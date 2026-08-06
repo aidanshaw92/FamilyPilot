@@ -191,8 +191,120 @@ cd familypilot && npm run test:routes
 
 Pre-remediation baseline: `docs/audit-screenshots/01-home.png` through `10-car-fit.png`
 
-Post-remediation captures should be taken after Vercel redeploy from this branch.
+Post-remediation captures (390×844): `docs/post-remediation-screenshots/`
+
+| File | Screen |
+|------|--------|
+| 01-home.png | Home |
+| 02-explore.png | Explore |
+| 03-trips.png | Trips |
+| 04-saved.png | Saved |
+| 05-profile.png | Profile |
+| 05-profile-testing.png | Profile testing notice + feedback |
+| 06-venue-detail.png | Venue detail |
+| 07-venue-not-found.png | Place not found |
+| 08-need-now.png | Need Now |
+| 09-holiday.png | Holiday |
+| 10-packing.png | Packing |
+| 11-car-fit.png | Car Fit |
+| 13-home-320px.png | Home at 320px width |
+| 14-feedback.png | Feedback screen |
+
+Full QA report: `docs/post-remediation-qa-report.md`
 
 ---
 
-*Remediation completed 6 August 2026.*
+## Post-Deployment Review
+
+**Production URL:** https://family-pilot-seven.vercel.app/  
+**Deployed commit:** `ec41951225fff7919cefe8898ee61f1d368421b3` (includes remediation + tester readiness + invalid venue rewrite fix)  
+**Review date:** 6 August 2026  
+**Method:** Automated route checks + Playwright screenshots at 390×844 and 320px + manual screenshot review
+
+### Route verification (production)
+
+| Route | HTTP | In-app state | Status |
+|-------|------|--------------|--------|
+| `/` | 200 | Home loads | Verified in production |
+| `/explore` | 200 | List view | Verified in production |
+| `/trips` | 200 | Trip timeline | Verified in production |
+| `/saved` | 200 | Saved rows | Verified in production |
+| `/profile` | 200 | Family profile | Verified in production |
+| `/venue/venue-1` | 200 | Venue detail | Verified in production |
+| `/venue/venue-2` | 200 | Venue detail | Verified in production |
+| `/venue/invalid` | 200 | Place not found | Verified in production (after rewrite fix) |
+| `/need-now` | 200 | Store list | Verified in production |
+| `/holiday` | 200 | Offer comparison | Verified in production |
+| `/packing` | 200 | Checklist | Verified in production |
+| `/car-fit` | 200 | Boot visualisation | Verified in production |
+| `/feedback` | 200 | Feedback form | Verified in production |
+
+- No JavaScript console errors captured during screenshot pass
+- Browser refresh on nested routes: HTTP 200 (static export)
+- No visible "Phase 4" or developer labels
+
+### Item-by-item production verification
+
+| Item | Classification | Notes |
+|------|----------------|-------|
+| Venue deep linking | **Verified in production** | `/venue/venue-1` cold load works |
+| Invalid venue handling | **Verified in production** | Required rewrite fix (`destination: /venue/[id]`) |
+| Remove Phase 4 placeholder | **Verified in production** | Explore shows list-first + "Map (coming soon)" |
+| Home density reduction | **Verified in production** | Single hero, 4 actions, one carousel; noticeably shorter |
+| Family Match consistency | **Verified in production** | Green badges consistent on cards and venue hero |
+| Need Now chip truncation | **Verified in production** | Medicine chip readable at 390px |
+| Save functionality | **Partially verified** | Heart icon and footer Save toggle work; Saved sync is client-side only |
+| Caption contrast | **Verified in production** | Supporting text readable; no obviously faint captions |
+| Empty states | **Partially verified** | Components exist; mock data prevents most from appearing in normal use |
+| Trust language | **Verified in production** | "Estimated", "Usually stocks", testing notice on Profile |
+| Back navigation | **Partially verified** | Back buttons present; full browser-history walkthrough not automated |
+| Testing notice + feedback | **Verified in production** | Profile disclaimer + `/feedback` screen |
+| Overall polish | **Verified in production** | No release-blocking visual defects at 390px or 320px |
+
+### Revised production scores
+
+Scores compared to pre-remediation audit (6.4 overall). These reflect **production as deployed**, not code intent alone.
+
+| Area | Before | After | Change | Rationale |
+|------|--------|-------|--------|-----------|
+| First impression | 7.0 | **8.0** | +1.0 | Home is shorter and clearer; greeting + Today's Pick visible quickly |
+| UI consistency | 5.5 | **7.5** | +2.0 | FamilyMatch unified; card variants distinct but coherent |
+| Navigation | 8.0 | **8.5** | +0.5 | All routes work; venue deep links fixed; back affordances present |
+| Visual hierarchy | 7.0 | **8.0** | +1.0 | Home sections have clear purpose; utility screens structured |
+| Accessibility | 6.0 | **7.0** | +1.0 | Contrast improved, 44pt targets, reduced motion; not fully audited |
+| Trust | 6.0 | **7.5** | +1.5 | Prototype labels, no Phase 4, venue links work, honest store copy |
+| Overall polish | 6.0 | **7.5** | +1.5 | Feels like a deliberate testing build, not an internal prototype |
+
+**Revised weighted overall: 7.6 / 10** (up from 6.4)
+
+Not inflated because: mock data still fills most screens, maps/inventory are fake, several CTAs are placeholders, and empty/loading states are rarely seen in normal testing.
+
+### Deep link checklist (completed)
+
+- [x] `/venue/venue-1` loads on cold URL
+- [x] `/venue/invalid` shows Place not found
+- [x] Stack routes load directly
+- [x] 390×844 and 320px — no horizontal overflow observed
+- [x] No console errors in automated capture
+
+### Parent testing readiness
+
+| Item | Path / method |
+|------|---------------|
+| Testing guide | [docs/PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md) |
+| Feedback collection | Profile → Send feedback → `/feedback` → GitHub issue (pre-filled) |
+| Testing notice | Profile screen (discreet, bottom of scroll) |
+
+### Recommendation
+
+**Ready to send to 5–10 parents** for structured feedback, with these caveats communicated upfront:
+
+- Prototype venue and store data
+- Placeholder actions on Trips (Start trip / Edit) and Profile edit rows
+- No real maps or live inventory
+
+Core routes and primary interactions (browse, save, venue detail, Need Now directions) work in production. Further development should wait until parent feedback is collected.
+
+---
+
+*Post-deployment review completed 6 August 2026.*
