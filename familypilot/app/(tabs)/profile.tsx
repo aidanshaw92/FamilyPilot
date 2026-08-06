@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FadeInView } from '@/src/components/ui/FadeInView';
@@ -8,6 +9,7 @@ import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { data: profile, isLoading } = useFamilyProfile();
 
   if (isLoading) {
@@ -115,6 +117,29 @@ export default function ProfileScreen() {
           Memberships & discounts
         </Text>
         <ProfileRow icon="card-outline" label="National Trust" value="Not linked" editable />
+
+        <View style={styles.testingNotice}>
+          <Text variant="caption" color={colors.text.secondary}>
+            FamilyPilot is currently an early testing version. Some venues, prices and availability
+            information are prototype data.
+          </Text>
+        </View>
+
+        <Text variant="heading3" style={styles.sectionTitle}>
+          Testing
+        </Text>
+        <Pressable
+          style={styles.feedbackRow}
+          onPress={() => router.push('/feedback' as never)}
+          accessibilityRole="button"
+          accessibilityLabel="Send tester feedback"
+        >
+          <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.primary[500]} />
+          <Text variant="body" style={styles.feedbackText}>
+            Send feedback
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />
+        </Pressable>
       </ScrollView>
     </ScreenContainer>
   );
@@ -237,5 +262,23 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
     marginRight: spacing.sm,
+  },
+  testingNotice: {
+    marginTop: spacing['2xl'],
+    padding: spacing.lg,
+    backgroundColor: colors.borderLight,
+    borderRadius: radius.md,
+  },
+  feedbackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  feedbackText: {
+    flex: 1,
   },
 });
