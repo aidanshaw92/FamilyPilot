@@ -1,20 +1,19 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ContinuePlanningCard, TodayHeroCard } from '@/src/components/home/TodayHeroCard';
 import { QuickActionGrid } from '@/src/components/home/QuickActionGrid';
-import { RecommendationCarousel } from '@/src/components/home/RecommendationCarousel';
 import { DecisionCard } from '@/src/components/shared/DecisionCard';
 import { ScreenContainer, ScreenHeader } from '@/src/components/shared/ScreenContainer';
-import { ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
-import { spacing } from '@/src/design-system/tokens';
+import { EmptyState, ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
+import { colors, spacing } from '@/src/design-system/tokens';
+import { mockVenues } from '@/src/data/mock-data';
 import {
   useFamilyProfile,
   useHomeRecommendations,
-  useRecentVenues,
   useTrips,
   useWeather,
 } from '@/src/hooks/use-queries';
-import { mockVenues } from '@/src/data/mock-data';
 
 function getTimeGreeting(): string {
   const hour = new Date().getHours();
@@ -22,6 +21,7 @@ function getTimeGreeting(): string {
 }
 
 export default function HomeScreen() {
+  const router = useRouter();
   const { data: profile } = useFamilyProfile();
   const { data: weather } = useWeather();
   const {
@@ -30,12 +30,17 @@ export default function HomeScreen() {
     isError: recsError,
     refetch,
   } = useHomeRecommendations();
-  const { data: recentVenues } = useRecentVenues();
   const { data: trips } = useTrips();
 
   const parentName = profile?.parentName ?? 'there';
   const todayPick = recommendations?.[0]?.venues[0] ?? mockVenues[0];
   const activeTrip = trips?.[0];
+
+  const moreIdeasVenues = (recommendations ?? [])
+    .flatMap((section) => section.venues)
+    .filter((venue, index, all) => all.findIndex((v) => v.id === venue.id) === index)
+    .filter((venue) => venue.id !== todayPick?.id)
+    .slice(0, 5);
 
   if (recsError) {
     return (
@@ -45,11 +50,30 @@ export default function HomeScreen() {
     );
   }
 
+  if (!recsLoading && !todayPick) {
+    return (
+      <ScreenContainer>
+        <ScreenHeader
+          greeting={`${getTimeGreeting()}, ${parentName}`}
+          location={profile?.homeLocation}
+          weather={weather}
+        />
+        <EmptyState
+          icon="compass-outline"
+          title="No recommendations right now"
+          message="We could not find suitable places for today. Try exploring nearby venues."
+          actionLabel="Explore"
+          onAction={() => router.push('/(tabs)/explore' as never)}
+        />
+      </ScreenContainer>
+    );
+  }
+
   return (
     <ScreenContainer>
       <ScreenHeader
-        timeGreeting={getTimeGreeting()}
-        name={parentName}
+        greeting={`${getTimeGreeting()}, ${parentName}`}
+        location={profile?.homeLocation}
         weather={weather}
       />
       <ScrollView
@@ -61,8 +85,32 @@ export default function HomeScreen() {
             <SkeletonDecisionCard />
           </View>
         ) : (
-          <TodayHeroCard venue={todayPick} weather={weather} />
+          <TodayHeroCard venue={todayPick} />
         )}
+
+        <View style={styles.section}>
+          <QuickActionGrid />
+        </View>
+
+        {!recsLoading && moreIdeasVenues.length > 0 ? (
+          <View style={styles.section}>
+            <SectionHeader
+              title="More ideas"
+              subtitle="Other places your family might love"
+              actionLabel="See all"
+              onAction={() => router.push('/(tabs)/explore' as never)}
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.carouselContent}
+            >
+              {moreIdeasVenues.map((venue, index) => (
+                <DecisionCard key={venue.id} venue={venue} variant="carousel" index={index} />
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
 
         {activeTrip ? (
           <ContinuePlanningCard
@@ -70,32 +118,6 @@ export default function HomeScreen() {
             tripDate={activeTrip.date}
             nextStop={activeTrip.stops[0]?.title ?? 'Plan your day'}
           />
-        ) : null}
-
-        <View style={styles.section}>
-          <Text variant="heading2" style={styles.sectionTitle}>
-            What shall we do?
-          </Text>
-          <QuickActionGrid />
-        </View>
-
-        {recsLoading
-          ? null
-          : recommendations?.map((section, i) => (
-              <RecommendationCarousel
-                key={section.id}
-                section={section}
-                startIndex={i * 3}
-              />
-            ))}
-
-        {recentVenues && recentVenues.length > 0 ? (
-          <View style={styles.section}>
-            <SectionHeader title="Recent places" subtitle="Pick up where you left off" />
-            {recentVenues.map((venue, index) => (
-              <DecisionCard key={venue.id} venue={venue} variant="list" index={index} />
-            ))}
-          </View>
         ) : null}
       </ScrollView>
     </ScreenContainer>
@@ -105,15 +127,15 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: spacing.screenPadding,
-    paddingBottom: spacing['5xl'],
+    paddingBottom: spacing['3xl'],
   },
   section: {
-    marginBottom: spacing['3xl'],
-  },
-  sectionTitle: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing['2xl'],
   },
   skeletonRow: {
-    marginBottom: spacing['3xl'],
+    marginBottom: spacing['2xl'],
+  },
+  carouselContent: {
+    paddingRight: spacing.screenPadding,
   },
 });

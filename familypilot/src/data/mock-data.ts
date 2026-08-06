@@ -133,48 +133,84 @@ export const mockVenues: Venue[] = [
   },
 ];
 
-export const mockVenueDetails: Record<string, VenueDetail> = {
-  'venue-1': {
-    ...mockVenues[0],
-    photos: [
-      'https://images.unsplash.com/photo-1564760055775-d63b17a55c44?w=1200&q=80',
-      'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?w=1200&q=80',
-      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&q=80',
-    ],
-    facilities: [
-      'cafe',
-      'toilets',
-      'baby_changing',
-      'playground',
-      'parking',
-      'shade',
-      'picnic',
-      'pushchair_friendly',
-    ],
-    openingHours: '8:00 AM – 6:00 PM',
-    terrain: 'flat',
-    bestAges: '1 – 8 years',
-    parkingInfo: 'Free parking, 200 spaces',
-    description:
-      'A beautiful country park with adventure playground, farm trail, and lakeside walks. Perfect for a full family day out.',
-    visitDurationMinutes: 180,
-    warnings: ['Playground busiest 11am–2pm on weekends'],
-    communityTips: [
-      {
-        id: 'tip-1',
-        author: 'Sarah M.',
-        message: 'Café queue is shorter before 11:30. Baby changing is behind the counter.',
-        timeAgo: '2 days ago',
-      },
-      {
-        id: 'tip-2',
-        author: 'James T.',
-        message: 'Parking fills up fast — arrive by 9:30 for a stress-free start.',
-        timeAgo: '1 week ago',
-      },
-    ],
-  },
-};
+export const mockVenueDetails: Record<string, VenueDetail> = Object.fromEntries(
+  mockVenues.map((venue) => [
+    venue.id,
+    {
+      ...venue,
+      photos: [
+        venue.imageUrl.replace('w=800', 'w=1200'),
+        venue.imageUrl.replace('w=800', 'w=1200').replace('q=80', 'q=70'),
+      ],
+      facilities: getDefaultFacilities(venue.category),
+      openingHours: 'Estimated · Usually 8:00 AM – 6:00 PM',
+      terrain: venue.category === 'park' || venue.category === 'farm' ? 'flat' : 'mixed',
+      bestAges: venue.category === 'museum' ? '3 – 12 years' : '1 – 8 years',
+      parkingInfo: venue.category === 'restaurant' ? 'Street parking nearby' : 'Free parking available',
+      description: getDefaultDescription(venue),
+      visitDurationMinutes: venue.category === 'restaurant' ? 90 : 180,
+      warnings:
+        venue.category === 'park'
+          ? ['Playground busiest 11am–2pm on weekends']
+          : undefined,
+      communityTips:
+        venue.id === 'venue-1'
+          ? [
+              {
+                id: 'tip-1',
+                author: 'Sarah M.',
+                message: 'Café queue is shorter before 11:30. Baby changing is behind the counter.',
+                timeAgo: '2 days ago',
+              },
+              {
+                id: 'tip-2',
+                author: 'James T.',
+                message: 'Parking fills up fast — arrive by 9:30 for a stress-free start.',
+                timeAgo: '1 week ago',
+              },
+            ]
+          : [
+              {
+                id: `tip-${venue.id}`,
+                author: 'Parent community',
+                message: 'Prototype venue data — community tips coming soon.',
+                timeAgo: 'Recently',
+              },
+            ],
+    } satisfies VenueDetail,
+  ]),
+);
+
+function getDefaultFacilities(category: Venue['category']): VenueDetail['facilities'] {
+  const base: VenueDetail['facilities'] = ['toilets', 'parking'];
+  switch (category) {
+    case 'park':
+      return [...base, 'playground', 'cafe', 'baby_changing', 'picnic', 'pushchair_friendly', 'shade'];
+    case 'farm':
+      return [...base, 'cafe', 'baby_changing', 'playground', 'pushchair_friendly'];
+    case 'museum':
+      return [...base, 'cafe', 'baby_changing', 'pushchair_friendly'];
+    case 'restaurant':
+      return [...base, 'highchairs', 'baby_changing'];
+    default:
+      return base;
+  }
+}
+
+function getDefaultDescription(venue: Venue): string {
+  switch (venue.category) {
+    case 'park':
+      return `${venue.name} is a family-friendly outdoor space with paths, play areas, and room to explore. Prototype venue data.`;
+    case 'farm':
+      return `${venue.name} offers hands-on animal experiences and indoor barns — great for young children. Prototype venue data.`;
+    case 'museum':
+      return `${venue.name} is a rainy-day favourite with interactive exhibits for curious kids. Prototype venue data.`;
+    case 'restaurant':
+      return `${venue.name} welcomes families with highchairs, changing facilities, and a relaxed atmosphere. Prototype venue data.`;
+    default:
+      return `${venue.name} — prototype venue data for user testing.`;
+  }
+}
 
 export const mockRecentVenues: Venue[] = [mockVenues[0], mockVenues[4]];
 
@@ -204,6 +240,9 @@ export const mockTrips: Trip[] = [
     id: 'trip-1',
     title: 'Saturday Adventure',
     date: 'Saturday, 9 Aug',
+    totalDriveMinutes: 40,
+    estimatedCost: '£30 – £45',
+    totalDurationHours: 6,
     stops: [
       {
         id: 's1',
@@ -247,7 +286,9 @@ export const mockStores: StoreLocation[] = [
     driveMinutes: 5,
     isOpen: true,
     closesAt: '10:00 PM',
-    stockNotes: ['In stock: Aptamil, Cow & Gate', 'Wipes & nappies available'],
+    phone: '020 8950 1234',
+    categoriesAvailable: ['Formula', 'Nappies', 'Wipes', 'Baby food'],
+    stockNotes: ['Usually stocks Aptamil and baby essentials'],
   },
   {
     id: 'store-2',
@@ -256,7 +297,9 @@ export const mockStores: StoreLocation[] = [
     driveMinutes: 8,
     isOpen: true,
     closesAt: '8:00 PM',
-    stockNotes: ['Calpol in stock', 'Thermometers available'],
+    phone: '01923 123456',
+    categoriesAvailable: ['Medicine', 'Calpol', 'Thermometers'],
+    stockNotes: ['Usually stocks Calpol and thermometers'],
   },
   {
     id: 'store-3',
@@ -265,7 +308,8 @@ export const mockStores: StoreLocation[] = [
     driveMinutes: 6,
     isOpen: true,
     closesAt: '9:00 PM',
-    stockNotes: ['Baby food & formula available'],
+    categoriesAvailable: ['Baby food', 'Formula', 'Nappies'],
+    stockNotes: ['Usually stocks baby food and formula'],
   },
 ];
 

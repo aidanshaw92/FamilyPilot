@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import * as Linking from 'expo-linking';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -19,24 +19,33 @@ import { PhotoGallery } from '@/src/components/venue/PhotoGallery';
 import { SaveButton } from '@/src/components/shared/SaveButton';
 import {
   Button,
-  ErrorState,
+  EmptyState,
+  FamilyMatch,
   FamilyMatchPanel,
   Skeleton,
   Text,
+  VenueImage,
 } from '@/src/components/ui';
 import { BackButton } from '@/src/components/ui/BackButton';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useVenue } from '@/src/hooks/use-queries';
+import { useSavedStore } from '@/src/stores/saved-store';
+import { generateVenueStaticParams } from '@/src/utils/venue-routes';
 
 const HERO_HEIGHT = 380;
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+
+export function generateStaticParams() {
+  return generateVenueStaticParams();
+}
 
 export default function VenueScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: venue, isLoading, isError, refetch } = useVenue(id ?? '');
+  const { isSaved, toggleSaved } = useSavedStore();
   const scrollY = useSharedValue(0);
   const [heroIndex, setHeroIndex] = useState(0);
 
@@ -62,9 +71,19 @@ export default function VenueScreen() {
     ],
   }));
 
+  const handleBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/explore' as never);
+    }
+  }, [router]);
+
   const handleDirections = useCallback(() => {
-    // Phase 4: open native maps via IMapsProvider
-  }, []);
+    if (!venue) return;
+    const query = encodeURIComponent(venue.name);
+    void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
+  }, [venue]);
 
   if (isLoading) {
     return (
@@ -78,16 +97,38 @@ export default function VenueScreen() {
     );
   }
 
-  if (isError || !venue) {
+  if (isError) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <BackButton onPress={() => router.back()} />
-        <ErrorState onRetry={() => void refetch()} />
+        <BackButton onPress={handleBack} />
+        <EmptyState
+          icon="cloud-offline-outline"
+          title="Could not load this place"
+          message="Check your connection and try again."
+          actionLabel="Retry"
+          onAction={() => void refetch()}
+        />
+      </View>
+    );
+  }
+
+  if (!venue) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <BackButton onPress={handleBack} />
+        <EmptyState
+          icon="location-outline"
+          title="Place not found"
+          message="This venue may have been removed or the link is incorrect."
+          actionLabel="Explore places"
+          onAction={() => router.replace('/(tabs)/explore' as never)}
+        />
       </View>
     );
   }
 
   const heroPhoto = venue.photos[heroIndex] ?? venue.photos[0];
+  const saved = isSaved(venue.id);
 
   return (
     <View style={styles.container}>
@@ -98,27 +139,26 @@ export default function VenueScreen() {
       >
         <View style={styles.heroContainer}>
           <Animated.View style={[styles.heroImageWrap, heroStyle]}>
-            <Image source={{ uri: heroPhoto }} style={styles.heroImage} contentFit="cover" transition={300} />
+            <VenueImage
+              uri={heroPhoto}
+              category={venue.category}
+              alt={venue.name}
+              style={styles.heroImage}
+              borderRadius={0}
+            />
           </Animated.View>
           <LinearGradient
             colors={[colors.gradient.heroStart, colors.gradient.heroEnd]}
             style={styles.heroGradient}
           />
           <View style={[styles.heroContent, { paddingTop: insets.top + spacing.sm }]}>
-            <BackButton onPress={() => router.back()} color={colors.text.inverse} />
+            <BackButton onPress={handleBack} color={colors.text.inverse} />
             <View style={styles.heroActions}>
               <SaveButton venueId={venue.id} color={colors.text.inverse} />
             </View>
           </View>
           <View style={styles.floatingMatch}>
-            <View style={styles.matchCircle}>
-              <Text variant="heading1" color={colors.text.inverse}>
-                {venue.familyScore.score}%
-              </Text>
-              <Text variant="caption" color={colors.text.inverse}>
-                Match
-              </Text>
-            </View>
+            <FamilyMatch score={venue.familyScore.score} variant="detail" />
           </View>
           <View style={styles.heroTitle}>
             <Text variant="heading1" color={colors.text.inverse}>
@@ -130,7 +170,7 @@ export default function VenueScreen() {
                 <MetaItem icon="time-outline" text={`~${Math.round(venue.visitDurationMinutes / 60)}h visit`} />
               ) : null}
               {venue.estimatedSpend ? (
-                <MetaItem icon="wallet-outline" text={venue.estimatedSpend} />
+                <MetaItem icon="wallet-outline" text={`Est. ${venue.estimatedSpend}`} />
               ) : null}
             </View>
           </View>
@@ -177,7 +217,12 @@ export default function VenueScreen() {
       </AnimatedScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
-        <Button label="Save" variant="outline" style={styles.footerButton} />
+        <Button
+          label={saved ? 'Saved' : 'Save'}
+          variant="outline"
+          style={styles.footerButton}
+          onPress={() => toggleSaved(venue.id)}
+        />
         <Button label="GO" style={styles.footerButton} onPress={handleDirections} />
       </View>
     </View>
@@ -259,16 +304,6 @@ const styles = StyleSheet.create({
     right: spacing.screenPadding,
     zIndex: 2,
   },
-  matchCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.secondary[500],
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: colors.surface,
-  },
   heroTitle: {
     position: 'absolute',
     bottom: spacing['2xl'],
@@ -309,7 +344,7 @@ const styles = StyleSheet.create({
     color: colors.warning[600],
   },
   sectionTitle: {
-    marginTop: spacing['3xl'],
+    marginTop: spacing['2xl'],
     marginBottom: spacing.lg,
   },
   detailsGrid: {

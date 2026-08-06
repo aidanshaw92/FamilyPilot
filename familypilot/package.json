@@ -39,14 +39,18 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vitest": "^3.2.4"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "build:web": "expo export --platform web"
+    "build:web": "expo export --platform web",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:routes": "npm run build:web && vitest run src/__tests__/remediation.test.ts"
   },
   "private": true
 }

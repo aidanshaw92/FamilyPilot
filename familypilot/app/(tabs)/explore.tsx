@@ -1,18 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
 
 import { FilterSheet } from '@/src/components/explore/FilterSheet';
 import { DecisionCard } from '@/src/components/shared/DecisionCard';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
-import { Chip, EmptyState, ErrorState, SkeletonCard, Text } from '@/src/components/ui';
+import { Chip, EmptyState, ErrorState, SectionHeader, SkeletonCard, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
-import { timing } from '@/src/design-system/animations/presets';
 import { useNearbyVenues } from '@/src/hooks/use-queries';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { filterVenues, PRIMARY_FILTERS } from '@/src/utils/filter-venues';
@@ -27,24 +20,14 @@ export default function ExploreScreen() {
     setPrimaryFilter,
     setFilterSheetOpen,
   } = useFiltersStore();
-  const [showMap, setShowMap] = useState(true);
-  const mapHeight = useSharedValue(200);
 
   const filteredVenues = useMemo(
     () => (venues ? filterVenues(venues, primaryFilter, advancedFilters) : []),
     [venues, primaryFilter, advancedFilters],
   );
 
-  const toggleMap = useCallback(() => {
-    setShowMap((prev) => {
-      mapHeight.value = withTiming(prev ? 80 : 200, timing.normal);
-      return !prev;
-    });
-  }, [mapHeight]);
-
-  const mapAnimatedStyle = useAnimatedStyle(() => ({
-    height: mapHeight.value,
-  }));
+  const activeFilterLabel =
+    PRIMARY_FILTERS.find((f) => f.id === primaryFilter)?.label ?? 'Results';
 
   const renderItem = useCallback(
     ({ item, index }: { item: Venue; index: number }) => (
@@ -67,7 +50,7 @@ export default function ExploreScreen() {
     <ScreenContainer>
       <View style={styles.header}>
         <Text variant="heading1">Explore</Text>
-        <Text variant="bodySmall" style={styles.subtitle}>
+        <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
           {filteredVenues.length} places near you
         </Text>
       </View>
@@ -92,7 +75,6 @@ export default function ExploreScreen() {
           accessibilityRole="button"
           accessibilityLabel="More filters"
         >
-          <Ionicons name="options-outline" size={18} color={colors.primary[500]} />
           <Text variant="bodySmall" color={colors.primary[500]}>
             More
           </Text>
@@ -106,24 +88,22 @@ export default function ExploreScreen() {
         </Pressable>
       </ScrollView>
 
-      <Pressable onPress={toggleMap} accessibilityRole="button" accessibilityLabel="Toggle map">
-        <Animated.View style={[styles.mapArea, mapAnimatedStyle]}>
-          <Ionicons name="map-outline" size={showMap ? 40 : 24} color={colors.primary[200]} />
-          <Text variant="caption" color={colors.text.tertiary} style={styles.mapLabel}>
-            {showMap ? 'Map view — Phase 4' : 'Tap to expand map'}
+      <View style={styles.listToggleRow}>
+        <Text variant="caption" color={colors.text.tertiary}>
+          List view
+        </Text>
+        <View style={styles.mapToggleDisabled} accessibilityState={{ disabled: true }}>
+          <Text variant="caption" color={colors.text.tertiary}>
+            Map (coming soon)
           </Text>
-        </Animated.View>
-      </Pressable>
+        </View>
+      </View>
 
       <View style={styles.listHeader}>
-        <Text variant="heading3">
-          {PRIMARY_FILTERS.find((f) => f.id === primaryFilter)?.label ?? 'Results'}
-        </Text>
-        <Pressable onPress={toggleMap}>
-          <Text variant="bodySmall" color={colors.primary[500]}>
-            {showMap ? 'Hide map' : 'Show map'}
-          </Text>
-        </Pressable>
+        <SectionHeader
+          title={activeFilterLabel}
+          subtitle={`${filteredVenues.length} result${filteredVenues.length === 1 ? '' : 's'}`}
+        />
       </View>
 
       {isLoading ? (
@@ -182,7 +162,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    minHeight: 44,
+    justifyContent: 'center',
     borderRadius: radius.full,
     backgroundColor: colors.primary[50],
     borderWidth: 1,
@@ -198,29 +179,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 4,
   },
-  mapArea: {
-    marginHorizontal: spacing.screenPadding,
-    marginTop: spacing.lg,
-    backgroundColor: colors.primary[50],
-    borderRadius: radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  mapLabel: {
-    marginTop: spacing.sm,
-  },
-  listHeader: {
+  listToggleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.screenPadding,
-    paddingTop: spacing['2xl'],
-    paddingBottom: spacing.md,
+    marginTop: spacing.md,
+  },
+  mapToggleDisabled: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: colors.borderLight,
+    opacity: 0.7,
+  },
+  listHeader: {
+    paddingHorizontal: spacing.screenPadding,
+    paddingTop: spacing.lg,
   },
   listContent: {
     paddingHorizontal: spacing.screenPadding,
-    paddingBottom: spacing['5xl'],
+    paddingBottom: spacing['3xl'],
   },
   loadingList: {
     paddingHorizontal: spacing.screenPadding,

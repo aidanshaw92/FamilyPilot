@@ -6,26 +6,18 @@ import { PressableScale } from '@/src/components/ui/PressableScale';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { Text } from '@/src/components/ui/Text';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
-import { Venue, WeatherInfo } from '@/src/types';
+import { Venue } from '@/src/types';
 
 interface TodayHeroCardProps {
   venue: Venue;
-  weather?: WeatherInfo;
 }
 
-export function TodayHeroCard({ venue, weather }: TodayHeroCardProps) {
+export function TodayHeroCard({ venue }: TodayHeroCardProps) {
   return (
     <FadeInView style={styles.wrap}>
-      <View style={styles.labelRow}>
-        <Text variant="label" color={colors.primary[500]}>
-          TODAY&apos;S PICK
-        </Text>
-        {weather ? (
-          <Text variant="caption" color={colors.text.tertiary}>
-            {weather.description}
-          </Text>
-        ) : null}
-      </View>
+      <Text variant="label" color={colors.primary[500]} style={styles.label}>
+        Today&apos;s Pick
+      </Text>
       <DecisionCard venue={venue} variant="hero" index={0} />
     </FadeInView>
   );
@@ -54,7 +46,7 @@ export function ContinuePlanningCard({
       >
         <View style={styles.planningContent}>
           <Text variant="label" color={colors.accent[600]}>
-            CONTINUE PLANNING
+            Continue planning
           </Text>
           <Text variant="heading3" style={styles.planningTitle}>
             {tripTitle}
@@ -73,13 +65,12 @@ export function ContinuePlanningCard({
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: spacing['3xl'],
+    marginBottom: spacing['2xl'],
   },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  label: {
     marginBottom: spacing.md,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   planningCard: {
     flexDirection: 'row',
@@ -87,7 +78,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent[50],
     borderRadius: radius.lg,
     padding: spacing.lg,
-    marginBottom: spacing['3xl'],
+    marginTop: spacing.lg,
     borderWidth: 1,
     borderColor: colors.accent[100],
   },

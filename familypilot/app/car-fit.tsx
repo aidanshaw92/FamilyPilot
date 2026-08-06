@@ -1,31 +1,69 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BootVisualisation } from '@/src/components/car-fit/BootVisualisation';
 import { BackButton } from '@/src/components/ui/BackButton';
-import { Card, Text } from '@/src/components/ui';
+import { Button, Card, EmptyState, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useCarFit } from '@/src/hooks/use-queries';
 
 export default function CarFitScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: carFit } = useCarFit();
+  const { data: carFit, isLoading, isError } = useCarFit();
 
-  if (!carFit) return null;
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)' as never);
+    }
+  };
+
+  if (isError) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <BackButton onPress={handleBack} />
+        <EmptyState
+          icon="car-outline"
+          title="Unable to calculate"
+          message="We could not load your car fit data. Try again later."
+        />
+      </View>
+    );
+  }
+
+  if (isLoading || !carFit) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <BackButton onPress={handleBack} />
+        <Text variant="bodySmall" color={colors.text.secondary} style={styles.loading}>
+          Calculating fit…
+        </Text>
+      </View>
+    );
+  }
 
   const usedLitres = carFit.equipment.reduce((sum, e) => sum + e.volumeLitres, 0);
   const usedPercent = (usedLitres / carFit.bootCapacityLitres) * 100;
 
+  const handleShare = () => {
+    void Share.share({
+      message: `Car fit check: ${carFit.allFits ? 'Everything fits' : 'Needs roof box'} in ${carFit.carName}. ${usedLitres}L of ${carFit.bootCapacityLitres}L used (estimate).`,
+    });
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <BackButton onPress={() => router.back()} />
+        <BackButton onPress={handleBack} />
         <View style={styles.headerText}>
           <Text variant="heading1">Car fit checker</Text>
-          <Text variant="bodySmall">{carFit.carName}</Text>
+          <Text variant="bodySmall" color={colors.text.secondary}>
+            {carFit.carName}
+          </Text>
         </View>
       </View>
 
@@ -50,19 +88,25 @@ export default function CarFitScreen() {
           <Text variant="heading2">
             {carFit.allFits ? 'Everything fits!' : 'Need a roof box'}
           </Text>
-          <Text variant="bodySmall" style={styles.statusSub}>
+          <Text variant="bodySmall" color={colors.text.secondary} style={styles.statusSub}>
             {carFit.allFits
-              ? `You'll have approx. ${carFit.spareLitres}L spare space`
-              : 'Some items exceed boot capacity'}
+              ? `You'll have approx. ${carFit.spareLitres}L spare space (estimate)`
+              : 'Some items exceed estimated boot capacity'}
           </Text>
 
           <View style={styles.capacityBar}>
             <View style={[styles.capacityFill, { width: `${usedPercent}%` }]} />
           </View>
-          <Text variant="caption">
+          <Text variant="caption" color={colors.text.secondary}>
             {usedLitres}L of {carFit.bootCapacityLitres}L used
           </Text>
         </Card>
+
+        <BootVisualisation
+          equipment={carFit.equipment}
+          capacityLitres={carFit.bootCapacityLitres}
+          usedLitres={usedLitres}
+        />
 
         <Text variant="heading3" style={styles.sectionTitle}>
           Your items
@@ -72,7 +116,7 @@ export default function CarFitScreen() {
             <Text variant="body" style={styles.itemName}>
               {item.name}
             </Text>
-            <Text variant="bodySmall" color={colors.text.tertiary}>
+            <Text variant="bodySmall" color={colors.text.secondary}>
               {item.volumeLitres}L
             </Text>
             <View
@@ -91,13 +135,10 @@ export default function CarFitScreen() {
           </View>
         ))}
 
-        <Image
-          source={{
-            uri: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&q=80',
-          }}
-          style={styles.bootImage}
-          contentFit="cover"
-        />
+        <View style={styles.actions}>
+          <Button label="Recalculate" variant="outline" style={styles.actionButton} />
+          <Button label="Share summary" onPress={handleShare} style={styles.actionButton} />
+        </View>
       </ScrollView>
     </View>
   );
@@ -107,6 +148,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  loading: {
+    padding: spacing.screenPadding,
   },
   header: {
     flexDirection: 'row',
@@ -120,11 +164,11 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: spacing.screenPadding,
-    paddingBottom: spacing['5xl'],
+    paddingBottom: spacing['3xl'],
   },
   statusCard: {
     alignItems: 'center',
-    marginBottom: spacing['3xl'],
+    marginBottom: spacing['2xl'],
   },
   statusIcon: {
     width: 64,
@@ -154,6 +198,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginBottom: spacing.lg,
+    marginTop: spacing['2xl'],
   },
   itemRow: {
     flexDirection: 'row',
@@ -168,13 +213,15 @@ const styles = StyleSheet.create({
   },
   fitsBadge: {
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: 4,
     borderRadius: radius.sm,
   },
-  bootImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: radius.lg,
+  actions: {
+    flexDirection: 'row',
+    gap: spacing.md,
     marginTop: spacing['2xl'],
+  },
+  actionButton: {
+    flex: 1,
   },
 });

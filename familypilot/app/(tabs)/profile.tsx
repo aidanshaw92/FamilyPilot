@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
@@ -29,7 +28,7 @@ export default function ProfileScreen() {
     <ScreenContainer>
       <View style={styles.header}>
         <Text variant="heading1">Your family</Text>
-        <Text variant="bodySmall" style={styles.subtitle}>
+        <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
           The more we know, the better we recommend
         </Text>
       </View>
@@ -62,7 +61,7 @@ export default function ProfileScreen() {
                   style={[styles.progressFill, { width: `${profile.completionPercent}%` }]}
                 />
               </View>
-              <Text variant="caption">
+              <Text variant="caption" color={colors.text.secondary}>
                 {profile.completionPercent}% complete — add your car to unlock Car Fit
               </Text>
             </View>
@@ -74,19 +73,11 @@ export default function ProfileScreen() {
         </Text>
         {children.map((child, index) => (
           <FadeInView key={child.id} delay={index * 50}>
-            <Card style={styles.memberCard}>
-              <View style={styles.memberRow}>
-                <View style={[styles.memberAvatar, { backgroundColor: colors.accent[100] }]}>
-                  <Text variant="heading3" color={colors.accent[600]}>
-                    {child.name.charAt(0)}
-                  </Text>
-                </View>
-                <View>
-                  <Text variant="heading3">{child.name}</Text>
-                  <Text variant="bodySmall">{child.age} years old</Text>
-                </View>
-              </View>
-            </Card>
+            <ProfileRow
+              icon="person-outline"
+              label={child.name}
+              value={`${child.age} years old`}
+            />
           </FadeInView>
         ))}
 
@@ -94,18 +85,36 @@ export default function ProfileScreen() {
           Preferences
         </Text>
         <Card style={styles.prefCard}>
-          <ProfileRow icon="location-outline" label="Home" value={profile.homeLocation} />
+          <ProfileRow icon="location-outline" label="Home" value={profile.homeLocation} editable />
           <ProfileRow
             icon="car-outline"
             label="Max drive"
             value={`${profile.maxDriveMinutes} minutes`}
+            editable
           />
           <ProfileRow
             icon="wallet-outline"
             label="Budget"
             value={profile.budgetTier.charAt(0).toUpperCase() + profile.budgetTier.slice(1)}
+            editable
           />
         </Card>
+
+        <Text variant="heading3" style={styles.sectionTitle}>
+          Vehicle
+        </Text>
+        <ProfileRow icon="car-sport-outline" label="Car" value="Tesla Model Y" editable />
+
+        <Text variant="heading3" style={styles.sectionTitle}>
+          Equipment
+        </Text>
+        <ProfileRow icon="bag-outline" label="Pushchair" value="Bugaboo Butterfly" editable />
+        <ProfileRow icon="bed-outline" label="Travel cot" value="Not added" editable />
+
+        <Text variant="heading3" style={styles.sectionTitle}>
+          Memberships & discounts
+        </Text>
+        <ProfileRow icon="card-outline" label="National Trust" value="Not linked" editable />
       </ScrollView>
     </ScreenContainer>
   );
@@ -115,21 +124,30 @@ function ProfileRow({
   icon,
   label,
   value,
+  editable = false,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
+  editable?: boolean;
 }) {
   return (
-    <View style={styles.prefRow}>
-      <Ionicons name={icon} size={20} color={colors.text.tertiary} />
-      <Text variant="bodySmall" style={styles.prefLabel}>
+    <Pressable
+      style={styles.prefRow}
+      accessibilityRole={editable ? 'button' : 'text'}
+      accessibilityLabel={editable ? `Edit ${label}` : undefined}
+    >
+      <Ionicons name={icon} size={20} color={colors.text.secondary} />
+      <Text variant="bodySmall" color={colors.text.secondary} style={styles.prefLabel}>
         {label}
       </Text>
       <Text variant="body" style={styles.prefValue}>
         {value}
       </Text>
-    </View>
+      {editable ? (
+        <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -153,11 +171,11 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.screenPadding,
-    paddingBottom: spacing['5xl'],
+    paddingBottom: spacing['3xl'],
   },
   familyCard: {
     alignItems: 'center',
-    marginBottom: spacing['3xl'],
+    marginBottom: spacing['2xl'],
   },
   avatarRow: {
     flexDirection: 'row',
@@ -197,35 +215,27 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginBottom: spacing.lg,
-  },
-  memberCard: {
-    marginBottom: spacing.md,
-  },
-  memberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
-  },
-  memberAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: spacing.lg,
   },
   prefCard: {
-    gap: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   prefRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 44,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
   },
   prefLabel: {
-    width: 80,
+    width: 100,
     marginLeft: spacing.md,
   },
   prefValue: {
     flex: 1,
     textAlign: 'right',
+    marginRight: spacing.sm,
   },
 });

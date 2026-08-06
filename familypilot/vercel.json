@@ -4,11 +4,5 @@
   "outputDirectory": "dist",
   "installCommand": "npm ci",
   "framework": null,
-  "cleanUrls": true,
-  "rewrites": [
-    {
-      "source": "/venue/:id",
-      "destination": "/venue/[id].html"
-    }
-  ]
+  "cleanUrls": true
 }

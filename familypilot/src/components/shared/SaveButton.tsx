@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -10,6 +10,7 @@ import Animated, {
 
 import { colors } from '@/src/design-system/tokens';
 import { spring } from '@/src/design-system/animations/presets';
+import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { useSavedStore } from '@/src/stores/saved-store';
 
 interface SaveButtonProps {
@@ -28,14 +29,19 @@ export function SaveButton({
   const { isSaved, toggleSaved } = useSavedStore();
   const saved = isSaved(venueId);
   const scale = useSharedValue(1);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reducedMotion) {
+      scale.value = 1;
+      return;
+    }
     scale.value = withSpring(saved ? 1.15 : 1, spring.snappy);
     const t = setTimeout(() => {
       scale.value = withSpring(1, spring.gentle);
     }, 150);
     return () => clearTimeout(t);
-  }, [saved, scale]);
+  }, [saved, scale, reducedMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -54,7 +60,8 @@ export function SaveButton({
       accessibilityRole="button"
       accessibilityLabel={saved ? 'Remove from saved' : 'Save place'}
       accessibilityState={{ selected: saved }}
-      hitSlop={12}
+      hitSlop={8}
+      style={styles.hitArea}
     >
       <Animated.View style={animatedStyle}>
         <Ionicons
@@ -66,3 +73,12 @@ export function SaveButton({
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  hitArea: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

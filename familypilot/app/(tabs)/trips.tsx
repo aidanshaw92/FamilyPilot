@@ -1,20 +1,22 @@
-import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { TripStopCard } from '@/src/components/shared/TripStopCard';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
-import { Card, EmptyState, Text } from '@/src/components/ui';
+import { Button, Card, EmptyState, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useTrips } from '@/src/hooks/use-queries';
 
 export default function TripsScreen() {
+  const router = useRouter();
   const { data: trips, isLoading } = useTrips();
 
   return (
     <ScreenContainer>
       <View style={styles.header}>
         <Text variant="heading1">Trips</Text>
-        <Text variant="bodySmall" style={styles.subtitle}>
+        <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
           Your planned days out
         </Text>
       </View>
@@ -25,46 +27,52 @@ export default function TripsScreen() {
             icon="calendar-outline"
             title="No trips yet"
             message="Plan a day out from the home screen and it will appear here."
+            actionLabel="Plan something"
+            onAction={() => router.push('/(tabs)' as never)}
           />
         ) : (
           trips?.map((trip, tripIndex) => (
             <FadeInView key={trip.id} delay={tripIndex * 80}>
               <Card style={styles.tripCard}>
-                <Text variant="heading2">{trip.title}</Text>
-                <Text variant="bodySmall" style={styles.date}>
-                  {trip.date}
-                </Text>
+                <View style={styles.tripHeader}>
+                  <View>
+                    <View style={styles.dateBadge}>
+                      <Text variant="caption" color={colors.primary[600]}>
+                        {trip.date}
+                      </Text>
+                    </View>
+                    <Text variant="heading2" style={styles.tripTitle}>
+                      {trip.title}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.summaryRow}>
+                  {trip.totalDriveMinutes ? (
+                    <SummaryPill icon="car-outline" label={`${trip.totalDriveMinutes} min drive`} />
+                  ) : null}
+                  {trip.estimatedCost ? (
+                    <SummaryPill icon="wallet-outline" label={`Est. ${trip.estimatedCost}`} />
+                  ) : null}
+                  {trip.totalDurationHours ? (
+                    <SummaryPill icon="time-outline" label={`~${trip.totalDurationHours}h total`} />
+                  ) : null}
+                </View>
 
                 <View style={styles.timeline}>
                   {trip.stops.map((stop, index) => (
-                    <View key={stop.id} style={styles.stopRow}>
-                      <View style={styles.timelineLeft}>
-                        <View style={[styles.timelineDot, index === 0 && styles.timelineDotActive]} />
-                        {index < trip.stops.length - 1 ? (
-                          <View style={styles.timelineLine} />
-                        ) : null}
-                      </View>
-                      <View style={styles.stopContent}>
-                        <Text variant="caption" color={colors.primary[500]}>
-                          {stop.time}
-                        </Text>
-                        <View style={styles.stopDetail}>
-                          <Image
-                            source={{ uri: stop.imageUrl }}
-                            style={styles.stopImage}
-                            contentFit="cover"
-                            transition={200}
-                          />
-                          <View style={styles.stopText}>
-                            <Text variant="heading3">{stop.title}</Text>
-                            {stop.subtitle ? (
-                              <Text variant="bodySmall">{stop.subtitle}</Text>
-                            ) : null}
-                          </View>
-                        </View>
-                      </View>
-                    </View>
+                    <TripStopCard
+                      key={stop.id}
+                      stop={stop}
+                      isActive={index === 0}
+                      isLast={index === trip.stops.length - 1}
+                    />
                   ))}
+                </View>
+
+                <View style={styles.actions}>
+                  <Button label="Start trip" style={styles.primaryAction} />
+                  <Button label="Edit" variant="outline" style={styles.secondaryAction} />
                 </View>
               </Card>
             </FadeInView>
@@ -72,6 +80,16 @@ export default function TripsScreen() {
         )}
       </ScrollView>
     </ScreenContainer>
+  );
+}
+
+function SummaryPill({ icon, label }: { icon: string; label: string }) {
+  return (
+    <View style={styles.summaryPill}>
+      <Text variant="caption" color={colors.text.secondary}>
+        {label}
+      </Text>
+    </View>
   );
 }
 
@@ -85,61 +103,49 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.screenPadding,
-    paddingBottom: spacing['5xl'],
+    paddingBottom: spacing['3xl'],
   },
   tripCard: {
     marginBottom: spacing['2xl'],
   },
-  date: {
+  tripHeader: {
+    marginBottom: spacing.lg,
+  },
+  dateBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primary[50],
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    marginBottom: spacing.sm,
+  },
+  tripTitle: {
     marginTop: spacing.xs,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
     marginBottom: spacing['2xl'],
+  },
+  summaryPill: {
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
   },
   timeline: {
     marginTop: spacing.sm,
   },
-  stopRow: {
+  actions: {
     flexDirection: 'row',
-    minHeight: 80,
-  },
-  timelineLeft: {
-    width: 24,
-    alignItems: 'center',
-  },
-  timelineDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.border,
-    marginTop: 4,
-  },
-  timelineDotActive: {
-    backgroundColor: colors.primary[500],
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  timelineLine: {
-    flex: 1,
-    width: 2,
-    backgroundColor: colors.border,
-    marginVertical: spacing.xs,
-  },
-  stopContent: {
-    flex: 1,
-    paddingBottom: spacing['2xl'],
-  },
-  stopDetail: {
-    flexDirection: 'row',
-    marginTop: spacing.sm,
     gap: spacing.md,
+    marginTop: spacing.lg,
   },
-  stopImage: {
-    width: 56,
-    height: 56,
-    borderRadius: radius.md,
-  },
-  stopText: {
+  primaryAction: {
     flex: 1,
-    justifyContent: 'center',
+  },
+  secondaryAction: {
+    minWidth: 88,
   },
 });

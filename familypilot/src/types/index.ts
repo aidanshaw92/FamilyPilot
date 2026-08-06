@@ -130,6 +130,9 @@ export interface Trip {
   title: string;
   date: string;
   stops: TripStop[];
+  totalDriveMinutes?: number;
+  estimatedCost?: string;
+  totalDurationHours?: number;
 }
 
 export interface SavedItem {
@@ -145,6 +148,8 @@ export interface StoreLocation {
   driveMinutes: number;
   isOpen: boolean;
   closesAt?: string;
+  phone?: string;
+  categoriesAvailable?: string[];
   stockNotes: string[];
 }
 

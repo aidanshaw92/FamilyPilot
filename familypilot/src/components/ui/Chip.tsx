@@ -27,8 +27,9 @@ export function Chip({ label, active = false, onPress }: ChipProps) {
     >
       <Text
         variant="bodySmall"
-        color={active ? colors.primary[600] : colors.text.secondary}
-        style={styles.label}
+        color={active ? colors.text.inverse : colors.text.secondary}
+        style={[styles.label, active && styles.activeLabel]}
+        numberOfLines={1}
       >
         {label}
       </Text>
@@ -39,7 +40,8 @@ export function Chip({ label, active = false, onPress }: ChipProps) {
 const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    minHeight: 44,
+    justifyContent: 'center',
     borderRadius: radius.full,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -47,10 +49,13 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   active: {
-    backgroundColor: colors.primary[50],
-    borderColor: colors.primary[200],
+    backgroundColor: colors.primary[500],
+    borderColor: colors.primary[600],
   },
   label: {
     fontFamily: 'Inter_500Medium',
+  },
+  activeLabel: {
+    fontFamily: 'Inter_600SemiBold',
   },
 });

@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { timing } from '@/src/design-system/animations/presets';
+import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 
 interface FadeInViewProps {
   children: ReactNode;
@@ -16,13 +17,19 @@ interface FadeInViewProps {
 }
 
 export function FadeInView({ children, delay = 0, style }: FadeInViewProps) {
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(12);
+  const reducedMotion = useReducedMotion();
+  const opacity = useSharedValue(reducedMotion ? 1 : 0);
+  const translateY = useSharedValue(reducedMotion ? 0 : 12);
 
   useEffect(() => {
+    if (reducedMotion) {
+      opacity.value = 1;
+      translateY.value = 0;
+      return;
+    }
     opacity.value = withDelay(delay, withTiming(1, timing.normal));
     translateY.value = withDelay(delay, withTiming(0, timing.normal));
-  }, [delay, opacity, translateY]);
+  }, [delay, opacity, translateY, reducedMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
