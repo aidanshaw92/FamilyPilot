@@ -40,7 +40,7 @@ export const colors = {
   text: {
     primary: '#1A1A2E',
     secondary: '#6B6B80',
-    tertiary: '#9B9BA8',
+    tertiary: '#767688',
     inverse: '#FFFFFF',
   },
   border: '#E8E6E3',

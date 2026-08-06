@@ -17,6 +17,8 @@ However, the current build reads as a **high-quality MVP**, not an App Store fea
 
 **Overall score: 6.4 / 10** — functional and promising, needs focused polish before it feels trustworthy enough for daily family decisions.
 
+> **Remediation update (6 Aug 2026):** Phase 2 remediation on branch `cursor/phase2-remediation-1a85` addresses P0–P2 audit items. See [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md) for completed changes. Original findings below are preserved unchanged.
+
 ---
 
 ## Audit Method
@@ -476,3 +478,31 @@ Captured at 390×844 mobile viewport from production preview.
 ---
 
 *Audit completed 6 August 2026. No application code was modified.*
+
+---
+
+## Remediation Status (Phase 2)
+
+The following audit priorities were addressed in Phase 2 remediation. See [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md) for full details.
+
+| Audit # | Item | Status |
+|---------|------|--------|
+| 1 | Fix `/venue/:id` routing | ✅ Completed |
+| 2 | Remove Phase 4 map placeholder | ✅ Completed |
+| 3 | Reduce Home scroll density | ✅ Completed |
+| 4 | Unify Family Match badge | ✅ Completed |
+| 5 | Fix Medicine chip truncation | ✅ Completed |
+| 6 | Increase caption contrast | ✅ Completed |
+| 7 | Compact Saved row variant | ✅ Completed |
+| 8 | Navigate CTA on Need Now | ✅ Completed |
+| 9 | Active filter chip styling | ✅ Completed |
+| 10 | Wire venue Save footer | ✅ Completed |
+| 11 | Category-specific imagery | ✅ Partial (VenueImage fallbacks) |
+| 12 | Empty states on stack screens | ✅ Completed |
+| 14 | Start trip CTA | ✅ Completed |
+| 15 | Profile edit affordances | ✅ Completed |
+| 16 | Packing checkbox feedback | ✅ Completed |
+| 17 | Holiday comparison summary | ✅ Completed |
+| 18 | Car Fit boot diagram | ✅ Completed |
+| 19 | Reduced motion | ✅ Completed |
+| 13, 20 | Mock delay / code splitting | ⏸ Deferred |

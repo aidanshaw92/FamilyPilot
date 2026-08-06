@@ -1,8 +1,9 @@
 # FamilyPilot — Project Status Summary
 
 **Last updated:** 6 August 2026  
-**Branch:** `cursor/familypilot-foundation-1a85`  
-**Pull Request:** [#1 — FamilyPilot Phase 1](https://github.com/aidanshaw92/FamilyPilot/pull/1) (draft)
+**Branch:** `cursor/phase2-remediation-1a85`  
+**Live preview:** https://family-pilot-seven.vercel.app/  
+**Remediation doc:** [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md)
 
 ---
 

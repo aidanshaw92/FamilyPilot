@@ -10,12 +10,12 @@ interface ScreenContainerProps {
 }
 
 export function ScreenHeader({
-  timeGreeting,
-  name,
+  greeting,
+  location,
   weather,
 }: {
-  timeGreeting: string;
-  name: string;
+  greeting: string;
+  location?: string;
   weather?: { temperature: number; description: string; condition: string };
 }) {
   const weatherIcon =
@@ -28,22 +28,22 @@ export function ScreenHeader({
   return (
     <View style={styles.header}>
       <View style={styles.greetingBlock}>
-        <Text variant="bodySmall" color={colors.text.secondary}>
-          {timeGreeting}
+        <Text variant="heading2" style={styles.greetingLine}>
+          {greeting}
         </Text>
-        <Text variant="display" style={styles.greetingName}>
-          {name}
-        </Text>
-        {weather ? (
-          <Text variant="bodySmall" color={colors.text.tertiary} style={styles.weatherDesc}>
-            {weather.description}
+        {location || weather ? (
+          <Text variant="bodySmall" color={colors.text.secondary} style={styles.contextLine}>
+            {[location, weather?.description].filter(Boolean).join(' · ')}
           </Text>
         ) : null}
       </View>
       {weather ? (
-        <View style={styles.weather} accessibilityLabel={`${weather.temperature} degrees, ${weather.description}`}>
-          <Ionicons name={weatherIcon} size={22} color={colors.accent[500]} />
-          <Text variant="heading2">{weather.temperature}°</Text>
+        <View
+          style={styles.weather}
+          accessibilityLabel={`${weather.temperature} degrees, ${weather.description}`}
+        >
+          <Ionicons name={weatherIcon} size={20} color={colors.accent[500]} />
+          <Text variant="heading3">{weather.temperature}°</Text>
         </View>
       ) : null}
     </View>
@@ -77,25 +77,25 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: spacing.lg,
   },
-  greetingName: {
-    marginTop: spacing.xs,
-    fontSize: 28,
-    lineHeight: 34,
+  greetingLine: {
+    fontSize: 24,
+    lineHeight: 30,
   },
-  weatherDesc: {
+  contextLine: {
     marginTop: spacing.sm,
-    maxWidth: 220,
+    maxWidth: 260,
   },
   weather: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: radius.full,
     ...shadows.card,
-    minWidth: 80,
+    minWidth: 72,
+    minHeight: 44,
     justifyContent: 'center',
   },
 });

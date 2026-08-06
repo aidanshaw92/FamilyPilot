@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/src/components/ui/Button';
+import { FamilyMatch } from '@/src/components/ui/FamilyMatch';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { PressableScale } from '@/src/components/ui/PressableScale';
 import { Text } from '@/src/components/ui/Text';
+import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
 
@@ -40,7 +41,7 @@ function DecisionCardComponent({
     router.push(`/venue/${venue.id}` as never);
   };
 
-  const reasons = venue.familyScore.explanation.slice(0, isHero ? 5 : 3);
+  const reasons = venue.familyScore.explanation.slice(0, isHero ? 3 : 2);
 
   return (
     <FadeInView delay={index * 60} style={variant === 'carousel' ? styles.carouselWrap : undefined}>
@@ -56,16 +57,15 @@ function DecisionCardComponent({
         ]}
       >
         <View style={styles.imageWrap}>
-          <Image
-            source={{ uri: venue.imageUrl }}
-            style={[styles.image, isHero && styles.heroImage]}
-            contentFit="cover"
-            transition={300}
+          <VenueImage
+            uri={venue.imageUrl}
+            category={venue.category}
+            alt={venue.name}
+            style={isHero ? { ...styles.image, ...styles.heroImage } : styles.image}
+            borderRadius={0}
           />
           <View style={styles.matchPill}>
-            <Text variant="caption" color={colors.text.inverse} style={styles.matchPillText}>
-              {matchPercent}% Match
-            </Text>
+            <FamilyMatch score={matchPercent} variant="card" />
           </View>
         </View>
 
@@ -74,9 +74,11 @@ function DecisionCardComponent({
             {venue.name}
           </Text>
 
-          <Text variant="caption" color={colors.text.tertiary} style={styles.perfectLabel}>
-            Perfect today because
-          </Text>
+          {isHero ? (
+            <Text variant="caption" color={colors.text.secondary} style={styles.perfectLabel}>
+              Top reasons today
+            </Text>
+          ) : null}
 
           {reasons.map((reason) => (
             <View key={reason} style={styles.reasonRow}>
@@ -90,10 +92,10 @@ function DecisionCardComponent({
           <View style={styles.metaRow}>
             <MetaChip icon="car-outline" label={`${venue.driveMinutes} min`} />
             {venue.estimatedSpend ? (
-              <MetaChip icon="wallet-outline" label={venue.estimatedSpend} />
+              <MetaChip icon="wallet-outline" label={`Est. ${venue.estimatedSpend}`} />
             ) : null}
             {venue.isOpen ? (
-              <MetaChip icon="time-outline" label="Open now" highlight />
+              <MetaChip icon="time-outline" label="Usually open" highlight />
             ) : null}
           </View>
 
@@ -123,7 +125,7 @@ function MetaChip({
       <Ionicons
         name={icon}
         size={12}
-        color={highlight ? colors.secondary[600] : colors.text.tertiary}
+        color={highlight ? colors.secondary[600] : colors.text.secondary}
       />
       <Text variant="caption" color={highlight ? colors.secondary[600] : colors.text.secondary}>
         {label}
@@ -145,7 +147,7 @@ const styles = StyleSheet.create({
     ...shadows.card,
   },
   carousel: {
-    width: 300,
+    width: 280,
   },
   list: {
     marginBottom: spacing.lg,
@@ -167,13 +169,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.md,
     left: spacing.md,
-    backgroundColor: colors.secondary[500],
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-  },
-  matchPillText: {
-    fontFamily: 'Inter_700Bold',
   },
   content: {
     padding: spacing.lg,
@@ -181,8 +176,6 @@ const styles = StyleSheet.create({
   perfectLabel: {
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
   },
   reasonRow: {
     flexDirection: 'row',

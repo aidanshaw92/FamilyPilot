@@ -16,15 +16,36 @@ const ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
   'bag-outline': 'bag-outline',
   'map-outline': 'map-outline',
   'car-outline': 'car-outline',
+  'calendar-outline': 'calendar-outline',
+  'heart-outline': 'heart-outline',
 };
 
 interface QuickActionButtonProps {
   action: QuickAction;
+  compact?: boolean;
 }
 
-export function QuickActionButton({ action }: QuickActionButtonProps) {
+export function QuickActionButton({ action, compact = false }: QuickActionButtonProps) {
   const router = useRouter();
   const iconName = ICON_MAP[action.icon] ?? 'ellipse-outline';
+
+  if (compact) {
+    return (
+      <PressableScale
+        accessibilityRole="button"
+        accessibilityLabel={action.label}
+        onPress={() => router.push(action.route as never)}
+        style={styles.compactContainer}
+      >
+        <View style={[styles.compactIcon, { backgroundColor: action.color + '18' }]}>
+          <Ionicons name={iconName} size={18} color={action.color} />
+        </View>
+        <Text variant="caption" style={styles.compactLabel} numberOfLines={1}>
+          {action.label}
+        </Text>
+      </PressableScale>
+    );
+  }
 
   return (
     <PressableScale
@@ -61,5 +82,27 @@ const styles = StyleSheet.create({
   label: {
     textAlign: 'center',
     paddingHorizontal: spacing.xs,
+  },
+  compactContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    minHeight: 44,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: '#F0EEEB',
+  },
+  compactIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  compactLabel: {
+    fontFamily: 'Inter_500Medium',
   },
 });

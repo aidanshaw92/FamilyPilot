@@ -4,11 +4,5 @@
   "buildCommand": "cd familypilot && npm run build:web",
   "outputDirectory": "familypilot/dist",
   "framework": null,
-  "cleanUrls": true,
-  "rewrites": [
-    {
-      "source": "/venue/:id",
-      "destination": "/venue/[id].html"
-    }
-  ]
+  "cleanUrls": true
 }
