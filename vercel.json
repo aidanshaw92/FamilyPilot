@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd familypilot && npm ci",
+  "buildCommand": "cd familypilot && npm run build:web",
+  "outputDirectory": "familypilot/dist",
+  "framework": null,
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/venue/:id",
+      "destination": "/venue/[id].html"
+    }
+  ]
+}
