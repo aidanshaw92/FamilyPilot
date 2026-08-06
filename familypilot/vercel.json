@@ -8,7 +8,7 @@
   "rewrites": [
     {
       "source": "/venue/:id",
-      "destination": "/venue/[id].html"
+      "destination": "/venue/[id]"
     }
   ]
 }
