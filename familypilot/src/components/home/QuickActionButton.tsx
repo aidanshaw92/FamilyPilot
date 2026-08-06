@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { PressableScale } from '@/src/components/ui/PressableScale';
 import { Text } from '@/src/components/ui';
 import { radius, spacing } from '@/src/design-system/tokens';
 import { QuickAction } from '@/src/types';
@@ -26,17 +26,12 @@ export function QuickActionButton({ action }: QuickActionButtonProps) {
   const router = useRouter();
   const iconName = ICON_MAP[action.icon] ?? 'ellipse-outline';
 
-  const handlePress = () => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push(action.route as never);
-  };
-
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={action.label}
-      onPress={handlePress}
-      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+      onPress={() => router.push(action.route as never)}
+      style={styles.container}
     >
       <View style={[styles.iconContainer, { backgroundColor: action.color + '18' }]}>
         <Ionicons name={iconName} size={26} color={action.color} />
@@ -44,7 +39,7 @@ export function QuickActionButton({ action }: QuickActionButtonProps) {
       <Text variant="caption" style={styles.label} numberOfLines={2}>
         {action.label}
       </Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -54,10 +49,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     minHeight: 88,
-  },
-  pressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.95 }],
   },
   iconContainer: {
     width: 56,

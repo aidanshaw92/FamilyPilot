@@ -3,6 +3,7 @@ import {
   mockFamilyProfile,
   mockHolidayOffers,
   mockPackingItems,
+  mockRecentVenues,
   mockRecommendations,
   mockSavedItems,
   mockStores,
@@ -57,6 +58,11 @@ export const recommendationService = {
   async getHomeRecommendations(): Promise<RecommendationSection[]> {
     await delay(400);
     return mockRecommendations;
+  },
+
+  async getRecentVenues(): Promise<Venue[]> {
+    await delay(200);
+    return mockRecentVenues;
   },
 };
 

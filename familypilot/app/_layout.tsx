@@ -1,3 +1,4 @@
+import 'react-native-reanimated';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   Inter_400Regular,

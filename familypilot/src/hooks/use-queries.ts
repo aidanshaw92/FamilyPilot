@@ -49,6 +49,13 @@ export function useHomeRecommendations() {
   });
 }
 
+export function useRecentVenues() {
+  return useQuery({
+    queryKey: ['venues', 'recent'],
+    queryFn: recommendationService.getRecentVenues,
+  });
+}
+
 export function useTrips() {
   return useQuery({
     queryKey: ['trips'],

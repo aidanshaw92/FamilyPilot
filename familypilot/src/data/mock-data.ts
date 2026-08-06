@@ -157,8 +157,26 @@ export const mockVenueDetails: Record<string, VenueDetail> = {
     parkingInfo: 'Free parking, 200 spaces',
     description:
       'A beautiful country park with adventure playground, farm trail, and lakeside walks. Perfect for a full family day out.',
+    visitDurationMinutes: 180,
+    warnings: ['Playground busiest 11am–2pm on weekends'],
+    communityTips: [
+      {
+        id: 'tip-1',
+        author: 'Sarah M.',
+        message: 'Café queue is shorter before 11:30. Baby changing is behind the counter.',
+        timeAgo: '2 days ago',
+      },
+      {
+        id: 'tip-2',
+        author: 'James T.',
+        message: 'Parking fills up fast — arrive by 9:30 for a stress-free start.',
+        timeAgo: '1 week ago',
+      },
+    ],
   },
 };
+
+export const mockRecentVenues: Venue[] = [mockVenues[0], mockVenues[4]];
 
 export const mockRecommendations: RecommendationSection[] = [
   {

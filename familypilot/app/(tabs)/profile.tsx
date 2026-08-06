@@ -1,13 +1,25 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { FadeInView } from '@/src/components/ui/FadeInView';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
-import { Card, Text } from '@/src/components/ui';
+import { Card, Skeleton, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
 
 export default function ProfileScreen() {
-  const { data: profile } = useFamilyProfile();
+  const { data: profile, isLoading } = useFamilyProfile();
+
+  if (isLoading) {
+    return (
+      <ScreenContainer>
+        <View style={styles.loading}>
+          <Skeleton height={200} borderRadius={radius.lg} />
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   if (!profile) return null;
 
@@ -16,60 +28,66 @@ export default function ProfileScreen() {
   return (
     <ScreenContainer>
       <View style={styles.header}>
-        <Text variant="heading1">Profile</Text>
+        <Text variant="heading1">Your family</Text>
+        <Text variant="bodySmall" style={styles.subtitle}>
+          The more we know, the better we recommend
+        </Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <Card style={styles.familyCard}>
-          <View style={styles.avatarRow}>
-            {profile.members.map((member, index) => (
-              <View
-                key={member.id}
-                style={[
-                  styles.avatar,
-                  { backgroundColor: AVATAR_COLORS[index % AVATAR_COLORS.length] },
-                  index > 0 && styles.avatarOverlap,
-                ]}
-              >
-                <Text variant="heading3" color={colors.text.inverse}>
-                  {member.name.charAt(0)}
-                </Text>
-              </View>
-            ))}
-          </View>
-          <Text variant="heading2" style={styles.familyName}>
-            The {profile.parentName} Family
-          </Text>
-          <View style={styles.completionRow}>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  { width: `${profile.completionPercent}%` },
-                ]}
-              />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <FadeInView>
+          <Card style={styles.familyCard}>
+            <View style={styles.avatarRow}>
+              {profile.members.map((member, index) => (
+                <View
+                  key={member.id}
+                  style={[
+                    styles.avatar,
+                    { backgroundColor: AVATAR_COLORS[index % AVATAR_COLORS.length] },
+                    index > 0 && styles.avatarOverlap,
+                  ]}
+                >
+                  <Text variant="heading3" color={colors.text.inverse}>
+                    {member.name.charAt(0)}
+                  </Text>
+                </View>
+              ))}
             </View>
-            <Text variant="caption">{profile.completionPercent}% complete</Text>
-          </View>
-        </Card>
+            <Text variant="heading2" style={styles.familyName}>
+              The {profile.parentName} Family
+            </Text>
+            <View style={styles.completionRow}>
+              <View style={styles.progressBar}>
+                <View
+                  style={[styles.progressFill, { width: `${profile.completionPercent}%` }]}
+                />
+              </View>
+              <Text variant="caption">
+                {profile.completionPercent}% complete — add your car to unlock Car Fit
+              </Text>
+            </View>
+          </Card>
+        </FadeInView>
 
         <Text variant="heading3" style={styles.sectionTitle}>
           Children
         </Text>
-        {children.map((child) => (
-          <Card key={child.id} style={styles.memberCard}>
-            <View style={styles.memberRow}>
-              <View style={[styles.memberAvatar, { backgroundColor: colors.accent[100] }]}>
-                <Text variant="heading3" color={colors.accent[600]}>
-                  {child.name.charAt(0)}
-                </Text>
+        {children.map((child, index) => (
+          <FadeInView key={child.id} delay={index * 50}>
+            <Card style={styles.memberCard}>
+              <View style={styles.memberRow}>
+                <View style={[styles.memberAvatar, { backgroundColor: colors.accent[100] }]}>
+                  <Text variant="heading3" color={colors.accent[600]}>
+                    {child.name.charAt(0)}
+                  </Text>
+                </View>
+                <View>
+                  <Text variant="heading3">{child.name}</Text>
+                  <Text variant="bodySmall">{child.age} years old</Text>
+                </View>
               </View>
-              <View>
-                <Text variant="heading3">{child.name}</Text>
-                <Text variant="bodySmall">{child.age} years old</Text>
-              </View>
-            </View>
-          </Card>
+            </Card>
+          </FadeInView>
         ))}
 
         <Text variant="heading3" style={styles.sectionTitle}>
@@ -123,9 +141,15 @@ const AVATAR_COLORS = [
 ];
 
 const styles = StyleSheet.create({
+  loading: {
+    padding: spacing.screenPadding,
+  },
   header: {
     paddingHorizontal: spacing.screenPadding,
     paddingTop: spacing.lg,
+  },
+  subtitle: {
+    marginTop: spacing.xs,
   },
   content: {
     padding: spacing.screenPadding,
