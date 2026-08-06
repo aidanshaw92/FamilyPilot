@@ -1,35 +1,26 @@
 import { create } from 'zustand';
 
-import { ExploreFilter } from '@/src/types';
-
-const defaultFilters: ExploreFilter[] = [
-  { id: 'all', label: 'All', active: true },
-  { id: 'parks', label: 'Parks', active: false },
-  { id: 'cafes', label: 'Cafés', active: false },
-  { id: 'playgrounds', label: 'Playgrounds', active: false },
-  { id: 'indoor', label: 'Indoor', active: false },
-  { id: 'free', label: 'Free', active: false },
-];
-
 interface FiltersState {
-  filters: ExploreFilter[];
-  toggleFilter: (id: string) => void;
-  resetFilters: () => void;
+  primaryFilter: string;
+  advancedFilters: string[];
+  filterSheetOpen: boolean;
+  setPrimaryFilter: (id: string) => void;
+  toggleAdvancedFilter: (id: string) => void;
+  clearAdvancedFilters: () => void;
+  setFilterSheetOpen: (open: boolean) => void;
 }
 
 export const useFiltersStore = create<FiltersState>((set) => ({
-  filters: defaultFilters,
-  toggleFilter: (id) =>
+  primaryFilter: 'popular',
+  advancedFilters: [],
+  filterSheetOpen: false,
+  setPrimaryFilter: (id) => set({ primaryFilter: id }),
+  toggleAdvancedFilter: (id) =>
     set((state) => ({
-      filters: state.filters.map((f) =>
-        id === 'all'
-          ? { ...f, active: f.id === 'all' }
-          : f.id === id
-            ? { ...f, active: !f.active }
-            : f.id === 'all'
-              ? { ...f, active: false }
-              : f,
-      ),
+      advancedFilters: state.advancedFilters.includes(id)
+        ? state.advancedFilters.filter((f) => f !== id)
+        : [...state.advancedFilters, id],
     })),
-  resetFilters: () => set({ filters: defaultFilters }),
+  clearAdvancedFilters: () => set({ advancedFilters: [] }),
+  setFilterSheetOpen: (open) => set({ filterSheetOpen: open }),
 }));

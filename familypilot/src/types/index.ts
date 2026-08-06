@@ -57,6 +57,13 @@ export interface Venue {
   address?: string;
 }
 
+export interface CommunityTip {
+  id: string;
+  author: string;
+  message: string;
+  timeAgo: string;
+}
+
 export interface VenueDetail extends Venue {
   photos: string[];
   facilities: FacilityType[];
@@ -65,6 +72,9 @@ export interface VenueDetail extends Venue {
   bestAges: string;
   parkingInfo: string;
   description: string;
+  visitDurationMinutes?: number;
+  warnings?: string[];
+  communityTips?: CommunityTip[];
 }
 
 export interface QuickAction {
