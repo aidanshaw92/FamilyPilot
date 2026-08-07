@@ -3,7 +3,10 @@
 **Last updated:** 7 August 2026  
 **Production URL:** https://family-pilot-seven.vercel.app/  
 **Current focus:** Parent user testing (Phase 2 remediation deployed)  
-**Product direction (planned):** [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md)  
+**Product constitution:** [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) — read before any code change  
+**MVP scope:** [MVP_SCOPE.md](./MVP_SCOPE.md)  
+**Future backlog:** [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md)  
+**Feature specs (planned):** [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md)  
 **Remediation & QA:** [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md)  
 **Tester guide:** [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md)
 
@@ -39,9 +42,9 @@ FamilyPilot is a **personalised family decision engine** — one family profile 
 
 **What works today:** Navigation, personalised Home, Explore, venue detail with deep links, Saved, Need Now, Trips, utility screens (packing, car fit, holidays), feedback collection, and mock-data-driven Family Match — all on web and Expo without backend credentials.
 
-**What does not work yet:** Real auth, live maps, external APIs, AI concierge, and all **Product Direction V2** features (Plan Your Day, Meet Another Family, Eat Nearby, accessibility/SEND depth, connected families). See [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md).
+**What does not work yet:** Real auth, live maps, external APIs, AI concierge, and all **Post-MVP** features (Plan Your Day, Meet Another Family, Eat Nearby, accessibility/SEND depth, connected families). See [MVP_SCOPE.md](./MVP_SCOPE.md) and [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md).
 
-**Current priority:** Collect structured feedback from 5–10 parents before building V2 features.
+**Current priority:** Collect structured feedback from 5–10 parents before building Post-MVP features. Every future decision is governed by [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) and [DECISION_PRINCIPLES.md](./DECISION_PRINCIPLES.md).
 
 ---
 
@@ -53,7 +56,7 @@ FamilyPilot is **not** a day planner, booking site, AI chatbot, parenting conten
 
 **Core philosophy:** Reduce research; provide confident, explainable recommendations. The user stays in control — generated plans and scores are starting points, not prescriptions.
 
-**Positioning rule:** Features like "Plan Your Day" strengthen the vision; they do not replace it. See [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md) §1–2.
+**Positioning rule:** Features like "Plan Your Day" strengthen the vision; they do not replace it. See [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) and [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md) §1–2.
 
 **Key differentiator:** **Family Match** — an explainable score (0–100) with visible reasoning for venues, restaurants, trips, meetups, and more.
 
@@ -673,16 +676,31 @@ When unset, the app silently uses mock data.
 
 ## Documentation index
 
+### Product constitution (read first)
+
 | Document | Purpose |
 |----------|---------|
-| [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md) | **Product roadmap & feature specs (planned)** |
+| [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) | **Canonical product vision — the constitution** |
+| [DECISION_PRINCIPLES.md](./DECISION_PRINCIPLES.md) | Build / no-build gates for every change |
+| [MVP_SCOPE.md](./MVP_SCOPE.md) | What is in scope for parent testing today |
+| [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md) | Prioritised backlog with scope labels |
+| [FEATURE_ROADMAP.md](./FEATURE_ROADMAP.md) | Phases 1–8 delivery plan |
+| [VISION_2030.md](./VISION_2030.md) | Long-term north star |
+| [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md) | Detailed feature specifications (planned) |
+| [INFORMATION_ARCHITECTURE.md](./INFORMATION_ARCHITECTURE.md) | Navigation & screen hierarchy |
+| [FAMILY_MATCH.md](./FAMILY_MATCH.md) | Scoring model & explainability |
+| [DATABASE_FUTURE.md](./DATABASE_FUTURE.md) | Extensible schema for future features |
+| [PRIVACY_MODEL.md](./PRIVACY_MODEL.md) | Privacy rules for location & sensitive prefs |
+
+### Engineering & QA
+
+| Document | Purpose |
+|----------|---------|
 | [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md) | Remediation changelog + production QA |
 | [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md) | Tester instructions |
 | [DESIGN_AUDIT.md](./DESIGN_AUDIT.md) | Pre-remediation design audit |
-| [BACKLOG.md](./BACKLOG.md) | Non-blocking deferred items |
+| [BACKLOG.md](./BACKLOG.md) | Quick reference — see FUTURE_BACKLOG for full list |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Technical architecture |
-| Commit | `feat: FamilyPilot Phase 1 — design system, navigation, and core screens` |
-| Files changed | 74 files, ~14,000 lines |
 
 ---
 

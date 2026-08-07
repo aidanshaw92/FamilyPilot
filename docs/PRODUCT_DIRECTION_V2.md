@@ -1,8 +1,13 @@
 # FamilyPilot — Product Direction V2
 
+> **Read [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) first.**  
+> That document is the product constitution. This file provides **detailed feature specifications** for planned work — it does not override the vision, simplify it, or replace it.
+
 **Date:** 7 August 2026  
 **Status:** Planning document — **not implemented**  
-**Supersedes:** Extends (does not replace) the vision in [PROJECT_STATUS.md](./PROJECT_STATUS.md) and [ARCHITECTURE.md](./ARCHITECTURE.md)
+**Authority:** [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md)  
+**Scope labels:** [MVP_SCOPE.md](./MVP_SCOPE.md) · [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md) · [FEATURE_ROADMAP.md](./FEATURE_ROADMAP.md)  
+**Extends:** [PROJECT_STATUS.md](./PROJECT_STATUS.md) and [ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ---
 

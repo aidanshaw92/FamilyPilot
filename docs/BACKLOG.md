@@ -1,8 +1,11 @@
 # FamilyPilot — Backlog
 
-Items deferred from remediation QA and planned V2 features. **None of the V2 features below are implemented.**
+> **Canonical backlog:** [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md) (prioritised, scope-labelled)  
+> **Product constitution:** [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md)
 
-Full specifications: [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md)
+This file is a **quick reference** for deferred polish and V2 planning. For the full prioritised backlog with MVP / Post-MVP / Future Vision / Long-term Research labels, use [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md).
+
+Full feature specifications: [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md)
 
 ---
 
