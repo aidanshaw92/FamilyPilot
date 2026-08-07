@@ -1,9 +1,11 @@
 # FamilyPilot — Project Status Summary
 
-**Last updated:** 6 August 2026  
-**Branch:** `cursor/phase2-remediation-1a85`  
-**Live preview:** https://family-pilot-seven.vercel.app/  
-**Remediation doc:** [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md)
+**Last updated:** 7 August 2026  
+**Production URL:** https://family-pilot-seven.vercel.app/  
+**Current focus:** Parent user testing (Phase 2 remediation deployed)  
+**Product direction (planned):** [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md)  
+**Remediation & QA:** [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md)  
+**Tester guide:** [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md)
 
 ---
 
@@ -30,28 +32,30 @@
 
 ## Executive Summary
 
-FamilyPilot Phase 1 establishes the **foundation** for a premium consumer React Native app — the "operating system for family life." This phase delivered:
+FamilyPilot is a **personalised family decision engine** — one family profile that helps parents make better everyday decisions (where to go, what to eat, what to pack, whether something fits, and more).
 
-- Complete product/design analysis based on UI inspiration mockups
-- Full architecture documentation (IA, database, API, folder structure)
-- A token-based design system and reusable UI component library
-- **10 production-ready screens** wired to a mock API layer
-- Supabase database schema (SQL migration, not yet connected)
-- Provider interfaces and Family Score algorithm (client-side, not yet deployed as edge function)
+**Phase 1** established the foundation: design system, 10+ screens, mock API, Supabase schema.  
+**Phase 2 remediation** (August 2026) fixed production routing, simplified Home, unified Family Match, and prepared the app for parent testing. Production score: **7.6 / 10** (see [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md)).
 
-**What works today:** The app runs in Expo with mock data — navigation, personalised home screen, venue details, utility screens (packing, car fit, need now, holidays), and tab-based browsing all function without backend credentials.
+**What works today:** Navigation, personalised Home, Explore, venue detail with deep links, Saved, Need Now, Trips, utility screens (packing, car fit, holidays), feedback collection, and mock-data-driven Family Match — all on web and Expo without backend credentials.
 
-**What does not work yet:** Real authentication, live maps, external API integrations, AI concierge, push notifications, onboarding, and all "future features" from the product brief.
+**What does not work yet:** Real auth, live maps, external APIs, AI concierge, and all **Product Direction V2** features (Plan Your Day, Meet Another Family, Eat Nearby, accessibility/SEND depth, connected families). See [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md).
+
+**Current priority:** Collect structured feedback from 5–10 parents before building V2 features.
 
 ---
 
 ## Product Vision Recap
 
-FamilyPilot is **not** another parenting app, booking app, or AI chatbot. It is the single app parents open when making family decisions — powered by one **family profile** that personalises everything.
+> **The app that helps families make better everyday decisions.**
 
-**Core philosophy:** The user should almost never need to type. The app proactively recommends based on children’s ages, weather, location, budget, and driving distance.
+FamilyPilot is **not** a day planner, booking site, AI chatbot, parenting content app, or generic directory. It is a **personalised family decision engine** powered by one family profile and explainable **Family Match** scores.
 
-**Key differentiator:** **Family Score** — an explainable, personalised score (0–100) for parks, hotels, restaurants, trips, and more.
+**Core philosophy:** Reduce research; provide confident, explainable recommendations. The user stays in control — generated plans and scores are starting points, not prescriptions.
+
+**Positioning rule:** Features like "Plan Your Day" strengthen the vision; they do not replace it. See [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md) §1–2.
+
+**Key differentiator:** **Family Match** — an explainable score (0–100) with visible reasoning for venues, restaurants, trips, meetups, and more.
 
 ---
 
@@ -468,6 +472,37 @@ Inter — 8 variants: `display`, `heading1–3`, `body`, `bodySmall`, `caption`,
 
 ---
 
+## Product Direction V2 — Planned (NOT implemented)
+
+Full specifications: **[PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md)**
+
+These features are on the roadmap **after parent user testing**. None are built yet.
+
+| Feature | Status | Priority (post-feedback) |
+|---------|--------|--------------------------|
+| **Eat Nearby** — restaurants ranked after activities | ⬜ Planned | 1 |
+| **Family-friendly restaurants** — first-class category + attributes | ⬜ Planned | 1 |
+| **Accessibility** — venue fields, profile preferences, filters | ⬜ Planned | 2 |
+| **SEND-friendly** — factual venue attributes, filters | ⬜ Planned | 3 |
+| **Meet Another Family** — one-phone two-location mode | ⬜ Planned | 4 |
+| **Plan Your Day** — itinerary builder with swap/save/share | ⬜ Planned | 5 |
+| **Connected Families** — invite other profiles | ⬜ Planned | 6 (future) |
+| **Combined Family Match** — for meetups | ⬜ Planned | With Meetups |
+| **Shareable meetup/day plans** — no account required to read | ⬜ Planned | With Meetups / Plan Your Day |
+| **Explore** — expanded categories + accessibility/SEND filters | ⬜ Planned | With §2–3 |
+| **Venue detail** — Accessibility, SEND, Eat nearby, Meet here sections | ⬜ Planned | With §2–3 |
+| **Profile** — progressive accessibility/SEND/dining preferences | ⬜ Planned | With §2–3 |
+
+### V2 data model (planned, not migrated)
+
+- `accessibility_features`, `send_features`, `restaurant_features`
+- `meetup_plans`, `day_plans`
+- `family_connections` (future architecture only)
+
+See [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md) §11 for schema sketches and privacy rules.
+
+---
+
 ## Database & API Layer
 
 ### Supabase schema (written, not deployed)
@@ -553,12 +588,21 @@ Inter — 8 variants: `display`, `heading1–3`, `body`, `bodySmall`, `caption`,
 
 | Phase | Scope | Status |
 |-------|-------|--------|
-| **1** | Design system, docs, navigation, 10 screens, mock API, DB schema | ✅ **Complete** |
-| **2** | Concierge, onboarding, animations, filter sheet, search | ⬜ Not started |
+| **1** | Design system, docs, navigation, screens, mock API, DB schema | ✅ Complete |
+| **2 remediation** | Production fixes, Home simplification, Family Match, parent testing prep | ✅ Complete |
+| **Testing** | 5–10 parent feedback sessions via [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md) | 🔄 **Current** |
+| **V2 — Priority 1** | Restaurants + Eat Nearby | ⬜ After feedback |
+| **V2 — Priority 2** | Accessibility fields + filters | ⬜ After feedback |
+| **V2 — Priority 3** | SEND-friendly data + filters | ⬜ After feedback |
+| **V2 — Priority 4** | Meet Another Family (one-phone) | ⬜ After feedback |
+| **V2 — Priority 5** | Plan Your Day | ⬜ After feedback |
 | **3** | Supabase auth, profile CRUD, saved sync, forms | ⬜ Not started |
 | **4** | Maps, Places API, weather, directions, score edge function | ⬜ Not started |
 | **5** | Holiday APIs, inventory, AI concierge, push notifications | ⬜ Not started |
+| **V2 — Priority 6** | Connected Families | ⬜ Future |
 | **Future** | Budget, toys, calendar, memories, milestones, etc. | ⬜ Not started |
+
+Roadmap detail and dependencies: [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md) §13–14.
 
 ---
 
@@ -619,9 +663,24 @@ When unset, the app silently uses mock data.
 
 | Item | Detail |
 |------|--------|
-| Branch | `cursor/familypilot-foundation-1a85` |
-| Base | `main` |
-| PR | [#1 (draft)](https://github.com/aidanshaw92/FamilyPilot/pull/1) |
+| Production branch | `main` |
+| Production URL | https://family-pilot-seven.vercel.app/ |
+| Deployed app commit | `ec41951` (remediation + tester readiness + venue rewrite) |
+| Docs commit | `9df27ec` (post-deployment QA + screenshots) |
+| Open PRs | None required for documentation-only updates |
+
+---
+
+## Documentation index
+
+| Document | Purpose |
+|----------|---------|
+| [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md) | **Product roadmap & feature specs (planned)** |
+| [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md) | Remediation changelog + production QA |
+| [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md) | Tester instructions |
+| [DESIGN_AUDIT.md](./DESIGN_AUDIT.md) | Pre-remediation design audit |
+| [BACKLOG.md](./BACKLOG.md) | Non-blocking deferred items |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Technical architecture |
 | Commit | `feat: FamilyPilot Phase 1 — design system, navigation, and core screens` |
 | Files changed | 74 files, ~14,000 lines |
 
