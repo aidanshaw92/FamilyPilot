@@ -8,9 +8,12 @@
 
 ## 2030 north star
 
-FamilyPilot is the **default family decision layer** — the first app parents open when they need to decide anything for their family, with enough confidence to act without opening Google, Maps, or five other apps.
+FamilyPilot is the **default family decision layer** — the app families instinctively trust whenever they face a practical family decision, with enough confidence to act without opening Google, Maps, or five other apps.
 
-One family profile. Every decision. Explainable confidence.
+**Internal positioning:** the operating system for family decisions.  
+**Supporting proposition:** One family profile. Better decisions everywhere.
+
+The goal is not more information. The goal is **enough confidence to stop researching and make the decision**.
 
 ---
 
@@ -79,9 +82,33 @@ Family Deals surface membership savings, verified kids-eat-free offers, and attr
 
 ### 9. Understand — Family DNA™
 
-Over time, the profile learns patterns: preferred outing length, noise tolerance, favourite cuisines, typical budget — always transparent and editable.
+Over time, the profile learns patterns: preferred outing length, noise tolerance, favourite cuisines, typical budget — always transparent and editable. The more FamilyPilot understands a family, the less work that family should need to do.
 
 **Scope label:** Long-term Research
+
+### 10. Trust — The FamilyPilot Promise
+
+Every recommendation exists to save time and reduce uncertainty — never solely to earn commission. Family Match independence from commercial relationships is non-negotiable.
+
+**Scope label:** Permanent principle (see [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md))
+
+### 11. Intelligence — Family Match as the layer
+
+Family Match evolves from a score into the full intelligence layer: family context + situational context + learned context, powering activities, restaurants, hotels, cars, products, meetups, and plans.
+
+**Scope label:** Foundation (MVP) · Enrichment (V2 factors)
+
+### 12. Connect — Family Graph™
+
+The family is not a flat profile but an interconnected graph: children, preferences, equipment, connections, DNA, and recommendations. Architecture should not block this model.
+
+**Scope label:** Future Vision (concept) · [FAMILY_GRAPH.md](./FAMILY_GRAPH.md)
+
+### 13. Summarise — Why Families Love It
+
+Factual venue intelligence summaries from trusted evidence — not a generic review feed. Verification, recency, and confidence mechanisms required.
+
+**Scope label:** Long-term Research · [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md)
 
 ---
 
@@ -90,10 +117,13 @@ Over time, the profile learns patterns: preferred outing length, noise tolerance
 | Anti-vision | Why |
 |-------------|-----|
 | Social network with feeds | Conflicts with calm, decision-focused mission |
+| Engagement feed or popularity contests | Not a social product |
 | Booking marketplace | We build confidence; partners handle transactions |
 | Parenting content hub | Not our job to educate generically |
 | Generic AI assistant | Intelligence stays invisible in scores and plans |
-| Child-tracking or surveillance | Privacy violation |
+| Child-tracking or surveillance | Privacy violation; Family DNA must be transparent |
+| Pay-to-win recommendations | Commission must not secretly drive Family Match |
+| Review spam platform | Summaries require evidence, not opinion masquerading as fact |
 
 ---
 
@@ -123,10 +153,22 @@ Detail: [FEATURE_ROADMAP.md](./FEATURE_ROADMAP.md)
 
 ## Measuring progress
 
-**Primary:** Do parents decide faster with more confidence?  
-**Secondary:** Return usage, save rate, plan completion, tester NPS, trust ratings.
+**Primary:** Do parents decide faster with more confidence?
 
-Not: raw DAU from content feeds, booking commission, or feature count.
+**Secondary metrics:**
+
+| Metric | Signal |
+|--------|--------|
+| Decision confidence | User stopped researching after recommendation |
+| Repeat utility | Families return for new decisions |
+| Recommendation acceptance | Saves, visits, plans, actions |
+| Trust | Users believe the explanation |
+| Research reduction | Fewer external searches |
+| Recommendation quality | Feedback loops (great / not for us / save for later) |
+
+**Not:** raw DAU from content feeds, booking commission, screen time, or feature count.
+
+The habit loop goal is useful recurring engagement when a genuine decision arises — not addictive screen time.
 
 ---
 
