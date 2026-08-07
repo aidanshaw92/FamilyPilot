@@ -4,6 +4,9 @@ import { PlaceSearchParams } from '../../src/types/places';
 
 import { createPlacesProvider, getConfiguredProviderName, getPlacesRuntimeStatus } from './provider-factory';
 import { mockPlacesProvider } from './mock-places-provider';
+import { googlePlacesProvider } from './google-places-provider';
+import { overpassPlacesProvider } from './overpass-places-provider';
+import { searchPlacesWithFallback } from './places-fallback';
 
 const CACHE_TTL_MS = 1000 * 60 * 15;
 
@@ -34,32 +37,16 @@ function setCached<T>(store: Map<string, CacheEntry<T>>, key: string, value: T):
 }
 
 async function searchWithFallback(params: PlaceSearchParams): Promise<PlacesSearchResult> {
-  const primary = createPlacesProvider();
   const fetchedAt = new Date().toISOString();
-
-  try {
-    const places = await primary.searchNearby(params);
-    return {
-      places,
-      provider: primary.name,
-      cached: false,
-      fetchedAt,
-      fallbackUsed: false,
-    };
-  } catch (primaryError) {
-    if (primary.name === 'mock') throw primaryError;
-
-    const places = await mockPlacesProvider.searchNearby(params);
-    return {
-      places,
-      provider: 'mock',
-      cached: false,
-      fetchedAt,
-      fallbackUsed: true,
-      fallbackReason:
-        primaryError instanceof Error ? primaryError.message : 'Primary provider failed',
-    };
-  }
+  const result = await searchPlacesWithFallback(params);
+  return {
+    places: result.places,
+    provider: result.provider,
+    cached: false,
+    fetchedAt,
+    fallbackUsed: result.fallbackUsed,
+    fallbackReason: result.fallbackReason,
+  };
 }
 
 export async function searchPlaces(params: PlaceSearchParams): Promise<PlacesSearchResult> {
@@ -84,20 +71,35 @@ export async function getPlaceDetail(familypilotId: string): Promise<PlaceDetail
   let fallbackUsed = false;
   let fallbackReason: string | undefined;
   let provider = primary.name;
+  const errors: string[] = [];
 
-  try {
-    place = await primary.getPlace(familypilotId);
-  } catch (error) {
-    fallbackUsed = true;
-    fallbackReason = error instanceof Error ? error.message : 'Primary provider failed';
+  const detailChain =
+    primary.name === 'google'
+      ? [googlePlacesProvider, overpassPlacesProvider, mockPlacesProvider]
+      : primary.name === 'osm'
+        ? [overpassPlacesProvider, mockPlacesProvider]
+        : [mockPlacesProvider];
+
+  for (let i = 0; i < detailChain.length; i += 1) {
+    const candidate = detailChain[i];
+    try {
+      place = await candidate.getPlace(familypilotId);
+      if (place) {
+        provider = candidate.name;
+        fallbackUsed = i > 0;
+        fallbackReason = i > 0 ? errors.join(' → ') : undefined;
+        break;
+      }
+    } catch (error) {
+      errors.push(
+        `${candidate.name}: ${error instanceof Error ? error.message : 'provider failed'}`,
+      );
+    }
   }
 
-  if (!place) {
-    place = await mockPlacesProvider.getPlace(familypilotId);
-    if (place) {
-      provider = 'mock';
-      fallbackUsed = fallbackUsed || getConfiguredProviderName() !== 'mock';
-    }
+  if (!place && errors.length > 0) {
+    fallbackUsed = true;
+    fallbackReason = errors.join(' → ');
   }
 
   if (!place) return null;

@@ -1,39 +1,5 @@
-const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
-];
-const OVERPASS_USER_AGENT = 'FamilyPilot/1.0 (https://family-pilot-seven.vercel.app; places-api)';
-
-async function probeOsm(lat, lng) {
-  const query = `[out:json][timeout:10];node["amenity"="restaurant"](around:4000,${lat},${lng});out center 5;`;
-  let lastError = null;
-
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': OVERPASS_USER_AGENT,
-          Accept: 'application/json',
-        },
-        body: new URLSearchParams({ data: query }).toString(),
-        signal: AbortSignal.timeout(12000),
-      });
-      if (!response.ok) {
-        lastError = `Overpass HTTP ${response.status} (${endpoint})`;
-        continue;
-      }
-      const data = await response.json();
-      const names = (data.elements || []).map((e) => e.tags && e.tags.name).filter(Boolean);
-      return { ok: true, count: names.length, sampleNames: names.slice(0, 5), endpoint };
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : 'Probe failed';
-    }
-  }
-
-  return { ok: false, count: 0, sampleNames: [], error: lastError || 'Overpass unavailable' };
-}
+const { probeGoogle } = require('./lib/google-places');
+const { probeOsm } = require('./lib/osm-places');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -44,9 +10,12 @@ module.exports = async function handler(req, res) {
   const configuredProvider = (process.env.PLACES_PROVIDER || 'mock').toLowerCase();
   const lat = Number(req.query.lat || 51.643);
   const lng = Number(req.query.lng || -0.36);
+  const hasGoogleKey = Boolean(process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY);
 
   let probe = null;
-  if (configuredProvider === 'osm') {
+  if (configuredProvider === 'google') {
+    probe = await probeGoogle(lat, lng);
+  } else if (configuredProvider === 'osm') {
     probe = await probeOsm(lat, lng);
   }
 
@@ -54,6 +23,7 @@ module.exports = async function handler(req, res) {
     runtime: {
       configuredProvider,
       envPlacesProvider: process.env.PLACES_PROVIDER,
+      hasGooglePlacesApiKey: hasGoogleKey,
       nodeVersion: process.version,
     },
     probe,

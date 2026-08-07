@@ -1,3 +1,6 @@
+const { getGooglePlace } = require('./lib/google-places');
+const { MOCK_FALLBACK } = require('./lib/fallback');
+
 const MOCK_DETAILS = {
   'venue-1': {
     place: {
@@ -20,6 +23,17 @@ const MOCK_DETAILS = {
   },
 };
 
+function mockDetailFor(id) {
+  const detail = MOCK_DETAILS[id];
+  if (detail) return detail;
+  const mockPlace = MOCK_FALLBACK.find((p) => p.familypilotId === id);
+  if (!mockPlace) return null;
+  return {
+    place: { ...mockPlace, photos: mockPlace.photos || [] },
+    metadata: null,
+  };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -28,21 +42,48 @@ module.exports = async function handler(req, res) {
   if (!id) return res.status(400).json({ error: 'Missing id', fallbackAvailable: true });
 
   const configuredProvider = (process.env.PLACES_PROVIDER || 'mock').toLowerCase();
-  const detail = MOCK_DETAILS[id];
+  const fetchedAt = new Date().toISOString();
+  let detail = null;
+  let provider = 'mock';
+  let fallbackUsed = false;
+  let fallbackReason;
+  const errors = [];
+
+  if (configuredProvider === 'google' && id.startsWith('fp-google-')) {
+    try {
+      const place = await getGooglePlace(id);
+      if (place) {
+        detail = { place, metadata: null };
+        provider = 'google';
+      }
+    } catch (error) {
+      errors.push(`google: ${error instanceof Error ? error.message : 'provider failed'}`);
+    }
+  }
+
+  if (!detail) {
+    const mockDetail = mockDetailFor(id);
+    if (mockDetail) {
+      detail = mockDetail;
+      provider = mockDetail.place.provider;
+      if (configuredProvider === 'google' && provider === 'mock') {
+        fallbackUsed = true;
+        fallbackReason = errors.join(' → ') || 'Google place not found — using mock detail';
+      }
+    }
+  }
+
   if (!detail) {
     return res.status(404).json({ error: 'Place not found', code: 'NOT_FOUND', fallbackAvailable: true });
   }
 
   return res.status(200).json({
     ...detail,
-    provider: detail.place.provider,
+    provider,
     configuredProvider,
     cached: false,
-    fetchedAt: new Date().toISOString(),
-    fallbackUsed: configuredProvider === 'osm' && detail.place.provider === 'mock',
-    fallbackReason:
-      configuredProvider === 'osm' && detail.place.provider === 'mock'
-        ? 'Detail lookup uses mock until OSM place cache is wired'
-        : undefined,
+    fetchedAt,
+    fallbackUsed,
+    fallbackReason,
   });
 };
