@@ -1,0 +1,19 @@
+# FamilyPilot — Agent rules
+
+Before making any code or product changes, read in full:
+
+1. **docs/MASTER_PRODUCT_VISION.md** — product constitution (non-negotiable)
+2. **docs/DECISION_PRINCIPLES.md** — build / no-build gates
+3. **docs/MVP_SCOPE.md** — what is in scope today
+
+Do not implement Post-MVP features unless explicitly requested and prioritised.
+
+Key rules:
+- FamilyPilot is a personalised family **decision** platform — not a booking app, directory, forum, or chatbot.
+- Every feature must answer: *What family decision does this help solve?*
+- Plan Your Day is a feature, not the product identity.
+- Do not add primary buttons to Home.
+- Always explain recommendations (Family Match + why).
+- Present confidence, not just data.
+
+Full doc index: docs/PROJECT_STATUS.md § Documentation index
