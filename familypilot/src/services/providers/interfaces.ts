@@ -1,13 +1,10 @@
 import { Venue, VenueDetail } from '@/src/types';
+import { PlaceSearchParams } from '@/src/types/places';
 
-export interface PlaceSearchParams {
-  latitude: number;
-  longitude: number;
-  radiusKm: number;
-  categories?: string[];
-  filters?: string[];
-}
+/** @deprecated Use PlacesProvider from ./places-provider.ts */
+export interface PlaceSearchParamsLegacy extends PlaceSearchParams {}
 
+/** @deprecated Use PlacesProvider from ./places-provider.ts */
 export interface IPlacesProvider {
   searchNearby(params: PlaceSearchParams): Promise<Venue[]>;
   getVenue(id: string): Promise<VenueDetail | null>;

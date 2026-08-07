@@ -5,7 +5,6 @@ import {
   mockSavedItems,
   mockStores,
   mockTrips,
-  mockVenueDetails,
   mockVenues,
   mockWeather,
 } from '@/src/data/mock-data';
@@ -30,6 +29,7 @@ import { buildHomeRecommendations, personaliseVenue, personaliseVenues } from '@
 import { filterRestaurants } from '@/src/utils/filter-restaurants';
 import { ExploreBudgetFilter } from '@/src/stores/filters-store';
 import { getAllRestaurants, getRestaurantById, getRestaurantsNearVenue } from '@/src/services/eat-nearby';
+import { getPlacesRepository } from '@/src/services/places/places-repository';
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -60,14 +60,17 @@ export const weatherService = {
 export const venueService = {
   async getNearby(): Promise<Venue[]> {
     await delay(300);
-    return personaliseVenues(mockVenues, getProfile());
+    const profile = getProfile();
+    const venues = await getPlacesRepository().searchNearby(profile);
+    return personaliseVenues(venues, profile);
   },
 
   async getById(id: string): Promise<VenueDetail | null> {
     await delay(200);
-    const base = mockVenueDetails[id];
-    if (!base) return null;
-    return { ...base, ...personaliseVenue(base, getProfile()) };
+    const profile = getProfile();
+    const detail = await getPlacesRepository().getVenueDetail(id, profile);
+    if (!detail) return null;
+    return { ...detail, ...personaliseVenue(detail, profile) };
   },
 };
 
