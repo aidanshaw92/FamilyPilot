@@ -6,7 +6,7 @@
   "framework": null,
   "cleanUrls": true,
   "env": {
-    "PLACES_PROVIDER": "osm"
+    "PLACES_PROVIDER": "google"
   },
   "functions": {
     "api/places/*.js": {
