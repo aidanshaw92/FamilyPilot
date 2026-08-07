@@ -15,9 +15,14 @@ interface TodayHeroCardProps {
 export function TodayHeroCard({ venue }: TodayHeroCardProps) {
   return (
     <FadeInView style={styles.wrap}>
-      <Text variant="body" color={colors.primary[500]} style={styles.label}>
-        Today&apos;s Pick
-      </Text>
+      <View style={styles.header}>
+        <Text variant="heading3" color={colors.primary[600]}>
+          Today&apos;s Pick
+        </Text>
+        <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
+          Our best suggestion for your family right now
+        </Text>
+      </View>
       <DecisionCard venue={venue} variant="hero" index={0} />
     </FadeInView>
   );
@@ -45,17 +50,17 @@ export function ContinuePlanningCard({
         accessibilityLabel={`Continue planning ${tripTitle}`}
       >
         <View style={styles.planningContent}>
-          <Text variant="label" color={colors.accent[600]}>
+          <Text variant="caption" color={colors.text.tertiary}>
             Continue planning
           </Text>
-          <Text variant="heading3" style={styles.planningTitle}>
+          <Text variant="body" style={styles.planningTitle}>
             {tripTitle}
           </Text>
-          <Text variant="bodySmall" color={colors.text.secondary}>
+          <Text variant="caption" color={colors.text.secondary}>
             {tripDate} · Next: {nextStop}
           </Text>
         </View>
-        <Text variant="bodySmall" color={colors.primary[500]} style={styles.planningLink}>
+        <Text variant="caption" color={colors.primary[500]} style={styles.planningLink}>
           View plan
         </Text>
       </PressableScale>
@@ -65,21 +70,24 @@ export function ContinuePlanningCard({
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing['3xl'],
   },
-  label: {
-    marginBottom: spacing.md,
-    fontFamily: 'Inter_600SemiBold',
+  header: {
+    marginBottom: spacing.lg,
+    gap: spacing.xs,
+  },
+  subtitle: {
+    lineHeight: 20,
   },
   planningCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.accent[50],
+    backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginTop: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.accent[100],
+    borderColor: colors.borderLight,
   },
   planningContent: {
     flex: 1,
@@ -87,6 +95,7 @@ const styles = StyleSheet.create({
   planningTitle: {
     marginTop: spacing.xs,
     marginBottom: spacing.xs,
+    fontFamily: 'Inter_500Medium',
   },
   planningLink: {
     fontFamily: 'Inter_600SemiBold',

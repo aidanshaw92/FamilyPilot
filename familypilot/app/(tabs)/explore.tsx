@@ -1,5 +1,5 @@
-import { useCallback, useMemo } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FilterSheet } from '@/src/components/explore/FilterSheet';
 import { DecisionCard } from '@/src/components/shared/DecisionCard';
@@ -8,8 +8,8 @@ import { Chip, EmptyState, ErrorState, SectionHeader, SkeletonCard, Text } from 
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
 import { useFiltersStore } from '@/src/stores/filters-store';
+import { buildExploreEditorialSections } from '@/src/utils/explore-editorial-sections';
 import { EXPLORE_CATEGORIES, filterVenues } from '@/src/utils/filter-venues';
-import { Venue } from '@/src/types';
 
 export default function ExploreScreen() {
   const { data: venues, isLoading, isError, refetch } = useNearbyVenues();
@@ -40,6 +40,17 @@ export default function ExploreScreen() {
     [venues, categoryFilter, advancedFilters, exploreMaxDrive, exploreBudget, profile?.maxDriveMinutes],
   );
 
+  const useEditorialLayout =
+    categoryFilter === 'all' &&
+    advancedFilters.length === 0 &&
+    exploreMaxDrive === 'any' &&
+    exploreBudget === 'any';
+
+  const editorialSections = useMemo(
+    () => (useEditorialLayout ? buildExploreEditorialSections(filteredVenues) : []),
+    [filteredVenues, useEditorialLayout],
+  );
+
   const activeCategoryLabel =
     EXPLORE_CATEGORIES.find((c) => c.id === categoryFilter)?.label ?? 'Places';
 
@@ -47,15 +58,6 @@ export default function ExploreScreen() {
     (exploreMaxDrive !== 'any' ? 1 : 0) +
     (exploreBudget !== 'any' ? 1 : 0) +
     advancedFilters.length;
-
-  const renderItem = useCallback(
-    ({ item, index }: { item: Venue; index: number }) => (
-      <DecisionCard venue={item} variant="list" index={index} />
-    ),
-    [],
-  );
-
-  const keyExtractor = useCallback((item: Venue) => item.id, []);
 
   if (isError) {
     return (
@@ -107,13 +109,6 @@ export default function ExploreScreen() {
         </Pressable>
       </ScrollView>
 
-      <View style={styles.listHeader}>
-        <SectionHeader
-          title={activeCategoryLabel}
-          subtitle={`${filteredVenues.length} place${filteredVenues.length === 1 ? '' : 's'} near you`}
-        />
-      </View>
-
       {isLoading ? (
         <View style={styles.loadingList}>
           <SkeletonCard />
@@ -130,18 +125,34 @@ export default function ExploreScreen() {
             resetExploreFilters();
           }}
         />
-      ) : (
-        <FlatList
-          data={filteredVenues}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          contentContainerStyle={styles.listContent}
+      ) : useEditorialLayout && editorialSections.length > 0 ? (
+        <ScrollView
+          contentContainerStyle={styles.editorialContent}
           showsVerticalScrollIndicator={false}
-          initialNumToRender={4}
-          maxToRenderPerBatch={6}
-          windowSize={5}
-          removeClippedSubviews
-        />
+        >
+          {editorialSections.map((section) => (
+            <View key={section.id} style={styles.editorialSection}>
+              <SectionHeader title={section.title} subtitle={section.subtitle} />
+              {section.venues.map((venue, index) => (
+                <DecisionCard key={venue.id} venue={venue} variant="list" index={index} />
+              ))}
+            </View>
+          ))}
+        </ScrollView>
+      ) : (
+        <>
+          <View style={styles.listHeader}>
+            <SectionHeader
+              title={activeCategoryLabel}
+              subtitle={`${filteredVenues.length} place${filteredVenues.length === 1 ? '' : 's'} near you`}
+            />
+          </View>
+          <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
+            {filteredVenues.map((venue, index) => (
+              <DecisionCard key={venue.id} venue={venue} variant="list" index={index} />
+            ))}
+          </ScrollView>
+        </>
       )}
 
       <FilterSheet visible={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
@@ -195,8 +206,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenPadding,
     paddingBottom: spacing['3xl'],
   },
+  editorialContent: {
+    paddingHorizontal: spacing.screenPadding,
+    paddingBottom: spacing['3xl'],
+    paddingTop: spacing.lg,
+  },
+  editorialSection: {
+    marginBottom: spacing['2xl'],
+  },
   loadingList: {
     paddingHorizontal: spacing.screenPadding,
     gap: spacing.lg,
+    paddingTop: spacing.lg,
   },
 });

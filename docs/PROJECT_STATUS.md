@@ -9,6 +9,7 @@
 **Feature specs (planned):** [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md)  
 **Remediation & QA:** [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md)  
 **Trust polish pass:** [TRUST_AND_POLISH_PASS.md](./TRUST_AND_POLISH_PASS.md)  
+**Final beta polish:** [FINAL_BETA_POLISH.md](./FINAL_BETA_POLISH.md)  
 **Tester guide:** [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md)
 
 ---
@@ -701,6 +702,7 @@ When unset, the app silently uses mock data.
 |----------|---------|
 | [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md) | Remediation changelog + production QA |
 | [TRUST_AND_POLISH_PASS.md](./TRUST_AND_POLISH_PASS.md) | Trust, clarity & premium polish pass (Aug 2026) |
+| [FINAL_BETA_POLISH.md](./FINAL_BETA_POLISH.md) | Final beta polish — hierarchy & curation pass |
 | [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md) | Tester instructions |
 | [DESIGN_AUDIT.md](./DESIGN_AUDIT.md) | Pre-remediation design audit |
 | [design-review/](./design-review/) | Mobile screenshot pack (390×844, 430×932) |

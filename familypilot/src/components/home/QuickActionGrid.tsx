@@ -37,51 +37,52 @@ const PRIMARY_ACTIONS: QuickAction[] = [
   },
 ];
 
+/** Secondary utilities — visually quieter, grouped under More. */
 const MORE_ACTIONS: QuickAction[] = [
   {
     id: 'holiday',
     label: 'Holiday',
     icon: 'airplane-outline',
-    color: colors.primary[500],
+    color: colors.text.tertiary,
     route: '/holiday',
   },
   {
     id: 'packing',
     label: 'Packing',
     icon: 'bag-outline',
-    color: colors.slateBlue,
+    color: colors.text.tertiary,
     route: '/packing',
   },
   {
     id: 'car-fit',
     label: 'Car fit',
     icon: 'car-outline',
-    color: colors.steelBlue,
+    color: colors.text.tertiary,
     route: '/car-fit',
   },
   {
     id: 'saved',
     label: 'Saved',
     icon: 'heart-outline',
-    color: colors.coral,
+    color: colors.text.tertiary,
     route: '/(tabs)/saved',
   },
 ];
 
 export function QuickActionGrid() {
   return (
-    <View>
+    <View style={styles.wrap}>
       <View style={styles.row}>
         {PRIMARY_ACTIONS.map((action) => (
-          <QuickActionButton key={action.id} action={action} />
+          <QuickActionButton key={action.id} action={action} subdued />
         ))}
       </View>
-      <Text variant="caption" color={colors.text.secondary} style={styles.moreLabel}>
+      <Text variant="caption" color={colors.text.tertiary} style={styles.moreLabel}>
         More
       </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.moreRow}>
         {MORE_ACTIONS.map((action) => (
-          <QuickActionButton key={action.id} action={action} compact />
+          <QuickActionButton key={action.id} action={action} compact subdued />
         ))}
       </ScrollView>
     </View>
@@ -89,13 +90,16 @@ export function QuickActionGrid() {
 }
 
 const styles = StyleSheet.create({
+  wrap: {
+    opacity: 0.95,
+  },
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
   moreLabel: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
   },
   moreRow: {
     gap: spacing.sm,
