@@ -1,12 +1,12 @@
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ContinuePlanningCard, TodayHeroCard } from '@/src/components/home/TodayHeroCard';
 import { QuickActionGrid } from '@/src/components/home/QuickActionGrid';
 import { DecisionCard } from '@/src/components/shared/DecisionCard';
 import { ScreenContainer, ScreenHeader } from '@/src/components/shared/ScreenContainer';
-import { EmptyState, ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
-import { colors, spacing } from '@/src/design-system/tokens';
+import { EmptyState, ErrorState, SectionHeader, SkeletonDecisionCard } from '@/src/components/ui';
+import { spacing } from '@/src/design-system/tokens';
 import { mockVenues } from '@/src/data/mock-data';
 import {
   useFamilyProfile,
@@ -93,10 +93,10 @@ export default function HomeScreen() {
         </View>
 
         {!recsLoading && moreIdeasVenues.length > 0 ? (
-          <View style={styles.section}>
+          <View style={styles.moreIdeasSection}>
             <SectionHeader
               title="More ideas"
-              subtitle="Other places your family might love"
+              subtitle="Other places worth a look"
               actionLabel="See all"
               onAction={() => router.push('/(tabs)/explore' as never)}
             />
@@ -130,7 +130,11 @@ const styles = StyleSheet.create({
     paddingBottom: spacing['3xl'],
   },
   section: {
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.xl,
+  },
+  moreIdeasSection: {
+    marginBottom: spacing.xl,
+    opacity: 0.92,
   },
   skeletonRow: {
     marginBottom: spacing['2xl'],

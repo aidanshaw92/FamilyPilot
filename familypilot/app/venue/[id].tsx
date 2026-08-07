@@ -21,9 +21,7 @@ import { WeatherAlternativeSection } from '@/src/components/venue/WeatherAlterna
 import { SaveButton } from '@/src/components/shared/SaveButton';
 import {
   Button,
-  DataTrustBadge,
   EmptyState,
-  FamilyMatch,
   FamilyMatchPanel,
   Skeleton,
   Text,
@@ -160,9 +158,6 @@ export default function VenueScreen() {
               <SaveButton venueId={venue.id} color={colors.text.inverse} />
             </View>
           </View>
-          <View style={styles.floatingMatch}>
-            <FamilyMatch score={venue.familyScore.score} variant="detail" />
-          </View>
           <View style={styles.heroTitle}>
             <Text variant="heading1" color={colors.text.inverse}>
               {venue.name}
@@ -182,11 +177,6 @@ export default function VenueScreen() {
         <View style={styles.body}>
           <FadeInView>
             <FamilyMatchPanel familyScore={venue.familyScore} venue={venue} />
-
-            <View style={styles.trustRow}>
-              <DataTrustBadge variant="venue_info" label="Venue information" />
-              <DataTrustBadge variant="updated_recently" label="Last checked 2 days ago" />
-            </View>
 
             <PhotoGallery photos={venue.photos} onPhotoPress={setHeroIndex} />
 
@@ -301,12 +291,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  floatingMatch: {
-    position: 'absolute',
-    top: 100,
-    right: spacing.screenPadding,
-    zIndex: 2,
-  },
   heroTitle: {
     position: 'absolute',
     bottom: spacing['2xl'],
@@ -328,13 +312,6 @@ const styles = StyleSheet.create({
   body: {
     padding: spacing.screenPadding,
     paddingBottom: 120,
-  },
-  trustRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.lg,
-    marginBottom: spacing.lg,
   },
   sectionTitle: {
     marginTop: spacing['2xl'],

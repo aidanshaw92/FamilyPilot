@@ -38,13 +38,10 @@ export function FamilyMatch({ score, variant = 'compact', style }: FamilyMatchPr
       <View
         style={[styles.card, style]}
         accessibilityRole="text"
-        accessibilityLabel={`${classification}, ${secondary}`}
+        accessibilityLabel={classification}
       >
         <Text variant="caption" color={colors.text.inverse} style={styles.cardPrimary}>
-          {classification}
-        </Text>
-        <Text variant="caption" color="rgba(255,255,255,0.85)" style={styles.cardSecondary}>
-          {secondary}
+          {classification.replace(' match', '')}
         </Text>
       </View>
     );
@@ -59,7 +56,7 @@ export function FamilyMatch({ score, variant = 'compact', style }: FamilyMatchPr
       <Text variant="bodySmall" color={colors.secondary[600]} style={styles.detailPrimary}>
         {classification}
       </Text>
-      <Text variant="caption" color={colors.text.secondary} style={styles.detailSecondary}>
+      <Text variant="caption" color={colors.text.tertiary} style={styles.detailSecondary}>
         {secondary}
       </Text>
     </View>
@@ -93,11 +90,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     lineHeight: 16,
   },
-  cardSecondary: {
-    fontSize: 10,
-    lineHeight: 14,
-    marginTop: 2,
-  },
   detail: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -116,5 +108,6 @@ const styles = StyleSheet.create({
   detailSecondary: {
     marginTop: 4,
     textAlign: 'center',
+    fontSize: 11,
   },
 });
