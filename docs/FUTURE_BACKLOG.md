@@ -179,7 +179,27 @@ Spec: [PRODUCT_DIRECTION_V2.md §3](./PRODUCT_DIRECTION_V2.md)
 | Packing auto-generation from trip + weather + children | Future Vision | What should we pack? |
 | Family Deals (memberships, kids eat free, vouchers) | Future Vision | Where can we save? |
 | Birthday planner | Long-term Research | Where should we celebrate? |
-| Family DNA™ personalisation | Long-term Research | Deep long-term prefs |
+| Family DNA™ personalisation | Long-term Research | Deep long-term prefs; transparent, editable |
+| Why Families Love It (venue intelligence) | Long-term Research | Factual summaries from evidence; not review feed |
+
+---
+
+---
+
+## Long-term Research — Why Families Love It
+
+**Decision solved:** *What do families consistently say about this venue — without reading hundreds of reviews?*
+
+| Item | Label | Notes |
+|------|-------|-------|
+| Factual pattern summaries from trusted reviews and feedback | Long-term Research | Not a generic review feed |
+| "Things to know" warnings (busy times, mud, queues) | Long-term Research | Evidence-based only |
+| Verification, recency, and confidence mechanisms | Long-term Research | Community data not auto-trusted |
+| Separate venue-provided vs community observations | Long-term Research | Trust rules |
+
+**Rules:** Do not fabricate summaries. Only summarise sufficient underlying evidence. Do not present subjective opinion as objective fact.
+
+Authority: [MASTER_PRODUCT_VISION.md § Why Families Love It](./MASTER_PRODUCT_VISION.md)
 
 ---
 
@@ -214,6 +234,8 @@ Even if requested, reject or defer:
 - Overloading Home with new primary buttons
 - Building all Post-MVP features before parent testing completes
 - Generic directory listings without Family Match and explainability
+- Secretly manipulating Family Match for affiliate commission
+- Disguising sponsored content as personalisation
 
 ---
 

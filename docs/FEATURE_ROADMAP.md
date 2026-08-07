@@ -3,6 +3,8 @@
 **Authority:** [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md)  
 **Last updated:** 7 August 2026
 
+> **Note:** Detailed phase sequencing lives here. The master vision uses durable categories only — see [MASTER_PRODUCT_VISION.md § Strategic Product Evolution](./MASTER_PRODUCT_VISION.md).
+
 ---
 
 ## Scope labels
@@ -162,6 +164,7 @@ Privacy: [PRIVACY_MODEL.md](./PRIVACY_MODEL.md)
 | Feature | Label |
 |---------|-------|
 | Family DNA™ personalisation | Long-term Research |
+| Why Families Love It (venue intelligence summaries) | Long-term Research |
 | Birthday planner | Long-term Research |
 | Family Deals / membership savings | Long-term Research |
 | Weather intelligence (UV, heat, wind) | Long-term Research |
@@ -197,6 +200,21 @@ Phase 8: Connected Families (needs Auth + Phase 6)
 - Directory-only browse without Family Match
 - Chatbot primary interface
 - Home screen button proliferation
+- Pay-to-win recommendations (commission must not secretly drive Match)
+- Cluttered advertising disguised as personalisation
+
+---
+
+## Strategic categories (master vision)
+
+The constitution maps phases to durable categories:
+
+| Category | Phases |
+|----------|--------|
+| **Foundation** | 1–2 (core platform, Family Match, trust) |
+| **Enrichment** | 3–5 (restaurants, accessibility, SEND) |
+| **Planning** | 6–7 (meetups, day planning) |
+| **Expansion** | 8+ (connected families, travel, shopping, cars) |
 
 ---
 

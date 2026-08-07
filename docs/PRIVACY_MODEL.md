@@ -26,7 +26,7 @@
 | **Sensitive preferences** | Accessibility requirements, SEND needs | RLS, optional, progressive |
 | **Location (session)** | Postcode for meetup calculation | Minimise retention |
 | **Location (saved)** | Home area / postcode | Never in public shares |
-| **Behavioural** | Saves, plan history | RLS, future opt-in for DNA |
+| **Behavioural** | Saves, plan history, Family DNA inferences | RLS, transparent, editable, future opt-in |
 
 ---
 
@@ -79,6 +79,22 @@
 | Directions | Delegated to Maps app | No storage |
 
 Prefer **postcode/general area** over full address where sufficient for drive time.
+
+---
+
+## Family DNA & learned preferences
+
+Family DNA represents patterns FamilyPilot learns over time (typical drive distance, spend, environment preferences).
+
+| Rule | Implementation |
+|------|----------------|
+| Transparent | User can see why a preference exists |
+| Editable | Important inferences viewable and correctable |
+| Minimum inference | Do not infer sensitive attributes unnecessarily |
+| Not surveillance | Never hidden behavioural profiling |
+| Feedback-driven | Saves, rejects, and explicit feedback improve DNA |
+
+Family DNA must comply with applicable data protection law before production personalisation ships.
 
 ---
 

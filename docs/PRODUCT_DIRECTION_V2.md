@@ -15,11 +15,11 @@
 
 ### What FamilyPilot is
 
-**FamilyPilot is a personalised family decision engine.**
+**FamilyPilot is a personalised family decision platform** — internally described as *the operating system for family decisions*.
 
 One family profile. Better decisions everywhere.
 
-The app helps parents make practical, everyday decisions — not by replacing their judgement, but by reducing research and surfacing confident, explainable recommendations.
+The app helps parents make practical, everyday decisions — not by replacing their judgement, but by reducing research and surfacing confident, explainable recommendations powered by **Family Match**, the intelligence layer.
 
 ### What FamilyPilot is not
 
@@ -33,7 +33,9 @@ The app helps parents make practical, everyday decisions — not by replacing th
 
 ### Positioning statement
 
-> **The app that helps families make better everyday decisions.**
+> **The app that helps families make better everyday decisions with less effort.**
+
+Internal strategy: *FamilyPilot is the operating system for family decisions.* (Use sparingly in consumer-facing copy.)
 
 "Plan Your Day" is an important feature — one part of the FamilyPilot ecosystem — not the product identity.
 
@@ -326,11 +328,23 @@ Store and display when data exists:
 
 ### Integration points
 
+Restaurants appear **contextually** — not as an isolated database:
+
+| Context | Surface |
+|---------|---------|
+| Visiting a park / activity | **Eat nearby** on venue detail |
+| Building a day plan | Automatic **Lunch** slot |
+| Meeting another family | Restaurant that suits both families |
+| Holiday | Family-friendly restaurants near hotel |
+| Explore | Restaurants and cafés categories |
+
 - Explore category: **Restaurants**, **Cafés**
 - Venue detail: **Eat nearby** section
 - Plan Your Day: automatic lunch slot
 - Meet Another Family: restaurant suggestion in share summary
 - Family Match: restaurant-specific factor weights
+
+**Principle:** Activities and eating are usually part of the same family decision.
 
 ---
 

@@ -7,11 +7,41 @@
 
 ## Purpose
 
-Family Match is the **explainable suitability score** that powers every FamilyPilot recommendation.
+**Family Match is the intelligence layer that powers FamilyPilot** — the explainable suitability score behind every recommendation.
 
-It answers: *"How well does this place, restaurant, hotel, or plan fit **this** family, **right now**?"*
+It answers: *"How well does this place, restaurant, hotel, car, product, or plan fit **this** family, **right now**?"*
+
+Family Match is not merely a UI badge. It combines **family context**, **situational context**, and **learned context (Family DNA)** to produce scores parents can trust.
 
 **Never simply display a percentage. Always explain why.**
+
+---
+
+## Context layers
+
+Family Match combines three input layers:
+
+### Family context
+
+Children's ages · Interests · Family preferences · Accessibility requirements · SEND preferences · Dietary preferences · Equipment · Vehicle · Budget
+
+### Situational context
+
+Weather · Travel time · Time available · Opening times · Cost · Parking · Terrain · Facilities · Restaurant availability · Current plan
+
+### Learned context (Family DNA)
+
+Previous choices · Saved places · Places rejected · Favourite categories · Typical travel distance · Typical spend · Preferred environments
+
+Family DNA inferences must be transparent and editable — see [PRIVACY_MODEL.md](./PRIVACY_MODEL.md).
+
+---
+
+## What Family Match evaluates
+
+Family Match can eventually score:
+
+Activities · Parks · Attractions · Restaurants · Cafés · Hotels · Holidays · Cars · Products · Family meetups · Day plans · Travel options
 
 ---
 
@@ -179,7 +209,11 @@ interface FamilyScoreFactors {
 - Label estimated costs: *"Estimated family cost"*
 - Do not imply live crowd, stock, or hours unless sourced
 - If accessibility/SEND data missing: *"Accessibility information not yet verified"*
-- Never inflate scores to please partners
+- **Never inflate scores to please partners or affiliates**
+- Commercial relationships must never secretly determine Family Match
+- Sponsored options shown separately with clear labels — never disguised as personalisation
+
+See [MASTER_PRODUCT_VISION.md § The FamilyPilot Promise](./MASTER_PRODUCT_VISION.md).
 
 ---
 

@@ -50,10 +50,14 @@ Even if requested, reject or defer if it turns FamilyPilot into:
 
 - A booking app (we recommend; parents book elsewhere)
 - A parenting forum or social feed
+- A generic social network or engagement feed
+- A review spam platform or pay-to-win recommendation engine
 - A travel agent checkout flow
 - A restaurant reservation service
 - A generic directory
 - An AI chatbot front-end
+- A cluttered advertising platform or booking site pretending to be impartial
+- A product that maximises screen time at the expense of family time
 
 ---
 
@@ -104,8 +108,22 @@ Never claim without verified data:
 - Live stock or inventory
 - Exact opening hours unless sourced
 - Exact pricing unless estimated and labelled
+- "Why Families Love It" summaries without sufficient underlying evidence
 
 Prefer: *"Usually available" · "Estimated family cost" · "Sensory session: Sundays 9–10am"*
+
+---
+
+## Commercial integrity
+
+Family Match must **never** be secretly manipulated by commission or affiliate revenue.
+
+- If a sponsored option earns more but a different option suits the family better, the better option remains primary
+- Sponsored content must always be clearly labelled (*Sponsored*, *Partner offer*)
+- Never disguise advertising as personalisation
+- Distinguish facts, estimates, community observations, and commercial content
+
+See [MASTER_PRODUCT_VISION.md § The FamilyPilot Promise](./MASTER_PRODUCT_VISION.md).
 
 ---
 
@@ -122,11 +140,24 @@ See [DATABASE_FUTURE.md](./DATABASE_FUTURE.md).
 
 ---
 
-## Success metric
+## Success metrics
 
 Parents stop searching elsewhere because FamilyPilot provides **enough confidence** to decide.
 
 Maximum confidence — not maximum information.
+
+| Metric | What it measures |
+|--------|------------------|
+| Decision confidence | User stopped researching after recommendation |
+| Repeat utility | Families return for new decisions |
+| Recommendation acceptance | Saves, visits, plans, actions taken |
+| Trust | Users believe the explanation |
+| Research reduction | Fewer external searches required |
+| Recommendation quality | Feedback: great / not for us / already been / save for later |
+
+**Avoid optimising for:** session length, notification clicks, screen time.
+
+The goal is useful decisions, not attention capture.
 
 ---
 
