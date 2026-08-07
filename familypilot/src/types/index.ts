@@ -27,6 +27,57 @@ export type VenueCategory =
 
 export type TerrainType = 'flat' | 'hilly' | 'mixed';
 
+/** Tri-state for restaurant attributes — never treat unknown as false. */
+export type FacilityStatus = 'confirmed' | 'not_available' | 'not_confirmed';
+
+export interface TrustMetadata {
+  source?: 'estimated' | 'provider' | 'community';
+  lastChecked?: string;
+}
+
+export interface RestaurantFeatures {
+  kidsMenu: FacilityStatus;
+  highChairs: FacilityStatus;
+  babyChanging: FacilityStatus;
+  pushchairSpace: FacilityStatus;
+  stepFreeAccess: FacilityStatus;
+  accessibleToilet: FacilityStatus;
+  outdoorSeating: FacilityStatus;
+  playArea: FacilityStatus;
+  activityPacks: FacilityStatus;
+  parking: FacilityStatus;
+  noiseLevel?: 'quiet' | 'moderate' | 'lively' | 'unknown';
+  bookingRecommended?: boolean;
+  dietaryOptions?: string[];
+  childOffers?: string;
+  serviceSpeed?: 'quick' | 'relaxed' | 'unknown';
+  familyNotes?: string;
+}
+
+export interface RestaurantDetail extends VenueDetail {
+  category: 'restaurant' | 'cafe';
+  cuisineType?: string;
+  restaurantFeatures: RestaurantFeatures;
+  estimatedFamilySpend?: string;
+  trust?: TrustMetadata;
+  /** Drive minutes from home (Explore list). */
+  driveMinutes: number;
+  /** Minutes from a linked activity — populated per context. */
+  driveMinutesFromActivity?: number;
+}
+
+export interface EatNearbyRecommendation {
+  restaurantId: string;
+  name: string;
+  imageUrl: string;
+  driveMinutes: number;
+  estimatedFamilySpend?: string;
+  classification: string;
+  familyScore: FamilyScore;
+  highlights: string[];
+  goodToKnow?: string[];
+}
+
 export interface FamilyScoreFactors {
   ageSuitability: number;
   accessibility: number;
@@ -57,6 +108,7 @@ export interface Venue {
   address?: string;
   goodToKnow?: string[];
   facilities?: FacilityType[];
+  trust?: TrustMetadata;
 }
 
 export interface CommunityTip {
@@ -78,10 +130,12 @@ export interface VenueDetail extends Venue {
   warnings?: string[];
   goodToKnow?: string[];
   communityTips?: CommunityTip[];
-  eatNearby?: EatNearbyOption[];
+  eatNearby?: EatNearbyRecommendation[];
   weatherAlternative?: WeatherAlternative;
+  trust?: TrustMetadata;
 }
 
+/** @deprecated use EatNearbyRecommendation from service layer */
 export interface EatNearbyOption {
   venueId: string;
   name: string;

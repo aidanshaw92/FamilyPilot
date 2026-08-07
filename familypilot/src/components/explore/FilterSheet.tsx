@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Chip, Text } from '@/src/components/ui';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { useFiltersStore } from '@/src/stores/filters-store';
+import { RESTAURANT_FILTER_OPTIONS } from '@/src/utils/filter-restaurants';
 import {
   BUDGET_FILTER_OPTIONS,
   DRIVE_FILTER_OPTIONS,
@@ -20,6 +21,7 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
   const insets = useSafeAreaInsets();
   const { data: profile } = useFamilyProfile();
   const {
+    categoryFilter,
     exploreMaxDrive,
     exploreBudget,
     advancedFilters,
@@ -29,7 +31,29 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
     resetExploreFilters,
   } = useFiltersStore();
 
+  const isRestaurantMode = categoryFilter === 'restaurants';
   const profileDrive = profile?.maxDriveMinutes ?? 30;
+
+  const handleReset = () => {
+    if (isRestaurantMode) {
+      setExploreMaxDrive('any');
+      setExploreBudget('any');
+      useFiltersStore.getState().clearAdvancedFilters();
+    } else {
+      resetExploreFilters();
+    }
+  };
+
+  const facilityOptions = isRestaurantMode
+    ? [
+        { id: 'facilities', label: 'Family facilities', options: RESTAURANT_FILTER_OPTIONS.slice(0, 9) },
+        {
+          id: 'dietary',
+          label: 'Dietary preferences',
+          options: RESTAURANT_FILTER_OPTIONS.slice(9),
+        },
+      ]
+    : [{ id: 'general', label: 'More filters', options: FILTER_SHEET_OPTIONS }];
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -38,7 +62,7 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
         <View style={styles.handle} />
         <View style={styles.header}>
           <Text variant="heading2">Filters</Text>
-          <Pressable onPress={resetExploreFilters} hitSlop={8}>
+          <Pressable onPress={handleReset} hitSlop={8}>
             <Text variant="bodySmall" color={colors.primary[500]}>
               Reset
             </Text>
@@ -67,7 +91,9 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
             Budget
           </Text>
           <View style={styles.chipWrap}>
-            {BUDGET_FILTER_OPTIONS.map((option) => (
+            {BUDGET_FILTER_OPTIONS.filter((option) =>
+              isRestaurantMode ? option.id !== 'free' : true,
+            ).map((option) => (
               <Chip
                 key={option.id}
                 label={option.label}
@@ -77,19 +103,23 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
             ))}
           </View>
 
-          <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
-            More filters
-          </Text>
-          <View style={styles.chipWrap}>
-            {FILTER_SHEET_OPTIONS.map((filter) => (
-              <Chip
-                key={filter.id}
-                label={filter.label}
-                active={advancedFilters.includes(filter.id)}
-                onPress={() => toggleAdvancedFilter(filter.id)}
-              />
-            ))}
-          </View>
+          {facilityOptions.map((group) => (
+            <View key={group.id}>
+              <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+                {group.label}
+              </Text>
+              <View style={styles.chipWrap}>
+                {group.options.map((filter) => (
+                  <Chip
+                    key={filter.id}
+                    label={filter.label}
+                    active={advancedFilters.includes(filter.id)}
+                    onPress={() => toggleAdvancedFilter(filter.id)}
+                  />
+                ))}
+              </View>
+            </View>
+          ))}
         </ScrollView>
 
         <Pressable style={styles.applyButton} onPress={onClose} accessibilityRole="button">

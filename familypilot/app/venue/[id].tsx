@@ -30,6 +30,7 @@ import {
 import { BackButton } from '@/src/components/ui/BackButton';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { isActivityVenue } from '@/src/data/mock-restaurants';
 import { useVenue } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { generateVenueStaticParams } from '@/src/utils/venue-routes';
@@ -192,8 +193,11 @@ export default function VenueScreen() {
               <DetailItem icon="car-outline" label="Parking" value={venue.parkingInfo} />
             </View>
 
-            {venue.eatNearby && venue.eatNearby.length > 0 ? (
-              <EatNearbySection options={venue.eatNearby} />
+            {isActivityVenue(venue) ? (
+              <EatNearbySection
+                activityVenueId={venue.id}
+                activityVenueName={venue.name}
+              />
             ) : null}
 
             {venue.weatherAlternative ? (

@@ -19,12 +19,17 @@ import {
   SavedItem,
   StoreLocation,
   Trip,
+  RestaurantDetail,
   Venue,
   VenueDetail,
   WeatherInfo,
+  EatNearbyRecommendation,
 } from '@/src/types';
 import { withCompletion } from '@/src/utils/profile-defaults';
 import { buildHomeRecommendations, personaliseVenue, personaliseVenues } from '@/src/utils/personalise-venues';
+import { filterRestaurants } from '@/src/utils/filter-restaurants';
+import { ExploreBudgetFilter } from '@/src/stores/filters-store';
+import { getAllRestaurants, getRestaurantById, getRestaurantsNearVenue } from '@/src/services/eat-nearby';
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -75,7 +80,7 @@ export const recommendationService = {
   async getRecentVenues(): Promise<Venue[]> {
     await delay(200);
     const profile = getProfile();
-    return personaliseVenues([mockVenues[0], mockVenues[4]], profile);
+    return personaliseVenues([mockVenues[0], mockVenues[3]], profile);
   },
 };
 
@@ -119,6 +124,38 @@ export const packingService = {
   async getPackingList(): Promise<PackingItem[]> {
     await delay(200);
     return mockPackingItems;
+  },
+};
+
+export const restaurantService = {
+  async getAll(): Promise<RestaurantDetail[]> {
+    await delay(250);
+    return getAllRestaurants(getProfile());
+  },
+
+  async getById(id: string, activityVenueId?: string): Promise<RestaurantDetail | null> {
+    await delay(200);
+    return getRestaurantById(id, getProfile(), { activityVenueId });
+  },
+
+  async getEatNearby(activityVenueId: string): Promise<EatNearbyRecommendation[]> {
+    await delay(280);
+    const activity = await venueService.getById(activityVenueId);
+    if (!activity || activity.category === 'restaurant' || activity.category === 'cafe') {
+      return [];
+    }
+    return getRestaurantsNearVenue(activity, getProfile());
+  },
+
+  async getFiltered(
+    advancedIds: string[],
+    maxDrive: number | 'any',
+    budget: ExploreBudgetFilter,
+  ): Promise<RestaurantDetail[]> {
+    await delay(250);
+    const profile = getProfile();
+    const all = getAllRestaurants(profile);
+    return filterRestaurants(all, advancedIds, maxDrive, profile.maxDriveMinutes, budget);
   },
 };
 

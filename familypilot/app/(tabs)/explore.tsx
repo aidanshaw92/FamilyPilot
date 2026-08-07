@@ -2,17 +2,25 @@ import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FilterSheet } from '@/src/components/explore/FilterSheet';
+import { RestaurantCard } from '@/src/components/restaurant/RestaurantCard';
 import { DecisionCard } from '@/src/components/shared/DecisionCard';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Chip, EmptyState, ErrorState, SectionHeader, SkeletonCard, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
-import { useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
+import { useFamilyProfile, useNearbyVenues, useRestaurants } from '@/src/hooks/use-queries';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { buildExploreEditorialSections } from '@/src/utils/explore-editorial-sections';
 import { EXPLORE_CATEGORIES, filterVenues } from '@/src/utils/filter-venues';
 
 export default function ExploreScreen() {
-  const { data: venues, isLoading, isError, refetch } = useNearbyVenues();
+  const { data: venues, isLoading: venuesLoading, isError: venuesError, refetch: refetchVenues } =
+    useNearbyVenues();
+  const {
+    data: restaurants,
+    isLoading: restaurantsLoading,
+    isError: restaurantsError,
+    refetch: refetchRestaurants,
+  } = useRestaurants();
   const { data: profile } = useFamilyProfile();
   const {
     categoryFilter,
@@ -24,6 +32,8 @@ export default function ExploreScreen() {
     setFilterSheetOpen,
     resetExploreFilters,
   } = useFiltersStore();
+
+  const isRestaurantMode = categoryFilter === 'restaurants';
 
   const filteredVenues = useMemo(
     () =>
@@ -41,6 +51,7 @@ export default function ExploreScreen() {
   );
 
   const useEditorialLayout =
+    !isRestaurantMode &&
     categoryFilter === 'all' &&
     advancedFilters.length === 0 &&
     exploreMaxDrive === 'any' &&
@@ -59,6 +70,23 @@ export default function ExploreScreen() {
     (exploreBudget !== 'any' ? 1 : 0) +
     advancedFilters.length;
 
+  const isLoading = isRestaurantMode ? restaurantsLoading : venuesLoading;
+  const isError = isRestaurantMode ? restaurantsError : venuesError;
+  const refetch = isRestaurantMode ? refetchRestaurants : refetchVenues;
+  const resultCount = isRestaurantMode ? (restaurants?.length ?? 0) : filteredVenues.length;
+
+  const handleClearFilters = () => {
+    if (isRestaurantMode) {
+      setCategoryFilter('restaurants');
+      useFiltersStore.getState().setExploreMaxDrive('any');
+      useFiltersStore.getState().setExploreBudget('any');
+      useFiltersStore.getState().clearAdvancedFilters();
+    } else {
+      setCategoryFilter('all');
+      resetExploreFilters();
+    }
+  };
+
   if (isError) {
     return (
       <ScreenContainer>
@@ -72,7 +100,9 @@ export default function ExploreScreen() {
       <View style={styles.header}>
         <Text variant="heading1">Explore</Text>
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
-          Curated places for your family
+          {isRestaurantMode
+            ? 'Family-friendly places to eat'
+            : 'Curated places for your family'}
         </Text>
       </View>
 
@@ -114,16 +144,17 @@ export default function ExploreScreen() {
           <SkeletonCard />
           <SkeletonCard />
         </View>
-      ) : filteredVenues.length === 0 ? (
+      ) : resultCount === 0 ? (
         <EmptyState
           icon="search-outline"
-          title="No places found"
-          message="Try a different category or adjust your filters."
+          title={isRestaurantMode ? 'No restaurants found' : 'No places found'}
+          message={
+            isRestaurantMode
+              ? 'Try adjusting your filters or explore a wider area.'
+              : 'Try a different category or adjust your filters.'
+          }
           actionLabel="Clear filters"
-          onAction={() => {
-            setCategoryFilter('all');
-            resetExploreFilters();
-          }}
+          onAction={handleClearFilters}
         />
       ) : useEditorialLayout && editorialSections.length > 0 ? (
         <ScrollView
@@ -144,13 +175,17 @@ export default function ExploreScreen() {
           <View style={styles.listHeader}>
             <SectionHeader
               title={activeCategoryLabel}
-              subtitle={`${filteredVenues.length} place${filteredVenues.length === 1 ? '' : 's'} near you`}
+              subtitle={`${resultCount} ${isRestaurantMode ? 'restaurant' : 'place'}${resultCount === 1 ? '' : 's'} near you`}
             />
           </View>
           <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
-            {filteredVenues.map((venue, index) => (
-              <DecisionCard key={venue.id} venue={venue} variant="list" index={index} />
-            ))}
+            {isRestaurantMode
+              ? restaurants?.map((restaurant, index) => (
+                  <RestaurantCard key={restaurant.id} restaurant={restaurant} index={index} />
+                ))
+              : filteredVenues.map((venue, index) => (
+                  <DecisionCard key={venue.id} venue={venue} variant="list" index={index} />
+                ))}
           </ScrollView>
         </>
       )}

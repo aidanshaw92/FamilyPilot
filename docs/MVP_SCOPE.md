@@ -55,7 +55,8 @@ Do not implement Post-MVP or Future Vision features unless explicitly prioritise
 | Trips | MVP | ✅ Timeline display |
 | Saved | MVP | ✅ Grouped list |
 | Profile | MVP | ✅ Mock family + testing notice |
-| Venue detail | MVP | ✅ Family Match + facilities |
+| Venue detail | MVP | ✅ Family Match + facilities + Eat Nearby |
+| Restaurant detail | Post-MVP | ✅ `/restaurant/[id]` mock beta |
 | Need Something Now | MVP | ✅ Store cards |
 | Car Fit | MVP | ✅ Prototype |
 | Packing list | MVP | ✅ Prototype |
@@ -104,7 +105,7 @@ These screens exist and are testable but use mock data, placeholder actions, or 
 
 | Item | Label | Gap |
 |------|-------|-----|
-| Explore filter chips | MVP | Toggle state only; list not filtered |
+| Explore filter chips | MVP | ✅ Places + Restaurants |
 | Need Now filter chips | MVP | Visual only |
 | Save / Directions on venue | MVP | Buttons present; handlers not wired |
 | Trips create / edit | MVP | Placeholder buttons |
@@ -122,7 +123,7 @@ These are **not** part of the current test build. Do not implement without prior
 
 | Feature | Label | See |
 |---------|-------|-----|
-| Eat Nearby / restaurant recommendations | Post-MVP | [FEATURE_ROADMAP.md § Phase 3](./FEATURE_ROADMAP.md) |
+| Live restaurant / Places API | Post-MVP | [EAT_NEARBY.md](./EAT_NEARBY.md) |
 | Accessibility filters & venue depth | Post-MVP | Phase 4 |
 | SEND-friendly attributes & filters | Post-MVP | Phase 5 |
 | Meet Another Family | Post-MVP | Phase 6 |

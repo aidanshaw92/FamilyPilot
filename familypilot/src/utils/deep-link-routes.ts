@@ -11,12 +11,17 @@
  * - Browser refresh on each route does not 404
  */
 
+import { RESTAURANT_IDS } from '@/src/utils/restaurant-routes';
 import { VENUE_IDS } from '@/src/utils/venue-routes';
 
 export const STACK_ROUTES = ['need-now', 'holiday', 'packing', 'car-fit', 'about'] as const;
 
 export function getExpectedVenuePaths(): string[] {
   return VENUE_IDS.map((id) => `venue/${id}.html`);
+}
+
+export function getExpectedRestaurantPaths(): string[] {
+  return RESTAURANT_IDS.map((id) => `restaurant/${id}.html`);
 }
 
 export function getExpectedStackPaths(): string[] {

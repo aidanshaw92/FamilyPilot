@@ -10,6 +10,13 @@ import { useSavedStore } from '@/src/stores/saved-store';
 import { SavedGroup, SavedItem } from '@/src/types';
 
 type SortOption = 'recent' | 'closest' | 'match';
+type TypeFilter = 'all' | 'places' | 'restaurants';
+
+const TYPE_FILTERS: { id: TypeFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'places', label: 'Places' },
+  { id: 'restaurants', label: 'Restaurants' },
+];
 
 const SORT_OPTIONS: { id: SortOption; label: string }[] = [
   { id: 'recent', label: 'Recent' },
@@ -28,10 +35,16 @@ export default function SavedScreen() {
   const { savedIds } = useSavedStore();
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortOption>('recent');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [removedId, setRemovedId] = useState<string | null>(null);
 
   const filteredItems = useMemo(() => {
     let items = savedItems ?? [];
+    if (typeFilter === 'places') {
+      items = items.filter((item) => item.type === 'place');
+    } else if (typeFilter === 'restaurants') {
+      items = items.filter((item) => item.type === 'restaurant');
+    }
     if (search.trim()) {
       const query = search.toLowerCase();
       items = items.filter((item) => item.venue.name.toLowerCase().includes(query));
@@ -41,7 +54,7 @@ export default function SavedScreen() {
       if (sort === 'match') return b.venue.familyScore.score - a.venue.familyScore.score;
       return savedIds.has(b.venue.id) === savedIds.has(a.venue.id) ? 0 : 1;
     });
-  }, [savedItems, search, sort, savedIds]);
+  }, [savedItems, search, sort, savedIds, typeFilter]);
 
   const groupedSections = useMemo(() => {
     if (search.trim()) return null;
@@ -71,6 +84,7 @@ export default function SavedScreen() {
     <SavedPlaceRow
       key={item.id}
       venue={item.venue}
+      itemType={item.type}
       onRemoved={(id) => {
         setRemovedId(id);
         setTimeout(() => setRemovedId(null), 5000);
@@ -97,6 +111,21 @@ export default function SavedScreen() {
           accessibilityLabel="Search saved places"
         />
       </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.sortRow}
+      >
+        {TYPE_FILTERS.map((option) => (
+          <Chip
+            key={option.id}
+            label={option.label}
+            active={typeFilter === option.id}
+            onPress={() => setTypeFilter(option.id)}
+          />
+        ))}
+      </ScrollView>
 
       <ScrollView
         horizontal

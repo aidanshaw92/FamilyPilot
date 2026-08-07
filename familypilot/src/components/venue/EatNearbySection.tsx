@@ -1,45 +1,106 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
-import { FamilyMatch } from '@/src/components/ui/FamilyMatch';
+import { EatNearbyCompactCard } from '@/src/components/restaurant/EatNearbyCompactCard';
+import { Button } from '@/src/components/ui/Button';
 import { Text } from '@/src/components/ui/Text';
-import { colors, radius, spacing } from '@/src/design-system/tokens';
-import { EatNearbyOption } from '@/src/types';
+import { colors, spacing } from '@/src/design-system/tokens';
+import { useEatNearby } from '@/src/hooks/use-queries';
+import { useFiltersStore } from '@/src/stores/filters-store';
+import { EatNearbyRecommendation } from '@/src/types';
 
 interface EatNearbySectionProps {
-  options: EatNearbyOption[];
+  activityVenueId: string;
+  activityVenueName: string;
+  /** Static fallback when service unavailable */
+  fallback?: EatNearbyRecommendation[];
 }
 
-export function EatNearbySection({ options }: EatNearbySectionProps) {
+export function EatNearbySection({
+  activityVenueId,
+  activityVenueName,
+  fallback = [],
+}: EatNearbySectionProps) {
   const router = useRouter();
+  const setCategoryFilter = useFiltersStore((s) => s.setCategoryFilter);
+  const { data, isLoading, isError } = useEatNearby(activityVenueId);
 
-  if (options.length === 0) return null;
+  const recommendations = data ?? fallback;
+
+  const openRestaurantExplore = () => {
+    setCategoryFilter('restaurants');
+    router.push('/(tabs)/explore' as never);
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.section}>
+        <Text variant="heading3" style={styles.title}>
+          Good places to eat nearby
+        </Text>
+        <ActivityIndicator color={colors.primary[500]} />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.section}>
+        <Text variant="heading3" style={styles.title}>
+          Eat nearby
+        </Text>
+        <Text variant="bodySmall" color={colors.text.secondary}>
+          Restaurant suggestions are temporarily unavailable.
+        </Text>
+      </View>
+    );
+  }
+
+  if (recommendations.length === 0) {
+    return (
+      <View style={styles.section}>
+        <Text variant="heading3" style={styles.title}>
+          Eat nearby
+        </Text>
+        <Text variant="bodySmall" color={colors.text.secondary} style={styles.emptyText}>
+          We couldn&apos;t find a strong family-friendly option nearby after your visit to{' '}
+          {activityVenueName}.
+        </Text>
+        <Button
+          label="Explore restaurants"
+          variant="outline"
+          onPress={openRestaurantExplore}
+          style={styles.emptyCta}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.section}>
       <Text variant="heading3" style={styles.title}>
-        Eat nearby
+        After your visit
       </Text>
-      {options.map((option) => (
-        <Pressable
-          key={option.venueId}
-          style={styles.card}
-          onPress={() => router.push(`/venue/${option.venueId}` as never)}
-          accessibilityRole="button"
-          accessibilityLabel={`View ${option.name}`}
-        >
-          <View style={styles.cardHeader}>
-            <Text variant="heading3">{option.name}</Text>
-            <Text variant="caption" color={colors.text.secondary}>
-              {option.driveMinutes} min · Est. {option.estimatedSpend ?? 'spend varies'}
-            </Text>
-          </View>
-          <Text variant="bodySmall" color={colors.text.secondary}>
-            {option.highlights.join(' · ')}
-          </Text>
-        </Pressable>
+      <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
+        Good places to eat near {activityVenueName}
+      </Text>
+      {recommendations.map((rec) => (
+        <EatNearbyCompactCard
+          key={rec.restaurantId}
+          recommendation={rec}
+          activityVenueId={activityVenueId}
+        />
       ))}
+      <Pressable
+        onPress={openRestaurantExplore}
+        accessibilityRole="button"
+        accessibilityLabel="See all nearby restaurants"
+        style={styles.seeAll}
+      >
+        <Text variant="bodySmall" color={colors.primary[500]}>
+          See all nearby restaurants
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -49,18 +110,21 @@ const styles = StyleSheet.create({
     marginTop: spacing['2xl'],
   },
   title: {
+    marginBottom: spacing.sm,
+  },
+  subtitle: {
     marginBottom: spacing.lg,
   },
-  card: {
-    backgroundColor: colors.background,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
+  emptyText: {
+    marginBottom: spacing.lg,
+    lineHeight: 22,
   },
-  cardHeader: {
-    marginBottom: spacing.sm,
-    gap: spacing.xs,
+  emptyCta: {
+    alignSelf: 'flex-start',
+  },
+  seeAll: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
   },
 });
