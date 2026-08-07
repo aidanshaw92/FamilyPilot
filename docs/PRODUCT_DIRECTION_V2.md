@@ -774,6 +774,7 @@ Filters via progressive-disclosure sheet — not all visible at once.
 | [DESIGN_AUDIT.md](./DESIGN_AUDIT.md) | Pre-remediation quality audit |
 | [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md) | Remediation + production QA |
 | [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md) | Tester instructions |
+| [FAMILY_GRAPH.md](./FAMILY_GRAPH.md) | Family Graph domain model |
 | [BACKLOG.md](./BACKLOG.md) | Deferred items + V2 feature index |
 
 ---
