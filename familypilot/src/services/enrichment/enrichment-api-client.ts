@@ -1,18 +1,21 @@
 const ENRICHMENT_TOKEN_KEY = 'fp_enrichment_admin_token';
 
-function getApiBaseUrl(): string {
-  if (typeof process !== 'undefined' && process.env.EXPO_PUBLIC_PLACES_API_URL) {
-    return process.env.EXPO_PUBLIC_PLACES_API_URL.replace(/\/$/, '');
-  }
+function getEnrichmentApiUrl(): string {
   if (typeof window !== 'undefined' && window.location?.origin) {
-    return window.location.origin;
+    return `${window.location.origin}/api/enrichment`;
   }
-  return '';
+  if (typeof process !== 'undefined' && process.env.EXPO_PUBLIC_PLACES_API_URL) {
+    const base = process.env.EXPO_PUBLIC_PLACES_API_URL.replace(/\/$/, '');
+    const origin = base.endsWith('/api/places') ? base.slice(0, -'/api/places'.length) : base;
+    return `${origin}/api/enrichment`;
+  }
+  return '/api/enrichment';
 }
 
 export function getEnrichmentToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return window.sessionStorage.getItem(ENRICHMENT_TOKEN_KEY);
+  const token = window.sessionStorage.getItem(ENRICHMENT_TOKEN_KEY);
+  return token?.trim() || null;
 }
 
 export function setEnrichmentToken(token: string): void {
@@ -36,11 +39,11 @@ async function enrichmentFetch(action: string, options: RequestInit = {}, queryP
     }
   }
 
-  const response = await fetch(`${getApiBaseUrl()}/api/enrichment?${query.toString()}`, {
+  const response = await fetch(`${getEnrichmentApiUrl()}?${query.toString()}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      'X-Enrichment-Token': token,
       ...(options.headers ?? {}),
     },
   });
@@ -66,7 +69,7 @@ async function enrichmentFetch(action: string, options: RequestInit = {}, queryP
 
 export const enrichmentApi = {
   async getConfig() {
-    const response = await fetch(`${getApiBaseUrl()}/api/enrichment?action=config`);
+    const response = await fetch(`${getEnrichmentApiUrl()}?action=config`);
     return response.json() as Promise<{ authConfigured: boolean; storageMode: string }>;
   },
 
