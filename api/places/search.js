@@ -1,4 +1,7 @@
-const OVERPASS_ENDPOINT = 'https://overpass-api.de/api/interpreter';
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+];
 const OVERPASS_USER_AGENT = 'FamilyPilot/1.0 (https://family-pilot-seven.vercel.app; places-api)';
 
 function getConfiguredProvider() {
@@ -55,28 +58,39 @@ function elementToRecord(element) {
 async function searchOsm(lat, lng, radiusKm) {
   const radiusM = Math.round(radiusKm * 1000);
   const query = buildOverpassQuery(lat, lng, radiusM);
-  const response = await fetch(OVERPASS_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': OVERPASS_USER_AGENT,
-      Accept: 'application/json',
-    },
-    body: new URLSearchParams({ data: query }).toString(),
-  });
-  if (!response.ok) {
-    throw new Error(`Overpass API error: ${response.status}`);
+  let lastError = null;
+
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': OVERPASS_USER_AGENT,
+          Accept: 'application/json',
+        },
+        body: new URLSearchParams({ data: query }).toString(),
+      });
+      if (!response.ok) {
+        lastError = new Error(`Overpass API error: ${response.status} (${endpoint})`);
+        continue;
+      }
+      const data = await response.json();
+      const seen = new Set();
+      return (data.elements || [])
+        .map(elementToRecord)
+        .filter(Boolean)
+        .filter((r) => {
+          if (seen.has(r.externalId)) return false;
+          seen.add(r.externalId);
+          return true;
+        });
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Overpass request failed');
+    }
   }
-  const data = await response.json();
-  const seen = new Set();
-  return (data.elements || [])
-    .map(elementToRecord)
-    .filter(Boolean)
-    .filter((r) => {
-      if (seen.has(r.externalId)) return false;
-      seen.add(r.externalId);
-      return true;
-    });
+
+  throw lastError || new Error('Overpass API unavailable');
 }
 
 const MOCK_FALLBACK = [
