@@ -1,6 +1,7 @@
 import { StyleSheet, View, ViewStyle } from 'react-native';
 
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
+import { EnrichmentStatus } from '@/src/types';
 import { getMatchClassification } from '@/src/utils/family-match-classification';
 
 import { formatFamilyMatchSecondary } from './family-match-label';
@@ -10,14 +11,20 @@ interface FamilyMatchProps {
   score: number;
   variant?: 'compact' | 'card' | 'detail';
   style?: ViewStyle;
+  enrichmentStatus?: EnrichmentStatus;
 }
 
 /**
  * Human-readable Family Match — classification leads, numeric score is secondary.
  */
-export function FamilyMatch({ score, variant = 'compact', style }: FamilyMatchProps) {
-  const classification = getMatchClassification(score);
-  const secondary = formatFamilyMatchSecondary(score);
+export function FamilyMatch({ score, variant = 'compact', style, enrichmentStatus }: FamilyMatchProps) {
+  const classification = getMatchClassification(score, enrichmentStatus);
+  const secondary = formatFamilyMatchSecondary(score, enrichmentStatus);
+
+  const displayLabel =
+    enrichmentStatus === 'provider_only'
+      ? classification
+      : classification.replace(' match', '');
 
   if (variant === 'compact') {
     return (
@@ -27,7 +34,7 @@ export function FamilyMatch({ score, variant = 'compact', style }: FamilyMatchPr
         accessibilityLabel={`${classification}, ${secondary}`}
       >
         <Text variant="caption" color={colors.secondary[600]} style={styles.compactPrimary}>
-          {classification.replace(' match', '')}
+          {displayLabel}
         </Text>
       </View>
     );
@@ -41,7 +48,7 @@ export function FamilyMatch({ score, variant = 'compact', style }: FamilyMatchPr
         accessibilityLabel={classification}
       >
         <Text variant="caption" color={colors.text.inverse} style={styles.cardPrimary}>
-          {classification.replace(' match', '')}
+          {displayLabel}
         </Text>
       </View>
     );

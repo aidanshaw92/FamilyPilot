@@ -47,6 +47,7 @@ export class PlacesRepository {
       longitude: home.longitude,
       radiusKm: (profile.maxDriveMinutes / 60) * 40 * 1.2,
       categories,
+      intent: 'explore',
     };
 
     const cacheKey = searchCacheKey(params);

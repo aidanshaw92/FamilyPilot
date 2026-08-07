@@ -57,6 +57,19 @@ Each field carries `FieldProvenance`: `{ source, updatedAt, reliability, label? 
 | `sendNotes` | familypilot | Factual session info only |
 | `familyNotes` | familypilot | Editorial |
 | `familyScore` | familypilot | Computed client-side from profile + metadata |
+| `enrichmentStatus` | derived | `provider_only` (live Google default), `enriched`, `verified` |
+
+**Provider-only rule (Aug 2026):** Live Google venues without `VenueFamilyMetadata` must remain `provider_only`. Family Match capped at 65 with "Potential match" copy. Never synthesise facilities or age suitability. See [LIVE_GOOGLE_QUALITY_PASS.md](./LIVE_GOOGLE_QUALITY_PASS.md).
+
+---
+
+## Enrichment status
+
+| Status | When | UI |
+|--------|------|-----|
+| `provider_only` | Provider facts only | "Family suitability not yet reviewed" |
+| `enriched` | FamilyPilot metadata present | Normal Family Match |
+| `verified` | Core fields with editorial provenance | Normal Family Match |
 
 **Never overwrite** FamilyPilot metadata during provider sync.
 
@@ -82,6 +95,8 @@ Mapped via `TrustMetadata` and `DataTrustBadge`:
 - "Estimated family spend"
 - "Facilities last checked X days ago"
 - "Venue information" (generic provider)
+- "Family suitability not yet reviewed" (provider-only live venues)
+- "Live place data · family details still being verified" (venue detail)
 - "Development mock layer" (mock only, dev/beta)
 
 ---

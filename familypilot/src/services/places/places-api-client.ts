@@ -26,6 +26,9 @@ export class PlacesApiClient {
     if (params.categories?.length) {
       query.set('categories', params.categories.join(','));
     }
+    if (params.intent) {
+      query.set('intent', params.intent);
+    }
 
     const response = await fetch(`${this.baseUrl}/search?${query.toString()}`);
     if (!response.ok) {

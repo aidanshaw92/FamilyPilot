@@ -1,4 +1,6 @@
-import { FamilyProfile, FamilyScore, FamilyScoreFactors, VenueDetail } from '@/src/types';
+import { EnrichmentStatus, FamilyProfile, FamilyScore, FamilyScoreFactors, VenueDetail } from '@/src/types';
+
+import { PROVIDER_ONLY_FAMILY_MATCH_CAP } from '@/src/constants/places-quality';
 
 const WEIGHTS = {
   ageSuitability: 0.25,
@@ -9,6 +11,10 @@ const WEIGHTS = {
   facilitiesMatch: 0.15,
   popularity: 0.1,
 } as const;
+
+export interface FamilyScoreOptions {
+  enrichmentStatus?: EnrichmentStatus;
+}
 
 function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, Math.round(value)));
@@ -56,29 +62,39 @@ function scoreBudget(venue: VenueDetail, tier: FamilyProfile['budgetTier']): num
 export function calculateFamilyScore(
   venue: VenueDetail,
   profile: FamilyProfile,
+  options: FamilyScoreOptions = {},
 ): FamilyScore {
+  const enrichmentStatus = options.enrichmentStatus ?? venue.enrichmentStatus ?? 'enriched';
+  const isProviderOnly = enrichmentStatus === 'provider_only';
+
   const childAges = profile.members
     .filter((m) => m.role === 'child')
     .map((m) => m.age);
 
   const factors: FamilyScoreFactors = {
     ageSuitability: scoreAgeSuitability(venue, childAges),
-    accessibility: venue.facilities.includes('pushchair_friendly') ? 92 : 70,
+    accessibility: venue.facilities?.includes('pushchair_friendly') ? 92 : isProviderOnly ? 55 : 70,
     distance: scoreDistance(venue.driveMinutes, profile.maxDriveMinutes),
     weatherFit: venue.category === 'museum' || venue.category === 'farm' ? 88 : 85,
     budgetFit: scoreBudget(venue, profile.budgetTier),
-    facilitiesMatch: clamp(Math.min(venue.facilities.length * 11, 96)),
-    popularity: 80,
+    facilitiesMatch: isProviderOnly
+      ? 50
+      : clamp(Math.min((venue.facilities?.length ?? 0) * 11, 96)),
+    popularity: isProviderOnly ? 55 : 80,
   };
 
-  const score = clamp(
+  let score = clamp(
     Object.entries(WEIGHTS).reduce(
       (sum, [key, weight]) => sum + factors[key as keyof FamilyScoreFactors] * weight,
       0,
     ),
   );
 
-  const explanation = buildExplanation(venue, profile, factors);
+  if (isProviderOnly) {
+    score = Math.min(score, PROVIDER_ONLY_FAMILY_MATCH_CAP);
+  }
+
+  const explanation = buildExplanation(venue, profile, factors, isProviderOnly);
 
   return { score, factors, explanation };
 }
@@ -87,7 +103,18 @@ function buildExplanation(
   venue: VenueDetail,
   profile: FamilyProfile,
   factors: FamilyScoreFactors,
+  isProviderOnly: boolean,
 ): string[] {
+  if (isProviderOnly) {
+    const reasons: string[] = [
+      'Based on location and category only. Family suitability has not yet been reviewed.',
+    ];
+    if (factors.distance >= 85) {
+      reasons.push(`About ${venue.driveMinutes} minutes from home`);
+    }
+    return reasons.slice(0, 2);
+  }
+
   const reasons: string[] = [];
   const children = profile.members.filter((m) => m.role === 'child');
 
@@ -115,11 +142,11 @@ function buildExplanation(
     reasons.push('Within your usual budget');
   }
 
-  if (venue.facilities.includes('baby_changing')) {
+  if (venue.facilities?.includes('baby_changing')) {
     reasons.push('Baby changing available on site');
   }
 
-  if (venue.facilities.includes('cafe') && venue.category !== 'restaurant') {
+  if (venue.facilities?.includes('cafe') && venue.category !== 'restaurant') {
     reasons.push('Café on site for lunch');
   }
 

@@ -76,7 +76,21 @@ interface PlacesProvider {
 Implementations:
 - `src/services/providers/mock-places-provider.ts` — wraps existing mock venues
 - `server/places/overpass-places-provider.ts` — OpenStreetMap via Overpass API
-- `server/places/google-places-provider.ts` — stub (requires server key)
+- `server/places/google-places-provider.ts` — Google Places API (New), server-side key
+- `server/places/places-quality.ts` — taxonomy, exclusions, chain dedupe, re-ranking
+
+**Google quality pass (Aug 2026):** Explore uses `intent=explore` with primary-type filtering, exclusions, and FamilyPilot re-ranking. See [LIVE_GOOGLE_QUALITY_PASS.md](./LIVE_GOOGLE_QUALITY_PASS.md).
+
+---
+
+## Search intents
+
+| Intent | Use | Google types |
+|--------|-----|--------------|
+| `explore` (default) | General family activities | Parks, museums, zoos, attractions — **no** restaurant/cafe |
+| `restaurant` | Eat Nearby / restaurant search (future wire-up) | restaurant, cafe, coffee_shop, etc. |
+
+API: `GET /api/places/search?lat=&lng=&intent=explore`
 
 ---
 
@@ -128,7 +142,8 @@ Runtime DB writes deferred until Supabase service role is wired; schema is ready
 | `src/data/family-place-metadata.ts` | FamilyPilot seed metadata |
 | `src/services/places/places-repository.ts` | Client orchestration + fallback |
 | `src/services/places/merge-place.ts` | Merge external + metadata → Venue |
-| `server/places/places-service.ts` | Server cache + fallback |
+| `server/places/places-quality.ts` | Google taxonomy, exclusions, dedupe, ranking |
+| `api/places/lib/places-quality.js` | Vercel mirror of quality layer |
 | `api/places/search.ts` | Vercel search endpoint |
 | `api/places/detail.ts` | Vercel detail endpoint |
 | `supabase/migrations/002_place_records_and_metadata.sql` | DB schema |

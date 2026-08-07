@@ -1,25 +1,36 @@
 import { mockVenueDetails, mockVenues } from '@/src/data/mock-data';
 import { calculateFamilyScore } from '@/src/services/scoring/family-score';
-import { FamilyProfile, RecommendationSection, Venue, VenueDetail } from '@/src/types';
+import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDetail } from '@/src/types';
 
 import { getChildNames } from './profile-defaults';
 
 function toVenueDetail(venue: Venue): VenueDetail {
-  return mockVenueDetails[venue.id] ?? {
+  const existing = mockVenueDetails[venue.id];
+  if (existing) return existing;
+
+  if (venue.enrichmentStatus === 'provider_only') {
+    return {
+      ...venue,
+      photos: venue.imageUrl ? [venue.imageUrl] : [],
+      facilities: [],
+      openingHours: 'Opening hours not confirmed',
+      description: `${venue.name} — family suitability has not yet been reviewed.`,
+    };
+  }
+
+  return {
     ...venue,
-    photos: [venue.imageUrl],
-    facilities: ['toilets', 'parking'],
-    openingHours: 'Usually 8:00 AM – 6:00 PM',
-    terrain: 'mixed',
-    bestAges: 'All ages',
-    parkingInfo: 'Parking nearby',
-    description: `${venue.name} is a family-friendly place worth considering for your next outing.`,
+    photos: venue.imageUrl ? [venue.imageUrl] : [],
+    facilities: venue.facilities ?? [],
+    openingHours: 'Opening hours not confirmed',
+    description: `${venue.name} is worth considering for your next outing.`,
   };
 }
 
 export function personaliseVenue(venue: Venue, profile: FamilyProfile): Venue {
   const detail = toVenueDetail(venue);
-  const familyScore = calculateFamilyScore(detail, profile);
+  const enrichmentStatus: EnrichmentStatus = venue.enrichmentStatus ?? 'provider_only';
+  const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus });
   return {
     ...venue,
     familyScore,

@@ -15,6 +15,7 @@ module.exports = async function handler(req, res) {
   const latitude = Number(req.query.lat);
   const longitude = Number(req.query.lng);
   const radiusKm = Number(req.query.radiusKm || 25);
+  const intent = req.query.intent === 'restaurant' ? 'restaurant' : 'explore';
   const configuredProvider = getConfiguredProvider();
   const fetchedAt = new Date().toISOString();
 
@@ -22,12 +23,15 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid coordinates', fallbackAvailable: true });
   }
 
-  const result = await searchWithFallback(latitude, longitude, radiusKm, configuredProvider);
+  const result = await searchWithFallback(latitude, longitude, radiusKm, configuredProvider, {
+    intent,
+  });
 
   return res.status(200).json({
     places: result.places,
     provider: result.provider,
     configuredProvider,
+    intent,
     cached: false,
     fetchedAt,
     fallbackUsed: result.fallbackUsed,

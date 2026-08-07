@@ -1,11 +1,20 @@
+import { EnrichmentStatus } from '@/src/types';
+
 export type MatchClassification =
+  | 'Potential match'
   | 'Excellent match'
   | 'Great match'
   | 'Good match'
   | 'Worth considering'
   | 'Limited match';
 
-export function getMatchClassification(score: number): MatchClassification {
+export function getMatchClassification(
+  score: number,
+  enrichmentStatus?: EnrichmentStatus,
+): MatchClassification {
+  if (enrichmentStatus === 'provider_only') {
+    return 'Potential match';
+  }
   if (score >= 90) return 'Excellent match';
   if (score >= 80) return 'Great match';
   if (score >= 70) return 'Good match';
@@ -29,4 +38,12 @@ export function formatTerrainLabel(terrain: string): string {
     default:
       return 'Mixed terrain';
   }
+}
+
+export function getProviderOnlyTrustCopy(): string {
+  return 'Family suitability not yet reviewed';
+}
+
+export function getProviderOnlyDetailTrustCopy(): string {
+  return 'Live place data · family details still being verified';
 }

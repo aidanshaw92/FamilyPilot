@@ -94,6 +94,8 @@ export interface FamilyScore {
   explanation: string[];
 }
 
+export type EnrichmentStatus = 'provider_only' | 'enriched' | 'verified';
+
 export interface Venue {
   id: string;
   name: string;
@@ -109,6 +111,8 @@ export interface Venue {
   goodToKnow?: string[];
   facilities?: FacilityType[];
   trust?: TrustMetadata;
+  /** Whether FamilyPilot has reviewed family suitability for this place. */
+  enrichmentStatus?: EnrichmentStatus;
 }
 
 export interface CommunityTip {
@@ -122,9 +126,10 @@ export interface VenueDetail extends Venue {
   photos: string[];
   facilities: FacilityType[];
   openingHours: string;
-  terrain: TerrainType;
-  bestAges: string;
-  parkingInfo: string;
+  /** Unknown when provider-only — do not synthesise defaults. */
+  terrain?: TerrainType;
+  bestAges?: string;
+  parkingInfo?: string;
   description: string;
   visitDurationMinutes?: number;
   warnings?: string[];

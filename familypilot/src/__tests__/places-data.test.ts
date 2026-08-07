@@ -42,7 +42,7 @@ describe('mergePlaceToVenueDetail', () => {
     expect(detail.openingHours).toContain('Hours from');
   });
 
-  it('preserves FamilyPilot fields when provider has no enrichment', async () => {
+  it('preserves unknown fields when provider has no enrichment', async () => {
     const place = await mockPlacesProvider.getPlace('venue-1');
     const detail = mergePlaceToVenueDetail(
       place!,
@@ -50,8 +50,9 @@ describe('mergePlaceToVenueDetail', () => {
       DEFAULT_HOME.latitude,
       DEFAULT_HOME.longitude,
     );
-    expect(detail.terrain).toBe('mixed');
-    expect(detail.bestAges).toBe('All ages');
+    expect(detail.terrain).toBeUndefined();
+    expect(detail.bestAges).toBeUndefined();
+    expect(detail.enrichmentStatus).toBe('provider_only');
   });
 });
 

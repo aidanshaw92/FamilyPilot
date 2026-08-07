@@ -13,6 +13,7 @@ describe('Family Match classification', () => {
     expect(getMatchClassification(75)).toBe('Good match');
     expect(getMatchClassification(65)).toBe('Worth considering');
     expect(getMatchClassification(50)).toBe('Limited match');
+    expect(getMatchClassification(90, 'provider_only')).toBe('Potential match');
   });
 
   it('maps factor values to qualitative ratings', () => {

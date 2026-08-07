@@ -40,7 +40,7 @@ function mockFetchResponse(status: number, body: unknown) {
 
 describe('google-places-mapper', () => {
   it('maps a complete Google place payload into ExternalPlaceRecord', () => {
-    const record = googlePlaceToRecord(SAMPLE_DETAIL);
+    const record = googlePlaceToRecord(SAMPLE_DETAIL, 'explore');
     expect(record).not.toBeNull();
     expect(record?.familypilotId).toBe('fp-google-ChIJTestPlace123');
     expect(record?.externalId).toBe('google:ChIJTestPlace123');
@@ -65,12 +65,19 @@ describe('google-places-mapper', () => {
     expect(mapGoogleCategory('restaurant', ['food'])).toBe('restaurant');
     expect(mapGoogleCategory('coffee_shop', [])).toBe('cafe');
     expect(mapGoogleCategory('zoo', [])).toBe('farm');
-    expect(mapGoogleCategory('unknown_type', [])).toBe('park');
+    expect(mapGoogleCategory('unknown_type', [])).toBeNull();
   });
 
-  it('builds includedTypes for category filters', () => {
-    expect(googleTypesForCategories(['restaurant', 'cafe'])).toEqual(['restaurant', 'cafe', 'coffee_shop']);
-    expect(googleTypesForCategories(undefined)).toContain('park');
+  it('builds includedTypes for explore by default', () => {
+    expect(googleTypesForCategories(undefined, 'explore')).toContain('park');
+    expect(googleTypesForCategories(undefined, 'explore')).not.toContain('restaurant');
+  });
+
+  it('builds includedTypes for restaurant intent', () => {
+    const types = googleTypesForCategories(['restaurant', 'cafe'], 'restaurant');
+    expect(types).toContain('restaurant');
+    expect(types).toContain('cafe');
+    expect(types).toContain('coffee_shop');
   });
 
   it('parses Google IDs from external and FamilyPilot IDs', () => {
@@ -107,10 +114,12 @@ describe('GooglePlacesProvider', () => {
       latitude: 51.643,
       longitude: -0.36,
       radiusKm: 8,
+      intent: 'explore',
     });
 
     expect(places).toHaveLength(1);
     expect(places[0].externalId).toBe('google:ChIJTestPlace123');
+    expect(places[0].enrichmentStatus).toBe('provider_only');
     expect(fetch).toHaveBeenCalledWith(
       'https://places.googleapis.com/v1/places:searchNearby',
       expect.objectContaining({
@@ -119,6 +128,7 @@ describe('GooglePlacesProvider', () => {
           'X-Goog-Api-Key': 'test-google-key',
           'X-Goog-FieldMask': expect.stringContaining('places.id'),
         }),
+        body: expect.stringContaining('includedPrimaryTypes'),
       }),
     );
   });

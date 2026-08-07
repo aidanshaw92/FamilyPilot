@@ -6,7 +6,7 @@ import { DataTrustBadge } from '@/src/components/ui/DataTrustBadge';
 import { Text } from '@/src/components/ui/Text';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
-import { getMatchClassification } from '@/src/utils/family-match-classification';
+import { getMatchClassification, getProviderOnlyTrustCopy } from '@/src/utils/family-match-classification';
 
 import { formatFamilyMatchSecondary } from '../ui/family-match-label';
 
@@ -47,7 +47,7 @@ export function RecommendationPattern({
   onCta,
   style,
 }: RecommendationPatternProps) {
-  const classification = getMatchClassification(venue.familyScore.score);
+  const classification = getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
   const reasons = venue.familyScore.explanation.slice(0, REASON_LIMIT[variant]);
   const cautions = (venue.goodToKnow ?? []).slice(0, CAUTION_LIMIT[variant]);
   const isDetail = variant === 'detail';
@@ -126,8 +126,14 @@ export function RecommendationPattern({
       </Text>
 
       <Text variant="caption" color={colors.text.tertiary} style={styles.scoreSecondary}>
-        {formatFamilyMatchSecondary(venue.familyScore.score)}
+        {formatFamilyMatchSecondary(venue.familyScore.score, venue.enrichmentStatus)}
       </Text>
+
+      {venue.enrichmentStatus === 'provider_only' ? (
+        <Text variant="caption" color={colors.text.secondary} style={styles.providerOnlyNote}>
+          {getProviderOnlyTrustCopy()}
+        </Text>
+      ) : null}
 
       {showTrust ? (
         <View style={styles.trustRow}>
@@ -204,6 +210,10 @@ const styles = StyleSheet.create({
   scoreSecondary: {
     marginTop: spacing.xs,
     fontFamily: 'Inter_400Regular',
+  },
+  providerOnlyNote: {
+    marginTop: spacing.sm,
+    fontStyle: 'italic',
   },
   trustRow: {
     marginTop: spacing.lg,
