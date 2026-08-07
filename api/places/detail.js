@@ -78,7 +78,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { getMetadata } = require('../enrichment/lib/enrichment-store');
+    const { getMetadata } = require('../enrichment/_lib/enrichment-store');
     const metadata = await getMetadata(id);
     if (metadata) {
       detail.metadata = metadata;

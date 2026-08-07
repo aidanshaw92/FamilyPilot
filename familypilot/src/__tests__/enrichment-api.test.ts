@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { verifyEnrichmentAuth, isAuthConfigured } = require('../../../api/enrichment/lib/auth');
+const { verifyEnrichmentAuth, isAuthConfigured } = require('../../../api/enrichment/_lib/auth');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { validateVerifiedRequirements, resolveEnrichmentStatus } = require('../../../api/enrichment/lib/validation');
+const { validateVerifiedRequirements, resolveEnrichmentStatus } = require('../../../api/enrichment/_lib/validation');
 
 describe('enrichment API auth', () => {
   it('rejects requests without token', () => {

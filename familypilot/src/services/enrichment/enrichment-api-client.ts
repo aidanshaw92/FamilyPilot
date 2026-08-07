@@ -25,11 +25,18 @@ export function clearEnrichmentToken(): void {
   window.sessionStorage.removeItem(ENRICHMENT_TOKEN_KEY);
 }
 
-async function enrichmentFetch(path: string, options: RequestInit = {}) {
+async function enrichmentFetch(action: string, options: RequestInit = {}, queryParams?: Record<string, string>) {
   const token = getEnrichmentToken();
   if (!token) throw new Error('Enrichment admin token required');
 
-  const response = await fetch(`${getApiBaseUrl()}/api/enrichment/${path}`, {
+  const query = new URLSearchParams({ action });
+  if (queryParams) {
+    for (const [key, value] of Object.entries(queryParams)) {
+      query.set(key, value);
+    }
+  }
+
+  const response = await fetch(`${getApiBaseUrl()}/api/enrichment?${query.toString()}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -59,7 +66,7 @@ async function enrichmentFetch(path: string, options: RequestInit = {}) {
 
 export const enrichmentApi = {
   async getConfig() {
-    const response = await fetch(`${getApiBaseUrl()}/api/enrichment/config`);
+    const response = await fetch(`${getApiBaseUrl()}/api/enrichment?action=config`);
     return response.json() as Promise<{ authConfigured: boolean; storageMode: string }>;
   },
 
@@ -77,13 +84,13 @@ export const enrichmentApi = {
     betaLng?: number;
     betaRadiusKm?: number;
   }) {
-    const query = new URLSearchParams();
-    if (params.status) query.set('status', params.status);
-    if (params.sort) query.set('sort', params.sort);
-    if (params.betaLat != null) query.set('betaLat', String(params.betaLat));
-    if (params.betaLng != null) query.set('betaLng', String(params.betaLng));
-    if (params.betaRadiusKm != null) query.set('betaRadiusKm', String(params.betaRadiusKm));
-    return enrichmentFetch(`queue?${query.toString()}`) as Promise<{
+    const queryParams: Record<string, string> = {};
+    if (params.status) queryParams.status = params.status;
+    if (params.sort) queryParams.sort = params.sort;
+    if (params.betaLat != null) queryParams.betaLat = String(params.betaLat);
+    if (params.betaLng != null) queryParams.betaLng = String(params.betaLng);
+    if (params.betaRadiusKm != null) queryParams.betaRadiusKm = String(params.betaRadiusKm);
+    return enrichmentFetch('queue', {}, queryParams) as Promise<{
       items: import('@/src/types/enrichment').EnrichmentQueueItem[];
       count: number;
     }>;
@@ -97,17 +104,21 @@ export const enrichmentApi = {
   },
 
   async getVenue(id: string) {
-    return enrichmentFetch(`venue?id=${encodeURIComponent(id)}`) as Promise<{
+    return enrichmentFetch('venue', {}, { id }) as Promise<{
       place: Record<string, unknown> | null;
       metadata: import('@/src/types/places').VenueFamilyMetadata | null;
     }>;
   },
 
   async saveVenue(id: string, payload: import('@/src/types/enrichment').EnrichmentSavePayload) {
-    return enrichmentFetch(`venue?id=${encodeURIComponent(id)}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    }) as Promise<{ metadata: import('@/src/types/places').VenueFamilyMetadata; saved: boolean }>;
+    return enrichmentFetch(
+      'venue',
+      {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      },
+      { id },
+    ) as Promise<{ metadata: import('@/src/types/places').VenueFamilyMetadata; saved: boolean }>;
   },
 
   async exportCsv() {
