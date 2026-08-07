@@ -11,44 +11,41 @@ import { Text } from '@/src/components/ui/Text';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
+import { getMatchClassification } from '@/src/utils/family-match-classification';
 
 interface DecisionCardProps {
   venue: Venue;
   index?: number;
   variant?: 'carousel' | 'list' | 'hero';
-  onGo?: () => void;
+  onViewDetails?: () => void;
 }
 
 function DecisionCardComponent({
   venue,
   index = 0,
   variant = 'carousel',
-  onGo,
+  onViewDetails,
 }: DecisionCardProps) {
   const router = useRouter();
-  const matchPercent = venue.familyScore.score;
   const isHero = variant === 'hero';
+  const classification = getMatchClassification(venue.familyScore.score);
+  const reasons = venue.familyScore.explanation.slice(0, isHero ? 3 : 2);
+  const cautions = (venue.goodToKnow ?? []).slice(0, isHero ? 2 : 1);
 
-  const handleGo = () => {
-    if (onGo) {
-      onGo();
+  const handleViewDetails = () => {
+    if (onViewDetails) {
+      onViewDetails();
       return;
     }
     router.push(`/venue/${venue.id}` as never);
   };
 
-  const handleCardPress = () => {
-    router.push(`/venue/${venue.id}` as never);
-  };
-
-  const reasons = venue.familyScore.explanation.slice(0, isHero ? 3 : 2);
-
   return (
     <FadeInView delay={index * 60} style={variant === 'carousel' ? styles.carouselWrap : undefined}>
       <PressableScale
-        onPress={handleCardPress}
+        onPress={handleViewDetails}
         accessibilityRole="button"
-        accessibilityLabel={`${venue.name}, ${matchPercent} percent family match, ${venue.driveMinutes} minutes away`}
+        accessibilityLabel={`${venue.name}, ${classification}, ${venue.driveMinutes} minutes away`}
         style={[
           styles.card,
           variant === 'carousel' && styles.carousel,
@@ -65,7 +62,7 @@ function DecisionCardComponent({
             borderRadius={0}
           />
           <View style={styles.matchPill}>
-            <FamilyMatch score={matchPercent} variant="card" />
+            <FamilyMatch score={venue.familyScore.score} variant="card" />
           </View>
         </View>
 
@@ -74,9 +71,14 @@ function DecisionCardComponent({
             {venue.name}
           </Text>
 
+          <Text variant="bodySmall" color={colors.text.secondary} style={styles.metaLine}>
+            {venue.driveMinutes} min away
+            {venue.estimatedSpend ? ` · Estimated ${venue.estimatedSpend}` : ''}
+          </Text>
+
           {isHero ? (
-            <Text variant="caption" color={colors.text.secondary} style={styles.perfectLabel}>
-              Top reasons today
+            <Text variant="bodySmall" style={styles.sectionLabel}>
+              Why it suits your family
             </Text>
           ) : null}
 
@@ -89,48 +91,33 @@ function DecisionCardComponent({
             </View>
           ))}
 
-          <View style={styles.metaRow}>
-            <MetaChip icon="car-outline" label={`${venue.driveMinutes} min`} />
-            {venue.estimatedSpend ? (
-              <MetaChip icon="wallet-outline" label={`Est. ${venue.estimatedSpend}`} />
-            ) : null}
-            {venue.isOpen ? (
-              <MetaChip icon="time-outline" label="Usually open" highlight />
-            ) : null}
-          </View>
+          {cautions.length > 0 ? (
+            <View style={styles.cautionBlock}>
+              {isHero ? (
+                <Text variant="bodySmall" style={styles.sectionLabel}>
+                  Good to know
+                </Text>
+              ) : null}
+              {cautions.map((item) => (
+                <View key={item} style={styles.cautionRow}>
+                  <Ionicons name="alert-circle-outline" size={14} color={colors.warning[600]} />
+                  <Text variant="bodySmall" style={styles.cautionText} numberOfLines={2}>
+                    {item}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
 
           <Button
-            label="GO"
-            onPress={handleGo}
+            label="View details"
+            onPress={handleViewDetails}
             size={isHero ? 'lg' : 'md'}
-            style={styles.goButton}
+            style={styles.ctaButton}
           />
         </View>
       </PressableScale>
     </FadeInView>
-  );
-}
-
-function MetaChip({
-  icon,
-  label,
-  highlight,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  highlight?: boolean;
-}) {
-  return (
-    <View style={[styles.metaChip, highlight && styles.metaChipHighlight]}>
-      <Ionicons
-        name={icon}
-        size={12}
-        color={highlight ? colors.secondary[600] : colors.text.secondary}
-      />
-      <Text variant="caption" color={highlight ? colors.secondary[600] : colors.text.secondary}>
-        {label}
-      </Text>
-    </View>
   );
 }
 
@@ -173,8 +160,13 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
   },
-  perfectLabel: {
+  metaLine: {
     marginTop: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  sectionLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.text.primary,
     marginBottom: spacing.sm,
   },
   reasonRow: {
@@ -185,28 +177,26 @@ const styles = StyleSheet.create({
   },
   reason: {
     flex: 1,
-    color: colors.text.secondary,
+    color: colors.text.primary,
+    lineHeight: 20,
   },
-  metaRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+  cautionBlock: {
     marginTop: spacing.md,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
-  metaChip: {
+  cautionRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.sm,
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  metaChipHighlight: {
-    backgroundColor: colors.secondary[50],
+  cautionText: {
+    flex: 1,
+    color: colors.warning[600],
+    lineHeight: 20,
   },
-  goButton: {
+  ctaButton: {
     width: '100%',
+    marginTop: spacing.lg,
   },
 });

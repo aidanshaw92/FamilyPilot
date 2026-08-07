@@ -15,7 +15,7 @@ interface TodayHeroCardProps {
 export function TodayHeroCard({ venue }: TodayHeroCardProps) {
   return (
     <FadeInView style={styles.wrap}>
-      <Text variant="label" color={colors.primary[500]} style={styles.label}>
+      <Text variant="body" color={colors.primary[500]} style={styles.label}>
         Today&apos;s Pick
       </Text>
       <DecisionCard venue={venue} variant="hero" index={0} />
@@ -56,7 +56,7 @@ export function ContinuePlanningCard({
           </Text>
         </View>
         <Text variant="bodySmall" color={colors.primary[500]} style={styles.planningLink}>
-          View →
+          View plan
         </Text>
       </PressableScale>
     </FadeInView>
@@ -69,8 +69,7 @@ const styles = StyleSheet.create({
   },
   label: {
     marginBottom: spacing.md,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    fontFamily: 'Inter_600SemiBold',
   },
   planningCard: {
     flexDirection: 'row',

@@ -6,28 +6,47 @@ import { DecisionCard } from '@/src/components/shared/DecisionCard';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Chip, EmptyState, ErrorState, SectionHeader, SkeletonCard, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
-import { useNearbyVenues } from '@/src/hooks/use-queries';
+import { useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
 import { useFiltersStore } from '@/src/stores/filters-store';
-import { filterVenues, PRIMARY_FILTERS } from '@/src/utils/filter-venues';
+import { EXPLORE_CATEGORIES, filterVenues } from '@/src/utils/filter-venues';
 import { Venue } from '@/src/types';
 
 export default function ExploreScreen() {
   const { data: venues, isLoading, isError, refetch } = useNearbyVenues();
+  const { data: profile } = useFamilyProfile();
   const {
-    primaryFilter,
+    categoryFilter,
+    exploreMaxDrive,
+    exploreBudget,
     advancedFilters,
     filterSheetOpen,
-    setPrimaryFilter,
+    setCategoryFilter,
     setFilterSheetOpen,
+    resetExploreFilters,
   } = useFiltersStore();
 
   const filteredVenues = useMemo(
-    () => (venues ? filterVenues(venues, primaryFilter, advancedFilters) : []),
-    [venues, primaryFilter, advancedFilters],
+    () =>
+      venues
+        ? filterVenues(
+            venues,
+            categoryFilter,
+            advancedFilters,
+            exploreMaxDrive,
+            profile?.maxDriveMinutes ?? 30,
+            exploreBudget,
+          )
+        : [],
+    [venues, categoryFilter, advancedFilters, exploreMaxDrive, exploreBudget, profile?.maxDriveMinutes],
   );
 
-  const activeFilterLabel =
-    PRIMARY_FILTERS.find((f) => f.id === primaryFilter)?.label ?? 'Results';
+  const activeCategoryLabel =
+    EXPLORE_CATEGORIES.find((c) => c.id === categoryFilter)?.label ?? 'Places';
+
+  const activeFilterCount =
+    (exploreMaxDrive !== 'any' ? 1 : 0) +
+    (exploreBudget !== 'any' ? 1 : 0) +
+    advancedFilters.length;
 
   const renderItem = useCallback(
     ({ item, index }: { item: Venue; index: number }) => (
@@ -51,58 +70,47 @@ export default function ExploreScreen() {
       <View style={styles.header}>
         <Text variant="heading1">Explore</Text>
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
-          {filteredVenues.length} places near you
+          Curated places for your family
         </Text>
       </View>
 
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.filterScroll}
-        contentContainerStyle={styles.filterContent}
+        style={styles.categoryScroll}
+        contentContainerStyle={styles.categoryContent}
       >
-        {PRIMARY_FILTERS.map((filter) => (
+        {EXPLORE_CATEGORIES.map((category) => (
           <Chip
-            key={filter.id}
-            label={filter.label}
-            active={primaryFilter === filter.id}
-            onPress={() => setPrimaryFilter(filter.id)}
+            key={category.id}
+            label={category.label}
+            active={categoryFilter === category.id}
+            onPress={() => setCategoryFilter(category.id)}
           />
         ))}
         <Pressable
-          style={styles.moreFilters}
+          style={styles.filterButton}
           onPress={() => setFilterSheetOpen(true)}
           accessibilityRole="button"
-          accessibilityLabel="More filters"
+          accessibilityLabel="Open filters"
         >
           <Text variant="bodySmall" color={colors.primary[500]}>
-            More
+            Filter
           </Text>
-          {advancedFilters.length > 0 ? (
+          {activeFilterCount > 0 ? (
             <View style={styles.filterBadge}>
               <Text variant="caption" color={colors.text.inverse}>
-                {advancedFilters.length}
+                {activeFilterCount}
               </Text>
             </View>
           ) : null}
         </Pressable>
       </ScrollView>
 
-      <View style={styles.listToggleRow}>
-        <Text variant="caption" color={colors.text.tertiary}>
-          List view
-        </Text>
-        <View style={styles.mapToggleDisabled} accessibilityState={{ disabled: true }}>
-          <Text variant="caption" color={colors.text.tertiary}>
-            Map (coming soon)
-          </Text>
-        </View>
-      </View>
-
       <View style={styles.listHeader}>
         <SectionHeader
-          title={activeFilterLabel}
-          subtitle={`${filteredVenues.length} result${filteredVenues.length === 1 ? '' : 's'}`}
+          title={activeCategoryLabel}
+          subtitle={`${filteredVenues.length} place${filteredVenues.length === 1 ? '' : 's'} near you`}
         />
       </View>
 
@@ -115,11 +123,11 @@ export default function ExploreScreen() {
         <EmptyState
           icon="search-outline"
           title="No places found"
-          message="Try a different filter or expand your search area."
+          message="Try a different category or adjust your filters."
           actionLabel="Clear filters"
           onAction={() => {
-            setPrimaryFilter('popular');
-            useFiltersStore.getState().clearAdvancedFilters();
+            setCategoryFilter('all');
+            resetExploreFilters();
           }}
         />
       ) : (
@@ -149,15 +157,15 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop: spacing.xs,
   },
-  filterScroll: {
+  categoryScroll: {
     maxHeight: 52,
     marginTop: spacing.lg,
   },
-  filterContent: {
+  categoryContent: {
     paddingHorizontal: spacing.screenPadding,
     alignItems: 'center',
   },
-  moreFilters: {
+  filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -178,20 +186,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 4,
-  },
-  listToggleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.screenPadding,
-    marginTop: spacing.md,
-  },
-  mapToggleDisabled: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    backgroundColor: colors.borderLight,
-    opacity: 0.7,
   },
   listHeader: {
     paddingHorizontal: spacing.screenPadding,

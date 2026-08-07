@@ -1,6 +1,6 @@
 # FamilyPilot — Design Review Screenshots
 
-Automated screenshot pack captured with Playwright after the first-time user experience (FTUE) build.
+Automated screenshot pack captured with Playwright after FTUE and trust/polish passes.
 
 ## Viewports
 
@@ -30,7 +30,7 @@ Automated screenshot pack captured with Playwright after the first-time user exp
 | `15-profile.png` | Profile |
 | `16-edit-profile.png` | Edit profile |
 | `17-empty-venue-not-found.png` | Empty state — venue not found |
-| `18-empty-explore-filters.png` | Empty state — no explore results (Indoor + Parks) |
+| `18-empty-explore-filters.png` | Empty state — no explore results (Parks + Indoor filter) |
 | `19-empty-saved-search.png` | Empty state — saved search with no matches |
 
 Post-onboarding screens use a seeded demo profile: **Sarah** family with **Mia** (4) and **Leo** (1) in Bushey.

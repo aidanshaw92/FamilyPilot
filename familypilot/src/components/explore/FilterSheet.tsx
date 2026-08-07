@@ -4,7 +4,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Chip, Text } from '@/src/components/ui';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { useFiltersStore } from '@/src/stores/filters-store';
-import { ADVANCED_FILTERS } from '@/src/utils/filter-venues';
+import {
+  BUDGET_FILTER_OPTIONS,
+  DRIVE_FILTER_OPTIONS,
+  FILTER_SHEET_OPTIONS,
+} from '@/src/utils/filter-venues';
+import { useFamilyProfile } from '@/src/hooks/use-queries';
 
 interface FilterSheetProps {
   visible: boolean;
@@ -13,7 +18,18 @@ interface FilterSheetProps {
 
 export function FilterSheet({ visible, onClose }: FilterSheetProps) {
   const insets = useSafeAreaInsets();
-  const { advancedFilters, toggleAdvancedFilter, clearAdvancedFilters } = useFiltersStore();
+  const { data: profile } = useFamilyProfile();
+  const {
+    exploreMaxDrive,
+    exploreBudget,
+    advancedFilters,
+    setExploreMaxDrive,
+    setExploreBudget,
+    toggleAdvancedFilter,
+    resetExploreFilters,
+  } = useFiltersStore();
+
+  const profileDrive = profile?.maxDriveMinutes ?? 30;
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -21,17 +37,51 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
       <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.lg }]}>
         <View style={styles.handle} />
         <View style={styles.header}>
-          <Text variant="heading2">More filters</Text>
-          <Pressable onPress={clearAdvancedFilters} hitSlop={8}>
+          <Text variant="heading2">Filters</Text>
+          <Pressable onPress={resetExploreFilters} hitSlop={8}>
             <Text variant="bodySmall" color={colors.primary[500]}>
-              Clear all
+              Reset
             </Text>
           </Pressable>
         </View>
 
         <ScrollView contentContainerStyle={styles.content}>
+          <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+            Travel time from home
+          </Text>
+          <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint}>
+            Your profile default is {profileDrive} minutes — change here for this search only
+          </Text>
           <View style={styles.chipWrap}>
-            {ADVANCED_FILTERS.map((filter) => (
+            {DRIVE_FILTER_OPTIONS.map((option) => (
+              <Chip
+                key={String(option.id)}
+                label={option.label}
+                active={exploreMaxDrive === option.id}
+                onPress={() => setExploreMaxDrive(option.id)}
+              />
+            ))}
+          </View>
+
+          <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+            Budget
+          </Text>
+          <View style={styles.chipWrap}>
+            {BUDGET_FILTER_OPTIONS.map((option) => (
+              <Chip
+                key={option.id}
+                label={option.label}
+                active={exploreBudget === option.id}
+                onPress={() => setExploreBudget(option.id)}
+              />
+            ))}
+          </View>
+
+          <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+            More filters
+          </Text>
+          <View style={styles.chipWrap}>
+            {FILTER_SHEET_OPTIONS.map((filter) => (
               <Chip
                 key={filter.id}
                 label={filter.label}
@@ -42,7 +92,7 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
           </View>
         </ScrollView>
 
-        <Pressable style={styles.applyButton} onPress={onClose}>
+        <Pressable style={styles.applyButton} onPress={onClose} accessibilityRole="button">
           <Text variant="heading3" color={colors.text.inverse}>
             Show results
           </Text>
@@ -63,7 +113,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radius.xl,
     paddingHorizontal: spacing.screenPadding,
     paddingTop: spacing.md,
-    maxHeight: '70%',
+    maxHeight: '85%',
     ...shadows.bottomSheet,
   },
   handle: {
@@ -83,10 +133,19 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: spacing.lg,
   },
+  groupLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    marginBottom: spacing.sm,
+    marginTop: spacing.md,
+  },
+  groupHint: {
+    marginBottom: spacing.md,
+  },
   chipWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   applyButton: {
     backgroundColor: colors.primary[500],

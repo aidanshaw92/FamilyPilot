@@ -19,6 +19,8 @@ However, the current build reads as a **high-quality MVP**, not an App Store fea
 
 > **Remediation update (6 Aug 2026):** Phase 2 remediation on branch `cursor/phase2-remediation-1a85` addresses P0–P2 audit items. See [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md) for completed changes. Original findings below are preserved unchanged.
 
+> **Trust & polish update (7 Aug 2026):** Branch `cursor/trust-polish-pass-1ade` addresses trust, CTA clarity, Family Match presentation, Explore filters, and prototype-language removal. See [TRUST_AND_POLISH_PASS.md](./TRUST_AND_POLISH_PASS.md). Fresh screenshots: [design-review/](./design-review/).
+
 ---
 
 ## Audit Method

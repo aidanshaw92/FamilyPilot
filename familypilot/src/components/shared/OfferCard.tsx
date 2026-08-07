@@ -1,9 +1,12 @@
 import { Image } from 'expo-image';
+import * as Linking from 'expo-linking';
 import { StyleSheet, View } from 'react-native';
 
+import { Button } from '@/src/components/ui/Button';
 import { Card, FamilyMatch, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { HolidayOffer } from '@/src/types';
+import { getMatchClassification } from '@/src/utils/family-match-classification';
 
 const PROVIDER_LABELS: Record<string, string> = {
   jet2: 'Jet2holidays',
@@ -18,6 +21,12 @@ interface OfferCardProps {
 }
 
 export function OfferCard({ offer }: OfferCardProps) {
+  const classification = getMatchClassification(offer.familyScore.score);
+
+  const handleViewOption = () => {
+    void Linking.openURL('https://www.jet2holidays.com/');
+  };
+
   return (
     <Card style={[styles.offerCard, offer.recommended && styles.recommendedCard]}>
       {offer.recommended ? (
@@ -38,6 +47,9 @@ export function OfferCard({ offer }: OfferCardProps) {
           </View>
           <FamilyMatch score={offer.familyScore.score} variant="compact" />
         </View>
+        <Text variant="bodySmall" color={colors.text.secondary} style={styles.classification}>
+          {classification}
+        </Text>
         <Text variant="heading2" style={styles.price}>
           £{offer.price.toLocaleString()}
         </Text>
@@ -49,6 +61,7 @@ export function OfferCard({ offer }: OfferCardProps) {
             · {h}
           </Text>
         ))}
+        <Button label="View option" onPress={handleViewOption} style={styles.cta} />
       </View>
     </Card>
   );
@@ -90,11 +103,17 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: spacing.md,
   },
+  classification: {
+    marginTop: spacing.sm,
+  },
   price: {
     marginTop: spacing.md,
     marginBottom: spacing.xs,
   },
   highlight: {
     marginTop: spacing.xs,
+  },
+  cta: {
+    marginTop: spacing.lg,
   },
 });

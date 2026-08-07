@@ -9,18 +9,23 @@ function toVenueDetail(venue: Venue): VenueDetail {
     ...venue,
     photos: [venue.imageUrl],
     facilities: ['toilets', 'parking'],
-    openingHours: 'Estimated · Usually 8:00 AM – 6:00 PM',
+    openingHours: 'Usually 8:00 AM – 6:00 PM',
     terrain: 'mixed',
     bestAges: 'All ages',
     parkingInfo: 'Parking nearby',
-    description: `${venue.name} — prototype venue data.`,
+    description: `${venue.name} is a family-friendly place worth considering for your next outing.`,
   };
 }
 
 export function personaliseVenue(venue: Venue, profile: FamilyProfile): Venue {
   const detail = toVenueDetail(venue);
   const familyScore = calculateFamilyScore(detail, profile);
-  return { ...venue, familyScore };
+  return {
+    ...venue,
+    familyScore,
+    goodToKnow: detail.goodToKnow,
+    facilities: detail.facilities,
+  };
 }
 
 export function personaliseVenues(venues: Venue[], profile: FamilyProfile): Venue[] {

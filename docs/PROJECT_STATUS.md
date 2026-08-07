@@ -2,12 +2,13 @@
 
 **Last updated:** 7 August 2026  
 **Production URL:** https://family-pilot-seven.vercel.app/  
-**Current focus:** Parent user testing (Phase 2 remediation deployed)  
+**Current focus:** Trust & clarity polish pass — ready for parent re-testing after deploy  
 **Product constitution:** [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) — read before any code change  
 **MVP scope:** [MVP_SCOPE.md](./MVP_SCOPE.md)  
 **Future backlog:** [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md)  
 **Feature specs (planned):** [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md)  
 **Remediation & QA:** [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md)  
+**Trust polish pass:** [TRUST_AND_POLISH_PASS.md](./TRUST_AND_POLISH_PASS.md)  
 **Tester guide:** [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md)
 
 ---
@@ -39,6 +40,8 @@ FamilyPilot is a **personalised family decision engine** — one family profile 
 
 **Phase 1** established the foundation: design system, 10+ screens, mock API, Supabase schema.  
 **Phase 2 remediation** (August 2026) fixed production routing, simplified Home, unified Family Match, and prepared the app for parent testing. Production score: **7.6 / 10** (see [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md)).
+
+**Trust & polish pass** (August 2026) addresses design-audit trust gaps: human-readable Family Match, explicit CTAs, data-confidence labels, Explore filters, profile warmth, and removal of prototype language from primary UX. See [TRUST_AND_POLISH_PASS.md](./TRUST_AND_POLISH_PASS.md).
 
 **What works today:** Navigation, personalised Home, Explore, venue detail with deep links, Saved, Need Now, Trips, utility screens (packing, car fit, holidays), feedback collection, and mock-data-driven Family Match — all on web and Expo without backend credentials.
 
@@ -697,8 +700,10 @@ When unset, the app silently uses mock data.
 | Document | Purpose |
 |----------|---------|
 | [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md) | Remediation changelog + production QA |
+| [TRUST_AND_POLISH_PASS.md](./TRUST_AND_POLISH_PASS.md) | Trust, clarity & premium polish pass (Aug 2026) |
 | [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md) | Tester instructions |
 | [DESIGN_AUDIT.md](./DESIGN_AUDIT.md) | Pre-remediation design audit |
+| [design-review/](./design-review/) | Mobile screenshot pack (390×844, 430×932) |
 | [BACKLOG.md](./BACKLOG.md) | Quick reference — see FUTURE_BACKLOG for full list |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Technical architecture |
 

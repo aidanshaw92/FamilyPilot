@@ -8,6 +8,7 @@ export { Chip } from './Chip';
 export { SectionHeader } from './SectionHeader';
 export { Skeleton, SkeletonCard, SkeletonDecisionCard } from './Skeleton';
 export { EmptyState } from './EmptyState';
+export { DataTrustBadge } from './DataTrustBadge';
 export { ErrorState } from './ErrorState';
 export { PressableScale } from './PressableScale';
 export { FadeInView } from './FadeInView';

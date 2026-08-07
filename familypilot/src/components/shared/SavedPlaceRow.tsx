@@ -9,6 +9,7 @@ import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { Venue, VenueCategory } from '@/src/types';
+import { getMatchClassification } from '@/src/utils/family-match-classification';
 
 const CATEGORY_LABELS: Record<VenueCategory, string> = {
   park: 'Park',
@@ -36,12 +37,14 @@ export function SavedPlaceRow({ venue, onRemoved }: SavedPlaceRowProps) {
     onRemoved?.(venue.id);
   };
 
+  const classification = getMatchClassification(venue.familyScore.score);
+
   return (
     <PressableScale
       onPress={() => router.push(`/venue/${venue.id}` as never)}
       style={styles.row}
       accessibilityRole="button"
-      accessibilityLabel={`${venue.name}, ${venue.familyScore.score} percent family match`}
+      accessibilityLabel={`${venue.name}, ${classification}, ${venue.driveMinutes} minutes away`}
     >
       <VenueImage
         uri={venue.imageUrl}
@@ -59,9 +62,9 @@ export function SavedPlaceRow({ venue, onRemoved }: SavedPlaceRowProps) {
         </Text>
         <View style={styles.meta}>
           <FamilyMatch score={venue.familyScore.score} variant="compact" style={styles.match} />
-          <Ionicons name="car-outline" size={14} color={colors.text.secondary} />
           <Text variant="caption" color={colors.text.secondary}>
-            {venue.driveMinutes} min
+            {venue.driveMinutes} min away
+            {venue.estimatedSpend ? ` · Estimated ${venue.estimatedSpend}` : ''}
           </Text>
         </View>
       </View>
@@ -73,7 +76,7 @@ export function SavedPlaceRow({ venue, onRemoved }: SavedPlaceRowProps) {
           accessibilityLabel={`View ${venue.name}`}
         >
           <Text variant="caption" color={colors.primary[500]}>
-            View
+            View details
           </Text>
         </Pressable>
         <Pressable

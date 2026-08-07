@@ -1,20 +1,31 @@
 import { create } from 'zustand';
 
+export type ExploreBudgetFilter = 'any' | 'free' | 'under_25' | 'under_50' | 'under_100';
+
 interface FiltersState {
-  primaryFilter: string;
+  categoryFilter: string;
+  exploreMaxDrive: number | 'any';
+  exploreBudget: ExploreBudgetFilter;
   advancedFilters: string[];
   filterSheetOpen: boolean;
-  setPrimaryFilter: (id: string) => void;
+  setCategoryFilter: (id: string) => void;
+  setExploreMaxDrive: (minutes: number | 'any') => void;
+  setExploreBudget: (budget: ExploreBudgetFilter) => void;
   toggleAdvancedFilter: (id: string) => void;
   clearAdvancedFilters: () => void;
+  resetExploreFilters: () => void;
   setFilterSheetOpen: (open: boolean) => void;
 }
 
 export const useFiltersStore = create<FiltersState>((set) => ({
-  primaryFilter: 'popular',
+  categoryFilter: 'all',
+  exploreMaxDrive: 'any',
+  exploreBudget: 'any',
   advancedFilters: [],
   filterSheetOpen: false,
-  setPrimaryFilter: (id) => set({ primaryFilter: id }),
+  setCategoryFilter: (id) => set({ categoryFilter: id }),
+  setExploreMaxDrive: (minutes) => set({ exploreMaxDrive: minutes }),
+  setExploreBudget: (budget) => set({ exploreBudget: budget }),
   toggleAdvancedFilter: (id) =>
     set((state) => ({
       advancedFilters: state.advancedFilters.includes(id)
@@ -22,5 +33,12 @@ export const useFiltersStore = create<FiltersState>((set) => ({
         : [...state.advancedFilters, id],
     })),
   clearAdvancedFilters: () => set({ advancedFilters: [] }),
+  resetExploreFilters: () =>
+    set({
+      categoryFilter: 'all',
+      exploreMaxDrive: 'any',
+      exploreBudget: 'any',
+      advancedFilters: [],
+    }),
   setFilterSheetOpen: (open) => set({ filterSheetOpen: open }),
 }));

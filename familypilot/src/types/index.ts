@@ -55,6 +55,8 @@ export interface Venue {
   estimatedSpend?: string;
   isOpen?: boolean;
   address?: string;
+  goodToKnow?: string[];
+  facilities?: FacilityType[];
 }
 
 export interface CommunityTip {
@@ -74,7 +76,24 @@ export interface VenueDetail extends Venue {
   description: string;
   visitDurationMinutes?: number;
   warnings?: string[];
+  goodToKnow?: string[];
   communityTips?: CommunityTip[];
+  eatNearby?: EatNearbyOption[];
+  weatherAlternative?: WeatherAlternative;
+}
+
+export interface EatNearbyOption {
+  venueId: string;
+  name: string;
+  driveMinutes: number;
+  estimatedSpend?: string;
+  highlights: string[];
+}
+
+export interface WeatherAlternative {
+  name: string;
+  driveMinutes: number;
+  description: string;
 }
 
 export interface QuickAction {
@@ -139,10 +158,13 @@ export interface Trip {
   totalDurationHours?: number;
 }
 
+export type SavedGroup = 'want' | 'favourite' | 'been';
+
 export interface SavedItem {
   id: string;
   type: 'place' | 'restaurant' | 'hotel' | 'shop';
   venue: Venue;
+  group?: SavedGroup;
 }
 
 export interface StoreLocation {

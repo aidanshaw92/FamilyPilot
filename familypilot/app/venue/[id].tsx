@@ -14,11 +14,14 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CommunitySection } from '@/src/components/venue/CommunitySection';
+import { EatNearbySection } from '@/src/components/venue/EatNearbySection';
 import { FacilityGrid } from '@/src/components/venue/FacilityGrid';
 import { PhotoGallery } from '@/src/components/venue/PhotoGallery';
+import { WeatherAlternativeSection } from '@/src/components/venue/WeatherAlternativeSection';
 import { SaveButton } from '@/src/components/shared/SaveButton';
 import {
   Button,
+  DataTrustBadge,
   EmptyState,
   FamilyMatch,
   FamilyMatchPanel,
@@ -178,22 +181,14 @@ export default function VenueScreen() {
 
         <View style={styles.body}>
           <FadeInView>
-            <FamilyMatchPanel familyScore={venue.familyScore} />
+            <FamilyMatchPanel familyScore={venue.familyScore} venue={venue} />
+
+            <View style={styles.trustRow}>
+              <DataTrustBadge variant="venue_info" label="Venue information" />
+              <DataTrustBadge variant="updated_recently" label="Last checked 2 days ago" />
+            </View>
 
             <PhotoGallery photos={venue.photos} onPhotoPress={setHeroIndex} />
-
-            {venue.warnings && venue.warnings.length > 0 ? (
-              <View style={styles.warnings}>
-                {venue.warnings.map((warning) => (
-                  <View key={warning} style={styles.warningRow}>
-                    <Ionicons name="information-circle-outline" size={18} color={colors.warning[600]} />
-                    <Text variant="bodySmall" style={styles.warningText}>
-                      {warning}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            ) : null}
 
             <Text variant="heading3" style={styles.sectionTitle}>
               Facilities
@@ -206,6 +201,14 @@ export default function VenueScreen() {
               <DetailItem icon="time-outline" label="Opening hours" value={venue.openingHours} />
               <DetailItem icon="car-outline" label="Parking" value={venue.parkingInfo} />
             </View>
+
+            {venue.eatNearby && venue.eatNearby.length > 0 ? (
+              <EatNearbySection options={venue.eatNearby} />
+            ) : null}
+
+            {venue.weatherAlternative ? (
+              <WeatherAlternativeSection alternative={venue.weatherAlternative} />
+            ) : null}
 
             <Text variant="body" style={styles.description}>
               {venue.description}
@@ -223,7 +226,7 @@ export default function VenueScreen() {
           style={styles.footerButton}
           onPress={() => toggleSaved(venue.id)}
         />
-        <Button label="GO" style={styles.footerButton} onPress={handleDirections} />
+        <Button label="Get directions" style={styles.footerButton} onPress={handleDirections} />
       </View>
     </View>
   );
@@ -326,22 +329,12 @@ const styles = StyleSheet.create({
     padding: spacing.screenPadding,
     paddingBottom: 120,
   },
-  warnings: {
-    marginTop: spacing['2xl'],
-    backgroundColor: colors.warning[50],
-    borderRadius: radius.md,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.warning[100],
-  },
-  warningRow: {
+  trustRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  warningText: {
-    flex: 1,
-    color: colors.warning[600],
+    marginTop: spacing.lg,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
     marginTop: spacing['2xl'],

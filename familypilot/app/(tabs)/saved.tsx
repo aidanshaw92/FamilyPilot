@@ -7,7 +7,7 @@ import { Chip, EmptyState, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useSavedItems } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
-import { SavedItem } from '@/src/types';
+import { SavedGroup, SavedItem } from '@/src/types';
 
 type SortOption = 'recent' | 'closest' | 'match';
 
@@ -15,6 +15,12 @@ const SORT_OPTIONS: { id: SortOption; label: string }[] = [
   { id: 'recent', label: 'Recent' },
   { id: 'closest', label: 'Closest' },
   { id: 'match', label: 'Best match' },
+];
+
+const SAVED_GROUPS: { id: SavedGroup; label: string }[] = [
+  { id: 'want', label: 'Want to go' },
+  { id: 'favourite', label: 'Favourites' },
+  { id: 'been', label: 'Been before' },
 ];
 
 export default function SavedScreen() {
@@ -37,6 +43,21 @@ export default function SavedScreen() {
     });
   }, [savedItems, search, sort, savedIds]);
 
+  const groupedSections = useMemo(() => {
+    if (search.trim()) return null;
+    const byGroup = new Map<SavedGroup, SavedItem[]>();
+    for (const item of filteredItems) {
+      const group = item.group ?? 'want';
+      const list = byGroup.get(group) ?? [];
+      list.push(item);
+      byGroup.set(group, list);
+    }
+    return SAVED_GROUPS.filter((section) => byGroup.has(section.id)).map((section) => ({
+      ...section,
+      items: byGroup.get(section.id) ?? [],
+    }));
+  }, [filteredItems, search]);
+
   const isEmpty = !isLoading && filteredItems.length === 0;
 
   const handleUndo = () => {
@@ -46,12 +67,23 @@ export default function SavedScreen() {
     }
   };
 
+  const renderItem = (item: SavedItem) => (
+    <SavedPlaceRow
+      key={item.id}
+      venue={item.venue}
+      onRemoved={(id) => {
+        setRemovedId(id);
+        setTimeout(() => setRemovedId(null), 5000);
+      }}
+    />
+  );
+
   return (
     <ScreenContainer>
       <View style={styles.header}>
         <Text variant="heading1">Saved</Text>
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
-          Places you love
+          Places your family wants to remember
         </Text>
       </View>
 
@@ -101,17 +133,17 @@ export default function SavedScreen() {
             title="Nothing saved yet"
             message="Tap the heart on any place to save it for later."
           />
-        ) : (
-          filteredItems.map((item: SavedItem) => (
-            <SavedPlaceRow
-              key={item.id}
-              venue={item.venue}
-              onRemoved={(id) => {
-                setRemovedId(id);
-                setTimeout(() => setRemovedId(null), 5000);
-              }}
-            />
+        ) : groupedSections ? (
+          groupedSections.map((section) => (
+            <View key={section.id} style={styles.section}>
+              <Text variant="heading3" style={styles.sectionTitle}>
+                {section.label}
+              </Text>
+              {section.items.map(renderItem)}
+            </View>
           ))
+        ) : (
+          filteredItems.map(renderItem)
         )}
       </ScrollView>
     </ScreenContainer>
@@ -159,5 +191,11 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.screenPadding,
     paddingBottom: spacing['3xl'],
+  },
+  section: {
+    marginBottom: spacing.lg,
+  },
+  sectionTitle: {
+    marginBottom: spacing.md,
   },
 });
