@@ -15,12 +15,15 @@ function getEnrichmentApiUrl(): string {
 export function getEnrichmentToken(): string | null {
   if (typeof window === 'undefined') return null;
   const token = window.sessionStorage.getItem(ENRICHMENT_TOKEN_KEY);
-  return token?.trim() || null;
+  if (!token) return null;
+  const normalized = token.replace(/^\uFEFF/, '').trim().replace(/^['"]|['"]$/g, '');
+  return normalized || null;
 }
 
 export function setEnrichmentToken(token: string): void {
   if (typeof window === 'undefined') return;
-  window.sessionStorage.setItem(ENRICHMENT_TOKEN_KEY, token);
+  const normalized = token.replace(/^\uFEFF/, '').trim().replace(/^['"]|['"]$/g, '');
+  window.sessionStorage.setItem(ENRICHMENT_TOKEN_KEY, normalized);
 }
 
 export function clearEnrichmentToken(): void {

@@ -6,6 +6,7 @@ import { Text } from '@/src/components/ui';
 import { colors, spacing } from '@/src/design-system/tokens';
 import {
   enrichmentApi,
+  clearEnrichmentToken,
   getEnrichmentToken,
   setEnrichmentToken,
 } from '@/src/services/enrichment/enrichment-api-client';
@@ -25,7 +26,15 @@ export default function EnrichmentLayout() {
           setChecking(false);
           return;
         }
-        if (getEnrichmentToken()) setAuthed(true);
+        const storedToken = getEnrichmentToken();
+        if (storedToken) {
+          try {
+            await enrichmentApi.getStats();
+            setAuthed(true);
+          } catch {
+            clearEnrichmentToken();
+          }
+        }
       } catch {
         setError('Could not reach enrichment API');
       } finally {
@@ -61,12 +70,21 @@ export default function EnrichmentLayout() {
         <Pressable
           style={styles.button}
           onPress={() => {
-            if (!tokenInput.trim()) {
-              setError('Token required');
-              return;
-            }
-            setEnrichmentToken(tokenInput.trim());
-            setAuthed(true);
+            void (async () => {
+              if (!tokenInput.trim()) {
+                setError('Token required');
+                return;
+              }
+              setError('');
+              setEnrichmentToken(tokenInput);
+              try {
+                await enrichmentApi.getStats();
+                setAuthed(true);
+              } catch {
+                clearEnrichmentToken();
+                setError('Invalid enrichment admin token');
+              }
+            })();
           }}
         >
           <Text variant="body" color={colors.text.inverse}>Unlock</Text>
