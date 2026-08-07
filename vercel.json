@@ -11,7 +11,8 @@
   "functions": {
     "api/places/*.ts": {
       "memory": 1024,
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "familypilot/server/**, familypilot/src/data/**, familypilot/src/types/**, familypilot/src/services/providers/**, familypilot/src/services/places/**"
     }
   },
   "rewrites": [
