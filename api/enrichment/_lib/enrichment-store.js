@@ -148,7 +148,14 @@ async function upsertPlaceRecord(place) {
     const { error } = await supabase.from('place_records').upsert(record, {
       onConflict: 'familypilot_place_id',
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (error.message.includes('row-level security')) {
+        throw new Error(
+          'Supabase rejected the place_records write (RLS). The server is not using a service_role JWT — check Vercel SUPABASE_SERVICE_ROLE_KEY is the service_role secret, not the anon/public key.',
+        );
+      }
+      throw new Error(error.message);
+    }
     return;
   }
 

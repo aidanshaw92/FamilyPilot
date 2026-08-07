@@ -133,6 +133,32 @@ describe('enrichment API auth', () => {
   });
 });
 
+describe('supabase admin client', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const {
+    assertServiceRoleKey,
+    decodeJwtRole,
+  } = require('../../../api/enrichment/_lib/supabase-admin');
+
+  function makeJwt(role: string) {
+    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+    const payload = Buffer.from(JSON.stringify({ role, iss: 'supabase-test' })).toString('base64url');
+    return `${header}.${payload}.test-signature`;
+  }
+
+  it('detects anon keys misconfigured as service role', () => {
+    const anonKey = makeJwt('anon');
+    expect(decodeJwtRole(anonKey)).toBe('anon');
+    expect(() => assertServiceRoleKey(anonKey)).toThrow(/anon\/public key/);
+  });
+
+  it('accepts service_role JWT keys', () => {
+    const serviceKey = makeJwt('service_role');
+    expect(decodeJwtRole(serviceKey)).toBe('service_role');
+    expect(() => assertServiceRoleKey(serviceKey)).not.toThrow();
+  });
+});
+
 describe('enrichment API validation mirror', () => {
   it('rejects malformed verified payload server-side', () => {
     expect(() =>

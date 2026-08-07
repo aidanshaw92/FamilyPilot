@@ -141,3 +141,7 @@ BEGIN
     CREATE POLICY "Venue family metadata is publicly readable" ON venue_family_metadata FOR SELECT USING (true);
   END IF;
 END $$;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.place_records TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.venue_family_metadata TO service_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO service_role;
