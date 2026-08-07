@@ -24,7 +24,7 @@
 |-------|------|-------|--------|
 | **1** | Core platform | MVP | ✅ Shipped (testing build) |
 | **2** | Feedback & polish | MVP | ✅ Remediation complete; 🔄 parent testing |
-| **3** | Eat Nearby & restaurants | Post-MVP | ⬜ Planned |
+| **3** | Eat Nearby & restaurants | Post-MVP | 🔄 Beta (mock data) |
 | **4** | Accessibility | Post-MVP | ⬜ Planned |
 | **5** | SEND-friendly | Post-MVP | ⬜ Planned |
 | **6** | Meet Another Family v1 | Post-MVP | ⬜ Planned |
@@ -74,13 +74,16 @@
 
 | Feature | Label | Depends on |
 |---------|-------|------------|
-| Restaurant as first-class venue type | Post-MVP | Venue model |
-| Restaurant attributes (kids menu, high chairs, etc.) | Post-MVP | Data sourcing |
-| **Eat Nearby** on venue detail | Post-MVP | Restaurant data |
-| Eat Nearby in recommendations | Post-MVP | Restaurant data |
-| Rank by distance + Family Match + facilities | Post-MVP | Family Match v2 |
-| Estimated family spend | Post-MVP | Mock → sourced |
-| Dietary options (factual only) | Post-MVP | Profile prefs |
+| Restaurant as first-class venue type | Post-MVP | ✅ Mock layer |
+| Restaurant attributes (kids menu, high chairs, etc.) | Post-MVP | ✅ Tri-state mock |
+| **Eat Nearby** on venue detail | Post-MVP | ✅ |
+| Eat Nearby on Home (subtle hint) | Post-MVP | ✅ |
+| Rank by distance + Family Match + facilities | Post-MVP | ✅ |
+| Estimated family spend | Post-MVP | ✅ Mock |
+| Explore Restaurants category + filters | Post-MVP | ✅ |
+| Restaurant detail route | Post-MVP | ✅ |
+| Saved Places / Restaurants filter | Post-MVP | ✅ |
+| Live restaurant data / booking | Post-MVP | ⬜ |
 
 **Why first after feedback:** Improves almost every activity recommendation.
 

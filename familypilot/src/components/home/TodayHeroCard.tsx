@@ -10,9 +10,10 @@ import { Venue } from '@/src/types';
 
 interface TodayHeroCardProps {
   venue: Venue;
+  diningHint?: string;
 }
 
-export function TodayHeroCard({ venue }: TodayHeroCardProps) {
+export function TodayHeroCard({ venue, diningHint }: TodayHeroCardProps) {
   return (
     <FadeInView style={styles.wrap}>
       <View style={styles.header}>
@@ -22,6 +23,11 @@ export function TodayHeroCard({ venue }: TodayHeroCardProps) {
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
           Our best suggestion for your family right now
         </Text>
+        {diningHint ? (
+          <Text variant="bodySmall" color={colors.secondary[600]} style={styles.diningHint}>
+            {diningHint}
+          </Text>
+        ) : null}
       </View>
       <DecisionCard venue={venue} variant="hero" index={0} />
     </FadeInView>
@@ -77,6 +83,11 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   subtitle: {
+    lineHeight: 20,
+  },
+  diningHint: {
+    marginTop: spacing.xs,
+    fontFamily: 'Inter_500Medium',
     lineHeight: 20,
   },
   planningCard: {

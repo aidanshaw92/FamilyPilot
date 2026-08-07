@@ -1,3 +1,4 @@
+import { mockRestaurantDetails } from '@/src/data/mock-restaurants';
 import {
   CarFitResult,
   FamilyProfile,
@@ -119,22 +120,6 @@ export const mockVenues: Venue[] = [
     estimatedSpend: 'Free',
     isOpen: true,
   },
-  {
-    id: 'venue-5',
-    name: 'The Farmhouse Cafe',
-    category: 'restaurant',
-    latitude: 51.658,
-    longitude: -0.31,
-    driveMinutes: 13,
-    imageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80',
-    familyScore: familyScore(92, [
-      'Highchairs and kids menu available',
-      'Baby changing in the café',
-      'Near Aldenham Park',
-    ]),
-    estimatedSpend: '£30 – £45',
-    isOpen: true,
-  },
 ];
 
 export const mockVenueDetails: Record<string, VenueDetail> = Object.fromEntries(
@@ -154,17 +139,6 @@ export const mockVenueDetails: Record<string, VenueDetail> = Object.fromEntries(
       description: getDefaultDescription(venue),
       visitDurationMinutes: venue.category === 'restaurant' ? 90 : 180,
       goodToKnow: getGoodToKnow(venue),
-      eatNearby: venue.id === 'venue-1'
-        ? [
-            {
-              venueId: 'venue-5',
-              name: 'The Farmhouse Cafe',
-              driveMinutes: 3,
-              estimatedSpend: '£30 – £45',
-              highlights: ['Kids menu', 'High chairs', 'Baby changing'],
-            },
-          ]
-        : undefined,
       weatherAlternative:
         venue.category === 'park' || venue.category === 'farm'
           ? {
@@ -251,7 +225,7 @@ function getDefaultDescription(venue: Venue): string {
   }
 }
 
-export const mockRecentVenues: Venue[] = [mockVenues[0], mockVenues[4]];
+export const mockRecentVenues: Venue[] = [mockVenues[0], mockVenues[3]];
 
 export const mockRecommendations: RecommendationSection[] = [
   {
@@ -264,7 +238,7 @@ export const mockRecommendations: RecommendationSection[] = [
     id: 'rec-2',
     title: 'Weekend ideas',
     subtitle: 'Popular with families like yours',
-    venues: [mockVenues[2], mockVenues[0], mockVenues[4]],
+    venues: [mockVenues[2], mockVenues[0], mockVenues[3]],
   },
   {
     id: 'rec-3',
@@ -294,9 +268,9 @@ export const mockTrips: Trip[] = [
       {
         id: 's2',
         time: '12:30 PM',
-        title: 'The Farmhouse Cafe',
+        title: 'The Family Kitchen',
         subtitle: 'Lunch · Highchairs available',
-        imageUrl: mockVenues[4].imageUrl,
+        imageUrl: mockRestaurantDetails['restaurant-1']?.imageUrl ?? mockVenues[0].imageUrl,
         type: 'meal',
       },
       {
@@ -313,7 +287,22 @@ export const mockTrips: Trip[] = [
 
 export const mockSavedItems: SavedItem[] = [
   { id: 'saved-1', type: 'place', venue: mockVenues[0], group: 'want' },
-  { id: 'saved-2', type: 'restaurant', venue: mockVenues[4], group: 'favourite' },
+  {
+    id: 'saved-2',
+    type: 'restaurant',
+    venue: {
+      id: 'restaurant-1',
+      name: mockRestaurantDetails['restaurant-1']!.name,
+      category: 'restaurant',
+      latitude: mockRestaurantDetails['restaurant-1']!.latitude,
+      longitude: mockRestaurantDetails['restaurant-1']!.longitude,
+      driveMinutes: mockRestaurantDetails['restaurant-1']!.driveMinutes,
+      imageUrl: mockRestaurantDetails['restaurant-1']!.imageUrl,
+      familyScore: mockRestaurantDetails['restaurant-1']!.familyScore,
+      estimatedSpend: mockRestaurantDetails['restaurant-1']!.estimatedSpend,
+    },
+    group: 'favourite',
+  },
   { id: 'saved-3', type: 'place', venue: mockVenues[1], group: 'been' },
 ];
 

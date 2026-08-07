@@ -70,6 +70,10 @@ export default function RootLayout() {
             name="venue/[id]"
             options={{ animation: 'slide_from_bottom' }}
           />
+          <Stack.Screen
+            name="restaurant/[id]"
+            options={{ animation: 'slide_from_bottom' }}
+          />
           <Stack.Screen name="need-now" />
           <Stack.Screen name="holiday" />
           <Stack.Screen name="packing" />

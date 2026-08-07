@@ -2,7 +2,7 @@
 
 **Last updated:** 7 August 2026  
 **Production URL:** https://family-pilot-seven.vercel.app/  
-**Current focus:** Trust & clarity polish pass — ready for parent re-testing after deploy  
+**Current focus:** Eat Nearby beta — restaurants + contextual dining recommendations  
 **Product constitution:** [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) — read before any code change  
 **MVP scope:** [MVP_SCOPE.md](./MVP_SCOPE.md)  
 **Future backlog:** [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md)  
@@ -10,6 +10,7 @@
 **Remediation & QA:** [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md)  
 **Trust polish pass:** [TRUST_AND_POLISH_PASS.md](./TRUST_AND_POLISH_PASS.md)  
 **Final beta polish:** [FINAL_BETA_POLISH.md](./FINAL_BETA_POLISH.md)  
+**Eat Nearby:** [EAT_NEARBY.md](./EAT_NEARBY.md)  
 **Tester guide:** [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md)
 
 ---
@@ -46,7 +47,7 @@ FamilyPilot is a **personalised family decision engine** — one family profile 
 
 **What works today:** Navigation, personalised Home, Explore, venue detail with deep links, Saved, Need Now, Trips, utility screens (packing, car fit, holidays), feedback collection, and mock-data-driven Family Match — all on web and Expo without backend credentials.
 
-**What does not work yet:** Real auth, live maps, external APIs, AI concierge, and all **Post-MVP** features (Plan Your Day, Meet Another Family, Eat Nearby, accessibility/SEND depth, connected families). See [MVP_SCOPE.md](./MVP_SCOPE.md) and [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md).
+**What does not work yet:** Real auth, live maps, external APIs, AI concierge, Plan Your Day, Meet Another Family, and live restaurant data. See [MVP_SCOPE.md](./MVP_SCOPE.md) and [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md).
 
 **Current priority:** Collect structured feedback from 5–10 parents before building Post-MVP features. Every future decision is governed by [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) and [DECISION_PRINCIPLES.md](./DECISION_PRINCIPLES.md).
 

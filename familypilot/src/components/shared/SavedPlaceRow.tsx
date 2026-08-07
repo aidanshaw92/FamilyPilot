@@ -25,12 +25,17 @@ const CATEGORY_LABELS: Record<VenueCategory, string> = {
 
 interface SavedPlaceRowProps {
   venue: Venue;
+  itemType?: 'place' | 'restaurant' | 'hotel' | 'shop';
   onRemoved?: (venueId: string) => void;
 }
 
-export function SavedPlaceRow({ venue, onRemoved }: SavedPlaceRowProps) {
+export function SavedPlaceRow({ venue, itemType, onRemoved }: SavedPlaceRowProps) {
   const router = useRouter();
   const { toggleSaved } = useSavedStore();
+
+  const isRestaurant =
+    itemType === 'restaurant' || venue.category === 'restaurant' || venue.category === 'cafe';
+  const detailPath = isRestaurant ? `/restaurant/${venue.id}` : `/venue/${venue.id}`;
 
   const handleRemove = () => {
     toggleSaved(venue.id);
@@ -38,10 +43,11 @@ export function SavedPlaceRow({ venue, onRemoved }: SavedPlaceRowProps) {
   };
 
   const classification = getMatchClassification(venue.familyScore.score);
+  const categoryLabel = isRestaurant ? 'Restaurant' : CATEGORY_LABELS[venue.category];
 
   return (
     <PressableScale
-      onPress={() => router.push(`/venue/${venue.id}` as never)}
+      onPress={() => router.push(detailPath as never)}
       style={styles.row}
       accessibilityRole="button"
       accessibilityLabel={`${venue.name}, ${classification}, ${venue.driveMinutes} minutes away`}
@@ -58,7 +64,7 @@ export function SavedPlaceRow({ venue, onRemoved }: SavedPlaceRowProps) {
           {venue.name}
         </Text>
         <Text variant="caption" color={colors.text.secondary}>
-          {CATEGORY_LABELS[venue.category]}
+          {categoryLabel}
         </Text>
         <View style={styles.meta}>
           <FamilyMatch score={venue.familyScore.score} variant="compact" style={styles.match} />
@@ -70,7 +76,7 @@ export function SavedPlaceRow({ venue, onRemoved }: SavedPlaceRowProps) {
       </View>
       <View style={styles.actions}>
         <Pressable
-          onPress={() => router.push(`/venue/${venue.id}` as never)}
+          onPress={() => router.push(detailPath as never)}
           style={styles.actionButton}
           accessibilityRole="button"
           accessibilityLabel={`View ${venue.name}`}

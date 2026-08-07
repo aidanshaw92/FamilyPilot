@@ -7,12 +7,14 @@ import {
   inventoryService,
   packingService,
   recommendationService,
+  restaurantService,
   savedService,
   tripService,
   venueService,
   weatherService,
 } from '@/src/services/api';
 import { useFamilyStore } from '@/src/stores/family-store';
+import { useFiltersStore } from '@/src/stores/filters-store';
 import { FamilyProfile } from '@/src/types';
 
 export function useProfileRevision() {
@@ -35,6 +37,8 @@ export function useUpdateFamilyProfile() {
       void queryClient.invalidateQueries({ queryKey: ['family'] });
       void queryClient.invalidateQueries({ queryKey: ['recommendations'] });
       void queryClient.invalidateQueries({ queryKey: ['venues'] });
+      void queryClient.invalidateQueries({ queryKey: ['restaurants'] });
+      void queryClient.invalidateQueries({ queryKey: ['eat-nearby'] });
       void queryClient.invalidateQueries({ queryKey: ['saved'] });
       void queryClient.invalidateQueries({ queryKey: ['car-fit'] });
     },
@@ -122,5 +126,46 @@ export function useHolidayOffers() {
   return useQuery({
     queryKey: ['holidays'],
     queryFn: holidayService.getOffers,
+  });
+}
+
+export function useRestaurants() {
+  const profileRevision = useProfileRevision();
+  const { categoryFilter, exploreMaxDrive, exploreBudget, advancedFilters } =
+    useFiltersStore();
+  const isRestaurantCategory = categoryFilter === 'restaurants';
+
+  return useQuery({
+    queryKey: [
+      'restaurants',
+      profileRevision,
+      categoryFilter,
+      exploreMaxDrive,
+      exploreBudget,
+      advancedFilters,
+    ],
+    queryFn: () =>
+      isRestaurantCategory
+        ? restaurantService.getFiltered(advancedFilters, exploreMaxDrive, exploreBudget)
+        : restaurantService.getAll(),
+    enabled: isRestaurantCategory,
+  });
+}
+
+export function useRestaurant(id: string, activityVenueId?: string) {
+  const profileRevision = useProfileRevision();
+  return useQuery({
+    queryKey: ['restaurants', id, activityVenueId, profileRevision],
+    queryFn: () => restaurantService.getById(id, activityVenueId),
+    enabled: Boolean(id),
+  });
+}
+
+export function useEatNearby(activityVenueId: string | undefined) {
+  const profileRevision = useProfileRevision();
+  return useQuery({
+    queryKey: ['eat-nearby', activityVenueId, profileRevision],
+    queryFn: () => restaurantService.getEatNearby(activityVenueId!),
+    enabled: Boolean(activityVenueId),
   });
 }

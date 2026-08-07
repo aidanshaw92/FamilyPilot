@@ -9,6 +9,7 @@ import { EmptyState, ErrorState, SectionHeader, SkeletonDecisionCard } from '@/s
 import { spacing } from '@/src/design-system/tokens';
 import { mockVenues } from '@/src/data/mock-data';
 import {
+  useEatNearby,
   useFamilyProfile,
   useHomeRecommendations,
   useTrips,
@@ -34,7 +35,13 @@ export default function HomeScreen() {
 
   const parentName = profile?.parentName ?? 'there';
   const todayPick = recommendations?.[0]?.venues[0] ?? mockVenues[0];
+  const { data: eatNearby } = useEatNearby(todayPick?.id);
   const activeTrip = trips?.[0];
+
+  const diningHint =
+    eatNearby?.[0] && eatNearby[0].familyScore.score >= 75
+      ? `Great family lunch ${eatNearby[0].driveMinutes} mins away`
+      : undefined;
 
   const moreIdeasVenues = (recommendations ?? [])
     .flatMap((section) => section.venues)
@@ -85,7 +92,7 @@ export default function HomeScreen() {
             <SkeletonDecisionCard />
           </View>
         ) : (
-          <TodayHeroCard venue={todayPick} />
+          <TodayHeroCard venue={todayPick} diningHint={diningHint} />
         )}
 
         <View style={styles.section}>
