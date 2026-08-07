@@ -9,6 +9,12 @@ import {
 /** External data provider — never expose API keys for these on the client. */
 export type PlacesProviderName = 'mock' | 'google' | 'osm' | 'familypilot';
 
+/** How much FamilyPilot-specific family metadata exists for a venue. */
+export type EnrichmentStatus = 'provider_only' | 'enriched' | 'verified';
+
+/** Search intent — general family Explore vs restaurant-specific queries. */
+export type PlaceSearchIntent = 'explore' | 'restaurant';
+
 export type FieldReliability = 'provider' | 'cached' | 'estimated' | 'community' | 'familypilot';
 
 export interface FieldProvenance {
@@ -49,6 +55,10 @@ export interface ExternalPlaceRecord {
   isOpen?: boolean;
   provenance: Partial<Record<ExternalPlaceField, FieldProvenance>>;
   fetchedAt: string;
+  /** Family metadata layer status — live Google results default to provider_only. */
+  enrichmentStatus?: EnrichmentStatus;
+  /** Google primaryType preserved for filtering and audit. */
+  googlePrimaryType?: string;
 }
 
 export type ExternalPlaceField =
@@ -109,6 +119,8 @@ export interface PlaceSearchParams {
   longitude: number;
   radiusKm: number;
   categories?: VenueCategory[];
+  /** Default explore — family activities without generic restaurants/cafés. */
+  intent?: PlaceSearchIntent;
 }
 
 export interface PlacesSearchResult {

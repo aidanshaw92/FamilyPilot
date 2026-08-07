@@ -1,9 +1,18 @@
 import {
   ExternalPlaceRecord,
   FieldProvenance,
+  PlaceSearchIntent,
   StructuredOpeningHours,
 } from '../../src/types/places';
 import { VenueCategory } from '../../src/types';
+
+import {
+  dedupeChains,
+  googleTypesForIntent,
+  isSupportedForIntent,
+  mapGoogleCategory,
+  rankPlaces,
+} from './places-quality';
 
 /** Minimal field masks — Essentials + Pro for search; add contact/hours on detail only. */
 export const GOOGLE_SEARCH_FIELD_MASK = [
@@ -30,18 +39,10 @@ export const GOOGLE_DETAIL_FIELD_MASK = [
   'businessStatus',
 ].join(',');
 
-const CATEGORY_TO_GOOGLE_TYPES: Partial<Record<VenueCategory, string[]>> = {
-  park: ['park', 'playground'],
-  museum: ['museum'],
-  farm: ['zoo'],
-  restaurant: ['restaurant'],
-  cafe: ['cafe', 'coffee_shop'],
-  beach: ['beach'],
-  hotel: ['lodging'],
-  shop: ['supermarket'],
-};
-
-const DEFAULT_SEARCH_TYPES = ['park', 'museum', 'restaurant', 'cafe', 'zoo'];
+/** Google Nearby rankPreference — popularity yields a quality candidate set; FamilyPilot re-ranks. */
+export const GOOGLE_SEARCH_RANK_PREFERENCE = 'POPULARITY' as const;
+export const EXPLORE_MAX_CANDIDATES = 20;
+export const RESULT_LIMIT = 20;
 
 function nowProvenance(): FieldProvenance {
   return {
@@ -52,31 +53,34 @@ function nowProvenance(): FieldProvenance {
   };
 }
 
-export function googleTypesForCategories(categories?: VenueCategory[]): string[] {
-  if (!categories?.length) return DEFAULT_SEARCH_TYPES;
-  const types = new Set<string>();
-  for (const category of categories) {
-    for (const type of CATEGORY_TO_GOOGLE_TYPES[category] ?? []) {
-      types.add(type);
-    }
+export function googleTypesForCategories(
+  categories?: VenueCategory[],
+  intent: PlaceSearchIntent = 'explore',
+): string[] {
+  if (intent === 'restaurant') return googleTypesForIntent('restaurant');
+  if (categories?.length) {
+    const fromCategories = categories.flatMap((category) => {
+      switch (category) {
+        case 'park':
+          return ['park', 'playground', 'national_park'];
+        case 'museum':
+          return ['museum', 'art_gallery', 'childrens_museum'];
+        case 'farm':
+          return ['zoo'];
+        case 'soft_play':
+          return ['amusement_park', 'bowling_alley'];
+        case 'beach':
+          return ['beach'];
+        default:
+          return [];
+      }
+    });
+    if (fromCategories.length > 0) return [...new Set(fromCategories)];
   }
-  return types.size > 0 ? [...types] : DEFAULT_SEARCH_TYPES;
+  return googleTypesForIntent('explore');
 }
 
-export function mapGoogleCategory(primaryType?: string, types: string[] = []): VenueCategory {
-  const candidates = [primaryType, ...types].filter(Boolean) as string[];
-  for (const type of candidates) {
-    if (type === 'restaurant' || type.endsWith('_restaurant')) return 'restaurant';
-    if (type === 'cafe' || type === 'coffee_shop') return 'cafe';
-    if (type === 'museum' || type === 'art_gallery') return 'museum';
-    if (type === 'zoo') return 'farm';
-    if (type === 'park' || type === 'playground' || type === 'national_park') return 'park';
-    if (type === 'beach') return 'beach';
-    if (type === 'lodging' || type === 'hotel') return 'hotel';
-    if (type === 'supermarket' || type === 'grocery_store') return 'shop';
-  }
-  return 'park';
-}
+export { mapGoogleCategory };
 
 function mapOpeningHours(
   regularOpeningHours?: GoogleRegularOpeningHours,
@@ -113,14 +117,27 @@ interface GoogleRegularOpeningHours {
   weekdayDescriptions?: string[];
 }
 
-export function googlePlaceToRecord(place: GooglePlacePayload): ExternalPlaceRecord | null {
+export function googlePlaceToRecord(
+  place: GooglePlacePayload,
+  intent: PlaceSearchIntent = 'explore',
+  options?: { skipIntentFilter?: boolean },
+): ExternalPlaceRecord | null {
   const placeId = place.id;
   const name = place.displayName?.text;
   const latitude = place.location?.latitude;
   const longitude = place.location?.longitude;
   if (!placeId || !name || latitude == null || longitude == null) return null;
 
-  const category = mapGoogleCategory(place.primaryType, place.types ?? []);
+  const primaryType = place.primaryType;
+  const types = place.types ?? [];
+
+  if (!options?.skipIntentFilter && !isSupportedForIntent(primaryType, types, intent)) {
+    return null;
+  }
+
+  const category = mapGoogleCategory(primaryType, types);
+  if (!category) return null;
+
   const prov = nowProvenance();
   const openingHours = mapOpeningHours(place.regularOpeningHours);
   const description = place.editorialSummary?.text;
@@ -152,7 +169,24 @@ export function googlePlaceToRecord(place: GooglePlacePayload): ExternalPlaceRec
       isOpen: place.businessStatus ? prov : undefined,
     },
     fetchedAt: new Date().toISOString(),
+    enrichmentStatus: 'provider_only',
+    googlePrimaryType: primaryType,
   };
+}
+
+export function processGoogleSearchResults(
+  records: ExternalPlaceRecord[],
+  originLat: number,
+  originLng: number,
+  intent: PlaceSearchIntent,
+): ExternalPlaceRecord[] {
+  const deduped = dedupeChains(records, originLat, originLng, intent);
+  return rankPlaces(deduped, {
+    originLat,
+    originLng,
+    intent,
+    maxResults: RESULT_LIMIT,
+  });
 }
 
 export function parseGoogleExternalId(externalId: string): string | null {

@@ -39,14 +39,14 @@ const SEARCH_CHAIN = {
   mock: [{ name: 'mock', search: async () => MOCK_FALLBACK }],
 };
 
-async function searchWithFallback(lat, lng, radiusKm, configuredProvider) {
+async function searchWithFallback(lat, lng, radiusKm, configuredProvider, options = {}) {
   const chain = SEARCH_CHAIN[configuredProvider] || SEARCH_CHAIN.mock;
   const errors = [];
 
   for (let i = 0; i < chain.length; i += 1) {
     const step = chain[i];
     try {
-      const places = await step.search(lat, lng, radiusKm);
+      const places = await step.search(lat, lng, radiusKm, options);
       return {
         places,
         provider: step.name,

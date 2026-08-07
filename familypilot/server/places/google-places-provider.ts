@@ -4,13 +4,17 @@ import { distanceKm } from '../../src/services/places/geo-utils';
 
 import { GooglePlacesError, mapHttpStatusToError } from './google-places-errors';
 import {
+  EXPLORE_MAX_CANDIDATES,
   GOOGLE_DETAIL_FIELD_MASK,
   GOOGLE_SEARCH_FIELD_MASK,
+  GOOGLE_SEARCH_RANK_PREFERENCE,
   googlePlaceToRecord,
   googleTypesForCategories,
   GooglePlacePayload,
   parseGoogleExternalId,
   parseGoogleFamilypilotId,
+  processGoogleSearchResults,
+  RESULT_LIMIT,
 } from './google-places-mapper';
 
 const PLACES_BASE_URL = 'https://places.googleapis.com/v1';
@@ -31,15 +35,17 @@ export class GooglePlacesProvider implements PlacesProvider {
   }
 
   async searchNearby(params: PlaceSearchParams): Promise<ExternalPlaceRecord[]> {
+    const intent = params.intent ?? (this.isRestaurantSearch(params) ? 'restaurant' : 'explore');
     const radiusM = Math.min(Math.max(Math.round(params.radiusKm * 1000), 500), 50000);
-    const includedTypes = googleTypesForCategories(params.categories);
+    const includedTypes = googleTypesForCategories(params.categories, intent);
 
     const response = await this.request(`${PLACES_BASE_URL}/places:searchNearby`, {
       method: 'POST',
       fieldMask: GOOGLE_SEARCH_FIELD_MASK,
       body: {
-        includedTypes,
-        maxResultCount: 20,
+        includedPrimaryTypes: includedTypes,
+        maxResultCount: intent === 'explore' ? EXPLORE_MAX_CANDIDATES : RESULT_LIMIT,
+        rankPreference: GOOGLE_SEARCH_RANK_PREFERENCE,
         locationRestriction: {
           circle: {
             center: { latitude: params.latitude, longitude: params.longitude },
@@ -52,8 +58,8 @@ export class GooglePlacesProvider implements PlacesProvider {
     const data = (await response.json()) as { places?: GooglePlacePayload[] };
     const seen = new Set<string>();
 
-    return (data.places ?? [])
-      .map(googlePlaceToRecord)
+    const mapped = (data.places ?? [])
+      .map((place) => googlePlaceToRecord(place, intent))
       .filter((record): record is ExternalPlaceRecord => record !== null)
       .filter((record) => {
         if (seen.has(record.externalId)) return false;
@@ -63,6 +69,13 @@ export class GooglePlacesProvider implements PlacesProvider {
         if (params.categories?.length && !params.categories.includes(record.category)) return false;
         return true;
       });
+
+    return processGoogleSearchResults(
+      mapped,
+      params.latitude,
+      params.longitude,
+      intent,
+    );
   }
 
   async getPlace(familypilotId: string): Promise<ExternalPlaceRecord | null> {
@@ -81,13 +94,22 @@ export class GooglePlacesProvider implements PlacesProvider {
         fieldMask: GOOGLE_DETAIL_FIELD_MASK,
       });
       const place = (await response.json()) as GooglePlacePayload;
-      return googlePlaceToRecord(place);
+      return (
+        googlePlaceToRecord(place, 'explore', { skipIntentFilter: true }) ??
+        googlePlaceToRecord(place, 'restaurant', { skipIntentFilter: true })
+      );
     } catch (error) {
       if (error instanceof GooglePlacesError && error.code === 'NOT_FOUND') {
         return null;
       }
       throw error;
     }
+  }
+
+  private isRestaurantSearch(params: PlaceSearchParams): boolean {
+    if (params.intent === 'restaurant') return true;
+    if (!params.categories?.length) return false;
+    return params.categories.every((c) => c === 'restaurant' || c === 'cafe');
   }
 
   private async request(

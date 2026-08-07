@@ -33,6 +33,7 @@ import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { isActivityVenue } from '@/src/data/mock-restaurants';
 import { useVenue } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
+import { getProviderOnlyDetailTrustCopy, formatTerrainLabel } from '@/src/utils/family-match-classification';
 import { generateVenueStaticParams } from '@/src/utils/venue-routes';
 
 const HERO_HEIGHT = 380;
@@ -179,6 +180,12 @@ export default function VenueScreen() {
           <FadeInView>
             <FamilyMatchPanel familyScore={venue.familyScore} venue={venue} />
 
+            {venue.enrichmentStatus === 'provider_only' ? (
+              <Text variant="caption" color={colors.text.secondary} style={styles.providerOnlyBanner}>
+                {getProviderOnlyDetailTrustCopy()}
+              </Text>
+            ) : null}
+
             <PhotoGallery photos={venue.photos} onPhotoPress={setHeroIndex} />
 
             <Text variant="heading3" style={styles.sectionTitle}>
@@ -187,10 +194,22 @@ export default function VenueScreen() {
             <FacilityGrid facilities={venue.facilities} />
 
             <View style={styles.detailsGrid}>
-              <DetailItem icon="people-outline" label="Best for ages" value={venue.bestAges} />
-              <DetailItem icon="trail-sign-outline" label="Terrain" value={venue.terrain} />
+              <DetailItem
+                icon="people-outline"
+                label="Best for ages"
+                value={venue.bestAges ?? 'Not yet reviewed'}
+              />
+              <DetailItem
+                icon="trail-sign-outline"
+                label="Terrain"
+                value={venue.terrain ? formatTerrainLabel(venue.terrain) : 'Not yet reviewed'}
+              />
               <DetailItem icon="time-outline" label="Opening hours" value={venue.openingHours} />
-              <DetailItem icon="car-outline" label="Parking" value={venue.parkingInfo} />
+              <DetailItem
+                icon="car-outline"
+                label="Parking"
+                value={venue.parkingInfo ?? 'Not yet reviewed'}
+              />
             </View>
 
             {isActivityVenue(venue) ? (
@@ -316,6 +335,10 @@ const styles = StyleSheet.create({
   body: {
     padding: spacing.screenPadding,
     paddingBottom: 120,
+  },
+  providerOnlyBanner: {
+    marginBottom: spacing.md,
+    fontStyle: 'italic',
   },
   sectionTitle: {
     marginTop: spacing['2xl'],

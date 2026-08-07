@@ -16,7 +16,7 @@ interface VenueCardProps {
 export function VenueCard({ venue, variant = 'carousel' }: VenueCardProps) {
   const router = useRouter();
   const isCarousel = variant === 'carousel';
-  const classification = getMatchClassification(venue.familyScore.score);
+  const classification = getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
 
   const handlePress = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -36,7 +36,11 @@ export function VenueCard({ venue, variant = 'carousel' }: VenueCardProps) {
     >
       <Image source={{ uri: venue.imageUrl }} style={styles.image} contentFit="cover" />
       <View style={styles.scoreOverlay}>
-        <FamilyMatch score={venue.familyScore.score} variant="card" />
+        <FamilyMatch
+          score={venue.familyScore.score}
+          variant="card"
+          enrichmentStatus={venue.enrichmentStatus}
+        />
       </View>
       <View style={styles.content}>
         <Text variant="heading3" numberOfLines={1}>

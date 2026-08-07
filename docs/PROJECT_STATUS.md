@@ -12,6 +12,7 @@
 **Final beta polish:** [FINAL_BETA_POLISH.md](./FINAL_BETA_POLISH.md)  
 **Eat Nearby:** [EAT_NEARBY.md](./EAT_NEARBY.md)  
 **Places data architecture:** [PLACES_DATA_ARCHITECTURE.md](./PLACES_DATA_ARCHITECTURE.md) · [DATA_PROVENANCE.md](./DATA_PROVENANCE.md)  
+**Google quality pass:** [LIVE_GOOGLE_QUALITY_PASS.md](./LIVE_GOOGLE_QUALITY_PASS.md)  
 **Tester guide:** [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md)
 
 ---

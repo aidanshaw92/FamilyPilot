@@ -1,0 +1,397 @@
+{
+  "auditedAt": "2026-08-07T14:10:06.139Z",
+  "results": [
+    {
+      "location": "Bushey",
+      "legacyCount": 20,
+      "legacyIrrelevant": 14,
+      "newCount": 15,
+      "newIrrelevant": 0,
+      "reductionPercent": 100,
+      "filteredSample": [
+        {
+          "name": "Harry Potter Studio",
+          "category": "park",
+          "googlePrimaryType": "tourist_attraction",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Warner Bros. Studio Tour London",
+          "category": "park",
+          "googlePrimaryType": "tourist_attraction",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Jump In by AirHop Adventure & Trampoline Park Elstree",
+          "category": "park",
+          "googlePrimaryType": "park",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Rickmansworth Aquadrome",
+          "category": "park",
+          "googlePrimaryType": "park",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Headstone Manor and Museum",
+          "category": "museum",
+          "googlePrimaryType": "museum",
+          "enrichmentStatus": "provider_only"
+        }
+      ],
+      "excludedLegacySample": [
+        {
+          "name": "Asda Watford Supercentre",
+          "primaryType": "supermarket",
+          "legacyCategory": "shop"
+        },
+        {
+          "name": "Vue Cinema Watford",
+          "primaryType": "movie_theater",
+          "legacyCategory": "park"
+        },
+        {
+          "name": "Leonardo Hotel London Watford",
+          "primaryType": "hotel",
+          "legacyCategory": "hotel"
+        },
+        {
+          "name": "Premier Inn London Edgware hotel",
+          "primaryType": "hotel",
+          "legacyCategory": "hotel"
+        },
+        {
+          "name": "JRC Global Buffet",
+          "primaryType": "buffet_restaurant",
+          "legacyCategory": "restaurant"
+        }
+      ]
+    },
+    {
+      "location": "Edinburgh",
+      "legacyCount": 20,
+      "legacyIrrelevant": 9,
+      "newCount": 17,
+      "newIrrelevant": 0,
+      "reductionPercent": 100,
+      "filteredSample": [
+        {
+          "name": "Royal Mile",
+          "category": "park",
+          "googlePrimaryType": "tourist_attraction",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Edinburgh Playhouse",
+          "category": "park",
+          "googlePrimaryType": "performing_arts_theater",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Festival Theatre",
+          "category": "park",
+          "googlePrimaryType": "performing_arts_theater",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Pleasance Courtyard",
+          "category": "park",
+          "googlePrimaryType": "performing_arts_theater",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "The Vennel Viewpoint Edinburgh Castle",
+          "category": "park",
+          "googlePrimaryType": "tourist_attraction",
+          "enrichmentStatus": "provider_only"
+        }
+      ],
+      "excludedLegacySample": [
+        {
+          "name": "Makars Mash Bar",
+          "primaryType": "british_restaurant",
+          "legacyCategory": "restaurant"
+        },
+        {
+          "name": "Dishoom Edinburgh",
+          "primaryType": "indian_restaurant",
+          "legacyCategory": "restaurant"
+        },
+        {
+          "name": "Cameron Toll Shopping Centre",
+          "primaryType": "shopping_mall",
+          "legacyCategory": "park"
+        },
+        {
+          "name": "Marks & Spencer",
+          "primaryType": "department_store",
+          "legacyCategory": "park"
+        },
+        {
+          "name": "Leonardo Hotel Edinburgh Haymarket",
+          "primaryType": "hotel",
+          "legacyCategory": "hotel"
+        }
+      ]
+    },
+    {
+      "location": "Manchester",
+      "legacyCount": 20,
+      "legacyIrrelevant": 8,
+      "newCount": 18,
+      "newIrrelevant": 0,
+      "reductionPercent": 100,
+      "filteredSample": [
+        {
+          "name": "Piccadilly Gardens",
+          "category": "park",
+          "googlePrimaryType": "city_park",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Palace Theatre Manchester",
+          "category": "park",
+          "googlePrimaryType": "performing_arts_theater",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Opera House Manchester",
+          "category": "park",
+          "googlePrimaryType": "opera_house",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Manchester Art Gallery",
+          "category": "museum",
+          "googlePrimaryType": "art_gallery",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Manchester Central Library",
+          "category": "museum",
+          "googlePrimaryType": "library",
+          "enrichmentStatus": "provider_only"
+        }
+      ],
+      "excludedLegacySample": [
+        {
+          "name": "Manchester Arndale Shopping Centre",
+          "primaryType": "shopping_mall",
+          "legacyCategory": "park"
+        },
+        {
+          "name": "Dishoom Manchester",
+          "primaryType": "indian_restaurant",
+          "legacyCategory": "restaurant"
+        },
+        {
+          "name": "Royal Nawaab Pyramid",
+          "primaryType": "pakistani_restaurant",
+          "legacyCategory": "restaurant"
+        },
+        {
+          "name": "Marks & Spencer",
+          "primaryType": "department_store",
+          "legacyCategory": "park"
+        },
+        {
+          "name": "Albert's Schloss - Manchester",
+          "primaryType": "bar",
+          "legacyCategory": "park"
+        }
+      ]
+    },
+    {
+      "location": "Bristol",
+      "legacyCount": 20,
+      "legacyIrrelevant": 9,
+      "newCount": 14,
+      "newIrrelevant": 0,
+      "reductionPercent": 100,
+      "filteredSample": [
+        {
+          "name": "Castle Park",
+          "category": "park",
+          "googlePrimaryType": "city_park",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Queen Square",
+          "category": "park",
+          "googlePrimaryType": "park",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Bristol Hippodrome",
+          "category": "park",
+          "googlePrimaryType": "performing_arts_theater",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Wills Memorial Building",
+          "category": "park",
+          "googlePrimaryType": "tourist_attraction",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Wake The Tiger",
+          "category": "park",
+          "googlePrimaryType": "tourist_attraction",
+          "enrichmentStatus": "provider_only"
+        }
+      ],
+      "excludedLegacySample": [
+        {
+          "name": "Za Za Bazaar",
+          "primaryType": "buffet_restaurant",
+          "legacyCategory": "restaurant"
+        },
+        {
+          "name": "Bristol Grand Hotel By Sunday",
+          "primaryType": "hotel",
+          "legacyCategory": "hotel"
+        },
+        {
+          "name": "Marks & Spencer",
+          "primaryType": "department_store",
+          "legacyCategory": "park"
+        },
+        {
+          "name": "Asda Longwell Green Supercentre",
+          "primaryType": "supermarket",
+          "legacyCategory": "shop"
+        },
+        {
+          "name": "Village Hotel Bristol",
+          "primaryType": "hotel",
+          "legacyCategory": "hotel"
+        }
+      ]
+    },
+    {
+      "location": "Cardiff",
+      "legacyCount": 20,
+      "legacyIrrelevant": 11,
+      "newCount": 16,
+      "newIrrelevant": 0,
+      "reductionPercent": 100,
+      "filteredSample": [
+        {
+          "name": "New Theatre",
+          "category": "park",
+          "googlePrimaryType": "performing_arts_theater",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Cardiff Winter Wonderland",
+          "category": "park",
+          "googlePrimaryType": "tourist_attraction",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Bute Park",
+          "category": "park",
+          "googlePrimaryType": "city_park",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Sophia Gardens",
+          "category": "park",
+          "googlePrimaryType": "park",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "Museum of Cardiff",
+          "category": "museum",
+          "googlePrimaryType": "museum",
+          "enrichmentStatus": "provider_only"
+        }
+      ],
+      "excludedLegacySample": [
+        {
+          "name": "Village Hotel Cardiff",
+          "primaryType": "hotel",
+          "legacyCategory": "hotel"
+        },
+        {
+          "name": "Premier Inn Cardiff City Centre (Queen Street) hotel",
+          "primaryType": "hotel",
+          "legacyCategory": "hotel"
+        },
+        {
+          "name": "Holland House Hotel Cardiff By Sunday",
+          "primaryType": "hotel",
+          "legacyCategory": "hotel"
+        },
+        {
+          "name": "Asda Cardiff Coryton Supercentre",
+          "primaryType": "supermarket",
+          "legacyCategory": "shop"
+        },
+        {
+          "name": "Future Inn Cardiff Bay",
+          "primaryType": "hotel",
+          "legacyCategory": "hotel"
+        }
+      ]
+    },
+    {
+      "location": "Central London",
+      "legacyCount": 20,
+      "legacyIrrelevant": 3,
+      "newCount": 17,
+      "newIrrelevant": 0,
+      "reductionPercent": 100,
+      "filteredSample": [
+        {
+          "name": "The National Gallery",
+          "category": "park",
+          "googlePrimaryType": "art_museum",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "St James's Park",
+          "category": "park",
+          "googlePrimaryType": "park",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "London Eye",
+          "category": "park",
+          "googlePrimaryType": "tourist_attraction",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "The Green Park",
+          "category": "park",
+          "googlePrimaryType": "park",
+          "enrichmentStatus": "provider_only"
+        },
+        {
+          "name": "The British Museum",
+          "category": "museum",
+          "googlePrimaryType": "museum",
+          "enrichmentStatus": "provider_only"
+        }
+      ],
+      "excludedLegacySample": [
+        {
+          "name": "Selfridges",
+          "primaryType": "department_store",
+          "legacyCategory": "park"
+        },
+        {
+          "name": "Liberty London",
+          "primaryType": "department_store",
+          "legacyCategory": "park"
+        },
+        {
+          "name": "Royal National Hotel",
+          "primaryType": "hotel",
+          "legacyCategory": "hotel"
+        }
+      ]
+    }
+  ]
+}
