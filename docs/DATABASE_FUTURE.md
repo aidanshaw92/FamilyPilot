@@ -309,10 +309,12 @@ Detail: [PRIVACY_MODEL.md](./PRIVACY_MODEL.md)
 
 | Layer | File |
 |-------|------|
-| Types | `src/types/index.ts` — extend incrementally |
-| Mock | `src/data/mock-data.ts` |
-| Services | `src/services/api/index.ts` |
+| Types | `src/types/index.ts`, `src/types/places.ts` |
+| Mock | `src/data/mock-data.ts` (retained as fallback) |
+| Services | `src/services/places/places-repository.ts` |
+| Providers | `src/services/providers/places-provider.ts`, `server/places/*` |
 | Scoring | `src/services/scoring/family-score.ts` |
+| Provenance | [DATA_PROVENANCE.md](./DATA_PROVENANCE.md) |
 
 ---
 

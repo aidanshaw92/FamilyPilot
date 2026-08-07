@@ -114,7 +114,7 @@ Runtime DB writes deferred until Supabase service role is wired; schema is ready
 
 | Variable | Where | Purpose |
 |----------|-------|---------|
-| `PLACES_PROVIDER` | Server | `mock` (default), `osm`, `google` |
+| `PLACES_PROVIDER` | Server | `mock` (default), `osm`, `google` — set to `osm` in `vercel.json` for production |
 | `GOOGLE_PLACES_API_KEY` | Server | Google Places (never client) |
 | `EXPO_PUBLIC_PLACES_API_URL` | Client | API base, default `/api/places` |
 

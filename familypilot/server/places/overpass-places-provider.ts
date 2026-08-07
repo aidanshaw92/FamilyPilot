@@ -3,12 +3,13 @@ import {
   FieldProvenance,
   PlaceSearchParams,
   StructuredOpeningHours,
-} from '@/src/types/places';
-import { VenueCategory } from '@/src/types';
-import { PlacesProvider } from '@/src/services/providers/places-provider';
-import { distanceKm, slugifyId } from '@/src/services/places/geo-utils';
+} from '../../src/types/places';
+import { VenueCategory } from '../../src/types';
+import { PlacesProvider } from '../../src/services/providers/places-provider';
+import { distanceKm, slugifyId } from '../../src/services/places/geo-utils';
 
 const OVERPASS_ENDPOINT = 'https://overpass-api.de/api/interpreter';
+const OVERPASS_USER_AGENT = 'FamilyPilot/1.0 (https://family-pilot-seven.vercel.app; places-api)';
 
 const CATEGORY_QUERIES: Record<VenueCategory, string[]> = {
   park: ['["leisure"="park"]', '["leisure"="playground"]', '["leisure"="nature_reserve"]'],
@@ -19,7 +20,7 @@ const CATEGORY_QUERIES: Record<VenueCategory, string[]> = {
   beach: ['["natural"="beach"]'],
   soft_play: ['["leisure"="indoor_play"]'],
   hotel: ['["tourism"="hotel"]'],
-  shop: ['["shop"]'],
+  shop: ['["shop"="supermarket"]', '["shop"="convenience"]'],
 };
 
 function nowProvenance(source: 'osm'): FieldProvenance {
@@ -120,8 +121,12 @@ export class OverpassPlacesProvider implements PlacesProvider {
 
     const response = await fetch(OVERPASS_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `data=${encodeURIComponent(query)}`,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': OVERPASS_USER_AGENT,
+        Accept: 'application/json',
+      },
+      body: new URLSearchParams({ data: query }).toString(),
     });
 
     if (!response.ok) {
