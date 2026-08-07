@@ -1,14 +1,27 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "cd familypilot && npm ci",
+  "installCommand": "cd familypilot && npm ci && cd .. && npm install",
   "buildCommand": "cd familypilot && npm run build:web",
   "outputDirectory": "familypilot/dist",
   "framework": null,
   "cleanUrls": true,
+  "env": {
+    "PLACES_PROVIDER": "osm"
+  },
+  "functions": {
+    "api/places/*.ts": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     {
       "source": "/venue/:id",
       "destination": "/venue/[id]"
+    },
+    {
+      "source": "/restaurant/:id",
+      "destination": "/restaurant/[id]"
     }
   ]
 }

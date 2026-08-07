@@ -41,7 +41,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     const result = await searchPlaces(params);
-    return res.status(200).json(result);
+    return res.status(200).json({
+      ...result,
+      configuredProvider: process.env.PLACES_PROVIDER ?? 'mock',
+    });
   } catch (error) {
     return res.status(503).json({
       error: error instanceof Error ? error.message : 'Places service unavailable',

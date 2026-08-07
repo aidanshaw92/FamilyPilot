@@ -1,5 +1,5 @@
-import { PlacesProvider, PlacesProviderHealth } from '@/src/services/providers/places-provider';
-import { PlacesProviderName } from '@/src/types/places';
+import { PlacesProvider, PlacesProviderHealth } from '../../src/services/providers/places-provider';
+import { PlacesProviderName } from '../../src/types/places';
 
 import { googlePlacesProvider } from './google-places-provider';
 import { mockPlacesProvider } from './mock-places-provider';
@@ -46,4 +46,17 @@ export async function checkProviderHealth(name?: PlacesProviderName): Promise<Pl
       message: error instanceof Error ? error.message : 'Provider unavailable',
     };
   }
+}
+
+export interface PlacesRuntimeStatus {
+  configuredProvider: PlacesProviderName;
+  envPlacesProvider: string | undefined;
+}
+
+export function getPlacesRuntimeStatus(): PlacesRuntimeStatus {
+  const configuredProvider = getConfiguredProviderName();
+  return {
+    configuredProvider,
+    envPlacesProvider: process.env.PLACES_PROVIDER,
+  };
 }

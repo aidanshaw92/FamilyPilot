@@ -1,5 +1,5 @@
-import { ExternalPlaceRecord, PlaceSearchParams } from '@/src/types/places';
-import { PlacesProvider } from '@/src/services/providers/places-provider';
+import { ExternalPlaceRecord, PlaceSearchParams } from '../../src/types/places';
+import { PlacesProvider } from '../../src/services/providers/places-provider';
 
 /**
  * Google Places provider — server-side only.
