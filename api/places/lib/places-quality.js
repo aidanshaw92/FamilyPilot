@@ -7,7 +7,7 @@ const EXPLORE_INCLUDED_PRIMARY_TYPES = [
   'park', 'playground', 'museum', 'zoo', 'tourist_attraction', 'amusement_park',
   'aquarium', 'national_park', 'botanical_garden', 'planetarium', 'water_park',
   'hiking_area', 'marina', 'campground', 'ice_skating_rink', 'bowling_alley',
-  'performing_arts_theater', 'cultural_center', 'library', 'art_gallery',
+  'cultural_center', 'art_gallery',
 ];
 
 const RESTAURANT_INCLUDED_PRIMARY_TYPES = [
@@ -36,12 +36,12 @@ const GOOGLE_TYPE_TO_TAXONOMY = {
   park: 'park', playground: 'playground', national_park: 'park', city_park: 'park', botanical_garden: 'park',
   hiking_area: 'park', marina: 'attraction', campground: 'attraction', rv_park: 'attraction',
   museum: 'museum', art_gallery: 'museum', art_museum: 'museum', aquarium: 'museum', planetarium: 'museum',
-  childrens_museum: 'museum', library: 'museum', cultural_center: 'museum',
+  childrens_museum: 'museum', cultural_center: 'museum',
   zoo: 'zoo', wildlife_park: 'zoo', petting_zoo: 'farm', farm: 'farm',
   tourist_attraction: 'attraction', amusement_park: 'activity', theme_park: 'activity',
   water_park: 'activity', bowling_alley: 'activity', indoor_playground: 'activity',
   trampoline_park: 'activity', ice_skating_rink: 'activity', sports_complex: 'activity',
-  stadium: 'attraction', performing_arts_theater: 'attraction', opera_house: 'attraction', ski_resort: 'activity',
+  stadium: 'attraction', opera_house: 'attraction', ski_resort: 'activity',
   restaurant: 'restaurant', fast_food_restaurant: 'restaurant', meal_takeaway: 'restaurant',
   meal_delivery: 'restaurant', cafe: 'cafe', coffee_shop: 'cafe', bakery: 'cafe',
   ice_cream_shop: 'cafe', beach: 'attraction', lodging: 'hotel', hotel: 'hotel',
@@ -50,8 +50,8 @@ const GOOGLE_TYPE_TO_TAXONOMY = {
 };
 
 const TAXONOMY_TO_VENUE_CATEGORY = {
-  park: 'park', playground: 'park', museum: 'museum', zoo: 'farm', farm: 'farm',
-  attraction: 'park', activity: 'soft_play', restaurant: 'restaurant', cafe: 'cafe',
+  park: 'park', playground: 'park', museum: 'museum', zoo: 'museum', farm: 'farm',
+  attraction: 'museum', activity: 'soft_play', restaurant: 'restaurant', cafe: 'cafe',
   shop: 'shop', hotel: 'hotel', other: null,
 };
 
@@ -60,26 +60,66 @@ const FORCE_NULL_TYPES = new Set([
   'mosque', 'synagogue', 'movie_theater', 'cinema', 'bar', 'pub', 'night_club',
   'gas_station', 'supermarket', 'grocery_store', 'department_store', 'shopping_mall',
   'hotel', 'lodging', 'bank', 'atm', 'pharmacy', 'hospital', 'car_dealer',
-  'car_wash', 'casino', 'storage',
+  'car_wash', 'casino', 'storage', 'library', 'performing_arts_theater',
 ]);
 
-function mapGoogleTaxonomy(primaryType, types = []) {
-  const candidates = [primaryType, ...types].filter(Boolean);
-  for (const type of candidates) {
-    if (FORCE_NULL_TYPES.has(type)) return null;
+const IGNORED_SECONDARY_TYPES = new Set(['point_of_interest', 'establishment']);
+
+const GENERIC_PRIMARY_TYPES = new Set([
+  'park', 'tourist_attraction', 'point_of_interest', 'establishment',
+]);
+
+const TAXONOMY_SPECIFICITY = [
+  'activity', 'zoo', 'museum', 'farm', 'attraction', 'playground', 'park',
+  'restaurant', 'cafe', 'shop', 'hotel', 'other',
+];
+
+function inferActivityTaxonomyFromName(name) {
+  const normalised = name.toLowerCase();
+  if (/trampoline|jump in|airhop|soft play|indoor play|inflatable|adventure park|clip '?n climb|tenpin|bowling/i.test(normalised)) {
+    return 'activity';
   }
+  return null;
+}
+
+function pickBestTaxonomyFromTypes(types) {
+  for (const taxonomy of TAXONOMY_SPECIFICITY) {
+    for (const type of types) {
+      if (GOOGLE_TYPE_TO_TAXONOMY[type] === taxonomy) return taxonomy;
+    }
+  }
+  return null;
+}
+
+function mapGoogleTaxonomy(primaryType, types = [], name) {
+  const candidates = [primaryType, ...types].filter(Boolean);
+
+  if (name) {
+    const fromName = inferActivityTaxonomyFromName(name);
+    if (fromName) return fromName;
+  }
+
+  if (primaryType && GENERIC_PRIMARY_TYPES.has(primaryType)) {
+    const fromSecondary = pickBestTaxonomyFromTypes(
+      types.filter((type) => !IGNORED_SECONDARY_TYPES.has(type) && !FORCE_NULL_TYPES.has(type)),
+    );
+    if (fromSecondary) return fromSecondary;
+  }
+
   for (const type of candidates) {
+    if (FORCE_NULL_TYPES.has(type) || IGNORED_SECONDARY_TYPES.has(type)) continue;
     if (type.endsWith('_restaurant') && type !== 'fast_food_restaurant') {
       return 'restaurant';
     }
     const taxonomy = GOOGLE_TYPE_TO_TAXONOMY[type];
     if (taxonomy) return taxonomy;
   }
+
   return null;
 }
 
-function mapGoogleCategory(primaryType, types = []) {
-  const taxonomy = mapGoogleTaxonomy(primaryType, types);
+function mapGoogleCategory(primaryType, types = [], name) {
+  const taxonomy = mapGoogleTaxonomy(primaryType, types, name);
   if (!taxonomy) return null;
   return TAXONOMY_TO_VENUE_CATEGORY[taxonomy];
 }
@@ -106,9 +146,9 @@ function shouldExcludePlace(primaryType, types, intent) {
   return candidates.some((type) => excluded.has(type));
 }
 
-function isSupportedForIntent(primaryType, types, intent) {
+function isSupportedForIntent(primaryType, types, intent, name) {
   if (shouldExcludePlace(primaryType, types, intent)) return false;
-  const category = mapGoogleCategory(primaryType, types);
+  const category = mapGoogleCategory(primaryType, types, name);
   if (!category) return false;
   if (intent === 'explore') return isExploreCategory(category);
   return category === 'restaurant' || category === 'cafe';
@@ -149,6 +189,58 @@ function haversineKm(lat1, lng1, lat2, lng2) {
       Math.cos((lat2 * Math.PI) / 180) *
       Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+const ALIAS_STOP_WORDS = new Set([
+  'the', 'london', 'uk', 'england', 'studio', 'tour', 'tours', 'and', 'at', 'by', 'park',
+]);
+
+function normaliseVenueAliasKey(name) {
+  return name
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter((word) => word.length > 2 && !ALIAS_STOP_WORDS.has(word))
+    .sort()
+    .join(' ');
+}
+
+function tokenOverlapScore(nameA, nameB) {
+  const tokensA = new Set(normaliseVenueAliasKey(nameA).split(' ').filter(Boolean));
+  const tokensB = new Set(normaliseVenueAliasKey(nameB).split(' ').filter(Boolean));
+  if (tokensA.size === 0 || tokensB.size === 0) return 0;
+  let overlap = 0;
+  for (const token of tokensA) {
+    if (tokensB.has(token)) overlap++;
+  }
+  return overlap / Math.max(tokensA.size, tokensB.size);
+}
+
+function areLikelySameVenueAlias(a, b, km) {
+  if (km > 0.5) return false;
+  if (tokenOverlapScore(a.name, b.name) >= 0.45) return true;
+  const nameA = a.name.toLowerCase();
+  const nameB = b.name.toLowerCase();
+  const studioTourSignals = /studio|tour|harry potter|warner bros|warner bros\./;
+  return km <= 0.2 && studioTourSignals.test(nameA) && studioTourSignals.test(nameB);
+}
+
+function dedupeVenueAliases(places) {
+  const suppressedIds = new Set();
+  for (let i = 0; i < places.length; i++) {
+    if (suppressedIds.has(places[i].familypilotId)) continue;
+    for (let j = i + 1; j < places.length; j++) {
+      if (suppressedIds.has(places[j].familypilotId)) continue;
+      const a = places[i];
+      const b = places[j];
+      const km = haversineKm(a.latitude, a.longitude, b.latitude, b.longitude);
+      if (!areLikelySameVenueAlias(a, b, km)) continue;
+      const keeper = a.name.length >= b.name.length ? a : b;
+      const duplicate = keeper.familypilotId === a.familypilotId ? b : a;
+      suppressedIds.add(duplicate.familypilotId);
+    }
+  }
+  return places.filter((place) => !suppressedIds.has(place.familypilotId));
 }
 
 function categoryRelevanceScore(category, intent) {
@@ -213,8 +305,9 @@ function dedupeChains(places, originLat, originLng, intent) {
     chainGroups.set(chainKey, group);
   }
 
-  for (const [chainKey, group] of chainGroups) {
+  for (const [, group] of chainGroups) {
     if (group.length <= 1) continue;
+    const chainKey = normaliseChainKey(group[0].name);
     const keeper = bestByChain.get(chainKey)?.place;
     for (const place of group) {
       if (keeper && place.familypilotId !== keeper.familypilotId) {
@@ -234,8 +327,10 @@ module.exports = {
   isSupportedForIntent,
   shouldExcludePlace,
   normaliseChainKey,
+  normaliseVenueAliasKey,
   rankPlaces,
   dedupeChains,
+  dedupeVenueAliases,
   EXPLORE_INCLUDED_PRIMARY_TYPES,
   RESTAURANT_INCLUDED_PRIMARY_TYPES,
 };

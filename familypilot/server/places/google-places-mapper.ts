@@ -8,6 +8,7 @@ import { VenueCategory } from '../../src/types';
 
 import {
   dedupeChains,
+  dedupeVenueAliases,
   googleTypesForIntent,
   isSupportedForIntent,
   mapGoogleCategory,
@@ -131,11 +132,11 @@ export function googlePlaceToRecord(
   const primaryType = place.primaryType;
   const types = place.types ?? [];
 
-  if (!options?.skipIntentFilter && !isSupportedForIntent(primaryType, types, intent)) {
+  if (!options?.skipIntentFilter && !isSupportedForIntent(primaryType, types, intent, name)) {
     return null;
   }
 
-  const category = mapGoogleCategory(primaryType, types);
+  const category = mapGoogleCategory(primaryType, types, name);
   if (!category) return null;
 
   const prov = nowProvenance();
@@ -171,6 +172,7 @@ export function googlePlaceToRecord(
     fetchedAt: new Date().toISOString(),
     enrichmentStatus: 'provider_only',
     googlePrimaryType: primaryType,
+    googleTypes: types,
   };
 }
 
@@ -180,7 +182,7 @@ export function processGoogleSearchResults(
   originLng: number,
   intent: PlaceSearchIntent,
 ): ExternalPlaceRecord[] {
-  const deduped = dedupeChains(records, originLat, originLng, intent);
+  const deduped = dedupeVenueAliases(dedupeChains(records, originLat, originLng, intent));
   return rankPlaces(deduped, {
     originLat,
     originLng,

@@ -6,6 +6,7 @@ const {
   isSupportedForIntent,
   rankPlaces,
   dedupeChains,
+  dedupeVenueAliases,
 } = require('./places-quality');
 
 const SEARCH_FIELD_MASK = [
@@ -72,9 +73,9 @@ function googlePlaceToRecord(place, intent) {
 
   const primaryType = place.primaryType;
   const types = place.types || [];
-  if (!isSupportedForIntent(primaryType, types, intent)) return null;
+  if (!isSupportedForIntent(primaryType, types, intent, name)) return null;
 
-  const category = mapGoogleCategory(primaryType, types);
+  const category = mapGoogleCategory(primaryType, types, name);
   if (!category) return null;
 
   const openingHours = mapOpeningHours(place.regularOpeningHours);
@@ -99,6 +100,7 @@ function googlePlaceToRecord(place, intent) {
     fetchedAt,
     enrichmentStatus: 'provider_only',
     googlePrimaryType: primaryType,
+    googleTypes: types,
   };
 }
 
@@ -163,7 +165,7 @@ async function searchGoogle(lat, lng, radiusKm, options = {}) {
       return true;
     });
 
-  const deduped = dedupeChains(mapped, lat, lng, intent);
+  const deduped = dedupeVenueAliases(dedupeChains(mapped, lat, lng, intent));
   return rankPlaces(deduped, {
     originLat: lat,
     originLng: lng,
@@ -183,7 +185,7 @@ async function getGooglePlace(familypilotId) {
       { method: 'GET', fieldMask: DETAIL_FIELD_MASK },
     );
     const { mapGoogleCategory: mapCat } = require('./places-quality');
-    const category = mapCat(place.primaryType, place.types || []);
+    const category = mapCat(place.primaryType, place.types || [], place.displayName?.text);
     if (!category) return null;
     const intent = category === 'restaurant' || category === 'cafe' ? 'restaurant' : 'explore';
     return googlePlaceToRecord(place, intent);

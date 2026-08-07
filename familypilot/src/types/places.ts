@@ -59,6 +59,8 @@ export interface ExternalPlaceRecord {
   enrichmentStatus?: EnrichmentStatus;
   /** Google primaryType preserved for filtering and audit. */
   googlePrimaryType?: string;
+  /** Full Google types array preserved for safe reclassification. */
+  googleTypes?: string[];
   /** FamilyPilot metadata when joined server-side (not from provider sync). */
   familyMetadata?: VenueFamilyMetadata;
 }

@@ -11,9 +11,11 @@ import { ExternalPlaceRecord } from '@/src/types/places';
 
 import {
   dedupeChains,
+  dedupeVenueAliases,
   googleTypesForIntent,
   isSupportedForIntent,
   mapGoogleCategory,
+  mapGoogleTaxonomy,
   normaliseChainKey,
   rankPlaces,
   shouldExcludePlace,
@@ -78,6 +80,75 @@ describe('Google category mapping', () => {
 
   it('historical landmark must not silently become park', () => {
     expect(mapGoogleCategory('historical_landmark', ['point_of_interest'])).toBeNull();
+  });
+});
+
+describe('Production category audit examples', () => {
+  it('maps tourist attractions to museum (attraction taxonomy), not park', () => {
+    expect(mapGoogleTaxonomy('tourist_attraction', ['tourist_attraction', 'point_of_interest']))
+      .toBe('attraction');
+    expect(
+      mapGoogleCategory('tourist_attraction', ['tourist_attraction', 'point_of_interest'], 'Warner Bros. Studio Tour London'),
+    ).toBe('museum');
+    expect(
+      mapGoogleCategory('tourist_attraction', ['tourist_attraction'], 'Harry Potter Studio'),
+    ).toBe('museum');
+  });
+
+  it('excludes performing arts theatres from explore', () => {
+    expect(mapGoogleCategory('performing_arts_theater', ['performing_arts_theater'], 'Troubadour Wembley Park Theatre')).toBeNull();
+    expect(isSupportedForIntent('performing_arts_theater', ['performing_arts_theater'], 'explore', 'Troubadour Wembley Park Theatre')).toBe(false);
+  });
+
+  it('excludes libraries rather than mapping them to museum', () => {
+    expect(mapGoogleCategory('library', ['library'], 'College Lane Campus LRC')).toBeNull();
+    expect(isSupportedForIntent('library', ['library'], 'explore', 'College Lane Campus LRC')).toBe(false);
+  });
+
+  it('maps zoos to museum (attraction bucket), not farm', () => {
+    expect(mapGoogleCategory('zoo', ['zoo', 'point_of_interest'], 'Hanwell Zoo')).toBe('museum');
+  });
+
+  it('maps trampoline venues from weak park primary types using name and secondary types', () => {
+    expect(
+      mapGoogleCategory(
+        'park',
+        ['park', 'point_of_interest'],
+        'Jump In by AirHop Adventure & Trampoline Park Elstree',
+      ),
+    ).toBe('soft_play');
+    expect(
+      mapGoogleCategory('park', ['park', 'trampoline_park', 'point_of_interest'], 'Some Venue'),
+    ).toBe('soft_play');
+  });
+
+  it('never defaults unknown types to park', () => {
+    expect(mapGoogleCategory('unknown_type', ['point_of_interest'])).toBeNull();
+    expect(mapGoogleCategory(undefined, ['point_of_interest'])).toBeNull();
+  });
+});
+
+describe('Venue alias deduplication', () => {
+  it('suppresses Harry Potter Studio when Warner Bros Studio Tour is present nearby', () => {
+    const places = [
+      {
+        familypilotId: 'fp-warner',
+        name: 'Warner Bros. Studio Tour London',
+        latitude: 51.656,
+        longitude: -0.418,
+        category: 'museum' as const,
+      },
+      {
+        familypilotId: 'fp-hp',
+        name: 'Harry Potter Studio',
+        latitude: 51.6561,
+        longitude: -0.4181,
+        category: 'museum' as const,
+      },
+    ];
+    const result = dedupeVenueAliases(places);
+    expect(result).toHaveLength(1);
+    expect(result[0].familypilotId).toBe('fp-warner');
   });
 });
 
@@ -201,6 +272,24 @@ describe('Enrichment status', () => {
   it('marks Google places as provider_only', () => {
     const record = googlePlaceToRecord(googlePlace('park', ['park']), 'explore');
     expect(record?.enrichmentStatus).toBe('provider_only');
+  });
+
+  it('maps production audit examples through googlePlaceToRecord', () => {
+    const warner = googlePlaceToRecord(
+      googlePlace('tourist_attraction', ['tourist_attraction'], {
+        displayName: { text: 'Warner Bros. Studio Tour London' },
+      }),
+      'explore',
+    );
+    expect(warner?.category).toBe('museum');
+
+    const theatre = googlePlaceToRecord(
+      googlePlace('performing_arts_theater', ['performing_arts_theater'], {
+        displayName: { text: 'Troubadour Wembley Park Theatre' },
+      }),
+      'explore',
+    );
+    expect(theatre).toBeNull();
   });
 
   it('derives enriched from partial metadata', () => {
