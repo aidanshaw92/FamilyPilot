@@ -27,8 +27,26 @@ module.exports = async function handler(req, res) {
     intent,
   });
 
+  let places = result.places;
+  try {
+    const { getMetadata } = require('../enrichment/lib/enrichment-store');
+    places = await Promise.all(
+      places.map(async (place) => {
+        const metadata = await getMetadata(place.familypilotId);
+        if (!metadata) return place;
+        return {
+          ...place,
+          enrichmentStatus: metadata.enrichmentStatus || place.enrichmentStatus,
+          familyMetadata: metadata,
+        };
+      }),
+    );
+  } catch {
+    // Best-effort metadata overlay
+  }
+
   return res.status(200).json({
-    places: result.places,
+    places,
     provider: result.provider,
     configuredProvider,
     intent,

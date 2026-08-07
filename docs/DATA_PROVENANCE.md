@@ -57,7 +57,7 @@ Each field carries `FieldProvenance`: `{ source, updatedAt, reliability, label? 
 | `sendNotes` | familypilot | Factual session info only |
 | `familyNotes` | familypilot | Editorial |
 | `familyScore` | familypilot | Computed client-side from profile + metadata |
-| `enrichmentStatus` | derived | `provider_only` (live Google default), `enriched`, `verified` |
+| `enrichmentStatus` | derived / stored | `provider_only`, `enriched`, `verified` — see [VENUE_ENRICHMENT_WORKFLOW.md](./VENUE_ENRICHMENT_WORKFLOW.md) |
 
 **Provider-only rule (Aug 2026):** Live Google venues without `VenueFamilyMetadata` must remain `provider_only`. Family Match capped at 65 with "Potential match" copy. Never synthesise facilities or age suitability. See [LIVE_GOOGLE_QUALITY_PASS.md](./LIVE_GOOGLE_QUALITY_PASS.md).
 

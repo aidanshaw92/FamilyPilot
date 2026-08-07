@@ -79,6 +79,7 @@ export default function RootLayout() {
           <Stack.Screen name="packing" />
           <Stack.Screen name="car-fit" />
           <Stack.Screen name="feedback" />
+          <Stack.Screen name="internal" options={{ headerShown: false }} />
           <Stack.Screen name="concierge" options={{ presentation: 'modal' }} />
         </Stack>
       </QueryClientProvider>

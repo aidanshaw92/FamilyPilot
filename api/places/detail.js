@@ -77,6 +77,17 @@ module.exports = async function handler(req, res) {
     return res.status(404).json({ error: 'Place not found', code: 'NOT_FOUND', fallbackAvailable: true });
   }
 
+  try {
+    const { getMetadata } = require('../enrichment/lib/enrichment-store');
+    const metadata = await getMetadata(id);
+    if (metadata) {
+      detail.metadata = metadata;
+      detail.place = { ...detail.place, enrichmentStatus: metadata.enrichmentStatus, familyMetadata: metadata };
+    }
+  } catch {
+    // Metadata load is best-effort — provider facts still returned
+  }
+
   return res.status(200).json({
     ...detail,
     provider,
