@@ -57,7 +57,9 @@ function elementToRecord(element) {
   if (tags.amenity === 'cafe') category = 'cafe';
   else if (tags.amenity === 'restaurant') category = 'restaurant';
   else if (tags.tourism === 'museum') category = 'museum';
-  else if (tags.tourism === 'farm' || tags.tourism === 'zoo') category = 'farm';
+  else if (tags.tourism === 'zoo') category = 'zoo';
+  else if (tags.tourism === 'attraction') category = 'attraction';
+  else if (tags.tourism === 'farm') category = 'farm';
   else if (tags.leisure === 'playground') category = 'park';
 
   return {

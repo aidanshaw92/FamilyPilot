@@ -8,6 +8,7 @@ import { VenueCategory } from '../../src/types';
 
 import {
   dedupeChains,
+  dedupeVenueAliases,
   googleTypesForIntent,
   isSupportedForIntent,
   mapGoogleCategory,
@@ -65,10 +66,16 @@ export function googleTypesForCategories(
           return ['park', 'playground', 'national_park'];
         case 'museum':
           return ['museum', 'art_gallery', 'childrens_museum'];
+        case 'zoo':
+          return ['zoo', 'wildlife_park'];
+        case 'attraction':
+          return ['tourist_attraction'];
+        case 'activity':
+          return ['amusement_park', 'bowling_alley', 'ice_skating_rink', 'water_park'];
         case 'farm':
-          return ['zoo'];
+          return ['farm', 'petting_zoo'];
         case 'soft_play':
-          return ['amusement_park', 'bowling_alley'];
+          return ['trampoline_park', 'indoor_playground', 'amusement_park'];
         case 'beach':
           return ['beach'];
         default:
@@ -131,11 +138,11 @@ export function googlePlaceToRecord(
   const primaryType = place.primaryType;
   const types = place.types ?? [];
 
-  if (!options?.skipIntentFilter && !isSupportedForIntent(primaryType, types, intent)) {
+  if (!options?.skipIntentFilter && !isSupportedForIntent(primaryType, types, intent, name)) {
     return null;
   }
 
-  const category = mapGoogleCategory(primaryType, types);
+  const category = mapGoogleCategory(primaryType, types, name);
   if (!category) return null;
 
   const prov = nowProvenance();
@@ -171,6 +178,7 @@ export function googlePlaceToRecord(
     fetchedAt: new Date().toISOString(),
     enrichmentStatus: 'provider_only',
     googlePrimaryType: primaryType,
+    googleTypes: types,
   };
 }
 
@@ -180,7 +188,7 @@ export function processGoogleSearchResults(
   originLng: number,
   intent: PlaceSearchIntent,
 ): ExternalPlaceRecord[] {
-  const deduped = dedupeChains(records, originLat, originLng, intent);
+  const deduped = dedupeVenueAliases(dedupeChains(records, originLat, originLng, intent));
   return rankPlaces(deduped, {
     originLat,
     originLng,

@@ -40,9 +40,7 @@ export const EXPLORE_INCLUDED_PRIMARY_TYPES = [
   'campground',
   'ice_skating_rink',
   'bowling_alley',
-  'performing_arts_theater',
   'cultural_center',
-  'library',
   'art_gallery',
 ] as const;
 
@@ -140,7 +138,6 @@ const GOOGLE_TYPE_TO_TAXONOMY: Record<string, FamilyPilotTaxonomyCategory> = {
   aquarium: 'museum',
   planetarium: 'museum',
   childrens_museum: 'museum',
-  library: 'museum',
   cultural_center: 'museum',
   zoo: 'zoo',
   wildlife_park: 'zoo',
@@ -156,7 +153,6 @@ const GOOGLE_TYPE_TO_TAXONOMY: Record<string, FamilyPilotTaxonomyCategory> = {
   ice_skating_rink: 'activity',
   sports_complex: 'activity',
   stadium: 'attraction',
-  performing_arts_theater: 'attraction',
   opera_house: 'attraction',
   ski_resort: 'activity',
   restaurant: 'restaurant',
@@ -182,16 +178,26 @@ const TAXONOMY_TO_VENUE_CATEGORY: Record<FamilyPilotTaxonomyCategory, VenueCateg
   park: 'park',
   playground: 'park',
   museum: 'museum',
-  zoo: 'farm',
+  zoo: 'zoo',
   farm: 'farm',
-  attraction: 'park',
-  activity: 'soft_play',
+  attraction: 'attraction',
+  activity: 'activity',
   restaurant: 'restaurant',
   cafe: 'cafe',
   shop: 'shop',
   hotel: 'hotel',
   other: null,
 };
+
+const SOFT_PLAY_GOOGLE_TYPES = new Set(['trampoline_park', 'indoor_playground']);
+
+function isSoftPlayActivity(types: string[], name?: string): boolean {
+  if (types.some((type) => SOFT_PLAY_GOOGLE_TYPES.has(type))) return true;
+  if (!name) return false;
+  return /trampoline|jump in|airhop|soft play|indoor play|inflatable|clip '?n climb/i.test(
+    name.toLowerCase(),
+  );
+}
 
 /** Explicit null mappings from audit — never default these to park. */
 const FORCE_NULL_TYPES = new Set([
@@ -222,19 +228,79 @@ const FORCE_NULL_TYPES = new Set([
   'car_wash',
   'casino',
   'storage',
+  'library',
+  'performing_arts_theater',
 ]);
+
+/** Generic Google tags — skip during mapping but do not exclude the whole place. */
+const IGNORED_SECONDARY_TYPES = new Set(['point_of_interest', 'establishment']);
+
+/** Generic Google primaries that should defer to more specific secondary types. */
+const GENERIC_PRIMARY_TYPES = new Set([
+  'park',
+  'tourist_attraction',
+  'point_of_interest',
+  'establishment',
+]);
+
+/** Prefer more specific taxonomy when secondary Google types are available. */
+const TAXONOMY_SPECIFICITY: FamilyPilotTaxonomyCategory[] = [
+  'activity',
+  'zoo',
+  'museum',
+  'farm',
+  'attraction',
+  'playground',
+  'park',
+  'restaurant',
+  'cafe',
+  'shop',
+  'hotel',
+  'other',
+];
+
+function inferActivityTaxonomyFromName(name: string): FamilyPilotTaxonomyCategory | null {
+  const normalised = name.toLowerCase();
+  if (
+    /trampoline|jump in|airhop|soft play|indoor play|inflatable|adventure park|clip '?n climb|tenpin|bowling/i.test(
+      normalised,
+    )
+  ) {
+    return 'activity';
+  }
+  return null;
+}
+
+function pickBestTaxonomyFromTypes(types: string[]): FamilyPilotTaxonomyCategory | null {
+  for (const taxonomy of TAXONOMY_SPECIFICITY) {
+    for (const type of types) {
+      if (GOOGLE_TYPE_TO_TAXONOMY[type] === taxonomy) return taxonomy;
+    }
+  }
+  return null;
+}
 
 export function mapGoogleTaxonomy(
   primaryType?: string,
   types: string[] = [],
+  name?: string,
 ): FamilyPilotTaxonomyCategory | null {
   const candidates = [primaryType, ...types].filter(Boolean) as string[];
 
-  for (const type of candidates) {
-    if (FORCE_NULL_TYPES.has(type)) return null;
+  if (name) {
+    const fromName = inferActivityTaxonomyFromName(name);
+    if (fromName) return fromName;
+  }
+
+  if (primaryType && GENERIC_PRIMARY_TYPES.has(primaryType)) {
+    const fromSecondary = pickBestTaxonomyFromTypes(
+      types.filter((type) => !IGNORED_SECONDARY_TYPES.has(type) && !FORCE_NULL_TYPES.has(type)),
+    );
+    if (fromSecondary) return fromSecondary;
   }
 
   for (const type of candidates) {
+    if (FORCE_NULL_TYPES.has(type) || IGNORED_SECONDARY_TYPES.has(type)) continue;
     if (type.endsWith('_restaurant') && type !== 'fast_food_restaurant') {
       return 'restaurant';
     }
@@ -248,9 +314,11 @@ export function mapGoogleTaxonomy(
 export function mapGoogleCategory(
   primaryType?: string,
   types: string[] = [],
+  name?: string,
 ): VenueCategory | null {
-  const taxonomy = mapGoogleTaxonomy(primaryType, types);
+  const taxonomy = mapGoogleTaxonomy(primaryType, types, name);
   if (!taxonomy) return null;
+  if (taxonomy === 'activity' && isSoftPlayActivity(types, name)) return 'soft_play';
   return TAXONOMY_TO_VENUE_CATEGORY[taxonomy];
 }
 
@@ -284,10 +352,11 @@ export function isSupportedForIntent(
   primaryType: string | undefined,
   types: string[],
   intent: PlaceSearchIntent,
+  name?: string,
 ): boolean {
   if (shouldExcludePlace(primaryType, types, intent)) return false;
 
-  const category = mapGoogleCategory(primaryType, types);
+  const category = mapGoogleCategory(primaryType, types, name);
   if (!category) return false;
 
   if (intent === 'explore') {
@@ -351,6 +420,78 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+const ALIAS_STOP_WORDS = new Set([
+  'the',
+  'london',
+  'uk',
+  'england',
+  'studio',
+  'tour',
+  'tours',
+  'and',
+  'at',
+  'by',
+  'park',
+]);
+
+/** Normalise venue names for conservative same-venue alias detection. */
+export function normaliseVenueAliasKey(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter((word) => word.length > 2 && !ALIAS_STOP_WORDS.has(word))
+    .sort()
+    .join(' ');
+}
+
+function tokenOverlapScore(nameA: string, nameB: string): number {
+  const tokensA = new Set(normaliseVenueAliasKey(nameA).split(' ').filter(Boolean));
+  const tokensB = new Set(normaliseVenueAliasKey(nameB).split(' ').filter(Boolean));
+  if (tokensA.size === 0 || tokensB.size === 0) return 0;
+
+  let overlap = 0;
+  for (const token of tokensA) {
+    if (tokensB.has(token)) overlap++;
+  }
+  return overlap / Math.max(tokensA.size, tokensB.size);
+}
+
+function areLikelySameVenueAlias(a: RankablePlace, b: RankablePlace, km: number): boolean {
+  if (km > 0.5) return false;
+
+  if (tokenOverlapScore(a.name, b.name) >= 0.45) return true;
+
+  const nameA = a.name.toLowerCase();
+  const nameB = b.name.toLowerCase();
+  const studioTourSignals = /studio|tour|harry potter|warner bros|warner bros\./;
+  return km <= 0.2 && studioTourSignals.test(nameA) && studioTourSignals.test(nameB);
+}
+
+/** Suppress obvious duplicate listings for the same venue (e.g. studio tour aliases). */
+export function dedupeVenueAliases<T extends RankablePlace>(places: T[]): T[] {
+  const suppressedIds = new Set<string>();
+
+  for (let i = 0; i < places.length; i++) {
+    if (suppressedIds.has(places[i].familypilotId)) continue;
+
+    for (let j = i + 1; j < places.length; j++) {
+      if (suppressedIds.has(places[j].familypilotId)) continue;
+
+      const a = places[i];
+      const b = places[j];
+      const km = haversineKm(a.latitude, a.longitude, b.latitude, b.longitude);
+      if (!areLikelySameVenueAlias(a, b, km)) continue;
+
+      const keeper = a.name.length >= b.name.length ? a : b;
+      const duplicate = keeper.familypilotId === a.familypilotId ? b : a;
+      suppressedIds.add(duplicate.familypilotId);
+    }
+  }
+
+  return places.filter((place) => !suppressedIds.has(place.familypilotId));
+}
+
 function categoryRelevanceScore(category: VenueCategory, intent: PlaceSearchIntent): number {
   if (intent === 'restaurant') {
     return category === 'restaurant' ? 90 : category === 'cafe' ? 85 : 40;
@@ -364,6 +505,12 @@ function categoryRelevanceScore(category: VenueCategory, intent: PlaceSearchInte
       return 90;
     case 'soft_play':
       return 88;
+    case 'zoo':
+      return 87;
+    case 'activity':
+      return 86;
+    case 'attraction':
+      return 84;
     case 'beach':
       return 85;
     default:

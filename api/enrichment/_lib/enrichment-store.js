@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { getSupabaseAdmin, isSupabaseConfigured } = require('./supabase-admin');
+const { mapGoogleCategory } = require('../../places/lib/places-quality');
 const {
   buildBestAges,
   facilitiesFromTriState,
@@ -141,6 +142,7 @@ async function upsertPlaceRecord(place) {
     fetched_at: place.fetchedAt || new Date().toISOString(),
     field_provenance: {
       googlePrimaryType: place.googlePrimaryType,
+      googleTypes: place.googleTypes || [],
     },
   };
 
@@ -168,6 +170,64 @@ async function upsertPlaceRecords(places) {
   for (const place of places) {
     await upsertPlaceRecord(place);
   }
+}
+
+/**
+ * Re-map provider_only place_records using stored Google types + current rules.
+ * Skips rows with enriched or verified metadata. Does not delete rows.
+ */
+async function reclassifyProviderOnlyPlaceRecords() {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { updated: 0, skippedProtected: 0 };
+
+  const { data: placeRows, error } = await supabase.from('place_records').select('*');
+  if (error) throw new Error(error.message);
+
+  const { data: metaRows } = await supabase
+    .from('venue_family_metadata')
+    .select('familypilot_place_id, enrichment_status');
+
+  const protectedIds = new Set(
+    (metaRows || [])
+      .filter(
+        (row) =>
+          row.enrichment_status === 'enriched' || row.enrichment_status === 'verified',
+      )
+      .map((row) => row.familypilot_place_id),
+  );
+
+  let updated = 0;
+  let skippedProtected = 0;
+
+  for (const row of placeRows || []) {
+    if (protectedIds.has(row.familypilot_place_id)) {
+      skippedProtected++;
+      continue;
+    }
+
+    const primaryType = row.field_provenance?.googlePrimaryType;
+    const types = row.field_provenance?.googleTypes || [];
+    const newCategory = mapGoogleCategory(primaryType, types, row.name);
+    if (!newCategory || newCategory === row.category) continue;
+
+    const { error: updateError } = await supabase
+      .from('place_records')
+      .update({
+        category: newCategory,
+        field_provenance: {
+          ...(row.field_provenance || {}),
+          googlePrimaryType: primaryType,
+          googleTypes: types,
+          reclassifiedAt: new Date().toISOString(),
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .eq('familypilot_place_id', row.familypilot_place_id);
+
+    if (!updateError) updated++;
+  }
+
+  return { updated, skippedProtected };
 }
 
 async function getMetadata(familypilotId) {
@@ -232,28 +292,36 @@ async function listQueue(filters = {}) {
     );
   }
 
-  const items = places.map((row) => {
-    const place = placeRowToRecord(row);
-    const meta = metadataMap[place.familypilotId] || null;
-    const enrichmentStatus = meta?.enrichmentStatus || 'provider_only';
-    return {
-      familypilotId: place.familypilotId,
-      externalId: place.externalId,
-      provider: place.provider,
-      name: place.name,
-      category: place.category,
-      latitude: place.latitude,
-      longitude: place.longitude,
-      address: place.address,
-      googlePrimaryType: place.googlePrimaryType,
-      enrichmentStatus,
-      lastChecked: meta?.lastChecked,
-      sourceType: meta?.enrichmentProvenance?.sourceType,
-      hasMetadata: Boolean(meta),
-      betaPriority: meta?.betaPriority || false,
-      fetchedAt: place.fetchedAt,
-    };
-  });
+  const items = places
+    .map((row) => {
+      const place = placeRowToRecord(row);
+      const meta = metadataMap[place.familypilotId] || null;
+      const enrichmentStatus = meta?.enrichmentStatus || 'provider_only';
+      return {
+        familypilotId: place.familypilotId,
+        externalId: place.externalId,
+        provider: place.provider,
+        name: place.name,
+        category: place.category,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        address: place.address,
+        googlePrimaryType: place.googlePrimaryType,
+        googleTypes: row.field_provenance?.googleTypes || [],
+        enrichmentStatus,
+        lastChecked: meta?.lastChecked,
+        sourceType: meta?.enrichmentProvenance?.sourceType,
+        hasMetadata: Boolean(meta),
+        betaPriority: meta?.betaPriority || false,
+        fetchedAt: place.fetchedAt,
+      };
+    })
+    .filter((item) => {
+      if (item.enrichmentStatus === 'enriched' || item.enrichmentStatus === 'verified') {
+        return true;
+      }
+      return mapGoogleCategory(item.googlePrimaryType, item.googleTypes, item.name) !== null;
+    });
 
   let filtered = items;
   if (filters.status) {
@@ -324,6 +392,7 @@ function getStorageMode() {
 module.exports = {
   upsertPlaceRecord,
   upsertPlaceRecords,
+  reclassifyProviderOnlyPlaceRecords,
   getMetadata,
   saveMetadata,
   listQueue,

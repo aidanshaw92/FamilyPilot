@@ -64,7 +64,7 @@ describe('google-places-mapper', () => {
   it('maps Google types to FamilyPilot categories', () => {
     expect(mapGoogleCategory('restaurant', ['food'])).toBe('restaurant');
     expect(mapGoogleCategory('coffee_shop', [])).toBe('cafe');
-    expect(mapGoogleCategory('zoo', [])).toBe('farm');
+    expect(mapGoogleCategory('zoo', [])).toBe('zoo');
     expect(mapGoogleCategory('unknown_type', [])).toBeNull();
   });
 

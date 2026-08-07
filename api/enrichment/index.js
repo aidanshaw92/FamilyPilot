@@ -6,6 +6,7 @@ const {
   getStorageMode,
   upsertPlaceRecords,
   upsertPlaceRecord,
+  reclassifyProviderOnlyPlaceRecords,
   getMetadata,
   saveMetadata,
 } = require('./_lib/enrichment-store');
@@ -117,8 +118,10 @@ async function handleSync(req, res) {
   try {
     const places = await searchGoogle(lat, lng, radiusKm, { intent });
     await upsertPlaceRecords(places);
+    const reclassified = await reclassifyProviderOnlyPlaceRecords();
     return res.status(200).json({
       synced: places.length,
+      reclassified,
       places: places.map((p) => ({
         familypilotId: p.familypilotId,
         name: p.name,
