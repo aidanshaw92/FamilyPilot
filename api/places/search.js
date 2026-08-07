@@ -8,21 +8,46 @@ function getConfiguredProvider() {
   return (process.env.PLACES_PROVIDER || 'mock').toLowerCase();
 }
 
-function buildOverpassQuery(lat, lng, radiusM) {
-  return `[out:json][timeout:25];
-(
-  node["leisure"="park"](around:${radiusM},${lat},${lng});
-  way["leisure"="park"](around:${radiusM},${lat},${lng});
-  node["tourism"="museum"](around:${radiusM},${lat},${lng});
-  way["tourism"="museum"](around:${radiusM},${lat},${lng});
-  node["tourism"="farm"](around:${radiusM},${lat},${lng});
-  way["tourism"="farm"](around:${radiusM},${lat},${lng});
-  node["amenity"="restaurant"](around:${radiusM},${lat},${lng});
-  way["amenity"="restaurant"](around:${radiusM},${lat},${lng});
-  node["amenity"="cafe"](around:${radiusM},${lat},${lng});
-  way["amenity"="cafe"](around:${radiusM},${lat},${lng});
-);
-out center 30;`;
+/** Tiered radii keep Overpass queries fast; regex tag filters often 504. */
+function buildOverpassQuery(lat, lng, radiusKm, variant) {
+  const radiusM = Math.min(Math.round(radiusKm * 1000), 12000);
+  const foodRadius = Math.min(radiusM, 4000);
+  const cultureRadius = Math.min(radiusM, 6000);
+  const parkRadius = Math.min(radiusM, 10000);
+  const limit = variant === 'minimal' ? 8 : 12;
+
+  if (variant === 'minimal') {
+    return `[out:json][timeout:8];(node["leisure"="park"](around:${Math.min(parkRadius, 5000)},${lat},${lng});node["amenity"="restaurant"](around:${Math.min(foodRadius, 3000)},${lat},${lng}););out center ${limit};`;
+  }
+
+  return `[out:json][timeout:12];(node["leisure"="park"](around:${parkRadius},${lat},${lng});node["leisure"="playground"](around:${Math.min(parkRadius, 6000)},${lat},${lng});node["amenity"="restaurant"](around:${foodRadius},${lat},${lng});node["amenity"="cafe"](around:${foodRadius},${lat},${lng});node["tourism"="museum"](around:${cultureRadius},${lat},${lng}););out center ${limit};`;
+}
+
+async function fetchOverpass(query) {
+  let lastError = null;
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': OVERPASS_USER_AGENT,
+          Accept: 'application/json',
+        },
+        body: new URLSearchParams({ data: query }).toString(),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!response.ok) {
+        lastError = new Error(`Overpass API error: ${response.status} (${endpoint})`);
+        continue;
+      }
+      const data = await response.json();
+      return data.elements || [];
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Overpass request failed');
+    }
+  }
+  throw lastError || new Error('Overpass API unavailable');
 }
 
 function elementToRecord(element) {
@@ -38,6 +63,7 @@ function elementToRecord(element) {
   else if (tags.amenity === 'restaurant') category = 'restaurant';
   else if (tags.tourism === 'museum') category = 'museum';
   else if (tags.tourism === 'farm' || tags.tourism === 'zoo') category = 'farm';
+  else if (tags.leisure === 'playground') category = 'park';
 
   return {
     familypilotId: `fp-osm-${element.id}`,
@@ -56,41 +82,22 @@ function elementToRecord(element) {
 }
 
 async function searchOsm(lat, lng, radiusKm) {
-  const radiusM = Math.round(radiusKm * 1000);
-  const query = buildOverpassQuery(lat, lng, radiusM);
-  let lastError = null;
-
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': OVERPASS_USER_AGENT,
-          Accept: 'application/json',
-        },
-        body: new URLSearchParams({ data: query }).toString(),
-      });
-      if (!response.ok) {
-        lastError = new Error(`Overpass API error: ${response.status} (${endpoint})`);
-        continue;
-      }
-      const data = await response.json();
-      const seen = new Set();
-      return (data.elements || [])
-        .map(elementToRecord)
-        .filter(Boolean)
-        .filter((r) => {
-          if (seen.has(r.externalId)) return false;
-          seen.add(r.externalId);
-          return true;
-        });
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error('Overpass request failed');
-    }
+  let elements = [];
+  try {
+    elements = await fetchOverpass(buildOverpassQuery(lat, lng, radiusKm, 'full'));
+  } catch (fullError) {
+    elements = await fetchOverpass(buildOverpassQuery(lat, lng, radiusKm, 'minimal'));
   }
 
-  throw lastError || new Error('Overpass API unavailable');
+  const seen = new Set();
+  return elements
+    .map(elementToRecord)
+    .filter(Boolean)
+    .filter((r) => {
+      if (seen.has(r.externalId)) return false;
+      seen.add(r.externalId);
+      return true;
+    });
 }
 
 const MOCK_FALLBACK = [
