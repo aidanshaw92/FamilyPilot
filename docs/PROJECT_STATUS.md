@@ -13,7 +13,7 @@
 **Eat Nearby:** [EAT_NEARBY.md](./EAT_NEARBY.md)  
 **Places data architecture:** [PLACES_DATA_ARCHITECTURE.md](./PLACES_DATA_ARCHITECTURE.md) · [DATA_PROVENANCE.md](./DATA_PROVENANCE.md)  
 **Google quality pass:** [LIVE_GOOGLE_QUALITY_PASS.md](./LIVE_GOOGLE_QUALITY_PASS.md)  
-**Venue enrichment workflow:** [VENUE_ENRICHMENT_WORKFLOW.md](./VENUE_ENRICHMENT_WORKFLOW.md)  
+**Venue enrichment workflow:** [VENUE_ENRICHMENT_WORKFLOW.md](./VENUE_ENRICHMENT_WORKFLOW.md) · [AI_VENUE_ENRICHMENT.md](./AI_VENUE_ENRICHMENT.md)  
 **Tester guide:** [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md)
 
 ---

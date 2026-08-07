@@ -6,6 +6,7 @@ export type EnrichmentSourceType =
   | 'venue_contact'
   | 'google_provider'
   | 'family_pilot_editorial'
+  | 'ai_assisted'
   | 'community_report'
   | 'local_authority'
   | 'other';
@@ -86,7 +87,8 @@ export interface EnrichmentQueueItem {
   longitude: number;
   address?: string;
   googlePrimaryType?: string;
-  enrichmentStatus: 'provider_only' | 'enriched' | 'verified';
+  enrichmentStatus: 'provider_only' | 'ai_draft' | 'enriched' | 'verified';
+  hasAiDraft?: boolean;
   lastChecked?: string;
   sourceType?: EnrichmentSourceType;
   hasMetadata: boolean;
@@ -97,6 +99,7 @@ export interface EnrichmentQueueItem {
 export interface EnrichmentStats {
   discovered: number;
   providerOnly: number;
+  aiDraft: number;
   enriched: number;
   verified: number;
   awaitingReview: number;

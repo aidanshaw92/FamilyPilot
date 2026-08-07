@@ -1,6 +1,7 @@
 import { EnrichmentStatus, FamilyProfile, FamilyScore, FamilyScoreFactors, VenueDetail } from '@/src/types';
 
 import { PROVIDER_ONLY_FAMILY_MATCH_CAP } from '@/src/constants/places-quality';
+import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 
 const WEIGHTS = {
   ageSuitability: 0.25,
@@ -65,7 +66,7 @@ export function calculateFamilyScore(
   options: FamilyScoreOptions = {},
 ): FamilyScore {
   const enrichmentStatus = options.enrichmentStatus ?? venue.enrichmentStatus ?? 'enriched';
-  const isProviderOnly = enrichmentStatus === 'provider_only';
+  const isProviderOnly = isUnreviewedEnrichmentStatus(enrichmentStatus);
 
   const childAges = profile.members
     .filter((m) => m.role === 'child')

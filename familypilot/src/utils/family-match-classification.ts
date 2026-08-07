@@ -1,4 +1,5 @@
 import { EnrichmentStatus } from '@/src/types';
+import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 
 export type MatchClassification =
   | 'Potential match'
@@ -12,7 +13,7 @@ export function getMatchClassification(
   score: number,
   enrichmentStatus?: EnrichmentStatus,
 ): MatchClassification {
-  if (enrichmentStatus === 'provider_only') {
+  if (isUnreviewedEnrichmentStatus(enrichmentStatus)) {
     return 'Potential match';
   }
   if (score >= 90) return 'Excellent match';
@@ -56,6 +57,11 @@ export function getEnrichmentTrustCopy(status?: EnrichmentStatus): string {
   if (status === 'verified') return getVerifiedTrustCopy();
   if (status === 'enriched') return getEnrichedTrustCopy();
   return getProviderOnlyTrustCopy();
+}
+
+/** Internal editorial label — not shown in consumer app. */
+export function getAiDraftInternalLabel(): string {
+  return 'AI suggestion — review required';
 }
 
 export function getProviderOnlyDetailTrustCopy(): string {

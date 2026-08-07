@@ -1,7 +1,7 @@
 import { ExternalPlaceRecord, StructuredOpeningHours, VenueFamilyMetadata } from '@/src/types/places';
 import { EnrichmentStatus, TrustMetadata, Venue, VenueDetail } from '@/src/types';
 
-import { deriveEnrichmentStatusFromRecord, mapExtendedTerrainToLegacy } from '@/src/utils/enrichment-rules';
+import { deriveEnrichmentStatusFromRecord, mapExtendedTerrainToLegacy, toConsumerEnrichmentStatus } from '@/src/utils/enrichment-rules';
 import { estimateDriveMinutes } from './geo-utils';
 
 function buildBestAgesLabelFromMeta(metadata: VenueFamilyMetadata | null): string | undefined {
@@ -38,10 +38,17 @@ function buildTrust(
   metadata: VenueFamilyMetadata | null,
   enrichmentStatus: EnrichmentStatus,
 ): TrustMetadata {
+  const consumerStatus = toConsumerEnrichmentStatus(enrichmentStatus);
   return {
-    source: enrichmentStatus === 'provider_only' ? 'estimated' : 'provider',
+    source: consumerStatus === 'provider_only' ? 'estimated' : 'provider',
     lastChecked: metadata?.lastChecked ?? place.fetchedAt.slice(0, 10),
   };
+}
+
+/** ai_draft metadata is internal-only — do not merge family fields into consumer views. */
+function consumerMetadata(metadata: VenueFamilyMetadata | null, enrichmentStatus: EnrichmentStatus) {
+  if (enrichmentStatus === 'ai_draft') return null;
+  return metadata;
 }
 
 export function mergePlaceToVenue(
@@ -53,6 +60,8 @@ export function mergePlaceToVenue(
   const driveMinutes = estimateDriveMinutes(homeLat, homeLng, place.latitude, place.longitude);
   const imageUrl = place.photos[0] ?? '';
   const enrichmentStatus = resolveEnrichmentStatus(place, metadata);
+  const consumerStatus = toConsumerEnrichmentStatus(enrichmentStatus);
+  const trustedMeta = consumerMetadata(metadata, enrichmentStatus);
 
   return {
     id: place.familypilotId,
@@ -75,13 +84,13 @@ export function mergePlaceToVenue(
       },
       explanation: [],
     },
-    estimatedSpend: metadata?.estimatedSpend,
+    estimatedSpend: trustedMeta?.estimatedSpend,
     isOpen: place.isOpen,
     address: place.address,
-    goodToKnow: metadata?.goodToKnow,
-    facilities: metadata?.facilities,
+    goodToKnow: trustedMeta?.goodToKnow,
+    facilities: trustedMeta?.facilities,
     trust: buildTrust(place, metadata, enrichmentStatus),
-    enrichmentStatus,
+    enrichmentStatus: consumerStatus,
   };
 }
 
@@ -92,26 +101,28 @@ export function mergePlaceToVenueDetail(
   homeLng: number,
 ): VenueDetail {
   const base = mergePlaceToVenue(place, metadata, homeLat, homeLng);
+  const rawStatus = resolveEnrichmentStatus(place, metadata);
+  const trustedMeta = consumerMetadata(metadata, rawStatus);
   const isProviderOnly = base.enrichmentStatus === 'provider_only';
 
   return {
     ...base,
     photos: place.photos.length > 0 ? place.photos : base.imageUrl ? [base.imageUrl] : [],
-    facilities: metadata?.facilities ?? [],
+    facilities: trustedMeta?.facilities ?? [],
     openingHours: formatOpeningHours(place.openingHours),
-    terrain: metadata?.terrain ?? mapExtendedTerrainToLegacy(metadata?.extendedTerrain),
-    bestAges: metadata?.bestAges ?? buildBestAgesLabelFromMeta(metadata),
-    parkingInfo: metadata?.parkingInfo,
+    terrain: trustedMeta?.terrain ?? mapExtendedTerrainToLegacy(trustedMeta?.extendedTerrain),
+    bestAges: trustedMeta?.bestAges ?? buildBestAgesLabelFromMeta(trustedMeta),
+    parkingInfo: trustedMeta?.parkingInfo,
     description:
-      metadata?.familyNotes ??
+      trustedMeta?.familyNotes ??
       place.description ??
       (isProviderOnly
         ? `${place.name} — live place data from ${place.provider === 'osm' ? 'OpenStreetMap' : 'Google'}. Family suitability has not yet been reviewed.`
         : `${place.name} — details from ${place.provider === 'osm' ? 'OpenStreetMap' : place.provider}.`),
-    visitDurationMinutes: metadata?.visitDurationMinutes,
-    warnings: metadata?.warnings,
-    goodToKnow: metadata?.goodToKnow,
-    communityTips: metadata?.communityTips,
-    trust: buildTrust(place, metadata, base.enrichmentStatus ?? 'provider_only'),
+    visitDurationMinutes: trustedMeta?.visitDurationMinutes,
+    warnings: trustedMeta?.warnings,
+    goodToKnow: trustedMeta?.goodToKnow,
+    communityTips: trustedMeta?.communityTips,
+    trust: buildTrust(place, metadata, rawStatus),
   };
 }
