@@ -1,37 +1,11 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
 const OVERPASS_ENDPOINT = 'https://overpass-api.de/api/interpreter';
 const OVERPASS_USER_AGENT = 'FamilyPilot/1.0 (https://family-pilot-seven.vercel.app; places-api)';
 
-interface OverpassElement {
-  type: string;
-  id: number;
-  lat?: number;
-  lon?: number;
-  center?: { lat: number; lon: number };
-  tags?: Record<string, string>;
+function getConfiguredProvider() {
+  return (process.env.PLACES_PROVIDER || 'mock').toLowerCase();
 }
 
-interface ExternalPlaceRecord {
-  familypilotId: string;
-  externalId: string;
-  provider: 'osm' | 'mock';
-  name: string;
-  latitude: number;
-  longitude: number;
-  category: string;
-  address?: string;
-  website?: string;
-  phone?: string;
-  photos: string[];
-  fetchedAt: string;
-}
-
-function getConfiguredProvider(): string {
-  return (process.env.PLACES_PROVIDER ?? 'mock').toLowerCase();
-}
-
-function buildOverpassQuery(lat: number, lng: number, radiusM: number): string {
+function buildOverpassQuery(lat, lng, radiusM) {
   return `[out:json][timeout:25];
 (
   node["leisure"="park"](around:${radiusM},${lat},${lng});
@@ -48,13 +22,13 @@ function buildOverpassQuery(lat: number, lng: number, radiusM: number): string {
 out center 30;`;
 }
 
-function elementToRecord(element: OverpassElement): ExternalPlaceRecord | null {
-  const tags = element.tags ?? {};
+function elementToRecord(element) {
+  const tags = element.tags || {};
   const name = tags.name;
   if (!name) return null;
-  const lat = element.lat ?? element.center?.lat;
-  const lon = element.lon ?? element.center?.lon;
-  if (lat === undefined || lon === undefined) return null;
+  const lat = element.lat != null ? element.lat : element.center && element.center.lat;
+  const lon = element.lon != null ? element.lon : element.center && element.center.lon;
+  if (lat == null || lon == null) return null;
 
   let category = 'park';
   if (tags.amenity === 'cafe') category = 'cafe';
@@ -72,13 +46,13 @@ function elementToRecord(element: OverpassElement): ExternalPlaceRecord | null {
     category,
     address: [tags['addr:street'], tags['addr:city'], tags['addr:postcode']].filter(Boolean).join(', ') || undefined,
     website: tags.website,
-    phone: tags.phone ?? tags['contact:phone'],
+    phone: tags.phone || tags['contact:phone'],
     photos: [],
     fetchedAt: new Date().toISOString(),
   };
 }
 
-async function searchOsm(lat: number, lng: number, radiusKm: number): Promise<ExternalPlaceRecord[]> {
+async function searchOsm(lat, lng, radiusKm) {
   const radiusM = Math.round(radiusKm * 1000);
   const query = buildOverpassQuery(lat, lng, radiusM);
   const response = await fetch(OVERPASS_ENDPOINT, {
@@ -93,11 +67,11 @@ async function searchOsm(lat: number, lng: number, radiusKm: number): Promise<Ex
   if (!response.ok) {
     throw new Error(`Overpass API error: ${response.status}`);
   }
-  const data = (await response.json()) as { elements: OverpassElement[] };
-  const seen = new Set<string>();
-  return data.elements
+  const data = await response.json();
+  const seen = new Set();
+  return (data.elements || [])
     .map(elementToRecord)
-    .filter((r): r is ExternalPlaceRecord => r !== null)
+    .filter(Boolean)
     .filter((r) => {
       if (seen.has(r.externalId)) return false;
       seen.add(r.externalId);
@@ -105,8 +79,7 @@ async function searchOsm(lat: number, lng: number, radiusKm: number): Promise<Ex
     });
 }
 
-/** Minimal mock fallback — same IDs as development layer */
-const MOCK_FALLBACK: ExternalPlaceRecord[] = [
+const MOCK_FALLBACK = [
   {
     familypilotId: 'venue-1',
     externalId: 'mock:venue-1',
@@ -118,20 +91,9 @@ const MOCK_FALLBACK: ExternalPlaceRecord[] = [
     photos: [],
     fetchedAt: new Date().toISOString(),
   },
-  {
-    familypilotId: 'venue-2',
-    externalId: 'mock:venue-2',
-    provider: 'mock',
-    name: 'Cassiobury Park',
-    latitude: 51.655,
-    longitude: -0.402,
-    category: 'park',
-    photos: [],
-    fetchedAt: new Date().toISOString(),
-  },
 ];
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Cache-Control', 'public, max-age=300');
@@ -141,7 +103,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const latitude = Number(req.query.lat);
   const longitude = Number(req.query.lng);
-  const radiusKm = Number(req.query.radiusKm ?? 25);
+  const radiusKm = Number(req.query.radiusKm || 25);
   const configuredProvider = getConfiguredProvider();
   const fetchedAt = new Date().toISOString();
 
@@ -181,4 +143,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     fetchedAt,
     fallbackUsed: false,
   });
-}
+};

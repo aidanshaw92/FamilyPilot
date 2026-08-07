@@ -9,10 +9,9 @@
     "PLACES_PROVIDER": "osm"
   },
   "functions": {
-    "api/places/*.ts": {
+    "api/places/*.js": {
       "memory": 1024,
-      "maxDuration": 30,
-      "includeFiles": "familypilot/server/**, familypilot/src/data/**, familypilot/src/types/**, familypilot/src/services/providers/**, familypilot/src/services/places/**"
+      "maxDuration": 30
     }
   },
   "rewrites": [
