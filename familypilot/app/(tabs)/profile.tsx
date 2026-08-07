@@ -4,9 +4,11 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
-import { Card, Skeleton, Text } from '@/src/components/ui';
+import { Button, Card, Skeleton, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
+import { formatBudgetTier, formatChildAge } from '@/src/utils/profile-defaults';
+import { getNextCompletionHint } from '@/src/utils/profile-completion';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -25,6 +27,7 @@ export default function ProfileScreen() {
   if (!profile) return null;
 
   const children = profile.members.filter((m) => m.role === 'child');
+  const completionHint = getNextCompletionHint(profile);
 
   return (
     <ScreenContainer>
@@ -64,9 +67,17 @@ export default function ProfileScreen() {
                 />
               </View>
               <Text variant="caption" color={colors.text.secondary}>
-                {profile.completionPercent}% complete — add your car to unlock Car Fit
+                {profile.completionPercent}% complete
+                {completionHint ? ` — ${completionHint.label}` : ' — looking good!'}
               </Text>
             </View>
+            <Button
+              label="Edit profile"
+              variant="outline"
+              fullWidth
+              onPress={() => router.push('/profile/edit' as never)}
+              style={styles.editButton}
+            />
           </Card>
         </FadeInView>
 
@@ -78,7 +89,7 @@ export default function ProfileScreen() {
             <ProfileRow
               icon="person-outline"
               label={child.name}
-              value={`${child.age} years old`}
+              value={formatChildAge(child.age)}
             />
           </FadeInView>
         ))}
@@ -87,36 +98,54 @@ export default function ProfileScreen() {
           Preferences
         </Text>
         <Card style={styles.prefCard}>
-          <ProfileRow icon="location-outline" label="Home" value={profile.homeLocation} editable />
+          <ProfileRow icon="location-outline" label="Home" value={profile.homeLocation || 'Not set'} />
           <ProfileRow
             icon="car-outline"
             label="Max drive"
             value={`${profile.maxDriveMinutes} minutes`}
-            editable
           />
           <ProfileRow
             icon="wallet-outline"
             label="Budget"
-            value={profile.budgetTier.charAt(0).toUpperCase() + profile.budgetTier.slice(1)}
-            editable
+            value={formatBudgetTier(profile.budgetTier)}
           />
         </Card>
 
         <Text variant="heading3" style={styles.sectionTitle}>
           Vehicle
         </Text>
-        <ProfileRow icon="car-sport-outline" label="Car" value="Tesla Model Y" editable />
+        <ProfileRow
+          icon="car-sport-outline"
+          label="Car"
+          value={profile.vehicle?.trim() || 'Not added'}
+        />
 
         <Text variant="heading3" style={styles.sectionTitle}>
           Equipment
         </Text>
-        <ProfileRow icon="bag-outline" label="Pushchair" value="Bugaboo Butterfly" editable />
-        <ProfileRow icon="bed-outline" label="Travel cot" value="Not added" editable />
+        <ProfileRow
+          icon="bag-outline"
+          label="Pushchair"
+          value={profile.pushchair?.trim() || 'Not added'}
+        />
+        <ProfileRow
+          icon="bed-outline"
+          label="Travel cot"
+          value={profile.travelCot?.trim() || 'Not added'}
+        />
 
         <Text variant="heading3" style={styles.sectionTitle}>
           Memberships & discounts
         </Text>
-        <ProfileRow icon="card-outline" label="National Trust" value="Not linked" editable />
+        <ProfileRow
+          icon="card-outline"
+          label="Memberships"
+          value={
+            profile.memberships && profile.memberships.length > 0
+              ? profile.memberships.join(', ')
+              : 'Not linked'
+          }
+        />
 
         <View style={styles.testingNotice}>
           <Text variant="caption" color={colors.text.secondary}>
@@ -149,19 +178,13 @@ function ProfileRow({
   icon,
   label,
   value,
-  editable = false,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
-  editable?: boolean;
 }) {
   return (
-    <Pressable
-      style={styles.prefRow}
-      accessibilityRole={editable ? 'button' : 'text'}
-      accessibilityLabel={editable ? `Edit ${label}` : undefined}
-    >
+    <View style={styles.prefRow}>
       <Ionicons name={icon} size={20} color={colors.text.secondary} />
       <Text variant="bodySmall" color={colors.text.secondary} style={styles.prefLabel}>
         {label}
@@ -169,10 +192,7 @@ function ProfileRow({
       <Text variant="body" style={styles.prefValue}>
         {value}
       </Text>
-      {editable ? (
-        <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />
-      ) : null}
-    </Pressable>
+    </View>
   );
 }
 
@@ -225,6 +245,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
   progressBar: {
     width: '100%',
@@ -237,6 +258,9 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: colors.secondary[500],
     borderRadius: radius.full,
+  },
+  editButton: {
+    marginTop: spacing.sm,
   },
   sectionTitle: {
     marginBottom: spacing.lg,

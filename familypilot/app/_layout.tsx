@@ -61,7 +61,10 @@ export default function RootLayout() {
             animation: 'slide_from_right',
           }}
         >
+          <Stack.Screen name="index" options={{ animation: 'fade' }} />
+          <Stack.Screen name="(onboarding)" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="profile/edit" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen
             name="venue/[id]"
             options={{ animation: 'slide_from_bottom' }}

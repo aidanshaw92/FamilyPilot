@@ -14,6 +14,45 @@ function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, Math.round(value)));
 }
 
+function scoreAgeSuitability(venue: VenueDetail, childAges: number[]): number {
+  if (childAges.length === 0) return 75;
+
+  const youngest = Math.min(...childAges);
+  const oldest = Math.max(...childAges);
+
+  switch (venue.category) {
+    case 'museum':
+      return oldest >= 3 ? clamp(88 + oldest) : clamp(70 + youngest * 5);
+    case 'farm':
+      return youngest >= 1 ? clamp(90 + youngest * 2) : 65;
+    case 'restaurant':
+    case 'cafe':
+      return clamp(82 + childAges.length * 4);
+    case 'park':
+      return clamp(85 + youngest * 3);
+    default:
+      return clamp(80 + childAges.length * 3);
+  }
+}
+
+function scoreDistance(driveMinutes: number, maxDriveMinutes: number): number {
+  if (driveMinutes <= maxDriveMinutes * 0.5) return 98;
+  if (driveMinutes <= maxDriveMinutes) return clamp(100 - (driveMinutes / maxDriveMinutes) * 25);
+  if (driveMinutes <= maxDriveMinutes + 10) return clamp(55 - (driveMinutes - maxDriveMinutes) * 3);
+  return 30;
+}
+
+function scoreBudget(venue: VenueDetail, tier: FamilyProfile['budgetTier']): number {
+  const spend = venue.estimatedSpend ?? '';
+  const isFree = spend.toLowerCase().includes('free') || spend.startsWith('£0');
+
+  if (tier === 'budget') {
+    return isFree ? 95 : spend.includes('£35') || spend.includes('£50') ? 65 : 80;
+  }
+  if (tier === 'premium') return 88;
+  return isFree ? 85 : 88;
+}
+
 export function calculateFamilyScore(
   venue: VenueDetail,
   profile: FamilyProfile,
@@ -23,12 +62,12 @@ export function calculateFamilyScore(
     .map((m) => m.age);
 
   const factors: FamilyScoreFactors = {
-    ageSuitability: clamp(85 + childAges.length * 3),
+    ageSuitability: scoreAgeSuitability(venue, childAges),
     accessibility: venue.facilities.includes('pushchair_friendly') ? 92 : 70,
-    distance: clamp(100 - venue.driveMinutes * 2),
-    weatherFit: 85,
-    budgetFit: profile.budgetTier === 'budget' ? (venue.estimatedSpend === 'Free' ? 95 : 75) : 88,
-    facilitiesMatch: clamp(venue.facilities.length * 12),
+    distance: scoreDistance(venue.driveMinutes, profile.maxDriveMinutes),
+    weatherFit: venue.category === 'museum' || venue.category === 'farm' ? 88 : 85,
+    budgetFit: scoreBudget(venue, profile.budgetTier),
+    facilitiesMatch: clamp(Math.min(venue.facilities.length * 11, 96)),
     popularity: 80,
   };
 
@@ -53,19 +92,35 @@ function buildExplanation(
   const children = profile.members.filter((m) => m.role === 'child');
 
   if (factors.ageSuitability >= 85 && children[0]) {
-    reasons.push(`${children[0].name} is the perfect age for this ${venue.category}`);
+    if (children.length === 1) {
+      reasons.push(`${children[0].name} is a great age for this ${venue.category}`);
+    } else {
+      reasons.push(`Works well for ${children.map((c) => c.name).join(' and ')}`);
+    }
   }
-  if (factors.accessibility >= 85) {
+
+  if (profile.pushchair?.trim() && factors.accessibility >= 85) {
+    reasons.push('Pushchair friendly paths and access');
+  } else if (factors.accessibility >= 85) {
     reasons.push('Flat enough for pushchairs');
   }
+
   if (factors.distance >= 85) {
     reasons.push(`Only ${venue.driveMinutes} minutes from home`);
+  } else if (venue.driveMinutes > profile.maxDriveMinutes) {
+    reasons.push(`Further than your usual ${profile.maxDriveMinutes} min drive`);
   }
+
   if (factors.budgetFit >= 85) {
     reasons.push('Within your usual budget');
   }
+
   if (venue.facilities.includes('baby_changing')) {
     reasons.push('Baby changing available on site');
+  }
+
+  if (venue.facilities.includes('cafe') && venue.category !== 'restaurant') {
+    reasons.push('Café on site for lunch');
   }
 
   return reasons.slice(0, 4);

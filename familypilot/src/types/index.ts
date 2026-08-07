@@ -108,6 +108,10 @@ export interface FamilyProfile {
   budgetTier: 'budget' | 'moderate' | 'premium';
   maxDriveMinutes: number;
   completionPercent: number;
+  vehicle?: string | null;
+  pushchair?: string | null;
+  travelCot?: string | null;
+  memberships?: string[];
 }
 
 export interface WeatherInfo {

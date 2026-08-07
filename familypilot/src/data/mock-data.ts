@@ -41,6 +41,10 @@ export const mockFamilyProfile: FamilyProfile = {
   budgetTier: 'moderate',
   maxDriveMinutes: 30,
   completionPercent: 72,
+  vehicle: 'Tesla Model Y',
+  pushchair: 'Bugaboo Butterfly',
+  travelCot: null,
+  memberships: ['National Trust'],
 };
 
 export const mockWeather: WeatherInfo = {

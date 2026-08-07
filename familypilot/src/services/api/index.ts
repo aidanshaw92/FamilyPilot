@@ -1,10 +1,7 @@
 import {
   mockCarFit,
-  mockFamilyProfile,
   mockHolidayOffers,
   mockPackingItems,
-  mockRecentVenues,
-  mockRecommendations,
   mockSavedItems,
   mockStores,
   mockTrips,
@@ -12,6 +9,7 @@ import {
   mockVenues,
   mockWeather,
 } from '@/src/data/mock-data';
+import { useFamilyStore } from '@/src/stores/family-store';
 import {
   CarFitResult,
   FamilyProfile,
@@ -25,13 +23,25 @@ import {
   VenueDetail,
   WeatherInfo,
 } from '@/src/types';
+import { withCompletion } from '@/src/utils/profile-defaults';
+import { buildHomeRecommendations, personaliseVenue, personaliseVenues } from '@/src/utils/personalise-venues';
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+function getProfile(): FamilyProfile {
+  return withCompletion(useFamilyStore.getState().profile);
+}
 
 export const familyService = {
   async getProfile(): Promise<FamilyProfile> {
     await delay(200);
-    return mockFamilyProfile;
+    return getProfile();
+  },
+
+  async updateProfile(updates: Partial<FamilyProfile>): Promise<FamilyProfile> {
+    await delay(150);
+    useFamilyStore.getState().updateProfile(updates);
+    return getProfile();
   },
 };
 
@@ -45,24 +55,27 @@ export const weatherService = {
 export const venueService = {
   async getNearby(): Promise<Venue[]> {
     await delay(300);
-    return mockVenues;
+    return personaliseVenues(mockVenues, getProfile());
   },
 
   async getById(id: string): Promise<VenueDetail | null> {
     await delay(200);
-    return mockVenueDetails[id] ?? null;
+    const base = mockVenueDetails[id];
+    if (!base) return null;
+    return { ...base, ...personaliseVenue(base, getProfile()) };
   },
 };
 
 export const recommendationService = {
   async getHomeRecommendations(): Promise<RecommendationSection[]> {
     await delay(400);
-    return mockRecommendations;
+    return buildHomeRecommendations(getProfile());
   },
 
   async getRecentVenues(): Promise<Venue[]> {
     await delay(200);
-    return mockRecentVenues;
+    const profile = getProfile();
+    return personaliseVenues([mockVenues[0], mockVenues[4]], profile);
   },
 };
 
@@ -76,7 +89,11 @@ export const tripService = {
 export const savedService = {
   async getSaved(): Promise<SavedItem[]> {
     await delay(200);
-    return mockSavedItems;
+    const profile = getProfile();
+    return mockSavedItems.map((item) => ({
+      ...item,
+      venue: personaliseVenue(item.venue, profile),
+    }));
   },
 };
 
@@ -90,7 +107,11 @@ export const inventoryService = {
 export const carFitService = {
   async getCarFit(): Promise<CarFitResult> {
     await delay(200);
-    return mockCarFit;
+    const profile = getProfile();
+    return {
+      ...mockCarFit,
+      carName: profile.vehicle?.trim() || 'Add your car in Profile',
+    };
   },
 };
 
