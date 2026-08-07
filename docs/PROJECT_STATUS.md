@@ -2,7 +2,7 @@
 
 **Last updated:** 7 August 2026  
 **Production URL:** https://family-pilot-seven.vercel.app/  
-**Current focus:** Eat Nearby beta — restaurants + contextual dining recommendations  
+**Current focus:** Provider-agnostic places data layer — live OSM/Google-ready with mock fallback  
 **Product constitution:** [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) — read before any code change  
 **MVP scope:** [MVP_SCOPE.md](./MVP_SCOPE.md)  
 **Future backlog:** [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md)  
@@ -11,6 +11,7 @@
 **Trust polish pass:** [TRUST_AND_POLISH_PASS.md](./TRUST_AND_POLISH_PASS.md)  
 **Final beta polish:** [FINAL_BETA_POLISH.md](./FINAL_BETA_POLISH.md)  
 **Eat Nearby:** [EAT_NEARBY.md](./EAT_NEARBY.md)  
+**Places data architecture:** [PLACES_DATA_ARCHITECTURE.md](./PLACES_DATA_ARCHITECTURE.md) · [DATA_PROVENANCE.md](./DATA_PROVENANCE.md)  
 **Tester guide:** [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md)
 
 ---
