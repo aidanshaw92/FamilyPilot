@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
 
   let places = result.places;
   try {
-    const { getMetadata } = require('../enrichment/lib/enrichment-store');
+    const { getMetadata } = require('../enrichment/_lib/enrichment-store');
     places = await Promise.all(
       places.map(async (place) => {
         const metadata = await getMetadata(place.familypilotId);
