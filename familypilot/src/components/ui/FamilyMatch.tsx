@@ -1,8 +1,9 @@
 import { StyleSheet, View, ViewStyle } from 'react-native';
 
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
+import { getMatchClassification } from '@/src/utils/family-match-classification';
 
-import { FAMILY_MATCH_LABEL } from './family-match-label';
+import { formatFamilyMatchSecondary } from './family-match-label';
 import { Text } from './Text';
 
 interface FamilyMatchProps {
@@ -12,24 +13,21 @@ interface FamilyMatchProps {
 }
 
 /**
- * Unified Family Match presentation.
- * Use "Family Score" (FamilyMatchPanel) only for detailed breakdowns.
+ * Human-readable Family Match — classification leads, numeric score is secondary.
  */
 export function FamilyMatch({ score, variant = 'compact', style }: FamilyMatchProps) {
-  const label = FAMILY_MATCH_LABEL;
+  const classification = getMatchClassification(score);
+  const secondary = formatFamilyMatchSecondary(score);
 
   if (variant === 'compact') {
     return (
       <View
         style={[styles.compact, style]}
         accessibilityRole="text"
-        accessibilityLabel={`${label} ${score} percent`}
+        accessibilityLabel={`${classification}, ${secondary}`}
       >
-        <Text variant="caption" color={colors.text.inverse} style={styles.compactScore}>
-          {score}%
-        </Text>
-        <Text variant="caption" color={colors.text.inverse} style={styles.compactLabel}>
-          Match
+        <Text variant="caption" color={colors.secondary[600]} style={styles.compactPrimary}>
+          {classification.replace(' match', '')}
         </Text>
       </View>
     );
@@ -40,10 +38,13 @@ export function FamilyMatch({ score, variant = 'compact', style }: FamilyMatchPr
       <View
         style={[styles.card, style]}
         accessibilityRole="text"
-        accessibilityLabel={`${label} ${score} percent`}
+        accessibilityLabel={`${classification}, ${secondary}`}
       >
-        <Text variant="caption" color={colors.text.inverse} style={styles.cardText}>
-          {score}% {label}
+        <Text variant="caption" color={colors.text.inverse} style={styles.cardPrimary}>
+          {classification}
+        </Text>
+        <Text variant="caption" color="rgba(255,255,255,0.85)" style={styles.cardSecondary}>
+          {secondary}
         </Text>
       </View>
     );
@@ -53,13 +54,13 @@ export function FamilyMatch({ score, variant = 'compact', style }: FamilyMatchPr
     <View
       style={[styles.detail, style]}
       accessibilityRole="text"
-      accessibilityLabel={`${label} ${score} percent`}
+      accessibilityLabel={`${classification}, ${secondary}`}
     >
-      <Text variant="heading1" color={colors.secondary[600]}>
-        {score}%
+      <Text variant="bodySmall" color={colors.secondary[600]} style={styles.detailPrimary}>
+        {classification}
       </Text>
-      <Text variant="caption" color={colors.secondary[600]} style={styles.detailLabel}>
-        {label}
+      <Text variant="caption" color={colors.text.secondary} style={styles.detailSecondary}>
+        {secondary}
       </Text>
     </View>
   );
@@ -67,45 +68,53 @@ export function FamilyMatch({ score, variant = 'compact', style }: FamilyMatchPr
 
 const styles = StyleSheet.create({
   compact: {
-    backgroundColor: colors.secondary[500],
+    backgroundColor: colors.secondary[50],
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
-    alignItems: 'center',
-    minWidth: 44,
-    minHeight: 44,
+    borderWidth: 1,
+    borderColor: colors.secondary[100],
+    minHeight: 32,
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  compactScore: {
-    fontFamily: 'Inter_700Bold',
-    lineHeight: 16,
-  },
-  compactLabel: {
-    fontSize: 10,
-    lineHeight: 12,
+  compactPrimary: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
   },
   card: {
-    backgroundColor: colors.secondary[500],
+    backgroundColor: colors.secondary[600],
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    maxWidth: 160,
   },
-  cardText: {
-    fontFamily: 'Inter_700Bold',
+  cardPrimary: {
+    fontFamily: 'Inter_600SemiBold',
+    lineHeight: 16,
+  },
+  cardSecondary: {
+    fontSize: 10,
+    lineHeight: 14,
+    marginTop: 2,
   },
   detail: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.secondary[50],
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: colors.secondary[500],
+    borderWidth: 1,
+    borderColor: colors.secondary[100],
     ...shadows.card,
+    minWidth: 120,
   },
-  detailLabel: {
+  detailPrimary: {
     fontFamily: 'Inter_600SemiBold',
-    marginTop: 2,
+    textAlign: 'center',
+  },
+  detailSecondary: {
+    marginTop: 4,
+    textAlign: 'center',
   },
 });

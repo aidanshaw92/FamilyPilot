@@ -132,10 +132,10 @@ async function captureEmptyStates(page, outDir) {
 
   await page.goto(`${BASE}/explore`, { waitUntil: 'domcontentloaded' });
   await waitForScreenReady(page);
-  await clickButton(page, 'Indoor');
-  await page.getByRole('button', { name: 'More filters' }).click();
-  await page.waitForTimeout(600);
   await clickButton(page, 'Parks');
+  await page.getByLabel('Open filters').click();
+  await page.waitForTimeout(600);
+  await clickButton(page, 'Indoor');
   await page.getByText('Show results').click();
   await waitForScreenReady(page, { animationMs: 900 });
   await capture(page, outDir, '18-empty-explore-filters.png');

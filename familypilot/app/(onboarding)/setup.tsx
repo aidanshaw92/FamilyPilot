@@ -52,19 +52,21 @@ export default function SetupScreen() {
       [
         {
           title: 'What should we call you?',
-          subtitle: 'We will use this to greet you on Home.',
+          subtitle: 'We will greet you by name on Home and tailor recommendations to your family.',
         },
         {
-          title: 'Where is home?',
-          subtitle: 'Your town or postcode helps us suggest nearby places.',
+          title: 'Where are you based?',
+          subtitle:
+            'We use your general area to find suitable places nearby. Your exact home address is never shown to other users.',
         },
         {
-          title: 'Who is in your family?',
-          subtitle: 'Add your children so we can match ages and facilities.',
+          title: 'Who are we planning for?',
+          subtitle:
+            'We use age to recommend places and activities that genuinely suit your family.',
         },
         {
-          title: 'A few preferences',
-          subtitle: 'Optional — you can change these anytime in Profile.',
+          title: 'How do you usually plan days out?',
+          subtitle: 'These defaults help Family Match — you can change them anytime in Profile.',
         },
       ][step - 1],
     [step],

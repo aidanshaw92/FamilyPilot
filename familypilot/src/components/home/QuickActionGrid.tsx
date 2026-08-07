@@ -96,8 +96,6 @@ const styles = StyleSheet.create({
   moreLabel: {
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   moreRow: {
     gap: spacing.sm,

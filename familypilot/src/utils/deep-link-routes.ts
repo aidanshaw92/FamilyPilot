@@ -13,7 +13,7 @@
 
 import { VENUE_IDS } from '@/src/utils/venue-routes';
 
-export const STACK_ROUTES = ['need-now', 'holiday', 'packing', 'car-fit'] as const;
+export const STACK_ROUTES = ['need-now', 'holiday', 'packing', 'car-fit', 'about'] as const;
 
 export function getExpectedVenuePaths(): string[] {
   return VENUE_IDS.map((id) => `venue/${id}.html`);

@@ -1,12 +1,12 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { FamilyScoreBadge, Text } from '@/src/components/ui';
+import { FamilyMatch, Text } from '@/src/components/ui';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
+import { getMatchClassification } from '@/src/utils/family-match-classification';
 
 interface VenueCardProps {
   venue: Venue;
@@ -16,6 +16,7 @@ interface VenueCardProps {
 export function VenueCard({ venue, variant = 'carousel' }: VenueCardProps) {
   const router = useRouter();
   const isCarousel = variant === 'carousel';
+  const classification = getMatchClassification(venue.familyScore.score);
 
   const handlePress = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -25,7 +26,7 @@ export function VenueCard({ venue, variant = 'carousel' }: VenueCardProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${venue.name}, family score ${venue.familyScore.score}, ${venue.driveMinutes} minutes drive`}
+      accessibilityLabel={`${venue.name}, ${classification}, ${venue.driveMinutes} minutes away`}
       onPress={handlePress}
       style={({ pressed }) => [
         styles.card,
@@ -35,26 +36,16 @@ export function VenueCard({ venue, variant = 'carousel' }: VenueCardProps) {
     >
       <Image source={{ uri: venue.imageUrl }} style={styles.image} contentFit="cover" />
       <View style={styles.scoreOverlay}>
-        <FamilyScoreBadge score={venue.familyScore.score} size="sm" />
+        <FamilyMatch score={venue.familyScore.score} variant="card" />
       </View>
       <View style={styles.content}>
         <Text variant="heading3" numberOfLines={1}>
           {venue.name}
         </Text>
-        <View style={styles.meta}>
-          <Ionicons name="car-outline" size={14} color={colors.text.tertiary} />
-          <Text variant="caption" style={styles.metaText}>
-            {venue.driveMinutes} min
-          </Text>
-          {venue.estimatedSpend ? (
-            <>
-              <Text variant="caption" color={colors.text.tertiary}>
-                ·
-              </Text>
-              <Text variant="caption">{venue.estimatedSpend}</Text>
-            </>
-          ) : null}
-        </View>
+        <Text variant="caption" color={colors.text.secondary} style={styles.metaLine}>
+          {venue.driveMinutes} min away
+          {venue.estimatedSpend ? ` · Estimated ${venue.estimatedSpend}` : ''}
+        </Text>
         {venue.familyScore.explanation[0] ? (
           <Text variant="caption" numberOfLines={2} style={styles.reason}>
             {venue.familyScore.explanation[0]}
@@ -95,14 +86,8 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
   },
-  meta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  metaLine: {
     marginTop: spacing.xs,
-    gap: spacing.xs,
-  },
-  metaText: {
-    marginLeft: 2,
   },
   reason: {
     marginTop: spacing.sm,

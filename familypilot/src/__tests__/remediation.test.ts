@@ -44,6 +44,12 @@ describe('Family Match consistency', () => {
     expect(formatFamilyMatchLabel(98)).toBe('98% Family Match');
     expect(formatFamilyMatchLabel(91)).toContain('Family Match');
   });
+
+  it('classifies scores for human-readable presentation', async () => {
+    const { getMatchClassification } = await import('@/src/utils/family-match-classification');
+    expect(getMatchClassification(91)).toBe('Excellent match');
+    expect(getMatchClassification(72)).toBe('Good match');
+  });
 });
 
 describe('web static routes', () => {

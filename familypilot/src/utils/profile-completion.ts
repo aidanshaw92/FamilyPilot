@@ -1,7 +1,7 @@
 import { FamilyProfile } from '@/src/types';
 
-export interface ProfileCompletionHint {
-  label: string;
+export interface ProfileSuggestion {
+  message: string;
   field: keyof FamilyProfile | 'children';
 }
 
@@ -20,24 +20,15 @@ export function computeCompletionPercent(profile: FamilyProfile): number {
   return Math.round((filled / checks.length) * 100);
 }
 
-export function getNextCompletionHint(profile: FamilyProfile): ProfileCompletionHint | null {
-  if (!profile.parentName.trim()) {
-    return { label: 'Add your name', field: 'parentName' };
-  }
-  if (!profile.homeLocation.trim()) {
-    return { label: 'Add your home area', field: 'homeLocation' };
-  }
-  if (!profile.members.some((m) => m.role === 'child')) {
-    return { label: 'Add your children', field: 'children' };
-  }
+export function getProfileSuggestion(profile: FamilyProfile): ProfileSuggestion | null {
   if (!profile.vehicle?.trim()) {
-    return { label: 'Add your car to unlock Car Fit', field: 'vehicle' };
+    return { message: 'Add your car to improve Car Fit recommendations', field: 'vehicle' };
   }
   if (!profile.pushchair?.trim()) {
-    return { label: 'Add your pushchair for better packing tips', field: 'pushchair' };
+    return { message: 'Add your pushchair for better packing and travel tips', field: 'pushchair' };
   }
   if ((profile.memberships?.length ?? 0) === 0) {
-    return { label: 'Link a membership for savings', field: 'memberships' };
+    return { message: 'Link a membership to surface savings opportunities', field: 'memberships' };
   }
   return null;
 }

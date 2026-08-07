@@ -147,15 +147,31 @@ export const mockVenueDetails: Record<string, VenueDetail> = Object.fromEntries(
         venue.imageUrl.replace('w=800', 'w=1200').replace('q=80', 'q=70'),
       ],
       facilities: getDefaultFacilities(venue.category),
-      openingHours: 'Estimated · Usually 8:00 AM – 6:00 PM',
+      openingHours: 'Usually 8:00 AM – 6:00 PM · Hours from venue',
       terrain: venue.category === 'park' || venue.category === 'farm' ? 'flat' : 'mixed',
       bestAges: venue.category === 'museum' ? '3 – 12 years' : '1 – 8 years',
       parkingInfo: venue.category === 'restaurant' ? 'Street parking nearby' : 'Free parking available',
       description: getDefaultDescription(venue),
       visitDurationMinutes: venue.category === 'restaurant' ? 90 : 180,
-      warnings:
-        venue.category === 'park'
-          ? ['Playground busiest 11am–2pm on weekends']
+      goodToKnow: getGoodToKnow(venue),
+      eatNearby: venue.id === 'venue-1'
+        ? [
+            {
+              venueId: 'venue-5',
+              name: 'The Farmhouse Cafe',
+              driveMinutes: 3,
+              estimatedSpend: '£30 – £45',
+              highlights: ['Kids menu', 'High chairs', 'Baby changing'],
+            },
+          ]
+        : undefined,
+      weatherAlternative:
+        venue.category === 'park' || venue.category === 'farm'
+          ? {
+              name: 'Willows Activity Farm',
+              driveMinutes: 22,
+              description: 'Indoor barn option if the weather turns',
+            }
           : undefined,
       communityTips:
         venue.id === 'venue-1'
@@ -173,14 +189,16 @@ export const mockVenueDetails: Record<string, VenueDetail> = Object.fromEntries(
                 timeAgo: '1 week ago',
               },
             ]
-          : [
-              {
-                id: `tip-${venue.id}`,
-                author: 'Parent community',
-                message: 'Prototype venue data — community tips coming soon.',
-                timeAgo: 'Recently',
-              },
-            ],
+          : venue.id === 'venue-2'
+            ? [
+                {
+                  id: 'tip-c2',
+                  author: 'Emma R.',
+                  message: 'Splash pad is best before midday on warm days.',
+                  timeAgo: '3 days ago',
+                },
+              ]
+            : undefined,
     } satisfies VenueDetail,
   ]),
 );
@@ -201,18 +219,35 @@ function getDefaultFacilities(category: Venue['category']): VenueDetail['facilit
   }
 }
 
+function getGoodToKnow(venue: Venue): string[] | undefined {
+  switch (venue.id) {
+    case 'venue-1':
+      return [
+        'Playground is mainly aimed at ages 4+',
+        'Parking gets busy around lunchtime',
+        'Paths can become muddy after rain',
+      ];
+    case 'venue-2':
+      return ['Splash pad area can get busy after 11am'];
+    case 'venue-3':
+      return ['Indoor barn available if weather changes'];
+    default:
+      return undefined;
+  }
+}
+
 function getDefaultDescription(venue: Venue): string {
   switch (venue.category) {
     case 'park':
-      return `${venue.name} is a family-friendly outdoor space with paths, play areas, and room to explore. Prototype venue data.`;
+      return `${venue.name} is a family-friendly outdoor space with paths, play areas, and room to explore.`;
     case 'farm':
-      return `${venue.name} offers hands-on animal experiences and indoor barns — great for young children. Prototype venue data.`;
+      return `${venue.name} offers hands-on animal experiences and indoor barns — great for young children.`;
     case 'museum':
-      return `${venue.name} is a rainy-day favourite with interactive exhibits for curious kids. Prototype venue data.`;
+      return `${venue.name} is a rainy-day favourite with interactive exhibits for curious kids.`;
     case 'restaurant':
-      return `${venue.name} welcomes families with highchairs, changing facilities, and a relaxed atmosphere. Prototype venue data.`;
+      return `${venue.name} welcomes families with highchairs, changing facilities, and a relaxed atmosphere.`;
     default:
-      return `${venue.name} — prototype venue data for user testing.`;
+      return `${venue.name} is a family-friendly place worth considering for your next outing.`;
   }
 }
 
@@ -277,9 +312,9 @@ export const mockTrips: Trip[] = [
 ];
 
 export const mockSavedItems: SavedItem[] = [
-  { id: 'saved-1', type: 'place', venue: mockVenues[0] },
-  { id: 'saved-2', type: 'restaurant', venue: mockVenues[4] },
-  { id: 'saved-3', type: 'place', venue: mockVenues[1] },
+  { id: 'saved-1', type: 'place', venue: mockVenues[0], group: 'want' },
+  { id: 'saved-2', type: 'restaurant', venue: mockVenues[4], group: 'favourite' },
+  { id: 'saved-3', type: 'place', venue: mockVenues[1], group: 'been' },
 ];
 
 export const mockStores: StoreLocation[] = [

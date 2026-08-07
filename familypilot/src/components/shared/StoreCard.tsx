@@ -22,7 +22,9 @@ interface StoreCardProps {
 
 export function StoreCard({ store }: StoreCardProps) {
   const handleDirections = () => {
-    void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.name)}`);
+    void Linking.openURL(
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.name)}`,
+    );
   };
 
   const handleCall = () => {
@@ -30,6 +32,10 @@ export function StoreCard({ store }: StoreCardProps) {
       void Linking.openURL(`tel:${store.phone}`);
     }
   };
+
+  const statusLine = store.isOpen
+    ? `Open until ${store.closesAt?.replace(':00', '') ?? 'closing time'}`
+    : 'Closed';
 
   return (
     <Card style={styles.card}>
@@ -42,46 +48,22 @@ export function StoreCard({ store }: StoreCardProps) {
         />
         <View style={styles.info}>
           <Text variant="heading3">{store.name}</Text>
-          <View style={styles.meta}>
-            <Ionicons name="car-outline" size={14} color={colors.text.secondary} />
-            <Text variant="caption" color={colors.text.secondary}>
-              {store.driveMinutes} min
-            </Text>
-            <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: store.isOpen ? colors.secondary[100] : colors.error[100] },
-              ]}
-            >
-              <Text
-                variant="caption"
-                color={store.isOpen ? colors.secondary[600] : colors.error[600]}
-              >
-                {store.isOpen ? `Open · Closes ${store.closesAt}` : 'Closed'}
-              </Text>
-            </View>
-          </View>
+          <Text variant="bodySmall" color={colors.text.secondary} style={styles.metaLine}>
+            {store.driveMinutes} mins away · {statusLine}
+          </Text>
         </View>
       </View>
 
-      {store.categoriesAvailable ? (
-        <Text variant="bodySmall" color={colors.text.secondary} style={styles.categories}>
-          Usually stocks: {store.categoriesAvailable.join(', ')}
-        </Text>
-      ) : null}
-
-      {store.stockNotes.map((note) => (
-        <View key={note} style={styles.noteRow}>
-          <Ionicons name="information-circle-outline" size={16} color={colors.text.secondary} />
-          <Text variant="bodySmall" color={colors.text.secondary} style={styles.noteText}>
-            {note}
+      {store.categoriesAvailable && store.categoriesAvailable.length > 0 ? (
+        <View style={styles.stockBlock}>
+          <Text variant="bodySmall" color={colors.text.secondary}>
+            Usually stocks:
+          </Text>
+          <Text variant="bodySmall" style={styles.stockList}>
+            {store.categoriesAvailable.join(' · ')}
           </Text>
         </View>
-      ))}
-
-      <Text variant="caption" color={colors.text.tertiary} style={styles.disclaimer}>
-        Availability is estimated. Check with the retailer before travelling.
-      </Text>
+      ) : null}
 
       <View style={styles.actions}>
         <Button label="Directions" onPress={handleDirections} style={styles.primaryAction} />
@@ -110,33 +92,16 @@ const styles = StyleSheet.create({
   info: {
     flex: 1,
   },
-  meta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+  metaLine: {
     marginTop: spacing.xs,
-    flexWrap: 'wrap',
   },
-  statusBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.sm,
+  stockBlock: {
+    marginBottom: spacing.md,
+    gap: spacing.xs,
   },
-  categories: {
-    marginBottom: spacing.sm,
-  },
-  noteRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  noteText: {
-    flex: 1,
-  },
-  disclaimer: {
-    marginTop: spacing.md,
-    fontStyle: 'italic',
+  stockList: {
+    color: colors.text.primary,
+    lineHeight: 20,
   },
   actions: {
     flexDirection: 'row',

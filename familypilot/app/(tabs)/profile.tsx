@@ -8,7 +8,7 @@ import { Button, Card, Skeleton, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
 import { formatBudgetTier, formatChildAge } from '@/src/utils/profile-defaults';
-import { getNextCompletionHint } from '@/src/utils/profile-completion';
+import { getProfileSuggestion } from '@/src/utils/profile-completion';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -27,14 +27,14 @@ export default function ProfileScreen() {
   if (!profile) return null;
 
   const children = profile.members.filter((m) => m.role === 'child');
-  const completionHint = getNextCompletionHint(profile);
+  const suggestion = getProfileSuggestion(profile);
 
   return (
     <ScreenContainer>
       <View style={styles.header}>
         <Text variant="heading1">Your family</Text>
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
-          The more we know, the better we recommend
+          What FamilyPilot knows about the people you plan for
         </Text>
       </View>
 
@@ -60,19 +60,22 @@ export default function ProfileScreen() {
             <Text variant="heading2" style={styles.familyName}>
               The {profile.parentName} Family
             </Text>
-            <View style={styles.completionRow}>
-              <View style={styles.progressBar}>
-                <View
-                  style={[styles.progressFill, { width: `${profile.completionPercent}%` }]}
-                />
+            {suggestion ? (
+              <View style={styles.suggestionBox}>
+                <Text variant="bodySmall" color={colors.text.secondary}>
+                  Make recommendations even better
+                </Text>
+                <Text variant="body" style={styles.suggestionText}>
+                  {suggestion.message}
+                </Text>
               </View>
-              <Text variant="caption" color={colors.text.secondary}>
-                {profile.completionPercent}% complete
-                {completionHint ? ` — ${completionHint.label}` : ' — looking good!'}
+            ) : (
+              <Text variant="bodySmall" color={colors.text.secondary} style={styles.allSet}>
+                FamilyPilot has what it needs to personalise your recommendations.
               </Text>
-            </View>
+            )}
             <Button
-              label="Edit profile"
+              label="Edit family details"
               variant="outline"
               fullWidth
               onPress={() => router.push('/profile/edit' as never)}
@@ -82,7 +85,7 @@ export default function ProfileScreen() {
         </FadeInView>
 
         <Text variant="heading3" style={styles.sectionTitle}>
-          Children
+          Your children
         </Text>
         {children.map((child, index) => (
           <FadeInView key={child.id} delay={index * 50}>
@@ -147,21 +150,24 @@ export default function ProfileScreen() {
           }
         />
 
-        <View style={styles.testingNotice}>
-          <Text variant="caption" color={colors.text.secondary}>
-            FamilyPilot is currently an early testing version. Some venues, prices and availability
-            information are prototype data.
+        <Pressable
+          style={styles.aboutRow}
+          onPress={() => router.push('/about' as never)}
+          accessibilityRole="button"
+          accessibilityLabel="About FamilyPilot and data sources"
+        >
+          <Ionicons name="information-circle-outline" size={20} color={colors.text.secondary} />
+          <Text variant="bodySmall" color={colors.text.secondary} style={styles.aboutText}>
+            About FamilyPilot · Beta data & sources
           </Text>
-        </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />
+        </Pressable>
 
-        <Text variant="heading3" style={styles.sectionTitle}>
-          Testing
-        </Text>
         <Pressable
           style={styles.feedbackRow}
           onPress={() => router.push('/feedback' as never)}
           accessibilityRole="button"
-          accessibilityLabel="Send tester feedback"
+          accessibilityLabel="Send feedback"
         >
           <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.primary[500]} />
           <Text variant="body" style={styles.feedbackText}>
@@ -241,23 +247,21 @@ const styles = StyleSheet.create({
   familyName: {
     marginBottom: spacing.lg,
   },
-  completionRow: {
+  suggestionBox: {
     width: '100%',
-    alignItems: 'center',
-    gap: spacing.sm,
+    backgroundColor: colors.primary[50],
+    borderRadius: radius.md,
+    padding: spacing.lg,
     marginBottom: spacing.lg,
+    gap: spacing.sm,
   },
-  progressBar: {
-    width: '100%',
-    height: 6,
-    backgroundColor: colors.borderLight,
-    borderRadius: radius.full,
-    overflow: 'hidden',
+  suggestionText: {
+    color: colors.text.primary,
+    lineHeight: 22,
   },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.secondary[500],
-    borderRadius: radius.full,
+  allSet: {
+    textAlign: 'center',
+    marginBottom: spacing.lg,
   },
   editButton: {
     marginTop: spacing.sm,
@@ -287,11 +291,18 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginRight: spacing.sm,
   },
-  testingNotice: {
+  aboutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
     marginTop: spacing['2xl'],
-    padding: spacing.lg,
-    backgroundColor: colors.borderLight,
-    borderRadius: radius.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  aboutText: {
+    flex: 1,
   },
   feedbackRow: {
     flexDirection: 'row',
