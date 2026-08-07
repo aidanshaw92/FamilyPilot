@@ -57,6 +57,18 @@ All variants share: shape language, colour meaning (green = strong fit), typogra
 
 ---
 
+## Live Google enrichment states (Aug 2026)
+
+| `enrichmentStatus` | Family Match | Trust copy |
+|--------------------|--------------|------------|
+| `provider_only` | Potential match, cap 65 | Family suitability not yet reviewed |
+| `enriched` | Normal scoring with known fields | FamilyPilot family details available |
+| `verified` | Normal scoring (not auto-excellent) | Family details checked recently |
+
+See [VENUE_ENRICHMENT_WORKFLOW.md](./VENUE_ENRICHMENT_WORKFLOW.md) for internal editorial workflow.
+
+---
+
 ## Example (target experience)
 
 ```

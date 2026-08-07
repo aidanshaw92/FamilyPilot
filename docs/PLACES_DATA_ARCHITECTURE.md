@@ -81,6 +81,8 @@ Implementations:
 
 **Google quality pass (Aug 2026):** Explore uses `intent=explore` with primary-type filtering, exclusions, and FamilyPilot re-ranking. See [LIVE_GOOGLE_QUALITY_PASS.md](./LIVE_GOOGLE_QUALITY_PASS.md).
 
+**Venue enrichment (Aug 2026):** Internal workflow at `/internal/enrichment` persists `venue_family_metadata` via server API. See [VENUE_ENRICHMENT_WORKFLOW.md](./VENUE_ENRICHMENT_WORKFLOW.md).
+
 ---
 
 ## Search intents

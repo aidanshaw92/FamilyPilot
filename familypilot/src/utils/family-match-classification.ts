@@ -44,6 +44,34 @@ export function getProviderOnlyTrustCopy(): string {
   return 'Family suitability not yet reviewed';
 }
 
+export function getEnrichedTrustCopy(): string {
+  return 'FamilyPilot family details available';
+}
+
+export function getVerifiedTrustCopy(): string {
+  return 'Family details checked recently';
+}
+
+export function getEnrichmentTrustCopy(status?: EnrichmentStatus): string {
+  if (status === 'verified') return getVerifiedTrustCopy();
+  if (status === 'enriched') return getEnrichedTrustCopy();
+  return getProviderOnlyTrustCopy();
+}
+
 export function getProviderOnlyDetailTrustCopy(): string {
   return 'Live place data · family details still being verified';
+}
+
+export function getEnrichedDetailTrustCopy(): string {
+  return 'FamilyPilot family details added · some fields may still be unconfirmed';
+}
+
+export function getVerifiedDetailTrustCopy(): string {
+  return 'Core family details checked against a reliable source';
+}
+
+export function getEnrichmentDetailTrustCopy(status?: EnrichmentStatus): string {
+  if (status === 'verified') return getVerifiedDetailTrustCopy();
+  if (status === 'enriched') return getEnrichedDetailTrustCopy();
+  return getProviderOnlyDetailTrustCopy();
 }

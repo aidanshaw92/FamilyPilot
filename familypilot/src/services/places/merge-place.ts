@@ -1,8 +1,19 @@
 import { ExternalPlaceRecord, StructuredOpeningHours, VenueFamilyMetadata } from '@/src/types/places';
 import { EnrichmentStatus, TrustMetadata, Venue, VenueDetail } from '@/src/types';
 
-import { deriveEnrichmentStatus } from '@/src/utils/places-enrichment';
+import { deriveEnrichmentStatusFromRecord, mapExtendedTerrainToLegacy } from '@/src/utils/enrichment-rules';
 import { estimateDriveMinutes } from './geo-utils';
+
+function buildBestAgesLabelFromMeta(metadata: VenueFamilyMetadata | null): string | undefined {
+  if (!metadata) return undefined;
+  if (metadata.bestAges) return metadata.bestAges;
+  const min = metadata.minRecommendedAge;
+  const max = metadata.maxRecommendedAge;
+  if (min != null && max != null) return `${min} – ${max} years`;
+  if (min != null) return `${min}+ years`;
+  if (max != null) return `Up to ${max} years`;
+  return undefined;
+}
 
 function formatOpeningHours(hours?: StructuredOpeningHours): string {
   if (!hours) return 'Opening hours not confirmed';
@@ -19,7 +30,7 @@ function resolveEnrichmentStatus(
   if (place.enrichmentStatus && place.enrichmentStatus !== 'provider_only') {
     return place.enrichmentStatus;
   }
-  return deriveEnrichmentStatus(metadata);
+  return deriveEnrichmentStatusFromRecord(metadata);
 }
 
 function buildTrust(
@@ -29,7 +40,7 @@ function buildTrust(
 ): TrustMetadata {
   return {
     source: enrichmentStatus === 'provider_only' ? 'estimated' : 'provider',
-    lastChecked: place.fetchedAt.slice(0, 10),
+    lastChecked: metadata?.lastChecked ?? place.fetchedAt.slice(0, 10),
   };
 }
 
@@ -88,8 +99,8 @@ export function mergePlaceToVenueDetail(
     photos: place.photos.length > 0 ? place.photos : base.imageUrl ? [base.imageUrl] : [],
     facilities: metadata?.facilities ?? [],
     openingHours: formatOpeningHours(place.openingHours),
-    terrain: metadata?.terrain ?? (isProviderOnly ? undefined : 'mixed'),
-    bestAges: metadata?.bestAges,
+    terrain: metadata?.terrain ?? mapExtendedTerrainToLegacy(metadata?.extendedTerrain),
+    bestAges: metadata?.bestAges ?? buildBestAgesLabelFromMeta(metadata),
     parkingInfo: metadata?.parkingInfo,
     description:
       metadata?.familyNotes ??

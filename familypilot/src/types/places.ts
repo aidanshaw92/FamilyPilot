@@ -59,6 +59,8 @@ export interface ExternalPlaceRecord {
   enrichmentStatus?: EnrichmentStatus;
   /** Google primaryType preserved for filtering and audit. */
   googlePrimaryType?: string;
+  /** FamilyPilot metadata when joined server-side (not from provider sync). */
+  familyMetadata?: VenueFamilyMetadata;
 }
 
 export type ExternalPlaceField =
@@ -76,22 +78,39 @@ export type ExternalPlaceField =
 /** FamilyPilot-owned enrichment — stored in our database, not from map providers. */
 export interface VenueFamilyMetadata {
   familypilotPlaceId: string;
+  enrichmentStatus?: EnrichmentStatus;
   bestAges?: string;
+  minRecommendedAge?: number;
+  maxRecommendedAge?: number;
+  ageNotes?: string;
   terrain?: TerrainType;
+  extendedTerrain?: import('@/src/types/enrichment').ExtendedTerrain;
+  terrainNotes?: string;
+  pathSurface?: import('@/src/types/enrichment').PathSurface;
   facilities?: FacilityType[];
+  familyFacilities?: import('@/src/types/enrichment').FamilyFacilitiesMap;
   parkingInfo?: string;
   visitDurationMinutes?: number;
   warnings?: string[];
   goodToKnow?: string[];
+  whyFamiliesLike?: string[];
   communityTips?: CommunityTip[];
   estimatedSpend?: string;
   pushchairAccess?: FacilityStatus;
+  pushchairSuitability?: import('@/src/types/enrichment').PushchairSuitability;
   babyChanging?: FacilityStatus;
   stepFreeAccess?: FacilityStatus;
   accessibleToilet?: FacilityStatus;
+  accessibility?: import('@/src/types/enrichment').AccessibilityInfo;
   accessibilityNotes?: string;
+  sendInfo?: import('@/src/types/enrichment').SendInfo;
   sendNotes?: string;
   familyNotes?: string;
+  categoryConfirmed?: import('@/src/types/enrichment').TriState;
+  enrichmentProvenance?: import('@/src/types/enrichment').EnrichmentProvenance;
+  lastChecked?: string;
+  checkedBy?: string;
+  betaPriority?: boolean;
   provenance: Partial<Record<FamilyMetadataField, FieldProvenance>>;
   updatedAt: string;
 }

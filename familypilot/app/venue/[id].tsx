@@ -33,7 +33,7 @@ import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { isActivityVenue } from '@/src/data/mock-restaurants';
 import { useVenue } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
-import { getProviderOnlyDetailTrustCopy, formatTerrainLabel } from '@/src/utils/family-match-classification';
+import { getEnrichmentDetailTrustCopy, formatTerrainLabel } from '@/src/utils/family-match-classification';
 import { generateVenueStaticParams } from '@/src/utils/venue-routes';
 
 const HERO_HEIGHT = 380;
@@ -180,9 +180,9 @@ export default function VenueScreen() {
           <FadeInView>
             <FamilyMatchPanel familyScore={venue.familyScore} venue={venue} />
 
-            {venue.enrichmentStatus === 'provider_only' ? (
+            {venue.enrichmentStatus ? (
               <Text variant="caption" color={colors.text.secondary} style={styles.providerOnlyBanner}>
-                {getProviderOnlyDetailTrustCopy()}
+                {getEnrichmentDetailTrustCopy(venue.enrichmentStatus)}
               </Text>
             ) : null}
 

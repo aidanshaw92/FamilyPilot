@@ -56,7 +56,7 @@ export class PlacesRepository {
       return cached.places.map((place) =>
         mergePlaceToVenue(
           place,
-          getFamilyPlaceMetadata(place.familypilotId),
+          place.familyMetadata ?? getFamilyPlaceMetadata(place.familypilotId),
           home.latitude,
           home.longitude,
         ),
@@ -69,7 +69,7 @@ export class PlacesRepository {
       return result.places.map((place) =>
         mergePlaceToVenue(
           place,
-          getFamilyPlaceMetadata(place.familypilotId),
+          place.familyMetadata ?? getFamilyPlaceMetadata(place.familypilotId),
           home.latitude,
           home.longitude,
         ),

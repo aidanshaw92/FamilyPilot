@@ -6,7 +6,7 @@ import { DataTrustBadge } from '@/src/components/ui/DataTrustBadge';
 import { Text } from '@/src/components/ui/Text';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
-import { getMatchClassification, getProviderOnlyTrustCopy } from '@/src/utils/family-match-classification';
+import { getMatchClassification, getEnrichmentTrustCopy } from '@/src/utils/family-match-classification';
 
 import { formatFamilyMatchSecondary } from '../ui/family-match-label';
 
@@ -129,9 +129,9 @@ export function RecommendationPattern({
         {formatFamilyMatchSecondary(venue.familyScore.score, venue.enrichmentStatus)}
       </Text>
 
-      {venue.enrichmentStatus === 'provider_only' ? (
+      {venue.enrichmentStatus ? (
         <Text variant="caption" color={colors.text.secondary} style={styles.providerOnlyNote}>
-          {getProviderOnlyTrustCopy()}
+          {getEnrichmentTrustCopy(venue.enrichmentStatus)}
         </Text>
       ) : null}
 
