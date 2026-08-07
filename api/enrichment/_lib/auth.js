@@ -1,16 +1,33 @@
-function getTokenFromRequest(req) {
-  const custom = req.headers['x-enrichment-token'];
-  if (typeof custom === 'string' && custom.trim()) return custom.trim();
+function normalizeToken(value) {
+  if (typeof value !== 'string') return '';
+  return value.replace(/^\uFEFF/, '').trim().replace(/^['"]|['"]$/g, '');
+}
 
-  const header = req.headers.authorization;
-  if (header?.startsWith('Bearer ')) return header.slice(7).trim();
+function readHeaderValue(value) {
+  if (typeof value === 'string') return normalizeToken(value);
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const normalized = normalizeToken(entry);
+      if (normalized) return normalized;
+    }
+  }
+  return '';
+}
+
+function getTokenFromRequest(req) {
+  const headers = req.headers ?? {};
+
+  const custom = readHeaderValue(headers['x-enrichment-token']);
+  if (custom) return custom;
+
+  const authorization = readHeaderValue(headers.authorization);
+  if (authorization.startsWith('Bearer ')) return normalizeToken(authorization.slice(7));
 
   return null;
 }
 
 function getAdminToken() {
-  const token = process.env.ENRICHMENT_ADMIN_TOKEN;
-  return typeof token === 'string' ? token.trim() : '';
+  return normalizeToken(process.env.ENRICHMENT_ADMIN_TOKEN ?? '');
 }
 
 function isAuthConfigured() {
@@ -41,4 +58,10 @@ function verifyEnrichmentAuth(req, res) {
   return true;
 }
 
-module.exports = { verifyEnrichmentAuth, isAuthConfigured, getAdminToken, getTokenFromRequest };
+module.exports = {
+  verifyEnrichmentAuth,
+  isAuthConfigured,
+  getAdminToken,
+  getTokenFromRequest,
+  normalizeToken,
+};
