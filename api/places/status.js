@@ -1,32 +1,38 @@
-const OVERPASS_ENDPOINT = 'https://overpass-api.de/api/interpreter';
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+];
 const OVERPASS_USER_AGENT = 'FamilyPilot/1.0 (https://family-pilot-seven.vercel.app; places-api)';
 
 async function probeOsm(lat, lng) {
-  const query = `[out:json][timeout:15];node["amenity"="restaurant"](around:5000,${lat},${lng});out center 5;`;
-  try {
-    const response = await fetch(OVERPASS_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': OVERPASS_USER_AGENT,
-        Accept: 'application/json',
-      },
-      body: new URLSearchParams({ data: query }).toString(),
-    });
-    if (!response.ok) {
-      return { ok: false, count: 0, sampleNames: [], error: `Overpass HTTP ${response.status}` };
+  const query = `[out:json][timeout:10];node["amenity"="restaurant"](around:4000,${lat},${lng});out center 5;`;
+  let lastError = null;
+
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': OVERPASS_USER_AGENT,
+          Accept: 'application/json',
+        },
+        body: new URLSearchParams({ data: query }).toString(),
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!response.ok) {
+        lastError = `Overpass HTTP ${response.status} (${endpoint})`;
+        continue;
+      }
+      const data = await response.json();
+      const names = (data.elements || []).map((e) => e.tags && e.tags.name).filter(Boolean);
+      return { ok: true, count: names.length, sampleNames: names.slice(0, 5), endpoint };
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : 'Probe failed';
     }
-    const data = await response.json();
-    const names = (data.elements || []).map((e) => e.tags && e.tags.name).filter(Boolean);
-    return { ok: true, count: names.length, sampleNames: names.slice(0, 5) };
-  } catch (error) {
-    return {
-      ok: false,
-      count: 0,
-      sampleNames: [],
-      error: error instanceof Error ? error.message : 'Probe failed',
-    };
   }
+
+  return { ok: false, count: 0, sampleNames: [], error: lastError || 'Overpass unavailable' };
 }
 
 module.exports = async function handler(req, res) {
