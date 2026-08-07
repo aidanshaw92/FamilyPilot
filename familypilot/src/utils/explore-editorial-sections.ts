@@ -12,7 +12,12 @@ function isFree(venue: Venue): boolean {
 }
 
 function isIndoorFriendly(venue: Venue): boolean {
-  return venue.category === 'museum' || venue.category === 'soft_play' || venue.category === 'farm';
+  return (
+    venue.category === 'museum' ||
+    venue.category === 'soft_play' ||
+    venue.category === 'activity' ||
+    venue.category === 'farm'
+  );
 }
 
 function suitsToddlers(venue: Venue): boolean {

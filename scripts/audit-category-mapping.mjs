@@ -94,7 +94,7 @@ function reportExamples(label) {
     name: example.name,
     latitude: example.latitude ?? 51.656,
     longitude: example.longitude ?? -0.418,
-    category: mapGoogleCategory(example.primaryType, example.types, example.name) ?? 'museum',
+    category: mapGoogleCategory(example.primaryType, example.types, example.name) ?? 'excluded',
   }));
   const deduped = dedupeVenueAliases(aliasCandidates);
   console.log('\nAlias dedupe (studio tour pair):', deduped.map((p) => p.name));
@@ -107,7 +107,7 @@ for (const example of AUDIT_EXAMPLES) {
   console.log(`  ${example.name}: ${legacyCategory(example.primaryType)}`);
 }
 
-reportExamples('After (current quality-pass rules)');
+reportExamples('After (native zoo / attraction / activity VenueCategories)');
 
 if (process.argv.includes('--live')) {
   const { searchGoogle } = require(join(root, 'api/places/lib/google-places.js'));

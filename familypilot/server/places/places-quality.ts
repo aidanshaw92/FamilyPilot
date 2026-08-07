@@ -178,16 +178,26 @@ const TAXONOMY_TO_VENUE_CATEGORY: Record<FamilyPilotTaxonomyCategory, VenueCateg
   park: 'park',
   playground: 'park',
   museum: 'museum',
-  zoo: 'museum',
+  zoo: 'zoo',
   farm: 'farm',
-  attraction: 'museum',
-  activity: 'soft_play',
+  attraction: 'attraction',
+  activity: 'activity',
   restaurant: 'restaurant',
   cafe: 'cafe',
   shop: 'shop',
   hotel: 'hotel',
   other: null,
 };
+
+const SOFT_PLAY_GOOGLE_TYPES = new Set(['trampoline_park', 'indoor_playground']);
+
+function isSoftPlayActivity(types: string[], name?: string): boolean {
+  if (types.some((type) => SOFT_PLAY_GOOGLE_TYPES.has(type))) return true;
+  if (!name) return false;
+  return /trampoline|jump in|airhop|soft play|indoor play|inflatable|clip '?n climb/i.test(
+    name.toLowerCase(),
+  );
+}
 
 /** Explicit null mappings from audit — never default these to park. */
 const FORCE_NULL_TYPES = new Set([
@@ -308,6 +318,7 @@ export function mapGoogleCategory(
 ): VenueCategory | null {
   const taxonomy = mapGoogleTaxonomy(primaryType, types, name);
   if (!taxonomy) return null;
+  if (taxonomy === 'activity' && isSoftPlayActivity(types, name)) return 'soft_play';
   return TAXONOMY_TO_VENUE_CATEGORY[taxonomy];
 }
 
@@ -494,6 +505,12 @@ function categoryRelevanceScore(category: VenueCategory, intent: PlaceSearchInte
       return 90;
     case 'soft_play':
       return 88;
+    case 'zoo':
+      return 87;
+    case 'activity':
+      return 86;
+    case 'attraction':
+      return 84;
     case 'beach':
       return 85;
     default:

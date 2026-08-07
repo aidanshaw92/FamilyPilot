@@ -41,9 +41,22 @@ export const BUDGET_FILTER_OPTIONS: { id: ExploreBudgetFilter; label: string }[]
   { id: 'under_100', label: 'Under £100' },
 ];
 
-const INDOOR_CATEGORIES: VenueCategory[] = ['museum', 'soft_play', 'restaurant', 'cafe'];
-const OUTDOOR_CATEGORIES: VenueCategory[] = ['park', 'farm', 'beach'];
-const ACTIVITY_CATEGORIES: VenueCategory[] = ['farm', 'museum', 'soft_play'];
+const INDOOR_CATEGORIES: VenueCategory[] = [
+  'museum',
+  'soft_play',
+  'activity',
+  'restaurant',
+  'cafe',
+];
+const OUTDOOR_CATEGORIES: VenueCategory[] = ['park', 'farm', 'beach', 'zoo'];
+const ACTIVITY_CATEGORIES: VenueCategory[] = [
+  'farm',
+  'museum',
+  'soft_play',
+  'activity',
+  'zoo',
+  'attraction',
+];
 
 function parseMaxSpend(estimatedSpend?: string): number | null {
   if (!estimatedSpend) return null;

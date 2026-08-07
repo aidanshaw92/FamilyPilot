@@ -69,8 +69,8 @@ describe('Google category mapping', () => {
     expect(mapGoogleCategory('movie_theater', ['movie_theater'])).toBeNull();
   });
 
-  it('bowling alley must not become restaurant', () => {
-    expect(mapGoogleCategory('bowling_alley', [])).toBe('soft_play');
+  it('bowling alley maps to activity, not restaurant', () => {
+    expect(mapGoogleCategory('bowling_alley', [])).toBe('activity');
   });
 
   it('art museum must not become cafe', () => {
@@ -83,16 +83,34 @@ describe('Google category mapping', () => {
   });
 });
 
+describe('Native VenueCategory taxonomy', () => {
+  it('maps Google types to distinct zoo, attraction, and activity categories', () => {
+    expect(mapGoogleCategory('zoo', ['zoo'], 'Hanwell Zoo')).toBe('zoo');
+    expect(mapGoogleCategory('tourist_attraction', ['tourist_attraction'], 'Warner Bros. Studio Tour London')).toBe(
+      'attraction',
+    );
+    expect(mapGoogleCategory('bowling_alley', [])).toBe('activity');
+    expect(mapGoogleCategory('amusement_park', [])).toBe('activity');
+  });
+
+  it('maps trampoline and indoor playground to soft_play, not activity', () => {
+    expect(
+      mapGoogleCategory('park', ['park', 'trampoline_park'], 'Jump In by AirHop Adventure & Trampoline Park Elstree'),
+    ).toBe('soft_play');
+    expect(mapGoogleCategory('indoor_playground', ['indoor_playground'])).toBe('soft_play');
+  });
+});
+
 describe('Production category audit examples', () => {
-  it('maps tourist attractions to museum (attraction taxonomy), not park', () => {
+  it('maps tourist attractions to attraction VenueCategory, not park or museum', () => {
     expect(mapGoogleTaxonomy('tourist_attraction', ['tourist_attraction', 'point_of_interest']))
       .toBe('attraction');
     expect(
       mapGoogleCategory('tourist_attraction', ['tourist_attraction', 'point_of_interest'], 'Warner Bros. Studio Tour London'),
-    ).toBe('museum');
+    ).toBe('attraction');
     expect(
       mapGoogleCategory('tourist_attraction', ['tourist_attraction'], 'Harry Potter Studio'),
-    ).toBe('museum');
+    ).toBe('attraction');
   });
 
   it('excludes performing arts theatres from explore', () => {
@@ -105,8 +123,8 @@ describe('Production category audit examples', () => {
     expect(isSupportedForIntent('library', ['library'], 'explore', 'College Lane Campus LRC')).toBe(false);
   });
 
-  it('maps zoos to museum (attraction bucket), not farm', () => {
-    expect(mapGoogleCategory('zoo', ['zoo', 'point_of_interest'], 'Hanwell Zoo')).toBe('museum');
+  it('maps zoos to zoo VenueCategory, not farm or museum', () => {
+    expect(mapGoogleCategory('zoo', ['zoo', 'point_of_interest'], 'Hanwell Zoo')).toBe('zoo');
   });
 
   it('maps trampoline venues from weak park primary types using name and secondary types', () => {
@@ -136,14 +154,14 @@ describe('Venue alias deduplication', () => {
         name: 'Warner Bros. Studio Tour London',
         latitude: 51.656,
         longitude: -0.418,
-        category: 'museum' as const,
+        category: 'attraction' as const,
       },
       {
         familypilotId: 'fp-hp',
         name: 'Harry Potter Studio',
         latitude: 51.6561,
         longitude: -0.4181,
-        category: 'museum' as const,
+        category: 'attraction' as const,
       },
     ];
     const result = dedupeVenueAliases(places);
@@ -281,7 +299,7 @@ describe('Enrichment status', () => {
       }),
       'explore',
     );
-    expect(warner?.category).toBe('museum');
+    expect(warner?.category).toBe('attraction');
 
     const theatre = googlePlaceToRecord(
       googlePlace('performing_arts_theater', ['performing_arts_theater'], {

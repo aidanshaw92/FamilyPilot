@@ -14,7 +14,10 @@ const OVERPASS_USER_AGENT = 'FamilyPilot/1.0 (https://family-pilot-seven.vercel.
 const CATEGORY_QUERIES: Record<VenueCategory, string[]> = {
   park: ['["leisure"="park"]', '["leisure"="playground"]', '["leisure"="nature_reserve"]'],
   museum: ['["tourism"="museum"]', '["tourism"="gallery"]'],
-  farm: ['["tourism"="farm"]', '["tourism"="zoo"]'],
+  zoo: ['["tourism"="zoo"]'],
+  attraction: ['["tourism"="attraction"]'],
+  activity: ['["leisure"="sports_centre"]', '["leisure"="bowling_alley"]'],
+  farm: ['["tourism"="farm"]'],
   restaurant: ['["amenity"="restaurant"]', '["amenity"="cafe"]'],
   cafe: ['["amenity"="cafe"]'],
   beach: ['["natural"="beach"]'],
@@ -36,7 +39,9 @@ function mapOsmCategory(tags: Record<string, string>): VenueCategory {
   if (tags.amenity === 'cafe') return 'cafe';
   if (tags.amenity === 'restaurant') return 'restaurant';
   if (tags.tourism === 'museum' || tags.tourism === 'gallery') return 'museum';
-  if (tags.tourism === 'farm' || tags.tourism === 'zoo') return 'farm';
+  if (tags.tourism === 'zoo') return 'zoo';
+  if (tags.tourism === 'attraction') return 'attraction';
+  if (tags.tourism === 'farm') return 'farm';
   if (tags.leisure === 'park' || tags.leisure === 'playground') return 'park';
   if (tags.natural === 'beach') return 'beach';
   return 'park';

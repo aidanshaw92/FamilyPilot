@@ -50,10 +50,20 @@ const GOOGLE_TYPE_TO_TAXONOMY = {
 };
 
 const TAXONOMY_TO_VENUE_CATEGORY = {
-  park: 'park', playground: 'park', museum: 'museum', zoo: 'museum', farm: 'farm',
-  attraction: 'museum', activity: 'soft_play', restaurant: 'restaurant', cafe: 'cafe',
+  park: 'park', playground: 'park', museum: 'museum', zoo: 'zoo', farm: 'farm',
+  attraction: 'attraction', activity: 'activity', restaurant: 'restaurant', cafe: 'cafe',
   shop: 'shop', hotel: 'hotel', other: null,
 };
+
+const SOFT_PLAY_GOOGLE_TYPES = new Set(['trampoline_park', 'indoor_playground']);
+
+function isSoftPlayActivity(types, name) {
+  if (types.some((type) => SOFT_PLAY_GOOGLE_TYPES.has(type))) return true;
+  if (!name) return false;
+  return /trampoline|jump in|airhop|soft play|indoor play|inflatable|clip '?n climb/i.test(
+    name.toLowerCase(),
+  );
+}
 
 const FORCE_NULL_TYPES = new Set([
   'historical_landmark', 'monument', 'place_of_worship', 'hindu_temple', 'church',
@@ -121,6 +131,7 @@ function mapGoogleTaxonomy(primaryType, types = [], name) {
 function mapGoogleCategory(primaryType, types = [], name) {
   const taxonomy = mapGoogleTaxonomy(primaryType, types, name);
   if (!taxonomy) return null;
+  if (taxonomy === 'activity' && isSoftPlayActivity(types, name)) return 'soft_play';
   return TAXONOMY_TO_VENUE_CATEGORY[taxonomy];
 }
 
@@ -252,6 +263,9 @@ function categoryRelevanceScore(category, intent) {
     case 'farm': return 92;
     case 'museum': return 90;
     case 'soft_play': return 88;
+    case 'zoo': return 87;
+    case 'activity': return 86;
+    case 'attraction': return 84;
     case 'beach': return 85;
     default: return 50;
   }

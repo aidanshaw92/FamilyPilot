@@ -66,10 +66,16 @@ export function googleTypesForCategories(
           return ['park', 'playground', 'national_park'];
         case 'museum':
           return ['museum', 'art_gallery', 'childrens_museum'];
+        case 'zoo':
+          return ['zoo', 'wildlife_park'];
+        case 'attraction':
+          return ['tourist_attraction'];
+        case 'activity':
+          return ['amusement_park', 'bowling_alley', 'ice_skating_rink', 'water_park'];
         case 'farm':
-          return ['zoo'];
+          return ['farm', 'petting_zoo'];
         case 'soft_play':
-          return ['amusement_park', 'bowling_alley'];
+          return ['trampoline_park', 'indoor_playground', 'amusement_park'];
         case 'beach':
           return ['beach'];
         default:
