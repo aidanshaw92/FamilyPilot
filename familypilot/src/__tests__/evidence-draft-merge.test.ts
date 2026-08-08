@@ -215,3 +215,181 @@ describe('candidate quality — discovered links vs common paths', () => {
     expect(isAuthoritativeFact({ field: 'toilets', value: 'yes', confidence: 'high' })).toBe(true);
   });
 });
+
+describe('parking false-positive guard', () => {
+  it('does not produce parking=yes from generic parking information text', () => {
+    const meta = {
+      url: 'https://example.org/visit',
+      sourceType: 'visitor_info',
+      retrievedAt: '2026-08-08T12:00:00.000Z',
+    };
+    const falsePositives = [
+      'For parking information please see our help page.',
+      'Parking charges apply in the nearby car park.',
+      'We hope this parking advice helps you plan your visit.',
+      'Pay and display parking is available on surrounding streets only.',
+    ];
+    for (const text of falsePositives) {
+      const facts = extractEvidenceFromText(text, meta);
+      expect(facts.some((f) => f.field === 'parking')).toBe(false);
+    }
+  });
+
+  it('produces parking=yes only when availability is explicit', () => {
+    const meta = {
+      url: 'https://example.org/visit',
+      sourceType: 'visitor_info',
+      retrievedAt: '2026-08-08T12:00:00.000Z',
+    };
+    const explicit = [
+      'Free parking is available on site for visitors.',
+      'Cars and minibuses are welcome to use our large free car park.',
+      'On-site parking is provided for ticket holders.',
+    ];
+    for (const text of explicit) {
+      const facts = extractEvidenceFromText(text, meta);
+      expect(facts.find((f) => f.field === 'parking')?.value).toBe('yes');
+    }
+  });
+
+  it('deterministic merge does not invent parking without explicit evidence', () => {
+    const meta = {
+      url: 'https://example.org/',
+      sourceType: 'official_website',
+      retrievedAt: '2026-08-08T12:00:00.000Z',
+    };
+    const bundle = buildEvidenceBundle(
+      'fp-test',
+      [{
+        url: 'https://example.org/',
+        sourceType: 'official_website',
+        fetchStatus: 'ok',
+        facts: extractEvidenceFromText('Baby changing facilities are available.', meta),
+      }],
+      'official_website',
+    );
+    const draft = buildDraftFromEvidence(bundle);
+    expect(draft.familyFacilities.babyChanging.value).toBe('yes');
+    expect(draft.familyFacilities.parking.value).toBe('unknown');
+  });
+});
+
+describe('utility link and generic keyword rejection', () => {
+  it('rejects accessibility toolbar and generic help links', async () => {
+    const { findRelevantLinks, isUtilityLink } = await import(
+      '../../../api/enrichment/_lib/html-text-extractor.js'
+    );
+
+    expect(isUtilityLink('https://example.org/recite-me/', 'Accessibility tools')).toBe(true);
+    expect(isUtilityLink('https://example.org/help/', 'Help')).toBe(true);
+    expect(isUtilityLink('https://example.org/visitor-help/', 'Help')).toBe(false);
+
+    const html = `
+      <html><body>
+        <nav>
+          <a href="/recite-me/">Recite Me</a>
+          <a href="/help/">Help</a>
+          <a href="/cookie-policy/">Cookie settings</a>
+        </nav>
+        <a href="/visitor-information/">Visitor information</a>
+        <a href="/additional-needs/">Additional needs</a>
+        <a href="/plan-your-visit/">Plan your visit</a>
+      </body></html>
+    `;
+    const links = findRelevantLinks(html, 'https://example.org/', 10);
+    const urls = links.map((l) => l.url);
+    expect(urls.some((u) => u.includes('recite-me'))).toBe(false);
+    expect(urls.some((u) => u.endsWith('/help/') || u.endsWith('/help'))).toBe(false);
+    expect(urls.some((u) => u.includes('visitor-information'))).toBe(true);
+    expect(urls.some((u) => u.includes('plan-your-visit'))).toBe(true);
+  });
+
+  it('does not select unrelated pages because anchor text contains generic "help"', () => {
+    const html = `
+      <a href="/careers/">We help families find jobs</a>
+      <a href="/visitor-information/">Visitor information</a>
+    `;
+    const { diagnostics } = mergePageCandidates('https://example.org/', [], html, 3);
+    const selectedUrls = diagnostics.linksSelected.map((l) => l.url);
+    expect(selectedUrls.some((u) => u.includes('careers'))).toBe(false);
+    expect(selectedUrls.some((u) => u.includes('visitor-information'))).toBe(true);
+  });
+});
+
+describe('contradiction and false-positive regressions', () => {
+  it('merge preserves toilets=yes and clears AI parking=yes without extracted evidence', () => {
+    const bundle = buildEvidenceBundle(
+      'fp-test',
+      [{
+        url: 'https://example.org/access',
+        sourceType: 'accessibility_page',
+        fetchStatus: 'ok',
+        facts: [{
+          field: 'toilets',
+          value: 'yes',
+          confidence: 'high',
+          evidenceText: 'Accessible toilets are available throughout the venue.',
+          sourceUrl: 'https://example.org/access',
+          sourceType: 'accessibility_page',
+          retrievedAt: '2026-08-08T12:00:00.000Z',
+        }],
+      }],
+      'official_website',
+    );
+    const aiDraft = normaliseDraftJson({
+      familyFacilities: {
+        toilets: { value: 'unknown', confidence: 'unknown' },
+        babyChanging: { value: 'unknown', confidence: 'unknown' },
+        parking: { value: 'yes', confidence: 'medium', reason: 'AI inferred parking' },
+        cafe: { value: 'unknown', confidence: 'unknown' },
+      },
+      overallDraftConfidence: 'medium',
+    });
+    const merged = mergeEvidenceIntoDraft(aiDraft, bundle);
+    expect(merged.familyFacilities.toilets.value).toBe('yes');
+    expect(merged.familyFacilities.parking.value).toBe('unknown');
+    expect(merged.familyFacilities.parking.confidence).toBe('unknown');
+  });
+
+  it('AI parking=yes without evidence is cleared to unknown', () => {
+    const bundle = buildEvidenceBundle('fp-test', [], 'official_website');
+    const aiDraft = normaliseDraftJson({
+      familyFacilities: {
+        parking: { value: 'yes', confidence: 'medium', reason: 'Large attraction likely has parking' },
+      },
+      overallDraftConfidence: 'low',
+    });
+    const merged = mergeEvidenceIntoDraft(aiDraft, bundle);
+    expect(merged.familyFacilities.parking.value).toBe('unknown');
+    expect(merged.familyFacilities.parking.confidence).toBe('unknown');
+  });
+
+  it('AI cannot override explicit parking evidence with contradictory unsupported value', () => {
+    const bundle = buildEvidenceBundle(
+      'fp-test',
+      [{
+        url: 'https://example.org/visit',
+        sourceType: 'visitor_info',
+        fetchStatus: 'ok',
+        facts: [{
+          field: 'parking',
+          value: 'yes',
+          confidence: 'high',
+          evidenceText: 'Free parking is available on site for visitors.',
+          sourceUrl: 'https://example.org/visit',
+          sourceType: 'visitor_info',
+          retrievedAt: '2026-08-08T12:00:00.000Z',
+        }],
+      }],
+      'official_website',
+    );
+    const aiDraft = normaliseDraftJson({
+      familyFacilities: {
+        parking: { value: 'no', confidence: 'low', reason: 'AI guess' },
+      },
+    });
+    const merged = mergeEvidenceIntoDraft(aiDraft, bundle);
+    expect(merged.familyFacilities.parking.value).toBe('yes');
+    expect((merged.familyFacilities.parking as { evidenceBacked?: boolean }).evidenceBacked).toBe(true);
+  });
+});

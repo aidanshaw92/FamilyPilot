@@ -33,13 +33,15 @@ const FIELD_PATTERNS = [
     field: 'parking',
     yes: [
       /parking\s+(is\s+)?available/i,
-      /car\s+park/i,
+      /(?:free\s+)?parking\s+(is\s+)?provided/i,
       /on.?site\s+parking/i,
-      /free\s+(car\s+)?park/i,
       /free\s+parking/i,
+      /(?:large\s+)?free\s+car\s+park/i,
+      /car\s+park(?:ing)?\s+(is\s+)?available/i,
+      /car\s+park\s+(is\s+)?(?:provided|located|on site|on-site)/i,
       /parking\s+(can\s+be\s+)?found/i,
       /parking\s+(is\s+)?located/i,
-      /large\s+free\s+car\s+park/i,
+      /(?:cars|vehicles|minibuses|coaches)\s+(?:are\s+)?welcome\s+to\s+use\s+(?:our\s+)?(?:large\s+)?(?:free\s+)?car\s+park/i,
     ],
     no: [/no\s+parking/i, /limited\s+parking/i],
   },
@@ -89,12 +91,44 @@ function splitSentences(text) {
     .filter((s) => s.length > 15);
 }
 
-function matchField(sentence, patterns) {
+function isExplicitParkingStatement(sentence) {
+  const lower = sentence.toLowerCase();
+
+  if (/parking\s+(information|charges|fees|rates|policy|restrictions|advice|tips|updates)/i.test(sentence)) {
+    if (!/available|provided|free|welcome to use|on site|on-site|located|can be found/i.test(lower)) {
+      return false;
+    }
+  }
+
+  if (/car\s+park/i.test(sentence)) {
+    if (!/available|free|provided|located|welcome|on site|on-site|use our|can be found/i.test(lower)) {
+      return false;
+    }
+  }
+
+  if (/pay\s+and\s+display|parking\s+meters|parking\s+charge/i.test(sentence)) {
+    if (!/free\s+parking|parking\s+(is\s+)?available|no charge/i.test(lower)) {
+      return false;
+    }
+  }
+
+  if (/surrounding streets|nearby streets|local streets|off.?site|street parking|near the venue/i.test(sentence)) {
+    if (!/on site|on-site|our car park|venue car park|site parking|welcome to use our/i.test(lower)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function matchField(sentence, patterns, fieldId) {
   for (const re of patterns.no) {
     if (re.test(sentence)) return { value: 'no', confidence: 'high' };
   }
   for (const re of patterns.yes) {
-    if (re.test(sentence)) return { value: 'yes', confidence: 'high' };
+    if (!re.test(sentence)) continue;
+    if (fieldId === 'parking' && !isExplicitParkingStatement(sentence)) continue;
+    return { value: 'yes', confidence: 'high' };
   }
   return null;
 }
@@ -105,7 +139,7 @@ function extractEvidenceFromText(text, sourceMeta) {
 
   for (const pattern of FIELD_PATTERNS) {
     for (const sentence of sentences) {
-      const match = matchField(sentence, pattern);
+      const match = matchField(sentence, pattern, pattern.field);
       if (!match) continue;
       facts.push({
         field: pattern.field,
@@ -174,5 +208,6 @@ module.exports = {
   extractEvidenceFromText,
   mergeEvidenceBundles,
   buildEvidenceBundle,
+  isExplicitParkingStatement,
   FIELD_PATTERNS,
 };

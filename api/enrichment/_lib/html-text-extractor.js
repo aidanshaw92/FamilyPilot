@@ -2,10 +2,74 @@
  * Extract compact readable text from HTML for evidence research.
  */
 
-const LINK_KEYWORDS = [
-  'faq', 'faqs', 'visit', 'visitor', 'plan your visit', 'plan-your-visit', 'accessibility',
-  'access', 'facilities', 'venue', 'location', 'contact', 'parking', 'family', 'parents',
-  'information', 'help', 'admission', 'getting here', 'your visit', 'opening', 'directions',
+const LINK_KEYWORDS_STRONG = [
+  'plan your visit',
+  'plan-your-visit',
+  'visitor information',
+  'visitor-information',
+  'your visit',
+  'getting here',
+  'getting-here',
+  'additional needs',
+  'accessibility',
+  'facilities',
+  'faq',
+  'faqs',
+  'family',
+  'parents',
+  'admission',
+  'parking',
+  'visit',
+  'visitor',
+  'plan your day',
+];
+
+const LINK_KEYWORDS_WEAK = ['contact', 'location', 'directions', 'opening', 'venue'];
+
+/** @deprecated use STRONG + WEAK lists */
+const LINK_KEYWORDS = [...LINK_KEYWORDS_STRONG, ...LINK_KEYWORDS_WEAK];
+
+const UTILITY_PATH_PATTERNS = [
+  /recite/i,
+  /userway/i,
+  /audioeye/i,
+  /accessibility-toolbar/i,
+  /accessibility-tools/i,
+  /accessibility-widget/i,
+  /skip-to/i,
+  /skip_to/i,
+  /cookie/i,
+  /privacy/i,
+  /terms-of/i,
+  /\/terms\b/i,
+  /login/i,
+  /sign-in/i,
+  /signin/i,
+  /\/account\b/i,
+  /\/basket\b/i,
+  /\/cart\b/i,
+  /\/search\b/i,
+  /sitemap/i,
+  /\/legal\b/i,
+  /gdpr/i,
+  /wp-admin/i,
+];
+
+const UTILITY_ANCHOR_PATTERNS = [
+  /^skip to/i,
+  /^accessibility tools/i,
+  /^accessibility toolbar/i,
+  /^recite me/i,
+  /^cookie preferences/i,
+  /^cookie settings/i,
+  /^privacy policy/i,
+  /^terms and conditions/i,
+  /^terms of use/i,
+  /^login$/i,
+  /^sign in$/i,
+  /^search$/i,
+  /^accessibility statement$/i,
+  /^site map$/i,
 ];
 
 const CONTENT_KEYWORDS = [
@@ -18,7 +82,7 @@ const CONTENT_KEYWORDS = [
 const COMMON_PATH_SEGMENTS = [
   'visit', 'plan-your-visit', 'visitor-information', 'your-visit', 'accessibility', 'access',
   'facilities', 'faq', 'faqs', 'getting-here', 'parking', 'family', 'parents',
-  'information', 'help', 'admission', 'contact', 'venue', 'location',
+  'admission', 'contact', 'venue', 'location',
 ];
 
 function decodeHtmlEntities(text) {
@@ -107,22 +171,78 @@ function extractPageContent(html, maxChars = 8000) {
   return { title, text: relevant };
 }
 
-function scoreLink(url, anchorText) {
-  const haystack = `${url} ${anchorText}`.toLowerCase();
-  let score = 0;
-  let matched = [];
+function includesKeyword(text, keyword) {
+  const lower = text.toLowerCase();
+  if (keyword.includes(' ')) {
+    return lower.includes(keyword);
+  }
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${escaped}\\b`, 'i').test(lower);
+}
 
-  for (const kw of LINK_KEYWORDS) {
-    if (haystack.includes(kw)) {
-      score += kw.includes(' ') ? 8 : 5;
-      matched.push(kw);
+function isUtilityLink(url, anchorText = '', anchorTagHtml = '') {
+  let path = '';
+  try {
+    path = new URL(url).pathname.toLowerCase();
+  } catch {
+    return true;
+  }
+
+  const anchor = anchorText.trim();
+  const haystack = `${path} ${anchor} ${anchorTagHtml}`.toLowerCase();
+
+  if (UTILITY_PATH_PATTERNS.some((p) => p.test(haystack))) return true;
+  if (UTILITY_ANCHOR_PATTERNS.some((p) => p.test(anchor))) return true;
+
+  if (/^help$/i.test(anchor) && !/\/faq|help-and|visitor-help|visit-help|plan-your/i.test(path)) {
+    return true;
+  }
+  if (/\/help\/?$/i.test(path) && !/\/faq|visitor|visit|plan-your/i.test(path)) {
+    return true;
+  }
+
+  if (/\baccess\b/i.test(anchor) && !/accessibility|wheelchair|disabled|additional needs|step-free/i.test(haystack)) {
+    return true;
+  }
+
+  return false;
+}
+
+function scoreLink(url, anchorText) {
+  const path = url.toLowerCase();
+  const anchor = anchorText.trim();
+  let score = 0;
+  const matched = [];
+
+  for (const kw of LINK_KEYWORDS_STRONG) {
+    if (includesKeyword(path, kw)) {
+      score += kw.includes(' ') ? 12 : 10;
+      matched.push(`path:${kw}`);
+    } else if (anchor.length <= 60 && includesKeyword(anchor, kw)) {
+      score += kw.includes(' ') ? 8 : 6;
+      matched.push(`anchor:${kw}`);
     }
   }
 
-  if (/\/visit\b|plan-your-visit|visitor-information|your-visit/.test(haystack)) score += 12;
-  if (/accessibility|access-for-all|disabled-access/.test(haystack)) score += 10;
-  if (/faq|frequently-asked|help/.test(haystack)) score += 8;
-  if (/facilities|parking|getting-here|admission/.test(haystack)) score += 6;
+  for (const kw of LINK_KEYWORDS_WEAK) {
+    if (includesKeyword(path, kw)) {
+      score += 4;
+      matched.push(`path:${kw}`);
+    } else if (anchor.length <= 40 && includesKeyword(anchor, kw)) {
+      score += 2;
+      matched.push(`anchor:${kw}`);
+    }
+  }
+
+  if (/\/visit\b|plan-your-visit|visitor-information|your-visit/.test(path)) score += 14;
+  if (/accessibility|access-for-all|disabled-access|additional-needs/.test(path)) score += 12;
+  if (/\/faq|frequently-asked|learning-session-faq/.test(path)) score += 10;
+  if (/facilities|getting-here|admission/.test(path)) score += 6;
+
+  if (/^help$/i.test(anchor) || /\/help\/?$/i.test(path)) {
+    score = 0;
+    matched.length = 0;
+  }
 
   return { score, matched };
 }
@@ -135,12 +255,15 @@ function findRelevantLinks(html, baseUrl, maxLinks = 12) {
 
   while ((match = anchorRegex.exec(html)) !== null) {
     try {
+      const fullTag = match[0];
       const resolved = new URL(match[1], baseUrl);
       if (resolved.protocol !== 'http:' && resolved.protocol !== 'https:') continue;
       if (resolved.hostname !== base.hostname) continue;
 
       const anchorText = stripTags(match[2]).slice(0, 120);
       const url = resolved.toString();
+      if (isUtilityLink(url, anchorText, fullTag)) continue;
+
       const { score, matched } = scoreLink(`${resolved.pathname} ${url}`, anchorText);
       if (score <= 0) continue;
 
@@ -162,6 +285,7 @@ function findRelevantLinks(html, baseUrl, maxLinks = 12) {
       if (resolved.protocol !== 'http:' && resolved.protocol !== 'https:') continue;
       if (resolved.hostname !== base.hostname) continue;
       const url = resolved.toString();
+      if (isUtilityLink(url, '')) continue;
       const { score, matched } = scoreLink(`${resolved.pathname} ${url}`, '');
       if (score <= 0) continue;
       if (candidates.some((c) => c.url === url)) continue;
@@ -208,8 +332,10 @@ module.exports = {
   stripHtml,
   stripTags,
   scoreLink,
+  isUtilityLink,
   isCloudflareChallenge,
   CONTENT_KEYWORDS,
   LINK_KEYWORDS,
+  LINK_KEYWORDS_STRONG,
   COMMON_PATH_SEGMENTS,
 };
