@@ -7,8 +7,36 @@ function triStateFromDraft(value) {
   return 'unknown';
 }
 
+function collectFieldEvidence(draft) {
+  const fields = {};
+  const add = (key, field) => {
+    if (!field) return;
+    fields[key] = {
+      value: field.value,
+      confidence: field.confidence,
+      sourceUrl: field.sourceUrl ?? null,
+      evidence: field.evidence ?? null,
+      sourceType: field.sourceType ?? null,
+      retrievedAt: field.retrievedAt ?? null,
+    };
+  };
+  for (const [key, field] of Object.entries(draft.familyFacilities ?? {})) {
+    add(`familyFacilities.${key}`, field);
+  }
+  add('pushchairSuitability', draft.pushchairSuitability);
+  add('terrain', draft.terrain);
+  for (const [key, field] of Object.entries(draft.accessibility ?? {})) {
+    add(`accessibility.${key}`, field);
+  }
+  for (const [key, field] of Object.entries(draft.sendInfo ?? {})) {
+    add(`sendInfo.${key}`, field);
+  }
+  return fields;
+}
+
 function draftJsonToSavePayload(draft, options) {
   const age = draft.recommendedAge ?? {};
+  const evidenceBundle = options.sourceContext?.evidenceBundle ?? null;
   return {
     minRecommendedAge: age.min ?? null,
     maxRecommendedAge: age.max ?? null,
@@ -49,6 +77,17 @@ function draftJsonToSavePayload(draft, options) {
         humanReviewed: true,
         approvedBy: options.reviewedBy,
         approvedAt: options.approvedAt,
+        evidenceStatus: options.evidenceStatus ?? options.sourceContext?.evidenceStatus ?? null,
+        sourcePagesChecked: options.sourceContext?.sourcePagesChecked ?? null,
+        sourceStatus: options.sourceContext?.sourceStatus ?? null,
+        fieldEvidence: collectFieldEvidence(draft),
+        evidenceBundleSummary: evidenceBundle
+          ? {
+              sourceStatus: evidenceBundle.sourceStatus,
+              pagesChecked: evidenceBundle.pagesChecked,
+              factCount: evidenceBundle.facts?.length ?? 0,
+            }
+          : null,
         sourceContext: options.sourceContext ?? {},
         overallDraftConfidence: draft.overallDraftConfidence,
       }),

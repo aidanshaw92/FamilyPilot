@@ -1,7 +1,9 @@
 # Venue Enrichment Workflow
 
-**Date:** 7 August 2026  
+**Date:** 8 August 2026  
 **Authority:** [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) · [LIVE_GOOGLE_QUALITY_PASS.md](./LIVE_GOOGLE_QUALITY_PASS.md)
+
+See **[EVIDENCE_BACKED_ENRICHMENT.md](./EVIDENCE_BACKED_ENRICHMENT.md)** for official source discovery, evidence extraction, and fetch security.
 
 ---
 
@@ -55,7 +57,8 @@ Provider sync **never** overwrites `venue_family_metadata`.
 
 ## Database
 
-Migration: `familypilot/supabase/migrations/003_venue_enrichment_workflow.sql`
+Migration: `familypilot/supabase/migrations/003_venue_enrichment_workflow.sql`  
+Evidence: `familypilot/supabase/migrations/006_venue_source_evidence.sql`
 
 Key columns added:
 

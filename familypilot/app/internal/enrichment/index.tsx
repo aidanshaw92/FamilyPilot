@@ -12,6 +12,7 @@ import {
 import { Text } from '@/src/components/ui';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { EnrichmentQueueItem, EnrichmentStats } from '@/src/types/enrichment';
+import { BatchDraftProgress } from '@/src/types/ai-enrichment';
 import { enrichmentApi } from '@/src/services/enrichment/enrichment-api-client';
 
 const STATUS_FILTERS = [
@@ -32,6 +33,8 @@ export default function EnrichmentQueueScreen() {
   const [syncing, setSyncing] = useState(false);
   const [generatingBatch, setGeneratingBatch] = useState(false);
   const [batchSummary, setBatchSummary] = useState('');
+  const [batchProgress, setBatchProgress] = useState<BatchDraftProgress | null>(null);
+  const [batchCancelRef, setBatchCancelRef] = useState<{ cancelled: boolean } | null>(null);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('provider_only');
   const [sort, setSort] = useState('nearest');
@@ -83,12 +86,18 @@ export default function EnrichmentQueueScreen() {
     setGeneratingBatch(true);
     setError('');
     setBatchSummary('');
+    setBatchProgress(null);
+    const cancelState = { cancelled: false };
+    setBatchCancelRef(cancelState);
     try {
       const result = await enrichmentApi.generateDraftBatch({
         batchSize: 10,
         betaLat: Number(betaLat),
         betaLng: Number(betaLng),
         betaRadiusKm: Number(betaRadius),
+        concurrency: 2,
+        shouldContinue: () => !cancelState.cancelled,
+        onProgress: (progress) => setBatchProgress(progress),
       });
       setBatchSummary(
         `Batch: ${result.succeeded}/${result.processed} succeeded · est. $${result.estimatedCostUsd.toFixed(4)}`,
@@ -98,7 +107,12 @@ export default function EnrichmentQueueScreen() {
       setError(e instanceof Error ? e.message : 'Batch generation failed');
     } finally {
       setGeneratingBatch(false);
+      setBatchCancelRef(null);
     }
+  };
+
+  const handleCancelBatch = () => {
+    if (batchCancelRef) batchCancelRef.cancelled = true;
   };
 
   const statusBadge = (status: string) => {
@@ -176,7 +190,27 @@ export default function EnrichmentQueueScreen() {
         >
           <Text variant="bodySmall">{generatingBatch ? 'Generating…' : 'Generate drafts (10)'}</Text>
         </Pressable>
+        {generatingBatch && batchCancelRef ? (
+          <Pressable style={[styles.actionBtn, styles.secondaryBtn]} onPress={handleCancelBatch}>
+            <Text variant="bodySmall">Cancel batch</Text>
+          </Pressable>
+        ) : null}
       </View>
+      {batchProgress ? (
+        <View style={styles.batchBox}>
+          <Text variant="caption" color={colors.text.secondary}>
+            Generating drafts — {batchProgress.completed} / {batchProgress.total} complete
+            {batchProgress.current ? ` · ${batchProgress.current}` : ''}
+          </Text>
+          {batchProgress.results.map((r) => (
+            <Text key={r.familypilotPlaceId} variant="caption" color={colors.text.tertiary}>
+              {r.ok ? '✓' : '✗'} {r.name}
+              {!r.ok && r.error ? ` — ${r.error}` : ''}
+              {r.ok && r.evidenceStatus === 'provider_only' ? ' — no official source' : ''}
+            </Text>
+          ))}
+        </View>
+      ) : null}
       {batchSummary ? (
         <Text variant="caption" color={colors.text.secondary}>{batchSummary}</Text>
       ) : null}
@@ -270,6 +304,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   chipActive: { borderColor: colors.primary[500], backgroundColor: colors.primary[50] },
+  batchBox: {
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    gap: spacing.xs,
+  },
   card: {
     backgroundColor: colors.surface,
     padding: spacing.md,

@@ -14,6 +14,7 @@ export function draftJsonToSavePayload(
     model: string;
     approvedAt: string;
     sourceContext?: Record<string, unknown>;
+    evidenceStatus?: string;
   },
 ): EnrichmentSavePayload {
   const age = draft.recommendedAge;
@@ -57,12 +58,41 @@ export function draftJsonToSavePayload(
         humanReviewed: true,
         approvedBy: options.reviewedBy,
         approvedAt: options.approvedAt,
+        evidenceStatus: options.evidenceStatus ?? options.sourceContext?.evidenceStatus ?? null,
+        fieldEvidence: collectFieldEvidence(draft),
         sourceContext: options.sourceContext ?? {},
         overallDraftConfidence: draft.overallDraftConfidence,
       }),
     },
     requestedStatus: 'enriched',
   };
+}
+
+function collectFieldEvidence(draft: VenueEnrichmentDraftJson) {
+  const fields: Record<string, unknown> = {};
+  const add = (key: string, field: { value?: string; confidence?: string; sourceUrl?: string | null; evidence?: string | null; sourceType?: string | null; retrievedAt?: string | null }) => {
+    if (!field) return;
+    fields[key] = {
+      value: field.value,
+      confidence: field.confidence,
+      sourceUrl: field.sourceUrl ?? null,
+      evidence: field.evidence ?? null,
+      sourceType: field.sourceType ?? null,
+      retrievedAt: field.retrievedAt ?? null,
+    };
+  };
+  for (const [key, field] of Object.entries(draft.familyFacilities ?? {})) {
+    add(`familyFacilities.${key}`, field);
+  }
+  add('pushchairSuitability', draft.pushchairSuitability);
+  add('terrain', draft.terrain);
+  for (const [key, field] of Object.entries(draft.accessibility ?? {})) {
+    add(`accessibility.${key}`, field);
+  }
+  for (const [key, field] of Object.entries(draft.sendInfo ?? {})) {
+    add(`sendInfo.${key}`, field);
+  }
+  return fields;
 }
 
 /** Pre-fill internal editor form from AI draft for human review. */

@@ -5,6 +5,7 @@ const { getSupabaseAdmin } = require('./supabase-admin');
 const { generateDraft } = require('./ai-provider');
 const { draftJsonToSavePayload } = require('./ai-draft-mapper');
 const { getMetadata, saveMetadata, listQueue } = require('./enrichment-store');
+const { gatherEvidenceForVenue } = require('./evidence-pipeline');
 
 const FILE_DRAFTS_PATH = path.join(process.cwd(), '.data', 'enrichment-drafts.json');
 const DEFAULT_BATCH_SIZE = 10;
@@ -42,6 +43,7 @@ function rowToDraft(row) {
     status: row.status,
     reviewedAt: row.reviewed_at,
     reviewedBy: row.reviewed_by,
+    evidenceStatus: row.evidence_status ?? (row.status === 'pending_review' ? 'legacy_no_sources' : undefined),
     tokenUsage: row.token_usage ?? {},
     estimatedCostUsd: row.estimated_cost_usd,
     createdAt: row.created_at,
@@ -147,6 +149,7 @@ async function saveDraftRecord(familypilotId, externalId, result) {
     generated_at: new Date().toISOString(),
     source_context: result.sourceContext,
     confidence_json: result.confidenceJson,
+    evidence_status: result.evidenceStatus ?? 'legacy_no_sources',
     status: 'pending_review',
     token_usage: result.tokenUsage ?? {},
     estimated_cost_usd: result.estimatedCostUsd ?? 0,
@@ -193,7 +196,7 @@ async function getPendingDraft(familypilotId) {
   return rowToDraft(row);
 }
 
-function placeRowToInput(row, existingMetadata) {
+function placeRowToInput(row, existingMetadata, evidenceBundle) {
   const hours = row.opening_hours?.weekdayText?.join('; ') ?? row.opening_hours ?? null;
   return {
     familypilotPlaceId: row.familypilot_place_id,
@@ -208,6 +211,7 @@ function placeRowToInput(row, existingMetadata) {
     googlePrimaryType: row.field_provenance?.googlePrimaryType,
     googleTypes: row.field_provenance?.googleTypes ?? [],
     existingMetadata,
+    evidenceBundle: evidenceBundle ?? null,
   };
 }
 
@@ -223,15 +227,30 @@ async function generateDraftForVenue(familypilotId, options = {}) {
   if (!place) throw new Error('Place record not found');
 
   await supersedePendingDrafts(familypilotId);
-  const input = placeRowToInput(place, metadata);
+  const evidenceBundle = await gatherEvidenceForVenue(familypilotId, place);
+  const input = placeRowToInput(place, metadata, evidenceBundle);
   const result = await generateDraft(input);
+  result.evidenceStatus =
+    evidenceBundle.sourceStatus === 'no_official_source' ? 'provider_only' : 'evidence_backed';
+  result.sourceContext = {
+    ...result.sourceContext,
+    evidenceBundle,
+    sourcePagesChecked: evidenceBundle.pagesChecked,
+    sourceCacheHits: evidenceBundle.cacheHits,
+    sourceStatus: evidenceBundle.sourceStatus,
+  };
   const draft = await saveDraftRecord(familypilotId, place.external_id, result);
 
   if (status !== 'enriched' && status !== 'verified') {
     await markAiDraftStatus(familypilotId);
   }
 
-  return { draft, tokenUsage: result.tokenUsage, estimatedCostUsd: result.estimatedCostUsd ?? 0 };
+  return {
+    draft,
+    tokenUsage: result.tokenUsage,
+    estimatedCostUsd: result.estimatedCostUsd ?? 0,
+    evidenceBundle,
+  };
 }
 
 async function generateDraftBatch(params = {}) {
@@ -301,6 +320,7 @@ async function approveDraft(familypilotId, payload, reviewedBy) {
     approvedAt: new Date().toISOString(),
     reviewedBy,
     sourceContext: draft.sourceContext,
+    evidenceStatus: draft.evidenceStatus,
   });
 
   const savePayload = {

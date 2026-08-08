@@ -14,17 +14,37 @@ function normaliseConfidence(value) {
   return 'unknown';
 }
 
+function normaliseEvidenceField(raw) {
+  if (raw == null) return { sourceUrl: null, evidence: null, sourceType: null, retrievedAt: null };
+  return {
+    sourceUrl: typeof raw.sourceUrl === 'string' ? raw.sourceUrl : null,
+    evidence: typeof raw.evidence === 'string' ? raw.evidence.slice(0, 500) : null,
+    sourceType: typeof raw.sourceType === 'string' ? raw.sourceType : null,
+    retrievedAt: typeof raw.retrievedAt === 'string' ? raw.retrievedAt : null,
+  };
+}
+
 function normaliseTriStateField(raw, fallback = {}) {
   const value = TRI_STATE.has(raw?.value) ? raw.value : 'unknown';
+  const evidenceMeta = normaliseEvidenceField(raw);
   return {
     value,
     confidence: normaliseConfidence(raw?.confidence ?? fallback.confidence),
     reason: typeof raw?.reason === 'string' ? raw.reason : null,
+    ...evidenceMeta,
   };
 }
 
 function emptyTriStateField() {
-  return { value: 'unknown', confidence: 'unknown', reason: null };
+  return {
+    value: 'unknown',
+    confidence: 'unknown',
+    reason: null,
+    sourceUrl: null,
+    evidence: null,
+    sourceType: null,
+    retrievedAt: null,
+  };
 }
 
 function normaliseDraftJson(raw) {
@@ -50,16 +70,22 @@ function normaliseDraftJson(raw) {
       parking: normaliseTriStateField(facilities.parking),
       cafe: normaliseTriStateField(facilities.cafe),
     },
-    pushchairSuitability: {
-      value: PUSHCHAIR.has(pushchair.value) ? pushchair.value : 'unknown',
-      confidence: normaliseConfidence(pushchair.confidence),
-      reason: typeof pushchair.reason === 'string' ? pushchair.reason : null,
-    },
-    terrain: {
-      value: TERRAIN.has(terrain.value) ? terrain.value : 'unknown',
-      confidence: normaliseConfidence(terrain.confidence),
-      reason: typeof terrain.reason === 'string' ? terrain.reason : null,
-    },
+    pushchairSuitability: (() => {
+      const base = {
+        value: PUSHCHAIR.has(pushchair.value) ? pushchair.value : 'unknown',
+        confidence: normaliseConfidence(pushchair.confidence),
+        reason: typeof pushchair.reason === 'string' ? pushchair.reason : null,
+      };
+      return { ...base, ...normaliseEvidenceField(pushchair) };
+    })(),
+    terrain: (() => {
+      const base = {
+        value: TERRAIN.has(terrain.value) ? terrain.value : 'unknown',
+        confidence: normaliseConfidence(terrain.confidence),
+        reason: typeof terrain.reason === 'string' ? terrain.reason : null,
+      };
+      return { ...base, ...normaliseEvidenceField(terrain) };
+    })(),
     accessibility: {},
     sendInfo: {},
     whyFamiliesLike: Array.isArray(raw.whyFamiliesLike)
