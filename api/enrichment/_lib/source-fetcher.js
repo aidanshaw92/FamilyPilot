@@ -4,12 +4,13 @@
 
 const crypto = require('crypto');
 const { assertSafeUrl } = require('./source-fetch-security');
-const { extractPageContent } = require('./html-text-extractor');
+const { extractPageContent, isCloudflareChallenge } = require('./html-text-extractor');
 
 const FETCH_TIMEOUT_MS = Number(process.env.SOURCE_FETCH_TIMEOUT_MS || 10000);
 const MAX_RESPONSE_BYTES = Number(process.env.SOURCE_FETCH_MAX_BYTES || 512 * 1024);
 const MAX_REDIRECTS = 3;
-const USER_AGENT = 'FamilyPilot/1.0 (enrichment-research; +https://family-pilot-seven.vercel.app)';
+const USER_AGENT =
+  'Mozilla/5.0 (compatible; FamilyPilot/1.0; +https://family-pilot-seven.vercel.app; enrichment-research)';
 
 async function fetchWithRedirects(urlString, redirectCount = 0) {
   const parsed = await assertSafeUrl(urlString);
@@ -22,6 +23,7 @@ async function fetchWithRedirects(urlString, redirectCount = 0) {
       headers: {
         'User-Agent': USER_AGENT,
         Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-GB,en;q=0.9',
       },
       redirect: 'manual',
       signal: controller.signal,
@@ -33,6 +35,15 @@ async function fetchWithRedirects(urlString, redirectCount = 0) {
       if (redirectCount >= MAX_REDIRECTS) throw new Error('Too many redirects');
       const nextUrl = new URL(location, parsed.toString()).toString();
       return fetchWithRedirects(nextUrl, redirectCount + 1);
+    }
+
+    if (response.status === 403 || response.status === 401) {
+      const buffer = await response.arrayBuffer();
+      const html = Buffer.from(buffer).toString('utf8');
+      if (isCloudflareChallenge(html)) {
+        return { status: 'blocked', html, finalUrl: parsed.toString(), error: 'cloudflare_challenge' };
+      }
+      return { status: 'blocked', html: null, error: `HTTP ${response.status}` };
     }
 
     if (!response.ok) {
@@ -50,6 +61,10 @@ async function fetchWithRedirects(urlString, redirectCount = 0) {
     }
 
     const html = Buffer.from(buffer).toString('utf8');
+    if (isCloudflareChallenge(html)) {
+      return { status: 'blocked', html, finalUrl: parsed.toString(), error: 'cloudflare_challenge' };
+    }
+
     return { status: 'ok', html, finalUrl: parsed.toString(), bytes: buffer.byteLength };
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
@@ -73,6 +88,7 @@ async function fetchOfficialPage(urlString) {
       fetchStatus: result.status,
       error: result.error ?? result.status,
       url: urlString,
+      html: result.html ?? null,
     };
   }
 
