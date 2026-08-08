@@ -10,24 +10,30 @@ const {
   resolveEnrichmentStatus,
 } = require('./validation');
 
-const FILE_STORE_PATH = path.join(process.cwd(), '.data', 'enrichment-store.json');
+const FILE_STORE_DIR = '.data';
+const FILE_STORE_NAME = 'enrichment-store.json';
+
+function getFileStorePath() {
+  return path.join(process.cwd(), FILE_STORE_DIR, FILE_STORE_NAME);
+}
 
 function ensureFileStore() {
-  const dir = path.dirname(FILE_STORE_PATH);
+  const filePath = getFileStorePath();
+  const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  if (!fs.existsSync(FILE_STORE_PATH)) {
-    fs.writeFileSync(FILE_STORE_PATH, JSON.stringify({ places: {}, metadata: {} }, null, 2));
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, JSON.stringify({ places: {}, metadata: {} }, null, 2));
   }
 }
 
 function readFileStore() {
   ensureFileStore();
-  return JSON.parse(fs.readFileSync(FILE_STORE_PATH, 'utf8'));
+  return JSON.parse(fs.readFileSync(getFileStorePath(), 'utf8'));
 }
 
 function writeFileStore(data) {
   ensureFileStore();
-  fs.writeFileSync(FILE_STORE_PATH, JSON.stringify(data, null, 2));
+  fs.writeFileSync(getFileStorePath(), JSON.stringify(data, null, 2));
 }
 
 function rowToMetadata(row) {

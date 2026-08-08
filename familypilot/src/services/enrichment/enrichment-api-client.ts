@@ -171,6 +171,27 @@ export const enrichmentApi = {
     }>;
   },
 
+  /** Regenerate a legacy pending draft through the evidence-backed pipeline. */
+  async regenerateDraftWithEvidence(id: string) {
+    return this.generateDraft(id, false);
+  },
+
+  async getLegacyDrafts(params?: { batchSize?: number }) {
+    const queryParams: Record<string, string> = {};
+    if (params?.batchSize != null) queryParams.batchSize = String(params.batchSize);
+    return enrichmentFetch('legacy-drafts', {}, queryParams) as Promise<{
+      items: Array<{
+        familypilotPlaceId: string;
+        familypilotId: string;
+        name: string;
+        draftId: string;
+        evidenceStatus: string;
+        enrichmentStatus: string;
+      }>;
+      count: number;
+    }>;
+  },
+
   /**
    * Client-controlled batch (Option A) — avoids Vercel 504 on long server batch.
    * Calls generate-draft per venue with limited concurrency; each draft persists immediately.
@@ -250,6 +271,94 @@ export const enrichmentApi = {
             name: item.name,
             ok: false,
             error: error instanceof Error ? error.message : 'Generation failed',
+          });
+        }
+
+        completed += 1;
+        report();
+        return null;
+      },
+      params.shouldContinue,
+    );
+
+    return {
+      processed: candidates.length,
+      succeeded: results.filter((r) => r.ok).length,
+      failed: results.filter((r) => !r.ok).length,
+      results,
+      tokenUsage,
+      estimatedCostUsd,
+    };
+  },
+
+  /**
+   * Client-controlled legacy draft regeneration — same concurrency model as generateDraftBatch.
+   * Re-runs evidence-backed generation for pending drafts with legacy_no_sources status.
+   */
+  async regenerateLegacyDraftBatch(
+    params: {
+      batchSize?: number;
+      concurrency?: number;
+      onProgress?: (progress: import('@/src/types/ai-enrichment').BatchDraftProgress) => void;
+      shouldContinue?: () => boolean;
+    } = {},
+  ): Promise<import('@/src/types/ai-enrichment').BatchDraftResult> {
+    const batchSize = params.batchSize ?? 10;
+    const concurrency = params.concurrency ?? 2;
+
+    const { items } = await this.getLegacyDrafts({ batchSize });
+    const candidates = items.slice(0, batchSize);
+    const results: import('@/src/types/ai-enrichment').BatchDraftItemResult[] = [];
+    let tokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+    let estimatedCostUsd = 0;
+    let completed = 0;
+
+    const report = () => {
+      params.onProgress?.({
+        total: candidates.length,
+        completed,
+        succeeded: results.filter((r) => r.ok).length,
+        failed: results.filter((r) => !r.ok).length,
+        results: [...results],
+      });
+    };
+
+    await runWithConcurrency(
+      candidates,
+      concurrency,
+      async (item) => {
+        if (params.shouldContinue && !params.shouldContinue()) {
+          return null;
+        }
+
+        params.onProgress?.({
+          total: candidates.length,
+          completed,
+          succeeded: results.filter((r) => r.ok).length,
+          failed: results.filter((r) => !r.ok).length,
+          current: item.name,
+          results: [...results],
+        });
+
+        try {
+          const result = await this.regenerateDraftWithEvidence(item.familypilotPlaceId);
+          tokenUsage.promptTokens += result.tokenUsage?.promptTokens ?? 0;
+          tokenUsage.completionTokens += result.tokenUsage?.completionTokens ?? 0;
+          tokenUsage.totalTokens += result.tokenUsage?.totalTokens ?? 0;
+          estimatedCostUsd += result.estimatedCostUsd ?? 0;
+          results.push({
+            familypilotPlaceId: item.familypilotPlaceId,
+            name: item.name,
+            ok: true,
+            draftId: result.draft.id,
+            evidenceStatus: result.draft.evidenceStatus,
+          });
+        } catch (error) {
+          results.push({
+            familypilotPlaceId: item.familypilotPlaceId,
+            name: item.name,
+            ok: false,
+            error: error instanceof Error ? error.message : 'Regeneration failed',
           });
         }
 

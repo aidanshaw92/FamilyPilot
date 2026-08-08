@@ -15,6 +15,7 @@ const { isAiConfigured } = require('./_lib/ai-provider');
 const {
   generateDraftForVenue,
   generateDraftBatch,
+  listLegacyPendingDrafts,
   getPendingDraft,
   approveDraft,
   rejectDraft,
@@ -56,6 +57,8 @@ module.exports = async function handler(req, res) {
       return handleGenerateDraft(req, res);
     case 'generate-batch':
       return handleGenerateBatch(req, res);
+    case 'legacy-drafts':
+      return handleLegacyDrafts(req, res);
     case 'draft':
       return handleDraft(req, res);
     case 'approve-draft':
@@ -231,6 +234,26 @@ async function handleGenerateBatch(req, res) {
   } catch (error) {
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Batch generation failed',
+    });
+  }
+}
+
+async function handleLegacyDrafts(req, res) {
+  setCorsHeaders(res, 'GET');
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  if (!verifyEnrichmentAuth(req, res)) return;
+
+  const batchSize = req.query.batchSize != null ? Number(req.query.batchSize) : undefined;
+
+  try {
+    const items = await listLegacyPendingDrafts({
+      batchSize,
+      provider: 'google',
+    });
+    return res.status(200).json({ items, count: items.length });
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Legacy draft listing failed',
     });
   }
 }
