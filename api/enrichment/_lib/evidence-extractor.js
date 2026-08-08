@@ -1,7 +1,5 @@
-/**
- * Keyword-based evidence extraction from official source text.
- * Does NOT invent facts — only extracts explicit or strongly implied statements.
- */
+const { cleanEvidenceSnippet } = require('./evidence-text-utils');
+const { extractPushchairEvidence } = require('./pushchair-evidence');
 
 const FIELD_PATTERNS = [
   {
@@ -59,18 +57,6 @@ const FIELD_PATTERNS = [
     field: 'accessibleToilet',
     yes: [/accessible\s+toilet/i, /disabled\s+toilet/i, /changing\s+places/i],
     no: [/no\s+accessible\s+toilet/i],
-  },
-  {
-    field: 'pushchairSuitability',
-    yes: [
-      /pushchair/i,
-      /buggy/i,
-      /pram/i,
-      /stroller/i,
-      /pushchairs?\s+(are\s+)?welcome/i,
-      /buggies?\s+(are\s+)?welcome/i,
-    ],
-    no: [/no\s+pushchair/i, /buggies?\s+not/i, /pushchairs?\s+not/i],
   },
   {
     field: 'playground',
@@ -145,13 +131,18 @@ function extractEvidenceFromText(text, sourceMeta) {
         field: pattern.field,
         value: match.value,
         confidence: match.confidence,
-        evidenceText: sentence.slice(0, 400),
+        evidenceText: cleanEvidenceSnippet(sentence),
         sourceUrl: sourceMeta.url,
         sourceType: sourceMeta.sourceType,
         retrievedAt: sourceMeta.retrievedAt,
       });
       break;
     }
+  }
+
+  const pushchairFact = extractPushchairEvidence(text, sourceMeta);
+  if (pushchairFact) {
+    facts.push(pushchairFact);
   }
 
   return facts;
@@ -162,12 +153,23 @@ function mergeEvidenceBundles(sources) {
   for (const source of sources) {
     for (const fact of source.facts ?? []) {
       const existing = byField.get(fact.field);
-      if (!existing || rankConfidence(fact.confidence) > rankConfidence(existing.confidence)) {
+      if (!existing || rankPushchairOrConfidence(fact, existing) > 0) {
         byField.set(fact.field, fact);
       }
     }
   }
   return [...byField.values()];
+}
+
+const PUSHCHAIR_RANK = { excellent: 4, good: 3, mixed: 2, difficult: 1, unknown: 0 };
+
+function rankPushchairOrConfidence(fact, existing) {
+  if (fact.field === 'pushchairSuitability') {
+    const factRank = PUSHCHAIR_RANK[fact.value] ?? 0;
+    const existingRank = PUSHCHAIR_RANK[existing.value] ?? 0;
+    if (factRank !== existingRank) return factRank - existingRank;
+  }
+  return rankConfidence(fact.confidence) - rankConfidence(existing.confidence);
 }
 
 function rankConfidence(c) {
@@ -210,4 +212,5 @@ module.exports = {
   buildEvidenceBundle,
   isExplicitParkingStatement,
   FIELD_PATTERNS,
+  cleanEvidenceSnippet,
 };

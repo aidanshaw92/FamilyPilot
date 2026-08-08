@@ -393,3 +393,102 @@ describe('contradiction and false-positive regressions', () => {
     expect((merged.familyFacilities.parking as { evidenceBacked?: boolean }).evidenceBacked).toBe(true);
   });
 });
+
+const CHILTERN_SOURCE = {
+  url: 'https://www.coam.org.uk/your-visit/accessibility/',
+  sourceType: 'accessibility_page',
+  retrievedAt: '2026-08-08T12:00:00.000Z',
+};
+
+const CHILTERN_TEXT =
+  'Buggies are welcome on site… ramps into most buildings… some buildings will not accommodate a pram… paths are gravel and can get muddy.';
+
+describe('pushchair suitability evidence', () => {
+  it('classifies Chiltern Open Air Museum official wording as good with high confidence', () => {
+    const facts = extractEvidenceFromText(CHILTERN_TEXT, CHILTERN_SOURCE);
+    const pushchair = facts.find((f) => f.field === 'pushchairSuitability');
+    expect(pushchair?.value).toBe('good');
+    expect(pushchair?.confidence).toBe('high');
+    expect(pushchair?.evidenceText).toContain('Buggies are welcome');
+    expect(pushchair?.sourceUrl).toBe(CHILTERN_SOURCE.url);
+  });
+
+  it('merges Chiltern pushchair evidence into draft with official source attached', () => {
+    const facts = extractEvidenceFromText(CHILTERN_TEXT, CHILTERN_SOURCE);
+    const bundle = buildEvidenceBundle('fp-google-chiltern', [{
+      ...CHILTERN_SOURCE,
+      fetchStatus: 'ok',
+      facts,
+    }], 'official_website');
+
+    const draft = buildDraftFromEvidence(bundle);
+    expect(draft.pushchairSuitability.value).toBe('good');
+    expect(draft.pushchairSuitability.confidence).toBe('high');
+    expect(draft.pushchairSuitability.sourceUrl).toBe(CHILTERN_SOURCE.url);
+    expect(draft.pushchairSuitability.evidence).toContain('gravel');
+    expect((draft.pushchairSuitability as { evidenceBacked?: boolean }).evidenceBacked).toBe(true);
+  });
+
+  it('classifies excellent when welcome with smooth step-free routes and no caveats', () => {
+    const text =
+      'Pushchairs are welcome throughout the site. All routes are step-free with smooth paved paths.';
+    const facts = extractEvidenceFromText(text, CHILTERN_SOURCE);
+    expect(facts.find((f) => f.field === 'pushchairSuitability')?.value).toBe('excellent');
+  });
+
+  it('classifies mixed when significant access limitations are stated', () => {
+    const text =
+      'Buggies are welcome but many areas have limited access due to steep steps and very uneven paths.';
+    const facts = extractEvidenceFromText(text, CHILTERN_SOURCE);
+    expect(facts.find((f) => f.field === 'pushchairSuitability')?.value).toBe('mixed');
+  });
+
+  it('classifies difficult when pushchairs are explicitly discouraged', () => {
+    const text = 'Pushchairs are not suitable for this trail. We strongly advise against bringing buggies.';
+    const facts = extractEvidenceFromText(text, CHILTERN_SOURCE);
+    expect(facts.find((f) => f.field === 'pushchairSuitability')?.value).toBe('difficult');
+  });
+
+  it('does not infer pushchair suitability from venue type alone', () => {
+    const facts = extractEvidenceFromText(
+      'Chiltern Open Air Museum is an open air heritage museum with historic buildings and woodland walks.',
+      CHILTERN_SOURCE,
+    );
+    expect(facts.find((f) => f.field === 'pushchairSuitability')).toBeUndefined();
+  });
+
+  it('returns unknown when no mobility wording is present', () => {
+    const facts = extractEvidenceFromText('Paths can be gravel and muddy after rain.', CHILTERN_SOURCE);
+    expect(facts.find((f) => f.field === 'pushchairSuitability')).toBeUndefined();
+  });
+
+  it('strips CSS/HTML fragments from evidence snippets', () => {
+    const text =
+      '.visitor-info { font-size: 14px; color: rgb(0,0,0); } Buggies are welcome on site with gravel paths that can get muddy.';
+    const facts = extractEvidenceFromText(text, CHILTERN_SOURCE);
+    const pushchair = facts.find((f) => f.field === 'pushchairSuitability');
+    expect(pushchair?.evidenceText).not.toMatch(/font-size|rgb\(|\.visitor-info/);
+    expect(pushchair?.evidenceText).toContain('Buggies are welcome');
+  });
+
+  it('isAuthoritativeFact accepts pushchair suitability values', () => {
+    expect(isAuthoritativeFact({
+      field: 'pushchairSuitability',
+      value: 'good',
+      confidence: 'high',
+    })).toBe(true);
+    expect(isAuthoritativeFact({
+      field: 'pushchairSuitability',
+      value: 'unknown',
+      confidence: 'high',
+    })).toBe(false);
+  });
+
+  it('AI pushchair guess without evidence is cleared when no extracted fact exists', () => {
+    const aiDraft = normaliseDraftJson({
+      pushchairSuitability: { value: 'excellent', confidence: 'low', reason: 'AI guess' },
+    });
+    const merged = mergeEvidenceIntoDraft(aiDraft, buildEvidenceBundle('fp-test', [], 'no_official_source'));
+    expect(merged.pushchairSuitability.value).toBe('unknown');
+  });
+});
