@@ -457,6 +457,13 @@ function DiagnosticsPanel({ diagnostics }: { diagnostics: import('@/src/types/ai
           ✗ Failed: {page.url.replace(/^https?:\/\/[^/]+/, '')} — {page.error ?? page.fetchStatus}
         </Text>
       ))}
+      {(diagnostics.pagesFetched ?? [])
+        .filter((p) => p.fetchStatus === 'fetched_truncated')
+        .map((page) => (
+          <Text key={`trunc-${page.url}`} variant="caption" color={colors.text.tertiary}>
+            ⚠ Truncated fetch: {page.url.replace(/^https?:\/\/[^/]+/, '')} (bounded read)
+          </Text>
+        ))}
       {(diagnostics.evidenceByPage ?? []).map((page) => (
         <Text key={page.url} variant="caption" color={colors.text.tertiary}>
           {page.factCount > 0

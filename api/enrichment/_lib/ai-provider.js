@@ -3,6 +3,7 @@
  */
 
 const { normaliseDraftJson, extractConfidenceJson, parseModelJson } = require('./ai-draft-schema');
+const { buildDraftFromEvidence, mergeEvidenceIntoDraft } = require('./evidence-draft-merge');
 
 const DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const MAX_OUTPUT_TOKENS = Number(process.env.AI_ENRICHMENT_MAX_TOKENS || 1800);
@@ -118,7 +119,8 @@ async function callOpenAI(input) {
       if (!content) throw new Error('Empty AI response');
 
       const parsed = parseModelJson(content);
-      const draftJson = normaliseDraftJson(parsed);
+      let draftJson = normaliseDraftJson(parsed);
+      draftJson = mergeEvidenceIntoDraft(draftJson, input.evidenceBundle);
       const tokenUsage = {
         promptTokens: data.usage?.prompt_tokens ?? 0,
         completionTokens: data.usage?.completion_tokens ?? 0,
@@ -148,8 +150,7 @@ async function callOpenAI(input) {
 
 function generateMockDraft(input) {
   const bundle = input.evidenceBundle;
-  const toiletFact = bundle?.facts?.find((f) => f.field === 'toilets');
-  const babyFact = bundle?.facts?.find((f) => f.field === 'babyChanging');
+  const evidenceDraft = buildDraftFromEvidence(bundle);
 
   const mkField = (fact) =>
     fact
@@ -161,29 +162,45 @@ function generateMockDraft(input) {
           evidence: fact.evidenceText ?? null,
           sourceType: fact.sourceType ?? null,
           retrievedAt: fact.retrievedAt ?? null,
+          evidenceBacked: true,
         }
-      : {
-          value: 'unknown',
-          confidence: 'unknown',
-          reason: 'No explicit evidence found.',
-          sourceUrl: null,
-          evidence: null,
-          sourceType: null,
-          retrievedAt: null,
-        };
+      : emptyTriStateFromEvidence();
+
+  function emptyTriStateFromEvidence() {
+    return {
+      value: 'unknown',
+      confidence: 'unknown',
+      reason: 'No explicit evidence found.',
+      sourceUrl: null,
+      evidence: null,
+      sourceType: null,
+      retrievedAt: null,
+    };
+  }
 
   const draftJson = normaliseDraftJson({
-    recommendedAge: { min: null, max: null, notes: null, confidence: 'unknown' },
+    recommendedAge: evidenceDraft.recommendedAge,
     familyFacilities: {
-      toilets: mkField(toiletFact),
-      babyChanging: mkField(babyFact),
-      parking: mkField(bundle?.facts?.find((f) => f.field === 'parking')),
-      cafe: mkField(bundle?.facts?.find((f) => f.field === 'cafe')),
+      toilets: evidenceDraft.familyFacilities.toilets?.value !== 'unknown'
+        ? evidenceDraft.familyFacilities.toilets
+        : mkField(bundle?.facts?.find((f) => f.field === 'toilets')),
+      babyChanging: evidenceDraft.familyFacilities.babyChanging?.value !== 'unknown'
+        ? evidenceDraft.familyFacilities.babyChanging
+        : mkField(bundle?.facts?.find((f) => f.field === 'babyChanging')),
+      parking: evidenceDraft.familyFacilities.parking?.value !== 'unknown'
+        ? evidenceDraft.familyFacilities.parking
+        : mkField(bundle?.facts?.find((f) => f.field === 'parking')),
+      cafe: evidenceDraft.familyFacilities.cafe?.value !== 'unknown'
+        ? evidenceDraft.familyFacilities.cafe
+        : mkField(bundle?.facts?.find((f) => f.field === 'cafe')),
     },
-    pushchairSuitability: mkField(bundle?.facts?.find((f) => f.field === 'pushchairSuitability')),
+    pushchairSuitability:
+      evidenceDraft.pushchairSuitability?.value !== 'unknown'
+        ? evidenceDraft.pushchairSuitability
+        : mkField(bundle?.facts?.find((f) => f.field === 'pushchairSuitability')),
     terrain: { value: 'unknown', confidence: 'unknown', reason: null, sourceUrl: null, evidence: null },
-    accessibility: {},
-    sendInfo: {},
+    accessibility: evidenceDraft.accessibility ?? {},
+    sendInfo: evidenceDraft.sendInfo ?? {},
     whyFamiliesLike: input.description ? [`${input.name} — ${input.description.slice(0, 120)}`] : [],
     goodToKnow:
       bundle?.sourceStatus === 'no_official_source'
@@ -191,7 +208,7 @@ function generateMockDraft(input) {
         : ['AI draft from official sources — human review required.'],
     suggestedVisitDuration: null,
     rainyDaySuitability: 'unknown',
-    overallDraftConfidence: bundle?.facts?.length ? 'medium' : 'low',
+    overallDraftConfidence: evidenceDraft.overallDraftConfidence,
   });
 
   return {
@@ -224,4 +241,6 @@ module.exports = {
   compactEvidenceBundle,
   DEFAULT_MODEL,
   AI_TIMEOUT_MS,
+  mergeEvidenceIntoDraft,
+  buildDraftFromEvidence,
 };
