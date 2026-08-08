@@ -32,9 +32,12 @@ export default function EnrichmentQueueScreen() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [generatingBatch, setGeneratingBatch] = useState(false);
+  const [regeneratingLegacyBatch, setRegeneratingLegacyBatch] = useState(false);
   const [batchSummary, setBatchSummary] = useState('');
   const [batchProgress, setBatchProgress] = useState<BatchDraftProgress | null>(null);
+  const [legacyBatchProgress, setLegacyBatchProgress] = useState<BatchDraftProgress | null>(null);
   const [batchCancelRef, setBatchCancelRef] = useState<{ cancelled: boolean } | null>(null);
+  const [legacyBatchCancelRef, setLegacyBatchCancelRef] = useState<{ cancelled: boolean } | null>(null);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('provider_only');
   const [sort, setSort] = useState('nearest');
@@ -115,6 +118,38 @@ export default function EnrichmentQueueScreen() {
     if (batchCancelRef) batchCancelRef.cancelled = true;
   };
 
+  const handleRegenerateLegacyBatch = async () => {
+    setRegeneratingLegacyBatch(true);
+    setError('');
+    setBatchSummary('');
+    setLegacyBatchProgress(null);
+    const cancelState = { cancelled: false };
+    setLegacyBatchCancelRef(cancelState);
+    try {
+      const result = await enrichmentApi.regenerateLegacyDraftBatch({
+        batchSize: 10,
+        concurrency: 2,
+        shouldContinue: () => !cancelState.cancelled,
+        onProgress: (progress) => setLegacyBatchProgress(progress),
+      });
+      setBatchSummary(
+        `Legacy regeneration: ${result.succeeded}/${result.processed} succeeded · est. $${result.estimatedCostUsd.toFixed(4)}`,
+      );
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Legacy draft regeneration failed');
+    } finally {
+      setRegeneratingLegacyBatch(false);
+      setLegacyBatchCancelRef(null);
+    }
+  };
+
+  const handleCancelLegacyBatch = () => {
+    if (legacyBatchCancelRef) legacyBatchCancelRef.cancelled = true;
+  };
+
+  const batchBusy = generatingBatch || regeneratingLegacyBatch;
+
   const statusBadge = (status: string) => {
     switch (status) {
       case 'ai_draft':
@@ -186,13 +221,27 @@ export default function EnrichmentQueueScreen() {
         <Pressable
           style={[styles.actionBtn, styles.secondaryBtn]}
           onPress={() => void handleGenerateBatch()}
-          disabled={generatingBatch}
+          disabled={batchBusy}
         >
           <Text variant="bodySmall">{generatingBatch ? 'Generating…' : 'Generate drafts (10)'}</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.actionBtn, styles.secondaryBtn]}
+          onPress={() => void handleRegenerateLegacyBatch()}
+          disabled={batchBusy}
+        >
+          <Text variant="bodySmall">
+            {regeneratingLegacyBatch ? 'Regenerating legacy…' : 'Regenerate legacy drafts'}
+          </Text>
         </Pressable>
         {generatingBatch && batchCancelRef ? (
           <Pressable style={[styles.actionBtn, styles.secondaryBtn]} onPress={handleCancelBatch}>
             <Text variant="bodySmall">Cancel batch</Text>
+          </Pressable>
+        ) : null}
+        {regeneratingLegacyBatch && legacyBatchCancelRef ? (
+          <Pressable style={[styles.actionBtn, styles.secondaryBtn]} onPress={handleCancelLegacyBatch}>
+            <Text variant="bodySmall">Cancel legacy batch</Text>
           </Pressable>
         ) : null}
       </View>
@@ -207,6 +256,23 @@ export default function EnrichmentQueueScreen() {
               {r.ok ? '✓' : '✗'} {r.name}
               {!r.ok && r.error ? ` — ${r.error}` : ''}
               {r.ok && r.evidenceStatus === 'provider_only' ? ' — no official source' : ''}
+              {r.ok && r.evidenceStatus === 'evidence_backed' ? ' — evidence-backed' : ''}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+      {legacyBatchProgress ? (
+        <View style={styles.batchBox}>
+          <Text variant="caption" color={colors.text.secondary}>
+            Regenerating legacy drafts — {legacyBatchProgress.completed} / {legacyBatchProgress.total} complete
+            {legacyBatchProgress.current ? ` · ${legacyBatchProgress.current}` : ''}
+          </Text>
+          {legacyBatchProgress.results.map((r) => (
+            <Text key={r.familypilotPlaceId} variant="caption" color={colors.text.tertiary}>
+              {r.ok ? '✓' : '✗'} {r.name}
+              {!r.ok && r.error ? ` — ${r.error}` : ''}
+              {r.ok && r.evidenceStatus === 'evidence_backed' ? ' — evidence-backed' : ''}
+              {r.ok && r.evidenceStatus === 'provider_only' ? ' — provider-only' : ''}
             </Text>
           ))}
         </View>

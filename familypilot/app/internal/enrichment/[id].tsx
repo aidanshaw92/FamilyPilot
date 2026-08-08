@@ -28,6 +28,7 @@ import { draftJsonToReviewForm, formatDraftConfidence } from '@/src/utils/ai-dra
 import { cleanEvidenceSnippet } from '@/src/utils/evidence-text-utils';
 import { getAiDraftInternalLabel } from '@/src/utils/family-match-classification';
 import { validateVerifiedRequirements } from '@/src/utils/enrichment-rules';
+import { isLegacyDraft } from '@/src/utils/legacy-draft';
 
 const SOURCE_TYPES: EnrichmentSourceType[] = [
   'official_website',
@@ -95,6 +96,7 @@ export default function EnrichmentFormScreen() {
   const [draft, setDraft] = useState<VenueEnrichmentDraftRecord | null>(null);
   const [evidenceBundle, setEvidenceBundle] = useState<EvidenceBundle | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [form, setForm] = useState<EnrichmentSavePayload>(metadataToForm(null));
   const [error, setError] = useState('');
   const [verificationHint, setVerificationHint] = useState('');
@@ -186,6 +188,25 @@ export default function EnrichmentFormScreen() {
     }
   };
 
+  const regenerateWithEvidence = async () => {
+    if (!id) return;
+    setRegenerating(true);
+    setError('');
+    try {
+      const result = await enrichmentApi.regenerateDraftWithEvidence(id);
+      setDraft(result.draft);
+      setEvidenceBundle((result.evidenceBundle ?? result.draft.sourceContext?.evidenceBundle) as EvidenceBundle | null);
+      setForm(draftJsonToReviewForm(result.draft.draftJson));
+      setEnrichmentStatus('ai_draft');
+      setDirty(true);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Evidence-backed regeneration failed');
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   const approveDraftAction = async () => {
     if (!id) return;
     setSaving(true);
@@ -245,6 +266,25 @@ export default function EnrichmentFormScreen() {
             {draft.evidenceStatus === 'evidence_backed' ? ' · Evidence-backed' : ''}
           </Text>
           <SourcePanel bundle={evidenceBundle} draft={draft} />
+          {isLegacyDraft(draft) ? (
+            <Pressable
+              style={styles.secondaryBtn}
+              disabled={regenerating || saving}
+              onPress={() => void regenerateWithEvidence()}
+            >
+              <Text variant="body">
+                {regenerating ? 'Regenerating with evidence…' : 'Regenerate with evidence'}
+              </Text>
+            </Pressable>
+          ) : null}
+          {regenerating ? (
+            <View style={styles.row}>
+              <ActivityIndicator color={colors.primary[500]} />
+              <Text variant="caption" color={colors.text.secondary}>
+                Researching official sources and rebuilding draft…
+              </Text>
+            </View>
+          ) : null}
           <DraftField
             label="Toilets"
             field={draft.draftJson.familyFacilities.toilets}
@@ -265,10 +305,10 @@ export default function EnrichmentFormScreen() {
             <Text variant="caption">Why families may like: {draft.draftJson.whyFamiliesLike.join(' · ')}</Text>
           ) : null}
           <View style={styles.row}>
-            <Pressable style={styles.primaryBtn} disabled={saving} onPress={() => void approveDraftAction()}>
+            <Pressable style={styles.primaryBtn} disabled={saving || regenerating} onPress={() => void approveDraftAction()}>
               <Text variant="body" color={colors.text.inverse}>Approve draft</Text>
             </Pressable>
-            <Pressable style={styles.secondaryBtn} disabled={saving} onPress={() => void rejectDraftAction()}>
+            <Pressable style={styles.secondaryBtn} disabled={saving || regenerating} onPress={() => void rejectDraftAction()}>
               <Text variant="body">Reject draft</Text>
             </Pressable>
           </View>

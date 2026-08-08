@@ -7,26 +7,40 @@ const { draftJsonToSavePayload } = require('./ai-draft-mapper');
 const { getMetadata, saveMetadata, listQueue } = require('./enrichment-store');
 const { gatherEvidenceForVenue } = require('./evidence-pipeline');
 
-const FILE_DRAFTS_PATH = path.join(process.cwd(), '.data', 'enrichment-drafts.json');
+const FILE_DRAFTS_DIR = '.data';
+const FILE_DRAFTS_NAME = 'enrichment-drafts.json';
 const DEFAULT_BATCH_SIZE = 10;
 const MAX_BATCH_SIZE = 25;
 
+function getDraftFilePath() {
+  return path.join(process.cwd(), FILE_DRAFTS_DIR, FILE_DRAFTS_NAME);
+}
+
 function ensureDraftFileStore() {
-  const dir = path.dirname(FILE_DRAFTS_PATH);
+  const filePath = getDraftFilePath();
+  const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  if (!fs.existsSync(FILE_DRAFTS_PATH)) {
-    fs.writeFileSync(FILE_DRAFTS_PATH, JSON.stringify({ drafts: [] }, null, 2));
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, JSON.stringify({ drafts: [] }, null, 2));
   }
 }
 
 function readDraftFileStore() {
   ensureDraftFileStore();
-  return JSON.parse(fs.readFileSync(FILE_DRAFTS_PATH, 'utf8'));
+  return JSON.parse(fs.readFileSync(getDraftFilePath(), 'utf8'));
 }
 
 function writeDraftFileStore(data) {
   ensureDraftFileStore();
-  fs.writeFileSync(FILE_DRAFTS_PATH, JSON.stringify(data, null, 2));
+  fs.writeFileSync(getDraftFilePath(), JSON.stringify(data, null, 2));
+}
+
+function isLegacyEvidenceStatus(status) {
+  return status == null || status === 'legacy_no_sources';
+}
+
+function resolveDraftEvidenceStatus(row) {
+  return row.evidence_status ?? (row.status === 'pending_review' ? 'legacy_no_sources' : undefined);
 }
 
 function rowToDraft(row) {
@@ -43,7 +57,7 @@ function rowToDraft(row) {
     status: row.status,
     reviewedAt: row.reviewed_at,
     reviewedBy: row.reviewed_by,
-    evidenceStatus: row.evidence_status ?? (row.status === 'pending_review' ? 'legacy_no_sources' : undefined),
+    evidenceStatus: resolveDraftEvidenceStatus(row),
     tokenUsage: row.token_usage ?? {},
     estimatedCostUsd: row.estimated_cost_usd,
     createdAt: row.created_at,
@@ -215,6 +229,98 @@ function placeRowToInput(row, existingMetadata, evidenceBundle) {
   };
 }
 
+async function listLegacyPendingDrafts(filters = {}) {
+  const batchSize = Math.min(
+    MAX_BATCH_SIZE,
+    Math.max(1, Number(filters.batchSize ?? DEFAULT_BATCH_SIZE)),
+  );
+  const protectedStatuses = new Set(['enriched', 'verified']);
+  const supabase = getSupabaseAdmin();
+
+  if (supabase) {
+    const { data: draftRows, error } = await supabase
+      .from('venue_enrichment_drafts')
+      .select('*')
+      .eq('status', 'pending_review')
+      .order('created_at', { ascending: true });
+    if (error) throw new Error(error.message);
+
+    const legacyDrafts = (draftRows ?? []).filter((row) =>
+      isLegacyEvidenceStatus(row.evidence_status),
+    );
+    if (legacyDrafts.length === 0) return [];
+
+    const placeIds = [...new Set(legacyDrafts.map((row) => row.familypilot_place_id))];
+    const { data: metaRows } = await supabase
+      .from('venue_family_metadata')
+      .select('familypilot_place_id, enrichment_status')
+      .in('familypilot_place_id', placeIds);
+    const metaById = Object.fromEntries(
+      (metaRows ?? []).map((row) => [row.familypilot_place_id, row.enrichment_status]),
+    );
+
+    let placeQuery = supabase
+      .from('place_records')
+      .select('familypilot_place_id, name, external_id, provider')
+      .in('familypilot_place_id', placeIds);
+    if (filters.provider) placeQuery = placeQuery.eq('provider', filters.provider);
+    const { data: placeRows } = await placeQuery;
+    const placeById = Object.fromEntries(
+      (placeRows ?? []).map((row) => [row.familypilot_place_id, row]),
+    );
+
+    const items = [];
+    for (const row of legacyDrafts) {
+      const enrichmentStatus = metaById[row.familypilot_place_id] ?? 'provider_only';
+      if (protectedStatuses.has(enrichmentStatus)) continue;
+      const place = placeById[row.familypilot_place_id];
+      if (!place) continue;
+      if (filters.provider && place.provider !== filters.provider) continue;
+      items.push({
+        familypilotPlaceId: row.familypilot_place_id,
+        familypilotId: row.familypilot_place_id,
+        externalId: place.external_id,
+        name: place.name,
+        draftId: row.id,
+        evidenceStatus: resolveDraftEvidenceStatus(row),
+        enrichmentStatus,
+      });
+    }
+
+    return items.slice(0, batchSize);
+  }
+
+  const store = readDraftFileStore();
+  const storePath = path.join(process.cwd(), '.data', 'enrichment-store.json');
+  const placeStore = fs.existsSync(storePath)
+    ? JSON.parse(fs.readFileSync(storePath, 'utf8'))
+    : { places: {}, metadata: {} };
+
+  const items = [];
+  for (const row of store.drafts) {
+    if (row.status !== 'pending_review' || !isLegacyEvidenceStatus(row.evidence_status)) continue;
+    const enrichmentStatus =
+      placeStore.metadata?.[row.familypilot_place_id]?.enrichment_status ?? 'provider_only';
+    if (protectedStatuses.has(enrichmentStatus)) continue;
+    const place = placeStore.places?.[row.familypilot_place_id];
+    if (!place) continue;
+    if (filters.provider && place.provider !== filters.provider) continue;
+    items.push({
+      familypilotPlaceId: row.familypilot_place_id,
+      familypilotId: row.familypilot_place_id,
+      externalId: place.external_id,
+      name: place.name,
+      draftId: row.id,
+      evidenceStatus: resolveDraftEvidenceStatus(row),
+      enrichmentStatus,
+    });
+  }
+
+  return items
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, batchSize);
+}
+
 async function generateDraftForVenue(familypilotId, options = {}) {
   const metadata = await getMetadata(familypilotId);
   const status = metadata?.enrichmentStatus ?? 'provider_only';
@@ -374,9 +480,13 @@ async function updateDraftStatus(draftId, status, reviewedBy) {
 module.exports = {
   generateDraftForVenue,
   generateDraftBatch,
+  listLegacyPendingDrafts,
   getPendingDraft,
   approveDraft,
   rejectDraft,
+  supersedePendingDrafts,
+  isLegacyEvidenceStatus,
+  resolveDraftEvidenceStatus,
   DEFAULT_BATCH_SIZE,
   MAX_BATCH_SIZE,
 };
