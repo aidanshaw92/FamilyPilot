@@ -14,6 +14,7 @@ import { colors, spacing } from '@/src/design-system/tokens';
 import { EnrichmentQueueItem, EnrichmentStats } from '@/src/types/enrichment';
 import { BatchDraftProgress } from '@/src/types/ai-enrichment';
 import { enrichmentApi } from '@/src/services/enrichment/enrichment-api-client';
+import { getEnrichmentQueueEmptyMessage } from '@/src/utils/enrichment-queue-ui';
 
 const STATUS_FILTERS = [
   { id: 'all', label: 'All' },
@@ -39,7 +40,7 @@ export default function EnrichmentQueueScreen() {
   const [batchCancelRef, setBatchCancelRef] = useState<{ cancelled: boolean } | null>(null);
   const [legacyBatchCancelRef, setLegacyBatchCancelRef] = useState<{ cancelled: boolean } | null>(null);
   const [error, setError] = useState('');
-  const [statusFilter, setStatusFilter] = useState('provider_only');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [sort, setSort] = useState('nearest');
   const [betaLat, setBetaLat] = useState(DEFAULT_BETA.lat);
   const [betaLng, setBetaLng] = useState(DEFAULT_BETA.lng);
@@ -49,15 +50,18 @@ export default function EnrichmentQueueScreen() {
     setLoading(true);
     setError('');
     try {
+      const betaParams = {
+        betaLat: Number(betaLat),
+        betaLng: Number(betaLng),
+        betaRadiusKm: Number(betaRadius),
+      };
       const [{ items: queueItems }, { stats: s }] = await Promise.all([
         enrichmentApi.getQueue({
           status: statusFilter === 'all' ? undefined : statusFilter,
           sort,
-          betaLat: Number(betaLat),
-          betaLng: Number(betaLng),
-          betaRadiusKm: Number(betaRadius),
+          ...betaParams,
         }),
-        enrichmentApi.getStats(),
+        enrichmentApi.getStats(betaParams),
       ]);
       setItems(queueItems);
       setStats(s);
@@ -186,6 +190,11 @@ export default function EnrichmentQueueScreen() {
     if (!stats) return null;
     return `${stats.discovered} discovered · ${stats.providerOnly} provider only · ${stats.aiDraft ?? 0} AI draft · ${stats.enriched} enriched · ${stats.verified} verified · ${stats.awaitingReview} awaiting review`;
   }, [stats]);
+
+  const emptyMessage = useMemo(
+    () => getEnrichmentQueueEmptyMessage(statusFilter as 'all' | 'provider_only' | 'ai_draft' | 'enriched' | 'verified', stats),
+    [statusFilter, stats],
+  );
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -325,7 +334,7 @@ export default function EnrichmentQueueScreen() {
 
       {!loading && items.length === 0 ? (
         <Text variant="bodySmall" color={colors.text.secondary}>
-          No venues in queue. Sync Google places for your beta area first.
+          {emptyMessage}
         </Text>
       ) : null}
     </ScrollView>

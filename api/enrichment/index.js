@@ -114,8 +114,17 @@ async function handleStats(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
   if (!verifyEnrichmentAuth(req, res)) return;
 
+  const betaLat = req.query.betaLat != null ? Number(req.query.betaLat) : undefined;
+  const betaLng = req.query.betaLng != null ? Number(req.query.betaLng) : undefined;
+  const betaRadiusKm = req.query.betaRadiusKm != null ? Number(req.query.betaRadiusKm) : undefined;
+
   try {
-    const stats = await getStats();
+    const stats = await getStats({
+      betaLat,
+      betaLng,
+      betaRadiusKm,
+      provider: 'google',
+    });
     return res.status(200).json({ stats, storageMode: getStorageMode() });
   } catch (error) {
     return res.status(500).json({
