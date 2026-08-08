@@ -8,8 +8,12 @@ const {
   COMMON_PATH_SEGMENTS,
 } = require('./html-text-extractor');
 
+const DISCOVERED_LINK_BOOST = 200;
+const COMMON_PATH_BASE_SCORE = 15;
+const HOMEPAGE_SCORE = 1000;
+
 const PAGE_TYPE_PATTERNS = [
-  { type: 'accessibility_page', pattern: /accessibility|access-for-all|disabled-access|access-map/i },
+  { type: 'accessibility_page', pattern: /accessibility|access-for-all|disabled-access|access-map|additional-needs/i },
   { type: 'visitor_info', pattern: /plan.?your.?visit|visitor.?information|your.?visit|facilities|getting.?here|admission|location/i },
   { type: 'faq_page', pattern: /faq|frequently.?asked|help/i },
   { type: 'family_page', pattern: /family|children|kids|parents/i },
@@ -87,9 +91,10 @@ function buildCommonPathCandidates(homepageUrl, maxCandidates = 8) {
       candidates.push({
         url,
         sourceType: classifyLinkedUrl(url),
-        score: 50 + (PATH_PRIORITY.length - PATH_PRIORITY.indexOf(segment)),
+        score: COMMON_PATH_BASE_SCORE + (PATH_PRIORITY.length - PATH_PRIORITY.indexOf(segment)),
         reason: `common_path:${segment}`,
         anchorText: segment.replace(/-/g, ' '),
+        speculative: true,
       });
     }
   }
@@ -118,93 +123,85 @@ function discoverSourceUrls({ website, googleDescription }) {
   return {
     sourceStatus: 'official_website',
     homepage,
-    pages: [{ url: homepage, sourceType: 'official_website', score: 100, reason: 'homepage' }],
+    pages: [{ url: homepage, sourceType: 'official_website', score: HOMEPAGE_SCORE, reason: 'homepage' }],
     googleDescription: googleDescription ?? null,
   };
 }
 
 function mergePageCandidates(homepageUrl, existingPages, html, maxPages = 5) {
   const homepageKey = normalisePageUrl(homepageUrl, homepageUrl)?.replace(/\/$/, '');
-  const byUrl = new Map();
+  const discovered = [];
+  const commonPaths = [];
 
-  for (const page of existingPages) {
-    const key = normalisePageUrl(page.url, homepageUrl)?.replace(/\/$/, '');
-    if (!key) continue;
-    byUrl.set(key, {
-      url: page.url,
-      sourceType: page.sourceType ?? 'official_website',
-      score: page.score ?? (key === homepageKey ? 100 : 40),
-      reason: page.reason ?? 'initial',
-      anchorText: page.anchorText ?? null,
-    });
-  }
-
-  const linked = html ? findRelevantLinks(html, homepageUrl, maxPages * 3) : [];
+  const linked = html ? findRelevantLinks(html, homepageUrl, maxPages * 6) : [];
   for (const link of linked) {
     const key = normalisePageUrl(link.url, homepageUrl)?.replace(/\/$/, '');
     if (!key || key === homepageKey) continue;
-    const existing = byUrl.get(key);
-    if (!existing || link.score > existing.score) {
-      byUrl.set(key, {
-        url: link.url,
-        sourceType: classifyLinkedUrl(link.url, link.anchorText),
-        score: link.score,
-        reason: link.reason ?? 'anchor_or_path',
-        anchorText: link.anchorText ?? null,
-      });
-    }
+    discovered.push({
+      url: link.url,
+      sourceType: classifyLinkedUrl(link.url, link.anchorText),
+      score: link.score + DISCOVERED_LINK_BOOST,
+      reason: link.reason ?? 'anchor_or_path',
+      anchorText: link.anchorText ?? null,
+      speculative: false,
+    });
   }
 
-  if (byUrl.size < maxPages) {
-    for (const candidate of buildCommonPathCandidates(homepageUrl, maxPages * 2)) {
-      const key = candidate.url.replace(/\/$/, '');
-      if (byUrl.has(key)) continue;
-      byUrl.set(key, candidate);
-      if (byUrl.size >= maxPages * 2) break;
-    }
+  for (const candidate of buildCommonPathCandidates(homepageUrl, 20)) {
+    const key = candidate.url.replace(/\/$/, '');
+    if (key === homepageKey) continue;
+    if (discovered.some((d) => d.url.replace(/\/$/, '') === key)) continue;
+    commonPaths.push(candidate);
   }
 
-  const sorted = [...byUrl.values()].sort((a, b) => b.score - a.score);
-  const homepage = sorted.find((p) => p.url.replace(/\/$/, '') === homepageKey) ?? {
+  discovered.sort((a, b) => b.score - a.score);
+  commonPaths.sort((a, b) => b.score - a.score);
+
+  const homepage = {
     url: homepageUrl,
     sourceType: 'official_website',
-    score: 100,
+    score: HOMEPAGE_SCORE,
     reason: 'homepage',
+    speculative: false,
   };
 
-  const others = sorted.filter((p) => p.url.replace(/\/$/, '') !== homepageKey);
-  const selected = [homepage, ...others].slice(0, maxPages);
+  const orderedCandidates = [...discovered, ...commonPaths];
+  const initialOthers = orderedCandidates.slice(0, Math.max(0, maxPages - 1));
+  const reserveCandidates = orderedCandidates.slice(Math.max(0, maxPages - 1));
+
+  const selected = [homepage, ...initialOthers];
 
   const linksDiscovered = [
-    ...linked.map((l) => ({ url: l.url, score: l.score, reason: l.reason, anchorText: l.anchorText })),
-    ...buildCommonPathCandidates(homepageUrl, 12).map((c) => ({
+    ...discovered.map((l) => ({
+      url: l.url,
+      score: l.score,
+      reason: l.reason,
+      anchorText: l.anchorText,
+      speculative: false,
+    })),
+    ...commonPaths.map((c) => ({
       url: c.url,
       score: c.score,
       reason: c.reason,
       anchorText: c.anchorText,
+      speculative: true,
     })),
   ];
 
-  const uniqueDiscovered = [];
-  const seen = new Set();
-  for (const item of linksDiscovered) {
-    const key = item.url.replace(/\/$/, '');
-    if (seen.has(key)) continue;
-    seen.add(key);
-    uniqueDiscovered.push(item);
-  }
-
   return {
     pages: selected.map(({ url, sourceType }) => ({ url, sourceType })),
+    reserveCandidates: reserveCandidates.map(({ url, sourceType }) => ({ url, sourceType })),
     diagnostics: {
-      linksDiscovered: uniqueDiscovered,
+      linksDiscovered,
       linksSelected: selected.map((p) => ({
         url: p.url,
         score: p.score,
         reason: p.reason,
         anchorText: p.anchorText,
         sourceType: p.sourceType,
+        speculative: p.speculative ?? false,
       })),
+      reserveCount: reserveCandidates.length,
     },
   };
 }
@@ -223,4 +220,5 @@ module.exports = {
   normalisePageUrl,
   classifyLinkedUrl,
   PATH_PRIORITY,
+  DISCOVERED_LINK_BOOST,
 };

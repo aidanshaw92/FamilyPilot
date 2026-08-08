@@ -65,6 +65,32 @@ Separate verification rules → verified
 
 ---
 
+## Warner Bros / Golders Hill QA (Aug 2026)
+
+### Issue 1 — evidence lost before draft (Warner Bros)
+
+**Symptom:** Diagnostics showed `babyChanging`, `toilets`, `accessibleToilet` extracted, but draft fields were all `unknown`.
+
+**Root cause:** OpenAI output replaced the entire draft JSON with model-generated unknowns. There was **no deterministic merge step** after `normaliseDraftJson(parsed)` — extracted facts never flowed into `familyFacilities.*` fields.
+
+**Fix:** `evidence-draft-merge.js` applies authoritative extracted facts after AI generation. High/medium-confidence official evidence wins over AI `unknown` or unsupported contradictions. Architecture:
+
+```text
+Official source → deterministic facts → AI (editorial/synthesis) → merge → human review
+```
+
+### Issue 2 — large pages discarded (Golders Hill)
+
+**Root cause:** `source-fetcher.js` downloaded full `arrayBuffer()` then rejected if `> 512 KB` with `too_large` and **no HTML**.
+
+**Fix:** Bounded streaming read (`readBoundedHtml`) stops at 512 KB, status `fetched_truncated`, still extracts evidence. Diagnostics distinguish `ok`, `fetched_truncated`, `too_large_unusable`.
+
+### Issue 3 — speculative paths wasting slots
+
+**Fix:** Discovered same-domain links get +200 score boost; common paths capped ~15–35. Reserve queue backfills on 404 up to 5 total fetch attempts — not uncontrolled crawling.
+
+---
+
 1. Official venue website (Google `websiteUri` / place record)
 2. Official local authority / council website *(future — not auto-guessed)*
 3. Linked accessibility / visitor / FAQ / family pages (same domain, max depth 1)

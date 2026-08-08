@@ -12,6 +12,13 @@ const { getCachedEvidence, saveEvidenceRecord } = require('./evidence-store');
 
 const MAX_PAGES = Number(process.env.SOURCE_MAX_PAGES || 5);
 
+function isQuickFailure(result) {
+  return (
+    result.fetchStatus === 'error' &&
+    (result.error === 'HTTP 404' || String(result.error).includes('404'))
+  );
+}
+
 async function ensurePlaceDetails(familypilotId, placeRow) {
   if (placeRow?.website && placeRow?.description) {
     return placeRow;
@@ -66,6 +73,7 @@ async function fetchAndExtractPage(familypilotPlaceId, page) {
       error: fetched.error,
       facts: [],
       html: fetched.html ?? null,
+      truncated: fetched.truncated ?? false,
     };
   }
 
@@ -84,7 +92,7 @@ async function fetchAndExtractPage(familypilotPlaceId, page) {
     contentHash: fetched.contentHash,
     extractedText: fetched.extractedText,
     extractedEvidence: facts,
-    fetchStatus: 'ok',
+    fetchStatus: fetched.fetchStatus,
   });
 
   return {
@@ -92,10 +100,11 @@ async function fetchAndExtractPage(familypilotPlaceId, page) {
     sourceType: page.sourceType,
     pageTitle: fetched.pageTitle,
     retrievedAt: fetched.retrievedAt,
-    fetchStatus: 'ok',
+    fetchStatus: fetched.fetchStatus,
     facts,
     extractedText: fetched.extractedText,
     html: fetched.html,
+    truncated: fetched.truncated ?? false,
   };
 }
 
@@ -142,7 +151,7 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow) {
   const homepage = discovery.pages[0];
   const homeResult = await fetchAndExtractPage(familypilotPlaceId, homepage);
 
-  const { pages, diagnostics: discoveryDiagnostics } = mergePageCandidates(
+  const { pages, reserveCandidates, diagnostics: discoveryDiagnostics } = mergePageCandidates(
     homepage.url,
     discovery.pages,
     homeResult.html,
@@ -150,42 +159,36 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow) {
   );
 
   const sources = [];
-  const fetchedUrls = new Set();
+  const attemptedUrls = new Set();
   const pagesFailed = [];
   const pagesFetched = [];
   const evidenceByPage = [];
 
-  const orderedPages = pages.sort((a, b) => {
-    if (a.url === homepage.url) return -1;
-    if (b.url === homepage.url) return 1;
-    return 0;
-  });
+  const homepageKey = homepage.url.replace(/\/$/, '');
+  const queue = pages.filter((p) => p.url.replace(/\/$/, '') !== homepageKey);
+  const reserve = [...reserveCandidates];
+  let fetchAttempts = 0;
+  const maxAttempts = MAX_PAGES;
 
-  for (const page of orderedPages) {
-    if (sources.length >= MAX_PAGES) break;
-    const urlKey = page.url.replace(/\/$/, '');
-    if (fetchedUrls.has(urlKey)) continue;
-    fetchedUrls.add(urlKey);
-
-    let result;
-    if (page.url.replace(/\/$/, '') === homepage.url.replace(/\/$/, '')) {
-      result = homeResult;
-    } else {
-      result = await fetchAndExtractPage(familypilotPlaceId, page);
-    }
-
+  const recordResult = (result) => {
     sources.push(result);
+    const usable =
+      result.fetchStatus === 'ok' ||
+      result.fetchStatus === 'cached' ||
+      result.fetchStatus === 'fetched_truncated';
 
-    if (result.fetchStatus === 'ok' || result.fetchStatus === 'cached') {
+    if (usable) {
       pagesFetched.push({
         url: result.url,
         fetchStatus: result.fetchStatus,
         pageTitle: result.pageTitle ?? null,
+        truncated: result.truncated ?? false,
       });
       evidenceByPage.push({
         url: result.url,
         fields: (result.facts ?? []).map((f) => f.field),
         factCount: (result.facts ?? []).length,
+        truncated: result.truncated ?? false,
       });
     } else {
       pagesFailed.push({
@@ -200,16 +203,40 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow) {
         error: result.error ?? result.fetchStatus,
       });
     }
+  };
+
+  recordResult(homeResult);
+  attemptedUrls.add(homepageKey);
+  fetchAttempts += 1;
+
+  while (fetchAttempts < maxAttempts && sources.length < MAX_PAGES + 1) {
+    let next = queue.shift();
+    if (!next && reserve.length) next = reserve.shift();
+    if (!next) break;
+
+    const urlKey = next.url.replace(/\/$/, '');
+    if (attemptedUrls.has(urlKey)) continue;
+    attemptedUrls.add(urlKey);
+    fetchAttempts += 1;
+
+    const result = await fetchAndExtractPage(familypilotPlaceId, next);
+    recordResult(result);
+
+    if (isQuickFailure(result) && reserve.length && fetchAttempts < maxAttempts) {
+      continue;
+    }
   }
 
   const diagnostics = {
     linksDiscovered: discoveryDiagnostics.linksDiscovered,
     linksSelected: discoveryDiagnostics.linksSelected,
+    reserveCount: discoveryDiagnostics.reserveCount ?? reserve.length,
     pagesFetched,
     pagesFailed,
     evidenceByPage,
     homepageFetchStatus: homeResult.fetchStatus,
     homepageFetchError: homeResult.error ?? null,
+    fetchAttempts,
   };
 
   return buildEvidenceBundle(familypilotPlaceId, sources, discovery.sourceStatus, diagnostics);
