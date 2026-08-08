@@ -10,24 +10,30 @@ const {
   resolveEnrichmentStatus,
 } = require('./validation');
 
-const FILE_STORE_PATH = path.join(process.cwd(), '.data', 'enrichment-store.json');
+const FILE_STORE_DIR = '.data';
+const FILE_STORE_NAME = 'enrichment-store.json';
+
+function getFileStorePath() {
+  return path.join(process.cwd(), FILE_STORE_DIR, FILE_STORE_NAME);
+}
 
 function ensureFileStore() {
-  const dir = path.dirname(FILE_STORE_PATH);
+  const filePath = getFileStorePath();
+  const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  if (!fs.existsSync(FILE_STORE_PATH)) {
-    fs.writeFileSync(FILE_STORE_PATH, JSON.stringify({ places: {}, metadata: {} }, null, 2));
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, JSON.stringify({ places: {}, metadata: {} }, null, 2));
   }
 }
 
 function readFileStore() {
   ensureFileStore();
-  return JSON.parse(fs.readFileSync(FILE_STORE_PATH, 'utf8'));
+  return JSON.parse(fs.readFileSync(getFileStorePath(), 'utf8'));
 }
 
 function writeFileStore(data) {
   ensureFileStore();
-  fs.writeFileSync(FILE_STORE_PATH, JSON.stringify(data, null, 2));
+  fs.writeFileSync(getFileStorePath(), JSON.stringify(data, null, 2));
 }
 
 function rowToMetadata(row) {
@@ -273,6 +279,31 @@ async function saveMetadata(familypilotId, payload) {
   return rowToMetadata(row);
 }
 
+const REVIEW_PIPELINE_STATUSES = new Set(['ai_draft', 'enriched', 'verified']);
+
+function isWithinBetaArea(item, betaLat, betaLng, betaRadiusKm) {
+  if (!Number.isFinite(item.latitude) || !Number.isFinite(item.longitude)) {
+    return false;
+  }
+  const km = haversineKm(betaLat, betaLng, item.latitude, item.longitude);
+  return Number.isFinite(km) && km <= betaRadiusKm;
+}
+
+function applyBetaAreaFilter(items, filters) {
+  if (filters.betaLat == null || filters.betaLng == null || filters.betaRadiusKm == null) {
+    return items;
+  }
+
+  return items.filter((item) => {
+    // Review-pipeline venues stay visible regardless of beta area — only discovery
+    // candidates (provider_only) are scoped to the sync box.
+    if (REVIEW_PIPELINE_STATUSES.has(item.enrichmentStatus)) {
+      return true;
+    }
+    return isWithinBetaArea(item, filters.betaLat, filters.betaLng, filters.betaRadiusKm);
+  });
+}
+
 async function listQueue(filters = {}) {
   const supabase = getSupabaseAdmin();
   let places = [];
@@ -334,12 +365,7 @@ async function listQueue(filters = {}) {
     filtered = filtered.filter((item) => item.enrichmentStatus === filters.status);
   }
 
-  if (filters.betaLat != null && filters.betaLng != null && filters.betaRadiusKm != null) {
-    filtered = filtered.filter((item) => {
-      const km = haversineKm(filters.betaLat, filters.betaLng, item.latitude, item.longitude);
-      return km <= filters.betaRadiusKm;
-    });
-  }
+  filtered = applyBetaAreaFilter(filtered, filters);
 
   const sort = filters.sort || 'newest';
   filtered.sort((a, b) => {
@@ -357,8 +383,13 @@ async function listQueue(filters = {}) {
   return filtered;
 }
 
-async function getStats() {
-  const items = await listQueue({});
+async function getStats(filters = {}) {
+  const items = await listQueue({
+    provider: filters.provider ?? 'google',
+    betaLat: filters.betaLat,
+    betaLng: filters.betaLng,
+    betaRadiusKm: filters.betaRadiusKm,
+  });
   const byCategory = {};
   for (const item of items) {
     byCategory[item.category] = (byCategory[item.category] || 0) + 1;
@@ -407,4 +438,6 @@ module.exports = {
   getStats,
   getStorageMode,
   isSupabaseConfigured,
+  applyBetaAreaFilter,
+  REVIEW_PIPELINE_STATUSES,
 };

@@ -102,8 +102,16 @@ export const enrichmentApi = {
     }>;
   },
 
-  async getStats() {
-    return enrichmentFetch('stats') as Promise<{
+  async getStats(params?: {
+    betaLat?: number;
+    betaLng?: number;
+    betaRadiusKm?: number;
+  }) {
+    const queryParams: Record<string, string> = {};
+    if (params?.betaLat != null) queryParams.betaLat = String(params.betaLat);
+    if (params?.betaLng != null) queryParams.betaLng = String(params.betaLng);
+    if (params?.betaRadiusKm != null) queryParams.betaRadiusKm = String(params.betaRadiusKm);
+    return enrichmentFetch('stats', {}, queryParams) as Promise<{
       stats: import('@/src/types/enrichment').EnrichmentStats;
       storageMode: string;
     }>;
