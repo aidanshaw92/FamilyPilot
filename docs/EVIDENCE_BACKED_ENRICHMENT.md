@@ -41,7 +41,29 @@ Separate verification rules → verified
 
 ---
 
-## Source priority
+## Headstone Manor incident — root cause (Aug 2026)
+
+**Symptom:** Evidence-backed draft fetched **1 page only**; toilets, baby changing, parking, pushchair all `unknown`.
+
+**Root causes (before fix):**
+
+1. **Link expansion gated on homepage HTML** — cached homepage responses did not retain HTML, so same-domain link discovery never ran after the first fetch.
+2. **Weak link discovery** — only URL path regex on `href`; ignored anchor text; stripped `<nav>`/`<header>` where visit/facility links often live.
+3. **No common-path fallback** — did not probe `/visit/`, `/faq/`, etc. when homepage had no parseable links.
+4. **Cloudflare bot challenge** — server fetch may receive a challenge page (`Just a moment…`) with no facility content and no links; previously treated inconsistently.
+5. **Strict text extraction** — footer facility text was discarded; sentence splitting missed FAQ/list-style statements (e.g. “public toilets are to be found…”).
+
+**Fixes:**
+
+- `mergePageCandidates()` — anchor text + URL scoring + common-path templates (max 5 pages, not a crawl).
+- Pipeline fetches all selected pages even when homepage is cached/blocked.
+- Cloudflare challenge → `fetchStatus: blocked` with reason in diagnostics.
+- Footer/main extraction; broader explicit evidence patterns.
+- Review UI diagnostics: links discovered/selected, pages fetched/failed, evidence fields per page.
+
+**After fix:** Headstone Manor should attempt `/visit/`, `/faq/`, accessibility paths, etc. Evidence appears only when official pages return readable HTML with explicit statements.
+
+---
 
 1. Official venue website (Google `websiteUri` / place record)
 2. Official local authority / council website *(future — not auto-guessed)*

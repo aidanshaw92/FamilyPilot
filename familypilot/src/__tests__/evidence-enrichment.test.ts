@@ -4,7 +4,16 @@ import {
   extractEvidenceFromText,
   buildEvidenceBundle,
 } from '../../../api/enrichment/_lib/evidence-extractor.js';
-import { discoverSourceUrls } from '../../../api/enrichment/_lib/source-discovery.js';
+import {
+  discoverSourceUrls,
+  mergePageCandidates,
+  buildCommonPathCandidates,
+} from '../../../api/enrichment/_lib/source-discovery.js';
+import {
+  findRelevantLinks,
+  extractPageContent,
+  isCloudflareChallenge,
+} from '../../../api/enrichment/_lib/html-text-extractor.js';
 import { isPrivateIp, validateUrlString } from '../../../api/enrichment/_lib/source-fetch-security.js';
 import { isCacheFresh } from '../../../api/enrichment/_lib/evidence-store.js';
 
@@ -50,6 +59,39 @@ describe('official source discovery', () => {
     const result = discoverSourceUrls({ website: 'headstonemanor.org', googleDescription: null });
     expect(result.pages[0].url).toBe('https://headstonemanor.org/');
   });
+
+  it('discovers visit page from anchor text even when URL path is opaque', () => {
+    const html = `
+      <html><body>
+        <a href="/about-us/visit-us/">Plan your visit</a>
+        <a href="/events/">Events</a>
+        <a href="/learning/learning-session-faqs/">Learning Session FAQs</a>
+      </body></html>
+    `;
+    const links = findRelevantLinks(html, 'https://headstonemanor.org/', 8);
+    expect(links.some((l) => l.url.includes('visit'))).toBe(true);
+    expect(links.some((l) => l.url.includes('faq'))).toBe(true);
+  });
+
+  it('selects up to 5 pages including common paths when homepage HTML is absent (cached scenario)', () => {
+    const discovery = discoverSourceUrls({ website: 'https://headstonemanor.org/', googleDescription: null });
+    const { pages, diagnostics } = mergePageCandidates(
+      'https://headstonemanor.org/',
+      discovery.pages,
+      null,
+      5,
+    );
+    expect(pages.length).toBeGreaterThan(1);
+    expect(pages.some((p) => /\/visit\b/i.test(p.url))).toBe(true);
+    expect(diagnostics.linksSelected.length).toBeGreaterThan(1);
+  });
+
+  it('includes common path templates for Headstone Manor domain', () => {
+    const candidates = buildCommonPathCandidates('https://headstonemanor.org/', 10);
+    expect(candidates.some((c) => c.url.includes('/visit'))).toBe(true);
+    expect(candidates.some((c) => c.url.includes('/accessibility'))).toBe(true);
+    expect(candidates.some((c) => c.url.includes('/faq'))).toBe(true);
+  });
 });
 
 describe('evidence extraction', () => {
@@ -81,6 +123,33 @@ describe('evidence extraction', () => {
   it('returns empty facts when no relevant evidence', () => {
     const facts = extractEvidenceFromText('A lovely museum in Hertfordshire with gardens.', {
       url: 'https://example.org/',
+      sourceType: 'official_website',
+      retrievedAt: '2026-08-07T12:00:00.000Z',
+    });
+    expect(facts).toHaveLength(0);
+  });
+
+  it('extracts Headstone Manor FAQ-style toilet and parking statements', () => {
+    const faqText = `
+      Are there toilets?
+      Museum public toilets are to be found in a block by the Visitor Centre.
+      Where do we park?
+      Cars and minibuses are welcome to use our large free car park.
+      Baby changing facilities and accessible toilets are available to visitors.
+    `;
+    const facts = extractEvidenceFromText(faqText, {
+      url: 'https://headstonemanor.org/learning/learning-session-faqs/',
+      sourceType: 'faq_page',
+      retrievedAt: '2026-08-07T12:00:00.000Z',
+    });
+    expect(facts.find((f) => f.field === 'toilets')?.value).toBe('yes');
+    expect(facts.find((f) => f.field === 'parking')?.value).toBe('yes');
+    expect(facts.find((f) => f.field === 'babyChanging')?.value).toBe('yes');
+  });
+
+  it('does not infer facilities from venue type alone', () => {
+    const facts = extractEvidenceFromText('Headstone Manor and Museum is a local history museum in Harrow.', {
+      url: 'https://headstonemanor.org/',
       sourceType: 'official_website',
       retrievedAt: '2026-08-07T12:00:00.000Z',
     });
@@ -173,6 +242,87 @@ describe('evidence cache', () => {
   it('treats old records as stale', () => {
     const old = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
     expect(isCacheFresh(old)).toBe(false);
+  });
+});
+
+describe('HTML extraction and bot protection', () => {
+  it('detects Cloudflare challenge pages', () => {
+    const html = '<html><title>Just a moment</title><body>Enable JavaScript and cookies to continue</body></html>';
+    expect(isCloudflareChallenge(html)).toBe(true);
+  });
+
+  it('preserves facility text from footer regions', () => {
+    const html = `
+      <html><body>
+        <main><p>Welcome to our museum.</p></main>
+        <footer>
+          <p>Public toilets are located by the Visitor Centre.</p>
+          <p>Free parking available in Pinner View car park.</p>
+        </footer>
+      </body></html>
+    `;
+    const { text } = extractPageContent(html);
+    expect(text.toLowerCase()).toContain('toilet');
+    expect(text.toLowerCase()).toContain('parking');
+    const facts = extractEvidenceFromText(text, {
+      url: 'https://headstonemanor.org/',
+      sourceType: 'official_website',
+      retrievedAt: '2026-08-07T12:00:00.000Z',
+    });
+    expect(facts.some((f) => f.field === 'toilets')).toBe(true);
+    expect(facts.some((f) => f.field === 'parking')).toBe(true);
+  });
+});
+
+describe('Headstone Manor single-page failure regression', () => {
+  it('before fix: homepage-only with no links would stay at 1 page — after fix: common paths expand selection', () => {
+    const discovery = discoverSourceUrls({ website: 'https://headstonemanor.org/', googleDescription: null });
+
+    // Simulates old behaviour: empty/challenge homepage HTML, no parseable links
+    const challengeHtml = '<html><title>Just a moment</title></html>';
+    const { pages: oldWouldBe } = mergePageCandidates(
+      discovery.homepage,
+      [{ url: discovery.homepage, sourceType: 'official_website' }],
+      challengeHtml,
+      5,
+    );
+
+    // Even with challenge HTML, common paths should add /visit/, /faq/, etc.
+    expect(oldWouldBe.length).toBeGreaterThan(1);
+    expect(oldWouldBe.map((p) => p.url)).toContain('https://headstonemanor.org/');
+    expect(oldWouldBe.some((p) => /\/visit/i.test(p.url))).toBe(true);
+  });
+
+  it('diagnostics report discovered vs selected links and per-page evidence', () => {
+    const visitFacts = extractEvidenceFromText(
+      'Museum public toilets are to be found in a block by the Visitor Centre. Free parking in Pinner View.',
+      { url: 'https://headstonemanor.org/visit/', sourceType: 'visitor_info', retrievedAt: '2026-08-07T12:00:00.000Z' },
+    );
+    const bundle = buildEvidenceBundle(
+      'fp-google-headstone',
+      [
+        {
+          url: 'https://headstonemanor.org/',
+          sourceType: 'official_website',
+          fetchStatus: 'blocked',
+          error: 'cloudflare_challenge',
+          facts: [],
+        },
+        {
+          url: 'https://headstonemanor.org/visit/',
+          sourceType: 'visitor_info',
+          fetchStatus: 'ok',
+          facts: visitFacts,
+        },
+      ],
+      'official_website',
+    );
+
+    expect(bundle.pagesChecked).toBe(2);
+    expect(bundle.facts.some((f) => f.field === 'toilets')).toBe(true);
+    expect(bundle.facts.some((f) => f.field === 'parking')).toBe(true);
+    expect(bundle.sources[0].fetchStatus).toBe('blocked');
+    expect(bundle.sources[1].facts?.length).toBeGreaterThan(0);
   });
 });
 

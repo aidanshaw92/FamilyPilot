@@ -5,7 +5,7 @@
 
 const { getGooglePlace } = require('../../places/lib/google-places');
 const { upsertPlaceRecord } = require('./enrichment-store');
-const { discoverSourceUrls, expandDiscoveryFromHtml } = require('./source-discovery');
+const { discoverSourceUrls, mergePageCandidates } = require('./source-discovery');
 const { fetchOfficialPage } = require('./source-fetcher');
 const { extractEvidenceFromText, buildEvidenceBundle } = require('./evidence-extractor');
 const { getCachedEvidence, saveEvidenceRecord } = require('./evidence-store');
@@ -44,6 +44,7 @@ async function fetchAndExtractPage(familypilotPlaceId, page) {
       fetchStatus: 'cached',
       facts: cached.extractedEvidence,
       extractedText: cached.extractedText,
+      html: null,
     };
   }
 
@@ -64,6 +65,7 @@ async function fetchAndExtractPage(familypilotPlaceId, page) {
       fetchStatus: fetched.fetchStatus,
       error: fetched.error,
       facts: [],
+      html: fetched.html ?? null,
     };
   }
 
@@ -104,9 +106,6 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow) {
     googleDescription: enrichedPlace?.description,
   });
 
-  const sources = [];
-  let pages = discovery.pages.slice(0, MAX_PAGES);
-
   if (discovery.sourceStatus === 'no_official_source') {
     const googleFacts = [];
     if (enrichedPlace?.description) {
@@ -120,26 +119,100 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow) {
         retrievedAt: enrichedPlace.fetched_at ?? new Date().toISOString(),
       });
     }
-    return buildEvidenceBundle(familypilotPlaceId, [{
-      url: enrichedPlace?.website ?? 'provider-only',
-      sourceType: 'google_provider',
-      retrievedAt: new Date().toISOString(),
-      fetchStatus: 'ok',
-      facts: googleFacts,
-    }], 'no_official_source');
+    return buildEvidenceBundle(
+      familypilotPlaceId,
+      [{
+        url: enrichedPlace?.website ?? 'provider-only',
+        sourceType: 'google_provider',
+        retrievedAt: new Date().toISOString(),
+        fetchStatus: 'ok',
+        facts: googleFacts,
+      }],
+      'no_official_source',
+      {
+        linksDiscovered: [],
+        linksSelected: [],
+        pagesFetched: [],
+        pagesFailed: [],
+        evidenceByPage: [],
+      },
+    );
   }
 
-  for (let i = 0; i < pages.length && sources.length < MAX_PAGES; i++) {
-    const page = pages[i];
-    const result = await fetchAndExtractPage(familypilotPlaceId, page);
+  const homepage = discovery.pages[0];
+  const homeResult = await fetchAndExtractPage(familypilotPlaceId, homepage);
+
+  const { pages, diagnostics: discoveryDiagnostics } = mergePageCandidates(
+    homepage.url,
+    discovery.pages,
+    homeResult.html,
+    MAX_PAGES,
+  );
+
+  const sources = [];
+  const fetchedUrls = new Set();
+  const pagesFailed = [];
+  const pagesFetched = [];
+  const evidenceByPage = [];
+
+  const orderedPages = pages.sort((a, b) => {
+    if (a.url === homepage.url) return -1;
+    if (b.url === homepage.url) return 1;
+    return 0;
+  });
+
+  for (const page of orderedPages) {
+    if (sources.length >= MAX_PAGES) break;
+    const urlKey = page.url.replace(/\/$/, '');
+    if (fetchedUrls.has(urlKey)) continue;
+    fetchedUrls.add(urlKey);
+
+    let result;
+    if (page.url.replace(/\/$/, '') === homepage.url.replace(/\/$/, '')) {
+      result = homeResult;
+    } else {
+      result = await fetchAndExtractPage(familypilotPlaceId, page);
+    }
+
     sources.push(result);
 
-    if (i === 0 && result.html && pages.length < MAX_PAGES) {
-      pages = expandDiscoveryFromHtml(result.html, page.url, pages, MAX_PAGES);
+    if (result.fetchStatus === 'ok' || result.fetchStatus === 'cached') {
+      pagesFetched.push({
+        url: result.url,
+        fetchStatus: result.fetchStatus,
+        pageTitle: result.pageTitle ?? null,
+      });
+      evidenceByPage.push({
+        url: result.url,
+        fields: (result.facts ?? []).map((f) => f.field),
+        factCount: (result.facts ?? []).length,
+      });
+    } else {
+      pagesFailed.push({
+        url: result.url,
+        fetchStatus: result.fetchStatus,
+        error: result.error ?? result.fetchStatus,
+      });
+      evidenceByPage.push({
+        url: result.url,
+        fields: [],
+        factCount: 0,
+        error: result.error ?? result.fetchStatus,
+      });
     }
   }
 
-  return buildEvidenceBundle(familypilotPlaceId, sources, discovery.sourceStatus);
+  const diagnostics = {
+    linksDiscovered: discoveryDiagnostics.linksDiscovered,
+    linksSelected: discoveryDiagnostics.linksSelected,
+    pagesFetched,
+    pagesFailed,
+    evidenceByPage,
+    homepageFetchStatus: homeResult.fetchStatus,
+    homepageFetchError: homeResult.error ?? null,
+  };
+
+  return buildEvidenceBundle(familypilotPlaceId, sources, discovery.sourceStatus, diagnostics);
 }
 
 module.exports = {

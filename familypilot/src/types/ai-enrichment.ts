@@ -58,6 +58,40 @@ export interface EvidenceFact {
   retrievedAt?: string | null;
 }
 
+export interface EvidenceDiagnostics {
+  linksDiscovered: Array<{
+    url: string;
+    score?: number;
+    reason?: string;
+    anchorText?: string | null;
+  }>;
+  linksSelected: Array<{
+    url: string;
+    score?: number;
+    reason?: string;
+    anchorText?: string | null;
+    sourceType?: string;
+  }>;
+  pagesFetched: Array<{
+    url: string;
+    fetchStatus: string;
+    pageTitle?: string | null;
+  }>;
+  pagesFailed: Array<{
+    url: string;
+    fetchStatus: string;
+    error?: string;
+  }>;
+  evidenceByPage: Array<{
+    url: string;
+    fields: string[];
+    factCount: number;
+    error?: string;
+  }>;
+  homepageFetchStatus?: string;
+  homepageFetchError?: string | null;
+}
+
 export interface EvidenceSourceSummary {
   url: string;
   type?: string;
@@ -65,6 +99,7 @@ export interface EvidenceSourceSummary {
   pageTitle?: string | null;
   retrievedAt?: string;
   fetchStatus?: string;
+  error?: string | null;
   facts?: EvidenceFact[];
 }
 
@@ -75,6 +110,7 @@ export interface EvidenceBundle {
   facts: EvidenceFact[];
   pagesChecked: number;
   cacheHits: number;
+  diagnostics?: EvidenceDiagnostics;
 }
 
 export interface VenueSourceEvidence {

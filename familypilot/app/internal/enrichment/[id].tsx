@@ -412,11 +412,56 @@ function SourcePanel({
 
   return (
     <View style={styles.sourcePanel}>
-      <Text variant="caption" color={colors.text.secondary}>Sources checked ({bundle.pagesChecked} pages)</Text>
+      <Text variant="caption" color={colors.text.secondary}>
+        Sources checked ({bundle.pagesChecked} pages)
+        {bundle.cacheHits ? ` · ${bundle.cacheHits} cached` : ''}
+      </Text>
       {(bundle.sources ?? []).map((s) => (
         <Text key={s.url} variant="caption">
-          ✓ {sourceLabels[s.sourceType ?? s.type ?? ''] ?? s.sourceType ?? 'Official source'}
+          {s.fetchStatus === 'ok' || s.fetchStatus === 'cached' ? '✓' : '✗'}{' '}
+          {sourceLabels[s.sourceType ?? s.type ?? ''] ?? s.sourceType ?? 'Official source'}
           {s.pageTitle ? ` — ${s.pageTitle}` : ''}
+          {s.fetchStatus && s.fetchStatus !== 'ok' && s.fetchStatus !== 'cached'
+            ? ` (${s.fetchStatus}${s.error ? `: ${s.error}` : ''})`
+            : ''}
+        </Text>
+      ))}
+      {bundle.diagnostics ? <DiagnosticsPanel diagnostics={bundle.diagnostics} /> : null}
+    </View>
+  );
+}
+
+function DiagnosticsPanel({ diagnostics }: { diagnostics: import('@/src/types/ai-enrichment').EvidenceDiagnostics }) {
+  const selectedCount = diagnostics.linksSelected?.length ?? 0;
+  const discoveredCount = diagnostics.linksDiscovered?.length ?? 0;
+
+  return (
+    <View style={styles.diagnosticsBox}>
+      <Text variant="caption" color={colors.text.tertiary}>Research diagnostics</Text>
+      <Text variant="caption" color={colors.text.tertiary}>
+        Links discovered: {discoveredCount} · Selected: {selectedCount}
+      </Text>
+      {diagnostics.homepageFetchStatus && diagnostics.homepageFetchStatus !== 'ok' && diagnostics.homepageFetchStatus !== 'cached' ? (
+        <Text variant="caption" color={colors.warning[600] ?? colors.text.secondary}>
+          Homepage fetch: {diagnostics.homepageFetchStatus}
+          {diagnostics.homepageFetchError ? ` — ${diagnostics.homepageFetchError}` : ''}
+        </Text>
+      ) : null}
+      {(diagnostics.linksSelected ?? []).slice(0, 5).map((link) => (
+        <Text key={link.url} variant="caption" color={colors.text.tertiary}>
+          → {link.url.replace(/^https?:\/\/[^/]+/, '')} ({link.reason ?? 'selected'})
+        </Text>
+      ))}
+      {(diagnostics.pagesFailed ?? []).map((page) => (
+        <Text key={page.url} variant="caption" color={colors.error[600]}>
+          ✗ Failed: {page.url.replace(/^https?:\/\/[^/]+/, '')} — {page.error ?? page.fetchStatus}
+        </Text>
+      ))}
+      {(diagnostics.evidenceByPage ?? []).map((page) => (
+        <Text key={page.url} variant="caption" color={colors.text.tertiary}>
+          {page.factCount > 0
+            ? `Evidence: ${page.url.replace(/^https?:\/\/[^/]+/, '')} → ${page.fields.join(', ')}`
+            : `No evidence: ${page.url.replace(/^https?:\/\/[^/]+/, '')}${page.error ? ` (${page.error})` : ''}`}
         </Text>
       ))}
     </View>
@@ -543,6 +588,13 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     borderRadius: 6,
     gap: spacing.xs,
+  },
+  diagnosticsBox: {
+    marginTop: spacing.xs,
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+    gap: 2,
   },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   actions: { gap: spacing.sm },

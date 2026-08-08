@@ -6,17 +6,41 @@
 const FIELD_PATTERNS = [
   {
     field: 'toilets',
-    yes: [/toilet(s)?\s+(are\s+)?available/i, /toilet\s+facilities/i, /restroom(s)?\s+available/i],
+    yes: [
+      /toilet(s)?\s+(are\s+)?available/i,
+      /toilet\s+facilities/i,
+      /restroom(s)?\s+available/i,
+      /public\s+toilets/i,
+      /toilets?\s+(can\s+be\s+)?found/i,
+      /toilets?\s+(are\s+)?(now\s+)?open/i,
+      /toilets?\s+(are\s+)?located/i,
+      /toilets?\s+(are\s+)?situated/i,
+      /toilets?\s+(are\s+)?provided/i,
+    ],
     no: [/no\s+toilet/i],
   },
   {
     field: 'babyChanging',
-    yes: [/baby\s+chang(e|ing)/i, /nappy\s+chang(e|ing)/i, /changing\s+facilit(y|ies)/i],
+    yes: [
+      /baby\s+chang(e|ing)/i,
+      /nappy\s+chang(e|ing)/i,
+      /changing\s+facilit(y|ies)/i,
+      /baby\s+chang(e|ing)\s+facilit/i,
+    ],
     no: [/no\s+baby\s+chang/i],
   },
   {
     field: 'parking',
-    yes: [/parking\s+(is\s+)?available/i, /car\s+park/i, /on.?site\s+parking/i],
+    yes: [
+      /parking\s+(is\s+)?available/i,
+      /car\s+park/i,
+      /on.?site\s+parking/i,
+      /free\s+(car\s+)?park/i,
+      /free\s+parking/i,
+      /parking\s+(can\s+be\s+)?found/i,
+      /parking\s+(is\s+)?located/i,
+      /large\s+free\s+car\s+park/i,
+    ],
     no: [/no\s+parking/i, /limited\s+parking/i],
   },
   {
@@ -36,8 +60,15 @@ const FIELD_PATTERNS = [
   },
   {
     field: 'pushchairSuitability',
-    yes: [/pushchair/i, /buggy/i, /pram/i, /stroller/i],
-    no: [/no\s+pushchair/i, /buggies?\s+not/i],
+    yes: [
+      /pushchair/i,
+      /buggy/i,
+      /pram/i,
+      /stroller/i,
+      /pushchairs?\s+(are\s+)?welcome/i,
+      /buggies?\s+(are\s+)?welcome/i,
+    ],
+    no: [/no\s+pushchair/i, /buggies?\s+not/i, /pushchairs?\s+not/i],
   },
   {
     field: 'playground',
@@ -53,9 +84,9 @@ const FIELD_PATTERNS = [
 
 function splitSentences(text) {
   return text
-    .split(/(?<=[.!?])\s+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 20);
+    .split(/(?:\n|\r|•|·|\u2022|(?<=[.!?])\s+)/)
+    .map((s) => s.replace(/^[\s\-–—*]+/, '').trim())
+    .filter((s) => s.length > 15);
 }
 
 function matchField(sentence, patterns) {
@@ -112,21 +143,30 @@ function rankConfidence(c) {
   return 0;
 }
 
-function buildEvidenceBundle(venueId, sources, sourceStatus) {
+function buildEvidenceBundle(venueId, sources, sourceStatus, diagnostics = null) {
   return {
     venueId,
     sourceStatus,
     sources: sources.map((s) => ({
       url: s.url,
       type: s.sourceType,
+      sourceType: s.sourceType,
       pageTitle: s.pageTitle ?? null,
       retrievedAt: s.retrievedAt,
       fetchStatus: s.fetchStatus,
+      error: s.error ?? null,
       facts: s.facts ?? [],
     })),
     facts: mergeEvidenceBundles(sources),
     pagesChecked: sources.length,
     cacheHits: sources.filter((s) => s.fetchStatus === 'cached').length,
+    diagnostics: diagnostics ?? {
+      linksDiscovered: [],
+      linksSelected: [],
+      pagesFetched: [],
+      pagesFailed: [],
+      evidenceByPage: [],
+    },
   };
 }
 
