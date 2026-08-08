@@ -4,6 +4,9 @@
  */
 
 const { normaliseDraftJson, emptyTriStateField, extractConfidenceJson } = require('./ai-draft-schema');
+const { cleanEvidenceSnippet } = require('./evidence-text-utils');
+
+const PUSHCHAIR_VALUES = new Set(['excellent', 'good', 'mixed', 'difficult']);
 
 /** Maps evidence extractor field ids → draft JSON paths */
 const EVIDENCE_FIELD_MAP = {
@@ -25,7 +28,7 @@ function factToTriStateField(fact) {
     confidence: fact.confidence ?? 'high',
     reason: 'Supported by official source evidence.',
     sourceUrl: fact.sourceUrl ?? null,
-    evidence: fact.evidenceText ?? null,
+    evidence: cleanEvidenceSnippet(fact.evidenceText) ?? fact.evidenceText ?? null,
     sourceType: fact.sourceType ?? null,
     retrievedAt: fact.retrievedAt ?? null,
     evidenceBacked: true,
@@ -34,14 +37,15 @@ function factToTriStateField(fact) {
 
 function factToPushchairField(fact) {
   let value = 'unknown';
-  if (fact.value === 'yes') value = 'good';
+  if (PUSHCHAIR_VALUES.has(fact.value)) value = fact.value;
+  else if (fact.value === 'yes') value = 'good';
   else if (fact.value === 'no') value = 'difficult';
   return {
     value,
     confidence: fact.confidence ?? 'high',
     reason: 'Supported by official source evidence.',
     sourceUrl: fact.sourceUrl ?? null,
-    evidence: fact.evidenceText ?? null,
+    evidence: cleanEvidenceSnippet(fact.evidenceText) ?? fact.evidenceText ?? null,
     sourceType: fact.sourceType ?? null,
     retrievedAt: fact.retrievedAt ?? null,
     evidenceBacked: true,
@@ -74,11 +78,13 @@ function rankConfidence(c) {
 }
 
 function isAuthoritativeFact(fact) {
-  return (
-    fact &&
-    (fact.confidence === 'high' || fact.confidence === 'medium') &&
-    (fact.value === 'yes' || fact.value === 'no')
-  );
+  if (!fact || (fact.confidence !== 'high' && fact.confidence !== 'medium')) {
+    return false;
+  }
+  if (fact.field === 'pushchairSuitability') {
+    return PUSHCHAIR_VALUES.has(fact.value);
+  }
+  return fact.value === 'yes' || fact.value === 'no';
 }
 
 function buildEmptyDraftShell() {
@@ -123,14 +129,17 @@ function buildDraftFromEvidence(bundle) {
 /**
  * Merge deterministic evidence into an AI-generated draft.
  * Authoritative extracted facts win over AI unknown or contradictory values.
+ * AI-invented facility claims without official evidence are cleared to unknown.
  */
 function mergeEvidenceIntoDraft(draftJson, bundle) {
   const draft = normaliseDraftJson(draftJson);
-  if (!bundle?.facts?.length) return draft;
+  const authoritativeFields = new Set(
+    (bundle?.facts ?? []).filter(isAuthoritativeFact).map((f) => f.field),
+  );
 
   let applied = 0;
 
-  for (const fact of bundle.facts) {
+  for (const fact of bundle?.facts ?? []) {
     if (!isAuthoritativeFact(fact)) continue;
     const mapping = EVIDENCE_FIELD_MAP[fact.field];
     if (!mapping) continue;
@@ -150,16 +159,50 @@ function mergeEvidenceIntoDraft(draftJson, bundle) {
     }
 
     const aiUnknown = !current || current.value === 'unknown' || current.confidence === 'unknown';
+    const evidenceValue =
+      mapping.kind === 'pushchair' ? factToPushchairField(fact).value : fact.value;
     const aiContradicts =
       current &&
-      mapping.kind === 'triState' &&
       current.value !== 'unknown' &&
-      current.value !== fact.value &&
+      current.value !== evidenceValue &&
       !current.evidenceBacked;
 
     if (aiUnknown || aiContradicts || !current?.sourceUrl) {
       setDraftField(draft, mapping, evidenceField);
       applied += 1;
+    }
+  }
+
+  for (const [fieldId, mapping] of Object.entries(EVIDENCE_FIELD_MAP)) {
+    if (authoritativeFields.has(fieldId)) continue;
+
+    if (mapping.kind === 'pushchair') {
+      const current = draft.pushchairSuitability;
+      if (current?.value !== 'unknown' && !current?.evidenceBacked) {
+        draft.pushchairSuitability = {
+          value: 'unknown',
+          confidence: 'unknown',
+          reason: 'No explicit official evidence found.',
+          sourceUrl: null,
+          evidence: null,
+          sourceType: null,
+          retrievedAt: null,
+        };
+      }
+      continue;
+    }
+
+    let current;
+    if (mapping.section === 'familyFacilities') {
+      current = draft.familyFacilities[mapping.key];
+    } else if (mapping.section === 'accessibility') {
+      current = draft.accessibility[mapping.key];
+    } else if (mapping.section === 'sendInfo') {
+      current = draft.sendInfo[mapping.key];
+    }
+
+    if (current?.value !== 'unknown' && !current?.evidenceBacked) {
+      setDraftField(draft, mapping, emptyTriStateField());
     }
   }
 

@@ -1,7 +1,5 @@
-/**
- * Keyword-based evidence extraction from official source text.
- * Does NOT invent facts — only extracts explicit or strongly implied statements.
- */
+const { cleanEvidenceSnippet } = require('./evidence-text-utils');
+const { extractPushchairEvidence } = require('./pushchair-evidence');
 
 const FIELD_PATTERNS = [
   {
@@ -33,13 +31,15 @@ const FIELD_PATTERNS = [
     field: 'parking',
     yes: [
       /parking\s+(is\s+)?available/i,
-      /car\s+park/i,
+      /(?:free\s+)?parking\s+(is\s+)?provided/i,
       /on.?site\s+parking/i,
-      /free\s+(car\s+)?park/i,
       /free\s+parking/i,
+      /(?:large\s+)?free\s+car\s+park/i,
+      /car\s+park(?:ing)?\s+(is\s+)?available/i,
+      /car\s+park\s+(is\s+)?(?:provided|located|on site|on-site)/i,
       /parking\s+(can\s+be\s+)?found/i,
       /parking\s+(is\s+)?located/i,
-      /large\s+free\s+car\s+park/i,
+      /(?:cars|vehicles|minibuses|coaches)\s+(?:are\s+)?welcome\s+to\s+use\s+(?:our\s+)?(?:large\s+)?(?:free\s+)?car\s+park/i,
     ],
     no: [/no\s+parking/i, /limited\s+parking/i],
   },
@@ -57,18 +57,6 @@ const FIELD_PATTERNS = [
     field: 'accessibleToilet',
     yes: [/accessible\s+toilet/i, /disabled\s+toilet/i, /changing\s+places/i],
     no: [/no\s+accessible\s+toilet/i],
-  },
-  {
-    field: 'pushchairSuitability',
-    yes: [
-      /pushchair/i,
-      /buggy/i,
-      /pram/i,
-      /stroller/i,
-      /pushchairs?\s+(are\s+)?welcome/i,
-      /buggies?\s+(are\s+)?welcome/i,
-    ],
-    no: [/no\s+pushchair/i, /buggies?\s+not/i, /pushchairs?\s+not/i],
   },
   {
     field: 'playground',
@@ -89,12 +77,44 @@ function splitSentences(text) {
     .filter((s) => s.length > 15);
 }
 
-function matchField(sentence, patterns) {
+function isExplicitParkingStatement(sentence) {
+  const lower = sentence.toLowerCase();
+
+  if (/parking\s+(information|charges|fees|rates|policy|restrictions|advice|tips|updates)/i.test(sentence)) {
+    if (!/available|provided|free|welcome to use|on site|on-site|located|can be found/i.test(lower)) {
+      return false;
+    }
+  }
+
+  if (/car\s+park/i.test(sentence)) {
+    if (!/available|free|provided|located|welcome|on site|on-site|use our|can be found/i.test(lower)) {
+      return false;
+    }
+  }
+
+  if (/pay\s+and\s+display|parking\s+meters|parking\s+charge/i.test(sentence)) {
+    if (!/free\s+parking|parking\s+(is\s+)?available|no charge/i.test(lower)) {
+      return false;
+    }
+  }
+
+  if (/surrounding streets|nearby streets|local streets|off.?site|street parking|near the venue/i.test(sentence)) {
+    if (!/on site|on-site|our car park|venue car park|site parking|welcome to use our/i.test(lower)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function matchField(sentence, patterns, fieldId) {
   for (const re of patterns.no) {
     if (re.test(sentence)) return { value: 'no', confidence: 'high' };
   }
   for (const re of patterns.yes) {
-    if (re.test(sentence)) return { value: 'yes', confidence: 'high' };
+    if (!re.test(sentence)) continue;
+    if (fieldId === 'parking' && !isExplicitParkingStatement(sentence)) continue;
+    return { value: 'yes', confidence: 'high' };
   }
   return null;
 }
@@ -105,19 +125,24 @@ function extractEvidenceFromText(text, sourceMeta) {
 
   for (const pattern of FIELD_PATTERNS) {
     for (const sentence of sentences) {
-      const match = matchField(sentence, pattern);
+      const match = matchField(sentence, pattern, pattern.field);
       if (!match) continue;
       facts.push({
         field: pattern.field,
         value: match.value,
         confidence: match.confidence,
-        evidenceText: sentence.slice(0, 400),
+        evidenceText: cleanEvidenceSnippet(sentence),
         sourceUrl: sourceMeta.url,
         sourceType: sourceMeta.sourceType,
         retrievedAt: sourceMeta.retrievedAt,
       });
       break;
     }
+  }
+
+  const pushchairFact = extractPushchairEvidence(text, sourceMeta);
+  if (pushchairFact) {
+    facts.push(pushchairFact);
   }
 
   return facts;
@@ -128,12 +153,23 @@ function mergeEvidenceBundles(sources) {
   for (const source of sources) {
     for (const fact of source.facts ?? []) {
       const existing = byField.get(fact.field);
-      if (!existing || rankConfidence(fact.confidence) > rankConfidence(existing.confidence)) {
+      if (!existing || rankPushchairOrConfidence(fact, existing) > 0) {
         byField.set(fact.field, fact);
       }
     }
   }
   return [...byField.values()];
+}
+
+const PUSHCHAIR_RANK = { excellent: 4, good: 3, mixed: 2, difficult: 1, unknown: 0 };
+
+function rankPushchairOrConfidence(fact, existing) {
+  if (fact.field === 'pushchairSuitability') {
+    const factRank = PUSHCHAIR_RANK[fact.value] ?? 0;
+    const existingRank = PUSHCHAIR_RANK[existing.value] ?? 0;
+    if (factRank !== existingRank) return factRank - existingRank;
+  }
+  return rankConfidence(fact.confidence) - rankConfidence(existing.confidence);
 }
 
 function rankConfidence(c) {
@@ -174,5 +210,7 @@ module.exports = {
   extractEvidenceFromText,
   mergeEvidenceBundles,
   buildEvidenceBundle,
+  isExplicitParkingStatement,
   FIELD_PATTERNS,
+  cleanEvidenceSnippet,
 };

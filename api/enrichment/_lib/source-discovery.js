@@ -15,9 +15,9 @@ const HOMEPAGE_SCORE = 1000;
 const PAGE_TYPE_PATTERNS = [
   { type: 'accessibility_page', pattern: /accessibility|access-for-all|disabled-access|access-map|additional-needs/i },
   { type: 'visitor_info', pattern: /plan.?your.?visit|visitor.?information|your.?visit|facilities|getting.?here|admission|location/i },
-  { type: 'faq_page', pattern: /faq|frequently.?asked|help/i },
+  { type: 'faq_page', pattern: /faq|frequently.?asked|learning-session-faq/i },
   { type: 'family_page', pattern: /family|children|kids|parents/i },
-  { type: 'visitor_info', pattern: /\/visit\b|parking|contact|information/i },
+  { type: 'visitor_info', pattern: /\/visit\b|getting.?here|visitor.?information|plan.?your.?visit/i },
 ];
 
 const PATH_PRIORITY = [
@@ -34,8 +34,6 @@ const PATH_PRIORITY = [
   'parking',
   'family',
   'parents',
-  'information',
-  'help',
   'admission',
   'contact',
   'venue',

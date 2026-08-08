@@ -25,6 +25,7 @@ import { VenueEnrichmentDraftRecord, EvidenceBundle } from '@/src/types/ai-enric
 import { VenueFamilyMetadata } from '@/src/types/places';
 import { enrichmentApi } from '@/src/services/enrichment/enrichment-api-client';
 import { draftJsonToReviewForm, formatDraftConfidence } from '@/src/utils/ai-draft-review';
+import { cleanEvidenceSnippet } from '@/src/utils/evidence-text-utils';
 import { getAiDraftInternalLabel } from '@/src/utils/family-match-classification';
 import { validateVerifiedRequirements } from '@/src/utils/enrichment-rules';
 
@@ -489,6 +490,8 @@ function DraftField({
     sourceType?: string | null;
   };
 }) {
+  const evidenceText = field.evidence ? cleanEvidenceSnippet(field.evidence) : null;
+
   return (
     <View style={styles.draftField}>
       <Text variant="caption">{label}</Text>
@@ -496,9 +499,9 @@ function DraftField({
         {field.value} · {formatDraftConfidence(field.confidence)} confidence
       </Text>
       {field.reason ? <Text variant="caption" color={colors.text.tertiary}>{field.reason}</Text> : null}
-      {field.evidence ? (
+      {evidenceText ? (
         <Text variant="caption" color={colors.text.secondary}>
-          Evidence: &quot;{field.evidence.slice(0, 200)}{field.evidence.length > 200 ? '…' : ''}&quot;
+          Evidence: &quot;{evidenceText.slice(0, 200)}{evidenceText.length > 200 ? '…' : ''}&quot;
         </Text>
       ) : null}
       {field.sourceUrl ? (
