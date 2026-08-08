@@ -21,7 +21,7 @@ import {
   SendInfo,
   TriState,
 } from '@/src/types/enrichment';
-import { VenueEnrichmentDraftRecord } from '@/src/types/ai-enrichment';
+import { VenueEnrichmentDraftRecord, EvidenceBundle } from '@/src/types/ai-enrichment';
 import { VenueFamilyMetadata } from '@/src/types/places';
 import { enrichmentApi } from '@/src/services/enrichment/enrichment-api-client';
 import { draftJsonToReviewForm, formatDraftConfidence } from '@/src/utils/ai-draft-review';
@@ -92,6 +92,7 @@ export default function EnrichmentFormScreen() {
   const [venueName, setVenueName] = useState('');
   const [enrichmentStatus, setEnrichmentStatus] = useState<string>('provider_only');
   const [draft, setDraft] = useState<VenueEnrichmentDraftRecord | null>(null);
+  const [evidenceBundle, setEvidenceBundle] = useState<EvidenceBundle | null>(null);
   const [generating, setGenerating] = useState(false);
   const [form, setForm] = useState<EnrichmentSavePayload>(metadataToForm(null));
   const [error, setError] = useState('');
@@ -105,6 +106,8 @@ export default function EnrichmentFormScreen() {
       setVenueName((place?.name as string) ?? id);
       setEnrichmentStatus(metadata?.enrichmentStatus ?? 'provider_only');
       setDraft(pendingDraft ?? null);
+      const bundle = pendingDraft?.sourceContext?.evidenceBundle as EvidenceBundle | undefined;
+      setEvidenceBundle(bundle ?? null);
       if (pendingDraft?.draftJson && (metadata?.enrichmentStatus === 'ai_draft' || !metadata)) {
         setForm(draftJsonToReviewForm(pendingDraft.draftJson));
       } else {
@@ -171,6 +174,7 @@ export default function EnrichmentFormScreen() {
     try {
       const result = await enrichmentApi.generateDraft(id);
       setDraft(result.draft);
+      setEvidenceBundle((result.evidenceBundle ?? result.draft.sourceContext?.evidenceBundle) as EvidenceBundle | null);
       setForm(draftJsonToReviewForm(result.draft.draftJson));
       setEnrichmentStatus('ai_draft');
       setDirty(true);
@@ -235,24 +239,26 @@ export default function EnrichmentFormScreen() {
           <Text variant="heading3">AI suggested — review required</Text>
           <Text variant="caption" color={colors.text.secondary}>
             Model: {draft.model} · Overall confidence: {formatDraftConfidence(draft.draftJson.overallDraftConfidence)}
+            {draft.evidenceStatus === 'legacy_no_sources' ? ' · Legacy draft (no evidence)' : ''}
+            {draft.evidenceStatus === 'provider_only' ? ' · Provider-only evidence' : ''}
+            {draft.evidenceStatus === 'evidence_backed' ? ' · Evidence-backed' : ''}
           </Text>
+          <SourcePanel bundle={evidenceBundle} draft={draft} />
           <DraftField
             label="Toilets"
-            value={draft.draftJson.familyFacilities.toilets.value}
-            confidence={draft.draftJson.familyFacilities.toilets.confidence}
-            reason={draft.draftJson.familyFacilities.toilets.reason}
+            field={draft.draftJson.familyFacilities.toilets}
           />
           <DraftField
             label="Baby changing"
-            value={draft.draftJson.familyFacilities.babyChanging.value}
-            confidence={draft.draftJson.familyFacilities.babyChanging.confidence}
-            reason={draft.draftJson.familyFacilities.babyChanging.reason}
+            field={draft.draftJson.familyFacilities.babyChanging}
+          />
+          <DraftField
+            label="Parking"
+            field={draft.draftJson.familyFacilities.parking}
           />
           <DraftField
             label="Pushchair suitability"
-            value={draft.draftJson.pushchairSuitability.value}
-            confidence={draft.draftJson.pushchairSuitability.confidence}
-            reason={draft.draftJson.pushchairSuitability.reason}
+            field={draft.draftJson.pushchairSuitability}
           />
           {(draft.draftJson.whyFamiliesLike ?? []).length > 0 ? (
             <Text variant="caption">Why families may like: {draft.draftJson.whyFamiliesLike.join(' · ')}</Text>
@@ -366,21 +372,88 @@ export default function EnrichmentFormScreen() {
   );
 }
 
+function SourcePanel({
+  bundle,
+  draft,
+}: {
+  bundle: EvidenceBundle | null;
+  draft: VenueEnrichmentDraftRecord;
+}) {
+  const status = draft.evidenceStatus ?? (bundle?.sourceStatus === 'no_official_source' ? 'provider_only' : null);
+
+  if (status === 'legacy_no_sources') {
+    return (
+      <View style={styles.sourcePanel}>
+        <Text variant="caption" color={colors.text.secondary}>
+          Legacy draft — created before evidence-backed enrichment. Regenerate for official sources.
+        </Text>
+      </View>
+    );
+  }
+
+  if (!bundle || bundle.sourceStatus === 'no_official_source' || status === 'provider_only') {
+    return (
+      <View style={styles.sourcePanel}>
+        <Text variant="caption" color={colors.warning[600] ?? colors.text.secondary}>
+          No reliable official source found. AI draft based on provider information only.
+        </Text>
+      </View>
+    );
+  }
+
+  const sourceLabels: Record<string, string> = {
+    official_website: 'Official venue website',
+    accessibility_page: 'Accessibility page',
+    visitor_info: 'Visitor information',
+    faq_page: 'Visitor FAQ',
+    family_page: 'Family / children page',
+    council_page: 'Council page',
+  };
+
+  return (
+    <View style={styles.sourcePanel}>
+      <Text variant="caption" color={colors.text.secondary}>Sources checked ({bundle.pagesChecked} pages)</Text>
+      {(bundle.sources ?? []).map((s) => (
+        <Text key={s.url} variant="caption">
+          ✓ {sourceLabels[s.sourceType ?? s.type ?? ''] ?? s.sourceType ?? 'Official source'}
+          {s.pageTitle ? ` — ${s.pageTitle}` : ''}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
 function DraftField({
   label,
-  value,
-  confidence,
-  reason,
+  field,
 }: {
   label: string;
-  value: string;
-  confidence: string;
-  reason?: string | null;
+  field: {
+    value: string;
+    confidence: string;
+    reason?: string | null;
+    sourceUrl?: string | null;
+    evidence?: string | null;
+    sourceType?: string | null;
+  };
 }) {
   return (
     <View style={styles.draftField}>
-      <Text variant="caption">{label}: {value} · Confidence: {formatDraftConfidence(confidence)}</Text>
-      {reason ? <Text variant="caption" color={colors.text.tertiary}>{reason}</Text> : null}
+      <Text variant="caption">{label}</Text>
+      <Text variant="bodySmall">
+        {field.value} · {formatDraftConfidence(field.confidence)} confidence
+      </Text>
+      {field.reason ? <Text variant="caption" color={colors.text.tertiary}>{field.reason}</Text> : null}
+      {field.evidence ? (
+        <Text variant="caption" color={colors.text.secondary}>
+          Evidence: &quot;{field.evidence.slice(0, 200)}{field.evidence.length > 200 ? '…' : ''}&quot;
+        </Text>
+      ) : null}
+      {field.sourceUrl ? (
+        <Text variant="caption" color={colors.primary[600] ?? colors.primary[500]}>
+          Source: {field.sourceType?.replace(/_/g, ' ') ?? 'official'} · {field.sourceUrl}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -465,6 +538,12 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   draftField: { gap: 2 },
+  sourcePanel: {
+    backgroundColor: colors.background,
+    padding: spacing.sm,
+    borderRadius: 6,
+    gap: spacing.xs,
+  },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   actions: { gap: spacing.sm },
   primaryBtn: {

@@ -1,7 +1,9 @@
 # FamilyPilot — Data Provenance
 
-**Last updated:** 7 August 2026  
+**Last updated:** 8 August 2026  
 **Authority:** [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md)
+
+Evidence-backed AI drafts store per-field source URLs and quotes in `enrichmentProvenance.sourceReference` on approval — see [EVIDENCE_BACKED_ENRICHMENT.md](./EVIDENCE_BACKED_ENRICHMENT.md).
 
 Every field shown to parents must have a traceable source. This document defines provenance for venue and restaurant data.
 

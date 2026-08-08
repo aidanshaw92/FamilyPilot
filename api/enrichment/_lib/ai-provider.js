@@ -1,6 +1,5 @@
 /**
- * AI venue enrichment provider — server-side only.
- * Uses OpenAI when OPENAI_API_KEY is set; mock provider for tests/local without key.
+ * AI venue enrichment provider — evidence-backed drafts, server-side only.
  */
 
 const { normaliseDraftJson, extractConfidenceJson, parseModelJson } = require('./ai-draft-schema');
@@ -8,39 +7,46 @@ const { normaliseDraftJson, extractConfidenceJson, parseModelJson } = require('.
 const DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const MAX_OUTPUT_TOKENS = Number(process.env.AI_ENRICHMENT_MAX_TOKENS || 1800);
 const RETRY_LIMIT = Number(process.env.AI_ENRICHMENT_RETRY_LIMIT || 2);
+const AI_TIMEOUT_MS = Number(process.env.AI_ENRICHMENT_TIMEOUT_MS || 25000);
 const ESTIMATED_COST_PER_1M_INPUT = 0.15;
 const ESTIMATED_COST_PER_1M_OUTPUT = 0.6;
 
-const SYSTEM_PROMPT = `You are a FamilyPilot editorial research assistant. Your job is to structure venue information for family outing decisions.
+const SYSTEM_PROMPT = `You are a FamilyPilot editorial research assistant structuring venue information for family outing decisions.
 
 CRITICAL RULES:
-- Return ONLY valid JSON matching the requested schema. No markdown, no commentary.
-- Do NOT invent factual facilities (toilets, baby changing, parking, accessibility, SEND features, prices, opening hours).
-- If evidence is missing in the input, set value to "unknown" and confidence to "unknown".
-- Confidence reflects evidence strength in the provided input — NOT your general knowledge about venue types.
-- You MAY draft softer editorial content (whyFamiliesLike, goodToKnow) when clearly labelled as suggestions based on category and provided facts — keep these practical and cautious.
-- suggestedVisitDuration must be null unless reasonably inferable from category; if provided, treat as estimated.
-- Never claim verification or official confirmation.
+- Return ONLY valid JSON matching the requested schema. No markdown.
+- Use the structured evidence bundle FIRST. Prefer explicit official-source evidence over general knowledge.
+- If no evidence supports a factual facility claim, set value to "unknown" and confidence to "unknown".
+- NEVER invent toilets, baby changing, parking, accessibility, SEND features, prices, or opening hours.
+- For each factual field include sourceUrl, evidence (short quote/paraphrase), sourceType, retrievedAt when evidence exists; null when unknown.
+- Editorial fields (whyFamiliesLike, goodToKnow, suggestedVisitDuration) may use category + evidence but must stay cautious. Mark low confidence when estimated.
+- Distinguish FACT (from evidence) from EDITORIAL (suggestions). Do not convert editorial into facility facts.
+- Never claim verified status.
 
-Schema:
-{
-  "recommendedAge": { "min": number|null, "max": number|null, "notes": string|null, "confidence": "high|medium|low|unknown" },
-  "familyFacilities": {
-    "toilets": { "value": "yes|no|unknown", "confidence": "high|medium|low|unknown", "reason": string|null },
-    "babyChanging": { "value": "yes|no|unknown", "confidence": "high|medium|low|unknown", "reason": string|null },
-    "parking": { "value": "yes|no|unknown", "confidence": "high|medium|low|unknown", "reason": string|null },
-    "cafe": { "value": "yes|no|unknown", "confidence": "high|medium|low|unknown", "reason": string|null }
-  },
-  "pushchairSuitability": { "value": "excellent|good|mixed|difficult|unknown", "confidence": "high|medium|low|unknown", "reason": string|null },
-  "terrain": { "value": "flat|mostly_flat|mixed|hilly|very_hilly|unknown", "confidence": "high|medium|low|unknown", "reason": string|null },
-  "accessibility": {},
-  "sendInfo": {},
-  "whyFamiliesLike": string[],
-  "goodToKnow": string[],
-  "suggestedVisitDuration": number|null,
-  "rainyDaySuitability": "yes|no|unknown",
-  "overallDraftConfidence": "high|medium|low|unknown"
-}`;
+Field schema includes: value, confidence, reason, sourceUrl, evidence, sourceType, retrievedAt`;
+
+function compactEvidenceBundle(bundle) {
+  if (!bundle) return null;
+  return {
+    sourceStatus: bundle.sourceStatus,
+    pagesChecked: bundle.pagesChecked,
+    facts: (bundle.facts ?? []).slice(0, 40).map((f) => ({
+      field: f.field,
+      value: f.value,
+      confidence: f.confidence,
+      evidenceText: f.evidenceText?.slice(0, 300),
+      sourceUrl: f.sourceUrl,
+      sourceType: f.sourceType,
+    })),
+    sources: (bundle.sources ?? []).slice(0, 5).map((s) => ({
+      url: s.url,
+      type: s.sourceType,
+      pageTitle: s.pageTitle,
+      fetchStatus: s.fetchStatus,
+      factCount: (s.facts ?? []).length,
+    })),
+  };
+}
 
 function buildUserPrompt(input) {
   const compact = {
@@ -53,14 +59,12 @@ function buildUserPrompt(input) {
     openingHours: input.openingHours ?? null,
     googlePrimaryType: input.googlePrimaryType ?? null,
     googleTypes: (input.googleTypes ?? []).slice(0, 12),
+    evidence: compactEvidenceBundle(input.evidenceBundle),
     existingMetadataSummary: input.existingMetadata
-      ? {
-          hasPriorEnrichment: true,
-          note: 'Existing metadata provided for context only — do not overwrite blindly; prefer unknown when unclear.',
-        }
+      ? { hasPriorEnrichment: true, note: 'Context only — do not overwrite blindly.' }
       : null,
   };
-  return `Generate a FamilyPilot enrichment DRAFT for this venue. Use only the facts below.\n\n${JSON.stringify(compact)}`;
+  return `Generate a FamilyPilot enrichment DRAFT using ONLY the provider facts and evidence below.\n\n${JSON.stringify(compact)}`;
 }
 
 function estimateCost(tokenUsage) {
@@ -88,14 +92,14 @@ async function callOpenAI(input) {
         body: JSON.stringify({
           model: DEFAULT_MODEL,
           max_tokens: MAX_OUTPUT_TOKENS,
-          temperature: 0.2,
+          temperature: 0.15,
           response_format: { type: 'json_object' },
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
             { role: 'user', content: buildUserPrompt(input) },
           ],
         }),
-        signal: AbortSignal.timeout(45000),
+        signal: AbortSignal.timeout(AI_TIMEOUT_MS),
       });
 
       if (response.status === 429) {
@@ -125,11 +129,8 @@ async function callOpenAI(input) {
         draftJson,
         model: data.model || DEFAULT_MODEL,
         sourceContext: {
-          inputSummary: {
-            name: input.name,
-            category: input.category,
-            googlePrimaryType: input.googlePrimaryType,
-          },
+          inputSummary: { name: input.name, category: input.category },
+          evidenceStatus: input.evidenceBundle?.sourceStatus ?? 'no_official_source',
         },
         confidenceJson: extractConfidenceJson(draftJson),
         tokenUsage,
@@ -145,39 +146,58 @@ async function callOpenAI(input) {
   throw lastError || new Error('AI generation failed');
 }
 
-/** Deterministic mock for tests and local dev without API key. */
 function generateMockDraft(input) {
-  const category = input.category || 'park';
+  const bundle = input.evidenceBundle;
+  const toiletFact = bundle?.facts?.find((f) => f.field === 'toilets');
+  const babyFact = bundle?.facts?.find((f) => f.field === 'babyChanging');
+
+  const mkField = (fact) =>
+    fact
+      ? {
+          value: fact.value === 'yes' || fact.value === 'no' ? fact.value : 'unknown',
+          confidence: fact.confidence ?? 'high',
+          reason: 'Based on official source evidence.',
+          sourceUrl: fact.sourceUrl ?? null,
+          evidence: fact.evidenceText ?? null,
+          sourceType: fact.sourceType ?? null,
+          retrievedAt: fact.retrievedAt ?? null,
+        }
+      : {
+          value: 'unknown',
+          confidence: 'unknown',
+          reason: 'No explicit evidence found.',
+          sourceUrl: null,
+          evidence: null,
+          sourceType: null,
+          retrievedAt: null,
+        };
+
   const draftJson = normaliseDraftJson({
-    recommendedAge: {
-      min: null,
-      max: null,
-      notes: category === 'zoo' ? 'Often popular with primary-age children — confirm on site.' : null,
-      confidence: 'low',
-    },
+    recommendedAge: { min: null, max: null, notes: null, confidence: 'unknown' },
     familyFacilities: {
-      toilets: { value: 'unknown', confidence: 'unknown', reason: null },
-      babyChanging: { value: 'unknown', confidence: 'unknown', reason: null },
-      parking: { value: 'unknown', confidence: 'unknown', reason: null },
-      cafe: { value: 'unknown', confidence: 'unknown', reason: null },
+      toilets: mkField(toiletFact),
+      babyChanging: mkField(babyFact),
+      parking: mkField(bundle?.facts?.find((f) => f.field === 'parking')),
+      cafe: mkField(bundle?.facts?.find((f) => f.field === 'cafe')),
     },
-    pushchairSuitability: { value: 'unknown', confidence: 'unknown', reason: null },
-    terrain: { value: 'unknown', confidence: 'unknown', reason: null },
+    pushchairSuitability: mkField(bundle?.facts?.find((f) => f.field === 'pushchairSuitability')),
+    terrain: { value: 'unknown', confidence: 'unknown', reason: null, sourceUrl: null, evidence: null },
     accessibility: {},
     sendInfo: {},
-    whyFamiliesLike: input.description
-      ? [`${input.name} may appeal to families based on available provider description.`]
-      : [`${input.name} is a ${category} — family appeal depends on on-site facilities.`],
-    goodToKnow: ['AI draft — human review required before publishing.'],
+    whyFamiliesLike: input.description ? [`${input.name} — ${input.description.slice(0, 120)}`] : [],
+    goodToKnow:
+      bundle?.sourceStatus === 'no_official_source'
+        ? ['No official evidence found — provider information only.']
+        : ['AI draft from official sources — human review required.'],
     suggestedVisitDuration: null,
-    rainyDaySuitability: ['museum', 'soft_play', 'activity'].includes(category) ? 'yes' : 'unknown',
-    overallDraftConfidence: 'low',
+    rainyDaySuitability: 'unknown',
+    overallDraftConfidence: bundle?.facts?.length ? 'medium' : 'low',
   });
 
   return {
     draftJson,
-    model: 'mock-enrichment-v1',
-    sourceContext: { mock: true, category },
+    model: 'mock-enrichment-v2',
+    sourceContext: { mock: true, evidenceStatus: bundle?.sourceStatus },
     confidenceJson: extractConfidenceJson(draftJson),
     tokenUsage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
     estimatedCostUsd: 0,
@@ -185,12 +205,8 @@ function generateMockDraft(input) {
 }
 
 async function generateDraft(input) {
-  if (process.env.OPENAI_API_KEY) {
-    return callOpenAI(input);
-  }
-  if (process.env.AI_ENRICHMENT_ALLOW_MOCK === 'true') {
-    return generateMockDraft(input);
-  }
+  if (process.env.OPENAI_API_KEY) return callOpenAI(input);
+  if (process.env.AI_ENRICHMENT_ALLOW_MOCK === 'true') return generateMockDraft(input);
   throw new Error(
     'AI enrichment not configured. Set OPENAI_API_KEY or AI_ENRICHMENT_ALLOW_MOCK=true for local testing.',
   );
@@ -204,7 +220,8 @@ module.exports = {
   generateDraft,
   generateMockDraft,
   isAiConfigured,
+  buildUserPrompt,
+  compactEvidenceBundle,
   DEFAULT_MODEL,
-  ESTIMATED_COST_PER_1M_INPUT,
-  ESTIMATED_COST_PER_1M_OUTPUT,
+  AI_TIMEOUT_MS,
 };

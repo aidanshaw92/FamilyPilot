@@ -1,7 +1,9 @@
 # AI-Assisted Venue Enrichment
 
-**Last updated:** 7 August 2026  
+**Last updated:** 8 August 2026  
 **Status:** Internal editorial workflow (human review required)
+
+> **Evidence-backed enrichment:** See [EVIDENCE_BACKED_ENRICHMENT.md](./EVIDENCE_BACKED_ENRICHMENT.md) for official source discovery, fetch security, and per-field evidence on drafts.
 
 ---
 
@@ -18,7 +20,9 @@ AI helps research and structure information. AI **must not invent family facts**
 ```text
 Google Place (provider_only)
         ↓
-Generate AI draft (stored separately)
+Official source discovery + evidence extraction
+        ↓
+Generate AI draft (evidence + provider facts, stored separately)
         ↓
 Human review in /internal/enrichment
         ↓
@@ -48,8 +52,10 @@ AI drafts **never** auto-become `enriched` or `verified`.
 
 | Layer | Location |
 |-------|----------|
+| Source evidence | `venue_source_evidence` table or `.data/venue-source-evidence.json` |
 | Draft storage | `venue_enrichment_drafts` table (Supabase) or `.data/enrichment-drafts.json` (file fallback) |
 | Status marker | `venue_family_metadata.enrichment_status = 'ai_draft'` (no family fields until approval) |
+| Evidence pipeline | `api/enrichment/_lib/evidence-pipeline.js` |
 | AI provider | `api/enrichment/_lib/ai-provider.js` (OpenAI; mock when `AI_ENRICHMENT_ALLOW_MOCK=true`) |
 | Schema validation | `api/enrichment/_lib/ai-draft-schema.js` |
 | Draft lifecycle | `api/enrichment/_lib/draft-store.js` |
@@ -71,14 +77,10 @@ Implementation is decoupled via `ai-provider.js`; swap models via `OPENAI_MODEL`
 
 ## Draft schema
 
-Structured JSON with per-field confidence (`high` | `medium` | `low` | `unknown`):
+Structured JSON with per-field confidence (`high` | `medium` | `low` | `unknown`) **and evidence metadata**:
 
-- `recommendedAge` (min/max/notes)
-- `familyFacilities` (toilets, babyChanging, parking, cafe)
-- `pushchairSuitability`, `terrain`
-- `accessibility`, `sendInfo` (empty unless evidence in input)
-- Editorial: `whyFamiliesLike`, `goodToKnow`, `suggestedVisitDuration`, `rainyDaySuitability`
-- `overallDraftConfidence`
+- `value`, `confidence`, `reason`
+- `sourceUrl`, `evidence`, `sourceType`, `retrievedAt` (null when unknown)
 
 Unknown remains unknown — no guessing toilets from venue type.
 
@@ -101,8 +103,8 @@ All generation endpoints require `X-Enrichment-Token`.
 
 | Action | Method | Description |
 |--------|--------|-------------|
-| `generate-draft` | POST | `{ id, regenerate? }` — one venue |
-| `generate-batch` | POST | `{ batchSize?, betaLat?, betaLng?, betaRadiusKm? }` — default 10, max 25 |
+| `generate-draft` | POST | `{ id, regenerate? }` — one venue (includes evidence gathering) |
+| `generate-batch` | POST | Server-side batch (legacy); **internal UI uses client batch** — see [EVIDENCE_BACKED_ENRICHMENT.md](./EVIDENCE_BACKED_ENRICHMENT.md) |
 | `draft` | GET | Pending draft for venue |
 | `approve-draft` | POST | `{ id, payload?, reviewedBy? }` → `enriched` |
 | `reject-draft` | POST | Discard draft → `provider_only` |
@@ -194,6 +196,7 @@ Prepared pattern for nightly: find high-priority `provider_only` in beta radius 
 
 ## Related docs
 
+- [EVIDENCE_BACKED_ENRICHMENT.md](./EVIDENCE_BACKED_ENRICHMENT.md)
 - [VENUE_ENRICHMENT_WORKFLOW.md](./VENUE_ENRICHMENT_WORKFLOW.md)
 - [DATA_PROVENANCE.md](./DATA_PROVENANCE.md)
 - [FAMILY_MATCH.md](./FAMILY_MATCH.md)

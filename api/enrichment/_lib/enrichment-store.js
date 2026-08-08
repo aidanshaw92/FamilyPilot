@@ -139,6 +139,11 @@ async function upsertPlaceRecord(place) {
     lat: place.latitude,
     lng: place.longitude,
     address: place.address ?? null,
+    description: place.description ?? null,
+    website: place.website ?? null,
+    phone: place.phone ?? null,
+    opening_hours: place.openingHours ?? null,
+    is_open: place.isOpen ?? null,
     fetched_at: place.fetchedAt || new Date().toISOString(),
     field_provenance: {
       googlePrimaryType: place.googlePrimaryType,

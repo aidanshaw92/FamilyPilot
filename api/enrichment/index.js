@@ -19,6 +19,7 @@ const {
   approveDraft,
   rejectDraft,
 } = require('./_lib/draft-store');
+const { listEvidenceForVenue } = require('./_lib/evidence-store');
 
 function setCorsHeaders(res, methods) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -169,7 +170,8 @@ async function handleVenue(req, res) {
       }
       const metadata = await getMetadata(id);
       const draft = await getPendingDraft(id);
-      return res.status(200).json({ place, metadata, draft });
+      const evidence = await listEvidenceForVenue(id);
+      return res.status(200).json({ place, metadata, draft, evidence });
     } catch (error) {
       return res.status(500).json({
         error: error instanceof Error ? error.message : 'Load failed',

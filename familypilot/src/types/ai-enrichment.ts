@@ -3,7 +3,16 @@ import { EnrichmentSavePayload } from '@/src/types/enrichment';
 /** Confidence in evidence supporting a draft field — not Family Match. */
 export type DraftConfidence = 'high' | 'medium' | 'low' | 'unknown';
 
-export interface DraftTriStateField {
+export type EvidenceStatus = 'evidence_backed' | 'legacy_no_sources' | 'provider_only';
+
+export interface DraftEvidenceMeta {
+  sourceUrl?: string | null;
+  evidence?: string | null;
+  sourceType?: string | null;
+  retrievedAt?: string | null;
+}
+
+export interface DraftTriStateField extends DraftEvidenceMeta {
   value: 'yes' | 'no' | 'unknown';
   confidence: DraftConfidence;
   reason?: string | null;
@@ -24,15 +33,11 @@ export interface VenueEnrichmentDraftJson {
     parking: DraftTriStateField;
     cafe: DraftTriStateField;
   };
-  pushchairSuitability: {
+  pushchairSuitability: DraftTriStateField & {
     value: 'excellent' | 'good' | 'mixed' | 'difficult' | 'unknown';
-    confidence: DraftConfidence;
-    reason?: string | null;
   };
-  terrain: {
+  terrain: DraftTriStateField & {
     value: 'flat' | 'mostly_flat' | 'mixed' | 'hilly' | 'very_hilly' | 'unknown';
-    confidence: DraftConfidence;
-    reason?: string | null;
   };
   accessibility: Record<string, DraftTriStateField>;
   sendInfo: Record<string, DraftTriStateField>;
@@ -41,6 +46,48 @@ export interface VenueEnrichmentDraftJson {
   suggestedVisitDuration: number | null;
   rainyDaySuitability: 'yes' | 'no' | 'unknown';
   overallDraftConfidence: DraftConfidence;
+}
+
+export interface EvidenceFact {
+  field: string;
+  value: string;
+  confidence: DraftConfidence;
+  evidenceText?: string | null;
+  sourceUrl?: string | null;
+  sourceType?: string | null;
+  retrievedAt?: string | null;
+}
+
+export interface EvidenceSourceSummary {
+  url: string;
+  type?: string;
+  sourceType?: string;
+  pageTitle?: string | null;
+  retrievedAt?: string;
+  fetchStatus?: string;
+  facts?: EvidenceFact[];
+}
+
+export interface EvidenceBundle {
+  venueId: string;
+  sourceStatus: 'official_website' | 'no_official_source' | string;
+  sources: EvidenceSourceSummary[];
+  facts: EvidenceFact[];
+  pagesChecked: number;
+  cacheHits: number;
+}
+
+export interface VenueSourceEvidence {
+  id: string;
+  familypilotPlaceId: string;
+  sourceUrl: string;
+  sourceType: string;
+  pageTitle?: string | null;
+  retrievedAt: string;
+  contentHash?: string;
+  extractedEvidence: EvidenceFact[];
+  fetchStatus: string;
+  error?: string | null;
 }
 
 export interface VenueEnrichmentInput {
@@ -56,6 +103,7 @@ export interface VenueEnrichmentInput {
   googlePrimaryType?: string;
   googleTypes?: string[];
   existingMetadata?: EnrichmentSavePayload | null;
+  evidenceBundle?: EvidenceBundle | null;
 }
 
 export interface VenueEnrichmentDraftResult {
@@ -63,6 +111,7 @@ export interface VenueEnrichmentDraftResult {
   model: string;
   sourceContext: Record<string, unknown>;
   confidenceJson: Record<string, DraftConfidence>;
+  evidenceStatus?: EvidenceStatus;
   tokenUsage?: { promptTokens?: number; completionTokens?: number; totalTokens?: number };
   estimatedCostUsd?: number;
 }
@@ -78,6 +127,7 @@ export interface VenueEnrichmentDraftRecord {
   generatedAt: string;
   sourceContext: Record<string, unknown>;
   confidenceJson: Record<string, DraftConfidence>;
+  evidenceStatus?: EvidenceStatus;
   status: DraftStatus;
   reviewedAt?: string;
   reviewedBy?: string;
@@ -87,17 +137,29 @@ export interface VenueEnrichmentDraftRecord {
   updatedAt: string;
 }
 
+export interface BatchDraftItemResult {
+  familypilotPlaceId: string;
+  name: string;
+  ok: boolean;
+  error?: string;
+  draftId?: string;
+  evidenceStatus?: EvidenceStatus;
+}
+
 export interface BatchDraftResult {
   processed: number;
   succeeded: number;
   failed: number;
-  results: Array<{
-    familypilotPlaceId: string;
-    name: string;
-    ok: boolean;
-    error?: string;
-    draftId?: string;
-  }>;
+  results: BatchDraftItemResult[];
   tokenUsage: { promptTokens: number; completionTokens: number; totalTokens: number };
   estimatedCostUsd: number;
+}
+
+export interface BatchDraftProgress {
+  total: number;
+  completed: number;
+  succeeded: number;
+  failed: number;
+  current?: string;
+  results: BatchDraftItemResult[];
 }

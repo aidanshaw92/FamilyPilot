@@ -165,6 +165,6 @@ describe('mock AI provider', () => {
       category: 'zoo',
     });
     expect(result.draftJson.familyFacilities.toilets.value).toBe('unknown');
-    expect(result.model).toBe('mock-enrichment-v1');
+    expect(result.model).toBe('mock-enrichment-v2');
   });
 });

@@ -70,6 +70,28 @@ async function enrichmentFetch(action: string, options: RequestInit = {}, queryP
   return response.json();
 }
 
+async function runWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>,
+  shouldContinue?: () => boolean,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let index = 0;
+
+  async function worker() {
+    while (index < items.length) {
+      if (shouldContinue && !shouldContinue()) return;
+      const current = index++;
+      results[current] = await fn(items[current]);
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, () => worker());
+  await Promise.all(workers);
+  return results;
+}
+
 export const enrichmentApi = {
   async getConfig() {
     const response = await fetch(`${getEnrichmentApiUrl()}?action=config`);
@@ -118,6 +140,7 @@ export const enrichmentApi = {
       place: Record<string, unknown> | null;
       metadata: import('@/src/types/places').VenueFamilyMetadata | null;
       draft: import('@/src/types/ai-enrichment').VenueEnrichmentDraftRecord | null;
+      evidence: import('@/src/types/ai-enrichment').VenueSourceEvidence[];
     }>;
   },
 
@@ -144,19 +167,107 @@ export const enrichmentApi = {
       draft: import('@/src/types/ai-enrichment').VenueEnrichmentDraftRecord;
       tokenUsage?: Record<string, number>;
       estimatedCostUsd?: number;
+      evidenceBundle?: import('@/src/types/ai-enrichment').EvidenceBundle;
     }>;
   },
 
-  async generateDraftBatch(params: {
-    batchSize?: number;
-    betaLat?: number;
-    betaLng?: number;
-    betaRadiusKm?: number;
-  }) {
-    return enrichmentFetch('generate-batch', {
-      method: 'POST',
-      body: JSON.stringify(params),
-    }) as Promise<import('@/src/types/ai-enrichment').BatchDraftResult>;
+  /**
+   * Client-controlled batch (Option A) — avoids Vercel 504 on long server batch.
+   * Calls generate-draft per venue with limited concurrency; each draft persists immediately.
+   */
+  async generateDraftBatch(
+    params: {
+      batchSize?: number;
+      betaLat?: number;
+      betaLng?: number;
+      betaRadiusKm?: number;
+      concurrency?: number;
+      onProgress?: (progress: import('@/src/types/ai-enrichment').BatchDraftProgress) => void;
+      shouldContinue?: () => boolean;
+    } = {},
+  ): Promise<import('@/src/types/ai-enrichment').BatchDraftResult> {
+    const batchSize = params.batchSize ?? 10;
+    const concurrency = params.concurrency ?? 2;
+
+    const { items } = await this.getQueue({
+      status: 'provider_only',
+      sort: 'priority',
+      betaLat: params.betaLat,
+      betaLng: params.betaLng,
+      betaRadiusKm: params.betaRadiusKm,
+    });
+
+    const candidates = items.slice(0, batchSize);
+    const results: import('@/src/types/ai-enrichment').BatchDraftItemResult[] = [];
+    let tokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+    let estimatedCostUsd = 0;
+    let completed = 0;
+
+    const report = () => {
+      params.onProgress?.({
+        total: candidates.length,
+        completed,
+        succeeded: results.filter((r) => r.ok).length,
+        failed: results.filter((r) => !r.ok).length,
+        results: [...results],
+      });
+    };
+
+    await runWithConcurrency(
+      candidates,
+      concurrency,
+      async (item) => {
+        if (params.shouldContinue && !params.shouldContinue()) {
+          return null;
+        }
+
+        params.onProgress?.({
+          total: candidates.length,
+          completed,
+          succeeded: results.filter((r) => r.ok).length,
+          failed: results.filter((r) => !r.ok).length,
+          current: item.name,
+          results: [...results],
+        });
+
+        try {
+          const result = await this.generateDraft(item.familypilotId);
+          tokenUsage.promptTokens += result.tokenUsage?.promptTokens ?? 0;
+          tokenUsage.completionTokens += result.tokenUsage?.completionTokens ?? 0;
+          tokenUsage.totalTokens += result.tokenUsage?.totalTokens ?? 0;
+          estimatedCostUsd += result.estimatedCostUsd ?? 0;
+          const entry = {
+            familypilotPlaceId: item.familypilotId,
+            name: item.name,
+            ok: true as const,
+            draftId: result.draft.id,
+            evidenceStatus: result.draft.evidenceStatus,
+          };
+          results.push(entry);
+        } catch (error) {
+          results.push({
+            familypilotPlaceId: item.familypilotId,
+            name: item.name,
+            ok: false,
+            error: error instanceof Error ? error.message : 'Generation failed',
+          });
+        }
+
+        completed += 1;
+        report();
+        return null;
+      },
+      params.shouldContinue,
+    );
+
+    return {
+      processed: candidates.length,
+      succeeded: results.filter((r) => r.ok).length,
+      failed: results.filter((r) => !r.ok).length,
+      results,
+      tokenUsage,
+      estimatedCostUsd,
+    };
   },
 
   async getDraft(id: string) {
