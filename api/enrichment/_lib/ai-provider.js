@@ -152,64 +152,30 @@ function generateMockDraft(input) {
   const bundle = input.evidenceBundle;
   const evidenceDraft = buildDraftFromEvidence(bundle);
 
-  const mkField = (fact) =>
-    fact
-      ? {
-          value: fact.value === 'yes' || fact.value === 'no' ? fact.value : 'unknown',
-          confidence: fact.confidence ?? 'high',
-          reason: 'Based on official source evidence.',
-          sourceUrl: fact.sourceUrl ?? null,
-          evidence: fact.evidenceText ?? null,
-          sourceType: fact.sourceType ?? null,
-          retrievedAt: fact.retrievedAt ?? null,
-          evidenceBacked: true,
-        }
-      : emptyTriStateFromEvidence();
-
-  function emptyTriStateFromEvidence() {
-    return {
-      value: 'unknown',
-      confidence: 'unknown',
-      reason: 'No explicit evidence found.',
-      sourceUrl: null,
-      evidence: null,
-      sourceType: null,
-      retrievedAt: null,
-    };
-  }
-
-  const draftJson = normaliseDraftJson({
-    recommendedAge: evidenceDraft.recommendedAge,
-    familyFacilities: {
-      toilets: evidenceDraft.familyFacilities.toilets?.value !== 'unknown'
-        ? evidenceDraft.familyFacilities.toilets
-        : mkField(bundle?.facts?.find((f) => f.field === 'toilets')),
-      babyChanging: evidenceDraft.familyFacilities.babyChanging?.value !== 'unknown'
-        ? evidenceDraft.familyFacilities.babyChanging
-        : mkField(bundle?.facts?.find((f) => f.field === 'babyChanging')),
-      parking: evidenceDraft.familyFacilities.parking?.value !== 'unknown'
-        ? evidenceDraft.familyFacilities.parking
-        : mkField(bundle?.facts?.find((f) => f.field === 'parking')),
-      cafe: evidenceDraft.familyFacilities.cafe?.value !== 'unknown'
-        ? evidenceDraft.familyFacilities.cafe
-        : mkField(bundle?.facts?.find((f) => f.field === 'cafe')),
-    },
-    pushchairSuitability:
-      evidenceDraft.pushchairSuitability?.value !== 'unknown'
-        ? evidenceDraft.pushchairSuitability
-        : mkField(bundle?.facts?.find((f) => f.field === 'pushchairSuitability')),
-    terrain: { value: 'unknown', confidence: 'unknown', reason: null, sourceUrl: null, evidence: null },
-    accessibility: evidenceDraft.accessibility ?? {},
-    sendInfo: evidenceDraft.sendInfo ?? {},
-    whyFamiliesLike: input.description ? [`${input.name} — ${input.description.slice(0, 120)}`] : [],
-    goodToKnow:
-      bundle?.sourceStatus === 'no_official_source'
-        ? ['No official evidence found — provider information only.']
-        : ['AI draft from official sources — human review required.'],
-    suggestedVisitDuration: null,
-    rainyDaySuitability: 'unknown',
-    overallDraftConfidence: evidenceDraft.overallDraftConfidence,
-  });
+  const draftJson = mergeEvidenceIntoDraft(
+    normaliseDraftJson({
+      recommendedAge: evidenceDraft.recommendedAge,
+      familyFacilities: {
+        toilets: evidenceDraft.familyFacilities.toilets,
+        babyChanging: evidenceDraft.familyFacilities.babyChanging,
+        parking: evidenceDraft.familyFacilities.parking,
+        cafe: evidenceDraft.familyFacilities.cafe,
+      },
+      pushchairSuitability: evidenceDraft.pushchairSuitability,
+      terrain: { value: 'unknown', confidence: 'unknown', reason: null, sourceUrl: null, evidence: null },
+      accessibility: evidenceDraft.accessibility ?? {},
+      sendInfo: evidenceDraft.sendInfo ?? {},
+      whyFamiliesLike: input.description ? [`${input.name} — ${input.description.slice(0, 120)}`] : [],
+      goodToKnow:
+        bundle?.sourceStatus === 'no_official_source'
+          ? ['No official evidence found — provider information only.']
+          : ['AI draft from official sources — human review required.'],
+      suggestedVisitDuration: null,
+      rainyDaySuitability: 'unknown',
+      overallDraftConfidence: evidenceDraft.overallDraftConfidence,
+    }),
+    bundle,
+  );
 
   return {
     draftJson,
