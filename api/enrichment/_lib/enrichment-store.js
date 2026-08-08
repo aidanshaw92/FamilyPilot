@@ -320,6 +320,7 @@ async function listQueue(filters = {}) {
       if (item.enrichmentStatus === 'enriched' || item.enrichmentStatus === 'verified') {
         return true;
       }
+      if (item.enrichmentStatus === 'ai_draft') return true;
       return mapGoogleCategory(item.googlePrimaryType, item.googleTypes, item.name) !== null;
     });
 
@@ -360,14 +361,16 @@ async function getStats() {
 
   const enriched = items.filter((i) => i.enrichmentStatus === 'enriched').length;
   const verified = items.filter((i) => i.enrichmentStatus === 'verified').length;
+  const aiDraft = items.filter((i) => i.enrichmentStatus === 'ai_draft').length;
   const providerOnly = items.filter((i) => i.enrichmentStatus === 'provider_only').length;
 
   return {
     discovered: items.length,
     providerOnly,
+    aiDraft,
     enriched,
     verified,
-    awaitingReview: providerOnly,
+    awaitingReview: providerOnly + aiDraft,
     byCategory,
   };
 }

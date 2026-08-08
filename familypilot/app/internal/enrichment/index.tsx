@@ -16,7 +16,8 @@ import { enrichmentApi } from '@/src/services/enrichment/enrichment-api-client';
 
 const STATUS_FILTERS = [
   { id: 'all', label: 'All' },
-  { id: 'provider_only', label: 'Needs review' },
+  { id: 'provider_only', label: 'Provider only' },
+  { id: 'ai_draft', label: 'AI draft' },
   { id: 'enriched', label: 'Enriched' },
   { id: 'verified', label: 'Verified' },
 ] as const;
@@ -29,6 +30,8 @@ export default function EnrichmentQueueScreen() {
   const [stats, setStats] = useState<EnrichmentStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [generatingBatch, setGeneratingBatch] = useState(false);
+  const [batchSummary, setBatchSummary] = useState('');
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('provider_only');
   const [sort, setSort] = useState('nearest');
@@ -76,6 +79,43 @@ export default function EnrichmentQueueScreen() {
     }
   };
 
+  const handleGenerateBatch = async () => {
+    setGeneratingBatch(true);
+    setError('');
+    setBatchSummary('');
+    try {
+      const result = await enrichmentApi.generateDraftBatch({
+        batchSize: 10,
+        betaLat: Number(betaLat),
+        betaLng: Number(betaLng),
+        betaRadiusKm: Number(betaRadius),
+      });
+      setBatchSummary(
+        `Batch: ${result.succeeded}/${result.processed} succeeded · est. $${result.estimatedCostUsd.toFixed(4)}`,
+      );
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Batch generation failed');
+    } finally {
+      setGeneratingBatch(false);
+    }
+  };
+
+  const statusBadge = (status: string) => {
+    switch (status) {
+      case 'ai_draft':
+        return 'AI draft';
+      case 'provider_only':
+        return 'Provider only';
+      case 'enriched':
+        return 'Enriched';
+      case 'verified':
+        return 'Verified';
+      default:
+        return status.replace('_', ' ');
+    }
+  };
+
   const handleExport = async () => {
     try {
       const csv = await enrichmentApi.exportCsv();
@@ -95,7 +135,7 @@ export default function EnrichmentQueueScreen() {
 
   const summary = useMemo(() => {
     if (!stats) return null;
-    return `${stats.discovered} discovered · ${stats.enriched} enriched · ${stats.verified} verified · ${stats.awaitingReview} awaiting review`;
+    return `${stats.discovered} discovered · ${stats.providerOnly} provider only · ${stats.aiDraft ?? 0} AI draft · ${stats.enriched} enriched · ${stats.verified} verified · ${stats.awaitingReview} awaiting review`;
   }, [stats]);
 
   return (
@@ -129,7 +169,17 @@ export default function EnrichmentQueueScreen() {
         <Pressable style={[styles.actionBtn, styles.secondaryBtn]} onPress={() => void load()}>
           <Text variant="bodySmall">Refresh</Text>
         </Pressable>
+        <Pressable
+          style={[styles.actionBtn, styles.secondaryBtn]}
+          onPress={() => void handleGenerateBatch()}
+          disabled={generatingBatch}
+        >
+          <Text variant="bodySmall">{generatingBatch ? 'Generating…' : 'Generate drafts (10)'}</Text>
+        </Pressable>
       </View>
+      {batchSummary ? (
+        <Text variant="caption" color={colors.text.secondary}>{batchSummary}</Text>
+      ) : null}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filters}>
         {STATUS_FILTERS.map((f) => (
@@ -162,7 +212,7 @@ export default function EnrichmentQueueScreen() {
         >
           <Text variant="heading3">{item.name}</Text>
           <Text variant="caption" color={colors.text.secondary}>
-            {item.category} · {item.enrichmentStatus.replace('_', ' ')}
+            {item.category} · {statusBadge(item.enrichmentStatus)}
           </Text>
           <Text variant="caption" color={colors.text.tertiary} numberOfLines={1}>
             {item.familypilotId} · {item.externalId}

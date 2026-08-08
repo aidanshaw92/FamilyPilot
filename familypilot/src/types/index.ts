@@ -97,7 +97,7 @@ export interface FamilyScore {
   explanation: string[];
 }
 
-export type EnrichmentStatus = 'provider_only' | 'enriched' | 'verified';
+export type EnrichmentStatus = 'provider_only' | 'ai_draft' | 'enriched' | 'verified';
 
 export interface Venue {
   id: string;

@@ -21,8 +21,11 @@ import {
   SendInfo,
   TriState,
 } from '@/src/types/enrichment';
+import { VenueEnrichmentDraftRecord } from '@/src/types/ai-enrichment';
 import { VenueFamilyMetadata } from '@/src/types/places';
 import { enrichmentApi } from '@/src/services/enrichment/enrichment-api-client';
+import { draftJsonToReviewForm, formatDraftConfidence } from '@/src/utils/ai-draft-review';
+import { getAiDraftInternalLabel } from '@/src/utils/family-match-classification';
 import { validateVerifiedRequirements } from '@/src/utils/enrichment-rules';
 
 const SOURCE_TYPES: EnrichmentSourceType[] = [
@@ -30,6 +33,7 @@ const SOURCE_TYPES: EnrichmentSourceType[] = [
   'venue_contact',
   'google_provider',
   'family_pilot_editorial',
+  'ai_assisted',
   'community_report',
   'local_authority',
   'other',
@@ -86,6 +90,9 @@ export default function EnrichmentFormScreen() {
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [venueName, setVenueName] = useState('');
+  const [enrichmentStatus, setEnrichmentStatus] = useState<string>('provider_only');
+  const [draft, setDraft] = useState<VenueEnrichmentDraftRecord | null>(null);
+  const [generating, setGenerating] = useState(false);
   const [form, setForm] = useState<EnrichmentSavePayload>(metadataToForm(null));
   const [error, setError] = useState('');
   const [verificationHint, setVerificationHint] = useState('');
@@ -94,9 +101,15 @@ export default function EnrichmentFormScreen() {
     if (!id) return;
     setLoading(true);
     try {
-      const { place, metadata } = await enrichmentApi.getVenue(id);
+      const { place, metadata, draft: pendingDraft } = await enrichmentApi.getVenue(id);
       setVenueName((place?.name as string) ?? id);
-      setForm(metadataToForm(metadata));
+      setEnrichmentStatus(metadata?.enrichmentStatus ?? 'provider_only');
+      setDraft(pendingDraft ?? null);
+      if (pendingDraft?.draftJson && (metadata?.enrichmentStatus === 'ai_draft' || !metadata)) {
+        setForm(draftJsonToReviewForm(pendingDraft.draftJson));
+      } else {
+        setForm(metadataToForm(metadata));
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Load failed');
     } finally {
@@ -151,6 +164,57 @@ export default function EnrichmentFormScreen() {
     }
   };
 
+  const generateDraft = async () => {
+    if (!id) return;
+    setGenerating(true);
+    setError('');
+    try {
+      const result = await enrichmentApi.generateDraft(id);
+      setDraft(result.draft);
+      setForm(draftJsonToReviewForm(result.draft.draftJson));
+      setEnrichmentStatus('ai_draft');
+      setDirty(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Draft generation failed');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const approveDraftAction = async () => {
+    if (!id) return;
+    setSaving(true);
+    setError('');
+    try {
+      await enrichmentApi.approveDraft(id, form);
+      setDirty(false);
+      Alert.alert('Approved', 'Draft approved — venue is now enriched');
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Approve failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const rejectDraftAction = async () => {
+    if (!id) return;
+    setSaving(true);
+    setError('');
+    try {
+      await enrichmentApi.rejectDraft(id);
+      setDraft(null);
+      setEnrichmentStatus('provider_only');
+      setForm(metadataToForm(null));
+      setDirty(false);
+      Alert.alert('Rejected', 'AI draft discarded — venue returned to provider only');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Reject failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -163,6 +227,51 @@ export default function EnrichmentFormScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text variant="heading2">{venueName}</Text>
       <Text variant="caption" color={colors.text.secondary}>{id}</Text>
+      <Text variant="caption" color={colors.text.secondary}>
+        Status: {enrichmentStatus === 'ai_draft' ? getAiDraftInternalLabel() : enrichmentStatus.replace('_', ' ')}
+      </Text>
+      {draft ? (
+        <View style={styles.draftBox}>
+          <Text variant="heading3">AI suggested — review required</Text>
+          <Text variant="caption" color={colors.text.secondary}>
+            Model: {draft.model} · Overall confidence: {formatDraftConfidence(draft.draftJson.overallDraftConfidence)}
+          </Text>
+          <DraftField
+            label="Toilets"
+            value={draft.draftJson.familyFacilities.toilets.value}
+            confidence={draft.draftJson.familyFacilities.toilets.confidence}
+            reason={draft.draftJson.familyFacilities.toilets.reason}
+          />
+          <DraftField
+            label="Baby changing"
+            value={draft.draftJson.familyFacilities.babyChanging.value}
+            confidence={draft.draftJson.familyFacilities.babyChanging.confidence}
+            reason={draft.draftJson.familyFacilities.babyChanging.reason}
+          />
+          <DraftField
+            label="Pushchair suitability"
+            value={draft.draftJson.pushchairSuitability.value}
+            confidence={draft.draftJson.pushchairSuitability.confidence}
+            reason={draft.draftJson.pushchairSuitability.reason}
+          />
+          {(draft.draftJson.whyFamiliesLike ?? []).length > 0 ? (
+            <Text variant="caption">Why families may like: {draft.draftJson.whyFamiliesLike.join(' · ')}</Text>
+          ) : null}
+          <View style={styles.row}>
+            <Pressable style={styles.primaryBtn} disabled={saving} onPress={() => void approveDraftAction()}>
+              <Text variant="body" color={colors.text.inverse}>Approve draft</Text>
+            </Pressable>
+            <Pressable style={styles.secondaryBtn} disabled={saving} onPress={() => void rejectDraftAction()}>
+              <Text variant="body">Reject draft</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+      {!draft && enrichmentStatus !== 'enriched' && enrichmentStatus !== 'verified' ? (
+        <Pressable style={styles.secondaryBtn} disabled={generating} onPress={() => void generateDraft()}>
+          <Text variant="body">{generating ? 'Generating AI draft…' : 'Generate AI draft'}</Text>
+        </Pressable>
+      ) : null}
       {dirty ? <Text variant="caption" color={colors.warning[600]}>Unsaved changes</Text> : null}
       {error ? <Text variant="caption" color={colors.error[600]}>{error}</Text> : null}
 
@@ -257,6 +366,25 @@ export default function EnrichmentFormScreen() {
   );
 }
 
+function DraftField({
+  label,
+  value,
+  confidence,
+  reason,
+}: {
+  label: string;
+  value: string;
+  confidence: string;
+  reason?: string | null;
+}) {
+  return (
+    <View style={styles.draftField}>
+      <Text variant="caption">{label}: {value} · Confidence: {formatDraftConfidence(confidence)}</Text>
+      {reason ? <Text variant="caption" color={colors.text.tertiary}>{reason}</Text> : null}
+    </View>
+  );
+}
+
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={styles.section}>
@@ -328,6 +456,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   chipActive: { borderColor: colors.primary[500], backgroundColor: colors.primary[50] },
+  draftBox: {
+    backgroundColor: colors.warning[50] ?? colors.surface,
+    padding: spacing.md,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.warning[100] ?? colors.border,
+    gap: spacing.sm,
+  },
+  draftField: { gap: 2 },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   actions: { gap: spacing.sm },
   primaryBtn: {
     backgroundColor: colors.primary[500],

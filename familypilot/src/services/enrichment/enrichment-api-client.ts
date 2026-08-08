@@ -73,7 +73,11 @@ async function enrichmentFetch(action: string, options: RequestInit = {}, queryP
 export const enrichmentApi = {
   async getConfig() {
     const response = await fetch(`${getEnrichmentApiUrl()}?action=config`);
-    return response.json() as Promise<{ authConfigured: boolean; storageMode: string }>;
+    return response.json() as Promise<{
+      authConfigured: boolean;
+      storageMode: string;
+      aiConfigured?: boolean;
+    }>;
   },
 
   async getStats() {
@@ -113,6 +117,7 @@ export const enrichmentApi = {
     return enrichmentFetch('venue', {}, { id }) as Promise<{
       place: Record<string, unknown> | null;
       metadata: import('@/src/types/places').VenueFamilyMetadata | null;
+      draft: import('@/src/types/ai-enrichment').VenueEnrichmentDraftRecord | null;
     }>;
   },
 
@@ -129,5 +134,48 @@ export const enrichmentApi = {
 
   async exportCsv() {
     return enrichmentFetch('export') as Promise<string>;
+  },
+
+  async generateDraft(id: string, regenerate = false) {
+    return enrichmentFetch('generate-draft', {
+      method: 'POST',
+      body: JSON.stringify({ id, regenerate }),
+    }) as Promise<{
+      draft: import('@/src/types/ai-enrichment').VenueEnrichmentDraftRecord;
+      tokenUsage?: Record<string, number>;
+      estimatedCostUsd?: number;
+    }>;
+  },
+
+  async generateDraftBatch(params: {
+    batchSize?: number;
+    betaLat?: number;
+    betaLng?: number;
+    betaRadiusKm?: number;
+  }) {
+    return enrichmentFetch('generate-batch', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    }) as Promise<import('@/src/types/ai-enrichment').BatchDraftResult>;
+  },
+
+  async getDraft(id: string) {
+    return enrichmentFetch('draft', {}, { id }) as Promise<{
+      draft: import('@/src/types/ai-enrichment').VenueEnrichmentDraftRecord | null;
+    }>;
+  },
+
+  async approveDraft(id: string, payload?: import('@/src/types/enrichment').EnrichmentSavePayload) {
+    return enrichmentFetch('approve-draft', {
+      method: 'POST',
+      body: JSON.stringify({ id, payload, reviewedBy: 'enrichment-editor' }),
+    }) as Promise<{ metadata: import('@/src/types/places').VenueFamilyMetadata; draftId: string }>;
+  },
+
+  async rejectDraft(id: string) {
+    return enrichmentFetch('reject-draft', {
+      method: 'POST',
+      body: JSON.stringify({ id, reviewedBy: 'enrichment-editor' }),
+    }) as Promise<{ rejected: boolean; draftId: string }>;
   },
 };

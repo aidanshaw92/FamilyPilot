@@ -6,6 +6,16 @@ import {
 } from '@/src/types/enrichment';
 import { EnrichmentStatus, VenueFamilyMetadata } from '@/src/types/places';
 
+/** Consumer-facing status — ai_draft behaves like provider_only until human approval. */
+export function toConsumerEnrichmentStatus(status?: EnrichmentStatus): EnrichmentStatus {
+  if (status === 'ai_draft') return 'provider_only';
+  return status ?? 'provider_only';
+}
+
+export function isUnreviewedEnrichmentStatus(status?: EnrichmentStatus): boolean {
+  return status === 'provider_only' || status === 'ai_draft';
+}
+
 /** Verified metadata must be re-checked within this window. */
 export const VERIFIED_FRESHNESS_DAYS = 365;
 
@@ -114,6 +124,7 @@ export function deriveEnrichmentStatusFromRecord(
   }
 
   if (metadata.enrichmentStatus === 'enriched') return 'enriched';
+  if (metadata.enrichmentStatus === 'ai_draft') return 'ai_draft';
   if (metadata.enrichmentStatus === 'provider_only') return 'provider_only';
 
   if (!hasMeaningfulEnrichmentContent(metadata)) return 'provider_only';

@@ -7,7 +7,9 @@
 
 ## Purpose
 
-Google tells FamilyPilot *what places exist*. Enrichment lets FamilyPilot answer *what it is actually like for a family* — with honest provenance and state transitions from `provider_only` → `enriched` → `verified`.
+Google tells FamilyPilot *what places exist*. Enrichment lets FamilyPilot answer *what it is actually like for a family* — with honest provenance and state transitions from `provider_only` → `ai_draft` → `enriched` → `verified`.
+
+See **[AI_VENUE_ENRICHMENT.md](./AI_VENUE_ENRICHMENT.md)** for the AI draft workflow (human review required).
 
 This is an **internal productivity tool**, not a public CMS.
 
@@ -18,6 +20,7 @@ This is an **internal productivity tool**, not a public CMS.
 | State | Meaning |
 |-------|---------|
 | `provider_only` | Provider facts only — default for live Google venues |
+| `ai_draft` | AI proposed metadata in `venue_enrichment_drafts` — **not trusted** until human approval |
 | `enriched` | FamilyPilot family metadata added; not all core fields recently verified |
 | `verified` | Core family attributes checked against reliable source within freshness window |
 

@@ -10,7 +10,7 @@ import {
 export type PlacesProviderName = 'mock' | 'google' | 'osm' | 'familypilot';
 
 /** How much FamilyPilot-specific family metadata exists for a venue. */
-export type EnrichmentStatus = 'provider_only' | 'enriched' | 'verified';
+export type EnrichmentStatus = 'provider_only' | 'ai_draft' | 'enriched' | 'verified';
 
 /** Search intent — general family Explore vs restaurant-specific queries. */
 export type PlaceSearchIntent = 'explore' | 'restaurant';

@@ -11,6 +11,14 @@ const {
   saveMetadata,
 } = require('./_lib/enrichment-store');
 const { sanitizePayload } = require('./_lib/validation');
+const { isAiConfigured } = require('./_lib/ai-provider');
+const {
+  generateDraftForVenue,
+  generateDraftBatch,
+  getPendingDraft,
+  approveDraft,
+  rejectDraft,
+} = require('./_lib/draft-store');
 
 function setCorsHeaders(res, methods) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -43,6 +51,16 @@ module.exports = async function handler(req, res) {
       return handleVenue(req, res);
     case 'export':
       return handleExport(req, res);
+    case 'generate-draft':
+      return handleGenerateDraft(req, res);
+    case 'generate-batch':
+      return handleGenerateBatch(req, res);
+    case 'draft':
+      return handleDraft(req, res);
+    case 'approve-draft':
+      return handleApproveDraft(req, res);
+    case 'reject-draft':
+      return handleRejectDraft(req, res);
     default:
       return res.status(400).json({ error: `Unknown action: ${action}` });
   }
@@ -55,6 +73,7 @@ async function handleConfig(req, res) {
   return res.status(200).json({
     authConfigured: isAuthConfigured(),
     storageMode: getStorageMode(),
+    aiConfigured: isAiConfigured(),
   });
 }
 
@@ -149,7 +168,8 @@ async function handleVenue(req, res) {
         if (place) await upsertPlaceRecord(place);
       }
       const metadata = await getMetadata(id);
-      return res.status(200).json({ place, metadata });
+      const draft = await getPendingDraft(id);
+      return res.status(200).json({ place, metadata, draft });
     } catch (error) {
       return res.status(500).json({
         error: error instanceof Error ? error.message : 'Load failed',
@@ -178,6 +198,103 @@ async function handleVenue(req, res) {
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
+}
+
+async function handleGenerateDraft(req, res) {
+  setCorsHeaders(res, 'POST');
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!verifyEnrichmentAuth(req, res)) return;
+
+  const id = req.body?.id || req.query.id;
+  if (!id) return res.status(400).json({ error: 'Missing venue id' });
+
+  try {
+    const result = await generateDraftForVenue(id, { regenerate: Boolean(req.body?.regenerate) });
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Draft generation failed',
+    });
+  }
+}
+
+async function handleGenerateBatch(req, res) {
+  setCorsHeaders(res, 'POST');
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!verifyEnrichmentAuth(req, res)) return;
+
+  try {
+    const result = await generateDraftBatch(req.body ?? {});
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Batch generation failed',
+    });
+  }
+}
+
+async function handleDraft(req, res) {
+  setCorsHeaders(res, 'GET');
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  if (!verifyEnrichmentAuth(req, res)) return;
+
+  const id = req.query.id;
+  if (!id) return res.status(400).json({ error: 'Missing id' });
+
+  try {
+    const draft = await getPendingDraft(id);
+    return res.status(200).json({ draft });
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Draft load failed',
+    });
+  }
+}
+
+async function handleApproveDraft(req, res) {
+  setCorsHeaders(res, 'POST');
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!verifyEnrichmentAuth(req, res)) return;
+
+  const id = req.body?.id || req.query.id;
+  if (!id) return res.status(400).json({ error: 'Missing venue id' });
+
+  try {
+    const payload = req.body?.payload ? sanitizePayload(req.body.payload) : {};
+    const reviewedBy = req.body?.reviewedBy || 'enrichment-admin';
+    const result = await approveDraft(id, payload, reviewedBy);
+    return res.status(200).json(result);
+  } catch (error) {
+    if (error.code === 'VALIDATION_ERROR') {
+      return res.status(400).json({
+        error: error.message,
+        missing: error.missing,
+        code: 'VALIDATION_ERROR',
+      });
+    }
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Approve failed',
+    });
+  }
+}
+
+async function handleRejectDraft(req, res) {
+  setCorsHeaders(res, 'POST');
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!verifyEnrichmentAuth(req, res)) return;
+
+  const id = req.body?.id || req.query.id;
+  if (!id) return res.status(400).json({ error: 'Missing venue id' });
+
+  try {
+    const reviewedBy = req.body?.reviewedBy || 'enrichment-admin';
+    const result = await rejectDraft(id, reviewedBy);
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Reject failed',
+    });
+  }
 }
 
 async function handleExport(req, res) {

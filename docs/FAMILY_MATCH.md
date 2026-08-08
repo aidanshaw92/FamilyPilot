@@ -61,7 +61,7 @@ All variants share: shape language, colour meaning (green = strong fit), typogra
 
 | `enrichmentStatus` | Family Match | Trust copy |
 |--------------------|--------------|------------|
-| `provider_only` | Potential match, cap 65 | Family suitability not yet reviewed |
+| `provider_only` / `ai_draft` | Potential match, cap 65 | Family suitability not yet reviewed |
 | `enriched` | Normal scoring with known fields | FamilyPilot family details available |
 | `verified` | Normal scoring (not auto-excellent) | Family details checked recently |
 
