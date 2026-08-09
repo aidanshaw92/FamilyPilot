@@ -54,7 +54,6 @@ const FIELD_PATTERNS = [
     ],
     no: [
       /no\s+parking/i,
-      /limited\s+parking/i,
       /no\s+on.?site\s+parking/i,
       /parking\s+is\s+not\s+available/i,
       /(?:do\s+not|don't|does\s+not|doesn't)\s+(?:have|offer|provide)\s+(?:any\s+)?(?:on.?site\s+)?parking/i,
@@ -193,9 +192,36 @@ function hasParkingNegation(sentence) {
   );
 }
 
+function hasLimitedParking(sentence) {
+  return /\blimited\s+(?:on.?site\s+)?parking\b|\bparking\s+(?:is\s+)?limited\b/i.test(sentence);
+}
+
+const EVIDENCE_ANCHORS = {
+  toilets: /\b(?:public\s+)?toilets?|restrooms?\b/i,
+  babyChanging: /\b(?:baby|nappy)\s+chang(?:e|ing)|changing\s+table\s+for\s+babies|parent\s+and\s+baby\s+facilit/i,
+  parking: /\bparking|car\s+park\b/i,
+  cafe: /\bcaf[eé]|coffee\s+shop|refreshments?\b/i,
+  wheelchairAccessible: /\bwheelchair|step.?free|accessible\s+to\s+all\b/i,
+  accessibleToilet: /\baccessible\s+toilet|disabled\s+toilet|changing\s+places\b/i,
+  playground: /\bplayground|play\s+area\b/i,
+  sensoryFriendlySessions: /\bsensory\s+friendly|quiet\s+session|relaxed\s+performance\b/i,
+};
+
+function extractEvidenceWindow(sentence, fieldId) {
+  const anchor = EVIDENCE_ANCHORS[fieldId];
+  const match = anchor?.exec(sentence);
+  if (!match) return sentence;
+  const start = Math.max(0, match.index - 80);
+  const end = Math.min(sentence.length, match.index + match[0].length + 320);
+  return sentence.slice(start, end).trim();
+}
+
 function matchField(sentence, patterns, fieldId) {
   if (fieldId === 'parking' && hasParkingNegation(sentence)) {
     return { value: 'no', confidence: 'high' };
+  }
+  if (fieldId === 'parking' && hasLimitedParking(sentence)) {
+    return null;
   }
   if (fieldId === 'toilets' && hasToiletNegation(sentence)) {
     return { value: 'no', confidence: 'high' };
@@ -226,7 +252,7 @@ function extractEvidenceFromText(text, sourceMeta) {
         field: pattern.field,
         value: match.value,
         confidence: match.confidence,
-        evidenceText: cleanEvidenceSnippet(sentence),
+        evidenceText: cleanEvidenceSnippet(extractEvidenceWindow(sentence, pattern.field)),
         sourceUrl: sourceMeta.url,
         sourceType: sourceMeta.sourceType,
         retrievedAt: sourceMeta.retrievedAt,
@@ -319,6 +345,8 @@ module.exports = {
   isExplicitParkingStatement,
   hasExplicitParkingAvailability,
   hasParkingNegation,
+  hasLimitedParking,
+  extractEvidenceWindow,
   hasToiletNegation,
   isExplicitBabyChangingStatement,
   FIELD_PATTERNS,
