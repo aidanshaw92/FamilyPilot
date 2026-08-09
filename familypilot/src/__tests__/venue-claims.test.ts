@@ -37,6 +37,8 @@ const SAMPLE_DRAFT = {
     sourceType: 'official_website',
   },
   terrain: { value: 'mostly_flat', confidence: 'medium', sourceType: 'official_website' },
+  environment: { value: 'outdoor', confidence: 'medium', sourceType: 'official_website' },
+  energyLevel: { value: 'high', confidence: 'medium', sourceType: 'official_website' },
   accessibility: {},
   sendInfo: {},
   whyFamiliesLike: ['Nice day out'],

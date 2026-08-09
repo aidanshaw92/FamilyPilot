@@ -39,6 +39,12 @@ export interface VenueEnrichmentDraftJson {
   terrain: DraftTriStateField & {
     value: 'flat' | 'mostly_flat' | 'mixed' | 'hilly' | 'very_hilly' | 'unknown';
   };
+  environment: DraftTriStateField & {
+    value: 'indoor' | 'outdoor' | 'mixed' | 'unknown';
+  };
+  energyLevel: DraftTriStateField & {
+    value: 'low' | 'moderate' | 'high' | 'mixed' | 'unknown';
+  };
   accessibility: Record<string, DraftTriStateField>;
   sendInfo: Record<string, DraftTriStateField>;
   whyFamiliesLike: string[];

@@ -163,6 +163,8 @@ function generateMockDraft(input) {
       },
       pushchairSuitability: evidenceDraft.pushchairSuitability,
       terrain: { value: 'unknown', confidence: 'unknown', reason: null, sourceUrl: null, evidence: null },
+      environment: { value: 'unknown', confidence: 'unknown', reason: null, sourceUrl: null, evidence: null },
+      energyLevel: { value: 'unknown', confidence: 'unknown', reason: null, sourceUrl: null, evidence: null },
       accessibility: evidenceDraft.accessibility ?? {},
       sendInfo: evidenceDraft.sendInfo ?? {},
       whyFamiliesLike: input.description ? [`${input.name} — ${input.description.slice(0, 120)}`] : [],

@@ -7,6 +7,8 @@ const CONFIDENCE_VALUES = new Set(['high', 'medium', 'low', 'unknown']);
 const TRI_STATE = new Set(['yes', 'no', 'unknown']);
 const PUSHCHAIR = new Set(['excellent', 'good', 'mixed', 'difficult', 'unknown']);
 const TERRAIN = new Set(['flat', 'mostly_flat', 'mixed', 'hilly', 'very_hilly', 'unknown']);
+const ENVIRONMENT = new Set(['indoor', 'outdoor', 'mixed', 'unknown']);
+const ENERGY_LEVEL = new Set(['low', 'moderate', 'high', 'mixed', 'unknown']);
 const RAINY = new Set(['yes', 'no', 'unknown']);
 
 function normaliseConfidence(value) {
@@ -35,9 +37,9 @@ function normaliseTriStateField(raw, fallback = {}) {
   };
 }
 
-function emptyTriStateField() {
+function emptyEnumField(defaultValue = 'unknown') {
   return {
-    value: 'unknown',
+    value: defaultValue,
     confidence: 'unknown',
     reason: null,
     sourceUrl: null,
@@ -45,6 +47,21 @@ function emptyTriStateField() {
     sourceType: null,
     retrievedAt: null,
   };
+}
+
+function normaliseEnumField(raw, allowed, fallback = 'unknown') {
+  const value = allowed.has(raw?.value) ? raw.value : fallback;
+  const evidenceMeta = normaliseEvidenceField(raw);
+  return {
+    value,
+    confidence: normaliseConfidence(raw?.confidence),
+    reason: typeof raw?.reason === 'string' ? raw.reason : null,
+    ...evidenceMeta,
+  };
+}
+
+function emptyTriStateField() {
+  return emptyEnumField('unknown');
 }
 
 function normaliseDraftJson(raw) {
@@ -86,6 +103,8 @@ function normaliseDraftJson(raw) {
       };
       return { ...base, ...normaliseEvidenceField(terrain) };
     })(),
+    environment: normaliseEnumField(raw.environment, ENVIRONMENT),
+    energyLevel: normaliseEnumField(raw.energyLevel, ENERGY_LEVEL),
     accessibility: {},
     sendInfo: {},
     whyFamiliesLike: Array.isArray(raw.whyFamiliesLike)
@@ -118,6 +137,8 @@ function extractConfidenceJson(draft) {
   }
   out.pushchairSuitability = draft.pushchairSuitability.confidence;
   out.terrain = draft.terrain.confidence;
+  out.environment = draft.environment.confidence;
+  out.energyLevel = draft.energyLevel.confidence;
   return out;
 }
 

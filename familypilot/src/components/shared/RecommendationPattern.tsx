@@ -15,6 +15,10 @@ export type RecommendationVariant = 'hero' | 'carousel' | 'list' | 'detail';
 interface RecommendationPatternProps {
   venue: Venue;
   variant?: RecommendationVariant;
+  /** When set, uses qualitative focused fit — no percentage score. */
+  focusedFitLabel?: string;
+  focusedReasons?: string[];
+  focusedUnknowns?: string[];
   showVenueName?: boolean;
   showTrust?: boolean;
   showCta?: boolean;
@@ -40,6 +44,9 @@ const CAUTION_LIMIT: Record<RecommendationVariant, number> = {
 export function RecommendationPattern({
   venue,
   variant = 'list',
+  focusedFitLabel,
+  focusedReasons,
+  focusedUnknowns,
   showVenueName = false,
   showTrust = false,
   showCta = false,
@@ -47,9 +54,17 @@ export function RecommendationPattern({
   onCta,
   style,
 }: RecommendationPatternProps) {
-  const classification = getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
-  const reasons = venue.familyScore.explanation.slice(0, REASON_LIMIT[variant]);
-  const cautions = (venue.goodToKnow ?? []).slice(0, CAUTION_LIMIT[variant]);
+  const isFocused = Boolean(focusedFitLabel);
+  const classification = isFocused
+    ? focusedFitLabel!
+    : getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
+  const reasons = isFocused
+    ? (focusedReasons ?? []).slice(0, REASON_LIMIT[variant])
+    : venue.familyScore.explanation.slice(0, REASON_LIMIT[variant]);
+  const unknownLines = isFocused ? (focusedUnknowns ?? []).slice(0, CAUTION_LIMIT[variant]) : [];
+  const cautions = isFocused
+    ? unknownLines
+    : (venue.goodToKnow ?? []).slice(0, CAUTION_LIMIT[variant]);
   const isDetail = variant === 'detail';
   const isHero = variant === 'hero';
   const showSectionLabels = isHero || isDetail;
@@ -98,7 +113,7 @@ export function RecommendationPattern({
         <View style={styles.cautionBlock}>
           {showSectionLabels ? (
             <Text variant="bodySmall" style={styles.sectionLabel}>
-              Good to know
+              {isFocused ? 'Not yet confirmed' : 'Good to know'}
             </Text>
           ) : null}
           {cautions.map((item) => (
@@ -125,9 +140,11 @@ export function RecommendationPattern({
         {venue.estimatedSpend ? ` · Estimated ${venue.estimatedSpend}` : ''}
       </Text>
 
-      <Text variant="caption" color={colors.text.tertiary} style={styles.scoreSecondary}>
-        {formatFamilyMatchSecondary(venue.familyScore.score, venue.enrichmentStatus)}
-      </Text>
+      {!isFocused ? (
+        <Text variant="caption" color={colors.text.tertiary} style={styles.scoreSecondary}>
+          {formatFamilyMatchSecondary(venue.familyScore.score, venue.enrichmentStatus)}
+        </Text>
+      ) : null}
 
       {venue.enrichmentStatus ? (
         <Text variant="caption" color={colors.text.secondary} style={styles.providerOnlyNote}>

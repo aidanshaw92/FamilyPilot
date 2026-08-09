@@ -119,6 +119,8 @@ function getEditorOverride(fieldKey, payload) {
     return payload.sendInfo?.[sub];
   }
   if (fieldKey === 'pushchairSuitability') return payload.pushchairSuitability;
+  if (fieldKey === 'environment') return payload.environment;
+  if (fieldKey === 'energyLevel') return payload.energyLevel;
   if (fieldKey === 'extendedTerrain') {
     return payload.extendedTerrain ?? payload.terrain;
   }
@@ -339,6 +341,8 @@ async function syncClaimsFromEditorSave(familypilotPlaceId, payload, reviewedBy)
   }
 
   await addScalar('pushchairSuitability', payload.pushchairSuitability);
+  await addScalar('environment', payload.environment);
+  await addScalar('energyLevel', payload.energyLevel);
   await addScalar('extendedTerrain', payload.extendedTerrain ?? payload.terrain);
   await addScalar('minRecommendedAge', payload.minRecommendedAge);
   await addScalar('maxRecommendedAge', payload.maxRecommendedAge);
@@ -421,6 +425,14 @@ function setNestedValue(target, fieldKey, value) {
   }
   if (fieldKey === 'pushchairSuitability') {
     target.pushchairSuitability = value;
+    return;
+  }
+  if (fieldKey === 'environment') {
+    target.environment = value;
+    return;
+  }
+  if (fieldKey === 'energyLevel') {
+    target.energyLevel = value;
   }
 }
 
@@ -526,6 +538,8 @@ function metadataRowFromPayload(familypilotPlaceId, payload, existing) {
     why_families_like: payload.whyFamiliesLike ?? [],
     estimated_spend: payload.estimatedSpend ?? null,
     pushchair_suitability: payload.pushchairSuitability ?? null,
+    environment: payload.environment ?? null,
+    energy_level: payload.energyLevel ?? null,
     accessibility: payload.accessibility ?? {},
     send_info: payload.sendInfo ?? {},
     family_notes: payload.familyNotes ?? null,

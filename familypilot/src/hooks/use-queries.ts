@@ -74,6 +74,16 @@ export function useHomeRecommendations() {
   return useQuery({
     queryKey: ['recommendations', 'home', profileRevision],
     queryFn: recommendationService.getHomeRecommendations,
+    enabled: false,
+  });
+}
+
+export function useFocusedRecommendations(request: import('@/src/types/day-request').DayRequest | null) {
+  const profileRevision = useProfileRevision();
+  return useQuery({
+    queryKey: ['recommendations', 'focused', profileRevision, request?.rawText, request?.parsedAt],
+    queryFn: () => recommendationService.getFocusedRecommendations(request!),
+    enabled: Boolean(request),
   });
 }
 

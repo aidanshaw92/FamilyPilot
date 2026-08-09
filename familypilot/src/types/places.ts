@@ -109,6 +109,8 @@ export interface VenueFamilyMetadata {
   sendNotes?: string;
   familyNotes?: string;
   categoryConfirmed?: import('@/src/types/enrichment').TriState;
+  environment?: import('@/src/types/enrichment').VenueEnvironment;
+  energyLevel?: import('@/src/types/enrichment').VenueEnergyLevel;
   enrichmentProvenance?: import('@/src/types/enrichment').EnrichmentProvenance;
   lastChecked?: string;
   checkedBy?: string;

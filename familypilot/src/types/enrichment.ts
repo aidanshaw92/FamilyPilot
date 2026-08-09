@@ -23,6 +23,12 @@ export type ExtendedTerrain =
   | 'very_hilly'
   | 'unknown';
 
+/** Trusted venue setting — approved via claims projection, never category-inferred. */
+export type VenueEnvironment = 'indoor' | 'outdoor' | 'mixed' | 'unknown';
+
+/** Trusted activity intensity — approved via claims projection, never category-inferred. */
+export type VenueEnergyLevel = 'low' | 'moderate' | 'high' | 'mixed' | 'unknown';
+
 export interface EnrichmentProvenance {
   sourceType: EnrichmentSourceType;
   sourceReference?: string;
@@ -126,6 +132,8 @@ export interface EnrichmentSavePayload {
   parkingInfo?: string;
   estimatedSpend?: string;
   visitDurationMinutes?: number | null;
+  environment?: VenueEnvironment;
+  energyLevel?: VenueEnergyLevel;
   categoryConfirmed?: TriState;
   enrichmentProvenance?: EnrichmentProvenance;
   lastChecked?: string;
