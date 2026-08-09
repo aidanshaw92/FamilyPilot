@@ -96,4 +96,4 @@ function draftJsonToSavePayload(draft, options) {
   };
 }
 
-module.exports = { draftJsonToSavePayload };
+module.exports = { draftJsonToSavePayload, collectFieldEvidence };

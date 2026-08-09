@@ -133,3 +133,24 @@ export interface EnrichmentSavePayload {
   betaPriority?: boolean;
   requestedStatus?: 'enriched' | 'verified';
 }
+
+/** Trusted field-level fact — only active claims project into venue_family_metadata. */
+export type VenueClaimStatus = 'active' | 'disputed' | 'expired' | 'superseded';
+
+export interface VenueClaim {
+  id: string;
+  familypilotPlaceId: string;
+  fieldKey: string;
+  valueJson: string | number | boolean | null;
+  confidence?: 'high' | 'medium' | 'low' | 'unknown';
+  sourceUrl?: string | null;
+  evidenceExcerpt?: string | null;
+  sourceType?: string | null;
+  checkedAt: string;
+  validUntil?: string | null;
+  approvedAt: string;
+  approvedBy: string;
+  approvedFromDraftId?: string | null;
+  status: VenueClaimStatus;
+  supersedesClaimId?: string | null;
+}

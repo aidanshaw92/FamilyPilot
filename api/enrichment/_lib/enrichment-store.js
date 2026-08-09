@@ -9,6 +9,11 @@ const {
   mapExtendedTerrain,
   resolveEnrichmentStatus,
 } = require('./validation');
+const {
+  rebuildMetadataPayloadFromClaims,
+  syncClaimsFromEditorSave,
+  venueHasActiveClaims,
+} = require('./claims-store');
 
 const FILE_STORE_DIR = '.data';
 const FILE_STORE_NAME = 'enrichment-store.json';
@@ -257,8 +262,22 @@ async function getMetadata(familypilotId) {
   return rowToMetadata(store.metadata[familypilotId]);
 }
 
-async function saveMetadata(familypilotId, payload) {
+async function saveMetadata(familypilotId, payload, options = {}) {
   const existing = await getMetadata(familypilotId);
+  const reviewedBy = payload.checkedBy || 'enrichment-admin';
+
+  if (options.fromClaims) {
+    const projected = await rebuildMetadataPayloadFromClaims(familypilotId, payload);
+    if (projected) payload = projected;
+  } else if (options.syncClaims) {
+    await syncClaimsFromEditorSave(familypilotId, payload, reviewedBy);
+    const projected = await rebuildMetadataPayloadFromClaims(familypilotId, payload);
+    if (projected) payload = projected;
+  } else if (await venueHasActiveClaims(familypilotId)) {
+    const projected = await rebuildMetadataPayloadFromClaims(familypilotId, payload);
+    if (projected) payload = projected;
+  }
+
   const status = resolveEnrichmentStatus(payload, existing);
   const row = metadataToRow(familypilotId, payload, status);
 
