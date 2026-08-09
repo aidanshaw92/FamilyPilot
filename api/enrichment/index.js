@@ -195,7 +195,7 @@ async function handleVenue(req, res) {
     if (!verifyEnrichmentAuth(req, res)) return;
     try {
       const payload = sanitizePayload(req.body);
-      const metadata = await saveMetadata(id, payload);
+      const metadata = await saveMetadata(id, payload, { syncClaims: true });
       return res.status(200).json({ metadata, saved: true });
     } catch (error) {
       if (error.code === 'VALIDATION_ERROR') {

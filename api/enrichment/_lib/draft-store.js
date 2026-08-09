@@ -4,6 +4,7 @@ const path = require('path');
 const { getSupabaseAdmin } = require('./supabase-admin');
 const { generateDraft } = require('./ai-provider');
 const { draftJsonToSavePayload } = require('./ai-draft-mapper');
+const { createClaimsFromApproval } = require('./claims-store');
 const { getMetadata, saveMetadata, listQueue } = require('./enrichment-store');
 const { gatherEvidenceForVenue } = require('./evidence-pipeline');
 
@@ -442,7 +443,17 @@ async function approveDraft(familypilotId, payload, reviewedBy) {
     },
   };
 
-  const metadata = await saveMetadata(familypilotId, savePayload);
+  const checkedAt = savePayload.lastChecked || new Date().toISOString().slice(0, 10);
+  await createClaimsFromApproval({
+    familypilotPlaceId: familypilotId,
+    draftJson: draft.draftJson,
+    editorPayload: savePayload,
+    reviewedBy: reviewedBy ?? 'enrichment-admin',
+    draftId: draft.id,
+    checkedAt,
+  });
+
+  const metadata = await saveMetadata(familypilotId, savePayload, { fromClaims: true });
   await updateDraftStatus(draft.id, 'approved', reviewedBy);
   return { metadata, draftId: draft.id };
 }
