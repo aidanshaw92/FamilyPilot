@@ -390,6 +390,68 @@ describe('focused recommendation QA regressions', () => {
     expect(facts.find((f) => f.field === 'parking')?.value).toBe('no');
   });
 
+  it('Verulamium Park — closed public toilets must not yield toilets=yes', async () => {
+    const { hasToiletNegation } = await import('../../../api/enrichment/_lib/evidence-extractor.js');
+    const sentence =
+      'The café is near the now closed public toilets at the far end of the park.';
+    expect(hasToiletNegation(sentence)).toBe(true);
+
+    const facts = extractEvidenceFromText(sentence, {
+      ...sourceMeta,
+      url: 'https://www.stalbans.gov.uk/parks/verulamium-park',
+      sourceType: 'official_website',
+    });
+    expect(facts.find((f) => f.field === 'toilets')?.value).toBe('no');
+  });
+
+  it('Golders Hill Park — address and public transport must not yield parking=yes', async () => {
+    const { hasExplicitParkingAvailability } = await import('../../../api/enrichment/_lib/evidence-extractor.js');
+    const sentence =
+      'Golders Hill Park is located on North End Way. Public transport links are excellent with buses serving the area.';
+    expect(hasExplicitParkingAvailability(sentence)).toBe(false);
+
+    const facts = extractEvidenceFromText(sentence, {
+      ...sourceMeta,
+      url: 'https://www.cityoflondon.gov.uk/things-to-do/green-spaces/hampstead-heath/golders-hill-park',
+      sourceType: 'official_website',
+    });
+    expect(facts.find((f) => f.field === 'parking')).toBeUndefined();
+  });
+
+  it('Golders Hill Park — parking located nearby must not yield parking=yes', async () => {
+    const sentence = 'Parking is located at the Spaniards Inn nearby.';
+    const facts = extractEvidenceFromText(sentence, {
+      ...sourceMeta,
+      url: 'https://www.cityoflondon.gov.uk/things-to-do/green-spaces/hampstead-heath/golders-hill-park',
+      sourceType: 'official_website',
+    });
+    expect(facts.find((f) => f.field === 'parking')).toBeUndefined();
+  });
+
+  it('Warner Bros — generic changing facilities must not yield babyChanging=yes', async () => {
+    const { isExplicitBabyChangingStatement } = await import('../../../api/enrichment/_lib/evidence-extractor.js');
+    const sentence =
+      'We offer a cloakroom, changing facilities and accessibility support throughout the tour.';
+    expect(isExplicitBabyChangingStatement(sentence)).toBe(false);
+
+    const facts = extractEvidenceFromText(sentence, {
+      ...sourceMeta,
+      url: 'https://www.wbstudiotour.co.uk/plan-your-visit/accessibility',
+      sourceType: 'accessibility_page',
+    });
+    expect(facts.find((f) => f.field === 'babyChanging')).toBeUndefined();
+  });
+
+  it('Warner Bros — explicit baby changing still yields babyChanging=yes', async () => {
+    const sentence = 'Baby changing facilities are available in the family restrooms near the entrance.';
+    const facts = extractEvidenceFromText(sentence, {
+      ...sourceMeta,
+      url: 'https://www.wbstudiotour.co.uk/plan-your-visit/accessibility',
+      sourceType: 'accessibility_page',
+    });
+    expect(facts.find((f) => f.field === 'babyChanging')?.value).toBe('yes');
+  });
+
   it('RAF — indoors and outdoors wording yields environment=mixed', async () => {
     const { extractEnvironmentEvidence } = await import('../../../api/enrichment/_lib/environment-evidence.js');
     const fact = extractEnvironmentEvidence(

@@ -14,6 +14,17 @@ const ENERGY_LEVEL = new Set(['low', 'moderate', 'high', 'mixed', 'unknown']);
 const RAINY = new Set(['yes', 'no', 'unknown']);
 const CONFIDENCE = new Set(['high', 'medium', 'low', 'unknown']);
 
+/** Keys of a DraftTriStateField — must not become review row labels. */
+const FIELD_META_KEYS = new Set([
+  'value',
+  'confidence',
+  'reason',
+  'sourceUrl',
+  'evidence',
+  'sourceType',
+  'retrievedAt',
+]);
+
 function asObject(raw: unknown): Record<string, unknown> {
   return raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
 }
@@ -99,9 +110,17 @@ function normalizeTerrainField(raw: unknown): VenueEnrichmentDraftJson['terrain'
 }
 
 function normalizeRecordFields(raw: unknown): Record<string, DraftTriStateField> {
+  const input = asObject(raw);
+  const keys = Object.keys(input);
+
+  // Legacy drafts sometimes store a single field object at the record root.
+  if (keys.length > 0 && keys.every((key) => FIELD_META_KEYS.has(key))) {
+    return { unspecified: normalizeTriStateField(input) };
+  }
+
   const out: Record<string, DraftTriStateField> = {};
-  for (const [key, val] of Object.entries(asObject(raw))) {
-    if (typeof key !== 'string') continue;
+  for (const [key, val] of Object.entries(input)) {
+    if (FIELD_META_KEYS.has(key)) continue;
     out[key] = normalizeTriStateField(val);
   }
   return out;
