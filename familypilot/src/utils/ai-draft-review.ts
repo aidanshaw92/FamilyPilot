@@ -1,4 +1,4 @@
-import { VenueEnrichmentDraftJson } from '@/src/types/ai-enrichment';
+import { DraftTriStateField, VenueEnrichmentDraftJson } from '@/src/types/ai-enrichment';
 import {
   EnrichmentSavePayload,
   PushchairSuitability,
@@ -25,35 +25,44 @@ function energyOrUnknown(value?: string): VenueEnergyLevel {
   return 'unknown';
 }
 
+/** Ensure legacy/partial AI draft JSON has all review fields before UI render. */
+export function normalizeDraftForReview(raw: unknown): VenueEnrichmentDraftJson {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { normaliseDraftJson } = require('../../../api/enrichment/_lib/ai-draft-schema.js') as {
+    normaliseDraftJson: (input: unknown) => VenueEnrichmentDraftJson;
+  };
+  return normaliseDraftJson(raw ?? {});
+}
+
 /** Pre-fill editor form from AI draft JSON for human review. */
-export function draftJsonToReviewForm(draft: VenueEnrichmentDraftJson): EnrichmentSavePayload {
+export function draftJsonToReviewForm(raw: VenueEnrichmentDraftJson | unknown): EnrichmentSavePayload {
+  const draft = normalizeDraftForReview(raw);
   const age = draft.recommendedAge;
+  const facilities = draft.familyFacilities;
   return {
     minRecommendedAge: age.min,
     maxRecommendedAge: age.max,
     ageNotes: age.notes ?? undefined,
     familyFacilities: {
-      toilets: triState(draft.familyFacilities.toilets.value),
-      babyChanging: triState(draft.familyFacilities.babyChanging.value),
-      parking: triState(draft.familyFacilities.parking.value),
-      cafe: triState(draft.familyFacilities.cafe.value),
+      toilets: triState(facilities.toilets?.value),
+      babyChanging: triState(facilities.babyChanging?.value),
+      parking: triState(facilities.parking?.value),
+      cafe: triState(facilities.cafe?.value),
     },
-    pushchairSuitability: draft.pushchairSuitability.value as PushchairSuitability,
-    extendedTerrain: draft.terrain.value,
+    pushchairSuitability: (draft.pushchairSuitability?.value ?? 'unknown') as PushchairSuitability,
+    extendedTerrain: draft.terrain?.value ?? 'unknown',
     environment: environmentOrUnknown(draft.environment?.value),
     energyLevel: energyOrUnknown(draft.energyLevel?.value),
     visitDurationMinutes: draft.suggestedVisitDuration,
     accessibility: Object.fromEntries(
-      Object.entries(draft.accessibility ?? {}).map(([key, field]) => [
-        key,
-        triState(field.value),
-      ]),
+      Object.entries(draft.accessibility ?? {})
+        .filter((entry): entry is [string, DraftTriStateField] => Boolean(entry[1]))
+        .map(([key, field]) => [key, triState(field.value)]),
     ),
     sendInfo: Object.fromEntries(
-      Object.entries(draft.sendInfo ?? {}).map(([key, field]) => [
-        key,
-        triState(field.value),
-      ]),
+      Object.entries(draft.sendInfo ?? {})
+        .filter((entry): entry is [string, DraftTriStateField] => Boolean(entry[1]))
+        .map(([key, field]) => [key, triState(field.value)]),
     ),
     whyFamiliesLike: draft.whyFamiliesLike ?? [],
     goodToKnow: draft.goodToKnow ?? [],
