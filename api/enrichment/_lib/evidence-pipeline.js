@@ -85,6 +85,7 @@ async function fetchAndExtractPage(familypilotPlaceId, page) {
     url: fetched.url,
     sourceType: page.sourceType,
     retrievedAt: fetched.retrievedAt,
+    pageTitle: fetched.pageTitle ?? null,
   });
 
   await saveEvidenceRecord({

@@ -1,5 +1,6 @@
 const { cleanEvidenceSnippet } = require('./evidence-text-utils');
 const { extractPushchairEvidence } = require('./pushchair-evidence');
+const { extractEnvironmentEvidence } = require('./environment-evidence');
 
 const FIELD_PATTERNS = [
   {
@@ -42,7 +43,13 @@ const FIELD_PATTERNS = [
       /parking\s+(is\s+)?located/i,
       /(?:cars|vehicles|minibuses|coaches)\s+(?:are\s+)?welcome\s+to\s+use\s+(?:our\s+)?(?:large\s+)?(?:free\s+)?car\s+park/i,
     ],
-    no: [/no\s+parking/i, /limited\s+parking/i],
+    no: [
+      /no\s+parking/i,
+      /limited\s+parking/i,
+      /no\s+on.?site\s+parking/i,
+      /parking\s+is\s+not\s+available/i,
+      /(?:do\s+not|don't|does\s+not|doesn't)\s+(?:have|offer|provide)\s+(?:any\s+)?(?:on.?site\s+)?parking/i,
+    ],
   },
   {
     field: 'cafe',
@@ -108,12 +115,28 @@ function isExplicitParkingStatement(sentence) {
   return true;
 }
 
+/** Explicit negation must win over substring matches like "on-site parking" in "do not have on-site parking". */
+function hasParkingNegation(sentence) {
+  return (
+    /\b(?:do\s+not|don't|does\s+not|doesn't)\s+(?:have|offer|provide)\b[^.!?]{0,40}\b(?:any\s+)?(?:on.?site\s+)?parking\b/i.test(
+      sentence,
+    ) ||
+    /\bno\s+on.?site\s+parking\b/i.test(sentence) ||
+    /\bparking\s+is\s+not\s+available\b/i.test(sentence) ||
+    /\b(?:without|lack\s+of)\s+on.?site\s+parking\b/i.test(sentence)
+  );
+}
+
 function matchField(sentence, patterns, fieldId) {
+  if (fieldId === 'parking' && hasParkingNegation(sentence)) {
+    return { value: 'no', confidence: 'high' };
+  }
   for (const re of patterns.no) {
     if (re.test(sentence)) return { value: 'no', confidence: 'high' };
   }
   for (const re of patterns.yes) {
     if (!re.test(sentence)) continue;
+    if (fieldId === 'parking' && hasParkingNegation(sentence)) continue;
     if (fieldId === 'parking' && !isExplicitParkingStatement(sentence)) continue;
     return { value: 'yes', confidence: 'high' };
   }
@@ -146,6 +169,11 @@ function extractEvidenceFromText(text, sourceMeta) {
     facts.push(pushchairFact);
   }
 
+  const environmentFact = extractEnvironmentEvidence(text, sourceMeta);
+  if (environmentFact) {
+    facts.push(environmentFact);
+  }
+
   return facts;
 }
 
@@ -163,11 +191,17 @@ function mergeEvidenceBundles(sources) {
 }
 
 const PUSHCHAIR_RANK = { excellent: 4, good: 3, mixed: 2, difficult: 1, unknown: 0 };
+const ENVIRONMENT_RANK = { mixed: 3, indoor: 2, outdoor: 2, unknown: 0 };
 
 function rankPushchairOrConfidence(fact, existing) {
   if (fact.field === 'pushchairSuitability') {
     const factRank = PUSHCHAIR_RANK[fact.value] ?? 0;
     const existingRank = PUSHCHAIR_RANK[existing.value] ?? 0;
+    if (factRank !== existingRank) return factRank - existingRank;
+  }
+  if (fact.field === 'environment') {
+    const factRank = ENVIRONMENT_RANK[fact.value] ?? 0;
+    const existingRank = ENVIRONMENT_RANK[existing.value] ?? 0;
     if (factRank !== existingRank) return factRank - existingRank;
   }
   return rankConfidence(fact.confidence) - rankConfidence(existing.confidence);
@@ -212,6 +246,7 @@ module.exports = {
   mergeEvidenceBundles,
   buildEvidenceBundle,
   isExplicitParkingStatement,
+  hasParkingNegation,
   FIELD_PATTERNS,
   cleanEvidenceSnippet,
 };

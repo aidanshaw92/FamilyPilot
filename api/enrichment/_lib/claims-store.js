@@ -128,7 +128,40 @@ function getEditorOverride(fieldKey, payload) {
   if (fieldKey === 'maxRecommendedAge') return payload.maxRecommendedAge;
   if (fieldKey === 'ageNotes') return payload.ageNotes;
   if (fieldKey === 'categoryConfirmed') return payload.categoryConfirmed;
+  if (fieldKey === 'visitDurationMinutes') return payload.visitDurationMinutes;
+  if (fieldKey === 'estimatedSpend') return payload.estimatedSpend;
   return undefined;
+}
+
+/** Fields the editor form exposes — only these may become trusted claims on draft approval. */
+function collectReviewedFieldKeys(editorPayload) {
+  const fieldKeys = new Set();
+  if (!editorPayload) return fieldKeys;
+
+  if (editorPayload.minRecommendedAge != null) fieldKeys.add('minRecommendedAge');
+  if (editorPayload.maxRecommendedAge != null) fieldKeys.add('maxRecommendedAge');
+  if (editorPayload.ageNotes) fieldKeys.add('ageNotes');
+  if (editorPayload.categoryConfirmed) fieldKeys.add('categoryConfirmed');
+  if (editorPayload.pushchairSuitability !== undefined) fieldKeys.add('pushchairSuitability');
+  if (editorPayload.environment !== undefined) fieldKeys.add('environment');
+  if (editorPayload.energyLevel !== undefined) fieldKeys.add('energyLevel');
+  if (editorPayload.extendedTerrain !== undefined || editorPayload.terrain !== undefined) {
+    fieldKeys.add('extendedTerrain');
+  }
+  if (editorPayload.visitDurationMinutes !== undefined) fieldKeys.add('visitDurationMinutes');
+  if (editorPayload.estimatedSpend !== undefined) fieldKeys.add('estimatedSpend');
+
+  for (const [key] of Object.entries(editorPayload.familyFacilities ?? {})) {
+    fieldKeys.add(`familyFacilities.${key}`);
+  }
+  for (const [key] of Object.entries(editorPayload.accessibility ?? {})) {
+    fieldKeys.add(`accessibility.${key}`);
+  }
+  for (const [key] of Object.entries(editorPayload.sendInfo ?? {})) {
+    fieldKeys.add(`sendInfo.${key}`);
+  }
+
+  return fieldKeys;
 }
 
 function buildClaimRecord({
@@ -265,22 +298,7 @@ async function createClaimsFromApproval({
   checkedAt,
 }) {
   const fieldEvidence = collectFieldEvidence(draftJson);
-  const fieldKeys = new Set(Object.keys(fieldEvidence));
-
-  if (editorPayload?.minRecommendedAge != null) fieldKeys.add('minRecommendedAge');
-  if (editorPayload?.maxRecommendedAge != null) fieldKeys.add('maxRecommendedAge');
-  if (editorPayload?.ageNotes) fieldKeys.add('ageNotes');
-  if (editorPayload?.categoryConfirmed) fieldKeys.add('categoryConfirmed');
-
-  for (const [key] of Object.entries(editorPayload?.familyFacilities ?? {})) {
-    fieldKeys.add(`familyFacilities.${key}`);
-  }
-  for (const [key] of Object.entries(editorPayload?.accessibility ?? {})) {
-    fieldKeys.add(`accessibility.${key}`);
-  }
-  for (const [key] of Object.entries(editorPayload?.sendInfo ?? {})) {
-    fieldKeys.add(`sendInfo.${key}`);
-  }
+  const fieldKeys = collectReviewedFieldKeys(editorPayload);
 
   const created = [];
   for (const fieldKey of fieldKeys) {

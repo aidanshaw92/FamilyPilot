@@ -1,8 +1,27 @@
 import { VenueEnrichmentDraftJson } from '@/src/types/ai-enrichment';
-import { EnrichmentSavePayload } from '@/src/types/enrichment';
+import {
+  EnrichmentSavePayload,
+  PushchairSuitability,
+  VenueEnergyLevel,
+  VenueEnvironment,
+} from '@/src/types/enrichment';
 
 function triState(value?: 'yes' | 'no' | 'unknown') {
   if (value === 'yes' || value === 'no' || value === 'unknown') return value;
+  return 'unknown';
+}
+
+function environmentOrUnknown(value?: string): VenueEnvironment {
+  if (value === 'indoor' || value === 'outdoor' || value === 'mixed' || value === 'unknown') {
+    return value;
+  }
+  return 'unknown';
+}
+
+function energyOrUnknown(value?: string): VenueEnergyLevel {
+  if (value === 'low' || value === 'moderate' || value === 'high' || value === 'mixed' || value === 'unknown') {
+    return value;
+  }
   return 'unknown';
 }
 
@@ -19,9 +38,23 @@ export function draftJsonToReviewForm(draft: VenueEnrichmentDraftJson): Enrichme
       parking: triState(draft.familyFacilities.parking.value),
       cafe: triState(draft.familyFacilities.cafe.value),
     },
-    pushchairSuitability: draft.pushchairSuitability.value,
+    pushchairSuitability: draft.pushchairSuitability.value as PushchairSuitability,
     extendedTerrain: draft.terrain.value,
+    environment: environmentOrUnknown(draft.environment?.value),
+    energyLevel: energyOrUnknown(draft.energyLevel?.value),
     visitDurationMinutes: draft.suggestedVisitDuration,
+    accessibility: Object.fromEntries(
+      Object.entries(draft.accessibility ?? {}).map(([key, field]) => [
+        key,
+        triState(field.value),
+      ]),
+    ),
+    sendInfo: Object.fromEntries(
+      Object.entries(draft.sendInfo ?? {}).map(([key, field]) => [
+        key,
+        triState(field.value),
+      ]),
+    ),
     whyFamiliesLike: draft.whyFamiliesLike ?? [],
     goodToKnow: draft.goodToKnow ?? [],
     lastChecked: new Date().toISOString().slice(0, 10),

@@ -124,6 +124,21 @@ function classifyPushchairSuitability(combinedText) {
     return { value: 'good', confidence: 'medium' };
   }
 
+  const ACCESS_ROUTE_PATTERNS = [
+    /\bwide\s+aisles\b[^.!?]{0,50}\b(wheelchair(s)?|pushchair(s)?|buggy|buggies|pram(s)?)\b/i,
+    /\b(wheelchair(s)?|pushchair(s)?|buggy|buggies|pram(s)?)\b[^.!?]{0,50}\bwide\s+aisles\b/i,
+    /\b(wheelchair(s)?|pushchair(s)?)\b[^.!?]{0,50}\b(step.?free|lifts?\s+to)\b/i,
+    /\b(step.?free)\b[^.!?]{0,50}\b(wheelchair(s)?|pushchair(s)?)\b/i,
+  ];
+
+  if (
+    hasPushchairSpecificTerm(combinedText) &&
+    ACCESS_ROUTE_PATTERNS.some((re) => re.test(combinedText)) &&
+    !hasDifficult
+  ) {
+    return { value: 'good', confidence: 'high' };
+  }
+
   if (hasPushchairSpecificTerm(combinedText) && TERRAIN_TERMS.test(combinedText) && caveatCount >= 2) {
     return { value: 'mixed', confidence: 'medium' };
   }

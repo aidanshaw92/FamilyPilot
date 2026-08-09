@@ -41,6 +41,14 @@ const SOURCE_TYPES: EnrichmentSourceType[] = [
   'other',
 ];
 
+const ACCESSIBILITY_DRAFT_LABELS: Record<string, string> = {
+  stepFreeEntrance: 'Step-free entrance',
+  wheelchairAccessible: 'Wheelchair accessible',
+  accessibleToilet: 'Accessible toilet',
+  changingPlaces: 'Changing Places',
+  accessibleParking: 'Accessible parking',
+};
+
 function metadataToForm(meta: VenueFamilyMetadata | null): EnrichmentSavePayload {
   if (!meta) {
     return {
@@ -303,6 +311,30 @@ export default function EnrichmentFormScreen() {
             label="Pushchair suitability"
             field={draft.draftJson.pushchairSuitability}
           />
+          <DraftField
+            label="Environment"
+            field={draft.draftJson.environment}
+          />
+          <DraftField
+            label="Energy level"
+            field={draft.draftJson.energyLevel}
+          />
+          {draft.draftJson.suggestedVisitDuration != null ? (
+            <Text variant="caption">
+              Visit duration: {draft.draftJson.suggestedVisitDuration} minutes (suggested)
+            </Text>
+          ) : (
+            <Text variant="caption" color={colors.text.secondary}>
+              Visit duration: unknown
+            </Text>
+          )}
+          {Object.entries(draft.draftJson.accessibility ?? {}).map(([key, field]) => (
+            <DraftField
+              key={key}
+              label={ACCESSIBILITY_DRAFT_LABELS[key] ?? key.replace(/([A-Z])/g, ' $1')}
+              field={field}
+            />
+          ))}
           {(draft.draftJson.whyFamiliesLike ?? []).length > 0 ? (
             <Text variant="caption">Why families may like: {draft.draftJson.whyFamiliesLike.join(' · ')}</Text>
           ) : null}
@@ -323,6 +355,27 @@ export default function EnrichmentFormScreen() {
       ) : null}
       {dirty ? <Text variant="caption" color={colors.warning[600]}>Unsaved changes</Text> : null}
       {error ? <Text variant="caption" color={colors.error[600]}>{error}</Text> : null}
+
+      <Section title="Focused recommendations">
+        <Field
+          label="Environment"
+          value={form.environment ?? 'unknown'}
+          onChange={(v) => patch({ environment: v as EnrichmentSavePayload['environment'] })}
+          placeholder="indoor/outdoor/mixed/unknown"
+        />
+        <Field
+          label="Energy level"
+          value={form.energyLevel ?? 'unknown'}
+          onChange={(v) => patch({ energyLevel: v as EnrichmentSavePayload['energyLevel'] })}
+          placeholder="low/moderate/high/mixed/unknown"
+        />
+        <Field
+          label="Visit duration (minutes)"
+          value={String(form.visitDurationMinutes ?? '')}
+          onChange={(v) => patch({ visitDurationMinutes: v ? Number(v) : null })}
+          keyboardType="number-pad"
+        />
+      </Section>
 
       <Section title="Core suitability">
         <Field label="Min age" value={String(form.minRecommendedAge ?? '')} onChange={(v) => patch({ minRecommendedAge: v ? Number(v) : null })} keyboardType="number-pad" />
