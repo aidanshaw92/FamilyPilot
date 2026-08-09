@@ -366,6 +366,8 @@ async function syncClaimsFromEditorSave(familypilotPlaceId, payload, reviewedBy)
   await addScalar('maxRecommendedAge', payload.maxRecommendedAge);
   await addScalar('ageNotes', payload.ageNotes);
   await addScalar('categoryConfirmed', payload.categoryConfirmed);
+  await addScalar('visitDurationMinutes', payload.visitDurationMinutes);
+  await addScalar('estimatedSpend', payload.estimatedSpend);
 
   return created;
 }
@@ -451,6 +453,14 @@ function setNestedValue(target, fieldKey, value) {
   }
   if (fieldKey === 'energyLevel') {
     target.energyLevel = value;
+    return;
+  }
+  if (fieldKey === 'visitDurationMinutes') {
+    target.visitDurationMinutes = value;
+    return;
+  }
+  if (fieldKey === 'estimatedSpend') {
+    target.estimatedSpend = value;
   }
 }
 
