@@ -384,3 +384,36 @@ describe('approveDraft integration with claims', () => {
     expect(claims.some((c) => c.fieldKey === 'pushchairSuitability')).toBe(false);
   });
 });
+
+
+describe('editorial claim projection', () => {
+  beforeEach(() => {
+    clearClaimsFile();
+  });
+
+  afterEach(() => {
+    clearClaimsFile();
+  });
+
+  it('projects reviewed visit duration and estimated spend from active claims', async () => {
+    const { createClaimsFromApproval, rebuildMetadataPayloadFromClaims } = await import(
+      '../../../api/enrichment/_lib/claims-store.js'
+    );
+
+    await createClaimsFromApproval({
+      familypilotPlaceId: 'fp-editorial-projection',
+      draftJson: SAMPLE_DRAFT,
+      editorPayload: {
+        visitDurationMinutes: 120,
+        estimatedSpend: '££',
+      },
+      reviewedBy: 'editor@test',
+      draftId: 'draft-editorial',
+      checkedAt: '2026-08-09',
+    });
+
+    const payload = await rebuildMetadataPayloadFromClaims('fp-editorial-projection');
+    expect(payload?.visitDurationMinutes).toBe(120);
+    expect(payload?.estimatedSpend).toBe('££');
+  });
+});

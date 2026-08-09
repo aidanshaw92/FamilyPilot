@@ -24,7 +24,30 @@ CRITICAL RULES:
 - Distinguish FACT (from evidence) from EDITORIAL (suggestions). Do not convert editorial into facility facts.
 - Never claim verified status.
 
-Field schema includes: value, confidence, reason, sourceUrl, evidence, sourceType, retrievedAt`;
+Field schema includes: value, confidence, reason, sourceUrl, evidence, sourceType, retrievedAt
+
+Always return every key in this exact JSON shape:
+{
+  "recommendedAge": { "min": null, "max": null, "notes": null, "confidence": "unknown" },
+  "familyFacilities": {
+    "toilets": { "value": "unknown", "confidence": "unknown" },
+    "babyChanging": { "value": "unknown", "confidence": "unknown" },
+    "parking": { "value": "unknown", "confidence": "unknown" },
+    "cafe": { "value": "unknown", "confidence": "unknown" }
+  },
+  "pushchairSuitability": { "value": "unknown", "confidence": "unknown" },
+  "terrain": { "value": "unknown", "confidence": "unknown" },
+  "environment": { "value": "unknown", "confidence": "unknown" },
+  "energyLevel": { "value": "unknown", "confidence": "unknown" },
+  "accessibility": {},
+  "sendInfo": {},
+  "whyFamiliesLike": [],
+  "goodToKnow": [],
+  "suggestedVisitDuration": null,
+  "rainyDaySuitability": "unknown",
+  "overallDraftConfidence": "unknown"
+}
+Age fit and suggested visit duration are editorial suggestions, not official facts. Populate them only when the available context supports a cautious recommendation; otherwise leave them null. Never present them as verified.
 
 function compactEvidenceBundle(bundle) {
   if (!bundle) return null;
