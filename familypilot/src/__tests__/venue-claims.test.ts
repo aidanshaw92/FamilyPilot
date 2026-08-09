@@ -48,6 +48,28 @@ const SAMPLE_DRAFT = {
   overallDraftConfidence: 'medium',
 };
 
+/** Simulates the internal review form the editor sees before approving a draft. */
+function reviewFormFromDraft(draft: typeof SAMPLE_DRAFT) {
+  return {
+    minRecommendedAge: draft.recommendedAge.min,
+    maxRecommendedAge: draft.recommendedAge.max,
+    ageNotes: draft.recommendedAge.notes,
+    familyFacilities: {
+      toilets: draft.familyFacilities.toilets.value,
+      babyChanging: draft.familyFacilities.babyChanging.value,
+      parking: draft.familyFacilities.parking.value,
+      cafe: draft.familyFacilities.cafe.value,
+    },
+    pushchairSuitability: draft.pushchairSuitability.value,
+    environment: draft.environment.value,
+    energyLevel: draft.energyLevel.value,
+    visitDurationMinutes: draft.suggestedVisitDuration,
+    extendedTerrain: draft.terrain.value,
+    accessibility: {},
+    sendInfo: {},
+  };
+}
+
 describe('venue claims trust layer', () => {
   beforeEach(() => {
     clearClaimsFile();
@@ -66,7 +88,7 @@ describe('venue claims trust layer', () => {
     await createClaimsFromApproval({
       familypilotPlaceId: 'fp-google-test-1',
       draftJson: SAMPLE_DRAFT,
-      editorPayload: {},
+      editorPayload: reviewFormFromDraft(SAMPLE_DRAFT),
       reviewedBy: 'editor@test',
       draftId: 'draft-123',
       checkedAt: '2026-08-09',
@@ -91,7 +113,7 @@ describe('venue claims trust layer', () => {
     await createClaimsFromApproval({
       familypilotPlaceId: 'fp-google-test-2',
       draftJson: SAMPLE_DRAFT,
-      editorPayload: {},
+      editorPayload: reviewFormFromDraft(SAMPLE_DRAFT),
       reviewedBy: 'editor@test',
       draftId: 'draft-a',
       checkedAt: '2026-08-09',
@@ -112,7 +134,13 @@ describe('venue claims trust layer', () => {
           },
         },
       },
-      editorPayload: {},
+      editorPayload: {
+        ...reviewFormFromDraft(SAMPLE_DRAFT),
+        familyFacilities: {
+          ...reviewFormFromDraft(SAMPLE_DRAFT).familyFacilities,
+          parking: 'no',
+        },
+      },
       reviewedBy: 'editor@test',
       draftId: 'draft-b',
       checkedAt: '2026-08-10',
@@ -143,7 +171,7 @@ describe('venue claims trust layer', () => {
     await createClaimsFromApproval({
       familypilotPlaceId: 'fp-google-test-3',
       draftJson: SAMPLE_DRAFT,
-      editorPayload: {},
+      editorPayload: reviewFormFromDraft(SAMPLE_DRAFT),
       reviewedBy: 'editor@test',
       draftId: 'draft-c',
       checkedAt: '2026-08-09',
@@ -174,7 +202,7 @@ describe('venue claims trust layer', () => {
     await createClaimsFromApproval({
       familypilotPlaceId: 'fp-google-test-4',
       draftJson: SAMPLE_DRAFT,
-      editorPayload: {},
+      editorPayload: reviewFormFromDraft(SAMPLE_DRAFT),
       reviewedBy: 'editor@test',
       draftId: 'draft-d',
       checkedAt: '2026-08-09',
@@ -200,7 +228,7 @@ describe('venue claims trust layer', () => {
     await createClaimsFromApproval({
       familypilotPlaceId: 'fp-google-test-5',
       draftJson: SAMPLE_DRAFT,
-      editorPayload: {},
+      editorPayload: reviewFormFromDraft(SAMPLE_DRAFT),
       reviewedBy: 'editor@test',
       draftId: 'draft-e',
       checkedAt: '2026-08-09',
@@ -307,7 +335,26 @@ describe('approveDraft integration with claims', () => {
     const { getActiveClaims } = await import('../../../api/enrichment/_lib/claims-store.js');
     const { getMetadata } = await import('../../../api/enrichment/_lib/enrichment-store.js');
 
-    const result = await approveDraft('fp-google-approve-test', {}, 'editor@test');
+    const editorPayload = {
+      minRecommendedAge: 2,
+      maxRecommendedAge: 10,
+      ageNotes: 'All ages welcome',
+      familyFacilities: {
+        toilets: 'yes',
+        babyChanging: 'unknown',
+        parking: 'yes',
+        cafe: 'no',
+      },
+      pushchairSuitability: 'good',
+      environment: 'outdoor',
+      energyLevel: 'high',
+      visitDurationMinutes: 120,
+      extendedTerrain: 'mostly_flat',
+      accessibility: {},
+      sendInfo: {},
+    };
+
+    const result = await approveDraft('fp-google-approve-test', editorPayload, 'editor@test');
     expect(result.draftId).toBe('draft-approve-1');
 
     const claims = await getActiveClaims('fp-google-approve-test');
@@ -316,5 +363,24 @@ describe('approveDraft integration with claims', () => {
     const metadata = await getMetadata('fp-google-approve-test');
     expect(metadata?.familyFacilities?.parking).toBe('yes');
     expect(metadata?.enrichmentStatus).toBe('enriched');
+  });
+
+  it('approveDraft does not create claims for fields absent from editor review form', async () => {
+    const { approveDraft } = await import('../../../api/enrichment/_lib/draft-store.js');
+    const { getActiveClaims } = await import('../../../api/enrichment/_lib/claims-store.js');
+
+    const partialReview = {
+      familyFacilities: { parking: 'yes' as const },
+      environment: 'unknown' as const,
+      energyLevel: 'unknown' as const,
+      accessibility: {},
+    };
+
+    await approveDraft('fp-google-approve-test', partialReview, 'editor@test');
+
+    const claims = await getActiveClaims('fp-google-approve-test');
+    expect(claims.some((c) => c.fieldKey === 'familyFacilities.parking')).toBe(true);
+    expect(claims.some((c) => c.fieldKey === 'familyFacilities.toilets')).toBe(false);
+    expect(claims.some((c) => c.fieldKey === 'pushchairSuitability')).toBe(false);
   });
 });

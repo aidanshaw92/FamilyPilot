@@ -447,7 +447,7 @@ async function approveDraft(familypilotId, payload, reviewedBy) {
   await createClaimsFromApproval({
     familypilotPlaceId: familypilotId,
     draftJson: draft.draftJson,
-    editorPayload: savePayload,
+    editorPayload: payload ?? {},
     reviewedBy: reviewedBy ?? 'enrichment-admin',
     draftId: draft.id,
     checkedAt,

@@ -163,7 +163,7 @@ function generateMockDraft(input) {
       },
       pushchairSuitability: evidenceDraft.pushchairSuitability,
       terrain: { value: 'unknown', confidence: 'unknown', reason: null, sourceUrl: null, evidence: null },
-      environment: { value: 'unknown', confidence: 'unknown', reason: null, sourceUrl: null, evidence: null },
+      environment: evidenceDraft.environment,
       energyLevel: { value: 'unknown', confidence: 'unknown', reason: null, sourceUrl: null, evidence: null },
       accessibility: evidenceDraft.accessibility ?? {},
       sendInfo: evidenceDraft.sendInfo ?? {},

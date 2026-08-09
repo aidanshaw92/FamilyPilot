@@ -7,6 +7,7 @@ const { normaliseDraftJson, emptyTriStateField, extractConfidenceJson } = requir
 const { cleanEvidenceSnippet } = require('./evidence-text-utils');
 
 const PUSHCHAIR_VALUES = new Set(['excellent', 'good', 'mixed', 'difficult']);
+const ENVIRONMENT_VALUES = new Set(['indoor', 'outdoor', 'mixed']);
 
 /** Legacy cache rows may omit confidence — treat extracted yes/no as high when missing. */
 function normalizeAuthoritativeFact(fact) {
@@ -16,6 +17,10 @@ function normalizeAuthoritativeFact(fact) {
   }
 
   if (fact.field === 'pushchairSuitability' && PUSHCHAIR_VALUES.has(fact.value)) {
+    return { ...fact, confidence: 'high' };
+  }
+
+  if (fact.field === 'environment' && ENVIRONMENT_VALUES.has(fact.value)) {
     return { ...fact, confidence: 'high' };
   }
 
@@ -49,6 +54,7 @@ const EVIDENCE_FIELD_MAP = {
   wheelchairAccessible: { section: 'accessibility', key: 'wheelchairAccessible', kind: 'triState' },
   accessibleToilet: { section: 'accessibility', key: 'accessibleToilet', kind: 'triState' },
   pushchairSuitability: { section: 'pushchairSuitability', key: null, kind: 'pushchair' },
+  environment: { section: 'environment', key: null, kind: 'environment' },
   sensoryFriendlySessions: { section: 'sendInfo', key: 'sensoryFriendlySessions', kind: 'triState' },
 };
 
@@ -83,9 +89,27 @@ function factToPushchairField(fact) {
   };
 }
 
+function factToEnvironmentField(fact) {
+  const value = ENVIRONMENT_VALUES.has(fact.value) ? fact.value : 'unknown';
+  return {
+    value,
+    confidence: fact.confidence ?? 'high',
+    reason: 'Supported by official source evidence.',
+    sourceUrl: fact.sourceUrl ?? null,
+    evidence: cleanEvidenceSnippet(fact.evidenceText) ?? fact.evidenceText ?? null,
+    sourceType: fact.sourceType ?? null,
+    retrievedAt: fact.retrievedAt ?? null,
+    evidenceBacked: true,
+  };
+}
+
 function setDraftField(draft, mapping, fieldValue) {
   if (mapping.kind === 'pushchair') {
     draft.pushchairSuitability = fieldValue;
+    return;
+  }
+  if (mapping.kind === 'environment') {
+    draft.environment = fieldValue;
     return;
   }
   if (mapping.section === 'familyFacilities') {
@@ -116,6 +140,9 @@ function isAuthoritativeFact(fact) {
   if (normalized.field === 'pushchairSuitability') {
     return PUSHCHAIR_VALUES.has(normalized.value);
   }
+  if (normalized.field === 'environment') {
+    return ENVIRONMENT_VALUES.has(normalized.value);
+  }
   return normalized.value === 'yes' || normalized.value === 'no';
 }
 
@@ -145,7 +172,11 @@ function buildDraftFromEvidence(bundle) {
     const mapping = EVIDENCE_FIELD_MAP[fact.field];
     if (!mapping) continue;
     const fieldValue =
-      mapping.kind === 'pushchair' ? factToPushchairField(fact) : factToTriStateField(fact);
+      mapping.kind === 'pushchair'
+        ? factToPushchairField(fact)
+        : mapping.kind === 'environment'
+          ? factToEnvironmentField(fact)
+          : factToTriStateField(fact);
     setDraftField(draft, mapping, fieldValue);
   }
 
@@ -174,7 +205,11 @@ function mergeEvidenceIntoDraft(draftJson, bundle) {
     if (!mapping) continue;
 
     const evidenceField =
-      mapping.kind === 'pushchair' ? factToPushchairField(fact) : factToTriStateField(fact);
+      mapping.kind === 'pushchair'
+        ? factToPushchairField(fact)
+        : mapping.kind === 'environment'
+          ? factToEnvironmentField(fact)
+          : factToTriStateField(fact);
 
     // Authoritative official-source facts always win over AI output.
     setDraftField(draft, mapping, evidenceField);
@@ -184,18 +219,32 @@ function mergeEvidenceIntoDraft(draftJson, bundle) {
   for (const [fieldId, mapping] of Object.entries(EVIDENCE_FIELD_MAP)) {
     if (authoritativeFields.has(fieldId)) continue;
 
-    if (mapping.kind === 'pushchair') {
-      const current = draft.pushchairSuitability;
+    if (mapping.kind === 'pushchair' || mapping.kind === 'environment') {
+      const current =
+        mapping.kind === 'pushchair' ? draft.pushchairSuitability : draft.environment;
       if (current?.value !== 'unknown' && !current?.evidenceBacked) {
-        draft.pushchairSuitability = {
-          value: 'unknown',
-          confidence: 'unknown',
-          reason: 'No explicit official evidence found.',
-          sourceUrl: null,
-          evidence: null,
-          sourceType: null,
-          retrievedAt: null,
-        };
+        const empty = emptyTriStateField();
+        if (mapping.kind === 'pushchair') {
+          draft.pushchairSuitability = {
+            value: 'unknown',
+            confidence: 'unknown',
+            reason: 'No explicit official evidence found.',
+            sourceUrl: null,
+            evidence: null,
+            sourceType: null,
+            retrievedAt: null,
+          };
+        } else {
+          draft.environment = {
+            value: 'unknown',
+            confidence: 'unknown',
+            reason: 'No explicit official evidence found.',
+            sourceUrl: null,
+            evidence: null,
+            sourceType: null,
+            retrievedAt: null,
+          };
+        }
       }
       continue;
     }

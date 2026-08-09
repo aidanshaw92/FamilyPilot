@@ -369,6 +369,142 @@ describe('Headstone Manor regression (mock evidence)', () => {
   });
 });
 
+describe('focused recommendation QA regressions', () => {
+  const sourceMeta = {
+    url: 'https://example.org/visit',
+    sourceType: 'official_website',
+    retrievedAt: '2026-08-09T12:00:00.000Z',
+  };
+
+  it('Flip Out — parking negation yields parking=no not yes', async () => {
+    const { hasParkingNegation } = await import('../../../api/enrichment/_lib/evidence-extractor.js');
+    const faqSentence =
+      'We do not have on-site parking, however, there is a small retail park opposite - charges apply.';
+    expect(hasParkingNegation(faqSentence)).toBe(true);
+
+    const facts = extractEvidenceFromText(faqSentence, {
+      ...sourceMeta,
+      url: 'https://www.flipout.co.uk/locations/brent-cross/frequently-asked-questions',
+      sourceType: 'faq_page',
+    });
+    expect(facts.find((f) => f.field === 'parking')?.value).toBe('no');
+  });
+
+  it('RAF — indoors and outdoors wording yields environment=mixed', async () => {
+    const { extractEnvironmentEvidence } = await import('../../../api/enrichment/_lib/environment-evidence.js');
+    const fact = extractEnvironmentEvidence(
+      'Whatever the weather, see their faces light up as they explore stories indoors and play outdoors at RAF Museum London this summer.',
+      sourceMeta,
+    );
+    expect(fact?.value).toBe('mixed');
+    expect(fact?.confidence).toBe('high');
+  });
+
+  it('Flip Out — indoor from official page title yields environment=indoor', async () => {
+    const { extractEnvironmentEvidence } = await import('../../../api/enrichment/_lib/environment-evidence.js');
+    const fact = extractEnvironmentEvidence('Explore attractions and book a session.', {
+      ...sourceMeta,
+      url: 'https://www.flipout.co.uk/locations/brent-cross',
+      pageTitle: "North London's Ultimate Indoor Trampoline & Adventure Park!",
+    });
+    expect(fact?.value).toBe('indoor');
+  });
+
+  it('RAF — wheelchairs and pushchairs with wide aisles yields pushchair=good', async () => {
+    const { extractPushchairEvidence } = await import('../../../api/enrichment/_lib/pushchair-evidence.js');
+    const text =
+      'Wide aisles, enabling access for wheelchairs and pushchairs. Lifts to upper levels. We have step free access around our site.';
+    const fact = extractPushchairEvidence(text, {
+      ...sourceMeta,
+      url: 'https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/',
+      sourceType: 'accessibility_page',
+    });
+    expect(fact?.value).toBe('good');
+    expect(fact?.confidence).toBe('high');
+  });
+
+  it('snippet cleanup removes navigation/header labels from evidence excerpts', async () => {
+    const { cleanEvidenceSnippet, stripNavFragmentPrefixes } = await import(
+      '../../../api/enrichment/_lib/evidence-text-utils.js'
+    );
+    const noisy =
+      'All parking information Toilet Facilities All our hangars have accessible toilets.';
+    expect(stripNavFragmentPrefixes(noisy)).toBe('All our hangars have accessible toilets.');
+    expect(cleanEvidenceSnippet(noisy)).toBe('All our hangars have accessible toilets.');
+  });
+
+  it('draftJsonToReviewForm prefills environment, energyLevel, accessibility, and visit duration', async () => {
+    const { draftJsonToReviewForm } = await import('@/src/utils/ai-draft-review');
+    const form = draftJsonToReviewForm({
+      recommendedAge: { min: null, max: null, notes: null, confidence: 'unknown' },
+      familyFacilities: {
+        toilets: { value: 'yes', confidence: 'high', reason: null },
+        babyChanging: { value: 'unknown', confidence: 'unknown', reason: null },
+        parking: { value: 'no', confidence: 'high', reason: null },
+        cafe: { value: 'unknown', confidence: 'unknown', reason: null },
+      },
+      pushchairSuitability: { value: 'good', confidence: 'high', reason: null },
+      terrain: { value: 'unknown', confidence: 'unknown', reason: null },
+      environment: {
+        value: 'mixed',
+        confidence: 'high',
+        reason: null,
+        evidence: 'explore indoors and play outdoors',
+      },
+      energyLevel: { value: 'unknown', confidence: 'unknown', reason: null },
+      accessibility: {
+        wheelchairAccessible: { value: 'yes', confidence: 'high', reason: null },
+      },
+      sendInfo: {},
+      whyFamiliesLike: [],
+      goodToKnow: [],
+      suggestedVisitDuration: 90,
+      rainyDaySuitability: 'unknown',
+      overallDraftConfidence: 'medium',
+    });
+    expect(form.environment).toBe('mixed');
+    expect(form.energyLevel).toBe('unknown');
+    expect(form.visitDurationMinutes).toBe(90);
+    expect(form.accessibility?.wheelchairAccessible).toBe('yes');
+    expect(form.familyFacilities?.parking).toBe('no');
+  });
+
+  it('environment evidence merges into draft JSON', async () => {
+    const { mergeEvidenceIntoDraft } = await import('../../../api/enrichment/_lib/evidence-draft-merge.js');
+    const bundle = buildEvidenceBundle(
+      'fp-test',
+      [
+        {
+          url: 'https://www.rafmuseum.org.uk/london/',
+          sourceType: 'official_website',
+          retrievedAt: '2026-08-09T12:00:00.000Z',
+          fetchStatus: 'ok',
+          facts: extractEvidenceFromText(
+            'Whatever the weather, explore stories indoors and play outdoors at the museum.',
+            sourceMeta,
+          ),
+        },
+      ],
+      'official_website',
+    );
+    const { normaliseDraftJson } = await import('../../../api/enrichment/_lib/ai-draft-schema.js');
+    const draft = mergeEvidenceIntoDraft(
+      normaliseDraftJson({
+        recommendedAge: { min: null, max: null, notes: null, confidence: 'unknown' },
+        familyFacilities: {},
+        pushchairSuitability: {},
+        terrain: {},
+        environment: { value: 'unknown', confidence: 'unknown', reason: null },
+        energyLevel: { value: 'unknown', confidence: 'unknown', reason: null },
+        overallDraftConfidence: 'unknown',
+      }),
+      bundle,
+    );
+    expect(draft.environment.value).toBe('mixed');
+    expect(draft.environment.evidenceBacked).toBe(true);
+  });
+});
+
 describe('draft schema evidence fields', () => {
   it('preserves sourceUrl and evidence on normalised fields', async () => {
     const { normaliseDraftJson } = await import('../../../api/enrichment/_lib/ai-draft-schema.js');
