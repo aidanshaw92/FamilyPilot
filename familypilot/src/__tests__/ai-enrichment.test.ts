@@ -35,6 +35,8 @@ const SAMPLE_DRAFT: VenueEnrichmentDraftJson = {
   },
   pushchairSuitability: { value: 'unknown', confidence: 'unknown', reason: null },
   terrain: { value: 'unknown', confidence: 'unknown', reason: null },
+  environment: { value: 'unknown', confidence: 'unknown', reason: null },
+  energyLevel: { value: 'unknown', confidence: 'unknown', reason: null },
   accessibility: {},
   sendInfo: {},
   whyFamiliesLike: ['May suit families visiting the area.'],

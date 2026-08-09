@@ -25,6 +25,8 @@ function collectFieldEvidence(draft) {
   }
   add('pushchairSuitability', draft.pushchairSuitability);
   add('terrain', draft.terrain);
+  add('environment', draft.environment);
+  add('energyLevel', draft.energyLevel);
   for (const [key, field] of Object.entries(draft.accessibility ?? {})) {
     add(`accessibility.${key}`, field);
   }
@@ -49,6 +51,8 @@ function draftJsonToSavePayload(draft, options) {
     },
     pushchairSuitability: draft.pushchairSuitability?.value ?? 'unknown',
     extendedTerrain: draft.terrain?.value ?? 'unknown',
+    environment: draft.environment?.value ?? 'unknown',
+    energyLevel: draft.energyLevel?.value ?? 'unknown',
     visitDurationMinutes: draft.suggestedVisitDuration ?? null,
     whyFamiliesLike: draft.whyFamiliesLike ?? [],
     goodToKnow: draft.goodToKnow ?? [],

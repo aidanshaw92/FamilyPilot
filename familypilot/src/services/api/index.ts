@@ -26,6 +26,9 @@ import {
 } from '@/src/types';
 import { withCompletion } from '@/src/utils/profile-defaults';
 import { buildHomeRecommendations, personaliseVenue, personaliseVenues } from '@/src/utils/personalise-venues';
+import { getFocusedRecommendations } from '@/src/services/recommendation/focused-recommendations';
+import { parseDayRequest, parseDayRequestMock } from '@/src/services/recommendation/parse-day-request-client';
+import { DayRequest } from '@/src/types/day-request';
 import { filterRestaurants } from '@/src/utils/filter-restaurants';
 import { ExploreBudgetFilter } from '@/src/stores/filters-store';
 import { getAllRestaurants, getRestaurantById, getRestaurantsNearVenue } from '@/src/services/eat-nearby';
@@ -78,6 +81,20 @@ export const recommendationService = {
   async getHomeRecommendations(): Promise<RecommendationSection[]> {
     await delay(400);
     return buildHomeRecommendations(getProfile());
+  },
+
+  async parseDayRequest(rawText: string): Promise<DayRequest> {
+    const profile = getProfile();
+    try {
+      return await parseDayRequest(rawText, profile);
+    } catch {
+      return parseDayRequestMock(rawText, profile);
+    }
+  },
+
+  async getFocusedRecommendations(request: DayRequest) {
+    await delay(200);
+    return getFocusedRecommendations(getProfile(), request);
   },
 
   async getRecentVenues(): Promise<Venue[]> {

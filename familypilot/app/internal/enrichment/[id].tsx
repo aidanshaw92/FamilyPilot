@@ -74,6 +74,8 @@ function metadataToForm(meta: VenueFamilyMetadata | null): EnrichmentSavePayload
     parkingInfo: meta.parkingInfo,
     estimatedSpend: meta.estimatedSpend,
     visitDurationMinutes: meta.visitDurationMinutes,
+    environment: meta.environment,
+    energyLevel: meta.energyLevel,
     categoryConfirmed: meta.categoryConfirmed,
     enrichmentProvenance: meta.enrichmentProvenance ?? {
       sourceType: 'family_pilot_editorial',

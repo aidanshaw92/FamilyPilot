@@ -30,6 +30,8 @@ export function draftJsonToSavePayload(
     },
     pushchairSuitability: draft.pushchairSuitability.value,
     extendedTerrain: draft.terrain.value,
+    environment: draft.environment.value,
+    energyLevel: draft.energyLevel.value,
     visitDurationMinutes: draft.suggestedVisitDuration,
     whyFamiliesLike: draft.whyFamiliesLike ?? [],
     goodToKnow: draft.goodToKnow ?? [],
@@ -86,6 +88,8 @@ function collectFieldEvidence(draft: VenueEnrichmentDraftJson) {
   }
   add('pushchairSuitability', draft.pushchairSuitability);
   add('terrain', draft.terrain);
+  add('environment', draft.environment);
+  add('energyLevel', draft.energyLevel);
   for (const [key, field] of Object.entries(draft.accessibility ?? {})) {
     add(`accessibility.${key}`, field);
   }
