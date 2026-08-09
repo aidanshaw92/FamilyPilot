@@ -674,3 +674,41 @@ describe('client batch concurrency helper', () => {
     enrichmentApi.generateDraft = originalGenerate;
   });
 });
+
+
+describe('live venue evidence quality regressions', () => {
+  const meta = {
+    url: 'https://example.org/visit',
+    sourceType: 'visitor_info',
+    retrievedAt: '2026-08-09T12:00:00.000Z',
+  };
+
+  it('keeps limited parking unknown rather than treating it as unavailable', () => {
+    const facts = extractEvidenceFromText('There is limited parking near to the zoo.', meta);
+    expect(facts.find((fact) => fact.field === 'parking')).toBeUndefined();
+  });
+
+  it('centres evidence on the matched wording inside long flattened pages', () => {
+    const text =
+      'unrelated navigation '.repeat(80) +
+      'visitor centre which includes a cafe, public toilets, classrooms and a fishing office';
+    const facts = extractEvidenceFromText(text, meta);
+    const toilets = facts.find((fact) => fact.field === 'toilets');
+    expect(toilets?.value).toBe('yes');
+    expect(toilets?.evidenceText).toContain('public toilets');
+    expect(toilets?.evidenceText.length).toBeLessThan(450);
+    expect(toilets?.evidenceText).not.toContain('unrelated navigation unrelated navigation unrelated navigation unrelated navigation');
+  });
+
+  it('centres baby-changing evidence instead of returning trailing page CSS', () => {
+    const text =
+      '.block { color: red; } '.repeat(80) +
+      'Baby changing facilities are located within the accessible toilet on the Village Green. ' +
+      '.footer { display: grid; } '.repeat(80);
+    const facts = extractEvidenceFromText(text, meta);
+    const babyChanging = facts.find((fact) => fact.field === 'babyChanging');
+    expect(babyChanging?.value).toBe('yes');
+    expect(babyChanging?.evidenceText).toContain('Baby changing facilities');
+    expect(babyChanging?.evidenceText).not.toContain('display: grid');
+  });
+});
