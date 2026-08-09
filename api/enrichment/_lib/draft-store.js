@@ -4,6 +4,7 @@ const path = require('path');
 const { getSupabaseAdmin } = require('./supabase-admin');
 const { generateDraft } = require('./ai-provider');
 const { draftJsonToSavePayload } = require('./ai-draft-mapper');
+const { normaliseDraftJson } = require('./ai-draft-schema');
 const { createClaimsFromApproval } = require('./claims-store');
 const { getMetadata, saveMetadata, listQueue } = require('./enrichment-store');
 const { gatherEvidenceForVenue } = require('./evidence-pipeline');
@@ -46,11 +47,17 @@ function resolveDraftEvidenceStatus(row) {
 
 function rowToDraft(row) {
   if (!row) return null;
+  let draftJson = row.draft_json;
+  try {
+    draftJson = normaliseDraftJson(row.draft_json);
+  } catch {
+    draftJson = row.draft_json;
+  }
   return {
     id: row.id,
     familypilotPlaceId: row.familypilot_place_id,
     externalId: row.external_id,
-    draftJson: row.draft_json,
+    draftJson,
     model: row.model,
     generatedAt: row.generated_at,
     sourceContext: row.source_context ?? {},

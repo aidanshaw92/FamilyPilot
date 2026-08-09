@@ -191,7 +191,7 @@ export default function VenueScreen() {
             <Text variant="heading3" style={styles.sectionTitle}>
               Facilities
             </Text>
-            <FacilityGrid facilities={venue.facilities} />
+            <FacilityGrid facilities={venue.facilities ?? []} />
 
             <View style={styles.detailsGrid}>
               <DetailItem

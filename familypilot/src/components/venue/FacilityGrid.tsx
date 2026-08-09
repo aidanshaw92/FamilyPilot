@@ -26,13 +26,23 @@ const FACILITY_CONFIG: Record<
 };
 
 interface FacilityGridProps {
-  facilities: FacilityType[];
+  facilities?: FacilityType[];
 }
 
 export function FacilityGrid({ facilities }: FacilityGridProps) {
+  const list = facilities ?? [];
+
+  if (list.length === 0) {
+    return (
+      <Text variant="caption" color={colors.text.secondary}>
+        Not confirmed — family facilities not yet reviewed
+      </Text>
+    );
+  }
+
   return (
     <View style={styles.grid}>
-      {facilities.map((facility) => {
+      {list.map((facility) => {
         const config = FACILITY_CONFIG[facility];
         return (
           <View key={facility} style={styles.item}>

@@ -24,7 +24,7 @@ import {
 import { VenueEnrichmentDraftRecord, EvidenceBundle } from '@/src/types/ai-enrichment';
 import { VenueFamilyMetadata } from '@/src/types/places';
 import { enrichmentApi } from '@/src/services/enrichment/enrichment-api-client';
-import { draftJsonToReviewForm, formatDraftConfidence } from '@/src/utils/ai-draft-review';
+import { draftJsonToReviewForm, formatDraftConfidence, normalizeDraftForReview } from '@/src/utils/ai-draft-review';
 import { cleanEvidenceSnippet } from '@/src/utils/evidence-text-utils';
 import { getAiDraftInternalLabel } from '@/src/utils/family-match-classification';
 import { validateVerifiedRequirements } from '@/src/utils/enrichment-rules';
@@ -118,7 +118,7 @@ export default function EnrichmentFormScreen() {
       const { place, metadata, draft: pendingDraft } = await enrichmentApi.getVenue(id);
       setVenueName((place?.name as string) ?? id);
       setEnrichmentStatus(metadata?.enrichmentStatus ?? 'provider_only');
-      setDraft(pendingDraft ?? null);
+      setDraft(pendingDraft ? { ...pendingDraft, draftJson: normalizeDraftForReview(pendingDraft.draftJson) } : null);
       const bundle = pendingDraft?.sourceContext?.evidenceBundle as EvidenceBundle | undefined;
       setEvidenceBundle(bundle ?? null);
       if (pendingDraft?.draftJson && (metadata?.enrichmentStatus === 'ai_draft' || !metadata)) {
@@ -186,7 +186,7 @@ export default function EnrichmentFormScreen() {
     setError('');
     try {
       const result = await enrichmentApi.generateDraft(id);
-      setDraft(result.draft);
+      setDraft({ ...result.draft, draftJson: normalizeDraftForReview(result.draft.draftJson) });
       setEvidenceBundle((result.evidenceBundle ?? result.draft.sourceContext?.evidenceBundle) as EvidenceBundle | null);
       setForm(draftJsonToReviewForm(result.draft.draftJson));
       setEnrichmentStatus('ai_draft');
@@ -204,7 +204,7 @@ export default function EnrichmentFormScreen() {
     setError('');
     try {
       const result = await enrichmentApi.regenerateDraftWithEvidence(id);
-      setDraft(result.draft);
+      setDraft({ ...result.draft, draftJson: normalizeDraftForReview(result.draft.draftJson) });
       setEvidenceBundle((result.evidenceBundle ?? result.draft.sourceContext?.evidenceBundle) as EvidenceBundle | null);
       setForm(draftJsonToReviewForm(result.draft.draftJson));
       setEnrichmentStatus('ai_draft');
@@ -576,15 +576,27 @@ function DraftField({
   field,
 }: {
   label: string;
-  field: {
+  field?: {
     value: string;
     confidence: string;
     reason?: string | null;
     sourceUrl?: string | null;
     evidence?: string | null;
     sourceType?: string | null;
-  };
+  } | null;
 }) {
+  if (!field) {
+    return (
+      <View style={styles.draftField}>
+        <Text variant="caption">{label}</Text>
+        <Text variant="bodySmall">unknown · Unknown confidence</Text>
+        <Text variant="caption" color={colors.text.secondary}>
+          Not confirmed — no evidence in draft
+        </Text>
+      </View>
+    );
+  }
+
   const evidenceText = field.evidence ? cleanEvidenceSnippet(field.evidence) : null;
 
   return (
