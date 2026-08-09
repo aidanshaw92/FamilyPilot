@@ -140,6 +140,123 @@ describe('Warner Bros evidence-loss regression', () => {
     expect(merged.familyFacilities.parking.value).toBe('unknown');
     expect(merged.pushchairSuitability.value).toBe('unknown');
   });
+
+  it('legacy regeneration preserves facts when cached evidence rows omit confidence', () => {
+    const cachedWarnerBundle = buildEvidenceBundle(
+      'fp-google-warner',
+      [
+        {
+          url: 'https://www.wbstudiotour.co.uk/visitor-information/',
+          sourceType: 'visitor_info',
+          fetchStatus: 'cached',
+          facts: [
+            {
+              field: 'babyChanging',
+              value: 'yes',
+              evidenceText: 'Baby changing facilities are available in the visitor centre toilets.',
+              sourceUrl: 'https://www.wbstudiotour.co.uk/visitor-information/',
+              sourceType: 'visitor_info',
+              retrievedAt: '2026-08-08T12:00:00.000Z',
+            },
+          ],
+        },
+        {
+          url: 'https://www.wbstudiotour.co.uk/additional-needs/',
+          sourceType: 'accessibility_page',
+          fetchStatus: 'cached',
+          facts: [
+            {
+              field: 'toilets',
+              value: 'yes',
+              evidenceText: 'Accessible toilets are available throughout the tour.',
+              sourceUrl: 'https://www.wbstudiotour.co.uk/additional-needs/',
+              sourceType: 'accessibility_page',
+              retrievedAt: '2026-08-08T12:00:00.000Z',
+            },
+          ],
+        },
+      ],
+      'official_website',
+    );
+
+    const aiDraft = normaliseDraftJson({
+      familyFacilities: {
+        toilets: {
+          value: 'unknown',
+          confidence: 'high',
+          sourceUrl: 'https://www.wbstudiotour.co.uk/additional-needs/',
+          evidence: 'Not confirmed',
+        },
+        babyChanging: {
+          value: 'unknown',
+          confidence: 'high',
+          sourceUrl: 'https://www.wbstudiotour.co.uk/visitor-information/',
+          evidence: 'Not confirmed',
+        },
+        parking: { value: 'unknown', confidence: 'unknown' },
+        cafe: { value: 'unknown', confidence: 'unknown' },
+      },
+    });
+
+    const merged = mergeEvidenceIntoDraft(aiDraft, cachedWarnerBundle);
+    expect(merged.familyFacilities.babyChanging.value).toBe('yes');
+    expect(merged.familyFacilities.babyChanging.confidence).toBe('high');
+    expect(merged.familyFacilities.babyChanging.sourceUrl).toContain('visitor-information');
+    expect(merged.familyFacilities.toilets.value).toBe('yes');
+    expect(merged.familyFacilities.toilets.evidence).toContain('Accessible toilets');
+    expect((merged.familyFacilities.babyChanging as { evidenceBacked?: boolean }).evidenceBacked).toBe(true);
+  });
+
+  it('legacy Warner-style regeneration via generateMockDraft persists extracted facility facts', async () => {
+    const { generateMockDraft } = await import('../../../api/enrichment/_lib/ai-provider.js');
+    const cachedWarnerBundle = buildEvidenceBundle(
+      'fp-google-warner',
+      [
+        {
+          url: 'https://www.wbstudiotour.co.uk/visitor-information/',
+          sourceType: 'visitor_info',
+          fetchStatus: 'cached',
+          facts: [
+            {
+              field: 'babyChanging',
+              value: 'yes',
+              evidenceText: 'Baby changing facilities are available in the visitor centre toilets.',
+              sourceUrl: 'https://www.wbstudiotour.co.uk/visitor-information/',
+              sourceType: 'visitor_info',
+              retrievedAt: '2026-08-08T12:00:00.000Z',
+            },
+          ],
+        },
+        {
+          url: 'https://www.wbstudiotour.co.uk/additional-needs/',
+          sourceType: 'accessibility_page',
+          fetchStatus: 'cached',
+          facts: [
+            {
+              field: 'toilets',
+              value: 'yes',
+              evidenceText: 'Accessible toilets are available throughout the tour.',
+              sourceUrl: 'https://www.wbstudiotour.co.uk/additional-needs/',
+              sourceType: 'accessibility_page',
+              retrievedAt: '2026-08-08T12:00:00.000Z',
+            },
+          ],
+        },
+      ],
+      'official_website',
+    );
+
+    const result = generateMockDraft({
+      name: 'Warner Bros. Studio Tour',
+      category: 'attraction',
+      evidenceBundle: cachedWarnerBundle,
+    });
+
+    expect(result.draftJson.familyFacilities.babyChanging.value).toBe('yes');
+    expect(result.draftJson.familyFacilities.toilets.value).toBe('yes');
+    expect(result.draftJson.familyFacilities.babyChanging.sourceUrl).toContain('visitor-information');
+    expect(result.draftJson.familyFacilities.toilets.sourceUrl).toContain('additional-needs');
+  });
 });
 
 describe('bounded truncated HTML fetch', () => {
@@ -460,6 +577,43 @@ describe('pushchair suitability evidence', () => {
   it('returns unknown when no mobility wording is present', () => {
     const facts = extractEvidenceFromText('Paths can be gravel and muddy after rain.', CHILTERN_SOURCE);
     expect(facts.find((f) => f.field === 'pushchairSuitability')).toBeUndefined();
+  });
+
+  it('does not classify pushchair suitability from wheelchair-only accessible route wording', () => {
+    const text =
+      'Standard wheelchair accessible route with kissing gates and a steep slope on the main path.';
+    const facts = extractEvidenceFromText(text, CHILTERN_SOURCE);
+    expect(facts.find((f) => f.field === 'pushchairSuitability')).toBeUndefined();
+    expect(facts.find((f) => f.field === 'wheelchairAccessible')?.value).toBe('yes');
+  });
+
+  it('does not classify pushchair suitability from wheelchair access and steep slope alone', () => {
+    const text = 'Wheelchair access is available but there is a steep slope and kissing gate on the route.';
+    const facts = extractEvidenceFromText(text, CHILTERN_SOURCE);
+    expect(facts.find((f) => f.field === 'pushchairSuitability')).toBeUndefined();
+  });
+
+  it('classifies good when buggies are welcome with muddy path caveats', () => {
+    const text = 'Buggies welcome but paths can become muddy after rain.';
+    const facts = extractEvidenceFromText(text, CHILTERN_SOURCE);
+    expect(facts.find((f) => f.field === 'pushchairSuitability')?.value).toBe('good');
+  });
+
+  it('classifies difficult for explicit pushchair discouragement', () => {
+    const text = 'Pushchairs are not recommended on the woodland trail.';
+    const facts = extractEvidenceFromText(text, CHILTERN_SOURCE);
+    expect(facts.find((f) => f.field === 'pushchairSuitability')?.value).toBe('difficult');
+  });
+
+  it('extracts Headstone-style toilets to be found wording from FAQ text', () => {
+    const text =
+      'Are there toilets? Museum public toilets are to be found in a block by the Visitor Centre.';
+    const facts = extractEvidenceFromText(text, {
+      url: 'https://headstonemanor.org/visit/faqs/',
+      sourceType: 'faq_page',
+      retrievedAt: '2026-08-08T12:00:00.000Z',
+    });
+    expect(facts.find((f) => f.field === 'toilets')?.value).toBe('yes');
   });
 
   it('strips CSS/HTML fragments from evidence snippets', () => {

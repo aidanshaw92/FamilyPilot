@@ -43,13 +43,17 @@ async function ensurePlaceDetails(familypilotId, placeRow) {
 async function fetchAndExtractPage(familypilotPlaceId, page) {
   const cached = await getCachedEvidence(familypilotPlaceId, page.url);
   if (cached) {
+    const facts = (cached.extractedEvidence ?? []).map((fact) => ({
+      ...fact,
+      confidence: fact.confidence ?? 'high',
+    }));
     return {
       url: cached.sourceUrl,
       sourceType: cached.sourceType,
       pageTitle: cached.pageTitle,
       retrievedAt: cached.retrievedAt,
       fetchStatus: 'cached',
-      facts: cached.extractedEvidence,
+      facts,
       extractedText: cached.extractedText,
       html: null,
     };

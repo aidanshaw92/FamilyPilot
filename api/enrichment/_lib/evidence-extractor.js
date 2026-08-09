@@ -10,6 +10,7 @@ const FIELD_PATTERNS = [
       /restroom(s)?\s+available/i,
       /public\s+toilets/i,
       /toilets?\s+(can\s+be\s+)?found/i,
+      /toilets?\s+(are\s+)?to\s+be\s+found/i,
       /toilets?\s+(are\s+)?(now\s+)?open/i,
       /toilets?\s+(are\s+)?located/i,
       /toilets?\s+(are\s+)?situated/i,

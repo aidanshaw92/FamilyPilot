@@ -1,12 +1,14 @@
 /**
  * Conservative pushchair/buggy suitability extraction from official source text.
- * Does not infer from venue type — requires explicit mobility/access wording.
+ * Does not infer from venue type or wheelchair/accessibility wording alone.
  */
 
 const { cleanEvidenceSnippet } = require('./evidence-text-utils');
 
-const MOBILITY_TERMS =
-  /\b(pushchair(s)?|buggy|buggies|pram(s)?|stroller(s)?|wheelchair(s)?)\b/i;
+const PUSHCHAIR_TERMS =
+  /\b(pushchair(s)?|buggy|buggies|pram(s)?|stroller(s)?)\b/i;
+
+const WHEELCHAIR_TERMS = /\b(wheelchair(s)?|mobility scooter(s)?)\b/i;
 
 const TERRAIN_TERMS =
   /\b(ramps?|steps?|stairs|gravel|mud(dy)?|uneven|paved|smooth|step.?free|flat|accessible routes?|paths?)\b/i;
@@ -18,10 +20,12 @@ const WELCOME_PATTERNS = [
 ];
 
 const DIFFICULT_PATTERNS = [
-  /\b(not suitable|not recommended|not advised|impractical|strongly advise against)\b/i,
+  /\b(not suitable|not recommended|not advised|impractical|strongly advise against)\b[^.]{0,40}\b(bugg(y|ies)|pram(s)?|pushchair(s)?|stroller(s)?)\b/i,
+  /\b(bugg(y|ies)|pram(s)?|pushchair(s)?|stroller(s)?)[^.]{0,40}\b(not suitable|not recommended|not advised|impractical)\b/i,
   /\b(no pushchair|no buggy|no pram|pushchairs?\s+not|buggies?\s+not|prams?\s+not)\b/i,
   /\b(unable to|cannot|can't)\s+(use|bring|access)[^.]{0,30}\b(bugg(y|ies)|pram(s)?|pushchair(s)?)\b/i,
   /\b(bugg(y|ies)|pram(s)?|pushchair(s)?)\s+(are\s+)?(not|unsuitable|discouraged)\b/i,
+  /\bpushchairs?\s+(are\s+)?not recommended\b/i,
 ];
 
 const MIXED_PATTERNS = [
@@ -39,6 +43,7 @@ const CAVEAT_PATTERNS = [
   /\boccasional steps\b/i,
   /\bsome areas\b/i,
   /\bcan get muddy\b/i,
+  /\bcan become muddy\b/i,
   /\bweather dependent\b/i,
   /\bnot all buildings\b/i,
 ];
@@ -59,34 +64,33 @@ function splitSentences(text) {
     .filter((s) => s.length > 10);
 }
 
-function isRelevantSentence(sentence) {
-  return MOBILITY_TERMS.test(sentence) || (TERRAIN_TERMS.test(sentence) && MOBILITY_TERMS.test(sentence));
-}
-
 function collectRelevantSentences(text) {
   const sentences = splitSentences(text);
-  const relevant = sentences.filter(
-    (s) => MOBILITY_TERMS.test(s) || (TERRAIN_TERMS.test(s) && /access|route|path|building|site|visit/i.test(s)),
-  );
-
-  if (relevant.length === 0) {
-    const mobilityOnly = sentences.filter((s) => MOBILITY_TERMS.test(s));
-    return mobilityOnly;
+  if (!sentences.some((s) => PUSHCHAIR_TERMS.test(s))) {
+    return [];
   }
 
-  return relevant;
+  return sentences.filter(
+    (s) =>
+      PUSHCHAIR_TERMS.test(s) ||
+      (TERRAIN_TERMS.test(s) && /access|route|path|building|site|visit|step/i.test(s)),
+  );
 }
 
 function countMatches(patterns, text) {
   return patterns.filter((re) => re.test(text)).length;
 }
 
+function hasPushchairSpecificTerm(text) {
+  return PUSHCHAIR_TERMS.test(text);
+}
+
 /**
  * Classify pushchair suitability from combined official-source text.
- * Returns { value, confidence } or null when insufficient evidence.
+ * Requires explicit pushchair/buggy/pram/stroller terminology — not wheelchair alone.
  */
 function classifyPushchairSuitability(combinedText) {
-  if (!combinedText || !MOBILITY_TERMS.test(combinedText)) {
+  if (!combinedText || !hasPushchairSpecificTerm(combinedText)) {
     return null;
   }
 
@@ -104,7 +108,7 @@ function classifyPushchairSuitability(combinedText) {
     return { value: 'mixed', confidence: 'high' };
   }
 
-  if (hasMixedSignal) {
+  if (hasMixedSignal && hasWelcome) {
     return { value: 'mixed', confidence: 'high' };
   }
 
@@ -120,7 +124,7 @@ function classifyPushchairSuitability(combinedText) {
     return { value: 'good', confidence: 'medium' };
   }
 
-  if (MOBILITY_TERMS.test(combinedText) && TERRAIN_TERMS.test(combinedText) && caveatCount >= 2) {
+  if (hasPushchairSpecificTerm(combinedText) && TERRAIN_TERMS.test(combinedText) && caveatCount >= 2) {
     return { value: 'mixed', confidence: 'medium' };
   }
 
@@ -153,5 +157,8 @@ module.exports = {
   extractPushchairEvidence,
   classifyPushchairSuitability,
   collectRelevantSentences,
+  hasPushchairSpecificTerm,
   cleanEvidenceSnippet,
+  PUSHCHAIR_TERMS,
+  WHEELCHAIR_TERMS,
 };

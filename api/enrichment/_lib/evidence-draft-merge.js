@@ -8,6 +8,37 @@ const { cleanEvidenceSnippet } = require('./evidence-text-utils');
 
 const PUSHCHAIR_VALUES = new Set(['excellent', 'good', 'mixed', 'difficult']);
 
+/** Legacy cache rows may omit confidence — treat extracted yes/no as high when missing. */
+function normalizeAuthoritativeFact(fact) {
+  if (!fact) return null;
+  if (fact.confidence === 'high' || fact.confidence === 'medium' || fact.confidence === 'low') {
+    return fact;
+  }
+
+  if (fact.field === 'pushchairSuitability' && PUSHCHAIR_VALUES.has(fact.value)) {
+    return { ...fact, confidence: 'high' };
+  }
+
+  if (fact.value === 'yes' || fact.value === 'no') {
+    return { ...fact, confidence: 'high' };
+  }
+
+  return fact;
+}
+
+function getAuthoritativeFacts(bundle) {
+  const rawFacts = bundle?.facts?.length
+    ? bundle.facts
+    : (bundle?.sources ?? []).flatMap((source) => source.facts ?? []);
+  const seen = new Map();
+  for (const raw of rawFacts) {
+    const fact = normalizeAuthoritativeFact(raw);
+    if (!fact || !isAuthoritativeFact(fact)) continue;
+    seen.set(fact.field, fact);
+  }
+  return [...seen.values()];
+}
+
 /** Maps evidence extractor field ids → draft JSON paths */
 const EVIDENCE_FIELD_MAP = {
   toilets: { section: 'familyFacilities', key: 'toilets', kind: 'triState' },
@@ -78,13 +109,14 @@ function rankConfidence(c) {
 }
 
 function isAuthoritativeFact(fact) {
-  if (!fact || (fact.confidence !== 'high' && fact.confidence !== 'medium')) {
+  const normalized = normalizeAuthoritativeFact(fact);
+  if (!normalized || (normalized.confidence !== 'high' && normalized.confidence !== 'medium')) {
     return false;
   }
-  if (fact.field === 'pushchairSuitability') {
-    return PUSHCHAIR_VALUES.has(fact.value);
+  if (normalized.field === 'pushchairSuitability') {
+    return PUSHCHAIR_VALUES.has(normalized.value);
   }
-  return fact.value === 'yes' || fact.value === 'no';
+  return normalized.value === 'yes' || normalized.value === 'no';
 }
 
 function buildEmptyDraftShell() {
@@ -106,10 +138,10 @@ function buildEmptyDraftShell() {
 /** Build a draft shell pre-filled from deterministic evidence facts. */
 function buildDraftFromEvidence(bundle) {
   const draft = buildEmptyDraftShell();
-  if (!bundle?.facts?.length) return draft;
+  const facts = getAuthoritativeFacts(bundle);
+  if (!facts.length) return draft;
 
-  for (const fact of bundle.facts) {
-    if (!isAuthoritativeFact(fact)) continue;
+  for (const fact of facts) {
     const mapping = EVIDENCE_FIELD_MAP[fact.field];
     if (!mapping) continue;
     const fieldValue =
@@ -117,10 +149,9 @@ function buildDraftFromEvidence(bundle) {
     setDraftField(draft, mapping, fieldValue);
   }
 
-  const backedCount = (bundle.facts ?? []).filter(isAuthoritativeFact).length;
-  if (backedCount > 0) {
+  if (facts.length > 0) {
     draft.overallDraftConfidence =
-      backedCount >= 3 ? 'medium' : rankConfidence(bundle.facts[0]?.confidence) >= 3 ? 'medium' : 'low';
+      facts.length >= 3 ? 'medium' : rankConfidence(facts[0]?.confidence) >= 3 ? 'medium' : 'low';
   }
 
   return draft;
@@ -133,44 +164,21 @@ function buildDraftFromEvidence(bundle) {
  */
 function mergeEvidenceIntoDraft(draftJson, bundle) {
   const draft = normaliseDraftJson(draftJson);
-  const authoritativeFields = new Set(
-    (bundle?.facts ?? []).filter(isAuthoritativeFact).map((f) => f.field),
-  );
+  const authoritativeFacts = getAuthoritativeFacts(bundle);
+  const authoritativeFields = new Set(authoritativeFacts.map((f) => f.field));
 
   let applied = 0;
 
-  for (const fact of bundle?.facts ?? []) {
-    if (!isAuthoritativeFact(fact)) continue;
+  for (const fact of authoritativeFacts) {
     const mapping = EVIDENCE_FIELD_MAP[fact.field];
     if (!mapping) continue;
 
     const evidenceField =
       mapping.kind === 'pushchair' ? factToPushchairField(fact) : factToTriStateField(fact);
 
-    let current;
-    if (mapping.kind === 'pushchair') {
-      current = draft.pushchairSuitability;
-    } else if (mapping.section === 'familyFacilities') {
-      current = draft.familyFacilities[mapping.key];
-    } else if (mapping.section === 'accessibility') {
-      current = draft.accessibility[mapping.key];
-    } else if (mapping.section === 'sendInfo') {
-      current = draft.sendInfo[mapping.key];
-    }
-
-    const aiUnknown = !current || current.value === 'unknown' || current.confidence === 'unknown';
-    const evidenceValue =
-      mapping.kind === 'pushchair' ? factToPushchairField(fact).value : fact.value;
-    const aiContradicts =
-      current &&
-      current.value !== 'unknown' &&
-      current.value !== evidenceValue &&
-      !current.evidenceBacked;
-
-    if (aiUnknown || aiContradicts || !current?.sourceUrl) {
-      setDraftField(draft, mapping, evidenceField);
-      applied += 1;
-    }
+    // Authoritative official-source facts always win over AI output.
+    setDraftField(draft, mapping, evidenceField);
+    applied += 1;
   }
 
   for (const [fieldId, mapping] of Object.entries(EVIDENCE_FIELD_MAP)) {
@@ -219,4 +227,6 @@ module.exports = {
   factToTriStateField,
   EVIDENCE_FIELD_MAP,
   isAuthoritativeFact,
+  normalizeAuthoritativeFact,
+  getAuthoritativeFacts,
 };
