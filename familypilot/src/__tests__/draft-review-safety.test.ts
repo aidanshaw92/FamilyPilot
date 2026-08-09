@@ -111,4 +111,22 @@ describe('draft review safety — legacy and partial evidence', () => {
     expect(draft.familyFacilities.toilets.evidence).toContain('Accessible toilets');
     expect(draft.accessibility.wheelchairAccessible?.evidence).toContain('Wheelchair');
   });
+
+  it('does not render field meta keys as accessibility review rows (Golders Hill legacy shape)', () => {
+    const draft = normalizeDraftForReview({
+      ...LEGACY_DRAFT,
+      accessibility: {
+        value: 'yes',
+        confidence: 'high',
+        reason: 'Official source',
+        evidence: 'Step-free routes throughout the zoo.',
+        sourceUrl: 'https://example.org/visit',
+      },
+    });
+    expect(draft.accessibility.value).toBeUndefined();
+    expect(draft.accessibility.unspecified?.value).toBe('yes');
+    expect(draft.accessibility.unspecified?.evidence).toContain('Step-free routes');
+    expect(draft.accessibility.reason).toBeUndefined();
+    expect(draft.accessibility.evidence).toBeUndefined();
+  });
 });

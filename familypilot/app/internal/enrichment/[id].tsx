@@ -47,7 +47,18 @@ const ACCESSIBILITY_DRAFT_LABELS: Record<string, string> = {
   accessibleToilet: 'Accessible toilet',
   changingPlaces: 'Changing Places',
   accessibleParking: 'Accessible parking',
+  unspecified: 'Accessibility (legacy field)',
 };
+
+const DRAFT_FIELD_META_KEYS = new Set([
+  'value',
+  'confidence',
+  'reason',
+  'sourceUrl',
+  'evidence',
+  'sourceType',
+  'retrievedAt',
+]);
 
 function metadataToForm(meta: VenueFamilyMetadata | null): EnrichmentSavePayload {
   if (!meta) {
@@ -328,7 +339,9 @@ export default function EnrichmentFormScreen() {
               Visit duration: unknown
             </Text>
           )}
-          {Object.entries(draft.draftJson.accessibility ?? {}).map(([key, field]) => (
+          {Object.entries(draft.draftJson.accessibility ?? {})
+            .filter(([key]) => !DRAFT_FIELD_META_KEYS.has(key))
+            .map(([key, field]) => (
             <DraftField
               key={key}
               label={ACCESSIBILITY_DRAFT_LABELS[key] ?? key.replace(/([A-Z])/g, ' $1')}

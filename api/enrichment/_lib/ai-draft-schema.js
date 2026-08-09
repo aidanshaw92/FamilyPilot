@@ -10,6 +10,15 @@ const TERRAIN = new Set(['flat', 'mostly_flat', 'mixed', 'hilly', 'very_hilly', 
 const ENVIRONMENT = new Set(['indoor', 'outdoor', 'mixed', 'unknown']);
 const ENERGY_LEVEL = new Set(['low', 'moderate', 'high', 'mixed', 'unknown']);
 const RAINY = new Set(['yes', 'no', 'unknown']);
+const FIELD_META_KEYS = new Set([
+  'value',
+  'confidence',
+  'reason',
+  'sourceUrl',
+  'evidence',
+  'sourceType',
+  'retrievedAt',
+]);
 
 function normaliseConfidence(value) {
   if (CONFIDENCE_VALUES.has(value)) return value;
@@ -64,6 +73,22 @@ function emptyTriStateField() {
   return emptyEnumField('unknown');
 }
 
+function normaliseRecordFields(raw) {
+  const input = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  const keys = Object.keys(input);
+
+  if (keys.length > 0 && keys.every((key) => FIELD_META_KEYS.has(key))) {
+    return { unspecified: normaliseTriStateField(input) };
+  }
+
+  const out = {};
+  for (const [key, val] of Object.entries(input)) {
+    if (typeof key !== 'string' || FIELD_META_KEYS.has(key)) continue;
+    out[key] = normaliseTriStateField(val);
+  }
+  return out;
+}
+
 function normaliseDraftJson(raw) {
   if (!raw || typeof raw !== 'object') {
     throw new Error('AI draft must be a JSON object');
@@ -105,8 +130,8 @@ function normaliseDraftJson(raw) {
     })(),
     environment: normaliseEnumField(raw.environment, ENVIRONMENT),
     energyLevel: normaliseEnumField(raw.energyLevel, ENERGY_LEVEL),
-    accessibility: {},
-    sendInfo: {},
+    accessibility: normaliseRecordFields(raw.accessibility),
+    sendInfo: normaliseRecordFields(raw.sendInfo),
     whyFamiliesLike: Array.isArray(raw.whyFamiliesLike)
       ? raw.whyFamiliesLike.filter((s) => typeof s === 'string').slice(0, 8)
       : [],
@@ -118,13 +143,6 @@ function normaliseDraftJson(raw) {
     rainyDaySuitability: RAINY.has(raw.rainyDaySuitability) ? raw.rainyDaySuitability : 'unknown',
     overallDraftConfidence: normaliseConfidence(raw.overallDraftConfidence),
   };
-
-  for (const [key, val] of Object.entries(raw.accessibility ?? {})) {
-    if (typeof key === 'string') draft.accessibility[key] = normaliseTriStateField(val);
-  }
-  for (const [key, val] of Object.entries(raw.sendInfo ?? {})) {
-    if (typeof key === 'string') draft.sendInfo[key] = normaliseTriStateField(val);
-  }
 
   return draft;
 }

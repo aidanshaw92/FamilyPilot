@@ -17,15 +17,24 @@ const FIELD_PATTERNS = [
       /toilets?\s+(are\s+)?situated/i,
       /toilets?\s+(are\s+)?provided/i,
     ],
-    no: [/no\s+toilet/i],
+    no: [
+      /no\s+toilet/i,
+      /no\s+public\s+toilets/i,
+      /toilets?\s+(are\s+)?closed/i,
+      /toilets?\s+currently\s+closed/i,
+      /toilets?\s+unavailable/i,
+      /toilets?\s+out\s+of\s+service/i,
+      /closed\s+public\s+toilets/i,
+    ],
   },
   {
     field: 'babyChanging',
     yes: [
       /baby\s+chang(e|ing)/i,
       /nappy\s+chang(e|ing)/i,
-      /changing\s+facilit(y|ies)/i,
       /baby\s+chang(e|ing)\s+facilit/i,
+      /changing\s+table\s+for\s+babies/i,
+      /parent\s+and\s+baby\s+facilit/i,
     ],
     no: [/no\s+baby\s+chang/i],
   },
@@ -38,9 +47,9 @@ const FIELD_PATTERNS = [
       /free\s+parking/i,
       /(?:large\s+)?free\s+car\s+park/i,
       /car\s+park(?:ing)?\s+(is\s+)?available/i,
-      /car\s+park\s+(is\s+)?(?:provided|located|on site|on-site)/i,
-      /parking\s+(can\s+be\s+)?found/i,
-      /parking\s+(is\s+)?located/i,
+      /car\s+park\s+(is\s+)?(?:provided|on site|on-site)/i,
+      /visitor\s+car\s+park/i,
+      /parking\s+spaces\s+(are\s+)?provided/i,
       /(?:cars|vehicles|minibuses|coaches)\s+(?:are\s+)?welcome\s+to\s+use\s+(?:our\s+)?(?:large\s+)?(?:free\s+)?car\s+park/i,
     ],
     no: [
@@ -85,17 +94,33 @@ function splitSentences(text) {
     .filter((s) => s.length > 15);
 }
 
+/** Parking=yes requires explicit availability language — not address, location, or transport context alone. */
+function hasExplicitParkingAvailability(sentence) {
+  return (
+    /parking\s+(is\s+)?available/i.test(sentence) ||
+    /(?:free\s+)?parking\s+(is\s+)?provided/i.test(sentence) ||
+    /on.?site\s+parking/i.test(sentence) ||
+    /free\s+parking/i.test(sentence) ||
+    /(?:large\s+)?free\s+car\s+park/i.test(sentence) ||
+    /car\s+park(?:ing)?\s+(is\s+)?available/i.test(sentence) ||
+    /car\s+park\s+(is\s+)?(?:provided|on site|on-site)/i.test(sentence) ||
+    /visitor\s+car\s+park/i.test(sentence) ||
+    /parking\s+spaces\s+(are\s+)?provided/i.test(sentence) ||
+    /(?:cars|vehicles|minibuses|coaches)\s+(?:are\s+)?welcome\s+to\s+use\s+(?:our\s+)?(?:large\s+)?(?:free\s+)?car\s+park/i.test(
+      sentence,
+    )
+  );
+}
+
 function isExplicitParkingStatement(sentence) {
   const lower = sentence.toLowerCase();
 
-  if (/parking\s+(information|charges|fees|rates|policy|restrictions|advice|tips|updates)/i.test(sentence)) {
-    if (!/available|provided|free|welcome to use|on site|on-site|located|can be found/i.test(lower)) {
-      return false;
-    }
+  if (!hasExplicitParkingAvailability(sentence)) {
+    return false;
   }
 
-  if (/car\s+park/i.test(sentence)) {
-    if (!/available|free|provided|located|welcome|on site|on-site|use our|can be found/i.test(lower)) {
+  if (/parking\s+(information|charges|fees|rates|policy|restrictions|advice|tips|updates)/i.test(sentence)) {
+    if (!/available|provided|free|welcome to use|on site|on-site/i.test(lower)) {
       return false;
     }
   }
@@ -112,7 +137,48 @@ function isExplicitParkingStatement(sentence) {
     }
   }
 
+  if (
+    /\bparking\s+(?:is\s+)?(?:located|can\s+be\s+found)\b/i.test(sentence) &&
+    !/\bon.?site\b|\bvisitor\s+car\s+park\b|\bparking\s+(?:is\s+)?available\b|\bparking\s+(?:is\s+)?provided\b/i.test(
+      lower,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    /\blocated\s+on\s+[A-Za-z0-9\s]+(?:way|road|street|lane|avenue|drive)\b/i.test(sentence) &&
+    !hasExplicitParkingAvailability(sentence)
+  ) {
+    return false;
+  }
+
   return true;
+}
+
+/** Closure/unavailability must win over bare "public toilets" substring matches. */
+function hasToiletNegation(sentence) {
+  return (
+    /\bclosed\s+public\s+toilets\b/i.test(sentence) ||
+    /\bpublic\s+toilets\s+(?:are\s+)?closed\b/i.test(sentence) ||
+    /\bnow\s+closed\s+public\s+toilets\b/i.test(sentence) ||
+    /\btoilets?\s+(?:are\s+)?closed\b/i.test(sentence) ||
+    /\btoilets?\s+currently\s+closed\b/i.test(sentence) ||
+    /\btoilets?\s+unavailable\b/i.test(sentence) ||
+    /\btoilets?\s+out\s+of\s+service\b/i.test(sentence) ||
+    /\bno\s+public\s+toilets\b/i.test(sentence)
+  );
+}
+
+/** Generic cloakroom/changing-room wording is not baby changing. */
+function isExplicitBabyChangingStatement(sentence) {
+  return (
+    /baby\s+chang(e|ing)/i.test(sentence) ||
+    /nappy\s+chang(e|ing)/i.test(sentence) ||
+    /baby\s+chang(e|ing)\s+facilit/i.test(sentence) ||
+    /changing\s+table\s+for\s+babies/i.test(sentence) ||
+    /parent\s+and\s+baby\s+facilit/i.test(sentence)
+  );
 }
 
 /** Explicit negation must win over substring matches like "on-site parking" in "do not have on-site parking". */
@@ -131,6 +197,9 @@ function matchField(sentence, patterns, fieldId) {
   if (fieldId === 'parking' && hasParkingNegation(sentence)) {
     return { value: 'no', confidence: 'high' };
   }
+  if (fieldId === 'toilets' && hasToiletNegation(sentence)) {
+    return { value: 'no', confidence: 'high' };
+  }
   for (const re of patterns.no) {
     if (re.test(sentence)) return { value: 'no', confidence: 'high' };
   }
@@ -138,6 +207,8 @@ function matchField(sentence, patterns, fieldId) {
     if (!re.test(sentence)) continue;
     if (fieldId === 'parking' && hasParkingNegation(sentence)) continue;
     if (fieldId === 'parking' && !isExplicitParkingStatement(sentence)) continue;
+    if (fieldId === 'toilets' && hasToiletNegation(sentence)) continue;
+    if (fieldId === 'babyChanging' && !isExplicitBabyChangingStatement(sentence)) continue;
     return { value: 'yes', confidence: 'high' };
   }
   return null;
@@ -246,7 +317,10 @@ module.exports = {
   mergeEvidenceBundles,
   buildEvidenceBundle,
   isExplicitParkingStatement,
+  hasExplicitParkingAvailability,
   hasParkingNegation,
+  hasToiletNegation,
+  isExplicitBabyChangingStatement,
   FIELD_PATTERNS,
   cleanEvidenceSnippet,
 };
