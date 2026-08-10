@@ -92,7 +92,9 @@ async function saveEvidenceRecord(record) {
   if (supabase) {
     const { data, error } = await supabase
       .from('venue_source_evidence')
-      .insert(row)
+      .upsert(row, {
+        onConflict: 'familypilot_place_id,source_url,content_hash',
+      })
       .select('*')
       .single();
     if (error) throw new Error(error.message);
@@ -100,9 +102,22 @@ async function saveEvidenceRecord(record) {
   }
 
   const store = readFileStore();
-  const id = `evidence-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  const saved = { id, created_at: new Date().toISOString(), ...row };
-  store.records.push(saved);
+  const existingIndex = store.records.findIndex(
+    (item) =>
+      item.familypilot_place_id === row.familypilot_place_id &&
+      item.source_url === row.source_url &&
+      item.content_hash === row.content_hash,
+  );
+  const existing = existingIndex >= 0 ? store.records[existingIndex] : null;
+  const saved = existing
+    ? { ...existing, ...row }
+    : {
+        id: `evidence-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        created_at: new Date().toISOString(),
+        ...row,
+      };
+  if (existingIndex >= 0) store.records[existingIndex] = saved;
+  else store.records.push(saved);
   writeFileStore(store);
   return rowToRecord(saved);
 }
