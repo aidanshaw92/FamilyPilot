@@ -8,7 +8,12 @@ import { QuickActionGrid } from '@/src/components/home/QuickActionGrid';
 import { ScreenContainer, ScreenHeader } from '@/src/components/shared/ScreenContainer';
 import { EmptyState, ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
 import { spacing } from '@/src/design-system/tokens';
-import { useFamilyProfile, useFocusedRecommendations, useWeather } from '@/src/hooks/use-queries';
+import {
+  useFamilyProfile,
+  useFocusedRecommendations,
+  useProactiveHomeRequest,
+  useWeather,
+} from '@/src/hooks/use-queries';
 import { recommendationService } from '@/src/services/api';
 import { useDayRequestStore } from '@/src/stores/day-request-store';
 
@@ -21,7 +26,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const { data: profile } = useFamilyProfile();
   const { data: weather } = useWeather();
-  const { rawText, parsedRequest, setRawText, setParsedRequest } = useDayRequestStore();
+  const { rawText, setRawText, setParsedRequest } = useDayRequestStore();
+  const { parsedRequest, isProactive } = useProactiveHomeRequest();
   const [parsing, setParsing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
 
@@ -43,7 +49,7 @@ export default function HomeScreen() {
     setParseError(null);
     try {
       const request = await recommendationService.parseDayRequest(rawText.trim());
-      setParsedRequest(request);
+      setParsedRequest(request, 'user');
     } catch (error) {
       setParseError(error instanceof Error ? error.message : 'Could not understand request');
     } finally {
@@ -70,32 +76,19 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <DayRequestInput
-          value={rawText}
-          onChange={setRawText}
-          onSubmit={() => void handleSubmitRequest()}
-          loading={parsing}
-        />
-
-        {parseError ? (
-          <Text variant="bodySmall" style={styles.error}>
-            {parseError}
-          </Text>
-        ) : null}
-
-        {parsedRequest && recsLoading ? (
+        {recsLoading ? (
           <View style={styles.skeletonRow}>
             <SkeletonDecisionCard />
           </View>
         ) : null}
 
-        {parsedRequest && !recsLoading && recommendations.length === 0 ? (
+        {!recsLoading && recommendations.length === 0 ? (
           <EmptyState
             icon="compass-outline"
             title="No matches with confirmed details"
             message={
               focusedResult?.message ??
-              'Try relaxing a requirement or explore nearby venues.'
+              'Try describing what you need below, or explore nearby venues.'
             }
             actionLabel="Explore"
             onAction={() => router.push('/(tabs)/explore' as never)}
@@ -103,10 +96,15 @@ export default function HomeScreen() {
         ) : null}
 
         {topPick ? (
-          <View>
+          <View style={styles.heroSection}>
             <Text variant="heading3" style={styles.sectionTitle}>
               Today&apos;s best match
             </Text>
+            {isProactive ? (
+              <Text variant="bodySmall" style={styles.heroSubtitle}>
+                Our best suggestion for your family right now
+              </Text>
+            ) : null}
             <FocusedRecommendationCard recommendation={topPick} variant="hero" index={0} />
           </View>
         ) : null}
@@ -128,6 +126,20 @@ export default function HomeScreen() {
             ))}
           </View>
         ) : null}
+
+        <DayRequestInput
+          value={rawText}
+          onChange={setRawText}
+          onSubmit={() => void handleSubmitRequest()}
+          loading={parsing}
+          variant="refinement"
+        />
+
+        {parseError ? (
+          <Text variant="bodySmall" style={styles.error}>
+            {parseError}
+          </Text>
+        ) : null}
       </ScrollView>
     </ScreenContainer>
   );
@@ -141,6 +153,9 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: spacing.xl,
   },
+  heroSection: {
+    marginBottom: spacing.xl,
+  },
   moreIdeasSection: {
     marginBottom: spacing.xl,
   },
@@ -148,10 +163,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing['2xl'],
   },
   sectionTitle: {
+    marginBottom: spacing.xs,
+  },
+  heroSubtitle: {
     marginBottom: spacing.md,
+    color: '#64748b',
   },
   error: {
     color: '#b45309',
-    marginBottom: spacing.md,
+    marginTop: spacing.sm,
   },
 });
