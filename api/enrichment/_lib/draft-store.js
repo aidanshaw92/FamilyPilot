@@ -140,20 +140,27 @@ async function clearAiDraftStatus(familypilotId) {
   }
 }
 
-async function supersedePendingDrafts(familypilotId) {
+async function supersedePendingDrafts(familypilotId, exceptDraftId = null) {
   const supabase = getSupabaseAdmin();
   if (supabase) {
-    await supabase
+    let query = supabase
       .from('venue_enrichment_drafts')
       .update({ status: 'superseded', updated_at: new Date().toISOString() })
       .eq('familypilot_place_id', familypilotId)
       .eq('status', 'pending_review');
+    if (exceptDraftId) query = query.neq('id', exceptDraftId);
+    const { error } = await query;
+    if (error) throw new Error(error.message);
     return;
   }
 
   const store = readDraftFileStore();
   for (const draft of store.drafts) {
-    if (draft.familypilot_place_id === familypilotId && draft.status === 'pending_review') {
+    if (
+      draft.familypilot_place_id === familypilotId &&
+      draft.status === 'pending_review' &&
+      draft.id !== exceptDraftId
+    ) {
       draft.status = 'superseded';
       draft.updated_at = new Date().toISOString();
     }
@@ -340,7 +347,6 @@ async function generateDraftForVenue(familypilotId, options = {}) {
   const place = await getPlaceRecord(familypilotId);
   if (!place) throw new Error('Place record not found');
 
-  await supersedePendingDrafts(familypilotId);
   const evidenceBundle = await gatherEvidenceForVenue(familypilotId, place);
   const input = placeRowToInput(place, metadata, evidenceBundle);
   const result = await generateDraft(input);
@@ -354,6 +360,7 @@ async function generateDraftForVenue(familypilotId, options = {}) {
     sourceStatus: evidenceBundle.sourceStatus,
   };
   const draft = await saveDraftRecord(familypilotId, place.external_id, result);
+  await supersedePendingDrafts(familypilotId, draft.id);
 
   if (status !== 'enriched' && status !== 'verified') {
     await markAiDraftStatus(familypilotId);
