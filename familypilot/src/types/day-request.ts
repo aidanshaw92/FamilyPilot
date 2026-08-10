@@ -82,6 +82,7 @@ export interface MatchableVenueFacts {
   toilets: TriState | 'unknown';
   babyChanging: TriState | 'unknown';
   parking: TriState | 'unknown';
+  freeParking?: TriState | 'unknown';
   pushchairSuitability: import('@/src/types/enrichment').PushchairSuitability;
   environment: VenueEnvironment;
   energyLevel: VenueEnergyLevel;

@@ -2,6 +2,7 @@ import { ExternalPlaceRecord, StructuredOpeningHours, VenueFamilyMetadata } from
 import { EnrichmentStatus, TrustMetadata, Venue, VenueDetail } from '@/src/types';
 
 import { deriveEnrichmentStatusFromRecord, mapExtendedTerrainToLegacy, toConsumerEnrichmentStatus } from '@/src/utils/enrichment-rules';
+import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
 import { estimateDriveMinutes } from './geo-utils';
 
 function buildBestAgesLabelFromMeta(metadata: VenueFamilyMetadata | null): string | undefined {
@@ -104,9 +105,18 @@ export function mergePlaceToVenueDetail(
   const rawStatus = resolveEnrichmentStatus(place, metadata);
   const trustedMeta = consumerMetadata(metadata, rawStatus);
   const isProviderOnly = base.enrichmentStatus === 'provider_only';
+  const trustedFacts = extractMatchableFacts(
+    place.familypilotId,
+    place.name,
+    place.category,
+    base.driveMinutes,
+    base.enrichmentStatus ?? 'provider_only',
+    trustedMeta,
+  );
 
   return {
     ...base,
+    trustedFacts,
     photos: place.photos.length > 0 ? place.photos : base.imageUrl ? [base.imageUrl] : [],
     facilities: trustedMeta?.facilities ?? [],
     openingHours: formatOpeningHours(place.openingHours),
