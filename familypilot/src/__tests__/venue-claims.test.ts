@@ -1,13 +1,32 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 
 const CLAIMS_PATH = path.join(process.cwd(), '.data', 'venue-claims.json');
 
+let savedSupabaseUrl: string | undefined;
+let savedSupabaseKey: string | undefined;
+
 function clearClaimsFile() {
   const dir = path.dirname(CLAIMS_PATH);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(CLAIMS_PATH, JSON.stringify({ claims: [] }, null, 2));
+}
+
+function isolateClaimsTests() {
+  savedSupabaseUrl = process.env.SUPABASE_URL;
+  savedSupabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  delete process.env.SUPABASE_URL;
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  vi.resetModules();
+}
+
+function restoreClaimsTests() {
+  if (savedSupabaseUrl !== undefined) process.env.SUPABASE_URL = savedSupabaseUrl;
+  else delete process.env.SUPABASE_URL;
+  if (savedSupabaseKey !== undefined) process.env.SUPABASE_SERVICE_ROLE_KEY = savedSupabaseKey;
+  else delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  vi.resetModules();
 }
 
 const SAMPLE_DRAFT = {
@@ -72,11 +91,13 @@ function reviewFormFromDraft(draft: typeof SAMPLE_DRAFT) {
 
 describe('venue claims trust layer', () => {
   beforeEach(() => {
+    isolateClaimsTests();
     clearClaimsFile();
   });
 
   afterEach(() => {
     clearClaimsFile();
+    restoreClaimsTests();
   });
 
   it('creates field-level claims on draft approval with evidence traceability', async () => {
@@ -271,6 +292,7 @@ describe('venue claims trust layer', () => {
 
 describe('approveDraft integration with claims', () => {
   beforeEach(() => {
+    isolateClaimsTests();
     clearClaimsFile();
     const storePath = path.join(process.cwd(), '.data', 'enrichment-store.json');
     const draftPath = path.join(process.cwd(), '.data', 'enrichment-drafts.json');
@@ -328,6 +350,7 @@ describe('approveDraft integration with claims', () => {
 
   afterEach(() => {
     clearClaimsFile();
+    restoreClaimsTests();
   });
 
   it('approveDraft creates claims then projects into metadata', async () => {
@@ -388,11 +411,13 @@ describe('approveDraft integration with claims', () => {
 
 describe('editorial claim projection', () => {
   beforeEach(() => {
+    isolateClaimsTests();
     clearClaimsFile();
   });
 
   afterEach(() => {
     clearClaimsFile();
+    restoreClaimsTests();
   });
 
   it('projects reviewed visit duration and estimated spend from active claims', async () => {

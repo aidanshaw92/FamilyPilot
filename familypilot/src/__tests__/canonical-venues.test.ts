@@ -1,12 +1,28 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 
 const storePath = path.join(process.cwd(), '.data/canonical-venues.json');
 
+let savedSupabaseUrl: string | undefined;
+let savedSupabaseKey: string | undefined;
+
 describe('canonical venue identity', () => {
   beforeEach(() => {
+    savedSupabaseUrl = process.env.SUPABASE_URL;
+    savedSupabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    vi.resetModules();
     if (fs.existsSync(storePath)) fs.unlinkSync(storePath);
+  });
+
+  afterEach(() => {
+    if (savedSupabaseUrl !== undefined) process.env.SUPABASE_URL = savedSupabaseUrl;
+    else delete process.env.SUPABASE_URL;
+    if (savedSupabaseKey !== undefined) process.env.SUPABASE_SERVICE_ROLE_KEY = savedSupabaseKey;
+    else delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    vi.resetModules();
   });
 
   it('suppresses alias place ids while keeping the primary record', async () => {

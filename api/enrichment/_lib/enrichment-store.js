@@ -484,4 +484,5 @@ module.exports = {
   isSupabaseConfigured,
   applyBetaAreaFilter,
   REVIEW_PIPELINE_STATUSES,
+  rowToMetadata,
 };

@@ -29,10 +29,10 @@ module.exports = async function handler(req, res) {
 
   let places = result.places;
   try {
-    const { getMetadata } = require('../enrichment/_lib/enrichment-store');
+    const { getConsumerMetadata } = require('../enrichment/_lib/consumer-projection');
     places = await Promise.all(
       places.map(async (place) => {
-        const metadata = await getMetadata(place.familypilotId);
+        const metadata = await getConsumerMetadata(place.familypilotId);
         if (!metadata) return place;
         return {
           ...place,
