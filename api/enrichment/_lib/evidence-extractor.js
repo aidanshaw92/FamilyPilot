@@ -224,7 +224,25 @@ function extractEvidenceWindow(sentence, fieldId) {
   return sentence.slice(start, end).trim();
 }
 
+function isQuestionOnlyEvidence(sentence) {
+  const value = sentence.trim();
+  return /\?$/.test(value) || /^(?:are|is|do|does|can|where|what|when|how|will|have)\b/i.test(value) && !/[.!]\s*$/.test(value);
+}
+
+function isSuspiciousEmbeddedContent(sentence) {
+  return /\b(?:bakerloo|piccadilly|jubilee|central|district|northern|victoria)\s+line\b|\b(?:tube|railway|underground)\s+station\b|\bplatform\s+\d+\b|\btransport\s+for\s+london\b/i.test(sentence);
+}
+
+function isScopedToiletClosure(sentence) {
+  return /\b(?:these|those|the|our|one|a|this)\s+(?:public\s+)?toilets?\b[^.!?]{0,80}\b(?:closed|unavailable|out\s+of\s+service)\b|\b(?:closed|unavailable|out\s+of\s+service)\b[^.!?]{0,80}\b(?:toilet\s+block|these|those|the)\b/i.test(sentence);
+}
+
+function hasVenueWideToiletAbsence(sentence) {
+  return /\bno\s+(?:public\s+)?toilets?\s+(?:are\s+)?(?:available|provided|on.?site|at\s+(?:the|this)\s+(?:venue|site))\b|\b(?:the|this)\s+(?:venue|site)\s+(?:does\s+not|doesn't)\s+(?:have|provide|offer)\s+(?:any\s+)?toilets?\b/i.test(sentence);
+}
+
 function matchField(sentence, patterns, fieldId) {
+  if (isQuestionOnlyEvidence(sentence) || isSuspiciousEmbeddedContent(sentence)) return null;
   if (fieldId === 'parking' && hasParkingNegation(sentence)) {
     return { value: 'no', confidence: 'high' };
   }
@@ -233,8 +251,13 @@ function matchField(sentence, patterns, fieldId) {
     // It remains unknown until the richer parking-details field is reviewed.
     return null;
   }
+  if (fieldId === 'toilets' && isScopedToiletClosure(sentence)) {
+    return null;
+  }
   if (fieldId === 'toilets' && hasToiletNegation(sentence)) {
-    return { value: 'no', confidence: 'high' };
+    return hasVenueWideToiletAbsence(sentence)
+      ? { value: 'no', confidence: 'high' }
+      : null;
   }
   for (const re of patterns.no) {
     if (re.test(sentence)) return { value: 'no', confidence: 'high' };
@@ -243,7 +266,7 @@ function matchField(sentence, patterns, fieldId) {
     if (!re.test(sentence)) continue;
     if (fieldId === 'parking' && hasParkingNegation(sentence)) continue;
     if (fieldId === 'parking' && !isExplicitParkingStatement(sentence)) continue;
-    if (fieldId === 'toilets' && hasToiletNegation(sentence)) continue;
+    if (fieldId === 'toilets' && (hasToiletNegation(sentence) || isScopedToiletClosure(sentence))) continue;
     if (fieldId === 'babyChanging' && !isExplicitBabyChangingStatement(sentence)) continue;
     return { value: 'yes', confidence: 'high' };
   }
@@ -258,7 +281,12 @@ function extractEvidenceFromText(text, sourceMeta) {
     for (const sentence of sentences) {
       // Classify only cleaned human-readable text. Matching raw flattened HTML can
       // turn CSS selectors such as ".baby-changing" into false facility claims.
-      const readableSentence = cleanEvidenceSnippet(sentence);
+      // Long flattened pages are windowed around the facility anchor before the
+      // 400-char storage cap so trailing facility prose is not truncated away.
+      const focusedSentence = EVIDENCE_ANCHORS[pattern.field]?.test(sentence)
+        ? extractEvidenceWindow(sentence, pattern.field)
+        : sentence;
+      const readableSentence = cleanEvidenceSnippet(focusedSentence);
       if (!readableSentence) continue;
       const match = matchField(readableSentence, pattern, pattern.field);
       if (!match) continue;
@@ -292,13 +320,40 @@ function mergeEvidenceBundles(sources) {
   const byField = new Map();
   for (const source of sources) {
     for (const fact of source.facts ?? []) {
-      const existing = byField.get(fact.field);
-      if (!existing || rankPushchairOrConfidence(fact, existing) > 0) {
-        byField.set(fact.field, fact);
-      }
+      const candidates = byField.get(fact.field) ?? [];
+      candidates.push(fact);
+      byField.set(fact.field, candidates);
     }
   }
-  return [...byField.values()];
+
+  return [...byField.entries()].map(([field, candidates]) => {
+    const values = [...new Set(candidates.map((fact) => fact.value).filter((value) => value !== 'unknown'))];
+    if (values.length > 1 && field !== 'pushchairSuitability' && field !== 'environment') {
+      return {
+        field,
+        value: 'unknown',
+        confidence: 'unknown',
+        evidenceStatus: 'conflict',
+        conflicts: candidates,
+        evidenceText: null,
+        sourceUrl: null,
+        sourceType: null,
+        retrievedAt: null,
+      };
+    }
+
+    if (field === 'pushchairSuitability' && values.length > 1) {
+      return candidates.reduce((mostCautious, fact) => {
+        const currentRank = PUSHCHAIR_RANK[mostCautious.value] ?? 0;
+        const factRank = PUSHCHAIR_RANK[fact.value] ?? 0;
+        return factRank < currentRank ? fact : mostCautious;
+      });
+    }
+
+    return candidates.reduce((best, fact) =>
+      !best || rankPushchairOrConfidence(fact, best) > 0 ? fact : best
+    , null);
+  });
 }
 
 const PUSHCHAIR_RANK = { excellent: 4, good: 3, mixed: 2, difficult: 1, unknown: 0 };
@@ -364,6 +419,10 @@ module.exports = {
   extractEvidenceWindow,
   hasToiletNegation,
   isExplicitBabyChangingStatement,
+  isQuestionOnlyEvidence,
+  isSuspiciousEmbeddedContent,
+  isScopedToiletClosure,
+  hasVenueWideToiletAbsence,
   FIELD_PATTERNS,
   cleanEvidenceSnippet,
 };

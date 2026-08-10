@@ -390,18 +390,21 @@ describe('focused recommendation QA regressions', () => {
     expect(facts.find((f) => f.field === 'parking')?.value).toBe('no');
   });
 
-  it('Verulamium Park — closed public toilets must not yield toilets=yes', async () => {
-    const { hasToiletNegation } = await import('../../../api/enrichment/_lib/evidence-extractor.js');
+  it('Verulamium Park — scoped toilet closure must not yield toilets=yes or venue-wide no', async () => {
+    const { hasToiletNegation, isScopedToiletClosure } = await import(
+      '../../../api/enrichment/_lib/evidence-extractor.js'
+    );
     const sentence =
       'The café is near the now closed public toilets at the far end of the park.';
     expect(hasToiletNegation(sentence)).toBe(true);
+    expect(isScopedToiletClosure(sentence)).toBe(true);
 
     const facts = extractEvidenceFromText(sentence, {
       ...sourceMeta,
       url: 'https://www.stalbans.gov.uk/parks/verulamium-park',
       sourceType: 'official_website',
     });
-    expect(facts.find((f) => f.field === 'toilets')?.value).toBe('no');
+    expect(facts.find((f) => f.field === 'toilets')).toBeUndefined();
   });
 
   it('Golders Hill Park — address and public transport must not yield parking=yes', async () => {
@@ -734,5 +737,103 @@ describe('live venue evidence quality regressions', () => {
     expect(babyChanging?.value).toBe('yes');
     expect(babyChanging?.evidenceText).toContain('Baby changing facilities');
     expect(babyChanging?.evidenceText).not.toContain('display: grid');
+  });
+});
+
+
+describe('evidence quality gates', () => {
+  const meta = {
+    url: 'https://example.org/faq',
+    sourceType: 'faq_page',
+    retrievedAt: '2026-08-10T12:00:00.000Z',
+  };
+
+  it('does not turn an FAQ question into a positive fact', () => {
+    const facts = extractEvidenceFromText(
+      'Are parent and baby facilities available at the Studio Tour?',
+      meta,
+    );
+    expect(facts.find((fact) => fact.field === 'babyChanging')).toBeUndefined();
+  });
+
+  it('does not turn the Warner Bros Studio Tour FAQ heading into baby changing evidence', () => {
+    const facts = extractEvidenceFromText(
+      'Are parent and baby facilities available at the Studio Tour?',
+      {
+        ...meta,
+        url: 'https://www.wbstudiotour.co.uk/plan-your-visit/frequently-asked-questions',
+        sourceType: 'faq_page',
+      },
+    );
+    expect(facts.find((fact) => fact.field === 'babyChanging')).toBeUndefined();
+  });
+
+  it('does not treat one closed toilet block as venue-wide absence', () => {
+    const facts = extractEvidenceFromText(
+      'The public toilets beside the south entrance are currently closed.',
+      meta,
+    );
+    expect(facts.find((fact) => fact.field === 'toilets')).toBeUndefined();
+  });
+
+  it('accepts explicit venue-wide toilet absence', () => {
+    const facts = extractEvidenceFromText(
+      'No public toilets are available at this venue.',
+      meta,
+    );
+    expect(facts.find((fact) => fact.field === 'toilets')?.value).toBe('no');
+  });
+
+  it('rejects unrelated embedded transport content', () => {
+    const facts = extractEvidenceFromText(
+      'Baby changing facilities are located at our Bakerloo line toilets.',
+      meta,
+    );
+    expect(facts.find((fact) => fact.field === 'babyChanging')).toBeUndefined();
+  });
+
+  it('returns unknown with conflicts instead of choosing an affirmative fact', () => {
+    const bundle = buildEvidenceBundle('venue-1', [
+      {
+        url: 'https://example.org/a',
+        sourceType: 'official_website',
+        retrievedAt: meta.retrievedAt,
+        fetchStatus: 'fetched',
+        facts: [{ field: 'parking', value: 'yes', confidence: 'high', evidenceText: 'Parking is available.', sourceUrl: 'https://example.org/a' }],
+      },
+      {
+        url: 'https://example.org/b',
+        sourceType: 'official_website',
+        retrievedAt: meta.retrievedAt,
+        fetchStatus: 'fetched',
+        facts: [{ field: 'parking', value: 'no', confidence: 'high', evidenceText: 'No parking is available at this venue.', sourceUrl: 'https://example.org/b' }],
+      },
+    ], 'official_website');
+
+    const parking = bundle.facts.find((fact) => fact.field === 'parking');
+    expect(parking?.value).toBe('unknown');
+    expect(parking?.evidenceStatus).toBe('conflict');
+    expect(parking?.conflicts).toHaveLength(2);
+  });
+
+  it('uses the most cautious supported pushchair classification', () => {
+    const bundle = buildEvidenceBundle('venue-1', [
+      {
+        url: 'https://example.org/a',
+        sourceType: 'official_website',
+        retrievedAt: meta.retrievedAt,
+        fetchStatus: 'fetched',
+        facts: [{ field: 'pushchairSuitability', value: 'excellent', confidence: 'high', evidenceText: 'Level paths.', sourceUrl: 'https://example.org/a' }],
+      },
+      {
+        url: 'https://example.org/b',
+        sourceType: 'official_website',
+        retrievedAt: meta.retrievedAt,
+        fetchStatus: 'fetched',
+        facts: [{ field: 'pushchairSuitability', value: 'mixed', confidence: 'high', evidenceText: 'Some rough paths.', sourceUrl: 'https://example.org/b' }],
+      },
+    ], 'official_website');
+
+    expect(bundle.facts.find((fact) => fact.field === 'pushchairSuitability')?.value).toBe('mixed');
   });
 });
