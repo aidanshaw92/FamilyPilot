@@ -683,6 +683,14 @@ describe('live venue evidence quality regressions', () => {
     retrievedAt: '2026-08-09T12:00:00.000Z',
   };
 
+  it('keeps Blue Badge-only parking unknown for general parking availability', () => {
+    const facts = extractEvidenceFromText(
+      'Eight parking spaces are provided for Blue Badge holders only.',
+      meta,
+    );
+    expect(facts.find((fact) => fact.field === 'parking')).toBeUndefined();
+  });
+
   it('keeps limited parking unknown rather than treating it as unavailable', () => {
     const facts = extractEvidenceFromText('There is limited parking near to the zoo.', meta);
     expect(facts.find((fact) => fact.field === 'parking')).toBeUndefined();
