@@ -49,8 +49,9 @@ export function useUpdateFamilyProfile() {
 }
 
 export function useWeather() {
+  const profileRevision = useProfileRevision();
   return useQuery({
-    queryKey: ['weather', 'current'],
+    queryKey: ['weather', 'current', profileRevision],
     queryFn: weatherService.getCurrent,
   });
 }

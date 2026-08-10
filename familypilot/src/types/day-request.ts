@@ -44,6 +44,8 @@ export interface DayRequest {
 
 export type FocusedFitClassification = 'Best fit' | 'Strong fit' | 'Possible fit';
 
+export type OpeningStatus = 'open' | 'closed' | 'unknown';
+
 export interface FocusedReason {
   field: string;
   text: string;
@@ -61,6 +63,8 @@ export interface FocusedRecommendation {
   caveats: string[];
   unknowns: FocusedReason[];
   enrichmentStatus: 'enriched' | 'verified' | 'provider_only';
+  openingStatus: OpeningStatus;
+  journeySource?: 'live' | 'estimated';
 }
 
 export interface FocusedRecommendationsResult {
@@ -90,6 +94,7 @@ export interface MatchableVenueFacts {
   estimatedSpend: string | null;
   goodToKnow: string[];
   warnings: string[];
+  openingStatus: OpeningStatus;
 }
 
 export type FactMatchOutcome = 'suitable' | 'unsuitable' | 'unknown' | 'not_applicable';

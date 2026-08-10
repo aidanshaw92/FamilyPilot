@@ -20,6 +20,10 @@
     "api/recommendations/*.js": {
       "memory": 512,
       "maxDuration": 20
+    },
+    "api/context/*.js": {
+      "memory": 512,
+      "maxDuration": 20
     }
   },
   "rewrites": [

@@ -112,6 +112,7 @@ export function mergePlaceToVenueDetail(
     base.driveMinutes,
     base.enrichmentStatus ?? 'provider_only',
     trustedMeta,
+    place.isOpen,
   );
 
   return {

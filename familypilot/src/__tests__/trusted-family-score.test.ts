@@ -42,6 +42,7 @@ const BASE_FACTS: MatchableVenueFacts = {
   estimatedSpend: '£',
   goodToKnow: [],
   warnings: [],
+  openingStatus: 'unknown',
 };
 
 function venueWithFacts(facts: MatchableVenueFacts, overrides: Partial<VenueDetail> = {}): VenueDetail {

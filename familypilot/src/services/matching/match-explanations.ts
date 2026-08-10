@@ -161,6 +161,7 @@ export function buildFocusedRecommendation(
   facts: MatchableVenueFacts,
   match: VenueMatchResult,
   imageUrl: string,
+  journeySource?: 'live' | 'estimated',
 ): FocusedRecommendation {
   return {
     venueId: facts.placeId,
@@ -173,6 +174,13 @@ export function buildFocusedRecommendation(
     reasons: buildFocusedReasons(facts, match.evaluations),
     caveats: facts.warnings.slice(0, 2),
     unknowns: buildFocusedUnknowns(match.evaluations),
-    enrichmentStatus: facts.enrichmentStatus === 'verified' ? 'verified' : facts.enrichmentStatus === 'enriched' ? 'enriched' : 'provider_only',
+    enrichmentStatus:
+      facts.enrichmentStatus === 'verified'
+        ? 'verified'
+        : facts.enrichmentStatus === 'enriched'
+          ? 'enriched'
+          : 'provider_only',
+    openingStatus: facts.openingStatus,
+    journeySource,
   };
 }
