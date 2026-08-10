@@ -387,6 +387,88 @@ export const enrichmentApi = {
     };
   },
 
+  /**
+   * Regenerate every pending AI draft through the current evidence-backed pipeline.
+   * Processing is deliberately sequential: each atomic replacement is persisted
+   * before the next venue starts, while approvals remain a separate manual step.
+   */
+  async regenerateAllPendingDrafts(
+    params: {
+      concurrency?: number;
+      onProgress?: (progress: import('@/src/types/ai-enrichment').BatchDraftProgress) => void;
+      shouldContinue?: () => boolean;
+    } = {},
+  ): Promise<import('@/src/types/ai-enrichment').BatchDraftResult> {
+    const concurrency = Math.max(1, Math.min(params.concurrency ?? 1, 2));
+    const { items } = await this.getQueue({
+      status: 'ai_draft',
+      sort: 'alphabetical',
+    });
+    const candidates = items.filter((item) => item.hasAiDraft !== false);
+    const results: import('@/src/types/ai-enrichment').BatchDraftItemResult[] = [];
+    let tokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+    let estimatedCostUsd = 0;
+    let completed = 0;
+
+    const report = (current?: string) => {
+      params.onProgress?.({
+        total: candidates.length,
+        completed,
+        succeeded: results.filter((r) => r.ok).length,
+        failed: results.filter((r) => !r.ok).length,
+        current,
+        results: [...results],
+      });
+    };
+
+    report();
+
+    await runWithConcurrency(
+      candidates,
+      concurrency,
+      async (item) => {
+        if (params.shouldContinue && !params.shouldContinue()) return null;
+        report(item.name);
+
+        try {
+          const result = await this.regenerateDraftWithEvidence(item.familypilotId);
+          tokenUsage.promptTokens += result.tokenUsage?.promptTokens ?? 0;
+          tokenUsage.completionTokens += result.tokenUsage?.completionTokens ?? 0;
+          tokenUsage.totalTokens += result.tokenUsage?.totalTokens ?? 0;
+          estimatedCostUsd += result.estimatedCostUsd ?? 0;
+          results.push({
+            familypilotPlaceId: item.familypilotId,
+            name: item.name,
+            ok: true,
+            draftId: result.draft.id,
+            evidenceStatus: result.draft.evidenceStatus,
+          });
+        } catch (error) {
+          results.push({
+            familypilotPlaceId: item.familypilotId,
+            name: item.name,
+            ok: false,
+            error: error instanceof Error ? error.message : 'Regeneration failed',
+          });
+        }
+
+        completed += 1;
+        report();
+        return null;
+      },
+      params.shouldContinue,
+    );
+
+    return {
+      processed: completed,
+      succeeded: results.filter((r) => r.ok).length,
+      failed: results.filter((r) => !r.ok).length,
+      results,
+      tokenUsage,
+      estimatedCostUsd,
+    };
+  },
+
   async getDraft(id: string) {
     return enrichmentFetch('draft', {}, { id }) as Promise<{
       draft: import('@/src/types/ai-enrichment').VenueEnrichmentDraftRecord | null;

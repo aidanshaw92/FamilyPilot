@@ -34,11 +34,14 @@ export default function EnrichmentQueueScreen() {
   const [syncing, setSyncing] = useState(false);
   const [generatingBatch, setGeneratingBatch] = useState(false);
   const [regeneratingLegacyBatch, setRegeneratingLegacyBatch] = useState(false);
+  const [regeneratingAllPending, setRegeneratingAllPending] = useState(false);
   const [batchSummary, setBatchSummary] = useState('');
   const [batchProgress, setBatchProgress] = useState<BatchDraftProgress | null>(null);
   const [legacyBatchProgress, setLegacyBatchProgress] = useState<BatchDraftProgress | null>(null);
+  const [allPendingProgress, setAllPendingProgress] = useState<BatchDraftProgress | null>(null);
   const [batchCancelRef, setBatchCancelRef] = useState<{ cancelled: boolean } | null>(null);
   const [legacyBatchCancelRef, setLegacyBatchCancelRef] = useState<{ cancelled: boolean } | null>(null);
+  const [allPendingCancelRef, setAllPendingCancelRef] = useState<{ cancelled: boolean } | null>(null);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sort, setSort] = useState('nearest');
@@ -152,7 +155,36 @@ export default function EnrichmentQueueScreen() {
     if (legacyBatchCancelRef) legacyBatchCancelRef.cancelled = true;
   };
 
-  const batchBusy = generatingBatch || regeneratingLegacyBatch;
+  const handleRegenerateAllPending = async () => {
+    setRegeneratingAllPending(true);
+    setError('');
+    setBatchSummary('');
+    setAllPendingProgress(null);
+    const cancelState = { cancelled: false };
+    setAllPendingCancelRef(cancelState);
+    try {
+      const result = await enrichmentApi.regenerateAllPendingDrafts({
+        concurrency: 1,
+        shouldContinue: () => !cancelState.cancelled,
+        onProgress: (progress) => setAllPendingProgress(progress),
+      });
+      setBatchSummary(
+        `Pending regeneration: ${result.succeeded}/${result.processed} succeeded · ${result.failed} failed · est. ${result.estimatedCostUsd.toFixed(4)}`,
+      );
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Pending draft regeneration failed');
+    } finally {
+      setRegeneratingAllPending(false);
+      setAllPendingCancelRef(null);
+    }
+  };
+
+  const handleCancelAllPending = () => {
+    if (allPendingCancelRef) allPendingCancelRef.cancelled = true;
+  };
+
+  const batchBusy = generatingBatch || regeneratingLegacyBatch || regeneratingAllPending;
 
   const statusBadge = (status: string) => {
     switch (status) {
@@ -248,9 +280,23 @@ export default function EnrichmentQueueScreen() {
             <Text variant="bodySmall">Cancel batch</Text>
           </Pressable>
         ) : null}
+        <Pressable
+          style={[styles.actionBtn, styles.secondaryBtn]}
+          onPress={() => void handleRegenerateAllPending()}
+          disabled={batchBusy}
+        >
+          <Text variant="bodySmall">
+            {regeneratingAllPending ? 'Regenerating all pending…' : 'Regenerate all pending drafts'}
+          </Text>
+        </Pressable>
         {regeneratingLegacyBatch && legacyBatchCancelRef ? (
           <Pressable style={[styles.actionBtn, styles.secondaryBtn]} onPress={handleCancelLegacyBatch}>
             <Text variant="bodySmall">Cancel legacy batch</Text>
+          </Pressable>
+        ) : null}
+        {regeneratingAllPending && allPendingCancelRef ? (
+          <Pressable style={[styles.actionBtn, styles.secondaryBtn]} onPress={handleCancelAllPending}>
+            <Text variant="bodySmall">Stop after current venue</Text>
           </Pressable>
         ) : null}
       </View>
@@ -282,6 +328,25 @@ export default function EnrichmentQueueScreen() {
               {!r.ok && r.error ? ` — ${r.error}` : ''}
               {r.ok && r.evidenceStatus === 'evidence_backed' ? ' — evidence-backed' : ''}
               {r.ok && r.evidenceStatus === 'provider_only' ? ' — provider-only' : ''}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+      {allPendingProgress ? (
+        <View style={styles.batchBox}>
+          <Text variant="caption" color={colors.text.secondary}>
+            Regenerating all pending drafts — {allPendingProgress.completed} / {allPendingProgress.total} complete
+            {allPendingProgress.current ? ` · ${allPendingProgress.current}` : ''}
+          </Text>
+          <Text variant="caption" color={colors.text.tertiary}>
+            Drafts remain pending review. Nothing is approved or published by this process.
+          </Text>
+          {allPendingProgress.results.map((r) => (
+            <Text key={r.familypilotPlaceId} variant="caption" color={colors.text.tertiary}>
+              {r.ok ? '✓' : '✗'} {r.name}
+              {!r.ok && r.error ? ` — ${r.error}` : ''}
+              {r.ok && r.evidenceStatus === 'provider_only' ? ' — no official source' : ''}
+              {r.ok && r.evidenceStatus === 'evidence_backed' ? ' — evidence-backed' : ''}
             </Text>
           ))}
         </View>
