@@ -683,6 +683,14 @@ describe('live venue evidence quality regressions', () => {
     retrievedAt: '2026-08-09T12:00:00.000Z',
   };
 
+  it('keeps Blue Badge-only parking unknown for general parking availability', () => {
+    const facts = extractEvidenceFromText(
+      'Eight parking spaces are provided for Blue Badge holders only.',
+      meta,
+    );
+    expect(facts.find((fact) => fact.field === 'parking')).toBeUndefined();
+  });
+
   it('keeps limited parking unknown rather than treating it as unavailable', () => {
     const facts = extractEvidenceFromText('There is limited parking near to the zoo.', meta);
     expect(facts.find((fact) => fact.field === 'parking')).toBeUndefined();
@@ -698,6 +706,22 @@ describe('live venue evidence quality regressions', () => {
     expect(toilets?.evidenceText).toContain('public toilets');
     expect(toilets?.evidenceText.length).toBeLessThan(450);
     expect(toilets?.evidenceText).not.toContain('unrelated navigation unrelated navigation unrelated navigation unrelated navigation');
+  });
+
+  it('rejects CSS-only baby-changing selectors as evidence', () => {
+    const facts = extractEvidenceFromText(
+      '.baby-changing { display: grid; color: red; } .footer-baby-changing { margin: 0; }',
+      meta,
+    );
+    expect(facts.find((fact) => fact.field === 'babyChanging')).toBeUndefined();
+  });
+
+  it('still extracts explicit baby-changing prose surrounded by CSS', () => {
+    const facts = extractEvidenceFromText(
+      '.layout { display: grid; } Baby changing facilities are available beside reception. .footer { color: red; }',
+      meta,
+    );
+    expect(facts.find((fact) => fact.field === 'babyChanging')?.value).toBe('yes');
   });
 
   it('centres baby-changing evidence instead of returning trailing page CSS', () => {
