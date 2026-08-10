@@ -17,6 +17,10 @@
       "memory": 1024,
       "maxDuration": 30
     },
+    "api/enrichment-worker.js": {
+      "memory": 1024,
+      "maxDuration": 60
+    },
     "api/recommendations/*.js": {
       "memory": 512,
       "maxDuration": 20
