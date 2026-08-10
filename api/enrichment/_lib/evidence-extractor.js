@@ -246,13 +246,17 @@ function extractEvidenceFromText(text, sourceMeta) {
 
   for (const pattern of FIELD_PATTERNS) {
     for (const sentence of sentences) {
-      const match = matchField(sentence, pattern, pattern.field);
+      // Classify only cleaned human-readable text. Matching raw flattened HTML can
+      // turn CSS selectors such as ".baby-changing" into false facility claims.
+      const readableSentence = cleanEvidenceSnippet(sentence);
+      if (!readableSentence) continue;
+      const match = matchField(readableSentence, pattern, pattern.field);
       if (!match) continue;
       facts.push({
         field: pattern.field,
         value: match.value,
         confidence: match.confidence,
-        evidenceText: cleanEvidenceSnippet(extractEvidenceWindow(sentence, pattern.field)),
+        evidenceText: cleanEvidenceSnippet(extractEvidenceWindow(readableSentence, pattern.field)),
         sourceUrl: sourceMeta.url,
         sourceType: sourceMeta.sourceType,
         retrievedAt: sourceMeta.retrievedAt,
