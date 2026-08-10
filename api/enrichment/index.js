@@ -1,5 +1,6 @@
 const { searchGoogle, getGooglePlace } = require('../places/lib/google-places');
-const { verifyEnrichmentAuth, verifyWorkerAuth, isAuthConfigured } = require('./_lib/auth');
+const { verifyEnrichmentAuth, isAuthConfigured } = require('./_lib/auth');
+const { consumeAutomationDispatch } = require('./_lib/automation-store');
 const {
   listQueue,
   getStats,
@@ -237,12 +238,19 @@ async function handleGenerateDraft(req, res) {
 async function handleAutomationRun(req, res) {
   setCorsHeaders(res, 'POST');
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  if (!verifyWorkerAuth(req, res)) return;
-
   const id = req.body?.id;
-  if (!id) return res.status(400).json({ error: 'Missing venue id' });
+  const jobId = req.body?.jobId;
+  const dispatchToken = req.body?.dispatchToken;
+  if (!id || !jobId || !dispatchToken) {
+    return res.status(400).json({ error: 'Missing automation dispatch data' });
+  }
 
   try {
+    const authorized = await consumeAutomationDispatch(jobId, dispatchToken, id);
+    if (!authorized) {
+      return res.status(401).json({ error: 'Invalid or expired automation dispatch' });
+    }
+
     const result = await generateDraftForVenue(id, { regenerate: Boolean(req.body?.regenerate) });
     return res.status(200).json({
       ok: true,
