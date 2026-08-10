@@ -1,5 +1,5 @@
 const { searchGoogle, getGooglePlace } = require('../places/lib/google-places');
-const { verifyEnrichmentAuth, isAuthConfigured } = require('./_lib/auth');
+const { verifyEnrichmentAuth, verifyWorkerAuth, isAuthConfigured } = require('./_lib/auth');
 const {
   listQueue,
   getStats,
@@ -55,6 +55,8 @@ module.exports = async function handler(req, res) {
       return handleExport(req, res);
     case 'generate-draft':
       return handleGenerateDraft(req, res);
+    case 'automation-run':
+      return handleAutomationRun(req, res);
     case 'generate-batch':
       return handleGenerateBatch(req, res);
     case 'legacy-drafts':
@@ -228,6 +230,29 @@ async function handleGenerateDraft(req, res) {
   } catch (error) {
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Draft generation failed',
+    });
+  }
+}
+
+async function handleAutomationRun(req, res) {
+  setCorsHeaders(res, 'POST');
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!verifyWorkerAuth(req, res)) return;
+
+  const id = req.body?.id;
+  if (!id) return res.status(400).json({ error: 'Missing venue id' });
+
+  try {
+    const result = await generateDraftForVenue(id, { regenerate: Boolean(req.body?.regenerate) });
+    return res.status(200).json({
+      ok: true,
+      venueId: id,
+      draftId: result.draft?.id,
+      evidenceStatus: result.draft?.evidenceStatus,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Automated draft generation failed',
     });
   }
 }
