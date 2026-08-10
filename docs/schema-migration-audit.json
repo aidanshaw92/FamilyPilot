@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-10T18:47:40.946Z",
+  "generatedAt": "2026-08-10T19:15:06.997Z",
   "migrationFiles": [
     "001_initial_schema.sql",
     "002_place_records_and_metadata.sql",
@@ -45,6 +45,21 @@
     "012_enable_automatic_enrichment_schedule.sql hard-codes production Supabase project URL",
     "place_record_id on venue_family_metadata is unused in application code"
   ],
-  "live": null,
-  "drift": null
+  "live": {
+    "mode": "probe",
+    "tables": [
+      "canonical_venues",
+      "place_records",
+      "venue_claims",
+      "venue_enrichment_drafts",
+      "venue_enrichment_jobs",
+      "venue_family_metadata",
+      "venue_place_links",
+      "venue_source_evidence"
+    ]
+  },
+  "drift": {
+    "missingInLive": [],
+    "extraInLive": []
+  }
 }

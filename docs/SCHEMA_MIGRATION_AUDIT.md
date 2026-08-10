@@ -1,6 +1,6 @@
 # Schema migration audit
 
-Generated: 2026-08-10T18:47:40.946Z
+Generated: 2026-08-10T19:15:06.997Z
 
 ## Committed migrations
 
@@ -37,6 +37,19 @@ Generated: 2026-08-10T18:47:40.946Z
 - 012_enable_automatic_enrichment_schedule.sql hard-codes production Supabase project URL
 - place_record_id on venue_family_metadata is unused in application code
 
-## Live audit
+## Live production tables
 
-Run with `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` plus `--live` to compare production.
+- canonical_venues
+- place_records
+- venue_claims
+- venue_enrichment_drafts
+- venue_enrichment_jobs
+- venue_family_metadata
+- venue_place_links
+- venue_source_evidence
+
+## Drift vs expected operational tables
+
+Missing in live: none
+
+Extra in live: none

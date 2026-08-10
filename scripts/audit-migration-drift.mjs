@@ -80,7 +80,7 @@ async function fetchLiveTables() {
     // information_schema may be blocked; fall back to probing expected tables
     const present = [];
     for (const table of EXPECTED_TABLES) {
-      const probe = await supabase.from(table).select('*', { count: 'exact', head: true });
+      const probe = await supabase.from(table).select('*').limit(1);
       if (!probe.error) present.push(table);
     }
     return { mode: 'probe', tables: present.sort() };
