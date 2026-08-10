@@ -47,7 +47,7 @@ Always return every key in this exact JSON shape:
   "rainyDaySuitability": "unknown",
   "overallDraftConfidence": "unknown"
 }
-Age fit and suggested visit duration are editorial suggestions, not official facts. Populate them only when the available context supports a cautious recommendation; otherwise leave them null. Never present them as verified.
+Age fit and suggested visit duration are editorial suggestions, not official facts. Populate them only when the available context supports a cautious recommendation; otherwise leave them null. Never present them as verified.`;
 
 function compactEvidenceBundle(bundle) {
   if (!bundle) return null;

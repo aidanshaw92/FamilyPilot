@@ -80,9 +80,14 @@ export default function EnrichmentLayout() {
               try {
                 await enrichmentApi.getStats();
                 setAuthed(true);
-              } catch {
+              } catch (caught) {
                 clearEnrichmentToken();
-                setError('Invalid enrichment admin token');
+                const apiError = caught as Error & { code?: string };
+                setError(
+                  apiError.code === 'TOKEN_MISMATCH' || apiError.code === 'MISSING_TOKEN'
+                    ? 'Invalid enrichment admin token'
+                    : `Enrichment API unavailable: ${apiError.message}`,
+                );
               }
             })();
           }}
