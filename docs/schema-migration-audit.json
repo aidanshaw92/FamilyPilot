@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-10T19:27:10.387Z",
+  "generatedAt": "2026-08-10T19:31:43.218Z",
   "migrationFiles": [
     "001_initial_schema.sql",
     "002_place_records_and_metadata.sql",
@@ -48,19 +48,18 @@
   "live": {
     "mode": "probe",
     "tables": [
+      "canonical_venues",
       "place_records",
       "venue_claims",
       "venue_enrichment_drafts",
       "venue_enrichment_jobs",
       "venue_family_metadata",
+      "venue_place_links",
       "venue_source_evidence"
     ]
   },
   "drift": {
-    "missingInLive": [
-      "canonical_venues",
-      "venue_place_links"
-    ],
+    "missingInLive": [],
     "extraInLive": []
   }
 }

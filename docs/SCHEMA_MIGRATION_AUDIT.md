@@ -1,6 +1,6 @@
 # Schema migration audit
 
-Generated: 2026-08-10T19:27:10.387Z
+Generated: 2026-08-10T19:31:43.218Z
 
 ## Committed migrations
 
@@ -39,15 +39,17 @@ Generated: 2026-08-10T19:27:10.387Z
 
 ## Live production tables
 
+- canonical_venues
 - place_records
 - venue_claims
 - venue_enrichment_drafts
 - venue_enrichment_jobs
 - venue_family_metadata
+- venue_place_links
 - venue_source_evidence
 
 ## Drift vs expected operational tables
 
-Missing in live: canonical_venues, venue_place_links
+Missing in live: none
 
 Extra in live: none
