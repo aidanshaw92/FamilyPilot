@@ -181,7 +181,7 @@ export const enrichmentApi = {
 
   /** Regenerate a legacy pending draft through the evidence-backed pipeline. */
   async regenerateDraftWithEvidence(id: string) {
-    return this.generateDraft(id, false);
+    return this.generateDraft(id, true);
   },
 
   async getLegacyDrafts(params?: { batchSize?: number }) {
