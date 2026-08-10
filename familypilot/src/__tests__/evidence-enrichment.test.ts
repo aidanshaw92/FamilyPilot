@@ -390,18 +390,21 @@ describe('focused recommendation QA regressions', () => {
     expect(facts.find((f) => f.field === 'parking')?.value).toBe('no');
   });
 
-  it('Verulamium Park — closed public toilets must not yield toilets=yes', async () => {
-    const { hasToiletNegation } = await import('../../../api/enrichment/_lib/evidence-extractor.js');
+  it('Verulamium Park — scoped toilet closure must not yield toilets=yes or venue-wide no', async () => {
+    const { hasToiletNegation, isScopedToiletClosure } = await import(
+      '../../../api/enrichment/_lib/evidence-extractor.js'
+    );
     const sentence =
       'The café is near the now closed public toilets at the far end of the park.';
     expect(hasToiletNegation(sentence)).toBe(true);
+    expect(isScopedToiletClosure(sentence)).toBe(true);
 
     const facts = extractEvidenceFromText(sentence, {
       ...sourceMeta,
       url: 'https://www.stalbans.gov.uk/parks/verulamium-park',
       sourceType: 'official_website',
     });
-    expect(facts.find((f) => f.field === 'toilets')?.value).toBe('no');
+    expect(facts.find((f) => f.field === 'toilets')).toBeUndefined();
   });
 
   it('Golders Hill Park — address and public transport must not yield parking=yes', async () => {
@@ -749,6 +752,18 @@ describe('evidence quality gates', () => {
     const facts = extractEvidenceFromText(
       'Are parent and baby facilities available at the Studio Tour?',
       meta,
+    );
+    expect(facts.find((fact) => fact.field === 'babyChanging')).toBeUndefined();
+  });
+
+  it('does not turn the Warner Bros Studio Tour FAQ heading into baby changing evidence', () => {
+    const facts = extractEvidenceFromText(
+      'Are parent and baby facilities available at the Studio Tour?',
+      {
+        ...meta,
+        url: 'https://www.wbstudiotour.co.uk/plan-your-visit/frequently-asked-questions',
+        sourceType: 'faq_page',
+      },
     );
     expect(facts.find((fact) => fact.field === 'babyChanging')).toBeUndefined();
   });

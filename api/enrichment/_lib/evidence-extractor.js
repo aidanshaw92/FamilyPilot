@@ -281,7 +281,12 @@ function extractEvidenceFromText(text, sourceMeta) {
     for (const sentence of sentences) {
       // Classify only cleaned human-readable text. Matching raw flattened HTML can
       // turn CSS selectors such as ".baby-changing" into false facility claims.
-      const readableSentence = cleanEvidenceSnippet(sentence);
+      // Long flattened pages are windowed around the facility anchor before the
+      // 400-char storage cap so trailing facility prose is not truncated away.
+      const focusedSentence = EVIDENCE_ANCHORS[pattern.field]?.test(sentence)
+        ? extractEvidenceWindow(sentence, pattern.field)
+        : sentence;
+      const readableSentence = cleanEvidenceSnippet(focusedSentence);
       if (!readableSentence) continue;
       const match = matchField(readableSentence, pattern, pattern.field);
       if (!match) continue;
