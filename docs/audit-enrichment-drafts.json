@@ -1,26 +1,11 @@
 {
-  "generatedAt": "2026-08-10T18:24:51.828Z",
+  "generatedAt": "2026-08-10T18:28:06.660Z",
   "venueCount": 15,
-  "rowCount": 19,
-  "unsupportedPositiveCount": 11,
-  "passedCount": 8,
-  "failedCount": 11,
+  "rowCount": 18,
+  "unsupportedPositiveCount": 0,
+  "passedCount": 18,
+  "failedCount": 0,
   "rows": [
-    {
-      "venue": "Chiltern Open Air Museum",
-      "proposedFact": "babyChanging",
-      "evidence": "Baby Changing Facilities Baby changing facilities are located at our Bakerloo midsite toilets.",
-      "source": "https://www.coam.org.uk/planyourvisit",
-      "sourceType": "visitor_info",
-      "classification": "yes",
-      "confidence": "high",
-      "passedQualityGate": false,
-      "warnings": [
-        "not_marked_evidence_backed"
-      ],
-      "unsupportedPositive": true,
-      "retrievedAt": "2026-08-10T18:21:33.654Z"
-    },
     {
       "venue": "Chiltern Open Air Museum",
       "proposedFact": "environment",
@@ -32,7 +17,7 @@
       "passedQualityGate": true,
       "warnings": [],
       "unsupportedPositive": false,
-      "retrievedAt": "2026-08-10T18:21:35.117Z"
+      "retrievedAt": "2026-08-10T18:27:46.654Z"
     },
     {
       "venue": "Chiltern Open Air Museum",
@@ -42,12 +27,10 @@
       "sourceType": "visitor_info",
       "classification": "yes",
       "confidence": "high",
-      "passedQualityGate": false,
-      "warnings": [
-        "not_marked_evidence_backed"
-      ],
-      "unsupportedPositive": true,
-      "retrievedAt": "2026-08-10T18:21:32.903Z"
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
+      "retrievedAt": "2026-08-10T18:27:45.630Z"
     },
     {
       "venue": "Colne Valley Regional Park",
@@ -57,11 +40,9 @@
       "sourceType": "visitor_info",
       "classification": "yes",
       "confidence": "high",
-      "passedQualityGate": false,
-      "warnings": [
-        "not_marked_evidence_backed"
-      ],
-      "unsupportedPositive": true,
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
       "retrievedAt": "2026-08-10T16:15:04.422Z"
     },
     {
@@ -111,11 +92,9 @@
       "sourceType": "official_website",
       "classification": "yes",
       "confidence": "high",
-      "passedQualityGate": false,
-      "warnings": [
-        "not_marked_evidence_backed"
-      ],
-      "unsupportedPositive": true,
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
       "retrievedAt": "2026-08-10T16:04:02.242Z"
     },
     {
@@ -139,11 +118,9 @@
       "sourceType": "official_website",
       "classification": "yes",
       "confidence": "high",
-      "passedQualityGate": false,
-      "warnings": [
-        "not_marked_evidence_backed"
-      ],
-      "unsupportedPositive": true,
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
       "retrievedAt": "2026-08-10T16:04:02.242Z"
     },
     {
@@ -154,11 +131,9 @@
       "sourceType": "official_website",
       "classification": "yes",
       "confidence": "high",
-      "passedQualityGate": false,
-      "warnings": [
-        "not_marked_evidence_backed"
-      ],
-      "unsupportedPositive": true,
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
       "retrievedAt": "2026-08-10T16:04:02.242Z"
     },
     {
@@ -169,11 +144,9 @@
       "sourceType": "faq_page",
       "classification": "yes",
       "confidence": "high",
-      "passedQualityGate": false,
-      "warnings": [
-        "not_marked_evidence_backed"
-      ],
-      "unsupportedPositive": true,
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
       "retrievedAt": "2026-08-10T18:23:07.527Z"
     },
     {
@@ -184,11 +157,9 @@
       "sourceType": "visitor_info",
       "classification": "yes",
       "confidence": "high",
-      "passedQualityGate": false,
-      "warnings": [
-        "not_marked_evidence_backed"
-      ],
-      "unsupportedPositive": true,
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
       "retrievedAt": "2026-08-10T18:23:10.693Z"
     },
     {
@@ -199,11 +170,9 @@
       "sourceType": "official_website",
       "classification": "yes",
       "confidence": "high",
-      "passedQualityGate": false,
-      "warnings": [
-        "not_marked_evidence_backed"
-      ],
-      "unsupportedPositive": true,
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
       "retrievedAt": "2026-08-10T16:01:04.055Z"
     },
     {
@@ -240,11 +209,9 @@
       "sourceType": "official_website",
       "classification": "yes",
       "confidence": "high",
-      "passedQualityGate": false,
-      "warnings": [
-        "not_marked_evidence_backed"
-      ],
-      "unsupportedPositive": true,
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
       "retrievedAt": "2026-08-10T16:01:04.055Z"
     },
     {
@@ -255,11 +222,9 @@
       "sourceType": "official_website",
       "classification": "yes",
       "confidence": "high",
-      "passedQualityGate": false,
-      "warnings": [
-        "not_marked_evidence_backed"
-      ],
-      "unsupportedPositive": true,
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
       "retrievedAt": "2026-08-10T16:01:04.055Z"
     },
     {
