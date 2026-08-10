@@ -22,8 +22,16 @@ import {
   TriState,
 } from '@/src/types/enrichment';
 import { VenueEnrichmentDraftRecord, EvidenceBundle } from '@/src/types/ai-enrichment';
+import { VenueClaim } from '@/src/types/enrichment';
 import { VenueFamilyMetadata } from '@/src/types/places';
 import { enrichmentApi } from '@/src/services/enrichment/enrichment-api-client';
+import {
+  conflictForDraftLabel,
+  formatClaimFieldKey,
+  formatClaimValue,
+  listEvidenceConflicts,
+  type EvidenceConflictSummary,
+} from '@/src/utils/claim-review';
 import { draftJsonToReviewForm, formatDraftConfidence, normalizeDraftForReview } from '@/src/utils/ai-draft-review';
 import { cleanEvidenceSnippet } from '@/src/utils/evidence-text-utils';
 import { getAiDraftInternalLabel } from '@/src/utils/family-match-classification';
@@ -116,6 +124,9 @@ export default function EnrichmentFormScreen() {
   const [enrichmentStatus, setEnrichmentStatus] = useState<string>('provider_only');
   const [draft, setDraft] = useState<VenueEnrichmentDraftRecord | null>(null);
   const [evidenceBundle, setEvidenceBundle] = useState<EvidenceBundle | null>(null);
+  const [claims, setClaims] = useState<VenueClaim[]>([]);
+  const [evidenceConflicts, setEvidenceConflicts] = useState<EvidenceConflictSummary[]>([]);
+  const [claimActionId, setClaimActionId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [form, setForm] = useState<EnrichmentSavePayload>(metadataToForm(null));
@@ -126,12 +137,15 @@ export default function EnrichmentFormScreen() {
     if (!id) return;
     setLoading(true);
     try {
-      const { place, metadata, draft: pendingDraft } = await enrichmentApi.getVenue(id);
+      const { place, metadata, draft: pendingDraft, claims: venueClaims, evidenceConflicts: conflicts } =
+        await enrichmentApi.getVenue(id);
       setVenueName((place?.name as string) ?? id);
       setEnrichmentStatus(metadata?.enrichmentStatus ?? 'provider_only');
       setDraft(pendingDraft ? { ...pendingDraft, draftJson: normalizeDraftForReview(pendingDraft.draftJson) } : null);
       const bundle = pendingDraft?.sourceContext?.evidenceBundle as EvidenceBundle | undefined;
       setEvidenceBundle(bundle ?? null);
+      setClaims(venueClaims ?? []);
+      setEvidenceConflicts(conflicts?.length ? conflicts : listEvidenceConflicts(bundle ?? null));
       if (pendingDraft?.draftJson && (metadata?.enrichmentStatus === 'ai_draft' || !metadata)) {
         setForm(draftJsonToReviewForm(pendingDraft.draftJson));
       } else {
@@ -230,17 +244,47 @@ export default function EnrichmentFormScreen() {
 
   const approveDraftAction = async () => {
     if (!id) return;
-    setSaving(true);
+    const runApprove = async () => {
+      setSaving(true);
+      setError('');
+      try {
+        await enrichmentApi.approveDraft(id, form);
+        setDirty(false);
+        Alert.alert('Approved', 'Draft approved — venue is now enriched');
+        await load();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Approve failed');
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    if (evidenceConflicts.length > 0) {
+      Alert.alert(
+        'Unresolved source conflicts',
+        `${evidenceConflicts.map((c) => c.label).join(', ')} — sources disagree. Confirm your form values before approving trusted claims.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Approve anyway', style: 'destructive', onPress: () => void runApprove() },
+        ],
+      );
+      return;
+    }
+
+    await runApprove();
+  };
+
+  const handleClaimStatus = async (claimId: string, action: 'dispute' | 'expire') => {
+    setClaimActionId(claimId);
     setError('');
     try {
-      await enrichmentApi.approveDraft(id, form);
-      setDirty(false);
-      Alert.alert('Approved', 'Draft approved — venue is now enriched');
+      if (action === 'dispute') await enrichmentApi.disputeClaim(claimId);
+      else await enrichmentApi.expireClaim(claimId);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Approve failed');
+      setError(e instanceof Error ? e.message : 'Claim update failed');
     } finally {
-      setSaving(false);
+      setClaimActionId(null);
     }
   };
 
@@ -287,6 +331,13 @@ export default function EnrichmentFormScreen() {
             {draft.evidenceStatus === 'evidence_backed' ? ' · Evidence-backed' : ''}
           </Text>
           <SourcePanel bundle={evidenceBundle} draft={draft} />
+          {evidenceConflicts.length > 0 ? (
+            <View style={styles.conflictBanner}>
+              <Text variant="caption" color={colors.error[600] ?? colors.warning[600]}>
+                Source conflict — review before approving: {evidenceConflicts.map((c) => c.label).join(', ')}
+              </Text>
+            </View>
+          ) : null}
           <Pressable
             style={styles.secondaryBtn}
             disabled={regenerating || saving}
@@ -311,26 +362,32 @@ export default function EnrichmentFormScreen() {
           <DraftField
             label="Toilets"
             field={draft.draftJson.familyFacilities.toilets}
+            conflict={conflictForDraftLabel('Toilets', evidenceConflicts)}
           />
           <DraftField
             label="Baby changing"
             field={draft.draftJson.familyFacilities.babyChanging}
+            conflict={conflictForDraftLabel('Baby changing', evidenceConflicts)}
           />
           <DraftField
             label="Parking"
             field={draft.draftJson.familyFacilities.parking}
+            conflict={conflictForDraftLabel('Parking', evidenceConflicts)}
           />
           <DraftField
             label="Pushchair suitability"
             field={draft.draftJson.pushchairSuitability}
+            conflict={conflictForDraftLabel('Pushchair suitability', evidenceConflicts)}
           />
           <DraftField
             label="Environment"
             field={draft.draftJson.environment}
+            conflict={conflictForDraftLabel('Environment', evidenceConflicts)}
           />
           <DraftField
             label="Energy level"
             field={draft.draftJson.energyLevel}
+            conflict={conflictForDraftLabel('Energy level', evidenceConflicts)}
           />
           {draft.draftJson.suggestedVisitDuration != null ? (
             <Text variant="caption">
@@ -370,6 +427,13 @@ export default function EnrichmentFormScreen() {
       ) : null}
       {dirty ? <Text variant="caption" color={colors.warning[600]}>Unsaved changes</Text> : null}
       {error ? <Text variant="caption" color={colors.error[600]}>{error}</Text> : null}
+
+      <TrustedClaimsPanel
+        claims={claims}
+        claimActionId={claimActionId}
+        onDispute={(claimId) => void handleClaimStatus(claimId, 'dispute')}
+        onExpire={(claimId) => void handleClaimStatus(claimId, 'expire')}
+      />
 
       <Section title="Focused recommendations">
         <Field
@@ -586,9 +650,90 @@ function DiagnosticsPanel({ diagnostics }: { diagnostics: import('@/src/types/ai
   );
 }
 
+function TrustedClaimsPanel({
+  claims,
+  claimActionId,
+  onDispute,
+  onExpire,
+}: {
+  claims: VenueClaim[];
+  claimActionId: string | null;
+  onDispute: (claimId: string) => void;
+  onExpire: (claimId: string) => void;
+}) {
+  if (claims.length === 0) {
+    return (
+      <Section title="Trusted claims">
+        <Text variant="caption" color={colors.text.secondary}>
+          No trusted claims yet — approve a draft or save enriched metadata to create field-level claims.
+        </Text>
+      </Section>
+    );
+  }
+
+  const activeClaims = claims.filter((c) => c.status === 'active');
+  const historyClaims = claims.filter((c) => c.status !== 'active');
+
+  return (
+    <Section title="Trusted claims">
+      <Text variant="caption" color={colors.text.secondary}>
+        Active claims project into consumer metadata. Dispute or expire to remove a field from the trusted read model.
+      </Text>
+      {activeClaims.map((claim) => (
+        <View key={claim.id} style={styles.claimCard}>
+          <Text variant="caption">{formatClaimFieldKey(claim.fieldKey)}</Text>
+          <Text variant="bodySmall">
+            {formatClaimValue(claim.valueJson)} · {claim.confidence ?? 'unknown'} confidence · {claim.status}
+          </Text>
+          {claim.evidenceExcerpt ? (
+            <Text variant="caption" color={colors.text.secondary} numberOfLines={2}>
+              Evidence: {claim.evidenceExcerpt}
+            </Text>
+          ) : null}
+          {claim.sourceUrl ? (
+            <Text variant="caption" color={colors.primary[600] ?? colors.primary[500]} numberOfLines={1}>
+              {claim.sourceType?.replace(/_/g, ' ') ?? 'source'} · {claim.sourceUrl}
+            </Text>
+          ) : null}
+          <Text variant="caption" color={colors.text.tertiary}>
+            Approved {claim.approvedAt.slice(0, 10)} by {claim.approvedBy}
+          </Text>
+          <View style={styles.row}>
+            <Pressable
+              style={styles.secondaryBtn}
+              disabled={claimActionId === claim.id}
+              onPress={() => onDispute(claim.id)}
+            >
+              <Text variant="caption">Dispute</Text>
+            </Pressable>
+            <Pressable
+              style={styles.secondaryBtn}
+              disabled={claimActionId === claim.id}
+              onPress={() => onExpire(claim.id)}
+            >
+              <Text variant="caption">Expire</Text>
+            </Pressable>
+          </View>
+        </View>
+      ))}
+      {historyClaims.length > 0 ? (
+        <>
+          <Text variant="caption" color={colors.text.secondary}>History</Text>
+          {historyClaims.slice(0, 8).map((claim) => (
+            <Text key={claim.id} variant="caption" color={colors.text.tertiary}>
+              {formatClaimFieldKey(claim.fieldKey)} → {formatClaimValue(claim.valueJson)} ({claim.status})
+            </Text>
+          ))}
+        </>
+      ) : null}
+    </Section>
+  );
+}
+
 function DraftField({
   label,
   field,
+  conflict,
 }: {
   label: string;
   field?: {
@@ -599,6 +744,7 @@ function DraftField({
     evidence?: string | null;
     sourceType?: string | null;
   } | null;
+  conflict?: EvidenceConflictSummary;
 }) {
   if (!field) {
     return (
@@ -615,8 +761,18 @@ function DraftField({
   const evidenceText = field.evidence ? cleanEvidenceSnippet(field.evidence) : null;
 
   return (
-    <View style={styles.draftField}>
+    <View style={[styles.draftField, conflict ? styles.draftFieldConflict : null]}>
       <Text variant="caption">{label}</Text>
+      {conflict ? (
+        <Text variant="caption" color={colors.error[600] ?? colors.warning[600]}>
+          Sources conflict — choose a value in the form below before approving
+        </Text>
+      ) : null}
+      {conflict?.conflicts.map((entry, index) => (
+        <Text key={`${entry.sourceUrl ?? index}`} variant="caption" color={colors.text.secondary}>
+          {entry.value} ({entry.confidence}): &quot;{(entry.evidenceText ?? entry.evidence ?? '').slice(0, 120)}&quot;
+        </Text>
+      ))}
       <Text variant="bodySmall">
         {field.value} · {formatDraftConfidence(field.confidence)} confidence
       </Text>
@@ -715,6 +871,24 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   draftField: { gap: 2 },
+  draftFieldConflict: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.error[500] ?? colors.warning[500],
+    paddingLeft: spacing.sm,
+  },
+  conflictBanner: {
+    backgroundColor: colors.error[50] ?? colors.warning[50],
+    padding: spacing.sm,
+    borderRadius: 6,
+  },
+  claimCard: {
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.background,
+  },
   sourcePanel: {
     backgroundColor: colors.background,
     padding: spacing.sm,

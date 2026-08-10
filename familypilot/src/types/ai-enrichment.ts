@@ -62,6 +62,8 @@ export interface EvidenceFact {
   sourceUrl?: string | null;
   sourceType?: string | null;
   retrievedAt?: string | null;
+  evidenceStatus?: 'conflict' | string;
+  conflicts?: EvidenceFact[];
 }
 
 export interface EvidenceDiagnostics {

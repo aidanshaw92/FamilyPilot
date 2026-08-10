@@ -149,6 +149,39 @@ export const enrichmentApi = {
       metadata: import('@/src/types/places').VenueFamilyMetadata | null;
       draft: import('@/src/types/ai-enrichment').VenueEnrichmentDraftRecord | null;
       evidence: import('@/src/types/ai-enrichment').VenueSourceEvidence[];
+      claims: import('@/src/types/enrichment').VenueClaim[];
+      evidenceConflicts: import('@/src/utils/claim-review').EvidenceConflictSummary[];
+    }>;
+  },
+
+  async getClaims(id: string, status?: string) {
+    const queryParams: Record<string, string> = { id };
+    if (status) queryParams.status = status;
+    return enrichmentFetch('claims', {}, queryParams) as Promise<{
+      claims: import('@/src/types/enrichment').VenueClaim[];
+      count: number;
+    }>;
+  },
+
+  async disputeClaim(claimId: string) {
+    return enrichmentFetch('dispute-claim', {
+      method: 'POST',
+      body: JSON.stringify({ claimId }),
+    }) as Promise<{
+      claim: import('@/src/types/enrichment').VenueClaim;
+      metadata: import('@/src/types/places').VenueFamilyMetadata;
+      ok: boolean;
+    }>;
+  },
+
+  async expireClaim(claimId: string) {
+    return enrichmentFetch('expire-claim', {
+      method: 'POST',
+      body: JSON.stringify({ claimId }),
+    }) as Promise<{
+      claim: import('@/src/types/enrichment').VenueClaim;
+      metadata: import('@/src/types/places').VenueFamilyMetadata;
+      ok: boolean;
     }>;
   },
 

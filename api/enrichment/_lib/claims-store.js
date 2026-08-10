@@ -3,6 +3,7 @@ const path = require('path');
 
 const { getSupabaseAdmin } = require('./supabase-admin');
 const { collectFieldEvidence } = require('./ai-draft-mapper');
+const { findEvidenceRecordBySourceUrl } = require('./evidence-store');
 const {
   buildBestAges,
   facilitiesFromTriState,
@@ -173,6 +174,7 @@ function buildClaimRecord({
   draftId,
   checkedAt,
   supersedesClaimId,
+  sourceEvidenceId,
 }) {
   const evidenceKey = fieldKey === 'extendedTerrain' ? 'terrain' : fieldKey;
   const evidence = fieldEvidence?.[evidenceKey] ?? fieldEvidence?.[fieldKey] ?? {};
@@ -184,7 +186,7 @@ function buildClaimRecord({
     sourceUrl: evidence.sourceUrl ?? null,
     evidenceExcerpt: evidence.evidence ?? null,
     sourceType: evidence.sourceType ?? 'ai_assisted',
-    sourceEvidenceId: null,
+    sourceEvidenceId: sourceEvidenceId ?? null,
     checkedAt,
     validUntil: null,
     approvedAt: new Date().toISOString(),
@@ -193,6 +195,13 @@ function buildClaimRecord({
     status: 'active',
     supersedesClaimId: supersedesClaimId ?? null,
   };
+}
+
+async function resolveSourceEvidenceId(familypilotPlaceId, fieldEvidence, fieldKey) {
+  const evidenceKey = fieldKey === 'extendedTerrain' ? 'terrain' : fieldKey;
+  const evidence = fieldEvidence?.[evidenceKey] ?? fieldEvidence?.[fieldKey] ?? {};
+  if (!evidence?.sourceUrl) return null;
+  return findEvidenceRecordBySourceUrl(familypilotPlaceId, evidence.sourceUrl);
 }
 
 async function getActiveClaimForField(familypilotPlaceId, fieldKey) {
@@ -257,6 +266,19 @@ async function updateClaimStatus(claimId, status) {
   writeClaimsFileStore(store);
 }
 
+async function getClaimById(claimId) {
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { data, error } = await supabase.from('venue_claims').select('*').eq('id', claimId).maybeSingle();
+    if (error) throw new Error(error.message);
+    return rowToClaim(data);
+  }
+
+  const store = readClaimsFileStore();
+  const row = store.claims.find((c) => c.id === claimId);
+  return rowToClaim(row);
+}
+
 async function createApprovedClaim({
   familypilotPlaceId,
   fieldKey,
@@ -267,6 +289,7 @@ async function createApprovedClaim({
   checkedAt,
 }) {
   const existing = await getActiveClaimForField(familypilotPlaceId, fieldKey);
+  const sourceEvidenceId = await resolveSourceEvidenceId(familypilotPlaceId, fieldEvidence, fieldKey);
   const claim = buildClaimRecord({
     familypilotPlaceId,
     fieldKey,
@@ -276,6 +299,7 @@ async function createApprovedClaim({
     draftId,
     checkedAt,
     supersedesClaimId: existing?.id ?? null,
+    sourceEvidenceId,
   });
 
   if (existing) {
@@ -585,6 +609,7 @@ module.exports = {
   createClaimsFromApproval,
   syncClaimsFromEditorSave,
   listClaimsForVenue,
+  getClaimById,
   getActiveClaims,
   projectActiveClaimsToPayload,
   rebuildMetadataPayloadFromClaims,
