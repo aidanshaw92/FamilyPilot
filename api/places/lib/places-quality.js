@@ -190,69 +190,14 @@ function normaliseChainKey(name) {
   return base.toLowerCase().replace(/[^\w\s']/g, '').replace(/\s+/g, ' ');
 }
 
-function haversineKm(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-const ALIAS_STOP_WORDS = new Set([
-  'the', 'london', 'uk', 'england', 'studio', 'tour', 'tours', 'and', 'at', 'by', 'park',
-]);
-
-function normaliseVenueAliasKey(name) {
-  return name
-    .toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
-    .split(/\s+/)
-    .filter((word) => word.length > 2 && !ALIAS_STOP_WORDS.has(word))
-    .sort()
-    .join(' ');
-}
-
-function tokenOverlapScore(nameA, nameB) {
-  const tokensA = new Set(normaliseVenueAliasKey(nameA).split(' ').filter(Boolean));
-  const tokensB = new Set(normaliseVenueAliasKey(nameB).split(' ').filter(Boolean));
-  if (tokensA.size === 0 || tokensB.size === 0) return 0;
-  let overlap = 0;
-  for (const token of tokensA) {
-    if (tokensB.has(token)) overlap++;
-  }
-  return overlap / Math.max(tokensA.size, tokensB.size);
-}
-
-function areLikelySameVenueAlias(a, b, km) {
-  if (km > 0.5) return false;
-  if (tokenOverlapScore(a.name, b.name) >= 0.45) return true;
-  const nameA = a.name.toLowerCase();
-  const nameB = b.name.toLowerCase();
-  const studioTourSignals = /studio|tour|harry potter|warner bros|warner bros\./;
-  return km <= 0.2 && studioTourSignals.test(nameA) && studioTourSignals.test(nameB);
-}
-
-function dedupeVenueAliases(places) {
-  const suppressedIds = new Set();
-  for (let i = 0; i < places.length; i++) {
-    if (suppressedIds.has(places[i].familypilotId)) continue;
-    for (let j = i + 1; j < places.length; j++) {
-      if (suppressedIds.has(places[j].familypilotId)) continue;
-      const a = places[i];
-      const b = places[j];
-      const km = haversineKm(a.latitude, a.longitude, b.latitude, b.longitude);
-      if (!areLikelySameVenueAlias(a, b, km)) continue;
-      const keeper = a.name.length >= b.name.length ? a : b;
-      const duplicate = keeper.familypilotId === a.familypilotId ? b : a;
-      suppressedIds.add(duplicate.familypilotId);
-    }
-  }
-  return places.filter((place) => !suppressedIds.has(place.familypilotId));
-}
+const {
+  haversineKm,
+  normaliseVenueAliasKey,
+  tokenOverlapScore,
+  areLikelySameVenueAlias,
+  findVenueAliasPairs,
+  dedupeVenueAliases,
+} = require('./venue-alias-detection');
 
 function categoryRelevanceScore(category, intent) {
   if (intent === 'restaurant') {
@@ -342,6 +287,9 @@ module.exports = {
   shouldExcludePlace,
   normaliseChainKey,
   normaliseVenueAliasKey,
+  tokenOverlapScore,
+  areLikelySameVenueAlias,
+  findVenueAliasPairs,
   rankPlaces,
   dedupeChains,
   dedupeVenueAliases,

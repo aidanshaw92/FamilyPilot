@@ -14,6 +14,7 @@ const {
   syncClaimsFromEditorSave,
   venueHasActiveClaims,
 } = require('./claims-store');
+const { loadCanonicalStore, getCanonicalVenueForPlace } = require('../../places/lib/canonical-venues');
 
 const FILE_STORE_DIR = '.data';
 const FILE_STORE_NAME = 'enrichment-store.json';
@@ -403,7 +404,27 @@ async function listQueue(filters = {}) {
     return new Date(b.fetchedAt || 0).getTime() - new Date(a.fetchedAt || 0).getTime();
   });
 
-  return filtered;
+  return enrichQueueItemsWithCanonical(filtered);
+}
+
+async function enrichQueueItemsWithCanonical(items) {
+  try {
+    const store = await loadCanonicalStore();
+    return items.map((item) => {
+      const match = getCanonicalVenueForPlace(store, item.familypilotId);
+      if (!match) return item;
+      return {
+        ...item,
+        canonicalVenueId: match.canonicalVenue.id,
+        canonicalPrimaryPlaceId: match.canonicalVenue.primaryFamilypilotPlaceId,
+        canonicalLinkType: match.link.linkType,
+        canonicalReviewStatus: match.canonicalVenue.reviewStatus,
+        isCanonicalAlias: match.link.linkType === 'alias',
+      };
+    });
+  } catch {
+    return items;
+  }
 }
 
 async function getStats(filters = {}) {

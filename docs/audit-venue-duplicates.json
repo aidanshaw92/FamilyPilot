@@ -1,0 +1,50 @@
+{
+  "generatedAt": "2026-08-10T19:27:13.771Z",
+  "heuristicPairCount": 2,
+  "storedGroupCount": 0,
+  "unlinkedHeuristicPairs": [
+    {
+      "primaryId": "fp-google-ChIJv9tbXcsRdkgRdSU67tQcC2w",
+      "primaryName": "Golders Hill Park Zoo",
+      "aliasId": "fp-google-ChIJATb-mYIQdkgRH82PlPcn3cs",
+      "aliasName": "Golders Hill Park",
+      "distanceKm": 0.09478973876222149,
+      "matchConfidence": 0.8166666666666667,
+      "matchMethod": "heuristic:venue_alias",
+      "linkedInDatabase": false
+    },
+    {
+      "primaryId": "fp-google-ChIJC9pWSLVBdkgRMA5Q9eG6egM",
+      "primaryName": "Warner Bros. Studio Tour London",
+      "aliasId": "fp-google-ChIJLcZnZgBBdkgRVa6ewdVh-1w",
+      "aliasName": "Harry Potter Studio",
+      "distanceKm": 0.006043946175001652,
+      "matchConfidence": 0.65,
+      "matchMethod": "heuristic:venue_alias",
+      "linkedInDatabase": false
+    }
+  ],
+  "heuristicPairs": [
+    {
+      "primaryId": "fp-google-ChIJv9tbXcsRdkgRdSU67tQcC2w",
+      "primaryName": "Golders Hill Park Zoo",
+      "aliasId": "fp-google-ChIJATb-mYIQdkgRH82PlPcn3cs",
+      "aliasName": "Golders Hill Park",
+      "distanceKm": 0.09478973876222149,
+      "matchConfidence": 0.8166666666666667,
+      "matchMethod": "heuristic:venue_alias",
+      "linkedInDatabase": false
+    },
+    {
+      "primaryId": "fp-google-ChIJC9pWSLVBdkgRMA5Q9eG6egM",
+      "primaryName": "Warner Bros. Studio Tour London",
+      "aliasId": "fp-google-ChIJLcZnZgBBdkgRVa6ewdVh-1w",
+      "aliasName": "Harry Potter Studio",
+      "distanceKm": 0.006043946175001652,
+      "matchConfidence": 0.65,
+      "matchMethod": "heuristic:venue_alias",
+      "linkedInDatabase": false
+    }
+  ],
+  "storedGroups": []
+}
