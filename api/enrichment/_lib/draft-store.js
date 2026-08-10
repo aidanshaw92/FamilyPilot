@@ -187,9 +187,19 @@ async function saveDraftRecord(familypilotId, externalId, result) {
 
   if (supabase) {
     const { data, error } = await supabase
-      .from('venue_enrichment_drafts')
-      .insert(record)
-      .select('*')
+      .rpc('replace_pending_venue_enrichment_draft', {
+        p_familypilot_place_id: record.familypilot_place_id,
+        p_external_id: record.external_id,
+        p_draft_json: record.draft_json,
+        p_model: record.model,
+        p_generated_at: record.generated_at,
+        p_source_context: record.source_context,
+        p_confidence_json: record.confidence_json,
+        p_evidence_status: record.evidence_status,
+        p_token_usage: record.token_usage,
+        p_estimated_cost_usd: record.estimated_cost_usd,
+        p_updated_at: record.updated_at,
+      })
       .single();
     if (error) throw new Error(error.message);
     return rowToDraft(data);
@@ -360,7 +370,12 @@ async function generateDraftForVenue(familypilotId, options = {}) {
     sourceStatus: evidenceBundle.sourceStatus,
   };
   const draft = await saveDraftRecord(familypilotId, place.external_id, result);
-  await supersedePendingDrafts(familypilotId, draft.id);
+
+  // Supabase replaces the pending draft atomically inside saveDraftRecord.
+  // The file-store fallback still needs to supersede older pending records here.
+  if (!getSupabaseAdmin()) {
+    await supersedePendingDrafts(familypilotId, draft.id);
+  }
 
   if (status !== 'enriched' && status !== 'verified') {
     await markAiDraftStatus(familypilotId);
