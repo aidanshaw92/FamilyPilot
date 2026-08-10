@@ -52,15 +52,15 @@ CREATE OR REPLACE FUNCTION public.consume_venue_enrichment_dispatch(
 ) RETURNS BOOLEAN
 LANGUAGE plpgsql SECURITY INVOKER SET search_path = public
 AS $$
-DECLARE consumed BOOLEAN;
+DECLARE affected_rows INTEGER;
 BEGIN
   UPDATE public.venue_enrichment_jobs
   SET dispatch_token=NULL, updated_at=now()
   WHERE id=p_job_id AND dispatch_token=p_dispatch_token
     AND familypilot_place_id=p_familypilot_place_id
     AND status='processing' AND locked_at > now() - interval '10 minutes';
-  GET DIAGNOSTICS consumed = ROW_COUNT;
-  RETURN consumed;
+  GET DIAGNOSTICS affected_rows = ROW_COUNT;
+  RETURN affected_rows = 1;
 END;
 $$;
 
