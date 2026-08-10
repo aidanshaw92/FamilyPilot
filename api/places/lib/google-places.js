@@ -7,7 +7,13 @@ const {
   rankPlaces,
   dedupeChains,
   dedupeVenueAliases,
+  findVenueAliasPairs,
 } = require('./places-quality');
+const {
+  filterPlacesToCanonicalPrimaries,
+  recordAliasPairs,
+  getCanonicalIdentity,
+} = require('./canonical-venues');
 
 const SEARCH_FIELD_MASK = [
   'places.id',
@@ -165,8 +171,19 @@ async function searchGoogle(lat, lng, radiusKm, options = {}) {
       return true;
     });
 
-  const deduped = dedupeVenueAliases(dedupeChains(mapped, lat, lng, intent));
-  return rankPlaces(deduped, {
+  const chainDeduped = dedupeChains(mapped, lat, lng, intent);
+  const { places: aliasDeduped, pairs } = findVenueAliasPairs(chainDeduped);
+
+  if (pairs.length > 0) {
+    try {
+      await recordAliasPairs(pairs, { reviewStatus: 'uncertain' });
+    } catch {
+      // Canonical link persistence must not break search
+    }
+  }
+
+  const canonicalFiltered = await filterPlacesToCanonicalPrimaries(aliasDeduped);
+  return rankPlaces(canonicalFiltered, {
     originLat: lat,
     originLng: lng,
     intent,

@@ -1,5 +1,6 @@
 const { getGooglePlace } = require('./lib/google-places');
 const { MOCK_FALLBACK } = require('./lib/fallback');
+const { getCanonicalIdentity, resolvePrimaryPlaceId } = require('./lib/canonical-venues');
 
 const MOCK_DETAILS = {
   'venue-1': {
@@ -41,6 +42,13 @@ module.exports = async function handler(req, res) {
   const id = req.query.id;
   if (!id) return res.status(400).json({ error: 'Missing id', fallbackAvailable: true });
 
+  let canonicalIdentity = null;
+  try {
+    canonicalIdentity = await getCanonicalIdentity(id);
+  } catch {
+    // Canonical lookup is best-effort
+  }
+
   const configuredProvider = (process.env.PLACES_PROVIDER || 'mock').toLowerCase();
   const fetchedAt = new Date().toISOString();
   let detail = null;
@@ -48,10 +56,14 @@ module.exports = async function handler(req, res) {
   let fallbackUsed = false;
   let fallbackReason;
   const errors = [];
+  const lookupId =
+    canonicalIdentity?.isAlias && canonicalIdentity.primaryFamilypilotPlaceId
+      ? canonicalIdentity.primaryFamilypilotPlaceId
+      : id;
 
-  if (configuredProvider === 'google' && id.startsWith('fp-google-')) {
+  if (configuredProvider === 'google' && lookupId.startsWith('fp-google-')) {
     try {
-      const place = await getGooglePlace(id);
+      const place = await getGooglePlace(lookupId);
       if (place) {
         detail = { place, metadata: null };
         provider = 'google';
@@ -62,7 +74,7 @@ module.exports = async function handler(req, res) {
   }
 
   if (!detail) {
-    const mockDetail = mockDetailFor(id);
+    const mockDetail = mockDetailFor(lookupId);
     if (mockDetail) {
       detail = mockDetail;
       provider = mockDetail.place.provider;
@@ -79,7 +91,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const { getMetadata } = require('../enrichment/_lib/enrichment-store');
-    const metadata = await getMetadata(id);
+    const metadata = await getMetadata(await resolvePrimaryPlaceId(id));
     if (metadata) {
       detail.metadata = metadata;
       detail.place = { ...detail.place, enrichmentStatus: metadata.enrichmentStatus, familyMetadata: metadata };
@@ -90,6 +102,8 @@ module.exports = async function handler(req, res) {
 
   return res.status(200).json({
     ...detail,
+    requestedPlaceId: id,
+    canonicalIdentity,
     provider,
     configuredProvider,
     cached: false,
