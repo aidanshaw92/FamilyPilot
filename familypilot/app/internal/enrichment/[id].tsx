@@ -287,17 +287,19 @@ export default function EnrichmentFormScreen() {
             {draft.evidenceStatus === 'evidence_backed' ? ' · Evidence-backed' : ''}
           </Text>
           <SourcePanel bundle={evidenceBundle} draft={draft} />
-          {isLegacyDraft(draft) ? (
-            <Pressable
-              style={styles.secondaryBtn}
-              disabled={regenerating || saving}
-              onPress={() => void regenerateWithEvidence()}
-            >
-              <Text variant="body">
-                {regenerating ? 'Regenerating with evidence…' : 'Regenerate with evidence'}
-              </Text>
-            </Pressable>
-          ) : null}
+          <Pressable
+            style={styles.secondaryBtn}
+            disabled={regenerating || saving}
+            onPress={() => void regenerateWithEvidence()}
+          >
+            <Text variant="body">
+              {regenerating
+                ? 'Regenerating with evidence…'
+                : isLegacyDraft(draft)
+                  ? 'Regenerate with evidence'
+                  : 'Regenerate draft with current evidence'}
+            </Text>
+          </Pressable>
           {regenerating ? (
             <View style={styles.row}>
               <ActivityIndicator color={colors.primary[500]} />
