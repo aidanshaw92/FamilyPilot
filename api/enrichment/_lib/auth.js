@@ -34,25 +34,6 @@ function isAuthConfigured() {
   return Boolean(getAdminToken());
 }
 
-function verifyWorkerAuth(req, res) {
-  const expected = normalizeToken(process.env.SUPABASE_SERVICE_ROLE_KEY ?? '');
-  if (!expected) {
-    res.status(503).json({
-      error: 'Automation credential not configured on server',
-      code: 'AUTOMATION_AUTH_NOT_CONFIGURED',
-    });
-    return false;
-  }
-
-  const provided = getTokenFromRequest(req);
-  if (!provided || provided !== expected) {
-    res.status(401).json({ error: 'Unauthorized', code: 'AUTOMATION_UNAUTHORIZED' });
-    return false;
-  }
-
-  return true;
-}
-
 function verifyEnrichmentAuth(req, res) {
   const expected = getAdminToken();
   if (!expected) {
@@ -83,5 +64,4 @@ module.exports = {
   getAdminToken,
   getTokenFromRequest,
   normalizeToken,
-  verifyWorkerAuth,
 };
