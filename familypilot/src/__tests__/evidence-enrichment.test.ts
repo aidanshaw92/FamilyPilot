@@ -700,6 +700,22 @@ describe('live venue evidence quality regressions', () => {
     expect(toilets?.evidenceText).not.toContain('unrelated navigation unrelated navigation unrelated navigation unrelated navigation');
   });
 
+  it('rejects CSS-only baby-changing selectors as evidence', () => {
+    const facts = extractEvidenceFromText(
+      '.baby-changing { display: grid; color: red; } .footer-baby-changing { margin: 0; }',
+      meta,
+    );
+    expect(facts.find((fact) => fact.field === 'babyChanging')).toBeUndefined();
+  });
+
+  it('still extracts explicit baby-changing prose surrounded by CSS', () => {
+    const facts = extractEvidenceFromText(
+      '.layout { display: grid; } Baby changing facilities are available beside reception. .footer { color: red; }',
+      meta,
+    );
+    expect(facts.find((fact) => fact.field === 'babyChanging')?.value).toBe('yes');
+  });
+
   it('centres baby-changing evidence instead of returning trailing page CSS', () => {
     const text =
       '.block { color: red; } '.repeat(80) +
