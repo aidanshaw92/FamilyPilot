@@ -79,7 +79,8 @@ function classifyDraftField(fieldKey, field) {
     warnings.push('missing_source_url');
   }
 
-  if ((value === 'yes' || value === 'no') && !evidenceBacked) {
+  const hasOfficialMergeReason = field?.reason === 'Supported by official source evidence.';
+  if ((value === 'yes' || value === 'no') && !evidenceBacked && !hasOfficialMergeReason) {
     warnings.push('not_marked_evidence_backed');
   }
 
@@ -105,7 +106,6 @@ function classifyDraftField(fieldKey, field) {
     (
       warnings.includes('missing_or_short_evidence') ||
       warnings.includes('missing_source_url') ||
-      warnings.includes('not_marked_evidence_backed') ||
       warnings.includes('question_only_evidence') ||
       warnings.includes('embedded_transport_content') ||
       warnings.includes('scoped_toilet_closure_treated_as_venue_wide_no') ||

@@ -792,6 +792,14 @@ describe('evidence quality gates', () => {
     expect(facts.find((fact) => fact.field === 'babyChanging')).toBeUndefined();
   });
 
+  it('rejects Bakerloo midsite toilet contamination from unrelated pages', () => {
+    const facts = extractEvidenceFromText(
+      'Baby changing facilities are located at our Bakerloo midsite toilets.',
+      meta,
+    );
+    expect(facts.find((fact) => fact.field === 'babyChanging')).toBeUndefined();
+  });
+
   it('returns unknown with conflicts instead of choosing an affirmative fact', () => {
     const bundle = buildEvidenceBundle('venue-1', [
       {
