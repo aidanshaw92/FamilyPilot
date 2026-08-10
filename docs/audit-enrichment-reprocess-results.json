@@ -1,0 +1,145 @@
+{
+  "startedAt": "2026-08-10T18:21:31.342Z",
+  "finishedAt": "2026-08-10T18:24:29.150Z",
+  "processed": 15,
+  "succeeded": 15,
+  "failed": 0,
+  "estimatedCostUsd": 0.00575565,
+  "results": [
+    {
+      "familypilotPlaceId": "fp-google-ChIJZz8_wPNodkgRQrQBE23io9I",
+      "name": "Chiltern Open Air Museum",
+      "ok": true,
+      "draftId": "e0a47cb8-f337-4687-98a4-1caa672e16f1",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 11688,
+      "estimatedCostUsd": 0.00049725
+    },
+    {
+      "familypilotPlaceId": "fp-google-ChIJq-jJARlxdkgRNLTE490EqVU",
+      "name": "Colne Valley Regional Park",
+      "ok": true,
+      "draftId": "51d597e2-ad8f-43a4-b919-8a1a3b8bfc12",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 7815,
+      "estimatedCostUsd": 0.00041339999999999997
+    },
+    {
+      "familypilotPlaceId": "fp-google-ChIJb5wm6eQQdkgR-qbm_aXw0xw",
+      "name": "Flip Out Brent Cross",
+      "ok": true,
+      "draftId": "3bb26c8c-849d-4582-9482-853b3534ec60",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 9350,
+      "estimatedCostUsd": 0.0003294
+    },
+    {
+      "familypilotPlaceId": "fp-google-ChIJ99IK4v8QdkgRZNGsdKK0pb8",
+      "name": "Gladstone Park",
+      "ok": true,
+      "draftId": "831e6230-a1ca-4349-bc7f-3d17795b0b65",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 9587,
+      "estimatedCostUsd": 0.00039735
+    },
+    {
+      "familypilotPlaceId": "fp-google-ChIJATb-mYIQdkgRH82PlPcn3cs",
+      "name": "Golders Hill Park",
+      "ok": true,
+      "draftId": "93e7eb96-0db0-4c58-b796-5e01f10cf5a9",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 10864,
+      "estimatedCostUsd": 0.0006288
+    },
+    {
+      "familypilotPlaceId": "fp-google-ChIJv9tbXcsRdkgRdSU67tQcC2w",
+      "name": "Golders Hill Park Zoo",
+      "ok": true,
+      "draftId": "b6e85ae8-9696-43a3-9719-6daa05c128b0",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 14100,
+      "estimatedCostUsd": 0.0002988
+    },
+    {
+      "familypilotPlaceId": "fp-google-ChIJHQ0TmmENdkgRStqMV2LSW5M",
+      "name": "Hanwell Zoo",
+      "ok": true,
+      "draftId": "080ee6ba-3a03-4c7c-8ad3-f3d7ddec4b31",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 7548,
+      "estimatedCostUsd": 0.00029624999999999996
+    },
+    {
+      "familypilotPlaceId": "fp-google-ChIJLcZnZgBBdkgRVa6ewdVh-1w",
+      "name": "Harry Potter Studio",
+      "ok": true,
+      "draftId": "831ff694-41df-428a-87ac-3bb4cbea31b6",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 10697,
+      "estimatedCostUsd": 0.0002781
+    },
+    {
+      "familypilotPlaceId": "fp-google-ChIJIwA11GYTdkgRoeeAutW9svo",
+      "name": "Headstone Manor and Museum",
+      "ok": true,
+      "draftId": "20d8a410-6383-4b72-aeb0-3156a2f80324",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 13524,
+      "estimatedCostUsd": 0.00041085000000000004
+    },
+    {
+      "familypilotPlaceId": "fp-google-ChIJi3VUUWoWdkgRluIRG5hbIlY",
+      "name": "Jump In by AirHop Adventure & Trampoline Park Elstree",
+      "ok": true,
+      "draftId": "21edfd52-4a1c-416e-bc0e-ad9eae8fe51b",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 5752,
+      "estimatedCostUsd": 0.0002898
+    },
+    {
+      "familypilotPlaceId": "fp-google-ChIJN3hATcsSdkgRPscumUj6FqU",
+      "name": "Northala Fields",
+      "ok": true,
+      "draftId": "2064e30a-9349-4a7c-aa54-2a69f508b2d0",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 7107,
+      "estimatedCostUsd": 0.00030944999999999996
+    },
+    {
+      "familypilotPlaceId": "fp-google-ChIJs4TUS9ZrdkgRFr2d6Wiqa5A",
+      "name": "Rickmansworth Aquadrome",
+      "ok": true,
+      "draftId": "5ac96db7-1943-44f4-81a2-4a446caf71ed",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 12265,
+      "estimatedCostUsd": 0.0006875999999999999
+    },
+    {
+      "familypilotPlaceId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+      "name": "Royal Air Force Museum London",
+      "ok": true,
+      "draftId": "b7cea850-cde9-4fcf-8c32-f04318987524",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 16694,
+      "estimatedCostUsd": 0.00035415
+    },
+    {
+      "familypilotPlaceId": "fp-google-ChIJ05KMm0A_dkgROCJiT9GMt7Y",
+      "name": "Verulamium Park",
+      "ok": true,
+      "draftId": "11febc54-3955-49fb-889d-35e222e3f522",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 10489,
+      "estimatedCostUsd": 0.00028379999999999996
+    },
+    {
+      "familypilotPlaceId": "fp-google-ChIJC9pWSLVBdkgRMA5Q9eG6egM",
+      "name": "Warner Bros. Studio Tour London",
+      "ok": true,
+      "draftId": "1edc24cc-8d3d-4642-8ba8-8c7b3370a34d",
+      "evidenceStatus": "evidence_backed",
+      "durationMs": 7805,
+      "estimatedCostUsd": 0.00028065
+    }
+  ]
+}

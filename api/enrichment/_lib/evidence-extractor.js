@@ -230,7 +230,11 @@ function isQuestionOnlyEvidence(sentence) {
 }
 
 function isSuspiciousEmbeddedContent(sentence) {
-  return /\b(?:bakerloo|piccadilly|jubilee|central|district|northern|victoria)\s+line\b|\b(?:tube|railway|underground)\s+station\b|\bplatform\s+\d+\b|\btransport\s+for\s+london\b/i.test(sentence);
+  return (
+    /\b(?:bakerloo|piccadilly|jubilee|central|district|northern|victoria)\s+line\b|\b(?:bakerloo|piccadilly|jubilee|central|district|northern|victoria)\b[^.!?]{0,40}\btoilets?\b|\b(?:tube|railway|underground)\s+station\b|\bplatform\s+\d+\b|\btransport\s+for\s+london\b/i.test(
+      sentence,
+    )
+  );
 }
 
 function isScopedToiletClosure(sentence) {

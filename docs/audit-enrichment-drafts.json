@@ -1,0 +1,279 @@
+{
+  "generatedAt": "2026-08-10T18:24:51.828Z",
+  "venueCount": 15,
+  "rowCount": 19,
+  "unsupportedPositiveCount": 11,
+  "passedCount": 8,
+  "failedCount": 11,
+  "rows": [
+    {
+      "venue": "Chiltern Open Air Museum",
+      "proposedFact": "babyChanging",
+      "evidence": "Baby Changing Facilities Baby changing facilities are located at our Bakerloo midsite toilets.",
+      "source": "https://www.coam.org.uk/planyourvisit",
+      "sourceType": "visitor_info",
+      "classification": "yes",
+      "confidence": "high",
+      "passedQualityGate": false,
+      "warnings": [
+        "not_marked_evidence_backed"
+      ],
+      "unsupportedPositive": true,
+      "retrievedAt": "2026-08-10T18:21:33.654Z"
+    },
+    {
+      "venue": "Chiltern Open Air Museum",
+      "proposedFact": "environment",
+      "evidence": "cessible to wheelchairs and provides an indoor place where kids can play",
+      "source": "https://www.coam.org.uk/familylearning",
+      "sourceType": "family_page",
+      "classification": "mixed",
+      "confidence": "high",
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
+      "retrievedAt": "2026-08-10T18:21:35.117Z"
+    },
+    {
+      "venue": "Chiltern Open Air Museum",
+      "proposedFact": "accessibleToilet",
+      "evidence": "sabled visitors have designated spaces close to the Museum entrance and we have accessible toilets.",
+      "source": "https://www.coam.org.uk/visit",
+      "sourceType": "visitor_info",
+      "classification": "yes",
+      "confidence": "high",
+      "passedQualityGate": false,
+      "warnings": [
+        "not_marked_evidence_backed"
+      ],
+      "unsupportedPositive": true,
+      "retrievedAt": "2026-08-10T18:21:32.903Z"
+    },
+    {
+      "venue": "Colne Valley Regional Park",
+      "proposedFact": "babyChanging",
+      "evidence": "Toilets, including disabled and baby changing facilities, are available on site.",
+      "source": "https://www.colnevalleypark.org.uk/visitor-centre/",
+      "sourceType": "visitor_info",
+      "classification": "yes",
+      "confidence": "high",
+      "passedQualityGate": false,
+      "warnings": [
+        "not_marked_evidence_backed"
+      ],
+      "unsupportedPositive": true,
+      "retrievedAt": "2026-08-10T16:15:04.422Z"
+    },
+    {
+      "venue": "Colne Valley Regional Park",
+      "proposedFact": "environment",
+      "evidence": "ark The visitor centre also offers fun, outdoor nature parties for children and a meeting room",
+      "source": "https://www.colnevalleypark.org.uk/visit-colne-valley/",
+      "sourceType": "visitor_info",
+      "classification": "outdoor",
+      "confidence": "high",
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
+      "retrievedAt": "2026-08-10T16:15:03.475Z"
+    },
+    {
+      "venue": "Flip Out Brent Cross",
+      "proposedFact": "environment",
+      "evidence": "North London's Ultimate Indoor Trampoline & Adventure Park",
+      "source": "https://www.flipout.co.uk/locations/brent-cross",
+      "sourceType": "official_website",
+      "classification": "indoor",
+      "confidence": "high",
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
+      "retrievedAt": "2026-08-10T16:06:03.358Z"
+    },
+    {
+      "venue": "Gladstone Park",
+      "proposedFact": "environment",
+      "evidence": "Facilities Children&rsquo;s playgrounds Outdoor gym Caf&eacute; Walled garden Rose terraces Duck pond Wildlife area Dollis Hill",
+      "source": "https://www.brent.gov.uk/parks-leisure-and-healthy-living/parks-and-open-spaces/park-finder/gladstone-park",
+      "sourceType": "official_website",
+      "classification": "outdoor",
+      "confidence": "high",
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
+      "retrievedAt": "2026-08-10T16:03:02.016Z"
+    },
+    {
+      "venue": "Golders Hill Park",
+      "proposedFact": "babyChanging",
+      "evidence": "Both toilets have baby change facilities.",
+      "source": "https://www.cityoflondon.gov.uk/things-to-do/green-spaces/hampstead-heath/where-to-go-at-hampstead-heath/golders-hill-park",
+      "sourceType": "official_website",
+      "classification": "yes",
+      "confidence": "high",
+      "passedQualityGate": false,
+      "warnings": [
+        "not_marked_evidence_backed"
+      ],
+      "unsupportedPositive": true,
+      "retrievedAt": "2026-08-10T16:04:02.242Z"
+    },
+    {
+      "venue": "Golders Hill Park",
+      "proposedFact": "pushchairSuitability",
+      "evidence": "All entrances to the park are step free.",
+      "source": "https://www.cityoflondon.gov.uk/things-to-do/green-spaces/hampstead-heath/where-to-go-at-hampstead-heath/golders-hill-park",
+      "sourceType": "official_website",
+      "classification": "unknown",
+      "confidence": "high",
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
+      "retrievedAt": null
+    },
+    {
+      "venue": "Golders Hill Park",
+      "proposedFact": "wheelchairAccessible",
+      "evidence": "All entrances to the park are step free.",
+      "source": "https://www.cityoflondon.gov.uk/things-to-do/green-spaces/hampstead-heath/where-to-go-at-hampstead-heath/golders-hill-park",
+      "sourceType": "official_website",
+      "classification": "yes",
+      "confidence": "high",
+      "passedQualityGate": false,
+      "warnings": [
+        "not_marked_evidence_backed"
+      ],
+      "unsupportedPositive": true,
+      "retrievedAt": "2026-08-10T16:04:02.242Z"
+    },
+    {
+      "venue": "Golders Hill Park",
+      "proposedFact": "accessibleToilet",
+      "evidence": "There are three accessible toilets in the park - By the cafe ///noting , dimensions are 2 by 1 with door width 0 .",
+      "source": "https://www.cityoflondon.gov.uk/things-to-do/green-spaces/hampstead-heath/where-to-go-at-hampstead-heath/golders-hill-park",
+      "sourceType": "official_website",
+      "classification": "yes",
+      "confidence": "high",
+      "passedQualityGate": false,
+      "warnings": [
+        "not_marked_evidence_backed"
+      ],
+      "unsupportedPositive": true,
+      "retrievedAt": "2026-08-10T16:04:02.242Z"
+    },
+    {
+      "venue": "Headstone Manor and Museum",
+      "proposedFact": "parking",
+      "evidence": "Headstone Manor and Museum has free parking to the rear of the building as well as a number of disabled spaces.",
+      "source": "https://headstonemanor.org/visit/faqs/",
+      "sourceType": "faq_page",
+      "classification": "yes",
+      "confidence": "high",
+      "passedQualityGate": false,
+      "warnings": [
+        "not_marked_evidence_backed"
+      ],
+      "unsupportedPositive": true,
+      "retrievedAt": "2026-08-10T18:23:07.527Z"
+    },
+    {
+      "venue": "Headstone Manor and Museum",
+      "proposedFact": "wheelchairAccessible",
+      "evidence": "The Great Barn, Small Barn and Visitor Centre/The Moat Cafe are all wheelchair accessible.",
+      "source": "https://headstonemanor.org/visit/access/",
+      "sourceType": "visitor_info",
+      "classification": "yes",
+      "confidence": "high",
+      "passedQualityGate": false,
+      "warnings": [
+        "not_marked_evidence_backed"
+      ],
+      "unsupportedPositive": true,
+      "retrievedAt": "2026-08-10T18:23:10.693Z"
+    },
+    {
+      "venue": "Rickmansworth Aquadrome",
+      "proposedFact": "parking",
+      "evidence": "ars Day Discover Two lakes to walk around and explore Café in the Park Free car parking (see above opening times) Accessible pathways Toilets (toilets close 30 minutes before the car park closes) Dog free picnic area with additional play equipment Access to the Grand Union Canal footpath Water based sports clubs N .",
+      "source": "https://www.threerivers.gov.uk/services/leisure-parks-culture/parks-open-spaces/rickmansworth-aquadrome",
+      "sourceType": "official_website",
+      "classification": "yes",
+      "confidence": "high",
+      "passedQualityGate": false,
+      "warnings": [
+        "not_marked_evidence_backed"
+      ],
+      "unsupportedPositive": true,
+      "retrievedAt": "2026-08-10T16:01:04.055Z"
+    },
+    {
+      "venue": "Rickmansworth Aquadrome",
+      "proposedFact": "pushchairSuitability",
+      "evidence": "Accessible pathways",
+      "source": "https://www.threerivers.gov.uk/services/leisure-parks-culture/parks-open-spaces/rickmansworth-aquadrome",
+      "sourceType": "official_website",
+      "classification": "unknown",
+      "confidence": "high",
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
+      "retrievedAt": null
+    },
+    {
+      "venue": "Rickmansworth Aquadrome",
+      "proposedFact": "environment",
+      "evidence": "Area of grass and woodland, popular with walkers",
+      "source": "https://www.threerivers.gov.uk/services/leisure-parks-culture/parks-open-spaces/rickmansworth-aquadrome",
+      "sourceType": "official_website",
+      "classification": "unknown",
+      "confidence": "high",
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
+      "retrievedAt": null
+    },
+    {
+      "venue": "Rickmansworth Aquadrome",
+      "proposedFact": "wheelchairAccessible",
+      "evidence": "AllTrails link for Batchworth Lake Fishing Swim There is a wheelchair accessible fishing swim located on Batchworth Lake.",
+      "source": "https://www.threerivers.gov.uk/services/leisure-parks-culture/parks-open-spaces/rickmansworth-aquadrome",
+      "sourceType": "official_website",
+      "classification": "yes",
+      "confidence": "high",
+      "passedQualityGate": false,
+      "warnings": [
+        "not_marked_evidence_backed"
+      ],
+      "unsupportedPositive": true,
+      "retrievedAt": "2026-08-10T16:01:04.055Z"
+    },
+    {
+      "venue": "Rickmansworth Aquadrome",
+      "proposedFact": "accessibleToilet",
+      "evidence": "Facilities There is a disabled toilet onsite which can be accessed with a key.",
+      "source": "https://www.threerivers.gov.uk/services/leisure-parks-culture/parks-open-spaces/rickmansworth-aquadrome",
+      "sourceType": "official_website",
+      "classification": "yes",
+      "confidence": "high",
+      "passedQualityGate": false,
+      "warnings": [
+        "not_marked_evidence_backed"
+      ],
+      "unsupportedPositive": true,
+      "retrievedAt": "2026-08-10T16:01:04.055Z"
+    },
+    {
+      "venue": "Royal Air Force Museum London",
+      "proposedFact": "environment",
+      "evidence": "Whatever the weather, see their faces light up as they explore stories indoors and play outdoors at RAF Museum London this summer",
+      "source": "https://www.rafmuseum.org.uk/london/",
+      "sourceType": "official_website",
+      "classification": "mixed",
+      "confidence": "high",
+      "passedQualityGate": true,
+      "warnings": [],
+      "unsupportedPositive": false,
+      "retrievedAt": "2026-08-10T16:05:03.139Z"
+    }
+  ]
+}
