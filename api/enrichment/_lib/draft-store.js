@@ -8,6 +8,7 @@ const { normaliseDraftJson } = require('./ai-draft-schema');
 const { createClaimsFromApproval } = require('./claims-store');
 const { getMetadata, saveMetadata, listQueue } = require('./enrichment-store');
 const { gatherEvidenceForVenue } = require('./evidence-pipeline');
+const { resolveBetaParams } = require('./beta-area');
 
 const FILE_DRAFTS_DIR = '.data';
 const FILE_DRAFTS_NAME = 'enrichment-drafts.json';
@@ -394,9 +395,7 @@ async function generateDraftBatch(params = {}) {
     MAX_BATCH_SIZE,
     Math.max(1, Number(params.batchSize ?? DEFAULT_BATCH_SIZE)),
   );
-  const betaLat = params.betaLat != null ? Number(params.betaLat) : 51.643;
-  const betaLng = params.betaLng != null ? Number(params.betaLng) : -0.36;
-  const betaRadiusKm = params.betaRadiusKm != null ? Number(params.betaRadiusKm) : 15;
+  const { betaLat, betaLng, betaRadiusKm } = resolveBetaParams(params);
 
   const queue = await listQueue({
     status: 'provider_only',
