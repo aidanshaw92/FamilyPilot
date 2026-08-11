@@ -7,6 +7,7 @@ const { normaliseDraftJson } = require('./ai-draft-schema');
 const { hasUnresolvedEvidenceConflicts } = require('./claim-review');
 const { approveDraft, getPendingDraft } = require('./draft-store');
 const { listQueue } = require('./enrichment-store');
+const { resolveBetaParams } = require('./beta-area');
 
 const REVIEWED_BY = 'ai_auto_approved';
 const TRI_STATE = new Set(['yes', 'no']);
@@ -197,9 +198,7 @@ async function autoApprovePendingBatch(params = {}) {
     MAX_BATCH_SIZE,
     Math.max(1, Number(params.batchSize ?? DEFAULT_BATCH_SIZE)),
   );
-  const betaLat = params.betaLat != null ? Number(params.betaLat) : 51.643;
-  const betaLng = params.betaLng != null ? Number(params.betaLng) : -0.36;
-  const betaRadiusKm = params.betaRadiusKm != null ? Number(params.betaRadiusKm) : 15;
+  const { betaLat, betaLng, betaRadiusKm } = resolveBetaParams(params);
 
   const queue = await listQueue({
     status: 'ai_draft',

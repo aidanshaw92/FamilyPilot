@@ -30,6 +30,7 @@ const {
 } = require('./_lib/claims-store');
 const { listEvidenceConflicts } = require('./_lib/claim-review');
 const { isAutoApproveEnabled, tryAutoApproveDraft } = require('./_lib/auto-approve');
+const { getDefaultBetaArea } = require('./_lib/beta-area');
 
 function setCorsHeaders(res, methods) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -100,6 +101,7 @@ async function handleConfig(req, res) {
     storageMode: getStorageMode(),
     aiConfigured: isAiConfigured(),
     autoApproveEnabled: isAutoApproveEnabled(),
+    betaArea: getDefaultBetaArea(),
   });
 }
 

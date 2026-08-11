@@ -13,8 +13,11 @@ import { Text } from '@/src/components/ui';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { EnrichmentQueueItem, EnrichmentStats } from '@/src/types/enrichment';
 import { BatchDraftProgress } from '@/src/types/ai-enrichment';
+import { ENRICHMENT_BETA_AREA } from '@/src/config/enrichment-beta-area';
 import { enrichmentApi } from '@/src/services/enrichment/enrichment-api-client';
 import { getEnrichmentQueueEmptyMessage } from '@/src/utils/enrichment-queue-ui';
+
+const DEFAULT_BETA = ENRICHMENT_BETA_AREA;
 
 const STATUS_FILTERS = [
   { id: 'all', label: 'All' },
@@ -23,8 +26,6 @@ const STATUS_FILTERS = [
   { id: 'enriched', label: 'Enriched' },
   { id: 'verified', label: 'Verified' },
 ] as const;
-
-const DEFAULT_BETA = { lat: '51.643', lng: '-0.360', radius: '15', label: 'Bushey' };
 
 export default function EnrichmentQueueScreen() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function EnrichmentQueueScreen() {
   const [sort, setSort] = useState('nearest');
   const [betaLat, setBetaLat] = useState(DEFAULT_BETA.lat);
   const [betaLng, setBetaLng] = useState(DEFAULT_BETA.lng);
-  const [betaRadius, setBetaRadius] = useState(DEFAULT_BETA.radius);
+  const [betaRadius, setBetaRadius] = useState(DEFAULT_BETA.radiusKm);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -241,7 +242,9 @@ export default function EnrichmentQueueScreen() {
         </View>
       ) : null}
 
-      <Text variant="heading3">Beta area ({DEFAULT_BETA.label})</Text>
+      <Text variant="heading3">
+        Beta area ({DEFAULT_BETA.label}, {DEFAULT_BETA.radiusMiles} mi)
+      </Text>
       <View style={styles.row}>
         <TextInput value={betaLat} onChangeText={setBetaLat} style={styles.smallInput} placeholder="Lat" />
         <TextInput value={betaLng} onChangeText={setBetaLng} style={styles.smallInput} placeholder="Lng" />
