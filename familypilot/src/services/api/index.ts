@@ -6,7 +6,6 @@ import {
   mockStores,
   mockTrips,
   mockVenues,
-  mockWeather,
 } from '@/src/data/mock-data';
 import { useFamilyStore } from '@/src/stores/family-store';
 import {
@@ -26,6 +25,7 @@ import {
 } from '@/src/types';
 import { withCompletion } from '@/src/utils/profile-defaults';
 import { buildHomeRecommendations, personaliseVenue, personaliseVenues } from '@/src/utils/personalise-venues';
+import { fetchLiveWeather } from '@/src/services/context/live-context';
 import { getFocusedRecommendations } from '@/src/services/recommendation/focused-recommendations';
 import { parseDayRequest, parseDayRequestMock } from '@/src/services/recommendation/parse-day-request-client';
 import { DayRequest } from '@/src/types/day-request';
@@ -56,7 +56,7 @@ export const familyService = {
 export const weatherService = {
   async getCurrent(): Promise<WeatherInfo> {
     await delay(100);
-    return mockWeather;
+    return fetchLiveWeather(getProfile());
   },
 };
 

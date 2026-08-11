@@ -43,6 +43,7 @@ function enrichedFacts(overrides: Partial<MatchableVenueFacts> = {}): MatchableV
     estimatedSpend: '£8–£12',
     goodToKnow: [],
     warnings: [],
+    openingStatus: 'unknown',
     ...overrides,
   };
 }

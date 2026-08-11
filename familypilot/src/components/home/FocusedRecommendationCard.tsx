@@ -9,6 +9,7 @@ import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { FocusedRecommendation } from '@/src/types/day-request';
 import { getEnrichmentTrustCopy } from '@/src/utils/family-match-classification';
+import { openingStatusLabel } from '@/src/services/context/live-context';
 
 interface FocusedRecommendationCardProps {
   recommendation: FocusedRecommendation;
@@ -94,9 +95,13 @@ export function FocusedRecommendationCard({
           <Text variant="bodySmall" color={colors.text.secondary} style={styles.meta}>
             {recommendation.driveMinutes} min away
             {recommendation.estimatedSpend ? ` · Estimated ${recommendation.estimatedSpend}` : ''}
+            {recommendation.openingStatus === 'open' ? ' · Open now' : ''}
           </Text>
           <Text variant="caption" color={colors.text.tertiary}>
             {getEnrichmentTrustCopy(recommendation.enrichmentStatus)}
+            {recommendation.openingStatus !== 'open'
+              ? ` · ${openingStatusLabel(recommendation.openingStatus)}`
+              : ''}
           </Text>
         </View>
       </PressableScale>

@@ -3,6 +3,7 @@ import { TriState, VenueEnergyLevel, VenueEnvironment } from '@/src/types/enrich
 import { VenueFamilyMetadata } from '@/src/types/places';
 
 import { MatchableVenueFacts } from '@/src/types/day-request';
+import { resolveOpeningStatus } from '@/src/services/context/live-context';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 
 const UNKNOWN_TRI: TriState | 'unknown' = 'unknown';
@@ -45,7 +46,9 @@ export function extractMatchableFacts(
   driveMinutes: number,
   enrichmentStatus: EnrichmentStatus | undefined,
   metadata: VenueFamilyMetadata | null,
+  isOpen?: boolean,
 ): MatchableVenueFacts {
+  const openingStatus = resolveOpeningStatus(isOpen);
   const status = enrichmentStatus ?? metadata?.enrichmentStatus ?? 'provider_only';
   const unreviewed = isUnreviewedEnrichmentStatus(status);
 
@@ -69,6 +72,7 @@ export function extractMatchableFacts(
       estimatedSpend: null,
       goodToKnow: [],
       warnings: [],
+      openingStatus,
     };
   }
 
@@ -91,5 +95,6 @@ export function extractMatchableFacts(
     estimatedSpend: metadata.estimatedSpend ?? null,
     goodToKnow: metadata.goodToKnow ?? [],
     warnings: metadata.warnings ?? [],
+    openingStatus,
   };
 }
