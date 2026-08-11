@@ -68,10 +68,12 @@ Deno.serve(async (req: Request) => {
 
     console.log("enrichment job completed", {
       jobId: data.id, venueId: data.familypilot_place_id, draftId: payload?.draftId,
+      autoApproved: payload?.autoApprove?.approved === true,
     });
     return json({
       ok: true, processed: 1, jobId: data.id,
       venueId: data.familypilot_place_id, draftId: payload?.draftId,
+      autoApprove: payload?.autoApprove ?? null,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown worker error";

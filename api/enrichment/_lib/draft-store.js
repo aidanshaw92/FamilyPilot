@@ -414,9 +414,10 @@ async function generateDraftBatch(params = {}) {
 
   for (const item of candidates) {
     try {
-      const { draft, tokenUsage: tu, estimatedCostUsd: cost } = await generateDraftForVenue(
+      const result = await generateDraftForVenue(
         item.familypilotId,
       );
+      const { draft, tokenUsage: tu, estimatedCostUsd: cost } = result;
       tokenUsage.promptTokens += tu?.promptTokens ?? 0;
       tokenUsage.completionTokens += tu?.completionTokens ?? 0;
       tokenUsage.totalTokens += tu?.totalTokens ?? 0;
@@ -427,6 +428,16 @@ async function generateDraftBatch(params = {}) {
         ok: true,
         draftId: draft.id,
       });
+
+      if (params.autoApprove) {
+        const { tryAutoApproveDraft } = require('./auto-approve');
+        const approval = await tryAutoApproveDraft(item.familypilotId, {
+          draft,
+          evidenceBundle: result.evidenceBundle,
+          force: true,
+        });
+        results[results.length - 1].autoApprove = approval;
+      }
     } catch (error) {
       results.push({
         familypilotPlaceId: item.familypilotId,
