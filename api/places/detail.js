@@ -90,8 +90,8 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { getMetadata } = require('../enrichment/_lib/enrichment-store');
-    const metadata = await getMetadata(await resolvePrimaryPlaceId(id));
+    const { getConsumerMetadata } = require('../enrichment/_lib/consumer-projection');
+    const metadata = await getConsumerMetadata(await resolvePrimaryPlaceId(id));
     if (metadata) {
       detail.metadata = metadata;
       detail.place = { ...detail.place, enrichmentStatus: metadata.enrichmentStatus, familyMetadata: metadata };
