@@ -5,11 +5,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BootVisualisation } from '@/src/components/car-fit/BootVisualisation';
 import { BackButton } from '@/src/components/ui/BackButton';
+import { DeferredPilotGate } from '@/src/components/shared/DeferredPilotGate';
 import { Button, Card, EmptyState, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useCarFit } from '@/src/hooks/use-queries';
 
 export default function CarFitScreen() {
+  return (
+    <DeferredPilotGate feature="car_fit" title="Car fit checker coming later">
+      <CarFitScreenContent />
+    </DeferredPilotGate>
+  );
+}
+
+function CarFitScreenContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: carFit, isLoading, isError } = useCarFit();

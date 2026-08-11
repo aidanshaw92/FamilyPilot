@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '@/src/components/ui/BackButton';
 import { Card, EmptyState, Text } from '@/src/components/ui';
+import { DeferredPilotGate } from '@/src/components/shared/DeferredPilotGate';
 import { timing } from '@/src/design-system/animations/presets';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { usePackingList } from '@/src/hooks/use-queries';
@@ -18,6 +19,14 @@ import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { PackingItem } from '@/src/types';
 
 export default function PackingScreen() {
+  return (
+    <DeferredPilotGate feature="packing" title="Packing lists coming later">
+      <PackingScreenContent />
+    </DeferredPilotGate>
+  );
+}
+
+function PackingScreenContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: initialItems, isLoading } = usePackingList();

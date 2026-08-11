@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { TripStopCard } from '@/src/components/shared/TripStopCard';
+import { DeferredPilotGate } from '@/src/components/shared/DeferredPilotGate';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Button, Card, EmptyState, Text } from '@/src/components/ui';
@@ -9,6 +10,14 @@ import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useTrips } from '@/src/hooks/use-queries';
 
 export default function TripsScreen() {
+  return (
+    <DeferredPilotGate feature="trips_tab" title="Trips coming later">
+      <TripsScreenContent />
+    </DeferredPilotGate>
+  );
+}
+
+function TripsScreenContent() {
   const router = useRouter();
   const { data: trips, isLoading } = useTrips();
 

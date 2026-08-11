@@ -166,6 +166,7 @@ export interface QuickAction {
   icon: string;
   color: string;
   route: string;
+  pilotFeature?: import('@/src/config/pilot-features').PilotFeature;
 }
 
 export interface RecommendationSection {

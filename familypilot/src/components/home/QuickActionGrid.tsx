@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { Text } from '@/src/components/ui/Text';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { QuickAction } from '@/src/types';
@@ -34,6 +35,7 @@ const PRIMARY_ACTIONS: QuickAction[] = [
     icon: 'calendar-outline',
     color: colors.primary[500],
     route: '/(tabs)/trips',
+    pilotFeature: 'plan_something_action',
   },
 ];
 
@@ -45,6 +47,7 @@ const MORE_ACTIONS: QuickAction[] = [
     icon: 'airplane-outline',
     color: colors.text.tertiary,
     route: '/holiday',
+    pilotFeature: 'holiday',
   },
   {
     id: 'packing',
@@ -52,6 +55,7 @@ const MORE_ACTIONS: QuickAction[] = [
     icon: 'bag-outline',
     color: colors.text.tertiary,
     route: '/packing',
+    pilotFeature: 'packing',
   },
   {
     id: 'car-fit',
@@ -59,6 +63,7 @@ const MORE_ACTIONS: QuickAction[] = [
     icon: 'car-outline',
     color: colors.text.tertiary,
     route: '/car-fit',
+    pilotFeature: 'car_fit',
   },
   {
     id: 'saved',
@@ -69,22 +74,35 @@ const MORE_ACTIONS: QuickAction[] = [
   },
 ];
 
+function visibleActions(actions: QuickAction[]): QuickAction[] {
+  return actions.filter(
+    (action) => !action.pilotFeature || isPilotFeatureVisible(action.pilotFeature),
+  );
+}
+
 export function QuickActionGrid() {
+  const primaryActions = visibleActions(PRIMARY_ACTIONS);
+  const moreActions = visibleActions(MORE_ACTIONS);
+
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
-        {PRIMARY_ACTIONS.map((action) => (
+        {primaryActions.map((action) => (
           <QuickActionButton key={action.id} action={action} subdued />
         ))}
       </View>
-      <Text variant="caption" color={colors.text.tertiary} style={styles.moreLabel}>
-        More
-      </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.moreRow}>
-        {MORE_ACTIONS.map((action) => (
-          <QuickActionButton key={action.id} action={action} compact subdued />
-        ))}
-      </ScrollView>
+      {moreActions.length > 0 ? (
+        <>
+          <Text variant="caption" color={colors.text.tertiary} style={styles.moreLabel}>
+            More
+          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.moreRow}>
+            {moreActions.map((action) => (
+              <QuickActionButton key={action.id} action={action} compact subdued />
+            ))}
+          </ScrollView>
+        </>
+      ) : null}
     </View>
   );
 }

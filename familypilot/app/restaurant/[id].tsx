@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RestaurantFacilities } from '@/src/components/restaurant/RestaurantFacilities';
 import { RecommendationPattern } from '@/src/components/shared/RecommendationPattern';
+import { DeferredPilotGate } from '@/src/components/shared/DeferredPilotGate';
 import { SaveButton } from '@/src/components/shared/SaveButton';
 import {
   Button,
@@ -63,6 +64,14 @@ function serviceSpeedLabel(speed?: string): string | null {
 }
 
 export default function RestaurantScreen() {
+  return (
+    <DeferredPilotGate feature="explore_restaurants" title="Restaurants coming later">
+      <RestaurantScreenContent />
+    </DeferredPilotGate>
+  );
+}
+
+function RestaurantScreenContent() {
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
