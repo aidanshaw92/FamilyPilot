@@ -39,6 +39,21 @@ const FIELD_PATTERNS = [
     no: [/no\s+baby\s+chang/i],
   },
   {
+    field: 'freeParking',
+    yes: [
+      /free\s+parking/i,
+      /parking\s+is\s+free/i,
+      /no\s+parking\s+(?:fee|charge)/i,
+      /complimentary\s+parking/i,
+    ],
+    no: [
+      /paid\s+parking/i,
+      /pay\s+and\s+display/i,
+      /parking\s+charges/i,
+      /parking\s+fee/i,
+    ],
+  },
+  {
     field: 'parking',
     yes: [
       /parking\s+(is\s+)?available/i,

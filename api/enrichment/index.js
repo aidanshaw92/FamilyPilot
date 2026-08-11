@@ -22,6 +22,13 @@ const {
   rejectDraft,
 } = require('./_lib/draft-store');
 const { listEvidenceForVenue } = require('./_lib/evidence-store');
+const {
+  listClaimsForVenue,
+  getClaimById,
+  disputeClaim,
+  expireClaim,
+} = require('./_lib/claims-store');
+const { listEvidenceConflicts } = require('./_lib/claim-review');
 
 function setCorsHeaders(res, methods) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -68,6 +75,12 @@ module.exports = async function handler(req, res) {
       return handleApproveDraft(req, res);
     case 'reject-draft':
       return handleRejectDraft(req, res);
+    case 'claims':
+      return handleClaims(req, res);
+    case 'dispute-claim':
+      return handleDisputeClaim(req, res);
+    case 'expire-claim':
+      return handleExpireClaim(req, res);
     default:
       return res.status(400).json({ error: `Unknown action: ${action}` });
   }
@@ -186,7 +199,11 @@ async function handleVenue(req, res) {
       const metadata = await getMetadata(id);
       const draft = await getPendingDraft(id);
       const evidence = await listEvidenceForVenue(id);
-      return res.status(200).json({ place, metadata, draft, evidence });
+      const claims = await listClaimsForVenue(id);
+      const evidenceConflicts = draft?.sourceContext?.evidenceBundle
+        ? listEvidenceConflicts(draft.sourceContext.evidenceBundle)
+        : [];
+      return res.status(200).json({ place, metadata, draft, evidence, claims, evidenceConflicts });
     } catch (error) {
       return res.status(500).json({
         error: error instanceof Error ? error.message : 'Load failed',
@@ -362,6 +379,70 @@ async function handleRejectDraft(req, res) {
       error: error instanceof Error ? error.message : 'Reject failed',
     });
   }
+}
+
+async function handleClaims(req, res) {
+  setCorsHeaders(res, 'GET');
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  if (!verifyEnrichmentAuth(req, res)) return;
+
+  const id = req.query.id;
+  if (!id) return res.status(400).json({ error: 'Missing id' });
+
+  try {
+    const status = req.query.status || undefined;
+    const claims = await listClaimsForVenue(id, { status });
+    return res.status(200).json({ claims, count: claims.length });
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Claims load failed',
+    });
+  }
+}
+
+async function handleClaimStatusChange(req, res, action) {
+  setCorsHeaders(res, 'POST');
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!verifyEnrichmentAuth(req, res)) return;
+
+  const claimId = req.body?.claimId;
+  if (!claimId) return res.status(400).json({ error: 'Missing claimId' });
+
+  try {
+    const claim = await getClaimById(claimId);
+    if (!claim) return res.status(404).json({ error: 'Claim not found' });
+    if (claim.status !== 'active') {
+      return res.status(400).json({ error: `Claim is already ${claim.status}` });
+    }
+
+    if (action === 'dispute') await disputeClaim(claimId);
+    else await expireClaim(claimId);
+
+    const existing = await getMetadata(claim.familypilotPlaceId);
+    const metadata = await saveMetadata(
+      claim.familypilotPlaceId,
+      {
+        lastChecked: existing?.lastChecked ?? new Date().toISOString().slice(0, 10),
+        checkedBy: req.body?.reviewedBy || 'enrichment-admin',
+      },
+      { fromClaims: true },
+    );
+
+    const updatedClaim = await getClaimById(claimId);
+    return res.status(200).json({ claim: updatedClaim, metadata, ok: true });
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : `${action} failed`,
+    });
+  }
+}
+
+async function handleDisputeClaim(req, res) {
+  return handleClaimStatusChange(req, res, 'dispute');
+}
+
+async function handleExpireClaim(req, res) {
+  return handleClaimStatusChange(req, res, 'expire');
 }
 
 async function handleExport(req, res) {

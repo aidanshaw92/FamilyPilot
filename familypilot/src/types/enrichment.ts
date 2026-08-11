@@ -154,6 +154,7 @@ export interface VenueClaim {
   sourceUrl?: string | null;
   evidenceExcerpt?: string | null;
   sourceType?: string | null;
+  sourceEvidenceId?: string | null;
   checkedAt: string;
   validUntil?: string | null;
   approvedAt: string;

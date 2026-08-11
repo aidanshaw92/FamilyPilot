@@ -122,6 +122,29 @@ async function saveEvidenceRecord(record) {
   return rowToRecord(saved);
 }
 
+async function findEvidenceRecordBySourceUrl(familypilotPlaceId, sourceUrl) {
+  if (!sourceUrl) return null;
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('venue_source_evidence')
+      .select('id')
+      .eq('familypilot_place_id', familypilotPlaceId)
+      .eq('source_url', sourceUrl)
+      .order('retrieved_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data?.id ?? null;
+  }
+
+  const store = readFileStore();
+  const row = store.records
+    .filter((r) => r.familypilot_place_id === familypilotPlaceId && r.source_url === sourceUrl)
+    .sort((a, b) => new Date(b.retrieved_at) - new Date(a.retrieved_at))[0];
+  return row?.id ?? null;
+}
+
 async function listEvidenceForVenue(familypilotPlaceId) {
   const supabase = getSupabaseAdmin();
   if (supabase) {
@@ -145,6 +168,7 @@ async function listEvidenceForVenue(familypilotPlaceId) {
 module.exports = {
   getCachedEvidence,
   saveEvidenceRecord,
+  findEvidenceRecordBySourceUrl,
   listEvidenceForVenue,
   isCacheFresh,
   CACHE_TTL_DAYS,
