@@ -97,9 +97,15 @@ export default function HomeScreen() {
 
         {topPick ? (
           <View style={styles.heroSection}>
-            <Text variant="heading3" style={styles.sectionTitle}>
-              Today&apos;s best match
-            </Text>
+              <View style={styles.sectionEyebrow}>
+                <View style={styles.eyebrowDot} />
+                <Text variant="caption" style={styles.eyebrowText}>
+                  TODAY&apos;S PICK
+                </Text>
+              </View>
+              <Text variant="heading1" style={styles.sectionTitle}>
+                A great fit for today
+              </Text>
             {isProactive ? (
               <Text variant="bodySmall" style={styles.heroSubtitle}>
                 Our best suggestion for your family right now
@@ -161,6 +167,23 @@ const styles = StyleSheet.create({
   },
   skeletonRow: {
     marginBottom: spacing['2xl'],
+  },
+  sectionEyebrow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  eyebrowDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#5CB88A',
+  },
+  eyebrowText: {
+    color: '#4A9A72',
+    letterSpacing: 1.2,
+    fontFamily: 'Inter_700Bold',
   },
   sectionTitle: {
     marginBottom: spacing.xs,

@@ -179,6 +179,12 @@ export default function VenueScreen() {
 
         <View style={styles.body}>
           <FadeInView>
+            <View style={styles.matchIntro}>
+              <Text variant="caption" style={styles.matchEyebrow}>
+                FAMILY MATCH
+              </Text>
+              <Text variant="heading2">Will this work for your family?</Text>
+            </View>
             <FamilyMatchPanel familyScore={venue.familyScore} venue={venue} />
 
             {venue.enrichmentStatus ? (
@@ -286,6 +292,15 @@ const styles = StyleSheet.create({
   },
   loadingBody: {
     padding: spacing.screenPadding,
+  },
+  matchIntro: {
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  matchEyebrow: {
+    color: colors.secondary[600],
+    letterSpacing: 1.1,
+    fontFamily: 'Inter_700Bold',
   },
   loadingGap: {
     marginBottom: spacing.lg,
