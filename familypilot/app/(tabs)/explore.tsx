@@ -111,6 +111,7 @@ export default function ExploreScreen() {
   return (
     <ScreenContainer>
       <View style={styles.header}>
+        <Text variant="caption" style={styles.eyebrow}>FIND YOUR NEXT FAMILY DAY</Text>
         <Text variant="heading1">Explore</Text>
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
           {isRestaurantMode
@@ -212,6 +213,12 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: spacing.screenPadding,
     paddingTop: spacing.lg,
+  },
+  eyebrow: {
+    color: colors.primary[600],
+    letterSpacing: 1.1,
+    fontFamily: 'Inter_700Bold',
+    marginBottom: spacing.xs,
   },
   subtitle: {
     marginTop: spacing.xs,
