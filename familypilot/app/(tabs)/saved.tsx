@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 import { SavedPlaceRow } from '@/src/components/shared/SavedPlaceRow';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Chip, EmptyState, Text } from '@/src/components/ui';
+import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useSavedItems } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
@@ -16,7 +17,9 @@ const TYPE_FILTERS: { id: TypeFilter; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'places', label: 'Places' },
   { id: 'restaurants', label: 'Restaurants' },
-];
+].filter(
+  (filter) => filter.id !== 'restaurants' || isPilotFeatureVisible('saved_restaurants'),
+);
 
 const SORT_OPTIONS: { id: SortOption; label: string }[] = [
   { id: 'recent', label: 'Recent' },

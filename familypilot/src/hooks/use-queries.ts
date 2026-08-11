@@ -18,6 +18,7 @@ import { buildProactiveDayRequest } from '@/src/services/recommendation/proactiv
 import { useDayRequestStore } from '@/src/stores/day-request-store';
 import { useFamilyStore } from '@/src/stores/family-store';
 import { useFiltersStore } from '@/src/stores/filters-store';
+import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { FamilyProfile } from '@/src/types';
 
 export function useProfileRevision() {
@@ -168,7 +169,8 @@ export function useRestaurants() {
   const profileRevision = useProfileRevision();
   const { categoryFilter, exploreMaxDrive, exploreBudget, advancedFilters } =
     useFiltersStore();
-  const isRestaurantCategory = categoryFilter === 'restaurants';
+  const isRestaurantCategory =
+    categoryFilter === 'restaurants' && isPilotFeatureVisible('explore_restaurants');
 
   return useQuery({
     queryKey: [
@@ -192,7 +194,7 @@ export function useRestaurant(id: string, activityVenueId?: string) {
   return useQuery({
     queryKey: ['restaurants', id, activityVenueId, profileRevision],
     queryFn: () => restaurantService.getById(id, activityVenueId),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && isPilotFeatureVisible('explore_restaurants'),
   });
 }
 

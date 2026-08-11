@@ -30,6 +30,7 @@ import {
 import { BackButton } from '@/src/components/ui/BackButton';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { isActivityVenue } from '@/src/data/mock-restaurants';
 import { useVenue } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
@@ -212,7 +213,7 @@ export default function VenueScreen() {
               />
             </View>
 
-            {isActivityVenue(venue) ? (
+            {isActivityVenue(venue) && isPilotFeatureVisible('eat_nearby') ? (
               <EatNearbySection
                 activityVenueId={venue.id}
                 activityVenueName={venue.name}

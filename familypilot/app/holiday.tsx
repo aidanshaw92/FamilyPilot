@@ -5,10 +5,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton } from '@/src/components/ui/BackButton';
 import { Card, EmptyState, FamilyMatch, Text } from '@/src/components/ui';
 import { OfferCard } from '@/src/components/shared/OfferCard';
+import { DeferredPilotGate } from '@/src/components/shared/DeferredPilotGate';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useHolidayOffers } from '@/src/hooks/use-queries';
 
 export default function HolidayScreen() {
+  return (
+    <DeferredPilotGate feature="holiday" title="Holiday comparison coming later">
+      <HolidayScreenContent />
+    </DeferredPilotGate>
+  );
+}
+
+function HolidayScreenContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: offers, isLoading, isError } = useHolidayOffers();
