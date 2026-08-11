@@ -3,6 +3,16 @@ import { EnrichmentStatus, FamilyProfile, FamilyScore, FamilyScoreFactors, Venue
 import { PROVIDER_ONLY_FAMILY_MATCH_CAP } from '@/src/constants/places-quality';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 
+import {
+  buildTrustedExplanation,
+  hasTrustedMatchSignals,
+  scoreTrustedAccessibility,
+  scoreTrustedAgeSuitability,
+  scoreTrustedBudget,
+  scoreTrustedFacilitiesMatch,
+  scoreTrustedWeatherFit,
+} from './trusted-family-score';
+
 const WEIGHTS = {
   ageSuitability: 0.25,
   accessibility: 0.15,
@@ -21,7 +31,7 @@ function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, Math.round(value)));
 }
 
-function scoreAgeSuitability(venue: VenueDetail, childAges: number[]): number {
+function scoreAgeSuitabilityHeuristic(venue: VenueDetail, childAges: number[]): number {
   if (childAges.length === 0) return 75;
 
   const youngest = Math.min(...childAges);
@@ -49,7 +59,7 @@ function scoreDistance(driveMinutes: number, maxDriveMinutes: number): number {
   return 30;
 }
 
-function scoreBudget(venue: VenueDetail, tier: FamilyProfile['budgetTier']): number {
+function scoreBudgetHeuristic(venue: VenueDetail, tier: FamilyProfile['budgetTier']): number {
   const spend = venue.estimatedSpend ?? '';
   const isFree = spend.toLowerCase().includes('free') || spend.startsWith('£0');
 
@@ -60,47 +70,7 @@ function scoreBudget(venue: VenueDetail, tier: FamilyProfile['budgetTier']): num
   return isFree ? 85 : 88;
 }
 
-export function calculateFamilyScore(
-  venue: VenueDetail,
-  profile: FamilyProfile,
-  options: FamilyScoreOptions = {},
-): FamilyScore {
-  const enrichmentStatus = options.enrichmentStatus ?? venue.enrichmentStatus ?? 'enriched';
-  const isProviderOnly = isUnreviewedEnrichmentStatus(enrichmentStatus);
-
-  const childAges = profile.members
-    .filter((m) => m.role === 'child')
-    .map((m) => m.age);
-
-  const factors: FamilyScoreFactors = {
-    ageSuitability: scoreAgeSuitability(venue, childAges),
-    accessibility: venue.facilities?.includes('pushchair_friendly') ? 92 : isProviderOnly ? 55 : 70,
-    distance: scoreDistance(venue.driveMinutes, profile.maxDriveMinutes),
-    weatherFit: venue.category === 'museum' || venue.category === 'farm' ? 88 : 85,
-    budgetFit: scoreBudget(venue, profile.budgetTier),
-    facilitiesMatch: isProviderOnly
-      ? 50
-      : clamp(Math.min((venue.facilities?.length ?? 0) * 11, 96)),
-    popularity: isProviderOnly ? 55 : 80,
-  };
-
-  let score = clamp(
-    Object.entries(WEIGHTS).reduce(
-      (sum, [key, weight]) => sum + factors[key as keyof FamilyScoreFactors] * weight,
-      0,
-    ),
-  );
-
-  if (isProviderOnly) {
-    score = Math.min(score, PROVIDER_ONLY_FAMILY_MATCH_CAP);
-  }
-
-  const explanation = buildExplanation(venue, profile, factors, isProviderOnly);
-
-  return { score, factors, explanation };
-}
-
-function buildExplanation(
+function buildHeuristicExplanation(
   venue: VenueDetail,
   profile: FamilyProfile,
   factors: FamilyScoreFactors,
@@ -152,4 +122,57 @@ function buildExplanation(
   }
 
   return reasons.slice(0, 4);
+}
+
+export function calculateFamilyScore(
+  venue: VenueDetail,
+  profile: FamilyProfile,
+  options: FamilyScoreOptions = {},
+): FamilyScore {
+  const enrichmentStatus = options.enrichmentStatus ?? venue.enrichmentStatus ?? 'enriched';
+  const isProviderOnly = isUnreviewedEnrichmentStatus(enrichmentStatus);
+
+  const childAges = profile.members.filter((m) => m.role === 'child').map((m) => m.age);
+  const facts = venue.trustedFacts;
+  const useTrusted = !isProviderOnly && facts != null && hasTrustedMatchSignals(facts);
+
+  const factors: FamilyScoreFactors = {
+    ageSuitability:
+      (useTrusted ? scoreTrustedAgeSuitability(facts, childAges) : null) ??
+      scoreAgeSuitabilityHeuristic(venue, childAges),
+    accessibility:
+      (useTrusted ? scoreTrustedAccessibility(facts, profile) : null) ??
+      (venue.facilities?.includes('pushchair_friendly') ? 92 : isProviderOnly ? 55 : 70),
+    distance: scoreDistance(venue.driveMinutes, profile.maxDriveMinutes),
+    weatherFit:
+      (useTrusted ? scoreTrustedWeatherFit(facts) : null) ??
+      (venue.category === 'museum' || venue.category === 'farm' ? 88 : 85),
+    budgetFit:
+      (useTrusted ? scoreTrustedBudget(facts, profile.budgetTier) : null) ??
+      scoreBudgetHeuristic(venue, profile.budgetTier),
+    facilitiesMatch: useTrusted
+      ? scoreTrustedFacilitiesMatch(facts, profile) ?? clamp(Math.min((venue.facilities?.length ?? 0) * 11, 96))
+      : isProviderOnly
+        ? 50
+        : clamp(Math.min((venue.facilities?.length ?? 0) * 11, 96)),
+    popularity: isProviderOnly ? 55 : useTrusted ? 78 : 80,
+  };
+
+  let score = clamp(
+    Object.entries(WEIGHTS).reduce(
+      (sum, [key, weight]) => sum + factors[key as keyof FamilyScoreFactors] * weight,
+      0,
+    ),
+  );
+
+  if (isProviderOnly) {
+    score = Math.min(score, PROVIDER_ONLY_FAMILY_MATCH_CAP);
+  }
+
+  const explanation =
+    useTrusted && facts
+      ? buildTrustedExplanation(venue, profile, facts, factors)
+      : buildHeuristicExplanation(venue, profile, factors, isProviderOnly);
+
+  return { score, factors, explanation };
 }

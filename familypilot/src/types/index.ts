@@ -141,6 +141,8 @@ export interface VenueDetail extends Venue {
   eatNearby?: EatNearbyRecommendation[];
   weatherAlternative?: WeatherAlternative;
   trust?: TrustMetadata;
+  /** Claim-backed facts for Family Match — populated from projected consumer metadata. */
+  trustedFacts?: import('@/src/types/day-request').MatchableVenueFacts;
 }
 
 /** @deprecated use EatNearbyRecommendation from service layer */
