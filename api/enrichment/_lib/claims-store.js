@@ -86,6 +86,13 @@ function claimToRow(claim) {
   };
 }
 
+function isStorableClaimValue(value) {
+  if (value === undefined || value === null) return false;
+  if (value === 'unknown') return false;
+  if (typeof value === 'string' && value.trim() === '') return false;
+  return true;
+}
+
 function normalizeConfidence(value) {
   if (value === 'high' || value === 'medium' || value === 'low') return value;
   return 'unknown';
@@ -327,7 +334,7 @@ async function createClaimsFromApproval({
   const created = [];
   for (const fieldKey of fieldKeys) {
     const value = resolveFieldValue(fieldKey, fieldEvidence, editorPayload);
-    if (value === undefined) continue;
+    if (!isStorableClaimValue(value)) continue;
     const claim = await createApprovedClaim({
       familypilotPlaceId,
       fieldKey: normalizeFieldKey(fieldKey),
@@ -351,7 +358,7 @@ async function syncClaimsFromEditorSave(familypilotPlaceId, payload, reviewedBy)
   const created = [];
 
   const addScalar = async (fieldKey, value) => {
-    if (value === undefined) return;
+    if (!isStorableClaimValue(value)) return;
     const claim = await createApprovedClaim({
       familypilotPlaceId,
       fieldKey,

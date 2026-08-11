@@ -235,7 +235,7 @@ describe('venue claims trust layer', () => {
     expect(projected.familyFacilities?.toilets).toBe('yes');
     expect(projected.familyFacilities?.parking).toBe('yes');
     expect(projected.familyFacilities?.cafe).toBe('no');
-    expect(projected.familyFacilities?.babyChanging).toBe('unknown');
+    expect(projected.familyFacilities?.babyChanging).toBeUndefined();
     expect(projected.pushchairSuitability).toBe('good');
     expect(projected.extendedTerrain).toBe('mostly_flat');
   });
@@ -267,7 +267,7 @@ describe('venue claims trust layer', () => {
     expect(payload?.goodToKnow).toEqual(['Check opening times']);
   });
 
-  it('applies editor overrides during approval', async () => {
+  it('does not create claims for unknown or null editor overrides', async () => {
     const {
       createClaimsFromApproval,
       getActiveClaims,
@@ -278,6 +278,8 @@ describe('venue claims trust layer', () => {
       draftJson: SAMPLE_DRAFT,
       editorPayload: {
         familyFacilities: { parking: 'unknown' },
+        visitDurationMinutes: null,
+        environment: 'unknown',
       },
       reviewedBy: 'editor@test',
       draftId: 'draft-f',
@@ -285,8 +287,7 @@ describe('venue claims trust layer', () => {
     });
 
     const active = await getActiveClaims('fp-google-test-6');
-    const parking = active.find((c) => c.fieldKey === 'familyFacilities.parking');
-    expect(parking?.valueJson).toBe('unknown');
+    expect(active).toHaveLength(0);
   });
 });
 
@@ -405,6 +406,8 @@ describe('approveDraft integration with claims', () => {
     expect(claims.some((c) => c.fieldKey === 'familyFacilities.parking')).toBe(true);
     expect(claims.some((c) => c.fieldKey === 'familyFacilities.toilets')).toBe(false);
     expect(claims.some((c) => c.fieldKey === 'pushchairSuitability')).toBe(false);
+    expect(claims.some((c) => c.fieldKey === 'environment')).toBe(false);
+    expect(claims.some((c) => c.fieldKey === 'energyLevel')).toBe(false);
   });
 });
 
