@@ -173,6 +173,49 @@ describe('day-request matcher', () => {
     expect(ranked.length).toBeLessThanOrEqual(3);
     expect(ranked.every((r) => r.match.eligible)).toBe(true);
   });
+
+  it('prefers verified venues over provider-only when fit is equal', () => {
+    const profile = {
+      members: [
+        { role: 'child', age: 3 },
+        { role: 'child', age: 1 },
+      ],
+      pushchair: 'Bugaboo',
+      maxDriveMinutes: 30,
+      budgetTier: 'moderate' as const,
+      homeLocation: 'Bushey',
+    };
+
+    const verified = enrichedFacts({
+      placeId: 'verified',
+      enrichmentStatus: 'verified',
+      pushchairSuitability: 'excellent',
+    });
+    const providerOnly = enrichedFacts({
+      placeId: 'provider',
+      enrichmentStatus: 'provider_only',
+      minRecommendedAge: null,
+      maxRecommendedAge: null,
+      toilets: 'unknown',
+      babyChanging: 'unknown',
+      parking: 'unknown',
+      pushchairSuitability: 'unknown',
+      environment: 'unknown',
+      energyLevel: 'unknown',
+      visitDurationMinutes: null,
+      estimatedSpend: null,
+    });
+
+    const relaxedRequest: DayRequest = {
+      ...BASE_REQUEST,
+      constraints: {
+        journey: { strength: 'required', value: { maxMinutes: 30 } },
+      },
+    };
+
+    const ranked = rankVenueMatches([providerOnly, verified], relaxedRequest, profile as never);
+    expect(ranked[0]?.facts.placeId).toBe('verified');
+  });
 });
 
 describe('day-request schema guard', () => {

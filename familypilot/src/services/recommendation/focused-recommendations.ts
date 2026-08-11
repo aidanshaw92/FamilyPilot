@@ -54,7 +54,7 @@ export async function getFocusedRecommendations(
     );
   });
 
-  const ranked = rankVenueMatches(factsList, request);
+  const ranked = rankVenueMatches(factsList, request, profile);
   const imageById = Object.fromEntries(
     places.map((p) => [p.familypilotId, p.photos[0] ?? '']),
   );

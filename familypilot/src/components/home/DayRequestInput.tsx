@@ -9,16 +9,27 @@ interface DayRequestInputProps {
   onChange: (text: string) => void;
   onSubmit: () => void;
   loading?: boolean;
+  variant?: 'default' | 'refinement';
 }
 
-export function DayRequestInput({ value, onChange, onSubmit, loading }: DayRequestInputProps) {
+export function DayRequestInput({
+  value,
+  onChange,
+  onSubmit,
+  loading,
+  variant = 'default',
+}: DayRequestInputProps) {
+  const isRefinement = variant === 'refinement';
+
   return (
     <View style={styles.wrap}>
       <Text variant="heading3" style={styles.title}>
-        What does your family need today?
+        {isRefinement ? 'Want something different?' : 'What does your family need today?'}
       </Text>
       <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
-        Describe your ideal outing — we match against trusted venue facts, not guesses.
+        {isRefinement
+          ? 'Describe what to change — we re-match against trusted venue facts, not guesses.'
+          : 'Describe your ideal outing — we match against trusted venue facts, not guesses.'}
       </Text>
       <TextInput
         value={value}
@@ -30,7 +41,7 @@ export function DayRequestInput({ value, onChange, onSubmit, loading }: DayReque
         accessibilityLabel="Describe what your family needs today"
       />
       <Button
-        label={loading ? 'Finding matches…' : 'Find recommendations'}
+        label={loading ? 'Finding matches…' : isRefinement ? 'Update recommendations' : 'Find recommendations'}
         onPress={onSubmit}
         disabled={loading || !value.trim()}
         size="lg"

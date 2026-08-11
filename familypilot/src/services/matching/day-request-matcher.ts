@@ -9,6 +9,40 @@ import {
   VenueMatchResult,
 } from '@/src/types/day-request';
 import { TriState } from '@/src/types/enrichment';
+import { FamilyProfile } from '@/src/types';
+import {
+  hasTrustedMatchSignals,
+  scoreTrustedAccessibility,
+  scoreTrustedAgeSuitability,
+  scoreTrustedBudget,
+  scoreTrustedFacilitiesMatch,
+} from '@/src/services/scoring/trusted-family-score';
+
+function enrichmentRank(status: MatchableVenueFacts['enrichmentStatus']): number {
+  switch (status) {
+    case 'verified':
+      return 3;
+    case 'enriched':
+      return 2;
+    default:
+      return 0;
+  }
+}
+
+function trustedRankingScore(facts: MatchableVenueFacts, profile: FamilyProfile): number {
+  if (!hasTrustedMatchSignals(facts)) return 0;
+
+  const childAges = profile.members.filter((member) => member.role === 'child').map((member) => member.age);
+  const scores = [
+    scoreTrustedAgeSuitability(facts, childAges),
+    scoreTrustedAccessibility(facts, profile),
+    scoreTrustedFacilitiesMatch(facts, profile),
+    scoreTrustedBudget(facts, profile.budgetTier),
+  ].filter((score): score is number => score != null);
+
+  if (scores.length === 0) return 0;
+  return scores.reduce((sum, score) => sum + score, 0) / scores.length;
+}
 
 function evaluateTriStateRequired(value: TriState | 'unknown', needYes: boolean): FactMatchOutcome {
   if (value === 'unknown') return 'unknown';
@@ -324,6 +358,7 @@ export function matchVenueToDayRequest(
 export function rankVenueMatches(
   factsList: MatchableVenueFacts[],
   request: DayRequest,
+  profile?: FamilyProfile,
 ): Array<{ facts: MatchableVenueFacts; match: VenueMatchResult }> {
   const results = factsList
     .map((facts) => ({ facts, match: matchVenueToDayRequest(facts, request) }))
@@ -337,6 +372,16 @@ export function rankVenueMatches(
     };
     const fitDiff = fitOrder[b.match.fit!] - fitOrder[a.match.fit!];
     if (fitDiff !== 0) return fitDiff;
+
+    const enrichDiff =
+      enrichmentRank(b.facts.enrichmentStatus) - enrichmentRank(a.facts.enrichmentStatus);
+    if (enrichDiff !== 0) return enrichDiff;
+
+    if (profile) {
+      const trustedDiff = trustedRankingScore(b.facts, profile) - trustedRankingScore(a.facts, profile);
+      if (trustedDiff !== 0) return trustedDiff;
+    }
+
     if (b.match.preferredPoints !== a.match.preferredPoints) {
       return b.match.preferredPoints - a.match.preferredPoints;
     }

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 import {
   carFitService,
@@ -13,6 +14,8 @@ import {
   venueService,
   weatherService,
 } from '@/src/services/api';
+import { buildProactiveDayRequest } from '@/src/services/recommendation/proactive-day-request';
+import { useDayRequestStore } from '@/src/stores/day-request-store';
 import { useFamilyStore } from '@/src/stores/family-store';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { FamilyProfile } from '@/src/types';
@@ -85,6 +88,27 @@ export function useFocusedRecommendations(request: import('@/src/types/day-reque
     queryFn: () => recommendationService.getFocusedRecommendations(request!),
     enabled: Boolean(request),
   });
+}
+
+/** Ensures Home has a proactive day request before the parent types anything. */
+export function useProactiveHomeRequest() {
+  const { data: profile } = useFamilyProfile();
+  const { data: weather } = useWeather();
+  const parsedRequest = useDayRequestStore((state) => state.parsedRequest);
+  const requestSource = useDayRequestStore((state) => state.requestSource);
+  const setParsedRequest = useDayRequestStore((state) => state.setParsedRequest);
+
+  useEffect(() => {
+    if (!profile || requestSource === 'user') return;
+    const proactiveRequest = buildProactiveDayRequest(profile, weather);
+    setParsedRequest(proactiveRequest, 'proactive');
+  }, [profile, weather, requestSource, setParsedRequest]);
+
+  return {
+    parsedRequest,
+    requestSource,
+    isProactive: requestSource === 'proactive',
+  };
 }
 
 export function useRecentVenues() {
