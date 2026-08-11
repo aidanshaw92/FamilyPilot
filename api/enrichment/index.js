@@ -29,6 +29,7 @@ const {
   expireClaim,
 } = require('./_lib/claims-store');
 const { listEvidenceConflicts } = require('./_lib/claim-review');
+const { isAutoApproveEnabled, tryAutoApproveDraft } = require('./_lib/auto-approve');
 
 function setCorsHeaders(res, methods) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -81,6 +82,10 @@ module.exports = async function handler(req, res) {
       return handleDisputeClaim(req, res);
     case 'expire-claim':
       return handleExpireClaim(req, res);
+    case 'auto-approve-draft':
+      return handleAutoApproveDraft(req, res);
+    case 'auto-approve-batch':
+      return handleAutoApproveBatch(req, res);
     default:
       return res.status(400).json({ error: `Unknown action: ${action}` });
   }
@@ -94,6 +99,7 @@ async function handleConfig(req, res) {
     authConfigured: isAuthConfigured(),
     storageMode: getStorageMode(),
     aiConfigured: isAiConfigured(),
+    autoApproveEnabled: isAutoApproveEnabled(),
   });
 }
 
@@ -244,7 +250,17 @@ async function handleGenerateDraft(req, res) {
 
   try {
     const result = await generateDraftForVenue(id, { regenerate: Boolean(req.body?.regenerate) });
-    return res.status(200).json(result);
+    const autoApprove =
+      Boolean(req.body?.autoApprove) || (isAutoApproveEnabled() && req.body?.autoApprove !== false);
+    let approval = null;
+    if (autoApprove) {
+      approval = await tryAutoApproveDraft(id, {
+        draft: result.draft,
+        evidenceBundle: result.evidenceBundle,
+        force: Boolean(req.body?.autoApprove),
+      });
+    }
+    return res.status(200).json({ ...result, autoApprove: approval });
   } catch (error) {
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Draft generation failed',
@@ -269,11 +285,16 @@ async function handleAutomationRun(req, res) {
     }
 
     const result = await generateDraftForVenue(id, { regenerate: Boolean(req.body?.regenerate) });
+    const approval = await tryAutoApproveDraft(id, {
+      draft: result.draft,
+      evidenceBundle: result.evidenceBundle,
+    });
     return res.status(200).json({
       ok: true,
       venueId: id,
       draftId: result.draft?.id,
       evidenceStatus: result.draft?.evidenceStatus,
+      autoApprove: approval,
     });
   } catch (error) {
     return res.status(500).json({
@@ -288,11 +309,48 @@ async function handleGenerateBatch(req, res) {
   if (!verifyEnrichmentAuth(req, res)) return;
 
   try {
-    const result = await generateDraftBatch(req.body ?? {});
+    const body = req.body ?? {};
+    const autoApprove =
+      Boolean(body.autoApprove) || (isAutoApproveEnabled() && body.autoApprove !== false);
+    const result = await generateDraftBatch({ ...body, autoApprove });
     return res.status(200).json(result);
   } catch (error) {
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Batch generation failed',
+    });
+  }
+}
+
+async function handleAutoApproveDraft(req, res) {
+  setCorsHeaders(res, 'POST');
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!verifyEnrichmentAuth(req, res)) return;
+
+  const id = req.body?.id || req.query.id;
+  if (!id) return res.status(400).json({ error: 'Missing venue id' });
+
+  try {
+    const result = await tryAutoApproveDraft(id, { force: Boolean(req.body?.force) });
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Auto-approve failed',
+    });
+  }
+}
+
+async function handleAutoApproveBatch(req, res) {
+  setCorsHeaders(res, 'POST');
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!verifyEnrichmentAuth(req, res)) return;
+
+  try {
+    const { autoApprovePendingBatch } = require('./_lib/auto-approve');
+    const result = await autoApprovePendingBatch(req.body ?? {});
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Auto-approve batch failed',
     });
   }
 }
