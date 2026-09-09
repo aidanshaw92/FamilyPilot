@@ -55,7 +55,8 @@
     "test": "vitest run",
     "test:routes": "npm run build:web && vitest run src/__tests__/remediation.test.ts",
     "screenshots:design-review": "npm run build:web && node scripts/capture-design-review.mjs",
-    "screenshots:eat-nearby": "npm run build:web && node scripts/capture-eat-nearby.mjs"
+    "screenshots:eat-nearby": "npm run build:web && node scripts/capture-eat-nearby.mjs",
+    "typecheck:app": "tsc --noEmit -p tsconfig.app.json"
   },
   "private": true
 }
