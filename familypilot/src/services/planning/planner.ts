@@ -76,7 +76,9 @@ export function planVenue(facts: MatchableVenueFacts, families: PlanningFamily[]
       const depart = start - journey.outbound - options.bufferMinutes;
       const home = end + journey.inbound + options.bufferMinutes;
       const conflicts = intervals[i].some(r => r.atHome && depart < r.end && home > r.start);
-      if (home > deadline || conflicts || depart < earliest) { fits = false; return; }
+      const travelConflict = intervals[i].some(r => !r.atHome &&
+        ((depart < r.end && start > r.start) || (end < r.end && home > r.start)));
+      if (home > deadline || conflicts || travelConflict || depart < earliest) { fits = false; return; }
       const nextHome = intervals[i].filter(r => r.atHome && r.start >= home).sort((a,b) => a.start-b.start)[0];
       const bound = Math.min(deadline, nextHome?.start ?? deadline);
       const latestDeparture = bound - journey.inbound - journey.outbound - options.bufferMinutes*2 - options.visitMinutes;
