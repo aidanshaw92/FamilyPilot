@@ -70,7 +70,7 @@ export function scoreTrustedFacilitiesMatch(
   const checks: Array<{ value: MatchableVenueFacts['toilets']; weight: number; label: string }> = [
     { value: facts.toilets, weight: 1, label: 'toilets' },
     { value: facts.parking, weight: 0.9, label: 'parking' },
-    { value: facts.freeParking, weight: 0.7, label: 'freeParking' },
+    { value: facts.freeParking ?? 'unknown', weight: 0.7, label: 'freeParking' },
   ];
 
   if (youngestChild != null && youngestChild <= 3) {
