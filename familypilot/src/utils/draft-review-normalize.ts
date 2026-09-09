@@ -67,7 +67,7 @@ function normalizeTriStateField(raw: unknown): DraftTriStateField {
   };
 }
 
-function normalizeEnumField(raw: unknown, allowed: Set<string>, fallback = 'unknown'): DraftTriStateField {
+function normalizeEnumField(raw: unknown, allowed: Set<string>, fallback = 'unknown'): Omit<DraftTriStateField, 'value'> & { value: string } {
   if (!raw || typeof raw !== 'object') return emptyReviewField(fallback);
   const r = raw as Partial<DraftTriStateField>;
   const value = allowed.has(r.value ?? '') ? (r.value as DraftTriStateField['value']) : fallback;
