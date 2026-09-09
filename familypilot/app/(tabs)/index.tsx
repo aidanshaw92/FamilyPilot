@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { FocusedRecommendationCard } from '@/src/components/home/FocusedRecommendationCard';
+import { OutingPreferences } from '@/src/components/home/OutingPreferences';
 import { ScreenContainer, ScreenHeader } from '@/src/components/shared/ScreenContainer';
 import { EmptyState, ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
@@ -34,14 +35,6 @@ export default function HomeScreen() {
   const topPick = recommendations[0];
   const moreIdeas = recommendations.slice(1);
 
-  if (recsError) {
-    return (
-      <ScreenContainer>
-        <ErrorState onRetry={() => void refetch()} />
-      </ScreenContainer>
-    );
-  }
-
   return (
     <ScreenContainer>
       <ScreenHeader
@@ -53,19 +46,21 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        <OutingPreferences request={parsedRequest} />
+        {recsError ? <ErrorState onRetry={() => void refetch()} /> : null}
         {recsLoading ? (
           <View style={styles.skeletonRow}>
             <SkeletonDecisionCard />
           </View>
         ) : null}
 
-        {!recsLoading && recommendations.length === 0 ? (
+        {!recsLoading && !recsError && parsedRequest && recommendations.length === 0 ? (
           <EmptyState
             icon="compass-outline"
             title="No matches with confirmed details"
             message={
               focusedResult?.message ??
-              'Try describing what you need below, or explore nearby venues.'
+              'Change your preferences above, or explore nearby venues.'
             }
             actionLabel="Explore"
             onAction={() => router.push('/(tabs)/explore' as never)}
