@@ -32,7 +32,10 @@ export async function getFocusedRecommendations(
   let places = [];
   try {
     const result = await placesApiClient.search(params);
-    places = result.places;
+    if (result.provider === 'mock') {
+      return { request, recommendations: [], eligibleCount: 0, message: 'Live places are unavailable. Please try again later.' };
+    }
+    places = result.places.filter(place => place.provider !== 'mock');
   } catch {
     return {
       request,
