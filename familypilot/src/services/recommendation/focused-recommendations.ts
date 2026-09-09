@@ -25,7 +25,7 @@ export async function getFocusedRecommendations(
   const params = {
     latitude: home.latitude,
     longitude: home.longitude,
-    radiusKm: (profile.maxDriveMinutes / 60) * 40 * 1.2,
+    radiusKm: ((request.constraints.journey?.value.maxMinutes ?? request.maxDriveMinutes) / 60) * 40 * 1.2,
     intent: 'explore' as const,
   };
 
