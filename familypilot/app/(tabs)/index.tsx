@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { FocusedRecommendationCard } from '@/src/components/home/FocusedRecommendationCard';
 import { OutingPreferences } from '@/src/components/home/OutingPreferences';
+import { Button } from '@/src/components/ui/Button';
 import { ScreenContainer, ScreenHeader } from '@/src/components/shared/ScreenContainer';
 import { EmptyState, ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
@@ -47,6 +48,7 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <OutingPreferences request={parsedRequest} />
+        <View style={{ marginBottom: spacing.lg }}><Button label="Plan around routines or meet friends" onPress={() => router.push('/(tabs)/trips' as never)} /></View>
         {recsError ? <ErrorState onRetry={() => void refetch()} /> : null}
         {recsLoading ? (
           <View style={styles.skeletonRow}>
