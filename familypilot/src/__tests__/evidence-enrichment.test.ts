@@ -824,7 +824,7 @@ describe('evidence quality gates', () => {
     expect(parking?.conflicts).toHaveLength(2);
   });
 
-  it('uses the most cautious supported pushchair classification', () => {
+  it('requires a recheck for conflicting pushchair classifications', () => {
     const bundle = buildEvidenceBundle('venue-1', [
       {
         url: 'https://example.org/a',
@@ -842,6 +842,6 @@ describe('evidence quality gates', () => {
       },
     ], 'official_website');
 
-    expect(bundle.facts.find((fact) => fact.field === 'pushchairSuitability')?.value).toBe('mixed');
+    expect(bundle.facts.find((fact) => fact.field === 'pushchairSuitability')?.evidenceStatus).toBe('conflict');
   });
 });

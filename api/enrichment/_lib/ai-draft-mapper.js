@@ -74,11 +74,11 @@ function draftJsonToSavePayload(draft, options) {
       sourceType: 'ai_assisted',
       checkedDate: options.approvedAt.slice(0, 10),
       checkedBy: options.reviewedBy,
-      evidenceNotes: `AI-assisted draft (${options.model}) reviewed and approved by editor.`,
+      evidenceNotes: options.reviewedBy === 'source_evidence_auto_v2' ? 'Automatically checked against fetched official source text.' : `AI-assisted draft (${options.model}) reviewed and approved by editor.`,
       sourceReference: JSON.stringify({
         origin: 'ai_assisted',
         model: options.model,
-        humanReviewed: true,
+        humanReviewed: options.reviewedBy !== 'source_evidence_auto_v2',
         approvedBy: options.reviewedBy,
         approvedAt: options.approvedAt,
         evidenceStatus: options.evidenceStatus ?? options.sourceContext?.evidenceStatus ?? null,

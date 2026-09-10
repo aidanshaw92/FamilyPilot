@@ -27,7 +27,7 @@ function writeFileStore(data) {
 
 function isCacheFresh(retrievedAt) {
   const ageMs = Date.now() - new Date(retrievedAt).getTime();
-  return ageMs < CACHE_TTL_DAYS * 24 * 60 * 60 * 1000;
+  return ageMs >= 0 && ageMs < Math.min(14, CACHE_TTL_DAYS) * 24 * 60 * 60 * 1000;
 }
 
 function rowToRecord(row) {
@@ -153,7 +153,7 @@ async function listEvidenceForVenue(familypilotPlaceId) {
       .select('*')
       .eq('familypilot_place_id', familypilotPlaceId)
       .order('retrieved_at', { ascending: false })
-      .limit(20);
+      .limit(100);
     if (error) throw new Error(error.message);
     return (data ?? []).map(rowToRecord);
   }

@@ -91,11 +91,14 @@ function reviewFormFromDraft(draft: typeof SAMPLE_DRAFT) {
 
 describe('venue claims trust layer', () => {
   beforeEach(() => {
+    vi.useFakeTimers({toFake:['Date']});
+    vi.setSystemTime(new Date('2026-08-15T12:00:00Z'));
     isolateClaimsTests();
     clearClaimsFile();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     clearClaimsFile();
     restoreClaimsTests();
   });
@@ -293,6 +296,8 @@ describe('venue claims trust layer', () => {
 
 describe('approveDraft integration with claims', () => {
   beforeEach(() => {
+    vi.useFakeTimers({toFake:['Date']});
+    vi.setSystemTime(new Date('2026-08-15T12:00:00Z'));
     isolateClaimsTests();
     clearClaimsFile();
     const storePath = path.join(process.cwd(), '.data', 'enrichment-store.json');
@@ -350,6 +355,7 @@ describe('approveDraft integration with claims', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     clearClaimsFile();
     restoreClaimsTests();
   });
@@ -414,11 +420,14 @@ describe('approveDraft integration with claims', () => {
 
 describe('editorial claim projection', () => {
   beforeEach(() => {
+    vi.useFakeTimers({toFake:['Date']});
+    vi.setSystemTime(new Date('2026-08-15T12:00:00Z'));
     isolateClaimsTests();
     clearClaimsFile();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     clearClaimsFile();
     restoreClaimsTests();
   });

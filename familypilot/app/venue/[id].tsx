@@ -1,3 +1,4 @@
+import { VenueTrustPanel } from '@/src/components/planning/VisitFeedback';
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -193,6 +194,7 @@ export default function VenueScreen() {
               </Text>
             ) : null}
 
+            <VenueTrustPanel venueId={venue.id}/>
             <PhotoGallery photos={venue.photos} onPhotoPress={setHeroIndex} />
 
             <Text variant="heading3" style={styles.sectionTitle}>

@@ -34,7 +34,6 @@ const FIELD_PATTERNS = [
       /nappy\s+chang(e|ing)/i,
       /baby\s+chang(e|ing)\s+facilit/i,
       /changing\s+table\s+for\s+babies/i,
-      /parent\s+and\s+baby\s+facilit/i,
     ],
     no: [/no\s+baby\s+chang/i],
   },
@@ -81,7 +80,7 @@ const FIELD_PATTERNS = [
   },
   {
     field: 'wheelchairAccessible',
-    yes: [/wheelchair\s+access/i, /step.?free/i, /accessible\s+to\s+all/i],
+    yes: [/wheelchair\s+accessible/i, /accessible\s+(?:for|to)\s+wheelchair\s+users/i],
     no: [/not\s+wheelchair/i],
   },
   {
@@ -190,8 +189,7 @@ function isExplicitBabyChangingStatement(sentence) {
     /baby\s+chang(e|ing)/i.test(sentence) ||
     /nappy\s+chang(e|ing)/i.test(sentence) ||
     /baby\s+chang(e|ing)\s+facilit/i.test(sentence) ||
-    /changing\s+table\s+for\s+babies/i.test(sentence) ||
-    /parent\s+and\s+baby\s+facilit/i.test(sentence)
+    /changing\s+table\s+for\s+babies/i.test(sentence)
   );
 }
 
@@ -283,6 +281,8 @@ function matchField(sentence, patterns, fieldId) {
   }
   for (const re of patterns.yes) {
     if (!re.test(sentence)) continue;
+    // Availability cannot be inferred from a mention in a closure, future plan, or question.
+    if (/\b(?:not|without|unavailable|closed|broken|planned|proposed|soon|will|temporarily)\b|\bno\s+(?!charge|fee)/i.test(sentence)) continue;
     if (fieldId === 'parking' && hasParkingNegation(sentence)) continue;
     if (fieldId === 'parking' && !isExplicitParkingStatement(sentence)) continue;
     if (fieldId === 'toilets' && (hasToiletNegation(sentence) || isScopedToiletClosure(sentence))) continue;
@@ -318,7 +318,7 @@ function extractEvidenceFromText(text, sourceMeta) {
         sourceType: sourceMeta.sourceType,
         retrievedAt: sourceMeta.retrievedAt,
       });
-      break;
+      // Keep all statements so contradictory text on the same page becomes a conflict.
     }
   }
 
@@ -347,7 +347,7 @@ function mergeEvidenceBundles(sources) {
 
   return [...byField.entries()].map(([field, candidates]) => {
     const values = [...new Set(candidates.map((fact) => fact.value).filter((value) => value !== 'unknown'))];
-    if (values.length > 1 && field !== 'pushchairSuitability' && field !== 'environment') {
+    if (values.length > 1) {
       return {
         field,
         value: 'unknown',

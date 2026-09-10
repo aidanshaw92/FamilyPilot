@@ -32,7 +32,10 @@ async function getConsumerMetadata(familypilotPlaceId) {
   const activeClaims = await getActiveClaims(familypilotPlaceId);
   if (activeClaims.length === 0) return null;
 
-  const projected = projectActiveClaimsToPayload(activeClaims);
+  const fields = await require('../../feedback/_lib/store').venueFeedback(familypilotPlaceId, activeClaims);
+  const definitions = require('../../feedback/_lib/rules').FIELDS;
+  const disputed = new Set(Object.entries(fields).filter(([,f]) => f.status === 'needs_recheck').map(([key]) => definitions[key].claim));
+  const projected = projectActiveClaimsToPayload(activeClaims.filter(c => !disputed.has(c.fieldKey)));
   const payload = attachTrustFields({ ...projected }, raw);
   const status = resolveEnrichmentStatus(payload, raw);
   const row = metadataRowFromPayload(familypilotPlaceId, payload, raw ?? { enrichmentStatus: status });

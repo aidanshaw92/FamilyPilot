@@ -86,10 +86,13 @@ function writeMetadata(placeId: string, metadata: Record<string, unknown>) {
 
 describe('consumer metadata projection', () => {
   beforeEach(() => {
+    vi.useFakeTimers({toFake:['Date']});
+    vi.setSystemTime(new Date('2026-08-15T12:00:00Z'));
     isolateFileStores();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     restoreEnv();
   });
 

@@ -251,7 +251,7 @@ async function handleGenerateDraft(req, res) {
   if (!id) return res.status(400).json({ error: 'Missing venue id' });
 
   try {
-    const result = await generateDraftForVenue(id, { regenerate: Boolean(req.body?.regenerate) });
+    const result = await generateDraftForVenue(id, { regenerate: Boolean(req.body?.regenerate), sourceOnly: true });
     const autoApprove =
       Boolean(req.body?.autoApprove) || (isAutoApproveEnabled() && req.body?.autoApprove !== false);
     let approval = null;
@@ -286,7 +286,7 @@ async function handleAutomationRun(req, res) {
       return res.status(401).json({ error: 'Invalid or expired automation dispatch' });
     }
 
-    const result = await generateDraftForVenue(id, { regenerate: Boolean(req.body?.regenerate) });
+    const result = await generateDraftForVenue(id, { regenerate: Boolean(req.body?.regenerate), sourceOnly: true });
     const approval = await tryAutoApproveDraft(id, {
       draft: result.draft,
       evidenceBundle: result.evidenceBundle,

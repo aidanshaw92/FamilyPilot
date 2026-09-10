@@ -1,3 +1,4 @@
+import { MyVisitReports } from './VisitFeedback';
 import { useEffect, useState } from 'react';
 import { Share, Switch, View } from 'react-native';
 import { Button, Text } from '@/src/components/ui';
@@ -30,6 +31,7 @@ export function PlanningAccount(){
   <Button label="Back up this device’s plans and routines" disabled={busy} onPress={()=>void run(async()=>{const {error}=await supabase!.from('planning_workspaces').upsert({user_id:user,data:{families:state.families,options:state.options,saved:state.saved},updated_at:new Date().toISOString()});if(error)throw error;setMessage('Private backup saved. This replaces the previous cloud backup.');})}/>
   <Button label="Check my cloud backup" variant="outline" disabled={busy} onPress={()=>void run(async()=>{const {data,error}=await supabase!.from('planning_workspaces').select('data').eq('user_id',user).maybeSingle();if(error)throw error;if(!data)throw new Error('No cloud backup yet.');if(!Array.isArray(data.data?.families)||!Array.isArray(data.data?.saved)||!data.data?.options)throw new Error('This backup cannot be restored.');setRestore(data.data as PlanningData);})}/>
   {restore?<><Text>Restore {restore.families.length} families and {restore.saved.length} plans? This replaces planning data on this device.</Text><Button label="Replace device data with this backup" disabled={busy} onPress={()=>{state.replace(restore);setRestore(null);setMessage('Backup restored.');}}/><Button label="Keep device data" variant="ghost" onPress={()=>setRestore(null)}/></>:null}
+  <MyVisitReports key={user}/>
   <Text variant="heading3">Connect a friend’s family</Text>
   <Text variant="bodySmall">Creating or accepting a code shares your family label, approximate area (rounded to about 1km), children’s ages and venue preferences with that family. It does not share children’s names or addresses. Codes expire after seven days and can be used once.</Text>
   <View style={s.row}><Switch accessibilityLabel="Also share home busy times" value={shareAvailability} onValueChange={setShareAvailability}/><Text>Also share home busy times</Text></View><Text variant="bodySmall">Optional: shares the start and length of home routines as “Home time”, without the child’s name or whether it is a nap or feed. This lets the planner respect both families’ availability.</Text>

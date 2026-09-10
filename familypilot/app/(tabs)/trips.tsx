@@ -1,3 +1,4 @@
+import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Linking, ScrollView, Share, View } from 'react-native';
@@ -29,6 +30,7 @@ export default function TripsScreen() {
  async function share(text:string){try{await Share.share({message:text});}catch{setMessage('Sharing is unavailable on this device.');}}
  if(!state.hydrated)return <ScreenContainer><Text>Loading your plans…</Text></ScreenContainer>;
  return <ScreenContainer><ScrollView contentContainerStyle={{padding:spacing.screenPadding,paddingBottom:60,gap:spacing.md}} keyboardShouldPersistTaps="handled">
+  <PostVisitInbox/>
   <Text variant="heading1">Make a plan</Text><Text color={colors.text.secondary}>A day that works for everyone.</Text>
   <View style={s.row}>{(['plan','saved','families'] as const).map(t=><Chip key={t} label={{plan:'Plan a day',saved:'Saved plans',families:'Families & routines'}[t]} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
   {editor?<FamilyEditor key={editor.id} initial={editor} onCancel={()=>setEditor(null)} onSave={f=>{state.setFamily(f);setSelected(ids=>[...new Set([...ids,f.id])]);setEditor(null);}}/>:null}

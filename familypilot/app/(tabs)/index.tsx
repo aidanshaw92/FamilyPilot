@@ -1,3 +1,4 @@
+import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
@@ -47,6 +48,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        <PostVisitInbox/>
         <OutingPreferences request={parsedRequest} />
         <View style={{ marginBottom: spacing.lg }}><Button label="Plan around routines or meet friends" onPress={() => router.push('/(tabs)/trips' as never)} /></View>
         {recsError ? <ErrorState onRetry={() => void refetch()} /> : null}

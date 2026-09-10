@@ -1,12 +1,14 @@
 # FamilyPilot: family planning build and launch guide
 
-Updated 9 September 2026. Product direction explicitly expanded by Aidan in this conversation.
+Updated 10 September 2026. Product direction explicitly expanded by Aidan in this conversation.
 
 ## Purpose
 
 The first place parents go to arrange a plan that works for their family and the families they are meeting. Answer: where can we go, what practical facilities are confirmed, where can we eat, when should each family leave, and can everyone be home for the routines they choose?
 
 One evolving family profile should ultimately power all recommendations. No booking checkout, social feed, public child profiles, invented suitability, or commission-driven ranking.
+
+See [Venue data automation and post-visit feedback](VENUE_DATA_AUTOMATION.md) for the latest data pipeline, applied schema, blocked activation and release steps.
 
 ## Implemented in this update
 

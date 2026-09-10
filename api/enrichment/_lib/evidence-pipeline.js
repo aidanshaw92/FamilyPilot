@@ -40,13 +40,10 @@ async function ensurePlaceDetails(familypilotId, placeRow) {
   return placeRow;
 }
 
-async function fetchAndExtractPage(familypilotPlaceId, page) {
-  const cached = await getCachedEvidence(familypilotPlaceId, page.url);
+async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
+  const cached = options.forceRefresh ? null : await getCachedEvidence(familypilotPlaceId, page.url);
   if (cached) {
-    const facts = (cached.extractedEvidence ?? []).map((fact) => ({
-      ...fact,
-      confidence: fact.confidence ?? 'high',
-    }));
+    const facts = extractEvidenceFromText(cached.extractedText || '', { url: cached.sourceUrl, sourceType: cached.sourceType, retrievedAt: cached.retrievedAt });
     return {
       url: cached.sourceUrl,
       sourceType: cached.sourceType,
@@ -113,7 +110,7 @@ async function fetchAndExtractPage(familypilotPlaceId, page) {
   };
 }
 
-async function gatherEvidenceForVenue(familypilotPlaceId, placeRow) {
+async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}) {
   const enrichedPlace = await ensurePlaceDetails(familypilotPlaceId, placeRow);
   const discovery = discoverSourceUrls({
     website: enrichedPlace?.website,
@@ -154,7 +151,7 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow) {
   }
 
   const homepage = discovery.pages[0];
-  const homeResult = await fetchAndExtractPage(familypilotPlaceId, homepage);
+  const homeResult = await fetchAndExtractPage(familypilotPlaceId, homepage, options);
 
   const { pages, reserveCandidates, diagnostics: discoveryDiagnostics } = mergePageCandidates(
     homepage.url,
@@ -224,7 +221,7 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow) {
     attemptedUrls.add(urlKey);
     fetchAttempts += 1;
 
-    const result = await fetchAndExtractPage(familypilotPlaceId, next);
+    const result = await fetchAndExtractPage(familypilotPlaceId, next, options);
     recordResult(result);
 
     if (isQuickFailure(result) && reserve.length && fetchAttempts < maxAttempts) {
