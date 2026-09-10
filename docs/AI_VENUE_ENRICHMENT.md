@@ -55,10 +55,10 @@ AI drafts **never** auto-become `enriched` or `verified`.
 | Source evidence | `venue_source_evidence` table or `.data/venue-source-evidence.json` |
 | Draft storage | `venue_enrichment_drafts` table (Supabase) or `.data/enrichment-drafts.json` (file fallback) |
 | Status marker | `venue_family_metadata.enrichment_status = 'ai_draft'` (no family fields until approval) |
-| Evidence pipeline | `api/enrichment/_lib/evidence-pipeline.js` |
-| AI provider | `api/enrichment/_lib/ai-provider.js` (OpenAI; mock when `AI_ENRICHMENT_ALLOW_MOCK=true`) |
-| Schema validation | `api/enrichment/_lib/ai-draft-schema.js` |
-| Draft lifecycle | `api/enrichment/_lib/draft-store.js` |
+| Evidence pipeline | `server/enrichment/_lib/evidence-pipeline.js` |
+| AI provider | `server/enrichment/_lib/ai-provider.js` (OpenAI; mock when `AI_ENRICHMENT_ALLOW_MOCK=true`) |
+| Schema validation | `server/enrichment/_lib/ai-draft-schema.js` |
+| Draft lifecycle | `server/enrichment/_lib/draft-store.js` |
 | API actions | `generate-draft`, `generate-batch`, `draft`, `approve-draft`, `reject-draft` |
 | TypeScript types | `familypilot/src/types/ai-enrichment.ts` |
 | Draft → save mapper | `familypilot/server/enrichment/ai-draft-mapper.ts` |

@@ -30,7 +30,7 @@ describe('canonical venue identity', () => {
       upsertHeuristicLink,
       filterPlacesToCanonicalPrimaries,
       invalidateCanonicalCache,
-    } = await import('../../../api/places/lib/canonical-venues.js');
+    } = await import('../../../server/places/lib/canonical-venues.js');
 
     await upsertHeuristicLink({
       primary: {
@@ -74,7 +74,7 @@ describe('canonical venue identity', () => {
 
   it('resolves alias ids to the primary place id', async () => {
     const { upsertHeuristicLink, resolvePrimaryPlaceId, invalidateCanonicalCache } = await import(
-      '../../../api/places/lib/canonical-venues.js'
+      '../../../server/places/lib/canonical-venues.js'
     );
 
     await upsertHeuristicLink({
@@ -100,7 +100,7 @@ describe('canonical venue identity', () => {
       filterPlacesToCanonicalPrimaries,
       invalidateCanonicalCache,
       loadCanonicalStore,
-    } = await import('../../../api/places/lib/canonical-venues.js');
+    } = await import('../../../server/places/lib/canonical-venues.js');
 
     await upsertHeuristicLink({
       primary: { familypilotId: 'fp-google-a', name: 'Venue A' },
@@ -125,7 +125,7 @@ describe('canonical venue identity', () => {
 
 describe('venue alias detection', () => {
   it('finds Warner Bros / Harry Potter as alias pairs', async () => {
-    const { findVenueAliasPairs } = await import('../../../api/places/lib/venue-alias-detection.js');
+    const { findVenueAliasPairs } = await import('../../../server/places/lib/venue-alias-detection.js');
     const { places, pairs } = findVenueAliasPairs([
       {
         familypilotId: 'fp-google-warner',

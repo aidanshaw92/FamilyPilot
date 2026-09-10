@@ -1,4 +1,4 @@
-const { getDriveTimes } = require('./lib/journey-provider');
+const { getDriveTimes } = require('../../server/context/lib/journey-provider');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

@@ -1,4 +1,4 @@
-const { getCurrentWeather } = require('./lib/weather-provider');
+const { getCurrentWeather } = require('../../server/context/lib/weather-provider');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

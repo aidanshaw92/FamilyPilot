@@ -166,8 +166,8 @@ Target was ≥80% irrelevant reduction; achieved **100%** across all six locatio
 | Area | Path |
 |------|------|
 | Quality layer (TS) | `familypilot/server/places/places-quality.ts` |
-| Quality layer (API JS) | `api/places/lib/places-quality.js` |
-| Google search | `api/places/lib/google-places.js`, `familypilot/server/places/google-places-provider.ts` |
+| Quality layer (API JS) | `server/places/lib/places-quality.js` |
+| Google search | `server/places/lib/google-places.js`, `familypilot/server/places/google-places-provider.ts` |
 | Mapper | `familypilot/server/places/google-places-mapper.ts` |
 | API route | `api/places/search.js` (`?intent=explore\|restaurant`) |
 | Enrichment | `familypilot/src/utils/places-enrichment.ts` |

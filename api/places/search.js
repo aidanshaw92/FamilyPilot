@@ -1,4 +1,4 @@
-const { searchWithFallback } = require('./lib/fallback');
+const { searchWithFallback } = require('../../server/places/lib/fallback');
 
 function getConfiguredProvider() {
   return (process.env.PLACES_PROVIDER || 'mock').toLowerCase();
@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
 
   let places = result.places;
   try {
-    const { getConsumerMetadata } = require('../enrichment/_lib/consumer-projection');
+    const { getConsumerMetadata } = require('../../server/enrichment/_lib/consumer-projection');
     places = await Promise.all(
       places.map(async (place) => {
         const metadata = await getConsumerMetadata(place.familypilotId);

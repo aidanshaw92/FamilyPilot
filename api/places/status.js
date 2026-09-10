@@ -1,5 +1,5 @@
-const { probeGoogle } = require('./lib/google-places');
-const { probeOsm } = require('./lib/osm-places');
+const { probeGoogle } = require('../../server/places/lib/google-places');
+const { probeOsm } = require('../../server/places/lib/osm-places');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

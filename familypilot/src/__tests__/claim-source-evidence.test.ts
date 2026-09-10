@@ -42,9 +42,9 @@ describe('claim source evidence linking', () => {
   });
 
   it('links approved claims to venue_source_evidence rows by source URL', async () => {
-    const { saveEvidenceRecord } = await import('../../../api/enrichment/_lib/evidence-store.js');
+    const { saveEvidenceRecord } = await import('../../../server/enrichment/_lib/evidence-store.js');
     const { createClaimsFromApproval, getActiveClaims } = await import(
-      '../../../api/enrichment/_lib/claims-store.js'
+      '../../../server/enrichment/_lib/claims-store.js'
     );
 
     await saveEvidenceRecord({

@@ -4,15 +4,15 @@
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { buildEvidenceBundle, extractEvidenceFromText } from '../../../api/enrichment/_lib/evidence-extractor.js';
+import { buildEvidenceBundle, extractEvidenceFromText } from '../../../server/enrichment/_lib/evidence-extractor.js';
 import {
   mergeEvidenceIntoDraft,
   buildDraftFromEvidence,
   isAuthoritativeFact,
-} from '../../../api/enrichment/_lib/evidence-draft-merge.js';
-import { normaliseDraftJson } from '../../../api/enrichment/_lib/ai-draft-schema.js';
-import { mergePageCandidates } from '../../../api/enrichment/_lib/source-discovery.js';
-import { readBoundedHtml } from '../../../api/enrichment/_lib/source-fetcher.js';
+} from '../../../server/enrichment/_lib/evidence-draft-merge.js';
+import { normaliseDraftJson } from '../../../server/enrichment/_lib/ai-draft-schema.js';
+import { mergePageCandidates } from '../../../server/enrichment/_lib/source-discovery.js';
+import { readBoundedHtml } from '../../../server/enrichment/_lib/source-fetcher.js';
 
 const WARNER_BUNDLE = buildEvidenceBundle(
   'fp-google-warner',
@@ -110,7 +110,7 @@ describe('Warner Bros evidence-loss regression', () => {
 
   it('full generateDraft path preserves evidence when mock AI would have unknown fields', async () => {
     const { generateMockDraft, mergeEvidenceIntoDraft: mergeFn } = await import(
-      '../../../api/enrichment/_lib/ai-provider.js'
+      '../../../server/enrichment/_lib/ai-provider.js'
     );
     const aiDraft = normaliseDraftJson({
       familyFacilities: {
@@ -208,7 +208,7 @@ describe('Warner Bros evidence-loss regression', () => {
   });
 
   it('legacy Warner-style regeneration via generateMockDraft persists extracted facility facts', async () => {
-    const { generateMockDraft } = await import('../../../api/enrichment/_lib/ai-provider.js');
+    const { generateMockDraft } = await import('../../../server/enrichment/_lib/ai-provider.js');
     const cachedWarnerBundle = buildEvidenceBundle(
       'fp-google-warner',
       [
@@ -394,7 +394,7 @@ describe('parking false-positive guard', () => {
 describe('utility link and generic keyword rejection', () => {
   it('rejects accessibility toolbar and generic help links', async () => {
     const { findRelevantLinks, isUtilityLink } = await import(
-      '../../../api/enrichment/_lib/html-text-extractor.js'
+      '../../../server/enrichment/_lib/html-text-extractor.js'
     );
 
     expect(isUtilityLink('https://example.org/recite-me/', 'Accessibility tools')).toBe(true);

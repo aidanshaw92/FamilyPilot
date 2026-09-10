@@ -133,7 +133,7 @@ Draft records include `evidence_status`:
 
 ## Fetch security (SSRF)
 
-Server-side fetcher (`api/enrichment/_lib/source-fetcher.js`):
+Server-side fetcher (`server/enrichment/_lib/source-fetcher.js`):
 
 - Blocks localhost, private IPs, link-local, metadata hosts
 - DNS resolution check before fetch
@@ -231,11 +231,11 @@ Unchanged:
 | Component | Path |
 |-----------|------|
 | Migration | `familypilot/supabase/migrations/006_venue_source_evidence.sql` |
-| Evidence pipeline | `api/enrichment/_lib/evidence-pipeline.js` |
-| Source fetch + SSRF | `api/enrichment/_lib/source-fetcher.js`, `source-fetch-security.js` |
-| Evidence extraction | `api/enrichment/_lib/evidence-extractor.js` |
-| AI provider | `api/enrichment/_lib/ai-provider.js` |
-| Draft lifecycle | `api/enrichment/_lib/draft-store.js` |
+| Evidence pipeline | `server/enrichment/_lib/evidence-pipeline.js` |
+| Source fetch + SSRF | `server/enrichment/_lib/source-fetcher.js`, `source-fetch-security.js` |
+| Evidence extraction | `server/enrichment/_lib/evidence-extractor.js` |
+| AI provider | `server/enrichment/_lib/ai-provider.js` |
+| Draft lifecycle | `server/enrichment/_lib/draft-store.js` |
 | Client batch | `familypilot/src/services/enrichment/enrichment-api-client.ts` |
 | Review UI | `familypilot/app/internal/enrichment/[id].tsx` |
 | Tests | `familypilot/src/__tests__/evidence-enrichment.test.ts` |

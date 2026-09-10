@@ -139,13 +139,13 @@ describe('ai_draft status derivation', () => {
 
 describe('AI draft schema validation (server mirror)', () => {
   it('rejects non-object AI output', async () => {
-    const { normaliseDraftJson } = await import('../../../api/enrichment/_lib/ai-draft-schema.js');
+    const { normaliseDraftJson } = await import('../../../server/enrichment/_lib/ai-draft-schema.js');
     expect(() => normaliseDraftJson(null)).toThrow();
     expect(() => normaliseDraftJson('string')).toThrow();
   });
 
   it('normalises missing fields to unknown', async () => {
-    const { normaliseDraftJson } = await import('../../../api/enrichment/_lib/ai-draft-schema.js');
+    const { normaliseDraftJson } = await import('../../../server/enrichment/_lib/ai-draft-schema.js');
     const draft = normaliseDraftJson({
       recommendedAge: {},
       familyFacilities: {},
@@ -160,7 +160,7 @@ describe('AI draft schema validation (server mirror)', () => {
 
 describe('mock AI provider', () => {
   it('generates draft without inventing toilets', async () => {
-    const { generateMockDraft } = await import('../../../api/enrichment/_lib/ai-provider.js');
+    const { generateMockDraft } = await import('../../../server/enrichment/_lib/ai-provider.js');
     const result = generateMockDraft({
       familypilotPlaceId: 'fp-google-test',
       name: 'Hanwell Zoo',

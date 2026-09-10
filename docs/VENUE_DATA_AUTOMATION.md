@@ -43,6 +43,13 @@ Do not activate against the old production API, which still uses its old approva
 
 ## Deployment and settings
 
+Deployment packaging: shared Node helpers live under `server/`, outside Vercel's
+`api/` function discovery directory. The ten HTTP entrypoints and their public
+URLs remain in `api/`. `api-deployment.test.ts` checks the 12-function budget
+and loads every entrypoint to catch broken helper imports. This addresses the
+PR preview's Hobby function-limit failure; a successful hosted deployment still
+needs verification before production activation.
+
 1. Deploy PR #67 to the existing Vercel project. Its production worker endpoint is `https://family-pilot-seven.vercel.app/api/enrichment?action=automation-run`.
 2. Preserve `SUPABASE_URL`, server-only `SUPABASE_SERVICE_ROLE_KEY`/`SUPABASE_SECRET_KEY`, and Google server credentials. Set `ENRICHMENT_AUTO_APPROVE=true` (v2 defaults on unless explicitly false). Never expose the service secret in an `EXPO_PUBLIC_*` variable.
 3. Web/native builds need `EXPO_PUBLIC_SUPABASE_URL` and the publishable/anon key for parent sign-in. Native apps also need `EXPO_PUBLIC_PLANNING_API_URL` pointing to the deployed `/api/planning` endpoint.

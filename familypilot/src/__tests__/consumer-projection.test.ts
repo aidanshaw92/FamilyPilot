@@ -100,7 +100,7 @@ describe('consumer metadata projection', () => {
     const placeId = 'fp-google-consumer-draft';
     writeMetadata(placeId, { enrichmentStatus: 'ai_draft' });
 
-    const { createApprovedClaim } = await import('../../../api/enrichment/_lib/claims-store.js');
+    const { createApprovedClaim } = await import('../../../server/enrichment/_lib/claims-store.js');
     await createApprovedClaim({
       familypilotPlaceId: placeId,
       fieldKey: 'familyFacilities.parking',
@@ -111,7 +111,7 @@ describe('consumer metadata projection', () => {
       checkedAt: '2026-08-10',
     });
 
-    const { getConsumerMetadata } = await import('../../../api/enrichment/_lib/consumer-projection.js');
+    const { getConsumerMetadata } = await import('../../../server/enrichment/_lib/consumer-projection.js');
     const result = await getConsumerMetadata(placeId);
     expect(result).toBeNull();
   });
@@ -120,7 +120,7 @@ describe('consumer metadata projection', () => {
     const placeId = 'fp-google-consumer-stale';
     writeMetadata(placeId, { enrichmentStatus: 'enriched' });
 
-    const { getConsumerMetadata } = await import('../../../api/enrichment/_lib/consumer-projection.js');
+    const { getConsumerMetadata } = await import('../../../server/enrichment/_lib/consumer-projection.js');
     const result = await getConsumerMetadata(placeId);
     expect(result).toBeNull();
   });
@@ -135,7 +135,7 @@ describe('consumer metadata projection', () => {
       goodToKnow: ['Should not leak'],
     });
 
-    const { createApprovedClaim } = await import('../../../api/enrichment/_lib/claims-store.js');
+    const { createApprovedClaim } = await import('../../../server/enrichment/_lib/claims-store.js');
     await createApprovedClaim({
       familypilotPlaceId: placeId,
       fieldKey: 'familyFacilities.parking',
@@ -153,7 +153,7 @@ describe('consumer metadata projection', () => {
       checkedAt: '2026-08-10',
     });
 
-    const { getConsumerMetadata } = await import('../../../api/enrichment/_lib/consumer-projection.js');
+    const { getConsumerMetadata } = await import('../../../server/enrichment/_lib/consumer-projection.js');
     const result = await getConsumerMetadata(placeId);
 
     expect(result).not.toBeNull();
@@ -170,7 +170,7 @@ describe('consumer metadata projection', () => {
     const placeId = 'fp-google-consumer-disputed';
     writeMetadata(placeId, { enrichmentStatus: 'enriched' });
 
-    const { createApprovedClaim, disputeClaim } = await import('../../../api/enrichment/_lib/claims-store.js');
+    const { createApprovedClaim, disputeClaim } = await import('../../../server/enrichment/_lib/claims-store.js');
     const claim = await createApprovedClaim({
       familypilotPlaceId: placeId,
       fieldKey: 'familyFacilities.parking',
@@ -182,7 +182,7 @@ describe('consumer metadata projection', () => {
     });
     await disputeClaim(claim.id);
 
-    const { getConsumerMetadata } = await import('../../../api/enrichment/_lib/consumer-projection.js');
+    const { getConsumerMetadata } = await import('../../../server/enrichment/_lib/consumer-projection.js');
     const result = await getConsumerMetadata(placeId);
     expect(result).toBeNull();
   });
@@ -190,7 +190,7 @@ describe('consumer metadata projection', () => {
 
 describe('attachTrustFields', () => {
   it('copies trust metadata without adding family suitability fields', async () => {
-    const { attachTrustFields } = await import('../../../api/enrichment/_lib/consumer-projection.js');
+    const { attachTrustFields } = await import('../../../server/enrichment/_lib/consumer-projection.js');
     const payload = attachTrustFields(
       { familyFacilities: { parking: 'yes' } },
       {

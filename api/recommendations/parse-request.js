@@ -1,4 +1,4 @@
-const { normaliseDayRequest, parseMockDayRequest } = require('./day-request-schema');
+const { normaliseDayRequest, parseMockDayRequest } = require('../../server/recommendations/day-request-schema');
 
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

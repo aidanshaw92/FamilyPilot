@@ -11,7 +11,7 @@ import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { isLegacyDraft } from '@/src/utils/legacy-draft';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const draftStore = require('../../../api/enrichment/_lib/draft-store.js');
+const draftStore = require('../../../server/enrichment/_lib/draft-store.js');
 
 function writeEnrichmentStore(cwd: string, places: Record<string, unknown>, metadata: Record<string, unknown>) {
   const dir = path.join(cwd, '.data');

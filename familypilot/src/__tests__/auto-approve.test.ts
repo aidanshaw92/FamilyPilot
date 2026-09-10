@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-const {extractEvidenceFromText,buildEvidenceBundle}=require('../../../api/enrichment/_lib/evidence-extractor');
-const {buildAutoApprovePayload,tryAutoApproveDraft}=require('../../../api/enrichment/_lib/auto-approve');
-const {getActiveClaims}=require('../../../api/enrichment/_lib/claims-store');
-const {saveEvidenceRecord}=require('../../../api/enrichment/_lib/evidence-store');
+const {extractEvidenceFromText,buildEvidenceBundle}=require('../../../server/enrichment/_lib/evidence-extractor');
+const {buildAutoApprovePayload,tryAutoApproveDraft}=require('../../../server/enrichment/_lib/auto-approve');
+const {getActiveClaims}=require('../../../server/enrichment/_lib/claims-store');
+const {saveEvidenceRecord}=require('../../../server/enrichment/_lib/evidence-store');
 const id='fp-google-auto-approve';
 const meta={url:'https://example.org/visit',sourceType:'official_website',retrievedAt:'2026-09-09T09:00:00Z'};
 const page='Toilets are available in the visitor centre. Baby changing facilities are available. Free on-site parking is available for visitors.';

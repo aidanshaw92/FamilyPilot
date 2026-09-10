@@ -1,8 +1,8 @@
-const {getSupabaseAdmin}=require('../enrichment/_lib/supabase-admin');
-const {getActiveClaims}=require('../enrichment/_lib/claims-store');
-const {resolvePrimaryPlaceId}=require('../places/lib/canonical-venues');
-const {venueFeedback}=require('../feedback/_lib/store');
-const {validateReport,selectQuestions}=require('../feedback/_lib/rules');
+const {getSupabaseAdmin}=require('../../server/enrichment/_lib/supabase-admin');
+const {getActiveClaims}=require('../../server/enrichment/_lib/claims-store');
+const {resolvePrimaryPlaceId}=require('../../server/places/lib/canonical-venues');
+const {venueFeedback}=require('../../server/feedback/_lib/store');
+const {validateReport,selectQuestions}=require('../../server/feedback/_lib/rules');
 module.exports=async function handler(req,res) {
  res.setHeader('Cache-Control','no-store');
  if(!['GET','POST','DELETE'].includes(req.method))return res.status(405).json({error:'Method not allowed'});

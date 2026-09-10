@@ -11,7 +11,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { getEnrichmentQueueEmptyMessage } from '@/src/utils/enrichment-queue-ui';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { listQueue, getStats } = require('../../../api/enrichment/_lib/enrichment-store.js');
+const { listQueue, getStats } = require('../../../server/enrichment/_lib/enrichment-store.js');
 
 const BETA = { betaLat: 51.643, betaLng: -0.36, betaRadiusKm: 15 };
 const OUTSIDE_BETA = { lat: 52.05, lng: 0.2 }; // well outside Bushey 15 km

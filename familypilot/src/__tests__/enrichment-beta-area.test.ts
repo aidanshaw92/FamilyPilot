@@ -8,7 +8,7 @@ describe('enrichment beta area defaults', () => {
     delete process.env.ENRICHMENT_BETA_LABEL;
     vi.resetModules();
 
-    const { getDefaultBetaArea } = await import('../../../api/enrichment/_lib/beta-area.js');
+    const { getDefaultBetaArea } = await import('../../../server/enrichment/_lib/beta-area.js');
     const area = getDefaultBetaArea();
     expect(area.label).toBe('Mill Hill');
     expect(area.lat).toBeCloseTo(51.613, 2);
@@ -24,7 +24,7 @@ describe('enrichment beta area defaults', () => {
     vi.resetModules();
 
     const { getDefaultBetaArea, resolveBetaParams } = await import(
-      '../../../api/enrichment/_lib/beta-area.js'
+      '../../../server/enrichment/_lib/beta-area.js'
     );
     const area = getDefaultBetaArea();
     expect(area.label).toBe('Custom area');

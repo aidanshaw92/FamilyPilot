@@ -1,5 +1,5 @@
 const { randomBytes, createHash } = require('node:crypto');
-const { getSupabaseAdmin } = require('../enrichment/_lib/supabase-admin');
+const { getSupabaseAdmin } = require('../../server/enrichment/_lib/supabase-admin');
 
 // Share only a coarse area and planning preferences. Never routine times or names of children.
 function safeSnapshot(input) {

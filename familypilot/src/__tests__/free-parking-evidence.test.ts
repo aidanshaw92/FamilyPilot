@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { extractEvidenceFromText, mergeEvidenceBundles } from '../../../api/enrichment/_lib/evidence-extractor.js';
+import { extractEvidenceFromText, mergeEvidenceBundles } from '../../../server/enrichment/_lib/evidence-extractor.js';
 
 describe('freeParking evidence extraction', () => {
   it('extracts free parking separately from general parking availability', () => {
