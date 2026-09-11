@@ -183,7 +183,10 @@ export interface FamilyMember {
   name: string;
   role: 'parent' | 'child';
   dateOfBirth: string;
+  /** Whole years, for age-suitability matching (rounds down for a baby under 1 - see ageMonths). */
   age: number;
+  /** Precise age in months for a baby under 1 (age === 0). Null/undefined once age >= 1. */
+  ageMonths?: number | null;
 }
 
 export interface FamilyProfile {

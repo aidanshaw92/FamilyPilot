@@ -92,7 +92,7 @@ export default function ProfileScreen() {
             <ProfileRow
               icon="person-outline"
               label={child.name}
-              value={formatChildAge(child.age)}
+              value={formatChildAge(child)}
             />
           </FadeInView>
         ))}
