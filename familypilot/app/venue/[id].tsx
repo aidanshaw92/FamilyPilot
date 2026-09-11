@@ -20,6 +20,7 @@ import { FacilityGrid } from '@/src/components/venue/FacilityGrid';
 import { PhotoGallery } from '@/src/components/venue/PhotoGallery';
 import { WeatherAlternativeSection } from '@/src/components/venue/WeatherAlternativeSection';
 import { SaveButton } from '@/src/components/shared/SaveButton';
+import { ShareButton } from '@/src/components/shared/ShareButton';
 import {
   Button,
   EmptyState,
@@ -165,6 +166,7 @@ export default function VenueScreen() {
           <View style={[styles.heroContent, { paddingTop: insets.top + spacing.sm }]}>
             <BackButton onPress={handleBack} color={colors.text.inverse} />
             <View style={styles.heroActions}>
+              <ShareButton title={venue.name} path={`/venue/${venue.id}`} color={colors.text.inverse} />
               <SaveButton venueId={venue.id} venue={venue} color={colors.text.inverse} />
             </View>
           </View>

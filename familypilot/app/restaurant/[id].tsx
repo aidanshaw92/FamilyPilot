@@ -17,6 +17,7 @@ import { RestaurantFacilities } from '@/src/components/restaurant/RestaurantFaci
 import { RecommendationPattern } from '@/src/components/shared/RecommendationPattern';
 import { DeferredPilotGate } from '@/src/components/shared/DeferredPilotGate';
 import { SaveButton } from '@/src/components/shared/SaveButton';
+import { ShareButton } from '@/src/components/shared/ShareButton';
 import {
   Button,
   DataTrustBadge,
@@ -204,7 +205,10 @@ function RestaurantScreenContent() {
           />
           <View style={[styles.heroContent, { paddingTop: insets.top + spacing.sm }]}>
             <BackButton onPress={handleBack} color={colors.text.inverse} />
-            <SaveButton venueId={restaurant.id} venue={restaurant} color={colors.text.inverse} />
+            <View style={styles.heroActions}>
+              <ShareButton title={restaurant.name} path={`/restaurant/${restaurant.id}`} color={colors.text.inverse} />
+              <SaveButton venueId={restaurant.id} venue={restaurant} color={colors.text.inverse} />
+            </View>
           </View>
           <View style={styles.heroTitle}>
             <Text variant="heading1" color={colors.text.inverse}>
@@ -409,6 +413,11 @@ const styles = StyleSheet.create({
   },
   heroGradient: {
     ...StyleSheet.absoluteFill,
+  },
+  heroActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
   heroContent: {
     flexDirection: 'row',
