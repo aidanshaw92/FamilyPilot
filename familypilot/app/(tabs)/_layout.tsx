@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { colors, spacing } from '@/src/design-system/tokens';
@@ -27,7 +27,12 @@ const TAB_CONFIG: {
   { name: 'profile', title: 'Profile', icon: 'person-outline', iconFocused: 'person' },
 ];
 
+const TAB_BAR_CONTENT_HEIGHT = 56;
+
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(spacing.sm, insets.bottom);
+
   return (
     <Tabs
       screenOptions={{
@@ -38,9 +43,9 @@ export default function TabLayout() {
           backgroundColor: colors.surface,
           borderTopColor: colors.borderLight,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 64,
+          height: TAB_BAR_CONTENT_HEIGHT + spacing.sm + bottomInset,
           paddingTop: spacing.sm,
-          paddingBottom: Platform.OS === 'ios' ? spacing['2xl'] : spacing.sm,
+          paddingBottom: bottomInset,
         },
         tabBarLabelStyle: {
           fontFamily: 'Inter_500Medium',

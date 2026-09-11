@@ -12,6 +12,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { colors } from '@/src/design-system/tokens';
 
@@ -52,37 +53,39 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar style="dark" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.background },
-            animation: 'slide_from_right',
-          }}
-        >
-          <Stack.Screen name="index" options={{ animation: 'fade' }} />
-          <Stack.Screen name="(onboarding)" options={{ animation: 'fade', gestureEnabled: false }} />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="profile/edit" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="about" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen
-            name="venue/[id]"
-            options={{ animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen
-            name="restaurant/[id]"
-            options={{ animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen name="need-now" />
-          <Stack.Screen name="holiday" />
-          <Stack.Screen name="packing" />
-          <Stack.Screen name="car-fit" />
-          <Stack.Screen name="feedback" />
-          <Stack.Screen name="internal" options={{ headerShown: false }} />
-          <Stack.Screen name="concierge" options={{ presentation: 'modal' }} />
-        </Stack>
-      </QueryClientProvider>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <StatusBar style="dark" />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.background },
+              animation: 'slide_from_right',
+            }}
+          >
+            <Stack.Screen name="index" options={{ animation: 'fade' }} />
+            <Stack.Screen name="(onboarding)" options={{ animation: 'fade', gestureEnabled: false }} />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="profile/edit" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="about" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen
+              name="venue/[id]"
+              options={{ animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen
+              name="restaurant/[id]"
+              options={{ animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen name="need-now" />
+            <Stack.Screen name="holiday" />
+            <Stack.Screen name="packing" />
+            <Stack.Screen name="car-fit" />
+            <Stack.Screen name="feedback" />
+            <Stack.Screen name="internal" options={{ headerShown: false }} />
+            <Stack.Screen name="concierge" options={{ presentation: 'modal' }} />
+          </Stack>
+        </QueryClientProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
