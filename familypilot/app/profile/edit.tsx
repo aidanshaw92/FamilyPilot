@@ -89,6 +89,20 @@ export default function EditProfileScreen() {
     const validChildren = children.filter((c) => c.name.trim() && c.age.trim());
     if (validChildren.length === 0) {
       nextErrors.children = 'Add at least one child';
+    } else {
+      for (const child of children) {
+        if (child.name.trim() && !child.age.trim()) {
+          nextErrors.children = 'Please enter an age for each child';
+          break;
+        }
+        if (child.age.trim()) {
+          const age = Number(child.age);
+          if (Number.isNaN(age) || age < 0 || age > 17) {
+            nextErrors.children = 'Age should be between 0 and 17';
+            break;
+          }
+        }
+      }
     }
 
     setErrors(nextErrors);
