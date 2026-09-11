@@ -65,7 +65,11 @@ export const venueService = {
     await delay(300);
     const profile = getProfile();
     const venues = await getPlacesRepository().searchNearby(profile);
-    return personaliseVenues(venues, profile);
+    // Explore is a London-wide discovery surface. Do not apply the normal max-drive cut-off here;
+    // keep travel time visible and let the parent filter it explicitly when they want to.
+    return venues
+      .map((venue) => personaliseVenue(venue, profile))
+      .sort((a, b) => b.familyScore.score - a.familyScore.score || a.driveMinutes - b.driveMinutes);
   },
 
   async getById(id: string): Promise<VenueDetail | null> {
