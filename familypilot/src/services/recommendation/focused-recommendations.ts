@@ -21,7 +21,7 @@ export async function getFocusedRecommendations(
   profile: FamilyProfile,
   request: DayRequest,
 ): Promise<FocusedRecommendationsResult> {
-  const home = resolveHomeCoordinates(profile.homeLocation);
+  const home = resolveHomeCoordinates(profile);
   const params = {
     latitude: home.latitude,
     longitude: home.longitude,
