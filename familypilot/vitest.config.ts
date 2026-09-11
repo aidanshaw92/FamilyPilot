@@ -13,5 +13,6 @@ export default defineConfig({
     fileParallelism: false,
     environment: 'node',
     include: ['src/__tests__/**/*.test.ts'],
+    setupFiles: ['src/__tests__/setup/vitest.setup.ts'],
   },
 });

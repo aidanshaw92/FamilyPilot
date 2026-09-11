@@ -566,7 +566,7 @@ describe('focused recommendation QA regressions', () => {
       bundle,
     );
     expect(draft.environment.value).toBe('mixed');
-    expect(draft.environment.evidenceBacked).toBe(true);
+    expect((draft.environment as { evidenceBacked?: boolean }).evidenceBacked).toBe(true);
   });
 });
 
@@ -707,7 +707,7 @@ describe('live venue evidence quality regressions', () => {
     const toilets = facts.find((fact) => fact.field === 'toilets');
     expect(toilets?.value).toBe('yes');
     expect(toilets?.evidenceText).toContain('public toilets');
-    expect(toilets?.evidenceText.length).toBeLessThan(450);
+    expect(toilets?.evidenceText?.length).toBeLessThan(450);
     expect(toilets?.evidenceText).not.toContain('unrelated navigation unrelated navigation unrelated navigation unrelated navigation');
   });
 

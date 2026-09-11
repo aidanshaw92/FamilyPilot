@@ -1,718 +1,261 @@
 # FamilyPilot — Project Status Summary
 
-**Last updated:** 7 August 2026  
-**Production URL:** https://family-pilot-seven.vercel.app/  
-**Current focus:** Provider-agnostic places data layer — live OSM/Google-ready with mock fallback  
-**Product constitution:** [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) — read before any code change  
-**MVP scope:** [MVP_SCOPE.md](./MVP_SCOPE.md)  
-**Future backlog:** [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md)  
-**Feature specs (planned):** [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md)  
-**Remediation & QA:** [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md)  
-**Trust polish pass:** [TRUST_AND_POLISH_PASS.md](./TRUST_AND_POLISH_PASS.md)  
-**Final beta polish:** [FINAL_BETA_POLISH.md](./FINAL_BETA_POLISH.md)  
-**Eat Nearby:** [EAT_NEARBY.md](./EAT_NEARBY.md)  
-**Places data architecture:** [PLACES_DATA_ARCHITECTURE.md](./PLACES_DATA_ARCHITECTURE.md) · [DATA_PROVENANCE.md](./DATA_PROVENANCE.md)  
-**Google quality pass:** [LIVE_GOOGLE_QUALITY_PASS.md](./LIVE_GOOGLE_QUALITY_PASS.md)  
-**Venue enrichment workflow:** [VENUE_ENRICHMENT_WORKFLOW.md](./VENUE_ENRICHMENT_WORKFLOW.md) · [AI_VENUE_ENRICHMENT.md](./AI_VENUE_ENRICHMENT.md) · [EVIDENCE_BACKED_ENRICHMENT.md](./EVIDENCE_BACKED_ENRICHMENT.md)  
-**Tester guide:** [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md)
+**Last updated:** 11 September 2026
+**Production URL:** https://family-pilot-seven.vercel.app/
+**Product constitution:** [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) — read before any code change
 
----
+> **Note on this update:** the previous version of this document (dated 7 August 2026) was badly out of
+> date. It described the app as mock-data-only with no onboarding, no real geocoding, and no tests. None
+> of that is true at HEAD. A large body of work landed between 8 August and 11 September 2026 — live
+> Google/OSM places, real UK geocoding, a genuine evidence-backed trust pipeline, routine-aware family
+> planning, family-to-family connections, and post-visit feedback — without the docs being kept in sync.
+> This rewrite reflects what actually exists in the repository as of the commit below, verified by
+> reading the code (not by re-reading old docs). One thing the old doc got right and this pass fixed:
+> there was genuinely no CI — see "Fixed in this pass" below. Keep this document honest going forward:
+> update it whenever a feature crosses from mock/partial to live, or vice versa.
 
-## Table of Contents
-
-1. [Executive Summary](#executive-summary)
-2. [Product Vision Recap](#product-vision-recap)
-3. [Design Inspiration Analysis](#design-inspiration-analysis)
-4. [Architectural Decisions](#architectural-decisions)
-5. [Tech Stack](#tech-stack)
-6. [Documentation Created](#documentation-created)
-7. [Files & Folder Structure](#files--folder-structure)
-8. [Design System](#design-system)
-9. [Features Implemented](#features-implemented)
-10. [Features Not Yet Implemented](#features-not-yet-implemented)
-11. [Database & API Layer](#database--api-layer)
-12. [Dependencies Installed vs Unused](#dependencies-installed-vs-unused)
-13. [Phase Roadmap](#phase-roadmap)
-14. [How to Run](#how-to-run)
-15. [Environment Variables](#environment-variables)
-16. [Known Gaps & Technical Debt](#known-gaps--technical-debt)
+**Verified against commit:** `43581a4` ("Fix profile location, Saved, and London place quality")
+**Verified by:** installing dependencies fresh, running `npm run typecheck`, `npm test`, and
+`npm run build:web` in `familypilot/`, and reading the actual source of every API route and the
+screens that call them.
 
 ---
 
 ## Executive Summary
 
-FamilyPilot is a **personalised family decision engine** — one family profile that helps parents make better everyday decisions (where to go, what to eat, what to pack, whether something fits, and more).
+FamilyPilot is a personalised family decision engine: one family profile (location, children's ages,
+routines, budget, max drive time) drives explainable **Family Match** scores on real London venues, an
+evidence-based trust model for facility facts (baby changing, toilets, parking, pushchair suitability),
+routine-aware "will this work today" planning, and consent-based planning between two families.
 
-**Phase 1** established the foundation: design system, 10+ screens, mock API, Supabase schema.  
-**Phase 2 remediation** (August 2026) fixed production routing, simplified Home, unified Family Match, and prepared the app for parent testing. Production score: **7.6 / 10** (see [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md)).
+**This is a working, live-data product, not a static prototype or mock demo.** With `GOOGLE_PLACES_API_KEY`
+set, Explore and Home show real London venues (Google Places, deduplicated and quality-filtered, with an
+OSM Overpass fallback), onboarding geocodes a real UK postcode/town via postcodes.io or Google Geocoding,
+and drive times/weather come from live providers. Every external dependency (Places, weather, drive-time,
+AI parsing, Supabase) degrades gracefully and *honestly* when its key is absent — mock/estimated data is
+always labelled as such, never presented as live.
 
-**Trust & polish pass** (August 2026) addresses design-audit trust gaps: human-readable Family Match, explicit CTAs, data-confidence labels, Explore filters, profile warmth, and removal of prototype language from primary UX. See [TRUST_AND_POLISH_PASS.md](./TRUST_AND_POLISH_PASS.md).
-
-**What works today:** Navigation, personalised Home, Explore, venue detail with deep links, Saved, Need Now, Trips, utility screens (packing, car fit, holidays), feedback collection, and mock-data-driven Family Match — all on web and Expo without backend credentials.
-
-**What does not work yet:** Real auth, live maps, external APIs, AI concierge, Plan Your Day, Meet Another Family, and live restaurant data. See [MVP_SCOPE.md](./MVP_SCOPE.md) and [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md).
-
-**Current priority:** Collect structured feedback from 5–10 parents before building Post-MVP features. Every future decision is governed by [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) and [DECISION_PRINCIPLES.md](./DECISION_PRINCIPLES.md).
-
----
-
-## Product Vision Recap
-
-> **The app that helps families make better everyday decisions.**
-
-FamilyPilot is **not** a day planner, booking site, AI chatbot, parenting content app, or generic directory. It is a **personalised family decision engine** powered by one family profile and explainable **Family Match** scores.
-
-**Core philosophy:** Reduce research; provide confident, explainable recommendations. The user stays in control — generated plans and scores are starting points, not prescriptions.
-
-**Positioning rule:** Features like "Plan Your Day" strengthen the vision; they do not replace it. See [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) and [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md) §1–2.
-
-**Key differentiator:** **Family Match** — an explainable score (0–100) with visible reasoning for venues, restaurants, trips, meetups, and more.
+**Current focus:** documentation and trust catch-up after a large feature push (family planning,
+connections, post-visit feedback, London place-quality fixes) landed across ~30 commits without status
+docs being updated. No urgent functional work is blocked; the priorities below are refinement, not
+ground-up construction.
 
 ---
 
-## Design Inspiration Analysis
+## What's real vs. partial vs. mock (verified by reading code, not docs)
 
-Based on the 10-screen UI inspiration mockups, documented in [`docs/DESIGN_ANALYSIS.md`](./DESIGN_ANALYSIS.md).
+### Real, live-data-capable (works today with the right API key; honest fallback without one)
 
-### What works well in the inspiration
+| Feature | Entry points | Provider(s) |
+|---|---|---|
+| Onboarding: name, home postcode/town → geocode, children (name + DOB/age), max drive, budget | `app/(onboarding)/setup.tsx` → `api/planning/location.js` | postcodes.io, Google Geocoding |
+| Profile edit, re-geocoding on location change | `app/profile/edit.tsx` | same |
+| Live London venue discovery (Home + Explore grid, area search e.g. "Richmond", "NW7") | `api/places/search.js`, `src/services/places/places-repository.ts` | Google Places (searchNearby), OSM Overpass fallback, mock last resort |
+| Venue detail (address, photos, hours, open status) | `api/places/detail.js`, `api/places/photo.js` | Google Places detail/photos |
+| Drive time / distance | `api/context/journey.js` | Google Distance Matrix; Haversine estimate fallback (labelled `estimated`) |
+| Weather-aware recommendations | `api/context/weather.js` | OpenWeather; deterministic seasonal estimate fallback (labelled `estimated`) |
+| Family Match scoring, explainable reasons | `src/services/scoring/*`, personalisation in `services/api/index.ts` | client-side, driven by real profile + real venue data |
+| Venue facility trust model (confirmed / not yet confirmed — never "No" for unknown) | `server/enrichment/_lib/consumer-projection.js`, `FacilityGrid.tsx`, venue detail screen | Supabase-backed evidence/claims pipeline (see below) |
+| Evidence-backed enrichment pipeline (fetch official sources → extract facts → editor/AI draft → approved claim) | `server/enrichment/_lib/*`, `api/enrichment/index.js`, internal console at `/internal` | Google Places, official venue websites, OpenAI (optional, for AI drafts) |
+| Saved places (device-local, survives reload) | `app/(tabs)/saved.tsx`, `src/stores/saved-store.ts` (AsyncStorage) | local only — **not yet synced across devices/accounts** |
+| Free-text "Plan a day" parsing | `api/recommendations/parse-request.js` | OpenAI JSON mode; deterministic mock parser fallback |
+| Routine-aware planning ("leave by X so you're back before nap") | `app/(tabs)/trips.tsx` and supporting `src/services`/`src/components/planning` | client-side scheduling logic over real venue + profile data |
+| Family-to-family consent connections (share a code, connect, plan together) | `api/planning/connections.js` | Supabase (service-role), hashed connection codes, 7-day expiry |
+| Post-visit feedback (baby changing / pushchair / parking / age fit) | `api/planning/feedback.js`, `src/components/planning/VisitFeedback.tsx` | Supabase RPC `submit_venue_visit_report`, rate-limited, triggers re-enrichment on conflicting reports |
+| Cloud backup of planning workspaces | `planning_workspaces` table, Supabase client auth | requires `EXPO_PUBLIC_SUPABASE_*` client keys |
 
-| Strength | Why it matters |
-|----------|----------------|
-| Family Score badge on every card | Instant trust; reduces need to read reviews |
-| Card-based layout on off-white background | Premium, scannable, Apple/Airbnb feel |
-| Contextual metadata (drive time, facilities) | Surfaces decision-relevant data early |
-| Quick-action home grid | Maps to parent intents; supports "no typing" philosophy |
-| Horizontal recommendation carousels | Keeps home alive without overwhelming |
-| Utility features as peers (car fit, packing, trips) | Positions app as "family OS", not a directory |
-| Hero photography on venue screens | Elevates everyday places to destinations |
+### Mock/legacy (Phase-1 screens, intentionally deferred from the pilot build)
 
-### What was improved in the redesign
+These are hidden by default in the pilot build via `src/config/pilot-features.ts`
+(`EXPO_PUBLIC_SHOW_DEFERRED_FEATURES=true` reveals them for internal QA):
 
-| Inspiration weakness | FamilyPilot improvement |
-|---------------------|-------------------------|
-| 8 equal home buttons | 4 primary + 4 secondary actions |
-| Filter chip overload on Explore | Category chips now; filter sheet planned Phase 2 |
-| Generic holiday provider cards | "We recommend Jet2" banner with explainable reasons |
-| Car fit checker lacks hierarchy | Capacity bar + FITS/DOESN'T FIT status first |
-| No personalised "Why" on venues | "Perfect for your family because…" block added |
-| Splash screen feature list | Deferred; onboard-through-use approach planned |
-| "Favourites" tab label | Renamed to **Saved** (broader scope) |
-| Map pins without context | Map placeholder; real pins planned Phase 4 |
+- Need Something Now (`app/need-now.tsx`) — mock inventory, filters are visual-only
+- Holiday planner (`app/holiday.tsx`) — mock provider comparison
+- Packing list (`app/packing.tsx`) — static checklist, not trip/weather-driven
+- Car fit checker (`app/car-fit.tsx`) — fixed mock vehicle/equipment data
+- Restaurant browsing / Eat Nearby, Concierge modal — behind the same flag
+- `CommunitySection` on venue detail — renders mock `communityTips` if present (harmless: renders nothing for real venues, which have none); **the real feedback signal is `VenueTrustPanel`**, not this component — don't confuse the two when reading venue detail code.
 
-### Premium apps referenced
+### Known gap: the old Supabase schema is unused
 
-Airbnb (listing quality) · Apple Maps (bottom sheet pattern) · Headspace (soft palette) · Uber (Need Now urgency) · TripIt (timeline) · Citymapper (quick actions) · Pinterest (carousels)
-
----
-
-## Architectural Decisions
-
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| **Mobile framework** | Expo SDK 57 + React Native 0.86 | Fast iteration, OTA updates, App Store path |
-| **Navigation** | Expo Router (file-based) | `(tabs)` for main nav, stack for features, modal for concierge |
-| **Styling** | TypeScript design tokens + StyleSheet | Type-safe, reliable; NativeWind installed but not configured |
-| **State — server** | TanStack Query | Caching, loading states, easy swap from mock → real API |
-| **State — client** | Zustand | Lightweight stores for profile and filters |
-| **Backend** | Supabase (PostgreSQL + Auth) | Schema written; client stub checks for env vars |
-| **External APIs** | Provider interface pattern | Never hardcode; swap Google ↔ Mapbox without touching UI |
-| **Family Score** | Client algorithm now; edge function later | Same weighted factor model; results stored as JSONB |
-| **Data in Phase 1** | Mock service layer | Screens are production-ready; services return realistic UK family data |
-| **Typography** | Inter via `@expo-google-fonts/inter` | Premium cross-platform feel; falls back to system UI |
-| **Strict TypeScript** | `strict: true`, no `any` | Enforced across all new source files |
-| **Forms (planned)** | React Hook Form + Zod | Dependencies installed; not yet used in screens |
+`supabase/migrations/001_initial_schema.sql` (`profiles`, `family_members`, `saved_items`, `trips`,
+etc.) was written in Phase 1 and **is not used by the client**. Family profile lives in Zustand +
+AsyncStorage (`src/stores/family-store.ts`); Saved lives in AsyncStorage (`src/stores/saved-store.ts`).
+The tables actually in use today (`place_records`, `venue_family_metadata`, `venue_enrichment_drafts`,
+`venue_source_evidence`, `venue_claims`, `canonical_venues`, `venue_place_links`,
+`planning_workspaces`, `planning_connections`, `venue_visit_reports`) come from migrations `002`–`20260909205743`
+and back the trust/enrichment/planning system, not user profiles. If/when Saved and the family profile
+need cross-device sync, they need new tables (or reuse of `planning_workspaces`'s pattern) — the old
+14-table schema should be treated as dead weight, not a foundation to build on.
 
 ---
 
-## Tech Stack
+## Fixed in this pass (11 September 2026)
 
-### Implemented & in use
+1. **Dependencies installed and a real baseline established.** `npm install` (root + `familypilot/`),
+   then `npm run typecheck`, `npm test`, `npm run build:web` all run clean:
+   - **Typecheck:** was failing — `tsconfig.json` had no `exclude`, so it was type-checking the Deno
+     edge function (`supabase/functions/enrichment-worker`) against a Node/RN config, and several test
+     files had latent implicit-`any`/possibly-null errors from dynamically importing untyped `.js`
+     server modules. Fixed both (added `exclude: ["node_modules", "supabase/functions/**"]`; typed the
+     dynamic-import results in the affected test files). **0 errors now.**
+   - **Tests:** 324/324 pass (34 files). Three `remediation.test.ts` cases need `dist/` to exist first
+     (`npm run build:web`) — not a real failure, just build-then-test ordering.
+   - **Build:** `expo export --platform web` succeeds, 47 static routes exported.
+2. **Fixed a real wiring bug:** `app/(tabs)/_layout.tsx` never applied the `trips_tab` pilot-feature
+   flag to the Plans tab, so it was visible in the pilot build despite the flag's own comment and a
+   passing test (`pilot-features.test.ts`) both declaring it should be hidden by default. Wired the
+   flag through so intent and behaviour match. The feature itself is fully built and unaffected —
+   `EXPO_PUBLIC_SHOW_DEFERRED_FEATURES=true` reveals it for QA at any time.
+3. **Added `familypilot/.env.example`** — no such file existed anywhere in the repo despite ~30 env
+   vars being referenced across `api/`, `server/`, and the client. Documents every var, what it unlocks,
+   where to get it, and what happens when it's absent.
+4. **Added `.github/workflows/ci.yml`.** There was genuinely no CI (the one thing the stale August doc
+   got right) — nothing enforced typecheck/tests/build on a PR, which is exactly how the tsconfig and
+   test-typing regressions above went unnoticed. CI now runs `npm ci`, `typecheck`, `build:web`, then
+   `test` (in that order — three tests assert `dist/` exists) on every PR and push to `main`.
+5. **Rewrote this document** to match reality.
 
-| Layer | Technology |
-|-------|------------|
-| Framework | React Native 0.86, React 19, Expo ~57 |
-| Language | TypeScript 6 (strict) |
-| Routing | Expo Router ~57 |
-| Data fetching | TanStack Query v5 |
-| Client state | Zustand v5 |
-| Images | expo-image |
-| Gradients | expo-linear-gradient |
-| Haptics | expo-haptics |
-| Icons | @expo/vector-icons (Ionicons) |
-| Fonts | Inter (4 weights) |
-| Gestures | react-native-gesture-handler |
-| Animation library | react-native-reanimated (installed, minimal usage) |
-
-### Installed but not yet integrated
-
-| Technology | Status |
-|------------|--------|
-| NativeWind + Tailwind CSS | Installed; no `tailwind.config.js` or component usage |
-| Supabase JS client | Client stub only; falls back when env vars missing |
-| React Hook Form + Zod + @hookform/resolvers | Installed; no forms built yet |
-| expo-blur | Installed; unused |
-| react-native-svg | Installed; unused |
-| expo-symbols | In legacy template files only |
-
----
-
-## Documentation Created
-
-| File | Purpose |
-|------|---------|
-| [`docs/DESIGN_ANALYSIS.md`](./DESIGN_ANALYSIS.md) | UI inspiration review — what works, what doesn't, improvements |
-| [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) | IA, user journey, database schema overview, API architecture, folder structure, phase plan |
-| [`docs/DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) | Colour palette, typography, spacing, components, animations, accessibility |
-| [`docs/PROJECT_STATUS.md`](./PROJECT_STATUS.md) | This document |
-| [`familypilot/README.md`](../familypilot/README.md) | Setup instructions, project structure, roadmap |
-| [`README.md`](../README.md) | Repo root pointer |
+None of the above changed runtime behaviour for a fully-configured deployment — they fix developer
+experience (clean typecheck/tests, regressions caught before merge instead of by the next agent), one
+visibility bug, and documentation debt.
 
 ---
 
-## Files & Folder Structure
+## Verified end-to-end (by reading the actual request path, not by re-trusting docs)
 
-### Repository layout
-
-```
-/workspace
-├── README.md
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── DESIGN_ANALYSIS.md
-│   ├── DESIGN_SYSTEM.md
-│   └── PROJECT_STATUS.md
-└── familypilot/                    # Expo app root
-    ├── app/                        # Expo Router screens
-    ├── src/                        # Application source
-    ├── supabase/migrations/        # Database schema
-    ├── assets/                     # Fonts, icons, splash
-    ├── components/                 # Legacy Expo template (unused)
-    ├── constants/                  # Legacy Expo template (unused)
-    └── package.json
-```
-
-### Screens (`familypilot/app/`)
-
-| File | Route | Status |
-|------|-------|--------|
-| `_layout.tsx` | Root stack | ✅ QueryClient, fonts, gesture handler |
-| `(tabs)/_layout.tsx` | Tab navigator | ✅ 5 tabs configured |
-| `(tabs)/index.tsx` | `/` Home | ✅ Full implementation |
-| `(tabs)/explore.tsx` | `/explore` | ✅ Filters + list; map placeholder |
-| `(tabs)/trips.tsx` | `/trips` | ✅ Timeline view |
-| `(tabs)/saved.tsx` | `/saved` | ✅ Grouped saved items |
-| `(tabs)/profile.tsx` | `/profile` | ✅ Family profile + completion ring |
-| `venue/[id].tsx` | `/venue/:id` | ✅ Airbnb-style detail |
-| `need-now.tsx` | `/need-now` | ✅ Emergency assistant |
-| `holiday.tsx` | `/holiday` | ✅ Provider comparison |
-| `packing.tsx` | `/packing` | ✅ Checklist |
-| `car-fit.tsx` | `/car-fit` | ✅ Boot capacity checker |
-| `+not-found.tsx` | 404 | ✅ Expo default |
-| `+html.tsx` | Web HTML | ✅ Expo default |
-
-**Not created:** `concierge.tsx` (registered in root layout but file missing — will 404)
-
-**Removed:** `modal.tsx`, `(tabs)/two.tsx` (Expo template defaults)
-
-### Design system (`familypilot/src/design-system/tokens/`)
-
-| File | Exports |
-|------|---------|
-| `colors.ts` | Primary purple, secondary green, accent blue, semantic colours |
-| `typography.ts` | 8 text variants, Inter font family names |
-| `spacing.ts` | 4px-base scale, `screenPadding: 20` |
-| `radius.ts` | sm → full pill |
-| `shadows.ts` | card, cardHover, bottomSheet |
-| `index.ts` | Re-exports all tokens |
-
-### UI components (`familypilot/src/components/`)
-
-| Component | Path | Purpose |
-|-----------|------|---------|
-| `Text` | `ui/Text.tsx` | Typed typography variants |
-| `Button` | `ui/Button.tsx` | primary/secondary/ghost/outline + haptics |
-| `Card` | `ui/Card.tsx` | White surface with shadow |
-| `FamilyScoreBadge` | `ui/FamilyScoreBadge.tsx` | Green circular score (USP) |
-| `Chip` | `ui/Chip.tsx` | Selectable filter pill |
-| `SectionHeader` | `ui/SectionHeader.tsx` | Title + optional "See all" |
-| `BackButton` | `ui/BackButton.tsx` | Accessible back navigation |
-| `QuickActionButton` | `home/QuickActionButton.tsx` | Home grid item |
-| `QuickActionGrid` | `home/QuickActionGrid.tsx` | 4+4 action layout |
-| `RecommendationCarousel` | `home/RecommendationCarousel.tsx` | Horizontal venue scroll |
-| `VenueCard` | `shared/VenueCard.tsx` | Carousel + list variants |
-| `ScreenContainer` | `shared/ScreenContainer.tsx` | Safe area + header |
-| `FacilityGrid` | `venue/FacilityGrid.tsx` | Icon grid for venue facilities |
-| `WhyRecommend` | `venue/WhyRecommend.tsx` | Explainable recommendation block |
-
-**Not yet built:** SearchBar, BottomSheet, Avatar/AvatarGroup, Skeleton, ProgressRing (inline in Profile only), TripTimeline (inline in Trips), Input, Modal, FilterSheet
-
-### Services & data (`familypilot/src/`)
-
-| File | Purpose |
-|------|---------|
-| `types/index.ts` | All TypeScript interfaces (Venue, FamilyProfile, Trip, etc.) |
-| `data/mock-data.ts` | Realistic mock data (Aidan, Sloane, Ozzie; Bushey, UK) |
-| `services/api/index.ts` | Mock service layer (family, weather, venues, trips, etc.) |
-| `services/providers/interfaces.ts` | Provider contracts (places, weather, maps, holidays, inventory, AI) |
-| `services/scoring/family-score.ts` | Weighted Family Score algorithm |
-| `services/supabase/client.ts` | Supabase client stub |
-| `hooks/use-queries.ts` | TanStack Query hooks for all services |
-| `stores/family-store.ts` | Zustand — family profile |
-| `stores/filters-store.ts` | Zustand — explore filter chips |
-
-### Database (`familypilot/supabase/migrations/`)
-
-| File | Contents |
-|------|----------|
-| `001_initial_schema.sql` | 14 tables, RLS policies, indexes |
+- **No silent Central London fallback for user-entered locations.** `resolveUkLocation()`
+  (`src/services/location/location-client.ts`) throws a real error on failed geocoding; both onboarding
+  (`setup.tsx`) and Explore area search (`explore.tsx` → `venueService.searchArea`) surface that error
+  to the user instead of swallowing it. The only remaining Central-London fallback
+  (`geo-utils.ts: DEFAULT_HOME`) fires solely for **legacy profiles saved before geocoding existed** and
+  has no live user data to affect yet (Saved/profile are device-local, pre-launch).
+- **Unknown facility data never renders as "No".** `FacilityGrid` only renders confirmed-yes facilities
+  or a generic "Not confirmed — family facilities not yet reviewed" line; `VenueTrustPanel` renders
+  explicit per-field statuses (`Source checked`, `FamilyPilot review`, `Parents have reported; source not
+  confirmed`, or `Not yet confirmed`) — there is no boolean coercion anywhere in this path.
+- **Explore area search is a genuine live radius search**, not a filter over a pre-loaded list:
+  `venueService.searchArea()` geocodes the typed area, guards it to within 45km of central London, then
+  calls the real `/api/places/search` with those coordinates.
+- **Saved persists across reload** via AsyncStorage (`familypilot-saved-v2` key) — confirmed by reading
+  the store, not by manual UI testing (see Known Gaps below for why manual testing wasn't possible here).
 
 ---
 
-## Design System
+## Known gaps & next priorities
 
-Full spec in [`docs/DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md).
-
-### Colour palette
-
-| Token | Hex | Usage |
-|-------|-----|-------|
-| Primary | `#8B6FC0` | Buttons, active tab, links |
-| Secondary | `#5CB88A` | Family Score, success |
-| Accent | `#6BB8E8` | Info, categories |
-| Warning | `#E8A54B` | Need Now, alerts |
-| Error | `#D4756A` | Errors, closed |
-| Background | `#F8F7F5` | Screen background |
-| Surface | `#FFFFFF` | Cards |
-
-### Typography
-
-Inter — 8 variants: `display`, `heading1–3`, `body`, `bodySmall`, `caption`, `label`
-
-### Spacing & radius
-
-4px base grid. Screen padding 20px. Card radius 16px. Score badge fully round.
-
-### Animation guidelines (documented, not implemented)
-
-- Screen enter: fade + slide up 300ms
-- Card press: scale 0.97 spring
-- Bottom sheet: spring 350ms
-- Haptics: light on press, success on save
-
-### Accessibility guidelines (documented, partially applied)
-
-- WCAG AA contrast targets defined
-- `accessibilityLabel` on interactive components
-- 44pt minimum touch targets on buttons
-- Family Score announced as "X out of 100"
+1. **No cross-device sync for Saved or family profile.** Both are AsyncStorage-only. Low risk pre-launch,
+   but plan a migration to Supabase (reusing the `planning_workspaces` RLS pattern) before multi-device
+   use matters.
+2. **Old `001_initial_schema.sql` schema is dead code.** Either delete it or explicitly mark it
+   superseded so a future agent doesn't build on it by mistake.
+3. **This session could not perform live manual QA against real providers.** All server-side keys
+   (`GOOGLE_PLACES_API_KEY`, `OPENWEATHER_API_KEY`, `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
+   `SUPABASE_URL`, `PLACES_PROVIDER`, `ENRICHMENT_ADMIN_TOKEN`) **are confirmed configured** in the
+   Vercel project's Production + Preview environments (verified via the Vercel dashboard, 11 Sept 2026).
+   However this sandboxed session has no general internet egress — only a small allowlist (npm, PyPI,
+   the Anthropic API) — so it could reach neither the production URL, the PR's own preview deployment,
+   nor the Vercel API itself (the Vercel MCP connector here is also 403-scoped to a different account
+   than the one that owns this project). Everything above was verified by reading code paths and passing
+   tests, not by clicking through the running app with real data. **Someone with browser access should
+   manually walk the test plan in `docs/PARENT_TESTING_GUIDE.md`** against the PR preview URL (posted by
+   the Vercel bot on the PR) or production (NW7, Richmond, Greenwich, Bromley, an invalid postcode;
+   save/unsave persistence; provider-failure behaviour).
+   - **One concrete gap found while checking the Vercel dashboard:** the two **client-side** Supabase
+     vars (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`/`_ANON_KEY`) are not among
+     the 7 configured vars. Server-side Supabase features (connections API, post-visit feedback API,
+     enrichment pipeline) will work; client-side Supabase auth (the Plans tab's "connect a family" /
+     cloud-backup-your-plans account flow) will not — the UI should show "Account connections need to be
+     enabled by the app owner" rather than failing silently, but this needs a live check.
+4. **Mock/legacy Phase-1 screens** (Need Now, Holiday, Packing, Car Fit) remain behind the pilot flag —
+   correctly deferred per the master build priority (P2), not a bug.
+5. **`docs/` still contains many stale files** dated 6–8 August 2026 (`PHASE_2_REMEDIATION.md`,
+   `TRUST_AND_POLISH_PASS.md`, `FINAL_BETA_POLISH.md`, `LIVE_GOOGLE_QUALITY_PASS.md`, etc.) that predate
+   the September planning/connections/feedback work. They're historically accurate for their date but
+   are no longer a reliable picture of current state — this document supersedes them for "what works
+   today"; treat them as changelog entries, not current-state references.
 
 ---
 
-## Features Implemented
+## Required credentials
 
-### Navigation ✅
+See `familypilot/.env.example` for the full list with descriptions and where to obtain each key.
 
-- [x] Bottom tab bar: Home, Explore, Trips, Saved, Profile
-- [x] Stack navigation for feature screens
-- [x] Back navigation on all stack screens
-- [x] Route registration for concierge modal (screen not built)
+**Confirmed already configured in Vercel (Production + Preview), 11 Sept 2026:**
+`GOOGLE_PLACES_API_KEY`, `OPENWEATHER_API_KEY`, `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
+`SUPABASE_URL`, `PLACES_PROVIDER`, `ENRICHMENT_ADMIN_TOKEN`. This covers every server-side provider —
+live places, weather, drive times, AI parsing/enrichment, and server-side Supabase (connections,
+feedback, enrichment pipeline) should all be live in production and on PR preview deployments.
 
-### Home screen ✅
+**Still missing — only blocks client-side Supabase auth (connecting families / cloud backup):**
 
-- [x] Dynamic time-based greeting ("Good morning, Aidan")
-- [x] Weather pill (temperature + condition icon)
-- [x] "What would you like to do today?" section
-- [x] 8 quick actions (4 primary + 4 secondary) with coloured icons
-- [x] 3 recommendation carousels (Recommended, Weekend ideas, Rainy day ideas)
-- [x] Venue cards with Family Score, drive time, one-line reason
+| Missing credential | What it unlocks | Get it from |
+|---|---|---|
+| `EXPO_PUBLIC_SUPABASE_URL` | Client-side Supabase connection | Same Supabase project (`uuolfuebwimrsjfgffsm`) → Project Settings → API → Project URL |
+| `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (or `EXPO_PUBLIC_SUPABASE_ANON_KEY`) | Client-side auth for the Plans tab's "connect a family" / cloud-backed plans account flow | Same page → anon/publishable key (**not** the service role secret — this one is safe to expose client-side) |
 
-### Explore screen ✅ (partial)
+Add these as Vercel env vars (Production **and** Preview, like the others) to light up that last piece.
 
-- [x] Filter chips (All, Parks, Cafés, Playgrounds, Indoor, Free)
-- [x] Chip toggle state via Zustand
-- [x] Nearby venue list with Family Score cards
-- [ ] **Map view** — placeholder only ("connect Mapbox in Phase 4")
-- [ ] Filter chips do not yet filter the list
-- [ ] Bottom sheet over map (Apple Maps pattern)
-
-### Venue detail screen ✅
-
-- [x] Full-bleed hero image with gradient overlay
-- [x] Family Score badge on hero
-- [x] Drive time + address
-- [x] "Perfect for your family" explainable block
-- [x] Facilities icon grid
-- [x] Detail rows (ages, terrain, hours, parking, spend)
-- [x] Sticky footer: Save + Directions buttons (non-functional)
-- [ ] Photo gallery swipe
-- [ ] Save/Directions actions wired up
-
-### Trips screen ✅
-
-- [x] Trip card with vertical timeline
-- [x] Stop thumbnails, times, subtitles
-- [ ] Create/edit trips
-- [ ] Auto-estimate driving, cost, weather, parking
-
-### Saved screen ✅
-
-- [x] Items grouped by type (Places, Restaurants)
-- [ ] Save/unsave from venue screen
-- [ ] Hotels, Shops categories (no mock data yet)
-
-### Profile screen ✅
-
-- [x] Family avatar cluster
-- [x] Profile completion progress bar (72%)
-- [x] Children list with ages
-- [x] Preferences (location, max drive, budget)
-- [ ] Edit profile
-- [ ] Vehicle, equipment, memberships sections
-- [ ] Onboarding for incomplete profiles
-
-### Need Something Now ✅
-
-- [x] Quick filters (Formula, Wipes, Nappies, Calpol, Medicine)
-- [x] Nearest stores with drive time, open/closed, stock notes
-- [ ] Filters do not yet filter results
-- [ ] Search bar
-- [ ] Real inventory API
-
-### Holiday planner ✅
-
-- [x] Search summary header (Tenerife, Aug 2026)
-- [x] "We recommend Jet2" banner with reasons
-- [x] Provider cards with price, score, highlights
-- [ ] Multi-step flow (Where, When, Family, Results)
-- [ ] Real provider API aggregation
-- [ ] Booking flow
-
-### Packing list ✅
-
-- [x] Categorised checklist (Essentials, Baby, Kids, Toiletries)
-- [x] Packed/unpacked visual state
-- [x] Progress summary
-- [ ] Toggle packed state (display only)
-- [ ] Auto-generate from trip + weather + children
-
-### Car fit checker ✅
-
-- [x] Vehicle name + boot capacity
-- [x] FITS / DOESN'T FIT status
-- [x] Capacity bar (used vs total litres)
-- [x] Equipment list with individual fit status
-- [x] Boot photo
-- [ ] 3D boot visualisation (future)
-- [ ] Add/edit equipment
-- [ ] Roof box recommendation logic
-
-### Family Score ✅ (algorithm only)
-
-- [x] Weighted factor model (7 factors)
-- [x] Explainable string generation with child names
-- [x] Mock scores on all venue/card data
-- [ ] Server-side edge function
-- [ ] Score caching in Supabase `venue_scores` table
-- [ ] Weather-aware recalculation
-
-### Mock API layer ✅
-
-- [x] All screens fed via TanStack Query + mock services
-- [x] Simulated network delay (100–400ms)
-- [x] Typed responses throughout
+A Supabase project (`uuolfuebwimrsjfgffsm`, region `eu-west-1`) already exists and is active with real
+data in it (51 place records, 49 venue family-metadata rows, 294 evidence rows, 56 approved claims) —
+the schema is deployed, it's specifically the *env vars pointing the app at it* that weren't present in
+this sandbox.
 
 ---
 
-## Features Not Yet Implemented
-
-### Phase 2 — UX & Concierge
-
-- [ ] **Family Concierge** modal screen (`/concierge`) — "We've got three hours free"
-- [ ] **Onboarding flow** — minimal profile setup (postcode + children ages)
-- [ ] **Reanimated animations** — screen enter, card press, carousel stagger
-- [ ] **Filter sheet** on Explore — detailed filters (age, distance, cost, facilities)
-- [ ] **Search bar** on Explore and Need Now
-- [ ] **Empty states** with illustrations
-- [ ] **Splash / intro screen** (redesigned — emotional hero, not feature list)
-- [ ] NativeWind integration (installed but unconfigured)
-
-### Phase 3 — Backend & Auth
-
-- [ ] Supabase authentication (sign up, sign in, session)
-- [ ] Profile CRUD wired to Supabase
-- [ ] Family members, vehicles, equipment management
-- [ ] Saved items sync (save/unsave)
-- [ ] Trip CRUD
-- [ ] Packing list persistence
-- [ ] React Hook Form + Zod validation on all forms
-
-### Phase 4 — External APIs
-
-- [ ] **Mapbox or Google Maps** — real map on Explore
-- [ ] **Google Places / Foursquare** — real venue data via `IPlacesProvider`
-- [ ] **OpenWeather** — live weather via `IWeatherProvider`
-- [ ] **Directions** — open native maps from venue screen
-- [ ] Family Score **Supabase Edge Function**
-- [ ] Provider implementations replacing mock services
-
-### Phase 5 — Advanced Features
-
-- [ ] **Holiday aggregator** — Jet2, TUI, Loveholidays, EasyJet, Booking.com APIs
-- [ ] **Inventory API** — real stock data for Need Now
-- [ ] **AI Concierge** — invisible AI via `IAIProvider` (not ChatGPT-style)
-- [ ] **Push notifications** — trip reminders, passport expiry
-- [ ] **Nap time awareness** in recommendations
-
-### Future features (from product brief — not started)
-
-- [ ] Family budget tracker
-- [ ] Toy recommendations
-- [ ] Birthday planning
-- [ ] Calendar integration
-- [ ] Memories / photo journal
-- [ ] School holidays calendar
-- [ ] Travel documents vault
-- [ ] Car seat reminders
-- [ ] Outgrown clothing reminders
-- [ ] Passport expiry alerts
-- [ ] Community updates
-- [ ] Baby milestones
-- [ ] Holiday countdown
-- [ ] Crowd prediction for parks
-- [ ] 3D boot visualisation
-
----
-
-## Product Direction V2 — Planned (NOT implemented)
-
-Full specifications: **[PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md)**
-
-These features are on the roadmap **after parent user testing**. None are built yet.
-
-| Feature | Status | Priority (post-feedback) |
-|---------|--------|--------------------------|
-| **Eat Nearby** — restaurants ranked after activities | ⬜ Planned | 1 |
-| **Family-friendly restaurants** — first-class category + attributes | ⬜ Planned | 1 |
-| **Accessibility** — venue fields, profile preferences, filters | ⬜ Planned | 2 |
-| **SEND-friendly** — factual venue attributes, filters | ⬜ Planned | 3 |
-| **Meet Another Family** — one-phone two-location mode | ⬜ Planned | 4 |
-| **Plan Your Day** — itinerary builder with swap/save/share | ⬜ Planned | 5 |
-| **Connected Families** — invite other profiles | ⬜ Planned | 6 (future) |
-| **Combined Family Match** — for meetups | ⬜ Planned | With Meetups |
-| **Shareable meetup/day plans** — no account required to read | ⬜ Planned | With Meetups / Plan Your Day |
-| **Explore** — expanded categories + accessibility/SEND filters | ⬜ Planned | With §2–3 |
-| **Venue detail** — Accessibility, SEND, Eat nearby, Meet here sections | ⬜ Planned | With §2–3 |
-| **Profile** — progressive accessibility/SEND/dining preferences | ⬜ Planned | With §2–3 |
-
-### V2 data model (planned, not migrated)
-
-- `accessibility_features`, `send_features`, `restaurant_features`
-- `meetup_plans`, `day_plans`
-- `family_connections` (future architecture only)
-
-See [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md) §11 for schema sketches and privacy rules.
-
----
-
-## Database & API Layer
-
-### Supabase schema (written, not deployed)
-
-**14 tables** in `001_initial_schema.sql`:
-
-| Table | Purpose |
-|-------|---------|
-| `profiles` | User profile (name, location, budget, max drive) |
-| `family_members` | Parents and children |
-| `family_vehicles` | Cars with boot dimensions |
-| `family_equipment` | Pushchairs, car seats, suitcases |
-| `memberships` | National Trust, Blue Light, etc. |
-| `interests` | Family interests |
-| `venues` | Cached external venue data |
-| `venue_facilities` | Facility flags per venue |
-| `venue_photos` | Photo URLs |
-| `venue_scores` | Cached personalised scores |
-| `trips` | Planned/past trips |
-| `trip_stops` | Timeline stops |
-| `packing_lists` | Packing list headers |
-| `packing_items` | Checklist items |
-| `saved_items` | Favourited places/searches |
-| `holiday_searches` | Holiday search params |
-| `holiday_offers` | Aggregated offers |
-
-**RLS:** All user data scoped to `auth.uid()`. Venues publicly readable.
-
-### Provider interfaces (defined, no implementations)
-
-| Interface | Purpose | Implementation |
-|-----------|---------|----------------|
-| `IPlacesProvider` | Venue search + detail | Mock only |
-| `IWeatherProvider` | Current weather | Mock only |
-| `IMapsProvider` | Drive time + directions | Not implemented |
-| `IHolidayProvider` | Holiday search | Mock only |
-| `IInventoryProvider` | Nearby stock | Mock only |
-| `IAIProvider` | Concierge recommendations | Not implemented |
-
-### TanStack Query keys (defined)
-
-```
-['family', 'profile']
-['weather', 'current']
-['venues', 'nearby']
-['venues', id]
-['recommendations', 'home']
-['trips']
-['saved']
-['inventory', 'nearby']
-['car-fit']
-['packing']
-['holidays']
-```
-
----
-
-## Dependencies Installed vs Unused
-
-| Package | Installed | Used in code |
-|---------|-----------|--------------|
-| `@tanstack/react-query` | ✅ | ✅ Root layout, all hooks |
-| `zustand` | ✅ | ✅ family-store, filters-store |
-| `@supabase/supabase-js` | ✅ | ⚠️ Client stub only |
-| `@expo-google-fonts/inter` | ✅ | ✅ Root layout |
-| `@expo/vector-icons` | ✅ | ✅ Throughout |
-| `expo-image` | ✅ | ✅ Venue cards, heroes |
-| `expo-linear-gradient` | ✅ | ✅ Venue hero |
-| `expo-haptics` | ✅ | ✅ Button, chips, cards |
-| `react-native-gesture-handler` | ✅ | ✅ Root layout |
-| `react-native-reanimated` | ✅ | ⚠️ Imported in root; no animations |
-| `react-hook-form` | ✅ | ❌ Not used |
-| `zod` | ✅ | ❌ Not used |
-| `@hookform/resolvers` | ✅ | ❌ Not used |
-| `nativewind` | ✅ | ❌ Not configured |
-| `tailwindcss` | ✅ | ❌ Not configured |
-| `expo-blur` | ✅ | ❌ Not used |
-| `react-native-svg` | ✅ | ❌ Not used |
-
----
-
-## Phase Roadmap
-
-| Phase | Scope | Status |
-|-------|-------|--------|
-| **1** | Design system, docs, navigation, screens, mock API, DB schema | ✅ Complete |
-| **2 remediation** | Production fixes, Home simplification, Family Match, parent testing prep | ✅ Complete |
-| **Testing** | 5–10 parent feedback sessions via [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md) | 🔄 **Current** |
-| **V2 — Priority 1** | Restaurants + Eat Nearby | ⬜ After feedback |
-| **V2 — Priority 2** | Accessibility fields + filters | ⬜ After feedback |
-| **V2 — Priority 3** | SEND-friendly data + filters | ⬜ After feedback |
-| **V2 — Priority 4** | Meet Another Family (one-phone) | ⬜ After feedback |
-| **V2 — Priority 5** | Plan Your Day | ⬜ After feedback |
-| **3** | Supabase auth, profile CRUD, saved sync, forms | ⬜ Not started |
-| **4** | Maps, Places API, weather, directions, score edge function | ⬜ Not started |
-| **5** | Holiday APIs, inventory, AI concierge, push notifications | ⬜ Not started |
-| **V2 — Priority 6** | Connected Families | ⬜ Future |
-| **Future** | Budget, toys, calendar, memories, milestones, etc. | ⬜ Not started |
-
-Roadmap detail and dependencies: [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md) §13–14.
-
----
-
-## How to Run
+## How to run
 
 ```bash
-cd familypilot
-npm install
-npm start
+npm install                 # repo root
+cd familypilot && npm install
+npm run typecheck            # 0 errors
+npm test                     # 324/324 pass
+npm run build:web            # exports to familypilot/dist
+npm start                    # Expo dev server (i/a/w for iOS/Android/web)
 ```
 
-- Press `i` for iOS simulator
-- Press `a` for Android emulator
-- Scan QR code with Expo Go on device
-
-**No environment variables required** for Phase 1 — all data is mocked.
-
-TypeScript check:
-
-```bash
-cd familypilot && npx tsc --noEmit
-```
-
----
-
-## Environment Variables
-
-```env
-EXPO_PUBLIC_SUPABASE_URL=
-EXPO_PUBLIC_SUPABASE_ANON_KEY=
-EXPO_PUBLIC_MAPBOX_TOKEN=
-EXPO_PUBLIC_GOOGLE_PLACES_KEY=
-```
-
-When unset, the app silently uses mock data.
-
----
-
-## Known Gaps & Technical Debt
-
-1. **`concierge.tsx` missing** — registered in `app/_layout.tsx` but file does not exist; navigating to `/concierge` will 404.
-2. **Legacy Expo template files** remain in `familypilot/components/` and `familypilot/constants/` — unused, should be removed.
-3. **NativeWind installed but not configured** — no `tailwind.config.js`, `babel.config.js`, or `global.css`.
-4. **Explore filters don't filter** — Zustand state toggles but list is not filtered.
-5. **Need Now filters don't filter** — chips are visual only.
-6. **Packing list items not toggleable** — display-only packed state.
-7. **Save/Directions buttons** on venue screen have no handlers.
-8. **Family Score algorithm** exists but mock data uses hardcoded scores; algorithm not wired to live calculation.
-9. **No tests** — no unit, integration, or E2E tests.
-10. **No CI/CD** — no GitHub Actions, EAS Build config, or App Store pipeline.
-11. **No error/loading states** — most screens assume data loads successfully.
-12. **No dark mode** — design system is light-mode only (legacy `useColorScheme` from template unused).
-13. **Web support** — Expo web configured but not tested or optimised.
-
----
-
-## Git & PR Status
-
-| Item | Detail |
-|------|--------|
-| Production branch | `main` |
-| Production URL | https://family-pilot-seven.vercel.app/ |
-| Deployed app commit | `ec41951` (remediation + tester readiness + venue rewrite) |
-| Docs commit | `9df27ec` (post-deployment QA + screenshots) |
-| Open PRs | None required for documentation-only updates |
+No environment variables are required to start the app — every provider has a labelled fallback. Add
+keys from `.env.example` incrementally to light up real data.
 
 ---
 
 ## Documentation index
 
+The documents below were the pre-existing index and remain useful for historical context and specific
+subsystems, but **defer to this document for current end-to-end state** — several are stale by a month
+or more as noted above.
+
 ### Product constitution (read first)
 
 | Document | Purpose |
 |----------|---------|
-| [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) | **Canonical product vision — the constitution** |
+| [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) | Canonical product vision |
 | [DECISION_PRINCIPLES.md](./DECISION_PRINCIPLES.md) | Build / no-build gates for every change |
-| [MVP_SCOPE.md](./MVP_SCOPE.md) | What is in scope for parent testing today |
-| [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md) | Prioritised backlog with scope labels |
-| [FEATURE_ROADMAP.md](./FEATURE_ROADMAP.md) | Phases 1–8 delivery plan |
-| [VISION_2030.md](./VISION_2030.md) | Long-term north star |
-| [PRODUCT_DIRECTION_V2.md](./PRODUCT_DIRECTION_V2.md) | Detailed feature specifications (planned) |
-| [INFORMATION_ARCHITECTURE.md](./INFORMATION_ARCHITECTURE.md) | Navigation & screen hierarchy |
+| [MVP_SCOPE.md](./MVP_SCOPE.md) | Scope for parent testing (verify against this doc before trusting — see note above) |
 | [FAMILY_MATCH.md](./FAMILY_MATCH.md) | Scoring model & explainability |
-| [DATABASE_FUTURE.md](./DATABASE_FUTURE.md) | Extensible schema for future features |
 | [PRIVACY_MODEL.md](./PRIVACY_MODEL.md) | Privacy rules for location & sensitive prefs |
 
-### Engineering & QA
+### Trust / data / enrichment subsystem (accurate in substance; the most sophisticated part of the codebase)
 
 | Document | Purpose |
 |----------|---------|
-| [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md) | Remediation changelog + production QA |
-| [TRUST_AND_POLISH_PASS.md](./TRUST_AND_POLISH_PASS.md) | Trust, clarity & premium polish pass (Aug 2026) |
-| [FINAL_BETA_POLISH.md](./FINAL_BETA_POLISH.md) | Final beta polish — hierarchy & curation pass |
-| [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md) | Tester instructions |
-| [DESIGN_AUDIT.md](./DESIGN_AUDIT.md) | Pre-remediation design audit |
-| [design-review/](./design-review/) | Mobile screenshot pack (390×844, 430×932) |
-| [BACKLOG.md](./BACKLOG.md) | Quick reference — see FUTURE_BACKLOG for full list |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Technical architecture |
+| [DATA_PROVENANCE.md](./DATA_PROVENANCE.md) | Provenance model for venue facts |
+| [PLACES_DATA_ARCHITECTURE.md](./PLACES_DATA_ARCHITECTURE.md) | Places data layer design |
+| [VENUE_ENRICHMENT_WORKFLOW.md](./VENUE_ENRICHMENT_WORKFLOW.md), [AI_VENUE_ENRICHMENT.md](./AI_VENUE_ENRICHMENT.md), [EVIDENCE_BACKED_ENRICHMENT.md](./EVIDENCE_BACKED_ENRICHMENT.md) | Enrichment pipeline (evidence → claims → consumer projection) |
+| [FAMILY_GRAPH.md](./FAMILY_GRAPH.md) | Family-to-family connection model |
+| [FAMILY_PLANNING_BUILD.md](./FAMILY_PLANNING_BUILD.md) | **Up to date (10 Sept 2026)** — the actual spec for the Plans tab, routine-aware scheduling, fair meeting suggestions, connections, and cloud backup implemented in this pass. Read this instead of the Phase-1 Trips description elsewhere. |
+| [VENUE_DATA_AUTOMATION.md](./VENUE_DATA_AUTOMATION.md) | Data pipeline / applied schema / release steps behind the above |
+
+### Engineering & QA (dated — see notes above)
+
+| Document | Purpose |
+|----------|---------|
+| [PARENT_TESTING_GUIDE.md](./PARENT_TESTING_GUIDE.md) | Tester instructions — use this as the manual QA script once credentials are available |
+| [PHASE_2_REMEDIATION.md](./PHASE_2_REMEDIATION.md), [TRUST_AND_POLISH_PASS.md](./TRUST_AND_POLISH_PASS.md), [FINAL_BETA_POLISH.md](./FINAL_BETA_POLISH.md), [LIVE_GOOGLE_QUALITY_PASS.md](./LIVE_GOOGLE_QUALITY_PASS.md) | Historical changelogs — accurate for their date, not current state |
+| [ARCHITECTURE.md](./ARCHITECTURE.md), [INFORMATION_ARCHITECTURE.md](./INFORMATION_ARCHITECTURE.md) | Technical/navigation architecture |
 
 ---
 
-*This document should be updated at the end of each phase.*
+*This document should be updated whenever a feature moves between mock/partial/live, or a new
+subsystem lands — not just "at the end of each phase". Stale status docs actively mislead future work;
+the previous version of this file cost real time to un-learn.*
