@@ -4,6 +4,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OnboardingShell } from '@/src/components/onboarding/OnboardingShell';
+import { AgeInput, AgeUnit } from '@/src/components/profile/AgeInput';
 import { TextField } from '@/src/components/profile/TextField';
 import { Button, Chip, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
@@ -16,7 +17,7 @@ import {
   withCompletion,
 } from '@/src/utils/profile-defaults';
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 3;
 
 const BUDGET_OPTIONS: { id: FamilyProfile['budgetTier']; label: string }[] = [
   { id: 'budget', label: 'Budget-friendly' },
@@ -30,6 +31,11 @@ interface DraftChild {
   id: string;
   name: string;
   age: string;
+  ageUnit: AgeUnit;
+}
+
+function maxForUnit(unit: AgeUnit): number {
+  return unit === 'months' ? 11 : 17;
 }
 
 export default function SetupScreen() {
@@ -44,7 +50,7 @@ export default function SetupScreen() {
   const [resolvedHome, setResolvedHome] = useState<ResolvedLocation | null>(null);
   const [resolvingHome, setResolvingHome] = useState(false);
   const [children, setChildren] = useState<DraftChild[]>([
-    { id: 'child-1', name: '', age: '' },
+    { id: 'child-1', name: '', age: '', ageUnit: 'years' },
   ]);
   const [maxDriveMinutes, setMaxDriveMinutes] = useState(30);
   const [budgetTier, setBudgetTier] = useState<FamilyProfile['budgetTier']>('moderate');
@@ -54,18 +60,14 @@ export default function SetupScreen() {
     () =>
       [
         {
-          title: 'What should we call you?',
-          subtitle: 'We will greet you by name on Home and tailor recommendations to your family.',
-        },
-        {
-          title: 'Where are you based?',
+          title: 'Let’s get started',
           subtitle:
-            'We use your town or postcode centroid for realistic travel times. Your exact home address is not needed.',
+            'Your name and general area are enough to personalise recommendations — your exact home address is never needed.',
         },
         {
           title: 'Who are we planning for?',
           subtitle:
-            'We use age to recommend places and activities that genuinely suit your family.',
+            'Age — in years, or months for a baby under 1 — helps us recommend places that genuinely suit your family.',
         },
         {
           title: 'How do you usually plan days out?',
@@ -78,15 +80,12 @@ export default function SetupScreen() {
   const validateStep = (): boolean => {
     const nextErrors: Record<string, string> = {};
 
-    if (step === 1 && !parentName.trim()) {
-      nextErrors.parentName = 'Please enter your first name';
+    if (step === 1) {
+      if (!parentName.trim()) nextErrors.parentName = 'Please enter your first name';
+      if (!homeLocation.trim()) nextErrors.homeLocation = 'Please enter your town or postcode';
     }
 
-    if (step === 2 && !homeLocation.trim()) {
-      nextErrors.homeLocation = 'Please enter your town or postcode';
-    }
-
-    if (step === 3) {
+    if (step === 2) {
       const validChildren = children.filter((c) => c.name.trim() && c.age.trim());
       if (validChildren.length === 0) {
         nextErrors.children = 'Add at least one child with a name and age';
@@ -98,8 +97,12 @@ export default function SetupScreen() {
           }
           if (child.age.trim()) {
             const age = Number(child.age);
-            if (Number.isNaN(age) || age < 0 || age > 17) {
-              nextErrors.children = 'Age should be between 0 and 17';
+            const max = maxForUnit(child.ageUnit);
+            if (Number.isNaN(age) || age < 0 || age > max) {
+              nextErrors.children =
+                child.ageUnit === 'months'
+                  ? 'Months should be between 0 and 11'
+                  : 'Age should be between 0 and 17';
               break;
             }
           }
@@ -114,7 +117,7 @@ export default function SetupScreen() {
   const handleNext = async () => {
     if (!validateStep()) return;
 
-    if (step === 2) {
+    if (step === 1) {
       setResolvingHome(true);
       try {
         const location = await resolveUkLocation(homeLocation);
@@ -136,14 +139,20 @@ export default function SetupScreen() {
     }
 
     if (!resolvedHome) {
-      setStep(2);
+      setStep(1);
       setErrors({ homeLocation: 'Please confirm your town or postcode again.' });
       return;
     }
 
     const childMembers = children
       .filter((c) => c.name.trim() && c.age.trim())
-      .map((c) => createChildMember(c.name, Number(c.age)));
+      .map((c) =>
+        createChildMember(
+          c.name,
+          c.ageUnit === 'months' ? 0 : Number(c.age),
+          c.ageUnit === 'months' ? Number(c.age) : null,
+        ),
+      );
 
     const profile = withCompletion({
       id: `family-${Date.now()}`,
@@ -177,12 +186,16 @@ export default function SetupScreen() {
   const addChild = () => {
     setChildren((prev) => [
       ...prev,
-      { id: `child-${Date.now()}`, name: '', age: '' },
+      { id: `child-${Date.now()}`, name: '', age: '', ageUnit: 'years' },
     ]);
   };
 
   const updateChild = (id: string, field: 'name' | 'age', value: string) => {
     setChildren((prev) => prev.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
+  };
+
+  const updateChildUnit = (id: string, ageUnit: AgeUnit) => {
+    setChildren((prev) => prev.map((c) => (c.id === id ? { ...c, ageUnit } : c)));
   };
 
   const removeChild = (id: string) => {
@@ -207,34 +220,32 @@ export default function SetupScreen() {
           contentContainerStyle={styles.scrollContent}
         >
           {step === 1 ? (
-            <TextField
-              label="Your first name"
-              value={parentName}
-              onChangeText={setParentName}
-              placeholder="e.g. Sarah"
-              autoCapitalize="words"
-              autoFocus
-              error={errors.parentName}
-            />
+            <View>
+              <TextField
+                label="Your first name"
+                value={parentName}
+                onChangeText={setParentName}
+                placeholder="e.g. Sarah"
+                autoCapitalize="words"
+                autoFocus
+                error={errors.parentName}
+              />
+              <TextField
+                label="Home town or postcode"
+                value={homeLocation}
+                onChangeText={(value) => {
+                  setHomeLocation(value);
+                  setResolvedHome(null);
+                }}
+                placeholder="e.g. Mill Hill or NW7 2AB"
+                autoCapitalize="words"
+                hint="We resolve this to a general area for travel and weather — never a full home address"
+                error={errors.homeLocation}
+              />
+            </View>
           ) : null}
 
           {step === 2 ? (
-            <TextField
-              label="Home town or postcode"
-              value={homeLocation}
-              onChangeText={(value) => {
-                setHomeLocation(value);
-                setResolvedHome(null);
-              }}
-              placeholder="e.g. Mill Hill or NW7 2AB"
-              autoCapitalize="words"
-              autoFocus
-              hint="We resolve this to a general area for travel and weather — never a full home address"
-              error={errors.homeLocation}
-            />
-          ) : null}
-
-          {step === 3 ? (
             <View>
               {children.map((child, index) => (
                 <View key={child.id} style={styles.childBlock}>
@@ -257,12 +268,11 @@ export default function SetupScreen() {
                     placeholder="e.g. Mia"
                     autoCapitalize="words"
                   />
-                  <TextField
-                    label="Age"
+                  <AgeInput
                     value={child.age}
-                    onChangeText={(value) => updateChild(child.id, 'age', value.replace(/[^0-9]/g, ''))}
-                    placeholder="e.g. 4"
-                    keyboardType="number-pad"
+                    unit={child.ageUnit}
+                    onChangeValue={(value) => updateChild(child.id, 'age', value)}
+                    onChangeUnit={(unit) => updateChildUnit(child.id, unit)}
                   />
                 </View>
               ))}
@@ -279,7 +289,7 @@ export default function SetupScreen() {
             </View>
           ) : null}
 
-          {step === 4 ? (
+          {step === 3 ? (
             <View>
               <Text variant="label" color={colors.text.secondary} style={styles.groupLabel}>
                 Maximum drive time

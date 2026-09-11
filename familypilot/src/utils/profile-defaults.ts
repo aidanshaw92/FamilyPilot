@@ -18,14 +18,26 @@ export function createEmptyProfile(): FamilyProfile {
   };
 }
 
-export function createChildMember(name: string, age: number): FamilyMember {
-  const birthYear = new Date().getFullYear() - age;
+/**
+ * ageMonths gives precise DOB for a baby under 1 (age === 0) rather than always Jan 1st, and is
+ * kept on the member so the UI can show "8 months old" instead of the much cruder "0 years old".
+ * For age >= 1 we don't know the birth month, so DOB stays the 1 Jan approximation.
+ */
+export function createChildMember(name: string, age: number, ageMonths?: number | null): FamilyMember {
+  const preciseMonths = age === 0 && ageMonths != null ? ageMonths : null;
+  const today = new Date();
+  const dateOfBirth =
+    preciseMonths != null
+      ? new Date(today.getFullYear(), today.getMonth() - preciseMonths, 1).toISOString().slice(0, 10)
+      : `${today.getFullYear() - age}-01-01`;
+
   return {
     id: `child-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     name: name.trim(),
     role: 'child',
-    dateOfBirth: `${birthYear}-01-01`,
+    dateOfBirth,
     age,
+    ageMonths: preciseMonths,
   };
 }
 
@@ -46,8 +58,11 @@ export function withCompletion(profile: FamilyProfile): FamilyProfile {
   };
 }
 
-export function formatChildAge(age: number): string {
-  return age === 1 ? '1 year old' : `${age} years old`;
+export function formatChildAge(member: Pick<FamilyMember, 'age' | 'ageMonths'>): string {
+  if (member.age === 0 && member.ageMonths != null) {
+    return member.ageMonths === 1 ? '1 month old' : `${member.ageMonths} months old`;
+  }
+  return member.age === 1 ? '1 year old' : `${member.age} years old`;
 }
 
 export function formatBudgetTier(tier: FamilyProfile['budgetTier']): string {

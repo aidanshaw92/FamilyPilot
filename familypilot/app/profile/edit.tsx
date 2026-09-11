@@ -12,9 +12,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AgeInput, AgeUnit } from '@/src/components/profile/AgeInput';
 import { TextField } from '@/src/components/profile/TextField';
 import { BackButton } from '@/src/components/ui/BackButton';
-import { Button, Chip, Text } from '@/src/components/ui';
+import { Button, Chip, EmptyState, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useUpdateFamilyProfile } from '@/src/hooks/use-queries';
 import { resolveUkLocation } from '@/src/services/location/location-client';
@@ -37,6 +38,11 @@ interface DraftChild {
   id: string;
   name: string;
   age: string;
+  ageUnit: AgeUnit;
+}
+
+function maxForUnit(unit: AgeUnit): number {
+  return unit === 'months' ? 11 : 17;
 }
 
 export default function EditProfileScreen() {
@@ -71,7 +77,11 @@ export default function EditProfileScreen() {
     setChildren(
       profile.members
         .filter((m) => m.role === 'child')
-        .map((m) => ({ id: m.id, name: m.name, age: String(m.age) })),
+        .map((m) =>
+          m.age === 0 && m.ageMonths != null
+            ? { id: m.id, name: m.name, age: String(m.ageMonths), ageUnit: 'months' as const }
+            : { id: m.id, name: m.name, age: String(m.age), ageUnit: 'years' as const },
+        ),
     );
   }, [profile]);
 
@@ -89,6 +99,24 @@ export default function EditProfileScreen() {
     const validChildren = children.filter((c) => c.name.trim() && c.age.trim());
     if (validChildren.length === 0) {
       nextErrors.children = 'Add at least one child';
+    } else {
+      for (const child of children) {
+        if (child.name.trim() && !child.age.trim()) {
+          nextErrors.children = 'Please enter an age for each child';
+          break;
+        }
+        if (child.age.trim()) {
+          const age = Number(child.age);
+          const max = maxForUnit(child.ageUnit);
+          if (Number.isNaN(age) || age < 0 || age > max) {
+            nextErrors.children =
+              child.ageUnit === 'months'
+                ? 'Months should be between 0 and 11'
+                : 'Age should be between 0 and 17';
+            break;
+          }
+        }
+      }
     }
 
     setErrors(nextErrors);
@@ -122,7 +150,13 @@ export default function EditProfileScreen() {
 
     const childMembers: FamilyMember[] = children
       .filter((c) => c.name.trim() && c.age.trim())
-      .map((c) => createChildMember(c.name, Number(c.age)));
+      .map((c) =>
+        createChildMember(
+          c.name,
+          c.ageUnit === 'months' ? 0 : Number(c.age),
+          c.ageUnit === 'months' ? Number(c.age) : null,
+        ),
+      );
 
     const parentMember =
       profile.members.find((m) => m.role === 'parent') ?? createParentMember(parentName);
@@ -148,11 +182,15 @@ export default function EditProfileScreen() {
   };
 
   const addChild = () => {
-    setChildren((prev) => [...prev, { id: `child-${Date.now()}`, name: '', age: '' }]);
+    setChildren((prev) => [...prev, { id: `child-${Date.now()}`, name: '', age: '', ageUnit: 'years' }]);
   };
 
   const updateChild = (id: string, field: 'name' | 'age', value: string) => {
     setChildren((prev) => prev.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
+  };
+
+  const updateChildUnit = (id: string, ageUnit: AgeUnit) => {
+    setChildren((prev) => prev.map((c) => (c.id === id ? { ...c, ageUnit } : c)));
   };
 
   const removeChild = (id: string) => {
@@ -166,10 +204,25 @@ export default function EditProfileScreen() {
     ]);
   };
 
-  if (isLoading || !profile) {
+  if (isLoading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <Text variant="body">Loading profile…</Text>
+      </View>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <BackButton onPress={handleBack} />
+        <EmptyState
+          icon="person-circle-outline"
+          title="We couldn't load your family profile"
+          message="Set up your family to get personalised recommendations."
+          actionLabel="Set up your family"
+          onAction={() => router.replace('/(onboarding)/setup' as never)}
+        />
       </View>
     );
   }
@@ -236,11 +289,11 @@ export default function EditProfileScreen() {
               onChangeText={(value) => updateChild(child.id, 'name', value)}
               autoCapitalize="words"
             />
-            <TextField
-              label="Age"
+            <AgeInput
               value={child.age}
-              onChangeText={(value) => updateChild(child.id, 'age', value.replace(/[^0-9]/g, ''))}
-              keyboardType="number-pad"
+              unit={child.ageUnit}
+              onChangeValue={(value) => updateChild(child.id, 'age', value)}
+              onChangeUnit={(unit) => updateChildUnit(child.id, unit)}
             />
           </View>
         ))}
