@@ -8,9 +8,6 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: familypilot
     steps:
       - uses: actions/checkout@v4
 
@@ -18,18 +15,33 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: familypilot/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            familypilot/package-lock.json
 
-      - name: Install dependencies
+      # server/ (used by familypilot's tests and API routes, e.g.
+      # server/enrichment/_lib/supabase-admin.js) lives outside familypilot/
+      # and depends on the root package.json (@supabase/supabase-js,
+      # @vercel/node). Node's module resolution walks up to the root
+      # node_modules, so it must be installed too - mirrors vercel.json's
+      # own installCommand.
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install app dependencies
+        working-directory: familypilot
         run: npm ci
 
       - name: Typecheck
+        working-directory: familypilot
         run: npm run typecheck
 
       - name: Build (web)
         # Runs before the test suite: a handful of tests assert that
         # `dist/` contains the expected static routes after a build.
+        working-directory: familypilot
         run: npm run build:web
 
       - name: Test
+        working-directory: familypilot
         run: npm test -- --run
