@@ -12,9 +12,17 @@ interface ShareButtonProps {
   color?: string;
 }
 
-function venueShareUrl(path: string): string | null {
-  if (typeof window === 'undefined' || !window.location?.origin) return null;
-  return `${window.location.origin}${path}`;
+// Production web origin, used as the sharable link's base on native (where there's no
+// window.location) so a shared link is always a real https URL anyone can open, not a
+// familypilot:// scheme link that only works if the recipient has the app installed.
+const PRODUCTION_WEB_ORIGIN = 'https://family-pilot-seven.vercel.app';
+
+function venueShareUrl(path: string): string {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}${path}`;
+  }
+  const origin = process.env.EXPO_PUBLIC_WEB_URL || PRODUCTION_WEB_ORIGIN;
+  return `${origin}${path}`;
 }
 
 async function copyToClipboard(text: string): Promise<boolean> {
@@ -39,7 +47,7 @@ export function ShareButton({ title, path, size = 24, color = colors.text.primar
     if (Platform.OS === 'web') {
       // navigator.share (mobile browsers, some desktop) beats a bare clipboard copy when available.
       const nav = typeof navigator !== 'undefined' ? (navigator as Navigator & { share?: (data: ShareData) => Promise<void> }) : undefined;
-      if (nav?.share && url) {
+      if (nav?.share) {
         try {
           await nav.share({ title, url });
           return;
@@ -48,7 +56,7 @@ export function ShareButton({ title, path, size = 24, color = colors.text.primar
           // through to clipboard rather than leaving the tap silently doing nothing.
         }
       }
-      if (url && (await copyToClipboard(url))) {
+      if (await copyToClipboard(url)) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }
@@ -56,7 +64,7 @@ export function ShareButton({ title, path, size = 24, color = colors.text.primar
     }
 
     try {
-      await Share.share(url ? { message: `${title}\n${url}`, url } : { message: title });
+      await Share.share({ message: `${title}\n${url}`, url });
     } catch {
       // User cancelled the native share sheet - nothing to do.
     }

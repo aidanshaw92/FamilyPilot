@@ -14,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CheckTodaySection } from '@/src/components/venue/CheckTodaySection';
 import { CommunitySection } from '@/src/components/venue/CommunitySection';
 import { EatNearbySection } from '@/src/components/venue/EatNearbySection';
 import { FacilityGrid } from '@/src/components/venue/FacilityGrid';
@@ -200,6 +201,14 @@ export default function VenueScreen() {
               <Text variant="caption" color={colors.text.secondary} style={styles.providerOnlyBanner}>
                 {getEnrichmentDetailTrustCopy(venue.enrichmentStatus)}
               </Text>
+            ) : null}
+
+            {venue.trustedFacts ? (
+              <CheckTodaySection
+                facts={venue.trustedFacts}
+                latitude={venue.latitude}
+                longitude={venue.longitude}
+              />
             ) : null}
 
             {venue.address ? <Text variant="bodySmall" style={{marginBottom:12}}>{venue.address}</Text> : null}
