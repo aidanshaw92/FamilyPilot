@@ -116,6 +116,8 @@ export interface Venue {
   trust?: TrustMetadata;
   /** Whether FamilyPilot has reviewed family suitability for this place. */
   enrichmentStatus?: EnrichmentStatus;
+  /** Claim-backed facts for Family Match — populated from projected consumer metadata. */
+  trustedFacts?: import('@/src/types/day-request').MatchableVenueFacts;
 }
 
 export interface CommunityTip {
@@ -143,8 +145,6 @@ export interface VenueDetail extends Venue {
   eatNearby?: EatNearbyRecommendation[];
   weatherAlternative?: WeatherAlternative;
   trust?: TrustMetadata;
-  /** Claim-backed facts for Family Match — populated from projected consumer metadata. */
-  trustedFacts?: import('@/src/types/day-request').MatchableVenueFacts;
 }
 
 /** @deprecated use EatNearbyRecommendation from service layer */

@@ -1,4 +1,4 @@
-import { EnrichmentStatus, FamilyProfile, FamilyScore, FamilyScoreFactors, VenueDetail } from '@/src/types';
+import { EnrichmentStatus, FamilyProfile, FamilyScore, FamilyScoreFactors, VenueDetail, WeatherInfo } from '@/src/types';
 
 import { PROVIDER_ONLY_FAMILY_MATCH_CAP } from '@/src/constants/places-quality';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
@@ -25,6 +25,31 @@ const WEIGHTS = {
 
 export interface FamilyScoreOptions {
   enrichmentStatus?: EnrichmentStatus;
+  weather?: WeatherInfo | null;
+}
+
+/**
+ * Category-based approximation of indoor/outdoor used only as a last-resort heuristic when a
+ * venue has no reviewed environment fact yet. Never surfaced as a confirmed claim.
+ */
+function heuristicIsIndoor(category: VenueDetail['category']): boolean | null {
+  if (['museum', 'soft_play', 'shop', 'restaurant', 'cafe', 'hotel'].includes(category)) return true;
+  if (['park', 'farm', 'beach'].includes(category)) return false;
+  return null; // zoo, attraction, activity: genuinely mixed - don't guess.
+}
+
+function scoreWeatherFitHeuristic(venue: VenueDetail, weather?: WeatherInfo | null): number {
+  const fallback = venue.category === 'museum' || venue.category === 'farm' ? 88 : 85;
+  if (!weather) return fallback;
+
+  const isIndoor = heuristicIsIndoor(venue.category);
+  if (isIndoor === null) return fallback;
+
+  const isWet = weather.condition === 'rainy';
+  const isBright = weather.condition === 'sunny' || weather.condition === 'partly_cloudy';
+
+  if (isIndoor) return isWet ? 95 : isBright ? 76 : 86;
+  return isWet ? 48 : isBright ? 95 : 80;
 }
 
 function clamp(value: number, min = 0, max = 100): number {
@@ -62,9 +87,11 @@ function scoreDistance(driveMinutes: number, maxDriveMinutes: number): number {
 function scoreBudgetHeuristic(venue: VenueDetail, tier: FamilyProfile['budgetTier']): number {
   const spend = venue.estimatedSpend ?? '';
   const isFree = spend.toLowerCase().includes('free') || spend.startsWith('£0');
+  // Matches the £/££/£££ tier-symbol format used by scoreTrustedBudget - not a price range.
+  const isExpensive = spend.includes('£££');
 
   if (tier === 'budget') {
-    return isFree ? 95 : spend.includes('£35') || spend.includes('£50') ? 65 : 80;
+    return isFree ? 95 : isExpensive ? 65 : 80;
   }
   if (tier === 'premium') return 88;
   return isFree ? 85 : 88;
@@ -121,6 +148,10 @@ function buildHeuristicExplanation(
     reasons.push('Café on site for lunch');
   }
 
+  if (factors.weatherFit >= 90) {
+    reasons.push('Good for today’s weather');
+  }
+
   return reasons.slice(0, 4);
 }
 
@@ -135,6 +166,7 @@ export function calculateFamilyScore(
   const childAges = profile.members.filter((m) => m.role === 'child').map((m) => m.age);
   const facts = venue.trustedFacts;
   const useTrusted = !isProviderOnly && facts != null && hasTrustedMatchSignals(facts);
+  const weather = options.weather;
 
   const factors: FamilyScoreFactors = {
     ageSuitability:
@@ -145,8 +177,8 @@ export function calculateFamilyScore(
       (venue.facilities?.includes('pushchair_friendly') ? 92 : isProviderOnly ? 55 : 70),
     distance: scoreDistance(venue.driveMinutes, profile.maxDriveMinutes),
     weatherFit:
-      (useTrusted ? scoreTrustedWeatherFit(facts) : null) ??
-      (venue.category === 'museum' || venue.category === 'farm' ? 88 : 85),
+      (useTrusted ? scoreTrustedWeatherFit(facts, weather) : null) ??
+      scoreWeatherFitHeuristic(venue, weather),
     budgetFit:
       (useTrusted ? scoreTrustedBudget(facts, profile.budgetTier) : null) ??
       scoreBudgetHeuristic(venue, profile.budgetTier),
@@ -171,7 +203,7 @@ export function calculateFamilyScore(
 
   const explanation =
     useTrusted && facts
-      ? buildTrustedExplanation(venue, profile, facts, factors)
+      ? buildTrustedExplanation(venue, profile, facts, factors, weather)
       : buildHeuristicExplanation(venue, profile, factors, isProviderOnly);
 
   return { score, factors, explanation };

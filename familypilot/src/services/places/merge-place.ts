@@ -63,6 +63,18 @@ export function mergePlaceToVenue(
   const enrichmentStatus = resolveEnrichmentStatus(place, metadata);
   const consumerStatus = toConsumerEnrichmentStatus(enrichmentStatus);
   const trustedMeta = consumerMetadata(metadata, enrichmentStatus);
+  // Computed here (not just on the detail view) so Family Match on list cards — Home, Explore,
+  // area search — uses verified evidence when available, instead of always falling back to
+  // category-based heuristics until the user opens the venue detail page.
+  const trustedFacts = extractMatchableFacts(
+    place.familypilotId,
+    place.name,
+    place.category,
+    driveMinutes,
+    consumerStatus,
+    trustedMeta,
+    place.isOpen,
+  );
 
   return {
     id: place.familypilotId,
@@ -92,6 +104,7 @@ export function mergePlaceToVenue(
     facilities: trustedMeta?.facilities,
     trust: buildTrust(place, metadata, enrichmentStatus),
     enrichmentStatus: consumerStatus,
+    trustedFacts,
   };
 }
 
@@ -105,19 +118,9 @@ export function mergePlaceToVenueDetail(
   const rawStatus = resolveEnrichmentStatus(place, metadata);
   const trustedMeta = consumerMetadata(metadata, rawStatus);
   const isProviderOnly = base.enrichmentStatus === 'provider_only';
-  const trustedFacts = extractMatchableFacts(
-    place.familypilotId,
-    place.name,
-    place.category,
-    base.driveMinutes,
-    base.enrichmentStatus ?? 'provider_only',
-    trustedMeta,
-    place.isOpen,
-  );
 
   return {
     ...base,
-    trustedFacts,
     website: place.website,
     phone: place.phone,
     photos: place.photos.length > 0 ? place.photos : base.imageUrl ? [base.imageUrl] : [],
