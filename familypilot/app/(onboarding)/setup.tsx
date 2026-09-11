@@ -7,6 +7,7 @@ import { OnboardingShell } from '@/src/components/onboarding/OnboardingShell';
 import { TextField } from '@/src/components/profile/TextField';
 import { Button, Chip, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { resolveUkLocation, ResolvedLocation } from '@/src/services/location/location-client';
 import { useFamilyStore } from '@/src/stores/family-store';
 import { FamilyProfile } from '@/src/types';
 import {
@@ -40,6 +41,8 @@ export default function SetupScreen() {
   const [step, setStep] = useState(1);
   const [parentName, setParentName] = useState('');
   const [homeLocation, setHomeLocation] = useState('');
+  const [resolvedHome, setResolvedHome] = useState<ResolvedLocation | null>(null);
+  const [resolvingHome, setResolvingHome] = useState(false);
   const [children, setChildren] = useState<DraftChild[]>([
     { id: 'child-1', name: '', age: '' },
   ]);
@@ -57,7 +60,7 @@ export default function SetupScreen() {
         {
           title: 'Where are you based?',
           subtitle:
-            'We use your general area to find suitable places nearby. Your exact home address is never shown to other users.',
+            'We use your town or postcode centroid for realistic travel times. Your exact home address is not needed.',
         },
         {
           title: 'Who are we planning for?',
@@ -108,11 +111,33 @@ export default function SetupScreen() {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!validateStep()) return;
+
+    if (step === 2) {
+      setResolvingHome(true);
+      try {
+        const location = await resolveUkLocation(homeLocation);
+        setResolvedHome(location);
+        setErrors({});
+      } catch (error) {
+        setErrors({
+          homeLocation: error instanceof Error ? error.message : 'Could not find that town or postcode.',
+        });
+        return;
+      } finally {
+        setResolvingHome(false);
+      }
+    }
 
     if (step < TOTAL_STEPS) {
       setStep(step + 1);
+      return;
+    }
+
+    if (!resolvedHome) {
+      setStep(2);
+      setErrors({ homeLocation: 'Please confirm your town or postcode again.' });
       return;
     }
 
@@ -125,6 +150,8 @@ export default function SetupScreen() {
       parentName: parentName.trim(),
       members: [createParentMember(parentName), ...childMembers],
       homeLocation: homeLocation.trim(),
+      homeLatitude: resolvedHome.latitude,
+      homeLongitude: resolvedHome.longitude,
       budgetTier,
       maxDriveMinutes,
       completionPercent: 0,
@@ -195,11 +222,14 @@ export default function SetupScreen() {
             <TextField
               label="Home town or postcode"
               value={homeLocation}
-              onChangeText={setHomeLocation}
-              placeholder="e.g. Bushey, WD23"
+              onChangeText={(value) => {
+                setHomeLocation(value);
+                setResolvedHome(null);
+              }}
+              placeholder="e.g. Mill Hill or NW7 2AB"
               autoCapitalize="words"
               autoFocus
-              hint="We use a general area — never your full address"
+              hint="We resolve this to a general area for travel and weather — never a full home address"
               error={errors.homeLocation}
             />
           ) : null}
@@ -292,10 +322,17 @@ export default function SetupScreen() {
 
         <View style={styles.footer}>
           <Button
-            label={step === TOTAL_STEPS ? 'See my recommendations' : 'Continue'}
+            label={
+              resolvingHome
+                ? 'Finding your area…'
+                : step === TOTAL_STEPS
+                  ? 'See my recommendations'
+                  : 'Continue'
+            }
             size="lg"
             fullWidth
-            onPress={handleNext}
+            disabled={resolvingHome}
+            onPress={() => void handleNext()}
           />
         </View>
       </OnboardingShell>
