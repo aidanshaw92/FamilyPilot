@@ -1,4 +1,4 @@
-/** Default home area for central London — used when profile has no coordinates. */
+/** Default home area for central London — used only when no profile coordinates are available. */
 export const DEFAULT_HOME = {
   label: 'London',
   latitude: 51.5074,
@@ -21,8 +21,30 @@ const KNOWN_LOCATIONS: Record<string, { latitude: number; longitude: number }> =
   elstree: { latitude: 51.658, longitude: -0.308 },
 };
 
-export function resolveHomeCoordinates(homeLocation: string): { latitude: number; longitude: number } {
-  const key = homeLocation.trim().toLowerCase();
+type HomeInput =
+  | string
+  | {
+      homeLocation: string;
+      homeLatitude?: number | null;
+      homeLongitude?: number | null;
+    };
+
+/**
+ * Resolve the family's saved centroid first. Legacy profiles without coordinates still use
+ * known-area fallbacks, but new/edited profiles are geocoded before they are saved.
+ */
+export function resolveHomeCoordinates(input: HomeInput): { latitude: number; longitude: number } {
+  if (typeof input !== 'string') {
+    if (Number.isFinite(input.homeLatitude) && Number.isFinite(input.homeLongitude)) {
+      return {
+        latitude: input.homeLatitude as number,
+        longitude: input.homeLongitude as number,
+      };
+    }
+    return resolveHomeCoordinates(input.homeLocation);
+  }
+
+  const key = input.trim().toLowerCase();
   if (!key) return DEFAULT_HOME;
 
   for (const [pattern, coords] of Object.entries(KNOWN_LOCATIONS)) {
