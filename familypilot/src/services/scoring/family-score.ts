@@ -87,9 +87,11 @@ function scoreDistance(driveMinutes: number, maxDriveMinutes: number): number {
 function scoreBudgetHeuristic(venue: VenueDetail, tier: FamilyProfile['budgetTier']): number {
   const spend = venue.estimatedSpend ?? '';
   const isFree = spend.toLowerCase().includes('free') || spend.startsWith('£0');
+  // Matches the £/££/£££ tier-symbol format used by scoreTrustedBudget - not a price range.
+  const isExpensive = spend.includes('£££');
 
   if (tier === 'budget') {
-    return isFree ? 95 : spend.includes('£35') || spend.includes('£50') ? 65 : 80;
+    return isFree ? 95 : isExpensive ? 65 : 80;
   }
   if (tier === 'premium') return 88;
   return isFree ? 85 : 88;

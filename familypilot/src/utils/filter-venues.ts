@@ -60,9 +60,18 @@ const ACTIVITY_CATEGORIES: VenueCategory[] = [
 
 function parseMaxSpend(estimatedSpend?: string): number | null {
   if (!estimatedSpend) return null;
-  if (estimatedSpend.toLowerCase().includes('free')) return 0;
-  const match = estimatedSpend.match(/£(\d+)/);
-  return match ? Number(match[1]) : null;
+  const trimmed = estimatedSpend.trim();
+  if (trimmed.toLowerCase().includes('free') || trimmed.startsWith('£0')) return 0;
+  // Trust-pipeline venues carry a £/££/£££ tier symbol (see scoreTrustedBudget), not a numeric
+  // price range - map each tier to a representative amount so budget filters still work once
+  // real venues use that format, instead of silently excluding every tiered venue (no digits to
+  // match below). Check the longest marker first: '£££' also contains '££' as a substring.
+  if (trimmed.includes('£££')) return 75;
+  if (trimmed.includes('££')) return 35;
+  const numericMatch = trimmed.match(/£(\d+)/);
+  if (numericMatch) return Number(numericMatch[1]);
+  if (trimmed === '£') return 15;
+  return null;
 }
 
 function matchesBudget(venue: Venue, budget: ExploreBudgetFilter): boolean {
