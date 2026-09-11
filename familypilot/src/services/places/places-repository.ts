@@ -15,12 +15,13 @@ import { PlaceSearchParams } from '@/src/types/places';
 
 const clientMockProvider = new MockPlacesProvider();
 
+type Coordinates = { latitude: number; longitude: number };
+
 function searchCacheKey(params: PlaceSearchParams): string {
   return JSON.stringify(params);
 }
 
-async function fallbackSearch(params: PlaceSearchParams): Promise<Venue[]> {
-  const home = { latitude: params.latitude, longitude: params.longitude };
+async function fallbackSearch(params: PlaceSearchParams, home: Coordinates): Promise<Venue[]> {
   const records = await clientMockProvider.searchNearby(params);
   return records.map((record) => {
     const metadata = getFamilyPlaceMetadata(record.familypilotId);
@@ -84,7 +85,7 @@ export class PlacesRepository {
       }
       // Do not leave Home/Explore blank during a provider outage. The UI labels these records as
       // unreviewed/mock data, while the next query will retry the live API rather than cache them.
-      return fallbackSearch(params);
+      return fallbackSearch(params, home);
     }
   }
 
