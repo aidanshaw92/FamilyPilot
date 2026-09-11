@@ -35,11 +35,11 @@ const SAVED_GROUPS: { id: SavedGroup; label: string }[] = [
 
 export default function SavedScreen() {
   const { data: savedItems, isLoading } = useSavedItems();
-  const { savedIds } = useSavedStore();
+  const restoreSaved = useSavedStore((state) => state.restoreSaved);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortOption>('recent');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
-  const [removedId, setRemovedId] = useState<string | null>(null);
+  const [removedItem, setRemovedItem] = useState<SavedItem | null>(null);
 
   const filteredItems = useMemo(() => {
     let items = savedItems ?? [];
@@ -55,9 +55,9 @@ export default function SavedScreen() {
     return [...items].sort((a, b) => {
       if (sort === 'closest') return a.venue.driveMinutes - b.venue.driveMinutes;
       if (sort === 'match') return b.venue.familyScore.score - a.venue.familyScore.score;
-      return savedIds.has(b.venue.id) === savedIds.has(a.venue.id) ? 0 : 1;
+      return (b.savedAt ?? '').localeCompare(a.savedAt ?? '');
     });
-  }, [savedItems, search, sort, savedIds, typeFilter]);
+  }, [savedItems, search, sort, typeFilter]);
 
   const groupedSections = useMemo(() => {
     if (search.trim()) return null;
@@ -77,9 +77,9 @@ export default function SavedScreen() {
   const isEmpty = !isLoading && filteredItems.length === 0;
 
   const handleUndo = () => {
-    if (removedId) {
-      useSavedStore.getState().toggleSaved(removedId);
-      setRemovedId(null);
+    if (removedItem) {
+      restoreSaved(removedItem);
+      setRemovedItem(null);
     }
   };
 
@@ -89,8 +89,9 @@ export default function SavedScreen() {
       venue={item.venue}
       itemType={item.type}
       onRemoved={(id) => {
-        setRemovedId(id);
-        setTimeout(() => setRemovedId(null), 5000);
+        const removed = (savedItems ?? []).find((candidate) => candidate.venue.id === id) ?? item;
+        setRemovedItem(removed);
+        setTimeout(() => setRemovedItem(null), 5000);
       }}
     />
   );
@@ -145,10 +146,10 @@ export default function SavedScreen() {
         ))}
       </ScrollView>
 
-      {removedId ? (
+      {removedItem ? (
         <View style={styles.undoBar}>
           <Text variant="bodySmall" color={colors.text.secondary}>
-            Place removed
+            {removedItem.venue.name} removed
           </Text>
           <Pressable onPress={handleUndo} accessibilityRole="button" accessibilityLabel="Undo remove">
             <Text variant="bodySmall" color={colors.primary[500]}>
@@ -163,7 +164,7 @@ export default function SavedScreen() {
           <EmptyState
             icon="heart-outline"
             title="Nothing saved yet"
-            message="Tap the heart on any place to save it for later."
+            message="Tap the heart on any place to save it here. Your saved places stay on this device."
           />
         ) : groupedSections ? (
           groupedSections.map((section) => (

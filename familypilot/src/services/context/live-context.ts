@@ -32,7 +32,7 @@ export function openingStatusLabel(status: OpeningStatus): string {
 }
 
 export async function fetchLiveWeather(profile: FamilyProfile): Promise<WeatherInfo & { source?: string }> {
-  const home = resolveHomeCoordinates(profile.homeLocation);
+  const home = resolveHomeCoordinates(profile);
   try {
     const weather: LiveWeatherResult = await contextApiClient.getWeather(home.latitude, home.longitude);
     return {
@@ -52,7 +52,7 @@ export async function fetchLiveDriveTimes(
 ): Promise<Map<string, JourneyResult>> {
   if (destinations.length === 0) return new Map();
 
-  const home = resolveHomeCoordinates(profile.homeLocation);
+  const home = resolveHomeCoordinates(profile);
   try {
     const result = await contextApiClient.getDriveTimes(
       { latitude: home.latitude, longitude: home.longitude },

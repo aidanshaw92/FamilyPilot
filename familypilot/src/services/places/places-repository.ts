@@ -35,14 +35,28 @@ async function fallbackDetail(id: string, profile: FamilyProfile): Promise<Venue
     const legacy = mockVenueDetails[id];
     return legacy ?? null;
   }
-  const home = resolveHomeCoordinates(profile.homeLocation);
+  const home = resolveHomeCoordinates(profile);
   const metadata = getFamilyPlaceMetadata(id);
   return mergePlaceToVenueDetail(record, metadata, home.latitude, home.longitude);
 }
 
+function mapLivePlacesToVenues(
+  places: Awaited<ReturnType<typeof placesApiClient.search>>['places'],
+  home: Coordinates,
+): Venue[] {
+  return places.map((place) =>
+    mergePlaceToVenue(
+      place,
+      place.familyMetadata ?? getFamilyPlaceMetadata(place.familypilotId),
+      home.latitude,
+      home.longitude,
+    ),
+  );
+}
+
 export class PlacesRepository {
   async searchNearby(profile: FamilyProfile, categories?: VenueCategory[]): Promise<Venue[]> {
-    const home = resolveHomeCoordinates(profile.homeLocation);
+    const home = resolveHomeCoordinates(profile);
     const params: PlaceSearchParams = {
       // Explore is deliberately London-wide. Cards still calculate travel from the family's real home.
       latitude: 51.5074,
@@ -55,14 +69,7 @@ export class PlacesRepository {
     const cacheKey = searchCacheKey(params);
     const cached = await getCachedSearch(cacheKey);
     if (cached && cached.provider !== 'mock' && cached.places.length > 0) {
-      return cached.places.map((place) =>
-        mergePlaceToVenue(
-          place,
-          place.familyMetadata ?? getFamilyPlaceMetadata(place.familypilotId),
-          home.latitude,
-          home.longitude,
-        ),
-      );
+      return mapLivePlacesToVenues(cached.places, home);
     }
 
     try {
@@ -71,14 +78,7 @@ export class PlacesRepository {
         throw new Error('Live places unavailable');
       }
       await setCachedSearch(cacheKey, result);
-      return result.places.map((place) =>
-        mergePlaceToVenue(
-          place,
-          place.familyMetadata ?? getFamilyPlaceMetadata(place.familypilotId),
-          home.latitude,
-          home.longitude,
-        ),
-      );
+      return mapLivePlacesToVenues(result.places, home);
     } catch (error) {
       if (__DEV__) {
         console.warn('[PlacesRepository] API unavailable, using safe fallback:', error);
@@ -89,8 +89,36 @@ export class PlacesRepository {
     }
   }
 
+  /** Search around a user-entered London town/postcode without substituting demo venues. */
+  async searchAround(
+    profile: FamilyProfile,
+    latitude: number,
+    longitude: number,
+    radiusKm = 8,
+  ): Promise<Venue[]> {
+    const home = resolveHomeCoordinates(profile);
+    const params: PlaceSearchParams = {
+      latitude,
+      longitude,
+      radiusKm,
+      intent: 'explore',
+    };
+    const cacheKey = searchCacheKey(params);
+    const cached = await getCachedSearch(cacheKey);
+    if (cached && cached.provider !== 'mock' && cached.places.length > 0) {
+      return mapLivePlacesToVenues(cached.places, home);
+    }
+
+    const result = await placesApiClient.search(params);
+    if (result.provider === 'mock' || result.places.length === 0) {
+      throw new Error('No live places were returned for that area.');
+    }
+    await setCachedSearch(cacheKey, result);
+    return mapLivePlacesToVenues(result.places, home);
+  }
+
   async getVenueDetail(id: string, profile: FamilyProfile): Promise<VenueDetail | null> {
-    const home = resolveHomeCoordinates(profile.homeLocation);
+    const home = resolveHomeCoordinates(profile);
 
     const cached = await getCachedDetail(id);
     if (cached) {

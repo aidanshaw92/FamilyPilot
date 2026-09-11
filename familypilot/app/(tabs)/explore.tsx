@@ -1,5 +1,5 @@
-import { useMemo, useEffect, useState } from 'react';
-import { TextInput, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useState, useEffect } from 'react';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { FilterSheet } from '@/src/components/explore/FilterSheet';
 import { RestaurantCard } from '@/src/components/restaurant/RestaurantCard';
@@ -9,12 +9,17 @@ import { Chip, EmptyState, ErrorState, SectionHeader, SkeletonCard, Text } from 
 import { isPilotFeatureVisible, visibleExploreCategoryIds } from '@/src/config/pilot-features';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useNearbyVenues, useRestaurants } from '@/src/hooks/use-queries';
+import { venueService } from '@/src/services/api';
 import { useFiltersStore } from '@/src/stores/filters-store';
+import { Venue } from '@/src/types';
 import { buildExploreEditorialSections } from '@/src/utils/explore-editorial-sections';
 import { EXPLORE_CATEGORIES, filterVenues } from '@/src/utils/filter-venues';
 
 export default function ExploreScreen() {
   const [search, setSearch] = useState('');
+  const [areaVenues, setAreaVenues] = useState<Venue[] | null>(null);
+  const [searchingArea, setSearchingArea] = useState(false);
+  const [searchMessage, setSearchMessage] = useState('');
   const { data: venues, isLoading: venuesLoading, isError: venuesError, refetch: refetchVenues } =
     useNearbyVenues();
   const {
@@ -49,19 +54,24 @@ export default function ExploreScreen() {
     [],
   );
 
+  const sourceVenues = areaVenues ?? venues;
   const filteredVenues = useMemo(
     () =>
-      venues
+      sourceVenues
         ? filterVenues(
-            venues,
+            sourceVenues,
             categoryFilter,
             advancedFilters,
             exploreMaxDrive,
             profile?.maxDriveMinutes ?? 30,
             exploreBudget,
-          ).filter(v => `${v.name} ${v.address ?? ''}`.toLowerCase().includes(search.toLowerCase().trim()))
+          ).filter((venue) =>
+            areaVenues
+              ? true
+              : `${venue.name} ${venue.address ?? ''}`.toLowerCase().includes(search.toLowerCase().trim()),
+          )
         : [],
-    [venues, categoryFilter, advancedFilters, exploreMaxDrive, exploreBudget, profile?.maxDriveMinutes, search],
+    [sourceVenues, areaVenues, categoryFilter, advancedFilters, exploreMaxDrive, exploreBudget, profile?.maxDriveMinutes, search],
   );
 
   const useEditorialLayout = false &&
@@ -84,12 +94,36 @@ export default function ExploreScreen() {
     (exploreBudget !== 'any' ? 1 : 0) +
     advancedFilters.length;
 
-  const isLoading = isRestaurantMode ? restaurantsLoading : venuesLoading;
+  const isLoading = searchingArea || (isRestaurantMode ? restaurantsLoading : venuesLoading);
   const isError = isRestaurantMode ? restaurantsError : venuesError;
   const refetch = isRestaurantMode ? refetchRestaurants : refetchVenues;
   const resultCount = isRestaurantMode ? (restaurants?.length ?? 0) : filteredVenues.length;
 
+  const handleAreaSearch = async () => {
+    const query = search.trim();
+    if (!query) {
+      setAreaVenues(null);
+      setSearchMessage('');
+      return;
+    }
+    setSearchingArea(true);
+    setSearchMessage('');
+    try {
+      const results = await venueService.searchArea(query);
+      setAreaVenues(results);
+      setSearchMessage(`Showing live places around ${query}.`);
+    } catch (error) {
+      setAreaVenues([]);
+      setSearchMessage(error instanceof Error ? error.message : 'Could not search that area.');
+    } finally {
+      setSearchingArea(false);
+    }
+  };
+
   const handleClearFilters = () => {
+    setSearch('');
+    setAreaVenues(null);
+    setSearchMessage('');
     if (isRestaurantMode) {
       setCategoryFilter('restaurants');
       useFiltersStore.getState().setExploreMaxDrive('any');
@@ -101,7 +135,7 @@ export default function ExploreScreen() {
     }
   };
 
-  if (isError) {
+  if (isError && !areaVenues) {
     return (
       <ScreenContainer>
         <ErrorState onRetry={() => void refetch()} />
@@ -120,13 +154,41 @@ export default function ExploreScreen() {
         </Text>
       </View>
 
-      <TextInput
-        accessibilityLabel="Search places or areas"
-        placeholder="Search places or areas"
-        value={search}
-        onChangeText={setSearch}
-        style={styles.searchInput}
-      />
+      <View style={styles.searchRow}>
+        <TextInput
+          accessibilityLabel="Search places or London areas"
+          placeholder="Search a place, area or postcode"
+          value={search}
+          onChangeText={(value) => {
+            setSearch(value);
+            setAreaVenues(null);
+            setSearchMessage('');
+          }}
+          onSubmitEditing={() => void handleAreaSearch()}
+          returnKeyType="search"
+          style={styles.searchInput}
+        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Search this London area"
+          onPress={() => void handleAreaSearch()}
+          style={styles.searchButton}
+        >
+          <Text variant="bodySmall" color={colors.text.inverse}>
+            Search
+          </Text>
+        </Pressable>
+      </View>
+      {searchMessage ? (
+        <Text
+          variant="caption"
+          color={areaVenues && areaVenues.length > 0 ? colors.text.secondary : colors.warning[600]}
+          style={styles.searchMessage}
+        >
+          {searchMessage}
+        </Text>
+      ) : null}
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -172,7 +234,9 @@ export default function ExploreScreen() {
           message={
             isRestaurantMode
               ? 'Try adjusting your filters or explore a wider area.'
-              : 'Try another category, clear your filters, or search a different London area.'
+              : areaVenues
+                ? 'Try a nearby London area or postcode, or clear the search to browse all London.'
+                : 'Try another category, clear your filters, or search a different London area.'
           }
           actionLabel="Clear filters"
           onAction={handleClearFilters}
@@ -195,8 +259,8 @@ export default function ExploreScreen() {
         <>
           <View style={styles.listHeader}>
             <SectionHeader
-              title={activeCategoryLabel}
-              subtitle={`${resultCount} ${isRestaurantMode ? 'restaurant' : 'place'}${resultCount === 1 ? '' : 's'} across London`}
+              title={areaVenues ? `Around ${search.trim()}` : activeCategoryLabel}
+              subtitle={`${resultCount} ${isRestaurantMode ? 'restaurant' : 'place'}${resultCount === 1 ? '' : 's'} ${areaVenues ? 'near this area' : 'across London'}`}
             />
           </View>
           <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
@@ -221,19 +285,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenPadding,
     paddingTop: spacing.lg,
   },
-  eyebrow: {
-    color: colors.primary[600],
-    letterSpacing: 1.1,
-    fontFamily: 'Inter_700Bold',
-    marginBottom: spacing.xs,
-  },
   subtitle: {
     marginTop: spacing.xs,
   },
-  searchInput: {
+  searchRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
     marginHorizontal: spacing.screenPadding,
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
     paddingHorizontal: spacing.lg,
     minHeight: 48,
     borderRadius: radius.lg,
@@ -243,6 +306,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 15,
     color: colors.text.primary,
+  },
+  searchButton: {
+    minHeight: 48,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primary[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchMessage: {
+    marginHorizontal: spacing.screenPadding,
+    marginBottom: spacing.sm,
   },
   categoryScroll: {
     maxHeight: 52,

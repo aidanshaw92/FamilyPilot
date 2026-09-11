@@ -28,6 +28,8 @@ export const EXPLORE_INCLUDED_PRIMARY_TYPES = [
   'playground',
   'museum',
   'zoo',
+  'wildlife_park',
+  'farm',
   'tourist_attraction',
   'amusement_park',
   'aquarium',
@@ -40,6 +42,7 @@ export const EXPLORE_INCLUDED_PRIMARY_TYPES = [
   'campground',
   'ice_skating_rink',
   'bowling_alley',
+  'indoor_playground',
   'cultural_center',
   'art_gallery',
 ] as const;
@@ -100,6 +103,10 @@ export const EXPLORE_EXCLUDED_PRIMARY_TYPES = [
   'insurance_agency',
   'lawyer',
   'accounting',
+  'library',
+  'university',
+  'school',
+  'performing_arts_theater',
 ] as const;
 
 /** Exclusions for restaurant search — unrelated retail and adult venues. */
@@ -135,7 +142,7 @@ const GOOGLE_TYPE_TO_TAXONOMY: Record<string, FamilyPilotTaxonomyCategory> = {
   museum: 'museum',
   art_gallery: 'museum',
   art_museum: 'museum',
-  aquarium: 'museum',
+  aquarium: 'attraction',
   planetarium: 'museum',
   childrens_museum: 'museum',
   cultural_center: 'museum',
@@ -229,6 +236,8 @@ const FORCE_NULL_TYPES = new Set([
   'casino',
   'storage',
   'library',
+  'university',
+  'school',
   'performing_arts_theater',
 ]);
 
@@ -249,9 +258,9 @@ const TAXONOMY_SPECIFICITY: FamilyPilotTaxonomyCategory[] = [
   'zoo',
   'museum',
   'farm',
-  'attraction',
   'playground',
   'park',
+  'attraction',
   'restaurant',
   'cafe',
   'shop',
@@ -294,8 +303,16 @@ export function mapGoogleTaxonomy(
 
   if (primaryType && GENERIC_PRIMARY_TYPES.has(primaryType)) {
     const fromSecondary = pickBestTaxonomyFromTypes(
-      types.filter((type) => !IGNORED_SECONDARY_TYPES.has(type) && !FORCE_NULL_TYPES.has(type)),
+      types.filter(
+        (type) =>
+          type !== primaryType &&
+          !IGNORED_SECONDARY_TYPES.has(type) &&
+          !FORCE_NULL_TYPES.has(type),
+      ),
     );
+    // Google often labels major parks as tourist attractions (or repeats tourist_attraction as
+    // a secondary type). Keep an actual park as a park unless a more specific destination exists.
+    if (primaryType === 'park' && (!fromSecondary || fromSecondary === 'attraction')) return 'park';
     if (fromSecondary) return fromSecondary;
   }
 
@@ -599,4 +616,3 @@ export function dedupeChains<T extends RankablePlace>(
 
   return places.filter((place) => !suppressedIds.has(place.familypilotId));
 }
-

@@ -159,7 +159,7 @@ export default function VenueScreen() {
           <View style={[styles.heroContent, { paddingTop: insets.top + spacing.sm }]}>
             <BackButton onPress={handleBack} color={colors.text.inverse} />
             <View style={styles.heroActions}>
-              <SaveButton venueId={venue.id} color={colors.text.inverse} />
+              <SaveButton venueId={venue.id} venue={venue} color={colors.text.inverse} />
             </View>
           </View>
           <View style={styles.heroTitle}>
@@ -193,7 +193,6 @@ export default function VenueScreen() {
                 {getEnrichmentDetailTrustCopy(venue.enrichmentStatus)}
               </Text>
             ) : null}
-
 
             {venue.address ? <Text variant="bodySmall" style={{marginBottom:12}}>{venue.address}</Text> : null}
             {venue.website && /^https?:\/\//.test(venue.website) ? <Button label="Official website & visitor information" variant="outline" onPress={() => void Linking.openURL(venue.website!)}/> : null}
@@ -250,7 +249,7 @@ export default function VenueScreen() {
           label={saved ? 'Saved' : 'Save'}
           variant="outline"
           style={styles.footerButton}
-          onPress={() => toggleSaved(venue.id)}
+          onPress={() => toggleSaved(venue.id, venue)}
         />
         <Button label="Get directions" style={styles.footerButton} onPress={handleDirections} />
       </View>

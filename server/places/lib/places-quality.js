@@ -4,10 +4,10 @@
  */
 
 const EXPLORE_INCLUDED_PRIMARY_TYPES = [
-  'park', 'playground', 'museum', 'zoo', 'tourist_attraction', 'amusement_park',
-  'aquarium', 'national_park', 'botanical_garden', 'planetarium', 'water_park',
-  'hiking_area', 'marina', 'campground', 'ice_skating_rink', 'bowling_alley',
-  'cultural_center', 'art_gallery',
+  'park', 'playground', 'museum', 'zoo', 'wildlife_park', 'farm', 'tourist_attraction',
+  'amusement_park', 'aquarium', 'national_park', 'botanical_garden', 'planetarium',
+  'water_park', 'hiking_area', 'marina', 'campground', 'ice_skating_rink', 'bowling_alley',
+  'indoor_playground', 'cultural_center', 'art_gallery',
 ];
 
 const RESTAURANT_INCLUDED_PRIMARY_TYPES = [
@@ -23,7 +23,8 @@ const EXPLORE_EXCLUDED_PRIMARY_TYPES = [
   'dentist', 'car_dealer', 'car_rental', 'car_wash', 'funeral_home', 'cemetery',
   'restaurant', 'cafe', 'coffee_shop', 'place_of_worship', 'hindu_temple',
   'church', 'mosque', 'synagogue', 'storage', 'real_estate_agency',
-  'insurance_agency', 'lawyer', 'accounting',
+  'insurance_agency', 'lawyer', 'accounting', 'library', 'university', 'school',
+  'performing_arts_theater',
 ];
 
 const RESTAURANT_EXCLUDED_PRIMARY_TYPES = [
@@ -35,8 +36,8 @@ const RESTAURANT_EXCLUDED_PRIMARY_TYPES = [
 const GOOGLE_TYPE_TO_TAXONOMY = {
   park: 'park', playground: 'playground', national_park: 'park', city_park: 'park', botanical_garden: 'park',
   hiking_area: 'park', marina: 'attraction', campground: 'attraction', rv_park: 'attraction',
-  museum: 'museum', art_gallery: 'museum', art_museum: 'museum', aquarium: 'museum', planetarium: 'museum',
-  childrens_museum: 'museum', cultural_center: 'museum',
+  museum: 'museum', art_gallery: 'museum', art_museum: 'museum', planetarium: 'museum',
+  childrens_museum: 'museum', cultural_center: 'museum', aquarium: 'attraction',
   zoo: 'zoo', wildlife_park: 'zoo', petting_zoo: 'farm', farm: 'farm',
   tourist_attraction: 'attraction', amusement_park: 'activity', theme_park: 'activity',
   water_park: 'activity', bowling_alley: 'activity', indoor_playground: 'activity',
@@ -70,7 +71,8 @@ const FORCE_NULL_TYPES = new Set([
   'mosque', 'synagogue', 'movie_theater', 'cinema', 'bar', 'pub', 'night_club',
   'gas_station', 'supermarket', 'grocery_store', 'department_store', 'shopping_mall',
   'hotel', 'lodging', 'bank', 'atm', 'pharmacy', 'hospital', 'car_dealer',
-  'car_wash', 'casino', 'storage', 'library', 'performing_arts_theater',
+  'car_wash', 'casino', 'storage', 'library', 'university', 'school',
+  'performing_arts_theater',
 ]);
 
 const IGNORED_SECONDARY_TYPES = new Set(['point_of_interest', 'establishment']);
@@ -79,8 +81,9 @@ const GENERIC_PRIMARY_TYPES = new Set([
   'park', 'tourist_attraction', 'point_of_interest', 'establishment',
 ]);
 
+// Prefer a concrete family destination type over Google's broad tourist_attraction label.
 const TAXONOMY_SPECIFICITY = [
-  'activity', 'zoo', 'museum', 'farm', 'attraction', 'playground', 'park',
+  'activity', 'zoo', 'museum', 'farm', 'playground', 'park', 'attraction',
   'restaurant', 'cafe', 'shop', 'hotel', 'other',
 ];
 
@@ -111,8 +114,16 @@ function mapGoogleTaxonomy(primaryType, types = [], name) {
 
   if (primaryType && GENERIC_PRIMARY_TYPES.has(primaryType)) {
     const fromSecondary = pickBestTaxonomyFromTypes(
-      types.filter((type) => !IGNORED_SECONDARY_TYPES.has(type) && !FORCE_NULL_TYPES.has(type)),
+      types.filter(
+        (type) =>
+          type !== primaryType &&
+          !IGNORED_SECONDARY_TYPES.has(type) &&
+          !FORCE_NULL_TYPES.has(type),
+      ),
     );
+    // Google often labels major parks as tourist attractions (or repeats tourist_attraction as
+    // a secondary type). Keep an actual park as a park unless a more specific destination exists.
+    if (primaryType === 'park' && (!fromSecondary || fromSecondary === 'attraction')) return 'park';
     if (fromSecondary) return fromSecondary;
   }
 

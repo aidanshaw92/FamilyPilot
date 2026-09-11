@@ -2,12 +2,12 @@ import {
   mockCarFit,
   mockHolidayOffers,
   mockPackingItems,
-  mockSavedItems,
   mockStores,
   mockTrips,
   mockVenues,
 } from '@/src/data/mock-data';
 import { useFamilyStore } from '@/src/stores/family-store';
+import { useSavedStore } from '@/src/stores/saved-store';
 import {
   CarFitResult,
   FamilyProfile,
@@ -33,6 +33,8 @@ import { filterRestaurants } from '@/src/utils/filter-restaurants';
 import { ExploreBudgetFilter } from '@/src/stores/filters-store';
 import { getAllRestaurants, getRestaurantById, getRestaurantsNearVenue } from '@/src/services/eat-nearby';
 import { getPlacesRepository } from '@/src/services/places/places-repository';
+import { distanceKm } from '@/src/services/places/geo-utils';
+import { resolveUkLocation } from '@/src/services/location/location-client';
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -67,6 +69,24 @@ export const venueService = {
     const venues = await getPlacesRepository().searchNearby(profile);
     // Explore is a London-wide discovery surface. Do not apply the normal max-drive cut-off here;
     // keep travel time visible and let the parent filter it explicitly when they want to.
+    return venues
+      .map((venue) => personaliseVenue(venue, profile))
+      .sort((a, b) => b.familyScore.score - a.familyScore.score || a.driveMinutes - b.driveMinutes);
+  },
+
+  async searchArea(area: string): Promise<Venue[]> {
+    const profile = getProfile();
+    const location = await resolveUkLocation(area);
+    const fromCentralLondonKm = distanceKm(51.5074, -0.1278, location.latitude, location.longitude);
+    if (fromCentralLondonKm > 45) {
+      throw new Error('Explore currently searches London and nearby areas. Try a London town or postcode.');
+    }
+    const venues = await getPlacesRepository().searchAround(
+      profile,
+      location.latitude,
+      location.longitude,
+      8,
+    );
     return venues
       .map((venue) => personaliseVenue(venue, profile))
       .sort((a, b) => b.familyScore.score - a.familyScore.score || a.driveMinutes - b.driveMinutes);
@@ -117,9 +137,8 @@ export const tripService = {
 
 export const savedService = {
   async getSaved(): Promise<SavedItem[]> {
-    await delay(200);
     const profile = getProfile();
-    return mockSavedItems.map((item) => ({
+    return useSavedStore.getState().items.map((item) => ({
       ...item,
       venue: personaliseVenue(item.venue, profile),
     }));

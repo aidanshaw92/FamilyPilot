@@ -34,14 +34,14 @@ interface SavedPlaceRowProps {
 
 export function SavedPlaceRow({ venue, itemType, onRemoved }: SavedPlaceRowProps) {
   const router = useRouter();
-  const { toggleSaved } = useSavedStore();
+  const { removeSaved } = useSavedStore();
 
   const isRestaurant =
     itemType === 'restaurant' || venue.category === 'restaurant' || venue.category === 'cafe';
   const detailPath = isRestaurant ? `/restaurant/${venue.id}` : `/venue/${venue.id}`;
 
   const handleRemove = () => {
-    toggleSaved(venue.id);
+    removeSaved(venue.id);
     onRemoved?.(venue.id);
   };
 

@@ -17,6 +17,7 @@ import { BackButton } from '@/src/components/ui/BackButton';
 import { Button, Chip, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useUpdateFamilyProfile } from '@/src/hooks/use-queries';
+import { resolveUkLocation } from '@/src/services/location/location-client';
 import { FamilyMember, FamilyProfile } from '@/src/types';
 import {
   createChildMember,
@@ -53,6 +54,7 @@ export default function EditProfileScreen() {
   const [pushchair, setPushchair] = useState('');
   const [travelCot, setTravelCot] = useState('');
   const [memberships, setMemberships] = useState('');
+  const [resolvingHome, setResolvingHome] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -96,6 +98,28 @@ export default function EditProfileScreen() {
   const handleSave = async () => {
     if (!validate() || !profile) return;
 
+    let homeLatitude = profile.homeLatitude;
+    let homeLongitude = profile.homeLongitude;
+    const locationChanged = homeLocation.trim() !== profile.homeLocation.trim();
+    const hasCoordinates = Number.isFinite(homeLatitude) && Number.isFinite(homeLongitude);
+
+    if (locationChanged || !hasCoordinates) {
+      setResolvingHome(true);
+      try {
+        const location = await resolveUkLocation(homeLocation);
+        homeLatitude = location.latitude;
+        homeLongitude = location.longitude;
+      } catch (error) {
+        setErrors((current) => ({
+          ...current,
+          homeLocation: error instanceof Error ? error.message : 'Could not find that town or postcode.',
+        }));
+        return;
+      } finally {
+        setResolvingHome(false);
+      }
+    }
+
     const childMembers: FamilyMember[] = children
       .filter((c) => c.name.trim() && c.age.trim())
       .map((c) => createChildMember(c.name, Number(c.age)));
@@ -106,6 +130,8 @@ export default function EditProfileScreen() {
     await updateProfile.mutateAsync({
       parentName: parentName.trim(),
       homeLocation: homeLocation.trim(),
+      homeLatitude,
+      homeLongitude,
       maxDriveMinutes,
       budgetTier,
       vehicle: vehicle.trim() || null,
@@ -148,6 +174,8 @@ export default function EditProfileScreen() {
     );
   }
 
+  const busy = updateProfile.isPending || resolvingHome;
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { paddingTop: insets.top }]}
@@ -183,7 +211,7 @@ export default function EditProfileScreen() {
           value={homeLocation}
           onChangeText={setHomeLocation}
           autoCapitalize="words"
-          hint="General area only — not your full address"
+          hint="Used to calculate real travel and weather from your general area — not your full address"
           error={errors.homeLocation}
         />
 
@@ -297,11 +325,11 @@ export default function EditProfileScreen() {
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
         <Button
-          label={updateProfile.isPending ? 'Saving…' : 'Save changes'}
+          label={resolvingHome ? 'Checking your area…' : updateProfile.isPending ? 'Saving…' : 'Save changes'}
           size="lg"
           fullWidth
           onPress={() => void handleSave()}
-          disabled={updateProfile.isPending}
+          disabled={busy}
         />
       </View>
     </KeyboardAvoidingView>

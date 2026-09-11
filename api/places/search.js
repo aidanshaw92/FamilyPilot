@@ -73,9 +73,10 @@ module.exports = async function handler(req, res) {
   }
 
   let places = result.places;
-  // Production discovery uses the existing insert-triggered enrichment queue.
+  // Production Explore discovery feeds the insert-triggered enrichment queue. This also covers
+  // explicit London area/postcode searches so useful outer-London places become richer over time.
   // Preview reads never enqueue work against the production worker.
-  if (process.env.VERCEL_ENV === 'production' && req.query.scope === 'london') {
+  if (process.env.VERCEL_ENV === 'production' && intent === 'explore') {
     try {
       const { getSupabaseAdmin } = require('../../server/enrichment/_lib/supabase-admin');
       const db = getSupabaseAdmin();
@@ -86,7 +87,8 @@ module.exports = async function handler(req, res) {
           website:p.website,fetched_at:p.fetchedAt,
           field_provenance:{googlePrimaryType:p.googlePrimaryType,googleTypes:p.googleTypes || []},
         }));
-        const { error } = await db.from('place_records').upsert(rows,{onConflict:'familypilot_place_id',ignoreDuplicates:true});
+        // Update provider facts/category on repeat discovery rather than freezing the first mapping.
+        const { error } = await db.from('place_records').upsert(rows,{onConflict:'familypilot_place_id'});
         if (error) console.error('[places] Discovery queue failed',error.code);
       }
     } catch(error) { console.error('[places] Discovery unavailable',error instanceof Error ? error.name : 'Error'); }
