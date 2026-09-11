@@ -4,11 +4,10 @@
  */
 
 const EXPLORE_INCLUDED_PRIMARY_TYPES = [
-  'park', 'playground', 'museum', 'childrens_museum', 'zoo', 'wildlife_park', 'petting_zoo',
-  'farm', 'tourist_attraction', 'amusement_park', 'aquarium', 'national_park',
-  'botanical_garden', 'planetarium', 'water_park', 'hiking_area', 'marina', 'campground',
-  'ice_skating_rink', 'bowling_alley', 'indoor_playground', 'trampoline_park',
-  'cultural_center', 'art_gallery',
+  'park', 'playground', 'museum', 'zoo', 'wildlife_park', 'farm', 'tourist_attraction',
+  'amusement_park', 'aquarium', 'national_park', 'botanical_garden', 'planetarium',
+  'water_park', 'hiking_area', 'marina', 'campground', 'ice_skating_rink', 'bowling_alley',
+  'indoor_playground', 'cultural_center', 'art_gallery',
 ];
 
 const RESTAURANT_INCLUDED_PRIMARY_TYPES = [
