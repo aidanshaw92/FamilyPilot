@@ -18,6 +18,7 @@ import { buildProactiveDayRequest } from '@/src/services/recommendation/proactiv
 import { useDayRequestStore } from '@/src/stores/day-request-store';
 import { useFamilyStore } from '@/src/stores/family-store';
 import { useFiltersStore } from '@/src/stores/filters-store';
+import { useSavedStore } from '@/src/stores/saved-store';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { FamilyProfile } from '@/src/types';
 
@@ -130,8 +131,11 @@ export function useTrips() {
 
 export function useSavedItems() {
   const profileRevision = useProfileRevision();
+  const savedVersion = useSavedStore((state) =>
+    state.items.map((item) => `${item.venue.id}:${item.savedAt ?? ''}`).join('|'),
+  );
   return useQuery({
-    queryKey: ['saved', profileRevision],
+    queryKey: ['saved', profileRevision, savedVersion],
     queryFn: savedService.getSaved,
   });
 }
