@@ -14,23 +14,31 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/src/components/ui';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { useFamilyStore } from '@/src/stores/family-store';
+import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 
 export default function SplashScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const markSplashSeen = useFamilyStore((s) => s.markSplashSeen);
+  const reducedMotion = useReducedMotion();
 
-  const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.92);
-  const taglineOpacity = useSharedValue(0);
+  const logoOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const logoScale = useSharedValue(reducedMotion ? 1 : 0.92);
+  const taglineOpacity = useSharedValue(reducedMotion ? 1 : 0);
 
   useEffect(() => {
-    logoOpacity.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) });
-    logoScale.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) });
-    taglineOpacity.value = withDelay(
-      400,
-      withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) }),
-    );
+    if (reducedMotion) {
+      logoOpacity.value = 1;
+      logoScale.value = 1;
+      taglineOpacity.value = 1;
+    } else {
+      logoOpacity.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) });
+      logoScale.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) });
+      taglineOpacity.value = withDelay(
+        400,
+        withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) }),
+      );
+    }
 
     const timer = setTimeout(() => {
       markSplashSeen();
@@ -38,7 +46,7 @@ export default function SplashScreen() {
     }, 2200);
 
     return () => clearTimeout(timer);
-  }, [logoOpacity, logoScale, markSplashSeen, router, taglineOpacity]);
+  }, [logoOpacity, logoScale, markSplashSeen, reducedMotion, router, taglineOpacity]);
 
   const logoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,

@@ -29,6 +29,7 @@ import { BackButton } from '@/src/components/ui/BackButton';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useRestaurant, useVenue } from '@/src/hooks/use-queries';
+import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { generateRestaurantStaticParams } from '@/src/utils/restaurant-routes';
 
@@ -80,6 +81,7 @@ function RestaurantScreenContent() {
   const { data: activityVenue } = useVenue(activityVenueId ?? '');
   const { isSaved, toggleSaved } = useSavedStore();
   const scrollY = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (e) => {
@@ -87,20 +89,24 @@ function RestaurantScreenContent() {
     },
   });
 
+  // Parallax hero effect is exactly the kind of scroll-triggered motion reduced-motion
+  // preferences are meant to suppress - keep the hero static (no translate/scale) instead.
   const heroStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateY: interpolate(
-          scrollY.value,
-          [-100, 0, HERO_HEIGHT],
-          [-50, 0, HERO_HEIGHT * 0.4],
-          Extrapolation.CLAMP,
-        ),
-      },
-      {
-        scale: interpolate(scrollY.value, [-100, 0], [1.15, 1], Extrapolation.CLAMP),
-      },
-    ],
+    transform: reducedMotion
+      ? []
+      : [
+          {
+            translateY: interpolate(
+              scrollY.value,
+              [-100, 0, HERO_HEIGHT],
+              [-50, 0, HERO_HEIGHT * 0.4],
+              Extrapolation.CLAMP,
+            ),
+          },
+          {
+            scale: interpolate(scrollY.value, [-100, 0], [1.15, 1], Extrapolation.CLAMP),
+          },
+        ],
   }));
 
   const handleBack = useCallback(() => {
