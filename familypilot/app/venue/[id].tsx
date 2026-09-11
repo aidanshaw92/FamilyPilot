@@ -38,7 +38,7 @@ import { useSavedStore } from '@/src/stores/saved-store';
 import { getEnrichmentDetailTrustCopy, formatTerrainLabel } from '@/src/utils/family-match-classification';
 import { generateVenueStaticParams } from '@/src/utils/venue-routes';
 
-const HERO_HEIGHT = 380;
+const HERO_HEIGHT = 250;
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 export function generateStaticParams() {
@@ -194,7 +194,10 @@ export default function VenueScreen() {
               </Text>
             ) : null}
 
-            <VenueTrustPanel venueId={venue.id}/>
+
+            {venue.address ? <Text variant="bodySmall" style={{marginBottom:12}}>{venue.address}</Text> : null}
+            {venue.website && /^https?:\/\//.test(venue.website) ? <Button label="Official website & visitor information" variant="outline" onPress={() => void Linking.openURL(venue.website!)}/> : null}
+            {venue.phone ? <Text variant="bodySmall" style={{marginVertical:12}}>Contact: {venue.phone}</Text> : null}
             <PhotoGallery photos={venue.photos} onPhotoPress={setHeroIndex} />
 
             <Text variant="heading3" style={styles.sectionTitle}>
@@ -236,6 +239,7 @@ export default function VenueScreen() {
               {venue.description}
             </Text>
 
+            <VenueTrustPanel venueId={venue.id}/>
             <CommunitySection tips={venue.communityTips} />
           </FadeInView>
         </View>

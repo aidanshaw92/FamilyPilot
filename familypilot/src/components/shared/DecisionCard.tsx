@@ -35,6 +35,18 @@ function DecisionCardComponent({
     router.push(`/venue/${venue.id}` as never);
   };
 
+  if (variant === 'list') return (
+    <PressableScale onPress={handleViewDetails} accessibilityRole="button" accessibilityLabel={`${venue.name}, view details`} style={styles.compact}>
+      <VenueImage uri={venue.imageUrl} alt={venue.name} style={{ width: 88, height: 88 }} />
+      <View style={{ flex: 1, gap: 5 }}>
+        <Text variant="heading3" numberOfLines={2}>{venue.name}</Text>
+        <Text variant="bodySmall" color={colors.text.secondary}>{venue.category.replace('_', ' ')} · ~{venue.driveMinutes} min drive</Text>
+        <Text variant="caption" color={colors.text.secondary} numberOfLines={1}>{venue.address}</Text>
+        <Text variant="caption" color={colors.primary[600]}>{venue.enrichmentStatus === 'provider_only' ? 'Family details to check' : 'View family details'} →</Text>
+      </View>
+    </PressableScale>
+  );
+
   return (
     <FadeInView delay={index * 60} style={variant === 'carousel' ? styles.carouselWrap : undefined}>
       <PressableScale
@@ -44,7 +56,6 @@ function DecisionCardComponent({
         style={[
           styles.card,
           variant === 'carousel' && styles.carousel,
-          variant === 'list' && styles.list,
           variant === 'hero' && styles.hero,
         ]}
       >
@@ -77,6 +88,7 @@ function DecisionCardComponent({
 export const DecisionCard = memo(DecisionCardComponent);
 
 const styles = StyleSheet.create({
+  compact: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, marginBottom: 10, backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.borderLight },
   carouselWrap: {
     marginRight: spacing.lg,
   },

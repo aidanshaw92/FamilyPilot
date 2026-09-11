@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { PlaceDetailResult, PlacesSearchResult } from '@/src/types/places';
 
-const CACHE_PREFIX = 'familypilot-places-cache:';
+const CACHE_PREFIX = 'familypilot-places-v2:';
 const SEARCH_TTL_MS = 1000 * 60 * 10;
 const DETAIL_TTL_MS = 1000 * 60 * 30;
 

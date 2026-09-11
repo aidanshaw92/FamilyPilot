@@ -3,12 +3,12 @@
  * Override temporarily via ENRICHMENT_BETA_* env vars on Vercel without redeploying code.
  */
 
-/** Mill Hill, London NW7 — 10 mile (~16.1 km) review radius. */
+/** London, London NW7 — 25 mile (~40 km) review radius. */
 const DEFAULT_BETA_AREA = {
-  lat: 51.613,
-  lng: -0.249,
-  radiusKm: 16.1,
-  label: 'Mill Hill',
+  lat: 51.5074,
+  lng: -0.1278,
+  radiusKm: 40,
+  label: 'London',
 };
 
 function parseEnvNumber(name, fallback) {

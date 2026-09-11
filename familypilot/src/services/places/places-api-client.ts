@@ -22,6 +22,7 @@ export class PlacesApiClient {
       lat: String(params.latitude),
       lng: String(params.longitude),
       radiusKm: String(params.radiusKm),
+      scope: params.radiusKm === 40 && params.latitude === 51.5074 ? 'london' : 'nearby',
     });
     if (params.categories?.length) {
       query.set('categories', params.categories.join(','));
@@ -30,7 +31,7 @@ export class PlacesApiClient {
       query.set('intent', params.intent);
     }
 
-    const response = await fetch(`${this.baseUrl}/search?${query.toString()}`);
+    const response = await fetch(`${this.baseUrl}/search?${query.toString()}`, { signal: AbortSignal.timeout(25000) });
     if (!response.ok) {
       const body = (await response.json().catch(() => ({}))) as { error?: string };
       throw new Error(body.error ?? `Places API error ${response.status}`);
@@ -41,6 +42,7 @@ export class PlacesApiClient {
   async getDetail(familypilotId: string): Promise<PlaceDetailResult> {
     const response = await fetch(
       `${this.baseUrl}/detail?id=${encodeURIComponent(familypilotId)}`,
+      { signal: AbortSignal.timeout(20000) },
     );
     if (!response.ok) {
       const body = (await response.json().catch(() => ({}))) as { error?: string };
