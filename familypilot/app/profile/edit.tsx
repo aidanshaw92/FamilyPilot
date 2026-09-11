@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AgeInput, AgeUnit } from '@/src/components/profile/AgeInput';
 import { TextField } from '@/src/components/profile/TextField';
 import { BackButton } from '@/src/components/ui/BackButton';
-import { Button, Chip, Text } from '@/src/components/ui';
+import { Button, Chip, EmptyState, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useUpdateFamilyProfile } from '@/src/hooks/use-queries';
 import { resolveUkLocation } from '@/src/services/location/location-client';
@@ -204,10 +204,25 @@ export default function EditProfileScreen() {
     ]);
   };
 
-  if (isLoading || !profile) {
+  if (isLoading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <Text variant="body">Loading profile…</Text>
+      </View>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <BackButton onPress={handleBack} />
+        <EmptyState
+          icon="person-circle-outline"
+          title="We couldn't load your family profile"
+          message="Set up your family to get personalised recommendations."
+          actionLabel="Set up your family"
+          onAction={() => router.replace('/(onboarding)/setup' as never)}
+        />
       </View>
     );
   }

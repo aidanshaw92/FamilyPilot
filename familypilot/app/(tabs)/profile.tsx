@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
-import { Button, Card, Skeleton, Text } from '@/src/components/ui';
+import { Button, Card, EmptyState, Skeleton, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
 import { formatBudgetTier, formatChildAge } from '@/src/utils/profile-defaults';
@@ -24,7 +24,19 @@ export default function ProfileScreen() {
     );
   }
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <ScreenContainer>
+        <EmptyState
+          icon="person-circle-outline"
+          title="We couldn't load your family profile"
+          message="Set up your family to get personalised recommendations."
+          actionLabel="Set up your family"
+          onAction={() => router.replace('/(onboarding)/setup' as never)}
+        />
+      </ScreenContainer>
+    );
+  }
 
   const children = profile.members.filter((m) => m.role === 'child');
   const suggestion = getProfileSuggestion(profile);
