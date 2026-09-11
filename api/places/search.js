@@ -1,4 +1,5 @@
 const { searchWithFallback } = require('../../server/places/lib/fallback');
+const { reorderByEnrichment } = require('../../server/places/lib/places-quality');
 
 function getConfiguredProvider() {
   return (process.env.PLACES_PROVIDER || 'mock').toLowerCase();
@@ -106,6 +107,10 @@ module.exports = async function handler(req, res) {
         };
       }),
     );
+    // rankPlaces (inside searchWithFallback) ran before real enrichment status was known - every
+    // place was still 'provider_only' then. Now that it's overlaid, nudge verified/enriched venues
+    // ahead of provider-only ones without disturbing relevance order within each trust tier.
+    places = reorderByEnrichment(places);
   } catch {
     // Best-effort metadata overlay
   }

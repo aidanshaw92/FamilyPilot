@@ -251,6 +251,21 @@ function rankPlaces(places, context) {
   return scored.slice(0, limit).map((entry) => entry.place);
 }
 
+const ENRICHMENT_TIER = { verified: 2, enriched: 1 };
+
+/**
+ * Stable re-sort applied once family metadata has been overlaid onto an already-ranked page of
+ * results (rankPlaces runs before that overlay, when every place is still 'provider_only' - see
+ * api/places/search.js). Nudges verified/enriched venues ahead of provider-only ones as a group,
+ * without disturbing the existing relevance/distance order within each trust tier.
+ */
+function reorderByEnrichment(places) {
+  return places
+    .map((place, index) => ({ place, index, tier: ENRICHMENT_TIER[place.enrichmentStatus] ?? 0 }))
+    .sort((a, b) => b.tier - a.tier || a.index - b.index)
+    .map((entry) => entry.place);
+}
+
 function dedupeChains(places, originLat, originLng, intent) {
   if (intent === 'restaurant') return places;
 
@@ -302,6 +317,7 @@ module.exports = {
   areLikelySameVenueAlias,
   findVenueAliasPairs,
   rankPlaces,
+  reorderByEnrichment,
   dedupeChains,
   dedupeVenueAliases,
   EXPLORE_INCLUDED_PRIMARY_TYPES,
