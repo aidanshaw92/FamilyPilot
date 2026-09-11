@@ -219,6 +219,40 @@ describe('day-request matcher', () => {
   });
 });
 
+describe('budget constraint matches the real £/££/£££ tier format', () => {
+  const budgetRequest: DayRequest = {
+    ...BASE_REQUEST,
+    budgetTier: 'budget',
+    constraints: {
+      journey: { strength: 'required', value: { maxMinutes: 30 } },
+      budget: { strength: 'required', value: 'within_profile' },
+    },
+  };
+
+  it('flags a £££ venue as unsuitable for a budget-tier family', () => {
+    const result = matchVenueToDayRequest(enrichedFacts({ estimatedSpend: '£££' }), budgetRequest);
+    expect(result.eligible).toBe(false);
+  });
+
+  it('treats £ and ££ as suitable for a budget-tier family, not just Free', () => {
+    expect(matchVenueToDayRequest(enrichedFacts({ estimatedSpend: '£' }), budgetRequest).eligible).toBe(true);
+    expect(matchVenueToDayRequest(enrichedFacts({ estimatedSpend: '££' }), budgetRequest).eligible).toBe(true);
+  });
+
+  it('treats Free as suitable for a budget-tier family', () => {
+    const result = matchVenueToDayRequest(enrichedFacts({ estimatedSpend: 'Free' }), budgetRequest);
+    expect(result.eligible).toBe(true);
+  });
+
+  it('does not exclude an unusually priced venue that happens to contain old mock-style substrings', () => {
+    // Regression guard: the old implementation matched specific price-range substrings
+    // ('£35', '£40', '£50', '£60') that never appear in real tier-symbol data, and would
+    // also have false-matched a range string like this one that isn't actually £££ tier.
+    const result = matchVenueToDayRequest(enrichedFacts({ estimatedSpend: '£40 family ticket' }), budgetRequest);
+    expect(result.eligible).toBe(true);
+  });
+});
+
 describe('day-request schema guard', () => {
   it('rejects parsed output that includes venue IDs', async () => {
     const { normaliseDayRequest } = await import('../../../server/recommendations/day-request-schema.js');

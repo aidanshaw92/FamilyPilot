@@ -126,13 +126,12 @@ function evaluateBudget(
   tier: 'budget' | 'moderate' | 'premium',
 ): FactMatchOutcome {
   if (!estimatedSpend) return 'unknown';
-  const lower = estimatedSpend.toLowerCase();
-  const isFree = lower.includes('free') || estimatedSpend.startsWith('£0');
-  const isExpensive =
-    lower.includes('£35') ||
-    lower.includes('£40') ||
-    lower.includes('£50') ||
-    lower.includes('£60');
+  const spend = estimatedSpend.trim();
+  const lower = spend.toLowerCase();
+  const isFree = lower.includes('free') || spend.startsWith('£0');
+  // Real enriched venues carry a £/££/£££ tier symbol (see scoreTrustedBudget), not a price
+  // range string - only £££ counts as "expensive" here, matching that same tier semantics.
+  const isExpensive = spend.includes('£££');
 
   if (tier === 'budget') {
     if (isFree) return 'suitable';
