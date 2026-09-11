@@ -112,16 +112,21 @@ export default function ExploreScreen() {
   return (
     <ScreenContainer>
       <View style={styles.header}>
-
         <Text variant="heading2">Explore London</Text>
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
           {isRestaurantMode
             ? 'Family-friendly places to eat'
-            : 'Parks, museums and days out across London'}
+            : 'Parks, museums and family days out across London'}
         </Text>
       </View>
 
-      <TextInput accessibilityLabel="Search places or areas" placeholder="Search places or areas" value={search} onChangeText={setSearch} style={{marginHorizontal:20,marginBottom:12,padding:14,borderRadius:14,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,fontFamily:'Inter_400Regular',fontSize:15,color:colors.text.primary}}/>
+      <TextInput
+        accessibilityLabel="Search places or areas"
+        placeholder="Search places or areas"
+        value={search}
+        onChangeText={setSearch}
+        style={styles.searchInput}
+      />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -167,7 +172,7 @@ export default function ExploreScreen() {
           message={
             isRestaurantMode
               ? 'Try adjusting your filters or explore a wider area.'
-              : 'Try a different category or adjust your filters.'
+              : 'Try another category, clear your filters, or search a different London area.'
           }
           actionLabel="Clear filters"
           onAction={handleClearFilters}
@@ -191,7 +196,7 @@ export default function ExploreScreen() {
           <View style={styles.listHeader}>
             <SectionHeader
               title={activeCategoryLabel}
-              subtitle={`${resultCount} ${isRestaurantMode ? 'restaurant' : 'place'}${resultCount === 1 ? '' : 's'} near you`}
+              subtitle={`${resultCount} ${isRestaurantMode ? 'restaurant' : 'place'}${resultCount === 1 ? '' : 's'} across London`}
             />
           </View>
           <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
@@ -225,9 +230,23 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop: spacing.xs,
   },
+  searchInput: {
+    marginHorizontal: spacing.screenPadding,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    minHeight: 48,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    color: colors.text.primary,
+  },
   categoryScroll: {
     maxHeight: 52,
-    marginTop: spacing.lg,
+    marginTop: spacing.sm,
   },
   categoryContent: {
     paddingHorizontal: spacing.screenPadding,
