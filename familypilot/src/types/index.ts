@@ -191,6 +191,9 @@ export interface FamilyProfile {
   parentName: string;
   members: FamilyMember[];
   homeLocation: string;
+  /** Resolved centroid for the entered town/postcode. Stored locally with the profile. */
+  homeLatitude?: number | null;
+  homeLongitude?: number | null;
   budgetTier: 'budget' | 'moderate' | 'premium';
   maxDriveMinutes: number;
   completionPercent: number;
@@ -232,6 +235,7 @@ export interface SavedItem {
   type: 'place' | 'restaurant' | 'hotel' | 'shop';
   venue: Venue;
   group?: SavedGroup;
+  savedAt?: string;
 }
 
 export interface StoreLocation {
