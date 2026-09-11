@@ -5,13 +5,14 @@
 **Product constitution:** [MASTER_PRODUCT_VISION.md](./MASTER_PRODUCT_VISION.md) — read before any code change
 
 > **Note on this update:** the previous version of this document (dated 7 August 2026) was badly out of
-> date. It described the app as mock-data-only with no onboarding, no real geocoding, no tests, and no
-> CI. None of that is true at HEAD. A large body of work landed between 8 August and 11 September 2026
-> — live Google/OSM places, real UK geocoding, a genuine evidence-backed trust pipeline, routine-aware
-> family planning, family-to-family connections, and post-visit feedback — without the docs being kept
-> in sync. This rewrite reflects what actually exists in the repository as of the commit below, verified
-> by reading the code (not by re-reading old docs). Keep this document honest going forward: update it
-> whenever a feature crosses from mock/partial to live, or vice versa.
+> date. It described the app as mock-data-only with no onboarding, no real geocoding, and no tests. None
+> of that is true at HEAD. A large body of work landed between 8 August and 11 September 2026 — live
+> Google/OSM places, real UK geocoding, a genuine evidence-backed trust pipeline, routine-aware family
+> planning, family-to-family connections, and post-visit feedback — without the docs being kept in sync.
+> This rewrite reflects what actually exists in the repository as of the commit below, verified by
+> reading the code (not by re-reading old docs). One thing the old doc got right and this pass fixed:
+> there was genuinely no CI — see "Fixed in this pass" below. Keep this document honest going forward:
+> update it whenever a feature crosses from mock/partial to live, or vice versa.
 
 **Verified against commit:** `43581a4` ("Fix profile location, Saved, and London place quality")
 **Verified by:** installing dependencies fresh, running `npm run typecheck`, `npm test`, and
@@ -109,10 +110,15 @@ need cross-device sync, they need new tables (or reuse of `planning_workspaces`'
 3. **Added `familypilot/.env.example`** — no such file existed anywhere in the repo despite ~30 env
    vars being referenced across `api/`, `server/`, and the client. Documents every var, what it unlocks,
    where to get it, and what happens when it's absent.
-4. **Rewrote this document** to match reality.
+4. **Added `.github/workflows/ci.yml`.** There was genuinely no CI (the one thing the stale August doc
+   got right) — nothing enforced typecheck/tests/build on a PR, which is exactly how the tsconfig and
+   test-typing regressions above went unnoticed. CI now runs `npm ci`, `typecheck`, `build:web`, then
+   `test` (in that order — three tests assert `dist/` exists) on every PR and push to `main`.
+5. **Rewrote this document** to match reality.
 
 None of the above changed runtime behaviour for a fully-configured deployment — they fix developer
-experience (clean typecheck/tests), one visibility bug, and documentation debt.
+experience (clean typecheck/tests, regressions caught before merge instead of by the next agent), one
+visibility bug, and documentation debt.
 
 ---
 
@@ -143,13 +149,24 @@ experience (clean typecheck/tests), one visibility bug, and documentation debt.
    use matters.
 2. **Old `001_initial_schema.sql` schema is dead code.** Either delete it or explicitly mark it
    superseded so a future agent doesn't build on it by mistake.
-3. **This session could not perform live manual QA against real providers** — no `GOOGLE_PLACES_API_KEY`,
-   `OPENWEATHER_API_KEY`, `OPENAI_API_KEY`, or `SUPABASE_SERVICE_ROLE_KEY` were present in this sandboxed
-   environment, and no `.vercel` project link or Vercel env access was available to read the production
-   values. Everything above was verified by reading code paths and passing tests, not by clicking through
-   the running app with real data. **Before the next release, someone with the production keys should
-   manually walk the test plan in `docs/PARENT_TESTING_GUIDE.md`** (NW7, Richmond, Greenwich, Bromley,
-   an invalid postcode; save/unsave persistence; provider-failure behaviour).
+3. **This session could not perform live manual QA against real providers.** All server-side keys
+   (`GOOGLE_PLACES_API_KEY`, `OPENWEATHER_API_KEY`, `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
+   `SUPABASE_URL`, `PLACES_PROVIDER`, `ENRICHMENT_ADMIN_TOKEN`) **are confirmed configured** in the
+   Vercel project's Production + Preview environments (verified via the Vercel dashboard, 11 Sept 2026).
+   However this sandboxed session has no general internet egress — only a small allowlist (npm, PyPI,
+   the Anthropic API) — so it could reach neither the production URL, the PR's own preview deployment,
+   nor the Vercel API itself (the Vercel MCP connector here is also 403-scoped to a different account
+   than the one that owns this project). Everything above was verified by reading code paths and passing
+   tests, not by clicking through the running app with real data. **Someone with browser access should
+   manually walk the test plan in `docs/PARENT_TESTING_GUIDE.md`** against the PR preview URL (posted by
+   the Vercel bot on the PR) or production (NW7, Richmond, Greenwich, Bromley, an invalid postcode;
+   save/unsave persistence; provider-failure behaviour).
+   - **One concrete gap found while checking the Vercel dashboard:** the two **client-side** Supabase
+     vars (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`/`_ANON_KEY`) are not among
+     the 7 configured vars. Server-side Supabase features (connections API, post-visit feedback API,
+     enrichment pipeline) will work; client-side Supabase auth (the Plans tab's "connect a family" /
+     cloud-backup-your-plans account flow) will not — the UI should show "Account connections need to be
+     enabled by the app owner" rather than failing silently, but this needs a live check.
 4. **Mock/legacy Phase-1 screens** (Need Now, Holiday, Packing, Car Fit) remain behind the pilot flag —
    correctly deferred per the master build priority (P2), not a bug.
 5. **`docs/` still contains many stale files** dated 6–8 August 2026 (`PHASE_2_REMEDIATION.md`,
@@ -160,17 +177,24 @@ experience (clean typecheck/tests), one visibility bug, and documentation debt.
 
 ---
 
-## Required credentials (none block core functionality; each unlocks more real data)
+## Required credentials
 
-See `familypilot/.env.example` for the full list with descriptions and where to obtain each key. Summary:
+See `familypilot/.env.example` for the full list with descriptions and where to obtain each key.
+
+**Confirmed already configured in Vercel (Production + Preview), 11 Sept 2026:**
+`GOOGLE_PLACES_API_KEY`, `OPENWEATHER_API_KEY`, `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
+`SUPABASE_URL`, `PLACES_PROVIDER`, `ENRICHMENT_ADMIN_TOKEN`. This covers every server-side provider —
+live places, weather, drive times, AI parsing/enrichment, and server-side Supabase (connections,
+feedback, enrichment pipeline) should all be live in production and on PR preview deployments.
+
+**Still missing — only blocks client-side Supabase auth (connecting families / cloud backup):**
 
 | Missing credential | What it unlocks | Get it from |
 |---|---|---|
-| `GOOGLE_PLACES_API_KEY` / `GOOGLE_MAPS_API_KEY` | Live venue search/detail/photos, real geocoding, real drive times | Google Cloud Console → enable "Places API (New)" + "Geocoding API" |
-| `OPENWEATHER_API_KEY` | Live current weather (vs. seasonal estimate) | openweathermap.org/api |
-| `OPENAI_API_KEY` | Natural-language day-request parsing, AI enrichment drafts | platform.openai.com/api-keys |
-| `SUPABASE_SERVICE_ROLE_KEY` + `SUPABASE_URL` | Family connections, post-visit feedback, enrichment pipeline persistence | Supabase project settings → API (must be `service_role`, not `anon`) |
-| `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Client-side auth for connecting families / cloud-backing plans | Same Supabase project, anon/publishable key |
+| `EXPO_PUBLIC_SUPABASE_URL` | Client-side Supabase connection | Same Supabase project (`uuolfuebwimrsjfgffsm`) → Project Settings → API → Project URL |
+| `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (or `EXPO_PUBLIC_SUPABASE_ANON_KEY`) | Client-side auth for the Plans tab's "connect a family" / cloud-backed plans account flow | Same page → anon/publishable key (**not** the service role secret — this one is safe to expose client-side) |
+
+Add these as Vercel env vars (Production **and** Preview, like the others) to light up that last piece.
 
 A Supabase project (`uuolfuebwimrsjfgffsm`, region `eu-west-1`) already exists and is active with real
 data in it (51 place records, 49 venue family-metadata rows, 294 evidence rows, 56 approved claims) —
