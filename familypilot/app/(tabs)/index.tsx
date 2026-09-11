@@ -8,9 +8,8 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FocusedRecommendationCard } from '@/src/components/home/FocusedRecommendationCard';
 import { OutingPreferences } from '@/src/components/home/OutingPreferences';
-import { Button } from '@/src/components/ui/Button';
 import { ScreenContainer, ScreenHeader } from '@/src/components/shared/ScreenContainer';
-import { EmptyState, ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
+import { ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import {
   useFamilyProfile,
@@ -56,16 +55,28 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <Text variant="heading3" style={{marginBottom:12}}>What would you like to do today?</Text>
-        <View style={{flexDirection:'row',gap:8,marginBottom:20}}>
+        <Text variant="heading3" style={styles.quickActionHeading}>What would you like to do today?</Text>
+        <View style={styles.quickActionRow}>
           {([
-            ['Go outside','leaf-outline','parks','#E9F8EF'],
-            ['Indoor activities','home-outline','museums','#F0EDFF'],
-            ['Plan a day','calendar-outline','plan','#EAF4FF'],
-            ['Explore London','compass-outline','all','#FFF0F4'],
-          ] as const).map(([label,icon,category,bg]) => <Pressable key={label} accessibilityRole="button" onPress={() => category === 'plan' ? router.push('/(tabs)/trips' as never) : browse(category)} style={{flex:1,alignItems:'center',gap:8,paddingVertical:14,paddingHorizontal:4,borderRadius:14,backgroundColor:bg}}><Ionicons name={icon} size={25} color={colors.primary[600]}/><Text variant="caption" style={{textAlign:'center'}}>{label}</Text></Pressable>)}
+            ['Go outside','leaf-outline','parks','#E9F8EF',colors.secondary[600]],
+            ['Indoor activities','home-outline','museums','#F0EDFF',colors.primary[600]],
+            ['Plan a day','calendar-outline','plan','#EAF4FF',colors.accent[600]],
+            ['Explore London','compass-outline','all','#FFF0F4',colors.coral],
+          ] as const).map(([label,icon,category,bg,iconColor]) => (
+            <Pressable
+              key={label}
+              accessibilityRole="button"
+              onPress={() => category === 'plan' ? router.push('/(tabs)/trips' as never) : browse(category)}
+              style={[styles.quickAction,{backgroundColor:bg}]}
+            >
+              <Ionicons name={icon} size={25} color={iconColor}/>
+              <Text variant="caption" style={styles.quickActionLabel}>{label}</Text>
+            </Pressable>
+          ))}
         </View>
-        <Pressable accessibilityRole="button" onPress={() => setPreferencesOpen(!preferencesOpen)} style={{paddingVertical:12,marginBottom:12}}><Text variant="bodySmall" color={colors.primary[600]}>Adjust today's preferences {preferencesOpen ? '−' : '+'}</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => setPreferencesOpen(!preferencesOpen)} style={styles.preferencesToggle}>
+          <Text variant="bodySmall" color={colors.primary[600]}>Adjust today's preferences {preferencesOpen ? '−' : '+'}</Text>
+        </Pressable>
         {preferencesOpen ? <OutingPreferences request={parsedRequest} /> : null}
         <PostVisitInbox/>
         {recsError ? <ErrorState onRetry={() => void refetch()} /> : null}
@@ -75,7 +86,7 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {!recsLoading && recommendations.length === 0 ? <Text variant="bodySmall" color={colors.text.secondary} style={{marginBottom:16}}>Explore real places below. We’ll show personalised matches when the details meet your family’s requirements.</Text> : null}
+        {!recsLoading && recommendations.length === 0 ? <Text variant="bodySmall" color={colors.text.secondary} style={styles.recommendationHint}>Explore real places below. We’ll show personalised matches when the details meet your family’s requirements.</Text> : null}
         {topPick ? (
           <View style={styles.heroSection}>
               <View style={styles.sectionEyebrow}>
@@ -110,7 +121,7 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        <SectionHeader title="Explore London" subtitle="Real places across the city · check family facilities before visiting" actionLabel="See all" onAction={() => browse('all')}/>
+        <SectionHeader title="Top picks for your family" subtitle="Real places across London · family details shown when verified" actionLabel="See all" onAction={() => browse('all')}/>
         {placesLoading ? <SkeletonDecisionCard/> : null}
         {placesError ? <ErrorState onRetry={() => void retryPlaces()}/> : null}
         {places?.slice(0,8).map((venue,index) => <DecisionCard key={venue.id} venue={venue} variant={index === 0 ? 'hero' : 'list'} index={index}/>)}
@@ -123,6 +134,32 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: spacing.screenPadding,
     paddingBottom: spacing['3xl'],
+  },
+  quickActionHeading: {
+    marginBottom: spacing.md,
+  },
+  quickActionRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  quickAction: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radius.lg,
+  },
+  quickActionLabel: {
+    textAlign: 'center',
+  },
+  preferencesToggle: {
+    paddingVertical: spacing.md,
+    marginBottom: spacing.md,
+  },
+  recommendationHint: {
+    marginBottom: spacing.lg,
   },
   heroSection: {
     marginBottom: spacing.xl,

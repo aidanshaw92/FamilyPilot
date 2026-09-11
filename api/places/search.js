@@ -4,6 +4,28 @@ function getConfiguredProvider() {
   return (process.env.PLACES_PROVIDER || 'mock').toLowerCase();
 }
 
+function mergeLondonBatches(batches, limit = 90) {
+  const live = batches.filter((batch) => batch.provider !== 'mock');
+  const unique = new Map();
+  const longestBatch = live.reduce((max, batch) => Math.max(max, batch.places.length), 0);
+
+  // Interleave areas so central London cannot fill the result set before outer London is considered.
+  for (let index = 0; index < longestBatch && unique.size < limit; index += 1) {
+    for (const batch of live) {
+      const place = batch.places[index];
+      if (place) unique.set(place.familypilotId, place);
+      if (unique.size >= limit) break;
+    }
+  }
+
+  return {
+    places: [...unique.values()],
+    provider: live[0]?.provider || 'mock',
+    fallbackUsed: live.some((batch) => batch.fallbackUsed),
+    fallbackReason: live.map((batch) => batch.fallbackReason).filter(Boolean).join(' | ') || undefined,
+  };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -25,16 +47,30 @@ module.exports = async function handler(req, res) {
 
   let result;
   if (req.query.scope === 'london' && intent === 'explore') {
-    const areas = [[51.5074,-0.1278],[51.60,-0.15],[51.43,-0.12],[51.52,0.02],[51.49,-0.30]];
-    const batches = await Promise.all(areas.map(([lat,lng]) => searchWithFallback(lat,lng,12,configuredProvider,{intent})));
-    const live = batches.filter(batch => batch.provider !== 'mock');
-    const unique = new Map();
-    for (const batch of live) for (const place of batch.places) unique.set(place.familypilotId,place);
-    result = { places:[...unique.values()].slice(0,60), provider:live[0]?.provider || 'mock', fallbackUsed:live.some(b => b.fallbackUsed) };
+    // A London-wide grid gives parents useful coverage in every direction rather than a
+    // central-London-heavy result set. Twelve-kilometre circles intentionally overlap so
+    // venues near area boundaries are still discovered and then de-duplicated below.
+    const areas = [
+      [51.5074, -0.1278], // central
+      [51.6030, -0.1700], // north
+      [51.5900, -0.3300], // north-west
+      [51.5900, 0.0600], // north-east
+      [51.5100, -0.3300], // west
+      [51.5200, 0.1000], // east
+      [51.4400, -0.2500], // south-west
+      [51.4200, -0.1000], // south
+      [51.4500, 0.0800], // south-east
+    ];
+    const batches = await Promise.all(
+      areas.map(([lat, lng]) => searchWithFallback(lat, lng, 12, configuredProvider, { intent })),
+    );
+    result = mergeLondonBatches(batches);
   } else {
     result = await searchWithFallback(latitude, longitude, radiusKm, configuredProvider, { intent });
   }
-  if (result.provider === 'mock' && configuredProvider !== 'mock') return res.status(503).json({error:'Live places are temporarily unavailable. Please retry.'});
+  if (result.provider === 'mock' && configuredProvider !== 'mock') {
+    return res.status(503).json({ error: 'Live places are temporarily unavailable. Please retry.' });
+  }
 
   let places = result.places;
   // Production discovery uses the existing insert-triggered enrichment queue.

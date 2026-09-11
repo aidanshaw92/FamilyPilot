@@ -15,12 +15,13 @@ import { PlaceSearchParams } from '@/src/types/places';
 
 const clientMockProvider = new MockPlacesProvider();
 
+type Coordinates = { latitude: number; longitude: number };
+
 function searchCacheKey(params: PlaceSearchParams): string {
   return JSON.stringify(params);
 }
 
-async function fallbackSearch(params: PlaceSearchParams): Promise<Venue[]> {
-  const home = { latitude: params.latitude, longitude: params.longitude };
+async function fallbackSearch(params: PlaceSearchParams, home: Coordinates): Promise<Venue[]> {
   const records = await clientMockProvider.searchNearby(params);
   return records.map((record) => {
     const metadata = getFamilyPlaceMetadata(record.familypilotId);
@@ -43,6 +44,7 @@ export class PlacesRepository {
   async searchNearby(profile: FamilyProfile, categories?: VenueCategory[]): Promise<Venue[]> {
     const home = resolveHomeCoordinates(profile.homeLocation);
     const params: PlaceSearchParams = {
+      // Explore is deliberately London-wide. Cards still calculate travel from the family's real home.
       latitude: 51.5074,
       longitude: -0.1278,
       radiusKm: 40,
@@ -52,7 +54,7 @@ export class PlacesRepository {
 
     const cacheKey = searchCacheKey(params);
     const cached = await getCachedSearch(cacheKey);
-    if (cached) {
+    if (cached && cached.provider !== 'mock' && cached.places.length > 0) {
       return cached.places.map((place) =>
         mergePlaceToVenue(
           place,
@@ -65,7 +67,9 @@ export class PlacesRepository {
 
     try {
       const result = await placesApiClient.search(params);
-      if (result.provider === 'mock') throw new Error('Live places unavailable');
+      if (result.provider === 'mock' || result.places.length === 0) {
+        throw new Error('Live places unavailable');
+      }
       await setCachedSearch(cacheKey, result);
       return result.places.map((place) =>
         mergePlaceToVenue(
@@ -77,9 +81,11 @@ export class PlacesRepository {
       );
     } catch (error) {
       if (__DEV__) {
-        console.warn('[PlacesRepository] API unavailable, using mock fallback:', error);
+        console.warn('[PlacesRepository] API unavailable, using safe fallback:', error);
       }
-      throw new Error('Could not load live places. Please retry.');
+      // Do not leave Home/Explore blank during a provider outage. The UI labels these records as
+      // unreviewed/mock data, while the next query will retry the live API rather than cache them.
+      return fallbackSearch(params, home);
     }
   }
 

@@ -37,11 +37,16 @@ function DecisionCardComponent({
 
   if (variant === 'list') return (
     <PressableScale onPress={handleViewDetails} accessibilityRole="button" accessibilityLabel={`${venue.name}, view details`} style={styles.compact}>
-      <VenueImage uri={venue.imageUrl} alt={venue.name} style={{ width: 88, height: 88 }} />
-      <View style={{ flex: 1, gap: 5 }}>
-        <Text variant="heading3" numberOfLines={2}>{venue.name}</Text>
+      <VenueImage uri={venue.imageUrl} category={venue.category} alt={venue.name} style={styles.compactImage} />
+      <View style={styles.compactContent}>
+        <View style={styles.compactTitleRow}>
+          <Text variant="heading3" numberOfLines={2} style={styles.compactTitle}>{venue.name}</Text>
+          <View style={styles.scoreBadge} accessibilityLabel={`Family Match ${venue.familyScore.score}`}>
+            <Text variant="bodySmall" style={styles.scoreText}>{venue.familyScore.score}</Text>
+          </View>
+        </View>
         <Text variant="bodySmall" color={colors.text.secondary}>{venue.category.replace('_', ' ')} · ~{venue.driveMinutes} min drive</Text>
-        <Text variant="caption" color={colors.text.secondary} numberOfLines={1}>{venue.address}</Text>
+        {venue.address ? <Text variant="caption" color={colors.text.secondary} numberOfLines={1}>{venue.address}</Text> : null}
         <Text variant="caption" color={colors.primary[600]}>{venue.enrichmentStatus === 'provider_only' ? 'Family details to check' : 'View family details'} →</Text>
       </View>
     </PressableScale>
@@ -88,7 +93,49 @@ function DecisionCardComponent({
 export const DecisionCard = memo(DecisionCardComponent);
 
 const styles = StyleSheet.create({
-  compact: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, marginBottom: 10, backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.borderLight },
+  compact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    ...shadows.card,
+  },
+  compactImage: {
+    width: 92,
+    height: 92,
+  },
+  compactContent: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  compactTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  compactTitle: {
+    flex: 1,
+  },
+  scoreBadge: {
+    minWidth: 36,
+    height: 28,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.secondary[50],
+    borderWidth: 1,
+    borderColor: colors.secondary[100],
+  },
+  scoreText: {
+    color: colors.secondary[600],
+    fontFamily: 'Inter_700Bold',
+  },
   carouselWrap: {
     marginRight: spacing.lg,
   },
