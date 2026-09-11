@@ -17,6 +17,7 @@ import { RestaurantFacilities } from '@/src/components/restaurant/RestaurantFaci
 import { RecommendationPattern } from '@/src/components/shared/RecommendationPattern';
 import { DeferredPilotGate } from '@/src/components/shared/DeferredPilotGate';
 import { SaveButton } from '@/src/components/shared/SaveButton';
+import { ShareButton } from '@/src/components/shared/ShareButton';
 import {
   Button,
   DataTrustBadge,
@@ -29,6 +30,7 @@ import { BackButton } from '@/src/components/ui/BackButton';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useRestaurant, useVenue } from '@/src/hooks/use-queries';
+import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { generateRestaurantStaticParams } from '@/src/utils/restaurant-routes';
 
@@ -80,6 +82,7 @@ function RestaurantScreenContent() {
   const { data: activityVenue } = useVenue(activityVenueId ?? '');
   const { isSaved, toggleSaved } = useSavedStore();
   const scrollY = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (e) => {
@@ -87,20 +90,24 @@ function RestaurantScreenContent() {
     },
   });
 
+  // Parallax hero effect is exactly the kind of scroll-triggered motion reduced-motion
+  // preferences are meant to suppress - keep the hero static (no translate/scale) instead.
   const heroStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateY: interpolate(
-          scrollY.value,
-          [-100, 0, HERO_HEIGHT],
-          [-50, 0, HERO_HEIGHT * 0.4],
-          Extrapolation.CLAMP,
-        ),
-      },
-      {
-        scale: interpolate(scrollY.value, [-100, 0], [1.15, 1], Extrapolation.CLAMP),
-      },
-    ],
+    transform: reducedMotion
+      ? []
+      : [
+          {
+            translateY: interpolate(
+              scrollY.value,
+              [-100, 0, HERO_HEIGHT],
+              [-50, 0, HERO_HEIGHT * 0.4],
+              Extrapolation.CLAMP,
+            ),
+          },
+          {
+            scale: interpolate(scrollY.value, [-100, 0], [1.15, 1], Extrapolation.CLAMP),
+          },
+        ],
   }));
 
   const handleBack = useCallback(() => {
@@ -198,7 +205,10 @@ function RestaurantScreenContent() {
           />
           <View style={[styles.heroContent, { paddingTop: insets.top + spacing.sm }]}>
             <BackButton onPress={handleBack} color={colors.text.inverse} />
-            <SaveButton venueId={restaurant.id} venue={restaurant} color={colors.text.inverse} />
+            <View style={styles.heroActions}>
+              <ShareButton title={restaurant.name} path={`/restaurant/${restaurant.id}`} color={colors.text.inverse} />
+              <SaveButton venueId={restaurant.id} venue={restaurant} color={colors.text.inverse} />
+            </View>
           </View>
           <View style={styles.heroTitle}>
             <Text variant="heading1" color={colors.text.inverse}>
@@ -403,6 +413,11 @@ const styles = StyleSheet.create({
   },
   heroGradient: {
     ...StyleSheet.absoluteFill,
+  },
+  heroActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
   heroContent: {
     flexDirection: 'row',

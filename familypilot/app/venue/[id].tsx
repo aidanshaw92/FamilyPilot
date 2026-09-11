@@ -20,6 +20,7 @@ import { FacilityGrid } from '@/src/components/venue/FacilityGrid';
 import { PhotoGallery } from '@/src/components/venue/PhotoGallery';
 import { WeatherAlternativeSection } from '@/src/components/venue/WeatherAlternativeSection';
 import { SaveButton } from '@/src/components/shared/SaveButton';
+import { ShareButton } from '@/src/components/shared/ShareButton';
 import {
   Button,
   EmptyState,
@@ -30,6 +31,7 @@ import {
 } from '@/src/components/ui';
 import { BackButton } from '@/src/components/ui/BackButton';
 import { FadeInView } from '@/src/components/ui/FadeInView';
+import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { isActivityVenue } from '@/src/data/mock-restaurants';
@@ -53,6 +55,7 @@ export default function VenueScreen() {
   const { isSaved, toggleSaved } = useSavedStore();
   const scrollY = useSharedValue(0);
   const [heroIndex, setHeroIndex] = useState(0);
+  const reducedMotion = useReducedMotion();
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (e) => {
@@ -60,20 +63,24 @@ export default function VenueScreen() {
     },
   });
 
+  // Parallax hero effect is exactly the kind of scroll-triggered motion reduced-motion
+  // preferences are meant to suppress - keep the hero static (no translate/scale) instead.
   const heroStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateY: interpolate(
-          scrollY.value,
-          [-100, 0, HERO_HEIGHT],
-          [-50, 0, HERO_HEIGHT * 0.4],
-          Extrapolation.CLAMP,
-        ),
-      },
-      {
-        scale: interpolate(scrollY.value, [-100, 0], [1.15, 1], Extrapolation.CLAMP),
-      },
-    ],
+    transform: reducedMotion
+      ? []
+      : [
+          {
+            translateY: interpolate(
+              scrollY.value,
+              [-100, 0, HERO_HEIGHT],
+              [-50, 0, HERO_HEIGHT * 0.4],
+              Extrapolation.CLAMP,
+            ),
+          },
+          {
+            scale: interpolate(scrollY.value, [-100, 0], [1.15, 1], Extrapolation.CLAMP),
+          },
+        ],
   }));
 
   const handleBack = useCallback(() => {
@@ -159,6 +166,7 @@ export default function VenueScreen() {
           <View style={[styles.heroContent, { paddingTop: insets.top + spacing.sm }]}>
             <BackButton onPress={handleBack} color={colors.text.inverse} />
             <View style={styles.heroActions}>
+              <ShareButton title={venue.name} path={`/venue/${venue.id}`} color={colors.text.inverse} />
               <SaveButton venueId={venue.id} venue={venue} color={colors.text.inverse} />
             </View>
           </View>

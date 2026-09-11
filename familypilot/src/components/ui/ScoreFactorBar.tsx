@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 
 import { colors, radius } from '@/src/design-system/tokens';
 import { timing } from '@/src/design-system/animations/presets';
+import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 
 import { Text } from './Text';
 
@@ -19,11 +20,16 @@ interface ScoreFactorBarProps {
 }
 
 export function ScoreFactorBar({ label, value, delay = 0 }: ScoreFactorBarProps) {
-  const width = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
+  const width = useSharedValue(reducedMotion ? value : 0);
 
   useEffect(() => {
+    if (reducedMotion) {
+      width.value = value;
+      return;
+    }
     width.value = withDelay(delay, withTiming(value, timing.slow));
-  }, [delay, value, width]);
+  }, [delay, value, width, reducedMotion]);
 
   const barStyle = useAnimatedStyle(() => ({
     width: `${width.value}%`,
