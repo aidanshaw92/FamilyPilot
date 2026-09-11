@@ -68,7 +68,7 @@ function parseMaxSpend(estimatedSpend?: string): number | null {
 function matchesBudget(venue: Venue, budget: ExploreBudgetFilter): boolean {
   if (budget === 'any') return true;
   const spend = parseMaxSpend(venue.estimatedSpend);
-  if (spend === null) return true;
+  if (spend === null) return false;
   if (budget === 'free') return spend === 0;
   if (budget === 'under_25') return spend <= 25;
   if (budget === 'under_50') return spend <= 50;
@@ -109,7 +109,7 @@ export function filterVenues(
   budgetFilter: ExploreBudgetFilter,
 ): Venue[] {
   const effectiveMaxDrive =
-    maxDriveMinutes === 'any' ? profileMaxDrive + 10 : maxDriveMinutes;
+    maxDriveMinutes === 'any' ? Infinity : maxDriveMinutes;
 
   let result = venues.filter((venue) => {
     if (venue.driveMinutes > effectiveMaxDrive) return false;

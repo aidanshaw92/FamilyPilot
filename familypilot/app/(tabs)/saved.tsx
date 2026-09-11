@@ -13,11 +13,11 @@ import { SavedGroup, SavedItem } from '@/src/types';
 type SortOption = 'recent' | 'closest' | 'match';
 type TypeFilter = 'all' | 'places' | 'restaurants';
 
-const TYPE_FILTERS: { id: TypeFilter; label: string }[] = [
+const TYPE_FILTERS = ([
   { id: 'all', label: 'All' },
   { id: 'places', label: 'Places' },
   { id: 'restaurants', label: 'Restaurants' },
-].filter(
+] satisfies { id: TypeFilter; label: string }[]).filter(
   (filter) => filter.id !== 'restaurants' || isPilotFeatureVisible('saved_restaurants'),
 );
 

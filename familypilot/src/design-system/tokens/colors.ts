@@ -3,9 +3,9 @@ export const colors = {
     50: '#F5F0FF',
     100: '#EBE0FF',
     200: '#D4C2F0',
-    500: '#8B6FC0',
-    600: '#7358A8',
-    700: '#5C4588',
+    500: '#6960E8',
+    600: '#554BD3',
+    700: '#4238B7',
   },
   secondary: {
     50: '#F0FAF4',
@@ -34,7 +34,7 @@ export const colors = {
   coral: '#E8927C',
   slateBlue: '#8B9FD4',
   steelBlue: '#7BAFD4',
-  background: '#F8F7F5',
+  background: '#FAFAFD',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
   text: {
@@ -43,8 +43,8 @@ export const colors = {
     tertiary: '#767688',
     inverse: '#FFFFFF',
   },
-  border: '#E8E6E3',
-  borderLight: '#F0EEEB',
+  border: '#E9EAF2',
+  borderLight: '#F1F2F8',
   overlay: 'rgba(26, 26, 46, 0.4)',
   gradient: {
     heroStart: 'rgba(26, 26, 46, 0)',

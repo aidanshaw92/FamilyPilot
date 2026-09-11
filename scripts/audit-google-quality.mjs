@@ -12,7 +12,7 @@ const require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 
-const { searchGoogle } = require(join(root, 'api/places/lib/google-places.js'));
+const { searchGoogle } = require(join(root, 'server/places/lib/google-places.js'));
 
 const LEGACY_INCLUDED = ['park', 'museum', 'restaurant', 'cafe', 'zoo'];
 const IRRELEVANT_CATEGORIES = new Set(['hotel', 'shop', 'restaurant', 'cafe']);

@@ -11,6 +11,8 @@ const {
   resolveEnrichmentStatus,
 } = require('./validation');
 
+const { expiryDate } = require('./trusted-evidence');
+
 const FILE_CLAIMS_DIR = '.data';
 const FILE_CLAIMS_NAME = 'venue-claims.json';
 
@@ -194,8 +196,8 @@ function buildClaimRecord({
     evidenceExcerpt: evidence.evidence ?? null,
     sourceType: evidence.sourceType ?? 'ai_assisted',
     sourceEvidenceId: sourceEvidenceId ?? null,
-    checkedAt,
-    validUntil: null,
+    checkedAt: evidence.retrievedAt?.slice(0,10) || checkedAt,
+    validUntil: expiryDate(fieldKey, evidence.retrievedAt || checkedAt),
     approvedAt: new Date().toISOString(),
     approvedBy: reviewedBy,
     approvedFromDraftId: draftId ?? null,
@@ -425,17 +427,15 @@ async function listClaimsForVenue(familypilotPlaceId, options = {}) {
 
 async function getActiveClaims(familypilotPlaceId) {
   const claims = await listClaimsForVenue(familypilotPlaceId, { status: 'active' });
-  const today = new Date().toISOString().slice(0, 10);
-  return claims.filter((c) => !c.validUntil || c.validUntil >= today);
+  return claims.filter(isClaimActive);
 }
 
 function isClaimActive(claim) {
   if (!ACTIVE_STATUSES.has(claim.status)) return false;
-  if (claim.validUntil) {
-    const today = new Date().toISOString().slice(0, 10);
-    if (claim.validUntil < today) return false;
-  }
-  return true;
+  // Legacy automatic approvals did not require source proof. Do not treat them as verified.
+  if (claim.approvedBy === 'ai_auto_approved') return false;
+  const until = claim.validUntil || expiryDate(claim.fieldKey, claim.checkedAt);
+  return until >= new Date().toISOString().slice(0,10);
 }
 
 function setNestedValue(target, fieldKey, value) {

@@ -358,9 +358,11 @@ async function generateDraftForVenue(familypilotId, options = {}) {
   const place = await getPlaceRecord(familypilotId);
   if (!place) throw new Error('Place record not found');
 
-  const evidenceBundle = await gatherEvidenceForVenue(familypilotId, place);
+  const evidenceBundle = await gatherEvidenceForVenue(familypilotId, place, {forceRefresh: options.sourceOnly === true});
   const input = placeRowToInput(place, metadata, evidenceBundle);
-  const result = await generateDraft(input);
+  const result = options.sourceOnly
+    ? { draftJson: require('./trusted-evidence').reviewEvidence(evidenceBundle).draft, model: 'official-source-rules-v2', sourceContext: {}, confidenceJson: {}, tokenUsage: {}, estimatedCostUsd: 0 }
+    : await generateDraft(input);
   result.evidenceStatus =
     evidenceBundle.sourceStatus === 'no_official_source' ? 'provider_only' : 'evidence_backed';
   result.sourceContext = {
@@ -457,11 +459,12 @@ async function generateDraftBatch(params = {}) {
   };
 }
 
-async function approveDraft(familypilotId, payload, reviewedBy) {
+async function approveDraft(familypilotId, payload, reviewedBy, options = {}) {
   const draft = await getPendingDraft(familypilotId);
   if (!draft) throw new Error('No pending AI draft to approve');
 
-  const fromDraft = draftJsonToSavePayload(draft.draftJson, {
+  if (options.expectedDraftId && draft.id !== options.expectedDraftId) throw new Error('Draft changed during approval; retry.');
+  const fromDraft = draftJsonToSavePayload(options.evidenceDraft ?? draft.draftJson, {
     model: draft.model,
     approvedAt: new Date().toISOString(),
     reviewedBy,
@@ -485,7 +488,7 @@ async function approveDraft(familypilotId, payload, reviewedBy) {
   const checkedAt = savePayload.lastChecked || new Date().toISOString().slice(0, 10);
   await createClaimsFromApproval({
     familypilotPlaceId: familypilotId,
-    draftJson: draft.draftJson,
+    draftJson: options.evidenceDraft ?? draft.draftJson,
     editorPayload: payload ?? {},
     reviewedBy: reviewedBy ?? 'enrichment-admin',
     draftId: draft.id,

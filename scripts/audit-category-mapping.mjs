@@ -12,9 +12,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 
 const { mapGoogleCategory, mapGoogleTaxonomy, dedupeVenueAliases } = require(
-  join(root, 'api/places/lib/places-quality.js'),
+  join(root, 'server/places/lib/places-quality.js'),
 );
-const { googlePlaceToRecord } = require(join(root, 'api/places/lib/google-places.js'));
+const { googlePlaceToRecord } = require(join(root, 'server/places/lib/google-places.js'));
 
 const AUDIT_EXAMPLES = [
   {
@@ -110,7 +110,7 @@ for (const example of AUDIT_EXAMPLES) {
 reportExamples('After (native zoo / attraction / activity VenueCategories)');
 
 if (process.argv.includes('--live')) {
-  const { searchGoogle } = require(join(root, 'api/places/lib/google-places.js'));
+  const { searchGoogle } = require(join(root, 'server/places/lib/google-places.js'));
   const lat = 51.643;
   const lng = -0.36;
   console.log('\n=== Live Bushey sync sample ===');

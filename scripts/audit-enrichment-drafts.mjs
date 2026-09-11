@@ -25,7 +25,7 @@ const {
   isScopedToiletClosure,
   hasVenueWideToiletAbsence,
   hasToiletNegation,
-} = require(join(root, 'api/enrichment/_lib/evidence-extractor.js'));
+} = require(join(root, 'server/enrichment/_lib/evidence-extractor.js'));
 
 const PRIORITY_VENUE_PATTERNS = [
   { key: 'harry-potter', pattern: /harry potter|warner bros/i },

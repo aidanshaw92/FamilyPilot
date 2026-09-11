@@ -1,13 +1,22 @@
-/** Default home area for Bushey, Hertfordshire — used when profile has no coordinates. */
+/** Default home area for central London — used when profile has no coordinates. */
 export const DEFAULT_HOME = {
-  label: 'Bushey, Hertfordshire',
-  latitude: 51.643,
-  longitude: -0.36,
+  label: 'London',
+  latitude: 51.5074,
+  longitude: -0.1278,
 };
 
 const KNOWN_LOCATIONS: Record<string, { latitude: number; longitude: number }> = {
-  'bushey, hertfordshire': DEFAULT_HOME,
-  bushey: DEFAULT_HOME,
+  'mill hill': { latitude: 51.613, longitude: -0.249 },
+  'bushey': { latitude: 51.643, longitude: -0.36 },
+  'richmond': { latitude: 51.4613, longitude: -0.3037 },
+  'greenwich': { latitude: 51.4826, longitude: -0.0077 },
+  'stratford': { latitude: 51.5413, longitude: -0.0033 },
+  'croydon': { latitude: 51.3762, longitude: -0.0982 },
+  'bromley': { latitude: 51.406, longitude: 0.013 },
+  'wimbledon': { latitude: 51.4214, longitude: -0.2064 },
+  'hampstead': { latitude: 51.556, longitude: -0.178 },
+  'barnet': { latitude: 51.653, longitude: -0.2 },
+  'ealing': { latitude: 51.513, longitude: -0.305 },
   watford: { latitude: 51.656, longitude: -0.396 },
   elstree: { latitude: 51.658, longitude: -0.308 },
 };

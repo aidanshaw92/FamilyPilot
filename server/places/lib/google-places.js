@@ -23,6 +23,9 @@ const SEARCH_FIELD_MASK = [
   'places.primaryType',
   'places.types',
   'places.businessStatus',
+  'places.photos',
+  'places.websiteUri',
+  'places.currentOpeningHours',
 ].join(',');
 
 const DETAIL_FIELD_MASK = [
@@ -37,6 +40,8 @@ const DETAIL_FIELD_MASK = [
   'regularOpeningHours',
   'editorialSummary',
   'businessStatus',
+  'photos',
+  'currentOpeningHours',
 ].join(',');
 
 /**
@@ -84,7 +89,7 @@ function googlePlaceToRecord(place, intent) {
   const category = mapGoogleCategory(primaryType, types, name);
   if (!category) return null;
 
-  const openingHours = mapOpeningHours(place.regularOpeningHours);
+  const openingHours = mapOpeningHours(place.currentOpeningHours || place.regularOpeningHours);
   const description = place.editorialSummary && place.editorialSummary.text;
   const fetchedAt = new Date().toISOString();
 
@@ -101,8 +106,8 @@ function googlePlaceToRecord(place, intent) {
     openingHours,
     website: place.websiteUri,
     phone: place.nationalPhoneNumber,
-    photos: [],
-    isOpen: mapIsOpen(place.businessStatus),
+    photos: (place.photos || []).slice(0, 3).map((photo, index) => `/api/places/photo?id=${encodeURIComponent(placeId)}&index=${index}&credit=${encodeURIComponent((photo.authorAttributions || []).map(a => a.displayName).join(', '))}`),
+    isOpen: typeof place.currentOpeningHours?.openNow === 'boolean' ? place.currentOpeningHours.openNow : (place.businessStatus === 'CLOSED_PERMANENTLY' || place.businessStatus === 'CLOSED_TEMPORARILY' ? false : undefined),
     fetchedAt,
     enrichmentStatus: 'provider_only',
     googlePrimaryType: primaryType,

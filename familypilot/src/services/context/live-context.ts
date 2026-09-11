@@ -1,4 +1,3 @@
-import { mockWeather } from '@/src/data/mock-data';
 import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
 import { FamilyProfile, WeatherInfo } from '@/src/types';
 
@@ -32,15 +31,6 @@ export function openingStatusLabel(status: OpeningStatus): string {
   }
 }
 
-function weatherFromMock(profile: FamilyProfile): WeatherInfo {
-  return {
-    ...mockWeather,
-    description: profile.homeLocation.trim()
-      ? `${mockWeather.description} near ${profile.homeLocation.trim()}`
-      : mockWeather.description,
-  };
-}
-
 export async function fetchLiveWeather(profile: FamilyProfile): Promise<WeatherInfo & { source?: string }> {
   const home = resolveHomeCoordinates(profile.homeLocation);
   try {
@@ -52,7 +42,7 @@ export async function fetchLiveWeather(profile: FamilyProfile): Promise<WeatherI
       source: weather.source,
     };
   } catch {
-    return weatherFromMock(profile);
+    throw new Error('Current weather is unavailable.');
   }
 }
 

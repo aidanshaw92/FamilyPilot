@@ -79,7 +79,7 @@ describe('claim review utils', () => {
 describe('claim-review server helpers', () => {
   it('detects conflicts from evidence bundle', async () => {
     const { listEvidenceConflicts, hasUnresolvedEvidenceConflicts } = await import(
-      '../../../api/enrichment/_lib/claim-review.js'
+      '../../../server/enrichment/_lib/claim-review.js'
     );
 
     const bundle = {

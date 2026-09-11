@@ -1,19 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 
 describe('enrichment beta area defaults', () => {
-  it('defaults to Mill Hill with a 10 mile radius', async () => {
+  it('defaults to London with a 25 mile radius', async () => {
     delete process.env.ENRICHMENT_BETA_LAT;
     delete process.env.ENRICHMENT_BETA_LNG;
     delete process.env.ENRICHMENT_BETA_RADIUS_KM;
     delete process.env.ENRICHMENT_BETA_LABEL;
     vi.resetModules();
 
-    const { getDefaultBetaArea } = await import('../../../api/enrichment/_lib/beta-area.js');
+    const { getDefaultBetaArea } = await import('../../../server/enrichment/_lib/beta-area.js');
     const area = getDefaultBetaArea();
-    expect(area.label).toBe('Mill Hill');
-    expect(area.lat).toBeCloseTo(51.613, 2);
-    expect(area.lng).toBeCloseTo(-0.249, 2);
-    expect(area.radiusKm).toBeCloseTo(16.1, 1);
+    expect(area.label).toBe('London');
+    expect(area.lat).toBeCloseTo(51.5074, 2);
+    expect(area.lng).toBeCloseTo(-0.1278, 2);
+    expect(area.radiusKm).toBeCloseTo(40, 1);
   });
 
   it('allows env overrides for temporary pilot areas', async () => {
@@ -24,7 +24,7 @@ describe('enrichment beta area defaults', () => {
     vi.resetModules();
 
     const { getDefaultBetaArea, resolveBetaParams } = await import(
-      '../../../api/enrichment/_lib/beta-area.js'
+      '../../../server/enrichment/_lib/beta-area.js'
     );
     const area = getDefaultBetaArea();
     expect(area.label).toBe('Custom area');

@@ -22,6 +22,8 @@ function clearStores() {
 
 describe('claim source evidence linking', () => {
   beforeEach(() => {
+    vi.useFakeTimers({toFake:['Date']});
+    vi.setSystemTime(new Date('2026-08-15T12:00:00Z'));
     savedSupabaseUrl = process.env.SUPABASE_URL;
     savedSupabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     delete process.env.SUPABASE_URL;
@@ -30,6 +32,7 @@ describe('claim source evidence linking', () => {
     clearStores();
   });
   afterEach(() => {
+    vi.useRealTimers();
     clearStores();
     if (savedSupabaseUrl !== undefined) process.env.SUPABASE_URL = savedSupabaseUrl;
     else delete process.env.SUPABASE_URL;
@@ -39,9 +42,9 @@ describe('claim source evidence linking', () => {
   });
 
   it('links approved claims to venue_source_evidence rows by source URL', async () => {
-    const { saveEvidenceRecord } = await import('../../../api/enrichment/_lib/evidence-store.js');
+    const { saveEvidenceRecord } = await import('../../../server/enrichment/_lib/evidence-store.js');
     const { createClaimsFromApproval, getActiveClaims } = await import(
-      '../../../api/enrichment/_lib/claims-store.js'
+      '../../../server/enrichment/_lib/claims-store.js'
     );
 
     await saveEvidenceRecord({

@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const { assertSafeUrl } = require('./source-fetch-security');
 const { extractPageContent, isCloudflareChallenge } = require('./html-text-extractor');
 
-const FETCH_TIMEOUT_MS = Number(process.env.SOURCE_FETCH_TIMEOUT_MS || 10000);
+const FETCH_TIMEOUT_MS = Number(process.env.SOURCE_FETCH_TIMEOUT_MS || 6000);
 const MAX_RESPONSE_BYTES = Number(process.env.SOURCE_FETCH_MAX_BYTES || 512 * 1024);
 const MAX_REDIRECTS = 3;
 const USER_AGENT =

@@ -19,7 +19,7 @@ function buildBestAgesLabelFromMeta(metadata: VenueFamilyMetadata | null): strin
 function formatOpeningHours(hours?: StructuredOpeningHours): string {
   if (!hours) return 'Opening hours not confirmed';
   if (hours.weekdayText?.length) {
-    return `${hours.weekdayText[0]} · Hours from ${hours.source === 'osm' ? 'OpenStreetMap' : hours.source}`;
+    return `${hours.weekdayText.join('\n')}\nHours from ${hours.source === 'osm' ? 'OpenStreetMap' : hours.source}`;
   }
   return `Opening hours from ${hours.source}`;
 }
@@ -118,6 +118,8 @@ export function mergePlaceToVenueDetail(
   return {
     ...base,
     trustedFacts,
+    website: place.website,
+    phone: place.phone,
     photos: place.photos.length > 0 ? place.photos : base.imageUrl ? [base.imageUrl] : [],
     facilities: trustedMeta?.facilities ?? [],
     openingHours: formatOpeningHours(place.openingHours),

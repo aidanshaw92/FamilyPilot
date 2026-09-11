@@ -44,7 +44,7 @@ async function fetchGoogleDistanceMatrix(origin, destinations, apiKey) {
     if (element?.status === 'OK' && element.duration?.value != null) {
       return {
         placeId: destination.placeId,
-        driveMinutes: Math.max(1, Math.round(element.duration.value / 60)),
+        driveMinutes: Math.max(1, Math.round((element.duration_in_traffic?.value ?? element.duration.value) / 60)),
         source: 'live',
       };
     }

@@ -1,6 +1,6 @@
 /**
  * Clean extracted evidence snippets for display.
- * Mirrors api/enrichment/_lib/evidence-text-utils.js.
+ * Mirrors server/enrichment/_lib/evidence-text-utils.js.
  */
 export function stripNavFragmentPrefixes(text: string): string {
   const NAV_FRAGMENT_PATTERNS = [

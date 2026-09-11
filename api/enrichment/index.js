@@ -1,6 +1,6 @@
-const { searchGoogle, getGooglePlace } = require('../places/lib/google-places');
-const { verifyEnrichmentAuth, isAuthConfigured } = require('./_lib/auth');
-const { consumeAutomationDispatch } = require('./_lib/automation-store');
+const { searchGoogle, getGooglePlace } = require('../../server/places/lib/google-places');
+const { verifyEnrichmentAuth, isAuthConfigured } = require('../../server/enrichment/_lib/auth');
+const { consumeAutomationDispatch } = require('../../server/enrichment/_lib/automation-store');
 const {
   listQueue,
   getStats,
@@ -10,9 +10,9 @@ const {
   reclassifyProviderOnlyPlaceRecords,
   getMetadata,
   saveMetadata,
-} = require('./_lib/enrichment-store');
-const { sanitizePayload } = require('./_lib/validation');
-const { isAiConfigured } = require('./_lib/ai-provider');
+} = require('../../server/enrichment/_lib/enrichment-store');
+const { sanitizePayload } = require('../../server/enrichment/_lib/validation');
+const { isAiConfigured } = require('../../server/enrichment/_lib/ai-provider');
 const {
   generateDraftForVenue,
   generateDraftBatch,
@@ -20,17 +20,17 @@ const {
   getPendingDraft,
   approveDraft,
   rejectDraft,
-} = require('./_lib/draft-store');
-const { listEvidenceForVenue } = require('./_lib/evidence-store');
+} = require('../../server/enrichment/_lib/draft-store');
+const { listEvidenceForVenue } = require('../../server/enrichment/_lib/evidence-store');
 const {
   listClaimsForVenue,
   getClaimById,
   disputeClaim,
   expireClaim,
-} = require('./_lib/claims-store');
-const { listEvidenceConflicts } = require('./_lib/claim-review');
-const { isAutoApproveEnabled, tryAutoApproveDraft } = require('./_lib/auto-approve');
-const { getDefaultBetaArea } = require('./_lib/beta-area');
+} = require('../../server/enrichment/_lib/claims-store');
+const { listEvidenceConflicts } = require('../../server/enrichment/_lib/claim-review');
+const { isAutoApproveEnabled, tryAutoApproveDraft } = require('../../server/enrichment/_lib/auto-approve');
+const { getDefaultBetaArea } = require('../../server/enrichment/_lib/beta-area');
 
 function setCorsHeaders(res, methods) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -251,7 +251,7 @@ async function handleGenerateDraft(req, res) {
   if (!id) return res.status(400).json({ error: 'Missing venue id' });
 
   try {
-    const result = await generateDraftForVenue(id, { regenerate: Boolean(req.body?.regenerate) });
+    const result = await generateDraftForVenue(id, { regenerate: Boolean(req.body?.regenerate), sourceOnly: true });
     const autoApprove =
       Boolean(req.body?.autoApprove) || (isAutoApproveEnabled() && req.body?.autoApprove !== false);
     let approval = null;
@@ -286,7 +286,7 @@ async function handleAutomationRun(req, res) {
       return res.status(401).json({ error: 'Invalid or expired automation dispatch' });
     }
 
-    const result = await generateDraftForVenue(id, { regenerate: Boolean(req.body?.regenerate) });
+    const result = await generateDraftForVenue(id, { regenerate: Boolean(req.body?.regenerate), sourceOnly: true });
     const approval = await tryAutoApproveDraft(id, {
       draft: result.draft,
       evidenceBundle: result.evidenceBundle,
@@ -347,7 +347,7 @@ async function handleAutoApproveBatch(req, res) {
   if (!verifyEnrichmentAuth(req, res)) return;
 
   try {
-    const { autoApprovePendingBatch } = require('./_lib/auto-approve');
+    const { autoApprovePendingBatch } = require('../../server/enrichment/_lib/auto-approve');
     const result = await autoApprovePendingBatch(req.body ?? {});
     return res.status(200).json(result);
   } catch (error) {

@@ -126,6 +126,8 @@ export interface CommunityTip {
 }
 
 export interface VenueDetail extends Venue {
+  website?: string;
+  phone?: string;
   photos: string[];
   facilities: FacilityType[];
   openingHours: string;

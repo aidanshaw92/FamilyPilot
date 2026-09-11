@@ -29,7 +29,7 @@ describe('opening status helpers', () => {
 describe('weather provider', () => {
   it('maps OpenWeather conditions into FamilyPilot weather types', async () => {
     const { mapOpenWeatherCondition, estimateWeatherFallback } = await import(
-      '../../../api/context/lib/weather-provider.js'
+      '../../../server/context/lib/weather-provider.js'
     );
 
     expect(mapOpenWeatherCondition('Rain', 90)).toBe('rainy');
@@ -45,7 +45,7 @@ describe('weather provider', () => {
 
 describe('journey provider', () => {
   it('estimates drive times when no maps key is configured', async () => {
-    const { estimateJourneys } = await import('../../../api/context/lib/journey-provider.js');
+    const { estimateJourneys } = await import('../../../server/context/lib/journey-provider.js');
 
     const journeys = estimateJourneys(
       { latitude: 51.64, longitude: -0.36 },

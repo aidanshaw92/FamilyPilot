@@ -1,5 +1,5 @@
-import { useMemo, useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useEffect, useState } from 'react';
+import { TextInput, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FilterSheet } from '@/src/components/explore/FilterSheet';
 import { RestaurantCard } from '@/src/components/restaurant/RestaurantCard';
@@ -14,6 +14,7 @@ import { buildExploreEditorialSections } from '@/src/utils/explore-editorial-sec
 import { EXPLORE_CATEGORIES, filterVenues } from '@/src/utils/filter-venues';
 
 export default function ExploreScreen() {
+  const [search, setSearch] = useState('');
   const { data: venues, isLoading: venuesLoading, isError: venuesError, refetch: refetchVenues } =
     useNearbyVenues();
   const {
@@ -58,12 +59,12 @@ export default function ExploreScreen() {
             exploreMaxDrive,
             profile?.maxDriveMinutes ?? 30,
             exploreBudget,
-          )
+          ).filter(v => `${v.name} ${v.address ?? ''}`.toLowerCase().includes(search.toLowerCase().trim()))
         : [],
-    [venues, categoryFilter, advancedFilters, exploreMaxDrive, exploreBudget, profile?.maxDriveMinutes],
+    [venues, categoryFilter, advancedFilters, exploreMaxDrive, exploreBudget, profile?.maxDriveMinutes, search],
   );
 
-  const useEditorialLayout =
+  const useEditorialLayout = false &&
     !isRestaurantMode &&
     categoryFilter === 'all' &&
     advancedFilters.length === 0 &&
@@ -111,15 +112,16 @@ export default function ExploreScreen() {
   return (
     <ScreenContainer>
       <View style={styles.header}>
-        <Text variant="caption" style={styles.eyebrow}>FIND YOUR NEXT FAMILY DAY</Text>
-        <Text variant="heading1">Explore</Text>
+
+        <Text variant="heading2">Explore London</Text>
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
           {isRestaurantMode
             ? 'Family-friendly places to eat'
-            : 'Curated places for your family'}
+            : 'Parks, museums and days out across London'}
         </Text>
       </View>
 
+      <TextInput accessibilityLabel="Search places or areas" placeholder="Search places or areas" value={search} onChangeText={setSearch} style={{marginHorizontal:20,marginBottom:12,padding:14,borderRadius:14,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,fontFamily:'Inter_400Regular',fontSize:15,color:colors.text.primary}}/>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

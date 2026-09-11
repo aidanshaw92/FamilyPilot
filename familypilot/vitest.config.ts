@@ -8,6 +8,9 @@ export default defineConfig({
     },
   },
   test: {
+    // Legacy enrichment tests share .data fixture files across suites.
+    // Serialise files until those fixtures have independent temporary stores.
+    fileParallelism: false,
     environment: 'node',
     include: ['src/__tests__/**/*.test.ts'],
   },

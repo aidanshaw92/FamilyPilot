@@ -3,19 +3,19 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   extractEvidenceFromText,
   buildEvidenceBundle,
-} from '../../../api/enrichment/_lib/evidence-extractor.js';
+} from '../../../server/enrichment/_lib/evidence-extractor.js';
 import {
   discoverSourceUrls,
   mergePageCandidates,
   buildCommonPathCandidates,
-} from '../../../api/enrichment/_lib/source-discovery.js';
+} from '../../../server/enrichment/_lib/source-discovery.js';
 import {
   findRelevantLinks,
   extractPageContent,
   isCloudflareChallenge,
-} from '../../../api/enrichment/_lib/html-text-extractor.js';
-import { isPrivateIp, validateUrlString } from '../../../api/enrichment/_lib/source-fetch-security.js';
-import { isCacheFresh } from '../../../api/enrichment/_lib/evidence-store.js';
+} from '../../../server/enrichment/_lib/html-text-extractor.js';
+import { isPrivateIp, validateUrlString } from '../../../server/enrichment/_lib/source-fetch-security.js';
+import { isCacheFresh } from '../../../server/enrichment/_lib/evidence-store.js';
 
 describe('source fetch security (SSRF)', () => {
   it('blocks localhost and private IP literals', () => {
@@ -187,7 +187,7 @@ describe('evidence extraction', () => {
 
 describe('mock AI provider — no hallucination', () => {
   it('does not invent toilets without evidence', async () => {
-    const { generateMockDraft } = await import('../../../api/enrichment/_lib/ai-provider.js');
+    const { generateMockDraft } = await import('../../../server/enrichment/_lib/ai-provider.js');
     const result = generateMockDraft({
       familypilotPlaceId: 'fp-google-test',
       name: 'Headstone Manor and Museum',
@@ -200,7 +200,7 @@ describe('mock AI provider — no hallucination', () => {
   });
 
   it('uses evidence when present', async () => {
-    const { generateMockDraft } = await import('../../../api/enrichment/_lib/ai-provider.js');
+    const { generateMockDraft } = await import('../../../server/enrichment/_lib/ai-provider.js');
     const bundle = buildEvidenceBundle(
       'fp-google-test',
       [
@@ -377,7 +377,7 @@ describe('focused recommendation QA regressions', () => {
   };
 
   it('Flip Out — parking negation yields parking=no not yes', async () => {
-    const { hasParkingNegation } = await import('../../../api/enrichment/_lib/evidence-extractor.js');
+    const { hasParkingNegation } = await import('../../../server/enrichment/_lib/evidence-extractor.js');
     const faqSentence =
       'We do not have on-site parking, however, there is a small retail park opposite - charges apply.';
     expect(hasParkingNegation(faqSentence)).toBe(true);
@@ -392,7 +392,7 @@ describe('focused recommendation QA regressions', () => {
 
   it('Verulamium Park — scoped toilet closure must not yield toilets=yes or venue-wide no', async () => {
     const { hasToiletNegation, isScopedToiletClosure } = await import(
-      '../../../api/enrichment/_lib/evidence-extractor.js'
+      '../../../server/enrichment/_lib/evidence-extractor.js'
     );
     const sentence =
       'The café is near the now closed public toilets at the far end of the park.';
@@ -408,7 +408,7 @@ describe('focused recommendation QA regressions', () => {
   });
 
   it('Golders Hill Park — address and public transport must not yield parking=yes', async () => {
-    const { hasExplicitParkingAvailability } = await import('../../../api/enrichment/_lib/evidence-extractor.js');
+    const { hasExplicitParkingAvailability } = await import('../../../server/enrichment/_lib/evidence-extractor.js');
     const sentence =
       'Golders Hill Park is located on North End Way. Public transport links are excellent with buses serving the area.';
     expect(hasExplicitParkingAvailability(sentence)).toBe(false);
@@ -432,7 +432,7 @@ describe('focused recommendation QA regressions', () => {
   });
 
   it('Warner Bros — generic changing facilities must not yield babyChanging=yes', async () => {
-    const { isExplicitBabyChangingStatement } = await import('../../../api/enrichment/_lib/evidence-extractor.js');
+    const { isExplicitBabyChangingStatement } = await import('../../../server/enrichment/_lib/evidence-extractor.js');
     const sentence =
       'We offer a cloakroom, changing facilities and accessibility support throughout the tour.';
     expect(isExplicitBabyChangingStatement(sentence)).toBe(false);
@@ -456,7 +456,7 @@ describe('focused recommendation QA regressions', () => {
   });
 
   it('RAF — indoors and outdoors wording yields environment=mixed', async () => {
-    const { extractEnvironmentEvidence } = await import('../../../api/enrichment/_lib/environment-evidence.js');
+    const { extractEnvironmentEvidence } = await import('../../../server/enrichment/_lib/environment-evidence.js');
     const fact = extractEnvironmentEvidence(
       'Whatever the weather, see their faces light up as they explore stories indoors and play outdoors at RAF Museum London this summer.',
       sourceMeta,
@@ -466,7 +466,7 @@ describe('focused recommendation QA regressions', () => {
   });
 
   it('Flip Out — indoor from official page title yields environment=indoor', async () => {
-    const { extractEnvironmentEvidence } = await import('../../../api/enrichment/_lib/environment-evidence.js');
+    const { extractEnvironmentEvidence } = await import('../../../server/enrichment/_lib/environment-evidence.js');
     const fact = extractEnvironmentEvidence('Explore attractions and book a session.', {
       ...sourceMeta,
       url: 'https://www.flipout.co.uk/locations/brent-cross',
@@ -476,7 +476,7 @@ describe('focused recommendation QA regressions', () => {
   });
 
   it('RAF — wheelchairs and pushchairs with wide aisles yields pushchair=good', async () => {
-    const { extractPushchairEvidence } = await import('../../../api/enrichment/_lib/pushchair-evidence.js');
+    const { extractPushchairEvidence } = await import('../../../server/enrichment/_lib/pushchair-evidence.js');
     const text =
       'Wide aisles, enabling access for wheelchairs and pushchairs. Lifts to upper levels. We have step free access around our site.';
     const fact = extractPushchairEvidence(text, {
@@ -490,7 +490,7 @@ describe('focused recommendation QA regressions', () => {
 
   it('snippet cleanup removes navigation/header labels from evidence excerpts', async () => {
     const { cleanEvidenceSnippet, stripNavFragmentPrefixes } = await import(
-      '../../../api/enrichment/_lib/evidence-text-utils.js'
+      '../../../server/enrichment/_lib/evidence-text-utils.js'
     );
     const noisy =
       'All parking information Toilet Facilities All our hangars have accessible toilets.';
@@ -535,7 +535,7 @@ describe('focused recommendation QA regressions', () => {
   });
 
   it('environment evidence merges into draft JSON', async () => {
-    const { mergeEvidenceIntoDraft } = await import('../../../api/enrichment/_lib/evidence-draft-merge.js');
+    const { mergeEvidenceIntoDraft } = await import('../../../server/enrichment/_lib/evidence-draft-merge.js');
     const bundle = buildEvidenceBundle(
       'fp-test',
       [
@@ -552,7 +552,7 @@ describe('focused recommendation QA regressions', () => {
       ],
       'official_website',
     );
-    const { normaliseDraftJson } = await import('../../../api/enrichment/_lib/ai-draft-schema.js');
+    const { normaliseDraftJson } = await import('../../../server/enrichment/_lib/ai-draft-schema.js');
     const draft = mergeEvidenceIntoDraft(
       normaliseDraftJson({
         recommendedAge: { min: null, max: null, notes: null, confidence: 'unknown' },
@@ -572,7 +572,7 @@ describe('focused recommendation QA regressions', () => {
 
 describe('draft schema evidence fields', () => {
   it('preserves sourceUrl and evidence on normalised fields', async () => {
-    const { normaliseDraftJson } = await import('../../../api/enrichment/_lib/ai-draft-schema.js');
+    const { normaliseDraftJson } = await import('../../../server/enrichment/_lib/ai-draft-schema.js');
     const draft = normaliseDraftJson({
       familyFacilities: {
         toilets: {
@@ -596,7 +596,7 @@ describe('draft schema evidence fields', () => {
 
 describe('approval provenance preserves evidence', () => {
   it('includes fieldEvidence in sourceReference', async () => {
-    const { draftJsonToSavePayload } = await import('../../../api/enrichment/_lib/ai-draft-mapper.js');
+    const { draftJsonToSavePayload } = await import('../../../server/enrichment/_lib/ai-draft-mapper.js');
     const payload = draftJsonToSavePayload(
       {
         recommendedAge: { min: null, max: null, notes: null, confidence: 'unknown' },
@@ -824,7 +824,7 @@ describe('evidence quality gates', () => {
     expect(parking?.conflicts).toHaveLength(2);
   });
 
-  it('uses the most cautious supported pushchair classification', () => {
+  it('requires a recheck for conflicting pushchair classifications', () => {
     const bundle = buildEvidenceBundle('venue-1', [
       {
         url: 'https://example.org/a',
@@ -842,6 +842,6 @@ describe('evidence quality gates', () => {
       },
     ], 'official_website');
 
-    expect(bundle.facts.find((fact) => fact.field === 'pushchairSuitability')?.value).toBe('mixed');
+    expect(bundle.facts.find((fact) => fact.field === 'pushchairSuitability')?.evidenceStatus).toBe('conflict');
   });
 });

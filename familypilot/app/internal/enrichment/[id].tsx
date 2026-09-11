@@ -770,7 +770,7 @@ function DraftField({
       ) : null}
       {conflict?.conflicts.map((entry, index) => (
         <Text key={`${entry.sourceUrl ?? index}`} variant="caption" color={colors.text.secondary}>
-          {entry.value} ({entry.confidence}): &quot;{(entry.evidenceText ?? entry.evidence ?? '').slice(0, 120)}&quot;
+          {entry.value} ({entry.confidence}): &quot;{(entry.evidenceText ?? '').slice(0, 120)}&quot;
         </Text>
       ))}
       <Text variant="bodySmall">

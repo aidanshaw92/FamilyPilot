@@ -17,8 +17,8 @@ import { enrichmentFetch } from './enrichment-api-client.mjs';
 const require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
-const { findVenueAliasPairs } = require(join(root, 'api/places/lib/venue-alias-detection.js'));
-const { listDuplicateGroups } = require(join(root, 'api/places/lib/canonical-venues.js'));
+const { findVenueAliasPairs } = require(join(root, 'server/places/lib/venue-alias-detection.js'));
+const { listDuplicateGroups } = require(join(root, 'server/places/lib/canonical-venues.js'));
 
 async function loadPlaceRecordsFromQueue() {
   const { items } = await enrichmentFetch('queue', { query: { sort: 'alphabetical' } });

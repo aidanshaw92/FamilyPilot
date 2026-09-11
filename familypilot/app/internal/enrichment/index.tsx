@@ -46,9 +46,9 @@ export default function EnrichmentQueueScreen() {
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sort, setSort] = useState('nearest');
-  const [betaLat, setBetaLat] = useState(DEFAULT_BETA.lat);
-  const [betaLng, setBetaLng] = useState(DEFAULT_BETA.lng);
-  const [betaRadius, setBetaRadius] = useState(DEFAULT_BETA.radiusKm);
+  const [betaLat, setBetaLat] = useState<string>(DEFAULT_BETA.lat);
+  const [betaLng, setBetaLng] = useState<string>(DEFAULT_BETA.lng);
+  const [betaRadius, setBetaRadius] = useState<string>(DEFAULT_BETA.radiusKm);
 
   const load = useCallback(async () => {
     setLoading(true);

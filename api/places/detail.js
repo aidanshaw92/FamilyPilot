@@ -1,6 +1,6 @@
-const { getGooglePlace } = require('./lib/google-places');
-const { MOCK_FALLBACK } = require('./lib/fallback');
-const { getCanonicalIdentity, resolvePrimaryPlaceId } = require('./lib/canonical-venues');
+const { getGooglePlace } = require('../../server/places/lib/google-places');
+const { MOCK_FALLBACK } = require('../../server/places/lib/fallback');
+const { getCanonicalIdentity, resolvePrimaryPlaceId } = require('../../server/places/lib/canonical-venues');
 
 const MOCK_DETAILS = {
   'venue-1': {
@@ -90,7 +90,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { getConsumerMetadata } = require('../enrichment/_lib/consumer-projection');
+    const { getConsumerMetadata } = require('../../server/enrichment/_lib/consumer-projection');
     const metadata = await getConsumerMetadata(await resolvePrimaryPlaceId(id));
     if (metadata) {
       detail.metadata = metadata;

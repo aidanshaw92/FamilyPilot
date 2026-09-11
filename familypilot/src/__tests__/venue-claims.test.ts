@@ -91,11 +91,14 @@ function reviewFormFromDraft(draft: typeof SAMPLE_DRAFT) {
 
 describe('venue claims trust layer', () => {
   beforeEach(() => {
+    vi.useFakeTimers({toFake:['Date']});
+    vi.setSystemTime(new Date('2026-08-15T12:00:00Z'));
     isolateClaimsTests();
     clearClaimsFile();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     clearClaimsFile();
     restoreClaimsTests();
   });
@@ -104,7 +107,7 @@ describe('venue claims trust layer', () => {
     const {
       createClaimsFromApproval,
       getActiveClaims,
-    } = await import('../../../api/enrichment/_lib/claims-store.js');
+    } = await import('../../../server/enrichment/_lib/claims-store.js');
 
     await createClaimsFromApproval({
       familypilotPlaceId: 'fp-google-test-1',
@@ -129,7 +132,7 @@ describe('venue claims trust layer', () => {
       createClaimsFromApproval,
       listClaimsForVenue,
       getActiveClaims,
-    } = await import('../../../api/enrichment/_lib/claims-store.js');
+    } = await import('../../../server/enrichment/_lib/claims-store.js');
 
     await createClaimsFromApproval({
       familypilotPlaceId: 'fp-google-test-2',
@@ -187,7 +190,7 @@ describe('venue claims trust layer', () => {
       getActiveClaims,
       projectActiveClaimsToPayload,
       listClaimsForVenue,
-    } = await import('../../../api/enrichment/_lib/claims-store.js');
+    } = await import('../../../server/enrichment/_lib/claims-store.js');
 
     await createClaimsFromApproval({
       familypilotPlaceId: 'fp-google-test-3',
@@ -218,7 +221,7 @@ describe('venue claims trust layer', () => {
       createClaimsFromApproval,
       projectActiveClaimsToPayload,
       getActiveClaims,
-    } = await import('../../../api/enrichment/_lib/claims-store.js');
+    } = await import('../../../server/enrichment/_lib/claims-store.js');
 
     await createClaimsFromApproval({
       familypilotPlaceId: 'fp-google-test-4',
@@ -244,7 +247,7 @@ describe('venue claims trust layer', () => {
     const {
       createClaimsFromApproval,
       rebuildMetadataPayloadFromClaims,
-    } = await import('../../../api/enrichment/_lib/claims-store.js');
+    } = await import('../../../server/enrichment/_lib/claims-store.js');
 
     await createClaimsFromApproval({
       familypilotPlaceId: 'fp-google-test-5',
@@ -271,7 +274,7 @@ describe('venue claims trust layer', () => {
     const {
       createClaimsFromApproval,
       getActiveClaims,
-    } = await import('../../../api/enrichment/_lib/claims-store.js');
+    } = await import('../../../server/enrichment/_lib/claims-store.js');
 
     await createClaimsFromApproval({
       familypilotPlaceId: 'fp-google-test-6',
@@ -293,6 +296,8 @@ describe('venue claims trust layer', () => {
 
 describe('approveDraft integration with claims', () => {
   beforeEach(() => {
+    vi.useFakeTimers({toFake:['Date']});
+    vi.setSystemTime(new Date('2026-08-15T12:00:00Z'));
     isolateClaimsTests();
     clearClaimsFile();
     const storePath = path.join(process.cwd(), '.data', 'enrichment-store.json');
@@ -350,14 +355,15 @@ describe('approveDraft integration with claims', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     clearClaimsFile();
     restoreClaimsTests();
   });
 
   it('approveDraft creates claims then projects into metadata', async () => {
-    const { approveDraft } = await import('../../../api/enrichment/_lib/draft-store.js');
-    const { getActiveClaims } = await import('../../../api/enrichment/_lib/claims-store.js');
-    const { getMetadata } = await import('../../../api/enrichment/_lib/enrichment-store.js');
+    const { approveDraft } = await import('../../../server/enrichment/_lib/draft-store.js');
+    const { getActiveClaims } = await import('../../../server/enrichment/_lib/claims-store.js');
+    const { getMetadata } = await import('../../../server/enrichment/_lib/enrichment-store.js');
 
     const editorPayload = {
       minRecommendedAge: 2,
@@ -390,8 +396,8 @@ describe('approveDraft integration with claims', () => {
   });
 
   it('approveDraft does not create claims for fields absent from editor review form', async () => {
-    const { approveDraft } = await import('../../../api/enrichment/_lib/draft-store.js');
-    const { getActiveClaims } = await import('../../../api/enrichment/_lib/claims-store.js');
+    const { approveDraft } = await import('../../../server/enrichment/_lib/draft-store.js');
+    const { getActiveClaims } = await import('../../../server/enrichment/_lib/claims-store.js');
 
     const partialReview = {
       familyFacilities: { parking: 'yes' as const },
@@ -414,18 +420,21 @@ describe('approveDraft integration with claims', () => {
 
 describe('editorial claim projection', () => {
   beforeEach(() => {
+    vi.useFakeTimers({toFake:['Date']});
+    vi.setSystemTime(new Date('2026-08-15T12:00:00Z'));
     isolateClaimsTests();
     clearClaimsFile();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     clearClaimsFile();
     restoreClaimsTests();
   });
 
   it('projects reviewed visit duration and estimated spend from active claims', async () => {
     const { createClaimsFromApproval, rebuildMetadataPayloadFromClaims } = await import(
-      '../../../api/enrichment/_lib/claims-store.js'
+      '../../../server/enrichment/_lib/claims-store.js'
     );
 
     await createClaimsFromApproval({

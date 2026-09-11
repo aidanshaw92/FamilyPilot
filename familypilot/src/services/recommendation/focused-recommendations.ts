@@ -25,14 +25,17 @@ export async function getFocusedRecommendations(
   const params = {
     latitude: home.latitude,
     longitude: home.longitude,
-    radiusKm: (profile.maxDriveMinutes / 60) * 40 * 1.2,
+    radiusKm: ((request.constraints.journey?.value.maxMinutes ?? request.maxDriveMinutes) / 60) * 40 * 1.2,
     intent: 'explore' as const,
   };
 
   let places = [];
   try {
     const result = await placesApiClient.search(params);
-    places = result.places;
+    if (result.provider === 'mock') {
+      return { request, recommendations: [], eligibleCount: 0, message: 'Live places are unavailable. Please try again later.' };
+    }
+    places = result.places.filter(place => place.provider !== 'mock');
   } catch {
     return {
       request,

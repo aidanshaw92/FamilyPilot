@@ -8,7 +8,7 @@ describe('buildProactiveDayRequest', () => {
     const request = buildProactiveDayRequest(
       mockFamilyProfile,
       mockWeather,
-      new Date('2026-08-10T09:30:00.000Z'),
+      new Date(2026, 7, 10, 9, 30),
     );
 
     expect(request.childAges).toEqual([4, 1]);
@@ -59,7 +59,7 @@ describe('buildProactiveDayRequest', () => {
     const request = buildProactiveDayRequest(
       mockFamilyProfile,
       mockWeather,
-      new Date('2026-08-10T18:00:00.000Z'),
+      new Date(2026, 7, 10, 18, 0),
     );
 
     expect(request.constraints.energyLevel).toEqual({

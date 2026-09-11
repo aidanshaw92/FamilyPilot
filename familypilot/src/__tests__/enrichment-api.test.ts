@@ -6,9 +6,9 @@ const {
   isAuthConfigured,
   getTokenFromRequest,
   normalizeToken,
-} = require('../../../api/enrichment/_lib/auth');
+} = require('../../../server/enrichment/_lib/auth');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { validateVerifiedRequirements, resolveEnrichmentStatus } = require('../../../api/enrichment/_lib/validation');
+const { validateVerifiedRequirements, resolveEnrichmentStatus } = require('../../../server/enrichment/_lib/validation');
 
 describe('enrichment API auth', () => {
   it('rejects requests without token', () => {
@@ -138,7 +138,7 @@ describe('supabase admin client', () => {
   const {
     assertServiceRoleKey,
     decodeJwtRole,
-  } = require('../../../api/enrichment/_lib/supabase-admin');
+  } = require('../../../server/enrichment/_lib/supabase-admin');
 
   function makeJwt(role: string) {
     const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');

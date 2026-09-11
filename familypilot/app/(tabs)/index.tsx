@@ -1,12 +1,20 @@
+import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { DecisionCard } from '@/src/components/shared/DecisionCard';
+import { useFiltersStore } from '@/src/stores/filters-store';
+import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FocusedRecommendationCard } from '@/src/components/home/FocusedRecommendationCard';
+import { OutingPreferences } from '@/src/components/home/OutingPreferences';
+import { Button } from '@/src/components/ui/Button';
 import { ScreenContainer, ScreenHeader } from '@/src/components/shared/ScreenContainer';
 import { EmptyState, ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import {
   useFamilyProfile,
+  useNearbyVenues,
   useFocusedRecommendations,
   useProactiveHomeRequest,
   useWeather,
@@ -18,6 +26,9 @@ function getTimeGreeting(): string {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const { data: places, isLoading: placesLoading, isError: placesError, refetch: retryPlaces } = useNearbyVenues();
+  const browse = (category: string) => { useFiltersStore.getState().resetExploreFilters(); useFiltersStore.getState().setCategoryFilter(category); router.push('/(tabs)/explore' as never); };
   const { data: profile } = useFamilyProfile();
   const { data: weather } = useWeather();
   const { parsedRequest, isProactive } = useProactiveHomeRequest();
@@ -34,14 +45,6 @@ export default function HomeScreen() {
   const topPick = recommendations[0];
   const moreIdeas = recommendations.slice(1);
 
-  if (recsError) {
-    return (
-      <ScreenContainer>
-        <ErrorState onRetry={() => void refetch()} />
-      </ScreenContainer>
-    );
-  }
-
   return (
     <ScreenContainer>
       <ScreenHeader
@@ -53,25 +56,26 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        <Text variant="heading3" style={{marginBottom:12}}>What would you like to do today?</Text>
+        <View style={{flexDirection:'row',gap:8,marginBottom:20}}>
+          {([
+            ['Go outside','leaf-outline','parks','#E9F8EF'],
+            ['Indoor activities','home-outline','museums','#F0EDFF'],
+            ['Plan a day','calendar-outline','plan','#EAF4FF'],
+            ['Explore London','compass-outline','all','#FFF0F4'],
+          ] as const).map(([label,icon,category,bg]) => <Pressable key={label} accessibilityRole="button" onPress={() => category === 'plan' ? router.push('/(tabs)/trips' as never) : browse(category)} style={{flex:1,alignItems:'center',gap:8,paddingVertical:14,paddingHorizontal:4,borderRadius:14,backgroundColor:bg}}><Ionicons name={icon} size={25} color={colors.primary[600]}/><Text variant="caption" style={{textAlign:'center'}}>{label}</Text></Pressable>)}
+        </View>
+        <Pressable accessibilityRole="button" onPress={() => setPreferencesOpen(!preferencesOpen)} style={{paddingVertical:12,marginBottom:12}}><Text variant="bodySmall" color={colors.primary[600]}>Adjust today's preferences {preferencesOpen ? '−' : '+'}</Text></Pressable>
+        {preferencesOpen ? <OutingPreferences request={parsedRequest} /> : null}
+        <PostVisitInbox/>
+        {recsError ? <ErrorState onRetry={() => void refetch()} /> : null}
         {recsLoading ? (
           <View style={styles.skeletonRow}>
             <SkeletonDecisionCard />
           </View>
         ) : null}
 
-        {!recsLoading && recommendations.length === 0 ? (
-          <EmptyState
-            icon="compass-outline"
-            title="No matches with confirmed details"
-            message={
-              focusedResult?.message ??
-              'Try describing what you need below, or explore nearby venues.'
-            }
-            actionLabel="Explore"
-            onAction={() => router.push('/(tabs)/explore' as never)}
-          />
-        ) : null}
-
+        {!recsLoading && recommendations.length === 0 ? <Text variant="bodySmall" color={colors.text.secondary} style={{marginBottom:16}}>Explore real places below. We’ll show personalised matches when the details meet your family’s requirements.</Text> : null}
         {topPick ? (
           <View style={styles.heroSection}>
               <View style={styles.sectionEyebrow}>
@@ -106,6 +110,10 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
+        <SectionHeader title="Explore London" subtitle="Real places across the city · check family facilities before visiting" actionLabel="See all" onAction={() => browse('all')}/>
+        {placesLoading ? <SkeletonDecisionCard/> : null}
+        {placesError ? <ErrorState onRetry={() => void retryPlaces()}/> : null}
+        {places?.slice(0,8).map((venue,index) => <DecisionCard key={venue.id} venue={venue} variant={index === 0 ? 'hero' : 'list'} index={index}/>)}
       </ScrollView>
     </ScreenContainer>
   );

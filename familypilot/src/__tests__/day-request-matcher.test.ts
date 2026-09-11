@@ -221,7 +221,7 @@ describe('day-request matcher', () => {
 
 describe('day-request schema guard', () => {
   it('rejects parsed output that includes venue IDs', async () => {
-    const { normaliseDayRequest } = await import('../../../api/recommendations/day-request-schema.js');
+    const { normaliseDayRequest } = await import('../../../server/recommendations/day-request-schema.js');
     expect(() =>
       normaliseDayRequest({ venueId: 'fp-google-x', constraints: {} }, {
         members: [{ role: 'child', age: 3 }],

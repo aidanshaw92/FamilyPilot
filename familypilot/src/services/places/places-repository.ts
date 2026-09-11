@@ -43,9 +43,9 @@ export class PlacesRepository {
   async searchNearby(profile: FamilyProfile, categories?: VenueCategory[]): Promise<Venue[]> {
     const home = resolveHomeCoordinates(profile.homeLocation);
     const params: PlaceSearchParams = {
-      latitude: home.latitude,
-      longitude: home.longitude,
-      radiusKm: (profile.maxDriveMinutes / 60) * 40 * 1.2,
+      latitude: 51.5074,
+      longitude: -0.1278,
+      radiusKm: 40,
       categories,
       intent: 'explore',
     };
@@ -65,6 +65,7 @@ export class PlacesRepository {
 
     try {
       const result = await placesApiClient.search(params);
+      if (result.provider === 'mock') throw new Error('Live places unavailable');
       await setCachedSearch(cacheKey, result);
       return result.places.map((place) =>
         mergePlaceToVenue(
@@ -78,7 +79,7 @@ export class PlacesRepository {
       if (__DEV__) {
         console.warn('[PlacesRepository] API unavailable, using mock fallback:', error);
       }
-      return fallbackSearch(params);
+      throw new Error('Could not load live places. Please retry.');
     }
   }
 

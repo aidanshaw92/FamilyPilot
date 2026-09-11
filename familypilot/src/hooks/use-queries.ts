@@ -86,7 +86,7 @@ export function useHomeRecommendations() {
 export function useFocusedRecommendations(request: import('@/src/types/day-request').DayRequest | null) {
   const profileRevision = useProfileRevision();
   return useQuery({
-    queryKey: ['recommendations', 'focused', profileRevision, request?.rawText, request?.parsedAt],
+    queryKey: ['recommendations', 'focused', profileRevision, request],
     queryFn: () => recommendationService.getFocusedRecommendations(request!),
     enabled: Boolean(request),
   });

@@ -145,7 +145,7 @@ Runtime DB writes deferred until Supabase service role is wired; schema is ready
 | `src/services/places/places-repository.ts` | Client orchestration + fallback |
 | `src/services/places/merge-place.ts` | Merge external + metadata → Venue |
 | `server/places/places-quality.ts` | Google taxonomy, exclusions, dedupe, ranking |
-| `api/places/lib/places-quality.js` | Vercel mirror of quality layer |
+| `server/places/lib/places-quality.js` | Vercel mirror of quality layer |
 | `api/places/search.ts` | Vercel search endpoint |
 | `api/places/detail.ts` | Vercel detail endpoint |
 | `supabase/migrations/002_place_records_and_metadata.sql` | DB schema |

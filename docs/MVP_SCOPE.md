@@ -26,7 +26,11 @@ For detailed future feature specs, see [FUTURE_BACKLOG.md](./FUTURE_BACKLOG.md) 
 
 ---
 
-## Current focus
+## September 2026 owner-prioritised expansion
+
+Aidan has explicitly prioritised routine-aware day planning, nearby meals and multi-family planning. The earlier postponement of those capabilities no longer applies to this build. See [FAMILY_PLANNING_BUILD.md](./FAMILY_PLANNING_BUILD.md) for the implementation, setup tasks, verification and remaining release gates. Existing tables below describe the August baseline and are historical.
+
+## Current focus (August baseline)
 
 **Collect structured feedback from 5–10 parents before building V2 features.**
 
