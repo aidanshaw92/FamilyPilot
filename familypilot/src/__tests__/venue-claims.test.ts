@@ -4,6 +4,25 @@ import path from 'path';
 
 const CLAIMS_PATH = path.join(process.cwd(), '.data', 'venue-claims.json');
 
+type VenueClaim = {
+  id: string;
+  fieldKey: string;
+  status: string;
+  valueJson: unknown;
+  sourceUrl?: string;
+  evidenceExcerpt?: string;
+  approvedFromDraftId?: string;
+  supersedesClaimId?: string | null;
+};
+
+type ProjectedClaimsPayload = {
+  familyFacilities?: Record<string, unknown>;
+  accessibility?: Record<string, unknown>;
+  sendInfo?: Record<string, unknown>;
+  pushchairSuitability?: unknown;
+  extendedTerrain?: unknown;
+};
+
 let savedSupabaseUrl: string | undefined;
 let savedSupabaseKey: string | undefined;
 
@@ -118,7 +137,7 @@ describe('venue claims trust layer', () => {
       checkedAt: '2026-08-09',
     });
 
-    const claims = await getActiveClaims('fp-google-test-1');
+    const claims = (await getActiveClaims('fp-google-test-1')) as VenueClaim[];
     const parking = claims.find((c) => c.fieldKey === 'familyFacilities.parking');
     expect(parking).toBeDefined();
     expect(parking?.valueJson).toBe('yes');
@@ -170,11 +189,11 @@ describe('venue claims trust layer', () => {
       checkedAt: '2026-08-10',
     });
 
-    const active = await getActiveClaims('fp-google-test-2');
+    const active = (await getActiveClaims('fp-google-test-2')) as VenueClaim[];
     const parkingActive = active.find((c) => c.fieldKey === 'familyFacilities.parking');
     expect(parkingActive?.valueJson).toBe('no');
 
-    const all = await listClaimsForVenue('fp-google-test-2');
+    const all = (await listClaimsForVenue('fp-google-test-2')) as VenueClaim[];
     const parkingClaims = all.filter((c) => c.fieldKey === 'familyFacilities.parking');
     expect(parkingClaims).toHaveLength(2);
     expect(parkingClaims.some((c) => c.status === 'superseded')).toBe(true);
@@ -201,7 +220,7 @@ describe('venue claims trust layer', () => {
       checkedAt: '2026-08-09',
     });
 
-    const claims = await listClaimsForVenue('fp-google-test-3');
+    const claims = (await listClaimsForVenue('fp-google-test-3')) as VenueClaim[];
     const toilets = claims.find((c) => c.fieldKey === 'familyFacilities.toilets' && c.status === 'active');
     const parking = claims.find((c) => c.fieldKey === 'familyFacilities.parking' && c.status === 'active');
 
@@ -209,7 +228,7 @@ describe('venue claims trust layer', () => {
     await expireClaim(parking!.id);
 
     const active = await getActiveClaims('fp-google-test-3');
-    const projected = projectActiveClaimsToPayload(active);
+    const projected = projectActiveClaimsToPayload(active) as ProjectedClaimsPayload;
 
     expect(projected.familyFacilities?.toilets).toBeUndefined();
     expect(projected.familyFacilities?.parking).toBeUndefined();
@@ -233,7 +252,7 @@ describe('venue claims trust layer', () => {
     });
 
     const active = await getActiveClaims('fp-google-test-4');
-    const projected = projectActiveClaimsToPayload(active);
+    const projected = projectActiveClaimsToPayload(active) as ProjectedClaimsPayload;
 
     expect(projected.familyFacilities?.toilets).toBe('yes');
     expect(projected.familyFacilities?.parking).toBe('yes');
@@ -387,7 +406,7 @@ describe('approveDraft integration with claims', () => {
     const result = await approveDraft('fp-google-approve-test', editorPayload, 'editor@test');
     expect(result.draftId).toBe('draft-approve-1');
 
-    const claims = await getActiveClaims('fp-google-approve-test');
+    const claims = (await getActiveClaims('fp-google-approve-test')) as VenueClaim[];
     expect(claims.some((c) => c.fieldKey === 'familyFacilities.parking')).toBe(true);
 
     const metadata = await getMetadata('fp-google-approve-test');
@@ -408,7 +427,7 @@ describe('approveDraft integration with claims', () => {
 
     await approveDraft('fp-google-approve-test', partialReview, 'editor@test');
 
-    const claims = await getActiveClaims('fp-google-approve-test');
+    const claims = (await getActiveClaims('fp-google-approve-test')) as VenueClaim[];
     expect(claims.some((c) => c.fieldKey === 'familyFacilities.parking')).toBe(true);
     expect(claims.some((c) => c.fieldKey === 'familyFacilities.toilets')).toBe(false);
     expect(claims.some((c) => c.fieldKey === 'pushchairSuitability')).toBe(false);

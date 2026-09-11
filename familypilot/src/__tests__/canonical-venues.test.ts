@@ -109,7 +109,7 @@ describe('canonical venue identity', () => {
     });
 
     const store = await loadCanonicalStore(true);
-    const canonical = Object.values(store.canonicalVenues)[0];
+    const canonical = Object.values(store.canonicalVenues)[0] as { id: string };
     store.canonicalVenues[canonical.id].reviewStatus = 'rejected';
     fs.writeFileSync(storePath, JSON.stringify(store, null, 2));
     invalidateCanonicalCache();

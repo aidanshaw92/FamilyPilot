@@ -89,7 +89,7 @@ describe('claim source evidence linking', () => {
     });
 
     const claims = await getActiveClaims('fp-google-evidence-link');
-    const parking = claims.find((c) => c.fieldKey === 'familyFacilities.parking');
+    const parking = claims.find((c: { fieldKey: string }) => c.fieldKey === 'familyFacilities.parking');
     expect(parking?.sourceEvidenceId).toBeTruthy();
     expect(parking?.sourceUrl).toBe('https://example.org/parking');
   });

@@ -180,7 +180,7 @@ describe('consumer metadata projection', () => {
       draftId: null,
       checkedAt: '2026-08-10',
     });
-    await disputeClaim(claim.id);
+    await disputeClaim(claim!.id);
 
     const { getConsumerMetadata } = await import('../../../server/enrichment/_lib/consumer-projection.js');
     const result = await getConsumerMetadata(placeId);
