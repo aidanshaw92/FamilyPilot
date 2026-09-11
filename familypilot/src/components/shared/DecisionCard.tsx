@@ -3,6 +3,7 @@ import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { FadeInView } from '@/src/components/ui/FadeInView';
+import { FamilyMatch } from '@/src/components/ui/FamilyMatch';
 import { PressableScale } from '@/src/components/ui/PressableScale';
 import { Text } from '@/src/components/ui/Text';
 import { VenueImage } from '@/src/components/ui/VenueImage';
@@ -64,13 +65,22 @@ function DecisionCardComponent({
           variant === 'hero' && styles.hero,
         ]}
       >
-        <VenueImage
-          uri={venue.imageUrl}
-          category={venue.category}
-          alt={venue.name}
-          style={isHero ? { ...styles.image, ...styles.heroImage } : styles.image}
-          borderRadius={isHero ? radius.lg : 0}
-        />
+        <View style={isHero ? styles.heroImageWrap : styles.imageWrap}>
+          <VenueImage
+            uri={venue.imageUrl}
+            category={venue.category}
+            alt={venue.name}
+            style={isHero ? { ...styles.image, ...styles.heroImage } : styles.image}
+            borderRadius={isHero ? radius.lg : 0}
+          />
+          <View style={styles.badgeOverlay}>
+            <FamilyMatch
+              score={venue.familyScore.score}
+              variant="card"
+              enrichmentStatus={venue.enrichmentStatus}
+            />
+          </View>
+        </View>
 
         <View style={styles.content}>
           <Text variant={isHero ? 'heading2' : 'heading3'} numberOfLines={1}>
@@ -157,12 +167,23 @@ const styles = StyleSheet.create({
     borderColor: colors.primary[100],
     ...shadows.bottomSheet,
   },
+  imageWrap: {
+    width: '100%',
+  },
+  heroImageWrap: {
+    width: '100%',
+  },
   image: {
     width: '100%',
     height: 150,
   },
   heroImage: {
     height: 220,
+  },
+  badgeOverlay: {
+    position: 'absolute',
+    top: spacing.md,
+    left: spacing.md,
   },
   content: {
     padding: spacing.lg,

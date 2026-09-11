@@ -47,7 +47,7 @@ export function FamilyMatch({ score, variant = 'compact', style, enrichmentStatu
         accessibilityRole="text"
         accessibilityLabel={classification}
       >
-        <Text variant="caption" color={colors.text.inverse} style={styles.cardPrimary}>
+        <Text variant="caption" color={colors.secondary[600]} style={styles.cardPrimary}>
           {displayLabel}
         </Text>
       </View>
@@ -87,10 +87,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   card: {
-    backgroundColor: colors.secondary[600],
+    // rgba, not colors.surface + opacity: View opacity would fade the label text too.
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: radius.md,
+    borderRadius: radius.full,
     maxWidth: 160,
   },
   cardPrimary: {
