@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RestaurantFacilities } from '@/src/components/restaurant/RestaurantFacilities';
 import { RecommendationPattern } from '@/src/components/shared/RecommendationPattern';
 import { DeferredPilotGate } from '@/src/components/shared/DeferredPilotGate';
+import { VenueTrustPanel } from '@/src/components/planning/VisitFeedback';
 import { SaveButton } from '@/src/components/shared/SaveButton';
 import { ShareButton } from '@/src/components/shared/ShareButton';
 import {
@@ -320,6 +321,8 @@ function RestaurantScreenContent() {
             <Text variant="body" style={styles.description}>
               {restaurant.description}
             </Text>
+
+            <VenueTrustPanel venueId={restaurant.id} />
           </FadeInView>
         </View>
       </AnimatedScrollView>
