@@ -9,6 +9,7 @@ import { Text } from '@/src/components/ui/Text';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
+import { getMatchClassification } from '@/src/utils/family-match-classification';
 
 import { RecommendationPattern } from './RecommendationPattern';
 
@@ -36,22 +37,56 @@ function DecisionCardComponent({
     router.push(`/venue/${venue.id}` as never);
   };
 
-  if (variant === 'list') return (
-    <PressableScale onPress={handleViewDetails} accessibilityRole="button" accessibilityLabel={`${venue.name}, view details`} style={styles.compact}>
-      <VenueImage uri={venue.imageUrl} category={venue.category} alt={venue.name} style={styles.compactImage} />
-      <View style={styles.compactContent}>
-        <View style={styles.compactTitleRow}>
-          <Text variant="heading3" numberOfLines={2} style={styles.compactTitle}>{venue.name}</Text>
-          <View style={styles.scoreBadge} accessibilityLabel={`Family Match ${venue.familyScore.score}`}>
-            <Text variant="bodySmall" style={styles.scoreText}>{venue.familyScore.score}</Text>
+  if (variant === 'list') {
+    const classification = getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
+    // Same shortening rule as FamilyMatch's badge: "Great match" -> "Great", but leave
+    // "Potential match" alone for unreviewed venues (there's no score behind it to shorten to).
+    const pillLabel =
+      venue.enrichmentStatus === 'provider_only' ? classification : classification.replace(' match', '');
+    const reason = venue.familyScore.explanation[0];
+
+    return (
+      <PressableScale
+        onPress={handleViewDetails}
+        accessibilityRole="button"
+        accessibilityLabel={`${venue.name}, ${classification}, view details`}
+        style={styles.compact}
+      >
+        <View style={styles.compactAccent} />
+        <VenueImage
+          uri={venue.imageUrl}
+          category={venue.category}
+          alt={venue.name}
+          style={styles.compactImage}
+          borderRadius={0}
+        />
+        <View style={styles.compactContent}>
+          <View style={styles.compactTitleRow}>
+            <Text variant="heading3" numberOfLines={2} style={styles.compactTitle}>
+              {venue.name}
+            </Text>
+            <View style={styles.matchPill}>
+              <Text variant="caption" style={styles.matchPillText}>
+                {pillLabel}
+              </Text>
+            </View>
           </View>
+          {reason ? (
+            <Text variant="bodySmall" color={colors.text.secondary} numberOfLines={2} style={styles.compactReason}>
+              {reason}
+            </Text>
+          ) : null}
+          <Text variant="caption" color={colors.text.tertiary}>
+            {venue.category.replace('_', ' ')} · {venue.driveMinutes} min away
+            {venue.estimatedSpend ? ` · ${venue.estimatedSpend}` : ''}
+          </Text>
+          <Text variant="caption" color={colors.primary[600]} style={styles.compactCta}>
+            {venue.enrichmentStatus === 'provider_only' ? 'Family details to check' : 'View family details'} →
+          </Text>
         </View>
-        <Text variant="bodySmall" color={colors.text.secondary}>{venue.category.replace('_', ' ')} · ~{venue.driveMinutes} min drive</Text>
-        {venue.address ? <Text variant="caption" color={colors.text.secondary} numberOfLines={1}>{venue.address}</Text> : null}
-        <Text variant="caption" color={colors.primary[600]}>{venue.enrichmentStatus === 'provider_only' ? 'Family details to check' : 'View family details'} →</Text>
-      </View>
-    </PressableScale>
-  );
+      </PressableScale>
+    );
+  }
 
   return (
     <FadeInView delay={index * 60} style={variant === 'carousel' ? styles.carouselWrap : undefined}>
@@ -105,23 +140,25 @@ export const DecisionCard = memo(DecisionCardComponent);
 const styles = StyleSheet.create({
   compact: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.md,
+    alignItems: 'stretch',
     marginBottom: spacing.sm,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
+    overflow: 'hidden',
     ...shadows.card,
+  },
+  // Left edge accent signals match quality at a glance without covering the photo.
+  compactAccent: {
+    width: 4,
+    backgroundColor: colors.secondary[500],
   },
   compactImage: {
     width: 92,
-    height: 92,
   },
   compactContent: {
     flex: 1,
     gap: spacing.xs,
+    padding: spacing.md,
   },
   compactTitleRow: {
     flexDirection: 'row',
@@ -131,20 +168,23 @@ const styles = StyleSheet.create({
   compactTitle: {
     flex: 1,
   },
-  scoreBadge: {
-    minWidth: 36,
-    height: 28,
+  matchPill: {
     paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
     borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: colors.secondary[50],
     borderWidth: 1,
     borderColor: colors.secondary[100],
   },
-  scoreText: {
+  matchPillText: {
     color: colors.secondary[600],
-    fontFamily: 'Inter_700Bold',
+    fontFamily: 'Inter_600SemiBold',
+  },
+  compactReason: {
+    lineHeight: 18,
+  },
+  compactCta: {
+    marginTop: 2,
   },
   carouselWrap: {
     marginRight: spacing.lg,
