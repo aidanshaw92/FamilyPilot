@@ -12,9 +12,11 @@ import { colors } from '@/src/design-system/tokens';
 import { spring } from '@/src/design-system/animations/presets';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { useSavedStore } from '@/src/stores/saved-store';
+import { Venue } from '@/src/types';
 
 interface SaveButtonProps {
   venueId: string;
+  venue?: Venue;
   size?: number;
   color?: string;
   filledColor?: string;
@@ -22,6 +24,7 @@ interface SaveButtonProps {
 
 export function SaveButton({
   venueId,
+  venue,
   size = 24,
   color = colors.text.primary,
   filledColor = colors.error[500],
@@ -51,7 +54,7 @@ export function SaveButton({
     void Haptics.impactAsync(
       saved ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium,
     );
-    toggleSaved(venueId);
+    toggleSaved(venueId, venue);
   };
 
   return (
