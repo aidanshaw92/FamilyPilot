@@ -198,7 +198,7 @@ function RestaurantScreenContent() {
           />
           <View style={[styles.heroContent, { paddingTop: insets.top + spacing.sm }]}>
             <BackButton onPress={handleBack} color={colors.text.inverse} />
-            <SaveButton venueId={restaurant.id} color={colors.text.inverse} />
+            <SaveButton venueId={restaurant.id} venue={restaurant} color={colors.text.inverse} />
           </View>
           <View style={styles.heroTitle}>
             <Text variant="heading1" color={colors.text.inverse}>
@@ -319,7 +319,7 @@ function RestaurantScreenContent() {
           label={saved ? 'Saved' : 'Save'}
           variant="outline"
           style={styles.footerButton}
-          onPress={() => toggleSaved(restaurant.id)}
+          onPress={() => toggleSaved(restaurant.id, restaurant, 'restaurant')}
         />
         <Button label="Get directions" style={styles.footerButton} onPress={handleDirections} />
       </View>
