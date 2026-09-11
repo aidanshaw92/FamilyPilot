@@ -19,6 +19,7 @@ export const FILTER_SHEET_OPTIONS = [
   { id: 'indoor', label: 'Indoor' },
   { id: 'outdoor', label: 'Outdoor' },
   { id: 'free', label: 'Free' },
+  { id: 'open_now', label: 'Open now' },
   { id: 'pushchair', label: 'Pushchair friendly' },
   { id: 'parking', label: 'Parking' },
   { id: 'toilets', label: 'Toilets' },
@@ -140,6 +141,11 @@ export function filterVenues(
           (v) =>
             v.estimatedSpend?.toLowerCase() === 'free' || v.estimatedSpend?.startsWith('£0'),
         );
+        break;
+      case 'open_now':
+        // isOpen is undefined when opening status isn't confirmed - only keep venues we know
+        // are open right now, not "assume open" for ones we simply haven't checked.
+        result = result.filter((v) => v.isOpen === true);
         break;
       case 'pushchair':
         result = result.filter((v) => venueHasFacility(v, 'pushchair_friendly'));
