@@ -46,6 +46,19 @@ export async function fetchLiveWeather(profile: FamilyProfile): Promise<WeatherI
   }
 }
 
+/**
+ * Same as fetchLiveWeather but never throws - callers that only want weather as a soft input to
+ * scoring (not the primary thing they're loading) should use this so a weather-provider outage
+ * doesn't also take down venue search/detail.
+ */
+export async function fetchLiveWeatherSafe(profile: FamilyProfile): Promise<WeatherInfo | null> {
+  try {
+    return await fetchLiveWeather(profile);
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchLiveDriveTimes(
   profile: FamilyProfile,
   destinations: JourneyDestination[],

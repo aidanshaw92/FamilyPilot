@@ -1,6 +1,6 @@
 import { mockVenueDetails, mockVenues } from '@/src/data/mock-data';
 import { calculateFamilyScore } from '@/src/services/scoring/family-score';
-import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDetail } from '@/src/types';
+import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDetail, WeatherInfo } from '@/src/types';
 
 import { getChildNames } from './profile-defaults';
 
@@ -27,10 +27,10 @@ function toVenueDetail(venue: Venue): VenueDetail {
   };
 }
 
-export function personaliseVenue(venue: Venue, profile: FamilyProfile): Venue {
+export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?: WeatherInfo | null): Venue {
   const detail = toVenueDetail(venue);
   const enrichmentStatus: EnrichmentStatus = venue.enrichmentStatus ?? 'provider_only';
-  const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus });
+  const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus, weather });
   return {
     ...venue,
     familyScore,
@@ -39,9 +39,9 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile): Venue {
   };
 }
 
-export function personaliseVenues(venues: Venue[], profile: FamilyProfile): Venue[] {
+export function personaliseVenues(venues: Venue[], profile: FamilyProfile, weather?: WeatherInfo | null): Venue[] {
   return venues
-    .map((venue) => personaliseVenue(venue, profile))
+    .map((venue) => personaliseVenue(venue, profile, weather))
     .filter((venue) => venue.driveMinutes <= profile.maxDriveMinutes + 10)
     .sort((a, b) => b.familyScore.score - a.familyScore.score);
 }

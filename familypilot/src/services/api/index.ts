@@ -25,7 +25,7 @@ import {
 } from '@/src/types';
 import { withCompletion } from '@/src/utils/profile-defaults';
 import { buildHomeRecommendations, personaliseVenue, personaliseVenues } from '@/src/utils/personalise-venues';
-import { fetchLiveWeather } from '@/src/services/context/live-context';
+import { fetchLiveWeather, fetchLiveWeatherSafe } from '@/src/services/context/live-context';
 import { getFocusedRecommendations } from '@/src/services/recommendation/focused-recommendations';
 import { parseDayRequest, parseDayRequestMock } from '@/src/services/recommendation/parse-day-request-client';
 import { DayRequest } from '@/src/types/day-request';
@@ -64,13 +64,19 @@ export const weatherService = {
 
 export const venueService = {
   async getNearby(): Promise<Venue[]> {
-    await delay(300);
     const profile = getProfile();
-    const venues = await getPlacesRepository().searchNearby(profile);
+    // Weather is a soft scoring input here, not the primary thing being loaded - fetch it
+    // alongside the venue search rather than blocking on it, and never let a weather-provider
+    // outage take down venue search (fetchLiveWeatherSafe resolves to null on failure).
+    const [, venues, weather] = await Promise.all([
+      delay(300),
+      getPlacesRepository().searchNearby(profile),
+      fetchLiveWeatherSafe(profile),
+    ]);
     // Explore is a London-wide discovery surface. Do not apply the normal max-drive cut-off here;
     // keep travel time visible and let the parent filter it explicitly when they want to.
     return venues
-      .map((venue) => personaliseVenue(venue, profile))
+      .map((venue) => personaliseVenue(venue, profile, weather))
       .sort((a, b) => b.familyScore.score - a.familyScore.score || a.driveMinutes - b.driveMinutes);
   },
 
@@ -81,23 +87,24 @@ export const venueService = {
     if (fromCentralLondonKm > 45) {
       throw new Error('Explore currently searches London and nearby areas. Try a London town or postcode.');
     }
-    const venues = await getPlacesRepository().searchAround(
-      profile,
-      location.latitude,
-      location.longitude,
-      8,
-    );
+    const [venues, weather] = await Promise.all([
+      getPlacesRepository().searchAround(profile, location.latitude, location.longitude, 8),
+      fetchLiveWeatherSafe(profile),
+    ]);
     return venues
-      .map((venue) => personaliseVenue(venue, profile))
+      .map((venue) => personaliseVenue(venue, profile, weather))
       .sort((a, b) => b.familyScore.score - a.familyScore.score || a.driveMinutes - b.driveMinutes);
   },
 
   async getById(id: string): Promise<VenueDetail | null> {
-    await delay(200);
     const profile = getProfile();
-    const detail = await getPlacesRepository().getVenueDetail(id, profile);
+    const [, detail, weather] = await Promise.all([
+      delay(200),
+      getPlacesRepository().getVenueDetail(id, profile),
+      fetchLiveWeatherSafe(profile),
+    ]);
     if (!detail) return null;
-    return { ...detail, ...personaliseVenue(detail, profile) };
+    return { ...detail, ...personaliseVenue(detail, profile, weather) };
   },
 };
 
