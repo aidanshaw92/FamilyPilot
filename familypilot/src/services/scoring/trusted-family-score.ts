@@ -30,11 +30,10 @@ export function scoreTrustedAgeSuitability(facts: MatchableVenueFacts, childAges
   const max = facts.maxRecommendedAge ?? 16;
 
   if (youngest >= min && oldest <= max) return 96;
-  if (youngest < min || oldest > max) {
-    if (youngest <= max && oldest >= min) return 58;
-    return 42;
-  }
-  return 65;
+  // Not fully within range: partial overlap with the recommended range scores
+  // better than no overlap at all, rather than treating every mismatch the same.
+  if (youngest <= max && oldest >= min) return 58;
+  return 42;
 }
 
 export function scoreTrustedAccessibility(
