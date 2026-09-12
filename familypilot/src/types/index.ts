@@ -215,8 +215,9 @@ export interface FamilyProfile {
   pushchair?: string | null;
   travelCot?: string | null;
   memberships?: string[];
-  /** Usual feed/nap schedule, used to flag venues that would run into one (see routine-caution.ts)
-   * and to seed Plans' "our family" routines so a parent doesn't re-enter them there. */
+  /** Usual feed/nap schedule, used to build a bespoke "leave by X to be home for Y" reason or
+   * caution per venue (see routine-fit.ts) and to seed Plans' "our family" routines so a parent
+   * doesn't re-enter them there. */
   routines?: FamilyRoutine[];
   /** Facilities this family always needs — used to flag a venue that's missing one
    * (see facility-match.ts) instead of just listing every facility a venue happens to have. */

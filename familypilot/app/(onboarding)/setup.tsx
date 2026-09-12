@@ -1,23 +1,23 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OnboardingShell } from '@/src/components/onboarding/OnboardingShell';
 import { AgeInput, AgeUnit } from '@/src/components/profile/AgeInput';
 import { TextField } from '@/src/components/profile/TextField';
-import { Button, Chip, Text } from '@/src/components/ui';
+import { Button, Chip, Text, TimeField } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { resolveUkLocation, ResolvedLocation } from '@/src/services/location/location-client';
 import { useFamilyStore } from '@/src/stores/family-store';
-import { FamilyProfile } from '@/src/types';
+import { FamilyProfile, FamilyRoutine } from '@/src/types';
 import {
   createChildMember,
   createParentMember,
   withCompletion,
 } from '@/src/utils/profile-defaults';
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 
 const BUDGET_OPTIONS: { id: FamilyProfile['budgetTier']; label: string }[] = [
   { id: 'budget', label: 'Budget-friendly' },
@@ -54,6 +54,10 @@ export default function SetupScreen() {
   ]);
   const [maxDriveMinutes, setMaxDriveMinutes] = useState(30);
   const [budgetTier, setBudgetTier] = useState<FamilyProfile['budgetTier']>('moderate');
+  const [hasNap, setHasNap] = useState(false);
+  const [napTime, setNapTime] = useState('13:00');
+  const [hasFeed, setHasFeed] = useState(false);
+  const [feedTime, setFeedTime] = useState('12:00');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const stepMeta = useMemo(
@@ -68,6 +72,11 @@ export default function SetupScreen() {
           title: 'Who are we planning for?',
           subtitle:
             'Age — in years, or months for a baby under 1 — helps us recommend places that genuinely suit your family.',
+        },
+        {
+          title: 'Naps and feeds',
+          subtitle:
+            'Tell us the usual times so recommendations can say things like "leave by 12:00 to be home for lunch" — not just distance.',
         },
         {
           title: 'How do you usually plan days out?',
@@ -154,6 +163,14 @@ export default function SetupScreen() {
         ),
       );
 
+    const routines: FamilyRoutine[] = [];
+    if (hasNap) {
+      routines.push({ id: `routine-${Date.now()}-nap`, label: 'Nap', kind: 'nap', time: napTime, durationMinutes: 60, atHome: true });
+    }
+    if (hasFeed) {
+      routines.push({ id: `routine-${Date.now()}-feed`, label: 'Feed', kind: 'feed', time: feedTime, durationMinutes: 30, atHome: true });
+    }
+
     const profile = withCompletion({
       id: `family-${Date.now()}`,
       parentName: parentName.trim(),
@@ -168,6 +185,7 @@ export default function SetupScreen() {
       pushchair: null,
       travelCot: null,
       memberships: [],
+      routines,
     });
 
     setProfile(profile);
@@ -291,6 +309,34 @@ export default function SetupScreen() {
 
           {step === 3 ? (
             <View>
+              <View style={styles.routineRow}>
+                <View style={styles.routineToggle}>
+                  <Switch accessibilityLabel="Does your child usually nap?" value={hasNap} onValueChange={setHasNap} />
+                  <Text variant="body">Does your child usually nap?</Text>
+                </View>
+                {hasNap ? <TimeField label="Usual nap time" value={napTime} onChange={setNapTime} /> : null}
+              </View>
+
+              <View style={styles.routineRow}>
+                <View style={styles.routineToggle}>
+                  <Switch
+                    accessibilityLabel="Do they need a bottle or meal at a set time?"
+                    value={hasFeed}
+                    onValueChange={setHasFeed}
+                  />
+                  <Text variant="body">Do they need a bottle or meal at a set time?</Text>
+                </View>
+                {hasFeed ? <TimeField label="Usual feed or lunch time" value={feedTime} onChange={setFeedTime} /> : null}
+              </View>
+
+              <Text variant="caption" color={colors.text.secondary}>
+                Optional — skip either if it doesn’t apply. You can change these anytime in Profile.
+              </Text>
+            </View>
+          ) : null}
+
+          {step === 4 ? (
+            <View>
               <Text variant="label" color={colors.text.secondary} style={styles.groupLabel}>
                 Maximum drive time
               </Text>
@@ -380,6 +426,15 @@ const styles = StyleSheet.create({
   },
   errorText: {
     marginBottom: spacing.md,
+  },
+  routineRow: {
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  routineToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
   groupLabel: {
     marginBottom: spacing.md,

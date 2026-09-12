@@ -3,7 +3,7 @@ import { calculateFamilyScore } from '@/src/services/scoring/family-score';
 import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDetail, WeatherInfo } from '@/src/types';
 
 import { getChildNames } from './profile-defaults';
-import { buildRoutineCaution } from './routine-caution';
+import { evaluateRoutineFit } from './routine-fit';
 import { buildFacilityMissingCaution } from './facility-match';
 
 function toVenueDetail(venue: Venue): VenueDetail {
@@ -36,13 +36,16 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
   const detail = toVenueDetail(venue);
   const enrichmentStatus: EnrichmentStatus = venue.enrichmentStatus ?? 'provider_only';
   const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus, weather });
+  const routineFit = evaluateRoutineFit(profile, venue.driveMinutes);
   const cautions = [
     buildFacilityMissingCaution(profile, detail.facilities),
-    buildRoutineCaution(profile, venue.driveMinutes),
+    routineFit.caution,
   ].filter((caution): caution is string => Boolean(caution));
   return {
     ...venue,
-    familyScore,
+    familyScore: routineFit.reason
+      ? { ...familyScore, explanation: [routineFit.reason, ...familyScore.explanation] }
+      : familyScore,
     goodToKnow: cautions.length ? [...cautions, ...(detail.goodToKnow ?? [])] : detail.goodToKnow,
     facilities: detail.facilities,
   };
