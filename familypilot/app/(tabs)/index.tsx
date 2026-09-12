@@ -9,7 +9,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { FocusedRecommendationCard } from '@/src/components/home/FocusedRecommendationCard';
 import { OutingPreferences } from '@/src/components/home/OutingPreferences';
 import { ScreenContainer, ScreenHeader } from '@/src/components/shared/ScreenContainer';
-import { ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
+import { EmptyState, ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import {
   useFamilyProfile,
@@ -124,6 +124,15 @@ export default function HomeScreen() {
         <SectionHeader title="Top picks for your family" subtitle="Real places across London · family details shown when verified" actionLabel="See all" onAction={() => browse('all')}/>
         {placesLoading ? <SkeletonDecisionCard/> : null}
         {placesError ? <ErrorState onRetry={() => void retryPlaces()}/> : null}
+        {!placesLoading && !placesError && places?.length === 0 ? (
+          <EmptyState
+            icon="search-outline"
+            title="No places found nearby"
+            message="Try exploring a wider area or adjusting your preferences."
+            actionLabel="Explore"
+            onAction={() => browse('all')}
+          />
+        ) : null}
         {places?.slice(0,8).map((venue,index) => <DecisionCard key={venue.id} venue={venue} variant={index === 0 ? 'hero' : 'list'} index={index}/>)}
       </ScrollView>
     </ScreenContainer>
