@@ -6,7 +6,7 @@ import {
   VenueMatchResult,
 } from '@/src/types/day-request';
 import { FacilityType, FamilyProfile } from '@/src/types';
-import { buildRoutineCaution } from '@/src/utils/routine-caution';
+import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 import { buildFacilityMissingCaution } from '@/src/utils/facility-match';
 
 /** MatchableVenueFacts tracks each facility as its own tri-state field rather than a
@@ -181,13 +181,15 @@ export function buildFocusedRecommendation(
   journeySource?: 'live' | 'estimated',
   profile?: FamilyProfile,
 ): FocusedRecommendation {
+  const routineFit = profile ? evaluateRoutineFit(profile, facts.driveMinutes) : { reason: null, caution: null };
   const extraCautions = profile
     ? [
         buildFacilityMissingCaution(profile, confirmedFacilities(facts)),
-        buildRoutineCaution(profile, facts.driveMinutes),
+        routineFit.caution,
       ].filter((caution): caution is string => Boolean(caution))
     : [];
   const caveats = [...extraCautions, ...facts.warnings];
+  const reasons = buildFocusedReasons(facts, match.evaluations);
   return {
     venueId: facts.placeId,
     venueName: facts.name,
@@ -196,7 +198,7 @@ export function buildFocusedRecommendation(
     driveMinutes: facts.driveMinutes,
     estimatedSpend: facts.estimatedSpend ?? undefined,
     fit: match.fit!,
-    reasons: buildFocusedReasons(facts, match.evaluations),
+    reasons: routineFit.reason ? [{ field: 'routine', text: routineFit.reason }, ...reasons] : reasons,
     caveats: caveats.slice(0, 2),
     unknowns: buildFocusedUnknowns(match.evaluations),
     enrichmentStatus:
