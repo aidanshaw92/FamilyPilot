@@ -7,19 +7,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FamilyHeroIllustration } from '@/src/components/onboarding/FamilyHeroIllustration';
 import { Button, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { isPilotFeatureVisible, PilotFeature } from '@/src/config/pilot-features';
 
-const BENEFITS: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
+const BENEFITS: { icon: keyof typeof Ionicons.glyphMap; label: string; feature?: PilotFeature }[] = [
   { icon: 'leaf-outline', label: 'Days out & activities' },
-  { icon: 'airplane-outline', label: 'Holidays' },
-  { icon: 'car-outline', label: 'Car fit checker' },
-  { icon: 'bag-handle-outline', label: 'Packing lists' },
-  { icon: 'basket-outline', label: 'Where to buy baby essentials' },
+  { icon: 'airplane-outline', label: 'Holidays', feature: 'holiday' },
+  { icon: 'car-outline', label: 'Car fit checker', feature: 'car_fit' },
+  { icon: 'bag-handle-outline', label: 'Packing lists', feature: 'packing' },
+  { icon: 'basket-outline', label: 'Where to buy baby essentials', feature: 'need_now' },
   { icon: 'sparkles-outline', label: 'And so much more…' },
 ];
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const visibleBenefits = BENEFITS.filter((benefit) => !benefit.feature || isPilotFeatureVisible(benefit.feature));
 
   return (
     <LinearGradient
@@ -49,7 +51,7 @@ export default function WelcomeScreen() {
         </View>
 
         <View style={styles.benefitsList}>
-          {BENEFITS.map((benefit) => (
+          {visibleBenefits.map((benefit) => (
             <View key={benefit.label} style={styles.benefitRow}>
               <View style={styles.benefitIconWrap}>
                 <Ionicons name={benefit.icon} size={18} color={colors.primary[600]} />

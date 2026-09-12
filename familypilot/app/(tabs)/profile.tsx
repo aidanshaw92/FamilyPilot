@@ -9,6 +9,21 @@ import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
 import { formatBudgetTier, formatChildAge } from '@/src/utils/profile-defaults';
 import { getProfileSuggestion } from '@/src/utils/profile-completion';
+import { formatClock } from '@/src/utils/clock-format';
+import { FacilityType } from '@/src/types';
+
+const MUST_HAVE_LABELS: Partial<Record<FacilityType, string>> = {
+  toilets: 'Toilets',
+  baby_changing: 'Baby changing',
+  parking: 'Parking',
+  pushchair_friendly: 'Pushchair access',
+};
+
+function formatRoutineTime(time: string): string {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(time);
+  if (!match) return time;
+  return formatClock(Number(match[1]) * 60 + Number(match[2]));
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -108,6 +123,33 @@ export default function ProfileScreen() {
             />
           </FadeInView>
         ))}
+
+        <Text variant="heading3" style={styles.sectionTitle}>
+          Naps, feeds & must-haves
+        </Text>
+        <Card style={styles.prefCard}>
+          {(profile.routines ?? []).length > 0 ? (
+            (profile.routines ?? []).map((routine) => (
+              <ProfileRow
+                key={routine.id}
+                icon={routine.kind === 'nap' ? 'moon-outline' : 'restaurant-outline'}
+                label={routine.label?.trim() || (routine.kind === 'nap' ? 'Nap' : 'Feed')}
+                value={formatRoutineTime(routine.time)}
+              />
+            ))
+          ) : (
+            <ProfileRow icon="moon-outline" label="Naps & feeds" value="Not set" />
+          )}
+          <ProfileRow
+            icon="checkmark-done-outline"
+            label="Must-haves"
+            value={
+              (profile.mustHaveFacilities ?? []).length > 0
+                ? profile.mustHaveFacilities!.map((f) => MUST_HAVE_LABELS[f] ?? f).join(', ')
+                : 'Not set'
+            }
+          />
+        </Card>
 
         <Text variant="heading3" style={styles.sectionTitle}>
           Preferences

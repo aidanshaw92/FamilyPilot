@@ -14,7 +14,8 @@ export type PilotFeature =
   | 'explore_restaurants'
   | 'eat_nearby'
   | 'saved_restaurants'
-  | 'concierge';
+  | 'concierge'
+  | 'need_now';
 
 const DEFERRED_PILOT_FEATURES = new Set<PilotFeature>([
   'trips_tab',
@@ -26,6 +27,9 @@ const DEFERRED_PILOT_FEATURES = new Set<PilotFeature>([
   'eat_nearby',
   'saved_restaurants',
   'concierge',
+  // Store stock/hours here are illustrative placeholders, not real data for these named
+  // businesses — keep this out of the pilot build until it's backed by a real source.
+  'need_now',
 ]);
 
 function deferredFeaturesEnabled(): boolean {

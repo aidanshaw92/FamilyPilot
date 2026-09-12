@@ -33,7 +33,7 @@ function baseScore(score: number, explanation: string[]): FamilyScore {
       weatherFit: 85,
       budgetFit: score - 3,
       facilitiesMatch: score - 1,
-      popularity: 78,
+      routineFit: 75,
     },
     explanation,
   };

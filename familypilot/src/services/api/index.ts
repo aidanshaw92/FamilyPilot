@@ -25,7 +25,12 @@ import {
 } from '@/src/types';
 import { withCompletion } from '@/src/utils/profile-defaults';
 import { buildHomeRecommendations, personaliseVenue, personaliseVenues } from '@/src/utils/personalise-venues';
-import { fetchLiveWeather, fetchLiveWeatherSafe } from '@/src/services/context/live-context';
+import {
+  fetchLiveWeather,
+  fetchLiveWeatherSafe,
+  isEligibleOpeningStatus,
+  resolveOpeningStatus,
+} from '@/src/services/context/live-context';
 import { getFocusedRecommendations } from '@/src/services/recommendation/focused-recommendations';
 import { parseDayRequest, parseDayRequestMock } from '@/src/services/recommendation/parse-day-request-client';
 import { DayRequest } from '@/src/types/day-request';
@@ -74,8 +79,12 @@ export const venueService = {
       fetchLiveWeatherSafe(profile),
     ]);
     // Explore is a London-wide discovery surface. Do not apply the normal max-drive cut-off here;
-    // keep travel time visible and let the parent filter it explicitly when they want to.
+    // keep travel time visible and let the parent filter it explicitly when they want to. A venue
+    // confirmed closed right now is excluded, though — never let the top of Home's main list be
+    // somewhere a family can't actually go today, matching the same rule the focused/proactive
+    // recommendation path already applies.
     return venues
+      .filter((venue) => isEligibleOpeningStatus(resolveOpeningStatus(venue.isOpen)))
       .map((venue) => personaliseVenue(venue, profile, weather))
       .sort((a, b) => b.familyScore.score - a.familyScore.score || a.driveMinutes - b.driveMinutes);
   },
@@ -92,6 +101,7 @@ export const venueService = {
       fetchLiveWeatherSafe(profile),
     ]);
     return venues
+      .filter((venue) => isEligibleOpeningStatus(resolveOpeningStatus(venue.isOpen)))
       .map((venue) => personaliseVenue(venue, profile, weather))
       .sort((a, b) => b.familyScore.score - a.familyScore.score || a.driveMinutes - b.driveMinutes);
   },
