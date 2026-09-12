@@ -19,7 +19,7 @@ import { Button, Chip, EmptyState, Text, TimeField } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useUpdateFamilyProfile } from '@/src/hooks/use-queries';
 import { resolveUkLocation } from '@/src/services/location/location-client';
-import { FamilyMember, FamilyProfile, FamilyRoutine } from '@/src/types';
+import { FacilityType, FamilyMember, FamilyProfile, FamilyRoutine } from '@/src/types';
 import {
   createChildMember,
   createParentMember,
@@ -33,6 +33,13 @@ const BUDGET_OPTIONS: { id: FamilyProfile['budgetTier']; label: string }[] = [
 ];
 
 const DRIVE_OPTIONS = [15, 20, 30, 45, 60];
+
+const MUST_HAVE_OPTIONS: { id: FacilityType; label: string }[] = [
+  { id: 'toilets', label: 'Toilets' },
+  { id: 'baby_changing', label: 'Baby changing' },
+  { id: 'parking', label: 'Parking' },
+  { id: 'pushchair_friendly', label: 'Pushchair access' },
+];
 
 interface DraftChild {
   id: string;
@@ -61,6 +68,7 @@ export default function EditProfileScreen() {
   const [travelCot, setTravelCot] = useState('');
   const [memberships, setMemberships] = useState('');
   const [routines, setRoutines] = useState<FamilyRoutine[]>([]);
+  const [mustHaveFacilities, setMustHaveFacilities] = useState<FacilityType[]>([]);
   const [resolvingHome, setResolvingHome] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -76,6 +84,7 @@ export default function EditProfileScreen() {
     setTravelCot(profile.travelCot ?? '');
     setMemberships((profile.memberships ?? []).join(', '));
     setRoutines(profile.routines ?? []);
+    setMustHaveFacilities(profile.mustHaveFacilities ?? []);
     setChildren(
       profile.members
         .filter((m) => m.role === 'child')
@@ -178,6 +187,7 @@ export default function EditProfileScreen() {
         .map((m) => m.trim())
         .filter(Boolean),
       routines,
+      mustHaveFacilities,
       members: [{ ...parentMember, name: parentName.trim() }, ...childMembers],
     });
 
@@ -227,6 +237,12 @@ export default function EditProfileScreen() {
 
   const removeRoutine = (id: string) => {
     setRoutines((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  const toggleMustHave = (facility: FacilityType) => {
+    setMustHaveFacilities((prev) =>
+      prev.includes(facility) ? prev.filter((f) => f !== facility) : [...prev, facility],
+    );
   };
 
   if (isLoading) {
@@ -416,6 +432,24 @@ export default function EditProfileScreen() {
               + Add a feed
             </Text>
           </Pressable>
+        </View>
+
+        <Text variant="heading3" style={styles.sectionTitle}>
+          Must-have facilities
+        </Text>
+        <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+          We'll flag a recommendation that doesn't confirm one of these instead of just listing
+          facilities that don't matter to you.
+        </Text>
+        <View style={styles.chipRow}>
+          {MUST_HAVE_OPTIONS.map((option) => (
+            <Chip
+              key={option.id}
+              label={option.label}
+              active={mustHaveFacilities.includes(option.id)}
+              onPress={() => toggleMustHave(option.id)}
+            />
+          ))}
         </View>
 
         <Text variant="heading3" style={styles.sectionTitle}>

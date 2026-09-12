@@ -5,8 +5,23 @@ import {
   MatchableVenueFacts,
   VenueMatchResult,
 } from '@/src/types/day-request';
-import { FamilyProfile } from '@/src/types';
+import { FacilityType, FamilyProfile } from '@/src/types';
 import { buildRoutineCaution } from '@/src/utils/routine-caution';
+import { buildFacilityMissingCaution } from '@/src/utils/facility-match';
+
+/** MatchableVenueFacts tracks each facility as its own tri-state field rather than a
+ * FacilityType[] list — collect the ones actually confirmed present so the same
+ * "you said you need X" check used elsewhere can run against this shape too. */
+function confirmedFacilities(facts: MatchableVenueFacts): FacilityType[] {
+  const confirmed: FacilityType[] = [];
+  if (facts.toilets === 'yes') confirmed.push('toilets');
+  if (facts.babyChanging === 'yes') confirmed.push('baby_changing');
+  if (facts.parking === 'yes') confirmed.push('parking');
+  if (facts.pushchairSuitability === 'good' || facts.pushchairSuitability === 'excellent') {
+    confirmed.push('pushchair_friendly');
+  }
+  return confirmed;
+}
 
 const FIELD_LABELS: Record<string, string> = {
   'childAgeFit': 'Recommended ages',
@@ -166,10 +181,13 @@ export function buildFocusedRecommendation(
   journeySource?: 'live' | 'estimated',
   profile?: FamilyProfile,
 ): FocusedRecommendation {
-  const routineCaution = profile ? buildRoutineCaution(profile, facts.driveMinutes) : null;
-  const caveats = routineCaution
-    ? [routineCaution, ...facts.warnings]
-    : facts.warnings;
+  const extraCautions = profile
+    ? [
+        buildFacilityMissingCaution(profile, confirmedFacilities(facts)),
+        buildRoutineCaution(profile, facts.driveMinutes),
+      ].filter((caution): caution is string => Boolean(caution))
+    : [];
+  const caveats = [...extraCautions, ...facts.warnings];
   return {
     venueId: facts.placeId,
     venueName: facts.name,

@@ -4,6 +4,7 @@ import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDet
 
 import { getChildNames } from './profile-defaults';
 import { buildRoutineCaution } from './routine-caution';
+import { buildFacilityMissingCaution } from './facility-match';
 
 function toVenueDetail(venue: Venue): VenueDetail {
   const existing = mockVenueDetails[venue.id];
@@ -35,11 +36,14 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
   const detail = toVenueDetail(venue);
   const enrichmentStatus: EnrichmentStatus = venue.enrichmentStatus ?? 'provider_only';
   const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus, weather });
-  const routineCaution = buildRoutineCaution(profile, venue.driveMinutes);
+  const cautions = [
+    buildFacilityMissingCaution(profile, detail.facilities),
+    buildRoutineCaution(profile, venue.driveMinutes),
+  ].filter((caution): caution is string => Boolean(caution));
   return {
     ...venue,
     familyScore,
-    goodToKnow: routineCaution ? [routineCaution, ...(detail.goodToKnow ?? [])] : detail.goodToKnow,
+    goodToKnow: cautions.length ? [...cautions, ...(detail.goodToKnow ?? [])] : detail.goodToKnow,
     facilities: detail.facilities,
   };
 }

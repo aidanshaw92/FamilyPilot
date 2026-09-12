@@ -16,6 +16,7 @@ export function createEmptyProfile(): FamilyProfile {
     travelCot: null,
     memberships: [],
     routines: [],
+    mustHaveFacilities: [],
   };
 }
 

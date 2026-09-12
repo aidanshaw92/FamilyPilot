@@ -218,6 +218,9 @@ export interface FamilyProfile {
   /** Usual feed/nap schedule, used to flag venues that would run into one (see routine-caution.ts)
    * and to seed Plans' "our family" routines so a parent doesn't re-enter them there. */
   routines?: FamilyRoutine[];
+  /** Facilities this family always needs — used to flag a venue that's missing one
+   * (see facility-match.ts) instead of just listing every facility a venue happens to have. */
+  mustHaveFacilities?: FacilityType[];
 }
 
 export interface WeatherInfo {
