@@ -1,4 +1,5 @@
 import { FamilyProfile } from '@/src/types';
+import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 
 export interface ProfileSuggestion {
   message: string;
@@ -21,7 +22,9 @@ export function computeCompletionPercent(profile: FamilyProfile): number {
 }
 
 export function getProfileSuggestion(profile: FamilyProfile): ProfileSuggestion | null {
-  if (!profile.vehicle?.trim()) {
+  // Never nudge a parent toward a feature that's hidden in this build — Car Fit is gated off
+  // by default, and following this suggestion would lead to a dead end.
+  if (!profile.vehicle?.trim() && isPilotFeatureVisible('car_fit')) {
     return { message: 'Add your car to improve Car Fit recommendations', field: 'vehicle' };
   }
   if (!profile.pushchair?.trim()) {

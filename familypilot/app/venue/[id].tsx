@@ -236,7 +236,16 @@ export default function VenueScreen() {
               <DetailItem
                 icon="car-outline"
                 label="Parking"
-                value={venue.parkingInfo ?? 'Not confirmed yet'}
+                value={
+                  venue.parkingInfo ??
+                  // The Facilities grid above already renders a "Parking" icon whenever
+                  // 'parking' is a confirmed facility — never contradict that here by calling
+                  // the same fact "Not confirmed yet" just because the richer free-text detail
+                  // (spaces, cost) hasn't been reviewed yet.
+                  (venue.facilities?.includes('parking')
+                    ? 'Available on site — more detail not confirmed'
+                    : 'Not confirmed yet')
+                }
               />
             </View>
 

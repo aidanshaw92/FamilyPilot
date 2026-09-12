@@ -6,12 +6,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StoreCard } from '@/src/components/shared/StoreCard';
 import { BackButton } from '@/src/components/ui/BackButton';
 import { Chip, EmptyState, Text } from '@/src/components/ui';
+import { DeferredPilotGate } from '@/src/components/shared/DeferredPilotGate';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { useNearbyStores } from '@/src/hooks/use-queries';
 
 const QUICK_FILTERS = ['Formula', 'Wipes', 'Nappies', 'Calpol', 'Medicine'];
 
 export default function NeedNowScreen() {
+  return (
+    <DeferredPilotGate feature="need_now" title="Need something now — coming later">
+      <NeedNowScreenContent />
+    </DeferredPilotGate>
+  );
+}
+
+function NeedNowScreenContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: stores, isLoading, isError } = useNearbyStores();

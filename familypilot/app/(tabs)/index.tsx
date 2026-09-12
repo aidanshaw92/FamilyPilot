@@ -43,6 +43,12 @@ export default function HomeScreen() {
   const recommendations = focusedResult?.recommendations ?? [];
   const topPick = recommendations[0];
   const moreIdeas = recommendations.slice(1);
+  // "Top picks" and "Today's Pick"/"Also worth considering" draw on two different ranking
+  // systems (see the architecture review) that can legitimately disagree about a venue's fit.
+  // Until they're merged into one, at least never show the *same* venue twice on one screen
+  // with two different framings — that reads as the app contradicting itself.
+  const featuredVenueIds = new Set(recommendations.map((rec) => rec.venueId));
+  const otherPlaces = (places ?? []).filter((venue) => !featuredVenueIds.has(venue.id));
 
   return (
     <ScreenContainer>
@@ -121,19 +127,30 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        <SectionHeader title="Top picks for your family" subtitle="Real places across London · family details shown when verified" actionLabel="See all" onAction={() => browse('all')}/>
-        {placesLoading ? <SkeletonDecisionCard/> : null}
-        {placesError ? <ErrorState onRetry={() => void retryPlaces()}/> : null}
-        {!placesLoading && !placesError && places?.length === 0 ? (
-          <EmptyState
-            icon="search-outline"
-            title="No places found nearby"
-            message="Try exploring a wider area or adjusting your preferences."
-            actionLabel="Explore"
-            onAction={() => browse('all')}
-          />
+        {placesLoading || placesError || otherPlaces.length > 0 || (!topPick && places?.length === 0) ? (
+          <>
+            <SectionHeader
+              title={topPick ? 'More nearby options' : 'Top picks for your family'}
+              subtitle="Real places across London · family details shown when verified"
+              actionLabel="See all"
+              onAction={() => browse('all')}
+            />
+            {placesLoading ? <SkeletonDecisionCard/> : null}
+            {placesError ? <ErrorState onRetry={() => void retryPlaces()}/> : null}
+            {!placesLoading && !placesError && places?.length === 0 ? (
+              <EmptyState
+                icon="search-outline"
+                title="No places found nearby"
+                message="Try exploring a wider area or adjusting your preferences."
+                actionLabel="Explore"
+                onAction={() => browse('all')}
+              />
+            ) : null}
+            {otherPlaces.slice(0,8).map((venue,index) => (
+              <DecisionCard key={venue.id} venue={venue} variant={!topPick && index === 0 ? 'hero' : 'list'} index={index}/>
+            ))}
+          </>
         ) : null}
-        {places?.slice(0,8).map((venue,index) => <DecisionCard key={venue.id} venue={venue} variant={index === 0 ? 'hero' : 'list'} index={index}/>)}
       </ScrollView>
     </ScreenContainer>
   );
