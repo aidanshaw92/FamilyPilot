@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Linking, ScrollView, Share, View } from 'react-native';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
-import { Button, Text } from '@/src/components/ui';
+import { Button, Card, Text } from '@/src/components/ui';
 import { Chip } from '@/src/components/ui/Chip';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, spacing } from '@/src/design-system/tokens';
@@ -36,13 +36,13 @@ export default function TripsScreen() {
   {editor?<FamilyEditor key={editor.id} initial={editor} onCancel={()=>setEditor(null)} onSave={f=>{state.setFamily(f);setSelected(ids=>[...new Set([...ids,f.id])]);setEditor(null);}}/>:null}
   {tab==='families'?<>
     <Text variant="bodySmall">Family details and saved plans stay on this device unless you choose to back them up. Friend connections share only the details you explicitly approve.</Text>
-    {state.families.map(f=><View key={f.id} style={s.panel}><Text variant="heading3">{f.label}</Text><Text>{f.area} · {f.ages.length?`Ages ${f.ages.join(', ')}`:'Adults only'} · {f.routines.length} routines</Text><Button label="Edit family and routines" variant="outline" onPress={()=>setEditor(f)}/><Button label="Remove from this device" variant="ghost" onPress={()=>{state.removeFamily(f.id);setSelected(ids=>ids.filter(id=>id!==f.id));}}/></View>)}
+    {state.families.map(f=><Card key={f.id} style={s.panel}><Text variant="heading3">{f.label}</Text><Text>{f.area} · {f.ages.length?`Ages ${f.ages.join(', ')}`:'Adults only'} · {f.routines.length} routines</Text><Button label="Edit family and routines" variant="outline" onPress={()=>setEditor(f)}/><Button label="Remove from this device" variant="ghost" onPress={()=>{state.removeFamily(f.id);setSelected(ids=>ids.filter(id=>id!==f.id));}}/></Card>)}
     {!state.families.some(f=>f.id==='mine')?<Button label="Add your family" onPress={()=>setEditor(blank(true))}/>:null}
     <Button label="Add a family together on this phone" variant="outline" onPress={()=>setEditor(blank(false))}/>
     <PlanningAccount/>
   </>:null}
   {tab==='plan'?<>
-   <View style={s.panel}><Text variant="heading2">Who’s coming?</Text>
+   <Card style={s.panel}><Text variant="heading2">Who’s coming?</Text>
     <View style={s.row}>{state.families.map(f=><Chip key={f.id} label={f.label} active={selected.includes(f.id)} onPress={()=>setSelected(ids=>ids.includes(f.id)?ids.filter(x=>x!==f.id):[...ids,f.id])}/>)}</View>
     {!state.families.length?<Button label="Set up your family & routines" onPress={()=>setEditor(blank(true))}/>:null}
     <Button label="Manage families and routines" variant="ghost" onPress={()=>setTab('families')}/>
@@ -54,11 +54,11 @@ export default function TripsScreen() {
     <Text variant="bodySmall">Extra time each way for traffic, parking and getting ready</Text><View style={s.row}>{[10,15,30].map(n=><Chip key={n} label={`${n} min`} active={state.options.bufferMinutes===n} onPress={()=>state.setOptions({bufferMinutes:n})}/>)}</View>
     <View style={s.row}>{(['either','indoor','outdoor'] as const).map(v=><Chip key={v} label={{either:'Any setting',indoor:'Indoors',outdoor:'Outdoors'}[v]} active={state.options.environment===v} onPress={()=>state.setOptions({environment:v})}/>)}</View>
     <Button label={busy?'Finding a plan for everyone…':'Find our best plans'} disabled={busy||!active.length} onPress={()=>void find()}/>
-   </View>
+   </Card>
    {message?<Text accessibilityRole="alert" color={colors.warning[600]}>{message}</Text>:null}
    {searched&&inputKey!==resultKey?<Text>Preferences have changed. Find plans again to update the timings.</Text>:null}
-   {searched&&inputKey===resultKey&&!results.length?<View style={s.panel}><Text variant="heading3">No confident match yet</Text><Text>No place in the available data meets every family’s requirements and timing. Try another date, a longer travel limit, or update a must-have. We won’t silently relax your requirements.</Text><Button label="Explore places and their details" variant="outline" onPress={()=>router.push('/(tabs)/explore' as never)}/></View>:null}
-   {inputKey===resultKey?results.map((result,i)=>{const {plan,place,food,foodStatus,meal}=result;return (<View key={plan.venueId} style={s.panel}>
+   {searched&&inputKey===resultKey&&!results.length?<Card style={s.panel}><Text variant="heading3">No confident match yet</Text><Text>No place in the available data meets every family’s requirements and timing. Try another date, a longer travel limit, or update a must-have. We won’t silently relax your requirements.</Text><Button label="Explore places and their details" variant="outline" onPress={()=>router.push('/(tabs)/explore' as never)}/></Card>:null}
+   {inputKey===resultKey?results.map((result,i)=>{const {plan,place,food,foodStatus,meal}=result;return (<Card key={plan.venueId} style={s.panel}>
     <VenueImage uri={place.photos[0]} category={place.category} alt={place.name} style={{height:180,width:'100%'}}/>
     <Text variant="bodySmall" color={colors.primary[600]}>{i===0?'Our first suggestion':'Another option'}</Text><Text variant="heading2">{plan.name}</Text>
     <Text>{clockLabel(plan.start)}–{clockLabel(plan.end)} · {active.length} {active.length===1?'family':'families'}</Text>
@@ -72,16 +72,16 @@ export default function TripsScreen() {
     <Text variant="bodySmall">{meal?'Confirm restaurant opening hours and availability.':'Add lunch above to include meal and transfer time in your plan.'}</Text>
     <Button label="Save this plan" onPress={()=>{state.savePlan({id:`${state.options.date}-${plan.venueId}`,date:state.options.date,plan,checked:[],createdAt:new Date().toISOString()});setTab('saved');}}/>
     <Button label="Share a summary" variant="outline" onPress={()=>void share(sharePlanText(plan,state.options.date))}/>
-   </View>); }):null}
+   </Card>); }):null}
   </>:null}
   {tab==='saved'?<>
-   {!state.saved.length?<View style={s.panel}><Text>No saved plans yet.</Text><Button label="Plan a day" onPress={()=>setTab('plan')}/></View>:null}
-   {state.saved.map(saved=><View key={saved.id} style={s.panel}><Text variant="heading2">{saved.plan.name}</Text><Text>{saved.date} · {clockLabel(saved.plan.start)}–{clockLabel(saved.plan.end)}</Text>
+   {!state.saved.length?<Card style={s.panel}><Text>No saved plans yet.</Text><Button label="Plan a day" onPress={()=>setTab('plan')}/></Card>:null}
+   {state.saved.map(saved=><Card key={saved.id} style={s.panel}><Text variant="heading2">{saved.plan.name}</Text><Text>{saved.date} · {clockLabel(saved.plan.start)}–{clockLabel(saved.plan.end)}</Text>
     {saved.plan.timings.map(t=><Text key={t.familyId}>{t.label}: leave {clockLabel(t.depart)}, home about {clockLabel(t.home)}</Text>)}
     <Text variant="bodySmall">Saved timings are a snapshot. Recheck before leaving if routines, weather or travel change.</Text>
     <Text variant="heading3">Before you go</Text>{['Check opening hours and booking','Check travel time','Pack feeds and snacks','Nappies, wipes and spare clothes','Buggy and weather layers'].map(item=><Chip key={item} label={`${saved.checked.includes(item)?'✓ ':''}${item}`} active={saved.checked.includes(item)} onPress={()=>state.togglePacked(saved.id,item)}/>)}
     <Button label="Share plan" onPress={()=>void share(sharePlanText(saved.plan,saved.date))}/><Button label="Replan with current preferences" variant="outline" onPress={()=>{state.setOptions({date:saved.date<localDate()?localDate():saved.date});setTab('plan');setSearched(false);}}/><Button label="Delete saved plan" variant="ghost" onPress={()=>state.deletePlan(saved.id)}/>
-   </View>)}
+   </Card>)}
   </>:null}
  </ScrollView></ScreenContainer>;
 }
