@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 
 import { SavedPlaceRow } from '@/src/components/shared/SavedPlaceRow';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
-import { Chip, EmptyState, Text } from '@/src/components/ui';
+import { Chip, EmptyState, SkeletonCard, Text } from '@/src/components/ui';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useSavedItems } from '@/src/hooks/use-queries';
@@ -160,7 +160,12 @@ export default function SavedScreen() {
       ) : null}
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {isEmpty ? (
+        {isLoading ? (
+          <View style={styles.loadingList}>
+            <SkeletonCard />
+            <SkeletonCard />
+          </View>
+        ) : isEmpty ? (
           <EmptyState
             icon="heart-outline"
             title="Nothing saved yet"
@@ -224,6 +229,9 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.screenPadding,
     paddingBottom: spacing['3xl'],
+  },
+  loadingList: {
+    gap: spacing.lg,
   },
   section: {
     marginBottom: spacing.lg,

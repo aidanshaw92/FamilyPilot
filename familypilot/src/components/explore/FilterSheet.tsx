@@ -62,7 +62,12 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
         <View style={styles.handle} />
         <View style={styles.header}>
           <Text variant="heading2">Filters</Text>
-          <Pressable onPress={handleReset} hitSlop={8}>
+          <Pressable
+            onPress={handleReset}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Reset filters"
+          >
             <Text variant="bodySmall" color={colors.primary[500]}>
               Reset
             </Text>

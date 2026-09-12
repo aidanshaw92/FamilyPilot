@@ -129,38 +129,44 @@ export default function ProfileScreen() {
         <Text variant="heading3" style={styles.sectionTitle}>
           Vehicle
         </Text>
-        <ProfileRow
-          icon="car-sport-outline"
-          label="Car"
-          value={profile.vehicle?.trim() || 'Not added'}
-        />
+        <Card style={styles.prefCard}>
+          <ProfileRow
+            icon="car-sport-outline"
+            label="Car"
+            value={profile.vehicle?.trim() || 'Not added'}
+          />
+        </Card>
 
         <Text variant="heading3" style={styles.sectionTitle}>
           Equipment
         </Text>
-        <ProfileRow
-          icon="bag-outline"
-          label="Pushchair"
-          value={profile.pushchair?.trim() || 'Not added'}
-        />
-        <ProfileRow
-          icon="bed-outline"
-          label="Travel cot"
-          value={profile.travelCot?.trim() || 'Not added'}
-        />
+        <Card style={styles.prefCard}>
+          <ProfileRow
+            icon="bag-outline"
+            label="Pushchair"
+            value={profile.pushchair?.trim() || 'Not added'}
+          />
+          <ProfileRow
+            icon="bed-outline"
+            label="Travel cot"
+            value={profile.travelCot?.trim() || 'Not added'}
+          />
+        </Card>
 
         <Text variant="heading3" style={styles.sectionTitle}>
           Memberships & discounts
         </Text>
-        <ProfileRow
-          icon="card-outline"
-          label="Memberships"
-          value={
-            profile.memberships && profile.memberships.length > 0
-              ? profile.memberships.join(', ')
-              : 'Not linked'
-          }
-        />
+        <Card style={styles.prefCard}>
+          <ProfileRow
+            icon="card-outline"
+            label="Memberships"
+            value={
+              profile.memberships && profile.memberships.length > 0
+                ? profile.memberships.join(', ')
+                : 'Not linked'
+            }
+          />
+        </Card>
 
         <Pressable
           style={styles.aboutRow}

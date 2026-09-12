@@ -376,8 +376,14 @@ export default function EditProfileScreen() {
               style={[styles.budgetOption, budgetTier === option.id && styles.budgetOptionActive]}
               onPress={() => setBudgetTier(option.id)}
               accessibilityRole="button"
+              accessibilityState={{ selected: budgetTier === option.id }}
             >
-              <Text variant="body">{option.label}</Text>
+              <Text
+                variant="body"
+                color={budgetTier === option.id ? colors.primary[600] : colors.text.primary}
+              >
+                {option.label}
+              </Text>
             </Pressable>
           ))}
         </View>
