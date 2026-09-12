@@ -402,6 +402,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
     paddingBottom: spacing.xl,
   },
   childBlock: {

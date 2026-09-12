@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { FamilyMatch } from '@/src/components/ui/FamilyMatch';
@@ -108,6 +109,13 @@ function DecisionCardComponent({
             style={isHero ? { ...styles.image, ...styles.heroImage } : styles.image}
             borderRadius={isHero ? radius.lg : 0}
           />
+          {isHero ? (
+            <LinearGradient
+              colors={[colors.gradient.heroStart, colors.gradient.heroEnd]}
+              style={styles.heroScrim}
+              pointerEvents="none"
+            />
+          ) : null}
           <View style={styles.badgeOverlay}>
             <FamilyMatch
               score={venue.familyScore.score}
@@ -115,12 +123,19 @@ function DecisionCardComponent({
               enrichmentStatus={venue.enrichmentStatus}
             />
           </View>
+          {isHero ? (
+            <Text variant="heading1" color={colors.text.inverse} style={styles.heroNameOverlay} numberOfLines={2}>
+              {venue.name}
+            </Text>
+          ) : null}
         </View>
 
         <View style={styles.content}>
-          <Text variant={isHero ? 'heading2' : 'heading3'} numberOfLines={1}>
-            {venue.name}
-          </Text>
+          {isHero ? null : (
+            <Text variant="heading3" numberOfLines={1}>
+              {venue.name}
+            </Text>
+          )}
 
           <RecommendationPattern
             venue={venue}
@@ -203,8 +218,6 @@ const styles = StyleSheet.create({
   },
   hero: {
     width: '100%',
-    borderWidth: 2,
-    borderColor: colors.primary[100],
     ...shadows.bottomSheet,
   },
   imageWrap: {
@@ -212,18 +225,32 @@ const styles = StyleSheet.create({
   },
   heroImageWrap: {
     width: '100%',
+    position: 'relative',
   },
   image: {
     width: '100%',
     height: 150,
   },
   heroImage: {
-    height: 220,
+    height: 260,
+  },
+  heroScrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '70%',
   },
   badgeOverlay: {
     position: 'absolute',
     top: spacing.md,
     left: spacing.md,
+  },
+  heroNameOverlay: {
+    position: 'absolute',
+    left: spacing.lg,
+    right: spacing.lg,
+    bottom: spacing.lg,
   },
   content: {
     padding: spacing.lg,

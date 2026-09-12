@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { PressableScale } from '@/src/components/ui/PressableScale';
@@ -34,17 +35,33 @@ export function FocusedRecommendationCard({
         accessibilityRole="button"
         accessibilityLabel={`${recommendation.venueName}, ${recommendation.fit}`}
       >
-        <VenueImage
-          uri={recommendation.imageUrl}
-          category={recommendation.category}
-          alt={recommendation.venueName}
-          style={isHero ? { ...styles.image, ...styles.heroImage } : styles.image}
-          borderRadius={isHero ? radius.lg : 0}
-        />
+        <View style={isHero ? styles.heroImageWrap : undefined}>
+          <VenueImage
+            uri={recommendation.imageUrl}
+            category={recommendation.category}
+            alt={recommendation.venueName}
+            style={isHero ? { ...styles.image, ...styles.heroImage } : styles.image}
+            borderRadius={isHero ? radius.lg : 0}
+          />
+          {isHero ? (
+            <>
+              <LinearGradient
+                colors={[colors.gradient.heroStart, colors.gradient.heroEnd]}
+                style={styles.heroScrim}
+                pointerEvents="none"
+              />
+              <Text variant="heading1" color={colors.text.inverse} style={styles.heroNameOverlay} numberOfLines={2}>
+                {recommendation.venueName}
+              </Text>
+            </>
+          ) : null}
+        </View>
         <View style={styles.content}>
-          <Text variant={isHero ? 'heading2' : 'heading3'} numberOfLines={1}>
-            {recommendation.venueName}
-          </Text>
+          {isHero ? null : (
+            <Text variant="heading3" numberOfLines={1}>
+              {recommendation.venueName}
+            </Text>
+          )}
           <Text variant={isHero ? 'heading2' : 'heading3'} style={styles.fitLabel}>
             {recommendation.fit}
           </Text>
@@ -121,12 +138,28 @@ const styles = StyleSheet.create({
   hero: {
     marginBottom: spacing['2xl'],
   },
+  heroImageWrap: {
+    position: 'relative',
+  },
   image: {
     width: '100%',
     height: 140,
   },
   heroImage: {
-    height: 200,
+    height: 260,
+  },
+  heroScrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '70%',
+  },
+  heroNameOverlay: {
+    position: 'absolute',
+    left: spacing.lg,
+    right: spacing.lg,
+    bottom: spacing.lg,
   },
   content: {
     padding: spacing.lg,

@@ -8,9 +8,10 @@ interface FamilyMatchPanelProps {
   familyScore: FamilyScore;
   venue?: VenueDetail;
   compact?: boolean;
+  showClassification?: boolean;
 }
 
-export function FamilyMatchPanel({ familyScore, venue, compact = false }: FamilyMatchPanelProps) {
+export function FamilyMatchPanel({ familyScore, venue, compact = false, showClassification = true }: FamilyMatchPanelProps) {
   if (!venue) {
     return null;
   }
@@ -19,7 +20,7 @@ export function FamilyMatchPanel({ familyScore, venue, compact = false }: Family
 
   return (
     <View style={[styles.panel, compact && styles.compact]}>
-      <RecommendationPattern venue={venueWithScore} variant="detail" showTrust />
+      <RecommendationPattern venue={venueWithScore} variant="detail" showTrust showClassification={showClassification} />
     </View>
   );
 }

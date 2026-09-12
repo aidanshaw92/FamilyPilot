@@ -28,23 +28,22 @@ export default function WelcomeScreen() {
       colors={[colors.background, colors.primary[50], colors.background]}
       style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
     >
+      <View style={styles.brandRow}>
+        <View style={styles.logoMark}>
+          <Ionicons name="heart" size={22} color={colors.text.inverse} />
+        </View>
+        <Text variant="heading3" style={styles.brandName}>
+          FamilyPilot
+        </Text>
+      </View>
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.brandRow}>
-          <View style={styles.logoMark}>
-            <Ionicons name="heart" size={22} color={colors.text.inverse} />
-          </View>
-          <View>
-            <Text variant="heading2" style={styles.brandName}>
-              FamilyPilot
-            </Text>
-            <Text variant="bodySmall" color={colors.text.secondary}>
-              The everyday app for family life
-            </Text>
-          </View>
-        </View>
+        <Text variant="display" style={styles.headline}>
+          The everyday app for family life.
+        </Text>
 
         <View style={styles.illustrationWrap}>
           <FamilyHeroIllustration />
@@ -85,19 +84,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenPadding,
   },
   scrollContent: {
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingVertical: spacing.xl,
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    marginBottom: spacing.xl,
+    paddingTop: spacing.md,
   },
   logoMark: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.lg,
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
     backgroundColor: colors.primary[500],
     alignItems: 'center',
     justifyContent: 'center',
@@ -105,15 +105,19 @@ const styles = StyleSheet.create({
   brandName: {
     letterSpacing: -0.3,
   },
-  illustrationWrap: {
-    aspectRatio: 320 / 200,
-    width: '100%',
+  headline: {
     marginBottom: spacing.xl,
-    borderRadius: radius.lg,
+    maxWidth: 300,
+  },
+  illustrationWrap: {
+    aspectRatio: 320 / 220,
+    width: '100%',
+    marginBottom: spacing['2xl'],
+    borderRadius: radius.xl,
     overflow: 'hidden',
   },
   benefitsList: {
-    gap: spacing.md,
+    gap: spacing.lg,
   },
   benefitRow: {
     flexDirection: 'row',

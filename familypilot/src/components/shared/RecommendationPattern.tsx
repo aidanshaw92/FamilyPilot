@@ -21,6 +21,9 @@ interface RecommendationPatternProps {
   focusedReasons?: string[];
   focusedUnknowns?: string[];
   showVenueName?: boolean;
+  /** Hide the "Excellent match" style headline — set false when the caller already shows it
+   * elsewhere (e.g. venue detail's score band) so it isn't stated twice on one screen. */
+  showClassification?: boolean;
   showTrust?: boolean;
   showCta?: boolean;
   ctaLabel?: string;
@@ -49,6 +52,7 @@ export function RecommendationPattern({
   focusedReasons,
   focusedUnknowns,
   showVenueName = false,
+  showClassification = true,
   showTrust = false,
   showCta = false,
   ctaLabel = 'View details',
@@ -80,9 +84,11 @@ export function RecommendationPattern({
         </Text>
       ) : null}
 
-      <Text variant={classificationVariant} style={styles.classification}>
-        {classification}
-      </Text>
+      {showClassification ? (
+        <Text variant={classificationVariant} style={styles.classification}>
+          {classification}
+        </Text>
+      ) : null}
 
       {reasons.length > 0 ? (
         <View style={styles.reasonsBlock}>
