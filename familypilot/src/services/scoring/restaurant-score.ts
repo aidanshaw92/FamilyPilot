@@ -8,6 +8,7 @@ import {
 } from '@/src/types';
 
 import { getDriveMinutesFromActivity } from '@/src/data/mock-restaurants';
+import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 
 const WEIGHTS = {
   ageSuitability: 0.2,
@@ -15,8 +16,14 @@ const WEIGHTS = {
   distance: 0.2,
   budgetFit: 0.15,
   facilitiesMatch: 0.25,
-  popularity: 0.05,
+  routineFit: 0.05,
 } as const;
+
+function scoreRoutineFit(reason: string | null, caution: string | null): number {
+  if (reason) return 92;
+  if (caution) return 45;
+  return 75;
+}
 
 function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, Math.round(value)));
@@ -127,6 +134,7 @@ export function calculateRestaurantFamilyScore(
       : restaurant.driveMinutes);
 
   const spend = restaurant.estimatedFamilySpend ?? restaurant.estimatedSpend;
+  const routineFit = evaluateRoutineFit(profile, driveFromActivity ?? restaurant.driveMinutes);
 
   const factors: FamilyScoreFactors = {
     ageSuitability: scoreAgeFit(restaurant.restaurantFeatures, childAges),
@@ -137,7 +145,7 @@ export function calculateRestaurantFamilyScore(
     weatherFit: 85,
     budgetFit: scoreBudget(spend, profile.budgetTier),
     facilitiesMatch: scoreFacilities(restaurant.restaurantFeatures, profile),
-    popularity: 78,
+    routineFit: scoreRoutineFit(routineFit.reason, routineFit.caution),
   };
 
   const score = clamp(

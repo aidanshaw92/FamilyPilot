@@ -2,6 +2,8 @@ import { EnrichmentStatus, FamilyProfile, FamilyScore, FamilyScoreFactors, Venue
 
 import { PROVIDER_ONLY_FAMILY_MATCH_CAP } from '@/src/constants/places-quality';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
+import { buildFacilityMissingCaution } from '@/src/utils/facility-match';
+import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 
 import {
   buildTrustedExplanation,
@@ -20,8 +22,21 @@ const WEIGHTS = {
   weatherFit: 0.1,
   budgetFit: 0.1,
   facilitiesMatch: 0.15,
-  popularity: 0.1,
+  routineFit: 0.1,
 } as const;
+
+/** A missing must-have facility caps how "family-suitable" a venue can score, the same way an
+ * unreviewed venue is capped — a caution shouldn't be the only place this shows up. */
+const FACILITY_MISSING_CAP = 35;
+
+/** Turns today's nap/feed timing into a score contribution: comfortable time to spare scores
+ * well, a visit that would run into a routine scores poorly, and no routines set (or nothing
+ * upcoming today) is neutral — never a thumb on the scale either way. */
+function scoreRoutineFit(reason: string | null, caution: string | null): number {
+  if (reason) return 92;
+  if (caution) return 45;
+  return 75;
+}
 
 export interface FamilyScoreOptions {
   enrichmentStatus?: EnrichmentStatus;
@@ -168,6 +183,14 @@ export function calculateFamilyScore(
   const useTrusted = !isProviderOnly && facts != null && hasTrustedMatchSignals(facts);
   const weather = options.weather;
 
+  const facilitiesMatchRaw = useTrusted
+    ? scoreTrustedFacilitiesMatch(facts, profile) ?? clamp(Math.min((venue.facilities?.length ?? 0) * 11, 96))
+    : isProviderOnly
+      ? 50
+      : clamp(Math.min((venue.facilities?.length ?? 0) * 11, 96));
+  const missingMustHave = buildFacilityMissingCaution(profile, venue.facilities) != null;
+  const routineFit = evaluateRoutineFit(profile, venue.driveMinutes);
+
   const factors: FamilyScoreFactors = {
     ageSuitability:
       (useTrusted ? scoreTrustedAgeSuitability(facts, childAges) : null) ??
@@ -182,12 +205,8 @@ export function calculateFamilyScore(
     budgetFit:
       (useTrusted ? scoreTrustedBudget(facts, profile.budgetTier) : null) ??
       scoreBudgetHeuristic(venue, profile.budgetTier),
-    facilitiesMatch: useTrusted
-      ? scoreTrustedFacilitiesMatch(facts, profile) ?? clamp(Math.min((venue.facilities?.length ?? 0) * 11, 96))
-      : isProviderOnly
-        ? 50
-        : clamp(Math.min((venue.facilities?.length ?? 0) * 11, 96)),
-    popularity: isProviderOnly ? 55 : useTrusted ? 78 : 80,
+    facilitiesMatch: missingMustHave ? Math.min(facilitiesMatchRaw, FACILITY_MISSING_CAP) : facilitiesMatchRaw,
+    routineFit: scoreRoutineFit(routineFit.reason, routineFit.caution),
   };
 
   let score = clamp(

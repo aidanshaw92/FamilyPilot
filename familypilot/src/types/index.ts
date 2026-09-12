@@ -88,7 +88,10 @@ export interface FamilyScoreFactors {
   weatherFit: number;
   budgetFit: number;
   facilitiesMatch: number;
-  popularity: number;
+  /** Whether today's routines (nap/feed) leave a comfortable window for this venue's drive
+   * time — see evaluateRoutineFit. Replaces a former "popularity" factor that was always a
+   * fixed constant with no real signal behind it. */
+  routineFit: number;
 }
 
 export interface FamilyScore {
