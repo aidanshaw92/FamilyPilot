@@ -94,6 +94,7 @@ export async function getFocusedRecommendations(
       match,
       imageById[facts.placeId] ?? '',
       journeySourceById[facts.placeId],
+      profile,
     ),
   );
 

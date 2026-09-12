@@ -5,6 +5,23 @@ import {
   MatchableVenueFacts,
   VenueMatchResult,
 } from '@/src/types/day-request';
+import { FacilityType, FamilyProfile } from '@/src/types';
+import { buildRoutineCaution } from '@/src/utils/routine-caution';
+import { buildFacilityMissingCaution } from '@/src/utils/facility-match';
+
+/** MatchableVenueFacts tracks each facility as its own tri-state field rather than a
+ * FacilityType[] list — collect the ones actually confirmed present so the same
+ * "you said you need X" check used elsewhere can run against this shape too. */
+function confirmedFacilities(facts: MatchableVenueFacts): FacilityType[] {
+  const confirmed: FacilityType[] = [];
+  if (facts.toilets === 'yes') confirmed.push('toilets');
+  if (facts.babyChanging === 'yes') confirmed.push('baby_changing');
+  if (facts.parking === 'yes') confirmed.push('parking');
+  if (facts.pushchairSuitability === 'good' || facts.pushchairSuitability === 'excellent') {
+    confirmed.push('pushchair_friendly');
+  }
+  return confirmed;
+}
 
 const FIELD_LABELS: Record<string, string> = {
   'childAgeFit': 'Recommended ages',
@@ -162,7 +179,15 @@ export function buildFocusedRecommendation(
   match: VenueMatchResult,
   imageUrl: string,
   journeySource?: 'live' | 'estimated',
+  profile?: FamilyProfile,
 ): FocusedRecommendation {
+  const extraCautions = profile
+    ? [
+        buildFacilityMissingCaution(profile, confirmedFacilities(facts)),
+        buildRoutineCaution(profile, facts.driveMinutes),
+      ].filter((caution): caution is string => Boolean(caution))
+    : [];
+  const caveats = [...extraCautions, ...facts.warnings];
   return {
     venueId: facts.placeId,
     venueName: facts.name,
@@ -172,7 +197,7 @@ export function buildFocusedRecommendation(
     estimatedSpend: facts.estimatedSpend ?? undefined,
     fit: match.fit!,
     reasons: buildFocusedReasons(facts, match.evaluations),
-    caveats: facts.warnings.slice(0, 2),
+    caveats: caveats.slice(0, 2),
     unknowns: buildFocusedUnknowns(match.evaluations),
     enrichmentStatus:
       facts.enrichmentStatus === 'verified'

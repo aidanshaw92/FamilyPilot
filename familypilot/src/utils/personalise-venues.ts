@@ -3,10 +3,15 @@ import { calculateFamilyScore } from '@/src/services/scoring/family-score';
 import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDetail, WeatherInfo } from '@/src/types';
 
 import { getChildNames } from './profile-defaults';
+import { buildRoutineCaution } from './routine-caution';
+import { buildFacilityMissingCaution } from './facility-match';
 
 function toVenueDetail(venue: Venue): VenueDetail {
   const existing = mockVenueDetails[venue.id];
-  if (existing) return existing;
+  // The legacy fixture's own driveMinutes/explanation are stale for whichever home
+  // location is actually configured — always score against the venue's live-computed
+  // distance so "X minutes from home" can't disagree with what the rest of the screen shows.
+  if (existing) return { ...existing, driveMinutes: venue.driveMinutes };
 
   if (venue.enrichmentStatus === 'provider_only') {
     return {
@@ -31,10 +36,14 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
   const detail = toVenueDetail(venue);
   const enrichmentStatus: EnrichmentStatus = venue.enrichmentStatus ?? 'provider_only';
   const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus, weather });
+  const cautions = [
+    buildFacilityMissingCaution(profile, detail.facilities),
+    buildRoutineCaution(profile, venue.driveMinutes),
+  ].filter((caution): caution is string => Boolean(caution));
   return {
     ...venue,
     familyScore,
-    goodToKnow: detail.goodToKnow,
+    goodToKnow: cautions.length ? [...cautions, ...(detail.goodToKnow ?? [])] : detail.goodToKnow,
     facilities: detail.facilities,
   };
 }

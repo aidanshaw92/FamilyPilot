@@ -189,6 +189,17 @@ export interface FamilyMember {
   ageMonths?: number | null;
 }
 
+/** Same shape as planner.ts's Routine — kept structurally compatible so a profile's usual
+ * feeds/naps can seed a planning family's routines without conversion. */
+export interface FamilyRoutine {
+  id: string;
+  label: string;
+  kind: 'nap' | 'feed';
+  time: string;
+  durationMinutes: number;
+  atHome: boolean;
+}
+
 export interface FamilyProfile {
   id: string;
   parentName: string;
@@ -204,6 +215,12 @@ export interface FamilyProfile {
   pushchair?: string | null;
   travelCot?: string | null;
   memberships?: string[];
+  /** Usual feed/nap schedule, used to flag venues that would run into one (see routine-caution.ts)
+   * and to seed Plans' "our family" routines so a parent doesn't re-enter them there. */
+  routines?: FamilyRoutine[];
+  /** Facilities this family always needs — used to flag a venue that's missing one
+   * (see facility-match.ts) instead of just listing every facility a venue happens to have. */
+  mustHaveFacilities?: FacilityType[];
 }
 
 export interface WeatherInfo {

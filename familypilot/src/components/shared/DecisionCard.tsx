@@ -72,7 +72,7 @@ function DecisionCardComponent({
             </View>
           </View>
           {reason ? (
-            <Text variant="bodySmall" color={colors.text.secondary} numberOfLines={2} style={styles.compactReason}>
+            <Text variant="bodySmall" color={colors.text.primary} numberOfLines={2} style={styles.compactReason}>
               {reason}
             </Text>
           ) : null}
