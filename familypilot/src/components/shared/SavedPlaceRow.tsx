@@ -63,7 +63,7 @@ export function SavedPlaceRow({ venue, itemType, onRemoved }: SavedPlaceRowProps
         borderRadius={radius.md}
       />
       <View style={styles.content}>
-        <Text variant="heading3" numberOfLines={1}>
+        <Text variant="heading3" numberOfLines={2}>
           {venue.name}
         </Text>
         <Text variant="caption" color={colors.text.secondary}>

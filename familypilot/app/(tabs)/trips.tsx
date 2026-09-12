@@ -7,10 +7,11 @@ import { Button, Text } from '@/src/components/ui';
 import { Chip } from '@/src/components/ui/Chip';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, spacing } from '@/src/design-system/tokens';
-import { FamilyEditor, Field, formStyles as s } from '@/src/components/planning/FamilyEditor';
+import { DateField, FamilyEditor, TimeField, formStyles as s } from '@/src/components/planning/FamilyEditor';
 import { PlanningAccount } from '@/src/components/planning/PlanningAccount';
 import { useFamilyStore } from '@/src/stores/family-store';
 import { localDate, usePlanningStore } from '@/src/stores/planning-store';
+import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
 import { PlanningFamily, clockLabel, clockMinutes, sharePlanText } from '@/src/services/planning/planner';
 import { PlanningResult, recommendPlans, addMeal } from '@/src/services/planning/recommendations';
 
@@ -21,7 +22,7 @@ export default function TripsScreen() {
  const [tab,setTab]=useState<'plan'|'saved'|'families'>('plan');const [resultKey,setResultKey]=useState('');
  const active=state.families.filter(f=>selected.includes(f.id));const inputKey=JSON.stringify({active,options:state.options});
  useEffect(()=>{if(state.hydrated&&state.options.date<localDate())state.setOptions({date:localDate()});},[state.hydrated]);
- const blank=(mine:boolean):PlanningFamily=>({id:mine?'mine':`guest-${Date.now()}`,label:mine?'Our family':'',area:mine?profile.homeLocation:'',latitude:NaN,longitude:NaN,ages:mine?profile.members.filter(m=>m.role==='child').map(m=>m.age):[],maxDriveMinutes:mine?profile.maxDriveMinutes:30,budgetTier:mine?profile.budgetTier:'moderate',pushchair:mine?Boolean(profile.pushchair):false,required:[],routines:[]});
+ const blank=(mine:boolean):PlanningFamily=>{const home=mine?resolveHomeCoordinates(profile):null;return {id:mine?'mine':`guest-${Date.now()}`,label:mine?'Our family':'',area:mine?profile.homeLocation:'',latitude:home?.latitude??NaN,longitude:home?.longitude??NaN,ages:mine?profile.members.filter(m=>m.role==='child').map(m=>m.age):[],maxDriveMinutes:mine?profile.maxDriveMinutes:30,budgetTier:mine?profile.budgetTier:'moderate',pushchair:mine?Boolean(profile.pushchair):false,required:[],routines:[]};};
  async function find(){setBusy(true);setMessage('');setResults([]);setSearched(false);try{
    clockMinutes(state.options.leaveAt);if(state.options.returnBy)clockMinutes(state.options.returnBy);
    if(!active.length)throw new Error('Add your family and select who is coming.');
@@ -46,14 +47,15 @@ export default function TripsScreen() {
     <View style={s.row}>{state.families.map(f=><Chip key={f.id} label={f.label} active={selected.includes(f.id)} onPress={()=>setSelected(ids=>ids.includes(f.id)?ids.filter(x=>x!==f.id):[...ids,f.id])}/>)}</View>
     {!state.families.length?<Button label="Set up your family & routines" onPress={()=>setEditor(blank(true))}/>:null}
     <Button label="Manage families and routines" variant="ghost" onPress={()=>setTab('families')}/>
-    <Field label="Date (YYYY-MM-DD)" value={state.options.date} onChange={date=>state.setOptions({date})}/>
-    <Field label="Earliest departure (HH:MM)" value={state.options.leaveAt} onChange={leaveAt=>state.setOptions({leaveAt})}/>
+    <DateField label="Date" value={state.options.date} onChange={date=>state.setOptions({date})}/>
+    <TimeField label="Earliest departure" value={state.options.leaveAt} onChange={leaveAt=>state.setOptions({leaveAt})}/>
     <Button label="Leave from now" variant="ghost" onPress={()=>{const d=new Date();state.setOptions({date:localDate(),leaveAt:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`});}}/>
-    <Field label="Everyone home by (HH:MM, optional)" value={state.options.returnBy} onChange={returnBy=>state.setOptions({returnBy})}/>
+    <TimeField label="Everyone home by (optional)" value={state.options.returnBy} onChange={returnBy=>state.setOptions({returnBy})} optional/>
     <Text variant="bodySmall">Time at the activity</Text><View style={s.row}>{[60,90,120,180].map(n=><Chip key={n} label={`${n} min`} active={state.options.visitMinutes===n} onPress={()=>state.setOptions({visitMinutes:n})}/>)}</View>
     <Text variant="bodySmall">Extra time each way for traffic, parking and getting ready</Text><View style={s.row}>{[10,15,30].map(n=><Chip key={n} label={`${n} min`} active={state.options.bufferMinutes===n} onPress={()=>state.setOptions({bufferMinutes:n})}/>)}</View>
     <View style={s.row}>{(['either','indoor','outdoor'] as const).map(v=><Chip key={v} label={{either:'Any setting',indoor:'Indoors',outdoor:'Outdoors'}[v]} active={state.options.environment===v} onPress={()=>state.setOptions({environment:v})}/>)}</View>
     <Button label={busy?'Finding a plan for everyone…':'Find our best plans'} disabled={busy||!active.length} onPress={()=>void find()}/>
+    {!busy&&!active.length?<Text variant="bodySmall" color={colors.warning[600]}>{state.families.length?'Select at least one family above to find a plan.':'Add your family above first — we need to know who’s coming.'}</Text>:null}
    </View>
    {message?<Text accessibilityRole="alert" color={colors.warning[600]}>{message}</Text>:null}
    {searched&&inputKey!==resultKey?<Text>Preferences have changed. Find plans again to update the timings.</Text>:null}

@@ -156,8 +156,8 @@ export default function ExploreScreen() {
 
       <View style={styles.searchRow}>
         <TextInput
-          accessibilityLabel="Search places or London areas"
-          placeholder="Search a place, area or postcode"
+          accessibilityLabel="Search a London area or postcode"
+          placeholder="Search a London area or postcode"
           value={search}
           onChangeText={(value) => {
             setSearch(value);

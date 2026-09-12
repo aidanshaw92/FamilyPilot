@@ -133,8 +133,8 @@ export function mergePlaceToVenueDetail(
       trustedMeta?.familyNotes ??
       place.description ??
       (isProviderOnly
-        ? `${place.name} — live place data from ${place.provider === 'osm' ? 'OpenStreetMap' : 'Google'}. Family suitability has not yet been reviewed.`
-        : `${place.name} — details from ${place.provider === 'osm' ? 'OpenStreetMap' : place.provider}.`),
+        ? `${place.name} — family suitability has not yet been reviewed.`
+        : `${place.name} is worth considering for your next outing.`),
     visitDurationMinutes: trustedMeta?.visitDurationMinutes,
     warnings: trustedMeta?.warnings,
     goodToKnow: trustedMeta?.goodToKnow,

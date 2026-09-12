@@ -6,7 +6,10 @@ import { getChildNames } from './profile-defaults';
 
 function toVenueDetail(venue: Venue): VenueDetail {
   const existing = mockVenueDetails[venue.id];
-  if (existing) return existing;
+  // The legacy fixture's own driveMinutes/explanation are stale for whichever home
+  // location is actually configured — always score against the venue's live-computed
+  // distance so "X minutes from home" can't disagree with what the rest of the screen shows.
+  if (existing) return { ...existing, driveMinutes: venue.driveMinutes };
 
   if (venue.enrichmentStatus === 'provider_only') {
     return {

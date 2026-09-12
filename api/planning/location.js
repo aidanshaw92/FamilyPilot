@@ -13,7 +13,7 @@ module.exports = async function handler(req, res) {
     }
     if (!location) {
       const key = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY;
-      if (!key) return res.status(503).json({ error: 'Town lookup is not configured yet. Try a full UK postcode.' });
+      if (!key) return res.status(503).json({ error: 'We can only look up full UK postcodes right now, like NW7 2AB. Try entering one instead of a town name.' });
       const url = new URL('https://maps.googleapis.com/maps/api/geocode/json');
       url.searchParams.set('address', input); url.searchParams.set('components', 'country:GB'); url.searchParams.set('key', key);
       const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
