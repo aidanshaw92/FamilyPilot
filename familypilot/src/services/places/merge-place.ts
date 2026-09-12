@@ -17,11 +17,9 @@ function buildBestAgesLabelFromMeta(metadata: VenueFamilyMetadata | null): strin
 }
 
 function formatOpeningHours(hours?: StructuredOpeningHours): string {
-  if (!hours) return 'Opening hours not confirmed';
-  if (hours.weekdayText?.length) {
-    return `${hours.weekdayText.join('\n')}\nHours from ${hours.source === 'osm' ? 'OpenStreetMap' : hours.source}`;
-  }
-  return `Opening hours from ${hours.source}`;
+  if (!hours) return 'Not confirmed yet';
+  if (hours.weekdayText?.length) return hours.weekdayText.join('\n');
+  return hours.source === 'estimated' ? 'Hours are an estimate — check before you go' : 'Not confirmed yet';
 }
 
 function resolveEnrichmentStatus(

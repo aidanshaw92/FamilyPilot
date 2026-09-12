@@ -23,6 +23,24 @@ export default function TripsScreen() {
  const [tab,setTab]=useState<'plan'|'saved'|'families'>('plan');const [resultKey,setResultKey]=useState('');
  const active=state.families.filter(f=>selected.includes(f.id));const inputKey=JSON.stringify({active,options:state.options});
  useEffect(()=>{if(state.hydrated&&state.options.date<localDate())state.setOptions({date:localDate()});},[state.hydrated]);
+ // "mine" is seeded from the profile once when first created, but a parent's home, pushchair or
+ // children's ages are facts, not a planning-session choice — keep them in sync so they can't
+ // silently drift from the profile that's meant to be the one source of truth. Label, budget,
+ // max drive, required facilities and routines stay untouched: those are legitimately something
+ // a parent might set differently for a specific day plan than for general browsing.
+ useEffect(()=>{
+   if(!state.hydrated)return;
+   const mine=usePlanningStore.getState().families.find(f=>f.id==='mine');
+   if(!mine)return;
+   const home=resolveHomeCoordinates(profile);
+   const ages=profile.members.filter(m=>m.role==='child').map(m=>m.age);
+   const pushchair=Boolean(profile.pushchair);
+   const agesChanged=JSON.stringify(ages)!==JSON.stringify(mine.ages);
+   if(mine.area!==profile.homeLocation||mine.latitude!==home.latitude||mine.longitude!==home.longitude||mine.pushchair!==pushchair||agesChanged){
+     usePlanningStore.getState().setFamily({...mine,area:profile.homeLocation,latitude:home.latitude,longitude:home.longitude,pushchair,ages});
+   }
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+ },[state.hydrated,profile.homeLocation,profile.homeLatitude,profile.homeLongitude,profile.pushchair,profile.members]);
  const blank=(mine:boolean):PlanningFamily=>{const home=mine?resolveHomeCoordinates(profile):null;return {id:mine?'mine':`guest-${Date.now()}`,label:mine?'Our family':'',area:mine?profile.homeLocation:'',latitude:home?.latitude??NaN,longitude:home?.longitude??NaN,ages:mine?profile.members.filter(m=>m.role==='child').map(m=>m.age):[],maxDriveMinutes:mine?profile.maxDriveMinutes:30,budgetTier:mine?profile.budgetTier:'moderate',pushchair:mine?Boolean(profile.pushchair):false,required:[],routines:mine?(profile.routines??[]).map(r=>({...r})):[]};};
  async function find(){setBusy(true);setMessage('');setResults([]);setSearched(false);try{
    clockMinutes(state.options.leaveAt);if(state.options.returnBy)clockMinutes(state.options.returnBy);

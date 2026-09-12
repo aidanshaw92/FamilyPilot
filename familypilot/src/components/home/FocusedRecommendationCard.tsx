@@ -10,6 +10,7 @@ import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { FocusedRecommendation } from '@/src/types/day-request';
 import { getEnrichmentTrustCopy } from '@/src/utils/family-match-classification';
 import { openingStatusLabel } from '@/src/services/context/live-context';
+import { formatArrivalTime } from '@/src/utils/clock-format';
 
 interface FocusedRecommendationCardProps {
   recommendation: FocusedRecommendation;
@@ -93,7 +94,7 @@ export function FocusedRecommendationCard({
           ) : null}
 
           <Text variant="bodySmall" color={colors.text.secondary} style={styles.meta}>
-            {recommendation.driveMinutes} min away
+            {recommendation.driveMinutes} min away · Arrive by {formatArrivalTime(recommendation.driveMinutes)} if you leave now
             {recommendation.estimatedSpend ? ` · Estimated ${recommendation.estimatedSpend}` : ''}
             {recommendation.openingStatus === 'open' ? ' · Open now' : ''}
           </Text>

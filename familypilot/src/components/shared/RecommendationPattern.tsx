@@ -7,6 +7,7 @@ import { Text } from '@/src/components/ui/Text';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
 import { getMatchClassification, getEnrichmentTrustCopy } from '@/src/utils/family-match-classification';
+import { formatArrivalTime } from '@/src/utils/clock-format';
 
 import { formatFamilyMatchSecondary } from '../ui/family-match-label';
 
@@ -136,7 +137,7 @@ export function RecommendationPattern({
       ) : null}
 
       <Text variant="bodySmall" color={colors.text.secondary} style={styles.metaLine}>
-        {venue.driveMinutes} min away
+        {venue.driveMinutes} min away · Arrive by {formatArrivalTime(venue.driveMinutes)} if you leave now
         {venue.estimatedSpend ? ` · Estimated ${venue.estimatedSpend}` : ''}
       </Text>
 

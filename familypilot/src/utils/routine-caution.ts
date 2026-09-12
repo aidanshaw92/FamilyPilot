@@ -1,4 +1,5 @@
 import { FamilyProfile } from '@/src/types';
+import { formatClock } from './clock-format';
 
 /** A generic assumption for how long a family spends at a venue when just browsing — Plans'
  * "Make a plan" flow lets a parent set the real figure once they're actually scheduling a day. */
@@ -8,15 +9,6 @@ function parseClock(value: string): number | null {
   const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(value);
   if (!match) return null;
   return Number(match[1]) * 60 + Number(match[2]);
-}
-
-function formatClock(minutes: number): string {
-  const m = ((Math.round(minutes) % 1440) + 1440) % 1440;
-  const hours24 = Math.floor(m / 60);
-  const mins = m % 60;
-  const period = hours24 >= 12 ? 'pm' : 'am';
-  const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
-  return `${hours12}:${String(mins).padStart(2, '0')}${period}`;
 }
 
 /**

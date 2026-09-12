@@ -225,18 +225,18 @@ export default function VenueScreen() {
               <DetailItem
                 icon="people-outline"
                 label="Best for ages"
-                value={venue.bestAges ?? 'Not yet reviewed'}
+                value={venue.bestAges ?? 'Not confirmed yet'}
               />
               <DetailItem
                 icon="trail-sign-outline"
                 label="Terrain"
-                value={venue.terrain ? formatTerrainLabel(venue.terrain) : 'Not yet reviewed'}
+                value={venue.terrain ? formatTerrainLabel(venue.terrain) : 'Not confirmed yet'}
               />
               <DetailItem icon="time-outline" label="Opening hours" value={venue.openingHours} />
               <DetailItem
                 icon="car-outline"
                 label="Parking"
-                value={venue.parkingInfo ?? 'Not yet reviewed'}
+                value={venue.parkingInfo ?? 'Not confirmed yet'}
               />
             </View>
 
