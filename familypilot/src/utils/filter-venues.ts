@@ -7,7 +7,7 @@ export interface ExploreCategory {
 }
 
 export const EXPLORE_CATEGORIES: ExploreCategory[] = [
-  { id: 'all', label: 'For you' },
+  { id: 'all', label: 'All' },
   { id: 'parks', label: 'Parks' },
   { id: 'restaurants', label: 'Restaurants' },
   { id: 'farms', label: 'Farms' },

@@ -1,57 +1,11 @@
-import { createElement, useState } from 'react';
-import { TextInput, View, StyleSheet, Switch, Platform } from 'react-native';
-import { Button, Text } from '@/src/components/ui';
+import { useState } from 'react';
+import { View, Switch } from 'react-native';
+import { Button, Field, TimeField, Text, formStyles } from '@/src/components/ui';
 import { Chip } from '@/src/components/ui/Chip';
-import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { colors } from '@/src/design-system/tokens';
 import { PlanningFamily, Routine, clockMinutes } from '@/src/services/planning/planner';
 import { locateArea } from '@/src/services/planning/recommendations';
 
-export const formStyles=StyleSheet.create({
-  panel:{backgroundColor:colors.surface,padding:spacing.lg,borderRadius:radius.lg,gap:spacing.md,marginBottom:spacing.lg},
-  row:{flexDirection:'row',flexWrap:'wrap',gap:spacing.sm,alignItems:'center'},
-  input:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:radius.md,padding:spacing.md,fontSize:16,color:colors.text.primary,minHeight:48},
-});
-export function Field({label,value,onChange,placeholder,secure=false}:{label:string;value:string;onChange:(s:string)=>void;placeholder?:string;secure?:boolean}) {
- return <View style={{gap:6}}><Text variant="bodySmall">{label}</Text><TextInput accessibilityLabel={label} value={value} onChangeText={onChange} placeholder={placeholder} secureTextEntry={secure} autoCapitalize="none" style={formStyles.input}/></View>;
-}
-
-// The web build is this pilot's real surface (see .env.example), so give it a native date/time
-// picker instead of a hand-typed "YYYY-MM-DD"/"HH:MM" string — far lower friction on a phone.
-// Native (iOS/Android) keeps the plain text field until a real native picker is wired up there.
-const webFieldStyle = {
-  backgroundColor: colors.surface,
-  border: `1px solid ${colors.border}`,
-  borderRadius: radius.md,
-  padding: spacing.md,
-  fontSize: 16,
-  color: colors.text.primary,
-  minHeight: 48,
-  width: '100%',
-  boxSizing: 'border-box',
-  fontFamily: 'inherit',
-};
-
-export function DateField({label,value,onChange}:{label:string;value:string;onChange:(s:string)=>void}) {
- if (Platform.OS === 'web') {
-   return <View style={{gap:6}}>
-     <Text variant="bodySmall">{label}</Text>
-     {createElement('input', { type:'date', value, 'aria-label':label, style:webFieldStyle,
-       onChange:(e: {target:{value:string}}) => onChange(e.target.value) })}
-   </View>;
- }
- return <Field label={label} value={value} onChange={onChange} placeholder="YYYY-MM-DD"/>;
-}
-
-export function TimeField({label,value,onChange,optional=false}:{label:string;value:string;onChange:(s:string)=>void;optional?:boolean}) {
- if (Platform.OS === 'web') {
-   return <View style={{gap:6}}>
-     <Text variant="bodySmall">{label}</Text>
-     {createElement('input', { type:'time', value, 'aria-label':label, style:webFieldStyle,
-       onChange:(e: {target:{value:string}}) => onChange(e.target.value) })}
-   </View>;
- }
- return <Field label={label} value={value} onChange={onChange} placeholder={optional?undefined:'HH:MM'}/>;
-}
 export function FamilyEditor({initial,onSave,onCancel}:{initial:PlanningFamily;onSave:(f:PlanningFamily)=>void;onCancel:()=>void}) {
  const [family,setFamily]=useState(initial);const [ages,setAges]=useState(initial.ages.join(', '));const [area,setArea]=useState(initial.area);
  const [busy,setBusy]=useState(false);const [error,setError]=useState('');

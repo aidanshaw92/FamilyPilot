@@ -6,7 +6,7 @@ import { supabase } from '@/src/services/supabase/client';
 import { planningApiUrl } from '@/src/services/planning/recommendations';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { PlanningData, usePlanningStore } from '@/src/stores/planning-store';
-import { Field, formStyles as s } from './FamilyEditor';
+import { Field, formStyles as s } from '@/src/components/ui';
 
 type Connection={id:string;pending:boolean;expiresAt:string;family:PlanningFamily|null};
 export function PlanningAccount(){

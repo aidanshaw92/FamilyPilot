@@ -15,6 +15,7 @@ export function createEmptyProfile(): FamilyProfile {
     pushchair: null,
     travelCot: null,
     memberships: [],
+    routines: [],
   };
 }
 

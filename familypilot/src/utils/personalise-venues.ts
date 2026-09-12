@@ -3,6 +3,7 @@ import { calculateFamilyScore } from '@/src/services/scoring/family-score';
 import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDetail, WeatherInfo } from '@/src/types';
 
 import { getChildNames } from './profile-defaults';
+import { buildRoutineCaution } from './routine-caution';
 
 function toVenueDetail(venue: Venue): VenueDetail {
   const existing = mockVenueDetails[venue.id];
@@ -34,10 +35,11 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
   const detail = toVenueDetail(venue);
   const enrichmentStatus: EnrichmentStatus = venue.enrichmentStatus ?? 'provider_only';
   const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus, weather });
+  const routineCaution = buildRoutineCaution(profile, venue.driveMinutes);
   return {
     ...venue,
     familyScore,
-    goodToKnow: detail.goodToKnow,
+    goodToKnow: routineCaution ? [routineCaution, ...(detail.goodToKnow ?? [])] : detail.goodToKnow,
     facilities: detail.facilities,
   };
 }

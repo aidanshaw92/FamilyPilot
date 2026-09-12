@@ -15,11 +15,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AgeInput, AgeUnit } from '@/src/components/profile/AgeInput';
 import { TextField } from '@/src/components/profile/TextField';
 import { BackButton } from '@/src/components/ui/BackButton';
-import { Button, Chip, EmptyState, Text } from '@/src/components/ui';
+import { Button, Chip, EmptyState, Text, TimeField } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useUpdateFamilyProfile } from '@/src/hooks/use-queries';
 import { resolveUkLocation } from '@/src/services/location/location-client';
-import { FamilyMember, FamilyProfile } from '@/src/types';
+import { FamilyMember, FamilyProfile, FamilyRoutine } from '@/src/types';
 import {
   createChildMember,
   createParentMember,
@@ -60,6 +60,7 @@ export default function EditProfileScreen() {
   const [pushchair, setPushchair] = useState('');
   const [travelCot, setTravelCot] = useState('');
   const [memberships, setMemberships] = useState('');
+  const [routines, setRoutines] = useState<FamilyRoutine[]>([]);
   const [resolvingHome, setResolvingHome] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -74,6 +75,7 @@ export default function EditProfileScreen() {
     setPushchair(profile.pushchair ?? '');
     setTravelCot(profile.travelCot ?? '');
     setMemberships((profile.memberships ?? []).join(', '));
+    setRoutines(profile.routines ?? []);
     setChildren(
       profile.members
         .filter((m) => m.role === 'child')
@@ -175,6 +177,7 @@ export default function EditProfileScreen() {
         .split(',')
         .map((m) => m.trim())
         .filter(Boolean),
+      routines,
       members: [{ ...parentMember, name: parentName.trim() }, ...childMembers],
     });
 
@@ -202,6 +205,28 @@ export default function EditProfileScreen() {
         onPress: () => setChildren((prev) => prev.filter((c) => c.id !== id)),
       },
     ]);
+  };
+
+  const addRoutine = (kind: FamilyRoutine['kind']) => {
+    setRoutines((prev) => [
+      ...prev,
+      {
+        id: `routine-${Date.now()}`,
+        label: '',
+        kind,
+        time: kind === 'nap' ? '13:00' : '12:00',
+        durationMinutes: 60,
+        atHome: true,
+      },
+    ]);
+  };
+
+  const updateRoutine = (id: string, patch: Partial<FamilyRoutine>) => {
+    setRoutines((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  };
+
+  const removeRoutine = (id: string) => {
+    setRoutines((prev) => prev.filter((r) => r.id !== id));
   };
 
   if (isLoading) {
@@ -339,6 +364,58 @@ export default function EditProfileScreen() {
               <Text variant="body">{option.label}</Text>
             </Pressable>
           ))}
+        </View>
+
+        <Text variant="heading3" style={styles.sectionTitle}>
+          Usual feeds and naps
+        </Text>
+        <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+          Lets us flag a recommendation that would run into nap time. You can still adjust times for a
+          specific day when you plan one.
+        </Text>
+        {routines.map((routine) => (
+          <View key={routine.id} style={styles.childBlock}>
+            <View style={styles.childHeader}>
+              <View style={styles.chipRow}>
+                {(['nap', 'feed'] as const).map((kind) => (
+                  <Chip
+                    key={kind}
+                    label={kind === 'nap' ? 'Nap' : 'Feed'}
+                    active={routine.kind === kind}
+                    onPress={() => updateRoutine(routine.id, { kind })}
+                  />
+                ))}
+              </View>
+              <Pressable onPress={() => removeRoutine(routine.id)} accessibilityRole="button">
+                <Text variant="caption" color={colors.error[500]}>
+                  Remove
+                </Text>
+              </Pressable>
+            </View>
+            <TextField
+              label="Label (optional)"
+              value={routine.label}
+              onChangeText={(value) => updateRoutine(routine.id, { label: value })}
+              placeholder={routine.kind === 'nap' ? 'e.g. Afternoon nap' : 'e.g. Lunch feed'}
+            />
+            <TimeField
+              label="Usual time"
+              value={routine.time}
+              onChange={(time) => updateRoutine(routine.id, { time })}
+            />
+          </View>
+        ))}
+        <View style={styles.chipRow}>
+          <Pressable onPress={() => addRoutine('nap')} style={styles.addChild} accessibilityRole="button">
+            <Text variant="body" color={colors.primary[500]}>
+              + Add a nap
+            </Text>
+          </Pressable>
+          <Pressable onPress={() => addRoutine('feed')} style={styles.addChild} accessibilityRole="button">
+            <Text variant="body" color={colors.primary[500]}>
+              + Add a feed
+            </Text>
+          </Pressable>
         </View>
 
         <Text variant="heading3" style={styles.sectionTitle}>

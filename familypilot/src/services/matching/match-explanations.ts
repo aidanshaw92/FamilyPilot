@@ -5,6 +5,8 @@ import {
   MatchableVenueFacts,
   VenueMatchResult,
 } from '@/src/types/day-request';
+import { FamilyProfile } from '@/src/types';
+import { buildRoutineCaution } from '@/src/utils/routine-caution';
 
 const FIELD_LABELS: Record<string, string> = {
   'childAgeFit': 'Recommended ages',
@@ -162,7 +164,12 @@ export function buildFocusedRecommendation(
   match: VenueMatchResult,
   imageUrl: string,
   journeySource?: 'live' | 'estimated',
+  profile?: FamilyProfile,
 ): FocusedRecommendation {
+  const routineCaution = profile ? buildRoutineCaution(profile, facts.driveMinutes) : null;
+  const caveats = routineCaution
+    ? [routineCaution, ...facts.warnings]
+    : facts.warnings;
   return {
     venueId: facts.placeId,
     venueName: facts.name,
@@ -172,7 +179,7 @@ export function buildFocusedRecommendation(
     estimatedSpend: facts.estimatedSpend ?? undefined,
     fit: match.fit!,
     reasons: buildFocusedReasons(facts, match.evaluations),
-    caveats: facts.warnings.slice(0, 2),
+    caveats: caveats.slice(0, 2),
     unknowns: buildFocusedUnknowns(match.evaluations),
     enrichmentStatus:
       facts.enrichmentStatus === 'verified'
