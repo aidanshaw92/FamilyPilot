@@ -68,7 +68,7 @@ export default function WelcomeScreen() {
           label="Get started"
           size="lg"
           fullWidth
-          onPress={() => router.push('/(onboarding)/setup' as never)}
+          onPress={() => router.push('/(onboarding)/account' as never)}
         />
         <Text variant="caption" color={colors.text.tertiary} style={styles.footerNote}>
           Takes about a minute · You can add more details later

@@ -14,5 +14,6 @@ export { PressableScale } from './PressableScale';
 export { FadeInView } from './FadeInView';
 export { ScoreFactorBar } from './ScoreFactorBar';
 export { VenueImage } from './VenueImage';
+export { FacilitySignals } from './FacilitySignals';
 export { Field, formStyles } from './Field';
 export { DateField, TimeField } from './DateTimeField';

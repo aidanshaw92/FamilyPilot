@@ -85,7 +85,7 @@ function PackingScreenContent() {
         <View style={styles.completeBanner}>
           <Ionicons name="checkmark-circle" size={20} color={colors.secondary[600]} />
           <Text variant="bodySmall" color={colors.secondary[600]}>
-            All packed — you&apos;re ready to go
+            All packed, you&apos;re ready to go
           </Text>
         </View>
       ) : null}

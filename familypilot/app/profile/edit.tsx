@@ -305,7 +305,7 @@ export default function EditProfileScreen() {
           value={homeLocation}
           onChangeText={setHomeLocation}
           autoCapitalize="words"
-          hint="Used to calculate real travel and weather from your general area — not your full address"
+          hint="Used to calculate real travel and weather from your general area, not your full address"
           error={errors.homeLocation}
         />
 
@@ -367,7 +367,7 @@ export default function EditProfileScreen() {
         </View>
 
         <Text variant="label" color={colors.text.secondary} style={styles.groupLabel}>
-          Budget — currently {formatBudgetTier(budgetTier)}
+          Budget: currently {formatBudgetTier(budgetTier)}
         </Text>
         <View style={styles.chipColumn}>
           {BUDGET_OPTIONS.map((option) => (

@@ -252,7 +252,7 @@ export default function VenueScreen() {
                   // the same fact "Not confirmed yet" just because the richer free-text detail
                   // (spaces, cost) hasn't been reviewed yet.
                   (venue.facilities?.includes('parking')
-                    ? 'Available on site — more detail not confirmed'
+                    ? 'Available on site, more detail not confirmed'
                     : 'Not confirmed yet')
                 }
               />

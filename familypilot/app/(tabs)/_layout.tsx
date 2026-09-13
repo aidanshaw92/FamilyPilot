@@ -23,6 +23,13 @@ const TAB_CONFIG: {
     iconFocused: 'calendar',
     pilotFeature: 'trips_tab',
   },
+  {
+    name: 'families',
+    title: 'Families',
+    icon: 'people-outline',
+    iconFocused: 'people',
+    pilotFeature: 'trips_tab',
+  },
   { name: 'saved', title: 'Saved', icon: 'heart-outline', iconFocused: 'heart' },
   { name: 'profile', title: 'Profile', icon: 'person-outline', iconFocused: 'person' },
 ];

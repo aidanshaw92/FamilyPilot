@@ -277,7 +277,7 @@ function RestaurantScreenContent() {
                 {restaurant.estimatedFamilySpend ?? restaurant.estimatedSpend ?? 'Varies'}
               </Text>
               <Text variant="caption" color={colors.text.secondary} style={styles.infoHint}>
-                Based on typical family meals — not an exact price
+                Based on typical family meals, not an exact price
               </Text>
               <DataTrustBadge variant="estimated" label="Estimated family spend" />
             </View>

@@ -19,7 +19,7 @@ function buildBestAgesLabelFromMeta(metadata: VenueFamilyMetadata | null): strin
 function formatOpeningHours(hours?: StructuredOpeningHours): string {
   if (!hours) return 'Not confirmed yet';
   if (hours.weekdayText?.length) return hours.weekdayText.join('\n');
-  return hours.source === 'estimated' ? 'Hours are an estimate — check before you go' : 'Not confirmed yet';
+  return hours.source === 'estimated' ? 'Hours are an estimate, check before you go' : 'Not confirmed yet';
 }
 
 function resolveEnrichmentStatus(
@@ -131,7 +131,7 @@ export function mergePlaceToVenueDetail(
       trustedMeta?.familyNotes ??
       place.description ??
       (isProviderOnly
-        ? `${place.name} — family suitability has not yet been reviewed.`
+        ? `${place.name}: family suitability has not yet been reviewed.`
         : `${place.name} is worth considering for your next outing.`),
     visitDurationMinutes: trustedMeta?.visitDurationMinutes,
     warnings: trustedMeta?.warnings,

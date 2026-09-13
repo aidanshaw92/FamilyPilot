@@ -19,6 +19,15 @@ interface FocusedRecommendationCardProps {
   index?: number;
 }
 
+// Confirmed facts already carry which field they're about; reuse that instead of a
+// second lookup, so a glance shows what's actually on offer without reading a sentence.
+const FACILITY_ICON_BY_FIELD: Record<string, keyof typeof Ionicons.glyphMap> = {
+  toilets: 'water-outline',
+  parking: 'car-outline',
+  babyChanging: 'happy-outline',
+  pushchairSuitability: 'accessibility-outline',
+};
+
 export function FocusedRecommendationCard({
   recommendation,
   variant = 'carousel',
@@ -26,6 +35,7 @@ export function FocusedRecommendationCard({
 }: FocusedRecommendationCardProps) {
   const router = useRouter();
   const isHero = variant === 'hero';
+  const facilitySignals = recommendation.reasons.filter((r) => FACILITY_ICON_BY_FIELD[r.field]);
 
   return (
     <FadeInView delay={index * 60}>
@@ -73,14 +83,25 @@ export function FocusedRecommendationCard({
                   Why it suits your family
                 </Text>
               ) : null}
-              {recommendation.reasons.slice(0, isHero ? 3 : 2).map((reason) => (
-                <View key={`${reason.field}-${reason.text}`} style={styles.row}>
-                  <Ionicons name="checkmark-circle" size={14} color={colors.secondary[500]} />
-                  <Text variant="bodySmall" style={styles.rowText} numberOfLines={2}>
-                    {reason.text}
-                  </Text>
+              <View style={styles.row}>
+                <Ionicons name="checkmark-circle" size={14} color={colors.secondary[500]} />
+                <Text variant="bodySmall" style={styles.rowText} numberOfLines={2}>
+                  {recommendation.reasons[0].text}
+                </Text>
+              </View>
+              {facilitySignals.length > 0 ? (
+                <View style={styles.signalsRow}>
+                  {facilitySignals.map((signal) => (
+                    <View key={signal.field} style={styles.signalBadge}>
+                      <Ionicons
+                        name={FACILITY_ICON_BY_FIELD[signal.field]}
+                        size={14}
+                        color={colors.secondary[600]}
+                      />
+                    </View>
+                  ))}
                 </View>
-              ))}
+              ) : null}
             </View>
           ) : null}
 
@@ -172,6 +193,19 @@ const styles = StyleSheet.create({
   block: {
     marginBottom: spacing.sm,
     gap: spacing.xs,
+  },
+  signalsRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 2,
+  },
+  signalBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.secondary[50],
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sectionLabel: {
     fontFamily: 'Inter_600SemiBold',

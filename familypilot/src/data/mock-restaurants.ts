@@ -114,7 +114,7 @@ export const mockRestaurantSeeds: Omit<RestaurantDetail, 'familyScore'>[] = [
     terrain: 'flat',
     bestAges: '3+',
     parkingInfo: 'Street parking only',
-    description: 'Fast counter-service café — handy if you need something quick, but limited toddler facilities.',
+    description: 'Fast counter-service café, handy if you need something quick, but limited toddler facilities.',
     goodToKnow: ['No high chairs confirmed', 'Can get busy at lunchtime'],
     restaurantFeatures: features({
       kidsMenu: 'not_available',
@@ -187,7 +187,7 @@ export const mockRestaurantSeeds: Omit<RestaurantDetail, 'familyScore'>[] = [
     terrain: 'flat',
     bestAges: '2+',
     parkingInfo: 'Pay & display nearby',
-    description: 'Shareable pizzas and a simple kids menu — popular after park visits.',
+    description: 'Shareable pizzas and a simple kids menu, popular after park visits.',
     goodToKnow: ['Noisy at peak times'],
     restaurantFeatures: features({
       kidsMenu: 'confirmed',
@@ -261,7 +261,7 @@ export const mockRestaurantSeeds: Omit<RestaurantDetail, 'familyScore'>[] = [
     terrain: 'flat',
     bestAges: '1 – 6 years',
     parkingInfo: 'Included with farm entry',
-    description: 'Simple farm café — great for toddlers, limited menu for older children.',
+    description: 'Simple farm café, great for toddlers, limited menu for older children.',
     restaurantFeatures: features({
       kidsMenu: 'confirmed',
       highChairs: 'confirmed',
@@ -296,7 +296,7 @@ export const mockRestaurantSeeds: Omit<RestaurantDetail, 'familyScore'>[] = [
     terrain: 'flat',
     bestAges: '0 – 5 years',
     parkingInfo: 'Small free car park',
-    description: 'Purpose-built for families with young children — excellent toddler fit.',
+    description: 'Purpose-built for families with young children, excellent toddler fit.',
     restaurantFeatures: features({
       kidsMenu: 'confirmed',
       highChairs: 'confirmed',
@@ -331,7 +331,7 @@ export const mockRestaurantSeeds: Omit<RestaurantDetail, 'familyScore'>[] = [
     openingHours: '10:00 AM – 5:00 PM',
     terrain: 'flat',
     bestAges: '3 – 12 years',
-    parkingInfo: 'No parking — use public transport',
+    parkingInfo: 'No parking, use public transport',
     description: 'Convenient museum café with reliable family facilities after exhibits.',
     restaurantFeatures: features({
       kidsMenu: 'confirmed',
@@ -367,7 +367,7 @@ export const mockRestaurantSeeds: Omit<RestaurantDetail, 'familyScore'>[] = [
     terrain: 'flat',
     bestAges: '5+',
     parkingInfo: 'Street parking limited',
-    description: 'Budget-friendly lunch spot — better for older children than toddlers.',
+    description: 'Budget-friendly lunch spot, better for older children than toddlers.',
     goodToKnow: ['Limited space for pushchairs at peak times'],
     restaurantFeatures: features({
       kidsMenu: 'not_confirmed',
@@ -439,8 +439,8 @@ export const mockRestaurantSeeds: Omit<RestaurantDetail, 'familyScore'>[] = [
     terrain: 'mixed',
     bestAges: '4+',
     parkingInfo: 'Pub car park',
-    description: 'Sunday-roast favourite with garden seating — less ideal for very young toddlers.',
-    goodToKnow: ['Step at entrance — pushchair access may need assistance'],
+    description: 'Sunday-roast favourite with garden seating, less ideal for very young toddlers.',
+    goodToKnow: ['Step at entrance, pushchair access may need assistance'],
     restaurantFeatures: features({
       kidsMenu: 'confirmed',
       highChairs: 'confirmed',
@@ -476,7 +476,7 @@ export const mockRestaurantSeeds: Omit<RestaurantDetail, 'familyScore'>[] = [
     terrain: 'flat',
     bestAges: '2 – 10 years',
     parkingInfo: 'Free farm parking',
-    description: 'Good value family grill near the farm — solid all-round option after animal visits.',
+    description: 'Good value family grill near the farm, solid all-round option after animal visits.',
     restaurantFeatures: features({
       kidsMenu: 'confirmed',
       highChairs: 'confirmed',

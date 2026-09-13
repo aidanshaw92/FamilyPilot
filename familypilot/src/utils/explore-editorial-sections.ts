@@ -82,7 +82,7 @@ export function buildExploreEditorialSections(venues: Venue[]): ExploreEditorial
     sections.push({
       id: 'worth-drive',
       title: 'Worth the drive',
-      subtitle: 'A little further — high family match',
+      subtitle: 'A little further, high family match',
       venues: worthDrive,
     });
   }

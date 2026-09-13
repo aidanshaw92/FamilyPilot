@@ -3,6 +3,7 @@ import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { FacilitySignals } from '@/src/components/ui/FacilitySignals';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { FamilyMatch } from '@/src/components/ui/FamilyMatch';
 import { PressableScale } from '@/src/components/ui/PressableScale';
@@ -44,11 +45,10 @@ function DecisionCardComponent({
     // "Potential match" alone for unreviewed venues (there's no score behind it to shorten to).
     const pillLabel =
       venue.enrichmentStatus === 'provider_only' ? classification : classification.replace(' match', '');
-    // Two concrete facts read as bespoke; one alone can look like a generic template repeated
-    // across every card, so combine the two most relevant reasons where there's a second one.
-    // (A third was tried and tested worse: numberOfLines={2} below just truncates it with an
-    // ellipsis rather than showing it, which reads as a cut-off fragment instead of a fact.)
-    const reason = venue.familyScore.explanation.slice(0, 2).join(' · ');
+    // The single most bespoke, relevant fact for this family (routine fit and concrete
+    // duration/age/facility matches are ordered first) reads as a real answer to "why this
+    // one" - a bulleted list of every known fact read as generic filler instead.
+    const oneLiner = venue.familyScore.explanation[0];
 
     return (
       <PressableScale
@@ -76,11 +76,17 @@ function DecisionCardComponent({
               </Text>
             </View>
           </View>
-          {reason ? (
-            <Text variant="bodySmall" color={colors.text.primary} numberOfLines={2} style={styles.compactReason}>
-              {reason}
+          {oneLiner ? (
+            <Text
+              variant="bodySmall"
+              color={colors.text.primary}
+              numberOfLines={2}
+              style={styles.compactReason}
+            >
+              {oneLiner}
             </Text>
           ) : null}
+          <FacilitySignals facts={venue.trustedFacts} />
           <Text variant="caption" color={colors.text.tertiary}>
             {venue.category.replace('_', ' ')} · {venue.driveMinutes} min away
             {venue.estimatedSpend ? ` · ${venue.estimatedSpend}` : ''}

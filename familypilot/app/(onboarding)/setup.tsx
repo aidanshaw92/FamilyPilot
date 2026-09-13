@@ -80,21 +80,21 @@ export default function SetupScreen() {
         {
           title: 'Let’s get started',
           subtitle:
-            'Your name and general area are enough to personalise recommendations — your exact home address is never needed.',
+            'Your name and general area are enough to personalise recommendations. Your exact home address is never needed.',
         },
         {
           title: 'Who are we planning for?',
           subtitle:
-            'Age — in years, or months for a baby under 1 — helps us recommend places that genuinely suit your family.',
+            'Age, in years, or months for a baby under 1, helps us recommend places that genuinely suit your family.',
         },
         {
           title: 'Naps and feeds',
           subtitle:
-            'Tell us the usual times so recommendations can say things like "leave by 12:00 to be home for lunch" — not just distance.',
+            'Tell us the usual times so recommendations can say things like "leave by 12:00 to be home for lunch", not just distance.',
         },
         {
           title: 'How do you usually plan days out?',
-          subtitle: 'These defaults help Family Match — you can change them anytime in Profile.',
+          subtitle: 'These defaults help Family Match. You can change them anytime in Profile.',
         },
       ][step - 1],
     [step],
@@ -204,7 +204,7 @@ export default function SetupScreen() {
 
     setProfile(profile);
     completeOnboarding();
-    router.replace('/(tabs)' as never);
+    router.replace('/(onboarding)/add-friends' as never);
   };
 
   const handleBack = () => {
@@ -271,7 +271,7 @@ export default function SetupScreen() {
                 }}
                 placeholder="e.g. Mill Hill or NW7 2AB"
                 autoCapitalize="words"
-                hint="We resolve this to a general area for travel and weather — never a full home address"
+                hint="We resolve this to a general area for travel and weather, never a full home address"
                 error={errors.homeLocation}
               />
             </View>
@@ -358,7 +358,7 @@ export default function SetupScreen() {
               </View>
 
               <Text variant="caption" color={colors.text.secondary}>
-                Optional — skip either if it doesn’t apply. You can change these anytime in Profile.
+                Optional, skip either if it doesn’t apply. You can change these anytime in Profile.
               </Text>
             </View>
           ) : null}

@@ -164,7 +164,7 @@ function weatherEnvironmentReason(
 
   if (environment === 'indoor' && isWet) return 'Good indoor option for today’s rain';
   if (environment === 'outdoor' && isBright) return 'Good for today’s weather';
-  if (environment === 'outdoor' && isWet) return 'Outdoor venue — today’s forecast is rain';
+  if (environment === 'outdoor' && isWet) return 'Outdoor venue, today’s forecast is rain';
   if (environment === 'indoor') return 'Indoor environment confirmed';
   if (environment === 'outdoor') return 'Outdoor environment confirmed';
   return null;

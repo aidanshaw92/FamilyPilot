@@ -3,6 +3,7 @@ import { StyleSheet, View, ViewStyle } from 'react-native';
 
 import { Button } from '@/src/components/ui/Button';
 import { DataTrustBadge } from '@/src/components/ui/DataTrustBadge';
+import { FacilitySignals } from '@/src/components/ui/FacilitySignals';
 import { Text } from '@/src/components/ui/Text';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
@@ -31,11 +32,13 @@ interface RecommendationPatternProps {
   style?: ViewStyle;
 }
 
+// One bespoke, specific reason reads as a real answer to "why this one"; a checklist of
+// every known fact read as generic filler regardless of how many items it had.
 const REASON_LIMIT: Record<RecommendationVariant, number> = {
-  hero: 3,
-  carousel: 2,
-  list: 2,
-  detail: 3,
+  hero: 1,
+  carousel: 1,
+  list: 1,
+  detail: 1,
 };
 
 const CAUTION_LIMIT: Record<RecommendationVariant, number> = {
@@ -113,6 +116,11 @@ export function RecommendationPattern({
               </Text>
             </View>
           ))}
+          {!isFocused ? (
+            <View style={styles.signalsRow}>
+              <FacilitySignals facts={venue.trustedFacts} size={isDetail ? 16 : 14} />
+            </View>
+          ) : null}
         </View>
       ) : null}
 
@@ -202,6 +210,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     color: colors.text.primary,
     marginBottom: spacing.sm,
+  },
+  signalsRow: {
+    marginTop: spacing.xs,
   },
   reasonRow: {
     flexDirection: 'row',

@@ -169,7 +169,7 @@ function buildHeuristicExplanation(
   }
 
   if (hasPushchair && factors.accessibility >= 85) {
-    reasons.push('Great for buggies — flat, step-free access');
+    reasons.push('Great for buggies: flat, step-free access');
   } else if (factors.accessibility >= 85) {
     reasons.push('Flat enough for pushchairs');
   }

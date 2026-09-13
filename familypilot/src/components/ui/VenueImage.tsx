@@ -46,7 +46,7 @@ export function VenueImage({uri,category,alt,style,borderRadius=radius.md}:Venue
   {!uri||failed?
    <LinearGradient
      colors={[gradientStart, gradientEnd]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.empty}
-     accessible accessibilityRole="image" accessibilityLabel={`${alt} — photo not available`}
+     accessible accessibilityRole="image" accessibilityLabel={`${alt}, photo not available`}
    >
     <Ionicons name={icon ?? 'image-outline'} size={30} color="rgba(255,255,255,0.92)" importantForAccessibility="no" />
    </LinearGradient>

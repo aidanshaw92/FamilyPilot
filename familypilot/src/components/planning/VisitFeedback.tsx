@@ -44,7 +44,7 @@ export function VenueTrustPanel({venueId}:{venueId:string}){
  {f.sourceUrl&&/^https?:\/\//.test(f.sourceUrl)?<Button label={`Read ${f.label.toLowerCase()} source`} variant="ghost" onPress={()=>void Linking.openURL(f.sourceUrl!).catch(()=>setMessage('Could not open that source.'))}/>:null}
  </View>):null}
  {message?<Text accessibilityRole="alert">{message}</Text>:null}
- {!open?<Button label="I’ve visited — share a quick check" variant="outline" onPress={()=>{setMessage('');setOpen(true);}}/>:<><Field label="Date you visited (YYYY-MM-DD)" value={date} onChange={setDate}/><VisitFeedbackForm venueId={venueId} date={date} onCancel={()=>setOpen(false)} onDone={()=>{setOpen(false);setRevision(r=>r+1);setMessage('Thank you. Your observations have been saved and a source recheck queued.');}}/></>}
+ {!open?<Button label="I’ve visited, share a quick check" variant="outline" onPress={()=>{setMessage('');setOpen(true);}}/>:<><Field label="Date you visited (YYYY-MM-DD)" value={date} onChange={setDate}/><VisitFeedbackForm venueId={venueId} date={date} onCancel={()=>setOpen(false)} onDone={()=>{setOpen(false);setRevision(r=>r+1);setMessage('Thank you. Your observations have been saved and a source recheck queued.');}}/></>}
  </Card>;
 }
 export function MyVisitReports(){

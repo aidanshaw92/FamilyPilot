@@ -9,7 +9,6 @@ import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { FamilyEditor } from '@/src/components/planning/FamilyEditor';
 import { DateField, TimeField, formStyles as s } from '@/src/components/ui';
-import { PlanningAccount } from '@/src/components/planning/PlanningAccount';
 import { useFamilyStore } from '@/src/stores/family-store';
 import { localDate, usePlanningStore } from '@/src/stores/planning-store';
 import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
@@ -24,7 +23,7 @@ export default function TripsScreen() {
  const router=useRouter();const state=usePlanningStore();const profile=useFamilyStore(x=>x.profile);
  const [editor,setEditor]=useState<PlanningFamily|null>(null);const [selected,setSelected]=useState<string[]>(['mine']);
  const [results,setResults]=useState<PlanningResult[]>([]);const [busy,setBusy]=useState(false);const [message,setMessage]=useState('');const [searched,setSearched]=useState(false);
- const [tab,setTab]=useState<'plan'|'saved'|'families'>('plan');const [resultKey,setResultKey]=useState('');
+ const [tab,setTab]=useState<'plan'|'saved'>('plan');const [resultKey,setResultKey]=useState('');
  const active=state.families.filter(f=>selected.includes(f.id));const inputKey=JSON.stringify({active,options:state.options});
  useEffect(()=>{if(state.hydrated&&state.options.date<localDate())state.setOptions({date:localDate()});},[state.hydrated]);
  // "mine" is seeded from the profile once when first created, but a parent's home, pushchair or
@@ -128,20 +127,13 @@ export default function TripsScreen() {
  return <ScreenContainer><ScrollView contentContainerStyle={{padding:spacing.screenPadding,paddingBottom:60,gap:spacing.md}} keyboardShouldPersistTaps="handled">
   <PostVisitInbox/>
   <Text variant="heading1">Make a plan</Text><Text color={colors.text.secondary}>A day that works for everyone.</Text>
-  <View style={s.row}>{(['plan','saved','families'] as const).map(t=><Chip key={t} label={{plan:'Plan a day',saved:'Saved plans',families:'Families & routines'}[t]} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
+  <View style={s.row}>{(['plan','saved'] as const).map(t=><Chip key={t} label={{plan:'Plan a day',saved:'Saved plans'}[t]} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
   {editor?<FamilyEditor key={editor.id} initial={editor} onCancel={()=>setEditor(null)} onSave={f=>{state.setFamily(f);setSelected(ids=>[...new Set([...ids,f.id])]);setEditor(null);}}/>:null}
-  {tab==='families'?<>
-    <Text variant="bodySmall">Family details and saved plans stay on this device unless you choose to back them up. Friend connections share only the details you explicitly approve.</Text>
-    {state.families.map(f=><Card key={f.id} style={s.panel}><Text variant="heading3">{f.label}</Text><Text>{f.area} · {f.ages.length?`Ages ${f.ages.join(', ')}`:'Adults only'} · {f.routines.length} routines</Text><Button label="Edit family and routines" variant="outline" onPress={()=>setEditor(f)}/><Button label="Remove from this device" variant="ghost" onPress={()=>{state.removeFamily(f.id);setSelected(ids=>ids.filter(id=>id!==f.id));}}/></Card>)}
-    {!state.families.some(f=>f.id==='mine')?<Button label="Add your family" onPress={()=>setEditor(blank(true))}/>:null}
-    <Button label="Add a family together on this phone" variant="outline" onPress={()=>setEditor(blank(false))}/>
-    <PlanningAccount/>
-  </>:null}
   {tab==='plan'?<>
    <Card style={s.panel}><Text variant="heading2">Who’s coming?</Text>
     <View style={s.row}>{state.families.map(f=><Chip key={f.id} label={f.label} active={selected.includes(f.id)} onPress={()=>setSelected(ids=>ids.includes(f.id)?ids.filter(x=>x!==f.id):[...ids,f.id])}/>)}</View>
     {!state.families.length?<Button label="Set up your family & routines" onPress={()=>setEditor(blank(true))}/>:null}
-    <Button label="Manage families and routines" variant="ghost" onPress={()=>setTab('families')}/>
+    <Button label="Manage families and routines" variant="ghost" onPress={()=>router.push('/(tabs)/families' as never)}/>
     <DateField label="Date" value={state.options.date} onChange={date=>state.setOptions({date})}/>
     <TimeField label="Earliest departure" value={state.options.leaveAt} onChange={leaveAt=>state.setOptions({leaveAt})}/>
     <Button label="Leave from now" variant="ghost" onPress={()=>{const d=new Date();state.setOptions({date:localDate(),leaveAt:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`});}}/>
@@ -150,7 +142,7 @@ export default function TripsScreen() {
     <Text variant="bodySmall">Extra time each way for traffic, parking and getting ready</Text><View style={s.row}>{[10,15,30].map(n=><Chip key={n} label={`${n} min`} active={state.options.bufferMinutes===n} onPress={()=>state.setOptions({bufferMinutes:n})}/>)}</View>
     <View style={s.row}>{(['either','indoor','outdoor'] as const).map(v=><Chip key={v} label={{either:'Any setting',indoor:'Indoors',outdoor:'Outdoors'}[v]} active={state.options.environment===v} onPress={()=>state.setOptions({environment:v})}/>)}</View>
     <Button label={busy?'Finding a plan for everyone…':'Find our best plans'} disabled={busy||!active.length} onPress={()=>void find()}/>
-    {!busy&&!active.length?<Text variant="bodySmall" color={colors.warning[600]}>{state.families.length?'Select at least one family above to find a plan.':'Add your family above first — we need to know who’s coming.'}</Text>:null}
+    {!busy&&!active.length?<Text variant="bodySmall" color={colors.warning[600]}>{state.families.length?'Select at least one family above to find a plan.':'Add your family above first. We need to know who’s coming.'}</Text>:null}
    </Card>
    {message?<Text accessibilityRole="alert" color={colors.warning[600]}>{message}</Text>:null}
    {searched&&inputKey!==resultKey?<Text>Preferences have changed. Find plans again to update the timings.</Text>:null}
@@ -214,7 +206,7 @@ export default function TripsScreen() {
       <View style={s.row}>{connections.filter(c=>!sent.some(i=>i.status!=='declined'&&i.connectionId===c.id)).map(c=><Chip key={c.id} label={c.family?.label||'Family'} onPress={()=>void sendInvite(c.id,saved)}/>)}</View>
       <Button label="Cancel" variant="ghost" size="sm" onPress={()=>setInviteTargetPlanId(null)}/>
      </>:<Button label="Invite a family to this plan" variant="outline" disabled={sharingBusy} onPress={()=>setInviteTargetPlanId(saved.id)}/>}
-    </>:<Text variant="bodySmall" color={colors.text.secondary}>Connect a family under Families &amp; routines to invite them here.</Text>}
+    </>:<Text variant="bodySmall" color={colors.text.secondary}>Connect a family under the Families tab to invite them here.</Text>}
 
     <Button label="Share plan" onPress={()=>void share(sharePlanText(saved.plan,saved.date))}/><Button label="Replan with current preferences" variant="outline" onPress={()=>{state.setOptions({date:saved.date<localDate()?localDate():saved.date});setTab('plan');setSearched(false);}}/><Button label="Delete saved plan" variant="ghost" onPress={()=>state.deletePlan(saved.id)}/>
    </Card>;})}
