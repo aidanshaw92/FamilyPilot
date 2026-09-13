@@ -1,6 +1,15 @@
+import { useEffect } from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { colors, radius } from '@/src/design-system/tokens';
+import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 
 interface SkeletonProps {
   width?: number | `${number}%`;
@@ -9,17 +18,37 @@ interface SkeletonProps {
   style?: ViewStyle;
 }
 
+const PULSE_MIN = 0.45;
+const PULSE_MAX = 1;
+
 export function Skeleton({
   width = '100%',
   height = 16,
   borderRadius = radius.sm,
   style,
 }: SkeletonProps) {
+  const reducedMotion = useReducedMotion();
+  const opacity = useSharedValue(PULSE_MAX);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      opacity.value = PULSE_MIN;
+      return;
+    }
+    opacity.value = withRepeat(
+      withTiming(PULSE_MIN, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true,
+    );
+  }, [opacity, reducedMotion]);
+
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
   return (
-    <View
+    <Animated.View
       accessibilityLabel="Loading"
       accessibilityRole="progressbar"
-      style={[styles.base, { width, height, borderRadius }, style]}
+      style={[styles.base, { width, height, borderRadius }, animatedStyle, style]}
     />
   );
 }
