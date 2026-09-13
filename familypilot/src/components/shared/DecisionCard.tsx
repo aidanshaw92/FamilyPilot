@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -7,6 +8,7 @@ import { FacilitySignals } from '@/src/components/ui/FacilitySignals';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { FamilyMatch } from '@/src/components/ui/FamilyMatch';
 import { PressableScale } from '@/src/components/ui/PressableScale';
+import { SaveButton } from '@/src/components/shared/SaveButton';
 import { Text } from '@/src/components/ui/Text';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
@@ -134,9 +136,23 @@ function DecisionCardComponent({
             />
           </View>
           {isHero ? (
-            <Text variant="heading1" color={colors.text.inverse} style={styles.heroNameOverlay} numberOfLines={2}>
-              {venue.name}
-            </Text>
+            <>
+              <View style={styles.saveBadge}>
+                <SaveButton
+                  venueId={venue.id}
+                  venue={venue}
+                  size={20}
+                  color={colors.text.inverse}
+                  filledColor={colors.coral}
+                />
+              </View>
+              <Text variant="heading1" color={colors.text.inverse} style={styles.heroNameOverlay} numberOfLines={2}>
+                {venue.name}
+              </Text>
+              <View style={styles.heroCta}>
+                <Ionicons name="arrow-forward" size={18} color={colors.text.inverse} />
+              </View>
+            </>
           ) : null}
         </View>
 
@@ -256,10 +272,32 @@ const styles = StyleSheet.create({
     top: spacing.md,
     left: spacing.md,
   },
+  saveBadge: {
+    position: 'absolute',
+    top: spacing.lg,
+    right: spacing.lg,
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroCta: {
+    position: 'absolute',
+    bottom: spacing.lg,
+    right: spacing.lg,
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   heroNameOverlay: {
     position: 'absolute',
     left: spacing.lg,
-    right: spacing.lg,
+    right: 68,
     bottom: spacing.lg,
   },
   content: {

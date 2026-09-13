@@ -5,10 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { PressableScale } from '@/src/components/ui/PressableScale';
 import { FadeInView } from '@/src/components/ui/FadeInView';
+import { SaveButton } from '@/src/components/shared/SaveButton';
 import { Text } from '@/src/components/ui/Text';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { FocusedRecommendation } from '@/src/types/day-request';
+import { Venue } from '@/src/types';
 import { getEnrichmentTrustCopy } from '@/src/utils/family-match-classification';
 import { openingStatusLabel } from '@/src/services/context/live-context';
 import { formatArrivalTime } from '@/src/utils/clock-format';
@@ -17,6 +19,9 @@ interface FocusedRecommendationCardProps {
   recommendation: FocusedRecommendation;
   variant?: 'hero' | 'carousel';
   index?: number;
+  /** The same venue looked up from a source that has the full record, so saving from this
+   * card writes a real, complete snapshot rather than a bare ID the Saved tab can't render. */
+  venueForSave?: Venue;
 }
 
 // Confirmed facts already carry which field they're about; reuse that instead of a
@@ -32,6 +37,7 @@ export function FocusedRecommendationCard({
   recommendation,
   variant = 'carousel',
   index = 0,
+  venueForSave,
 }: FocusedRecommendationCardProps) {
   const router = useRouter();
   const isHero = variant === 'hero';
@@ -60,9 +66,23 @@ export function FocusedRecommendationCard({
                 style={styles.heroScrim}
                 pointerEvents="none"
               />
+              {venueForSave ? (
+                <View style={styles.saveBadge}>
+                  <SaveButton
+                    venueId={recommendation.venueId}
+                    venue={venueForSave}
+                    size={20}
+                    color={colors.text.inverse}
+                    filledColor={colors.coral}
+                  />
+                </View>
+              ) : null}
               <Text variant="heading1" color={colors.text.inverse} style={styles.heroNameOverlay} numberOfLines={2}>
                 {recommendation.venueName}
               </Text>
+              <View style={styles.heroCta}>
+                <Ionicons name="arrow-forward" size={18} color={colors.text.inverse} />
+              </View>
             </>
           ) : null}
         </View>
@@ -176,10 +196,32 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: '70%',
   },
+  saveBadge: {
+    position: 'absolute',
+    top: spacing.lg,
+    right: spacing.lg,
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroCta: {
+    position: 'absolute',
+    bottom: spacing.lg,
+    right: spacing.lg,
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   heroNameOverlay: {
     position: 'absolute',
     left: spacing.lg,
-    right: spacing.lg,
+    right: 68,
     bottom: spacing.lg,
   },
   content: {

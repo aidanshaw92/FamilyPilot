@@ -11,7 +11,7 @@ import { FocusedRecommendationCard } from '@/src/components/home/FocusedRecommen
 import { OutingPreferences } from '@/src/components/home/OutingPreferences';
 import { ScreenContainer, ScreenHeader } from '@/src/components/shared/ScreenContainer';
 import { EmptyState, ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
-import { colors, fontFamily, radius, spacing } from '@/src/design-system/tokens';
+import { colors, fontFamily, radius, shadows, spacing } from '@/src/design-system/tokens';
 import {
   useFamilyProfile,
   useNearbyVenues,
@@ -60,6 +60,9 @@ export default function HomeScreen() {
   // with two different framings — that reads as the app contradicting itself.
   const featuredVenueIds = new Set(recommendations.map((rec) => rec.venueId));
   const otherPlaces = (places ?? []).filter((venue) => !featuredVenueIds.has(venue.id));
+  // Recommendations only carry display fields; look up the full record so saving from a
+  // featured card writes a real snapshot the Saved tab can render, not a bare ID.
+  const venueById = new Map((places ?? []).map((venue) => [venue.id, venue]));
 
   return (
     <ScreenContainer>
@@ -80,6 +83,17 @@ export default function HomeScreen() {
           />
         }
       >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Search places to explore"
+          onPress={() => browse('all')}
+          style={styles.searchShortcut}
+        >
+          <Ionicons name="search-outline" size={18} color={colors.text.tertiary} />
+          <Text variant="body" color={colors.text.tertiary} style={styles.searchShortcutText}>
+            Search a place, park or activity
+          </Text>
+        </Pressable>
         <Text variant="heading3" style={styles.quickActionHeading}>What would you like to do today?</Text>
         <View style={styles.quickActionRow}>
           {([
@@ -130,7 +144,12 @@ export default function HomeScreen() {
                 Our best suggestion for your family right now
               </Text>
             ) : null}
-            <FocusedRecommendationCard recommendation={topPick} variant="hero" index={0} />
+            <FocusedRecommendationCard
+              recommendation={topPick}
+              variant="hero"
+              index={0}
+              venueForSave={venueById.get(topPick.venueId)}
+            />
           </View>
         ) : null}
 
@@ -189,6 +208,20 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: spacing.screenPadding,
     paddingBottom: 120,
+  },
+  searchShortcut: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.lg,
+    minHeight: 48,
+    marginBottom: spacing.xl,
+    ...shadows.card,
+  },
+  searchShortcutText: {
+    flex: 1,
   },
   quickActionHeading: {
     marginBottom: spacing.md,
