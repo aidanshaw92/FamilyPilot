@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { FadeInView } from '@/src/components/ui/FadeInView';
 import { FamilyMatch } from '@/src/components/ui/FamilyMatch';
 import { PressableScale } from '@/src/components/ui/PressableScale';
 import { Text } from '@/src/components/ui/Text';
@@ -30,9 +31,10 @@ interface SavedPlaceRowProps {
   venue: Venue;
   itemType?: 'place' | 'restaurant' | 'hotel' | 'shop';
   onRemoved?: (venueId: string) => void;
+  index?: number;
 }
 
-export function SavedPlaceRow({ venue, itemType, onRemoved }: SavedPlaceRowProps) {
+export function SavedPlaceRow({ venue, itemType, onRemoved, index = 0 }: SavedPlaceRowProps) {
   const router = useRouter();
   const { removeSaved } = useSavedStore();
 
@@ -49,55 +51,57 @@ export function SavedPlaceRow({ venue, itemType, onRemoved }: SavedPlaceRowProps
   const categoryLabel = isRestaurant ? 'Restaurant' : CATEGORY_LABELS[venue.category];
 
   return (
-    <PressableScale
-      onPress={() => router.push(detailPath as never)}
-      style={styles.row}
-      accessibilityRole="button"
-      accessibilityLabel={`${venue.name}, ${classification}, ${venue.driveMinutes} minutes away`}
-    >
-      <VenueImage
-        uri={venue.imageUrl}
-        category={venue.category}
-        alt={venue.name}
-        style={styles.thumbnail}
-        borderRadius={radius.md}
-      />
-      <View style={styles.content}>
-        <Text variant="heading3" numberOfLines={2}>
-          {venue.name}
-        </Text>
-        <Text variant="caption" color={colors.text.secondary}>
-          {categoryLabel}
-        </Text>
-        <View style={styles.meta}>
-          <FamilyMatch score={venue.familyScore.score} variant="compact" style={styles.match} />
+    <FadeInView delay={index * 60}>
+      <PressableScale
+        onPress={() => router.push(detailPath as never)}
+        style={styles.row}
+        accessibilityRole="button"
+        accessibilityLabel={`${venue.name}, ${classification}, ${venue.driveMinutes} minutes away`}
+      >
+        <VenueImage
+          uri={venue.imageUrl}
+          category={venue.category}
+          alt={venue.name}
+          style={styles.thumbnail}
+          borderRadius={radius.md}
+        />
+        <View style={styles.content}>
+          <Text variant="heading3" numberOfLines={2}>
+            {venue.name}
+          </Text>
           <Text variant="caption" color={colors.text.secondary}>
-            {venue.driveMinutes} min away
-            {venue.estimatedSpend ? ` · Estimated ${venue.estimatedSpend}` : ''}
+            {categoryLabel}
           </Text>
+          <View style={styles.meta}>
+            <FamilyMatch score={venue.familyScore.score} variant="compact" style={styles.match} />
+            <Text variant="caption" color={colors.text.secondary}>
+              {venue.driveMinutes} min away
+              {venue.estimatedSpend ? ` · Estimated ${venue.estimatedSpend}` : ''}
+            </Text>
+          </View>
         </View>
-      </View>
-      <View style={styles.actions}>
-        <Pressable
-          onPress={() => router.push(detailPath as never)}
-          style={styles.actionButton}
-          accessibilityRole="button"
-          accessibilityLabel={`View ${venue.name}`}
-        >
-          <Text variant="caption" color={colors.primary[500]}>
-            View details
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={handleRemove}
-          style={styles.actionButton}
-          accessibilityRole="button"
-          accessibilityLabel={`Remove ${venue.name} from saved`}
-        >
-          <Ionicons name="heart" size={20} color={colors.error[500]} />
-        </Pressable>
-      </View>
-    </PressableScale>
+        <View style={styles.actions}>
+          <Pressable
+            onPress={() => router.push(detailPath as never)}
+            style={styles.actionButton}
+            accessibilityRole="button"
+            accessibilityLabel={`View ${venue.name}`}
+          >
+            <Text variant="caption" color={colors.primary[500]}>
+              View details
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={handleRemove}
+            style={styles.actionButton}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${venue.name} from saved`}
+          >
+            <Ionicons name="heart" size={20} color={colors.error[500]} />
+          </Pressable>
+        </View>
+      </PressableScale>
+    </FadeInView>
   );
 }
 

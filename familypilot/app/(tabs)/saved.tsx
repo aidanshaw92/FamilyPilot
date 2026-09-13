@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 import { SavedPlaceRow } from '@/src/components/shared/SavedPlaceRow';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Chip, EmptyState, SkeletonCard, Text } from '@/src/components/ui';
+import { FadeInView } from '@/src/components/ui/FadeInView';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useSavedItems } from '@/src/hooks/use-queries';
@@ -83,11 +84,12 @@ export default function SavedScreen() {
     }
   };
 
-  const renderItem = (item: SavedItem) => (
+  const renderItem = (item: SavedItem, index: number) => (
     <SavedPlaceRow
       key={item.id}
       venue={item.venue}
       itemType={item.type}
+      index={index}
       onRemoved={(id) => {
         const removed = (savedItems ?? []).find((candidate) => candidate.venue.id === id) ?? item;
         setRemovedItem(removed);
@@ -147,7 +149,7 @@ export default function SavedScreen() {
       </ScrollView>
 
       {removedItem ? (
-        <View style={styles.undoBar}>
+        <FadeInView style={styles.undoBar}>
           <Text variant="bodySmall" color={colors.text.secondary}>
             {removedItem.venue.name} removed
           </Text>
@@ -156,7 +158,7 @@ export default function SavedScreen() {
               Undo
             </Text>
           </Pressable>
-        </View>
+        </FadeInView>
       ) : null}
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>

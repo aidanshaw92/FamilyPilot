@@ -9,6 +9,7 @@ import { OnboardingShell } from '@/src/components/onboarding/OnboardingShell';
 import { AgeInput, AgeUnit } from '@/src/components/profile/AgeInput';
 import { TextField } from '@/src/components/profile/TextField';
 import { Button, Chip, Text, TimeField } from '@/src/components/ui';
+import { FadeInView } from '@/src/components/ui/FadeInView';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { resolveUkLocation, ResolvedLocation } from '@/src/services/location/location-client';
 import { useFamilyStore } from '@/src/stores/family-store';
@@ -332,9 +333,9 @@ export default function SetupScreen() {
                   <Switch accessibilityLabel="Does your child usually nap?" value={hasNap} onValueChange={setHasNap} />
                 </View>
                 {hasNap ? (
-                  <View style={styles.routineTimeField}>
+                  <FadeInView style={styles.routineTimeField}>
                     <TimeField label="Usual nap time" value={napTime} onChange={setNapTime} />
-                  </View>
+                  </FadeInView>
                 ) : null}
               </View>
 
@@ -350,9 +351,9 @@ export default function SetupScreen() {
                   />
                 </View>
                 {hasFeed ? (
-                  <View style={styles.routineTimeField}>
+                  <FadeInView style={styles.routineTimeField}>
                     <TimeField label="Usual feed or lunch time" value={feedTime} onChange={setFeedTime} />
-                  </View>
+                  </FadeInView>
                 ) : null}
               </View>
 

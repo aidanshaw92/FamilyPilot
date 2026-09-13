@@ -1,8 +1,12 @@
+import { useEffect } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Chip, Text } from '@/src/components/ui';
+import { Button, Chip, Text } from '@/src/components/ui';
+import { timing } from '@/src/design-system/animations/presets';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
+import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { RESTAURANT_FILTER_OPTIONS } from '@/src/utils/filter-restaurants';
 import {
@@ -11,6 +15,27 @@ import {
   FILTER_SHEET_OPTIONS,
 } from '@/src/utils/filter-venues';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function Backdrop({ onClose }: { onClose: () => void }) {
+  const reducedMotion = useReducedMotion();
+  const opacity = useSharedValue(reducedMotion ? 1 : 0);
+
+  useEffect(() => {
+    opacity.value = withTiming(1, timing.normal);
+  }, [opacity]);
+
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  return (
+    <AnimatedPressable
+      style={[styles.backdrop, animatedStyle]}
+      onPress={onClose}
+      accessibilityLabel="Close filters"
+    />
+  );
+}
 
 interface FilterSheetProps {
   visible: boolean;
@@ -57,7 +82,7 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close filters" />
+      <Backdrop onClose={onClose} />
       <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.lg }]}>
         <View style={styles.handle} />
         <View style={styles.header}>
@@ -127,11 +152,7 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
           ))}
         </ScrollView>
 
-        <Pressable style={styles.applyButton} onPress={onClose} accessibilityRole="button">
-          <Text variant="heading3" color={colors.text.inverse}>
-            Show results
-          </Text>
-        </Pressable>
+        <Button label="Show results" onPress={onClose} size="lg" fullWidth style={styles.applyButton} />
       </View>
     </Modal>
   );
@@ -183,11 +204,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   applyButton: {
-    backgroundColor: colors.primary[500],
-    borderRadius: radius.md,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    minHeight: 52,
-    justifyContent: 'center',
+    marginTop: spacing.sm,
   },
 });
