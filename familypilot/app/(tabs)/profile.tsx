@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.screenPadding,
-    paddingBottom: spacing['3xl'],
+    paddingBottom: 120,
   },
   familyCard: {
     alignItems: 'center',

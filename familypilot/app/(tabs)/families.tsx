@@ -44,7 +44,7 @@ export default function FamiliesScreen() {
   return (
     <ScreenContainer>
       <ScrollView
-        contentContainerStyle={{ padding: spacing.screenPadding, paddingBottom: 60, gap: spacing.md }}
+        contentContainerStyle={{ padding: spacing.screenPadding, paddingBottom: 120, gap: spacing.md }}
         keyboardShouldPersistTaps="handled"
       >
         <Text variant="heading1">Families</Text>

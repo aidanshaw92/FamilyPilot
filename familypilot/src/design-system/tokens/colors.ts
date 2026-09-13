@@ -1,11 +1,14 @@
 export const colors = {
+  /** The app's one confident accent: warm near-black, not a brand hue. Used for primary
+   * buttons, active nav/tab states and links, the way a modern editorial travel app leans on
+   * ink rather than a colored brand tint. */
   primary: {
-    50: '#EEECFD',
-    100: '#DCD8FB',
-    200: '#B9B0F7',
-    500: '#5B4FE8',
-    600: '#4A3FD1',
-    700: '#332A9E',
+    50: '#EDEAE5',
+    100: '#DDD7CD',
+    200: '#B6AEA0',
+    500: '#1C1A18',
+    600: '#0F0E0C',
+    700: '#000000',
   },
   secondary: {
     50: '#E3F5EC',
@@ -34,27 +37,27 @@ export const colors = {
   coral: '#E0654A',
   slateBlue: '#8B9FD4',
   steelBlue: '#7BAFD4',
-  background: '#F6F5F9',
+  background: '#F6F3EE',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
   text: {
-    primary: '#0A0A0D',
-    secondary: '#5C586E',
-    tertiary: '#8B87A0',
+    primary: '#171512',
+    secondary: '#6B6459',
+    tertiary: '#9A9285',
     inverse: '#FFFFFF',
   },
-  border: '#ECE9F2',
-  borderLight: '#F3F1F7',
-  overlay: 'rgba(10, 10, 13, 0.45)',
+  border: '#E8E2D8',
+  borderLight: '#F0EBE2',
+  overlay: 'rgba(15, 13, 10, 0.45)',
   gradient: {
-    heroStart: 'rgba(10, 10, 13, 0)',
-    heroEnd: 'rgba(10, 10, 13, 0.68)',
+    heroStart: 'rgba(15, 13, 10, 0)',
+    heroEnd: 'rgba(15, 13, 10, 0.7)',
   },
   /** A dark, immersive band reserved for the single most important moment on a screen (Home's
    * top pick, a venue detail hero) — used sparingly, never as a whole-app background. */
   midnight: {
-    start: '#14101F',
-    end: '#241C3D',
+    start: '#141210',
+    end: '#232019',
   },
   /** Every venue category owns a gradient so a card without a real photo still reads as
    * designed rather than broken — upgrades automatically the moment a real photo exists. */

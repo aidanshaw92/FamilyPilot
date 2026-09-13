@@ -1,4 +1,5 @@
 import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
+import { PlanTimeline, TimelineEvent } from '@/src/components/planning/PlanTimeline';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Linking, ScrollView, Share, View } from 'react-native';
@@ -12,12 +13,49 @@ import { DateField, TimeField, formStyles as s } from '@/src/components/ui';
 import { useFamilyStore } from '@/src/stores/family-store';
 import { localDate, usePlanningStore } from '@/src/stores/planning-store';
 import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
-import { PlanningFamily, clockLabel, clockMinutes, sharePlanText } from '@/src/services/planning/planner';
+import { FamilyTiming, PlanningFamily, clockLabel, clockMinutes, sharePlanText } from '@/src/services/planning/planner';
 import { PlanningResult, recommendPlans, addMeal } from '@/src/services/planning/recommendations';
 import { PlanningConnection, listAcceptedConnections } from '@/src/services/planning/connections';
 import { PlanInvite, listPlanInvites, createPlanInvite, respondToPlanInvite, cancelPlanInvite } from '@/src/services/planning/plan-invites';
 import { SavedPlan } from '@/src/stores/planning-store';
 import { supabase } from '@/src/services/supabase/client';
+
+function buildTimelineEvents(
+  venueName: string,
+  t: FamilyTiming,
+  meal?: { name: string; start: number; duration: number },
+): TimelineEvent[] {
+  const events: TimelineEvent[] = [
+    {
+      time: clockLabel(t.depart),
+      label: 'Leave home',
+      detail: `${t.journey.outbound} min drive, ${t.journey.source}`,
+      icon: 'exit-outline',
+    },
+    { time: clockLabel(t.arrive), label: `Arrive at ${venueName}`, icon: 'location-outline' },
+  ];
+  if (meal && meal.start > t.arrive && meal.start < t.leaveVenue) {
+    events.push({
+      time: clockLabel(meal.start),
+      label: `Lunch at ${meal.name}`,
+      detail: `${meal.duration} minutes`,
+      icon: 'restaurant-outline',
+    });
+  }
+  events.push({
+    time: clockLabel(t.leaveVenue),
+    label: `Leave ${venueName}`,
+    detail: `Latest departure for a full visit: ${clockLabel(t.latestDeparture)}`,
+    icon: 'walk-outline',
+  });
+  events.push({
+    time: clockLabel(t.home),
+    label: 'Home',
+    detail: [`${t.journey.inbound} min drive, ${t.journey.source}`, ...t.notes].join('. '),
+    icon: 'home-outline',
+  });
+  return events;
+}
 
 export default function TripsScreen() {
  const router=useRouter();const state=usePlanningStore();const profile=useFamilyStore(x=>x.profile);
@@ -124,7 +162,7 @@ export default function TripsScreen() {
    setSharingMessage(`Added "${invite.plan.name}" to your saved plans.`);
  }
  if(!state.hydrated)return <ScreenContainer><Text>Loading your plans…</Text></ScreenContainer>;
- return <ScreenContainer><ScrollView contentContainerStyle={{padding:spacing.screenPadding,paddingBottom:60,gap:spacing.md}} keyboardShouldPersistTaps="handled">
+ return <ScreenContainer><ScrollView contentContainerStyle={{padding:spacing.screenPadding,paddingBottom:120,gap:spacing.md}} keyboardShouldPersistTaps="handled">
   <PostVisitInbox/>
   <Text variant="heading1">Make a plan</Text><Text color={colors.text.secondary}>A day that works for everyone.</Text>
   <View style={s.row}>{(['plan','saved'] as const).map(t=><Chip key={t} label={{plan:'Plan a day',saved:'Saved plans'}[t]} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
@@ -152,7 +190,7 @@ export default function TripsScreen() {
     <Text variant="bodySmall" color={colors.primary[600]}>{i===0?'Our first suggestion':'Another option'}</Text><Text variant="heading2">{plan.name}</Text>
     <Text>{clockLabel(plan.start)}–{clockLabel(plan.end)} · {active.length} {active.length===1?'family':'families'}</Text>
     {plan.reasons.map(reason=><Text key={reason} variant="bodySmall">✓ {reason}</Text>)}
-    {plan.timings.map(t=><View key={t.familyId} style={{gap:6,paddingVertical:10}}><Text variant="heading3">{t.label}</Text><Text>Leave {clockLabel(t.depart)} · Home about {clockLabel(t.home)}</Text><Text variant="bodySmall">{t.journey.outbound} min out / {t.journey.inbound} min back, estimated. Latest departure for a full visit before the next home commitment: {clockLabel(t.latestDeparture)}.</Text>{t.notes.map(n=><Text key={n} variant="bodySmall">{n}</Text>)}</View>)}
+    {plan.timings.map(t=><View key={t.familyId}>{plan.timings.length>1?<Text variant="heading3" style={{marginTop:spacing.sm}}>{t.label}</Text>:null}<PlanTimeline events={buildTimelineEvents(plan.name,t,meal)}/></View>)}
     <Text variant="bodySmall" color={colors.warning[600]}>Opening hours for your visit are not verified. Confirm before committing. Return traffic is estimated; feed and sleep times remain flexible.</Text>
     {plan.unknowns.map(u=><Text key={u} variant="bodySmall">{u}</Text>)}
     <Button label="View venue facilities and evidence" variant="outline" onPress={()=>router.push(`/venue/${place.familypilotId}` as never)}/>

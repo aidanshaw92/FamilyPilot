@@ -380,11 +380,11 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: spacing.screenPadding,
-    paddingBottom: spacing['3xl'],
+    paddingBottom: 120,
   },
   editorialContent: {
     paddingHorizontal: spacing.screenPadding,
-    paddingBottom: spacing['3xl'],
+    paddingBottom: 120,
     paddingTop: spacing.lg,
   },
   editorialSection: {

@@ -188,7 +188,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: spacing.screenPadding,
-    paddingBottom: spacing['3xl'],
+    paddingBottom: 120,
   },
   quickActionHeading: {
     marginBottom: spacing.md,

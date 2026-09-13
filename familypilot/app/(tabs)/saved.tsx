@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: spacing.screenPadding,
-    paddingBottom: spacing['3xl'],
+    paddingBottom: 120,
   },
   loadingList: {
     gap: spacing.lg,
