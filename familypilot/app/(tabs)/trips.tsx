@@ -15,6 +15,10 @@ import { localDate, usePlanningStore } from '@/src/stores/planning-store';
 import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
 import { PlanningFamily, clockLabel, clockMinutes, sharePlanText } from '@/src/services/planning/planner';
 import { PlanningResult, recommendPlans, addMeal } from '@/src/services/planning/recommendations';
+import { PlanningConnection, listAcceptedConnections } from '@/src/services/planning/connections';
+import { PlanInvite, listPlanInvites, createPlanInvite, respondToPlanInvite, cancelPlanInvite } from '@/src/services/planning/plan-invites';
+import { SavedPlan } from '@/src/stores/planning-store';
+import { supabase } from '@/src/services/supabase/client';
 
 export default function TripsScreen() {
  const router=useRouter();const state=usePlanningStore();const profile=useFamilyStore(x=>x.profile);
@@ -48,6 +52,78 @@ export default function TripsScreen() {
    const data=await recommendPlans(active,state.options);setResults(data);setResultKey(inputKey);setSearched(true);
  }catch(e){setMessage(e instanceof Error?e.message:'Could not find plans. Please try again.');}finally{setBusy(false);}}
  async function share(text:string){try{await Share.share({message:text});}catch{setMessage('Sharing is unavailable on this device.');}}
+
+ // Sharing a specific saved plan with a connected family, and tracking whether they've
+ // accepted it, is separate from the standing family "connection" itself - a family can be
+ // connected but only invited to some days, and each invite has its own pending/accepted state.
+ const [connections, setConnections] = useState<PlanningConnection[]>([]);
+ const [invites, setInvites] = useState<PlanInvite[]>([]);
+ const [sharingBusy, setSharingBusy] = useState(false);
+ const [sharingMessage, setSharingMessage] = useState('');
+ const [inviteTargetPlanId, setInviteTargetPlanId] = useState<string | null>(null);
+
+ async function loadSharing() {
+   // Silent no-op for a device that hasn't created a planning account - sharing a plan is an
+   // opt-in extra on top of local-only planning, not something to nag every Saved-tab visitor
+   // with a "please sign in" message for.
+   if (!supabase) return;
+   const { data } = await supabase.auth.getSession();
+   if (!data.session) { setConnections([]); setInvites([]); return; }
+   setSharingBusy(true);
+   setSharingMessage('');
+   try {
+     const [conns, invs] = await Promise.all([listAcceptedConnections(), listPlanInvites()]);
+     setConnections(conns);
+     setInvites(invs);
+   } catch (e) {
+     setSharingMessage(e instanceof Error ? e.message : 'Could not load sharing status.');
+   } finally {
+     setSharingBusy(false);
+   }
+ }
+ useEffect(() => { if (tab === 'saved') void loadSharing(); }, [tab]);
+
+ async function sendInvite(connectionId: string, saved: SavedPlan) {
+   setSharingBusy(true);
+   setSharingMessage('');
+   try {
+     await createPlanInvite(connectionId, { id: saved.id, date: saved.date, plan: saved.plan });
+     setInviteTargetPlanId(null);
+     setSharingMessage('Invite sent. They’ll see it as pending until they respond.');
+     await loadSharing();
+   } catch (e) {
+     setSharingMessage(e instanceof Error ? e.message : 'Could not send invite.');
+   } finally {
+     setSharingBusy(false);
+   }
+ }
+ async function respondInvite(id: string, status: 'accepted' | 'declined') {
+   setSharingBusy(true);
+   setSharingMessage('');
+   try {
+     await respondToPlanInvite(id, status);
+     await loadSharing();
+   } catch (e) {
+     setSharingMessage(e instanceof Error ? e.message : 'Could not respond to invite.');
+   } finally {
+     setSharingBusy(false);
+   }
+ }
+ async function cancelInvite(id: string) {
+   setSharingBusy(true);
+   try {
+     await cancelPlanInvite(id);
+     await loadSharing();
+   } catch (e) {
+     setSharingMessage(e instanceof Error ? e.message : 'Could not cancel invite.');
+   } finally {
+     setSharingBusy(false);
+   }
+ }
+ function addSharedPlanToMine(invite: PlanInvite) {
+   state.savePlan({ id: invite.planId, date: invite.planDate, plan: invite.plan, checked: [], createdAt: new Date().toISOString() });
+   setSharingMessage(`Added "${invite.plan.name}" to your saved plans.`);
+ }
  if(!state.hydrated)return <ScreenContainer><Text>Loading your plans…</Text></ScreenContainer>;
  return <ScreenContainer><ScrollView contentContainerStyle={{padding:spacing.screenPadding,paddingBottom:60,gap:spacing.md}} keyboardShouldPersistTaps="handled">
   <PostVisitInbox/>
@@ -96,13 +172,52 @@ export default function TripsScreen() {
    </Card>); }):null}
   </>:null}
   {tab==='saved'?<>
+   {sharingMessage?<Text accessibilityRole="alert" color={colors.warning[600]}>{sharingMessage}</Text>:null}
+
+   {invites.some(i=>i.direction==='received')?<Card style={s.panel}>
+    <Text variant="heading2">Shared with you</Text>
+    <Text variant="bodySmall" color={colors.text.secondary}>Days another connected family has invited you to.</Text>
+    {invites.filter(i=>i.direction==='received').map((invite,i)=><View key={invite.id} style={i>0?{borderTopWidth:1,borderColor:colors.border,marginTop:spacing.md,paddingTop:spacing.md}:undefined}>
+     <View style={s.row}><Text variant="heading3" style={{flex:1}}>{invite.plan.name}</Text>
+      <View style={{paddingHorizontal:spacing.sm,paddingVertical:2,borderRadius:999,backgroundColor:invite.status==='pending'?colors.warning[50]:invite.status==='accepted'?colors.secondary[50]:colors.error[50]}}>
+       <Text variant="caption" color={invite.status==='pending'?colors.warning[600]:invite.status==='accepted'?colors.secondary[600]:colors.error[600]}>{invite.status==='pending'?'Pending your response':invite.status==='accepted'?'Accepted':'Declined'}</Text>
+      </View>
+     </View>
+     <Text variant="bodySmall" color={colors.text.secondary}>From {invite.otherLabel} · {invite.planDate} · {clockLabel(invite.plan.start)}–{clockLabel(invite.plan.end)}</Text>
+     {invite.plan.timings.map(t=><Text key={t.familyId} variant="bodySmall">{t.label}: leave {clockLabel(t.depart)}, home about {clockLabel(t.home)}</Text>)}
+     {invite.status==='pending'?<View style={s.row}>
+      <Button label="Accept" size="sm" disabled={sharingBusy} onPress={()=>void respondInvite(invite.id,'accepted')}/>
+      <Button label="Decline" size="sm" variant="ghost" disabled={sharingBusy} onPress={()=>void respondInvite(invite.id,'declined')}/>
+     </View>:invite.status==='accepted'?<Button label="Add to my saved plans" size="sm" variant="outline" onPress={()=>addSharedPlanToMine(invite)}/>:null}
+    </View>)}
+   </Card>:null}
+
    {!state.saved.length?<Card style={s.panel}><Text>No saved plans yet.</Text><Button label="Plan a day" onPress={()=>setTab('plan')}/></Card>:null}
-   {state.saved.map(saved=><Card key={saved.id} style={s.panel}><Text variant="heading2">{saved.plan.name}</Text><Text>{saved.date} · {clockLabel(saved.plan.start)}–{clockLabel(saved.plan.end)}</Text>
+   {state.saved.map(saved=>{
+    const sent=invites.filter(i=>i.direction==='sent'&&i.planId===saved.id);
+    return <Card key={saved.id} style={s.panel}><Text variant="heading2">{saved.plan.name}</Text><Text>{saved.date} · {clockLabel(saved.plan.start)}–{clockLabel(saved.plan.end)}</Text>
     {saved.plan.timings.map(t=><Text key={t.familyId}>{t.label}: leave {clockLabel(t.depart)}, home about {clockLabel(t.home)}</Text>)}
     <Text variant="bodySmall">Saved timings are a snapshot. Recheck before leaving if routines, weather or travel change.</Text>
     <Text variant="heading3">Before you go</Text>{['Check opening hours and booking','Check travel time','Pack feeds and snacks','Nappies, wipes and spare clothes','Buggy and weather layers'].map(item=><Chip key={item} label={`${saved.checked.includes(item)?'✓ ':''}${item}`} active={saved.checked.includes(item)} onPress={()=>state.togglePacked(saved.id,item)}/>)}
+
+    <Text variant="heading3">Invite a family</Text>
+    {sent.length?sent.map(invite=><View key={invite.id} style={[s.row,{alignItems:'center'}]}>
+     <Text variant="bodySmall" style={{flex:1}}>{invite.otherLabel}</Text>
+     <View style={{paddingHorizontal:spacing.sm,paddingVertical:2,borderRadius:999,backgroundColor:invite.status==='pending'?colors.warning[50]:invite.status==='accepted'?colors.secondary[50]:colors.error[50]}}>
+      <Text variant="caption" color={invite.status==='pending'?colors.warning[600]:invite.status==='accepted'?colors.secondary[600]:colors.error[600]}>{invite.status==='pending'?'Pending':invite.status==='accepted'?'Accepted':'Declined'}</Text>
+     </View>
+     {invite.status==='pending'?<Button label="Cancel" size="sm" variant="ghost" onPress={()=>void cancelInvite(invite.id)}/>:null}
+    </View>):null}
+    {connections.length?<>
+     {inviteTargetPlanId===saved.id?<>
+      <Text variant="bodySmall" color={colors.text.secondary}>Choose a connected family to invite:</Text>
+      <View style={s.row}>{connections.filter(c=>!sent.some(i=>i.status!=='declined'&&i.connectionId===c.id)).map(c=><Chip key={c.id} label={c.family?.label||'Family'} onPress={()=>void sendInvite(c.id,saved)}/>)}</View>
+      <Button label="Cancel" variant="ghost" size="sm" onPress={()=>setInviteTargetPlanId(null)}/>
+     </>:<Button label="Invite a family to this plan" variant="outline" disabled={sharingBusy} onPress={()=>setInviteTargetPlanId(saved.id)}/>}
+    </>:<Text variant="bodySmall" color={colors.text.secondary}>Connect a family under Families &amp; routines to invite them here.</Text>}
+
     <Button label="Share plan" onPress={()=>void share(sharePlanText(saved.plan,saved.date))}/><Button label="Replan with current preferences" variant="outline" onPress={()=>{state.setOptions({date:saved.date<localDate()?localDate():saved.date});setTab('plan');setSearched(false);}}/><Button label="Delete saved plan" variant="ghost" onPress={()=>state.deletePlan(saved.id)}/>
-   </Card>)}
+   </Card>;})}
   </>:null}
  </ScrollView></ScreenContainer>;
 }

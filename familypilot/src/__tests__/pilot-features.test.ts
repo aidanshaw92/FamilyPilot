@@ -10,10 +10,14 @@ describe('pilot-features', () => {
   it('hides deferred prototype features in the default pilot build', () => {
     vi.stubEnv('EXPO_PUBLIC_SHOW_DEFERRED_FEATURES', '');
     expect(isPilotBuild()).toBe(true);
-    expect(isPilotFeatureVisible('trips_tab')).toBe(false);
     expect(isPilotFeatureVisible('holiday')).toBe(false);
     expect(isPilotFeatureVisible('explore_restaurants')).toBe(false);
     expect(isPilotFeatureVisible('eat_nearby')).toBe(false);
+  });
+
+  it('shows the trips tab (day planning + family invites) in the default pilot build', () => {
+    vi.stubEnv('EXPO_PUBLIC_SHOW_DEFERRED_FEATURES', '');
+    expect(isPilotFeatureVisible('trips_tab')).toBe(true);
   });
 
   it('reveals deferred features when explicitly enabled for internal QA', () => {

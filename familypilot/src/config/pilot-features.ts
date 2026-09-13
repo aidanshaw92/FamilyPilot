@@ -18,7 +18,8 @@ export type PilotFeature =
   | 'need_now';
 
 const DEFERRED_PILOT_FEATURES = new Set<PilotFeature>([
-  'trips_tab',
+  // 'trips_tab' is live: multi-family day planning with drive-time/routine-aware scheduling,
+  // plus per-plan invites to connected families with pending/accepted tracking.
   'plan_something_action',
   'holiday',
   'packing',
