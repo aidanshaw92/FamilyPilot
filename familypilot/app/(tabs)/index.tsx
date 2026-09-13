@@ -5,7 +5,7 @@ import { DecisionCard } from '@/src/components/shared/DecisionCard';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FocusedRecommendationCard } from '@/src/components/home/FocusedRecommendationCard';
 import { OutingPreferences } from '@/src/components/home/OutingPreferences';
@@ -27,10 +27,11 @@ function getTimeGreeting(): string {
 export default function HomeScreen() {
   const router = useRouter();
   const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { data: places, isLoading: placesLoading, isError: placesError, refetch: retryPlaces } = useNearbyVenues();
   const browse = (category: string) => { useFiltersStore.getState().resetExploreFilters(); useFiltersStore.getState().setCategoryFilter(category); router.push('/(tabs)/explore' as never); };
   const { data: profile } = useFamilyProfile();
-  const { data: weather } = useWeather();
+  const { data: weather, refetch: refetchWeather } = useWeather();
   const { parsedRequest, isProactive } = useProactiveHomeRequest();
 
   const {
@@ -39,6 +40,15 @@ export default function HomeScreen() {
     isError: recsError,
     refetch,
   } = useFocusedRecommendations(parsedRequest);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([retryPlaces(), refetch(), refetchWeather()]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const parentName = profile?.parentName ?? 'there';
   const recommendations = focusedResult?.recommendations ?? [];
@@ -61,6 +71,14 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void handleRefresh()}
+            tintColor={colors.primary[500]}
+            colors={[colors.primary[500]]}
+          />
+        }
       >
         <Text variant="heading3" style={styles.quickActionHeading}>What would you like to do today?</Text>
         <View style={styles.quickActionRow}>

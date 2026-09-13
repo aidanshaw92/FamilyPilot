@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { SavedPlaceRow } from '@/src/components/shared/SavedPlaceRow';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
@@ -35,12 +35,22 @@ const SAVED_GROUPS: { id: SavedGroup; label: string }[] = [
 ];
 
 export default function SavedScreen() {
-  const { data: savedItems, isLoading } = useSavedItems();
+  const { data: savedItems, isLoading, refetch } = useSavedItems();
   const restoreSaved = useSavedStore((state) => state.restoreSaved);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortOption>('recent');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [removedItem, setRemovedItem] = useState<SavedItem | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const filteredItems = useMemo(() => {
     let items = savedItems ?? [];
@@ -161,7 +171,18 @@ export default function SavedScreen() {
         </FadeInView>
       ) : null}
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void handleRefresh()}
+            tintColor={colors.primary[500]}
+            colors={[colors.primary[500]]}
+          />
+        }
+      >
         {isLoading ? (
           <View style={styles.loadingList}>
             <SkeletonCard />
