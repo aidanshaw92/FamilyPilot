@@ -171,24 +171,26 @@ export default function VenueScreen() {
               <SaveButton venueId={venue.id} venue={venue} color={colors.text.inverse} />
             </View>
           </View>
-          <View style={styles.heroTitle}>
-            <Text variant="heading1" color={colors.text.inverse}>
-              {venue.name}
-            </Text>
-            <View style={styles.heroMeta}>
-              <MetaItem icon="car-outline" text={`${venue.driveMinutes} min`} />
-              {venue.visitDurationMinutes ? (
-                <MetaItem icon="time-outline" text={`~${Math.round(venue.visitDurationMinutes / 60)}h visit`} />
-              ) : null}
-              {venue.estimatedSpend ? (
-                <MetaItem icon="wallet-outline" text={`Est. ${venue.estimatedSpend}`} />
-              ) : null}
-            </View>
-          </View>
         </View>
 
         <View style={styles.body}>
           <FadeInView>
+            <View style={styles.titleBlock}>
+              <Text variant="heading1">{venue.name}</Text>
+              <View style={styles.heroMeta}>
+                <MetaItem icon="car-outline" text={`${venue.driveMinutes} min`} color={colors.text.secondary} />
+                {venue.visitDurationMinutes ? (
+                  <MetaItem
+                    icon="time-outline"
+                    text={`~${Math.round(venue.visitDurationMinutes / 60)}h visit`}
+                    color={colors.text.secondary}
+                  />
+                ) : null}
+                {venue.estimatedSpend ? (
+                  <MetaItem icon="wallet-outline" text={`Est. ${venue.estimatedSpend}`} color={colors.text.secondary} />
+                ) : null}
+              </View>
+            </View>
             <View style={styles.matchIntro}>
               <Text variant="caption" style={styles.matchEyebrow}>
                 FAMILY MATCH
@@ -292,11 +294,19 @@ export default function VenueScreen() {
   );
 }
 
-function MetaItem({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: string }) {
+function MetaItem({
+  icon,
+  text,
+  color = colors.text.inverse,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  text: string;
+  color?: string;
+}) {
   return (
     <View style={styles.metaItem}>
-      <Ionicons name={icon} size={14} color={colors.text.inverse} />
-      <Text variant="caption" color={colors.text.inverse}>
+      <Ionicons name={icon} size={14} color={color} />
+      <Text variant="caption" color={color}>
         {text}
       </Text>
     </View>
@@ -384,12 +394,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  heroTitle: {
-    position: 'absolute',
-    bottom: spacing['2xl'],
-    left: spacing.screenPadding,
-    right: spacing.screenPadding,
-    zIndex: 2,
+  titleBlock: {
+    marginBottom: spacing.lg,
   },
   heroMeta: {
     flexDirection: 'row',

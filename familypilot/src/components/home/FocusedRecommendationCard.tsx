@@ -1,6 +1,5 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { PressableScale } from '@/src/components/ui/PressableScale';
@@ -61,11 +60,6 @@ export function FocusedRecommendationCard({
           />
           {isHero ? (
             <>
-              <LinearGradient
-                colors={[colors.gradient.heroStart, colors.gradient.heroEnd]}
-                style={styles.heroScrim}
-                pointerEvents="none"
-              />
               {venueForSave ? (
                 <View style={styles.saveBadge}>
                   <SaveButton
@@ -77,24 +71,34 @@ export function FocusedRecommendationCard({
                   />
                 </View>
               ) : null}
-              <Text variant="heading1" color={colors.text.inverse} style={styles.heroNameOverlay} numberOfLines={2}>
-                {recommendation.venueName}
-              </Text>
-              <View style={styles.heroCta}>
-                <Ionicons name="arrow-forward" size={18} color={colors.text.inverse} />
+              <View style={styles.fitBadge}>
+                <Text variant="caption" style={styles.fitBadgeText} numberOfLines={1}>
+                  {recommendation.fit}
+                </Text>
               </View>
             </>
           ) : null}
         </View>
         <View style={styles.content}>
-          {isHero ? null : (
-            <Text variant="heading3" numberOfLines={1}>
-              {recommendation.venueName}
-            </Text>
+          {isHero ? (
+            <View style={styles.heroTitleRow}>
+              <Text variant="heading1" numberOfLines={2} style={styles.heroTitle}>
+                {recommendation.venueName}
+              </Text>
+              <View style={styles.heroCta}>
+                <Ionicons name="arrow-forward" size={18} color={colors.text.inverse} />
+              </View>
+            </View>
+          ) : (
+            <>
+              <Text variant="heading3" numberOfLines={1}>
+                {recommendation.venueName}
+              </Text>
+              <Text variant="bodySmall" style={styles.fitLabel}>
+                {recommendation.fit}
+              </Text>
+            </>
           )}
-          <Text variant={isHero ? 'heading2' : 'heading3'} style={styles.fitLabel}>
-            {recommendation.fit}
-          </Text>
 
           {recommendation.reasons.length > 0 ? (
             <View style={styles.block}>
@@ -187,14 +191,7 @@ const styles = StyleSheet.create({
     height: 140,
   },
   heroImage: {
-    height: 260,
-  },
-  heroScrim: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '70%',
+    height: 210,
   },
   saveBadge: {
     position: 'absolute',
@@ -207,22 +204,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroCta: {
+  fitBadge: {
     position: 'absolute',
+    left: spacing.lg,
     bottom: spacing.lg,
-    right: spacing.lg,
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    maxWidth: '65%',
+  },
+  fitBadgeText: {
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.text.primary,
+  },
+  heroTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  heroTitle: {
+    flex: 1,
+  },
+  heroCta: {
     width: 40,
     height: 40,
     borderRadius: radius.full,
     backgroundColor: colors.primary[500],
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  heroNameOverlay: {
-    position: 'absolute',
-    left: spacing.lg,
-    right: 68,
-    bottom: spacing.lg,
   },
   content: {
     padding: spacing.lg,

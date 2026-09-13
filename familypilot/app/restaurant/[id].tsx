@@ -212,29 +212,28 @@ function RestaurantScreenContent() {
               <SaveButton venueId={restaurant.id} venue={restaurant} color={colors.text.inverse} />
             </View>
           </View>
-          <View style={styles.heroTitle}>
-            <Text variant="heading1" color={colors.text.inverse}>
-              {restaurant.name}
-            </Text>
-            {restaurant.cuisineType ? (
-              <Text variant="bodySmall" color={colors.text.inverse} style={styles.cuisine}>
-                {restaurant.cuisineType}
-              </Text>
-            ) : null}
-            <View style={styles.heroMeta}>
-              <MetaItem icon="car-outline" text={`${distanceMinutes} min`} />
-              {restaurant.isOpen !== undefined ? (
-                <MetaItem
-                  icon={restaurant.isOpen ? 'checkmark-circle-outline' : 'close-circle-outline'}
-                  text={restaurant.isOpen ? 'Open now' : 'Closed'}
-                />
-              ) : null}
-            </View>
-          </View>
         </View>
 
         <View style={styles.body}>
           <FadeInView>
+            <View style={styles.titleBlock}>
+              <Text variant="heading1">{restaurant.name}</Text>
+              {restaurant.cuisineType ? (
+                <Text variant="bodySmall" color={colors.text.secondary} style={styles.cuisine}>
+                  {restaurant.cuisineType}
+                </Text>
+              ) : null}
+              <View style={styles.heroMeta}>
+                <MetaItem icon="car-outline" text={`${distanceMinutes} min`} color={colors.text.secondary} />
+                {restaurant.isOpen !== undefined ? (
+                  <MetaItem
+                    icon={restaurant.isOpen ? 'checkmark-circle-outline' : 'close-circle-outline'}
+                    text={restaurant.isOpen ? 'Open now' : 'Closed'}
+                    color={colors.text.secondary}
+                  />
+                ) : null}
+              </View>
+            </View>
             {activityVenue && restaurant.driveMinutesFromActivity !== undefined ? (
               <View style={styles.contextBanner}>
                 <Ionicons name="location-outline" size={18} color={colors.primary[500]} />
@@ -350,11 +349,19 @@ function RestaurantScreenContent() {
   );
 }
 
-function MetaItem({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: string }) {
+function MetaItem({
+  icon,
+  text,
+  color = colors.text.inverse,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  text: string;
+  color?: string;
+}) {
   return (
     <View style={styles.metaItem}>
-      <Ionicons name={icon} size={14} color={colors.text.inverse} />
-      <Text variant="caption" color={colors.text.inverse}>
+      <Ionicons name={icon} size={14} color={color} />
+      <Text variant="caption" color={color}>
         {text}
       </Text>
     </View>
@@ -438,16 +445,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenPadding,
     zIndex: 2,
   },
-  heroTitle: {
-    position: 'absolute',
-    bottom: spacing['2xl'],
-    left: spacing.screenPadding,
-    right: spacing.screenPadding,
-    zIndex: 2,
+  titleBlock: {
+    marginBottom: spacing.lg,
   },
   cuisine: {
     marginTop: spacing.xs,
-    opacity: 0.9,
   },
   heroMeta: {
     flexDirection: 'row',

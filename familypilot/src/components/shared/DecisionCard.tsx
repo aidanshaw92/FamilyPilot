@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { FacilitySignals } from '@/src/components/ui/FacilitySignals';
 import { FadeInView } from '@/src/components/ui/FadeInView';
@@ -121,14 +120,7 @@ function DecisionCardComponent({
             style={isHero ? { ...styles.image, ...styles.heroImage } : styles.image}
             borderRadius={isHero ? radius.lg : 0}
           />
-          {isHero ? (
-            <LinearGradient
-              colors={[colors.gradient.heroStart, colors.gradient.heroEnd]}
-              style={styles.heroScrim}
-              pointerEvents="none"
-            />
-          ) : null}
-          <View style={styles.badgeOverlay}>
+          <View style={isHero ? styles.badgeOverlayHero : styles.badgeOverlay}>
             <FamilyMatch
               score={venue.familyScore.score}
               variant="card"
@@ -136,28 +128,29 @@ function DecisionCardComponent({
             />
           </View>
           {isHero ? (
-            <>
-              <View style={styles.saveBadge}>
-                <SaveButton
-                  venueId={venue.id}
-                  venue={venue}
-                  size={20}
-                  color={colors.text.inverse}
-                  filledColor={colors.coral}
-                />
-              </View>
-              <Text variant="heading1" color={colors.text.inverse} style={styles.heroNameOverlay} numberOfLines={2}>
+            <View style={styles.saveBadge}>
+              <SaveButton
+                venueId={venue.id}
+                venue={venue}
+                size={20}
+                color={colors.text.inverse}
+                filledColor={colors.coral}
+              />
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.content}>
+          {isHero ? (
+            <View style={styles.heroTitleRow}>
+              <Text variant="heading1" numberOfLines={2} style={styles.heroTitle}>
                 {venue.name}
               </Text>
               <View style={styles.heroCta}>
                 <Ionicons name="arrow-forward" size={18} color={colors.text.inverse} />
               </View>
-            </>
-          ) : null}
-        </View>
-
-        <View style={styles.content}>
-          {isHero ? null : (
+            </View>
+          ) : (
             <Text variant="heading3" numberOfLines={1}>
               {venue.name}
             </Text>
@@ -166,7 +159,8 @@ function DecisionCardComponent({
           <RecommendationPattern
             venue={venue}
             variant={variant}
-            showCta
+            showClassification={!isHero}
+            showCta={!isHero}
             ctaLabel="View details"
             onCta={handleViewDetails}
           />
@@ -258,19 +252,17 @@ const styles = StyleSheet.create({
     height: 150,
   },
   heroImage: {
-    height: 260,
-  },
-  heroScrim: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '70%',
+    height: 210,
   },
   badgeOverlay: {
     position: 'absolute',
     top: spacing.md,
     left: spacing.md,
+  },
+  badgeOverlayHero: {
+    position: 'absolute',
+    left: spacing.lg,
+    bottom: spacing.lg,
   },
   saveBadge: {
     position: 'absolute',
@@ -283,22 +275,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  heroTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  heroTitle: {
+    flex: 1,
+  },
   heroCta: {
-    position: 'absolute',
-    bottom: spacing.lg,
-    right: spacing.lg,
     width: 40,
     height: 40,
     borderRadius: radius.full,
     backgroundColor: colors.primary[500],
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  heroNameOverlay: {
-    position: 'absolute',
-    left: spacing.lg,
-    right: 68,
-    bottom: spacing.lg,
   },
   content: {
     padding: spacing.lg,
