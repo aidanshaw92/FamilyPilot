@@ -139,6 +139,7 @@ function placeRowToRecord(row) {
     latitude: row.lat,
     longitude: row.lng,
     address: row.address,
+    photos: row.photos || [],
     googlePrimaryType: row.field_provenance?.googlePrimaryType,
     fetchedAt: row.fetched_at,
   };
@@ -158,6 +159,7 @@ async function upsertPlaceRecord(place) {
     description: place.description ?? null,
     website: place.website ?? null,
     phone: place.phone ?? null,
+    photos: place.photos ?? [],
     opening_hours: place.openingHours ?? null,
     is_open: place.isOpen ?? null,
     fetched_at: place.fetchedAt || new Date().toISOString(),

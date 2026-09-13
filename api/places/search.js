@@ -85,7 +85,7 @@ module.exports = async function handler(req, res) {
         const rows = places.filter(p => p.provider !== 'mock').map(p => ({
           familypilot_place_id:p.familypilotId,external_id:p.externalId,provider:p.provider,
           name:p.name,category:p.category,lat:p.latitude,lng:p.longitude,address:p.address,
-          website:p.website,fetched_at:p.fetchedAt,
+          website:p.website,photos:p.photos ?? [],fetched_at:p.fetchedAt,
           field_provenance:{googlePrimaryType:p.googlePrimaryType,googleTypes:p.googleTypes || []},
         }));
         // Update provider facts/category on repeat discovery rather than freezing the first mapping.
