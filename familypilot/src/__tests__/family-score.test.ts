@@ -68,6 +68,51 @@ describe('calculateFamilyScore — routine fit', () => {
   });
 });
 
+describe('calculateFamilyScore — bespoke explanations', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 0, 1, 9, 0));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('leads with the routine-fit "leave by" line when a routine is set and there is time', () => {
+    const profile: FamilyProfile = {
+      ...PROFILE,
+      routines: [{ id: 'r1', label: 'Lunch', kind: 'feed', time: '12:00', durationMinutes: 30, atHome: true }],
+    };
+    const { explanation } = calculateFamilyScore(venue({ driveMinutes: 30 }), profile, {});
+    expect(explanation[0]).toContain('Leave by');
+    expect(explanation[0]).toContain('Lunch');
+  });
+
+  it('surfaces a concrete visit-duration line rather than only the age-suitability filler', () => {
+    const { explanation } = calculateFamilyScore(venue({ visitDurationMinutes: 120 }), PROFILE, {});
+    expect(explanation.some((line) => line.includes('2-hour visit'))).toBe(true);
+  });
+
+  it('does not let the generic age-suitability line lead when more specific facts are available', () => {
+    const { explanation } = calculateFamilyScore(
+      venue({ visitDurationMinutes: 120, facilities: ['toilets', 'parking', 'baby_changing'] }),
+      PROFILE,
+      {},
+    );
+    // The age line ("Mia is a great age for this park") is still present, but only as filler -
+    // never the very first thing a family reads on the card.
+    expect(explanation[0]).not.toContain('great age');
+  });
+
+  it('mentions parking and baby changing together when both are on site', () => {
+    const { explanation } = calculateFamilyScore(
+      venue({ facilities: ['toilets', 'parking', 'baby_changing'] }),
+      PROFILE,
+      {},
+    );
+    expect(explanation.some((line) => line.includes('Parking and baby changing both on site'))).toBe(true);
+  });
+});
+
 describe('calculateFamilyScore — must-have facilities', () => {
   const wellEquipped = ['toilets', 'parking', 'cafe', 'playground'] as const;
 

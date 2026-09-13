@@ -38,7 +38,7 @@ import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { isActivityVenue } from '@/src/data/mock-restaurants';
 import { useVenue } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
-import { getEnrichmentDetailTrustCopy, formatTerrainLabel } from '@/src/utils/family-match-classification';
+import { getEnrichmentDetailTrustCopy, formatTerrainLabel, getMatchClassification } from '@/src/utils/family-match-classification';
 import { generateVenueStaticParams } from '@/src/utils/venue-routes';
 
 const HERO_HEIGHT = 250;
@@ -195,7 +195,16 @@ export default function VenueScreen() {
               </Text>
               <Text variant="heading2">Will this work for your family?</Text>
             </View>
-            <FamilyMatchPanel familyScore={venue.familyScore} venue={venue} />
+            <View style={styles.scoreBand}>
+              <Text variant="scoreDisplay" color={colors.primary[700]}>
+                {venue.familyScore.score}
+              </Text>
+              <View style={styles.scoreBandText}>
+                <Text variant="heading3">{getMatchClassification(venue.familyScore.score, venue.enrichmentStatus)}</Text>
+                <Text variant="bodySmall" color={colors.text.secondary}>Family Score for your household</Text>
+              </View>
+            </View>
+            <FamilyMatchPanel familyScore={venue.familyScore} venue={venue} showClassification={false} />
 
             {venue.enrichmentStatus ? (
               <Text variant="caption" color={colors.text.secondary} style={styles.providerOnlyBanner}>
@@ -332,6 +341,20 @@ const styles = StyleSheet.create({
     color: colors.secondary[600],
     letterSpacing: 1.1,
     fontFamily: 'Inter_700Bold',
+  },
+  scoreBand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+    backgroundColor: colors.primary[50],
+    borderRadius: radius.xl,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  scoreBandText: {
+    flex: 1,
+    gap: 2,
   },
   loadingGap: {
     marginBottom: spacing.lg,

@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { FilterSheet } from '@/src/components/explore/FilterSheet';
 import { RestaurantCard } from '@/src/components/restaurant/RestaurantCard';
@@ -117,6 +117,20 @@ export default function ExploreScreen() {
       setSearchMessage(error instanceof Error ? error.message : 'Could not search that area.');
     } finally {
       setSearchingArea(false);
+    }
+  };
+
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      if (areaVenues) {
+        await handleAreaSearch();
+      } else {
+        await refetch();
+      }
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -263,7 +277,18 @@ export default function ExploreScreen() {
               subtitle={`${resultCount} ${isRestaurantMode ? 'restaurant' : 'place'}${resultCount === 1 ? '' : 's'} ${areaVenues ? 'near this area' : 'across London'}`}
             />
           </View>
-          <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => void handleRefresh()}
+                tintColor={colors.primary[500]}
+                colors={[colors.primary[500]]}
+              />
+            }
+          >
             {isRestaurantMode
               ? restaurants?.map((restaurant, index) => (
                   <RestaurantCard key={restaurant.id} restaurant={restaurant} index={index} />

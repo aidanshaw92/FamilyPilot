@@ -34,6 +34,7 @@ import { useRestaurant, useVenue } from '@/src/hooks/use-queries';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { generateRestaurantStaticParams } from '@/src/utils/restaurant-routes';
+import { getMatchClassification } from '@/src/utils/family-match-classification';
 
 const HERO_HEIGHT = 320;
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
@@ -249,7 +250,16 @@ function RestaurantScreenContent() {
             <Text variant="heading3" style={styles.sectionTitle}>
               Family suitability
             </Text>
-            <RecommendationPattern venue={restaurant} variant="detail" showTrust />
+            <View style={styles.scoreBand}>
+              <Text variant="scoreDisplay" color={colors.primary[700]}>
+                {restaurant.familyScore.score}
+              </Text>
+              <View style={styles.scoreBandText}>
+                <Text variant="heading3">{getMatchClassification(restaurant.familyScore.score, restaurant.enrichmentStatus)}</Text>
+                <Text variant="bodySmall" color={colors.text.secondary}>Family Score for your household</Text>
+              </View>
+            </View>
+            <RecommendationPattern venue={restaurant} variant="detail" showTrust showClassification={false} />
 
             <Text variant="heading3" style={styles.sectionTitle}>
               Family facilities
@@ -478,6 +488,20 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginTop: spacing['2xl'],
     marginBottom: spacing.lg,
+  },
+  scoreBand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+    backgroundColor: colors.primary[50],
+    borderRadius: radius.xl,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  scoreBandText: {
+    flex: 1,
+    gap: 2,
   },
   infoBlock: {
     backgroundColor: colors.surface,

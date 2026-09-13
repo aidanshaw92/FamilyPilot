@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { SavedPlaceRow } from '@/src/components/shared/SavedPlaceRow';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Chip, EmptyState, SkeletonCard, Text } from '@/src/components/ui';
+import { FadeInView } from '@/src/components/ui/FadeInView';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useSavedItems } from '@/src/hooks/use-queries';
@@ -34,12 +35,22 @@ const SAVED_GROUPS: { id: SavedGroup; label: string }[] = [
 ];
 
 export default function SavedScreen() {
-  const { data: savedItems, isLoading } = useSavedItems();
+  const { data: savedItems, isLoading, refetch } = useSavedItems();
   const restoreSaved = useSavedStore((state) => state.restoreSaved);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortOption>('recent');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [removedItem, setRemovedItem] = useState<SavedItem | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const filteredItems = useMemo(() => {
     let items = savedItems ?? [];
@@ -83,11 +94,12 @@ export default function SavedScreen() {
     }
   };
 
-  const renderItem = (item: SavedItem) => (
+  const renderItem = (item: SavedItem, index: number) => (
     <SavedPlaceRow
       key={item.id}
       venue={item.venue}
       itemType={item.type}
+      index={index}
       onRemoved={(id) => {
         const removed = (savedItems ?? []).find((candidate) => candidate.venue.id === id) ?? item;
         setRemovedItem(removed);
@@ -147,7 +159,7 @@ export default function SavedScreen() {
       </ScrollView>
 
       {removedItem ? (
-        <View style={styles.undoBar}>
+        <FadeInView style={styles.undoBar}>
           <Text variant="bodySmall" color={colors.text.secondary}>
             {removedItem.venue.name} removed
           </Text>
@@ -156,10 +168,21 @@ export default function SavedScreen() {
               Undo
             </Text>
           </Pressable>
-        </View>
+        </FadeInView>
       ) : null}
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void handleRefresh()}
+            tintColor={colors.primary[500]}
+            colors={[colors.primary[500]]}
+          />
+        }
+      >
         {isLoading ? (
           <View style={styles.loadingList}>
             <SkeletonCard />

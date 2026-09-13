@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { DecisionCard } from '@/src/components/shared/DecisionCard';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FocusedRecommendationCard } from '@/src/components/home/FocusedRecommendationCard';
 import { OutingPreferences } from '@/src/components/home/OutingPreferences';
 import { ScreenContainer, ScreenHeader } from '@/src/components/shared/ScreenContainer';
 import { EmptyState, ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
-import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { colors, fontFamily, radius, spacing } from '@/src/design-system/tokens';
 import {
   useFamilyProfile,
   useNearbyVenues,
@@ -26,10 +27,11 @@ function getTimeGreeting(): string {
 export default function HomeScreen() {
   const router = useRouter();
   const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { data: places, isLoading: placesLoading, isError: placesError, refetch: retryPlaces } = useNearbyVenues();
   const browse = (category: string) => { useFiltersStore.getState().resetExploreFilters(); useFiltersStore.getState().setCategoryFilter(category); router.push('/(tabs)/explore' as never); };
   const { data: profile } = useFamilyProfile();
-  const { data: weather } = useWeather();
+  const { data: weather, refetch: refetchWeather } = useWeather();
   const { parsedRequest, isProactive } = useProactiveHomeRequest();
 
   const {
@@ -38,6 +40,15 @@ export default function HomeScreen() {
     isError: recsError,
     refetch,
   } = useFocusedRecommendations(parsedRequest);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([retryPlaces(), refetch(), refetchWeather()]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const parentName = profile?.parentName ?? 'there';
   const recommendations = focusedResult?.recommendations ?? [];
@@ -60,22 +71,32 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void handleRefresh()}
+            tintColor={colors.primary[500]}
+            colors={[colors.primary[500]]}
+          />
+        }
       >
         <Text variant="heading3" style={styles.quickActionHeading}>What would you like to do today?</Text>
         <View style={styles.quickActionRow}>
           {([
-            ['Go outside','leaf-outline','parks','#E9F8EF',colors.secondary[600]],
-            ['Indoor activities','home-outline','museums','#F0EDFF',colors.primary[600]],
-            ['Plan a day','calendar-outline','plan','#EAF4FF',colors.accent[600]],
-            ['Explore London','compass-outline','all','#FFF0F4',colors.coral],
-          ] as const).map(([label,icon,category,bg,iconColor]) => (
+            ['Go outside','leaf-outline','parks',['#3FA66B','#1C8A57']],
+            ['Indoor activities','home-outline','museums',['#7A6FF2','#5B4FE8']],
+            ['Plan a day','calendar-outline','plan',['#2F9FD6','#1476AD']],
+            ['Explore London','compass-outline','all',['#F2568F','#C81F66']],
+          ] as const).map(([label,icon,category,gradient]) => (
             <Pressable
               key={label}
               accessibilityRole="button"
               onPress={() => category === 'plan' ? router.push('/(tabs)/trips' as never) : browse(category)}
-              style={[styles.quickAction,{backgroundColor:bg}]}
+              style={styles.quickAction}
             >
-              <Ionicons name={icon} size={25} color={iconColor}/>
+              <LinearGradient colors={gradient} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.quickActionBadge}>
+                <Ionicons name={icon} size={24} color="#FFFFFF"/>
+              </LinearGradient>
               <Text variant="caption" style={styles.quickActionLabel}>{label}</Text>
             </Pressable>
           ))}
@@ -121,9 +142,17 @@ export default function HomeScreen() {
               actionLabel="Explore"
               onAction={() => router.push('/(tabs)/explore' as never)}
             />
-            {moreIdeas.map((rec, index) => (
-              <FocusedRecommendationCard key={rec.venueId} recommendation={rec} index={index + 1} />
-            ))}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.moreIdeasScroll}
+            >
+              {moreIdeas.map((rec, index) => (
+                <View key={rec.venueId} style={styles.moreIdeasItem}>
+                  <FocusedRecommendationCard recommendation={rec} index={index + 1} />
+                </View>
+              ))}
+            </ScrollView>
           </View>
         ) : null}
 
@@ -173,12 +202,22 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     gap: spacing.sm,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xs,
+  },
+  quickActionBadge: {
+    width: 52,
+    height: 52,
     borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.text.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 3,
   },
   quickActionLabel: {
     textAlign: 'center',
+    fontFamily: fontFamily.semiBold,
   },
   preferencesToggle: {
     paddingVertical: spacing.md,
@@ -192,6 +231,13 @@ const styles = StyleSheet.create({
   },
   moreIdeasSection: {
     marginBottom: spacing.xl,
+  },
+  moreIdeasScroll: {
+    gap: spacing.md,
+    paddingRight: spacing.md,
+  },
+  moreIdeasItem: {
+    width: 260,
   },
   skeletonRow: {
     marginBottom: spacing['2xl'],

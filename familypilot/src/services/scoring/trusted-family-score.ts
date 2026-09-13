@@ -1,5 +1,13 @@
 import { FamilyProfile, FamilyScoreFactors, VenueDetail, WeatherInfo } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
+import { RoutineFit } from '@/src/utils/routine-fit';
+
+/** "2-hour" / "90-minute" — an adjective phrase for "a ___ visit", not a raw number. */
+function formatDurationAdjective(minutes: number): string {
+  if (minutes < 60) return `${minutes}-minute`;
+  const hours = minutes / 60;
+  return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}-hour`;
+}
 
 function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, Math.round(value)));
@@ -168,9 +176,21 @@ export function buildTrustedExplanation(
   facts: MatchableVenueFacts,
   factors: FamilyScoreFactors,
   weather?: WeatherInfo | null,
+  routineFit?: RoutineFit,
 ): string[] {
   const reasons: string[] = [];
   const children = profile.members.filter((m) => m.role === 'child');
+
+  // Lead with the most time-bound, bespoke facts before the reviewed-but-often-generic ones
+  // below — a routine-fit line or a concrete visit duration says something no other venue's
+  // card would say in quite the same way.
+  if (routineFit?.reason) {
+    reasons.push(routineFit.reason);
+  }
+
+  if (facts.visitDurationMinutes != null) {
+    reasons.push(`Typically a ${formatDurationAdjective(facts.visitDurationMinutes)} visit`);
+  }
 
   if (facts.minRecommendedAge != null || facts.maxRecommendedAge != null) {
     if (factors.ageSuitability >= 85 && children.length > 0) {
@@ -226,5 +246,5 @@ export function buildTrustedExplanation(
     reasons.push('Based on reviewed family suitability details');
   }
 
-  return reasons.slice(0, 4);
+  return reasons.slice(0, 6);
 }

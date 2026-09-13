@@ -59,9 +59,9 @@ export default function SplashScreen() {
 
   return (
     <LinearGradient
-      colors={[colors.primary[700], colors.primary[500], colors.secondary[500]]}
+      colors={[colors.midnight.start, colors.midnight.end]}
       start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      end={{ x: 0, y: 1 }}
       style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
     >
       <View style={styles.content}>

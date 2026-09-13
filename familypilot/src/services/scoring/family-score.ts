@@ -3,7 +3,7 @@ import { EnrichmentStatus, FamilyProfile, FamilyScore, FamilyScoreFactors, Venue
 import { PROVIDER_ONLY_FAMILY_MATCH_CAP } from '@/src/constants/places-quality';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 import { buildFacilityMissingCaution } from '@/src/utils/facility-match';
-import { evaluateRoutineFit } from '@/src/utils/routine-fit';
+import { evaluateRoutineFit, RoutineFit } from '@/src/utils/routine-fit';
 
 import {
   buildTrustedExplanation,
@@ -112,11 +112,19 @@ function scoreBudgetHeuristic(venue: VenueDetail, tier: FamilyProfile['budgetTie
   return isFree ? 85 : 88;
 }
 
+/** "2-hour" / "90-minute" — an adjective phrase for "a ___ visit", not a raw number. */
+function formatDurationAdjective(minutes: number): string {
+  if (minutes < 60) return `${minutes}-minute`;
+  const hours = minutes / 60;
+  return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}-hour`;
+}
+
 function buildHeuristicExplanation(
   venue: VenueDetail,
   profile: FamilyProfile,
   factors: FamilyScoreFactors,
   isProviderOnly: boolean,
+  routineFit: RoutineFit,
 ): string[] {
   if (isProviderOnly) {
     const reasons: string[] = [
@@ -130,19 +138,18 @@ function buildHeuristicExplanation(
 
   const reasons: string[] = [];
   const children = profile.members.filter((m) => m.role === 'child');
+  const hasPushchair = Boolean(profile.pushchair?.trim());
 
-  if (factors.ageSuitability >= 85 && children[0]) {
-    if (children.length === 1) {
-      reasons.push(`${children[0].name} is a great age for this ${venue.category}`);
-    } else {
-      reasons.push(`Works well for ${children.map((c) => c.name).join(' and ')}`);
-    }
+  // Lead with whatever is most specific to this exact venue, visit, and family — a time-bound
+  // routine fit, a concrete duration, distance, or facility fact — before the heuristic age
+  // line below, which (with no reviewed age data to go on) is almost always trivially true and
+  // reads as boilerplate ("X is a great age for this park") if it's allowed to always lead.
+  if (routineFit.reason) {
+    reasons.push(routineFit.reason);
   }
 
-  if (profile.pushchair?.trim() && factors.accessibility >= 85) {
-    reasons.push('Pushchair friendly paths and access');
-  } else if (factors.accessibility >= 85) {
-    reasons.push('Flat enough for pushchairs');
+  if (venue.visitDurationMinutes) {
+    reasons.push(`Typically a ${formatDurationAdjective(venue.visitDurationMinutes)} visit`);
   }
 
   if (factors.distance >= 85) {
@@ -151,23 +158,45 @@ function buildHeuristicExplanation(
     reasons.push(`Further than your usual ${profile.maxDriveMinutes} min drive`);
   }
 
-  if (factors.budgetFit >= 85) {
-    reasons.push('Within your usual budget');
+  const hasParking = venue.facilities?.includes('parking');
+  const hasBabyChanging = venue.facilities?.includes('baby_changing');
+  if (hasParking && hasBabyChanging) {
+    reasons.push('Parking and baby changing both on site');
+  } else if (hasParking) {
+    reasons.push('Parking available on site');
+  } else if (hasBabyChanging) {
+    reasons.push('Baby changing available on site');
   }
 
-  if (venue.facilities?.includes('baby_changing')) {
-    reasons.push('Baby changing available on site');
+  if (hasPushchair && factors.accessibility >= 85) {
+    reasons.push('Great for buggies — flat, step-free access');
+  } else if (factors.accessibility >= 85) {
+    reasons.push('Flat enough for pushchairs');
   }
 
   if (venue.facilities?.includes('cafe') && venue.category !== 'restaurant') {
     reasons.push('Café on site for lunch');
   }
 
+  if (factors.budgetFit >= 85) {
+    reasons.push('Within your usual budget');
+  }
+
   if (factors.weatherFit >= 90) {
     reasons.push('Good for today’s weather');
   }
 
-  return reasons.slice(0, 4);
+  // A filler, not a leader: kept last so it only shows up once the more specific facts above
+  // haven't already filled the card.
+  if (factors.ageSuitability >= 85 && children[0]) {
+    reasons.push(
+      children.length === 1
+        ? `${children[0].name} is a great age for this ${venue.category}`
+        : `Works well for ${children.map((c) => c.name).join(' and ')}`,
+    );
+  }
+
+  return reasons.slice(0, 6);
 }
 
 export function calculateFamilyScore(
@@ -222,8 +251,8 @@ export function calculateFamilyScore(
 
   const explanation =
     useTrusted && facts
-      ? buildTrustedExplanation(venue, profile, facts, factors, weather)
-      : buildHeuristicExplanation(venue, profile, factors, isProviderOnly);
+      ? buildTrustedExplanation(venue, profile, facts, factors, weather, routineFit)
+      : buildHeuristicExplanation(venue, profile, factors, isProviderOnly, routineFit);
 
   return { score, factors, explanation };
 }

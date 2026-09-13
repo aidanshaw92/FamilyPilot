@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -70,18 +71,15 @@ export default function ProfileScreen() {
           <Card style={styles.familyCard}>
             <View style={styles.avatarRow}>
               {profile.members.map((member, index) => (
-                <View
+                <LinearGradient
                   key={member.id}
-                  style={[
-                    styles.avatar,
-                    { backgroundColor: AVATAR_COLORS[index % AVATAR_COLORS.length] },
-                    index > 0 && styles.avatarOverlap,
-                  ]}
+                  colors={AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length]}
+                  style={[styles.avatar, index > 0 && styles.avatarOverlap]}
                 >
                   <Text variant="heading3" color={colors.text.inverse}>
                     {member.name.charAt(0)}
                   </Text>
-                </View>
+                </LinearGradient>
               ))}
             </View>
             <Text variant="heading2" style={styles.familyName}>
@@ -114,15 +112,17 @@ export default function ProfileScreen() {
         <Text variant="heading3" style={styles.sectionTitle}>
           Your children
         </Text>
-        {children.map((child, index) => (
-          <FadeInView key={child.id} delay={index * 50}>
-            <ProfileRow
-              icon="person-outline"
-              label={child.name}
-              value={formatChildAge(child)}
-            />
-          </FadeInView>
-        ))}
+        <Card style={styles.prefCard}>
+          {children.map((child, index) => (
+            <FadeInView key={child.id} delay={index * 50}>
+              <ProfileRow
+                icon="person-outline"
+                label={child.name}
+                value={formatChildAge(child)}
+              />
+            </FadeInView>
+          ))}
+        </Card>
 
         <Text variant="heading3" style={styles.sectionTitle}>
           Naps, feeds & must-haves
@@ -262,11 +262,11 @@ function ProfileRow({
   );
 }
 
-const AVATAR_COLORS = [
-  colors.primary[500],
-  colors.secondary[500],
-  colors.accent[500],
-  colors.coral,
+const AVATAR_GRADIENTS: readonly [string, string][] = [
+  [colors.primary[500], colors.primary[600]],
+  [colors.secondary[500], colors.secondary[600]],
+  [colors.accent[500], colors.accent[600]],
+  [colors.coral, '#C0472F'],
 ];
 
 const styles = StyleSheet.create({

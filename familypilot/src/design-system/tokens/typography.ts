@@ -7,21 +7,32 @@ export const fontFamily = {
   medium: 'Inter_500Medium',
   semiBold: 'Inter_600SemiBold',
   bold: 'Inter_700Bold',
+  extraBold: 'Inter_800ExtraBold',
+  black: 'Inter_900Black',
 } as const;
 
 export const typography = {
+  /** Reserved for a single number that is the whole point of the moment — a Family Score. Use
+   * sparingly; this is the app's loudest weight. */
+  scoreDisplay: {
+    fontFamily: fontFamily.black,
+    fontSize: 40,
+    lineHeight: 44,
+    letterSpacing: -1,
+    color: colors.text.primary,
+  },
   display: {
-    fontFamily: fontFamily.bold,
+    fontFamily: fontFamily.extraBold,
     fontSize: 32,
     lineHeight: 40,
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
     color: colors.text.primary,
   },
   heading1: {
-    fontFamily: fontFamily.bold,
+    fontFamily: fontFamily.extraBold,
     fontSize: 26,
     lineHeight: 32,
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
     color: colors.text.primary,
   },
   heading2: {
