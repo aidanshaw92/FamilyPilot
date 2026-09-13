@@ -43,9 +43,7 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
   ].filter((caution): caution is string => Boolean(caution));
   return {
     ...venue,
-    familyScore: routineFit.reason
-      ? { ...familyScore, explanation: [routineFit.reason, ...familyScore.explanation] }
-      : familyScore,
+    familyScore,
     goodToKnow: cautions.length ? [...cautions, ...(detail.goodToKnow ?? [])] : detail.goodToKnow,
     facilities: detail.facilities,
   };
