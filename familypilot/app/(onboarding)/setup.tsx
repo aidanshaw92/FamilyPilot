@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
@@ -36,6 +38,17 @@ interface DraftChild {
 
 function maxForUnit(unit: AgeUnit): number {
   return unit === 'months' ? 11 : 17;
+}
+
+function StepIcon({ name }: { name: keyof typeof Ionicons.glyphMap }) {
+  return (
+    <LinearGradient
+      colors={[colors.primary[600], colors.primary[500]]}
+      style={styles.stepIcon}
+    >
+      <Ionicons name={name} size={30} color={colors.text.inverse} />
+    </LinearGradient>
+  );
 }
 
 export default function SetupScreen() {
@@ -265,6 +278,7 @@ export default function SetupScreen() {
 
           {step === 2 ? (
             <View>
+              <StepIcon name="people" />
               {children.map((child, index) => (
                 <View key={child.id} style={styles.childBlock}>
                   <View style={styles.childHeader}>
@@ -309,24 +323,37 @@ export default function SetupScreen() {
 
           {step === 3 ? (
             <View>
-              <View style={styles.routineRow}>
+              <StepIcon name="moon" />
+              <View style={styles.routineCard}>
                 <View style={styles.routineToggle}>
+                  <Text variant="body" style={styles.routineLabel}>
+                    Does your child usually nap?
+                  </Text>
                   <Switch accessibilityLabel="Does your child usually nap?" value={hasNap} onValueChange={setHasNap} />
-                  <Text variant="body">Does your child usually nap?</Text>
                 </View>
-                {hasNap ? <TimeField label="Usual nap time" value={napTime} onChange={setNapTime} /> : null}
+                {hasNap ? (
+                  <View style={styles.routineTimeField}>
+                    <TimeField label="Usual nap time" value={napTime} onChange={setNapTime} />
+                  </View>
+                ) : null}
               </View>
 
-              <View style={styles.routineRow}>
+              <View style={styles.routineCard}>
                 <View style={styles.routineToggle}>
+                  <Text variant="body" style={styles.routineLabel}>
+                    Do they need a bottle or meal at a set time?
+                  </Text>
                   <Switch
                     accessibilityLabel="Do they need a bottle or meal at a set time?"
                     value={hasFeed}
                     onValueChange={setHasFeed}
                   />
-                  <Text variant="body">Do they need a bottle or meal at a set time?</Text>
                 </View>
-                {hasFeed ? <TimeField label="Usual feed or lunch time" value={feedTime} onChange={setFeedTime} /> : null}
+                {hasFeed ? (
+                  <View style={styles.routineTimeField}>
+                    <TimeField label="Usual feed or lunch time" value={feedTime} onChange={setFeedTime} />
+                  </View>
+                ) : null}
               </View>
 
               <Text variant="caption" color={colors.text.secondary}>
@@ -337,6 +364,7 @@ export default function SetupScreen() {
 
           {step === 4 ? (
             <View>
+              <StepIcon name="navigate" />
               <Text variant="label" color={colors.text.secondary} style={styles.groupLabel}>
                 Maximum drive time
               </Text>
@@ -406,6 +434,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingBottom: spacing.xl,
   },
+  stepIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: spacing.xl,
+  },
   childBlock: {
     marginBottom: spacing.lg,
     padding: spacing.lg,
@@ -429,14 +466,25 @@ const styles = StyleSheet.create({
   errorText: {
     marginBottom: spacing.md,
   },
-  routineRow: {
-    gap: spacing.sm,
+  routineCard: {
     marginBottom: spacing.lg,
+    padding: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   routineToggle: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.md,
+  },
+  routineLabel: {
+    flex: 1,
+  },
+  routineTimeField: {
+    marginTop: spacing.md,
   },
   groupLabel: {
     marginBottom: spacing.md,
