@@ -54,51 +54,44 @@ export function SavedPlaceRow({ venue, itemType, onRemoved, index = 0 }: SavedPl
     <FadeInView delay={index * 60}>
       <PressableScale
         onPress={() => router.push(detailPath as never)}
-        style={styles.row}
+        style={styles.card}
         accessibilityRole="button"
         accessibilityLabel={`${venue.name}, ${classification}, ${venue.driveMinutes} minutes away`}
       >
-        <VenueImage
-          uri={venue.imageUrl}
-          category={venue.category}
-          alt={venue.name}
-          style={styles.thumbnail}
-          borderRadius={radius.md}
-        />
-        <View style={styles.content}>
-          <Text variant="heading3" numberOfLines={2}>
-            {venue.name}
-          </Text>
-          <Text variant="caption" color={colors.text.secondary}>
-            {categoryLabel}
-          </Text>
-          <View style={styles.meta}>
-            <FamilyMatch score={venue.familyScore.score} variant="compact" style={styles.match} />
-            <Text variant="caption" color={colors.text.secondary}>
-              {venue.driveMinutes} min away
-              {venue.estimatedSpend ? ` · Estimated ${venue.estimatedSpend}` : ''}
-            </Text>
+        <View style={styles.imageWrap}>
+          <VenueImage
+            uri={venue.imageUrl}
+            category={venue.category}
+            alt={venue.name}
+            style={styles.image}
+            borderRadius={0}
+          />
+          <View style={styles.badgeOverlay}>
+            <FamilyMatch score={venue.familyScore.score} variant="card" />
           </View>
-        </View>
-        <View style={styles.actions}>
-          <Pressable
-            onPress={() => router.push(detailPath as never)}
-            style={styles.actionButton}
-            accessibilityRole="button"
-            accessibilityLabel={`View ${venue.name}`}
-          >
-            <Text variant="caption" color={colors.primary[500]}>
-              View details
-            </Text>
-          </Pressable>
           <Pressable
             onPress={handleRemove}
-            style={styles.actionButton}
+            style={styles.removeBadge}
             accessibilityRole="button"
             accessibilityLabel={`Remove ${venue.name} from saved`}
+            hitSlop={8}
           >
-            <Ionicons name="heart" size={20} color={colors.error[500]} />
+            <Ionicons name="heart" size={18} color={colors.coral} />
           </Pressable>
+        </View>
+        <View style={styles.content}>
+          <View style={styles.titleRow}>
+            <Text variant="heading3" numberOfLines={2} style={styles.title}>
+              {venue.name}
+            </Text>
+            <View style={styles.cta}>
+              <Ionicons name="arrow-forward" size={14} color={colors.text.inverse} />
+            </View>
+          </View>
+          <Text variant="caption" color={colors.text.secondary}>
+            {categoryLabel} · {venue.driveMinutes} min away
+            {venue.estimatedSpend ? ` · Estimated ${venue.estimatedSpend}` : ''}
+          </Text>
         </View>
       </PressableScale>
     </FadeInView>
@@ -106,42 +99,54 @@ export function SavedPlaceRow({ venue, itemType, onRemoved, index = 0 }: SavedPl
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    marginBottom: spacing.lg,
     ...shadows.card,
-    gap: spacing.md,
   },
-  thumbnail: {
-    width: 64,
-    height: 64,
+  imageWrap: {
+    width: '100%',
+    position: 'relative',
+  },
+  image: {
+    width: '100%',
+    height: 130,
+  },
+  badgeOverlay: {
+    position: 'absolute',
+    top: spacing.md,
+    left: spacing.md,
+  },
+  removeBadge: {
+    position: 'absolute',
+    top: spacing.md,
+    right: spacing.md,
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
-    flex: 1,
     gap: spacing.xs,
+    padding: spacing.lg,
   },
-  meta: {
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginTop: spacing.xs,
   },
-  match: {
-    minWidth: 52,
-    minHeight: 32,
-    paddingVertical: 2,
+  title: {
+    flex: 1,
   },
-  actions: {
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  actionButton: {
-    minWidth: 44,
-    minHeight: 44,
+  cta: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary[500],
     alignItems: 'center',
     justifyContent: 'center',
   },
