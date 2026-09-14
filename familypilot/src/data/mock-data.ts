@@ -68,7 +68,7 @@ export const mockVenues: Venue[] = [
       'Flat enough for Ozzie\'s pushchair',
       'Only 12 minutes from home',
     ]),
-    estimatedSpend: '£0 – £15',
+    estimatedSpend: '£0-£15',
     isOpen: true,
     address: ' Aldenham Rd, Elstree WD6 3BA',
   },
@@ -101,7 +101,7 @@ export const mockVenues: Venue[] = [
       'Ozzie will love the tractor ride',
       'Indoor barn if it rains',
     ]),
-    estimatedSpend: '£35 – £50',
+    estimatedSpend: '£35-£50',
     isOpen: true,
   },
   {
@@ -132,9 +132,9 @@ export const mockVenueDetails: Record<string, VenueDetail> = Object.fromEntries(
         venue.imageUrl.replace('w=800', 'w=1200').replace('q=80', 'q=70'),
       ],
       facilities: getDefaultFacilities(venue.category),
-      openingHours: 'Usually 8:00 AM – 6:00 PM · Hours from venue',
+      openingHours: 'Usually 8:00 AM-6:00 PM · Hours from venue',
       terrain: venue.category === 'park' || venue.category === 'farm' ? 'flat' : 'mixed',
-      bestAges: venue.category === 'museum' ? '3 – 12 years' : '1 – 8 years',
+      bestAges: venue.category === 'museum' ? '3-12 years' : '1-8 years',
       parkingInfo: venue.category === 'restaurant' ? 'Street parking nearby' : 'Free parking available',
       description: getDefaultDescription(venue),
       visitDurationMinutes: venue.category === 'restaurant' ? 90 : 180,
@@ -254,7 +254,7 @@ export const mockTrips: Trip[] = [
     title: 'Saturday Adventure',
     date: 'Saturday, 9 Aug',
     totalDriveMinutes: 40,
-    estimatedCost: '£30 – £45',
+    estimatedCost: '£30-£45',
     totalDurationHours: 6,
     stops: [
       {

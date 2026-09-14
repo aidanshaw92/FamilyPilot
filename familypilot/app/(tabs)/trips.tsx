@@ -358,9 +358,10 @@ export default function TripsScreen() {
                 ) : null}
                 <Button
                   label="Manage families and routines"
-                  variant="ghost"
+                  variant="secondary"
+                  size="sm"
                   onPress={() => router.push('/(tabs)/families' as never)}
-                  style={styles.ghostLink}
+                  style={styles.inlineAction}
                 />
               </View>
 
@@ -379,7 +380,8 @@ export default function TripsScreen() {
                   />
                   <Button
                     label="Leave from now"
-                    variant="ghost"
+                    variant="secondary"
+                    size="sm"
                     onPress={() => {
                       const d = new Date();
                       state.setOptions({
@@ -1018,6 +1020,10 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: spacing.sm,
     paddingHorizontal: 0,
+  },
+  inlineAction: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.md,
   },
   findButton: {
     marginBottom: spacing.lg,

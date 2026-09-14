@@ -157,7 +157,6 @@ export default function FamiliesScreen() {
           />
 
           <View style={styles.accountSection}>
-            <Text variant="heading3">Connect with friends</Text>
             <Text variant="caption" color={colors.text.tertiary} style={styles.hint}>
               Family details stay on this device unless you back them up. Connections share only what
               you approve.

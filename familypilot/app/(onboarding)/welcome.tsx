@@ -23,7 +23,9 @@ export default function WelcomeScreen() {
   const visibleBenefits = BENEFITS.filter((benefit) => !benefit.feature || isPilotFeatureVisible(benefit.feature));
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View
+      style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom + spacing.lg }]}
+    >
       <View style={styles.brandRow}>
         <View style={styles.logoMark}>
           <Ionicons name="heart" size={22} color={colors.text.inverse} />
@@ -136,6 +138,7 @@ const styles = StyleSheet.create({
   footer: {
     gap: spacing.md,
     paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   footerNote: {
     textAlign: 'center',

@@ -195,7 +195,7 @@ export function buildTrustedExplanation(
   if (facts.minRecommendedAge != null || facts.maxRecommendedAge != null) {
     if (factors.ageSuitability >= 85 && children.length > 0) {
       if (facts.minRecommendedAge != null && facts.maxRecommendedAge != null) {
-        reasons.push(`Recommended for ages ${facts.minRecommendedAge}–${facts.maxRecommendedAge}`);
+        reasons.push(`Recommended for ages ${facts.minRecommendedAge}-${facts.maxRecommendedAge}`);
       } else if (facts.minRecommendedAge != null) {
         reasons.push(`Recommended from age ${facts.minRecommendedAge}`);
       } else if (facts.maxRecommendedAge != null) {

@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   },
   pillFlex: {
     flex: 1,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
   pillIdle: {
     backgroundColor: colors.surface,

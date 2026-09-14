@@ -8,6 +8,15 @@ const FP_SOURCE: FieldProvenance = {
   label: 'FamilyPilot editorial',
 };
 
+/** The mock metadata states an age range only as a label ("3-12 years"). Matching needs the
+ * numbers, so read them back off that same label rather than leaving the range unknown and
+ * having every plan fail closed against development data. */
+function parseAgeRange(label: string | undefined): { min?: number; max?: number } {
+  const match = /(\d+)\s*-\s*(\d+)/.exec(label ?? '');
+  if (!match) return {};
+  return { min: Number(match[1]), max: Number(match[2]) };
+}
+
 function metaForVenue(venueId: string): VenueFamilyMetadata | null {
   const detail = mockVenueDetails[venueId];
   if (!detail) return null;
@@ -24,9 +33,13 @@ function metaForVenue(venueId: string): VenueFamilyMetadata | null {
     estimatedSpend: detail.estimatedSpend ? { ...FP_SOURCE, reliability: 'estimated' } : undefined,
   };
 
+  const ages = parseAgeRange(detail.bestAges);
+
   return {
     familypilotPlaceId: venueId,
     bestAges: detail.bestAges,
+    minRecommendedAge: ages.min,
+    maxRecommendedAge: ages.max,
     terrain: detail.terrain,
     facilities: detail.facilities,
     parkingInfo: detail.parkingInfo,

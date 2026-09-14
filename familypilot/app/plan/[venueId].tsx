@@ -26,11 +26,18 @@ import { buildPlanForVenue, planningFamilyFromProfile } from '@/src/services/pla
 import { localDate, usePlanningStore } from '@/src/stores/planning-store';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { formatCategory } from '@/src/utils/format-category';
+import { VENUE_IDS } from '@/src/utils/venue-routes';
+
+/** Deep links to a plan for any known place need a page in the static export, the same way
+ * the place detail route does. */
+export function generateStaticParams() {
+  return VENUE_IDS.map((venueId) => ({ venueId }));
+}
 
 const TABS = [
   { id: 'plan', label: 'Your plan' },
   { id: 'who', label: "Who's coming" },
-  { id: 'details', label: 'Plan details' },
+  { id: 'details', label: 'Details' },
 ];
 
 const VISIT_LENGTHS = [60, 90, 120, 180];
@@ -215,8 +222,8 @@ export default function PlanBuilderScreen() {
               </Text>
 
               <ItineraryCard
-                eyebrow="Stop 1"
-                title={`${formatCategory(venue.category)} at ${venue.name}`}
+                eyebrow={`Stop 1 · ${formatCategory(venue.category)}`}
+                title={venue.name}
                 imageUrl={venue.photos?.[0] ?? venue.imageUrl}
                 category={venue.category}
                 expanded={expanded === 'activity'}
@@ -274,7 +281,7 @@ export default function PlanBuilderScreen() {
 
               <ItineraryCard
                 eyebrow="Heading home"
-                title="Home"
+                title="Back home"
                 category="park"
                 expanded={expanded === 'home'}
                 onToggle={() => setExpanded(expanded === 'home' ? null : 'home')}

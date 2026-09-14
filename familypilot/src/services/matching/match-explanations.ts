@@ -88,7 +88,7 @@ function formatPushchair(value: string): string {
 
 function formatAgeRange(facts: MatchableVenueFacts): string {
   const { minRecommendedAge: min, maxRecommendedAge: max } = facts;
-  if (min != null && max != null) return `Recommended for ages ${min}–${max}`;
+  if (min != null && max != null) return `Recommended for ages ${min}-${max}`;
   if (min != null) return `Recommended from age ${min}+`;
   if (max != null) return `Recommended up to age ${max}`;
   return 'Age suitability not confirmed';

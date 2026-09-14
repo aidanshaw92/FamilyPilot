@@ -108,20 +108,24 @@ export default function SavedScreen() {
 
         {(savedItems?.length ?? 0) > 0 ? (
           <>
-            <PillSelector
-              options={TYPE_FILTERS}
-              value={typeFilter}
-              onChange={setTypeFilter}
-              accessibilityLabel="Saved types"
-              style={styles.rail}
-              contentStyle={styles.railContent}
-            />
+            {/* A type rail with one real choice is just chrome, so it only appears once
+                restaurants are part of the build. */}
+            {TYPE_FILTERS.length > 2 ? (
+              <PillSelector
+                options={TYPE_FILTERS}
+                value={typeFilter}
+                onChange={setTypeFilter}
+                accessibilityLabel="Saved types"
+                style={styles.rail}
+                contentStyle={styles.railContent}
+              />
+            ) : null}
             <PillSelector
               options={SORT_OPTIONS}
               value={sort}
               onChange={(id) => setSort(id as SortOption)}
               accessibilityLabel="Sort saved places"
-              style={styles.railTight}
+              style={TYPE_FILTERS.length > 2 ? styles.railTight : styles.railSolo}
               contentStyle={styles.railContent}
             />
           </>
@@ -213,6 +217,10 @@ const styles = StyleSheet.create({
   },
   railTight: {
     marginTop: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  railSolo: {
+    marginTop: spacing.xl,
     marginBottom: spacing.xl,
   },
   railContent: {
