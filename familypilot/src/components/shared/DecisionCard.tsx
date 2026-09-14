@@ -42,10 +42,6 @@ function DecisionCardComponent({
 
   if (variant === 'list') {
     const classification = getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
-    // Same shortening rule as FamilyMatch's badge: "Great match" -> "Great", but leave
-    // "Potential match" alone for unreviewed venues (there's no score behind it to shorten to).
-    const pillLabel =
-      venue.enrichmentStatus === 'provider_only' ? classification : classification.replace(' match', '');
     // The single most bespoke, relevant fact for this family (routine fit and concrete
     // duration/age/facility matches are ordered first) reads as a real answer to "why this
     // one" - a bulleted list of every known fact read as generic filler instead.
@@ -58,23 +54,25 @@ function DecisionCardComponent({
         accessibilityLabel={`${venue.name}, ${classification}, view details`}
         style={styles.compact}
       >
-        <View style={styles.compactAccent} />
-        <VenueImage
-          uri={venue.imageUrl}
-          category={venue.category}
-          alt={venue.name}
-          style={styles.compactImage}
-          borderRadius={0}
-        />
+        <View style={styles.compactImageWrap}>
+          <VenueImage
+            uri={venue.imageUrl}
+            category={venue.category}
+            alt={venue.name}
+            style={styles.compactImage}
+            borderRadius={0}
+          />
+          <View style={styles.badgeOverlay}>
+            <FamilyMatch score={venue.familyScore.score} variant="card" enrichmentStatus={venue.enrichmentStatus} />
+          </View>
+        </View>
         <View style={styles.compactContent}>
           <View style={styles.compactTitleRow}>
             <Text variant="heading3" numberOfLines={2} style={styles.compactTitle}>
               {venue.name}
             </Text>
-            <View style={styles.matchPill}>
-              <Text variant="caption" style={styles.matchPillText}>
-                {pillLabel}
-              </Text>
+            <View style={styles.compactCta}>
+              <Ionicons name="arrow-forward" size={14} color={colors.text.inverse} />
             </View>
           </View>
           {oneLiner ? (
@@ -91,9 +89,6 @@ function DecisionCardComponent({
           <Text variant="caption" color={colors.text.tertiary}>
             {venue.category.replace('_', ' ')} · {venue.driveMinutes} min away
             {venue.estimatedSpend ? ` · ${venue.estimatedSpend}` : ''}
-          </Text>
-          <Text variant="caption" color={colors.primary[600]} style={styles.compactCta}>
-            {venue.enrichmentStatus === 'provider_only' ? 'Family details to check' : 'View family details'} →
           </Text>
         </View>
       </PressableScale>
@@ -174,52 +169,42 @@ export const DecisionCard = memo(DecisionCardComponent);
 
 const styles = StyleSheet.create({
   compact: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.lg,
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     overflow: 'hidden',
     ...shadows.card,
   },
-  // Left edge accent signals match quality at a glance without covering the photo.
-  compactAccent: {
-    width: 4,
-    backgroundColor: colors.secondary[500],
+  compactImageWrap: {
+    width: '100%',
+    position: 'relative',
   },
   compactImage: {
-    width: 92,
+    width: '100%',
+    height: 130,
   },
   compactContent: {
-    flex: 1,
     gap: spacing.xs,
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   compactTitleRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: spacing.sm,
   },
   compactTitle: {
     flex: 1,
   },
-  matchPill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-    backgroundColor: colors.secondary[50],
-    borderWidth: 1,
-    borderColor: colors.secondary[100],
-  },
-  matchPillText: {
-    color: colors.secondary[600],
-    fontFamily: 'Inter_600SemiBold',
-  },
   compactReason: {
     lineHeight: 18,
   },
   compactCta: {
-    marginTop: 2,
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary[500],
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   carouselWrap: {
     marginRight: spacing.lg,
