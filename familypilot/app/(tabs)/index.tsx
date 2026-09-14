@@ -1,273 +1,128 @@
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { DecisionCard } from '@/src/components/shared/DecisionCard';
-import { useFiltersStore } from '@/src/stores/filters-store';
-import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
 import { useRouter } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FocusedRecommendationCard } from '@/src/components/home/FocusedRecommendationCard';
 import { OutingPreferences } from '@/src/components/home/OutingPreferences';
-import { ScreenContainer, ScreenHeader } from '@/src/components/shared/ScreenContainer';
+import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
+import { DecisionCard } from '@/src/components/shared/DecisionCard';
+import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { EmptyState, ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
 import { colors, fontFamily, radius, spacing } from '@/src/design-system/tokens';
-import {
-  useFamilyProfile,
-  useNearbyVenues,
-  useFocusedRecommendations,
-  useProactiveHomeRequest,
-  useWeather,
-} from '@/src/hooks/use-queries';
-function getTimeGreeting(): string {
+import { useFiltersStore } from '@/src/stores/filters-store';
+import { useFamilyProfile, useNearbyVenues, useFocusedRecommendations, useProactiveHomeRequest, useWeather } from '@/src/hooks/use-queries';
+
+function getTimeGreeting() {
   const hour = new Date().getHours();
   return hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 }
+
+const categories = [
+  ['Parks', 'leaf-outline', 'parks'],
+  ['Museums', 'business-outline', 'museums'],
+  ['Playgrounds', 'happy-outline', 'parks'],
+  ['Restaurants', 'restaurant-outline', 'restaurants'],
+  ['All places', 'compass-outline', 'all'],
+] as const;
 
 export default function HomeScreen() {
   const router = useRouter();
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { data: places, isLoading: placesLoading, isError: placesError, refetch: retryPlaces } = useNearbyVenues();
-  const browse = (category: string) => { useFiltersStore.getState().resetExploreFilters(); useFiltersStore.getState().setCategoryFilter(category); router.push('/(tabs)/explore' as never); };
   const { data: profile } = useFamilyProfile();
   const { data: weather, refetch: refetchWeather } = useWeather();
   const { parsedRequest, isProactive } = useProactiveHomeRequest();
-
-  const {
-    data: focusedResult,
-    isLoading: recsLoading,
-    isError: recsError,
-    refetch,
-  } = useFocusedRecommendations(parsedRequest);
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await Promise.all([retryPlaces(), refetch(), refetchWeather()]);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const parentName = profile?.parentName ?? 'there';
+  const { data: focusedResult, isLoading: recsLoading, isError: recsError, refetch } = useFocusedRecommendations(parsedRequest);
   const recommendations = focusedResult?.recommendations ?? [];
   const topPick = recommendations[0];
   const moreIdeas = recommendations.slice(1);
-  // "Top picks" and "Today's Pick"/"Also worth considering" draw on two different ranking
-  // systems (see the architecture review) that can legitimately disagree about a venue's fit.
-  // Until they're merged into one, at least never show the *same* venue twice on one screen
-  // with two different framings — that reads as the app contradicting itself.
   const featuredVenueIds = new Set(recommendations.map((rec) => rec.venueId));
   const otherPlaces = (places ?? []).filter((venue) => !featuredVenueIds.has(venue.id));
+  const browse = (category: string) => {
+    useFiltersStore.getState().resetExploreFilters();
+    useFiltersStore.getState().setCategoryFilter(category);
+    router.push('/(tabs)/explore' as never);
+  };
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try { await Promise.all([retryPlaces(), refetch(), refetchWeather()]); } finally { setRefreshing(false); }
+  };
 
   return (
     <ScreenContainer>
-      <ScreenHeader
-        greeting={`${getTimeGreeting()}, ${parentName}`}
-        location={profile?.homeLocation}
-        weather={weather}
-      />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => void handleRefresh()}
-            tintColor={colors.primary[500]}
-            colors={[colors.primary[500]]}
-          />
-        }
-      >
-        <Text variant="heading3" style={styles.quickActionHeading}>What would you like to do today?</Text>
-        <View style={styles.quickActionRow}>
-          {([
-            ['Go outside','leaf-outline','parks',['#3FA66B','#1C8A57']],
-            ['Indoor activities','home-outline','museums',['#7A6FF2','#5B4FE8']],
-            ['Plan a day','calendar-outline','plan',['#2F9FD6','#1476AD']],
-            ['Explore London','compass-outline','all',['#F2568F','#C81F66']],
-          ] as const).map(([label,icon,category,gradient]) => (
-            <Pressable
-              key={label}
-              accessibilityRole="button"
-              onPress={() => category === 'plan' ? router.push('/(tabs)/trips' as never) : browse(category)}
-              style={styles.quickAction}
-            >
-              <LinearGradient colors={gradient} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.quickActionBadge}>
-                <Ionicons name={icon} size={24} color="#FFFFFF"/>
-              </LinearGradient>
-              <Text variant="caption" style={styles.quickActionLabel}>{label}</Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void handleRefresh()} tintColor={colors.primary[500]} />}>
+        <View style={styles.header}>
+          <View>
+            <Text variant="heading2" style={styles.greeting}>{getTimeGreeting()}, {profile?.parentName ?? 'there'}</Text>
+            <Text variant="bodySmall" color={colors.text.secondary} style={styles.welcome}>Find something lovely to do together</Text>
+          </View>
+          <View style={styles.avatar}><Text style={styles.avatarText}>{(profile?.parentName ?? 'F').slice(0, 1).toUpperCase()}</Text></View>
+        </View>
+
+        <Pressable style={styles.searchBar} onPress={() => router.push('/(tabs)/explore' as never)} accessibilityRole="button" accessibilityLabel="Search family activities">
+          <Ionicons name="search-outline" size={23} color={colors.text.primary} />
+          <Text variant="body" color={colors.text.secondary}>Search activities, places...</Text>
+          <View style={styles.filterButton}><Ionicons name="options-outline" size={20} color={colors.text.inverse} /></View>
+        </Pressable>
+
+        <Text variant="heading3" style={styles.sectionTitle}>What are you in the mood for?</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryRow}>
+          {categories.map(([label, icon, category], index) => (
+            <Pressable key={label} onPress={() => browse(category)} style={[styles.categoryChip, index === 0 && styles.categoryChipActive]} accessibilityRole="button">
+              <Ionicons name={icon} size={17} color={index === 0 ? colors.text.inverse : colors.text.primary} />
+              <Text variant="bodySmall" style={index === 0 ? styles.activeChipText : undefined}>{label}</Text>
             </Pressable>
           ))}
-        </View>
-        <Pressable accessibilityRole="button" onPress={() => setPreferencesOpen(!preferencesOpen)} style={styles.preferencesToggle}>
-          <Text variant="bodySmall" color={colors.primary[600]}>Adjust today's preferences {preferencesOpen ? '−' : '+'}</Text>
-        </Pressable>
+        </ScrollView>
+
+        <View style={styles.headingRow}><Text variant="heading2">A great fit for today</Text><Pressable onPress={() => router.push('/(tabs)/explore' as never)}><Text variant="bodySmall" style={styles.seeAll}>See all</Text></Pressable></View>
+        {isProactive ? <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>Picked around your family&apos;s needs</Text> : null}
+        <Pressable onPress={() => setPreferencesOpen(!preferencesOpen)} style={styles.preferenceLink}><Text variant="caption" color={colors.primary[600]}>Adjust today&apos;s preferences {preferencesOpen ? '−' : '+'}</Text></Pressable>
         {preferencesOpen ? <OutingPreferences request={parsedRequest} /> : null}
-        <PostVisitInbox/>
+        <PostVisitInbox />
         {recsError ? <ErrorState onRetry={() => void refetch()} /> : null}
-        {recsLoading ? (
-          <View style={styles.skeletonRow}>
-            <SkeletonDecisionCard />
-          </View>
-        ) : null}
+        {recsLoading ? <SkeletonDecisionCard /> : null}
+        {!recsLoading && !topPick ? <Text variant="bodySmall" color={colors.text.secondary} style={styles.emptyHint}>Explore real places below. We&apos;ll show personalised matches when available.</Text> : null}
+        {topPick ? <FocusedRecommendationCard recommendation={topPick} variant="hero" index={0} /> : null}
 
-        {!recsLoading && recommendations.length === 0 ? <Text variant="bodySmall" color={colors.text.secondary} style={styles.recommendationHint}>Explore real places below. We’ll show personalised matches when the details meet your family’s requirements.</Text> : null}
-        {topPick ? (
-          <View style={styles.heroSection}>
-              <View style={styles.sectionEyebrow}>
-                <View style={styles.eyebrowDot} />
-                <Text variant="caption" style={styles.eyebrowText}>
-                  Today&apos;s Pick
-                </Text>
-              </View>
-              <Text variant="heading1" style={styles.sectionTitle}>
-                A great fit for today
-              </Text>
-            {isProactive ? (
-              <Text variant="bodySmall" style={styles.heroSubtitle}>
-                Our best suggestion for your family right now
-              </Text>
-            ) : null}
-            <FocusedRecommendationCard recommendation={topPick} variant="hero" index={0} />
-          </View>
-        ) : null}
+        {moreIdeas.length > 0 ? <>
+          <SectionHeader title="More ideas for you" actionLabel="Explore" onAction={() => router.push('/(tabs)/explore' as never)} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.moreIdeasScroll}>{moreIdeas.map((rec, index) => <View key={rec.venueId} style={styles.moreIdeasItem}><FocusedRecommendationCard recommendation={rec} index={index + 1} /></View>)}</ScrollView>
+        </> : null}
 
-        {moreIdeas.length > 0 ? (
-          <View style={styles.moreIdeasSection}>
-            <SectionHeader
-              title="Also worth considering"
-              subtitle="Up to three evidence-backed suggestions"
-              actionLabel="Explore"
-              onAction={() => router.push('/(tabs)/explore' as never)}
-            />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.moreIdeasScroll}
-            >
-              {moreIdeas.map((rec, index) => (
-                <View key={rec.venueId} style={styles.moreIdeasItem}>
-                  <FocusedRecommendationCard recommendation={rec} index={index + 1} />
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
-
-        {placesLoading || placesError || otherPlaces.length > 0 || (!topPick && places?.length === 0) ? (
-          <>
-            <SectionHeader
-              title={topPick ? 'More nearby options' : 'Top picks for your family'}
-              subtitle="Real places across London · family details shown when verified"
-              actionLabel="See all"
-              onAction={() => browse('all')}
-            />
-            {placesLoading ? <SkeletonDecisionCard/> : null}
-            {placesError ? <ErrorState onRetry={() => void retryPlaces()}/> : null}
-            {!placesLoading && !placesError && places?.length === 0 ? (
-              <EmptyState
-                icon="search-outline"
-                title="No places found nearby"
-                message="Try exploring a wider area or adjusting your preferences."
-                actionLabel="Explore"
-                onAction={() => browse('all')}
-              />
-            ) : null}
-            {otherPlaces.slice(0,8).map((venue,index) => (
-              <DecisionCard key={venue.id} venue={venue} variant={!topPick && index === 0 ? 'hero' : 'list'} index={index}/>
-            ))}
-          </>
-        ) : null}
+        {placesLoading || placesError || otherPlaces.length > 0 ? <>
+          <SectionHeader title={topPick ? 'More nearby options' : 'Top picks for your family'} actionLabel="See all" onAction={() => browse('all')} />
+          {placesLoading ? <SkeletonDecisionCard /> : null}
+          {placesError ? <ErrorState onRetry={() => void retryPlaces()} /> : null}
+          {otherPlaces.slice(0, 6).map((venue, index) => <DecisionCard key={venue.id} venue={venue} variant={!topPick && index === 0 ? 'hero' : 'list'} index={index} />)}
+        </> : null}
       </ScrollView>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    paddingHorizontal: spacing.screenPadding,
-    paddingBottom: spacing['3xl'],
-  },
-  quickActionHeading: {
-    marginBottom: spacing.md,
-  },
-  quickActionRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  quickAction: {
-    flex: 1,
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  quickActionBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.text.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  quickActionLabel: {
-    textAlign: 'center',
-    fontFamily: fontFamily.semiBold,
-  },
-  preferencesToggle: {
-    paddingVertical: spacing.md,
-    marginBottom: spacing.md,
-  },
-  recommendationHint: {
-    marginBottom: spacing.lg,
-  },
-  heroSection: {
-    marginBottom: spacing.xl,
-  },
-  moreIdeasSection: {
-    marginBottom: spacing.xl,
-  },
-  moreIdeasScroll: {
-    gap: spacing.md,
-    paddingRight: spacing.md,
-  },
-  moreIdeasItem: {
-    width: 260,
-  },
-  skeletonRow: {
-    marginBottom: spacing['2xl'],
-  },
-  sectionEyebrow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  eyebrowDot: {
-    width: 7,
-    height: 7,
-    borderRadius: radius.full,
-    backgroundColor: colors.primary[500],
-  },
-  eyebrowText: {
-    color: colors.primary[600],
-    letterSpacing: 1.2,
-    fontFamily: 'Inter_700Bold',
-  },
-  sectionTitle: {
-    marginBottom: spacing.xs,
-  },
-  heroSubtitle: {
-    marginBottom: spacing.md,
-    color: colors.text.secondary,
-  },
-  error: {
-    color: '#b45309',
-    marginTop: spacing.sm,
-  },
+  scrollContent: { paddingHorizontal: spacing.screenPadding, paddingBottom: spacing['3xl'] },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: spacing.lg, paddingBottom: spacing.lg },
+  greeting: { fontSize: 24, lineHeight: 30 },
+  welcome: { marginTop: spacing.xs },
+  avatar: { width: 46, height: 46, borderRadius: radius.full, backgroundColor: colors.primary[100], alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: colors.primary[700], fontFamily: fontFamily.bold, fontSize: 18 },
+  searchBar: { height: 60, borderRadius: radius.full, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', paddingLeft: spacing.lg, gap: spacing.sm, marginBottom: spacing.xl, shadowColor: '#172026', shadowOpacity: 0.06, shadowRadius: 12, elevation: 2 },
+  filterButton: { marginLeft: 'auto', marginRight: 6, width: 48, height: 48, borderRadius: radius.full, backgroundColor: colors.text.primary, alignItems: 'center', justifyContent: 'center' },
+  sectionTitle: { marginBottom: spacing.md },
+  categoryRow: { gap: spacing.sm, paddingBottom: spacing.xl, paddingRight: spacing.md },
+  categoryChip: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: spacing.md, height: 42, borderRadius: radius.full, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
+  categoryChipActive: { backgroundColor: colors.text.primary, borderColor: colors.text.primary },
+  activeChipText: { color: colors.text.inverse, fontFamily: fontFamily.semiBold },
+  headingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs },
+  seeAll: { color: colors.primary[600], textDecorationLine: 'underline' },
+  subtitle: { marginBottom: spacing.sm },
+  preferenceLink: { paddingVertical: spacing.sm, marginBottom: spacing.md },
+  emptyHint: { marginBottom: spacing.lg },
+  moreIdeasScroll: { gap: spacing.md, paddingRight: spacing.md },
+  moreIdeasItem: { width: 260 },
 });
