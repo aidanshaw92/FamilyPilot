@@ -1,25 +1,35 @@
 import { ViewStyle } from 'react-native';
 
-import { colors } from './colors';
-
+/** Surfaces are separated by a hairline border and whitespace, not by heavy elevation.
+ * Shadow is reserved for things that genuinely float above the page: the bottom nav,
+ * a sheet, a control sitting on photography. */
 export const shadows = {
+  /** Effectively flat: cards rely on `colors.border` instead. */
   card: {
-    shadowColor: colors.text.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowColor: '#14141A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
   },
   cardHover: {
-    shadowColor: colors.text.primary,
+    shadowColor: '#14141A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  /** The floating bottom navigation and fixed CTAs. */
+  floating: {
+    shadowColor: '#14141A',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.16,
+    shadowRadius: 24,
+    elevation: 12,
   },
   bottomSheet: {
-    shadowColor: colors.text.primary,
-    shadowOffset: { width: 0, height: -4 },
+    shadowColor: '#14141A',
+    shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.08,
     shadowRadius: 24,
     elevation: 8,

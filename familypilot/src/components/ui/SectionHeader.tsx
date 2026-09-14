@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 
 import { colors, spacing } from '@/src/design-system/tokens';
 
@@ -9,27 +9,34 @@ interface SectionHeaderProps {
   subtitle?: string;
   actionLabel?: string;
   onAction?: () => void;
+  style?: ViewStyle;
 }
 
-export function SectionHeader({ title, subtitle, actionLabel, onAction }: SectionHeaderProps) {
+/** Heading on the left, a quiet underlined link on the right, exactly as the reference
+ * sets up "Upcoming tours / See all". */
+export function SectionHeader({ title, subtitle, actionLabel, onAction, style }: SectionHeaderProps) {
   return (
-    <View style={styles.container}>
-      <View style={styles.textContainer}>
-        <Text variant="heading2">{title}</Text>
+    <View style={[styles.wrap, style]}>
+      <View style={styles.titleBlock}>
+        <Text variant="heading1" numberOfLines={1}>
+          {title}
+        </Text>
         {subtitle ? (
-          <Text variant="bodySmall" style={styles.subtitle}>
+          <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle} numberOfLines={2}>
             {subtitle}
           </Text>
         ) : null}
       </View>
+
       {actionLabel && onAction ? (
         <Pressable
+          onPress={onAction}
           accessibilityRole="button"
           accessibilityLabel={actionLabel}
-          onPress={onAction}
           hitSlop={8}
+          style={({ pressed }) => [styles.action, pressed && styles.pressed]}
         >
-          <Text variant="bodySmall" color={colors.primary[500]}>
+          <Text variant="bodySmall" color={colors.text.primary} style={styles.actionLabel}>
             {actionLabel}
           </Text>
         </Pressable>
@@ -39,17 +46,27 @@ export function SectionHeader({ title, subtitle, actionLabel, onAction }: Sectio
 }
 
 const styles = StyleSheet.create({
-  container: {
+  wrap: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing.md,
     marginBottom: spacing.lg,
   },
-  textContainer: {
+  titleBlock: {
     flex: 1,
-    marginRight: spacing.md,
   },
   subtitle: {
-    marginTop: spacing.xs,
+    marginTop: 3,
+  },
+  action: {
+    paddingVertical: spacing.xs,
+  },
+  actionLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    textDecorationLine: 'underline',
+  },
+  pressed: {
+    opacity: 0.6,
   },
 });

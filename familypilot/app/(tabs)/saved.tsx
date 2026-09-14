@@ -1,31 +1,36 @@
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { SavedPlaceRow } from '@/src/components/shared/SavedPlaceRow';
-import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
-import { Chip, EmptyState, SkeletonCard, Text } from '@/src/components/ui';
-import { FadeInView } from '@/src/components/ui/FadeInView';
+import { PlaceTile } from '@/src/components/shared/PlaceTile';
+import {
+  EmptyState,
+  PillSelector,
+  SearchBar,
+  SectionHeader,
+  Skeleton,
+  Text,
+} from '@/src/components/ui';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
-import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { colors, layout, radius, spacing } from '@/src/design-system/tokens';
 import { useSavedItems } from '@/src/hooks/use-queries';
-import { useSavedStore } from '@/src/stores/saved-store';
 import { SavedGroup, SavedItem } from '@/src/types';
+import { getCardSignals } from '@/src/utils/family-signals';
+import { formatCategory } from '@/src/utils/format-category';
 
 type SortOption = 'recent' | 'closest' | 'match';
-type TypeFilter = 'all' | 'places' | 'restaurants';
 
-const TYPE_FILTERS = ([
+const TYPE_FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'places', label: 'Places' },
-  { id: 'restaurants', label: 'Restaurants' },
-] satisfies { id: TypeFilter; label: string }[]).filter(
-  (filter) => filter.id !== 'restaurants' || isPilotFeatureVisible('saved_restaurants'),
-);
+  ...(isPilotFeatureVisible('saved_restaurants') ? [{ id: 'restaurants', label: 'Restaurants' }] : []),
+];
 
 const SORT_OPTIONS: { id: SortOption; label: string }[] = [
   { id: 'recent', label: 'Recent' },
   { id: 'closest', label: 'Closest' },
-  { id: 'match', label: 'Best match' },
+  { id: 'match', label: 'Best fit' },
 ];
 
 const SAVED_GROUPS: { id: SavedGroup; label: string }[] = [
@@ -35,12 +40,12 @@ const SAVED_GROUPS: { id: SavedGroup; label: string }[] = [
 ];
 
 export default function SavedScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { data: savedItems, isLoading, refetch } = useSavedItems();
-  const restoreSaved = useSavedStore((state) => state.restoreSaved);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortOption>('recent');
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
-  const [removedItem, setRemovedItem] = useState<SavedItem | null>(null);
+  const [typeFilter, setTypeFilter] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -52,214 +57,174 @@ export default function SavedScreen() {
     }
   };
 
-  const filteredItems = useMemo(() => {
-    let items = savedItems ?? [];
-    if (typeFilter === 'places') {
-      items = items.filter((item) => item.type === 'place');
-    } else if (typeFilter === 'restaurants') {
-      items = items.filter((item) => item.type === 'restaurant');
-    }
+  const items = useMemo(() => {
+    let rows = savedItems ?? [];
+    if (typeFilter === 'places') rows = rows.filter((item) => item.type === 'place');
+    else if (typeFilter === 'restaurants') rows = rows.filter((item) => item.type === 'restaurant');
     if (search.trim()) {
       const query = search.toLowerCase();
-      items = items.filter((item) => item.venue.name.toLowerCase().includes(query));
+      rows = rows.filter((item) => item.venue.name.toLowerCase().includes(query));
     }
-    return [...items].sort((a, b) => {
+    return [...rows].sort((a, b) => {
       if (sort === 'closest') return a.venue.driveMinutes - b.venue.driveMinutes;
       if (sort === 'match') return b.venue.familyScore.score - a.venue.familyScore.score;
       return (b.savedAt ?? '').localeCompare(a.savedAt ?? '');
     });
-  }, [savedItems, search, sort, typeFilter]);
+  }, [savedItems, typeFilter, search, sort]);
 
-  const groupedSections = useMemo(() => {
-    if (search.trim()) return null;
-    const byGroup = new Map<SavedGroup, SavedItem[]>();
-    for (const item of filteredItems) {
-      const group = item.group ?? 'want';
-      const list = byGroup.get(group) ?? [];
-      list.push(item);
-      byGroup.set(group, list);
-    }
-    return SAVED_GROUPS.filter((section) => byGroup.has(section.id)).map((section) => ({
-      ...section,
-      items: byGroup.get(section.id) ?? [],
-    }));
-  }, [filteredItems, search]);
+  const groups = SAVED_GROUPS.map((group) => ({
+    ...group,
+    items: items.filter((item) => (item.group ?? 'want') === group.id),
+  })).filter((group) => group.items.length > 0);
 
-  const isEmpty = !isLoading && filteredItems.length === 0;
-
-  const handleUndo = () => {
-    if (removedItem) {
-      restoreSaved(removedItem);
-      setRemovedItem(null);
-    }
-  };
-
-  const renderItem = (item: SavedItem, index: number) => (
-    <SavedPlaceRow
-      key={item.id}
-      venue={item.venue}
-      itemType={item.type}
-      index={index}
-      onRemoved={(id) => {
-        const removed = (savedItems ?? []).find((candidate) => candidate.venue.id === id) ?? item;
-        setRemovedItem(removed);
-        setTimeout(() => setRemovedItem(null), 5000);
-      }}
-    />
-  );
+  const detailPath = (item: SavedItem) =>
+    item.type === 'restaurant' ? `/restaurant/${item.venue.id}` : `/venue/${item.venue.id}`;
 
   return (
-    <ScreenContainer>
-      <View style={styles.header}>
-        <Text variant="heading1">Saved</Text>
-        <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
-          Places your family wants to remember
-        </Text>
-      </View>
-
-      <View style={styles.searchRow}>
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search saved places"
-          placeholderTextColor={colors.text.tertiary}
-          style={styles.searchInput}
-          accessibilityLabel="Search saved places"
-        />
-      </View>
-
+    <View style={styles.screen}>
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.sortRow}
-      >
-        {TYPE_FILTERS.map((option) => (
-          <Chip
-            key={option.id}
-            label={option.label}
-            active={typeFilter === option.id}
-            onPress={() => setTypeFilter(option.id)}
-          />
-        ))}
-      </ScrollView>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.sortRow}
-      >
-        {SORT_OPTIONS.map((option) => (
-          <Chip
-            key={option.id}
-            label={option.label}
-            active={sort === option.id}
-            onPress={() => setSort(option.id)}
-          />
-        ))}
-      </ScrollView>
-
-      {removedItem ? (
-        <FadeInView style={styles.undoBar}>
-          <Text variant="bodySmall" color={colors.text.secondary}>
-            {removedItem.venue.name} removed
-          </Text>
-          <Pressable onPress={handleUndo} accessibilityRole="button" accessibilityLabel="Undo remove">
-            <Text variant="bodySmall" color={colors.primary[500]}>
-              Undo
-            </Text>
-          </Pressable>
-        </FadeInView>
-      ) : null}
-
-      <ScrollView
-        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.lg }]}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => void handleRefresh()}
-            tintColor={colors.primary[500]}
-            colors={[colors.primary[500]]}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={() => void handleRefresh()} />
         }
       >
-        {isLoading ? (
-          <View style={styles.loadingList}>
-            <SkeletonCard />
-            <SkeletonCard />
-          </View>
-        ) : isEmpty ? (
-          <EmptyState
-            icon="heart-outline"
-            title="Nothing saved yet"
-            message="Tap the heart on any place to save it here. Your saved places stay on this device."
-          />
-        ) : groupedSections ? (
-          groupedSections.map((section) => (
-            <View key={section.id} style={styles.section}>
-              <Text variant="heading3" style={styles.sectionTitle}>
-                {section.label}
-              </Text>
-              {section.items.map(renderItem)}
+        <View style={styles.gutter}>
+          <Text variant="display">Saved</Text>
+          <Text variant="bodySmall" color={colors.text.secondary} style={styles.sub}>
+            Places your family wants to remember
+          </Text>
+
+          {(savedItems?.length ?? 0) > 0 ? (
+            <SearchBar
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search saved places"
+              style={styles.search}
+            />
+          ) : null}
+        </View>
+
+        {(savedItems?.length ?? 0) > 0 ? (
+          <>
+            <PillSelector
+              options={TYPE_FILTERS}
+              value={typeFilter}
+              onChange={setTypeFilter}
+              accessibilityLabel="Saved types"
+              style={styles.rail}
+              contentStyle={styles.railContent}
+            />
+            <PillSelector
+              options={SORT_OPTIONS}
+              value={sort}
+              onChange={(id) => setSort(id as SortOption)}
+              accessibilityLabel="Sort saved places"
+              style={styles.railTight}
+              contentStyle={styles.railContent}
+            />
+          </>
+        ) : null}
+
+        <View style={styles.gutter}>
+          {isLoading ? (
+            <>
+              <Skeleton height={248} borderRadius={radius['2xl']} style={styles.skeleton} />
+              <Skeleton height={248} borderRadius={radius['2xl']} />
+            </>
+          ) : null}
+
+          {!isLoading && (savedItems?.length ?? 0) === 0 ? (
+            <EmptyState
+              icon="heart-outline"
+              title="Nothing saved yet"
+              message="Tap the heart on any place to keep it here for later."
+              actionLabel="Find somewhere to go"
+              onAction={() => router.push('/(tabs)/explore' as never)}
+            />
+          ) : null}
+
+          {!isLoading && (savedItems?.length ?? 0) > 0 && items.length === 0 ? (
+            <EmptyState
+              icon="search-outline"
+              title="Nothing matches"
+              message="Try a different search or filter."
+              actionLabel="Clear search"
+              onAction={() => {
+                setSearch('');
+                setTypeFilter('all');
+              }}
+            />
+          ) : null}
+
+          {groups.map((group) => (
+            <View key={group.id} style={styles.group}>
+              <SectionHeader title={group.label} />
+              {group.items.map((item) => (
+                <PlaceTile
+                  key={item.id}
+                  id={item.venue.id}
+                  name={item.venue.name}
+                  imageUrl={item.venue.imageUrl}
+                  category={item.venue.category}
+                  meta={`${formatCategory(item.venue.category)} · ${item.venue.driveMinutes} min away`}
+                  detail={
+                    getCardSignals(item.venue, 4)
+                      .slice(1)
+                      .map((signal) => signal.label)
+                      .join(' · ') || undefined
+                  }
+                  score={item.venue.familyScore.score}
+                  enrichmentStatus={item.venue.enrichmentStatus}
+                  saveVenue={item.venue}
+                  onPress={() => router.push(detailPath(item) as never)}
+                  imageHeight={172}
+                  style={styles.tile}
+                />
+              ))}
             </View>
-          ))
-        ) : (
-          filteredItems.map(renderItem)
-        )}
+          ))}
+        </View>
       </ScrollView>
-    </ScreenContainer>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: spacing.screenPadding,
-    paddingTop: spacing.lg,
-  },
-  subtitle: {
-    marginTop: spacing.xs,
-  },
-  searchRow: {
-    paddingHorizontal: spacing.screenPadding,
-    marginTop: spacing.lg,
-  },
-  searchInput: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.lg,
-    minHeight: 44,
-    fontFamily: 'Inter_400Regular',
-    fontSize: 16,
-    color: colors.text.primary,
-  },
-  sortRow: {
-    paddingHorizontal: spacing.screenPadding,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-  },
-  undoBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginHorizontal: spacing.screenPadding,
-    marginBottom: spacing.md,
-    padding: spacing.md,
-    backgroundColor: colors.primary[50],
-    borderRadius: radius.md,
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
   content: {
+    paddingBottom: layout.navClearance,
+  },
+  gutter: {
     paddingHorizontal: spacing.screenPadding,
-    paddingBottom: 120,
   },
-  loadingList: {
-    gap: spacing.lg,
+  sub: {
+    marginTop: 4,
   },
-  section: {
+  search: {
+    marginTop: spacing.xl,
+  },
+  rail: {
+    marginTop: spacing.xl,
+  },
+  railTight: {
+    marginTop: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  railContent: {
+    paddingLeft: spacing.screenPadding,
+  },
+  skeleton: {
     marginBottom: spacing.lg,
   },
-  sectionTitle: {
-    marginBottom: spacing.md,
+  group: {
+    marginBottom: spacing.xl,
+  },
+  tile: {
+    marginBottom: spacing.lg,
   },
 });

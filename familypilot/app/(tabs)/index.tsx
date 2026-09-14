@@ -1,24 +1,37 @@
-import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { DecisionCard } from '@/src/components/shared/DecisionCard';
-import { useFiltersStore } from '@/src/stores/filters-store';
-import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
 import { useRouter } from 'expo-router';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-
-import { FocusedRecommendationCard } from '@/src/components/home/FocusedRecommendationCard';
-import { OutingPreferences } from '@/src/components/home/OutingPreferences';
-import { ScreenContainer, ScreenHeader } from '@/src/components/shared/ScreenContainer';
-import { EmptyState, ErrorState, SectionHeader, SkeletonDecisionCard, Text } from '@/src/components/ui';
-import { colors, fontFamily, radius, shadows, spacing } from '@/src/design-system/tokens';
+import { useMemo, useState } from 'react';
 import {
-  useFamilyProfile,
-  useNearbyVenues,
-  useFocusedRecommendations,
-  useProactiveHomeRequest,
-  useWeather,
-} from '@/src/hooks/use-queries';
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { FilterSheet } from '@/src/components/explore/FilterSheet';
+import { PlaceShowcaseCard } from '@/src/components/shared/PlaceShowcaseCard';
+import { PlaceTile } from '@/src/components/shared/PlaceTile';
+import {
+  EmptyState,
+  ErrorState,
+  PillSelector,
+  SearchBar,
+  SectionHeader,
+  Skeleton,
+  SnapCarousel,
+  Text,
+} from '@/src/components/ui';
+import { colors, layout, radius, spacing } from '@/src/design-system/tokens';
+import { useFamilyProfile, useNearbyVenues, useWeather } from '@/src/hooks/use-queries';
+import { useFiltersStore } from '@/src/stores/filters-store';
+import { Venue } from '@/src/types';
+import { getCardSignals } from '@/src/utils/family-signals';
+import { formatCategory } from '@/src/utils/format-category';
+import { filterByPlanCategory, PLAN_CATEGORIES } from '@/src/utils/plan-categories';
+
 function getTimeGreeting(): string {
   const hour = new Date().getHours();
   return hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -26,281 +39,231 @@ function getTimeGreeting(): string {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const [category, setCategory] = useState('for_you');
   const [refreshing, setRefreshing] = useState(false);
-  const { data: places, isLoading: placesLoading, isError: placesError, refetch: retryPlaces } = useNearbyVenues();
-  const browse = (category: string) => { useFiltersStore.getState().resetExploreFilters(); useFiltersStore.getState().setCategoryFilter(category); router.push('/(tabs)/explore' as never); };
-  const { data: profile } = useFamilyProfile();
-  const { data: weather, refetch: refetchWeather } = useWeather();
-  const { parsedRequest, isProactive } = useProactiveHomeRequest();
+  const filterSheetOpen = useFiltersStore((s) => s.filterSheetOpen);
+  const setFilterSheetOpen = useFiltersStore((s) => s.setFilterSheetOpen);
 
+  const { data: profile } = useFamilyProfile();
+  const { data: weather } = useWeather();
   const {
-    data: focusedResult,
-    isLoading: recsLoading,
-    isError: recsError,
+    data: venues,
+    isLoading,
+    isError,
     refetch,
-  } = useFocusedRecommendations(parsedRequest);
+  } = useNearbyVenues();
+
+  const firstName = profile?.parentName?.split(' ')[0] ?? 'there';
+  const ranked = useMemo(
+    () => [...(venues ?? [])].sort((a, b) => b.familyScore.score - a.familyScore.score),
+    [venues],
+  );
+  const shortlist = useMemo(() => filterByPlanCategory(ranked, category), [ranked, category]);
+  const showcase = shortlist.slice(0, 6);
+  const alsoGood = shortlist.slice(6, 12);
+
+  // The next card must peek, which is what tells a parent this rail swipes.
+  const cardWidth = Math.round(width - spacing.screenPadding * 2 - 44);
+  const cardHeight = Math.round(cardWidth * 1.22);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await Promise.all([retryPlaces(), refetch(), refetchWeather()]);
+      await refetch();
     } finally {
       setRefreshing(false);
     }
   };
 
-  const parentName = profile?.parentName ?? 'there';
-  const recommendations = focusedResult?.recommendations ?? [];
-  const topPick = recommendations[0];
-  const moreIdeas = recommendations.slice(1);
-  // "Top picks" and "Today's Pick"/"Also worth considering" draw on two different ranking
-  // systems (see the architecture review) that can legitimately disagree about a venue's fit.
-  // Until they're merged into one, at least never show the *same* venue twice on one screen
-  // with two different framings — that reads as the app contradicting itself.
-  const featuredVenueIds = new Set(recommendations.map((rec) => rec.venueId));
-  const otherPlaces = (places ?? []).filter((venue) => !featuredVenueIds.has(venue.id));
-  // Recommendations only carry display fields; look up the full record so saving from a
-  // featured card writes a real snapshot the Saved tab can render, not a bare ID.
-  const venueById = new Map((places ?? []).map((venue) => [venue.id, venue]));
+  const openVenue = (venue: Venue) => router.push(`/venue/${venue.id}` as never);
 
   return (
-    <ScreenContainer>
-      <ScreenHeader
-        greeting={`${getTimeGreeting()}, ${parentName}`}
-        location={profile?.homeLocation}
-        weather={weather}
-      />
+    <View style={styles.screen}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.lg }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => void handleRefresh()}
             tintColor={colors.primary[500]}
-            colors={[colors.primary[500]]}
           />
         }
       >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Search places to explore"
-          onPress={() => browse('all')}
-          style={styles.searchShortcut}
-        >
-          <Ionicons name="search-outline" size={18} color={colors.text.tertiary} />
-          <Text variant="body" color={colors.text.tertiary} style={styles.searchShortcutText}>
-            Search a place, park or activity
-          </Text>
-        </Pressable>
-        <Text variant="heading3" style={styles.quickActionHeading}>What would you like to do today?</Text>
-        <View style={styles.quickActionRow}>
-          {([
-            ['Go outside','leaf-outline','parks',['#3FA66B','#1C8A57']],
-            ['Indoor activities','home-outline','museums',['#7A6FF2','#5B4FE8']],
-            ['Plan a day','calendar-outline','plan',['#2F9FD6','#1476AD']],
-            ['Explore London','compass-outline','all',['#F2568F','#C81F66']],
-          ] as const).map(([label,icon,category,gradient]) => (
-            <Pressable
-              key={label}
-              accessibilityRole="button"
-              onPress={() => category === 'plan' ? router.push('/(tabs)/trips' as never) : browse(category)}
-              style={styles.quickAction}
-            >
-              <LinearGradient colors={gradient} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.quickActionBadge}>
-                <Ionicons name={icon} size={24} color="#FFFFFF"/>
-              </LinearGradient>
-              <Text variant="caption" style={styles.quickActionLabel}>{label}</Text>
-            </Pressable>
-          ))}
+        <View style={styles.header}>
+          <View style={styles.greeting}>
+            <Text variant="display" numberOfLines={1}>
+              {getTimeGreeting()}, {firstName}
+            </Text>
+            <Text variant="bodySmall" color={colors.text.secondary} style={styles.greetingSub}>
+              {weather
+                ? `${weather.description}, ${weather.temperature}°. What shall we do today?`
+                : 'What shall we do today?'}
+            </Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Your family profile"
+            onPress={() => router.push('/(tabs)/profile' as never)}
+            style={styles.avatar}
+          >
+            <Text variant="heading3" color={colors.text.inverse}>
+              {firstName.charAt(0).toUpperCase()}
+            </Text>
+          </Pressable>
         </View>
-        <Pressable accessibilityRole="button" onPress={() => setPreferencesOpen(!preferencesOpen)} style={styles.preferencesToggle}>
-          <Text variant="bodySmall" color={colors.primary[600]}>Adjust today's preferences {preferencesOpen ? '−' : '+'}</Text>
-        </Pressable>
-        {preferencesOpen ? <OutingPreferences request={parsedRequest} /> : null}
-        <PostVisitInbox/>
-        {recsError ? <ErrorState onRetry={() => void refetch()} /> : null}
-        {recsLoading ? (
-          <View style={styles.skeletonRow}>
-            <SkeletonDecisionCard />
+
+        <SearchBar
+          placeholder="Search places and activities"
+          onPress={() => router.push('/(tabs)/explore' as never)}
+          onFilterPress={() => setFilterSheetOpen(true)}
+          style={styles.search}
+        />
+
+        <Text variant="heading1" style={styles.railHeading}>
+          Select your plan
+        </Text>
+        <PillSelector
+          options={PLAN_CATEGORIES}
+          value={category}
+          onChange={setCategory}
+          accessibilityLabel="Plan categories"
+          style={styles.rail}
+          contentStyle={styles.railContent}
+        />
+
+        {isError ? (
+          <View style={styles.gutter}>
+            <ErrorState onRetry={() => void refetch()} />
           </View>
         ) : null}
 
-        {!recsLoading && recommendations.length === 0 ? <Text variant="bodySmall" color={colors.text.secondary} style={styles.recommendationHint}>Explore real places below. We’ll show personalised matches when the details meet your family’s requirements.</Text> : null}
-        {topPick ? (
-          <View style={styles.heroSection}>
-              <View style={styles.sectionEyebrow}>
-                <View style={styles.eyebrowDot} />
-                <Text variant="caption" style={styles.eyebrowText}>
-                  Today&apos;s Pick
-                </Text>
-              </View>
-              <Text variant="heading1" style={styles.sectionTitle}>
-                A great fit for today
-              </Text>
-            {isProactive ? (
-              <Text variant="bodySmall" style={styles.heroSubtitle}>
-                Our best suggestion for your family right now
-              </Text>
-            ) : null}
-            <FocusedRecommendationCard
-              recommendation={topPick}
-              variant="hero"
-              index={0}
-              venueForSave={venueById.get(topPick.venueId)}
+        {isLoading ? (
+          <View style={styles.gutter}>
+            <Skeleton height={cardHeight} borderRadius={radius['3xl']} />
+          </View>
+        ) : null}
+
+        {!isLoading && !isError && showcase.length === 0 ? (
+          <View style={styles.gutter}>
+            <EmptyState
+              icon="search-outline"
+              title="Nothing confirmed here yet"
+              message="We only show places once the family details we need have been reviewed. Try another category."
+              actionLabel="See everything nearby"
+              onAction={() => setCategory('for_you')}
             />
           </View>
         ) : null}
 
-        {moreIdeas.length > 0 ? (
-          <View style={styles.moreIdeasSection}>
-            <SectionHeader
-              title="Also worth considering"
-              subtitle="Up to three evidence-backed suggestions"
-              actionLabel="Explore"
-              onAction={() => router.push('/(tabs)/explore' as never)}
-            />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.moreIdeasScroll}
-            >
-              {moreIdeas.map((rec, index) => (
-                <View key={rec.venueId} style={styles.moreIdeasItem}>
-                  <FocusedRecommendationCard recommendation={rec} index={index + 1} />
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
-
-        {placesLoading || placesError || otherPlaces.length > 0 || (!topPick && places?.length === 0) ? (
-          <>
-            <SectionHeader
-              title={topPick ? 'More nearby options' : 'Top picks for your family'}
-              subtitle="Real places across London · family details shown when verified"
-              actionLabel="See all"
-              onAction={() => browse('all')}
-            />
-            {placesLoading ? <SkeletonDecisionCard/> : null}
-            {placesError ? <ErrorState onRetry={() => void retryPlaces()}/> : null}
-            {!placesLoading && !placesError && places?.length === 0 ? (
-              <EmptyState
-                icon="search-outline"
-                title="No places found nearby"
-                message="Try exploring a wider area or adjusting your preferences."
-                actionLabel="Explore"
-                onAction={() => browse('all')}
+        {showcase.length > 0 ? (
+          <SnapCarousel
+            data={showcase}
+            keyExtractor={(venue) => venue.id}
+            itemWidth={cardWidth}
+            gap={spacing.md}
+            showDots
+            renderItem={(venue) => (
+              <PlaceShowcaseCard
+                venue={venue}
+                width={cardWidth}
+                height={cardHeight}
+                onPress={() => openVenue(venue)}
               />
-            ) : null}
-            {otherPlaces.slice(0,8).map((venue,index) => (
-              <DecisionCard key={venue.id} venue={venue} variant={!topPick && index === 0 ? 'hero' : 'list'} index={index}/>
-            ))}
-          </>
+            )}
+          />
+        ) : null}
+
+        {alsoGood.length > 0 ? (
+          <View style={styles.alsoGood}>
+            <View style={styles.gutter}>
+              <SectionHeader
+                title="Also worth a look"
+                actionLabel="See all"
+                onAction={() => router.push('/(tabs)/explore' as never)}
+              />
+            </View>
+            <SnapCarousel
+              data={alsoGood}
+              keyExtractor={(venue) => venue.id}
+              itemWidth={228}
+              gap={spacing.md}
+              renderItem={(venue) => (
+                <PlaceTile
+                  id={venue.id}
+                  name={venue.name}
+                  imageUrl={venue.imageUrl}
+                  category={venue.category}
+                  meta={`${formatCategory(venue.category)} · ${venue.driveMinutes} min away`}
+                  detail={getCardSignals(venue, 3)
+                    .slice(1)
+                    .map((s) => s.label)
+                    .join(' · ')}
+                  score={venue.familyScore.score}
+                  enrichmentStatus={venue.enrichmentStatus}
+                  saveVenue={venue}
+                  onPress={() => openVenue(venue)}
+                />
+              )}
+            />
+          </View>
         ) : null}
       </ScrollView>
-    </ScreenContainer>
+
+      <FilterSheet visible={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  content: {
+    paddingBottom: layout.navClearance,
+  },
+  gutter: {
     paddingHorizontal: spacing.screenPadding,
-    paddingBottom: 120,
   },
-  searchShortcut: {
+  header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surface,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.lg,
-    minHeight: 48,
+    alignItems: 'flex-start',
+    gap: spacing.lg,
+    paddingHorizontal: spacing.screenPadding,
     marginBottom: spacing.xl,
-    ...shadows.card,
   },
-  searchShortcutText: {
+  greeting: {
     flex: 1,
   },
-  quickActionHeading: {
-    marginBottom: spacing.md,
+  greetingSub: {
+    marginTop: 4,
   },
-  quickActionRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  quickAction: {
-    flex: 1,
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  quickActionBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.text.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  quickActionLabel: {
-    textAlign: 'center',
-    fontFamily: fontFamily.semiBold,
-  },
-  preferencesToggle: {
-    paddingVertical: spacing.md,
-    marginBottom: spacing.md,
-  },
-  recommendationHint: {
-    marginBottom: spacing.lg,
-  },
-  heroSection: {
-    marginBottom: spacing.xl,
-  },
-  moreIdeasSection: {
-    marginBottom: spacing.xl,
-  },
-  moreIdeasScroll: {
-    gap: spacing.md,
-    paddingRight: spacing.md,
-  },
-  moreIdeasItem: {
-    width: 260,
-  },
-  skeletonRow: {
-    marginBottom: spacing['2xl'],
-  },
-  sectionEyebrow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  eyebrowDot: {
-    width: 7,
-    height: 7,
+  avatar: {
+    width: 46,
+    height: 46,
     borderRadius: radius.full,
     backgroundColor: colors.primary[500],
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  eyebrowText: {
-    color: colors.primary[600],
-    letterSpacing: 1.2,
-    fontFamily: 'Inter_700Bold',
+  search: {
+    paddingHorizontal: spacing.screenPadding,
+    marginBottom: spacing['2xl'],
   },
-  sectionTitle: {
-    marginBottom: spacing.xs,
+  railHeading: {
+    paddingHorizontal: spacing.screenPadding,
+    marginBottom: spacing.lg,
   },
-  heroSubtitle: {
-    marginBottom: spacing.md,
-    color: colors.text.secondary,
+  rail: {
+    marginBottom: spacing.xl,
   },
-  error: {
-    color: '#b45309',
-    marginTop: spacing.sm,
+  railContent: {
+    paddingLeft: spacing.screenPadding,
+  },
+  alsoGood: {
+    marginTop: spacing['3xl'],
   },
 });

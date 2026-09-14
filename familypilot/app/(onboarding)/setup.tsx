@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
@@ -43,12 +42,9 @@ function maxForUnit(unit: AgeUnit): number {
 
 function StepIcon({ name }: { name: keyof typeof Ionicons.glyphMap }) {
   return (
-    <LinearGradient
-      colors={[colors.primary[600], colors.primary[500]]}
-      style={styles.stepIcon}
-    >
-      <Ionicons name={name} size={30} color={colors.text.inverse} />
-    </LinearGradient>
+    <View style={styles.stepIcon}>
+      <Ionicons name={name} size={28} color={colors.text.inverse} />
+    </View>
   );
 }
 
@@ -439,6 +435,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: radius.full,
+    backgroundColor: colors.primary[500],
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',

@@ -19,7 +19,7 @@ export default function AddFriendsScreen() {
         <View style={styles.iconWrap}>
           <Ionicons name="people-circle-outline" size={40} color={colors.text.inverse} />
         </View>
-        <Text variant="heading1" style={styles.heading}>
+        <Text variant="display" style={styles.heading}>
           Add friends
         </Text>
         <Text variant="body" color={colors.text.secondary} style={styles.subtitle}>
@@ -29,7 +29,7 @@ export default function AddFriendsScreen() {
       </View>
 
       <View style={styles.footer}>
-        <Button label="Invite a friend" size="lg" fullWidth onPress={goToFamilies} />
+        <Button label="Invite a friend" size="lg" fullWidth trailingArrow onPress={goToFamilies} />
         <Button label="Skip for now" variant="ghost" fullWidth onPress={goHome} />
       </View>
     </View>

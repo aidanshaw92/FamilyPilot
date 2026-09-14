@@ -1,43 +1,30 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import Animated, {
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-  interpolate,
-  Extrapolation,
-} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { RestaurantFacilities } from '@/src/components/restaurant/RestaurantFacilities';
-import { RecommendationPattern } from '@/src/components/shared/RecommendationPattern';
-import { DeferredPilotGate } from '@/src/components/shared/DeferredPilotGate';
 import { VenueTrustPanel } from '@/src/components/planning/VisitFeedback';
+import { RestaurantFacilities } from '@/src/components/restaurant/RestaurantFacilities';
+import { DeferredPilotGate } from '@/src/components/shared/DeferredPilotGate';
 import { SaveButton } from '@/src/components/shared/SaveButton';
 import { ShareButton } from '@/src/components/shared/ShareButton';
 import {
   Button,
+  CircleButton,
   DataTrustBadge,
   EmptyState,
+  FamilyFitBadge,
   Skeleton,
   Text,
   VenueImage,
 } from '@/src/components/ui';
-import { BackButton } from '@/src/components/ui/BackButton';
 import { FadeInView } from '@/src/components/ui/FadeInView';
-import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { colors, layout, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { useRestaurant, useVenue } from '@/src/hooks/use-queries';
-import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { generateRestaurantStaticParams } from '@/src/utils/restaurant-routes';
-import { getMatchClassification } from '@/src/utils/family-match-classification';
-
-const HERO_HEIGHT = 320;
-const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 export function generateStaticParams() {
   return generateRestaurantStaticParams();
@@ -83,35 +70,6 @@ function RestaurantScreenContent() {
   const { data: restaurant, isLoading, isError, refetch } = useRestaurant(id ?? '', activityVenueId);
   const { data: activityVenue } = useVenue(activityVenueId ?? '');
   const { isSaved, toggleSaved } = useSavedStore();
-  const scrollY = useSharedValue(0);
-  const reducedMotion = useReducedMotion();
-
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (e) => {
-      scrollY.value = e.contentOffset.y;
-    },
-  });
-
-  // Parallax hero effect is exactly the kind of scroll-triggered motion reduced-motion
-  // preferences are meant to suppress - keep the hero static (no translate/scale) instead.
-  const heroStyle = useAnimatedStyle(() => ({
-    transform: reducedMotion
-      ? []
-      : [
-          {
-            translateY: interpolate(
-              scrollY.value,
-              [-100, 0, HERO_HEIGHT],
-              [-50, 0, HERO_HEIGHT * 0.4],
-              Extrapolation.CLAMP,
-            ),
-          },
-          {
-            scale: interpolate(scrollY.value, [-100, 0], [1.15, 1], Extrapolation.CLAMP),
-          },
-        ],
-  }));
-
   const handleBack = useCallback(() => {
     if (router.canGoBack()) {
       router.back();
@@ -136,8 +94,8 @@ function RestaurantScreenContent() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <Skeleton height={HERO_HEIGHT} borderRadius={0} />
+      <View style={[styles.screen, { paddingTop: insets.top + spacing.lg }]}>
+        <Skeleton height={layout.heroHeight} borderRadius={0} />
         <View style={styles.loadingBody}>
           <Skeleton height={120} style={styles.loadingGap} />
           <Skeleton height={200} />
@@ -148,8 +106,10 @@ function RestaurantScreenContent() {
 
   if (isError) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <BackButton onPress={handleBack} />
+      <View style={[styles.screen, { paddingTop: insets.top + spacing.lg }]}>
+        <View style={styles.errorNav}>
+          <CircleButton icon="chevron-back" accessibilityLabel="Go back" onPress={handleBack} />
+        </View>
         <EmptyState
           icon="cloud-offline-outline"
           title="Could not load this restaurant"
@@ -163,8 +123,10 @@ function RestaurantScreenContent() {
 
   if (!restaurant) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <BackButton onPress={handleBack} />
+      <View style={[styles.screen, { paddingTop: insets.top + spacing.lg }]}>
+        <View style={styles.errorNav}>
+          <CircleButton icon="chevron-back" accessibilityLabel="Go back" onPress={handleBack} />
+        </View>
         <EmptyState
           icon="restaurant-outline"
           title="Restaurant not found"
@@ -185,80 +147,88 @@ function RestaurantScreenContent() {
   const dietary = restaurant.restaurantFeatures.dietaryOptions ?? [];
 
   return (
-    <View style={styles.container}>
-      <AnimatedScrollView
-        onScroll={scrollHandler}
-        scrollEventThrottle={16}
+    <View style={styles.screen}>
+      <ScrollView
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+        scrollIndicatorInsets={{ bottom: layout.ctaClearance }}
       >
-        <View style={styles.heroContainer}>
-          <Animated.View style={[styles.heroImageWrap, heroStyle]}>
-            <VenueImage
-              uri={heroPhoto}
-              category={restaurant.category}
-              alt={restaurant.name}
-              style={styles.heroImage}
-              borderRadius={0}
-            />
-          </Animated.View>
-          <LinearGradient
-            colors={[colors.gradient.heroStart, colors.gradient.heroEnd]}
-            style={styles.heroGradient}
+        <View style={styles.hero}>
+          <VenueImage
+            uri={heroPhoto}
+            category={restaurant.category}
+            alt={restaurant.name}
+            style={styles.heroImage}
+            borderRadius={0}
           />
-          <View style={[styles.heroContent, { paddingTop: insets.top + spacing.sm }]}>
-            <BackButton onPress={handleBack} color={colors.text.inverse} />
+          <View style={[styles.heroChrome, { top: insets.top + spacing.sm }]}>
+            <CircleButton icon="chevron-back" accessibilityLabel="Go back" onPress={handleBack} />
             <View style={styles.heroActions}>
-              <ShareButton title={restaurant.name} path={`/restaurant/${restaurant.id}`} color={colors.text.inverse} />
-              <SaveButton venueId={restaurant.id} venue={restaurant} color={colors.text.inverse} />
+              <View style={styles.chromeButton}>
+                <ShareButton title={restaurant.name} path={`/restaurant/${restaurant.id}`} />
+              </View>
+              <View style={styles.chromeButton}>
+                <SaveButton
+                  venueId={restaurant.id}
+                  venue={restaurant}
+                  type="restaurant"
+                  size={21}
+                  filledColor={colors.coral}
+                />
+              </View>
             </View>
           </View>
         </View>
 
-        <View style={styles.body}>
+        <View style={styles.sheet}>
           <FadeInView>
-            <View style={styles.titleBlock}>
-              <Text variant="heading1">{restaurant.name}</Text>
-              {restaurant.cuisineType ? (
-                <Text variant="bodySmall" color={colors.text.secondary} style={styles.cuisine}>
-                  {restaurant.cuisineType}
+            <View style={styles.titleRow}>
+              <View style={styles.titleText}>
+                <Text variant="heading1" numberOfLines={2}>
+                  {restaurant.name}
                 </Text>
-              ) : null}
-              <View style={styles.heroMeta}>
-                <MetaItem icon="car-outline" text={`${distanceMinutes} min`} color={colors.text.secondary} />
-                {restaurant.isOpen !== undefined ? (
-                  <MetaItem
-                    icon={restaurant.isOpen ? 'checkmark-circle-outline' : 'close-circle-outline'}
-                    text={restaurant.isOpen ? 'Open now' : 'Closed'}
-                    color={colors.text.secondary}
-                  />
-                ) : null}
+                <View style={styles.locationRow}>
+                  <Ionicons name="location-outline" size={15} color={colors.text.secondary} />
+                  <Text variant="bodySmall" color={colors.text.secondary} numberOfLines={1}>
+                    {restaurant.cuisineType ? `${restaurant.cuisineType} · ` : ''}
+                    {distanceMinutes} min away
+                    {restaurant.isOpen !== undefined
+                      ? ` · ${restaurant.isOpen ? 'Open now' : 'Closed'}`
+                      : ''}
+                  </Text>
+                </View>
               </View>
+              <FamilyFitBadge
+                score={restaurant.familyScore.score}
+                enrichmentStatus={restaurant.enrichmentStatus}
+              />
             </View>
+
             {activityVenue && restaurant.driveMinutesFromActivity !== undefined ? (
               <View style={styles.contextBanner}>
-                <Ionicons name="location-outline" size={18} color={colors.primary[500]} />
+                <Ionicons name="location-outline" size={18} color={colors.text.primary} />
                 <View style={styles.contextText}>
                   <Text variant="bodySmall" style={styles.contextPrimary}>
                     {restaurant.driveMinutesFromActivity} minutes from {activityVenue.name}
                   </Text>
-                  <PressableLink label={`Return to ${activityVenue.name}`} onPress={handleReturnToActivity} />
+                  <Text
+                    variant="bodySmall"
+                    color={colors.text.primary}
+                    onPress={handleReturnToActivity}
+                    accessibilityRole="link"
+                    style={styles.contextLink}
+                  >
+                    Back to {activityVenue.name}
+                  </Text>
                 </View>
               </View>
             ) : null}
 
-            <Text variant="heading3" style={styles.sectionTitle}>
-              Family suitability
-            </Text>
-            <View style={styles.scoreBand}>
-              <Text variant="scoreDisplay" color={colors.primary[700]}>
-                {restaurant.familyScore.score}
+            {restaurant.description ? (
+              <Text variant="body" color={colors.text.secondary} style={styles.description}>
+                {restaurant.description}
               </Text>
-              <View style={styles.scoreBandText}>
-                <Text variant="heading3">{getMatchClassification(restaurant.familyScore.score, restaurant.enrichmentStatus)}</Text>
-                <Text variant="bodySmall" color={colors.text.secondary}>Family Score for your household</Text>
-              </View>
-            </View>
-            <RecommendationPattern venue={restaurant} variant="detail" showTrust showClassification={false} />
+            ) : null}
 
             <Text variant="heading3" style={styles.sectionTitle}>
               Family facilities
@@ -269,101 +239,94 @@ function RestaurantScreenContent() {
               Cost
             </Text>
             <View style={styles.infoBlock}>
-              <Text variant="body" style={styles.infoLabel}>
+              <Text variant="bodySmall" color={colors.text.secondary}>
                 Estimated family spend
               </Text>
-              <Text variant="heading3">
-                {restaurant.estimatedFamilySpend ?? restaurant.estimatedSpend ?? 'Varies'}
+              <Text variant="heading2">
+                {restaurant.estimatedFamilySpend ?? restaurant.estimatedSpend ?? 'Not known'}
               </Text>
-              <Text variant="caption" color={colors.text.secondary} style={styles.infoHint}>
+              <Text variant="caption" color={colors.text.tertiary}>
                 Based on typical family meals, not an exact price
               </Text>
               <DataTrustBadge variant="estimated" label="Estimated family spend" />
             </View>
 
-            <Text variant="heading3" style={styles.sectionTitle}>
-              Dining considerations
-            </Text>
-            <View style={styles.considerations}>
-              {noise ? <ConsiderationRow icon="volume-medium-outline" label={noise} /> : null}
-              {restaurant.restaurantFeatures.bookingRecommended ? (
-                <ConsiderationRow
-                  icon="calendar-outline"
-                  label="Booking recommended at busy times"
-                  caution
-                />
-              ) : null}
-              {serviceSpeed ? <ConsiderationRow icon="time-outline" label={serviceSpeed} /> : null}
-              {dietary.length > 0 ? (
-                <ConsiderationRow
-                  icon="nutrition-outline"
-                  label={`Dietary options: ${dietary.join(', ')}`}
-                />
-              ) : null}
-              {restaurant.restaurantFeatures.childOffers ? (
-                <ConsiderationRow
-                  icon="gift-outline"
-                  label={restaurant.restaurantFeatures.childOffers}
-                />
-              ) : null}
-              {restaurant.restaurantFeatures.familyNotes ? (
-                <ConsiderationRow
-                  icon="information-circle-outline"
-                  label={restaurant.restaurantFeatures.familyNotes}
-                />
-              ) : null}
-            </View>
-
-            {restaurant.trust ? (
-              <View style={styles.trustSection}>
-                <Text variant="bodySmall" color={colors.text.secondary}>
-                  {restaurant.openingHours.includes('provider')
-                    ? 'Opening hours from provider'
-                    : 'Opening hours estimated'}
-                  {restaurant.trust.lastChecked
-                    ? ` · Facilities last checked ${restaurant.trust.lastChecked}`
-                    : ''}
+            {noise ||
+            serviceSpeed ||
+            dietary.length > 0 ||
+            restaurant.restaurantFeatures.bookingRecommended ||
+            restaurant.restaurantFeatures.childOffers ||
+            restaurant.restaurantFeatures.familyNotes ? (
+              <>
+                <Text variant="heading3" style={styles.sectionTitle}>
+                  Worth knowing
                 </Text>
-              </View>
+                <View style={styles.considerations}>
+                  {noise ? <ConsiderationRow icon="volume-medium-outline" label={noise} /> : null}
+                  {restaurant.restaurantFeatures.bookingRecommended ? (
+                    <ConsiderationRow
+                      icon="calendar-outline"
+                      label="Booking recommended at busy times"
+                      caution
+                    />
+                  ) : null}
+                  {serviceSpeed ? (
+                    <ConsiderationRow icon="time-outline" label={serviceSpeed} />
+                  ) : null}
+                  {dietary.length > 0 ? (
+                    <ConsiderationRow
+                      icon="nutrition-outline"
+                      label={`Dietary options: ${dietary.join(', ')}`}
+                    />
+                  ) : null}
+                  {restaurant.restaurantFeatures.childOffers ? (
+                    <ConsiderationRow
+                      icon="gift-outline"
+                      label={restaurant.restaurantFeatures.childOffers}
+                    />
+                  ) : null}
+                  {restaurant.restaurantFeatures.familyNotes ? (
+                    <ConsiderationRow
+                      icon="information-circle-outline"
+                      label={restaurant.restaurantFeatures.familyNotes}
+                    />
+                  ) : null}
+                </View>
+              </>
             ) : null}
 
-            <Text variant="body" style={styles.description}>
-              {restaurant.description}
-            </Text>
+            {restaurant.trust ? (
+              <Text variant="caption" color={colors.text.tertiary} style={styles.trustNote}>
+                {restaurant.openingHours.includes('provider')
+                  ? 'Opening hours from provider'
+                  : 'Opening hours estimated'}
+                {restaurant.trust.lastChecked
+                  ? ` · Facilities last checked ${restaurant.trust.lastChecked}`
+                  : ''}
+              </Text>
+            ) : null}
 
-            <VenueTrustPanel venueId={restaurant.id} />
+            <View style={styles.tail}>
+              <VenueTrustPanel venueId={restaurant.id} />
+            </View>
           </FadeInView>
         </View>
-      </AnimatedScrollView>
+      </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
+      <View style={[styles.cta, { paddingBottom: insets.bottom + spacing.lg }]}>
         <Button
           label={saved ? 'Saved' : 'Save'}
           variant="outline"
-          style={styles.footerButton}
+          style={styles.ctaButton}
           onPress={() => toggleSaved(restaurant.id, restaurant, 'restaurant')}
         />
-        <Button label="Get directions" style={styles.footerButton} onPress={handleDirections} />
+        <Button
+          label="Get directions"
+          trailingArrow
+          style={styles.ctaButton}
+          onPress={handleDirections}
+        />
       </View>
-    </View>
-  );
-}
-
-function MetaItem({
-  icon,
-  text,
-  color = colors.text.inverse,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  text: string;
-  color?: string;
-}) {
-  return (
-    <View style={styles.metaItem}>
-      <Ionicons name={icon} size={14} color={color} />
-      <Text variant="caption" color={color}>
-        {text}
-      </Text>
     </View>
   );
 }
@@ -379,11 +342,7 @@ function ConsiderationRow({
 }) {
   return (
     <View style={styles.considerationRow}>
-      <Ionicons
-        name={icon}
-        size={18}
-        color={caution ? colors.warning[600] : colors.primary[500]}
-      />
+      <Ionicons name={icon} size={18} color={caution ? colors.warning[600] : colors.text.primary} />
       <Text
         variant="bodySmall"
         color={caution ? colors.warning[600] : colors.text.primary}
@@ -395,24 +354,13 @@ function ConsiderationRow({
   );
 }
 
-function PressableLink({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <Text
-      variant="bodySmall"
-      color={colors.primary[500]}
-      onPress={onPress}
-      accessibilityRole="link"
-      style={styles.contextLink}
-    >
-      {label}
-    </Text>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  scroll: {
+    paddingBottom: layout.ctaClearance,
   },
   loadingBody: {
     padding: spacing.screenPadding,
@@ -420,60 +368,69 @@ const styles = StyleSheet.create({
   loadingGap: {
     marginBottom: spacing.lg,
   },
-  heroContainer: {
-    height: HERO_HEIGHT,
-    overflow: 'hidden',
+  errorNav: {
+    paddingHorizontal: spacing.screenPadding,
+    marginBottom: spacing.lg,
   },
-  heroImageWrap: {
-    ...StyleSheet.absoluteFill,
+  hero: {
+    height: layout.heroHeight,
   },
   heroImage: {
     width: '100%',
     height: '100%',
   },
-  heroGradient: {
-    ...StyleSheet.absoluteFill,
+  heroChrome: {
+    position: 'absolute',
+    left: spacing.screenPadding,
+    right: spacing.screenPadding,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   heroActions: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  heroContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  chromeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.card,
+  },
+  sheet: {
+    backgroundColor: colors.background,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
+    marginTop: -layout.sheetOverlap,
+    paddingTop: spacing['2xl'],
     paddingHorizontal: spacing.screenPadding,
-    zIndex: 2,
   },
-  titleBlock: {
-    marginBottom: spacing.lg,
-  },
-  cuisine: {
-    marginTop: spacing.xs,
-  },
-  heroMeta: {
+  titleRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'flex-start',
     gap: spacing.md,
-    marginTop: spacing.sm,
   },
-  metaItem: {
+  titleText: {
+    flex: 1,
+  },
+  locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-  },
-  body: {
-    padding: spacing.screenPadding,
-    paddingBottom: 120,
+    gap: 5,
+    marginTop: 6,
   },
   contextBanner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.surface,
     padding: spacing.lg,
-    borderRadius: radius.lg,
-    marginBottom: spacing.lg,
+    borderRadius: radius['2xl'],
+    marginTop: spacing.lg,
+    ...shadows.card,
   },
   contextText: {
     flex: 1,
@@ -484,80 +441,60 @@ const styles = StyleSheet.create({
   },
   contextLink: {
     fontFamily: 'Inter_600SemiBold',
-    minHeight: 44,
-    lineHeight: 44,
+    textDecorationLine: 'underline',
+    minHeight: 32,
+    lineHeight: 32,
+  },
+  description: {
+    marginTop: spacing.lg,
+    lineHeight: 23,
   },
   sectionTitle: {
     marginTop: spacing['2xl'],
     marginBottom: spacing.lg,
   },
-  scoreBand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
-    backgroundColor: colors.primary[50],
-    borderRadius: radius.xl,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  scoreBandText: {
-    flex: 1,
-    gap: 2,
-  },
   infoBlock: {
     backgroundColor: colors.surface,
     padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderRadius: radius['2xl'],
     gap: spacing.sm,
-  },
-  infoLabel: {
-    color: colors.text.secondary,
-  },
-  infoHint: {
-    marginBottom: spacing.sm,
+    alignItems: 'flex-start',
+    ...shadows.card,
   },
   considerations: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   considerationRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
-    minHeight: 44,
+    minHeight: 40,
     paddingVertical: spacing.xs,
   },
   considerationText: {
     flex: 1,
     lineHeight: 22,
   },
-  trustSection: {
+  trustNote: {
     marginTop: spacing.xl,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
   },
-  description: {
+  tail: {
     marginTop: spacing['2xl'],
-    color: colors.text.secondary,
-    lineHeight: 24,
   },
-  footer: {
+  cta: {
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
+    bottom: 0,
     flexDirection: 'row',
     gap: spacing.md,
     paddingHorizontal: spacing.screenPadding,
     paddingTop: spacing.lg,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     borderTopWidth: 1,
     borderTopColor: colors.borderLight,
   },
-  footerButton: {
+  ctaButton: {
     flex: 1,
   },
 });

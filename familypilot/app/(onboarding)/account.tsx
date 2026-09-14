@@ -5,8 +5,8 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 're
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TextField } from '@/src/components/profile/TextField';
-import { Button, Chip, Text } from '@/src/components/ui';
-import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { Button, PillSelector, Text } from '@/src/components/ui';
+import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { supabase } from '@/src/services/supabase/client';
 
 export default function AccountScreen() {
@@ -78,7 +78,7 @@ export default function AccountScreen() {
         <View style={styles.iconWrap}>
           <Ionicons name="person-circle-outline" size={40} color={colors.text.inverse} />
         </View>
-        <Text variant="heading1" style={styles.heading}>
+        <Text variant="display" style={styles.heading}>
           Create your account
         </Text>
         <Text variant="body" color={colors.text.secondary} style={styles.subtitle}>
@@ -97,10 +97,17 @@ export default function AccountScreen() {
           </View>
         ) : (
           <>
-            <View style={styles.modeRow}>
-              <Chip label="Create account" active={mode === 'signup'} onPress={() => setMode('signup')} />
-              <Chip label="Sign in" active={mode === 'signin'} onPress={() => setMode('signin')} />
-            </View>
+            <PillSelector
+              options={[
+                { id: 'signup', label: 'Create account' },
+                { id: 'signin', label: 'Sign in' },
+              ]}
+              value={mode}
+              onChange={(id) => setMode(id as 'signup' | 'signin')}
+              scroll={false}
+              accessibilityLabel="Account mode"
+              style={styles.modeRow}
+            />
 
             <TextField
               label="Email"
@@ -172,9 +179,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing['2xl'],
   },
   modeRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.sm,
     marginBottom: spacing.xl,
   },
   submit: {
@@ -184,9 +188,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     padding: spacing.lg,
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderRadius: radius['2xl'],
+    ...shadows.card,
   },
   confirmText: {
     lineHeight: 22,
