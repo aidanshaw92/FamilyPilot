@@ -115,7 +115,7 @@ describe('calculateFamilyScore with trusted facts', () => {
     const mismatchScore = calculateFamilyScore(mismatchedAge, PROFILE);
     const heuristicScore = calculateFamilyScore(heuristicOnly, PROFILE);
 
-    expect(trustedScore.explanation.some((line) => line.includes('Recommended for ages 2–10'))).toBe(true);
+    expect(trustedScore.explanation.some((line) => line.includes('Recommended for ages 2-10'))).toBe(true);
     expect(mismatchScore.score).toBeLessThan(trustedScore.score);
     expect(trustedScore.score).not.toBe(heuristicScore.score);
   });

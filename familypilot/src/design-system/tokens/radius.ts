@@ -1,9 +1,15 @@
+/** Generous radii are the loudest part of this design language. Cards and images are
+ * heavily rounded; only the smallest chrome stays tight. */
 export const radius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  '2xl': 24,
+  sm: 10,
+  md: 14,
+  lg: 20,
+  xl: 24,
+  '2xl': 28,
+  /** Large image cards and hero photography. */
+  '3xl': 32,
+  /** The bottom sheet's top corners. */
+  sheet: 36,
   full: 9999,
 } as const;
 

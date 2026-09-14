@@ -158,7 +158,7 @@ export function buildBestAgesLabel(payload: EnrichmentSavePayload): string | und
   if (payload.bestAges?.trim()) return payload.bestAges.trim();
   const min = payload.minRecommendedAge;
   const max = payload.maxRecommendedAge;
-  if (min != null && max != null) return `${min} – ${max} years`;
+  if (min != null && max != null) return `${min}-${max} years`;
   if (min != null) return `${min}+ years`;
   if (max != null) return `Up to ${max} years`;
   return undefined;

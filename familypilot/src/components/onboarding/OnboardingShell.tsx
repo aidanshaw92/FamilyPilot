@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/src/components/ui';
-import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 
 interface StepIndicatorProps {
   current: number;
@@ -59,7 +59,7 @@ export function OnboardingShell({
       </View>
 
       <View style={styles.header}>
-        <Text variant="heading1">{title}</Text>
+        <Text variant="display">{title}</Text>
         {subtitle ? (
           <Text variant="body" color={colors.text.secondary} style={styles.subtitle}>
             {subtitle}
@@ -90,6 +90,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radius.full,
     backgroundColor: colors.surface,
+    ...shadows.card,
   },
   backPlaceholder: {
     width: 44,

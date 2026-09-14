@@ -35,7 +35,7 @@ export function FacilityGrid({ facilities }: FacilityGridProps) {
   if (list.length === 0) {
     return (
       <Text variant="caption" color={colors.text.secondary}>
-        Not confirmed — family facilities not yet reviewed
+        Not confirmed, family facilities not yet reviewed
       </Text>
     );
   }

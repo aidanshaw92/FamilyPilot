@@ -15,7 +15,7 @@ export function FamilyEditor({initial,onSave,onCancel}:{initial:PlanningFamily;o
    const parsed=ages.trim()?ages.split(',').map(v=>Number(v.trim())):[];
    if(!family.label.trim()||parsed.some(n=>!Number.isFinite(n)||n<0||n>17)||parsed.length>10)throw new Error('Add a family name and children’s ages from 0 to 17, separated by commas.');
    if(!Number.isFinite(family.maxDriveMinutes)||family.maxDriveMinutes<5||family.maxDriveMinutes>120)throw new Error('Maximum drive must be between 5 and 120 minutes.');
-   family.routines.forEach(r=>{clockMinutes(r.time);if(!Number.isFinite(r.durationMinutes)||r.durationMinutes<1||r.durationMinutes>240)throw new Error('Routine lengths must be 1–240 minutes.');});
+   family.routines.forEach(r=>{clockMinutes(r.time);if(!Number.isFinite(r.durationMinutes)||r.durationMinutes<1||r.durationMinutes>240)throw new Error('Routine lengths must be 1-240 minutes.');});
    const location=area===initial.area&&Number.isFinite(initial.latitude)?{area:initial.area,latitude:initial.latitude,longitude:initial.longitude}:await locateArea(area);
    onSave({...family,...location,ages:parsed,label:family.label.trim()});
  }catch(e){setError(e instanceof Error?e.message:'Could not save family.');}finally{setBusy(false);}}

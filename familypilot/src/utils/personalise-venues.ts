@@ -19,7 +19,7 @@ function toVenueDetail(venue: Venue): VenueDetail {
       photos: venue.imageUrl ? [venue.imageUrl] : [],
       facilities: [],
       openingHours: 'Opening hours not confirmed',
-      description: `${venue.name} — family suitability has not yet been reviewed.`,
+      description: `${venue.name}: family suitability has not yet been reviewed.`,
     };
   }
 

@@ -1,14 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Button, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { contextApiClient } from '@/src/services/context/context-api-client';
-import { estimateDriveMinutes } from '@/src/services/places/geo-utils';
+import { estimateDriveMinutes, resolveHomeCoordinates } from '@/src/services/places/geo-utils';
+import { planningFamilyFromProfile } from '@/src/services/planning/plan-from-venue';
 import { Journey, PlanMatch, PlanningFamily, clockLabel, planVenue } from '@/src/services/planning/planner';
+import { useFamilyStore } from '@/src/stores/family-store';
 import { localDate, usePlanningStore } from '@/src/stores/planning-store';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 
@@ -54,8 +56,17 @@ async function journeyFor(
  */
 export function CheckTodaySection({ facts, latitude, longitude }: CheckTodaySectionProps) {
   const router = useRouter();
-  const families = usePlanningStore((s) => s.families);
+  const savedFamilies = usePlanningStore((s) => s.families);
   const hydrated = usePlanningStore((s) => s.hydrated);
+  const profile = useFamilyStore((s) => s.profile);
+
+  // A parent who entered naps and feeds during onboarding has already told us their routine;
+  // only fall back to the planning families when they have set those up separately.
+  const families = useMemo(() => {
+    if (savedFamilies.length) return savedFamilies;
+    if (!profile.members.length) return [];
+    return [planningFamilyFromProfile(profile, resolveHomeCoordinates(profile))];
+  }, [savedFamilies, profile]);
   const [state, setState] = useState<CheckState>({ status: 'idle' });
 
   const visible = isPilotFeatureVisible('trips_tab');
@@ -127,7 +138,7 @@ export function CheckTodaySection({ facts, latitude, longitude }: CheckTodaySect
         <View style={styles.card}>
           <Ionicons name="calendar-outline" size={20} color={colors.primary[500]} />
           <Text variant="bodySmall" color={colors.text.secondary} style={styles.text}>
-            Add your family's nap and feed routine in Plans to check whether a visit fits around
+            Add your family and routines to check whether a visit fits around
             it right now.
           </Text>
         </View>

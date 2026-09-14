@@ -68,7 +68,7 @@ export const mockVenues: Venue[] = [
       'Flat enough for Ozzie\'s pushchair',
       'Only 12 minutes from home',
     ]),
-    estimatedSpend: '£0 – £15',
+    estimatedSpend: '£0-£15',
     isOpen: true,
     address: ' Aldenham Rd, Elstree WD6 3BA',
   },
@@ -97,11 +97,11 @@ export const mockVenues: Venue[] = [
     driveMinutes: 22,
     imageUrl: 'https://images.unsplash.com/photo-1500595046743-be5264b89a46?w=800&q=80',
     familyScore: familyScore(91, [
-      'Perfect for Sloane\'s age — feeding lambs',
+      'Perfect for Sloane\'s age: feeding lambs',
       'Ozzie will love the tractor ride',
       'Indoor barn if it rains',
     ]),
-    estimatedSpend: '£35 – £50',
+    estimatedSpend: '£35-£50',
     isOpen: true,
   },
   {
@@ -132,9 +132,9 @@ export const mockVenueDetails: Record<string, VenueDetail> = Object.fromEntries(
         venue.imageUrl.replace('w=800', 'w=1200').replace('q=80', 'q=70'),
       ],
       facilities: getDefaultFacilities(venue.category),
-      openingHours: 'Usually 8:00 AM – 6:00 PM · Hours from venue',
+      openingHours: 'Usually 8:00 AM-6:00 PM · Hours from venue',
       terrain: venue.category === 'park' || venue.category === 'farm' ? 'flat' : 'mixed',
-      bestAges: venue.category === 'museum' ? '3 – 12 years' : '1 – 8 years',
+      bestAges: venue.category === 'museum' ? '3-12 years' : '1-8 years',
       parkingInfo: venue.category === 'restaurant' ? 'Street parking nearby' : 'Free parking available',
       description: getDefaultDescription(venue),
       visitDurationMinutes: venue.category === 'restaurant' ? 90 : 180,
@@ -159,7 +159,7 @@ export const mockVenueDetails: Record<string, VenueDetail> = Object.fromEntries(
               {
                 id: 'tip-2',
                 author: 'James T.',
-                message: 'Parking fills up fast — arrive by 9:30 for a stress-free start.',
+                message: 'Parking fills up fast, arrive by 9:30 for a stress-free start.',
                 timeAgo: '1 week ago',
               },
             ]
@@ -215,7 +215,7 @@ function getDefaultDescription(venue: Venue): string {
     case 'park':
       return `${venue.name} is a family-friendly outdoor space with paths, play areas, and room to explore.`;
     case 'farm':
-      return `${venue.name} offers hands-on animal experiences and indoor barns — great for young children.`;
+      return `${venue.name} offers hands-on animal experiences and indoor barns, great for young children.`;
     case 'museum':
       return `${venue.name} is a rainy-day favourite with interactive exhibits for curious kids.`;
     case 'restaurant':
@@ -254,7 +254,7 @@ export const mockTrips: Trip[] = [
     title: 'Saturday Adventure',
     date: 'Saturday, 9 Aug',
     totalDriveMinutes: 40,
-    estimatedCost: '£30 – £45',
+    estimatedCost: '£30-£45',
     totalDurationHours: 6,
     stops: [
       {

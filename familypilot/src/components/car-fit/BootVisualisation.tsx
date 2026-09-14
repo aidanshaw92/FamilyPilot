@@ -20,7 +20,7 @@ export function BootVisualisation({ equipment, capacityLitres, usedLitres }: Boo
         Boot layout (estimate)
       </Text>
       <Text variant="caption" color={colors.text.secondary} style={styles.subtitle}>
-        Capacity is approximate — verify with your vehicle manual.
+        Capacity is approximate, verify with your vehicle manual.
       </Text>
       <View style={styles.boot}>
         <View style={[styles.usedArea, { width: `${usedPercent}%` }]}>

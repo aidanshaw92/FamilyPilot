@@ -64,7 +64,7 @@ export function planVenue(facts: MatchableVenueFacts, families: PlanningFamily[]
   if (evaluations.some(e => !e)) return null;
   const maxOut = Math.max(...families.map(f => journeys[f.id].outbound));
   const intervals = families.map(f => f.routines.map(r => {
-    if (!Number.isFinite(r.durationMinutes) || r.durationMinutes < 1 || r.durationMinutes > 240) throw new Error('Routine duration must be 1–240 minutes.');
+    if (!Number.isFinite(r.durationMinutes) || r.durationMinutes < 1 || r.durationMinutes > 240) throw new Error('Routine duration must be 1-240 minutes.');
     return { ...r, start: clockMinutes(r.time), end: clockMinutes(r.time) + r.durationMinutes };
   }));
   for (let start = earliest + maxOut + options.bufferMinutes; start + options.visitMinutes <= deadline; start += 5) {

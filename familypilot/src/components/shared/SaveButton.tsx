@@ -12,11 +12,13 @@ import { colors } from '@/src/design-system/tokens';
 import { spring } from '@/src/design-system/animations/presets';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { useSavedStore } from '@/src/stores/saved-store';
-import { Venue } from '@/src/types';
+import { SavedItem, Venue } from '@/src/types';
 
 interface SaveButtonProps {
   venueId: string;
   venue?: Venue;
+  /** Kept so a restaurant saved from its hero lands in the Saved tab as a restaurant. */
+  type?: SavedItem['type'];
   size?: number;
   color?: string;
   filledColor?: string;
@@ -25,6 +27,7 @@ interface SaveButtonProps {
 export function SaveButton({
   venueId,
   venue,
+  type,
   size = 24,
   color = colors.text.primary,
   filledColor = colors.error[500],
@@ -54,7 +57,7 @@ export function SaveButton({
     void Haptics.impactAsync(
       saved ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium,
     );
-    toggleSaved(venueId, venue);
+    toggleSaved(venueId, venue, type);
   };
 
   return (

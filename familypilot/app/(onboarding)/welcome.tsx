@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,9 +23,8 @@ export default function WelcomeScreen() {
   const visibleBenefits = BENEFITS.filter((benefit) => !benefit.feature || isPilotFeatureVisible(benefit.feature));
 
   return (
-    <LinearGradient
-      colors={[colors.background, colors.primary[50], colors.background]}
-      style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+    <View
+      style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom + spacing.lg }]}
     >
       <View style={styles.brandRow}>
         <View style={styles.logoMark}>
@@ -53,7 +51,7 @@ export default function WelcomeScreen() {
           {visibleBenefits.map((benefit) => (
             <View key={benefit.label} style={styles.benefitRow}>
               <View style={styles.benefitIconWrap}>
-                <Ionicons name={benefit.icon} size={18} color={colors.primary[600]} />
+                <Ionicons name={benefit.icon} size={18} color={colors.text.primary} />
               </View>
               <Text variant="body" style={styles.benefitLabel}>
                 {benefit.label}
@@ -68,19 +66,21 @@ export default function WelcomeScreen() {
           label="Get started"
           size="lg"
           fullWidth
-          onPress={() => router.push('/(onboarding)/setup' as never)}
+          trailingArrow
+          onPress={() => router.push('/(onboarding)/account' as never)}
         />
         <Text variant="caption" color={colors.text.tertiary} style={styles.footerNote}>
           Takes about a minute · You can add more details later
         </Text>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
     paddingHorizontal: spacing.screenPadding,
   },
   scrollContent: {
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   logoMark: {
     width: 40,
     height: 40,
-    borderRadius: radius.md,
+    borderRadius: radius.full,
     backgroundColor: colors.primary[500],
     alignItems: 'center',
     justifyContent: 'center',
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     aspectRatio: 320 / 220,
     width: '100%',
     marginBottom: spacing['2xl'],
-    borderRadius: radius.xl,
+    borderRadius: radius['3xl'],
     overflow: 'hidden',
   },
   benefitsList: {
@@ -125,10 +125,10 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   benefitIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.md,
-    backgroundColor: colors.primary[50],
+    width: 38,
+    height: 38,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -138,6 +138,7 @@ const styles = StyleSheet.create({
   footer: {
     gap: spacing.md,
     paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   footerNote: {
     textAlign: 'center',
