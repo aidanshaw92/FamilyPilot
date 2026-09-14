@@ -2,191 +2,34 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-
 import { PressableScale } from '@/src/components/ui/PressableScale';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { Text } from '@/src/components/ui/Text';
 import { VenueImage } from '@/src/components/ui/VenueImage';
-import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
+import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { FocusedRecommendation } from '@/src/types/day-request';
-import { getEnrichmentTrustCopy } from '@/src/utils/family-match-classification';
-import { openingStatusLabel } from '@/src/services/context/live-context';
 import { formatArrivalTime } from '@/src/utils/clock-format';
 
-interface FocusedRecommendationCardProps {
-  recommendation: FocusedRecommendation;
-  variant?: 'hero' | 'carousel';
-  index?: number;
-}
-
-export function FocusedRecommendationCard({
-  recommendation,
-  variant = 'carousel',
-  index = 0,
-}: FocusedRecommendationCardProps) {
+interface Props { recommendation: FocusedRecommendation; variant?: 'hero' | 'carousel'; index?: number }
+export function FocusedRecommendationCard({ recommendation, variant = 'carousel', index = 0 }: Props) {
   const router = useRouter();
   const isHero = variant === 'hero';
-
-  return (
-    <FadeInView delay={index * 60}>
-      <PressableScale
-        onPress={() => router.push(`/venue/${recommendation.venueId}` as never)}
-        style={[styles.card, isHero && styles.hero]}
-        accessibilityRole="button"
-        accessibilityLabel={`${recommendation.venueName}, ${recommendation.fit}`}
-      >
-        <View style={isHero ? styles.heroImageWrap : undefined}>
-          <VenueImage
-            uri={recommendation.imageUrl}
-            category={recommendation.category}
-            alt={recommendation.venueName}
-            style={isHero ? { ...styles.image, ...styles.heroImage } : styles.image}
-            borderRadius={isHero ? radius.lg : 0}
-          />
-          {isHero ? (
-            <>
-              <LinearGradient
-                colors={[colors.gradient.heroStart, colors.gradient.heroEnd]}
-                style={styles.heroScrim}
-                pointerEvents="none"
-              />
-              <Text variant="heading1" color={colors.text.inverse} style={styles.heroNameOverlay} numberOfLines={2}>
-                {recommendation.venueName}
-              </Text>
-            </>
-          ) : null}
-        </View>
-        <View style={styles.content}>
-          {isHero ? null : (
-            <Text variant="heading3" numberOfLines={1}>
-              {recommendation.venueName}
-            </Text>
-          )}
-          <Text variant={isHero ? 'heading2' : 'heading3'} style={styles.fitLabel}>
-            {recommendation.fit}
-          </Text>
-
-          {recommendation.reasons.length > 0 ? (
-            <View style={styles.block}>
-              {isHero ? (
-                <Text variant="bodySmall" style={styles.sectionLabel}>
-                  Why it suits your family
-                </Text>
-              ) : null}
-              {recommendation.reasons.slice(0, isHero ? 3 : 2).map((reason) => (
-                <View key={`${reason.field}-${reason.text}`} style={styles.row}>
-                  <Ionicons name="checkmark-circle" size={14} color={colors.secondary[500]} />
-                  <Text variant="bodySmall" style={styles.rowText} numberOfLines={2}>
-                    {reason.text}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          {recommendation.unknowns.length > 0 ? (
-            <View style={styles.block}>
-              {recommendation.unknowns.slice(0, 1).map((item) => (
-                <View key={item.field} style={styles.row}>
-                  <Ionicons name="help-circle-outline" size={14} color={colors.text.tertiary} />
-                  <Text variant="caption" color={colors.text.secondary} style={styles.rowText}>
-                    {item.text}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          {recommendation.caveats.length > 0 ? (
-            <View style={styles.block}>
-              {recommendation.caveats.slice(0, 1).map((item) => (
-                <View key={item} style={styles.row}>
-                  <Ionicons name="alert-circle-outline" size={14} color={colors.warning[600]} />
-                  <Text variant="caption" color={colors.warning[600]} style={styles.rowText}>
-                    {item}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          <Text variant="bodySmall" color={colors.text.secondary} style={styles.meta}>
-            {recommendation.driveMinutes} min away · Arrive by {formatArrivalTime(recommendation.driveMinutes)} if you leave now
-            {recommendation.estimatedSpend ? ` · Estimated ${recommendation.estimatedSpend}` : ''}
-            {recommendation.openingStatus === 'open' ? ' · Open now' : ''}
-          </Text>
-          <Text variant="caption" color={colors.text.tertiary}>
-            {getEnrichmentTrustCopy(recommendation.enrichmentStatus)}
-            {recommendation.openingStatus !== 'open'
-              ? ` · ${openingStatusLabel(recommendation.openingStatus)}`
-              : ''}
-          </Text>
-        </View>
-      </PressableScale>
-    </FadeInView>
-  );
+  return <FadeInView delay={index * 60}>
+    <PressableScale onPress={() => router.push(`/venue/${recommendation.venueId}` as never)} style={[styles.card, isHero && styles.hero]} accessibilityRole="button" accessibilityLabel={`${recommendation.venueName}, ${recommendation.fit}`}>
+      <View style={styles.imageWrap}>
+        <VenueImage uri={recommendation.imageUrl} category={recommendation.category} alt={recommendation.venueName} style={[styles.image, isHero && styles.heroImage]} borderRadius={radius.lg} />
+        {isHero ? <>
+          <LinearGradient colors={['transparent', 'rgba(18,24,27,0.82)']} style={styles.scrim} pointerEvents="none" />
+          <View style={styles.overlayCopy}><Text variant="caption" color={colors.text.inverse}>{recommendation.category}</Text><Text variant="heading2" color={colors.text.inverse} style={styles.venueName}>{recommendation.venueName}</Text><View style={styles.rating}><Ionicons name="star" size={14} color="#FFD166" /><Text variant="caption" color={colors.text.inverse}>{recommendation.fit}</Text><Text variant="caption" color="rgba(255,255,255,0.76)">{recommendation.driveMinutes} min away</Text></View></View>
+          <View style={styles.arrow}><Ionicons name="arrow-forward" size={22} color={colors.text.primary} /></View>
+        </> : null}
+      </View>
+      {!isHero ? <View style={styles.content}><Text variant="heading3" numberOfLines={1}>{recommendation.venueName}</Text><Text variant="bodySmall" style={styles.fit}>{recommendation.fit}</Text></View> : null}
+      {isHero ? <View style={styles.detailRow}><Text variant="bodySmall" numberOfLines={1} style={styles.reason}>{recommendation.reasons[0]?.text ?? 'A thoughtful option for your family'}</Text><Text variant="caption" color={colors.text.secondary}>Arrive by {formatArrivalTime(recommendation.driveMinutes)}</Text></View> : null}
+    </PressableScale>
+  </FadeInView>;
 }
-
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    ...shadows.card,
-    marginBottom: spacing.lg,
-  },
-  hero: {
-    marginBottom: spacing['2xl'],
-  },
-  heroImageWrap: {
-    position: 'relative',
-  },
-  image: {
-    width: '100%',
-    height: 140,
-  },
-  heroImage: {
-    height: 260,
-  },
-  heroScrim: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '70%',
-  },
-  heroNameOverlay: {
-    position: 'absolute',
-    left: spacing.lg,
-    right: spacing.lg,
-    bottom: spacing.lg,
-  },
-  content: {
-    padding: spacing.lg,
-    gap: spacing.xs,
-  },
-  fitLabel: {
-    color: colors.secondary[600],
-    marginBottom: spacing.sm,
-  },
-  block: {
-    marginBottom: spacing.sm,
-    gap: spacing.xs,
-  },
-  sectionLabel: {
-    fontFamily: 'Inter_600SemiBold',
-    marginBottom: spacing.xs,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-  },
-  rowText: {
-    flex: 1,
-    lineHeight: 20,
-  },
-  meta: {
-    marginTop: spacing.sm,
-  },
+  card: { backgroundColor: colors.surface, borderRadius: radius.lg, overflow: 'hidden', marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.borderLight },
+  hero: { marginBottom: spacing.xl }, imageWrap: { position: 'relative' }, image: { width: '100%', height: 150 }, heroImage: { height: 310 }, scrim: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '68%' }, overlayCopy: { position: 'absolute', left: spacing.lg, right: 72, bottom: spacing.lg, gap: 5 }, venueName: { fontSize: 25, lineHeight: 30 }, rating: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xs }, arrow: { position: 'absolute', right: spacing.lg, bottom: spacing.lg, width: 48, height: 48, borderRadius: radius.full, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }, content: { padding: spacing.md }, fit: { color: colors.secondary[600], marginTop: spacing.xs }, detailRow: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: 4 }, reason: { flex: 1 },
 });
