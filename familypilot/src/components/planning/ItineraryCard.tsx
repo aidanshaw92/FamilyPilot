@@ -22,6 +22,9 @@ interface ItineraryCardProps {
   title: string;
   imageUrl?: string;
   category?: string;
+  /** For a stop that is not a place, such as heading home: a plain icon tile instead of
+   * photography, so nothing implies a venue that isn't there. */
+  icon?: keyof typeof Ionicons.glyphMap;
   expanded: boolean;
   onToggle: () => void;
   slots: ItinerarySlot[];
@@ -38,6 +41,7 @@ export function ItineraryCard({
   title,
   imageUrl,
   category,
+  icon,
   expanded,
   onToggle,
   slots,
@@ -58,13 +62,19 @@ export function ItineraryCard({
         accessibilityLabel={`${eyebrow}, ${title}`}
         style={styles.header}
       >
-        <VenueImage
-          uri={imageUrl}
-          category={category}
-          alt={title}
-          style={styles.thumb}
-          borderRadius={radius.lg}
-        />
+        {icon ? (
+          <View style={[styles.thumb, styles.iconThumb]}>
+            <Ionicons name={icon} size={24} color={colors.text.secondary} />
+          </View>
+        ) : (
+          <VenueImage
+            uri={imageUrl}
+            category={category}
+            alt={title}
+            style={styles.thumb}
+            borderRadius={radius.lg}
+          />
+        )}
         <View style={styles.headerText}>
           <Text variant="caption" color={colors.text.tertiary}>
             {eyebrow}
@@ -130,6 +140,12 @@ const styles = StyleSheet.create({
   thumb: {
     width: 62,
     height: 62,
+  },
+  iconThumb: {
+    borderRadius: radius.lg,
+    backgroundColor: colors.surfaceSunken,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerText: {
     flex: 1,

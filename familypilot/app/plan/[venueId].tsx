@@ -282,7 +282,7 @@ export default function PlanBuilderScreen() {
               <ItineraryCard
                 eyebrow="Heading home"
                 title="Back home"
-                category="park"
+                icon="home-outline"
                 expanded={expanded === 'home'}
                 onToggle={() => setExpanded(expanded === 'home' ? null : 'home')}
                 slots={homeSlots}
@@ -320,9 +320,10 @@ export default function PlanBuilderScreen() {
             />
             <Button
               label="Manage families and routines"
-              variant="ghost"
-              fullWidth
+              variant="secondary"
+              size="sm"
               onPress={() => router.push('/(tabs)/families' as never)}
+              style={styles.panelAction}
             />
           </View>
         ) : null}
@@ -522,7 +523,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   panelAction: {
-    marginTop: spacing.sm,
+    alignSelf: 'flex-start',
+    marginTop: spacing.md,
   },
   detailRow: {
     gap: 2,

@@ -61,8 +61,10 @@ export default function HomeScreen() {
     [venues],
   );
   const shortlist = useMemo(() => filterByPlanCategory(ranked, category), [ranked, category]);
-  const showcase = shortlist.slice(0, 6);
-  const alsoGood = shortlist.slice(6, 12);
+  // The big cards carry the top few picks; everything else that passed the same filter goes
+  // into the rail below, so a short list still fills the screen instead of trailing off.
+  const showcase = shortlist.slice(0, 3);
+  const alsoGood = shortlist.slice(3, 12);
 
   // The next card must peek, which is what tells a parent this rail swipes.
   const cardWidth = Math.round(width - spacing.screenPadding * 2 - 44);
