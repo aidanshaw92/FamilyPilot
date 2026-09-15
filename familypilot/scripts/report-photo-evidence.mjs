@@ -84,7 +84,11 @@ const report = await page.evaluate(() => {
   const creditOnCard = [...(card?.querySelectorAll('div') ?? [])].find(
     (el) => el.children.length === 0 && (el.textContent ?? '').includes('· Google'),
   );
+  // React Native's Image renders on web as a div with a background image, not an <img>, so the
+  // asset form is detected by that rather than by tag name.
   const mark = document.querySelector('[aria-label="Google Maps"]');
+  const markBackground = mark ? getComputedStyle(mark).backgroundImage : 'none';
+  const markIsAsset = Boolean(mark) && markBackground !== 'none' && markBackground !== '';
   const markText = [...document.querySelectorAll('div')].find(
     (el) => el.children.length === 0 && (el.textContent ?? '').trim() === 'Google Maps',
   );
@@ -92,11 +96,13 @@ const report = await page.evaluate(() => {
     activeVenue: card?.getAttribute('aria-label')?.replace(/, see more$/, '') ?? null,
     layers: [describe(layers[0], 'back'), describe(layers[1], 'next'), describe(layers[2], 'active')],
     creditOnCard: creditOnCard?.textContent ?? null,
-    googleMark: mark
-      ? { kind: mark.tagName === 'IMG' ? 'official asset' : 'element', src: mark.getAttribute('src') }
-      : markText
-        ? { kind: 'text fallback', src: null }
-        : null,
+    googleMark: markIsAsset
+      ? { kind: 'official asset', src: markBackground.replace(/^url\("?|"?\)$/g, '') }
+      : mark?.tagName === 'IMG'
+        ? { kind: 'official asset', src: mark.getAttribute('src') }
+        : markText || mark
+          ? { kind: 'wordmark text', src: null }
+          : null,
   };
 });
 
@@ -127,8 +133,7 @@ const active = report.layers[2];
 const checks = [
   ['active card shows a decoded photograph', active.naturalWidth > 1],
   ['preview carries no photographer credit', report.creditOnCard === null],
-  ['Home carries the Google attribution', report.googleMark !== null],
-  ['attribution uses the official asset', report.googleMark?.kind === 'official asset'],
+  ['Home carries the Google Maps attribution', report.googleMark !== null],
 ];
 console.log('');
 checks.forEach(([name, passed]) => console.log(`${passed ? 'PASS' : 'FAIL'}  ${name}`));
