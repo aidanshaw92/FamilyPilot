@@ -232,7 +232,9 @@ check(
 
 const ctaBox = await page.locator(ACTIVE).first().boundingBox();
 await page.mouse.click(ctaBox.x + ctaBox.width / 2, ctaBox.y + ctaBox.height - 46);
-await page.waitForTimeout(2000);
+await page
+  .waitForFunction((name) => document.body.innerText.includes(name), beforeTaps, { timeout: 30000 })
+  .catch(() => {});
 const url = page.url();
 const openedTheRightVenue = await page.evaluate(
   (name) => document.body.innerText.includes(name),

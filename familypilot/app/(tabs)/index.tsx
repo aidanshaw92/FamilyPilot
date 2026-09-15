@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     marginTop: 29,
   },
   attribution: {
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
     alignItems: 'center',
   },
 });

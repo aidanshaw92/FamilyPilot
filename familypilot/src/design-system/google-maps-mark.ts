@@ -1,16 +1,16 @@
 import { ImageSourcePropType } from 'react-native';
 
 /**
- * The official Google Maps attribution asset.
+ * The official Google attribution asset for Places content, exactly as Google supplies it:
+ * powered_by_google_on_white.png, 59 x 18, from
+ * storage.googleapis.com/geo-devrel-public-buckets. Google's terms require the supplied file —
+ * the mark may be scaled but never redrawn, recoloured or altered — so it is committed as
+ * downloaded, and the sandbox this was built in could not reach Google's hosts, so a CI runner
+ * fetched it (see the "Fetch the official Google attribution assets" step in
+ * .github/workflows/home-photo-capture.yml).
  *
- * Google's branding terms require the supplied file: the mark must not be redrawn, recoloured or
- * altered, only scaled. The agent sandbox this was built in cannot reach Google's asset hosts, so
- * the file is fetched on a CI runner and committed here — see the "Fetch the official Google
- * attribution assets" step in .github/workflows/home-photo-capture.yml.
- *
- * Until it lands, this stays null and the attribution falls back to the wordmark set in text,
- * which Google's policy allows where space is limited. Point `source` at the committed file and
- * set its true aspect ratio to switch over; nothing else needs to change.
+ * The white variant is the right one here: every surface it appears on is the app's near-white
+ * background.
  */
 export interface GoogleMapsMarkAsset {
   source: ImageSourcePropType;
@@ -18,4 +18,8 @@ export interface GoogleMapsMarkAsset {
   aspectRatio: number;
 }
 
-export const GOOGLE_MAPS_MARK: GoogleMapsMarkAsset | null = null;
+export const GOOGLE_MAPS_MARK: GoogleMapsMarkAsset | null = {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  source: require('../../assets/images/powered_by_google_on_white.png'),
+  aspectRatio: 59 / 18,
+};
