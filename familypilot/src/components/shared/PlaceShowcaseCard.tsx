@@ -8,7 +8,6 @@ import { Text } from '@/src/components/ui/Text';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { SaveButton } from '@/src/components/shared/SaveButton';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
-import { photoCredit } from '@/src/services/places/place-photo-url';
 import { Venue } from '@/src/types';
 import { getTravelSignal } from '@/src/utils/family-signals';
 import { formatCategory } from '@/src/utils/format-category';
@@ -30,6 +29,11 @@ interface PlaceShowcaseCardProps {
  * The hero of the whole app: a tall photograph carrying the card, a scrim so white type
  * stays readable, and only the few facts a parent scans for. Everything else waits on the
  * detail screen.
+ *
+ * The photograph is a preview. Google's policy lets a space-constrained preview omit the
+ * per-photo author attribution as long as the user can reach a larger version that carries it in
+ * full — which is what tapping through to the venue does. Home instead carries the Google Maps
+ * mark once, beneath the deck.
  */
 export function PlaceShowcaseCard({
   venue,
@@ -39,7 +43,6 @@ export function PlaceShowcaseCard({
   style,
   isSwiping,
 }: PlaceShowcaseCardProps) {
-  const credit = photoCredit(venue.imageUrl);
 
   return (
     <PressableScale
@@ -66,14 +69,6 @@ export function PlaceShowcaseCard({
         style={styles.fill}
         pointerEvents="none"
       />
-
-      {/* Attribution sits top-left, over open photography. Drawn across the foot of the image it
-          would run through the card's own footer and the CTA. */}
-      {credit ? (
-        <Text variant="caption" color="rgba(255,255,255,0.95)" numberOfLines={1} style={styles.credit}>
-          {credit} · Google
-        </Text>
-      ) : null}
 
       <View style={styles.saveSlot}>
         <View style={styles.saveGlass}>
@@ -239,19 +234,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.lg,
     right: spacing.lg,
-  },
-  credit: {
-    position: 'absolute',
-    top: spacing.lg + 6,
-    left: spacing.xl,
-    // Stop well clear of the save control.
-    maxWidth: '55%',
-    // Google requires the photographer's name to be clearly visible and never obscured, and a
-    // photograph can be any tone behind it. A shadow carries that without adding a box to the
-    // approved composition.
-    textShadowColor: 'rgba(8, 8, 10, 0.75)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
   },
   saveGlass: {
     width: 42,

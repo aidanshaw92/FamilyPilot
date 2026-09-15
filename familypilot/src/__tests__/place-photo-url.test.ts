@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   apiOrigin,
+  photoAttribution,
   photoCredit,
   resolvePlacePhotoUrl,
   resolvePlacePhotoUrls,
@@ -86,6 +87,35 @@ describe('place photo urls', () => {
 });
 
 describe('photo attribution', () => {
+  it('carries the photographer, their profile and the photo, for the screen that shows it at size', () => {
+    // What the sync worker now writes: Google requires the author named, their profile linked
+    // where supplied, and the individual photo reachable on Google Maps.
+    const full =
+      '/api/places/photo?id=ChIJx&index=0&credit=Babs+Kehinde' +
+      '&authorUri=https%3A%2F%2Fmaps.google.com%2Fmaps%2Fcontrib%2F123' +
+      '&photoUri=https%3A%2F%2Fmaps.google.com%2Fmaps%2Fplace%2F%3Fq%3Dphoto';
+    expect(photoAttribution(full)).toEqual({
+      author: 'Babs Kehinde',
+      authorUri: 'https://maps.google.com/maps/contrib/123',
+      photoUri: 'https://maps.google.com/maps/place/?q=photo',
+    });
+  });
+
+  it('still names the photographer for rows synced before the links were carried', () => {
+    // 113 of the 122 production rows predate the links; they must credit, just not link.
+    const legacy = PRODUCTION_PHOTOS[0];
+    expect(photoAttribution(legacy)).toEqual({
+      author: 'Richard Goldschmidt',
+      authorUri: null,
+      photoUri: null,
+    });
+  });
+
+  it('has no attribution for a photo that is not one of ours', () => {
+    expect(photoAttribution('https://lh3.googleusercontent.com/x')).toBeNull();
+    expect(photoAttribution('/api/places/photo?id=x&index=0')).toBeNull();
+  });
+
   it('names the photographer Google requires us to credit', () => {
     expect(photoCredit(PRODUCTION_PHOTOS[0])).toBe('Richard Goldschmidt');
     expect(photoCredit('https://host/api/places/photo?id=x&index=0&credit=Babs%20Kehinde')).toBe(

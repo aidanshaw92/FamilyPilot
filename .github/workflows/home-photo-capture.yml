@@ -97,6 +97,33 @@ jobs:
           echo "resolving $origin$first"
           curl -sS -o /dev/null -w 'photo: %{http_code} -> %{url_effective}\n' -L --max-time 60 "$origin$first"
 
+      # The sandbox this branch was built in cannot reach Google's asset hosts, and the logo must
+      # be the official file rather than a redrawn one. The runner can fetch it, so it collects
+      # every candidate official URL and publishes whichever resolve for review.
+      - name: Fetch the official Google attribution assets
+        run: |
+          mkdir -p docs/home-photo-evidence/google-attribution
+          urls="
+          https://storage.googleapis.com/geo-devrel-public-buckets/powered_by_google_on_white.png
+          https://storage.googleapis.com/geo-devrel-public-buckets/powered_by_google_on_non_white.png
+          https://developers.google.com/static/maps/documentation/images/google_on_white.png
+          https://developers.google.com/static/maps/documentation/images/google_on_non_white.png
+          https://developers.google.com/maps/documentation/images/google_on_white.png
+          https://developers.google.com/maps/documentation/images/google_on_non_white.png
+          "
+          for u in $urls; do
+            name=$(basename "$u")
+            out="docs/home-photo-evidence/google-attribution/$name"
+            code=$(curl -sSL -o "$out" -w '%{http_code}' --max-time 45 "$u" || echo 000)
+            type=$(file -b --mime-type "$out" 2>/dev/null || echo unknown)
+            size=$(wc -c < "$out" 2>/dev/null || echo 0)
+            echo "$code  $type  ${size}B  $u"
+            # Keep only real images; a 404 page is not an asset.
+            case "$type" in image/*) ;; *) rm -f "$out" ;; esac
+          done
+          echo "--- kept:"
+          ls -la docs/home-photo-evidence/google-attribution/ || true
+
       - name: Build this branch against the deployed API
         working-directory: familypilot
         env:
@@ -140,8 +167,9 @@ jobs:
 
       # Pushed to its own branch so the feature branch stays free of CI output, and so the
       # captures can be reviewed without downloading an artifact.
+      # Always — a failed check is exactly when the captures are worth looking at.
       - name: Push captures to the evidence branch
-        if: ${{ inputs.push_evidence != 'false' }}
+        if: ${{ always() && inputs.push_evidence != 'false' }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

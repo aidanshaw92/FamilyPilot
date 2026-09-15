@@ -106,13 +106,30 @@ function googlePlaceToRecord(place, intent) {
     openingHours,
     website: place.websiteUri,
     phone: place.nationalPhoneNumber,
-    photos: (place.photos || []).slice(0, 3).map((photo, index) => `/api/places/photo?id=${encodeURIComponent(placeId)}&index=${index}&credit=${encodeURIComponent((photo.authorAttributions || []).map(a => a.displayName).join(', '))}`),
+    photos: (place.photos || []).slice(0, 3).map((photo, index) => photoProxyPath(placeId, index, photo)),
     isOpen: typeof place.currentOpeningHours?.openNow === 'boolean' ? place.currentOpeningHours.openNow : (place.businessStatus === 'CLOSED_PERMANENTLY' || place.businessStatus === 'CLOSED_TEMPORARILY' ? false : undefined),
     fetchedAt,
     enrichmentStatus: 'provider_only',
     googlePrimaryType: primaryType,
     googleTypes: types,
   };
+}
+
+/**
+ * Google's photo references expire and cannot be resolved client-side without exposing the key,
+ * so a photo is stored as a path to our own proxy. The attribution Google requires alongside the
+ * image rides on the query: the photographer's name, their Google Maps profile, and a link to the
+ * photo itself, so the app can credit and link without a second API call.
+ */
+function photoProxyPath(placeId, index, photo) {
+  const params = new URLSearchParams({ id: placeId, index: String(index) });
+  const attributions = photo.authorAttributions || [];
+  const credit = attributions.map((a) => a.displayName).filter(Boolean).join(', ');
+  if (credit) params.set('credit', credit);
+  const authorUri = attributions.find((a) => a.uri)?.uri;
+  if (authorUri) params.set('authorUri', authorUri);
+  if (photo.googleMapsUri) params.set('photoUri', photo.googleMapsUri);
+  return `/api/places/photo?${params.toString()}`;
 }
 
 async function googleRequest(url, options) {

@@ -52,13 +52,33 @@ export function resolvePlacePhotoUrls(photos: readonly string[] | undefined | nu
   return (photos ?? []).map(resolvePlacePhotoUrl).filter((url) => url.length > 0);
 }
 
+export interface PhotoAttribution {
+  /** The photographer Google requires us to name. */
+  author: string;
+  /** Their Google Maps profile, where Google supplied one. */
+  authorUri: string | null;
+  /** The individual photo on Google Maps, which users must be able to reach. */
+  photoUri: string | null;
+}
+
 /**
- * The photographer Google requires us to name, carried on the proxy URL by the sync worker.
- * Null for anything that is not one of our proxied Google photos.
+ * The attribution the sync worker carried on the proxy URL. Null for anything that is not one of
+ * our proxied Google photos, and for rows synced before the worker started carrying the links —
+ * those still name the photographer, they just cannot link out.
  */
-export function photoCredit(uri: string | undefined | null): string | null {
+export function photoAttribution(uri: string | undefined | null): PhotoAttribution | null {
   if (!uri || !uri.includes('/api/places/photo?')) return null;
-  const query = uri.slice(uri.indexOf('?') + 1);
-  const credit = new URLSearchParams(query).get('credit')?.trim();
-  return credit ? credit : null;
+  const query = new URLSearchParams(uri.slice(uri.indexOf('?') + 1));
+  const author = query.get('credit')?.trim();
+  if (!author) return null;
+  return {
+    author,
+    authorUri: query.get('authorUri') || null,
+    photoUri: query.get('photoUri') || null,
+  };
+}
+
+/** Just the photographer's name, for callers that only credit and never link. */
+export function photoCredit(uri: string | undefined | null): string | null {
+  return photoAttribution(uri)?.author ?? null;
 }

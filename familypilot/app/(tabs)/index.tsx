@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { GoogleMapsAttribution } from '@/src/components/shared/GoogleAttribution';
 import { RecommendationDeck } from '@/src/components/home/RecommendationDeck';
 import { deckMetrics } from '@/src/utils/home-deck-geometry';
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
@@ -181,6 +182,15 @@ export default function HomeScreen() {
             />
           </View>
         ) : null}
+
+        {/* The deck's places come from Google, and Google requires its mark wherever that content
+            appears without a Google map. It sits in the gap the frame already leaves between the
+            deck and the navigation, so nothing in the approved composition moves. */}
+        {!isLoading && !isError && shortlist.length > 0 ? (
+          <View style={styles.attribution}>
+            <GoogleMapsAttribution />
+          </View>
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -236,5 +246,9 @@ const styles = StyleSheet.create({
   },
   deckSlot: {
     marginTop: 29,
+  },
+  attribution: {
+    marginTop: spacing.sm,
+    alignItems: 'center',
   },
 });

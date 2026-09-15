@@ -97,8 +97,12 @@ async function restingOffset() {
   return previous;
 }
 
-/** A pointer drag across the active card. `steps` and `pause` control the release velocity. */
-async function drag(dx, { steps = 12, pause = 0 } = {}) {
+/**
+ * A pointer drag across the active card. `steps` and `pause` control the release velocity;
+ * `settle` is how long to let the spring run afterwards — the full wait matters when the next
+ * assertion reads position, but walking to the end of a long deck only needs the label.
+ */
+async function drag(dx, { steps = 12, pause = 0, settle = 700 } = {}) {
   const card = page.locator(ACTIVE).first();
   await card.waitFor({ state: 'visible', timeout: 15000 });
   await card.scrollIntoViewIfNeeded();
@@ -113,7 +117,7 @@ async function drag(dx, { steps = 12, pause = 0 } = {}) {
     if (pause) await page.waitForTimeout(pause);
   }
   await page.mouse.up();
-  await page.waitForTimeout(700); // let the spring settle
+  await page.waitForTimeout(settle);
 }
 
 // --- 1 & 2: one card per swipe, both directions -----------------------------------------------
@@ -164,16 +168,22 @@ check(
   `still ${beforeFirstClamp}`,
 );
 
+// Production returns around ninety places, so the walk has to be able to reach the end of a deck
+// that long — and fast enough to be worth running. Only the label is read here, so the spring does
+// not need to finish settling between swipes.
 const seen = [first];
 let guard = 0;
 let current = first;
-while (guard < 30) {
-  await drag(-180);
+while (guard < 150) {
+  await drag(-180, { settle: 220 });
   const next = await activeName();
   if (next === current) break;
   current = next;
   seen.push(next);
   guard += 1;
+}
+if (guard >= 150) {
+  console.log(`(walk stopped at the ${guard}-swipe guard, deck longer than expected)`);
 }
 const last = current;
 await drag(-180);
