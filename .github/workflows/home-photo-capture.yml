@@ -34,6 +34,8 @@ permissions:
 
 env:
   EVIDENCE_BRANCH: ci/home-photo-evidence
+  # A push event carries no inputs, so the dispatch input only overrides this when given.
+  API_BASE: ${{ inputs.api_base || 'https://family-pilot-seven.vercel.app/api/places' }}
 
 jobs:
   capture:
@@ -64,8 +66,6 @@ jobs:
       # real rows carrying photo references there is nothing to photograph.
       - name: Check the deployed places API
         id: api
-        env:
-          API_BASE: ${{ inputs.api_base }}
         run: |
           set -o pipefail
           url="$API_BASE/search?lat=51.5074&lng=-0.1278&radiusKm=40&scope=london&intent=explore"
@@ -102,7 +102,7 @@ jobs:
         env:
           # The client reads this for /api/places/* and derives the photo origin from it, so a
           # locally served bundle fetches production data and production photographs.
-          EXPO_PUBLIC_PLACES_API_URL: ${{ inputs.api_base }}
+          EXPO_PUBLIC_PLACES_API_URL: ${{ env.API_BASE }}
         run: npx expo export --platform web
 
       - name: Serve the bundle
@@ -141,7 +141,7 @@ jobs:
       # Pushed to its own branch so the feature branch stays free of CI output, and so the
       # captures can be reviewed without downloading an artifact.
       - name: Push captures to the evidence branch
-        if: ${{ inputs.push_evidence == 'true' }}
+        if: ${{ inputs.push_evidence != 'false' }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
