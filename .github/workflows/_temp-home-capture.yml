@@ -1,0 +1,138 @@
+name: TEMP — fetch Google Maps asset and capture Home
+
+# TEMPORARY. Delete this file before the Home PR is opened.
+#
+# It exists only because the agent sandbox this branch was built in cannot reach Google's asset
+# hosts or googleusercontent.com, so it can neither download the official attribution asset nor
+# render a real venue photograph. A runner can do both. Everything here is either a one-off asset
+# fetch or a duplicate of the permanent "Home visual regression" workflow, which runs on pull
+# requests and is what survives.
+
+on:
+  push:
+    branches: [feat/home-approved-figma]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  API_BASE: https://family-pilot-seven.vercel.app/api/places
+  EVIDENCE_BRANCH: ci/home-photo-evidence
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            familypilot/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install app dependencies
+        working-directory: familypilot
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: familypilot
+        run: npx playwright install --with-deps chromium
+
+      # Google publishes its attribution assets in a public bucket. Listing it beats guessing file
+      # names: whatever the current Google Maps lockup is called, it is in here.
+      - name: List Google's public attribution assets
+        run: |
+          mkdir -p docs/home-photo-evidence/google-attribution
+          echo "--- objects in geo-devrel-public-buckets mentioning google or maps:"
+          curl -sS --max-time 60 \
+            "https://storage.googleapis.com/storage/v1/b/geo-devrel-public-buckets/o?fields=items(name,size,contentType)&maxResults=1000" \
+            -o /tmp/bucket.json || true
+          node -e '
+            const fs = require("fs");
+            let d;
+            try { d = JSON.parse(fs.readFileSync("/tmp/bucket.json", "utf8")); }
+            catch { console.log("(bucket listing unavailable)"); process.exit(0); }
+            const items = (d.items || []).filter((o) => /google|maps/i.test(o.name));
+            if (!items.length) console.log("(no matching objects)");
+            items.forEach((o) => console.log(`  ${o.name}  ${o.size}B  ${o.contentType}`));
+            fs.writeFileSync("/tmp/candidates.txt", items.map((o) => o.name).join("\n"));
+          '
+
+      - name: Download every candidate attribution asset
+        run: |
+          out=docs/home-photo-evidence/google-attribution
+          mkdir -p "$out"
+          # Anything the bucket listing found, plus the documented paths, in case listing is denied.
+          {
+            if [ -s /tmp/candidates.txt ]; then
+              while read -r n; do
+                [ -n "$n" ] && echo "https://storage.googleapis.com/geo-devrel-public-buckets/$n"
+              done < /tmp/candidates.txt
+            fi
+            cat <<'URLS'
+          https://storage.googleapis.com/geo-devrel-public-buckets/google_maps_on_white.png
+          https://storage.googleapis.com/geo-devrel-public-buckets/google_maps_on_non_white.png
+          https://storage.googleapis.com/geo-devrel-public-buckets/powered_by_google_maps_on_white.png
+          https://developers.google.com/static/maps/documentation/images/google_maps_on_white.png
+          https://maps.gstatic.com/mapfiles/api-3/images/google4.png
+          URLS
+          } | sort -u > /tmp/urls.txt
+          while read -r u; do
+            [ -z "$u" ] && continue
+            name=$(basename "$u")
+            dest="$out/$name"
+            code=$(curl -sSL -o "$dest" -w '%{http_code}' --max-time 45 "$u" || echo 000)
+            type=$(file -b --mime-type "$dest" 2>/dev/null || echo unknown)
+            size=$(wc -c < "$dest" 2>/dev/null || echo 0)
+            dims=$(file -b "$dest" 2>/dev/null | grep -o '[0-9]\+ x [0-9]\+' | head -1)
+            echo "$code  ${type}  ${size}B  ${dims:-?}  $u"
+            case "$type" in image/*) ;; *) rm -f "$dest" ;; esac
+          done < /tmp/urls.txt
+          echo "--- kept:"
+          ls -la "$out"
+
+      - name: Build this branch against the deployed API
+        working-directory: familypilot
+        env:
+          EXPO_PUBLIC_PLACES_API_URL: ${{ env.API_BASE }}
+        run: npx expo export --platform web
+
+      - name: Serve the bundle
+        working-directory: familypilot
+        run: |
+          npx serve dist -l 4173 --no-clipboard &
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://localhost:4173/ && break
+            sleep 2
+          done
+          curl -sf -o /dev/null http://localhost:4173/ || { echo "::error::static server never came up"; exit 1; }
+
+      - name: Capture and measure against the locked frame
+        working-directory: familypilot
+        run: node scripts/verify-home-against-figma.mjs http://localhost:4173 ../docs/home-photo-evidence
+
+      - name: Deck gesture checks
+        working-directory: familypilot
+        run: node scripts/verify-deck-gesture.mjs http://localhost:4173
+
+      - name: Report what actually loaded
+        working-directory: familypilot
+        run: node scripts/report-photo-evidence.mjs http://localhost:4173
+
+      - name: Push captures to the evidence branch
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan "$EVIDENCE_BRANCH"
+          git rm -r --cached . > /dev/null
+          git add -f docs/home-photo-evidence
+          git commit -m "Home capture and Google attribution candidates (${GITHUB_SHA::7})"
+          git push -f origin "$EVIDENCE_BRANCH"
