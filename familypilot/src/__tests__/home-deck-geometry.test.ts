@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  ACTIVE_HEIGHT,
+  ACTIVE_WIDTH,
+  BACK_OFFSET_Y,
   BACK_REVEAL,
   BACK_SCALE,
   deckMetrics,
+  NEXT_OFFSET_Y,
   NEXT_REVEAL,
   NEXT_SCALE,
   rearLayerOffsetX,
@@ -42,6 +46,32 @@ describe('home recommendation deck geometry', () => {
     const rearRightEdge = offset + backWidth / 2;
     const activeRightEdge = activeWidth / 2;
     expect(rearRightEdge - activeRightEdge).toBeCloseTo(27, 5);
+  });
+
+  it('reproduces the three card boxes the frame actually draws', () => {
+    // Measured on the locked component "Recommendation deck" (node 38:43), whose own origin sits
+    // at x=15.5, y=307 on the artboard:
+    //   active  x=25,       y=0,  312      x 428
+    //   next    x=0,        y=32, 237.6449 x 326
+    //   back    x=140.9346, y=40, 223.0654 x 306
+    const { activeWidth, activeHeight, scale } = deckMetrics(393);
+    expect([activeWidth, activeHeight]).toEqual([ACTIVE_WIDTH, ACTIVE_HEIGHT]);
+
+    expect(activeWidth * NEXT_SCALE).toBeCloseTo(237.6449, 3);
+    expect(activeHeight * NEXT_SCALE).toBeCloseTo(326, 1);
+    expect(NEXT_OFFSET_Y * scale).toBe(32);
+
+    expect(activeWidth * BACK_SCALE).toBeCloseTo(223.0654, 3);
+    expect(activeHeight * BACK_SCALE).toBeCloseTo(306, 1);
+    expect(BACK_OFFSET_Y * scale).toBe(40);
+  });
+
+  it('centres the active card on the screen, as the frame does', () => {
+    // Frame: active card spans x=40.5..352.5 of 393, so its centre is the artboard's own.
+    const { activeWidth } = deckMetrics(393);
+    const left = (393 - activeWidth) / 2;
+    expect(left).toBe(40.5);
+    expect(left + activeWidth / 2).toBe(393 / 2);
   });
 
   it('keeps every rear layer narrower than the active card so it reads as behind it', () => {

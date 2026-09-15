@@ -11,9 +11,13 @@ export const REFERENCE_WIDTH = 393;
 export const ACTIVE_WIDTH = 312;
 export const ACTIVE_HEIGHT = 428;
 
-/** Rear layers are scaled down and pushed down so they end above the active card's CTA. */
-export const NEXT_SCALE = 0.76;
-export const BACK_SCALE = 0.71;
+/**
+ * Rear layers are scaled down and pushed down so they end above the active card's CTA. Taken
+ * from the frame's own card widths rather than rounded: the next card is 237.6449 wide and the
+ * back card 223.0654, against the active card's 312.
+ */
+export const NEXT_SCALE = 237.6449 / ACTIVE_WIDTH;
+export const BACK_SCALE = 223.0654 / ACTIVE_WIDTH;
 export const NEXT_OFFSET_Y = 32;
 export const BACK_OFFSET_Y = 40;
 

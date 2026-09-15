@@ -9,6 +9,7 @@ import { Text } from '@/src/components/ui/Text';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { SaveButton } from '@/src/components/shared/SaveButton';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { photoCredit } from '@/src/services/places/place-photo-url';
 import { Venue } from '@/src/types';
 import { getCardSignals } from '@/src/utils/family-signals';
 import { formatCategory } from '@/src/utils/format-category';
@@ -40,6 +41,7 @@ export function PlaceShowcaseCard({
   isSwiping,
 }: PlaceShowcaseCardProps) {
   const signals = getCardSignals(venue, 3);
+  const credit = photoCredit(venue.imageUrl);
 
   return (
     <PressableScale
@@ -57,6 +59,8 @@ export function PlaceShowcaseCard({
         alt={venue.name}
         style={styles.fill}
         borderRadius={0}
+        showCredit={false}
+        pointerEvents="none"
       />
       <LinearGradient
         colors={[colors.gradient.heroStart, colors.gradient.heroMid, colors.gradient.heroEnd]}
@@ -64,6 +68,14 @@ export function PlaceShowcaseCard({
         style={styles.fill}
         pointerEvents="none"
       />
+
+      {/* Attribution sits top-left, over open photography. Drawn across the foot of the image it
+          would run through the card's own footer and the CTA. */}
+      {credit ? (
+        <Text variant="caption" color="rgba(255,255,255,0.72)" numberOfLines={1} style={styles.credit}>
+          {credit} · Google
+        </Text>
+      ) : null}
 
       <View style={styles.saveSlot}>
         <View style={styles.saveGlass}>
@@ -147,6 +159,8 @@ export function PlaceShowcaseCardRear({
         alt=""
         style={styles.fill}
         borderRadius={0}
+        showCredit={false}
+        pointerEvents="none"
       />
       <View style={styles.rearScrim} pointerEvents="none" />
     </View>
@@ -179,6 +193,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.lg,
     right: spacing.lg,
+  },
+  credit: {
+    position: 'absolute',
+    top: spacing.lg + 6,
+    left: spacing.xl,
+    // Stop well clear of the save control.
+    maxWidth: '55%',
   },
   saveGlass: {
     width: 42,

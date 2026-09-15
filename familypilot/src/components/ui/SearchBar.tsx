@@ -40,9 +40,9 @@ export function SearchBar({
         accessibilityLabel={readOnly ? placeholder : undefined}
         onPress={onPress}
         disabled={!readOnly}
-        style={styles.field}
+        style={[styles.field, onFilterPress ? styles.fieldWithFilter : null]}
       >
-        <Ionicons name="search" size={19} color={colors.text.tertiary} />
+        <Ionicons name="search" size={SEARCH_ICON} color={colors.text.tertiary} />
         {readOnly ? (
           <View style={styles.readOnlyLabel} pointerEvents="none">
             <PlaceholderText>{value || placeholder}</PlaceholderText>
@@ -62,13 +62,15 @@ export function SearchBar({
         )}
       </Pressable>
 
+      {/* The approved frame tucks the filter disc inside the field's right edge, not beside it.
+          It sits over the field rather than within it so its press area stays its own. */}
       {onFilterPress ? (
         <CircleButton
           icon="options-outline"
           accessibilityLabel="Filters"
-          tone={filterActive ? 'dark' : 'dark'}
-          size={48}
-          iconSize={21}
+          tone="dark"
+          size={FILTER_SIZE}
+          iconSize={20}
           onPress={onFilterPress}
           style={styles.filter}
         />
@@ -88,23 +90,34 @@ function PlaceholderText({ children }: { children: string }) {
   );
 }
 
+/**
+ * From the approved frame "01 — Home" (node "Search bar"): a 56pt field with the search glyph
+ * 22px in, the placeholder starting at 56, and a 46px filter disc inset 5 from the right edge.
+ */
+const FIELD_HEIGHT = 56;
+const SEARCH_ICON = 22;
+const FILTER_SIZE = 46;
+const FILTER_INSET = 5;
+
 const styles = StyleSheet.create({
   wrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+    height: FIELD_HEIGHT,
+    justifyContent: 'center',
   },
   field: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    height: 56,
-    paddingHorizontal: spacing.xl,
+    height: FIELD_HEIGHT,
+    paddingHorizontal: 21,
     borderRadius: radius.full,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  fieldWithFilter: {
+    // Clear the disc so the placeholder never runs underneath it.
+    paddingRight: FILTER_INSET + FILTER_SIZE + spacing.sm,
   },
   input: {
     flex: 1,
@@ -121,6 +134,8 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
   },
   filter: {
-    marginLeft: spacing.xs,
+    position: 'absolute',
+    right: FILTER_INSET,
+    top: (FIELD_HEIGHT - FILTER_SIZE) / 2,
   },
 });

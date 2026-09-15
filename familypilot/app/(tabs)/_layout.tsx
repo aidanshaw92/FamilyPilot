@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { FloatingTabBar } from '@/src/components/navigation/FloatingTabBar';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
-import { colors, spacing } from '@/src/design-system/tokens';
+import { colors } from '@/src/design-system/tokens';
+import { ICON_SIZE } from '@/src/utils/floating-tab-bar-layout';
 
 type TabIcon = keyof typeof Ionicons.glyphMap;
 
@@ -27,39 +28,13 @@ const TAB_CONFIG: {
   { name: 'profile', title: 'Profile', icon: 'person-outline', iconFocused: 'person' },
 ];
 
-const TAB_BAR_CONTENT_HEIGHT = 56;
-
 export default function TabLayout() {
-  const insets = useSafeAreaInsets();
-  const bottomInset = Math.max(spacing.sm, insets.bottom);
-
   return (
     <Tabs
+      tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.text.primary,
-        tabBarInactiveTintColor: '#A7ADB0',
-        tabBarStyle: {
-          position: 'absolute',
-          left: spacing.md,
-          right: spacing.md,
-          bottom: Math.max(spacing.sm, insets.bottom),
-          height: TAB_BAR_CONTENT_HEIGHT,
-          borderTopWidth: 0,
-          borderRadius: 30,
-          backgroundColor: colors.text.primary,
-          paddingTop: 6,
-          paddingBottom: 6,
-          shadowColor: '#172026',
-          shadowOpacity: 0.18,
-          shadowRadius: 16,
-          elevation: 8,
-        },
-        tabBarLabelStyle: {
-          fontFamily: 'Inter_500Medium',
-          fontSize: 11,
-          marginTop: 2,
-        },
       }}
     >
       {TAB_CONFIG.map((tab) => {
@@ -74,7 +49,7 @@ export default function TabLayout() {
               tabBarIcon: ({ color, focused }) => (
                 <Ionicons
                   name={focused ? tab.iconFocused : tab.icon}
-                  size={24}
+                  size={ICON_SIZE}
                   color={color}
                 />
               ),

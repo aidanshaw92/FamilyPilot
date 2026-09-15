@@ -12,7 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RecommendationDeck } from '@/src/components/home/RecommendationDeck';
 import { deckMetrics } from '@/src/utils/home-deck-geometry';
-import { homeHeaderLayout, searchPlaceholder } from '@/src/utils/home-header-layout';
+import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
+import { homeGutter, homeHeaderLayout, searchPlaceholder } from '@/src/utils/home-header-layout';
 import {
   EmptyState,
   ErrorState,
@@ -38,6 +39,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const tabBarClearance = useTabBarClearance();
   const [category, setCategory] = useState('for_you');
   const [refreshing, setRefreshing] = useState(false);
   const setFilterSheetOpen = useFiltersStore((s) => s.setFilterSheetOpen);
@@ -59,6 +61,7 @@ export default function HomeScreen() {
   // fits the greeting and the placeholder whole, rather than a clipped heading.
   const greetingText = `${getTimeGreeting()}, ${firstName}`;
   const header = homeHeaderLayout(width, greetingText);
+  const gutter = { paddingHorizontal: homeGutter(width) };
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -75,7 +78,14 @@ export default function HomeScreen() {
     <View style={styles.screen}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.lg }]}
+        contentContainerStyle={[
+          styles.content,
+          {
+            // The frame puts the greeting at y=58, which is where a phone's status bar ends.
+            paddingTop: Math.max(insets.top, spacing.lg),
+            paddingBottom: tabBarClearance,
+          },
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -84,7 +94,7 @@ export default function HomeScreen() {
           />
         }
       >
-        <View style={styles.gutter}>
+        <View style={gutter}>
           <View style={[styles.header, { gap: header.gap }]}>
             <View style={styles.greeting}>
               <Text
@@ -130,23 +140,23 @@ export default function HomeScreen() {
           value={category}
           onChange={setCategory}
           accessibilityLabel="Plan categories"
-          contentStyle={styles.pillContent}
+          contentStyle={{ paddingLeft: homeGutter(width) }}
         />
 
         {isError ? (
-          <View style={[styles.gutter, styles.deckSlot]}>
+          <View style={[gutter, styles.deckSlot]}>
             <ErrorState onRetry={() => void refetch()} />
           </View>
         ) : null}
 
         {isLoading ? (
-          <View style={[styles.gutter, styles.deckSlot]}>
+          <View style={[gutter, styles.deckSlot]}>
             <Skeleton height={deckHeight} borderRadius={radius['3xl']} />
           </View>
         ) : null}
 
         {!isLoading && !isError && shortlist.length === 0 ? (
-          <View style={[styles.gutter, styles.deckSlot]}>
+          <View style={[gutter, styles.deckSlot]}>
             <EmptyState
               icon="search-outline"
               title="Nothing confirmed here yet"
@@ -176,12 +186,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  content: {
-    paddingBottom: spacing['5xl'],
-  },
-  gutter: {
-    paddingHorizontal: spacing.screenPadding,
-  },
+  content: {},
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -193,7 +198,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.6,
   },
   greetingSub: {
-    marginTop: 2,
+    // Frame: greeting ends at y=89, subtitle starts at 94.
+    marginTop: 4,
   },
   avatar: {
     width: 46,
@@ -203,17 +209,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // The gaps below are the approved frame's own: subtitle 111 -> search 126, search 182 ->
+  // heading 198, heading 225 -> pills 234, pills 278 -> deck 307.
   search: {
-    marginTop: spacing.xl,
+    marginTop: 15,
   },
   sectionTitle: {
-    marginTop: spacing['2xl'],
-    marginBottom: spacing.lg,
-  },
-  pillContent: {
-    paddingLeft: spacing.screenPadding,
+    marginTop: 16,
+    marginBottom: 9,
   },
   deckSlot: {
-    marginTop: spacing['2xl'],
+    marginTop: 29,
   },
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  AVATAR_SIZE,
   estimateTextWidth,
   FIT_MARGIN,
   GREETING_FONT_SIZE,
@@ -8,7 +9,10 @@ import {
   GREETING_MIN_FONT_SIZE,
   HEADER_GAP,
   HEADER_MIN_GAP,
+  homeGutter,
   homeHeaderLayout,
+  NARROW_SCREEN_PADDING,
+  SCREEN_PADDING,
   SEARCH_FONT_SIZE,
   SEARCH_PLACEHOLDERS,
   searchPlaceholder,
@@ -23,7 +27,7 @@ function greetingWidth(text: string, fontSize: number) {
 
 /** Header space left for the greeting once the gutters, avatar and gap are taken out. */
 function greetingSpace(viewportWidth: number, gap: number) {
-  return viewportWidth - 20 * 2 - 46 - gap;
+  return viewportWidth - homeGutter(viewportWidth) * 2 - AVATAR_SIZE - gap;
 }
 
 describe('home header layout', () => {
@@ -36,6 +40,13 @@ describe('home header layout', () => {
       maxLines: 1,
     });
     expect(searchPlaceholder(393)).toBe(SEARCH_PLACEHOLDERS[0]);
+  });
+
+  it('uses the frame gutter at the reference width and gives it back on narrow phones', () => {
+    expect(homeGutter(393)).toBe(SCREEN_PADDING);
+    expect(homeGutter(430)).toBe(SCREEN_PADDING);
+    expect(homeGutter(360)).toBe(NARROW_SCREEN_PADDING);
+    expect(NARROW_SCREEN_PADDING).toBeLessThan(SCREEN_PADDING);
   });
 
   it('does not grow the heading on wider phones', () => {
@@ -98,15 +109,13 @@ describe('home header layout', () => {
     );
   });
 
-  it('proves the full placeholder really is what overflows at 360pt', () => {
+  it('proves the full placeholder really is what runs out of room at 360pt', () => {
     // Guards the fix itself: if this stops being true the shortened copy is no longer earning its
-    // place and the full string should come back.
-    expect(estimateTextWidth(SEARCH_PLACEHOLDERS[0], SEARCH_FONT_SIZE)).toBeGreaterThan(
-      searchTextWidth(360),
-    );
-    expect(estimateTextWidth(SEARCH_PLACEHOLDERS[0], SEARCH_FONT_SIZE)).toBeLessThanOrEqual(
-      searchTextWidth(393),
-    );
+    // place and the full string should come back. At 360 it clears the raw box by only a few
+    // pixels, which is inside the estimate's own tolerance — not enough to ship.
+    const full = estimateTextWidth(SEARCH_PLACEHOLDERS[0], SEARCH_FONT_SIZE);
+    expect(full + FIT_MARGIN).toBeGreaterThan(searchTextWidth(360));
+    expect(full + FIT_MARGIN).toBeLessThanOrEqual(searchTextWidth(393));
   });
 
   it('estimates a shade wide of what the browser actually renders', () => {

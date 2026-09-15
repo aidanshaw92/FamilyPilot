@@ -17,8 +17,18 @@
 /** The artboard the approved composition was signed off on. */
 export const HEADER_REFERENCE_WIDTH = 393;
 
-/** spacing.screenPadding — the gutter either side of the header row. */
-export const SCREEN_PADDING = 20;
+/**
+ * The gutter either side of the screen. The approved frame draws it at 24 — greeting, search,
+ * heading and pills all start at x=24 — rather than the shared spacing.screenPadding of 20.
+ * Below the reference width that 4px either side is the cheapest thing to give back, so narrow
+ * phones fall to 20 and keep a larger heading instead.
+ */
+export const SCREEN_PADDING = 24;
+export const NARROW_SCREEN_PADDING = 20;
+
+export function homeGutter(viewportWidth: number): number {
+  return viewportWidth >= HEADER_REFERENCE_WIDTH ? SCREEN_PADDING : NARROW_SCREEN_PADDING;
+}
 
 /** typography.heading1, the approved greeting size, and its line-height ratio. */
 export const GREETING_FONT_SIZE = 26;
@@ -34,12 +44,16 @@ export const HEADER_MIN_GAP = 8;
 
 export const AVATAR_SIZE = 46;
 
-/** Search bar geometry: the filter disc and the field's own internal chrome. */
-const FILTER_SIZE = 48;
-const FILTER_GUTTER = 12; // spacing.sm between field and disc + spacing.xs on the disc
-const FIELD_PADDING = 40; // spacing.xl either side
+/**
+ * Search bar geometry, from the approved frame: the field runs the full width inside the gutter,
+ * with the filter disc tucked inside its right edge rather than sitting beside it.
+ */
+const FIELD_PADDING_LEFT = 21;
+const FILTER_SIZE = 46;
+const FILTER_INSET = 5;
+const FILTER_CLEARANCE = 8; // spacing.sm between the placeholder and the disc
 const FIELD_BORDERS = 2;
-const SEARCH_ICON = 19;
+const SEARCH_ICON = 22;
 const SEARCH_ICON_GAP = 12; // spacing.md
 export const SEARCH_FONT_SIZE = 15;
 
@@ -135,7 +149,7 @@ export function homeHeaderLayout(viewportWidth: number, greeting: string): HomeH
 
   if (viewportWidth >= HEADER_REFERENCE_WIDTH) return approved;
 
-  const row = viewportWidth - SCREEN_PADDING * 2 - AVATAR_SIZE;
+  const row = viewportWidth - homeGutter(viewportWidth) * 2 - AVATAR_SIZE;
 
   // Closing the gap costs the composition almost nothing, so spend that first at each size and
   // only step the type down once the tightest gap still will not do.
@@ -164,9 +178,11 @@ export function homeHeaderLayout(viewportWidth: number, greeting: string): HomeH
 
 /** Width left for placeholder text inside the search field, after icon, padding and filter disc. */
 export function searchTextWidth(viewportWidth: number): number {
-  const wrap = viewportWidth - SCREEN_PADDING * 2;
-  const field = wrap - FILTER_SIZE - FILTER_GUTTER;
-  return field - FIELD_PADDING - FIELD_BORDERS - SEARCH_ICON - SEARCH_ICON_GAP;
+  const field = viewportWidth - homeGutter(viewportWidth) * 2;
+  const rightChrome = FILTER_INSET + FILTER_SIZE + FILTER_CLEARANCE;
+  return (
+    field - FIELD_BORDERS - FIELD_PADDING_LEFT - SEARCH_ICON - SEARCH_ICON_GAP - rightChrome
+  );
 }
 
 /**

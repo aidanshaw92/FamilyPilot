@@ -4,13 +4,32 @@ import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { colors, radius } from '@/src/design-system/tokens';
+import { photoCredit } from '@/src/services/places/place-photo-url';
 import { Skeleton } from './Skeleton';
 import { Text } from './Text';
 
 // style is composed into an array below, so callers may pass an array or a conditional style the
 // same way they can with any View. Declaring it as a bare ViewStyle was narrower than the
 // implementation and rejected valid call sites.
-interface VenueImageProps { uri?: string; category?: string; alt: string; style?: StyleProp<ViewStyle>; borderRadius?: number }
+interface VenueImageProps {
+  uri?: string;
+  category?: string;
+  alt: string;
+  style?: StyleProp<ViewStyle>;
+  borderRadius?: number;
+  /**
+   * Google requires the photographer to be named wherever their photo is shown. This draws that
+   * line across the foot of the image, which is right for a plain thumbnail but wrong where the
+   * caller stacks its own content over the photo — there the caller places the credit itself.
+   */
+  showCredit?: boolean;
+  /**
+   * Pass 'none' where the photo is decoration inside something interactive. On web an <img> is
+   * natively draggable, and that drag captures the pointer — which silently killed the Home
+   * deck's swipe as soon as real photographs started loading in place of the gradient fallback.
+   */
+  pointerEvents?: 'auto' | 'none';
+}
 
 const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   park: 'leaf-outline',
@@ -39,13 +58,13 @@ function categoryGradient(category?: string): readonly [string, string] {
 /** Only show the venue's actual photo. Stock photography must not impersonate a place. Without
  * one, a category-owned gradient + icon reads as a designed placeholder rather than a broken
  * image — and upgrades to a real photo the moment one exists, with no layout change. */
-export function VenueImage({uri,category,alt,style,borderRadius=radius.md}:VenueImageProps){
+export function VenueImage({uri,category,alt,style,borderRadius=radius.md,showCredit=true,pointerEvents='auto'}:VenueImageProps){
  const [loading,setLoading]=useState(Boolean(uri));const [failed,setFailed]=useState(false);
  useEffect(()=>{setLoading(Boolean(uri));setFailed(false);},[uri]);
- const credit=uri?.includes('/api/places/photo?') ? new URLSearchParams(uri.split('?')[1]).get('credit') : null;
+ const credit=showCredit&&!failed?photoCredit(uri):null;
  const icon = category ? CATEGORY_ICONS[category] : undefined;
  const [gradientStart, gradientEnd] = categoryGradient(category);
- return <View style={[styles.wrap,{borderRadius},style]}>
+ return <View pointerEvents={pointerEvents} style={[styles.wrap,{borderRadius},style]}>
   {!uri||failed?
    <LinearGradient
      colors={[gradientStart, gradientEnd]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.empty}
