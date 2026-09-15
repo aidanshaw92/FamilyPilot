@@ -2,6 +2,8 @@ import { describe,it,expect } from 'vitest';
 import { clockMinutes, planVenue, sharePlanText, PlanningFamily, PlanningOptions } from '@/src/services/planning/planner';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { addMeal, PlanningResult } from '@/src/services/planning/recommendations';
+import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
+import { VenueFamilyMetadata } from '@/src/types/places';
 
 const now=new Date('2026-09-10T08:00:00');
 const family:PlanningFamily={id:'a',label:'Family A',area:'Town',latitude:51.6,longitude:-0.3,ages:[3,0],maxDriveMinutes:45,budgetTier:'moderate',pushchair:true,required:['babyChanging'],routines:[]};
@@ -45,4 +47,51 @@ describe('lunch planning',()=>{
  function result():PlanningResult{return {plan:planVenue(facts,[family],journeys,future,now)!,place:{familypilotId:'test',externalId:'test',provider:'google',name:'Test venue',latitude:family.latitude,longitude:family.longitude,category:'park',photos:[],provenance:{},fetchedAt:'2099-09-10',familyMetadata:{familypilotPlaceId:'test',enrichmentStatus:'verified',minRecommendedAge:0,maxRecommendedAge:10,familyFacilities:{babyChanging:'yes'},provenance:{},updatedAt:'2099-09-10'}},food:[],foodStatus:''};}
  it('includes a meal and transfer in the new schedule',()=>{const original=result();const next=addMeal(original,food,[family],future);expect(next.meal?.duration).toBe(45);expect(next.plan.end-next.plan.start).toBe(116);});
  it('rejects a meal that misses the home deadline',()=>{expect(()=>addMeal(result(),food,[family],{...future,returnBy:'11:30'})).toThrow(/Lunch does not fit/);});
+});
+
+/**
+ * Regression: production venues carry no age range at all. Verified against the live database
+ * on 2026-09-15 — 0 of 122 place_records had both min_recommended_age and max_recommended_age,
+ * and venue_claims held no age-range field key. This fixture mirrors one of those rows
+ * (Beckenham Place Park, fp-google-ChIJRfXNwPoBdkgRqdTuM7Baxuw: enriched, facilities confirmed,
+ * age range absent) and is built through extractMatchableFacts so it exercises the real
+ * production mapping rather than a hand-written facts object.
+ */
+describe('age suitability policy',()=>{
+ const realMetadata:VenueFamilyMetadata={familypilotPlaceId:'fp-google-ChIJRfXNwPoBdkgRqdTuM7Baxuw',enrichmentStatus:'enriched',familyFacilities:{toilets:'yes',playground:'yes',babyChanging:'yes'},provenance:{},updatedAt:'2026-09-01T00:00:00.000Z'};
+ const realFacts=(overrides:Partial<VenueFamilyMetadata>={}):MatchableVenueFacts=>extractMatchableFacts('fp-google-ChIJRfXNwPoBdkgRqdTuM7Baxuw','Beckenham Place Park','park',20,'enriched',{...realMetadata,...overrides},undefined);
+
+ it('plans a real venue whose age range was never recorded',()=>{
+  const f=realFacts();
+  expect(f.minRecommendedAge).toBeNull();
+  expect(f.maxRecommendedAge).toBeNull();
+  expect(planVenue(f,[family],journeys,options,now)).not.toBeNull();
+ });
+
+ it('still reports the missing age range as unconfirmed',()=>{
+  const p=planVenue(realFacts(),[family],journeys,options,now)!;
+  expect(p.unknowns).toContain('childAgeFit: not confirmed');
+ });
+
+ it('rejects a documented range that excludes a child',()=>{
+  expect(planVenue(realFacts({minRecommendedAge:5,maxRecommendedAge:12}),[family],journeys,options,now)).toBeNull();
+ });
+
+ it('allows a documented range that covers every child',()=>{
+  expect(planVenue(realFacts({minRecommendedAge:0,maxRecommendedAge:8}),[family],journeys,options,now)).not.toBeNull();
+ });
+
+ it('applies a lower bound on its own',()=>{
+  expect(planVenue(realFacts({minRecommendedAge:2}),[family],journeys,options,now)).toBeNull();
+  expect(planVenue(realFacts({minRecommendedAge:0}),[family],journeys,options,now)).not.toBeNull();
+ });
+
+ it('applies an upper bound on its own',()=>{
+  expect(planVenue(realFacts({maxRecommendedAge:2}),[family],journeys,options,now)).toBeNull();
+  expect(planVenue(realFacts({maxRecommendedAge:5}),[family],journeys,options,now)).not.toBeNull();
+ });
+
+ it('does not gate an adults-only party on an absent range',()=>{
+  expect(planVenue(realFacts(),[{...family,ages:[]}],journeys,options,now)).not.toBeNull();
+ });
 });
