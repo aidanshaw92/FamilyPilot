@@ -94,4 +94,20 @@ describe('age suitability policy',()=>{
  it('does not gate an adults-only party on an absent range',()=>{
   expect(planVenue(realFacts(),[{...family,ages:[]}],journeys,options,now)).not.toBeNull();
  });
+
+ it('does not claim an age check that did not happen',()=>{
+  const p=planVenue(realFacts(),[family],journeys,options,now)!;
+  expect(p.reasons[0]).not.toContain('age range checked');
+  expect(p.reasons[0]).toContain('Recommended ages are not published');
+ });
+
+ it('does claim the age check when a range was documented',()=>{
+  const p=planVenue(realFacts({minRecommendedAge:0,maxRecommendedAge:8}),[family],journeys,options,now)!;
+  expect(p.reasons[0]).toContain('age range checked');
+ });
+
+ it('makes no age claim for a party with no children',()=>{
+  const p=planVenue(realFacts(),[{...family,ages:[]}],journeys,options,now)!;
+  expect(p.reasons[0]).toBe('Required facilities checked for every family.');
+ });
 });
