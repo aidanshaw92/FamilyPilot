@@ -2,12 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { colors, radius } from '@/src/design-system/tokens';
 import { Skeleton } from './Skeleton';
 import { Text } from './Text';
 
-interface VenueImageProps { uri?: string; category?: string; alt: string; style?: ViewStyle; borderRadius?: number }
+// style is composed into an array below, so callers may pass an array or a conditional style the
+// same way they can with any View. Declaring it as a bare ViewStyle was narrower than the
+// implementation and rejected valid call sites.
+interface VenueImageProps { uri?: string; category?: string; alt: string; style?: StyleProp<ViewStyle>; borderRadius?: number }
 
 const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   park: 'leaf-outline',
