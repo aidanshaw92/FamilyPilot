@@ -11,6 +11,13 @@ name: Home photo capture
 # review this branch's Home against the locked frame, with production's data behind it.
 
 on:
+  # workflow_dispatch only dispatches from the default branch, and this workflow lives on the
+  # feature branch for now — so a push to that branch is what runs it until it merges.
+  push:
+    branches: [feat/home-approved-figma]
+    paths:
+      - 'familypilot/**'
+      - '.github/workflows/home-photo-capture.yml'
   workflow_dispatch:
     inputs:
       api_base:
