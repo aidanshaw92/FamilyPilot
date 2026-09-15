@@ -79,19 +79,31 @@ const report = await page.evaluate(() => {
         : null,
     };
   };
-  const credit = [...(card?.querySelectorAll('div') ?? [])].find(
+  // The card is a preview, so it must NOT carry a photographer's name; Home carries the Google
+  // mark instead. Both halves of that are checked, because either one alone is non-compliant.
+  const creditOnCard = [...(card?.querySelectorAll('div') ?? [])].find(
     (el) => el.children.length === 0 && (el.textContent ?? '').includes('· Google'),
+  );
+  const mark = document.querySelector('[aria-label="Google Maps"]');
+  const markText = [...document.querySelectorAll('div')].find(
+    (el) => el.children.length === 0 && (el.textContent ?? '').trim() === 'Google Maps',
   );
   return {
     activeVenue: card?.getAttribute('aria-label')?.replace(/, see more$/, '') ?? null,
     layers: [describe(layers[0], 'back'), describe(layers[1], 'next'), describe(layers[2], 'active')],
-    attribution: credit?.textContent ?? null,
+    creditOnCard: creditOnCard?.textContent ?? null,
+    googleMark: mark
+      ? { kind: mark.tagName === 'IMG' ? 'official asset' : 'element', src: mark.getAttribute('src') }
+      : markText
+        ? { kind: 'text fallback', src: null }
+        : null,
   };
 });
 
 console.log('\n=== Photo evidence ===');
-console.log('active venue:', report.activeVenue);
-console.log('attribution :', report.attribution ?? '(none rendered)');
+console.log('active venue   :', report.activeVenue);
+console.log('credit on card :', report.creditOnCard ?? '(none — correct for a preview)');
+console.log('google mark    :', report.googleMark ? `${report.googleMark.kind} ${report.googleMark.src ?? ''}` : '(missing)');
 console.log('\nlayers:');
 for (const layer of report.layers) {
   console.log(
@@ -108,10 +120,18 @@ const decoded = report.layers.filter((l) => l.naturalWidth > 1 && l.naturalHeigh
 const realPhotos = decoded.length;
 console.log(`\n${realPhotos}/3 layers are showing a decoded photograph`);
 
-// The active card carrying a real photograph is the acceptance condition; the rear strips should
-// carry one too, but a deck near its end legitimately has fewer than three layers.
+// Acceptance: the active card shows a real photograph, the card stays clean of a photographer's
+// name, and Home carries the Google mark. The rear strips should carry photographs too, but a deck
+// near its end legitimately has fewer than three layers.
 const active = report.layers[2];
-const ok = active.naturalWidth > 1 && report.attribution;
-console.log(ok ? 'PASS — real photography on the active card, with attribution' : 'FAIL — no real photograph or no attribution on the active card');
+const checks = [
+  ['active card shows a decoded photograph', active.naturalWidth > 1],
+  ['preview carries no photographer credit', report.creditOnCard === null],
+  ['Home carries the Google attribution', report.googleMark !== null],
+  ['attribution uses the official asset', report.googleMark?.kind === 'official asset'],
+];
+console.log('');
+checks.forEach(([name, passed]) => console.log(`${passed ? 'PASS' : 'FAIL'}  ${name}`));
+const ok = checks.every(([, passed]) => passed);
 await browser.close();
 process.exit(ok ? 0 : 1);

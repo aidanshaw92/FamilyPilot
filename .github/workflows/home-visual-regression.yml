@@ -1,40 +1,34 @@
-name: Home photo capture
+name: Home visual regression
 
-# Captures the Home screen with real venue photography.
+# Measures the rendered Home screen against the locked Figma frame "01 — Home", with real
+# production data and real venue photography behind it.
 #
-# The agent sandbox this branch was built in cannot reach googleusercontent.com, so every capture
-# taken there falls back to the category gradient. A GitHub runner has ordinary network access, so
-# it can do what the sandbox cannot: build THIS branch's web bundle, point it at the deployed
-# places API, and let the browser follow /api/places/photo all the way to the signed Google URL.
+# It builds the branch under test, points it at the deployed places API, serves it locally and
+# drives it with a browser — so the run reviews the change, not whatever is currently deployed.
+# The 88 assertions are tied to the frame's own node ids (8:4, 40:2, 7:31, 9:2), so a drift from
+# the approved design fails a build instead of surviving to a design review.
 #
-# Deliberately not a screenshot of the deployed site: production runs main, and the point is to
-# review this branch's Home against the locked frame, with production's data behind it.
+# It also runs the deck's gesture harness against production's data volume, which is what catches
+# behaviour a handful of fixtures cannot: the swipe, the clamp at either end of a long deck, and
+# the tap-versus-swipe disambiguation on a real photograph.
 
 on:
-  # workflow_dispatch only dispatches from the default branch, and this workflow lives on the
-  # feature branch for now — so a push to that branch is what runs it until it merges.
-  push:
-    branches: [feat/home-approved-figma]
+  pull_request:
     paths:
       - 'familypilot/**'
-      - '.github/workflows/home-photo-capture.yml'
+      - '.github/workflows/home-visual-regression.yml'
   workflow_dispatch:
     inputs:
       api_base:
         description: Base URL of the deployed places API
         required: false
         default: https://family-pilot-seven.vercel.app/api/places
-      push_evidence:
-        description: Commit the captures to the evidence branch
-        required: false
-        default: 'true'
 
 permissions:
-  contents: write
+  contents: read
 
 env:
-  EVIDENCE_BRANCH: ci/home-photo-evidence
-  # A push event carries no inputs, so the dispatch input only overrides this when given.
+  # A pull_request event carries no inputs, so the dispatch input only overrides this when given.
   API_BASE: ${{ inputs.api_base || 'https://family-pilot-seven.vercel.app/api/places' }}
 
 jobs:
@@ -97,33 +91,6 @@ jobs:
           echo "resolving $origin$first"
           curl -sS -o /dev/null -w 'photo: %{http_code} -> %{url_effective}\n' -L --max-time 60 "$origin$first"
 
-      # The sandbox this branch was built in cannot reach Google's asset hosts, and the logo must
-      # be the official file rather than a redrawn one. The runner can fetch it, so it collects
-      # every candidate official URL and publishes whichever resolve for review.
-      - name: Fetch the official Google attribution assets
-        run: |
-          mkdir -p docs/home-photo-evidence/google-attribution
-          urls="
-          https://storage.googleapis.com/geo-devrel-public-buckets/powered_by_google_on_white.png
-          https://storage.googleapis.com/geo-devrel-public-buckets/powered_by_google_on_non_white.png
-          https://developers.google.com/static/maps/documentation/images/google_on_white.png
-          https://developers.google.com/static/maps/documentation/images/google_on_non_white.png
-          https://developers.google.com/maps/documentation/images/google_on_white.png
-          https://developers.google.com/maps/documentation/images/google_on_non_white.png
-          "
-          for u in $urls; do
-            name=$(basename "$u")
-            out="docs/home-photo-evidence/google-attribution/$name"
-            code=$(curl -sSL -o "$out" -w '%{http_code}' --max-time 45 "$u" || echo 000)
-            type=$(file -b --mime-type "$out" 2>/dev/null || echo unknown)
-            size=$(wc -c < "$out" 2>/dev/null || echo 0)
-            echo "$code  $type  ${size}B  $u"
-            # Keep only real images; a 404 page is not an asset.
-            case "$type" in image/*) ;; *) rm -f "$out" ;; esac
-          done
-          echo "--- kept:"
-          ls -la docs/home-photo-evidence/google-attribution/ || true
-
       - name: Build this branch against the deployed API
         working-directory: familypilot
         env:
@@ -144,7 +111,7 @@ jobs:
 
       - name: Capture and measure against the locked frame
         working-directory: familypilot
-        run: node scripts/verify-home-against-figma.mjs http://localhost:4173 ../docs/home-photo-evidence
+        run: node scripts/verify-home-against-figma.mjs http://localhost:4173 ../docs/home-visual-regression
 
       - name: Element-by-element diff against the frame
         working-directory: familypilot
@@ -161,20 +128,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: home-photo-evidence
-          path: docs/home-photo-evidence/
+          name: home-visual-regression
+          path: docs/home-visual-regression/
           if-no-files-found: error
-
-      # Pushed to its own branch so the feature branch stays free of CI output, and so the
-      # captures can be reviewed without downloading an artifact.
-      # Always — a failed check is exactly when the captures are worth looking at.
-      - name: Push captures to the evidence branch
-        if: ${{ always() && inputs.push_evidence != 'false' }}
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan "$EVIDENCE_BRANCH"
-          git rm -r --cached . > /dev/null
-          git add -f docs/home-photo-evidence
-          git commit -m "Home captured with real production photography (${GITHUB_SHA::7})"
-          git push -f origin "$EVIDENCE_BRANCH"
