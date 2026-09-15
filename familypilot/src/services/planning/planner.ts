@@ -103,8 +103,17 @@ export function planVenue(facts: MatchableVenueFacts, families: PlanningFamily[]
     const drives = families.map(f => journeys[f.id].outbound);
     const fairnessGap = Math.max(...drives) - Math.min(...drives);
     const unknowns = [...new Set(evaluations.flatMap(e => e!.evaluations.filter(v => v.outcome === 'unknown').map(v => `${v.field}: not confirmed`)))];
+    // Only claim the age range was checked when there was one to check against. Saying otherwise
+    // would assert a verification that did not happen.
+    const anyChildren = families.some(f => f.ages.length > 0);
+    const ageRangeDocumented = facts.minRecommendedAge != null || facts.maxRecommendedAge != null;
+    const checkedReason = !anyChildren
+      ? 'Required facilities checked for every family.'
+      : ageRangeDocumented
+        ? 'Required facilities and age range checked for every family.'
+        : 'Required facilities checked for every family. Recommended ages are not published for this place.';
     return { venueId: facts.placeId, name: facts.name, timings, start, end, fairnessGap,
-      reasons: ['Required facilities and age range checked for every family.', families.length > 1 ? `${fairnessGap} minute difference between outbound journeys.` : 'Fits your selected travel limit.', 'Fits the home routines you entered.'],
+      reasons: [checkedReason, families.length > 1 ? `${fairnessGap} minute difference between outbound journeys.` : 'Fits your selected travel limit.', 'Fits the home routines you entered.'],
       unknowns, score: evaluations.reduce((sum,e) => sum+e!.preferredPoints-e!.preferredUnknowns-e!.preferredUnsuitable*2,0)*10 - fairnessGap - Math.max(...drives)*0.25 - (start-earliest)*0.05 };
   }
   return null;
