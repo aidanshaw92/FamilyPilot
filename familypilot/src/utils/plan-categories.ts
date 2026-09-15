@@ -14,8 +14,9 @@ export const PLAN_CATEGORIES: PlanCategory[] = [
   { id: 'outdoor', label: 'Outdoor' },
   { id: 'soft_play', label: 'Soft play' },
   { id: 'farm', label: 'Farm' },
-  { id: 'museum', label: 'Museum' },
   { id: 'park', label: 'Park' },
+  { id: 'activity', label: 'Activity' },
+  { id: 'museum', label: 'Museum' },
   { id: 'animals', label: 'Animals' },
   { id: 'free', label: 'Free' },
   { id: 'rainy_day', label: 'Rainy day' },
@@ -53,6 +54,9 @@ export function filterByPlanCategory(venues: Venue[], categoryId: string): Venue
       return venues.filter((v) => v.category === 'farm');
     case 'museum':
       return venues.filter((v) => v.category === 'museum');
+    case 'activity':
+      // Somewhere the family does something, rather than somewhere they walk around.
+      return venues.filter((v) => v.category === 'activity' || v.category === 'attraction');
     case 'park':
       return venues.filter((v) => v.category === 'park' || v.category === 'beach');
     case 'animals':

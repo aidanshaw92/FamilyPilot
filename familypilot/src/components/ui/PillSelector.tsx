@@ -53,9 +53,9 @@ export function PillSelector({
       >
         <Text
           variant="bodySmall"
-          color={active ? colors.text.inverse : colors.text.secondary}
+          color={active ? colors.text.inverse : FRAME_INK}
           numberOfLines={1}
-          style={active ? styles.labelActive : styles.label}
+          style={styles.label}
         >
           {option.label}
         </Text>
@@ -84,18 +84,31 @@ export function PillSelector({
   );
 }
 
+/**
+ * From the approved frame "01 — Home" (node "Category pills"): 44pt chips, 20 of padding either
+ * side, 10 between, and an 18pt line box. Compact and secondary — the deck is what carries the
+ * screen, not the rail.
+ */
+const PILL_HEIGHT = 44;
+const PILL_PADDING_X = 20;
+const PILL_GAP = 10;
+const PILL_FONT_SIZE = 14.5;
+const PILL_LINE_HEIGHT = 18;
+/** The near-black the frame uses for ink and for the selected chip. */
+const FRAME_INK = '#141416';
+
 const styles = StyleSheet.create({
   scrollContent: {
-    gap: spacing.sm,
+    gap: PILL_GAP,
     paddingRight: spacing.screenPadding,
   },
   row: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: PILL_GAP,
   },
   pill: {
-    height: 42,
-    paddingHorizontal: spacing.xl,
+    height: PILL_HEIGHT,
+    paddingHorizontal: PILL_PADDING_X,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
@@ -105,19 +118,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
   pillIdle: {
+    // The frame's idle chip is plain white with no outline: secondary, not a bordered control.
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   pillActive: {
-    // Near-black, as in the approved Home frame — not the purple brand primary.
-    backgroundColor: colors.text.primary,
+    backgroundColor: FRAME_INK,
   },
   label: {
     fontFamily: 'Inter_500Medium',
-  },
-  labelActive: {
-    fontFamily: 'Inter_600SemiBold',
+    fontSize: PILL_FONT_SIZE,
+    lineHeight: PILL_LINE_HEIGHT,
   },
   pressed: {
     opacity: 0.85,

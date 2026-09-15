@@ -30,10 +30,15 @@ export function homeGutter(viewportWidth: number): number {
   return viewportWidth >= HEADER_REFERENCE_WIDTH ? SCREEN_PADDING : NARROW_SCREEN_PADDING;
 }
 
-/** typography.heading1, the approved greeting size, and its line-height ratio. */
-export const GREETING_FONT_SIZE = 26;
-const GREETING_LINE_RATIO = 32 / 26;
-export const GREETING_LETTER_SPACING = -0.6;
+/**
+ * The greeting as the frame draws it (node 7:16): Inter Semi Bold at 25.5, not the token
+ * heading1's Extra Bold 26 — that extra weight is most of why the header read heavier than the
+ * design.
+ */
+export const GREETING_FONT_SIZE = 25.5;
+const GREETING_LINE_RATIO = 31 / 25.5;
+export const GREETING_LETTER_SPACING = -0.6375;
+export const GREETING_FONT_FAMILY = 'Inter_600SemiBold';
 
 /** Below this the heading stops reading as the page's primary voice, so we wrap instead. */
 export const GREETING_MIN_FONT_SIZE = 22;
@@ -55,7 +60,7 @@ const FILTER_CLEARANCE = 8; // spacing.sm between the placeholder and the disc
 const FIELD_BORDERS = 2;
 const SEARCH_ICON = 22;
 const SEARCH_ICON_GAP = 12; // spacing.md
-export const SEARCH_FONT_SIZE = 15;
+export const SEARCH_FONT_SIZE = 15.5;
 
 /** Placeholder copy, longest first. The first one that fits is used. */
 export const SEARCH_PLACEHOLDERS = [
@@ -106,7 +111,7 @@ const DEFAULT_ADVANCE = 0.55;
  * against the browser's own measurement of the strings this screen actually renders, and rounded
  * up, so the estimate errs towards judging text too wide rather than too narrow.
  */
-const WEIGHT_FACTOR = { regular: 1.025, extraBold: 1.115 } as const;
+const WEIGHT_FACTOR = { regular: 1.025, semiBold: 1.09, extraBold: 1.115 } as const;
 export type TextWeight = keyof typeof WEIGHT_FACTOR;
 
 /**
@@ -154,7 +159,7 @@ export function homeHeaderLayout(viewportWidth: number, greeting: string): HomeH
   // Closing the gap costs the composition almost nothing, so spend that first at each size and
   // only step the type down once the tightest gap still will not do.
   for (let fontSize = GREETING_FONT_SIZE; fontSize >= GREETING_MIN_FONT_SIZE; fontSize -= 1) {
-    const width = estimateTextWidth(greeting, fontSize, 'extraBold', GREETING_LETTER_SPACING);
+    const width = estimateTextWidth(greeting, fontSize, 'semiBold', GREETING_LETTER_SPACING);
     for (const gap of [HEADER_GAP, HEADER_MIN_GAP]) {
       if (width + FIT_MARGIN <= row - gap) {
         return {

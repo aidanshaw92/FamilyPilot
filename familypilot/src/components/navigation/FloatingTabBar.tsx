@@ -6,7 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radius, shadows } from '@/src/design-system/tokens';
+import { colors, radius } from '@/src/design-system/tokens';
 import {
   ACTIVE_INDICATOR,
   floatingTabBarLayout,
@@ -102,8 +102,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: PILL_PADDING_X,
     paddingVertical: PILL_PADDING_Y,
     borderRadius: radius.full,
-    backgroundColor: colors.text.primary,
-    ...shadows.card,
+    // Frame node 9:2 — a hair off pure black, with its own lift.
+    backgroundColor: '#171617',
+    shadowColor: 'rgba(15, 15, 20, 1)',
+    shadowOpacity: 0.22,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 24,
+    elevation: 12,
   },
   tab: {
     width: TAB_SIZE,

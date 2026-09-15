@@ -22,7 +22,7 @@ import {
 const GREETING = 'Good afternoon, Aidan';
 
 function greetingWidth(text: string, fontSize: number) {
-  return estimateTextWidth(text, fontSize, 'extraBold', GREETING_LETTER_SPACING);
+  return estimateTextWidth(text, fontSize, 'semiBold', GREETING_LETTER_SPACING);
 }
 
 /** Header space left for the greeting once the gutters, avatar and gap are taken out. */
@@ -36,7 +36,7 @@ describe('home header layout', () => {
     expect(layout).toEqual({
       gap: HEADER_GAP,
       fontSize: GREETING_FONT_SIZE,
-      lineHeight: 32,
+      lineHeight: 31,
       maxLines: 1,
     });
     expect(searchPlaceholder(393)).toBe(SEARCH_PLACEHOLDERS[0]);
@@ -119,16 +119,17 @@ describe('home header layout', () => {
   });
 
   it('estimates a shade wide of what the browser actually renders', () => {
-    // Measured in Chromium against the real Inter faces on the web export: the greeting at 26pt
-    // ExtraBold with -0.6 tracking comes out at 277.38px, and the placeholder at 15pt Regular at
-    // 198.17px. The estimate must sit just above each, never below, or text will overflow.
+    // Measured in Chromium against the real Inter faces on the web export, at the frame's own
+    // type: the greeting at 25.5pt Semi Bold with -0.6375 tracking comes out at 264.67px, and the
+    // placeholder at 15.5pt Regular at 204.78px. The estimate must sit just above each, never
+    // below, or text will overflow.
     const greeting = greetingWidth(GREETING, GREETING_FONT_SIZE);
-    expect(greeting).toBeGreaterThanOrEqual(277.38);
-    expect(greeting).toBeLessThan(277.38 * 1.04);
+    expect(greeting).toBeGreaterThanOrEqual(264.67);
+    expect(greeting).toBeLessThan(264.67 * 1.04);
 
     const search = estimateTextWidth(SEARCH_PLACEHOLDERS[0], SEARCH_FONT_SIZE);
-    expect(search).toBeGreaterThanOrEqual(198.17);
-    expect(search).toBeLessThan(198.17 * 1.04);
+    expect(search).toBeGreaterThanOrEqual(204.78);
+    expect(search).toBeLessThan(204.78 * 1.04);
   });
 
   it('measures narrow and wide glyphs differently', () => {

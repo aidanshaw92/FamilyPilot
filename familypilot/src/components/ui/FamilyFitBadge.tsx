@@ -45,7 +45,7 @@ export function FamilyFitBadge({
       {!unreviewed ? (
         <Ionicons
           name="star"
-          size={13}
+          size={14}
           color={onImage ? colors.text.inverse : colors.text.primary}
         />
       ) : null}
@@ -85,9 +85,11 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: spacing.md,
-    height: 30,
+    // Frame node 8:13: 32 tall, 12 in on the left, 14 on the right, 6 between star and label.
+    gap: 6,
+    paddingLeft: spacing.md,
+    paddingRight: 14,
+    height: 32,
     borderRadius: radius.full,
     alignSelf: 'flex-start',
   },
@@ -97,10 +99,11 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   onImage: {
-    backgroundColor: colors.glass.dark,
+    backgroundColor: 'rgba(13, 13, 15, 0.45)',
   },
   label: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 12.5,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    lineHeight: 17,
   },
 });

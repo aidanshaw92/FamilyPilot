@@ -42,7 +42,7 @@ export function SearchBar({
         disabled={!readOnly}
         style={[styles.field, onFilterPress ? styles.fieldWithFilter : null]}
       >
-        <Ionicons name="search" size={SEARCH_ICON} color={colors.text.tertiary} />
+        <Ionicons name="search" size={SEARCH_ICON} color={PLACEHOLDER_INK} />
         {readOnly ? (
           <View style={styles.readOnlyLabel} pointerEvents="none">
             <PlaceholderText>{value || placeholder}</PlaceholderText>
@@ -51,7 +51,7 @@ export function SearchBar({
           <TextInput
             accessibilityLabel={placeholder}
             placeholder={placeholder}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={PLACEHOLDER_INK}
             value={value}
             onChangeText={onChangeText}
             onSubmitEditing={onSubmit}
@@ -95,6 +95,8 @@ function PlaceholderText({ children }: { children: string }) {
  * 22px in, the placeholder starting at 56, and a 46px filter disc inset 5 from the right edge.
  */
 const FIELD_HEIGHT = 56;
+const PLACEHOLDER_FONT_SIZE = 15.5;
+const PLACEHOLDER_INK = '#8C8C91';
 const SEARCH_ICON = 22;
 const FILTER_SIZE = 46;
 const FILTER_INSET = 5;
@@ -112,8 +114,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 21,
     borderRadius: radius.full,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    // The frame carries a soft drop shadow here rather than an outline.
+    shadowColor: 'rgba(15, 15, 20, 1)',
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 9,
+    elevation: 2,
   },
   fieldWithFilter: {
     // Clear the disc so the placeholder never runs underneath it.
@@ -122,7 +128,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontFamily: fontFamily.regular,
-    fontSize: 15,
+    fontSize: PLACEHOLDER_FONT_SIZE,
     color: colors.text.primary,
     // Web needs the outline removed explicitly; RN ignores it.
     outlineStyle: 'none',
@@ -131,7 +137,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   readOnlyInput: {
-    color: colors.text.tertiary,
+    color: PLACEHOLDER_INK,
   },
   filter: {
     position: 'absolute',

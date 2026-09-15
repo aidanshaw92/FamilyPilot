@@ -13,7 +13,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RecommendationDeck } from '@/src/components/home/RecommendationDeck';
 import { deckMetrics } from '@/src/utils/home-deck-geometry';
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
-import { homeGutter, homeHeaderLayout, searchPlaceholder } from '@/src/utils/home-header-layout';
+import {
+  GREETING_FONT_FAMILY,
+  homeGutter,
+  homeHeaderLayout,
+  searchPlaceholder,
+} from '@/src/utils/home-header-layout';
 import {
   EmptyState,
   ErrorState,
@@ -107,7 +112,7 @@ export default function HomeScreen() {
               >
                 {greetingText}
               </Text>
-              <Text variant="bodySmall" color={colors.text.secondary} style={styles.greetingSub}>
+              <Text variant="bodySmall" color="#6E6E73" style={styles.greetingSub}>
                 What shall we do today?
               </Text>
             </View>
@@ -181,6 +186,9 @@ export default function HomeScreen() {
   );
 }
 
+/** The near-black the approved frame uses for ink and for the selected chip. */
+const FRAME_INK = '#141416';
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -195,17 +203,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   greetingLine: {
-    letterSpacing: -0.6,
+    fontFamily: GREETING_FONT_FAMILY,
+    letterSpacing: -0.6375,
+    color: FRAME_INK,
   },
   greetingSub: {
-    // Frame: greeting ends at y=89, subtitle starts at 94.
+    // Frame: greeting ends at y=89, subtitle starts at 94 and is 17 tall.
     marginTop: 4,
+    lineHeight: 17,
   },
   avatar: {
     width: 46,
     height: 46,
     borderRadius: radius.full,
-    backgroundColor: colors.text.primary,
+    backgroundColor: FRAME_INK,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -217,6 +228,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginTop: 16,
     marginBottom: 9,
+    // Frame node 7:30: Semi Bold 22 with a 27 line box, which is what puts the pills at y=234.
+    fontSize: 22,
+    lineHeight: 27,
+    letterSpacing: -0.44,
+    color: FRAME_INK,
   },
   deckSlot: {
     marginTop: 29,

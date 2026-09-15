@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 
@@ -11,7 +10,7 @@ import { SaveButton } from '@/src/components/shared/SaveButton';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { photoCredit } from '@/src/services/places/place-photo-url';
 import { Venue } from '@/src/types';
-import { getCardSignals } from '@/src/utils/family-signals';
+import { getTravelSignal } from '@/src/utils/family-signals';
 import { formatCategory } from '@/src/utils/format-category';
 
 interface PlaceShowcaseCardProps {
@@ -40,7 +39,6 @@ export function PlaceShowcaseCard({
   style,
   isSwiping,
 }: PlaceShowcaseCardProps) {
-  const signals = getCardSignals(venue, 3);
   const credit = photoCredit(venue.imageUrl);
 
   return (
@@ -63,8 +61,8 @@ export function PlaceShowcaseCard({
         pointerEvents="none"
       />
       <LinearGradient
-        colors={[colors.gradient.heroStart, colors.gradient.heroMid, colors.gradient.heroEnd]}
-        locations={[0.32, 0.6, 1]}
+        colors={SCRIM_COLORS}
+        locations={SCRIM_STOPS}
         style={styles.fill}
         pointerEvents="none"
       />
@@ -82,7 +80,7 @@ export function PlaceShowcaseCard({
           <SaveButton
             venueId={venue.id}
             venue={venue}
-            size={20}
+            size={22}
             color={colors.text.inverse}
             filledColor={colors.coral}
             isSwiping={isSwiping}
@@ -91,30 +89,28 @@ export function PlaceShowcaseCard({
       </View>
 
       <View style={styles.footer}>
-        <Text variant="caption" color="rgba(255,255,255,0.82)" style={styles.eyebrow}>
+        <Text variant="caption" color="rgba(255,255,255,0.82)" style={[styles.footerText, styles.eyebrow]}>
           {formatCategory(venue.category)}
         </Text>
-        <Text variant="heading1" color={colors.text.inverse} numberOfLines={2} style={styles.title}>
+        <Text
+          variant="heading1"
+          color={colors.text.inverse}
+          numberOfLines={2}
+          style={[styles.footerText, styles.title]}
+        >
           {venue.name}
         </Text>
 
-        <View style={styles.metaRow}>
+        {/* Frame: one meta row — the Family Fit badge with travel time beside it, not below. */}
+        <View style={[styles.footerText, styles.metaRow]}>
           <FamilyFitBadge
             score={venue.familyScore.score}
             enrichmentStatus={venue.enrichmentStatus}
             tone="onImage"
           />
-        </View>
-
-        <View style={styles.signals}>
-          {signals.map((signal) => (
-            <View key={signal.key} style={styles.signal}>
-              <Ionicons name={signal.icon} size={13} color="rgba(255,255,255,0.9)" />
-              <Text variant="caption" color="rgba(255,255,255,0.9)" numberOfLines={1}>
-                {signal.label}
-              </Text>
-            </View>
-          ))}
+          <Text variant="body" color="rgba(255,255,255,0.9)" numberOfLines={1} style={styles.distance}>
+            {getTravelSignal(venue.driveMinutes).label}
+          </Text>
         </View>
 
         <View style={styles.cta} pointerEvents="none">
@@ -125,8 +121,9 @@ export function PlaceShowcaseCard({
             icon="arrow-forward"
             accessibilityLabel={`See more about ${venue.name}`}
             tone="light"
-            size={40}
-            iconSize={18}
+            size={CTA_DISC}
+            iconSize={20}
+            style={styles.ctaDisc}
           />
         </View>
       </View>
@@ -146,12 +143,21 @@ export function PlaceShowcaseCardRear({
   height,
   style,
 }: Pick<PlaceShowcaseCardProps, 'venue' | 'width' | 'height' | 'style'>) {
+  // The frame scales a rear card whole, corner radius included: the next card's 21.327 is the
+  // active card's 28 at its own 0.7617.
+  const borderRadius = radius['3xl'] * (width / ACTIVE_CARD_WIDTH);
+
   return (
     <View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       pointerEvents="none"
-      style={[styles.card, { width, height: height ?? Math.round(width * 1.28) }, style]}
+      style={[
+        styles.card,
+        styles.rearCard,
+        { width, height: height ?? Math.round(width * 1.28), borderRadius },
+        style,
+      ]}
     >
       <VenueImage
         uri={venue.imageUrl}
@@ -162,25 +168,65 @@ export function PlaceShowcaseCardRear({
         showCredit={false}
         pointerEvents="none"
       />
-      <View style={styles.rearScrim} pointerEvents="none" />
+      <LinearGradient
+        colors={SCRIM_COLORS}
+        locations={SCRIM_STOPS}
+        style={[styles.fill, styles.rearScrim]}
+        pointerEvents="none"
+      />
     </View>
   );
 }
+
+/** Frame: the CTA runs to 14 from each card edge and carries a 46px arrow disc inset 6. */
+const CTA_INSET = 14;
+const CTA_DISC = 46;
+
+/**
+ * The frame's scrim (node 8:6) is a separate box covering the card's bottom 300 of 428, filled
+ * with a four-stop ramp. Expressed here across the whole card, so one gradient does the job:
+ * its first stop sits where the frame's box begins.
+ */
+const SCRIM_TOP = 128 / 428;
+const SCRIM_COLORS = [
+  'rgba(8, 8, 10, 0)',
+  'rgba(8, 8, 10, 0.26)',
+  'rgba(8, 8, 10, 0.66)',
+  'rgba(8, 8, 10, 0.88)',
+] as const;
+const SCRIM_STOPS: readonly [number, number, ...number[]] = [
+  SCRIM_TOP,
+  SCRIM_TOP + (1 - SCRIM_TOP) * 0.4,
+  SCRIM_TOP + (1 - SCRIM_TOP) * 0.75,
+  1,
+];
+
+/** The neutral the frame shows behind a photograph while it loads. */
+const CARD_BACKDROP = '#B8BBBE';
+
+/** The active card's width on the frame's artboard, used to scale a rear card's radius. */
+const ACTIVE_CARD_WIDTH = 312;
 
 const styles = StyleSheet.create({
   card: {
     borderRadius: radius['3xl'],
     overflow: 'hidden',
-    backgroundColor: colors.primary[100],
+    backgroundColor: CARD_BACKDROP,
+    shadowColor: 'rgba(15, 15, 20, 1)',
+    shadowOpacity: 0.14,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 20,
+    elevation: 10,
   },
+  // The frame runs the same ramp behind a rear card, at a third of the strength.
   rearScrim: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: colors.gradient.heroEnd,
     opacity: 0.35,
+  },
+  rearCard: {
+    shadowOpacity: 0.07,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 4,
   },
   fill: {
     position: 'absolute',
@@ -205,51 +251,68 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: radius.full,
-    backgroundColor: colors.glass.dark,
+    backgroundColor: 'rgba(20, 20, 23, 0.32)',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.65)',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
+  // The footer's rhythm is the frame's own, measured card-local on node 8:4 (312 x 428):
+  // eyebrow y=244 h=16, title y=264 h=31, meta y=306 h=32, CTA y=356 h=58, 14 to the card edge.
   footer: {
     position: 'absolute',
-    left: spacing.xl,
-    right: spacing.xl,
-    bottom: spacing.lg,
+    left: CTA_INSET,
+    right: CTA_INSET,
+    bottom: CTA_INSET,
+  },
+  // Text sits at x=20 while the CTA runs wider, to x=14.
+  footerText: {
+    marginHorizontal: spacing.xl - CTA_INSET,
   },
   eyebrow: {
-    letterSpacing: 0.6,
+    letterSpacing: 1.04,
     textTransform: 'uppercase',
-    fontFamily: 'Inter_600SemiBold',
-    marginBottom: 2,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    lineHeight: 16,
+    marginBottom: 4,
   },
   title: {
-    marginBottom: spacing.sm,
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 26,
+    lineHeight: 31,
+    letterSpacing: -0.52,
+    marginBottom: 11,
   },
   metaRow: {
     flexDirection: 'row',
-    marginBottom: spacing.sm,
-  },
-  signals: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  signal: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: spacing.md,
+    height: 32,
+    marginBottom: 18,
+  },
+  distance: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    lineHeight: 17,
   },
   cta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    height: 56,
-    paddingLeft: spacing.xl,
-    paddingRight: spacing.sm,
+    justifyContent: 'center',
+    height: 58,
     borderRadius: radius.full,
-    backgroundColor: colors.glass.darker,
+    backgroundColor: 'rgba(18, 18, 20, 0.72)',
   },
   ctaLabel: {
-    letterSpacing: -0.2,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 16.5,
+    lineHeight: 20,
+    letterSpacing: 0,
+    textAlign: 'center',
+  },
+  ctaDisc: {
+    position: 'absolute',
+    right: 6,
+    top: (58 - CTA_DISC) / 2,
   },
 });
