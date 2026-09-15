@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { RecommendationDeck } from '@/src/components/home/RecommendationDeck';
 import { deckMetrics } from '@/src/utils/home-deck-geometry';
+import { homeHeaderLayout, searchPlaceholder } from '@/src/utils/home-header-layout';
 import {
   EmptyState,
   ErrorState,
@@ -54,6 +55,11 @@ export default function HomeScreen() {
 
   const { deckHeight } = deckMetrics(width);
 
+  // The approved header is drawn at 393pt. Narrower phones get the largest treatment that still
+  // fits the greeting and the placeholder whole, rather than a clipped heading.
+  const greetingText = `${getTimeGreeting()}, ${firstName}`;
+  const header = homeHeaderLayout(width, greetingText);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
@@ -79,10 +85,17 @@ export default function HomeScreen() {
         }
       >
         <View style={styles.gutter}>
-          <View style={styles.header}>
+          <View style={[styles.header, { gap: header.gap }]}>
             <View style={styles.greeting}>
-              <Text variant="heading1" numberOfLines={1} style={styles.greetingLine}>
-                {getTimeGreeting()}, {firstName}
+              <Text
+                variant="heading1"
+                numberOfLines={header.maxLines}
+                style={[
+                  styles.greetingLine,
+                  { fontSize: header.fontSize, lineHeight: header.lineHeight },
+                ]}
+              >
+                {greetingText}
               </Text>
               <Text variant="bodySmall" color={colors.text.secondary} style={styles.greetingSub}>
                 What shall we do today?
@@ -101,7 +114,7 @@ export default function HomeScreen() {
           </View>
 
           <SearchBar
-            placeholder="Search places and activities"
+            placeholder={searchPlaceholder(width)}
             onPress={() => router.push('/(tabs)/explore' as never)}
             onFilterPress={() => setFilterSheetOpen(true)}
             style={styles.search}
@@ -172,7 +185,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
   },
   greeting: {
     flex: 1,

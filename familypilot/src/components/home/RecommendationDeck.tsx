@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityActionEvent, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -29,6 +29,13 @@ import { Venue } from '@/src/types';
 const COMMIT_RATIO = 0.25;
 const COMMIT_VELOCITY = 500;
 
+/**
+ * A pointer that has travelled this far is swiping the deck, not tapping the card. The card and
+ * its save control are ordinary pressables, and neither knows a drag is in progress — without
+ * this, releasing a short drag lands as a tap and opens the venue.
+ */
+const PRESS_SLOP = 6;
+
 interface RecommendationDeckProps {
   venues: Venue[];
   viewportWidth: number;
@@ -52,6 +59,15 @@ export function RecommendationDeck({
   const [index, setIndex] = useState(0);
   const reducedMotion = useReducedMotion();
   const drag = useSharedValue(0);
+
+  // Mirrored on both threads: the shared value keeps the worklet from crossing over on every
+  // frame, the ref is what the press handlers can read synchronously.
+  const dragged = useSharedValue(false);
+  const draggedRef = useRef(false);
+  const setDragged = useCallback((value: boolean) => {
+    draggedRef.current = value;
+  }, []);
+  const isSwiping = useCallback(() => draggedRef.current, []);
 
   const { scale, activeWidth, activeHeight, deckHeight } = deckMetrics(viewportWidth);
 
@@ -90,8 +106,16 @@ export function RecommendationDeck({
   const pan = Gesture.Pan()
     .activeOffsetX([-12, 12])
     .failOffsetY([-16, 16])
+    .onBegin(() => {
+      dragged.value = false;
+      runOnJS(setDragged)(false);
+    })
     .onUpdate((event) => {
       drag.value = event.translationX;
+      if (!dragged.value && Math.abs(event.translationX) > PRESS_SLOP) {
+        dragged.value = true;
+        runOnJS(setDragged)(true);
+      }
     })
     .onEnd((event) => {
       const threshold = activeWidth * COMMIT_RATIO;
@@ -183,6 +207,7 @@ export function RecommendationDeck({
             width={activeWidth}
             height={activeHeight}
             onPress={() => onPressVenue(active)}
+            isSwiping={isSwiping}
           />
         </Animated.View>
       </View>

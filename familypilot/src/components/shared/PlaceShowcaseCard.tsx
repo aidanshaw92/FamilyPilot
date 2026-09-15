@@ -19,6 +19,11 @@ interface PlaceShowcaseCardProps {
   width: number;
   height?: number;
   style?: ViewStyle;
+  /**
+   * Set by a container that also drags this card, such as the Home deck. Asked at the moment of
+   * the press, so a swipe that ends inside the card is not mistaken for a tap.
+   */
+  isSwiping?: () => boolean;
 }
 
 /**
@@ -26,12 +31,22 @@ interface PlaceShowcaseCardProps {
  * stays readable, and only the few facts a parent scans for. Everything else waits on the
  * detail screen.
  */
-export function PlaceShowcaseCard({ venue, onPress, width, height, style }: PlaceShowcaseCardProps) {
+export function PlaceShowcaseCard({
+  venue,
+  onPress,
+  width,
+  height,
+  style,
+  isSwiping,
+}: PlaceShowcaseCardProps) {
   const signals = getCardSignals(venue, 3);
 
   return (
     <PressableScale
-      onPress={onPress}
+      onPress={() => {
+        if (isSwiping?.()) return;
+        onPress();
+      }}
       accessibilityRole="button"
       accessibilityLabel={`${venue.name}, see more`}
       style={[styles.card, { width, height: height ?? Math.round(width * 1.28) }, style]}
@@ -58,6 +73,7 @@ export function PlaceShowcaseCard({ venue, onPress, width, height, style }: Plac
             size={20}
             color={colors.text.inverse}
             filledColor={colors.coral}
+            isSwiping={isSwiping}
           />
         </View>
       </View>
