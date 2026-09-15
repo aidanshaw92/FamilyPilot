@@ -216,12 +216,15 @@ export function matchVenueToDayRequest(
     eligible = false;
   }
 
-  if (request.constraints.childAgeFit) {
+  // Honours the declared strength like every sibling constraint below. Callers that need an
+  // unrecorded age range to fail closed keep declaring it required; the day planner declares it
+  // preferred because it enforces the range itself before calling here.
+  if (request.constraints.childAgeFit && request.constraints.childAgeFit.strength !== 'context') {
     if (
       !applyConstraint(
         evaluations,
         'childAgeFit',
-        'required',
+        request.constraints.childAgeFit.strength,
         evaluateChildAgeFit(facts, request.childAges),
         tally,
       )

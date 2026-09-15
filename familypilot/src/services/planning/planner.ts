@@ -25,9 +25,21 @@ export function clockLabel(minutes: number): string {
   const day = Math.floor(minutes / 1440); const m = ((Math.round(minutes) % 1440) + 1440) % 1440;
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}${day > 0 ? ' next day' : ''}`;
 }
+/** True only when a documented range explicitly excludes one of these children.
+ * An absent bound is missing evidence, not evidence of unsuitability, so it never excludes;
+ * planVenue owns this decision and the matcher records the gap as an unknown instead. */
+export function ageRangeExcludes(facts: Pick<MatchableVenueFacts, 'minRecommendedAge' | 'maxRecommendedAge'>, ages: number[]): boolean {
+  const { minRecommendedAge: min, maxRecommendedAge: max } = facts;
+  if (min == null && max == null) return false;
+  return ages.some((age) => (min != null && age < min) || (max != null && age > max));
+}
+
 export function familyRequest(family: PlanningFamily, environment: PlanningOptions['environment']): DayRequest {
   const constraints: DayRequest['constraints'] = {
-    childAgeFit: { strength: 'required', value: 'in_range' },
+    // Age suitability is enforced by ageRangeExcludes before the matcher runs. Kept here as
+    // preferred so an unrecorded range still surfaces in plan.unknowns rather than failing
+    // the whole plan closed — required + unknown is rejected by applyConstraint.
+    childAgeFit: { strength: 'preferred', value: 'in_range' },
     journey: { strength: 'required', value: { maxMinutes: family.maxDriveMinutes } },
     environment: { strength: 'required', value: environment },
     budget: { strength: 'preferred', value: 'within_profile' },
@@ -56,8 +68,9 @@ export function planVenue(facts: MatchableVenueFacts, families: PlanningFamily[]
   const evaluations = families.map((family) => {
     const journey = journeys[family.id];
     if (!journey || ![journey.outbound, journey.inbound].every(n => Number.isFinite(n) && n >= 0 && n <= family.maxDriveMinutes)) return null;
-    // Every child must fall within the explicitly documented range; overlap is insufficient.
-    if (family.ages.length && (facts.minRecommendedAge == null || facts.maxRecommendedAge == null || family.ages.some(age => age < facts.minRecommendedAge! || age > facts.maxRecommendedAge!))) return null;
+    // Where a range is documented, every child must fall within it; overlap is insufficient.
+    // Where no range is documented, there is nothing to reject on — see ageRangeExcludes.
+    if (family.ages.length && ageRangeExcludes(facts, family.ages)) return null;
     const match = matchVenueToDayRequest({ ...facts, driveMinutes: journey.outbound }, familyRequest(family, options.environment));
     return match.eligible ? match : null;
   });
