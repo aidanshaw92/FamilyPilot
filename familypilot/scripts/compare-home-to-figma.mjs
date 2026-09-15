@@ -9,6 +9,18 @@
  * Usage: node scripts/compare-home-to-figma.mjs [baseUrl]
  */
 import { chromium } from 'playwright';
+import { existsSync } from 'node:fs';
+
+/**
+ * This sandbox ships Chromium at a fixed path and blocks the download Playwright would
+ * otherwise do; a CI runner or a developer machine has its own. Use ours when it is there and
+ * let Playwright resolve its own otherwise, so the same script runs in both places.
+ */
+const SANDBOX_CHROMIUM = '/opt/pw-browsers/chromium';
+const launchOptions = {
+  headless: true,
+  ...(existsSync(SANDBOX_CHROMIUM) ? { executablePath: SANDBOX_CHROMIUM } : {}),
+};
 
 const BASE = process.argv[2] ?? 'http://localhost:4173';
 const IPHONE_INSETS = { top: 59, bottom: 34 };
@@ -56,10 +68,7 @@ const FAMILY_STATE = {
   version: 0,
 };
 
-const browser = await chromium.launch({
-  headless: true,
-  executablePath: '/opt/pw-browsers/chromium',
-});
+const browser = await chromium.launch(launchOptions);
 const context = await browser.newContext({ viewport: { width: 393, height: 852 } });
 const page = await context.newPage();
 // The frame is drawn in the evening, so the greeting string matches.

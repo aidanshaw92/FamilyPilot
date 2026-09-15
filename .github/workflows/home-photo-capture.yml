@@ -1,0 +1,145 @@
+name: Home photo capture
+
+# Captures the Home screen with real venue photography.
+#
+# The agent sandbox this branch was built in cannot reach googleusercontent.com, so every capture
+# taken there falls back to the category gradient. A GitHub runner has ordinary network access, so
+# it can do what the sandbox cannot: build THIS branch's web bundle, point it at the deployed
+# places API, and let the browser follow /api/places/photo all the way to the signed Google URL.
+#
+# Deliberately not a screenshot of the deployed site: production runs main, and the point is to
+# review this branch's Home against the locked frame, with production's data behind it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: Base URL of the deployed places API
+        required: false
+        default: https://family-pilot-seven.vercel.app/api/places
+      push_evidence:
+        description: Commit the captures to the evidence branch
+        required: false
+        default: 'true'
+
+permissions:
+  contents: write
+
+env:
+  EVIDENCE_BRANCH: ci/home-photo-evidence
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            familypilot/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install app dependencies
+        working-directory: familypilot
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: familypilot
+        run: npx playwright install --with-deps chromium
+
+      # Fail early and legibly if the deployed API is unreachable or serving mock data — without
+      # real rows carrying photo references there is nothing to photograph.
+      - name: Check the deployed places API
+        id: api
+        env:
+          API_BASE: ${{ inputs.api_base }}
+        run: |
+          set -o pipefail
+          url="$API_BASE/search?lat=51.5074&lng=-0.1278&radiusKm=40&scope=london&intent=explore"
+          echo "GET $url"
+          code=$(curl -sS -o /tmp/search.json -w '%{http_code}' --max-time 60 "$url") || true
+          echo "status: $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::places API returned $code"
+            head -c 400 /tmp/search.json || true
+            exit 1
+          fi
+          node -e '
+            const d = JSON.parse(require("fs").readFileSync("/tmp/search.json", "utf8"));
+            const withPhotos = (d.places || []).filter((p) => (p.photos || []).length > 0);
+            console.log("provider:", d.provider, "places:", (d.places || []).length, "with photos:", withPhotos.length);
+            if (d.provider === "mock") { console.log("::error::API is serving mock data"); process.exit(1); }
+            if (withPhotos.length === 0) { console.log("::error::no place carries a photo reference"); process.exit(1); }
+            const sample = withPhotos[0];
+            console.log("sample venue:", sample.name, "|", sample.familypilotId);
+            console.log("sample photo path:", sample.photos[0]);
+          '
+          # Follow one photo the whole way, so the log records that the proxy really resolves.
+          first=$(node -e '
+            const d = JSON.parse(require("fs").readFileSync("/tmp/search.json", "utf8"));
+            const p = (d.places || []).find((x) => (x.photos || []).length > 0);
+            process.stdout.write(p.photos[0]);
+          ')
+          origin="${API_BASE%/api/places}"
+          echo "resolving $origin$first"
+          curl -sS -o /dev/null -w 'photo: %{http_code} -> %{url_effective}\n' -L --max-time 60 "$origin$first"
+
+      - name: Build this branch against the deployed API
+        working-directory: familypilot
+        env:
+          # The client reads this for /api/places/* and derives the photo origin from it, so a
+          # locally served bundle fetches production data and production photographs.
+          EXPO_PUBLIC_PLACES_API_URL: ${{ inputs.api_base }}
+        run: npx expo export --platform web
+
+      - name: Serve the bundle
+        working-directory: familypilot
+        run: |
+          npx serve dist -l 4173 --no-clipboard &
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://localhost:4173/ && break
+            sleep 2
+          done
+          curl -sf -o /dev/null http://localhost:4173/ || { echo "::error::static server never came up"; exit 1; }
+
+      - name: Capture and measure against the locked frame
+        working-directory: familypilot
+        run: node scripts/verify-home-against-figma.mjs http://localhost:4173 ../docs/home-photo-evidence
+
+      - name: Element-by-element diff against the frame
+        working-directory: familypilot
+        run: node scripts/compare-home-to-figma.mjs http://localhost:4173
+
+      - name: Deck gesture checks
+        working-directory: familypilot
+        run: node scripts/verify-deck-gesture.mjs http://localhost:4173
+
+      - name: Report what actually loaded
+        working-directory: familypilot
+        run: node scripts/report-photo-evidence.mjs http://localhost:4173
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: home-photo-evidence
+          path: docs/home-photo-evidence/
+          if-no-files-found: error
+
+      # Pushed to its own branch so the feature branch stays free of CI output, and so the
+      # captures can be reviewed without downloading an artifact.
+      - name: Push captures to the evidence branch
+        if: ${{ inputs.push_evidence == 'true' }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan "$EVIDENCE_BRANCH"
+          git rm -r --cached . > /dev/null
+          git add -f docs/home-photo-evidence
+          git commit -m "Home captured with real production photography (${GITHUB_SHA::7})"
+          git push -f origin "$EVIDENCE_BRANCH"

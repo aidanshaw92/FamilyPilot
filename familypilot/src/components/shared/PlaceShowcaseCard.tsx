@@ -70,7 +70,7 @@ export function PlaceShowcaseCard({
       {/* Attribution sits top-left, over open photography. Drawn across the foot of the image it
           would run through the card's own footer and the CTA. */}
       {credit ? (
-        <Text variant="caption" color="rgba(255,255,255,0.72)" numberOfLines={1} style={styles.credit}>
+        <Text variant="caption" color="rgba(255,255,255,0.95)" numberOfLines={1} style={styles.credit}>
           {credit} · Google
         </Text>
       ) : null}
@@ -246,6 +246,12 @@ const styles = StyleSheet.create({
     left: spacing.xl,
     // Stop well clear of the save control.
     maxWidth: '55%',
+    // Google requires the photographer's name to be clearly visible and never obscured, and a
+    // photograph can be any tone behind it. A shadow carries that without adding a box to the
+    // approved composition.
+    textShadowColor: 'rgba(8, 8, 10, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   saveGlass: {
     width: 42,

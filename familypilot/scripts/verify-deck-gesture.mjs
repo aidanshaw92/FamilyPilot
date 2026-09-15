@@ -11,6 +11,18 @@
  * Usage: node scripts/verify-deck-gesture.mjs [baseUrl]
  */
 import { chromium } from 'playwright';
+import { existsSync } from 'node:fs';
+
+/**
+ * This sandbox ships Chromium at a fixed path and blocks the download Playwright would
+ * otherwise do; a CI runner or a developer machine has its own. Use ours when it is there and
+ * let Playwright resolve its own otherwise, so the same script runs in both places.
+ */
+const SANDBOX_CHROMIUM = '/opt/pw-browsers/chromium';
+const launchOptions = {
+  headless: true,
+  ...(existsSync(SANDBOX_CHROMIUM) ? { executablePath: SANDBOX_CHROMIUM } : {}),
+};
 
 const BASE = process.argv[2] ?? 'http://localhost:4173';
 
@@ -50,10 +62,7 @@ function check(name, passed, detail) {
   console.log(`${passed ? 'PASS' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`);
 }
 
-const browser = await chromium.launch({
-  headless: true,
-  executablePath: '/opt/pw-browsers/chromium',
-});
+const browser = await chromium.launch(launchOptions);
 const context = await browser.newContext({ viewport: { width: 393, height: 900 } });
 const page = await context.newPage();
 await page.addInitScript((seed) => {

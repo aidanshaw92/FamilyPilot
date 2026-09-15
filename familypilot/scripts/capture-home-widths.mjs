@@ -6,8 +6,19 @@
  * Usage: node scripts/capture-home-widths.mjs [baseUrl] [outDir]
  */
 import { chromium } from 'playwright';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+
+/**
+ * This sandbox ships Chromium at a fixed path and blocks the download Playwright would
+ * otherwise do; a CI runner or a developer machine has its own. Use ours when it is there and
+ * let Playwright resolve its own otherwise, so the same script runs in both places.
+ */
+const SANDBOX_CHROMIUM = '/opt/pw-browsers/chromium';
+const launchOptions = {
+  headless: true,
+  ...(existsSync(SANDBOX_CHROMIUM) ? { executablePath: SANDBOX_CHROMIUM } : {}),
+};
 
 const BASE = process.argv[2] ?? 'http://localhost:4173';
 const OUT = process.argv[3] ?? join(process.cwd(), '..', 'docs', 'home-widths');
@@ -44,10 +55,7 @@ const FAMILY_STATE = {
 
 mkdirSync(OUT, { recursive: true });
 
-const browser = await chromium.launch({
-  headless: true,
-  executablePath: '/opt/pw-browsers/chromium',
-});
+const browser = await chromium.launch(launchOptions);
 
 for (const width of WIDTHS) {
   const context = await browser.newContext({
