@@ -1,16 +1,20 @@
 import { ImageSourcePropType } from 'react-native';
 
 /**
- * The official Google attribution asset for Places content, exactly as Google supplies it:
- * powered_by_google_on_white.png, 59 x 18, from
- * storage.googleapis.com/geo-devrel-public-buckets. Google's terms require the supplied file —
- * the mark may be scaled but never redrawn, recoloured or altered — so it is committed as
- * downloaded, and the sandbox this was built in could not reach Google's hosts, so a CI runner
- * fetched it (see the "Fetch the official Google attribution assets" step in
- * .github/workflows/home-photo-capture.yml).
+ * The official Google Maps attribution asset, once we have it.
  *
- * The white variant is the right one here: every surface it appears on is the app's near-white
- * background.
+ * Current Places guidance is that attribution should be the Google Maps logo, not the older
+ * Google-only logotype — and that where space is limited, the text "Google Maps" is acceptable.
+ * We could not obtain the Google Maps asset: the only files reachable from Google's public
+ * buckets and linked from its policy pages are the Google-only logotype
+ * (powered_by_google_on_white.png, maps.gstatic.com/.../google4.png) and unrelated site chrome.
+ * Shipping the Google-only mark would be the form the guidance moved away from, and redrawing or
+ * approximating the Maps lockup is expressly forbidden — so this stays null and the attribution
+ * renders as the permitted wordmark text.
+ *
+ * To switch to the asset: drop Google's supplied file into assets/images, point `source` at it,
+ * and set `aspectRatio` to the file's own width / height. Nothing else changes, and the mark is
+ * only ever scaled, never altered.
  */
 export interface GoogleMapsMarkAsset {
   source: ImageSourcePropType;
@@ -18,8 +22,4 @@ export interface GoogleMapsMarkAsset {
   aspectRatio: number;
 }
 
-export const GOOGLE_MAPS_MARK: GoogleMapsMarkAsset | null = {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  source: require('../../assets/images/powered_by_google_on_white.png'),
-  aspectRatio: 59 / 18,
-};
+export const GOOGLE_MAPS_MARK: GoogleMapsMarkAsset | null = null;

@@ -11,9 +11,10 @@ import { PhotoAttribution } from '@/src/services/places/place-photo-url';
  * author attribution may be omitted, provided the user can reach a larger version that carries it
  * in full — so Home shows the mark once and the venue screen shows the photographer.
  *
- * The mark is Google's own supplied file, scaled at its true aspect ratio and never redrawn. The
- * text fallback below only applies if that asset is ever missing, and is itself allowed by the
- * policy where space is limited.
+ * The mark renders from Google's own supplied file when we have it, scaled at its true aspect
+ * ratio and never redrawn. Until then it is the wordmark set in text, which the policy allows
+ * where space is limited — and which says "Google Maps" rather than only "Google", as the current
+ * guidance asks of new implementations.
  */
 export function GoogleMapsMark({ compact = true }: { compact?: boolean }) {
   // 18 is the asset's own height; the compact size is the largest that still clears the bottom
