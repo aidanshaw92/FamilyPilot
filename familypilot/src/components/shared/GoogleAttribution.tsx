@@ -35,11 +35,17 @@ export function GoogleMapsMark({ compact = true }: { compact?: boolean }) {
   }
 
   return (
-    <Text variant="caption" color={colors.text.tertiary} style={styles.wordmark}>
+    <Text variant="caption" color={ATTRIBUTION_INK} style={styles.wordmark}>
       Google Maps
     </Text>
   );
 }
+
+/**
+ * The grey Google permits for attribution on a light background. Darker and more neutral than the
+ * app's own tertiary ink, which is a light purple-grey and would sit under the required contrast.
+ */
+const ATTRIBUTION_INK = '#5E5E5E';
 
 /** The mark on its own, for a screen whose place content is a preview. */
 export function GoogleMapsAttribution({ compact = true }: { compact?: boolean }) {
@@ -67,7 +73,7 @@ export function PhotoAttributionLine({ attribution }: PhotoAttributionLineProps)
   return (
     <View style={styles.photoLine}>
       <GoogleMapsMark />
-      <Text variant="caption" color={colors.text.tertiary} numberOfLines={2} style={styles.photoText}>
+      <Text variant="caption" color={ATTRIBUTION_INK} numberOfLines={2} style={styles.photoText}>
         Photo by{' '}
         {authorUri ? (
           <Text
@@ -108,7 +114,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   wordmark: {
-    fontFamily: 'Inter_600SemiBold',
+    // Google's attribution is set at a normal weight, not emphasised.
+    fontFamily: 'Inter_400Regular',
     letterSpacing: 0,
   },
   photoLine: {
