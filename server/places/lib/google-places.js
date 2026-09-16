@@ -26,6 +26,11 @@ const SEARCH_FIELD_MASK = [
   'places.photos',
   'places.websiteUri',
   'places.currentOpeningHours',
+  // The recurring weekly schedule, and the timezone it is expressed in. Without these a stored
+  // record can say what a place's hours look like but not whether it is open on a given date.
+  'places.regularOpeningHours',
+  'places.timeZone',
+  'places.utcOffsetMinutes',
 ].join(',');
 
 const DETAIL_FIELD_MASK = [
@@ -42,6 +47,8 @@ const DETAIL_FIELD_MASK = [
   'businessStatus',
   'photos',
   'currentOpeningHours',
+  'timeZone',
+  'utcOffsetMinutes',
 ].join(',');
 
 /**
@@ -60,10 +67,64 @@ function getApiKey() {
   return key;
 }
 
-function mapOpeningHours(regularOpeningHours) {
-  const weekdayText = regularOpeningHours && regularOpeningHours.weekdayDescriptions;
-  if (!weekdayText || !weekdayText.length) return undefined;
-  return { weekdayText, source: 'google' };
+/**
+ * One end of an opening period. Google's `Point` carries day (0-6, 0 = Sunday), hour (0-23) and
+ * minute (0-59); anything outside those ranges is not a point we can evaluate, so it is dropped
+ * rather than clamped — a wrong opening time is worse than an unknown one.
+ */
+function mapOpeningPoint(point) {
+  if (!point) return undefined;
+  const { day, hour } = point;
+  const minute = point.minute == null ? 0 : point.minute;
+  if (!Number.isInteger(day) || day < 0 || day > 6) return undefined;
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23) return undefined;
+  if (!Number.isInteger(minute) || minute < 0 || minute > 59) return undefined;
+  return { day, hour, minute };
+}
+
+/**
+ * The weekly schedule, taken from `regularOpeningHours` only.
+ *
+ * `currentOpeningHours` is deliberately not used here: it covers just the seven days from the
+ * request and is truncated at that boundary, so storing it as the recurring weekly schedule would
+ * make a venue look shut on dates it is open. `regularOpeningHours` is the typical-week schedule,
+ * which is the thing a future visit has to be judged against.
+ *
+ * An empty `periods` array is preserved, because Google uses it to mean "never open". A present
+ * but wholly unreadable array collapses to undefined, so it reads as unknown instead.
+ */
+function mapOpeningPeriods(regularOpeningHours) {
+  const periods = regularOpeningHours && regularOpeningHours.periods;
+  if (!Array.isArray(periods)) return undefined;
+
+  const mapped = [];
+  for (const period of periods) {
+    const open = mapOpeningPoint(period && period.open);
+    if (!open) continue;
+    const close = mapOpeningPoint(period && period.close);
+    mapped.push(close ? { open, close } : { open });
+  }
+
+  if (periods.length > 0 && mapped.length === 0) return undefined;
+  return mapped;
+}
+
+function mapOpeningHours(place) {
+  const regular = place.regularOpeningHours;
+  // The display lines may come from either, since they are shown rather than evaluated, and the
+  // current set reflects any special hours in effect.
+  const display = place.currentOpeningHours || regular;
+  const weekdayText = display && display.weekdayDescriptions;
+  const periods = mapOpeningPeriods(regular);
+  const hasWeekdayText = Boolean(weekdayText && weekdayText.length);
+  if (!hasWeekdayText && !periods) return undefined;
+
+  const hours = { source: 'google' };
+  if (hasWeekdayText) hours.weekdayText = weekdayText;
+  if (periods) hours.periods = periods;
+  if (place.timeZone && place.timeZone.id) hours.timezone = place.timeZone.id;
+  if (Number.isInteger(place.utcOffsetMinutes)) hours.utcOffsetMinutes = place.utcOffsetMinutes;
+  return hours;
 }
 
 function mapIsOpen(businessStatus) {
@@ -89,7 +150,7 @@ function googlePlaceToRecord(place, intent) {
   const category = mapGoogleCategory(primaryType, types, name);
   if (!category) return null;
 
-  const openingHours = mapOpeningHours(place.currentOpeningHours || place.regularOpeningHours);
+  const openingHours = mapOpeningHours(place);
   const description = place.editorialSummary && place.editorialSummary.text;
   const fetchedAt = new Date().toISOString();
 

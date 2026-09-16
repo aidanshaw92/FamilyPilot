@@ -5,6 +5,7 @@ import {
   TerrainType,
   VenueCategory,
 } from '@/src/types';
+import { OpeningHoursSchedule } from './opening-hours';
 
 /** External data provider — never expose API keys for these on the client. */
 export type PlacesProviderName = 'mock' | 'google' | 'osm' | 'familypilot';
@@ -24,15 +25,10 @@ export interface FieldProvenance {
   label?: string;
 }
 
-export interface OpeningHoursPeriod {
-  day: number;
-  open: string;
-  close: string;
-}
+export type { OpeningHoursPeriod, OpeningHoursPoint, OpeningHoursSchedule } from './opening-hours';
 
-export interface StructuredOpeningHours {
-  periods?: OpeningHoursPeriod[];
-  weekdayText?: string[];
+/** A provider's opening hours, with the provenance the consumer model does not need to carry. */
+export interface StructuredOpeningHours extends OpeningHoursSchedule {
   source: PlacesProviderName | 'estimated';
 }
 
