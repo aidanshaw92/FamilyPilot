@@ -1,5 +1,5 @@
 import { ExternalPlaceRecord, StructuredOpeningHours, VenueFamilyMetadata } from '@/src/types/places';
-import { EnrichmentStatus, TrustMetadata, Venue, VenueDetail } from '@/src/types';
+import { EnrichmentStatus, OpeningHoursSchedule, TrustMetadata, Venue, VenueDetail } from '@/src/types';
 
 import { deriveEnrichmentStatusFromRecord, mapExtendedTerrainToLegacy, toConsumerEnrichmentStatus } from '@/src/utils/enrichment-rules';
 import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
@@ -15,6 +15,18 @@ function buildBestAgesLabelFromMeta(metadata: VenueFamilyMetadata | null): strin
   if (min != null) return `${min}+ years`;
   if (max != null) return `Up to ${max} years`;
   return undefined;
+}
+
+/**
+ * Carries the machine-readable hours into the domain model, dropping only the provenance the
+ * consumer side has no use for. Returns undefined when there is no schedule to evaluate, so
+ * "we don't know" stays distinguishable from "closed".
+ */
+function toSchedule(hours?: StructuredOpeningHours): OpeningHoursSchedule | undefined {
+  if (!hours) return undefined;
+  const { periods, weekdayText, timezone, utcOffsetMinutes } = hours;
+  if (!periods && !weekdayText?.length) return undefined;
+  return { periods, weekdayText, timezone, utcOffsetMinutes };
 }
 
 function formatOpeningHours(hours?: StructuredOpeningHours): string {
@@ -129,6 +141,7 @@ export function mergePlaceToVenueDetail(
     photos: resolvedPhotos.length > 0 ? resolvedPhotos : base.imageUrl ? [base.imageUrl] : [],
     facilities: trustedMeta?.facilities ?? [],
     openingHours: formatOpeningHours(place.openingHours),
+    structuredOpeningHours: toSchedule(place.openingHours),
     terrain: trustedMeta?.terrain ?? mapExtendedTerrainToLegacy(trustedMeta?.extendedTerrain),
     bestAges: trustedMeta?.bestAges ?? buildBestAgesLabelFromMeta(trustedMeta),
     parkingInfo: trustedMeta?.parkingInfo,

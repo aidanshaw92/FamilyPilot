@@ -1,3 +1,7 @@
+import { OpeningHoursSchedule } from './opening-hours';
+
+export type { OpeningHoursPeriod, OpeningHoursPoint, OpeningHoursSchedule } from './opening-hours';
+
 export type FacilityType =
   | 'cafe'
   | 'toilets'
@@ -135,7 +139,15 @@ export interface VenueDetail extends Venue {
   phone?: string;
   photos: string[];
   facilities: FacilityType[];
+  /** Display copy. Already localised by the provider, and not machine-readable. */
   openingHours: string;
+  /**
+   * The same hours as data, when the provider supplied them. Absent means nobody can say whether
+   * this place is open on a given date — which is different from saying it is shut.
+   *
+   * Evaluate with `isOpenOn` in `@/src/utils/opening-hours` rather than reading it directly.
+   */
+  structuredOpeningHours?: OpeningHoursSchedule;
   /** Unknown when provider-only — do not synthesise defaults. */
   terrain?: TerrainType;
   bestAges?: string;
