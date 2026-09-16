@@ -85,17 +85,44 @@ jobs:
       - name: Probe one real venue through the preview build
         env:
           PREVIEW: ${{ steps.preview.outputs.url }}
+          # Vercel protects preview deployments by default, so an unauthenticated request is
+          # bounced to SSO. Generated in the Vercel project under Deployment Protection →
+          # Protection Bypass for Automation. Actions masks it in logs; it is only ever sent as a
+          # request header to the project's own preview host.
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           set -euo pipefail
           endpoint="${PREVIEW}/api/places/detail?id=${PLACE_ID}"
           echo "GET ${endpoint}"
-          code=$(curl -sS -o /tmp/detail.json -w '%{http_code}' --max-time 90 "$endpoint")
-          echo "status: $code"
-          if [ "$code" != "200" ]; then
-            echo "::error::detail endpoint returned $code"
-            head -c 400 /tmp/detail.json || true
-            exit 1
+
+          auth=()
+          if [ -n "${BYPASS:-}" ]; then
+            auth+=(-H "x-vercel-protection-bypass: ${BYPASS}" -H "x-vercel-set-bypass-cookie: true")
+            echo "using the automation bypass secret"
+          else
+            echo "no bypass secret configured"
           fi
+
+          code=$(curl -sS "${auth[@]}" -o /tmp/detail.json -w '%{http_code}' --max-time 90 "$endpoint")
+          echo "status: $code"
+
+          case "$code" in
+            200) ;;
+            301|302|303|307|308|401|403)
+              if [ -z "${BYPASS:-}" ]; then
+                echo "::error::The preview is behind Vercel Deployment Protection and no VERCEL_AUTOMATION_BYPASS_SECRET repository secret is set, so this check cannot reach the build under test. Create the secret in the Vercel project (Settings → Deployment Protection → Protection Bypass for Automation) and add it to this repository's Actions secrets. Production is public, but it runs main's mapper rather than this branch's, so it cannot stand in."
+              else
+                echo "::error::the bypass secret was sent but the preview still returned $code — the secret may be stale or belong to another project"
+              fi
+              exit 1
+              ;;
+            *)
+              echo "::error::detail endpoint returned $code"
+              head -c 400 /tmp/detail.json || true
+              exit 1
+              ;;
+          esac
+
           node scripts/assert-live-opening-hours.mjs /tmp/detail.json
 
       - uses: actions/upload-artifact@v4
