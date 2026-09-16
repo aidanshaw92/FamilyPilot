@@ -2,7 +2,21 @@ import { FamilyProfile } from '@/src/types';
 import { DayRequest, MatchableVenueFacts } from '@/src/types/day-request';
 import { matchVenueToDayRequest } from '@/src/services/matching/day-request-matcher';
 
-export interface Routine { id: string; label: string; kind: 'nap' | 'feed'; time: string; durationMinutes: number; atHome: boolean }
+// Routine windows and their overlap rules live in routine-windows.ts so the day sequencer applies
+// the same ones across several stops. Routine is re-exported here to keep this module's API
+// unchanged for its existing callers.
+import type { Routine } from './routine-windows';
+import {
+  clockMinutes,
+  homeBeforeNote,
+  homeRoutineConflict,
+  nextHomeRoutineAfter,
+  outOfHomeNotes,
+  routineWindows,
+  travelRoutineConflict,
+} from './routine-windows';
+
+export type { Routine } from './routine-windows';
 export interface PlanningFamily {
   id: string; label: string; area: string; latitude: number; longitude: number;
   ages: number[]; maxDriveMinutes: number; budgetTier: FamilyProfile['budgetTier'];
@@ -17,10 +31,7 @@ export interface Journey { outbound: number; inbound: number; source: 'live' | '
 export interface FamilyTiming { familyId: string; label: string; depart: number; arrive: number; leaveVenue: number; home: number; latestDeparture: number; journey: Journey; notes: string[] }
 export interface PlanMatch { venueId: string; name: string; timings: FamilyTiming[]; start: number; end: number; fairnessGap: number; reasons: string[]; unknowns: string[]; score: number }
 
-export function clockMinutes(value: string): number {
-  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) throw new Error('Enter times as HH:MM, for example 09:30.');
-  const [h, m] = value.split(':').map(Number); return h * 60 + m;
-}
+export { clockMinutes };
 export function clockLabel(minutes: number): string {
   const day = Math.floor(minutes / 1440); const m = ((Math.round(minutes) % 1440) + 1440) % 1440;
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}${day > 0 ? ' next day' : ''}`;
@@ -76,10 +87,7 @@ export function planVenue(facts: MatchableVenueFacts, families: PlanningFamily[]
   });
   if (evaluations.some(e => !e)) return null;
   const maxOut = Math.max(...families.map(f => journeys[f.id].outbound));
-  const intervals = families.map(f => f.routines.map(r => {
-    if (!Number.isFinite(r.durationMinutes) || r.durationMinutes < 1 || r.durationMinutes > 240) throw new Error('Routine duration must be 1–240 minutes.');
-    return { ...r, start: clockMinutes(r.time), end: clockMinutes(r.time) + r.durationMinutes };
-  }));
+  const intervals = families.map(f => routineWindows(f.routines));
   for (let start = earliest + maxOut + options.bufferMinutes; start + options.visitMinutes <= deadline; start += 5) {
     const end = start + options.visitMinutes;
     const timings: FamilyTiming[] = [];
@@ -88,15 +96,19 @@ export function planVenue(facts: MatchableVenueFacts, families: PlanningFamily[]
       const journey = journeys[family.id];
       const depart = start - journey.outbound - options.bufferMinutes;
       const home = end + journey.inbound + options.bufferMinutes;
-      const conflicts = intervals[i].some(r => r.atHome && depart < r.end && home > r.start);
-      const travelConflict = intervals[i].some(r => !r.atHome &&
-        ((depart < r.end && start > r.start) || (end < r.end && home > r.start)));
+      const conflicts = homeRoutineConflict(intervals[i], depart, home);
+      // The outbound and inbound drives are the spans where a routine cannot happen; time at the
+      // venue is not checked, because that is where it can.
+      const travelConflict = travelRoutineConflict(intervals[i], [
+        { from: depart, to: start },
+        { from: end, to: home },
+      ]);
       if (home > deadline || conflicts || travelConflict || depart < earliest) { fits = false; return; }
-      const nextHome = intervals[i].filter(r => r.atHome && r.start >= home).sort((a,b) => a.start-b.start)[0];
+      const nextHome = nextHomeRoutineAfter(intervals[i], home);
       const bound = Math.min(deadline, nextHome?.start ?? deadline);
       const latestDeparture = bound - journey.inbound - journey.outbound - options.bufferMinutes*2 - options.visitMinutes;
-      const notes = intervals[i].filter(r => !r.atHome && r.start >= depart && r.start < home).map(r => `${r.label || r.kind}: ${r.time} while out; allow ${r.durationMinutes} minutes within your visit and check facilities.`);
-      if (nextHome) notes.push(`Home before ${nextHome.label || nextHome.kind} at ${nextHome.time}.`);
+      const notes = outOfHomeNotes(intervals[i], depart, home);
+      if (nextHome) notes.push(homeBeforeNote(nextHome));
       timings.push({ familyId: family.id, label: family.label, depart, arrive: start, leaveVenue: end, home, latestDeparture, journey, notes });
     });
     if (!fits) continue;
