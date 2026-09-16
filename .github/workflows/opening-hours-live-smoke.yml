@@ -103,8 +103,20 @@ jobs:
             echo "no bypass secret configured"
           fi
 
-          code=$(curl -sS "${auth[@]}" -o /tmp/detail.json -w '%{http_code}' --max-time 90 "$endpoint")
-          echo "status: $code"
+          # The bypass cookie is handed over by a redirect, so the hop has to be followed and the
+          # cookie kept — stopping at the 307 would look identical to being refused.
+          code=$(curl -sS "${auth[@]}" \
+            -L --max-redirs 5 -c /tmp/vercel-cookies -b /tmp/vercel-cookies \
+            -D /tmp/headers -o /tmp/detail.json \
+            -w '%{http_code}' --max-time 90 "$endpoint")
+          echo "status: $code  (after $(grep -ci '^location:' /tmp/headers || echo 0) redirect(s))"
+
+          if [ "$code" != "200" ]; then
+            # Where it was sent tells us whether this is authentication or something else. The
+            # query is stripped because an SSO redirect carries a token in it.
+            echo "redirect targets:"
+            grep -i '^location:' /tmp/headers | sed 's/?.*//' || echo "  (none)"
+          fi
 
           case "$code" in
             200) ;;
@@ -112,7 +124,7 @@ jobs:
               if [ -z "${BYPASS:-}" ]; then
                 echo "::error::The preview is behind Vercel Deployment Protection and no VERCEL_AUTOMATION_BYPASS_SECRET repository secret is set, so this check cannot reach the build under test. Create the secret in the Vercel project (Settings → Deployment Protection → Protection Bypass for Automation) and add it to this repository's Actions secrets. Production is public, but it runs main's mapper rather than this branch's, so it cannot stand in."
               else
-                echo "::error::the bypass secret was sent but the preview still returned $code — the secret may be stale or belong to another project"
+                echo "::error::the bypass secret was sent and redirects were followed, but the preview still returned $code. If the redirect targets above point at Vercel SSO, the secret is stale or belongs to another project; otherwise the endpoint itself is redirecting."
               fi
               exit 1
               ;;
