@@ -1,0 +1,106 @@
+name: Opening hours live smoke test
+
+# Proves that a real Google Places response, mapped by THIS branch, actually yields the structured
+# schedule the evaluator needs. The unit tests pin the mapper against Google's published schema;
+# this pins the published schema against what Google really sends.
+#
+# It calls the pull request's own Vercel Preview build rather than production, so the code under
+# test is the code in the diff. The preview URL is discovered from GitHub's Deployments API using
+# the built-in token, so no Vercel credential is needed here.
+#
+# The Google API key stays server-side on Vercel throughout — this workflow never sees it, and the
+# response it prints carries no secret (photo fields are paths to our own proxy).
+
+on:
+  pull_request:
+    paths:
+      - 'server/places/lib/google-places.js'
+      - '.github/workflows/opening-hours-live-smoke.yml'
+  workflow_dispatch:
+    inputs:
+      place_id:
+        description: FamilyPilot place id to probe
+        required: false
+        default: fp-google-ChIJzZtNX7UcdkgRzycysU2TrhM
+
+permissions:
+  contents: read
+  deployments: read
+  statuses: read
+
+env:
+  # Whitechapel Gallery: a real production row with published hours, and shut on Mondays — so a
+  # correct mapping yields six periods rather than a uniform seven.
+  PLACE_ID: ${{ inputs.place_id || 'fp-google-ChIJzZtNX7UcdkgRzycysU2TrhM' }}
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for the Vercel preview of this commit
+        id: preview
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          echo "looking for a preview deployment of $SHA"
+          url=""
+          for attempt in $(seq 1 40); do
+            # Vercel registers a GitHub Deployment per commit; its status carries the preview URL.
+            ids=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/deployments?sha=${SHA}&per_page=20" \
+              | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+                  const rows = JSON.parse(s||"[]");
+                  process.stdout.write(Array.isArray(rows)?rows.map(r=>r.id).join(" "):"");
+                })')
+            for id in $ids; do
+              found=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${GITHUB_REPOSITORY}/deployments/${id}/statuses?per_page=20" \
+                | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+                    const rows = JSON.parse(s||"[]");
+                    const ok = (Array.isArray(rows)?rows:[]).find(
+                      (r) => r.state === "success" && (r.environment_url || "").includes("vercel.app"),
+                    );
+                    process.stdout.write(ok ? ok.environment_url : "");
+                  })')
+              if [ -n "$found" ]; then url="$found"; break; fi
+            done
+            if [ -n "$url" ]; then break; fi
+            echo "  attempt $attempt: no successful preview yet, waiting"
+            sleep 15
+          done
+
+          if [ -z "$url" ]; then
+            echo "::error::no successful Vercel preview deployment found for $SHA"
+            exit 1
+          fi
+          echo "preview: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Probe one real venue through the preview build
+        env:
+          PREVIEW: ${{ steps.preview.outputs.url }}
+        run: |
+          set -euo pipefail
+          endpoint="${PREVIEW}/api/places/detail?id=${PLACE_ID}"
+          echo "GET ${endpoint}"
+          code=$(curl -sS -o /tmp/detail.json -w '%{http_code}' --max-time 90 "$endpoint")
+          echo "status: $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::detail endpoint returned $code"
+            head -c 400 /tmp/detail.json || true
+            exit 1
+          fi
+          node scripts/assert-live-opening-hours.mjs /tmp/detail.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: opening-hours-live-evidence
+          path: /tmp/opening-hours-evidence.json
+          if-no-files-found: warn
