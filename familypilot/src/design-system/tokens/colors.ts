@@ -48,7 +48,16 @@ export const colors = {
   overlay: 'rgba(10, 10, 13, 0.45)',
   gradient: {
     heroStart: 'rgba(10, 10, 13, 0)',
+    /** Mid stop so a scrim over photography ramps rather than banding. */
+    heroMid: 'rgba(10, 10, 13, 0.28)',
     heroEnd: 'rgba(10, 10, 13, 0.68)',
+  },
+  /** Translucent chrome that sits directly on photography — a save button, a rating chip,
+   * a call to action inside a photo card. */
+  glass: {
+    dark: 'rgba(10, 10, 13, 0.55)',
+    darker: 'rgba(10, 10, 13, 0.78)',
+    light: 'rgba(255, 255, 255, 0.92)',
   },
   /** A dark, immersive band reserved for the single most important moment on a screen (Home's
    * top pick, a venue detail hero) — used sparingly, never as a whole-app background. */

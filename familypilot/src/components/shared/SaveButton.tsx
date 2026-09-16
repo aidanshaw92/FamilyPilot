@@ -20,6 +20,8 @@ interface SaveButtonProps {
   size?: number;
   color?: string;
   filledColor?: string;
+  /** Set when the button sits on something draggable, so a swipe does not land as a tap. */
+  isSwiping?: () => boolean;
 }
 
 export function SaveButton({
@@ -28,6 +30,7 @@ export function SaveButton({
   size = 24,
   color = colors.text.primary,
   filledColor = colors.error[500],
+  isSwiping,
 }: SaveButtonProps) {
   const { isSaved, toggleSaved } = useSavedStore();
   const saved = isSaved(venueId);
@@ -51,6 +54,7 @@ export function SaveButton({
   }));
 
   const handlePress = () => {
+    if (isSwiping?.()) return;
     void Haptics.impactAsync(
       saved ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium,
     );

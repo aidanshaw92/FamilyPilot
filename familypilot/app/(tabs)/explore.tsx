@@ -1,6 +1,8 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
+import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
+
 import { FilterSheet } from '@/src/components/explore/FilterSheet';
 import { RestaurantCard } from '@/src/components/restaurant/RestaurantCard';
 import { DecisionCard } from '@/src/components/shared/DecisionCard';
@@ -16,6 +18,7 @@ import { buildExploreEditorialSections } from '@/src/utils/explore-editorial-sec
 import { EXPLORE_CATEGORIES, filterVenues } from '@/src/utils/filter-venues';
 
 export default function ExploreScreen() {
+  const tabBarClearance = useTabBarClearance();
   const [search, setSearch] = useState('');
   const [areaVenues, setAreaVenues] = useState<Venue[] | null>(null);
   const [searchingArea, setSearchingArea] = useState(false);
@@ -257,7 +260,7 @@ export default function ExploreScreen() {
         />
       ) : useEditorialLayout && editorialSections.length > 0 ? (
         <ScrollView
-          contentContainerStyle={styles.editorialContent}
+          contentContainerStyle={[styles.editorialContent, { paddingBottom: tabBarClearance }]}
           showsVerticalScrollIndicator={false}
         >
           {editorialSections.map((section) => (
@@ -278,7 +281,7 @@ export default function ExploreScreen() {
             />
           </View>
           <ScrollView
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[styles.listContent, { paddingBottom: tabBarClearance }]}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
+import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
+
 import { SavedPlaceRow } from '@/src/components/shared/SavedPlaceRow';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Chip, EmptyState, SkeletonCard, Text } from '@/src/components/ui';
@@ -35,6 +37,7 @@ const SAVED_GROUPS: { id: SavedGroup; label: string }[] = [
 ];
 
 export default function SavedScreen() {
+  const tabBarClearance = useTabBarClearance();
   const { data: savedItems, isLoading, refetch } = useSavedItems();
   const restoreSaved = useSavedStore((state) => state.restoreSaved);
   const [search, setSearch] = useState('');
@@ -172,7 +175,7 @@ export default function SavedScreen() {
       ) : null}
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

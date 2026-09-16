@@ -1,0 +1,124 @@
+[
+  {
+    "familypilotId": "fp-google-ChIJG5FG-NUbdkgRLUU1g4e7xp4",
+    "externalId": "google:ChIJG5FG-NUbdkgRLUU1g4e7xp4",
+    "provider": "google",
+    "name": "Alexandra Park",
+    "category": "park",
+    "latitude": 51.5934423,
+    "longitude": -0.1294808,
+    "address": "Alexandra Palace Way, London N22 7AY, UK",
+    "description": "Big park with tree-lined jogging paths, a boating lake, kids’ playgrounds & resident fallow deer.",
+    "website": "http://www.alexandrapalace.com/park/",
+    "phone": "020 8365 2121",
+    "photos": [
+      "/api/places/photo?id=ChIJG5FG-NUbdkgRLUU1g4e7xp4&index=0&credit=Andr%C3%A9s%20Felipe%20Suaza%20Quinch%C3%ADa",
+      "/api/places/photo?id=ChIJG5FG-NUbdkgRLUU1g4e7xp4&index=1&credit=Babs%20Kehinde",
+      "/api/places/photo?id=ChIJG5FG-NUbdkgRLUU1g4e7xp4&index=2&credit=Huseyin%20Meral"
+    ],
+    "isOpen": true,
+    "openingHours": { "source": "google", "weekdayText": ["Monday: Open 24 hours", "Tuesday: Open 24 hours", "Wednesday: Open 24 hours", "Thursday: Open 24 hours", "Friday: Open 24 hours", "Saturday: Open 24 hours", "Sunday: Open 24 hours"] },
+    "provenance": {},
+    "fetchedAt": "2026-09-14T17:46:01.890Z",
+    "enrichmentStatus": "provider_only"
+  },
+  {
+    "familypilotId": "fp-google-ChIJ_zIJCh8XdkgRnCvSmVMa1iY",
+    "externalId": "google:ChIJ_zIJCh8XdkgRnCvSmVMa1iY",
+    "provider": "google",
+    "name": "Belmont Children's Farm",
+    "category": "farm",
+    "latitude": 51.621507,
+    "longitude": -0.231828,
+    "address": "The Ridgeway, London NW7 1QT, UK",
+    "description": "Redeveloped working farm with an indoor playground, a pizzeria & a bakery, plus a farm shop & cafe.",
+    "website": "http://www.belmontfarm.co.uk/",
+    "phone": "020 7318 4421",
+    "photos": [
+      "/api/places/photo?id=ChIJ_zIJCh8XdkgRnCvSmVMa1iY&index=0&credit=Belmont%20Children's%20Farm",
+      "/api/places/photo?id=ChIJ_zIJCh8XdkgRnCvSmVMa1iY&index=1&credit=Christina%20Flouri",
+      "/api/places/photo?id=ChIJ_zIJCh8XdkgRnCvSmVMa1iY&index=2&credit=Irina%20Bairamian"
+    ],
+    "isOpen": true,
+    "openingHours": { "source": "google", "weekdayText": ["Monday: 9:00 AM – 5:00 PM", "Tuesday: 9:00 AM – 5:00 PM", "Wednesday: 9:00 AM – 5:00 PM", "Thursday: 9:00 AM – 5:00 PM", "Friday: 9:00 AM – 5:00 PM", "Saturday: 9:00 AM – 5:00 PM", "Sunday: 9:00 AM – 5:00 PM"] },
+    "provenance": {},
+    "fetchedAt": "2026-09-14T17:45:03.500Z",
+    "enrichmentStatus": "provider_only"
+  },
+  {
+    "familypilotId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+    "externalId": "google:ChIJ7_PV980bdkgROekbwOVWVfo",
+    "provider": "google",
+    "name": "Babylon Park London",
+    "category": "soft_play",
+    "latitude": 51.5422171,
+    "longitude": -0.144926,
+    "address": "8 Castlehaven Rd, London NW1 8QU, UK",
+    "website": "https://babylonpark.com/london/",
+    "photos": [
+      "/api/places/photo?id=ChIJ7_PV980bdkgROekbwOVWVfo&index=0&credit=Babylon%20Park%20London",
+      "/api/places/photo?id=ChIJ7_PV980bdkgROekbwOVWVfo&index=1&credit=Whitechapelmack",
+      "/api/places/photo?id=ChIJ7_PV980bdkgROekbwOVWVfo&index=2&credit=Sam%20Aberman"
+    ],
+    "isOpen": true,
+    "openingHours": { "source": "google", "weekdayText": ["Monday: 10:00 AM – 9:00 PM", "Tuesday: 10:00 AM – 9:00 PM", "Wednesday: 10:00 AM – 9:00 PM", "Thursday: 10:00 AM – 9:00 PM", "Friday: 10:00 AM – 9:00 PM", "Saturday: 10:00 AM – 10:00 PM", "Sunday: 10:00 AM – 9:00 PM"] },
+    "provenance": {},
+    "fetchedAt": "2026-09-14T03:01:11.976Z",
+    "enrichmentStatus": "provider_only"
+  },
+  {
+    "familypilotId": "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4",
+    "externalId": "google:ChIJOWBQvA4FdkgRQf5iYYFF1v4",
+    "provider": "google",
+    "name": "Battersea Park",
+    "category": "park",
+    "latitude": 51.4791075,
+    "longitude": -0.1564981,
+    "address": "Battersea Park Rd, London SW11 4NJ, UK",
+    "website": "https://www.wandsworth.gov.uk/batterseapark",
+    "photos": [
+      "/api/places/photo?id=ChIJOWBQvA4FdkgRQf5iYYFF1v4&index=0&credit=Remy%20Rachet",
+      "/api/places/photo?id=ChIJOWBQvA4FdkgRQf5iYYFF1v4&index=1&credit=Keith%20Douglas"
+    ],
+    "isOpen": true,
+    "provenance": {},
+    "fetchedAt": "2026-09-15T14:28:04.922Z",
+    "enrichmentStatus": "provider_only"
+  },
+  {
+    "familypilotId": "fp-google-ChIJV0tnSdcbdkgRBOMTTP6eLHg",
+    "externalId": "google:ChIJV0tnSdcbdkgRBOMTTP6eLHg",
+    "provider": "google",
+    "name": "Alexandra Palace Ice Rink",
+    "category": "activity",
+    "latitude": 51.5948748,
+    "longitude": -0.1298026,
+    "address": "Alexandra Palace, Alexandra Palace Way, London N22 7AY, UK",
+    "website": "http://www.alexandrapalace.com/ice-rink/",
+    "phone": "020 8365 4386",
+    "photos": [
+      "/api/places/photo?id=ChIJV0tnSdcbdkgRBOMTTP6eLHg&index=0&credit=Alexandra%20Palace%20Ice%20Rink",
+      "/api/places/photo?id=ChIJV0tnSdcbdkgRBOMTTP6eLHg&index=1&credit=Liam%20O'Brien"
+    ],
+    "isOpen": true,
+    "openingHours": { "source": "google", "weekdayText": ["Monday: 11:00 AM – 5:00 PM", "Tuesday: 11:00 AM – 5:00 PM", "Wednesday: 11:00 AM – 5:00 PM", "Thursday: 11:00 AM – 5:00 PM", "Friday: 11:00 AM – 5:00 PM", "Saturday: 11:00 AM – 5:00 PM", "Sunday: 11:00 AM – 5:00 PM"] },
+    "provenance": {},
+    "fetchedAt": "2026-09-14T17:52:01.556Z",
+    "enrichmentStatus": "provider_only"
+  },
+  {
+    "familypilotId": "fp-google-ChIJZz8_wPNodkgRQrQBE23io9I",
+    "externalId": "google:ChIJZz8_wPNodkgRQrQBE23io9I",
+    "provider": "google",
+    "name": "Chiltern Open Air Museum",
+    "category": "museum",
+    "latitude": 51.6062,
+    "longitude": -0.5548,
+    "address": "Newland Park, Gorelands Ln, Chalfont St Giles HP8 4AB, UK",
+    "photos": [],
+    "isOpen": true,
+    "provenance": {},
+    "fetchedAt": "2026-08-10T18:27:55.367Z",
+    "enrichmentStatus": "provider_only"
+  }
+]

@@ -3,6 +3,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
+
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Button, Card, EmptyState, Skeleton, Text } from '@/src/components/ui';
@@ -27,6 +29,7 @@ function formatRoutineTime(time: string): string {
 }
 
 export default function ProfileScreen() {
+  const tabBarClearance = useTabBarClearance();
   const router = useRouter();
   const { data: profile, isLoading } = useFamilyProfile();
 
@@ -66,7 +69,10 @@ export default function ProfileScreen() {
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]}
+        showsVerticalScrollIndicator={false}
+      >
         <FadeInView>
           <Card style={styles.familyCard}>
             <View style={styles.avatarRow}>

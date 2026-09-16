@@ -20,6 +20,7 @@ import { EatNearbySection } from '@/src/components/venue/EatNearbySection';
 import { FacilityGrid } from '@/src/components/venue/FacilityGrid';
 import { PhotoGallery } from '@/src/components/venue/PhotoGallery';
 import { WeatherAlternativeSection } from '@/src/components/venue/WeatherAlternativeSection';
+import { PhotoAttributionLine } from '@/src/components/shared/GoogleAttribution';
 import { SaveButton } from '@/src/components/shared/SaveButton';
 import { ShareButton } from '@/src/components/shared/ShareButton';
 import {
@@ -31,6 +32,7 @@ import {
   VenueImage,
 } from '@/src/components/ui';
 import { BackButton } from '@/src/components/ui/BackButton';
+import { photoAttribution } from '@/src/services/places/place-photo-url';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
@@ -141,6 +143,7 @@ export default function VenueScreen() {
   }
 
   const heroPhoto = venue.photos[heroIndex] ?? venue.photos[0];
+  const heroAttribution = photoAttribution(heroPhoto);
   const saved = isSaved(venue.id);
 
   return (
@@ -224,6 +227,15 @@ export default function VenueScreen() {
             {venue.website && /^https?:\/\//.test(venue.website) ? <Button label="Official website & visitor information" variant="outline" onPress={() => void Linking.openURL(venue.website!)}/> : null}
             {venue.phone ? <Text variant="bodySmall" style={{marginVertical:12}}>Contact: {venue.phone}</Text> : null}
             <PhotoGallery photos={venue.photos} onPhotoPress={setHeroIndex} />
+
+            {/* This is the larger version of the photograph Home previews, so it carries the full
+                attribution Google requires: the photographer, their profile, and a way to open the
+                individual photo on Google Maps. */}
+            {heroAttribution ? (
+              <View style={styles.photoAttribution}>
+                <PhotoAttributionLine attribution={heroAttribution} />
+              </View>
+            ) : null}
 
             <Text variant="heading3" style={styles.sectionTitle}>
               Facilities
@@ -413,6 +425,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginTop: spacing['2xl'],
     marginBottom: spacing.lg,
+  },
+  photoAttribution: {
+    marginTop: spacing.md,
   },
   detailsGrid: {
     marginTop: spacing['2xl'],

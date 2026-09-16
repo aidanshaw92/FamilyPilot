@@ -4,6 +4,7 @@ import { EnrichmentStatus, TrustMetadata, Venue, VenueDetail } from '@/src/types
 import { deriveEnrichmentStatusFromRecord, mapExtendedTerrainToLegacy, toConsumerEnrichmentStatus } from '@/src/utils/enrichment-rules';
 import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
 import { estimateDriveMinutes } from './geo-utils';
+import { resolvePlacePhotoUrl, resolvePlacePhotoUrls } from './place-photo-url';
 
 function buildBestAgesLabelFromMeta(metadata: VenueFamilyMetadata | null): string | undefined {
   if (!metadata) return undefined;
@@ -57,7 +58,10 @@ export function mergePlaceToVenue(
   homeLng: number,
 ): Venue {
   const driveMinutes = estimateDriveMinutes(homeLat, homeLng, place.latitude, place.longitude);
-  const imageUrl = place.photos[0] ?? '';
+  // Stored photos are paths to our own photo proxy. Resolve them here, where the record becomes
+  // a Venue, so every consumer of imageUrl gets a URL it can actually fetch — not just on web,
+  // where a relative path happens to resolve against the page.
+  const imageUrl = resolvePlacePhotoUrl(place.photos[0]);
   const enrichmentStatus = resolveEnrichmentStatus(place, metadata);
   const consumerStatus = toConsumerEnrichmentStatus(enrichmentStatus);
   const trustedMeta = consumerMetadata(metadata, enrichmentStatus);
@@ -113,6 +117,7 @@ export function mergePlaceToVenueDetail(
   homeLng: number,
 ): VenueDetail {
   const base = mergePlaceToVenue(place, metadata, homeLat, homeLng);
+  const resolvedPhotos = resolvePlacePhotoUrls(place.photos);
   const rawStatus = resolveEnrichmentStatus(place, metadata);
   const trustedMeta = consumerMetadata(metadata, rawStatus);
   const isProviderOnly = base.enrichmentStatus === 'provider_only';
@@ -121,7 +126,7 @@ export function mergePlaceToVenueDetail(
     ...base,
     website: place.website,
     phone: place.phone,
-    photos: place.photos.length > 0 ? place.photos : base.imageUrl ? [base.imageUrl] : [],
+    photos: resolvedPhotos.length > 0 ? resolvedPhotos : base.imageUrl ? [base.imageUrl] : [],
     facilities: trustedMeta?.facilities ?? [],
     openingHours: formatOpeningHours(place.openingHours),
     terrain: trustedMeta?.terrain ?? mapExtendedTerrainToLegacy(trustedMeta?.extendedTerrain),
