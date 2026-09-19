@@ -253,6 +253,73 @@ async function reclassifyProviderOnlyPlaceRecords() {
   return { updated, skippedProtected };
 }
 
+/**
+ * One page of Google-backed place records, carrying only what an opening-hours refresh needs.
+ *
+ * Ordered by `familypilot_place_id` and paged with a `startAfter` cursor rather than an offset,
+ * so a run that resumes after a failure cannot skip a row or visit one twice because something
+ * was inserted in between.
+ */
+async function listPlaceRecordsForOpeningHours({ limit = 25, startAfter = null } = {}) {
+  const toRow = (row) => ({
+    familypilotPlaceId: row.familypilot_place_id,
+    openingHours: row.opening_hours ?? undefined,
+  });
+
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    let query = supabase
+      .from('place_records')
+      .select('familypilot_place_id, opening_hours')
+      .eq('provider', 'google')
+      .order('familypilot_place_id', { ascending: true })
+      .limit(limit);
+    if (startAfter) query = query.gt('familypilot_place_id', startAfter);
+
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return (data || []).map(toRow);
+  }
+
+  const store = readFileStore();
+  return Object.values(store.places)
+    .filter((row) => row.provider === 'google')
+    .map(toRow)
+    .sort((a, b) => a.familypilotPlaceId.localeCompare(b.familypilotPlaceId))
+    .filter((row) => (startAfter ? row.familypilotPlaceId > startAfter : true))
+    .slice(0, limit);
+}
+
+/**
+ * Write a refreshed schedule onto one row, and nothing else.
+ *
+ * Deliberately not `upsertPlaceRecord`, which rewrites the whole record. This operation refreshes
+ * opening hours alone, so `fetched_at` stays frozen — it records when the place record as a whole
+ * was last pulled, and moving it would claim a freshness for the name, photos, address and
+ * category that this run never checked.
+ */
+async function updatePlaceRecordOpeningHours(familypilotPlaceId, openingHours) {
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { error } = await supabase
+      .from('place_records')
+      .update({
+        opening_hours: openingHours ?? null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('familypilot_place_id', familypilotPlaceId);
+    if (error) throw new Error(error.message);
+    return;
+  }
+
+  const store = readFileStore();
+  const row = store.places[familypilotPlaceId];
+  if (!row) throw new Error(`No place record for ${familypilotPlaceId}`);
+  row.opening_hours = openingHours ?? null;
+  row.updated_at = new Date().toISOString();
+  writeFileStore(store);
+}
+
 async function getMetadata(familypilotId) {
   const supabase = getSupabaseAdmin();
   if (supabase) {
@@ -478,6 +545,8 @@ module.exports = {
   upsertPlaceRecord,
   upsertPlaceRecords,
   reclassifyProviderOnlyPlaceRecords,
+  listPlaceRecordsForOpeningHours,
+  updatePlaceRecordOpeningHours,
   getMetadata,
   saveMetadata,
   listQueue,
