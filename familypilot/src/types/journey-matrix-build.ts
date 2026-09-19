@@ -92,6 +92,8 @@ export interface BuildJourneyMatrixInput {
   families: PlanningFamily[];
   /** Exactly the stops the day may contain; the anchor is identified by `StopRequest.anchor`. */
   stops: StopRequest[];
+  /** Where those stops are. One entry per stop, matched by `placeId`. */
+  locations: StopLocation[];
 }
 
 /**
