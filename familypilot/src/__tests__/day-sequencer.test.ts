@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { PlanningFamily, Routine } from '@/src/services/planning/planner';
 import { SequenceOptions, homeKey, sequenceDay, stopKey } from '@/src/services/planning/sequencer';
+import { compareFailures, compareItineraries } from '@/src/services/planning/sequence-ranking';
 import { JourneyMatrix, StopRequest } from '@/src/types/day-sequence';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { OpeningHoursSchedule } from '@/src/types/opening-hours';
@@ -140,11 +141,7 @@ describe('a day is built from stops and legs, not one padded visit', () => {
       expect(journey.arrive - journey.depart).toBe(journey.travelMinutes + journey.bufferMinutes);
     }
     // Home out, the transfer between stops, then home again — in that order.
-    expect(legs.map((l) => `${l.from.kind}->${l.to.kind}`)).toEqual([
-      'home->stop',
-      'stop->stop',
-      'stop->home',
-    ]);
+    expect(legs.map((l) => l.kind)).toEqual(['rendezvous', 'transfer', 'return']);
   });
 
   it('records when the family leaves and gets back', () => {
@@ -161,13 +158,24 @@ describe('a day is built from stops and legs, not one padded visit', () => {
 });
 
 describe('the anchor venue is never substituted', () => {
-  it('keeps it even when it is not first in the request list', () => {
+  it('leads the day even when it is listed second', () => {
     const anchoredSecond = [{ ...lunch, anchor: false }, { ...gallery, anchor: true }];
     const result = sequenceDay(anchoredSecond, [family], matrix(), options, now);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.itinerary.stops.some((s) => s.anchor && s.placeId === 'fp-w')).toBe(true);
+    // The anchor is stop 1, not merely present somewhere in the day.
+    expect(result.itinerary.stops[0].placeId).toBe('fp-w');
+    expect(result.itinerary.stops[0].anchor).toBe(true);
     expect(result.itinerary.stops).toHaveLength(2);
+  });
+
+  it('is never reordered behind another activity', () => {
+    const second: StopRequest = { ...lunch, role: 'activity' };
+    for (const requests of [[gallery, second], [second, gallery]]) {
+      const result = sequenceDay(requests, [family], matrix(), options, now);
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.itinerary.stops[0].placeId).toBe('fp-w');
+    }
   });
 
   it('fails rather than dropping it when the anchor cannot be opened', () => {
@@ -265,11 +273,18 @@ describe('opening hours decide slots without inventing certainty', () => {
     expect(confirmed.ok && unconfirmed.ok).toBe(true);
     if (!confirmed.ok || !unconfirmed.ok) return;
 
-    // The unconfirmed venue schedules 85 minutes earlier, because nothing stops it opening at
-    // 09:35. It must still rank below the one known to be open, or the preference inverts
-    // exactly where it matters.
+    // The unconfirmed venue schedules earlier and so scores *better* on scheduling alone. That is
+    // the point: ordering must not depend on score magnitude, or the preference inverts exactly
+    // where it matters.
     expect(unconfirmed.itinerary.stops[0].arrive).toBeLessThan(confirmed.itinerary.stops[0].arrive);
-    expect(confirmed.itinerary.score).toBeGreaterThan(unconfirmed.itinerary.score);
+    expect(unconfirmed.itinerary.score).toBeGreaterThan(confirmed.itinerary.score);
+
+    // The comparator still puts the confirmed one first, because unknown hours are compared
+    // before any score is looked at.
+    expect(compareItineraries(confirmed.itinerary, unconfirmed.itinerary)).toBeLessThan(0);
+    expect([unconfirmed.itinerary, confirmed.itinerary].sort(compareItineraries)[0]).toBe(
+      confirmed.itinerary,
+    );
 
     // Candidate selection has not been written yet; these are the counts it will rank on, so it
     // never has to infer confidence from the weighting of a scalar.
@@ -322,9 +337,8 @@ describe('the failures a person could act on', () => {
     if (result.failure.reason !== 'no-feasible-sequence') return;
     expect(result.failure.nearest?.reason).toBe('return-by-exceeded');
     if (result.failure.nearest?.reason !== 'return-by-exceeded') return;
-    // Arrives 10:02 rather than 10:00: the 5 minute scan starts from a 22 minute drive plus the
-    // buffer, so it steps past the opening time rather than landing on it.
-    expect(result.failure.nearest.homeAt).toBe(702);
+    // 10:00 arrival, 60 minutes there, then a 25 minute drive and the buffer.
+    expect(result.failure.nearest.homeAt).toBe(700);
     expect(result.failure.nearest.returnBy).toBe(690);
   });
 
@@ -366,7 +380,9 @@ describe('the failures a person could act on', () => {
     if (result.ok) return;
     expect(result.failure.reason).toBe('no-feasible-sequence');
     if (result.failure.reason !== 'no-feasible-sequence') return;
-    expect(result.failure.attempts).toBe(2);
+    // One ordering: the anchor is pinned to stop 1, so only the stops after it can move, and
+    // with a single other stop there is nothing to permute.
+    expect(result.failure.attempts).toBe(1);
   });
 });
 
@@ -417,18 +433,87 @@ describe('several families', () => {
     // Both leave their own homes at their own times, but reach the first stop at the same moment.
     const [a, b] = result.itinerary.families;
     expect(a.depart).not.toBe(b.depart);
-    const arrivals = result.itinerary.legs.filter((l) => l.to.kind === 'stop' && l.from.kind === 'home');
+    const arrivals = result.itinerary.legs.filter((l) => l.kind === 'rendezvous');
     expect(new Set(arrivals.map((l) => l.arrive)).size).toBe(1);
+  });
+
+  it('keeps each household’s own outbound duration rather than one shared number', () => {
+    // Family A is 20 minutes from the anchor, Family B is 30. Both must survive into the
+    // itinerary: a single travelMinutes shared across the two would have to discard one.
+    const result = sequenceDay([gallery, lunch], [family, second], matrix(), options, now);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const rendezvous = result.itinerary.legs.filter((l) => l.kind === 'rendezvous');
+    const byFamily = Object.fromEntries(
+      rendezvous.map((l) => [l.kind === 'rendezvous' ? l.familyId : '', l.travelMinutes]),
+    );
+    expect(byFamily).toEqual({ a: 20, b: 30 });
+
+    // Return legs differ too, and each belongs to one family rather than a list.
+    const returns = result.itinerary.legs.filter((l) => l.kind === 'return');
+    expect(
+      Object.fromEntries(returns.map((l) => [l.kind === 'return' ? l.familyId : '', l.travelMinutes])),
+    ).toEqual({ a: 25, b: 35 });
+
+    // Different departures, same moment of arrival.
+    for (const journey of rendezvous) {
+      expect(journey.arrive - journey.depart).toBe(journey.travelMinutes + journey.bufferMinutes);
+    }
+    expect(new Set(rendezvous.map((l) => l.depart)).size).toBe(2);
+    expect(new Set(rendezvous.map((l) => l.arrive)).size).toBe(1);
   });
 
   it('gives every family their own outbound and return legs', () => {
     const result = sequenceDay([gallery, lunch], [family, second], matrix(), options, now);
     if (!result.ok) return;
-    const perFamily = result.itinerary.legs.filter((l) => l.familyIds.length === 1);
+    const perFamily = result.itinerary.legs.filter((l) => l.kind !== 'transfer');
     expect(perFamily).toHaveLength(4);
-    const shared = result.itinerary.legs.filter((l) => l.familyIds.length === 2);
+    const shared = result.itinerary.legs.filter((l) => l.kind === 'transfer');
     expect(shared).toHaveLength(1);
     expect(shared[0].from.kind).toBe('stop');
     expect(shared[0].to.kind).toBe('stop');
+  });
+});
+
+describe('the planner picks times on the clock, not on an offset grid', () => {
+  it.each(['09:00', '09:01', '09:07', '09:13', '09:22', '09:38'])(
+    'starts on a five minute boundary when the earliest departure is %s',
+    (leaveAt) => {
+      // The home→Babylon drive is 22 minutes, so an unsnapped scan starting at
+      // earliest + 22 + 15 would produce arrivals like 10:02 purely from where the grid began.
+      const result = sequenceDay(
+        [{ ...lunch, anchor: true }],
+        [family],
+        matrix(),
+        { ...options, leaveAt },
+        now,
+      );
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      for (const stop of result.itinerary.stops) {
+        expect(stop.arrive % 5).toBe(0);
+        expect(stop.depart % 5).toBe(0);
+      }
+    },
+  );
+
+  it('opens the day at 10:00 rather than 10:02 when the venue opens at ten', () => {
+    const result = sequenceDay([{ ...lunch, anchor: true }], [family], matrix(), options, now);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.itinerary.stops[0].arrive).toBe(600);
+  });
+
+  it('does not round the travel itself, so a departure stays true to the journey', () => {
+    // 22 minutes from home and a 15 minute buffer against a 10:00 arrival is 09:23, an honest
+    // time off the grid. Snapping it would claim a journey nobody is making.
+    const result = sequenceDay([{ ...lunch, anchor: true }], [family], matrix(), options, now);
+    if (!result.ok) return;
+    const [timing] = result.itinerary.families;
+    expect(timing.depart).toBe(563);
+    expect(timing.depart % 5).not.toBe(0);
+    const rendezvous = result.itinerary.legs.find((l) => l.kind === 'rendezvous')!;
+    expect(rendezvous.travelMinutes).toBe(22);
   });
 });

@@ -93,16 +93,9 @@ export interface SequenceStop {
   opening: StopOpening;
 }
 
-/**
- * A journey between two points in the day, scheduled in its own right.
- *
- * The first and last legs are per family, because families start and finish at their own homes.
- * Legs between stops are shared, so they carry every family id.
- */
-export interface SequenceLeg {
+interface SequenceLegBase {
   from: LegEndpoint;
   to: LegEndpoint;
-  familyIds: string[];
   depart: number;
   arrive: number;
   travelMinutes: number;
@@ -110,6 +103,23 @@ export interface SequenceLeg {
   bufferMinutes: number;
   source: 'live' | 'estimated';
 }
+
+/**
+ * A journey between two points in the day, scheduled in its own right.
+ *
+ * Split by kind rather than carrying a list of family ids, because households start and finish at
+ * their own homes and so have their own travel times. One duration shared across several families
+ * cannot represent that, and a single shape would let it be written by accident: a rendezvous or
+ * return leg belongs to exactly one family, and only the transfers between stops — where everyone
+ * is already travelling together — are shared.
+ */
+export type SequenceLeg =
+  /** One family leaving home for the first stop, at their own pace. */
+  | (SequenceLegBase & { kind: 'rendezvous'; familyId: string })
+  /** Everyone moving between two stops together. */
+  | (SequenceLegBase & { kind: 'transfer'; familyIds: string[] })
+  /** One family heading home from the last stop. */
+  | (SequenceLegBase & { kind: 'return'; familyId: string });
 
 export interface SequenceFamilyTiming {
   familyId: string;

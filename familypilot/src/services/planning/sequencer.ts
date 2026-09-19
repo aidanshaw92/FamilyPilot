@@ -17,6 +17,7 @@ import {
 import { isOpenOn } from '@/src/utils/opening-hours';
 
 import { PlanningFamily, PlanningOptions, ageRangeExcludes, familyRequest } from './planner';
+import { compareItineraries, mostRelevantFailure } from './sequence-ranking';
 import {
   RoutineWindow,
   TimeSpan,
@@ -30,37 +31,36 @@ import {
 } from './routine-windows';
 
 /**
- * Builds a day out of several stops: activity, lunch, optional second activity, home.
+ * Builds a day out of several stops: the chosen venue, lunch, an optional second activity, home.
  *
  * Pure by construction. Every travel time it is allowed to use arrives in the `JourneyMatrix`,
  * precomputed by the caller — this never calls a travel provider, Google or Supabase. Mixing
- * sequencing with I/O would make the interesting logic untestable and is left to the travel-legs
- * change.
+ * sequencing with I/O would make the interesting logic untestable, and live travel belongs to its
+ * own change.
  *
- * Two things it will not do. It never substitutes the anchor venue: the place chosen on Home is
- * what the day is built around, so a day that cannot include it is a failure rather than an
- * invitation to propose somewhere else. And it never reads an unconfirmed opening as an open one;
- * unknown hours are scheduled but carried in `unknowns`, because 107 of the 122 live rows have no
- * structured hours yet and refusing them would return nothing at all.
+ * Two promises it keeps. The anchor venue — the place chosen on Home — is always the first stop,
+ * never reordered behind another activity and never swapped for somewhere else; a day that cannot
+ * start there is a failure. And an unconfirmed opening is never read as an open one: unknown
+ * hours are scheduled but carried in `unknowns`, because 107 of the 122 live rows still have no
+ * structured hours and refusing them would return nothing at all.
  */
 
-const SCAN_STEP_MINUTES = 5;
+/**
+ * Times the planner picks for itself land on the clock — :00, :05, :10 — rather than on an offset
+ * grid running from whenever the first drive happened to finish. Travel durations are never
+ * rounded, so a family's departure is still whatever the journey actually implies.
+ */
+const CLOCK_GRID_MINUTES = 5;
 const MAX_FAMILIES = 6;
 const MIN_DWELL_MINUTES = 15;
 const MAX_DWELL_MINUTES = 480;
 const MAX_BUFFER_MINUTES = 60;
 const END_OF_DAY = 1439;
-/**
- * A stop whose hours nobody has confirmed costs more than any scheduling term can win back.
- *
- * Deliberately dominant. The timing terms below reach roughly 45 across a day, so a smaller
- * penalty lets an unverified venue outrank a confirmed one purely by being schedulable earlier —
- * which is the opposite of the intended preference. Making it lexicographic keeps "confirmed open
- * beats unknown" true regardless of how the rest of the day falls.
- */
-const UNKNOWN_HOURS_PENALTY = 100;
 
-export interface SequenceOptions extends Pick<PlanningOptions, 'date' | 'leaveAt' | 'returnBy' | 'bufferMinutes' | 'environment'> {
+const snapToGrid = (minutes: number): number => Math.ceil(minutes / CLOCK_GRID_MINUTES) * CLOCK_GRID_MINUTES;
+
+export interface SequenceOptions
+  extends Pick<PlanningOptions, 'date' | 'leaveAt' | 'returnBy' | 'bufferMinutes' | 'environment'> {
   /** Overrides the timezone each stop's own schedule carries. */
   timezone?: string;
 }
@@ -72,7 +72,7 @@ function leg(matrix: JourneyMatrix, from: JourneyNodeKey, to: JourneyNodeKey): J
   return matrix.legs[from]?.[to];
 }
 
-/** `HH:MM` on the planned day. Times are clamped into the day because a stop never spans midnight here. */
+/** `HH:MM` on the planned day. Stops never span midnight here, so the value is clamped into the day. */
 function hhmm(minutes: number): string {
   const within = ((Math.round(minutes) % 1440) + 1440) % 1440;
   return `${String(Math.floor(within / 60)).padStart(2, '0')}:${String(within % 60).padStart(2, '0')}`;
@@ -90,47 +90,7 @@ const invalid = (message: string): SequenceResult => ({
   failure: { reason: 'invalid-request', message },
 });
 
-/**
- * How far into the day an attempt got before it failed.
- *
- * Used to pick which near-miss to report: the attempt that scheduled the most stops is the one
- * whose reason is most likely to be actionable, and "no feasible sequence" on its own tells a
- * person nothing they can do something about.
- */
-function failureDepth(failure: SequenceFailure): number {
-  // Ordered by how far the attempt got, which is the order the checks actually run in: travel is
-  // ruled out first, then each stop's hours, then whether the families themselves can make it.
-  // A routine clash means every stop already passed its opening check, so it is a later and more
-  // useful thing to report than a closure.
-  switch (failure.reason) {
-    case 'travel-infeasible':
-      return 10;
-    case 'venue-closed':
-      return 40 + failure.stopIndex;
-    // More actionable than a flat closure: it names a time the visit could be moved before.
-    case 'venue-closes-during-visit':
-      return 50 + failure.stopIndex;
-    case 'return-by-exceeded':
-      return 85;
-    case 'routine-conflict':
-      return 90;
-    default:
-      return 0;
-  }
-}
-
-/**
- * Enough of a lift to prefer a problem with the anchor over the same kind of problem elsewhere,
- * without letting it outrank a failure that got further into the day. The day is built around the
- * anchor, so "the gallery is shut on Mondays" is the useful thing to say — not that the lunch
- * stop it was paired with happens to close at nine.
- */
-const ANCHOR_FAILURE_BONUS = 15;
-
-function rankFailure(failure: SequenceFailure, anchorPlaceId: string): number {
-  const aboutAnchor = 'placeId' in failure && failure.placeId === anchorPlaceId;
-  return failureDepth(failure) + (aboutAnchor ? ANCHOR_FAILURE_BONUS : 0);
-}
+type OpeningOutcome = { ok: true; opening: StopOpening } | { ok: false; failure: SequenceFailure };
 
 /** Checks one stop's hours, turning a closure into a failure and an unknown into a carried caveat. */
 function evaluateOpening(
@@ -139,40 +99,41 @@ function evaluateOpening(
   arrive: number,
   depart: number,
   options: SequenceOptions,
-): StopOpening | SequenceFailure {
-  const verdict = isOpenOn(
-    options.date,
-    hhmm(arrive),
-    hhmm(depart),
-    request.openingHours,
-    options.timezone,
-  );
+): OpeningOutcome {
+  const verdict = isOpenOn(options.date, hhmm(arrive), hhmm(depart), request.openingHours, options.timezone);
 
   if (verdict.status === 'closed') {
     if (verdict.closesDuringVisit) {
       return {
-        reason: 'venue-closes-during-visit',
-        message: `${request.name} closes at ${verdict.closesAt ?? 'an earlier time'}, before this visit would finish.`,
-        stopIndex: index,
-        placeId: request.placeId,
-        closesAt: verdict.closesAt,
+        ok: false,
+        failure: {
+          reason: 'venue-closes-during-visit',
+          message: `${request.name} closes at ${verdict.closesAt ?? 'an earlier time'}, before this visit would finish.`,
+          stopIndex: index,
+          placeId: request.placeId,
+          closesAt: verdict.closesAt,
+        },
       };
     }
     return {
-      reason: 'venue-closed',
-      message: `${request.name} is not open at that time on ${options.date}.`,
-      stopIndex: index,
-      placeId: request.placeId,
-      date: options.date,
+      ok: false,
+      failure: {
+        reason: 'venue-closed',
+        message: `${request.name} is not open at that time on ${options.date}.`,
+        stopIndex: index,
+        placeId: request.placeId,
+        date: options.date,
+      },
     };
   }
 
   // 'open' and 'unknown' both proceed, and the difference is preserved rather than flattened.
-  return { status: verdict.status, reason: verdict.reason, closesAt: verdict.closesAt };
+  return { ok: true, opening: { status: verdict.status, reason: verdict.reason, closesAt: verdict.closesAt } };
 }
 
-interface Attempt {
-  itinerary: DayItinerary;
+interface OrderOutcome {
+  itinerary: DayItinerary | null;
+  failures: SequenceFailure[];
 }
 
 function tryOrder(
@@ -183,38 +144,39 @@ function tryOrder(
   options: SequenceOptions,
   earliest: number,
   deadline: number,
-): Attempt | SequenceFailure {
+): OrderOutcome {
   const buffer = options.bufferMinutes;
   const first = order[0];
   const last = order[order.length - 1];
-  const anchorPlaceId = order.find((stop) => stop.anchor)!.placeId;
-  let worst: SequenceFailure | null = null;
-  const note = (failure: SequenceFailure) => {
-    if (!worst || rankFailure(failure, anchorPlaceId) > rankFailure(worst, anchorPlaceId)) worst = failure;
-    return failure;
-  };
+  const failures: SequenceFailure[] = [];
 
-  // Outbound and return legs are per family and must be inside each family's own driving limit.
+  // Rendezvous and return legs belong to one family each, and are checked against that family's
+  // own driving limit.
   const outbound: Record<string, JourneyLegEstimate> = {};
   const inbound: Record<string, JourneyLegEstimate> = {};
   for (const family of families) {
     const out = leg(matrix, homeKey(family.id), stopKey(first.placeId));
     const back = leg(matrix, stopKey(last.placeId), homeKey(family.id));
-    for (const [estimate, to, from] of [
-      [out, { kind: 'stop', index: 0, placeId: first.placeId } as LegEndpoint, { kind: 'home', familyId: family.id } as LegEndpoint],
-      [back, { kind: 'home', familyId: family.id } as LegEndpoint, { kind: 'stop', index: order.length - 1, placeId: last.placeId } as LegEndpoint],
+    const homeEnd: LegEndpoint = { kind: 'home', familyId: family.id };
+    const firstStop: LegEndpoint = { kind: 'stop', index: 0, placeId: first.placeId };
+    const lastStop: LegEndpoint = { kind: 'stop', index: order.length - 1, placeId: last.placeId };
+
+    for (const [estimate, from, to] of [
+      [out, homeEnd, firstStop],
+      [back, lastStop, homeEnd],
     ] as const) {
       if (!estimate || !Number.isFinite(estimate.minutes) || estimate.minutes < 0) {
-        return note({
+        failures.push({
           reason: 'travel-infeasible',
-          message: `No travel time is known between ${family.label} and ${first.name}.`,
+          message: `No travel time is known between ${family.label} and ${to.kind === 'stop' ? first.name : 'home'}.`,
           from,
           to,
           familyId: family.id,
         });
+        return { itinerary: null, failures };
       }
       if (estimate.minutes > family.maxDriveMinutes) {
-        return note({
+        failures.push({
           reason: 'travel-infeasible',
           message: `That journey is ${estimate.minutes} minutes, beyond ${family.label}'s ${family.maxDriveMinutes} minute limit.`,
           from,
@@ -223,6 +185,7 @@ function tryOrder(
           travelMinutes: estimate.minutes,
           limitMinutes: family.maxDriveMinutes,
         });
+        return { itinerary: null, failures };
       }
     }
     outbound[family.id] = out!;
@@ -234,12 +197,13 @@ function tryOrder(
   for (let i = 0; i < order.length - 1; i += 1) {
     const estimate = leg(matrix, stopKey(order[i].placeId), stopKey(order[i + 1].placeId));
     if (!estimate || !Number.isFinite(estimate.minutes) || estimate.minutes < 0) {
-      return note({
+      failures.push({
         reason: 'travel-infeasible',
         message: `No travel time is known between ${order[i].name} and ${order[i + 1].name}.`,
         from: { kind: 'stop', index: i, placeId: order[i].placeId },
         to: { kind: 'stop', index: i + 1, placeId: order[i + 1].placeId },
       });
+      return { itinerary: null, failures };
     }
     transfers.push(estimate);
   }
@@ -247,28 +211,31 @@ function tryOrder(
   const maxOutbound = Math.max(...families.map((f) => outbound[f.id].minutes));
   const totalDwell = order.reduce((sum, stop) => sum + stop.dwellMinutes, 0);
   const totalTransfer = transfers.reduce((sum, t) => sum + t.minutes + buffer, 0);
+  // The first arrival is the planner's own choice, so it sits on the clock rather than wherever
+  // the longest drive plus a buffer happens to land.
+  const firstPossible = snapToGrid(earliest + maxOutbound + buffer);
 
   for (
-    let firstArrival = earliest + maxOutbound + buffer;
+    let firstArrival = firstPossible;
     firstArrival + totalDwell + totalTransfer <= deadline;
-    firstArrival += SCAN_STEP_MINUTES
+    firstArrival += CLOCK_GRID_MINUTES
   ) {
     const stops: SequenceStop[] = [];
     const openingUnknowns: string[] = [];
     let cursor = firstArrival;
-    let closedOut: SequenceFailure | null = null;
+    let closedOut = false;
 
     for (let i = 0; i < order.length; i += 1) {
       const request = order[i];
       const arrive = cursor;
       const depart = arrive + request.dwellMinutes;
-      const opening = evaluateOpening(request, i, arrive, depart, options);
-      if ('reason' in opening && 'message' in opening) {
-        closedOut = note(opening as SequenceFailure);
+      const outcome = evaluateOpening(request, i, arrive, depart, options);
+      if (!outcome.ok) {
+        failures.push(outcome.failure);
+        closedOut = true;
         break;
       }
-      const resolved = opening as StopOpening;
-      if (resolved.status === 'unknown') {
+      if (outcome.opening.status === 'unknown') {
         openingUnknowns.push(`${request.name}: opening hours not confirmed`);
       }
       stops.push({
@@ -280,7 +247,7 @@ function tryOrder(
         arrive,
         depart,
         dwellMinutes: request.dwellMinutes,
-        opening: resolved,
+        opening: outcome.opening,
       });
       cursor = depart + (transfers[i] ? transfers[i].minutes + buffer : 0);
     }
@@ -289,17 +256,19 @@ function tryOrder(
     const lastDeparture = stops[stops.length - 1].depart;
     const legs: SequenceLeg[] = [];
     const timings: SequenceFamilyTiming[] = [];
-    let blocked: SequenceFailure | null = null;
+    let blocked = false;
 
     for (let i = 0; i < families.length && !blocked; i += 1) {
       const family = families[i];
       const out = outbound[family.id];
       const back = inbound[family.id];
+      // Derived from this family's own journey, so it is exact rather than snapped: the grid is
+      // for times the planner chooses, not for times travel dictates.
       const leavesHome = firstArrival - out.minutes - buffer;
       const backHome = lastDeparture + back.minutes + buffer;
 
       if (leavesHome < earliest) {
-        blocked = note({
+        failures.push({
           reason: 'travel-infeasible',
           message: `${family.label} would have to leave at ${hhmm(leavesHome)}, before the earliest departure.`,
           from: { kind: 'home', familyId: family.id },
@@ -307,44 +276,47 @@ function tryOrder(
           familyId: family.id,
           travelMinutes: out.minutes,
         });
+        blocked = true;
         break;
       }
       if (backHome > deadline) {
-        blocked = note({
+        failures.push({
           reason: 'return-by-exceeded',
           message: `${family.label} would get home at ${hhmm(backHome)}, after the time you asked to be back.`,
           familyId: family.id,
           homeAt: backHome,
           returnBy: deadline,
         });
+        blocked = true;
         break;
       }
 
       const travelSpans: TimeSpan[] = [{ from: leavesHome, to: firstArrival }];
       stops.forEach((stop, index) => {
-        const transfer = transfers[index];
-        if (transfer) travelSpans.push({ from: stop.depart, to: stops[index + 1].arrive });
+        if (transfers[index]) travelSpans.push({ from: stop.depart, to: stops[index + 1].arrive });
       });
       travelSpans.push({ from: lastDeparture, to: backHome });
 
       const homeClash = homeRoutineConflict(windows[i], leavesHome, backHome);
       if (homeClash) {
-        blocked = note({
+        failures.push({
           reason: 'routine-conflict',
           message: `${homeClash.label || homeClash.kind} at ${homeClash.time} has to happen at home, and the day would be out then.`,
           familyId: family.id,
           routineLabel: homeClash.label || homeClash.kind,
         });
+        blocked = true;
         break;
       }
       const travelClash = travelRoutineConflict(windows[i], travelSpans);
       if (travelClash) {
-        blocked = note({
+        failures.push({
           reason: 'routine-conflict',
           message: `${travelClash.label || travelClash.kind} at ${travelClash.time} would fall while travelling.`,
           familyId: family.id,
           routineLabel: travelClash.label || travelClash.kind,
         });
+        blocked = true;
         break;
       }
 
@@ -363,9 +335,10 @@ function tryOrder(
       });
 
       legs.push({
+        kind: 'rendezvous',
+        familyId: family.id,
         from: { kind: 'home', familyId: family.id },
         to: { kind: 'stop', index: 0, placeId: first.placeId },
-        familyIds: [family.id],
         depart: leavesHome,
         arrive: firstArrival,
         travelMinutes: out.minutes,
@@ -373,9 +346,10 @@ function tryOrder(
         source: out.source,
       });
       legs.push({
+        kind: 'return',
+        familyId: family.id,
         from: { kind: 'stop', index: order.length - 1, placeId: last.placeId },
         to: { kind: 'home', familyId: family.id },
-        familyIds: [family.id],
         depart: lastDeparture,
         arrive: backHome,
         travelMinutes: back.minutes,
@@ -385,13 +359,13 @@ function tryOrder(
     }
     if (blocked) continue;
 
-    // Shared transfers, recorded once with everyone on them.
     const familyIds = families.map((f) => f.id);
     transfers.forEach((transfer, index) => {
       legs.push({
+        kind: 'transfer',
+        familyIds,
         from: { kind: 'stop', index, placeId: stops[index].placeId },
         to: { kind: 'stop', index: index + 1, placeId: stops[index + 1].placeId },
-        familyIds,
         depart: stops[index].depart,
         arrive: stops[index + 1].arrive,
         travelMinutes: transfer.minutes,
@@ -405,15 +379,17 @@ function tryOrder(
     // definition of what suits a family. The drive a constraint is judged against is the leg the
     // family actually took to reach that stop.
     const factUnknowns = new Set<string>();
+    let ineligible: SequenceFailure | null = null;
     for (const family of families) {
-      for (let i = 0; i < order.length; i += 1) {
+      for (let i = 0; i < order.length && !ineligible; i += 1) {
         const request = order[i];
         if (family.ages.length && ageRangeExcludes(request.facts, family.ages)) {
-          return note({
+          ineligible = {
             reason: 'no-feasible-sequence',
             message: `${request.name} publishes an age range that excludes a child in ${family.label}.`,
             attempts: 1,
-          });
+          };
+          break;
         }
         const driveMinutes = i === 0 ? outbound[family.id].minutes : transfers[i - 1].minutes;
         const match = matchVenueToDayRequest(
@@ -421,16 +397,21 @@ function tryOrder(
           familyRequest(family, options.environment),
         );
         if (!match.eligible) {
-          return note({
+          ineligible = {
             reason: 'no-feasible-sequence',
             message: `${request.name} does not meet what ${family.label} requires.`,
             attempts: 1,
-          });
+          };
+          break;
         }
         match.evaluations
           .filter((evaluation) => evaluation.outcome === 'unknown')
           .forEach((evaluation) => factUnknowns.add(`${evaluation.field}: not confirmed`));
       }
+    }
+    if (ineligible) {
+      failures.push(ineligible);
+      return { itinerary: null, failures };
     }
 
     const drives = families.map((f) => outbound[f.id].minutes);
@@ -438,6 +419,7 @@ function tryOrder(
     const unknownHours = stops.filter((stop) => stop.opening.status === 'unknown').length;
 
     return {
+      failures,
       itinerary: {
         date: options.date,
         stops,
@@ -446,32 +428,21 @@ function tryOrder(
         unknowns: [...openingUnknowns, ...factUnknowns],
         openingConfidence: { confirmed: stops.length - unknownHours, unknown: unknownHours },
         reasons: [
-          `${stops.length} ${stops.length === 1 ? 'stop' : 'stops'}, built around ${order.find((s) => s.anchor)!.name}.`,
+          `${stops.length} ${stops.length === 1 ? 'stop' : 'stops'}, built around ${stops[0].name}.`,
           families.length > 1
             ? `${fairnessGap} minute difference between outbound journeys.`
             : 'Fits your selected travel limit.',
           'Fits the home routines you entered.',
         ],
         fairnessGap,
-        // Unknown hours cost the day something, so a caller choosing between candidates prefers
-        // a venue confirmed open over one nobody has checked.
-        score:
-          1000 -
-          fairnessGap -
-          Math.max(...drives) * 0.25 -
-          (firstArrival - earliest) * 0.05 -
-          unknownHours * UNKNOWN_HOURS_PENALTY,
+        // Scheduling quality only. Whether hours are confirmed is compared separately and first,
+        // in compareItineraries, so it never depends on the magnitude of these terms.
+        score: 1000 - fairnessGap - Math.max(...drives) * 0.25 - (firstArrival - earliest) * 0.05,
       },
     };
   }
 
-  return (
-    worst ?? {
-      reason: 'no-feasible-sequence',
-      message: 'No start time in the day fits this order of stops.',
-      attempts: 1,
-    }
-  );
+  return { itinerary: null, failures };
 }
 
 export function sequenceDay(
@@ -489,10 +460,12 @@ export function sequenceDay(
     return invalid('The same place cannot appear twice in one day.');
   }
   const anchors = requests.filter((r) => r.anchor);
-  if (anchors.length !== 1) {
-    return invalid('A day is built around exactly one chosen place.');
-  }
-  if (requests.some((r) => !Number.isFinite(r.dwellMinutes) || r.dwellMinutes < MIN_DWELL_MINUTES || r.dwellMinutes > MAX_DWELL_MINUTES)) {
+  if (anchors.length !== 1) return invalid('A day is built around exactly one chosen place.');
+  if (
+    requests.some(
+      (r) => !Number.isFinite(r.dwellMinutes) || r.dwellMinutes < MIN_DWELL_MINUTES || r.dwellMinutes > MAX_DWELL_MINUTES,
+    )
+  ) {
     return invalid(`Time at each place must be between ${MIN_DWELL_MINUTES} and ${MAX_DWELL_MINUTES} minutes.`);
   }
   if (!families.length || families.length > MAX_FAMILIES) {
@@ -529,33 +502,37 @@ export function sequenceDay(
     return invalid(error instanceof Error ? error.message : 'Check the times you entered.');
   }
 
-  const orders = permutations(requests);
-  let nearest: SequenceFailure | null = null;
-  let attempts = 0;
+  // The anchor is the first non-home stop, always. Only the stops after it are reordered, so no
+  // other activity is ever placed ahead of the venue the day was chosen for.
+  const anchor = anchors[0];
+  const rest = requests.filter((request) => request !== anchor);
+  const orders = permutations(rest).map((tail) => [anchor, ...tail]);
 
+  const candidates: DayItinerary[] = [];
+  const failures: SequenceFailure[] = [];
   for (const order of orders) {
-    attempts += 1;
     const outcome = tryOrder(order, families, windows, matrix, options, earliest, deadline);
-    if ('itinerary' in outcome) {
-      // The anchor is never dropped or swapped, so this holds by construction; asserting it keeps
-      // a future change to the ordering from quietly breaking the promise.
-      if (!outcome.itinerary.stops.some((stop) => stop.anchor && stop.placeId === anchors[0].placeId)) {
-        return invalid('The chosen place was lost while building the day.');
-      }
-      return { ok: true, itinerary: outcome.itinerary };
+    if (outcome.itinerary) candidates.push(outcome.itinerary);
+    failures.push(...outcome.failures);
+  }
+
+  if (candidates.length) {
+    const [best] = candidates.sort(compareItineraries);
+    if (best.stops[0]?.placeId !== anchor.placeId) {
+      // Holds by construction; asserted so a future change to ordering cannot quietly break the
+      // promise that the chosen venue leads the day.
+      return invalid('The chosen place was lost while building the day.');
     }
-    if (!nearest || rankFailure(outcome, anchors[0].placeId) > rankFailure(nearest, anchors[0].placeId)) {
-      nearest = outcome;
-    }
+    return { ok: true, itinerary: best };
   }
 
   return {
     ok: false,
     failure: {
       reason: 'no-feasible-sequence',
-      message: 'No order of these stops fits the day you described.',
-      attempts,
-      nearest: nearest ?? undefined,
+      message: 'No arrangement of these stops fits the day you described.',
+      attempts: orders.length,
+      nearest: mostRelevantFailure(failures, anchor.placeId),
     },
   };
 }
