@@ -11,6 +11,10 @@ const {
   getMetadata,
   saveMetadata,
 } = require('../../server/enrichment/_lib/enrichment-store');
+const {
+  runOpeningHoursBackfill,
+  createOpeningHoursBackfillDeps,
+} = require('../../server/enrichment/_lib/opening-hours-backfill');
 const { sanitizePayload } = require('../../server/enrichment/_lib/validation');
 const { isAiConfigured } = require('../../server/enrichment/_lib/ai-provider');
 const {
@@ -59,6 +63,8 @@ module.exports = async function handler(req, res) {
       return handleStats(req, res);
     case 'sync':
       return handleSync(req, res);
+    case 'backfill-opening-hours':
+      return handleBackfillOpeningHours(req, res);
     case 'venue':
       return handleVenue(req, res);
     case 'export':
@@ -187,6 +193,35 @@ async function handleSync(req, res) {
   } catch (error) {
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Sync failed',
+    });
+  }
+}
+
+/**
+ * Refresh structured opening hours for a page of Google-backed place records.
+ *
+ * Admin-only, behind the same `ENRICHMENT_ADMIN_TOKEN` every other write action uses. Reports a
+ * dry run unless the body carries a literal `dryRun: false`, so an accidental call — a stray curl,
+ * a mistyped body, a retried request — enumerates and compares without touching a row.
+ */
+async function handleBackfillOpeningHours(req, res) {
+  setCorsHeaders(res, 'POST');
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!verifyEnrichmentAuth(req, res)) return;
+
+  try {
+    const result = await runOpeningHoursBackfill(
+      {
+        limit: req.body?.limit,
+        startAfter: req.body?.startAfter,
+        dryRun: req.body?.dryRun,
+      },
+      createOpeningHoursBackfillDeps(),
+    );
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Opening-hours backfill failed',
     });
   }
 }
