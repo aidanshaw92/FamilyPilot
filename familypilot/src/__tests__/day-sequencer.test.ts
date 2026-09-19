@@ -517,3 +517,75 @@ describe('the planner picks times on the clock, not on an offset grid', () => {
     expect(rendezvous.travelMinutes).toBe(22);
   });
 });
+
+describe('v1 stop order: home → anchor → meal → optional activity → home', () => {
+  const activity: StopRequest = {
+    ...lunch,
+    placeId: 'fp-c',
+    name: 'Second Activity',
+    role: 'activity',
+    facts: facts('fp-c', 'Second Activity'),
+    openingHours: BABYLON,
+  };
+  const threeStopMatrix = matrix({
+    [homeKey('a')]: { [stopKey('fp-w')]: 20, [stopKey('fp-b')]: 22, [stopKey('fp-c')]: 22 },
+    [stopKey('fp-w')]: { [homeKey('a')]: 25, [stopKey('fp-b')]: 15, [stopKey('fp-c')]: 15 },
+    [stopKey('fp-b')]: { [homeKey('a')]: 25, [stopKey('fp-w')]: 15, [stopKey('fp-c')]: 15 },
+    [stopKey('fp-c')]: { [homeKey('a')]: 25, [stopKey('fp-w')]: 15, [stopKey('fp-b')]: 15 },
+  });
+
+  const roles = (requests: StopRequest[]) => {
+    const result = sequenceDay(requests, [family], threeStopMatrix, options, now);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return null;
+    return result.itinerary.stops.map((s) => `${s.placeId}:${s.role}`);
+  };
+
+  const EXPECTED = ['fp-w:activity', 'fp-b:meal', 'fp-c:activity'];
+
+  it('keeps [anchor, meal, activity] in that order', () => {
+    expect(roles([gallery, lunch, activity])).toEqual(EXPECTED);
+  });
+
+  it('reorders [activity, anchor, meal] to put the anchor first and the meal second', () => {
+    expect(roles([activity, gallery, lunch])).toEqual(EXPECTED);
+  });
+
+  it('reorders [anchor, activity, meal] so the meal is not left until last', () => {
+    // The shape this rules out: activity → activity → meal.
+    expect(roles([gallery, activity, lunch])).toEqual(EXPECTED);
+  });
+
+  it('allows a second activity at stop 2 when there is no meal', () => {
+    const order = roles([gallery, activity]);
+    expect(order).toEqual(['fp-w:activity', 'fp-c:activity']);
+  });
+
+  it('still enforces the three-stop cap', () => {
+    const fourth: StopRequest = { ...activity, placeId: 'fp-d', name: 'Fourth', facts: facts('fp-d', 'Fourth') };
+    const result = sequenceDay([gallery, lunch, activity, fourth], [family], threeStopMatrix, options, now);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.failure.reason).toBe('invalid-request');
+      expect(result.failure.message).toContain('at most 3 stops');
+    }
+  });
+
+  it('refuses two meals, which cannot both be stop 2', () => {
+    const secondMeal: StopRequest = { ...activity, role: 'meal' };
+    const result = sequenceDay([gallery, lunch, secondMeal], [family], threeStopMatrix, options, now);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.failure.reason).toBe('invalid-request');
+      expect(result.failure.message).toBe('A day can include only one meal stop.');
+    }
+  });
+
+  it('leaves no ordering freedom once a meal is present', () => {
+    const result = sequenceDay([gallery, activity, lunch], [family], threeStopMatrix, options, now);
+    if (!result.ok) return;
+    // Stops and legs still line up: three stops, and travel between each of them.
+    expect(result.itinerary.stops.map((s) => s.index)).toEqual([0, 1, 2]);
+    expect(result.itinerary.legs.filter((l) => l.kind === 'transfer')).toHaveLength(2);
+  });
+});

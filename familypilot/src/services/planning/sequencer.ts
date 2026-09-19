@@ -502,11 +502,22 @@ export function sequenceDay(
     return invalid(error instanceof Error ? error.message : 'Check the times you entered.');
   }
 
-  // The anchor is the first non-home stop, always. Only the stops after it are reordered, so no
-  // other activity is ever placed ahead of the venue the day was chosen for.
+  // v1 shape: home → anchor activity → meal → optional activity → home.
+  //
+  // The anchor is always the first non-home stop, so no other activity is ever placed ahead of
+  // the venue the day was chosen for. A meal takes second place whenever there is one, which is
+  // what makes the day a lunch in the middle rather than an afterthought at the end — so
+  // activity → activity → meal is not a shape this version will produce. Only when there is no
+  // meal do the remaining activities have any freedom, and then the comparator picks between
+  // them.
   const anchor = anchors[0];
   const rest = requests.filter((request) => request !== anchor);
-  const orders = permutations(rest).map((tail) => [anchor, ...tail]);
+  const meals = rest.filter((request) => request.role === 'meal');
+  if (meals.length > 1) return invalid('A day can include only one meal stop.');
+  const activities = rest.filter((request) => request.role !== 'meal');
+  const orders = meals.length
+    ? [[anchor, ...meals, ...activities]]
+    : permutations(activities).map((tail) => [anchor, ...tail]);
 
   const candidates: DayItinerary[] = [];
   const failures: SequenceFailure[] = [];
