@@ -15,6 +15,25 @@ import type { OpeningHoursSchedule } from '@/src/types/opening-hours';
  * convention `planner.ts` already uses, so `clockLabel` renders these unchanged.
  */
 
+/**
+ * The time a plan is being made at, already resolved into the timezone the plan is about.
+ *
+ * A `Date` is read in the host's timezone, which is right for a device planning its own day and
+ * wrong for a service planning a venue's: near midnight the two disagree about what day it is,
+ * and about how much of today is left. Resolving once, up front, means matrix construction and
+ * sequencing cannot reach different conclusions from the same instant.
+ *
+ * Lives here rather than beside the sequencer because both the sequencer and the day-plan result
+ * carry it, and the result types should not have to depend on a service module to name it.
+ */
+export interface PlanningClock {
+  /** YYYY-MM-DD in the planning timezone. */
+  today: string;
+  /** Wall-clock minutes past midnight in that same timezone. */
+  nowMinutes: number;
+  timezone: string;
+}
+
 /** Lunch is a stop like any other, not an add-on folded into a neighbouring visit. */
 export type StopRole = 'activity' | 'meal';
 
