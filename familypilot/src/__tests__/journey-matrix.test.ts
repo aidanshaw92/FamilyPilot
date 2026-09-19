@@ -14,9 +14,9 @@ import {
 } from '@/src/types/journey-matrix-build';
 
 /**
- * The builder is the only part of planning that reaches the network, so these drive it through a
- * stubbed probe — including the degraded answers the real endpoint gives when Google declines an
- * element or the key is missing entirely.
+ * The builder is the only network boundary in the JourneyMatrix / new sequencer path, so these
+ * drive it through a stubbed probe — including the degraded answers the real endpoint gives when
+ * Google declines an element or the key is missing entirely.
  */
 
 const TODAY = '2026-09-22';
@@ -208,6 +208,57 @@ describe('provenance', () => {
     expect(missing).toEqual([]);
     expect(provenance).toEqual({ live: 0, estimated: 8 });
     expect(matrix.legs[homeKey('a')][stopKey(ANCHOR)]).toEqual({ minutes: 20, source: 'estimated' });
+  });
+
+  it('reports no downgrade for a future date the provider had already estimated', async () => {
+    // Nothing was taken away, so nothing was downgraded. Reading `trafficDowngraded` off the date
+    // alone would describe a loss that never happened.
+    const allEstimated = Object.fromEntries(
+      Object.entries(TABLE).map(([key, value]) => [key, { ...value, source: 'estimated' as const }]),
+    );
+    const { provenance, trafficDowngraded } = await buildJourneyMatrix(twoFamilyInput, {
+      probe: probeFrom(allEstimated, originOf),
+      planDate: '2026-12-25',
+      today: TODAY,
+    });
+
+    expect(provenance.live).toBe(0);
+    expect(trafficDowngraded).toBe(false);
+  });
+
+  it('reports a downgrade only when a live element actually lost its label', async () => {
+    const oneLive: Record<string, { minutes: number; source: 'live' | 'estimated' }> =
+      Object.fromEntries(
+        Object.entries(TABLE).map(([key, value]) => [key, { ...value, source: 'estimated' as const }]),
+      );
+    oneLive[`${homeKey('a')}->${stopKey(ANCHOR)}`] = { minutes: 20, source: 'live' };
+
+    const future = await buildJourneyMatrix(twoFamilyInput, {
+      probe: probeFrom(oneLive, originOf),
+      planDate: '2026-12-25',
+      today: TODAY,
+    });
+    expect(future.trafficDowngraded).toBe(true);
+    expect(future.provenance.live).toBe(0);
+
+    // The same data planned for today keeps its live element and is not a downgrade.
+    const todayBuild = await buildJourneyMatrix(twoFamilyInput, {
+      probe: probeFrom(oneLive, originOf),
+      planDate: TODAY,
+      today: TODAY,
+    });
+    expect(todayBuild.trafficDowngraded).toBe(false);
+    expect(todayBuild.provenance.live).toBe(1);
+  });
+
+  it('never reports a downgrade for a plan made today', async () => {
+    const { trafficDowngraded, provenance } = await buildJourneyMatrix(twoFamilyInput, {
+      probe: probeFrom(TABLE, originOf),
+      planDate: TODAY,
+      today: TODAY,
+    });
+    expect(trafficDowngraded).toBe(false);
+    expect(provenance.live).toBe(8);
   });
 
   it('exposes no live leg for a plan on another date', async () => {

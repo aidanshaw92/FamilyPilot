@@ -4,9 +4,12 @@ import type { PlanningFamily } from '@/src/services/planning/planner';
 /**
  * Turning family homes and a day's stops into the matrix `sequenceDay` consumes.
  *
- * The split matters: the builder owns every network call, and `sequenceDay` owns none. Keeping
- * the provider behind one injected function is what lets the whole of matrix construction be
- * tested against recorded provider responses, including the ones that come back degraded.
+ * The split matters: the builder is the only network boundary in the JourneyMatrix / new
+ * sequencer path, and `sequenceDay` has none at all. The existing recommendation and planner path
+ * still performs its own journey I/O and has not migrated, so this is not yet the only place in
+ * planning that reaches a provider. Keeping the provider behind one injected function is what
+ * lets the whole of matrix construction be tested against recorded provider responses, including
+ * the ones that come back degraded.
  *
  * PR 4 deliberately does not change the provider contract. The endpoint asks Google for current
  * traffic and nothing here pretends otherwise: a plan for another date is recorded as estimated
@@ -82,8 +85,13 @@ export interface JourneyMatrixBuild {
   /** Per-leg counts, for reporting how much of a day rests on estimates. */
   provenance: { live: number; estimated: number };
   /**
-   * True when the plan is for another date, in which case no leg carries `live` however the
-   * provider answered.
+   * True only when at least one element the provider reported as `live` was relabelled
+   * `estimated` because the plan is for another date.
+   *
+   * Narrower than "the date differs", deliberately. A future-dated day the provider had already
+   * estimated throughout has lost nothing, so reporting a downgrade would describe a loss that
+   * never happened. Either way a future-dated matrix exposes no `live` leg — that guarantee lives
+   * in `provenance.live`, not here.
    */
   trafficDowngraded: boolean;
 }

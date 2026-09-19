@@ -19,8 +19,12 @@ import { homeKey, stopKey } from './sequencer';
 /**
  * Builds the road-network travel times `sequenceDay` consumes.
  *
- * This is where every network call lives, so the sequencer can stay pure. The provider takes one
- * origin and many destinations, so the day becomes one probe per origin: each family home asking
+ * This is the only network boundary in the JourneyMatrix / new sequencer path, so the sequencer
+ * can stay pure. The existing recommendation and planner path does its own journey I/O and has
+ * not migrated, so this is not yet the only place in planning that reaches a provider.
+ *
+ * The provider takes one origin and many destinations, so the day becomes one probe per origin:
+ * each family home asking
  * for the anchor, and each stop asking for the other stops and every home. Asymmetry falls out of
  * that shape rather than being assumed — home to anchor and anchor to home are different origins,
  * so they are genuinely different measurements.
@@ -192,7 +196,10 @@ export async function buildJourneyMatrix(
 
   // Traffic measured now is not traffic on another day, so nothing from a differently-dated plan
   // is allowed to keep a live label.
-  const trafficDowngraded = input.families.length > 0 && deps.planDate !== deps.today;
+  const downgradeApplies = deps.planDate !== deps.today;
+  // Whether anything was actually taken away, which is a narrower thing than the date differing:
+  // a future-dated day the provider had already estimated throughout loses nothing.
+  let downgradedAnyLive = false;
 
   const legs: Record<JourneyNodeKey, Record<JourneyNodeKey, JourneyLegEstimate>> = {};
   const missing: MissingJourneyLeg[] = [...unplaceable];
@@ -217,7 +224,8 @@ export async function buildJourneyMatrix(
         continue;
       }
 
-      const source = trafficDowngraded ? 'estimated' : element.source;
+      const source = downgradeApplies ? 'estimated' : element.source;
+      if (downgradeApplies && element.source === 'live') downgradedAnyLive = true;
       if (source === 'live') live += 1;
       else estimated += 1;
 
@@ -227,5 +235,10 @@ export async function buildJourneyMatrix(
   });
 
   const matrix: JourneyMatrix = { legs };
-  return { matrix, missing, provenance: { live, estimated }, trafficDowngraded };
+  return {
+    matrix,
+    missing,
+    provenance: { live, estimated },
+    trafficDowngraded: downgradedAnyLive,
+  };
 }
