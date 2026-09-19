@@ -6,6 +6,7 @@ import {
   JourneyNodeKey,
   LegEndpoint,
   MAX_SEQUENCE_STOPS,
+  PlanningClock,
   SequenceFailure,
   SequenceFamilyTiming,
   SequenceLeg,
@@ -89,6 +90,22 @@ const invalid = (message: string): SequenceResult => ({
   ok: false,
   failure: { reason: 'invalid-request', message },
 });
+
+/**
+ * Reads the clock the caller supplied, without reinterpreting it.
+ *
+ * A `Date` is read in the host's timezone, which is what every existing caller expects and gets.
+ * A caller that knows which timezone the plan is actually about passes a `PlanningClock` already
+ * resolved into it, and nothing here second-guesses those values.
+ */
+function resolveClock(now: Date | PlanningClock): { today: string; nowMinutes: number } {
+  if (!(now instanceof Date)) return { today: now.today, nowMinutes: now.nowMinutes };
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return {
+    today: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
+    nowMinutes: now.getHours() * 60 + now.getMinutes(),
+  };
+}
 
 type OpeningOutcome = { ok: true; opening: StopOpening } | { ok: false; failure: SequenceFailure };
 
@@ -450,7 +467,7 @@ export function sequenceDay(
   families: PlanningFamily[],
   matrix: JourneyMatrix,
   options: SequenceOptions,
-  now: Date = new Date(),
+  now: Date | PlanningClock = new Date(),
 ): SequenceResult {
   if (!requests.length) return invalid('Choose at least one place to visit.');
   if (requests.length > MAX_SEQUENCE_STOPS) {
@@ -485,8 +502,10 @@ export function sequenceDay(
   ) {
     return invalid('Choose a valid date.');
   }
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (selected < today) return invalid('Choose today or a future date.');
+  const clock = resolveClock(now);
+  // YYYY-MM-DD compares lexicographically in date order, so this needs no Date arithmetic — and
+  // no second reading of the clock in whatever timezone the host happens to be in.
+  if (options.date < clock.today) return invalid('Choose today or a future date.');
 
   let windows: RoutineWindow[][];
   let earliest: number;
@@ -495,7 +514,7 @@ export function sequenceDay(
     windows = families.map((family) => routineWindows(family.routines));
     earliest = Math.max(
       clockMinutes(options.leaveAt),
-      selected.getTime() === today.getTime() ? now.getHours() * 60 + now.getMinutes() : 0,
+      options.date === clock.today ? clock.nowMinutes : 0,
     );
     deadline = options.returnBy ? clockMinutes(options.returnBy) : END_OF_DAY;
   } catch (error) {
