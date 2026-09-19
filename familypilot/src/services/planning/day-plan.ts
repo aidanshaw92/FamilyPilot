@@ -13,7 +13,9 @@ import {
   PlanningClock,
   SequenceFailure,
   StopRequest,
+  StopRole,
 } from '@/src/types/day-sequence';
+import { ExternalPlaceRecord } from '@/src/types/places';
 import {
   JourneyProbeFn,
   MissingJourneyLeg,
@@ -55,13 +57,73 @@ const invalid = (message: string, field?: string): PlanGenerationResult => ({
   failure: { kind: 'invalid-request', message, field },
 });
 
+/**
+ * Narrows a provider record down to what planning needs.
+ *
+ * Exported so callers do not hand-roll this mapping and quietly disagree about which field is
+ * the place id. Everything a plan has no business knowing — photos, website, provider ids, fetch
+ * timestamps — is left behind here rather than carried through the planner.
+ */
+export function resolvedStopFromRecord(
+  record: ExternalPlaceRecord,
+  role: StopRole,
+  dwellMinutes: number,
+): ResolvedStop {
+  return {
+    placeId: record.familypilotId,
+    name: record.name,
+    category: record.category,
+    role,
+    dwellMinutes,
+    latitude: record.latitude,
+    longitude: record.longitude,
+    openingHours: record.openingHours,
+    isOpen: record.isOpen,
+    enrichmentStatus: record.enrichmentStatus,
+    familyMetadata: record.familyMetadata,
+  };
+}
+
 const stopsOf = (request: DayPlanRequest): ResolvedStop[] =>
   [request.anchor, request.meal, request.secondActivity].filter(
     (stop): stop is ResolvedStop => stop !== undefined,
   );
 
+/**
+ * A real day on the calendar, not merely eight digits and two dashes.
+ *
+ * The sequencer checks this too and keeps doing so, but by then a matrix has already been built:
+ * a date like 2026-02-30 would cost a round of provider calls before anything noticed.
+ */
+function isRealCalendarDate(date: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+  const parsed = new Date(`${date}T00:00:00`);
+  return (
+    Number.isFinite(parsed.getTime()) &&
+    parsed.getFullYear() === Number(date.slice(0, 4)) &&
+    parsed.getMonth() + 1 === Number(date.slice(5, 7)) &&
+    parsed.getDate() === Number(date.slice(8, 10))
+  );
+}
+
 function validate(request: DayPlanRequest, stops: ResolvedStop[]): PlanGenerationResult | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(request.date)) return invalid('Choose a valid date.', 'date');
+  if (!isRealCalendarDate(request.date)) return invalid('Choose a valid date.', 'date');
+
+  // The slot a stop occupies is a claim about what it is, and the sequencer orders the day by
+  // `role`. A meal sitting in the activity slot would quietly move lunch to the end of the day,
+  // so a contradiction between the two is rejected rather than silently honoured.
+  if (request.anchor.role !== 'activity') {
+    return invalid('The venue a day is built around must be an activity.', 'anchor.role');
+  }
+  if (request.meal && request.meal.role !== 'meal') {
+    return invalid(`${request.meal.name} is in the meal slot but is not a meal.`, 'meal.role');
+  }
+  if (request.secondActivity && request.secondActivity.role !== 'activity') {
+    return invalid(
+      `${request.secondActivity.name} is in the second activity slot but is not an activity.`,
+      'secondActivity.role',
+    );
+  }
   if (!request.families.length || request.families.length > MAX_FAMILIES) {
     return invalid(`Choose between one and ${MAX_FAMILIES} families.`, 'families');
   }
@@ -73,9 +135,6 @@ function validate(request: DayPlanRequest, stops: ResolvedStop[]): PlanGeneratio
   }
   if (new Set(stops.map((stop) => stop.placeId)).size !== stops.length) {
     return invalid('The same place cannot appear twice in one day.', 'stops');
-  }
-  if (request.anchor.role === 'meal' && request.meal) {
-    return invalid('A day can include only one meal stop.', 'meal');
   }
   for (const stop of stops) {
     if (!Number.isFinite(stop.latitude) || !Number.isFinite(stop.longitude)) {
@@ -262,8 +321,13 @@ export async function generateDayPlan(
         name: stop.name,
       })),
   ];
-  if (build.provenance.estimated > 0) {
-    caveats.push({ kind: 'travel-estimated', legs: build.provenance.estimated });
+  // Counted off the journeys the day actually makes, not the matrix. The matrix holds legs for
+  // orders that were considered and dropped, and telling a family their travel times are
+  // estimated because of a journey they are not taking would be untrue. The full matrix
+  // provenance stays in `travel.provenance` for debugging.
+  const estimatedLegsInPlan = sequenced.itinerary.legs.filter((leg) => leg.source === 'estimated').length;
+  if (estimatedLegsInPlan > 0) {
+    caveats.push({ kind: 'travel-estimated', legs: estimatedLegsInPlan });
   }
   if (build.trafficDowngraded) {
     caveats.push({ kind: 'traffic-not-predictive', planDate: request.date });

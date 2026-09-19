@@ -1,13 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { buildJourneyMatrix } from '@/src/services/planning/journey-matrix';
-import { GenerateDayPlanDeps, generateDayPlan } from '@/src/services/planning/day-plan';
+import { GenerateDayPlanDeps, generateDayPlan, resolvedStopFromRecord } from '@/src/services/planning/day-plan';
 import { PlanningFamily, Routine } from '@/src/services/planning/planner';
 import { homeKey, sequenceDay, stopKey } from '@/src/services/planning/sequencer';
 import { DayPlanRequest, ResolvedStop } from '@/src/types/day-plan';
 import { JourneyMatrix } from '@/src/types/day-sequence';
 import { JourneyMatrixBuild, JourneyProbe, JourneyProbeResult } from '@/src/types/journey-matrix-build';
 import { OpeningHoursSchedule } from '@/src/types/opening-hours';
+import { ExternalPlaceRecord } from '@/src/types/places';
 
 import { BABYLON_PARK, TEXT_ONLY_PLACE, WHITECHAPEL_GALLERY } from './fixtures/provider-opening-hours';
 
@@ -458,5 +459,195 @@ describe('the planning clock is never the device clock', () => {
     );
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.plan.clock.timezone).toBe('Europe/London');
+  });
+});
+
+describe('a stop must be what its slot says it is', () => {
+  // sequenceDay orders the day by StopRequest.role, so a DTO whose role contradicts its slot
+  // would quietly move lunch somewhere nobody asked for.
+  const rejects = async (over: Partial<DayPlanRequest>, field: string) => {
+    const buildMatrix = vi.fn() as unknown as typeof buildJourneyMatrix;
+    const result = await generateDayPlan(request(over), deps({ buildMatrix }));
+
+    expect(result.ok).toBe(false);
+    if (!result.ok && result.failure.kind === 'invalid-request') {
+      expect(result.failure.field).toBe(field);
+    } else {
+      expect.unreachable(`${field} mismatch must be an invalid request`);
+    }
+    expect(buildMatrix).not.toHaveBeenCalled();
+  };
+
+  it('refuses a meal in the anchor slot', () =>
+    rejects({ anchor: stop(ANCHOR, { role: 'meal' }) }, 'anchor.role'));
+
+  it('refuses an activity in the meal slot', () =>
+    rejects({ meal: stop(MEAL, { role: 'activity', openingHours: BABYLON }) }, 'meal.role'));
+
+  it('refuses a meal in the second activity slot', () =>
+    rejects({ secondActivity: stop(EXTRA, { role: 'meal', openingHours: BABYLON }) }, 'secondActivity.role'));
+
+  it('accepts the roles the slots expect', async () => {
+    const result = await generateDayPlan(request(), deps());
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.plan.itinerary.stops.map((s) => s.role)).toEqual(['activity', 'meal', 'activity']);
+    }
+  });
+});
+
+describe('a date must be a real day before anything is fetched', () => {
+  it('refuses 2026-02-30 without building a matrix', async () => {
+    const buildMatrix = vi.fn() as unknown as typeof buildJourneyMatrix;
+    const result = await generateDayPlan(request({ date: '2026-02-30' }), deps({ buildMatrix }));
+
+    expect(result.ok).toBe(false);
+    if (!result.ok && result.failure.kind === 'invalid-request') {
+      expect(result.failure.field).toBe('date');
+    } else {
+      expect.unreachable('an impossible date must be an invalid request');
+    }
+    // The sequencer would have caught it, but only after a round of provider calls.
+    expect(buildMatrix).not.toHaveBeenCalled();
+  });
+
+  it.each(['2026-13-01', '2026-04-31', '2025-02-29'])('refuses %s', async (date) => {
+    const buildMatrix = vi.fn() as unknown as typeof buildJourneyMatrix;
+    const result = await generateDayPlan(request({ date }), deps({ buildMatrix }));
+    expect(result.ok).toBe(false);
+    expect(buildMatrix).not.toHaveBeenCalled();
+  });
+
+  it('accepts a real leap day', async () => {
+    const buildMatrix = vi.fn(async () => buildOf()) as unknown as typeof buildJourneyMatrix;
+    await generateDayPlan(
+      request({ date: '2028-02-29', meal: undefined, secondActivity: undefined }),
+      deps({ buildMatrix }),
+    );
+    expect(buildMatrix).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the record to planning-stop boundary', () => {
+  const record: ExternalPlaceRecord = {
+    familypilotId: 'fp-google-abc',
+    externalId: 'google:abc',
+    provider: 'google',
+    name: 'Whitechapel Gallery',
+    latitude: 51.5159,
+    longitude: -0.0698,
+    category: 'museum',
+    address: '77-82 Whitechapel High St',
+    website: 'https://example.org',
+    phone: '+44 20 0000 0000',
+    photos: ['/api/places/photo?id=abc&index=0'],
+    isOpen: true,
+    provenance: {},
+    fetchedAt: '2026-09-19T00:00:00.000Z',
+    enrichmentStatus: 'enriched',
+    openingHours: { ...WHITECHAPEL, source: 'google' },
+    familyMetadata: {
+      familypilotPlaceId: 'fp-google-abc',
+      enrichmentStatus: 'enriched',
+      minRecommendedAge: 0,
+      maxRecommendedAge: 12,
+      familyFacilities: { babyChanging: 'yes' },
+      provenance: {},
+      updatedAt: '2026-09-01',
+    },
+  };
+
+  it('maps only the fields planning needs', () => {
+    const resolved = resolvedStopFromRecord(record, 'activity', 90);
+
+    expect(resolved).toEqual({
+      placeId: 'fp-google-abc',
+      name: 'Whitechapel Gallery',
+      category: 'museum',
+      role: 'activity',
+      dwellMinutes: 90,
+      latitude: 51.5159,
+      longitude: -0.0698,
+      openingHours: record.openingHours,
+      isOpen: true,
+      enrichmentStatus: 'enriched',
+      familyMetadata: record.familyMetadata,
+    });
+  });
+
+  it('leaves behind everything planning has no business knowing', () => {
+    const resolved = resolvedStopFromRecord(record, 'meal', 60);
+    for (const field of ['photos', 'website', 'phone', 'address', 'externalId', 'provider', 'fetchedAt', 'provenance']) {
+      expect(resolved, field).not.toHaveProperty(field);
+    }
+    expect(resolved.role).toBe('meal');
+  });
+
+  it('carries opening hours and family metadata through unchanged', () => {
+    const resolved = resolvedStopFromRecord(record, 'activity', 90);
+    // Same values, and the same objects: nothing is rebuilt or reinterpreted on the way past.
+    expect(resolved.openingHours).toBe(record.openingHours);
+    expect(resolved.familyMetadata).toBe(record.familyMetadata);
+    expect(resolved.openingHours?.periods).toHaveLength(6);
+  });
+
+  it('produces a stop that plans, end to end', async () => {
+    const anchorFromRecord = resolvedStopFromRecord(record, 'activity', 90);
+    const legs = fullMatrix().legs;
+    legs[homeKey('a')] = { [stopKey('fp-google-abc')]: { minutes: 20, source: 'live' } };
+    legs[stopKey('fp-google-abc')] = { [homeKey('a')]: { minutes: 20, source: 'live' } };
+
+    const result = await generateDayPlan(
+      request({ anchor: anchorFromRecord, meal: undefined, secondActivity: undefined }),
+      deps({ buildMatrix: vi.fn(async () => buildOf({ matrix: { legs } })) as unknown as typeof buildJourneyMatrix }),
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.plan.itinerary.stops[0].placeId).toBe('fp-google-abc');
+  });
+});
+
+describe('the estimated-travel caveat describes the day, not the matrix', () => {
+  it('stays silent when every journey the plan makes is live', async () => {
+    // The matrix holds an estimated leg for an order that was considered and dropped. Telling a
+    // family their travel is estimated because of a journey they are not taking would be untrue.
+    const legs = fullMatrix('live').legs;
+    legs[stopKey(EXTRA)][stopKey(ANCHOR)] = { minutes: 15, source: 'estimated' };
+
+    const result = await generateDayPlan(
+      request(),
+      deps({
+        buildMatrix: vi.fn(async () =>
+          buildOf({ matrix: { legs }, provenance: { live: 11, estimated: 1 } }),
+        ) as unknown as typeof buildJourneyMatrix,
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.plan.itinerary.legs.every((leg) => leg.source === 'live')).toBe(true);
+    expect(result.plan.caveats.some((c) => c.kind === 'travel-estimated')).toBe(false);
+    // The full matrix provenance is still there for debugging.
+    expect(result.plan.travel.provenance).toEqual({ live: 11, estimated: 1 });
+  });
+
+  it('counts only the scheduled legs that are estimated', async () => {
+    const legs = fullMatrix('live').legs;
+    legs[homeKey('a')][stopKey(ANCHOR)] = { minutes: 20, source: 'estimated' };
+    legs[stopKey(EXTRA)][stopKey(ANCHOR)] = { minutes: 15, source: 'estimated' };
+
+    const result = await generateDayPlan(
+      request(),
+      deps({
+        buildMatrix: vi.fn(async () =>
+          buildOf({ matrix: { legs }, provenance: { live: 10, estimated: 2 } }),
+        ) as unknown as typeof buildJourneyMatrix,
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const used = result.plan.itinerary.legs.filter((leg) => leg.source === 'estimated').length;
+    expect(used).toBe(1);
+    expect(result.plan.caveats).toContainEqual({ kind: 'travel-estimated', legs: 1 });
   });
 });
