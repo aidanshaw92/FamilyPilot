@@ -288,6 +288,59 @@ async function getClaimById(claimId) {
   return rowToClaim(row);
 }
 
+/**
+ * Swap a field's active claim for a new one, without a moment where it has neither.
+ *
+ * The obvious two-step — supersede the old row, then insert the new one — leaves a window in which
+ * a failed insert has already destroyed the fact a parent could previously see. The order cannot
+ * simply be reversed, because `idx_venue_claims_one_active_per_field` forbids two active rows for
+ * the same field, so the supersede has to come first. Which is exactly why the two statements have
+ * to share a transaction rather than be two client round trips.
+ *
+ * On Supabase that transaction is `replace_venue_claim`, which also takes a per-field advisory lock
+ * so two refreshes of the same venue serialise instead of racing. The file store gets the same
+ * guarantee for free: it reads, mutates in memory and writes once.
+ */
+async function replaceActiveClaim(claim) {
+  const supabase = getSupabaseAdmin();
+
+  if (supabase) {
+    const { data, error } = await supabase.rpc('replace_venue_claim', {
+      p_claim: claimToRow(claim),
+    });
+    if (error) throw new Error(error.message);
+    // A set-returning RPC hands back an array; a scalar composite hands back the row itself.
+    return rowToClaim(Array.isArray(data) ? data[0] : data);
+  }
+
+  const store = readClaimsFileStore();
+  const existing = store.claims.find(
+    (row) =>
+      row.familypilot_place_id === claim.familypilotPlaceId &&
+      row.field_key === claim.fieldKey &&
+      row.status === 'active',
+  );
+
+  const row = claimToRow(claim);
+  const stored = {
+    ...row,
+    id: claim.id || `claim-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    status: 'active',
+    // Authoritative here too: link to what was actually replaced, not to what the caller assumed.
+    supersedes_claim_id: existing ? existing.id : null,
+    created_at: new Date().toISOString(),
+  };
+
+  if (existing) {
+    existing.status = 'superseded';
+    existing.updated_at = new Date().toISOString();
+  }
+  store.claims.push(stored);
+  // One write, so the supersede and the insert land together or not at all.
+  writeClaimsFileStore(store);
+  return rowToClaim(stored);
+}
+
 async function createApprovedClaim({
   familypilotPlaceId,
   fieldKey,
@@ -297,7 +350,6 @@ async function createApprovedClaim({
   draftId,
   checkedAt,
 }) {
-  const existing = await getActiveClaimForField(familypilotPlaceId, fieldKey);
   const sourceEvidenceId = await resolveSourceEvidenceId(familypilotPlaceId, fieldEvidence, fieldKey);
   const claim = buildClaimRecord({
     familypilotPlaceId,
@@ -306,16 +358,14 @@ async function createApprovedClaim({
     fieldEvidence,
     reviewedBy,
     draftId,
-    checkedAt,
-    supersedesClaimId: existing?.id ?? null,
+    // The replacement decides what it supersedes while holding the lock. Reading it beforehand
+    // would be a guess that a concurrent refresh could already have invalidated.
+    supersedesClaimId: null,
     sourceEvidenceId,
+    checkedAt,
   });
 
-  if (existing) {
-    await updateClaimStatus(existing.id, 'superseded');
-  }
-
-  return insertClaim(claim);
+  return replaceActiveClaim(claim);
 }
 
 /**
@@ -657,6 +707,7 @@ function metadataRowFromPayload(familypilotPlaceId, payload, existing) {
 
 module.exports = {
   listClaimsWithFreshness,
+  replaceActiveClaim,
   createClaimsFromApproval,
   syncClaimsFromEditorSave,
   listClaimsForVenue,
