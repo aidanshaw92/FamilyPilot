@@ -425,6 +425,49 @@ async function listClaimsForVenue(familypilotPlaceId, options = {}) {
     .map(rowToClaim);
 }
 
+/**
+ * Active claims split by how much they are still worth today.
+ *
+ * Additive on purpose. `getActiveClaims` keeps meaning exactly what it has always meant — usable,
+ * unexpired trusted claims — because callers already depend on that, and `trusted` here is the
+ * same set. What is new is that the claims which would simply have vanished at `validUntil` are
+ * now separated into `stale` when their own source failed transiently, instead of being lost.
+ *
+ * Freshness is resolved per source, not per venue: one venue refresh routinely succeeds on some
+ * pages and fails on others, so each claim is judged against the page that actually backs it.
+ */
+async function listClaimsWithFreshness(familypilotPlaceId, today = new Date().toISOString().slice(0, 10)) {
+  const { classifyClaim } = require('./claim-freshness');
+  const { sourceRecordsByUrl } = require('./evidence-store');
+
+  const claims = (await listClaimsForVenue(familypilotPlaceId, { status: 'active' }))
+    // Legacy automatic approvals did not require source proof, so they are not trusted here and
+    // are not eligible for grace either. Same rule `isClaimActive` applies.
+    .filter((claim) => claim.approvedBy !== 'ai_auto_approved');
+
+  let byUrl = new Map();
+  try {
+    byUrl = await sourceRecordsByUrl(familypilotPlaceId);
+  } catch {
+    // Evidence history is only needed to grant grace. Losing it must never promote a claim, and
+    // must never drop a claim that is still inside its own lifetime.
+  }
+
+  const trusted = [];
+  const stale = [];
+  const expired = [];
+
+  for (const claim of claims) {
+    const records = claim.sourceUrl ? byUrl.get(claim.sourceUrl) : null;
+    const state = classifyClaim(claim, records, today);
+    if (state === 'fresh' || state === 'refresh_due') trusted.push({ ...claim, freshness: state });
+    else if (state === 'stale') stale.push({ ...claim, freshness: state });
+    else expired.push({ ...claim, freshness: 'expired' });
+  }
+
+  return { trusted, stale, expired };
+}
+
 async function getActiveClaims(familypilotPlaceId) {
   const claims = await listClaimsForVenue(familypilotPlaceId, { status: 'active' });
   return claims.filter(isClaimActive);
@@ -613,6 +656,7 @@ function metadataRowFromPayload(familypilotPlaceId, payload, existing) {
 }
 
 module.exports = {
+  listClaimsWithFreshness,
   createClaimsFromApproval,
   syncClaimsFromEditorSave,
   listClaimsForVenue,

@@ -158,6 +158,8 @@ async function fetchOfficialPage(urlString) {
     return {
       ok: false,
       fetchStatus: result.status,
+      // Kept as a number so the refresh lifecycle can tell a 404 from a 503 without parsing text.
+      httpStatus: Number.isInteger(result.httpStatus) ? result.httpStatus : null,
       error: result.error ?? result.status,
       url: urlString,
       html: result.html ?? null,
