@@ -73,7 +73,7 @@ describe('age suitability policy',()=>{
   expect(p.unknowns).toContain('ageRecommendedFit: not confirmed');
  });
 
- it('keeps a documented range that suits neither child — a recommendation is not a gate',()=>{
+ it('keeps a documented range that excludes both children — a recommendation is not a gate',()=>{
   expect(planVenue(realFacts({minRecommendedAge:5,maxRecommendedAge:12}),[family],journeys,options,now)).not.toBeNull();
  });
 

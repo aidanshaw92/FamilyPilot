@@ -86,8 +86,10 @@ function isInside(months: number, interval: RecommendedMonthInterval): boolean {
  * Evaluate the recommendation against each child independently.
  *
  * Evaluating the *span* of the children instead — youngest against the upper bound, oldest
- * against the lower — is what let a 2-year-old and an 8-year-old pass a 5–12 recommendation that
- * suits neither of them. Each child is asked separately and the answers are counted.
+ * against the lower — let one fitting child vouch for the rest: a 2-year-old and an 8-year-old
+ * against a 5–12 recommendation came back fully suitable, because the 8-year-old is inside it
+ * and the span straddles the range. The 2-year-old's mismatch simply disappeared. Each child is
+ * now asked separately and the answers are counted.
  */
 export function evaluateAgeRecommendation(
   facts: Pick<MatchableVenueFacts, 'minRecommendedAge' | 'maxRecommendedAge'>,

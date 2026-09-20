@@ -33,11 +33,14 @@ export function hasTrustedMatchSignals(facts: MatchableVenueFacts): boolean {
  * How strongly a venue's recommended ages favour these children, for ranking only.
  *
  * Takes months, not years, so a two-month-old and an eleven-month-old are not the same input.
- * Each child is judged on their own — the previous youngest/oldest comparison let a pair of
- * children straddle a range that suited neither and still score as a full match.
+ * Each child is judged on their own — the previous youngest/oldest comparison let one child
+ * inside the range vouch for a sibling outside it, so ages 2 and 8 against a 5–12 recommendation
+ * scored as a full match on the strength of the 8-year-old alone.
  *
- * Returns null when there is nothing to judge, which is the signal callers use to leave age out
- * of the score rather than substitute a guess. This function never decides eligibility.
+ * Returns null to mean "no evidence-backed age score", not zero and not a guess. What a caller
+ * does with that is its own decision: calculateFamilyScore currently substitutes its neutral
+ * UNKNOWN_AGE_SCORE so the weighted average stays well-defined. This function never decides
+ * eligibility.
  */
 export function scoreTrustedAgeSuitability(
   facts: MatchableVenueFacts,

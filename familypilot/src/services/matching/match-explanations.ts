@@ -24,7 +24,12 @@ function confirmedFacilities(facts: MatchableVenueFacts): FacilityType[] {
 }
 
 const FIELD_LABELS: Record<string, string> = {
-  'childAgeFit': 'Recommended ages',
+  ageRecommendedFit: 'Recommended ages',
+  // Deprecated compatibility alias. The matcher emits `ageRecommendedFit`, but a persisted or
+  // in-flight evaluation can still carry the old key, and an unlabelled field falls through to
+  // the raw identifier — which is how "ageRecommendedFit not confirmed for this venue" would
+  // reach a parent. Both keys deliberately resolve to the same label.
+  childAgeFit: 'Recommended ages',
   environment: 'Indoor/outdoor setting',
   energyLevel: 'Activity energy level',
   pushchairSuitability: 'Pushchair suitability',
@@ -104,8 +109,11 @@ export function buildFocusedReasons(
     if (evaluation.outcome !== 'suitable') continue;
 
     switch (evaluation.field) {
+      case 'ageRecommendedFit':
       case 'childAgeFit':
-        reasons.push({ field: 'childAgeFit', text: formatAgeRange(facts) });
+        // Both resolve to the same published range. `field` echoes whichever key the evaluation
+        // carried, so a consumer keying off it keeps working either way.
+        reasons.push({ field: evaluation.field, text: formatAgeRange(facts) });
         break;
       case 'environment':
         reasons.push({ field: 'environment', text: formatEnvironment(facts.environment) });

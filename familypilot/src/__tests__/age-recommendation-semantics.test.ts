@@ -9,6 +9,11 @@ import {
 } from '@/src/services/matching/age-suitability';
 import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
 import { matchVenueToDayRequest } from '@/src/services/matching/day-request-matcher';
+import {
+  buildFocusedReasons,
+  buildFocusedRecommendation,
+  buildFocusedUnknowns,
+} from '@/src/services/matching/match-explanations';
 import { familyRequest, planVenue, PlanningFamily, PlanningOptions } from '@/src/services/planning/planner';
 import { buildProactiveDayRequest } from '@/src/services/recommendation/proactive-day-request';
 import { parseDayRequestMock } from '@/src/services/recommendation/parse-day-request-client';
@@ -392,5 +397,70 @@ describe('Family Match makes no age claim without age evidence', () => {
     for (const word of ['allowed', 'permitted', 'prohibited', 'not admitted', 'must be']) {
       expect(explanation).not.toContain(word);
     }
+  });
+});
+
+describe('focused explanations stay wired to the renamed evaluation field', () => {
+  /**
+   * The matcher emits `field: 'ageRecommendedFit'`, and match-explanations.ts looks the reason
+   * and the unknown label up by exactly that string. Renaming the field without teaching the
+   * explanation layer the new key silently drops the "Recommended for ages" reason and leaks the
+   * raw identifier into the unknown line a parent reads.
+   */
+  it('produces the published range as a focused reason', () => {
+    const facts = realFacts({ minRecommendedAge: 3, maxRecommendedAge: 8 });
+    const match = matchVenueToDayRequest(facts, requestFor([5]));
+    expect(ageOutcome(facts, requestFor([5]))?.outcome).toBe('suitable');
+
+    const texts = buildFocusedReasons(facts, match.evaluations).map((r) => r.text);
+    expect(texts).toContain('Recommended for ages 3–8');
+  });
+
+  it('formats an open-ended lower bound as a focused reason', () => {
+    const facts = realFacts({ minRecommendedAge: 3 });
+    const match = matchVenueToDayRequest(facts, requestFor([5]));
+    const texts = buildFocusedReasons(facts, match.evaluations).map((r) => r.text);
+    expect(texts).toContain('Recommended from age 3+');
+  });
+
+  it('says "Recommended ages not confirmed for this venue" when nothing is published', () => {
+    const facts = realFacts();
+    const match = matchVenueToDayRequest(facts, requestFor([5]));
+    const texts = buildFocusedUnknowns(match.evaluations).map((r) => r.text);
+    expect(texts).toContain('Recommended ages not confirmed for this venue');
+  });
+
+  it('never leaks the raw internal field name into user-visible text', () => {
+    const facts = realFacts();
+    const match = matchVenueToDayRequest(facts, requestFor([5]));
+    const visible = [
+      ...buildFocusedReasons(facts, match.evaluations),
+      ...buildFocusedUnknowns(match.evaluations),
+    ]
+      .map((r) => r.text)
+      .join(' | ');
+    expect(visible).not.toContain('ageRecommendedFit');
+    expect(visible).not.toContain('childAgeFit');
+  });
+
+  it('still formats the deprecated childAgeFit key if an evaluation carries it', () => {
+    const facts = realFacts({ minRecommendedAge: 3, maxRecommendedAge: 8 });
+    const legacySuitable = [{ field: 'childAgeFit', strength: 'preferred', outcome: 'suitable' }];
+    const legacyUnknown = [{ field: 'childAgeFit', strength: 'preferred', outcome: 'unknown' }];
+
+    expect(buildFocusedReasons(facts, legacySuitable as never).map((r) => r.text)).toContain(
+      'Recommended for ages 3–8',
+    );
+    expect(buildFocusedUnknowns(legacyUnknown as never).map((r) => r.text)).toContain(
+      'Recommended ages not confirmed for this venue',
+    );
+  });
+
+  it('carries the range through the whole focused recommendation', () => {
+    const facts = realFacts({ minRecommendedAge: 3, maxRecommendedAge: 8 });
+    const match = matchVenueToDayRequest(facts, requestFor([5]));
+    const focused = buildFocusedRecommendation(facts, match, 'https://example.org/i.jpg');
+    const texts = focused.reasons.map((r) => r.text).join(' | ');
+    expect(texts).toContain('Recommended for ages 3–8');
   });
 });
