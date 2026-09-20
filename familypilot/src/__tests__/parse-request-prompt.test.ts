@@ -63,22 +63,40 @@ describe('parser prompt contract', () => {
   });
 
   it('keeps the example free of any age constraint', () => {
-    const example = prompt.slice(prompt.indexOf('Example'), prompt.indexOf('AGE IS THE EXCEPTION'));
+    const example = prompt.slice(prompt.indexOf('Example'), prompt.indexOf('THE SERVER OWNS THESE'));
     expect(example).not.toContain('childAgeFit');
     expect(example).not.toContain('ageRecommendedFit');
     expect(example).not.toContain('age');
   });
 
   it('still forbids an age constraint, explicitly and by both key names', () => {
-    expect(prompt).toContain('Never emit childAgeFit or ageRecommendedFit');
-    expect(prompt).toContain('Never infer an age constraint from rawText');
+    expect(prompt).toContain('childAgeFit / ageRecommendedFit');
+    expect(prompt).toContain('THE SERVER OWNS THESE - never emit them');
   });
 
-  it('scopes the age prohibition to age rather than to inference in general', () => {
-    // The exact clause that caused the regression. It must not reappear as a free-standing rule.
+  it('also declares journey and budget server-owned', () => {
+    // The model emitted journey 30 against a profile of 45 in production. The server now ignores
+    // a model journey outright; the prompt stops advertising it as well.
+    const owned = prompt.slice(prompt.indexOf('THE SERVER OWNS THESE'));
+    expect(owned).toContain('journey');
+    expect(owned).toContain('budget');
+  });
+
+  it('does not list journey or budget among the allowed keys', () => {
+    const allowed = prompt.slice(prompt.indexOf('Allowed constraint keys'), prompt.indexOf('Each constraint is'));
+    expect(allowed).not.toContain('journey');
+    expect(allowed).not.toContain('budget');
+  });
+
+  it('tells the model not to invent a field nobody referred to', () => {
+    expect(prompt).toContain('Only emit a field the parent actually referred to');
+  });
+
+  it('scopes the prohibition to the server-owned fields, not to inference in general', () => {
+    // The exact clause that caused the omission regression. It must not reappear.
     expect(prompt).not.toContain('must not be inferred from the request text');
     // And the prohibition must sit after the extraction instructions, not before them.
-    expect(prompt.indexOf('AGE IS THE EXCEPTION')).toBeGreaterThan(
+    expect(prompt.indexOf('THE SERVER OWNS THESE')).toBeGreaterThan(
       prompt.indexOf('Extract every requirement or preference'),
     );
   });
@@ -102,11 +120,10 @@ describe('parser prompt contract', () => {
   });
 });
 
-describe('server normalisation is unchanged by this patch', () => {
+describe('the prompt is not what makes this safe', () => {
   /**
-   * The normaliser was never the problem — it passes every non-age constraint through. Pinned
-   * here so a future prompt change cannot be blamed on it, and so the age guarantee from P0-B1
-   * still holds against a model payload that ignores the prohibition.
+   * Superseded by constraint-authority.test.ts. These two only record the boundary: prompt
+   * wording is best effort, and the server no longer depends on the model obeying it.
    */
   const profile = {
     homeLocation: 'London',
@@ -120,36 +137,26 @@ describe('server normalisation is unchanged by this patch', () => {
     return normaliseDayRequest({ rawText: 'x', constraints }, profile);
   }
 
-  it('passes every allowed non-age constraint through at its stated strength', async () => {
+  it('a model that ignores every instruction still cannot gate a venue', async () => {
     const out = await normalise({
       environment: { strength: 'required', value: 'indoor' },
-      energyLevel: { strength: 'preferred', value: 'high' },
-      babyChanging: { strength: 'required', value: 'yes' },
       parking: { strength: 'required', value: 'yes' },
-      toilets: { strength: 'preferred', value: 'yes' },
-      pushchair: { strength: 'preferred', value: 'not_difficult' },
-      visitDuration: { strength: 'preferred', value: { maxMinutes: 120 } },
+      journey: { strength: 'required', value: { maxMinutes: 5 } },
+      budget: { strength: 'required', value: 'within_profile' },
+      childAgeFit: { strength: 'required', value: 'in_range' },
     });
 
-    expect(out.constraints.environment).toEqual({ strength: 'required', value: 'indoor' });
-    expect(out.constraints.energyLevel).toEqual({ strength: 'preferred', value: 'high' });
-    expect(out.constraints.babyChanging).toEqual({ strength: 'required', value: 'yes' });
-    expect(out.constraints.parking).toEqual({ strength: 'required', value: 'yes' });
-    expect(out.constraints.toilets.strength).toBe('preferred');
-    expect(out.constraints.pushchair.strength).toBe('preferred');
-    expect(out.constraints.visitDuration.value.maxMinutes).toBe(120);
-  });
-
-  it('still adds the soft age recommendation itself, whatever the model sent', async () => {
-    const out = await normalise({ environment: { strength: 'required', value: 'outdoor' } });
+    // rawText is 'x': nothing supports environment or parking, so both are dropped outright.
+    expect(out.constraints.environment).toBeUndefined();
+    expect(out.constraints.parking).toBeUndefined();
+    expect(out.constraints.journey).toEqual({ strength: 'required', value: { maxMinutes: 45 } });
+    expect(out.constraints.budget).toEqual({ strength: 'preferred', value: 'within_profile' });
     expect(out.constraints.ageRecommendedFit).toEqual({ strength: 'preferred', value: 'in_range' });
     expect(out.constraints.childAgeFit).toBeUndefined();
-    expect(out.childAgeMonthsList).toEqual([7, 96]);
   });
 
-  it('normalises an age constraint the model emitted anyway down to preferred', async () => {
-    const out = await normalise({ childAgeFit: { strength: 'required', value: 'in_range' } });
-    expect(out.constraints.ageRecommendedFit.strength).toBe('preferred');
-    expect(out.constraints.childAgeFit).toBeUndefined();
+  it('still carries month precision through from the profile', async () => {
+    const out = await normalise({});
+    expect(out.childAgeMonthsList).toEqual([7, 96]);
   });
 });
