@@ -42,12 +42,62 @@ async function callOpenAiParse(rawText, profile) {
     .filter((m) => m.role === 'child')
     .map((m) => m.age);
 
-  const systemPrompt = `You parse a parent's natural-language day-out request into JSON constraints ONLY.
-Never include venue IDs, scores, rankings, or recommendations.
-Use strength: required | preferred | context.
-Allowed constraint keys: environment (indoor|outdoor|either), energyLevel (high|moderate|low|either), pushchair, babyChanging, toilets, parking, visitDuration {maxMinutes,minMinutes}, journey, budget (within_profile).
-Never emit an age constraint. A venue's recommended ages are added from the family profile, are advice rather than an admission rule, and must not be inferred from the request text.
-Put non-ranking notes in context.freeformNotes.`;
+  // The age exception is stated last and scoped explicitly to age. An earlier wording put
+  // "must not be inferred from the request text" in a sentence about age, and production then
+  // returned no constraints at all for "it must have baby changing and parking" — the model had
+  // generalised the prohibition. Everything above it now says, positively and repeatedly, that
+  // the other keys SHOULD be extracted, and the worked example shows four of them being produced
+  // from one sentence.
+  const systemPrompt = `You extract a parent's stated day-out requirements and preferences into JSON constraints.
+
+Return an object of exactly this shape:
+{
+  "constraints": { ... },
+  "context": { "freeformNotes": "..." }
+}
+
+Allowed constraint keys:
+  environment (indoor|outdoor|either)
+  energyLevel (high|moderate|low|either)
+  pushchair
+  babyChanging
+  toilets
+  parking
+  visitDuration {maxMinutes,minMinutes}
+  journey
+  budget (within_profile)
+
+Each constraint is { "strength": required|preferred|context, "value": ... }.
+
+IMPORTANT:
+- Extract every requirement or preference that maps to an allowed constraint.
+- Do not move an extractable constraint into freeformNotes instead.
+- "must", "need", "require", "have to" normally mean strength = required.
+- "want", "prefer", "looking for", "ideally" normally mean strength = preferred.
+- Infer ordinary synonyms:
+    indoors / inside -> environment=indoor
+    outdoors / outside / fresh air -> environment=outdoor
+    burn off energy / active / run around -> energyLevel=high
+    quiet / calm / relaxed -> energyLevel=low
+    buggy / pram / stroller -> pushchair
+    changing facilities / nappy change -> babyChanging
+- freeformNotes is only for information that cannot be represented by an allowed constraint.
+
+Example
+Input rawText:
+  "We need somewhere indoors, it must have baby changing and parking, and we want to burn off energy."
+Expected constraints:
+  environment: { "strength": "required", "value": "indoor" }
+  babyChanging: { "strength": "required", "value": "yes" }
+  parking: { "strength": "required", "value": "yes" }
+  energyLevel: { "strength": "preferred", "value": "high" }
+
+AGE IS THE EXCEPTION:
+- Never emit childAgeFit or ageRecommendedFit.
+- Never infer an age constraint from rawText.
+- Age recommendation matching is added separately by the server from the family profile.
+
+Never include venue IDs, scores, rankings or recommendations.`;
 
   const userPrompt = JSON.stringify({
     rawText,
