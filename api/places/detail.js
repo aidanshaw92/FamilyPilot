@@ -90,12 +90,20 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { getConsumerMetadata } = require('../../server/enrichment/_lib/consumer-projection');
-    const metadata = await getConsumerMetadata(await resolvePrimaryPlaceId(id));
+    const {
+      getConsumerMetadata,
+      getVenueStaleFacts,
+    } = require('../../server/enrichment/_lib/consumer-projection');
+    const primaryId = await resolvePrimaryPlaceId(id);
+    const metadata = await getConsumerMetadata(primaryId);
     if (metadata) {
       detail.metadata = metadata;
       detail.place = { ...detail.place, enrichmentStatus: metadata.enrichmentStatus, familyMetadata: metadata };
     }
+    // A sibling of `metadata`, never a field inside it. Facts we no longer vouch for must be
+    // impossible to reach by reading the venue's metadata, so that a screen which has never heard
+    // of stale evidence cannot render one as confirmed.
+    detail.staleFacts = await getVenueStaleFacts(primaryId);
   } catch {
     // Metadata load is best-effort — provider facts still returned
   }

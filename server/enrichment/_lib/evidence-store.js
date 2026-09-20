@@ -42,6 +42,7 @@ function rowToRecord(row) {
     extractedText: row.extracted_text,
     extractedEvidence: row.extracted_evidence ?? [],
     fetchStatus: row.fetch_status,
+    httpStatus: row.http_status ?? null,
     error: row.error,
   };
 }
@@ -85,6 +86,9 @@ async function saveEvidenceRecord(record) {
     extracted_text: record.extractedText ?? null,
     extracted_evidence: record.extractedEvidence ?? [],
     fetch_status: record.fetchStatus ?? 'ok',
+    // Recorded as a number so a failure can be classified without matching on `error`, which is
+    // prose assembled for humans and would silently reclassify claims if its wording changed.
+    http_status: Number.isInteger(record.httpStatus) ? record.httpStatus : null,
     error: record.error ?? null,
     updated_at: new Date().toISOString(),
   };
@@ -165,9 +169,28 @@ async function listEvidenceForVenue(familypilotPlaceId) {
     .sort((a, b) => new Date(b.retrievedAt) - new Date(a.retrievedAt));
 }
 
+/**
+ * Every stored attempt for a venue, grouped by the source page it was against.
+ *
+ * Claim freshness is decided per source, so the consumer path needs the outcomes keyed the same
+ * way the claims are: one bucket per `source_url`, newest first within each.
+ */
+async function sourceRecordsByUrl(familypilotPlaceId) {
+  const records = await listEvidenceForVenue(familypilotPlaceId);
+  const byUrl = new Map();
+  for (const record of records) {
+    if (!record.sourceUrl) continue;
+    const bucket = byUrl.get(record.sourceUrl);
+    if (bucket) bucket.push(record);
+    else byUrl.set(record.sourceUrl, [record]);
+  }
+  return byUrl;
+}
+
 module.exports = {
   getCachedEvidence,
   saveEvidenceRecord,
+  sourceRecordsByUrl,
   findEvidenceRecordBySourceUrl,
   listEvidenceForVenue,
   isCacheFresh,

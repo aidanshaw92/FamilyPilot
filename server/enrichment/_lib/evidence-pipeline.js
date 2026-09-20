@@ -63,6 +63,7 @@ async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
       sourceUrl: page.url,
       sourceType: page.sourceType,
       fetchStatus: fetched.fetchStatus,
+      httpStatus: fetched.httpStatus ?? null,
       error: fetched.error,
       extractedEvidence: [],
     });

@@ -32,6 +32,25 @@ export interface StructuredOpeningHours extends OpeningHoursSchedule {
   source: PlacesProviderName | 'estimated';
 }
 
+/**
+ * A fact FamilyPilot still holds but no longer vouches for.
+ *
+ * Deliberately not part of `VenueFamilyMetadata` and deliberately not a `TriState`. A stale fact
+ * is display-only: it cannot satisfy a required facility, cannot rule a venue out, and earns no
+ * Family Match score. Keeping it in its own shape, on its own field, means a surface that has
+ * never heard of stale evidence reads the metadata field as absent and resolves it to unknown.
+ */
+export interface StaleFact {
+  /** Dotted claim key, e.g. `familyFacilities.babyChanging`. */
+  fieldKey: string;
+  value: unknown;
+  /** `YYYY-MM-DD` the claim was last confirmed against its source. */
+  lastConfirmed: string;
+  /** `YYYY-MM-DD` after which it is dropped entirely. */
+  graceUntil: string;
+  recheckPending: true;
+}
+
 /** Provider-supplied place facts — cached separately from FamilyPilot enrichment. */
 export interface ExternalPlaceRecord {
   /** Stable FamilyPilot ID used in routes and saved items. */
