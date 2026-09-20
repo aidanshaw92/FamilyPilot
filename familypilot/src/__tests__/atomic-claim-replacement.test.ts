@@ -8,6 +8,14 @@ import path from 'path';
  * The failure these cover is not hypothetical: the venue-freshness scheduler replaces claims
  * automatically now, so a replacement insert that fails after the old claim was already superseded
  * would silently remove a fact a parent could previously see.
+ *
+ * What these tests do NOT cover: real concurrency. They run against the file store in a single
+ * process, so they exercise the replacement contract and its failure modes, not two PostgreSQL
+ * sessions contending for the advisory lock in `replace_venue_claim`. Serialisation is enforced by
+ * the database — the transaction-scoped lock, and the partial unique index behind it — and is not
+ * claimed to be proven here. The repository has no two-session test harness (no postgres client,
+ * no testcontainers, and `dblink`/`postgres_fdw` are not installed), so adding one is its own
+ * piece of work rather than something to approximate in this file.
  */
 
 const CLAIMS_PATH = path.join(process.cwd(), '.data', 'venue-claims.json');
@@ -207,7 +215,9 @@ describe('atomic claim replacement', () => {
     expect(still[0].value_json).toBe('yes');
   });
 
-  it('sequential replacements serialise to one active claim and one chain', async () => {
+  // Sequential, in one process. This proves the supersession chain and the single-active
+  // invariant; it is not a concurrency test and must not be read as one.
+  it('repeated replacements keep one active claim and an intact supersession chain', async () => {
     const first = await approve('yes');
     const second = await approve('no', { checkedAt: '2026-09-21' });
     const third = await approve('yes', { checkedAt: '2026-09-22' });
