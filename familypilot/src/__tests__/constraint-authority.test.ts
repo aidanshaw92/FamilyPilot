@@ -324,6 +324,36 @@ describe('downstream: a hallucinated constraint cannot remove a venue', () => {
     expect(matchVenueToDayRequest(indoors, request).eligible).toBe(true);
   });
 
+  it('a corrected preference becomes a real gate when the parent said they need it', async () => {
+    // "I'd prefer outdoors but I need indoors": environment must end up required/indoor.
+    const request = (await normalise("I'd prefer outdoors but I need indoors", {})) as unknown as DayRequest;
+    const indoors = { ...facts(20), environment: 'indoor' as const };
+    expect(matchVenueToDayRequest(indoors, request).eligible).toBe(true);
+    // Unknown environment fails the stated requirement closed, as it should.
+    expect(matchVenueToDayRequest(facts(20), request).eligible).toBe(false);
+  });
+
+  it('an unresolved contradiction produces no gate at all', async () => {
+    const request = (await normalise('We need indoors but we need outdoors', {})) as unknown as DayRequest;
+    expect((request.constraints as Record<string, unknown>).environment).toBeUndefined();
+    expect(matchVenueToDayRequest(facts(20), request).eligible).toBe(true);
+  });
+
+  it('an inherited requirement still gates, and a following preference does not', async () => {
+    const request = (await normalise(
+      'We need parking and baby changing preferably with toilets',
+      {},
+    )) as unknown as DayRequest;
+    const constraints = request.constraints as unknown as Record<string, { strength: string }>;
+    expect(constraints.babyChanging.strength).toBe('required');
+    expect(constraints.toilets.strength).toBe('preferred');
+
+    // babyChanging unknown must exclude; toilets unknown alone must not.
+    expect(matchVenueToDayRequest(facts(20), request).eligible).toBe(false);
+    const withFacilities = { ...facts(20), babyChanging: 'yes' as const, parking: 'yes' as const };
+    expect(matchVenueToDayRequest(withFacilities, request).eligible).toBe(true);
+  });
+
   it('still lets the parent’s own stated requirement exclude a venue', async () => {
     // The layer removes the model's authority, not the parent's. An unknown facility the parent
     // said they need must still fail closed.

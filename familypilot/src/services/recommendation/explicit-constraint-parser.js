@@ -48,6 +48,15 @@ const MODALITY_SCAN = new RegExp(`(${REQUIRED_WORDS.source})|(${PREFERRED_WORDS.
 const POSTFIX_PREFERRED = /\b(?:if possible|if we can|if they have|if there'?s|if there is|would be nice|is nice|would be good)\b/;
 
 /**
+ * The only markers allowed to govern a concept that PRECEDES them.
+ *
+ * "parking is essential" needs this. A preference marker must not have it: in "we need parking
+ * and baby changing preferably with toilets" the `preferably` governs the toilets after it, and
+ * letting it reach backwards downgraded the baby changing that had inherited `need`.
+ */
+const POSTPOSED_REQUIRED = /^(?:essential|required|needed|necessary|a must|must)$/;
+
+/**
  * Negation, as parents actually phrase it.
  *
  * Negation applies to the WHOLE segment, not just to concepts appearing after the marker. An
@@ -119,7 +128,11 @@ function modalityMarkers(segment) {
   MODALITY_SCAN.lastIndex = 0;
   let match;
   while ((match = MODALITY_SCAN.exec(segment)) !== null) {
-    markers.push({ index: match.index, strength: match[1] ? 'required' : 'preferred' });
+    markers.push({
+      index: match.index,
+      strength: match[1] ? 'required' : 'preferred',
+      text: match[0],
+    });
   }
   MODALITY_SCAN.lastIndex = 0;
   return markers;
@@ -141,8 +154,35 @@ function strengthForConcept(markers, conceptIndex, carried) {
     else if (following === null) following = marker;
   }
   if (preceding) return preceding.strength;
-  if (following) return following.strength;
+  // Only a postposed requirement reaches backwards. A following `ideally` or `preferably`
+  // governs what comes after it, and must not soften a concept that inherited an earlier need.
+  if (following && following.strength === 'required' && POSTPOSED_REQUIRED.test(following.text)) {
+    return 'required';
+  }
   return carried ?? DEFAULT_STRENGTH;
+}
+
+/**
+ * Resolve every statement the parent made about one field.
+ *
+ * "First positive statement wins" discarded corrections: "I'd prefer outdoors but I need indoors"
+ * kept the preference and ignored the requirement. Since this parser is authoritative, repeated
+ * statements need a stated policy:
+ *
+ *   - a requirement outranks a preference, whatever order they were said in;
+ *   - two statements at the same authority that disagree are ambiguous, and produce NOTHING.
+ *
+ * Failing open on a genuine contradiction is deliberate. Picking a side would invent a gate the
+ * parent never agreed to; emitting neither leaves the venue in the results, where they can judge.
+ */
+function resolveField(candidates) {
+  const required = candidates.filter((candidate) => candidate.strength === 'required');
+  const pool = required.length > 0 ? required : candidates;
+  const strength = required.length > 0 ? 'required' : 'preferred';
+
+  const distinct = new Set(pool.map((candidate) => JSON.stringify(candidate.value)));
+  if (distinct.size > 1) return null;
+  return { strength, value: pool[0].value };
 }
 
 /**
@@ -169,14 +209,23 @@ function visitDurationFrom(text) {
  * Returns `{ constraints, supported }`. `constraints` is authoritative — no model output may
  * weaken, strengthen or contradict it. `supported` is the set of fields the text positively
  * backs, and is deliberately NOT the set of fields the text mentions: "I don't need parking"
- * mentions parking and supports nothing, so a model that then proposes parking cannot smuggle it
- * back in.
+ * mentions parking and supports nothing, and a field the parent contradicted themselves on
+ * supports nothing either, so a model cannot supply a value for what they did not settle.
+ *
+ * Every statement is gathered first and resolved per field at the end — see resolveField. An
+ * earlier version took the first statement of a field and ignored the rest, which discarded
+ * "I'd prefer outdoors but I need indoors" down to the preference.
  */
 function parseExplicitTextConstraints(rawText) {
   const text = typeof rawText === 'string' ? rawText.toLowerCase() : '';
-  const constraints = {};
-  const supported = new Set();
-  if (!text.trim()) return { constraints, supported };
+  if (!text.trim()) return { constraints: {}, supported: new Set() };
+
+  // Every statement the parent made, gathered before any of them is allowed to win.
+  const candidates = new Map();
+  const record = (field, value, strength) => {
+    if (!candidates.has(field)) candidates.set(field, []);
+    candidates.get(field).push({ value, strength });
+  };
 
   for (const clause of text.split(CLAUSE_SPLIT)) {
     if (!clause.trim()) continue;
@@ -199,7 +248,10 @@ function parseExplicitTextConstraints(rawText) {
 
       const markers = modalityMarkers(segment);
       const softenedFrom = segment.search(POSTFIX_PREFERRED);
-      // The last marker sets the context inherited by a following coordinated segment.
+      // Concepts in this segment inherit the strength carried in; the segment's own last marker
+      // only sets the context for the NEXT coordinated segment. Updating `carried` first made
+      // "we need parking and baby changing preferably with toilets" downgrade the baby changing.
+      const inherited = carried;
       if (markers.length > 0) carried = markers[markers.length - 1].strength;
 
       const hits = [];
@@ -208,9 +260,7 @@ function parseExplicitTextConstraints(rawText) {
         if (match) hits.push({ concept, index: match.index });
       }
 
-      // A postfix qualifier softens only the concept it immediately follows. Applying it to
-      // everything earlier in the segment turned "we need somewhere indoors with parking if
-      // possible" into a merely-preferred indoors, losing a requirement the parent did state.
+      // A postfix qualifier softens only the concept it immediately follows.
       const softened =
         softenedFrom === -1
           ? null
@@ -219,26 +269,32 @@ function parseExplicitTextConstraints(rawText) {
               .sort((a, b) => b.index - a.index)[0] ?? null;
 
       for (const hit of hits) {
-        supported.add(hit.concept.field);
-        // First positive statement of a field wins; a later bare mention cannot downgrade it.
-        if (constraints[hit.concept.field]) continue;
         const strength =
-          hit === softened ? DEFAULT_STRENGTH : strengthForConcept(markers, hit.index, carried);
-        constraints[hit.concept.field] = { strength, value: hit.concept.value };
+          hit === softened ? DEFAULT_STRENGTH : strengthForConcept(markers, hit.index, inherited);
+        record(hit.concept.field, hit.concept.value, strength);
       }
 
       const maxMinutes = visitDurationFrom(segment);
       if (maxMinutes != null) {
-        supported.add('visitDuration');
-        if (!constraints.visitDuration) {
-          const index = segment.search(MINUTES) !== -1 ? segment.search(MINUTES) : segment.search(HOURS);
-          constraints.visitDuration = {
-            strength: strengthForConcept(markers, index === -1 ? segment.length : index, carried),
-            value: { maxMinutes },
-          };
-        }
+        const at = segment.search(MINUTES) !== -1 ? segment.search(MINUTES) : segment.search(HOURS);
+        record(
+          'visitDuration',
+          { maxMinutes },
+          strengthForConcept(markers, at === -1 ? segment.length : at, inherited),
+        );
       }
     }
+  }
+
+  const constraints = {};
+  const supported = new Set();
+  for (const [field, statements] of candidates) {
+    const resolved = resolveField(statements);
+    // An unresolved contradiction supports nothing, so the model cannot supply a value for the
+    // field the parent could not be read as settling.
+    if (!resolved) continue;
+    constraints[field] = resolved;
+    supported.add(field);
   }
 
   return { constraints, supported };

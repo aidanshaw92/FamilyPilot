@@ -119,6 +119,57 @@ const CORPUS: Array<{ raw: string; expect: Expected; why?: string }> = [
     why: 'a marker after the concept still governs it when none precedes',
   },
 
+  // Same field stated more than once. "First positive statement wins" discarded corrections.
+  {
+    raw: "I'd prefer outdoors but I need indoors",
+    expect: { environment: { strength: 'required', value: 'indoor' } },
+    why: 'a later requirement must not be discarded by an earlier preference',
+  },
+  {
+    raw: "I need indoors but I'd prefer outdoors",
+    expect: { environment: { strength: 'required', value: 'indoor' } },
+    why: 'and a later preference must not weaken an earlier requirement',
+  },
+  {
+    raw: 'Parking would be nice but parking is essential',
+    expect: { parking: { strength: 'required', value: 'yes' } },
+  },
+  {
+    raw: 'Parking is essential but parking would also be nice',
+    expect: { parking: { strength: 'required', value: 'yes' } },
+  },
+  {
+    raw: 'We need indoors but we need outdoors',
+    expect: {},
+    why: 'two equally authoritative contradictions fail open rather than guessing a side',
+  },
+  {
+    raw: 'I prefer indoors but I prefer outdoors',
+    expect: {},
+    why: 'same at preference level',
+  },
+
+  // A following preference marker must not reach backwards over an inherited requirement.
+  {
+    raw: 'We need parking and baby changing preferably with toilets',
+    expect: {
+      parking: { strength: 'required', value: 'yes' },
+      babyChanging: { strength: 'required', value: 'yes' },
+      toilets: { strength: 'preferred', value: 'yes' },
+    },
+    why: '"preferably" governs the toilets after it, not the baby changing before it',
+  },
+  {
+    raw: 'We need baby changing and parking ideally somewhere indoors',
+    expect: {
+      babyChanging: { strength: 'required', value: 'yes' },
+      parking: { strength: 'required', value: 'yes' },
+      environment: { strength: 'preferred', value: 'indoor' },
+    },
+  },
+  { raw: 'Parking is essential', expect: { parking: { strength: 'required', value: 'yes' } } },
+  { raw: 'Parking would be nice', expect: { parking: { strength: 'preferred', value: 'yes' } } },
+
   { raw: "I don't need parking", expect: {}, why: 'negation yields no positive constraint' },
   { raw: "We don't need baby changing", expect: {} },
   { raw: 'Something without parking', expect: {} },
