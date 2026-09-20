@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-10T19:27:10.387Z",
+  "generatedAt": "2026-09-20T08:07:03.246Z",
   "migrationFiles": [
     "001_initial_schema.sql",
     "002_place_records_and_metadata.sql",
@@ -14,9 +14,16 @@
     "011_automatic_enrichment_worker.sql",
     "012_enable_automatic_enrichment_schedule.sql",
     "013_canonical_venue_identity.sql",
-    "014_canonical_venue_grants.sql"
+    "014_canonical_venue_grants.sql",
+    "20260909182317_family_planning_workspaces.sql",
+    "20260909205743_venue_feedback_freshness.sql",
+    "20260913190000_plan_invites.sql",
+    "20260913200000_automatic_area_sync.sql",
+    "20260913210000_automatic_area_sync_schedule.sql",
+    "20260913220000_area_sync_twice_weekly.sql",
+    "20260920090000_venue_source_evidence_http_status.sql"
   ],
-  "migrationCount": 14,
+  "migrationCount": 21,
   "tablesFromMigrations": [
     "canonical_venues",
     "place_records",
@@ -45,22 +52,6 @@
     "012_enable_automatic_enrichment_schedule.sql hard-codes production Supabase project URL",
     "place_record_id on venue_family_metadata is unused in application code"
   ],
-  "live": {
-    "mode": "probe",
-    "tables": [
-      "place_records",
-      "venue_claims",
-      "venue_enrichment_drafts",
-      "venue_enrichment_jobs",
-      "venue_family_metadata",
-      "venue_source_evidence"
-    ]
-  },
-  "drift": {
-    "missingInLive": [
-      "canonical_venues",
-      "venue_place_links"
-    ],
-    "extraInLive": []
-  }
+  "live": null,
+  "drift": null
 }

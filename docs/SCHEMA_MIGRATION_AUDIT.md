@@ -1,6 +1,6 @@
 # Schema migration audit
 
-Generated: 2026-08-10T19:27:10.387Z
+Generated: 2026-09-20T08:07:03.246Z
 
 ## Committed migrations
 
@@ -18,6 +18,13 @@ Generated: 2026-08-10T19:27:10.387Z
 - 012_enable_automatic_enrichment_schedule.sql: (no create tables)
 - 013_canonical_venue_identity.sql: canonical_venues, venue_place_links
 - 014_canonical_venue_grants.sql: (no create tables)
+- 20260909182317_family_planning_workspaces.sql: public, public
+- 20260909205743_venue_feedback_freshness.sql: (no create tables)
+- 20260913190000_plan_invites.sql: public
+- 20260913200000_automatic_area_sync.sql: (no create tables)
+- 20260913210000_automatic_area_sync_schedule.sql: (no create tables)
+- 20260913220000_area_sync_twice_weekly.sql: (no create tables)
+- 20260920090000_venue_source_evidence_http_status.sql: (no create tables)
 
 ## Expected operational tables
 
@@ -37,17 +44,6 @@ Generated: 2026-08-10T19:27:10.387Z
 - 012_enable_automatic_enrichment_schedule.sql hard-codes production Supabase project URL
 - place_record_id on venue_family_metadata is unused in application code
 
-## Live production tables
+## Live audit
 
-- place_records
-- venue_claims
-- venue_enrichment_drafts
-- venue_enrichment_jobs
-- venue_family_metadata
-- venue_source_evidence
-
-## Drift vs expected operational tables
-
-Missing in live: canonical_venues, venue_place_links
-
-Extra in live: none
+Run with `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` plus `--live` to compare production.
