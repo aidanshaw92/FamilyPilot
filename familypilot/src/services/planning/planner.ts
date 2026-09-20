@@ -1,6 +1,7 @@
 import { FamilyProfile } from '@/src/types';
 import { DayRequest, MatchableVenueFacts } from '@/src/types/day-request';
 import { matchVenueToDayRequest } from '@/src/services/matching/day-request-matcher';
+import { AGE_RECOMMENDATION_STRENGTH } from '@/src/services/matching/age-suitability';
 
 // Routine windows and their overlap rules live in routine-windows.ts so the day sequencer applies
 // the same ones across several stops. Routine is re-exported here to keep this module's API
@@ -36,21 +37,15 @@ export function clockLabel(minutes: number): string {
   const day = Math.floor(minutes / 1440); const m = ((Math.round(minutes) % 1440) + 1440) % 1440;
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}${day > 0 ? ' next day' : ''}`;
 }
-/** True only when a documented range explicitly excludes one of these children.
- * An absent bound is missing evidence, not evidence of unsuitability, so it never excludes;
- * planVenue owns this decision and the matcher records the gap as an unknown instead. */
-export function ageRangeExcludes(facts: Pick<MatchableVenueFacts, 'minRecommendedAge' | 'maxRecommendedAge'>, ages: number[]): boolean {
-  const { minRecommendedAge: min, maxRecommendedAge: max } = facts;
-  if (min == null && max == null) return false;
-  return ages.some((age) => (min != null && age < min) || (max != null && age > max));
-}
+/* `ageRangeExcludes` used to live here and removed a venue from the plan when any child fell
+ * outside its published range. That treated a recommendation as an admission rule: a venue
+ * suggesting ages 5–12 vanished for a family with a three-year-old, even though nothing stopped
+ * them going. Recommended ages now only rank and explain — see services/matching/age-suitability.
+ * A venue-level prohibition is a separate, evidence-backed fact that P0-B2 introduces. */
 
 export function familyRequest(family: PlanningFamily, environment: PlanningOptions['environment']): DayRequest {
   const constraints: DayRequest['constraints'] = {
-    // Age suitability is enforced by ageRangeExcludes before the matcher runs. Kept here as
-    // preferred so an unrecorded range still surfaces in plan.unknowns rather than failing
-    // the whole plan closed — required + unknown is rejected by applyConstraint.
-    childAgeFit: { strength: 'preferred', value: 'in_range' },
+    ageRecommendedFit: { strength: AGE_RECOMMENDATION_STRENGTH, value: 'in_range' },
     journey: { strength: 'required', value: { maxMinutes: family.maxDriveMinutes } },
     environment: { strength: 'required', value: environment },
     budget: { strength: 'preferred', value: 'within_profile' },
@@ -79,9 +74,6 @@ export function planVenue(facts: MatchableVenueFacts, families: PlanningFamily[]
   const evaluations = families.map((family) => {
     const journey = journeys[family.id];
     if (!journey || ![journey.outbound, journey.inbound].every(n => Number.isFinite(n) && n >= 0 && n <= family.maxDriveMinutes)) return null;
-    // Where a range is documented, every child must fall within it; overlap is insufficient.
-    // Where no range is documented, there is nothing to reject on — see ageRangeExcludes.
-    if (family.ages.length && ageRangeExcludes(facts, family.ages)) return null;
     const match = matchVenueToDayRequest({ ...facts, driveMinutes: journey.outbound }, familyRequest(family, options.environment));
     return match.eligible ? match : null;
   });
@@ -115,14 +107,15 @@ export function planVenue(facts: MatchableVenueFacts, families: PlanningFamily[]
     const drives = families.map(f => journeys[f.id].outbound);
     const fairnessGap = Math.max(...drives) - Math.min(...drives);
     const unknowns = [...new Set(evaluations.flatMap(e => e!.evaluations.filter(v => v.outcome === 'unknown').map(v => `${v.field}: not confirmed`)))];
-    // Only claim the age range was checked when there was one to check against. Saying otherwise
-    // would assert a verification that did not happen.
+    // Required facilities are genuinely a gate, so "checked" is accurate for them. Recommended
+    // ages are not — the plan no longer turns on them — so this reports whether the place
+    // publishes a suggestion, and never implies it was enforced.
     const anyChildren = families.some(f => f.ages.length > 0);
     const ageRangeDocumented = facts.minRecommendedAge != null || facts.maxRecommendedAge != null;
     const checkedReason = !anyChildren
       ? 'Required facilities checked for every family.'
       : ageRangeDocumented
-        ? 'Required facilities and age range checked for every family.'
+        ? 'Required facilities checked for every family. This place also publishes recommended ages.'
         : 'Required facilities checked for every family. Recommended ages are not published for this place.';
     return { venueId: facts.placeId, name: facts.name, timings, start, end, fairnessGap,
       reasons: [checkedReason, families.length > 1 ? `${fairnessGap} minute difference between outbound journeys.` : 'Fits your selected travel limit.', 'Fits the home routines you entered.'],

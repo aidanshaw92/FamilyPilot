@@ -89,8 +89,10 @@ describe('trusted family score helpers', () => {
   });
 
   it('scores age suitability from reviewed age range', () => {
-    expect(scoreTrustedAgeSuitability(BASE_FACTS, [5, 3])).toBe(96);
-    expect(scoreTrustedAgeSuitability(BASE_FACTS, [12])).toBe(42);
+    // Takes months now, so a baby's real age survives. BASE_FACTS recommends ages 2-10,
+    // which is [24, 132) months.
+    expect(scoreTrustedAgeSuitability(BASE_FACTS, [5 * 12, 3 * 12])).toBe(96);
+    expect(scoreTrustedAgeSuitability(BASE_FACTS, [12 * 12])).toBe(42);
   });
 
   it('scores facilities from confirmed tri-state facts', () => {

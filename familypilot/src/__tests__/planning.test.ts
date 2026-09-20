@@ -18,7 +18,7 @@ describe('family planning',()=>{
  it('synchronises arrivals and measures fairness',()=>{const b={...family,id:'b',label:'Family B'};const p=planVenue(facts,[family,b],{...journeys,b:{outbound:35,inbound:30,source:'estimated'}},options,now)!;expect(p.timings[0].arrive).toBe(p.timings[1].arrive);expect(p.fairnessGap).toBe(15);expect(p.timings[0].depart-p.timings[1].depart).toBe(15);});
  it('checks return travel against each family’s limit',()=>{expect(planVenue(facts,[family],{a:{outbound:20,inbound:60,source:'estimated'}},options,now)).toBeNull();});
  it('does not substitute unknown required facilities',()=>{expect(planVenue({...facts,babyChanging:'unknown'},[family],journeys,options,now)).toBeNull();});
- it('requires a confirmed range for every child, not overlapping ages',()=>{expect(planVenue({...facts,minRecommendedAge:2},[family],journeys,options,now)).toBeNull();});
+ it('keeps a venue whose recommended range starts above the youngest child',()=>{expect(planVenue({...facts,minRecommendedAge:2},[family],journeys,options,now)).not.toBeNull();});
  it('rejects a nonfinite journey instead of recommending it',()=>{expect(planVenue(facts,[family],{a:{outbound:NaN,inbound:10,source:'estimated'}},options,now)).toBeNull();});
  it('flags an out-of-home feed without inventing facilities',()=>{const p=planVenue(facts,[{...family,routines:[{id:'feed',label:'Feed',kind:'feed',time:'10:00',durationMinutes:20,atHome:false}]}],journeys,options,now)!;expect(p.timings[0].notes.join(' ')).toContain('check facilities');});
  it('does not schedule driving during an out-of-home feed',()=>{const p=planVenue(facts,[{...family,routines:[{id:'feed',label:'Feed',kind:'feed',time:'09:15',durationMinutes:30,atHome:false}]}],journeys,options,now)!;expect(p.timings[0].depart).toBeGreaterThanOrEqual(585);});
@@ -70,24 +70,24 @@ describe('age suitability policy',()=>{
 
  it('still reports the missing age range as unconfirmed',()=>{
   const p=planVenue(realFacts(),[family],journeys,options,now)!;
-  expect(p.unknowns).toContain('childAgeFit: not confirmed');
+  expect(p.unknowns).toContain('ageRecommendedFit: not confirmed');
  });
 
- it('rejects a documented range that excludes a child',()=>{
-  expect(planVenue(realFacts({minRecommendedAge:5,maxRecommendedAge:12}),[family],journeys,options,now)).toBeNull();
+ it('keeps a documented range that excludes both children — a recommendation is not a gate',()=>{
+  expect(planVenue(realFacts({minRecommendedAge:5,maxRecommendedAge:12}),[family],journeys,options,now)).not.toBeNull();
  });
 
  it('allows a documented range that covers every child',()=>{
   expect(planVenue(realFacts({minRecommendedAge:0,maxRecommendedAge:8}),[family],journeys,options,now)).not.toBeNull();
  });
 
- it('applies a lower bound on its own',()=>{
-  expect(planVenue(realFacts({minRecommendedAge:2}),[family],journeys,options,now)).toBeNull();
+ it('never excludes on a lower bound alone',()=>{
+  expect(planVenue(realFacts({minRecommendedAge:2}),[family],journeys,options,now)).not.toBeNull();
   expect(planVenue(realFacts({minRecommendedAge:0}),[family],journeys,options,now)).not.toBeNull();
  });
 
- it('applies an upper bound on its own',()=>{
-  expect(planVenue(realFacts({maxRecommendedAge:2}),[family],journeys,options,now)).toBeNull();
+ it('never excludes on an upper bound alone',()=>{
+  expect(planVenue(realFacts({maxRecommendedAge:2}),[family],journeys,options,now)).not.toBeNull();
   expect(planVenue(realFacts({maxRecommendedAge:5}),[family],journeys,options,now)).not.toBeNull();
  });
 
@@ -101,9 +101,10 @@ describe('age suitability policy',()=>{
   expect(p.reasons[0]).toContain('Recommended ages are not published');
  });
 
- it('does claim the age check when a range was documented',()=>{
+ it('reports a documented range without claiming it was enforced',()=>{
   const p=planVenue(realFacts({minRecommendedAge:0,maxRecommendedAge:8}),[family],journeys,options,now)!;
-  expect(p.reasons[0]).toContain('age range checked');
+  expect(p.reasons[0]).toContain('publishes recommended ages');
+  expect(p.reasons[0]).not.toContain('age range checked');
  });
 
  it('makes no age claim for a party with no children',()=>{

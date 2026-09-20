@@ -1,5 +1,6 @@
 import { FamilyProfile, WeatherInfo } from '@/src/types';
 import { DayRequest } from '@/src/types/day-request';
+import { AGE_RECOMMENDATION_STRENGTH, childAgesInMonths } from '@/src/services/matching/age-suitability';
 
 function childAgesFromProfile(profile: FamilyProfile): number[] {
   return profile.members.filter((member) => member.role === 'child').map((member) => member.age);
@@ -57,7 +58,7 @@ export function buildProactiveDayRequest(
   const hasPushchair = Boolean(profile.pushchair?.trim());
 
   const constraints: DayRequest['constraints'] = {
-    childAgeFit: { strength: 'required', value: 'in_range' },
+    ageRecommendedFit: { strength: AGE_RECOMMENDATION_STRENGTH, value: 'in_range' },
     journey: { strength: 'required', value: { maxMinutes: profile.maxDriveMinutes } },
     budget: { strength: 'preferred', value: 'within_profile' },
   };
@@ -87,6 +88,7 @@ export function buildProactiveDayRequest(
     rawText: `Best matches for our family ${weatherPhrase.toLowerCase()}`,
     parsedAt: now.toISOString(),
     childAges,
+    childAgeMonthsList: childAgesInMonths(profile.members),
     homeLocation: profile.homeLocation,
     budgetTier: profile.budgetTier,
     maxDriveMinutes: profile.maxDriveMinutes,

@@ -13,7 +13,7 @@ describe('buildProactiveDayRequest', () => {
 
     expect(request.childAges).toEqual([4, 1]);
     expect(request.hasPushchair).toBe(true);
-    expect(request.constraints.childAgeFit).toEqual({ strength: 'required', value: 'in_range' });
+    expect(request.constraints.ageRecommendedFit).toEqual({ strength: 'preferred', value: 'in_range' });
     expect(request.constraints.journey).toEqual({
       strength: 'required',
       value: { maxMinutes: mockFamilyProfile.maxDriveMinutes },
