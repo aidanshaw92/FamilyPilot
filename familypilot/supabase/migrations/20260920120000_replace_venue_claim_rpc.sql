@@ -35,8 +35,13 @@ begin
   if v_place is null or v_field is null then
     raise exception 'replace_venue_claim requires familypilot_place_id and field_key';
   end if;
-  if p_claim->'value_json' is null then
-    raise exception 'replace_venue_claim requires value_json';
+  -- Two different absences. A missing key yields SQL NULL; an explicit "value_json": null yields
+  -- JSONB null, which is a perfectly valid non-SQL-NULL value and would satisfy the column's NOT
+  -- NULL constraint while storing a claim that asserts nothing. The application layer already
+  -- refuses null claim values, but this function is the authoritative write boundary and is
+  -- callable directly by service_role, so it rejects both here.
+  if p_claim->'value_json' is null or p_claim->'value_json' = 'null'::jsonb then
+    raise exception 'replace_venue_claim requires a non-null value_json';
   end if;
 
   -- Transaction-scoped, released on commit or rollback. Keyed on the row identity being replaced
