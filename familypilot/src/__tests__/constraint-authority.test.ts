@@ -305,6 +305,25 @@ describe('downstream: a hallucinated constraint cannot remove a venue', () => {
     expect(matchVenueToDayRequest(facts(50), request).eligible).toBe(false);
   });
 
+  it('a postposed negation cannot exclude a venue', async () => {
+    // "parking isn't important" against unknown parking. An earlier version let parking through
+    // as a positive preference, and "parking is not required" even survived as required.
+    const request = (await normalise("Parking isn't important", {})) as unknown as DayRequest;
+    expect((request.constraints as Record<string, unknown>).parking).toBeUndefined();
+    expect(matchVenueToDayRequest(facts(20), request).eligible).toBe(true);
+  });
+
+  it('a merely-ideal concept cannot exclude a venue', async () => {
+    const request = (await normalise('We need somewhere indoors ideally with parking', {})) as unknown as DayRequest;
+    const constraints = request.constraints as unknown as Record<string, { strength: string }>;
+    expect(constraints.environment.strength).toBe('required');
+    expect(constraints.parking.strength).toBe('preferred');
+
+    // The stated requirement is satisfied, so unknown parking must not remove the venue.
+    const indoors = { ...facts(20), environment: 'indoor' as const };
+    expect(matchVenueToDayRequest(indoors, request).eligible).toBe(true);
+  });
+
   it('still lets the parent’s own stated requirement exclude a venue', async () => {
     // The layer removes the model's authority, not the parent's. An unknown facility the parent
     // said they need must still fail closed.

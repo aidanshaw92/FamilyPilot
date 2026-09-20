@@ -77,6 +77,48 @@ const CORPUS: Array<{ raw: string; expect: Expected; why?: string }> = [
     },
     why: 'same, via "though"',
   },
+  // Postposed negation. The concept comes BEFORE the marker, which an earlier version let
+  // through: "parking is not required" even survived as required/yes, the exact inverse.
+  { raw: "Parking isn't important", expect: {}, why: 'negation after the concept still negates' },
+  { raw: 'Parking is not important', expect: {} },
+  { raw: "Parking isn't required", expect: {} },
+  { raw: 'Parking is not required', expect: {} },
+  { raw: "Baby changing isn't important", expect: {} },
+  { raw: 'Not indoors', expect: {}, why: 'bare "not" negates too' },
+
+  // Mixed modality in one segment. Required must not leak onto a concept the parent called ideal.
+  {
+    raw: 'We need somewhere indoors ideally with parking',
+    expect: {
+      environment: { strength: 'required', value: 'indoor' },
+      parking: { strength: 'preferred', value: 'yes' },
+    },
+    why: '"ideally" governs what follows it, not what precedes',
+  },
+  {
+    raw: 'It must be indoors preferably with parking',
+    expect: {
+      environment: { strength: 'required', value: 'indoor' },
+      parking: { strength: 'preferred', value: 'yes' },
+    },
+  },
+  {
+    raw: 'We need somewhere indoors with parking if possible',
+    expect: {
+      environment: { strength: 'required', value: 'indoor' },
+      parking: { strength: 'preferred', value: 'yes' },
+    },
+    why: 'a postfix qualifier softens only the concept it follows',
+  },
+  {
+    raw: 'Parking is essential but indoors would be nice',
+    expect: {
+      parking: { strength: 'required', value: 'yes' },
+      environment: { strength: 'preferred', value: 'indoor' },
+    },
+    why: 'a marker after the concept still governs it when none precedes',
+  },
+
   { raw: "I don't need parking", expect: {}, why: 'negation yields no positive constraint' },
   { raw: "We don't need baby changing", expect: {} },
   { raw: 'Something without parking', expect: {} },

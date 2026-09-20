@@ -21,21 +21,48 @@
  */
 
 /** Words that mark a stated requirement. Only these can produce `required`. */
-const REQUIRED_WORDS = /\b(must|need|needs|needed|require|requires|required|have to|has to|essential)\b/;
+const REQUIRED_WORDS = /\b(?:must|need|needs|needed|require|requires|required|have to|has to|essential|a must)\b/;
 /** Words that mark a stated preference. */
-const PREFERRED_WORDS = /\b(want|wants|prefer|prefers|preferably|ideally|looking for|would like|hoping|nice to have)\b/;
+const PREFERRED_WORDS = /\b(?:want|wants|prefer|prefers|preferably|ideally|looking for|would like|hoping|nice to have)\b/;
+
+/**
+ * Every modality marker in a segment, with its position.
+ *
+ * Positions matter because one segment routinely governs two concepts differently: in "we need
+ * somewhere indoors ideally with parking", `need` governs `indoors` and `ideally` governs
+ * `parking`. Testing the segment as a whole and letting `required` win the tie made the parent's
+ * merely-ideal parking a hard gate.
+ */
+const MODALITY_SCAN = new RegExp(`(${REQUIRED_WORDS.source})|(${PREFERRED_WORDS.source})`, 'g');
+
+/**
+ * Qualifiers that soften the concept they follow.
+ *
+ * "with parking if possible" states a preference even though `need` appeared earlier in the
+ * sentence. These only ever downgrade, never upgrade, so an over-broad match costs a ranking
+ * nudge rather than a wrongly excluded venue.
+ *
+ * Deliberately excludes `ideally` and `preferably`, which precede what they govern — "indoors
+ * ideally with parking" softens the parking, not the indoors. They are prefix markers instead.
+ */
+const POSTFIX_PREFERRED = /\b(?:if possible|if we can|if they have|if there'?s|if there is|would be nice|is nice|would be good)\b/;
 
 /**
  * Negation, as parents actually phrase it.
  *
- * A concept is dropped when it appears after one of these in the same segment. Dropped, not
- * inverted: the schema only expresses positive requirements, so "no parking needed" cannot be
- * stored as anything truthful. Silence is the honest answer.
+ * Negation applies to the WHOLE segment, not just to concepts appearing after the marker. An
+ * earlier version required `match.index > negationAt`, which let "parking isn't important"
+ * through as a positive preference and, worse, let "parking is not required" through as
+ * `required` — the exact inverse of what the parent said. Attributing negation precisely is hard
+ * and the cost of getting it wrong is a venue wrongly removed, so the whole segment is dropped.
+ *
+ * Dropped, not inverted: the schema only expresses positive requirements, so "no parking needed"
+ * cannot be stored as anything truthful. Silence is the honest answer.
  *
  * Bare "no" excludes "no more than", which is a limit phrase, not a negation — it was otherwise
  * swallowing "a visit of no more than 90 minutes".
  */
-const NEGATION_MARKERS = /\b(?:don'?t|do not|doesn'?t|does not|didn'?t|no need|not fussed|not bothered|not important|isn'?t important|aren'?t important|without|never|no(?!\s+more\s+than)\b)/g;
+const NEGATION_MARKERS = /\b(?:don'?t|do not|doesn'?t|does not|didn'?t|did not|isn'?t|is not|aren'?t|are not|wasn'?t|was not|won'?t|will not|can'?t|cannot|not|no need|without|never|no(?!\s+more\s+than))\b/;
 
 /** Where a segment says nothing about how badly a thing is wanted. Never `required`. */
 const DEFAULT_STRENGTH = 'preferred';
@@ -86,18 +113,36 @@ const LIMIT_PREFIX = '(?:within|under|no more than|max(?:imum)?(?: of)?|up to|le
 const HOURS = new RegExp(`\\b${LIMIT_PREFIX}\\s+(\\d+(?:\\.\\d+)?)\\s*(?:hours?|hrs?)\\b`);
 const MINUTES = new RegExp(`\\b${LIMIT_PREFIX}\\s+(\\d+)\\s*(?:minutes?|mins?)\\b`);
 
-function strengthOf(text) {
-  if (REQUIRED_WORDS.test(text)) return 'required';
-  if (PREFERRED_WORDS.test(text)) return 'preferred';
-  return null;
+/** Modality markers in a segment, in order, as { index, strength }. */
+function modalityMarkers(segment) {
+  const markers = [];
+  MODALITY_SCAN.lastIndex = 0;
+  let match;
+  while ((match = MODALITY_SCAN.exec(segment)) !== null) {
+    markers.push({ index: match.index, strength: match[1] ? 'required' : 'preferred' });
+  }
+  MODALITY_SCAN.lastIndex = 0;
+  return markers;
 }
 
-/** Index of the earliest negation marker in a segment, or -1. */
-function firstNegationIndex(segment) {
-  NEGATION_MARKERS.lastIndex = 0;
-  const match = NEGATION_MARKERS.exec(segment);
-  NEGATION_MARKERS.lastIndex = 0;
-  return match ? match.index : -1;
+/**
+ * Which modality governs a concept at this position.
+ *
+ * A marker normally governs what follows it, so the nearest preceding one wins. Where none
+ * precedes — "parking is essential" — the nearest following marker governs instead, because the
+ * parent has still plainly stated one. Failing both, the strength carried from an earlier
+ * coordinated segment applies, and failing that, `preferred`.
+ */
+function strengthForConcept(markers, conceptIndex, carried) {
+  let preceding = null;
+  let following = null;
+  for (const marker of markers) {
+    if (marker.index < conceptIndex) preceding = marker;
+    else if (following === null) following = marker;
+  }
+  if (preceding) return preceding.strength;
+  if (following) return following.strength;
+  return carried ?? DEFAULT_STRENGTH;
 }
 
 /**
@@ -149,27 +194,48 @@ function parseExplicitTextConstraints(rawText) {
       }
       if (!segment || !segment.trim()) continue;
 
-      const own = strengthOf(segment);
-      if (own) carried = own;
-      const strength = carried ?? DEFAULT_STRENGTH;
+      // Any negation anywhere in the segment disqualifies the whole segment.
+      if (NEGATION_MARKERS.test(segment)) continue;
 
-      const negationAt = firstNegationIndex(segment);
+      const markers = modalityMarkers(segment);
+      const softenedFrom = segment.search(POSTFIX_PREFERRED);
+      // The last marker sets the context inherited by a following coordinated segment.
+      if (markers.length > 0) carried = markers[markers.length - 1].strength;
+
+      const hits = [];
       for (const concept of CONCEPTS) {
         const match = segment.match(concept.pattern);
-        if (!match) continue;
-        // Negated: the parent said they do not need this. Record nothing, support nothing.
-        if (negationAt !== -1 && match.index > negationAt) continue;
-        supported.add(concept.field);
+        if (match) hits.push({ concept, index: match.index });
+      }
+
+      // A postfix qualifier softens only the concept it immediately follows. Applying it to
+      // everything earlier in the segment turned "we need somewhere indoors with parking if
+      // possible" into a merely-preferred indoors, losing a requirement the parent did state.
+      const softened =
+        softenedFrom === -1
+          ? null
+          : hits
+              .filter((hit) => hit.index < softenedFrom)
+              .sort((a, b) => b.index - a.index)[0] ?? null;
+
+      for (const hit of hits) {
+        supported.add(hit.concept.field);
         // First positive statement of a field wins; a later bare mention cannot downgrade it.
-        if (constraints[concept.field]) continue;
-        constraints[concept.field] = { strength, value: concept.value };
+        if (constraints[hit.concept.field]) continue;
+        const strength =
+          hit === softened ? DEFAULT_STRENGTH : strengthForConcept(markers, hit.index, carried);
+        constraints[hit.concept.field] = { strength, value: hit.concept.value };
       }
 
       const maxMinutes = visitDurationFrom(segment);
-      if (maxMinutes != null && negationAt === -1) {
+      if (maxMinutes != null) {
         supported.add('visitDuration');
         if (!constraints.visitDuration) {
-          constraints.visitDuration = { strength, value: { maxMinutes } };
+          const index = segment.search(MINUTES) !== -1 ? segment.search(MINUTES) : segment.search(HOURS);
+          constraints.visitDuration = {
+            strength: strengthForConcept(markers, index === -1 ? segment.length : index, carried),
+            value: { maxMinutes },
+          };
         }
       }
     }
