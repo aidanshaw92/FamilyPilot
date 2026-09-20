@@ -17,7 +17,7 @@ import {
 } from '@/src/types/day-sequence';
 import { isOpenOn } from '@/src/utils/opening-hours';
 
-import { PlanningFamily, PlanningOptions, ageRangeExcludes, familyRequest } from './planner';
+import { PlanningFamily, PlanningOptions, familyRequest } from './planner';
 import { compareItineraries, mostRelevantFailure } from './sequence-ranking';
 import {
   RoutineWindow,
@@ -400,14 +400,6 @@ function tryOrder(
     for (const family of families) {
       for (let i = 0; i < order.length && !ineligible; i += 1) {
         const request = order[i];
-        if (family.ages.length && ageRangeExcludes(request.facts, family.ages)) {
-          ineligible = {
-            reason: 'no-feasible-sequence',
-            message: `${request.name} publishes an age range that excludes a child in ${family.label}.`,
-            attempts: 1,
-          };
-          break;
-        }
         const driveMinutes = i === 0 ? outbound[family.id].minutes : transfers[i - 1].minutes;
         const match = matchVenueToDayRequest(
           { ...request.facts, driveMinutes },

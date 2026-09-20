@@ -11,6 +11,13 @@ import {
 import { TriState } from '@/src/types/enrichment';
 import { FamilyProfile } from '@/src/types';
 import {
+  AGE_RECOMMENDATION_STRENGTH,
+  ageRecommendationToOutcome,
+  childAgesInMonths,
+  evaluateAgeRecommendation,
+  yearsToMonths,
+} from './age-suitability';
+import {
   hasTrustedMatchSignals,
   scoreTrustedAccessibility,
   scoreTrustedAgeSuitability,
@@ -32,9 +39,8 @@ function enrichmentRank(status: MatchableVenueFacts['enrichmentStatus']): number
 function trustedRankingScore(facts: MatchableVenueFacts, profile: FamilyProfile): number {
   if (!hasTrustedMatchSignals(facts)) return 0;
 
-  const childAges = profile.members.filter((member) => member.role === 'child').map((member) => member.age);
   const scores = [
-    scoreTrustedAgeSuitability(facts, childAges),
+    scoreTrustedAgeSuitability(facts, childAgesInMonths(profile.members)),
     scoreTrustedAccessibility(facts, profile),
     scoreTrustedFacilitiesMatch(facts, profile),
     scoreTrustedBudget(facts, profile.budgetTier),
@@ -51,15 +57,9 @@ function evaluateTriStateRequired(value: TriState | 'unknown', needYes: boolean)
   return 'not_applicable';
 }
 
-function evaluateChildAgeFit(facts: MatchableVenueFacts, childAges: number[]): FactMatchOutcome {
-  if (childAges.length === 0) return 'not_applicable';
-  const { minRecommendedAge: min, maxRecommendedAge: max } = facts;
-  if (min == null && max == null) return 'unknown';
-  const youngest = Math.min(...childAges);
-  const oldest = Math.max(...childAges);
-  if (min != null && oldest < min) return 'unsuitable';
-  if (max != null && youngest > max) return 'unsuitable';
-  return 'suitable';
+/** The children in months, preferring the precise list when the producer supplied one. */
+function requestChildMonths(request: DayRequest): number[] {
+  return request.childAgeMonthsList ?? yearsToMonths(request.childAges);
 }
 
 function evaluateEnvironment(
@@ -216,21 +216,23 @@ export function matchVenueToDayRequest(
     eligible = false;
   }
 
-  // Honours the declared strength like every sibling constraint below. Callers that need an
-  // unrecorded age range to fail closed keep declaring it required; the day planner declares it
-  // preferred because it enforces the range itself before calling here.
-  if (request.constraints.childAgeFit && request.constraints.childAgeFit.strength !== 'context') {
-    if (
-      !applyConstraint(
-        evaluations,
-        'childAgeFit',
-        request.constraints.childAgeFit.strength,
-        evaluateChildAgeFit(facts, request.childAges),
-        tally,
-      )
-    ) {
-      eligible = false;
-    }
+  // Unlike every sibling constraint below, this one does NOT honour the declared strength. A
+  // recommended age range is advice, so it may rank a venue but never exclude one, and pinning
+  // the strength here means a request built by any caller — including a persisted one still
+  // carrying the deprecated required `childAgeFit` — cannot turn that advice into a prohibition.
+  // `applyConstraint` is what would otherwise reject on `unsuitable` or `unknown` at `required`.
+  const ageConstraint = request.constraints.ageRecommendedFit ?? request.constraints.childAgeFit;
+  if (ageConstraint && ageConstraint.strength !== 'context' && request.childAges.length > 0) {
+    const fit = evaluateAgeRecommendation(facts, requestChildMonths(request));
+    // Return value deliberately ignored: at `preferred` strength applyConstraint cannot fail,
+    // and treating it as if it could would invite someone to reintroduce the rejection.
+    applyConstraint(
+      evaluations,
+      'ageRecommendedFit',
+      AGE_RECOMMENDATION_STRENGTH,
+      ageRecommendationToOutcome(fit),
+      tally,
+    );
   }
 
   if (request.constraints.environment && request.constraints.environment.strength !== 'context') {

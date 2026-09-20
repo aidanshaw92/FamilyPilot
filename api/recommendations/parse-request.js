@@ -45,7 +45,8 @@ async function callOpenAiParse(rawText, profile) {
   const systemPrompt = `You parse a parent's natural-language day-out request into JSON constraints ONLY.
 Never include venue IDs, scores, rankings, or recommendations.
 Use strength: required | preferred | context.
-Allowed constraint keys: environment (indoor|outdoor|either), energyLevel (high|moderate|low|either), pushchair, babyChanging, toilets, parking, visitDuration {maxMinutes,minMinutes}, childAgeFit (always in_range if children exist), journey, budget (within_profile).
+Allowed constraint keys: environment (indoor|outdoor|either), energyLevel (high|moderate|low|either), pushchair, babyChanging, toilets, parking, visitDuration {maxMinutes,minMinutes}, journey, budget (within_profile).
+Never emit an age constraint. A venue's recommended ages are added from the family profile, are advice rather than an admission rule, and must not be inferred from the request text.
 Put non-ranking notes in context.freeformNotes.`;
 
   const userPrompt = JSON.stringify({

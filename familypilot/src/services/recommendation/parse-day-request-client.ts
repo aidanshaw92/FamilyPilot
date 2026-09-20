@@ -1,5 +1,6 @@
 import { FamilyProfile } from '@/src/types';
 import { DayRequest } from '@/src/types/day-request';
+import { AGE_RECOMMENDATION_STRENGTH, childAgesInMonths } from '@/src/services/matching/age-suitability';
 
 function getApiBaseUrl(): string {
   if (typeof process !== 'undefined' && process.env.EXPO_PUBLIC_RECOMMENDATIONS_API_URL) {
@@ -35,7 +36,7 @@ export function parseDayRequestMock(rawText: string, profile: FamilyProfile): Da
   const text = rawText.toLowerCase();
   const childAges = profile.members.filter((m) => m.role === 'child').map((m) => m.age);
   const constraints: DayRequest['constraints'] = {
-    childAgeFit: { strength: 'required', value: 'in_range' },
+    ageRecommendedFit: { strength: AGE_RECOMMENDATION_STRENGTH, value: 'in_range' },
     journey: { strength: 'required', value: { maxMinutes: profile.maxDriveMinutes } },
     budget: { strength: 'preferred', value: 'within_profile' },
   };
@@ -77,6 +78,7 @@ export function parseDayRequestMock(rawText: string, profile: FamilyProfile): Da
     rawText,
     parsedAt: new Date().toISOString(),
     childAges,
+    childAgeMonthsList: childAgesInMonths(profile.members),
     homeLocation: profile.homeLocation,
     budgetTier: profile.budgetTier,
     maxDriveMinutes: profile.maxDriveMinutes,

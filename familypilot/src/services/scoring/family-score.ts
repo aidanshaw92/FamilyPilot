@@ -5,6 +5,7 @@ import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 import { buildFacilityMissingCaution } from '@/src/utils/facility-match';
 import { evaluateRoutineFit, RoutineFit } from '@/src/utils/routine-fit';
 
+import { childAgesInMonths } from '@/src/services/matching/age-suitability';
 import {
   buildTrustedExplanation,
   hasTrustedMatchSignals,
@@ -71,26 +72,20 @@ function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, Math.round(value)));
 }
 
-function scoreAgeSuitabilityHeuristic(venue: VenueDetail, childAges: number[]): number {
-  if (childAges.length === 0) return 75;
-
-  const youngest = Math.min(...childAges);
-  const oldest = Math.max(...childAges);
-
-  switch (venue.category) {
-    case 'museum':
-      return oldest >= 3 ? clamp(88 + oldest) : clamp(70 + youngest * 5);
-    case 'farm':
-      return youngest >= 1 ? clamp(90 + youngest * 2) : 65;
-    case 'restaurant':
-    case 'cafe':
-      return clamp(82 + childAges.length * 4);
-    case 'park':
-      return clamp(85 + youngest * 3);
-    default:
-      return clamp(80 + childAges.length * 3);
-  }
-}
+/**
+ * What the age factor contributes when no venue has published a recommendation for these ages.
+ *
+ * The same neutral value scoreRoutineFit uses for "nothing to say either way", and deliberately
+ * not a suitability judgement: it keeps the weighted average well-defined without asserting that
+ * a venue does or does not suit a child. Nothing may turn this number into an explanation — a
+ * neutral placeholder is the absence of evidence, not evidence of a good fit.
+ *
+ * This replaced a category-based heuristic that scored a museum from the oldest child's age and a
+ * park from the youngest, and so told parents about age suitability on the strength of the word
+ * "park". With 0 of 122 venues carrying a recommended range, that heuristic was producing
+ * essentially every age score in production.
+ */
+const UNKNOWN_AGE_SCORE = 75;
 
 function scoreDistance(driveMinutes: number, maxDriveMinutes: number): number {
   if (driveMinutes <= maxDriveMinutes * 0.5) return 98;
@@ -137,7 +132,6 @@ function buildHeuristicExplanation(
   }
 
   const reasons: string[] = [];
-  const children = profile.members.filter((m) => m.role === 'child');
   const hasPushchair = Boolean(profile.pushchair?.trim());
 
   // Lead with whatever is most specific to this exact venue, visit, and family — a time-bound
@@ -186,15 +180,10 @@ function buildHeuristicExplanation(
     reasons.push('Good for today’s weather');
   }
 
-  // A filler, not a leader: kept last so it only shows up once the more specific facts above
-  // haven't already filled the card.
-  if (factors.ageSuitability >= 85 && children[0]) {
-    reasons.push(
-      children.length === 1
-        ? `${children[0].name} is a great age for this ${venue.category}`
-        : `Works well for ${children.map((c) => c.name).join(' and ')}`,
-    );
-  }
+  // No age line here at all. This branch runs precisely when the venue has no trusted facts, so
+  // anything it said about age would be inferred from the category — which is what produced
+  // "Ada is a great age for this park" for a venue nobody had reviewed. The trusted branch still
+  // reports a real published range; see buildTrustedExplanation.
 
   return reasons.slice(0, 6);
 }
@@ -207,7 +196,7 @@ export function calculateFamilyScore(
   const enrichmentStatus = options.enrichmentStatus ?? venue.enrichmentStatus ?? 'enriched';
   const isProviderOnly = isUnreviewedEnrichmentStatus(enrichmentStatus);
 
-  const childAges = profile.members.filter((m) => m.role === 'child').map((m) => m.age);
+  const childMonths = childAgesInMonths(profile.members);
   const facts = venue.trustedFacts;
   const useTrusted = !isProviderOnly && facts != null && hasTrustedMatchSignals(facts);
   const weather = options.weather;
@@ -222,8 +211,7 @@ export function calculateFamilyScore(
 
   const factors: FamilyScoreFactors = {
     ageSuitability:
-      (useTrusted ? scoreTrustedAgeSuitability(facts, childAges) : null) ??
-      scoreAgeSuitabilityHeuristic(venue, childAges),
+      (useTrusted ? scoreTrustedAgeSuitability(facts, childMonths) : null) ?? UNKNOWN_AGE_SCORE,
     accessibility:
       (useTrusted ? scoreTrustedAccessibility(facts, profile) : null) ??
       (venue.facilities?.includes('pushchair_friendly') ? 92 : isProviderOnly ? 55 : 70),

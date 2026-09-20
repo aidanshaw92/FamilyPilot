@@ -1,6 +1,7 @@
 import { FamilyProfile, FamilyScoreFactors, VenueDetail, WeatherInfo } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { RoutineFit } from '@/src/utils/routine-fit';
+import { evaluateAgeRecommendation } from '@/src/services/matching/age-suitability';
 
 /** "2-hour" / "90-minute" — an adjective phrase for "a ___ visit", not a raw number. */
 function formatDurationAdjective(minutes: number): string {
@@ -28,20 +29,32 @@ export function hasTrustedMatchSignals(facts: MatchableVenueFacts): boolean {
   );
 }
 
-export function scoreTrustedAgeSuitability(facts: MatchableVenueFacts, childAges: number[]): number | null {
-  if (childAges.length === 0) return null;
-  if (facts.minRecommendedAge == null && facts.maxRecommendedAge == null) return null;
-
-  const youngest = Math.min(...childAges);
-  const oldest = Math.max(...childAges);
-  const min = facts.minRecommendedAge ?? 0;
-  const max = facts.maxRecommendedAge ?? 16;
-
-  if (youngest >= min && oldest <= max) return 96;
-  // Not fully within range: partial overlap with the recommended range scores
-  // better than no overlap at all, rather than treating every mismatch the same.
-  if (youngest <= max && oldest >= min) return 58;
-  return 42;
+/**
+ * How strongly a venue's recommended ages favour these children, for ranking only.
+ *
+ * Takes months, not years, so a two-month-old and an eleven-month-old are not the same input.
+ * Each child is judged on their own — the previous youngest/oldest comparison let a pair of
+ * children straddle a range that suited neither and still score as a full match.
+ *
+ * Returns null when there is nothing to judge, which is the signal callers use to leave age out
+ * of the score rather than substitute a guess. This function never decides eligibility.
+ */
+export function scoreTrustedAgeSuitability(
+  facts: MatchableVenueFacts,
+  childMonths: number[],
+): number | null {
+  const fit = evaluateAgeRecommendation(facts, childMonths);
+  switch (fit) {
+    case 'all':
+      return 96;
+    // Some children suited scores above none, rather than treating every mismatch the same.
+    case 'some':
+      return 58;
+    case 'none':
+      return 42;
+    default:
+      return null;
+  }
 }
 
 export function scoreTrustedAccessibility(

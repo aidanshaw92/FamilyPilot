@@ -3,6 +3,17 @@
  */
 
 const STRENGTH = new Set(['required', 'preferred', 'context']);
+
+/**
+ * A venue's recommended ages rank a result; they never gate one.
+ *
+ * Emitted frozen and by spread rather than assembled per call site, so the three producers below
+ * cannot drift apart. `required` is deliberately unreachable: `applyConstraint` on the client
+ * rejects a required constraint whose outcome is `unsuitable` OR `unknown`, which would turn
+ * "this place suggests other ages" and "nobody published an age suggestion" alike into a
+ * rejection. Mirrors AGE_RECOMMENDATION_STRENGTH in src/services/matching/age-suitability.ts.
+ */
+const AGE_RECOMMENDED_FIT = Object.freeze({ strength: 'preferred', value: 'in_range' });
 const ENV_NEED = new Set(['indoor', 'outdoor', 'either']);
 const ENERGY_NEED = new Set(['high', 'moderate', 'low', 'either']);
 
@@ -41,11 +52,17 @@ function normaliseJourneyConstraint(raw, profileMaxDrive) {
 }
 
 function mergeWithProfile(parsed, profile) {
-  const childAges = profile.members.filter((m) => m.role === 'child').map((m) => m.age);
+  const children = profile.members.filter((m) => m.role === 'child');
+  const childAges = children.map((m) => m.age);
+  // Whole years round every baby under one down to 0; ageMonths keeps a 2-month-old and an
+  // 11-month-old apart, which is exactly where suitability differs most.
+  const childAgeMonthsList = children.map((m) =>
+    m.age === 0 && m.ageMonths != null ? m.ageMonths : m.age * 12,
+  );
   const constraints = { ...(parsed.constraints ?? {}) };
 
-  if (childAges.length > 0 && !constraints.childAgeFit) {
-    constraints.childAgeFit = { strength: 'required', value: 'in_range' };
+  if (childAges.length > 0 && !constraints.ageRecommendedFit) {
+    constraints.ageRecommendedFit = { ...AGE_RECOMMENDED_FIT };
   }
 
   if (!constraints.journey) {
@@ -63,6 +80,7 @@ function mergeWithProfile(parsed, profile) {
     rawText: parsed.rawText ?? '',
     parsedAt: new Date().toISOString(),
     childAges,
+    childAgeMonthsList,
     homeLocation: profile.homeLocation,
     budgetTier: profile.budgetTier,
     maxDriveMinutes: profile.maxDriveMinutes,
@@ -79,11 +97,12 @@ function normaliseParsedConstraints(raw) {
   const constraints = {};
   const c = raw?.constraints ?? {};
 
-  if (c.childAgeFit) {
-    constraints.childAgeFit = {
-      strength: normaliseStrength(c.childAgeFit.strength, 'required'),
-      value: 'in_range',
-    };
+  // Either key is accepted on input; only the unambiguous one is ever emitted, and its strength
+  // is fixed rather than normalised from the caller. The model is told to send `in_range` and
+  // nothing else, but it is a language model, and a `required` it invented would otherwise make
+  // an unpublished recommendation reject the venue.
+  if (c.ageRecommendedFit || c.childAgeFit) {
+    constraints.ageRecommendedFit = { ...AGE_RECOMMENDED_FIT };
   }
   const environment = normaliseConstraint(c.environment, ENV_NEED, 'either');
   if (environment) constraints.environment = environment;
@@ -164,7 +183,7 @@ function parseMockDayRequest(rawText, profile) {
     };
   }
 
-  constraints.childAgeFit = { strength: 'required', value: 'in_range' };
+  constraints.ageRecommendedFit = { ...AGE_RECOMMENDED_FIT };
   constraints.journey = { strength: 'required', value: { maxMinutes: profile.maxDriveMinutes } };
   constraints.budget = { strength: 'preferred', value: 'within_profile' };
 

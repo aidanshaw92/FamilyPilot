@@ -14,6 +14,20 @@ export type EnergyNeed = 'high' | 'moderate' | 'low' | 'either';
 export type PushchairNeed = 'not_difficult';
 
 export interface DayRequestConstraints {
+  /**
+   * How well a venue's *recommended* ages line up with the children. Soft by construction: it
+   * ranks and explains, and can never make a venue ineligible. A venue-level prohibition is a
+   * separate fact that does not exist yet (P0-B2).
+   *
+   * Its strength is always `preferred` — see AGE_RECOMMENDATION_STRENGTH.
+   */
+  ageRecommendedFit?: DayConstraint<'in_range'>;
+  /**
+   * @deprecated Ambiguous: it read as both "suits these ages" and "admits these ages", and every
+   * producer emitted it at `required`, which made an absent recommendation reject the venue.
+   * Superseded by `ageRecommendedFit`. Still accepted on input and normalised to the soft
+   * semantics, so persisted or in-flight requests keep working; never emitted.
+   */
   childAgeFit?: DayConstraint<'in_range'>;
   environment?: DayConstraint<EnvironmentNeed>;
   pushchair?: DayConstraint<PushchairNeed>;
@@ -30,7 +44,13 @@ export interface DayRequestConstraints {
 export interface DayRequest {
   rawText: string;
   parsedAt: string;
+  /** Whole years. Rounds every baby under one down to 0 — see `childAgeMonthsList`. */
   childAges: number[];
+  /**
+   * The same children in months, preserving the precision `childAges` loses under age one.
+   * Optional so existing persisted requests still parse; consumers fall back to `childAges * 12`.
+   */
+  childAgeMonthsList?: number[];
   homeLocation: string;
   budgetTier: FamilyProfile['budgetTier'];
   maxDriveMinutes: number;

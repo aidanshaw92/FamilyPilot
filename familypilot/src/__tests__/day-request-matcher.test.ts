@@ -15,7 +15,7 @@ const BASE_REQUEST: DayRequest = {
   maxDriveMinutes: 30,
   hasPushchair: true,
   constraints: {
-    childAgeFit: { strength: 'required', value: 'in_range' },
+    ageRecommendedFit: { strength: 'preferred', value: 'in_range' },
     environment: { strength: 'required', value: 'indoor' },
     pushchair: { strength: 'required', value: 'not_difficult' },
     parking: { strength: 'required', value: 'yes' },
@@ -148,7 +148,7 @@ describe('day-request matcher', () => {
       ...BASE_REQUEST,
       constraints: {
         journey: BASE_REQUEST.constraints.journey,
-        childAgeFit: BASE_REQUEST.constraints.childAgeFit,
+        ageRecommendedFit: BASE_REQUEST.constraints.ageRecommendedFit,
         toilets: { strength: 'required', value: 'yes' },
       },
     };
