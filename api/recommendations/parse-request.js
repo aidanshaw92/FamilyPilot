@@ -42,12 +42,12 @@ async function callOpenAiParse(rawText, profile) {
     .filter((m) => m.role === 'child')
     .map((m) => m.age);
 
-  // The age exception is stated last and scoped explicitly to age. An earlier wording put
-  // "must not be inferred from the request text" in a sentence about age, and production then
-  // returned no constraints at all for "it must have baby changing and parking" — the model had
-  // generalised the prohibition. Everything above it now says, positively and repeatedly, that
-  // the other keys SHOULD be extracted, and the worked example shows four of them being produced
-  // from one sentence.
+  // Prompt wording is a best effort, not a guarantee. Whatever this asks for, the server treats
+  // the result as suggestions: server/recommendations/day-request-schema.js caps every model
+  // field to `preferred` and owns age, journey and budget outright, so a model that ignores the
+  // instructions below cannot change which venues a parent is shown. The wording still matters
+  // for quality — an earlier version put "must not be inferred from the request text" in a
+  // sentence about age and the model generalised it, returning no constraints at all.
   const systemPrompt = `You extract a parent's stated day-out requirements and preferences into JSON constraints.
 
 Return an object of exactly this shape:
@@ -64,10 +64,11 @@ Allowed constraint keys:
   toilets
   parking
   visitDuration {maxMinutes,minMinutes}
-  journey
-  budget (within_profile)
 
 Each constraint is { "strength": required|preferred|context, "value": ... }.
+
+Only emit a field the parent actually referred to. Do not add a field because it seems sensible
+for a family; a suggestion nobody asked for is worse than none.
 
 IMPORTANT:
 - Extract every requirement or preference that maps to an allowed constraint.
@@ -92,10 +93,10 @@ Expected constraints:
   parking: { "strength": "required", "value": "yes" }
   energyLevel: { "strength": "preferred", "value": "high" }
 
-AGE IS THE EXCEPTION:
-- Never emit childAgeFit or ageRecommendedFit.
-- Never infer an age constraint from rawText.
-- Age recommendation matching is added separately by the server from the family profile.
+THE SERVER OWNS THESE - never emit them:
+- childAgeFit / ageRecommendedFit: age matching is added from the family profile.
+- journey: the drive limit comes from the family profile, not from you.
+- budget: taken from the family profile's budget tier.
 
 Never include venue IDs, scores, rankings or recommendations.`;
 

@@ -2,7 +2,38 @@
  * Strict schema for AI-parsed day requests — no venue IDs or scores.
  */
 
+const { parseExplicitTextConstraints } = require('./explicit-constraint-parser');
+
 const STRENGTH = new Set(['required', 'preferred', 'context']);
+
+/**
+ * Constraint authority, highest first.
+ *
+ *   1. the family profile and this server   (ageRecommendedFit, journey, budget)
+ *   2. deterministic parsing of the parent's own words
+ *   3. the model, as soft suggestions only
+ *
+ * A language model may paraphrase, spot a synonym and rank. It may not decide that a venue
+ * disappears. Production demonstrated both halves of why: before the prompt fix it dropped
+ * "it must have parking", and after it invented a required pushchair nobody mentioned and a
+ * 30-minute journey limit against a profile that said 45. `day-request-matcher` evaluates
+ * journey at `required` whatever strength the request declares, so that invented 30 really did
+ * remove every venue 31-45 minutes away.
+ */
+
+/** The only fields a model may contribute at all, and never above `preferred`. */
+const MODEL_SUGGESTABLE_FIELDS = new Set([
+  'environment',
+  'energyLevel',
+  'pushchair',
+  'babyChanging',
+  'toilets',
+  'parking',
+  'visitDuration',
+]);
+
+/** The strongest a model-only field may ever be. `preferred` cannot fail a venue closed. */
+const MODEL_MAX_STRENGTH = 'preferred';
 
 /**
  * A venue's recommended ages rank a result; they never gate one.
@@ -14,6 +45,12 @@ const STRENGTH = new Set(['required', 'preferred', 'context']);
  * rejection. Mirrors AGE_RECOMMENDATION_STRENGTH in src/services/matching/age-suitability.ts.
  */
 const AGE_RECOMMENDED_FIT = Object.freeze({ strength: 'preferred', value: 'in_range' });
+
+/**
+ * Budget is profile-owned. The schema can only express `within_profile`, so there is nothing for
+ * a model to say about it that the profile does not already say better.
+ */
+const BUDGET_WITHIN_PROFILE = Object.freeze({ strength: 'preferred', value: 'within_profile' });
 const ENV_NEED = new Set(['indoor', 'outdoor', 'either']);
 const ENERGY_NEED = new Set(['high', 'moderate', 'low', 'either']);
 
@@ -59,22 +96,10 @@ function mergeWithProfile(parsed, profile) {
   const childAgeMonthsList = children.map((m) =>
     m.age === 0 && m.ageMonths != null ? m.ageMonths : m.age * 12,
   );
+  // reconcileConstraints already assigned the server-owned fields last and unconditionally, so
+  // there is nothing to fill in here. Re-deriving them would reintroduce the "only if absent"
+  // rule that let a model-supplied journey survive.
   const constraints = { ...(parsed.constraints ?? {}) };
-
-  if (childAges.length > 0 && !constraints.ageRecommendedFit) {
-    constraints.ageRecommendedFit = { ...AGE_RECOMMENDED_FIT };
-  }
-
-  if (!constraints.journey) {
-    constraints.journey = {
-      strength: 'required',
-      value: { maxMinutes: profile.maxDriveMinutes },
-    };
-  }
-
-  if (!constraints.budget) {
-    constraints.budget = { strength: 'preferred', value: 'within_profile' };
-  }
 
   return {
     rawText: parsed.rawText ?? '',
@@ -93,104 +118,85 @@ function mergeWithProfile(parsed, profile) {
   };
 }
 
-function normaliseParsedConstraints(raw) {
-  const constraints = {};
+/**
+ * What the model suggested, reduced to something that cannot gate.
+ *
+ * Every surviving field is capped to `preferred`, and the three server-owned fields are dropped
+ * outright rather than normalised — the model has no say in age, journey or budget, so reading
+ * them at all would only invite someone to start trusting them again.
+ */
+function modelSuggestions(raw) {
+  const suggestions = {};
   const c = raw?.constraints ?? {};
 
-  // Either key is accepted on input; only the unambiguous one is ever emitted, and its strength
-  // is fixed rather than normalised from the caller. The model is told to send `in_range` and
-  // nothing else, but it is a language model, and a `required` it invented would otherwise make
-  // an unpublished recommendation reject the venue.
-  if (c.ageRecommendedFit || c.childAgeFit) {
-    constraints.ageRecommendedFit = { ...AGE_RECOMMENDED_FIT };
-  }
   const environment = normaliseConstraint(c.environment, ENV_NEED, 'either');
-  if (environment) constraints.environment = environment;
+  if (environment) suggestions.environment = environment;
   const energyLevel = normaliseConstraint(c.energyLevel, ENERGY_NEED, 'either');
-  if (energyLevel) constraints.energyLevel = energyLevel;
-  if (c.pushchair) {
-    constraints.pushchair = {
-      strength: normaliseStrength(c.pushchair.strength),
-      value: 'not_difficult',
-    };
-  }
-  if (c.babyChanging) {
-    constraints.babyChanging = { strength: normaliseStrength(c.babyChanging.strength), value: 'yes' };
-  }
-  if (c.toilets) {
-    constraints.toilets = { strength: normaliseStrength(c.toilets.strength), value: 'yes' };
-  }
-  if (c.parking) {
-    constraints.parking = { strength: normaliseStrength(c.parking.strength), value: 'yes' };
-  }
+  if (energyLevel) suggestions.energyLevel = energyLevel;
+  if (c.pushchair) suggestions.pushchair = { strength: 'preferred', value: 'not_difficult' };
+  if (c.babyChanging) suggestions.babyChanging = { strength: 'preferred', value: 'yes' };
+  if (c.toilets) suggestions.toilets = { strength: 'preferred', value: 'yes' };
+  if (c.parking) suggestions.parking = { strength: 'preferred', value: 'yes' };
   const visitDuration = normaliseDurationConstraint(c.visitDuration);
-  if (visitDuration) constraints.visitDuration = visitDuration;
-  if (c.budget) {
-    constraints.budget = {
-      strength: normaliseStrength(c.budget.strength, 'preferred'),
-      value: 'within_profile',
-    };
+  if (visitDuration) suggestions.visitDuration = visitDuration;
+
+  // Belt and braces over the per-field handling above: nothing leaves here outside the allowed
+  // set, and nothing leaves here able to fail a venue closed.
+  for (const [field, constraint] of Object.entries(suggestions)) {
+    if (!MODEL_SUGGESTABLE_FIELDS.has(field)) {
+      delete suggestions[field];
+      continue;
+    }
+    if (constraint.strength === 'required') constraint.strength = MODEL_MAX_STRENGTH;
   }
-  const journey = normaliseJourneyConstraint(c.journey, 30);
-  if (journey) constraints.journey = journey;
+
+  return suggestions;
+}
+
+/**
+ * Apply the authority order to produce the constraints the rest of the system acts on.
+ *
+ * Deterministic text does not merge with a model suggestion for the same field — it replaces it
+ * whole. A model cannot weaken "must have parking" to preferred, cannot strengthen "would like
+ * parking" to required, and cannot contradict the value the parent's own words carry.
+ */
+function reconcileConstraints(explicit, suggestions, profile) {
+  const constraints = {};
+
+  // 3. Model suggestions: lowest authority, already incapable of gating.
+  for (const [field, constraint] of Object.entries(suggestions)) {
+    constraints[field] = constraint;
+  }
+
+  // 2. The parent's own words, read deterministically. Replaces whatever the model said.
+  for (const [field, constraint] of Object.entries(explicit)) {
+    constraints[field] = { ...constraint };
+  }
+
+  // 1. Server and profile. Assigned last, so nothing below can have touched them.
+  constraints.ageRecommendedFit = { ...AGE_RECOMMENDED_FIT };
+  constraints.budget = { ...BUDGET_WITHIN_PROFILE };
+  constraints.journey = {
+    strength: 'required',
+    value: { maxMinutes: profile.maxDriveMinutes },
+  };
 
   return constraints;
 }
 
+/**
+ * Offline / no-API-key path.
+ *
+ * Runs the same deterministic extractor as the real path, with no model suggestions, so the two
+ * cannot drift into different rules about what "must have parking" means.
+ */
 function parseMockDayRequest(rawText, profile) {
-  const text = rawText.toLowerCase();
-  const constraints = {};
-
-  if (/\bindoor\b/.test(text)) {
-    constraints.environment = { strength: /\bneed\b|\bmust\b|\bwant\b/.test(text) ? 'required' : 'preferred', value: 'indoor' };
-  } else if (/\boutdoor\b/.test(text)) {
-    constraints.environment = { strength: 'preferred', value: 'outdoor' };
-  }
-
-  if (/burn energy|run around|active|let off steam/.test(text)) {
-    constraints.energyLevel = { strength: 'preferred', value: 'high' };
-  } else if (/calm|quiet|gentle/.test(text)) {
-    constraints.energyLevel = { strength: 'preferred', value: 'low' };
-  }
-
-  if (/pushchair|buggy|pram|stroller/.test(text)) {
-    constraints.pushchair = {
-      strength: /don'?t want difficult|need|must/.test(text) ? 'required' : 'preferred',
-      value: 'not_difficult',
-    };
-  }
-
-  if (/baby chang/.test(text)) {
-    constraints.babyChanging = { strength: 'preferred', value: 'yes' };
-  }
-
-  if (/toilet/.test(text)) {
-    constraints.toilets = { strength: 'preferred', value: 'yes' };
-  }
-
-  if (/parking/.test(text)) {
-    constraints.parking = {
-      strength: /don'?t want difficult|need|must|easy/.test(text) ? 'required' : 'preferred',
-      value: 'yes',
-    };
-  }
-
-  const hourMatch = text.match(/(\d+)\s*hours?/);
-  if (hourMatch) {
-    constraints.visitDuration = {
-      strength: 'preferred',
-      value: { maxMinutes: Number(hourMatch[1]) * 60 },
-    };
-  }
-
-  constraints.ageRecommendedFit = { ...AGE_RECOMMENDED_FIT };
-  constraints.journey = { strength: 'required', value: { maxMinutes: profile.maxDriveMinutes } };
-  constraints.budget = { strength: 'preferred', value: 'within_profile' };
+  const { constraints: explicit } = parseExplicitTextConstraints(rawText);
 
   return mergeWithProfile(
     {
       rawText,
-      constraints,
+      constraints: reconcileConstraints(explicit, {}, profile),
       context: { freeformNotes: rawText.slice(0, 200) },
     },
     profile,
@@ -205,10 +211,13 @@ function normaliseDayRequest(raw, profile) {
     throw new Error('Parsed day request must not include venue IDs or scores');
   }
 
+  const rawText = typeof raw.rawText === 'string' ? raw.rawText : '';
+  const { constraints: explicit } = parseExplicitTextConstraints(rawText);
+
   return mergeWithProfile(
     {
-      rawText: typeof raw.rawText === 'string' ? raw.rawText : '',
-      constraints: normaliseParsedConstraints(raw),
+      rawText,
+      constraints: reconcileConstraints(explicit, modelSuggestions(raw), profile),
       context: raw.context ?? {},
     },
     profile,
@@ -216,7 +225,12 @@ function normaliseDayRequest(raw, profile) {
 }
 
 module.exports = {
+  AGE_RECOMMENDED_FIT,
+  BUDGET_WITHIN_PROFILE,
+  MODEL_SUGGESTABLE_FIELDS,
+  mergeWithProfile,
+  modelSuggestions,
   normaliseDayRequest,
   parseMockDayRequest,
-  mergeWithProfile,
+  reconcileConstraints,
 };
