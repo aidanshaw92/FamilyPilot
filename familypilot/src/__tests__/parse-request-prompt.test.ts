@@ -146,8 +146,9 @@ describe('the prompt is not what makes this safe', () => {
       childAgeFit: { strength: 'required', value: 'in_range' },
     });
 
-    expect(out.constraints.environment.strength).toBe('preferred');
-    expect(out.constraints.parking.strength).toBe('preferred');
+    // rawText is 'x': nothing supports environment or parking, so both are dropped outright.
+    expect(out.constraints.environment).toBeUndefined();
+    expect(out.constraints.parking).toBeUndefined();
     expect(out.constraints.journey).toEqual({ strength: 'required', value: { maxMinutes: 45 } });
     expect(out.constraints.budget).toEqual({ strength: 'preferred', value: 'within_profile' });
     expect(out.constraints.ageRecommendedFit).toEqual({ strength: 'preferred', value: 'in_range' });

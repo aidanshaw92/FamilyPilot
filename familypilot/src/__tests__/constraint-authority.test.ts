@@ -69,23 +69,31 @@ describe('deterministic text restores what the model dropped', () => {
 });
 
 describe('a model-only field can never gate', () => {
-  it('production case: an invented required pushchair is capped to preferred', async () => {
-    // Nothing in case A mentions a pushchair. Run 59063 in production emitted it as `required`,
-    // which would have excluded every venue whose pushchair suitability is unknown.
+  it('production case: an invented pushchair is dropped, not merely softened', async () => {
+    // Nothing in case A mentions a pushchair. Run 59063 in production emitted it as `required`.
+    // Softening it to `preferred` would stop it excluding a venue but still move fit
+    // classification, preferredUnknowns, ranking and the explanation the parent reads.
     const out = await normalise(CASE_A, {
       pushchair: { strength: 'required', value: 'not_difficult' },
     });
-    expect(out.constraints.pushchair.strength).toBe('preferred');
+    expect(out.constraints.pushchair).toBeUndefined();
   });
 
-  it('an invented required environment cannot become hard eligibility', async () => {
+  it('an invented environment the text never mentions is dropped', async () => {
     const out = await normalise('Something fun for a 3 year old', {
       environment: { strength: 'required', value: 'indoor' },
     });
-    expect(out.constraints.environment.strength).toBe('preferred');
+    expect(out.constraints.environment).toBeUndefined();
   });
 
-  it('caps every model-suggestable field, not just the ones we saw fail', async () => {
+  it('a model field the parent negated is dropped rather than reintroduced', async () => {
+    const out = await normalise("I don't need parking", {
+      parking: { strength: 'required', value: 'yes' },
+    });
+    expect(out.constraints.parking).toBeUndefined();
+  });
+
+  it('drops every ungrounded model field, not just the ones we saw fail', async () => {
     const out = await normalise('Something fun', {
       environment: { strength: 'required', value: 'indoor' },
       energyLevel: { strength: 'required', value: 'high' },
@@ -94,11 +102,57 @@ describe('a model-only field can never gate', () => {
       toilets: { strength: 'required', value: 'yes' },
       parking: { strength: 'required', value: 'yes' },
     });
-    const required = Object.entries(out.constraints)
-      .filter(([, c]) => (c as { strength: string }).strength === 'required')
-      .map(([field]) => field);
-    // journey is server-owned and legitimately required; nothing else may be.
-    expect(required).toEqual(['journey']);
+    // Nothing in "Something fun" supports any of them, so only the server-owned three survive.
+    expect(Object.keys(out.constraints).sort()).toEqual(['ageRecommendedFit', 'budget', 'journey']);
+  });
+});
+
+describe('the model-suggestion layer itself', () => {
+  /**
+   * Since unsupported fields are dropped, and a supported field is by construction one the
+   * deterministic parser also produced, `reconcileConstraints` always overwrites whatever the
+   * model contributed. The model therefore cannot currently change the final constraint object
+   * at all — which is the intended consequence of giving it no authority, not an accident.
+   *
+   * The `required -> preferred` cap inside modelSuggestions is consequently unreachable through
+   * normaliseDayRequest today. It is kept as defence in depth for any future change to the
+   * reconciliation order, and pinned here directly so it cannot rot unnoticed.
+   */
+  it('caps a surviving model field to preferred', async () => {
+    const { modelSuggestions } = await schema();
+    // environment and energyLevel read the caller's strength (normaliseConstraint), unlike the
+    // tri-state fields which hardcode preferred, so they are what the cap actually protects.
+    const out = modelSuggestions(
+      {
+        constraints: {
+          environment: { strength: 'required', value: 'indoor' },
+          energyLevel: { strength: 'required', value: 'high' },
+        },
+      },
+      new Set(['environment', 'energyLevel']),
+    );
+    expect(out.environment).toEqual({ strength: 'preferred', value: 'indoor' });
+    expect(out.energyLevel).toEqual({ strength: 'preferred', value: 'high' });
+  });
+
+  it('drops a field the text does not support', async () => {
+    const { modelSuggestions } = await schema();
+    const out = modelSuggestions(
+      { constraints: { pushchair: { strength: 'required', value: 'not_difficult' } } },
+      new Set(),
+    );
+    expect(out.pushchair).toBeUndefined();
+  });
+
+  it('drops a server-owned field outright rather than normalising it', async () => {
+    const { modelSuggestions } = await schema();
+    const out = modelSuggestions(
+      { constraints: { journey: { strength: 'required', value: { maxMinutes: 5 } }, budget: { strength: 'required', value: 'within_profile' } } },
+      new Set(['journey', 'budget']),
+    );
+    const fields = out as unknown as Record<string, unknown>;
+    expect(fields.journey).toBeUndefined();
+    expect(fields.budget).toBeUndefined();
   });
 });
 

@@ -32,7 +32,17 @@ const MODEL_SUGGESTABLE_FIELDS = new Set([
   'visitDuration',
 ]);
 
-/** The strongest a model-only field may ever be. `preferred` cannot fail a venue closed. */
+/**
+ * A model field survives only where the parent's own words positively support it.
+ *
+ * Capping an unsupported field to `preferred` stops it excluding a venue, but it still moves fit
+ * classification, preferredUnknowns, ranking and the explanation shown to the parent. Production
+ * invented a `pushchair` requirement for a request that never mentioned one; nothing the parent
+ * did not express should change what they are shown, softly or otherwise.
+ *
+ * Support is positive support, not mention: "I don't need parking" supports nothing, so a model
+ * proposing parking cannot smuggle it back in.
+ */
 const MODEL_MAX_STRENGTH = 'preferred';
 
 /**
@@ -125,7 +135,7 @@ function mergeWithProfile(parsed, profile) {
  * outright rather than normalised — the model has no say in age, journey or budget, so reading
  * them at all would only invite someone to start trusting them again.
  */
-function modelSuggestions(raw) {
+function modelSuggestions(raw, supported) {
   const suggestions = {};
   const c = raw?.constraints ?? {};
 
@@ -140,10 +150,10 @@ function modelSuggestions(raw) {
   const visitDuration = normaliseDurationConstraint(c.visitDuration);
   if (visitDuration) suggestions.visitDuration = visitDuration;
 
-  // Belt and braces over the per-field handling above: nothing leaves here outside the allowed
-  // set, and nothing leaves here able to fail a venue closed.
+  // Nothing leaves here outside the allowed set, nothing leaves here ungrounded in the parent's
+  // own words, and nothing leaves here able to fail a venue closed.
   for (const [field, constraint] of Object.entries(suggestions)) {
-    if (!MODEL_SUGGESTABLE_FIELDS.has(field)) {
+    if (!MODEL_SUGGESTABLE_FIELDS.has(field) || !supported.has(field)) {
       delete suggestions[field];
       continue;
     }
@@ -212,12 +222,12 @@ function normaliseDayRequest(raw, profile) {
   }
 
   const rawText = typeof raw.rawText === 'string' ? raw.rawText : '';
-  const { constraints: explicit } = parseExplicitTextConstraints(rawText);
+  const { constraints: explicit, supported } = parseExplicitTextConstraints(rawText);
 
   return mergeWithProfile(
     {
       rawText,
-      constraints: reconcileConstraints(explicit, modelSuggestions(raw), profile),
+      constraints: reconcileConstraints(explicit, modelSuggestions(raw, supported), profile),
       context: raw.context ?? {},
     },
     profile,
