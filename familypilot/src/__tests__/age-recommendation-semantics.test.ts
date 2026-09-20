@@ -301,9 +301,12 @@ describe('producers never emit a required age recommendation', () => {
   it('the AI parser prompt no longer advertises an age constraint', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('../api/recommendations/parse-request.js', 'utf8');
-    const prompt = source.slice(source.indexOf('Allowed constraint keys'), source.indexOf('Put non-ranking notes'));
-    expect(prompt).not.toContain('childAgeFit');
-    expect(prompt).not.toContain('ageRecommendedFit');
+    // Only the allowed-keys list. The prompt names both keys further down, in the prohibition
+    // that tells the model never to emit them, which is the opposite of advertising them.
+    const allowed = source.slice(source.indexOf('Allowed constraint keys'), source.indexOf('IMPORTANT:'));
+    expect(allowed.length).toBeGreaterThan(50);
+    expect(allowed).not.toContain('childAgeFit');
+    expect(allowed).not.toContain('ageRecommendedFit');
   });
 });
 
