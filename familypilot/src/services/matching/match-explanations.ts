@@ -8,6 +8,7 @@ import {
 import { FacilityType, FamilyProfile } from '@/src/types';
 import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 import { buildFacilityMissingCaution } from '@/src/utils/facility-match';
+import { describeAgeAdmission, describeAgeCaveats } from './age-admission';
 
 /** MatchableVenueFacts tracks each facility as its own tri-state field rather than a
  * FacilityType[] list — collect the ones actually confirmed present so the same
@@ -25,6 +26,10 @@ function confirmedFacilities(facts: MatchableVenueFacts): FacilityType[] {
 
 const FIELD_LABELS: Record<string, string> = {
   ageRecommendedFit: 'Recommended ages',
+  // The venue's door policy, not its advice. A separate label because conflating the two is the
+  // mistake `childAgeFit` made, and a parent reading "Recommended ages" for a hard prohibition
+  // would be told the wrong thing about why a venue is missing.
+  ageAdmission: 'Age policy',
   // Deprecated compatibility alias. The matcher emits `ageRecommendedFit`, but a persisted or
   // in-flight evaluation can still carry the old key, and an unlabelled field falls through to
   // the raw identifier — which is how "ageRecommendedFit not confirmed for this venue" would
@@ -109,6 +114,11 @@ export function buildFocusedReasons(
     if (evaluation.outcome !== 'suitable') continue;
 
     switch (evaluation.field) {
+      case 'ageAdmission':
+        // Only ever reached when the family IS admitted: a prohibition makes the venue
+        // ineligible, so this branch never explains an exclusion.
+        reasons.push({ field: 'ageAdmission', text: describeAgeAdmission(facts) ?? 'Age policy' });
+        break;
       case 'ageRecommendedFit':
       case 'childAgeFit':
         // Both resolve to the same published range. `field` echoes whichever key the evaluation
@@ -196,7 +206,11 @@ export function buildFocusedRecommendation(
         routineFit.caution,
       ].filter((caution): caution is string => Boolean(caution))
     : [];
-  const caveats = [...extraCautions, ...facts.warnings];
+  // Age rules that explain without excluding -- an activity minimum, an accompaniment rule, a
+  // scope that could not be read, or a door whose sources disagree. Listed BEFORE the generic
+  // warnings because a rule about who may go in is what a parent most needs before setting off,
+  // and because the venue is still on this list precisely thanks to those rules not excluding.
+  const caveats = [...describeAgeCaveats(facts), ...extraCautions, ...facts.warnings];
   const reasons = buildFocusedReasons(facts, match.evaluations);
   return {
     venueId: facts.placeId,

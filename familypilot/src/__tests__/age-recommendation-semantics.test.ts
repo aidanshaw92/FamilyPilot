@@ -28,7 +28,7 @@ import { VenueFamilyMetadata } from '@/src/types/places';
  *
  * The invariant every test below defends is that no age input — inside the range, outside it,
  * absent, or a legacy `required` constraint from a persisted request — can make a venue
- * ineligible. Hard age eligibility arrives in B2 as a separate, evidence-backed venue-level
+ * ineligible. Hard age eligibility is B2's separate, evidence-backed venue-level
  * prohibition; until then, nothing about age closes a door.
  */
 

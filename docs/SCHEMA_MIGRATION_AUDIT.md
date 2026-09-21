@@ -1,6 +1,6 @@
 # Schema migration audit
 
-Generated: 2026-09-21T10:55:28.530Z
+Generated: 2026-09-21T13:15:09.887Z
 
 ## Committed migrations
 
@@ -27,6 +27,7 @@ Generated: 2026-09-21T10:55:28.530Z
 - 20260920090000_venue_source_evidence_http_status.sql: (no create tables)
 - 20260920120000_replace_venue_claim_rpc.sql: (no create tables)
 - 20260920210000_least_privilege_client_roles.sql: (no create tables)
+- 20260921120000_venue_age_policy.sql: (no create tables)
 
 ## Expected operational tables
 

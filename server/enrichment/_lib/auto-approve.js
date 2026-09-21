@@ -6,7 +6,7 @@
 const { approveDraft, getPendingDraft } = require('./draft-store');
 const { listQueue } = require('./enrichment-store');
 const { resolveBetaParams } = require('./beta-area');
-const REVIEWED_BY = 'source_evidence_auto_v2';
+const { SOURCE_EVIDENCE_AUTO_APPROVER: REVIEWED_BY, AI_AUTO_APPROVER } = require('./approval-actors');
 
 function isAutoApproveEnabled() {
   const flag = process.env.ENRICHMENT_AUTO_APPROVE;
@@ -65,7 +65,7 @@ async function reconcileSourceClaims(id, bundle) {
   const review = require('./trusted-evidence').reviewEvidence(bundle);
   const claims = await listClaimsForVenue(id, {status:'active'});
   for (const claim of claims) {
-    if (!['source_evidence_auto_v2','ai_auto_approved'].includes(claim.approvedBy)) continue;
+    if (![REVIEWED_BY, AI_AUTO_APPROVER].includes(claim.approvedBy)) continue;
     const source = bundle.sources.find(s=>s.url===claim.sourceUrl && Date.parse(s.retrievedAt)>=Date.parse(claim.checkedAt));
     if (!source) continue;
     const field = Object.keys(FIELD_MAP).find(key=>FIELD_MAP[key]===claim.fieldKey);

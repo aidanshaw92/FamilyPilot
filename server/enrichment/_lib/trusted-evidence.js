@@ -1,7 +1,8 @@
 /** Only server-extracted, recent official facts can be published automatically. */
 const { extractEvidenceFromText, buildEvidenceBundle } = require('./evidence-extractor');
 const { listEvidenceForVenue } = require('./evidence-store');
-const SOURCE_TYPES = new Set(['official_website','accessibility_page','visitor_info','faq_page','family_page']);
+// One taxonomy, shared with the age-policy gate. See source-types.js for why council_page is out.
+const { OFFICIAL_SOURCE_TYPES: SOURCE_TYPES } = require('./source-types');
 const FIELD_MAP = {
   toilets:'familyFacilities.toilets', babyChanging:'familyFacilities.babyChanging',
   parking:'familyFacilities.parking', freeParking:'familyFacilities.freeParking', cafe:'familyFacilities.cafe',
@@ -10,7 +11,9 @@ const FIELD_MAP = {
   pushchairSuitability:'pushchairSuitability', environment:'environment',
 };
 function expiryDate(fieldKey, checkedAt) {
-  const days = /Facilities|accessibility|pushchair|sendInfo/.test(fieldKey) ? 30 : 90;
+  // agePolicy is short-lived deliberately: it is the only fact that removes a venue, so it must
+  // be re-read often. Mirrored by SHORT_LIVED in claim-freshness.js -- change both together.
+  const days = /Facilities|accessibility|pushchair|sendInfo|agePolicy/.test(fieldKey) ? 30 : 90;
   const date = new Date(checkedAt);
   if (!Number.isFinite(date.getTime())) return '1970-01-01';
   date.setUTCDate(date.getUTCDate()+days);
@@ -49,4 +52,4 @@ async function verifiedBundleForVenue(id) {
     facts:extractEvidenceFromText(r.extractedText,{url:r.sourceUrl,sourceType:r.sourceType,retrievedAt:r.retrievedAt})}));
   return buildEvidenceBundle(id,sources,'official_website');
 }
-module.exports={expiryDate,reviewEvidence,eligibleFact,verifiedBundleForVenue,FIELD_MAP};
+module.exports={expiryDate,reviewEvidence,eligibleFact,verifiedBundleForVenue,FIELD_MAP,SOURCE_TYPES};

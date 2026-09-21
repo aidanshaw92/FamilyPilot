@@ -2,6 +2,9 @@
 
 Updated 10 September 2026. Changes extend PR #67 and do not mean the production app has been deployed.
 
+See [AGE_POLICY.md](AGE_POLICY.md) for the venue age-policy model: which age claims may remove a
+venue from a parent's results, and which may only explain.
+
 ## What is implemented
 
 - Routine worker requests now use deterministic extraction of explicit official website facts. They do not need an OpenAI call. Manual AI draft generation remains available to editors, but AI output is never sufficient for automatic publication.

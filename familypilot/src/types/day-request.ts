@@ -9,6 +9,54 @@ export interface DayConstraint<T> {
   value: T;
 }
 
+/** A venue-level door policy in months, half-open [min, max). Always carries its source. */
+/**
+ * One door a venue enforces, in MONTHS, half-open [min, max).
+ *
+ * A venue may enforce several. "Under 4s are not admitted" and "over 12s are not admitted" are
+ * two doors, not one interval and not a contradiction, so `VenueAgePolicy.restrictions` is a list
+ * and a child must satisfy every entry.
+ */
+export interface VenueAgeRestriction {
+  minMonthsInclusive: number | null;
+  maxMonthsExclusive: number | null;
+  sourceUrl: string;
+  checkedAt: string | null;
+  statedAs?: string | null;
+}
+
+/** Where an age rule applies. Only `venue` describes the door, and only a door may exclude. */
+export type VenueAgeScope = 'venue' | 'activity' | 'accompaniment' | 'ambiguous';
+
+/**
+ * An age rule that explains without excluding: an activity rule ("soft play is 5+"), an
+ * accompaniment rule ("under 2s must be with an adult"), a rule whose scope could not be
+ * determined, or a door whose provenance, lifetime or corroboration fell short of gating.
+ */
+export interface VenueAgeCaveat {
+  scope: VenueAgeScope;
+  activity?: string | null;
+  accompaniment?: { adultRequired?: boolean; ratio?: string } | null;
+  statedAs?: string | null;
+  minMonthsInclusive: number | null;
+  maxMonthsExclusive: number | null;
+  sourceUrl: string | null;
+}
+
+/**
+ * A venue's projected age policy: what it enforces, what it merely states, and whether its
+ * sources contradict each other.
+ *
+ * Built server-side from trusted age-policy claims (server/enrichment/_lib/age-policy.js). When
+ * `sourcesDisagree` is true, `restrictions` is empty by construction -- a contradiction between
+ * sources leaves no door standing, because picking a side would invent a policy neither stated.
+ */
+export interface VenueAgePolicy {
+  restrictions: VenueAgeRestriction[];
+  caveats: VenueAgeCaveat[];
+  sourcesDisagree: boolean;
+}
+
 export type EnvironmentNeed = 'indoor' | 'outdoor' | 'either';
 export type EnergyNeed = 'high' | 'moderate' | 'low' | 'either';
 export type PushchairNeed = 'not_difficult';
@@ -16,12 +64,21 @@ export type PushchairNeed = 'not_difficult';
 export interface DayRequestConstraints {
   /**
    * How well a venue's *recommended* ages line up with the children. Soft by construction: it
-   * ranks and explains, and can never make a venue ineligible. A venue-level prohibition is a
-   * separate fact that does not exist yet (P0-B2).
+   * ranks and explains, and can never make a venue ineligible. A venue-level prohibition is the
+   * separate `ageAdmission` constraint below.
    *
    * Its strength is always `preferred` — see AGE_RECOMMENDATION_STRENGTH.
    */
   ageRecommendedFit?: DayConstraint<'in_range'>;
+  /**
+   * Whether the venue admits every child in the family. Hard by construction: this is the one age
+   * fact that can make a venue ineligible, because a family turned away at the door has had a
+   * wasted journey rather than a judgement call. Unknown never excludes.
+   *
+   * Server-owned like `journey` and `budget`: it comes from the family profile's children and the
+   * venue's own published policy, never from the request text or the model.
+   */
+  ageAdmission?: DayConstraint<'admits_all_children'>;
   /**
    * @deprecated Ambiguous: it read as both "suits these ages" and "admits these ages", and every
    * producer emitted it at `required`, which made an absent recommendation reject the venue.
@@ -103,6 +160,16 @@ export interface MatchableVenueFacts {
   enrichmentStatus: 'provider_only' | 'ai_draft' | 'enriched' | 'verified';
   minRecommendedAge: number | null;
   maxRecommendedAge: number | null;
+  /**
+   * The venue's own age policy -- as opposed to the ages it recommends. Null means unknown, and
+   * unknown never excludes. `restrictions` holds the only age facts that may make a venue
+   * ineligible; see services/matching/age-admission.ts.
+   *
+   * Projected server-side from trusted, in-lifetime, human-approved, venue-scope age-policy
+   * claims. An activity or accompaniment rule never becomes a restriction: it arrives in
+   * `caveats`, which explain without excluding.
+   */
+  venueAgePolicy: VenueAgePolicy | null;
   toilets: TriState | 'unknown';
   babyChanging: TriState | 'unknown';
   parking: TriState | 'unknown';

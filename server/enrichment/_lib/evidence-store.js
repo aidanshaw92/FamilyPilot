@@ -149,6 +149,39 @@ async function findEvidenceRecordBySourceUrl(familypilotPlaceId, sourceUrl) {
   return row?.id ?? null;
 }
 
+/**
+ * The most recent evidence row for one venue and one exact source URL, in full.
+ *
+ * `findEvidenceRecordBySourceUrl` returns only an id, which is enough to satisfy a foreign key
+ * and nothing more: it cannot tell a caller what source type that row actually is. The age-policy
+ * writer needs the row itself, because the provenance behind a hard gate has to come FROM the
+ * stored evidence rather than from fields the caller supplied alongside it.
+ *
+ * Scoped by venue, so a row belonging to a different place can never be returned here.
+ */
+async function findEvidenceRecordForSource(familypilotPlaceId, sourceUrl) {
+  if (!sourceUrl) return null;
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('venue_source_evidence')
+      .select('*')
+      .eq('familypilot_place_id', familypilotPlaceId)
+      .eq('source_url', sourceUrl)
+      .order('retrieved_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ? rowToRecord(data) : null;
+  }
+
+  const store = readFileStore();
+  const rows = store.records
+    .filter((r) => r.familypilot_place_id === familypilotPlaceId && r.source_url === sourceUrl)
+    .sort((a, b) => String(b.retrieved_at).localeCompare(String(a.retrieved_at)));
+  return rows.length > 0 ? rowToRecord(rows[0]) : null;
+}
+
 async function listEvidenceForVenue(familypilotPlaceId) {
   const supabase = getSupabaseAdmin();
   if (supabase) {
@@ -192,6 +225,7 @@ module.exports = {
   saveEvidenceRecord,
   sourceRecordsByUrl,
   findEvidenceRecordBySourceUrl,
+  findEvidenceRecordForSource,
   listEvidenceForVenue,
   isCacheFresh,
   CACHE_TTL_DAYS,

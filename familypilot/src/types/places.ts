@@ -99,6 +99,11 @@ export interface VenueFamilyMetadata {
   bestAges?: string;
   minRecommendedAge?: number;
   maxRecommendedAge?: number;
+  /**
+   * Door policy in months, projected from trusted venue-scope age-policy claims. Absent means
+   * unknown, and unknown never excludes. Never written from an editor payload.
+   */
+  venueAgePolicy?: import('@/src/types/day-request').VenueAgePolicy | null;
   ageNotes?: string;
   terrain?: TerrainType;
   extendedTerrain?: import('@/src/types/enrichment').ExtendedTerrain;

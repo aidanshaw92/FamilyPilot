@@ -20,7 +20,7 @@ See [Venue data automation and post-visit feedback](VENUE_DATA_AUTOMATION.md) fo
 | Shared meeting time | Every family arrives for a common activity; computes their individual departures/returns | Up to six selected families; road return estimates are explicit |
 | Fair meeting suggestions | Search from each family's area; satisfy all hard constraints; rank fit and journey fairness | Searches at most 60 candidate places; not exhaustive global optimisation |
 | Trusted facility matching | Required toilets, baby changing, parking and buggy access | Unknown requirements exclude; no category-based inference |
-| Age suitability | All children must be within a confirmed age range | Infant accompaniment needs evidence; no assumption that toddler suitability covers babies |
+| Age suitability | All children must be within a confirmed age range | Infant accompaniment needs evidence; no assumption that toddler suitability covers babies. A recommended range ranks and explains; only a venue's confirmed door policy excludes. See [AGE_POLICY.md](AGE_POLICY.md) |
 | Nearby food | Real nearby restaurants/cafés ranked using confirmed facilities and proximity | No claims about menus, highchairs or allergy safety without evidence |
 | Add lunch | Add 45-minute lunch plus transfer allowance; recalculate departures and home times | Directions and return travel estimated; restaurant availability needs checking |
 | Saved plans | Save/delete, replan, packing checklist, share summary | Device-local snapshots; recheck before leaving |

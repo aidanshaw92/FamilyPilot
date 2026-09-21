@@ -29,6 +29,7 @@ const facts = (placeId: string): MatchableVenueFacts => ({
   enrichmentStatus: 'verified',
   minRecommendedAge: 0,
   maxRecommendedAge: 12,
+  venueAgePolicy: null,
   toilets: 'yes',
   babyChanging: 'yes',
   parking: 'yes',

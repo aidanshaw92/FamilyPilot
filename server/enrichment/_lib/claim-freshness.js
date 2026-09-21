@@ -34,7 +34,7 @@ const REFRESH_LEAD_DAYS = 7;
  * pipeline so it can be reasoned about (and tested) on its own. The two are pinned together by a
  * test that asserts they agree for every field key in FIELD_MAP.
  */
-const SHORT_LIVED = /Facilities|accessibility|pushchair|sendInfo/;
+const SHORT_LIVED = /Facilities|accessibility|pushchair|sendInfo|agePolicy/;
 
 function addDays(isoDate, days) {
   const date = new Date(`${String(isoDate).slice(0, 10)}T00:00:00Z`);

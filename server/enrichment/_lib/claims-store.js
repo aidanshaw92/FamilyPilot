@@ -3,7 +3,7 @@ const path = require('path');
 
 const { getSupabaseAdmin } = require('./supabase-admin');
 const { collectFieldEvidence } = require('./ai-draft-mapper');
-const { findEvidenceRecordBySourceUrl } = require('./evidence-store');
+const { findEvidenceRecordBySourceUrl, findEvidenceRecordForSource } = require('./evidence-store');
 const {
   buildBestAges,
   facilitiesFromTriState,
@@ -12,6 +12,16 @@ const {
 } = require('./validation');
 
 const { expiryDate } = require('./trusted-evidence');
+const {
+  isAgePolicyFieldKey,
+  agePolicyFieldKey,
+  normaliseAgeRules,
+  projectAgePolicy,
+  ruleIsSupportedBy,
+  PROJECTED_AGE_POLICY,
+} = require('./age-policy');
+const { isHumanApprover } = require('./approval-actors');
+
 
 const FILE_CLAIMS_DIR = '.data';
 const FILE_CLAIMS_NAME = 'venue-claims.json';
@@ -341,6 +351,139 @@ async function replaceActiveClaim(claim) {
   return rowToClaim(stored);
 }
 
+/**
+ * Turn one stored evidence row into the provenance an age-policy claim may carry.
+ *
+ * Pure and exported so the refusals below can be tested directly rather than only through a store
+ * that is already scoped correctly -- the venue check in particular is a second line of defence,
+ * and a guard nothing can reach is a guard nothing can prove.
+ *
+ * Every value returned comes from the ROW. Nothing the caller supplied survives.
+ */
+function agePolicyProvenanceFrom(record, familypilotPlaceId) {
+  if (!record) {
+    throw Object.assign(new Error('No evidence record for this venue and source'), {
+      code: 'AGE_POLICY_NO_EVIDENCE',
+    });
+  }
+  if (record.familypilotPlaceId !== familypilotPlaceId) {
+    throw Object.assign(new Error('Evidence record belongs to a different venue'), {
+      code: 'AGE_POLICY_EVIDENCE_VENUE_MISMATCH',
+    });
+  }
+  if (!['ok', 'cached', 'fetched_truncated'].includes(record.fetchStatus)) {
+    throw Object.assign(new Error(`Evidence record for ${record.sourceUrl} did not fetch cleanly`), {
+      code: 'AGE_POLICY_EVIDENCE_NOT_FETCHED',
+    });
+  }
+
+  const fieldKey = agePolicyFieldKey(record.sourceUrl);
+  if (!fieldKey) {
+    throw Object.assign(new Error(`Unusable source URL: ${record.sourceUrl}`), {
+      code: 'AGE_POLICY_BAD_SOURCE_URL',
+    });
+  }
+
+  return {
+    fieldKey,
+    sourceUrl: record.sourceUrl,
+    sourceType: record.sourceType,
+    sourceEvidenceId: record.id,
+    checkedAt: String(record.retrievedAt).slice(0, 10),
+    validUntil: expiryDate(fieldKey, record.retrievedAt),
+    retrievedAt: record.retrievedAt,
+  };
+}
+
+/**
+ * The rules that quote the page they claim to come from.
+ *
+ * Per RULE, not per claim. One genuine quotation used to make a whole claim `high` confidence,
+ * which meant a second door nobody had read anywhere inherited the first one's proof and could
+ * exclude families on its own. A claim deliberately holds several independent doors, so the proof
+ * has to be just as independent.
+ *
+ * Pure and exported so the drop can be asserted directly.
+ */
+function supportedAgeRules(rules, extractedText) {
+  return rules.filter((rule) => ruleIsSupportedBy(rule, extractedText));
+}
+
+/**
+ * The ONLY writer of an age-policy claim.
+ *
+ * Every field the hard gate later reads is taken from the stored `venue_source_evidence` ROW,
+ * never from anything the caller passes alongside it. A foreign key proves only that SOME
+ * evidence row exists: it does not prove that row is for this venue, this URL, or the source type
+ * the caller stamped on the claim. So a caller could attach a genuine `council_page` row while
+ * labelling the claim `official_website`, and the projector -- which reads the claim's own copy
+ * of the provenance and deliberately performs no database query -- would treat second-hand
+ * summary as first-party evidence and remove venues on it.
+ *
+ * Deriving instead of trusting makes that mismatch unrepresentable rather than merely detectable.
+ * The projector stays pure; this is where the two are tied together.
+ *
+ * `createApprovedClaim` refuses age-policy keys for the same reason: there must be no second way
+ * in that skips this.
+ */
+async function createAgePolicyClaim({ familypilotPlaceId, sourceUrl, rules, reviewedBy }) {
+  // NOT `humanApprover(reviewedBy)`. That mints the namespace for any value it does not already
+  // recognise as a robot, so an automated producer calling this with its own actor id would be
+  // written to the database as a human and would gate. Stamping a human identity is a decision
+  // for the boundary where a person actually approves something; this writer only accepts one
+  // that has already been stamped there.
+  if (!isHumanApprover(reviewedBy)) {
+    throw Object.assign(new Error('An age policy needs an already-stamped human approver'), {
+      code: 'AGE_POLICY_NO_HUMAN',
+    });
+  }
+
+  const normalised = normaliseAgeRules({ rules });
+  if (normalised.length === 0) {
+    throw Object.assign(new Error('No readable age rules to record'), { code: 'AGE_POLICY_NO_RULES' });
+  }
+
+  // Scoped by venue inside the store, so a row belonging to another place cannot be returned --
+  // and a URL this venue has never been fetched at has no row at all.
+  const record = await findEvidenceRecordForSource(familypilotPlaceId, sourceUrl);
+  const provenance = agePolicyProvenanceFrom(record, familypilotPlaceId);
+
+  // Unsupported rules are dropped rather than stored, so nothing downstream has to remember to
+  // distrust them. A rule the page does not carry is not a rule this venue stated.
+  const supported = supportedAgeRules(normalised, record.extractedText);
+  if (supported.length === 0) {
+    throw Object.assign(new Error('No age rule quotes the page that was fetched'), {
+      code: 'AGE_POLICY_NO_SUPPORTED_RULES',
+    });
+  }
+
+  return replaceActiveClaim({
+    familypilotPlaceId,
+    fieldKey: provenance.fieldKey,
+    valueJson: {
+      rules: supported,
+      sourceUrl: provenance.sourceUrl,
+      retrievedAt: provenance.retrievedAt,
+    },
+    // Every stored rule quotes the page, so this is a consequence of the rules rather than a
+    // separate judgement about them. `claimMayGate` still checks it, which keeps a hand-written
+    // row at a lower confidence from gating.
+    confidence: 'high',
+    sourceUrl: provenance.sourceUrl,
+    // A summary for the claims UI. The proof lives on each rule; this column cannot carry it.
+    evidenceExcerpt: supported[0].evidenceExcerpt,
+    sourceType: provenance.sourceType,
+    sourceEvidenceId: provenance.sourceEvidenceId,
+    checkedAt: provenance.checkedAt,
+    validUntil: provenance.validUntil,
+    approvedAt: new Date().toISOString(),
+    approvedBy: reviewedBy,
+    approvedFromDraftId: null,
+    status: 'active',
+    supersedesClaimId: null,
+  });
+}
+
 async function createApprovedClaim({
   familypilotPlaceId,
   fieldKey,
@@ -350,6 +493,13 @@ async function createApprovedClaim({
   draftId,
   checkedAt,
 }) {
+  if (isAgePolicyFieldKey(fieldKey)) {
+    // This path takes its provenance from caller-supplied `fieldEvidence`, which is exactly what
+    // a hard gate must not rest on. There is one writer for age policy and this is not it.
+    throw Object.assign(new Error('Use createAgePolicyClaim for an age-policy claim'), {
+      code: 'AGE_POLICY_WRONG_WRITER',
+    });
+  }
   const sourceEvidenceId = await resolveSourceEvidenceId(familypilotPlaceId, fieldEvidence, fieldKey);
   const claim = buildClaimRecord({
     familypilotPlaceId,
@@ -601,8 +751,26 @@ function projectActiveClaimsToPayload(activeClaims) {
 
   for (const claim of activeClaims) {
     if (!isClaimActive(claim)) continue;
+    // Age policy is not a scalar the payload carries verbatim: several sources may each state
+    // one, and only a trusted, non-conflicted, venue-scoped rule may become a gate. Handled
+    // below, from the claims themselves, so no per-key allow-list can drop it.
+    if (isAgePolicyFieldKey(claim.fieldKey)) continue;
     setNestedValue(payload, claim.fieldKey, claim.valueJson);
   }
+
+  /**
+   * The ONLY writer of the age-policy read model -- doors, caveats and the disagreement flag
+   * together, because they are all derived from the same claims and must never disagree with
+   * each other.
+   *
+   * `venueAgePolicy` is deliberately absent from `getEditorOverride`, `collectReviewedFieldKeys`,
+   * `setNestedValue` and `mergeEditorialFields`, so an editor payload cannot express it and
+   * `metadataRowFromPayload` can only ever persist what this line produced. A previous revision
+   * let a typed scalar reach the column directly, which meant a venue could be excluded on a
+   * value with no claim behind it at all.
+   */
+  const agePolicy = projectAgePolicy(activeClaims);
+  if (agePolicy) payload[PROJECTED_AGE_POLICY] = agePolicy;
 
   if (Object.keys(payload.familyFacilities).length === 0) delete payload.familyFacilities;
   if (Object.keys(payload.accessibility).length === 0) delete payload.accessibility;
@@ -676,6 +844,10 @@ function metadataRowFromPayload(familypilotPlaceId, payload, existing) {
     best_ages: bestAges,
     min_recommended_age: payload.minRecommendedAge ?? null,
     max_recommended_age: payload.maxRecommendedAge ?? null,
+    // Null unless projectActiveClaimsToPayload put it there, under a Symbol an editor payload
+    // cannot express. "No claim" and "no restriction" are therefore the same state by
+    // construction rather than by convention.
+    venue_age_policy: payload[PROJECTED_AGE_POLICY] ?? null,
     age_notes: payload.ageNotes ?? null,
     terrain,
     extended_terrain: payload.extendedTerrain ?? null,
@@ -720,8 +892,12 @@ module.exports = {
   disputeClaim,
   expireClaim,
   createApprovedClaim,
+  createAgePolicyClaim,
+  agePolicyProvenanceFrom,
+  supportedAgeRules,
   isClaimActive,
   metadataRowFromPayload,
+  PROJECTED_AGE_POLICY,
   INACTIVE_STATUSES,
   ACTIVE_STATUSES,
 };
