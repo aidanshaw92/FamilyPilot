@@ -81,27 +81,44 @@ alter default privileges for role postgres in schema public
 alter default privileges for role postgres in schema public
   revoke all on sequences from public, anon, authenticated;
 
--- Functions are a real exception, and the limit is PostgreSQL's rather than this project's.
+-- Functions need two statements, and the difference between them matters.
 --
--- `pg_default_acl` records only the DIFFERENCE from the built-in `acldefault()`, and that
--- difference is merged back onto `acldefault()` when an object is created. `acldefault()` for a
--- function includes `=X/owner` -- EXECUTE to PUBLIC -- so "PUBLIC gets no EXECUTE" is not a
--- difference that can be expressed, and the PUBLIC half of the revoke below is silently dropped.
--- Verified against production (PostgreSQL 17.6) with a rolled-back probe: a newly created function
--- came out `{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,...}`
--- although the stored default ACL names no PUBLIC entry at all.
+-- PostgreSQL's built-in `acldefault()` for a function grants EXECUTE to PUBLIC, and every role
+-- belongs to PUBLIC -- so a new function is executable by `anon` the moment it is created unless
+-- that default is cancelled. Cancelling it takes a GLOBAL default-privileges statement, one with
+-- no `IN SCHEMA` clause, which is stored with `defaclnamespace = 0`. A schema-scoped statement is
+-- merged on top of the global default rather than replacing it, so `IN SCHEMA public ... REVOKE
+-- EXECUTE ON FUNCTIONS FROM PUBLIC` silently leaves PUBLIC's EXECUTE in place.
 --
--- Every role belongs to PUBLIC, so that EXECUTE reaches `anon` and `authenticated` whatever this
--- statement removes: on a fresh function `has_function_privilege('anon', f, 'EXECUTE')` is true
--- before it and true after it. This line is therefore NOT what keeps a future function private.
--- The only thing that does is an explicit `revoke all on function ... from public, anon,
--- authenticated` in the migration that creates the function -- which is already what all eleven
--- existing functions do, and what `least-privilege-acl.test.ts` now requires of any new one.
+-- Verified on production (PostgreSQL 17.6) inside a rolled-back transaction. Before, a newly
+-- created function came out `{=X/postgres,postgres=X/postgres,anon=X/postgres,...}` with
+-- `has_function_privilege('anon', f, 'EXECUTE')` true. After the two statements below, the same
+-- probe produced `{postgres=X/postgres,service_role=X/postgres}` with anon and authenticated
+-- false and service_role true. Nothing persisted.
 --
--- It is kept for one narrow reason: it clears the redundant `anon`/`authenticated` entries from
--- the default, so a per-function `revoke ... from public` cannot leave a direct grant behind.
+-- The PUBLIC revoke is deliberately global, because that is the only scope at which it works. It
+-- applies to functions `postgres` creates in ANY schema, which is a tightening rather than a
+-- change of behaviour for anything that exists today -- defaults affect future objects only, and
+-- all eleven current functions already carry explicit grants. Worth knowing for later: an
+-- extension installed AS `postgres` would no longer hand PUBLIC execute on its functions, and
+-- would need an explicit grant. Supabase's own extensions are created by `supabase_admin`, whose
+-- defaults this migration does not touch, so they are unaffected.
+--
+-- The anon/authenticated revoke stays scoped to `public`: those two roles have no business in this
+-- schema by default, and other schemas' defaults are not this migration's to change. EXECUTE is
+-- the only function privilege, so `revoke execute` and `revoke all` are equivalent here; the
+-- privilege is named explicitly to keep the two statements readable as a pair.
+alter default privileges for role postgres
+  revoke execute on functions from public;
+
 alter default privileges for role postgres in schema public
-  revoke all on functions from public, anon, authenticated;
+  revoke execute on functions from anon, authenticated;
+
+-- Per-function `revoke all on function ... from public, anon, authenticated` in each function's own
+-- migration remains the convention, and `least-privilege-acl.test.ts` still requires it of every
+-- new function. It is defence in depth rather than the only protection: the defaults above now
+-- close the gap on their own, and the explicit revoke keeps a function private even if the default
+-- is ever changed or the function is created by some other role.
 
 -- service_role and postgres are untouched throughout: the server writes as service_role, which
 -- also bypasses RLS, and every existing RPC is already granted to it explicitly.

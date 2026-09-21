@@ -153,22 +153,30 @@ begin
     end if;
   end loop;
 
-  -- A new FUNCTION is the documented exception. `acldefault()` grants EXECUTE to PUBLIC and
-  -- ALTER DEFAULT PRIVILEGES cannot express its removal, so anon and authenticated DO reach it,
-  -- via PUBLIC, until the function's own migration revokes it. Asserted as the expected state so
-  -- that a future PostgreSQL which fixes this fails here and the migration comment gets revisited.
-  if not has_function_privilege('anon', 'public.zz_probe_function()', 'EXECUTE') then
-    failures := failures || 'new function: anon has no EXECUTE -- PostgreSQL behaviour changed, revisit the migration comment'::text;
+  -- A new FUNCTION must already be closed to the client roles, with no per-function revoke yet.
+  -- PostgreSQL's built-in acldefault() grants EXECUTE to PUBLIC, and cancelling that needs the
+  -- GLOBAL default-privileges statement in the migration (no IN SCHEMA). If someone re-scopes that
+  -- statement to `in schema public`, PUBLIC keeps EXECUTE, every role inherits it, and these three
+  -- assertions are what catch it.
+  foreach r in array array['anon','authenticated'] loop
+    if has_function_privilege(r, 'public.zz_probe_function()', 'EXECUTE') then
+      failures := failures || format('new function: %s has EXECUTE before any per-function revoke -- is the PUBLIC revoke schema-scoped?', r)::text;
+    end if;
+  end loop;
+  if exists (select 1 from pg_proc pr, aclexplode(pr.proacl) a
+             where pr.oid = 'public.zz_probe_function()'::regprocedure and a.grantee = 0) then
+    failures := failures || 'new function: PUBLIC holds EXECUTE'::text;
   end if;
   if not has_function_privilege('service_role', 'public.zz_probe_function()', 'EXECUTE') then
     failures := failures || 'new function: service_role lost EXECUTE'::text;
   end if;
 
-  -- And the repo convention is what actually closes it.
+  -- The per-function revoke is kept as defence in depth, so it must still work and must still
+  -- leave service_role alone.
   execute 'revoke all on function public.zz_probe_function() from public, anon, authenticated';
   foreach r in array array['anon','authenticated'] loop
     if has_function_privilege(r, 'public.zz_probe_function()', 'EXECUTE') then
-      failures := failures || format('function: %s still has EXECUTE after the per-function revoke', r)::text;
+      failures := failures || format('function: %s has EXECUTE after the per-function revoke', r)::text;
     end if;
   end loop;
   if not has_function_privilege('service_role', 'public.zz_probe_function()', 'EXECUTE') then
@@ -178,7 +186,7 @@ begin
   if array_length(failures, 1) is not null then
     raise exception E'NEW-OBJECT DEFAULT CHECK FAILED:\n%', array_to_string(failures, E'\n');
   end if;
-  raise notice 'PASS 2/3  new table and sequence grant anon/authenticated/PUBLIC nothing; service_role intact; the function exception behaves as documented';
+  raise notice 'PASS 2/3  a new table, sequence AND function grant anon/authenticated/PUBLIC nothing; service_role intact';
 
   -- 3. An explicit grant still works, and grants exactly what it names.
   execute 'grant select on table public.zz_probe_table to anon, authenticated';

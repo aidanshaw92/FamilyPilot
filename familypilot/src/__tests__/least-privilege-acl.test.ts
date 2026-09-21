@@ -12,13 +12,17 @@ import path from 'path';
  * checks for, and -- more importantly -- that the one convention PostgreSQL will not enforce for
  * us is kept by every future migration.
  *
- * That convention is about functions. `pg_default_acl` records only the difference from the
- * built-in `acldefault()`, and `acldefault()` for a function grants EXECUTE to PUBLIC. So
- * "PUBLIC gets no EXECUTE by default" cannot be expressed, and since every role belongs to PUBLIC,
- * a new function is executable by `anon` the moment it is created. Verified on production
- * (PostgreSQL 17.6) with a rolled-back probe. The only thing that closes it is an explicit
- * `REVOKE ... ON FUNCTION ... FROM PUBLIC` in the migration that creates the function, so that is
- * asserted here for every function the repo has ever created.
+ * The subtle one is functions. `acldefault()` grants EXECUTE to PUBLIC and every role belongs to
+ * PUBLIC, so a new function is executable by `anon` unless that default is cancelled -- and
+ * cancelling it requires a GLOBAL `ALTER DEFAULT PRIVILEGES`, with no `IN SCHEMA` clause. A
+ * schema-scoped one is merged on top of the global default instead of replacing it, so it leaves
+ * PUBLIC's EXECUTE untouched while looking like it removed it. Verified on production
+ * (PostgreSQL 17.6) inside a rolled-back transaction. The scope of that statement is asserted
+ * below, because re-scoping it to `in schema public` is a silent regression.
+ *
+ * Per-function `REVOKE ... FROM PUBLIC` is kept as defence in depth and is still required of every
+ * function the repo creates, so that a function stays private even if the default is later changed
+ * or the function is created by another role.
  */
 
 const REPO_ROOT = path.resolve(__dirname, '../../..');
@@ -114,27 +118,61 @@ describe('least-privilege migration declares the intended desired state', () => 
     expect(migration).not.toContain('for role supabase_admin');
   });
 
-  it('closes the default for tables, sequences and functions alike', () => {
-    for (const objectType of ['tables', 'sequences', 'functions']) {
+  it('closes the schema default for tables and sequences', () => {
+    for (const objectType of ['tables', 'sequences']) {
       expect(migration).toContain(
         `alter default privileges for role postgres in schema public revoke all on ${objectType} from public, anon, authenticated;`,
       );
     }
   });
 
-  it('records that the function default cannot remove PUBLIC, so the claim is not lost', () => {
-    // The statement above is a partial no-op and the next test is what actually protects functions.
-    // If someone deletes this explanation, they will also delete the reason the next test exists.
+  it('revokes PUBLIC execute on functions GLOBALLY, not scoped to a schema', () => {
+    // The whole point. `in schema public ... from public` is merged on top of the built-in default
+    // rather than replacing it, so PUBLIC keeps EXECUTE and every role inherits it. Only the
+    // global form (stored with defaclnamespace = 0) cancels it.
+    expect(migration).toContain(
+      'alter default privileges for role postgres revoke execute on functions from public;',
+    );
+
+    // And no statement may revoke from PUBLIC on functions while naming a schema.
+    for (const statement of migration.match(/alter default privileges[^;]+;/g) ?? []) {
+      if (!/on functions/.test(statement)) continue;
+      const grantees = statement.split(/\bfrom\b/)[1] ?? '';
+      if (!/\bpublic\b/.test(grantees)) continue;
+      expect(
+        /in schema/.test(statement),
+        `the PUBLIC function revoke must not be schema-scoped: ${statement}`,
+      ).toBe(false);
+    }
+  });
+
+  it('revokes the client roles on functions within the public schema', () => {
+    expect(migration).toContain(
+      'alter default privileges for role postgres in schema public revoke execute on functions from anon, authenticated;',
+    );
+  });
+
+  it('explains why the PUBLIC revoke is global, so the reason is not lost', () => {
     const raw = readMigration(MIGRATION_FILE);
     expect(raw).toContain('acldefault()');
-    expect(raw).toContain('EXECUTE to PUBLIC');
+    expect(raw).toContain('defaclnamespace = 0');
+  });
+
+  it('no longer claims PUBLIC execute is impossible to remove', () => {
+    // An earlier revision of this migration asserted exactly that, on the strength of a
+    // schema-scoped experiment. It was wrong, and the wording must not come back.
+    const raw = readMigration(MIGRATION_FILE).toLowerCase();
+    expect(raw).not.toContain('not a difference that can be expressed');
+    expect(raw).not.toContain('silently dropped');
+    expect(raw).not.toContain('cannot be expressed');
   });
 });
 
 describe('every function a migration creates revokes PUBLIC explicitly', () => {
   /**
-   * This is the test that does real work. ALTER DEFAULT PRIVILEGES cannot make a new function
-   * private, so a migration that creates one and forgets the revoke hands `anon` EXECUTE.
+   * Defence in depth. The global default now closes this on its own, but an explicit revoke keeps
+   * a function private even if that default is changed later or the function is created by a role
+   * whose defaults this migration does not govern.
    */
   const created: Array<{ file: string; fn: string }> = [];
   const revokedFrom: Record<string, string[]> = {};
@@ -158,7 +196,7 @@ describe('every function a migration creates revokes PUBLIC explicitly', () => {
       const targets = revokedFrom[fn];
       expect(targets, `${fn} has no REVOKE ... ON FUNCTION at all`).toBeDefined();
       const combined = (targets ?? []).join(' ');
-      expect(combined, `${fn} must revoke from PUBLIC -- ALTER DEFAULT PRIVILEGES cannot`).toMatch(/\bpublic\b/);
+      expect(combined, `${fn} must revoke from PUBLIC`).toMatch(/\bpublic\b/);
       expect(combined, `${fn} must revoke from anon`).toMatch(/\banon\b/);
       expect(combined, `${fn} must revoke from authenticated`).toMatch(/\bauthenticated\b/);
     });
