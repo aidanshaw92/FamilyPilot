@@ -136,6 +136,10 @@ function getEditorOverride(fieldKey, payload) {
   }
   if (fieldKey === 'minRecommendedAge') return payload.minRecommendedAge;
   if (fieldKey === 'maxRecommendedAge') return payload.maxRecommendedAge;
+  // Admission is a door policy, not advice. Editor-supplied only: age facts are never published
+  // from model output (docs/VENUE_DATA_AUTOMATION.md), and this one can exclude a venue.
+  if (fieldKey === 'minAdmissionAge') return payload.minAdmissionAge;
+  if (fieldKey === 'maxAdmissionAge') return payload.maxAdmissionAge;
   if (fieldKey === 'ageNotes') return payload.ageNotes;
   if (fieldKey === 'categoryConfirmed') return payload.categoryConfirmed;
   if (fieldKey === 'visitDurationMinutes') return payload.visitDurationMinutes;
@@ -150,6 +154,8 @@ function collectReviewedFieldKeys(editorPayload) {
 
   if (editorPayload.minRecommendedAge != null) fieldKeys.add('minRecommendedAge');
   if (editorPayload.maxRecommendedAge != null) fieldKeys.add('maxRecommendedAge');
+  if (editorPayload.minAdmissionAge != null) fieldKeys.add('minAdmissionAge');
+  if (editorPayload.maxAdmissionAge != null) fieldKeys.add('maxAdmissionAge');
   if (editorPayload.ageNotes) fieldKeys.add('ageNotes');
   if (editorPayload.categoryConfirmed) fieldKeys.add('categoryConfirmed');
   if (editorPayload.pushchairSuitability !== undefined) fieldKeys.add('pushchairSuitability');
@@ -559,6 +565,17 @@ function setNestedValue(target, fieldKey, value) {
     target.maxRecommendedAge = value;
     return;
   }
+  // Admission is a separate hop from the editor override above: an approved claim reaches the
+  // payload through here, and a key this allow-list does not name is dropped in silence -- the
+  // venue then reads `unknown`, which looks exactly like a venue with no policy.
+  if (fieldKey === 'minAdmissionAge') {
+    target.minAdmissionAge = value;
+    return;
+  }
+  if (fieldKey === 'maxAdmissionAge') {
+    target.maxAdmissionAge = value;
+    return;
+  }
   if (fieldKey === 'ageNotes') {
     target.ageNotes = value;
     return;
@@ -676,6 +693,8 @@ function metadataRowFromPayload(familypilotPlaceId, payload, existing) {
     best_ages: bestAges,
     min_recommended_age: payload.minRecommendedAge ?? null,
     max_recommended_age: payload.maxRecommendedAge ?? null,
+    min_admission_age: payload.minAdmissionAge ?? null,
+    max_admission_age: payload.maxAdmissionAge ?? null,
     age_notes: payload.ageNotes ?? null,
     terrain,
     extended_terrain: payload.extendedTerrain ?? null,

@@ -11,8 +11,8 @@ import { FactMatchOutcome, MatchableVenueFacts } from '@/src/types/day-request';
  * callers use that for ranking and explanation only.
  *
  * A venue-level prohibition — "under 4s not admitted" — is a different fact with a different
- * source and a different consequence. It does not exist yet; P0-B2 adds it, and it will be the
- * only age fact that can make a venue ineligible.
+ * source and a different consequence. It lives in `age-admission.ts` (P0-B2) and is the only age
+ * fact that can make a venue ineligible. Nothing in THIS module may ever exclude.
  */
 
 /**

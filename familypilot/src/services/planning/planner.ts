@@ -41,7 +41,9 @@ export function clockLabel(minutes: number): string {
  * outside its published range. That treated a recommendation as an admission rule: a venue
  * suggesting ages 5–12 vanished for a family with a three-year-old, even though nothing stopped
  * them going. Recommended ages now only rank and explain — see services/matching/age-suitability.
- * A venue-level prohibition is a separate, evidence-backed fact that P0-B2 introduces. */
+ * A venue-level prohibition is a separate, evidence-backed fact, and the plan does honour that
+ * one: `planVenue` gates on `matchVenueToDayRequest`, which applies `ageAdmission` as required,
+ * so a venue that would turn a child away never reaches a plan. See matching/age-admission. */
 
 export function familyRequest(family: PlanningFamily, environment: PlanningOptions['environment']): DayRequest {
   const constraints: DayRequest['constraints'] = {

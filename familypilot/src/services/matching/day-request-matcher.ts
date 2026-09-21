@@ -17,6 +17,7 @@ import {
   evaluateAgeRecommendation,
   yearsToMonths,
 } from './age-suitability';
+import { evaluateAgeAdmission } from './age-admission';
 import {
   hasTrustedMatchSignals,
   scoreTrustedAccessibility,
@@ -214,6 +215,26 @@ export function matchVenueToDayRequest(
     )
   ) {
     eligible = false;
+  }
+
+  // Age admission: the one age fact that may exclude. Applied BEFORE the recommendation below so
+  // the two are impossible to confuse while reading -- the hard door policy first, the advice
+  // second. Unknown never reaches `unsuitable`, so a venue with no recorded policy is untouched.
+  if (request.childAges.length > 0) {
+    const admission = evaluateAgeAdmission(facts, requestChildMonths(request));
+    if (admission !== 'unknown') {
+      if (
+        !applyConstraint(
+          evaluations,
+          'ageAdmission',
+          'required',
+          admission === 'admitted' ? 'suitable' : 'unsuitable',
+          tally,
+        )
+      ) {
+        eligible = false;
+      }
+    }
   }
 
   // Unlike every sibling constraint below, this one does NOT honour the declared strength. A

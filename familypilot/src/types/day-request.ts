@@ -16,12 +16,21 @@ export type PushchairNeed = 'not_difficult';
 export interface DayRequestConstraints {
   /**
    * How well a venue's *recommended* ages line up with the children. Soft by construction: it
-   * ranks and explains, and can never make a venue ineligible. A venue-level prohibition is a
-   * separate fact that does not exist yet (P0-B2).
+   * ranks and explains, and can never make a venue ineligible. A venue-level prohibition is the
+   * separate `ageAdmission` constraint below.
    *
    * Its strength is always `preferred` — see AGE_RECOMMENDATION_STRENGTH.
    */
   ageRecommendedFit?: DayConstraint<'in_range'>;
+  /**
+   * Whether the venue admits every child in the family. Hard by construction: this is the one age
+   * fact that can make a venue ineligible, because a family turned away at the door has had a
+   * wasted journey rather than a judgement call. Unknown never excludes.
+   *
+   * Server-owned like `journey` and `budget`: it comes from the family profile's children and the
+   * venue's own published policy, never from the request text or the model.
+   */
+  ageAdmission?: DayConstraint<'admits_all_children'>;
   /**
    * @deprecated Ambiguous: it read as both "suits these ages" and "admits these ages", and every
    * producer emitted it at `required`, which made an absent recommendation reject the venue.
@@ -103,6 +112,13 @@ export interface MatchableVenueFacts {
   enrichmentStatus: 'provider_only' | 'ai_draft' | 'enriched' | 'verified';
   minRecommendedAge: number | null;
   maxRecommendedAge: number | null;
+  /**
+   * The ages a venue ADMITS, as opposed to the ages it recommends. Null means unknown, and
+   * unknown never excludes. This is the only age fact that may make a venue ineligible -- see
+   * services/matching/age-admission.ts.
+   */
+  minAdmissionAge: number | null;
+  maxAdmissionAge: number | null;
   toilets: TriState | 'unknown';
   babyChanging: TriState | 'unknown';
   parking: TriState | 'unknown';
