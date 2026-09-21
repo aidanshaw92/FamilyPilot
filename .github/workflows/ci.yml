@@ -100,3 +100,45 @@ jobs:
         run: |
           psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20260920210000_least_privilege_client_roles.sql
           psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/least_privilege_acl_check.sql
+
+      - name: Apply the venue age-policy migration
+        # Applied AFTER the privilege migration on purpose: that is the production order, and the
+        # two interact. A CHECK constraint calls its validator as the WRITING role and that call
+        # is privilege-checked, so the write probe below would fail with "permission denied for
+        # function" if the privilege model ever stopped leaving service_role able to execute a
+        # new function in public.
+        run: psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20260921120000_venue_age_policy.sql
+
+      - name: Assert the age-policy read model's shape guard
+        run: psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/venue_age_policy_shape_check.sql
+
+      - name: Prove the guard holds for the role that actually writes
+        # The shape check calls the validator directly. This writes through the real constraint as
+        # service_role, so a missing EXECUTE grant or a detached constraint fails here rather than
+        # in production.
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          alter table public.venue_family_metadata add column if not exists ci_probe_id text;
+          grant insert, delete on public.venue_family_metadata to service_role;
+          set role service_role;
+          insert into public.venue_family_metadata (venue_age_policy)
+            values ('{"restrictions":[],"caveats":[],"sourcesDisagree":true}');
+          do $$
+          begin
+            begin
+              insert into public.venue_family_metadata (venue_age_policy)
+                values ('{"restrictions":[{"minMonthsInclusive":48,"maxMonthsExclusive":null,"checkedAt":null}],"caveats":[],"sourcesDisagree":false}');
+              raise exception 'a door with no source was accepted';
+            exception when check_violation then
+              raise notice 'the constraint rejected a source-less door, as it must';
+            end;
+          end;
+          $$;
+          reset role;
+          delete from public.venue_family_metadata;
+          SQL
+
+      - name: Apply the age-policy migration a second time and re-assert
+        run: |
+          psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20260921120000_venue_age_policy.sql
+          psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/venue_age_policy_shape_check.sql

@@ -8,7 +8,7 @@ import {
 import { FacilityType, FamilyProfile } from '@/src/types';
 import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 import { buildFacilityMissingCaution } from '@/src/utils/facility-match';
-import { describeAgeAdmission } from './age-admission';
+import { describeAgeAdmission, describeAgeCaveats } from './age-admission';
 
 /** MatchableVenueFacts tracks each facility as its own tri-state field rather than a
  * FacilityType[] list — collect the ones actually confirmed present so the same
@@ -206,7 +206,11 @@ export function buildFocusedRecommendation(
         routineFit.caution,
       ].filter((caution): caution is string => Boolean(caution))
     : [];
-  const caveats = [...extraCautions, ...facts.warnings];
+  // Age rules that explain without excluding -- an activity minimum, an accompaniment rule, a
+  // scope that could not be read, or a door whose sources disagree. Listed BEFORE the generic
+  // warnings because a rule about who may go in is what a parent most needs before setting off,
+  // and because the venue is still on this list precisely thanks to those rules not excluding.
+  const caveats = [...describeAgeCaveats(facts), ...extraCautions, ...facts.warnings];
   const reasons = buildFocusedReasons(facts, match.evaluations);
   return {
     venueId: facts.placeId,

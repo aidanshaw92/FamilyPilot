@@ -50,7 +50,7 @@ const facts: MatchableVenueFacts = {
   enrichmentStatus: 'verified',
   minRecommendedAge: 0,
   maxRecommendedAge: 10,
-  venueAgeRestriction: null,
+  venueAgePolicy: null,
   toilets: 'yes',
   babyChanging: 'yes',
   parking: 'yes',

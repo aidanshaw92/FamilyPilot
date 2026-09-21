@@ -8,7 +8,7 @@ import { VenueFamilyMetadata } from '@/src/types/places';
 const now=new Date('2026-09-10T08:00:00');
 const family:PlanningFamily={id:'a',label:'Family A',area:'Town',latitude:51.6,longitude:-0.3,ages:[3,0],maxDriveMinutes:45,budgetTier:'moderate',pushchair:true,required:['babyChanging'],routines:[]};
 const options:PlanningOptions={date:'2026-09-10',leaveAt:'09:00',returnBy:'',visitMinutes:60,bufferMinutes:15,environment:'either'};
-const facts:MatchableVenueFacts={placeId:'test',name:'Test venue',category:'park',driveMinutes:20,enrichmentStatus:'verified',minRecommendedAge:0,maxRecommendedAge:10,venueAgeRestriction:null,toilets:'yes',babyChanging:'yes',parking:'yes',pushchairSuitability:'good',environment:'outdoor',energyLevel:'moderate',visitDurationMinutes:60,estimatedSpend:'Free',goodToKnow:[],warnings:[],openingStatus:'unknown'};
+const facts:MatchableVenueFacts={placeId:'test',name:'Test venue',category:'park',driveMinutes:20,enrichmentStatus:'verified',minRecommendedAge:0,maxRecommendedAge:10,venueAgePolicy:null,toilets:'yes',babyChanging:'yes',parking:'yes',pushchairSuitability:'good',environment:'outdoor',energyLevel:'moderate',visitDurationMinutes:60,estimatedSpend:'Free',goodToKnow:[],warnings:[],openingStatus:'unknown'};
 const journeys={a:{outbound:20,inbound:25,source:'estimated' as const}};
 describe('family planning',()=>{
  it('calculates outbound, buffer, visit and asymmetric return',()=>{const p=planVenue(facts,[family],journeys,options,now)!;expect(p.timings[0].depart).toBe(540);expect(p.start).toBe(575);expect(p.timings[0].home).toBe(675);});

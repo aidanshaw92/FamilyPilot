@@ -14,9 +14,8 @@ const {
 const { expiryDate } = require('./trusted-evidence');
 const {
   isAgePolicyFieldKey,
-  venueRestrictionFromClaims,
-  ageCaveatsFromClaims,
-  PROJECTED_AGE_RESTRICTION,
+  projectAgePolicy,
+  PROJECTED_AGE_POLICY,
 } = require('./age-policy');
 
 
@@ -616,19 +615,18 @@ function projectActiveClaimsToPayload(activeClaims) {
   }
 
   /**
-   * The ONLY writer of the hard-gating read model.
+   * The ONLY writer of the age-policy read model -- doors, caveats and the disagreement flag
+   * together, because they are all derived from the same claims and must never disagree with
+   * each other.
    *
-   * `venueAgeRestriction` is deliberately absent from `getEditorOverride`,
-   * `collectReviewedFieldKeys`, `setNestedValue` and `mergeEditorialFields`, so an editor payload
-   * cannot express it and `metadataRowFromPayload` can only ever persist what this line produced.
-   * A previous revision let a typed scalar reach the column directly, which meant a venue could be
-   * excluded on a value with no claim behind it at all.
+   * `venueAgePolicy` is deliberately absent from `getEditorOverride`, `collectReviewedFieldKeys`,
+   * `setNestedValue` and `mergeEditorialFields`, so an editor payload cannot express it and
+   * `metadataRowFromPayload` can only ever persist what this line produced. A previous revision
+   * let a typed scalar reach the column directly, which meant a venue could be excluded on a
+   * value with no claim behind it at all.
    */
-  const restriction = venueRestrictionFromClaims(activeClaims);
-  if (restriction) payload[PROJECTED_AGE_RESTRICTION] = restriction;
-
-  const caveats = ageCaveatsFromClaims(activeClaims);
-  if (caveats.length > 0) payload.ageCaveats = caveats;
+  const agePolicy = projectAgePolicy(activeClaims);
+  if (agePolicy) payload[PROJECTED_AGE_POLICY] = agePolicy;
 
   if (Object.keys(payload.familyFacilities).length === 0) delete payload.familyFacilities;
   if (Object.keys(payload.accessibility).length === 0) delete payload.accessibility;
@@ -705,7 +703,7 @@ function metadataRowFromPayload(familypilotPlaceId, payload, existing) {
     // Null unless projectActiveClaimsToPayload put it there, under a Symbol an editor payload
     // cannot express. "No claim" and "no restriction" are therefore the same state by
     // construction rather than by convention.
-    venue_age_restriction: payload[PROJECTED_AGE_RESTRICTION] ?? null,
+    venue_age_policy: payload[PROJECTED_AGE_POLICY] ?? null,
     age_notes: payload.ageNotes ?? null,
     terrain,
     extended_terrain: payload.extendedTerrain ?? null,
@@ -752,7 +750,7 @@ module.exports = {
   createApprovedClaim,
   isClaimActive,
   metadataRowFromPayload,
-  PROJECTED_AGE_RESTRICTION,
+  PROJECTED_AGE_POLICY,
   INACTIVE_STATUSES,
   ACTIVE_STATUSES,
 };

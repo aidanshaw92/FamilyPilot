@@ -15,7 +15,7 @@ const {
   venueHasActiveClaims,
 } = require('./claims-store');
 const { loadCanonicalStore, getCanonicalVenueForPlace } = require('../../places/lib/canonical-venues');
-const { PROJECTED_AGE_RESTRICTION } = require('./age-policy');
+const { PROJECTED_AGE_POLICY } = require('./age-policy');
 
 const FILE_STORE_DIR = '.data';
 const FILE_STORE_NAME = 'enrichment-store.json';
@@ -51,7 +51,7 @@ function rowToMetadata(row) {
     bestAges: row.best_ages,
     minRecommendedAge: row.min_recommended_age,
     maxRecommendedAge: row.max_recommended_age,
-    venueAgeRestriction: row.venue_age_restriction ?? null,
+    venueAgePolicy: row.venue_age_policy ?? null,
     ageNotes: row.age_notes,
     terrain: row.terrain,
     extendedTerrain: row.extended_terrain,
@@ -94,7 +94,7 @@ function metadataToRow(id, payload, status) {
     max_recommended_age: payload.maxRecommendedAge ?? null,
     // Symbol-keyed on purpose: see age-policy.js. A raw editor payload cannot express this, so
     // the column is null unless the claim projection produced it.
-    venue_age_restriction: payload[PROJECTED_AGE_RESTRICTION] ?? null,
+    venue_age_policy: payload[PROJECTED_AGE_POLICY] ?? null,
     age_notes: payload.ageNotes ?? null,
     terrain,
     extended_terrain: payload.extendedTerrain ?? null,

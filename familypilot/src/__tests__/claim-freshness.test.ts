@@ -96,10 +96,23 @@ describe('source refresh outcome classification', () => {
 
 describe('claim lifetimes', () => {
   test('a missing validUntil is derived, and agrees with the evidence pipeline for every field', () => {
-    for (const fieldKey of Object.values(FIELD_MAP) as string[]) {
+    // FIELD_MAP covers the keys the evidence pipeline writes. Age policy is NOT one of them -- it
+    // has its own producer -- so it has to be named here explicitly, or the two mirrored lifetime
+    // rules can drift apart for the one fact that removes a venue and no test would notice.
+    const { agePolicyFieldKey } = require('../../../server/enrichment/_lib/age-policy');
+    const keys = [...(Object.values(FIELD_MAP) as string[]), agePolicyFieldKey('https://venue.example/visit')];
+
+    for (const fieldKey of keys) {
       const derived = validUntil(claim({ fieldKey, validUntil: null, checkedAt: '2026-09-01' }));
       expect(derived, fieldKey).toBe(expiryDate(fieldKey, '2026-09-01T00:00:00.000Z'));
     }
+  });
+
+  test('age policy gets the short lifetime on BOTH sides of the mirror', () => {
+    const { agePolicyFieldKey } = require('../../../server/enrichment/_lib/age-policy');
+    const fieldKey = agePolicyFieldKey('https://venue.example/visit');
+    expect(validUntil(claim({ fieldKey, validUntil: null, checkedAt: '2026-09-01' }))).toBe('2026-10-01');
+    expect(expiryDate(fieldKey, '2026-09-01T00:00:00.000Z')).toBe('2026-10-01');
   });
 
   test('grace runs exactly 14 days past expiry', () => {

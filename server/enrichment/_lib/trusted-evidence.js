@@ -1,7 +1,8 @@
 /** Only server-extracted, recent official facts can be published automatically. */
 const { extractEvidenceFromText, buildEvidenceBundle } = require('./evidence-extractor');
 const { listEvidenceForVenue } = require('./evidence-store');
-const SOURCE_TYPES = new Set(['official_website','accessibility_page','visitor_info','faq_page','family_page']);
+// One taxonomy, shared with the age-policy gate. See source-types.js for why council_page is out.
+const { OFFICIAL_SOURCE_TYPES: SOURCE_TYPES } = require('./source-types');
 const FIELD_MAP = {
   toilets:'familyFacilities.toilets', babyChanging:'familyFacilities.babyChanging',
   parking:'familyFacilities.parking', freeParking:'familyFacilities.freeParking', cafe:'familyFacilities.cafe',
@@ -51,4 +52,4 @@ async function verifiedBundleForVenue(id) {
     facts:extractEvidenceFromText(r.extractedText,{url:r.sourceUrl,sourceType:r.sourceType,retrievedAt:r.retrievedAt})}));
   return buildEvidenceBundle(id,sources,'official_website');
 }
-module.exports={expiryDate,reviewEvidence,eligibleFact,verifiedBundleForVenue,FIELD_MAP};
+module.exports={expiryDate,reviewEvidence,eligibleFact,verifiedBundleForVenue,FIELD_MAP,SOURCE_TYPES};
