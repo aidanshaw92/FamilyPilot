@@ -9,13 +9,14 @@ const {
   claimMayGate,
   projectAgePolicy,
   GATING_SOURCE_TYPES,
+  MIN_EVIDENCE_EXCERPT_CHARS,
 } = require('../../../server/enrichment/_lib/age-policy');
 const {
   projectActiveClaimsToPayload,
   metadataRowFromPayload,
   PROJECTED_AGE_POLICY,
 } = require('../../../server/enrichment/_lib/claims-store');
-const { expiryDate, SOURCE_TYPES } = require('../../../server/enrichment/_lib/trusted-evidence');
+const { expiryDate, SOURCE_TYPES, eligibleFact } = require('../../../server/enrichment/_lib/trusted-evidence');
 const { ALL_SOURCE_TYPES } = require('../../../server/enrichment/_lib/source-types');
 const {
   humanApprover,
@@ -48,6 +49,9 @@ const TODAY = '2026-09-21';
 const FUTURE = '2026-10-15';
 const PAST = '2026-09-20';
 const EDITOR = humanApprover('editor@familypilot');
+/** Long enough to clear the 15-character floor, and what the seeded page says. */
+const PAGE_TEXT = 'Under 4s are not admitted to the museum.';
+const OTHER_EXCERPT = 'Over 12s are not admitted to the museum.';
 
 /** A claim whose provenance is strong enough to gate. Tests weaken one field at a time. */
 function gatingClaim(overrides: Record<string, unknown> = {}) {
@@ -63,6 +67,7 @@ function gatingClaim(overrides: Record<string, unknown> = {}) {
           minMonthsInclusive: 48,
           maxMonthsExclusive: null,
           statedAs: 'Under 4s not admitted',
+          evidenceExcerpt: PAGE_TEXT,
         },
       ],
     },
@@ -186,13 +191,13 @@ describe('a door needs BOTH a venue scope and an excluding effect', () => {
    * said `effect: caveat` -- or said nothing at all -- was silently promoted into a hard gate.
    */
   const notDoors: Array<[string, Record<string, unknown>]> = [
-    ['effect omitted entirely', { scope: 'venue', minMonthsInclusive: 48 }],
-    ['effect explicitly a caveat', { scope: 'venue', effect: 'caveat', minMonthsInclusive: 48 }],
-    ['an unrecognised effect', { scope: 'venue', effect: 'maybe', minMonthsInclusive: 48 }],
-    ['a null effect', { scope: 'venue', effect: null, minMonthsInclusive: 48 }],
-    ['excludes on an activity scope', { scope: 'activity', effect: 'excludes', minMonthsInclusive: 60 }],
-    ['excludes on an accompaniment scope', { scope: 'accompaniment', effect: 'excludes', maxMonthsExclusive: 24 }],
-    ['excludes on an ambiguous scope', { scope: 'ambiguous', effect: 'excludes', minMonthsInclusive: 48 }],
+    ['effect omitted entirely', { scope: 'venue', minMonthsInclusive: 48, evidenceExcerpt: PAGE_TEXT }],
+    ['effect explicitly a caveat', { scope: 'venue', effect: 'caveat', minMonthsInclusive: 48, evidenceExcerpt: PAGE_TEXT }],
+    ['an unrecognised effect', { scope: 'venue', effect: 'maybe', minMonthsInclusive: 48, evidenceExcerpt: PAGE_TEXT }],
+    ['a null effect', { scope: 'venue', effect: null, minMonthsInclusive: 48, evidenceExcerpt: PAGE_TEXT }],
+    ['excludes on an activity scope', { scope: 'activity', effect: 'excludes', minMonthsInclusive: 60, evidenceExcerpt: PAGE_TEXT }],
+    ['excludes on an accompaniment scope', { scope: 'accompaniment', effect: 'excludes', maxMonthsExclusive: 24, evidenceExcerpt: PAGE_TEXT }],
+    ['excludes on an ambiguous scope', { scope: 'ambiguous', effect: 'excludes', minMonthsInclusive: 48, evidenceExcerpt: PAGE_TEXT }],
   ];
 
   it.each(notDoors)('%s never becomes a restriction', (_label, rule) => {
@@ -292,6 +297,88 @@ describe('source types come from the evidence pipeline, not a second taxonomy', 
   });
 });
 
+describe('every rule carries its own proof', () => {
+  /**
+   * The defect this closes: evidence was CLAIM-level, so one genuine quotation made the whole
+   * claim high-confidence and a second door nobody had read anywhere inherited its proof.
+   */
+  it('a door with no excerpt is not surfaced in any form', () => {
+    const claim = gatingClaim({
+      valueJson: {
+        rules: [{ scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null }],
+      },
+    });
+    expect(projectAgePolicy([claim], TODAY)).toBeNull();
+  });
+
+  it('a door whose excerpt is too short to mean anything is not surfaced either', () => {
+    // "the" occurs on almost every page. A short match proves a string exists, not a policy.
+    const claim = gatingClaim({
+      valueJson: {
+        rules: [
+          { scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null, evidenceExcerpt: 'the' },
+        ],
+      },
+    });
+    expect(projectAgePolicy([claim], TODAY)).toBeNull();
+  });
+
+  it('reuses the evidence pipeline floor rather than inventing one', () => {
+    expect(MIN_EVIDENCE_EXCERPT_CHARS).toBe(15);
+    // Pinned against the publisher's own floor: a 14-character excerpt is not eligible there.
+    const fact = {
+      field: 'toilets',
+      value: 'yes',
+      confidence: 'high',
+      evidenceStatus: 'ok',
+      sourceType: 'official_website',
+      sourceUrl: 'https://venue.example/visit',
+      retrievedAt: new Date().toISOString(),
+      evidenceText: 'x'.repeat(MIN_EVIDENCE_EXCERPT_CHARS - 1),
+    };
+    const bundle = { sources: [] };
+    expect(eligibleFact(fact, bundle)).toBe(false);
+  });
+
+  it('one unsupported door does not ride on a supported one', () => {
+    const claim = gatingClaim({
+      valueJson: {
+        rules: [
+          { scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null, statedAs: 'real', evidenceExcerpt: PAGE_TEXT },
+          { scope: 'venue', effect: 'excludes', minMonthsInclusive: null, maxMonthsExclusive: 144, statedAs: 'invented' },
+        ],
+      },
+    });
+    const policy = projectAgePolicy([claim], TODAY);
+    expect(policy.restrictions).toHaveLength(1);
+    expect(policy.restrictions[0].statedAs).toBe('real');
+    expect(policy.sourcesDisagree, 'one source, one surviving door -- not a disagreement').toBe(false);
+  });
+
+  it('two doors with their own excerpts both apply', () => {
+    const claim = gatingClaim({
+      valueJson: {
+        rules: [
+          { scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null, evidenceExcerpt: PAGE_TEXT },
+          { scope: 'venue', effect: 'excludes', minMonthsInclusive: null, maxMonthsExclusive: 144, evidenceExcerpt: OTHER_EXCERPT },
+        ],
+      },
+    });
+    expect(projectAgePolicy([claim], TODAY).restrictions).toHaveLength(2);
+  });
+
+  it('an unsupported caveat never reaches a parent as a statement of fact', () => {
+    // "Soft play is age 5 and over" is a sentence a parent will act on. Unsupported information
+    // has to stay unknown rather than become a confident caveat.
+    const claim = gatingClaim({
+      valueJson: {
+        rules: [{ scope: 'activity', effect: 'caveat', minMonthsInclusive: 60, activity: 'soft play' }],
+      },
+    });
+    expect(projectAgePolicy([claim], TODAY)).toBeNull();
+  });
+});
+
 describe('provenance: a source-less claim never becomes a hard gate', () => {
   const weakenings: Array<[string, Record<string, unknown>]> = [
     ['no evidence record', { sourceEvidenceId: null }],
@@ -339,8 +426,8 @@ describe('several doors from one source are several doors, not a contradiction',
   const twoDoors = gatingClaim({
     valueJson: {
       rules: [
-        { scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null, statedAs: 'Under 4s not admitted' },
-        { scope: 'venue', effect: 'excludes', minMonthsInclusive: null, maxMonthsExclusive: 144, statedAs: 'Over 12s not admitted' },
+        { scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null, statedAs: 'Under 4s not admitted', evidenceExcerpt: PAGE_TEXT },
+        { scope: 'venue', effect: 'excludes', minMonthsInclusive: null, maxMonthsExclusive: 144, statedAs: 'Over 12s not admitted', evidenceExcerpt: PAGE_TEXT },
       ],
     },
   });
@@ -364,8 +451,8 @@ describe('several doors from one source are several doors, not a contradiction',
     const repeated = gatingClaim({
       valueJson: {
         rules: [
-          { scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null },
-          { scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null },
+          { scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null, evidenceExcerpt: PAGE_TEXT },
+          { scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null, evidenceExcerpt: PAGE_TEXT },
         ],
       },
     });
@@ -378,8 +465,8 @@ describe('several doors from one source are several doors, not a contradiction',
     const impossible = gatingClaim({
       valueJson: {
         rules: [
-          { scope: 'venue', effect: 'excludes', minMonthsInclusive: 144, maxMonthsExclusive: null },
-          { scope: 'venue', effect: 'excludes', minMonthsInclusive: null, maxMonthsExclusive: 48 },
+          { scope: 'venue', effect: 'excludes', minMonthsInclusive: 144, maxMonthsExclusive: null, evidenceExcerpt: PAGE_TEXT },
+          { scope: 'venue', effect: 'excludes', minMonthsInclusive: null, maxMonthsExclusive: 48, evidenceExcerpt: PAGE_TEXT },
         ],
       },
     });
@@ -395,7 +482,7 @@ describe('conflict: sources that disagree do not exclude anyone', () => {
     const a = gatingClaim();
     const b = gatingClaim({
       sourceUrl: otherSource,
-      valueJson: { rules: [{ scope: 'venue', effect: 'excludes', minMonthsInclusive: 96, maxMonthsExclusive: null }] },
+      valueJson: { rules: [{ scope: 'venue', effect: 'excludes', minMonthsInclusive: 96, maxMonthsExclusive: null, evidenceExcerpt: PAGE_TEXT }] },
     });
     const policy = projectAgePolicy([a, b], TODAY);
     expect(policy.restrictions).toHaveLength(0);
@@ -406,7 +493,7 @@ describe('conflict: sources that disagree do not exclude anyone', () => {
     const a = gatingClaim();
     const b = gatingClaim({
       sourceUrl: otherSource,
-      valueJson: { rules: [{ scope: 'venue', effect: 'excludes', minMonthsInclusive: 96, maxMonthsExclusive: null }] },
+      valueJson: { rules: [{ scope: 'venue', effect: 'excludes', minMonthsInclusive: 96, maxMonthsExclusive: null, evidenceExcerpt: PAGE_TEXT }] },
     });
     // Both sides survive as caveats. An earlier revision skipped each one individually on the
     // grounds that it "may gate", so the promised disagreement caveat never existed.
@@ -429,7 +516,7 @@ describe('conflict: sources that disagree do not exclude anyone', () => {
     const floor = gatingClaim();
     const ceiling = gatingClaim({
       sourceUrl: otherSource,
-      valueJson: { rules: [{ scope: 'venue', effect: 'excludes', minMonthsInclusive: null, maxMonthsExclusive: 144 }] },
+      valueJson: { rules: [{ scope: 'venue', effect: 'excludes', minMonthsInclusive: null, maxMonthsExclusive: 144, evidenceExcerpt: PAGE_TEXT }] },
     });
     const policy = projectAgePolicy([floor, ceiling], TODAY);
     expect(policy.restrictions).toHaveLength(0);
@@ -441,7 +528,7 @@ describe('conflict: sources that disagree do not exclude anyone', () => {
     const untrusted = gatingClaim({
       sourceUrl: otherSource,
       sourceType: 'council_page',
-      valueJson: { rules: [{ scope: 'venue', effect: 'excludes', minMonthsInclusive: 96, maxMonthsExclusive: null }] },
+      valueJson: { rules: [{ scope: 'venue', effect: 'excludes', minMonthsInclusive: 96, maxMonthsExclusive: null, evidenceExcerpt: PAGE_TEXT }] },
     });
     const policy = projectAgePolicy([trusted, untrusted], TODAY);
     expect(policy.sourcesDisagree).toBe(false);
@@ -461,9 +548,9 @@ describe('caveats reach the read model instead of being dropped', () => {
     const claim = gatingClaim({
       valueJson: {
         rules: [
-          { scope: 'activity', effect: 'caveat', minMonthsInclusive: 60, activity: 'soft play', statedAs: 'Soft play is 5+' },
-          { scope: 'accompaniment', effect: 'caveat', maxMonthsExclusive: 24, accompaniment: { adultRequired: true } },
-          { scope: 'ambiguous', effect: 'caveat', minMonthsInclusive: 36 },
+          { scope: 'activity', effect: 'caveat', minMonthsInclusive: 60, activity: 'soft play', statedAs: 'Soft play is 5+', evidenceExcerpt: PAGE_TEXT },
+          { scope: 'accompaniment', effect: 'caveat', maxMonthsExclusive: 24, accompaniment: { adultRequired: true }, evidenceExcerpt: PAGE_TEXT },
+          { scope: 'ambiguous', effect: 'caveat', minMonthsInclusive: 36, evidenceExcerpt: PAGE_TEXT },
         ],
       },
     });
@@ -537,7 +624,7 @@ describe('the real editor-save path', () => {
       sourceUrl,
       sourceType: 'visitor_info',
       retrievedAt: `${TODAY}T09:00:00Z`,
-      extractedText: 'Under 4s are not admitted to the museum.',
+      extractedText: PAGE_TEXT,
       fetchStatus: 'ok',
       httpStatus: 200,
       ...overrides,
@@ -551,6 +638,8 @@ describe('the real editor-save path', () => {
     sourceEvidenceId: string | null;
     checkedAt: string;
     validUntil: string;
+    approvedBy: string;
+    valueJson: { rules: Array<{ statedAs: string | null }> };
   };
 
   /** Write an age-policy claim through its only writer. */
@@ -563,8 +652,7 @@ describe('the real editor-save path', () => {
       familypilotPlaceId: id,
       sourceUrl,
       rules,
-      reviewedBy: 'editor@familypilot',
-      evidenceExcerpt: 'Under 4s are not admitted to the museum.',
+      reviewedBy: EDITOR,
       ...options,
     });
     expect(written, 'the writer must return the claim it stored').toBeTruthy();
@@ -572,7 +660,14 @@ describe('the real editor-save path', () => {
   }
 
   const VENUE_DOOR = [
-    { scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null, statedAs: 'Under 4s not admitted' },
+    {
+      scope: 'venue',
+      effect: 'excludes',
+      minMonthsInclusive: 48,
+      maxMonthsExclusive: null,
+      statedAs: 'Under 4s not admitted',
+      evidenceExcerpt: PAGE_TEXT,
+    },
   ];
 
   it('cannot persist a venue-excluding value through a normal save', async () => {
@@ -663,6 +758,59 @@ describe('the real editor-save path', () => {
     );
   });
 
+  it('refuses an actor that is merely unknown, rather than minting it a human identity', async () => {
+    /**
+     * The defect this closes: the writer called `humanApprover(reviewedBy)`, which prefixes any
+     * value it does not already recognise as a robot. A new automated producer calling with its
+     * own actor id would have been stored as `human:some_new_worker_v9` and would have gated,
+     * without ever being added to SYSTEM_APPROVERS. Stamping is a decision for the boundary where
+     * a person actually approves; this writer only accepts an identity stamped there.
+     */
+    await seedEvidence();
+    await expect(seedApprovedPolicy(VENUE_DOOR, { reviewedBy: 'some_new_worker_v9' })).rejects.toThrow(
+      /already-stamped human approver/,
+    );
+    // The bare editor identity is refused for the same reason: it has not been stamped yet.
+    await expect(seedApprovedPolicy(VENUE_DOOR, { reviewedBy: 'editor@familypilot' })).rejects.toThrow(
+      /already-stamped human approver/,
+    );
+  });
+
+  it('accepts an identity that a real approval already stamped', async () => {
+    await seedEvidence();
+    const claim = await seedApprovedPolicy(VENUE_DOOR, { reviewedBy: 'human:editor@familypilot' });
+    expect(claim.approvedBy).toBe('human:editor@familypilot');
+  });
+
+  it('refuses a padded identity rather than tidying it into one', async () => {
+    // `humanApprover()` normalises at the point a person approves. By the time it reaches this
+    // writer an identity is either exactly what was stamped or it is not that identity, and
+    // refusing is the direction that fails towards not gating.
+    await seedEvidence();
+    await expect(seedApprovedPolicy(VENUE_DOOR, { reviewedBy: '  human:editor@familypilot  ' })).rejects.toThrow(
+      /already-stamped human approver/,
+    );
+  });
+
+  it('stores only the rules that quote the page', async () => {
+    await seedEvidence();
+    const claim = await seedApprovedPolicy([
+      ...VENUE_DOOR,
+      { scope: 'venue', effect: 'excludes', minMonthsInclusive: null, maxMonthsExclusive: 144, statedAs: 'invented', evidenceExcerpt: 'Over 12s are not admitted.' },
+      { scope: 'venue', effect: 'excludes', minMonthsInclusive: 60, maxMonthsExclusive: null, statedAs: 'tiny', evidenceExcerpt: 'the' },
+    ]);
+    expect(claim.valueJson.rules.map((r) => r.statedAs)).toEqual(['Under 4s not admitted']);
+  });
+
+  it('refuses a claim in which nothing quotes the page', async () => {
+    await seedEvidence();
+    await expect(
+      seedApprovedPolicy([
+        { scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null, evidenceExcerpt: 'Over 12s are not admitted.' },
+      ]),
+    ).rejects.toThrow(/quotes the page/);
+  });
+
   it('refuses an age-policy claim through the generic claim writer', async () => {
     // There must be no second way in. The generic path takes its provenance from caller-supplied
     // `fieldEvidence`, which is exactly what a hard gate must not rest on.
@@ -719,7 +867,7 @@ describe('the real editor-save path', () => {
       sourceUrl,
       sourceType: 'official_website',
       retrievedAt: `${TODAY}T09:00:00Z`,
-      extractedText: 'Under 4s are not admitted to the museum.',
+      extractedText: PAGE_TEXT,
       fetchStatus: 'ok',
       httpStatus: 200,
     });
@@ -743,24 +891,19 @@ describe('the real editor-save path', () => {
       sourceUrl,
       sourceType: 'official_website',
       retrievedAt: `${TODAY}T09:00:00Z`,
-      extractedText: 'Under 4s are not admitted to the museum.',
+      extractedText: PAGE_TEXT,
       fetchStatus: 'ok',
     };
 
-    expect(() => agePolicyProvenanceFrom(elsewhere, id, 'Under 4s are not admitted to the museum.')).toThrow(
-      /different venue/,
-    );
+    expect(() => agePolicyProvenanceFrom(elsewhere, id)).toThrow(/different venue/);
     // ...and the same row IS accepted for the venue it actually belongs to, so the refusal above
     // is about the venue and not about something else being wrong with the record.
-    expect(
-      agePolicyProvenanceFrom(elsewhere, 'fp-some-other-venue', 'Under 4s are not admitted to the museum.')
-        .sourceType,
-    ).toBe('official_website');
+    expect(agePolicyProvenanceFrom(elsewhere, 'fp-some-other-venue').sourceType).toBe('official_website');
   });
 
   it('refuses a door whose excerpt is not in the page that was fetched', async () => {
     await seedEvidence({ extractedText: 'The cafe is open until four.' });
-    await expect(seedApprovedPolicy(VENUE_DOOR)).rejects.toThrow(/not present in the fetched page/);
+    await expect(seedApprovedPolicy(VENUE_DOOR)).rejects.toThrow(/quotes the page/);
   });
 
   it('refuses a source the fetcher never actually retrieved', async () => {
@@ -791,9 +934,9 @@ describe('the real editor-save path', () => {
 
     await seedEvidence();
     await seedApprovedPolicy([
-      { scope: 'activity', effect: 'caveat', minMonthsInclusive: 60, activity: 'soft play', statedAs: 'Soft play is 5+' },
-      { scope: 'accompaniment', effect: 'caveat', maxMonthsExclusive: 24, accompaniment: { adultRequired: true } },
-      { scope: 'ambiguous', effect: 'caveat', minMonthsInclusive: 36 },
+      { scope: 'activity', effect: 'caveat', minMonthsInclusive: 60, activity: 'soft play', statedAs: 'Soft play is 5+', evidenceExcerpt: PAGE_TEXT },
+      { scope: 'accompaniment', effect: 'caveat', maxMonthsExclusive: 24, accompaniment: { adultRequired: true }, evidenceExcerpt: PAGE_TEXT },
+      { scope: 'ambiguous', effect: 'caveat', minMonthsInclusive: 36, evidenceExcerpt: PAGE_TEXT },
     ]);
     await saveMetadata(id, { checkedBy: 'editor@familypilot', minRecommendedAge: 5 }, { syncClaims: true });
 

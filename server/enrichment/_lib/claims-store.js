@@ -17,10 +17,10 @@ const {
   agePolicyFieldKey,
   normaliseAgeRules,
   projectAgePolicy,
-  GATING_SOURCE_TYPES,
+  ruleIsSupportedBy,
   PROJECTED_AGE_POLICY,
 } = require('./age-policy');
-const { humanApprover } = require('./approval-actors');
+const { isHumanApprover } = require('./approval-actors');
 
 
 const FILE_CLAIMS_DIR = '.data';
@@ -352,35 +352,17 @@ async function replaceActiveClaim(claim) {
 }
 
 /**
- * The ONLY writer of an age-policy claim.
- *
- * Every field the hard gate later reads is taken from the stored `venue_source_evidence` ROW,
- * never from anything the caller passes alongside it. A foreign key proves only that SOME
- * evidence row exists: it does not prove that row is for this venue, this URL, or the source type
- * the caller stamped on the claim. So a caller could attach a genuine `council_page` row while
- * labelling the claim `official_website`, and the projector -- which reads the claim's own copy
- * of the provenance and deliberately performs no database query -- would treat second-hand
- * summary as first-party evidence and remove venues on it.
- *
- * Deriving instead of trusting makes that mismatch unrepresentable rather than merely detectable.
- * The projector stays pure; this is where the two are tied together.
- *
- * `createApprovedClaim` refuses age-policy keys for the same reason: there must be no second way
- * in that skips this.
- */
-/**
  * Turn one stored evidence row into the provenance an age-policy claim may carry.
  *
  * Pure and exported so the refusals below can be tested directly rather than only through a store
  * that is already scoped correctly -- the venue check in particular is a second line of defence,
  * and a guard nothing can reach is a guard nothing can prove.
  *
- * Every value returned comes from the ROW. Nothing the caller supplied is carried through except
- * the excerpt, and that has to appear in the page before it counts for anything.
+ * Every value returned comes from the ROW. Nothing the caller supplied survives.
  */
-function agePolicyProvenanceFrom(record, familypilotPlaceId, evidenceExcerpt) {
+function agePolicyProvenanceFrom(record, familypilotPlaceId) {
   if (!record) {
-    throw Object.assign(new Error(`No evidence record for this venue and source`), {
+    throw Object.assign(new Error('No evidence record for this venue and source'), {
       code: 'AGE_POLICY_NO_EVIDENCE',
     });
   }
@@ -402,28 +384,29 @@ function agePolicyProvenanceFrom(record, familypilotPlaceId, evidenceExcerpt) {
     });
   }
 
-  // The excerpt must actually appear in the text stored for this page. Without it, "high
-  // confidence" would be the caller's assertion about its own input; with it, the claim is
-  // pinned to words the fetcher really saw.
-  const excerpt = String(evidenceExcerpt ?? '').trim();
-  const quoted = excerpt.length > 0 && String(record.extractedText ?? '').includes(excerpt);
-  if (!quoted && GATING_SOURCE_TYPES.has(record.sourceType)) {
-    throw Object.assign(new Error('Age policy evidence excerpt is not present in the fetched page'), {
-      code: 'AGE_POLICY_EXCERPT_NOT_FOUND',
-    });
-  }
-
   return {
     fieldKey,
     sourceUrl: record.sourceUrl,
     sourceType: record.sourceType,
     sourceEvidenceId: record.id,
-    evidenceExcerpt: excerpt || null,
-    confidence: quoted ? 'high' : 'medium',
     checkedAt: String(record.retrievedAt).slice(0, 10),
     validUntil: expiryDate(fieldKey, record.retrievedAt),
     retrievedAt: record.retrievedAt,
   };
+}
+
+/**
+ * The rules that quote the page they claim to come from.
+ *
+ * Per RULE, not per claim. One genuine quotation used to make a whole claim `high` confidence,
+ * which meant a second door nobody had read anywhere inherited the first one's proof and could
+ * exclude families on its own. A claim deliberately holds several independent doors, so the proof
+ * has to be just as independent.
+ *
+ * Pure and exported so the drop can be asserted directly.
+ */
+function supportedAgeRules(rules, extractedText) {
+  return rules.filter((rule) => ruleIsSupportedBy(rule, extractedText));
 }
 
 /**
@@ -443,10 +426,16 @@ function agePolicyProvenanceFrom(record, familypilotPlaceId, evidenceExcerpt) {
  * `createApprovedClaim` refuses age-policy keys for the same reason: there must be no second way
  * in that skips this.
  */
-async function createAgePolicyClaim({ familypilotPlaceId, sourceUrl, rules, reviewedBy, evidenceExcerpt }) {
-  const approvedBy = humanApprover(reviewedBy);
-  if (!approvedBy) {
-    throw Object.assign(new Error('An age policy needs a human approver'), { code: 'AGE_POLICY_NO_HUMAN' });
+async function createAgePolicyClaim({ familypilotPlaceId, sourceUrl, rules, reviewedBy }) {
+  // NOT `humanApprover(reviewedBy)`. That mints the namespace for any value it does not already
+  // recognise as a robot, so an automated producer calling this with its own actor id would be
+  // written to the database as a human and would gate. Stamping a human identity is a decision
+  // for the boundary where a person actually approves something; this writer only accepts one
+  // that has already been stamped there.
+  if (!isHumanApprover(reviewedBy)) {
+    throw Object.assign(new Error('An age policy needs an already-stamped human approver'), {
+      code: 'AGE_POLICY_NO_HUMAN',
+    });
   }
 
   const normalised = normaliseAgeRules({ rules });
@@ -457,25 +446,38 @@ async function createAgePolicyClaim({ familypilotPlaceId, sourceUrl, rules, revi
   // Scoped by venue inside the store, so a row belonging to another place cannot be returned --
   // and a URL this venue has never been fetched at has no row at all.
   const record = await findEvidenceRecordForSource(familypilotPlaceId, sourceUrl);
-  const provenance = agePolicyProvenanceFrom(record, familypilotPlaceId, evidenceExcerpt);
+  const provenance = agePolicyProvenanceFrom(record, familypilotPlaceId);
+
+  // Unsupported rules are dropped rather than stored, so nothing downstream has to remember to
+  // distrust them. A rule the page does not carry is not a rule this venue stated.
+  const supported = supportedAgeRules(normalised, record.extractedText);
+  if (supported.length === 0) {
+    throw Object.assign(new Error('No age rule quotes the page that was fetched'), {
+      code: 'AGE_POLICY_NO_SUPPORTED_RULES',
+    });
+  }
 
   return replaceActiveClaim({
     familypilotPlaceId,
     fieldKey: provenance.fieldKey,
     valueJson: {
-      rules: normalised,
+      rules: supported,
       sourceUrl: provenance.sourceUrl,
       retrievedAt: provenance.retrievedAt,
     },
-    confidence: provenance.confidence,
+    // Every stored rule quotes the page, so this is a consequence of the rules rather than a
+    // separate judgement about them. `claimMayGate` still checks it, which keeps a hand-written
+    // row at a lower confidence from gating.
+    confidence: 'high',
     sourceUrl: provenance.sourceUrl,
-    evidenceExcerpt: provenance.evidenceExcerpt,
+    // A summary for the claims UI. The proof lives on each rule; this column cannot carry it.
+    evidenceExcerpt: supported[0].evidenceExcerpt,
     sourceType: provenance.sourceType,
     sourceEvidenceId: provenance.sourceEvidenceId,
     checkedAt: provenance.checkedAt,
     validUntil: provenance.validUntil,
     approvedAt: new Date().toISOString(),
-    approvedBy,
+    approvedBy: reviewedBy,
     approvedFromDraftId: null,
     status: 'active',
     supersedesClaimId: null,
@@ -892,6 +894,7 @@ module.exports = {
   createApprovedClaim,
   createAgePolicyClaim,
   agePolicyProvenanceFrom,
+  supportedAgeRules,
   isClaimActive,
   metadataRowFromPayload,
   PROJECTED_AGE_POLICY,

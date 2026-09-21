@@ -52,6 +52,16 @@ const GATING_CONFIDENCE = new Set(['high']);
 
 const AGE_POLICY_PREFIX = 'agePolicy.';
 
+/**
+ * Shortest excerpt that can support a rule.
+ *
+ * The same floor `trusted-evidence.js` already applies to an automatically published fact
+ * (`fact.evidenceText.length < 15`), for the same reason: a handful of characters will occur on
+ * almost any page, so a short "quote" proves that a string exists, not that a policy was stated.
+ * Pinned by a test against that module rather than left as a coincidence.
+ */
+const MIN_EVIDENCE_EXCERPT_CHARS = 15;
+
 /** Bits of SHA-256 kept in a field key. 128 bits: a collision is not a thing that happens. */
 const SOURCE_KEY_HEX_CHARS = 32;
 
@@ -178,6 +188,9 @@ function normaliseAgeRules(valueJson) {
       activity: typeof rule.activity === 'string' ? rule.activity : null,
       accompaniment: rule.accompaniment && typeof rule.accompaniment === 'object' ? rule.accompaniment : null,
       statedAs: typeof rule.statedAs === 'string' ? rule.statedAs : null,
+      // Each rule carries its OWN proof. A claim-level excerpt would let one real quotation
+      // vouch for every rule beside it, including one nobody read anywhere.
+      evidenceExcerpt: typeof rule.evidenceExcerpt === 'string' ? rule.evidenceExcerpt.trim() : null,
     });
   }
 
@@ -211,6 +224,29 @@ function claimMayGate(claim, today = new Date().toISOString().slice(0, 10)) {
   if (!claim.validUntil || String(claim.validUntil).slice(0, 10) < today) return false;
 
   return true;
+}
+
+/**
+ * Whether a rule quotes enough of its source to be worth anything.
+ *
+ * Checkable without the page, so the projector can apply it: a rule with no excerpt, or one too
+ * short to mean anything, is not surfaced at all -- not as a door, and not as a caveat either.
+ * A caveat reaches a parent as a statement of fact ("soft play is age 5 and over"), so unsupported
+ * information has to stay unknown rather than become a confident sentence.
+ */
+function ruleHasUsableExcerpt(rule) {
+  return typeof rule?.evidenceExcerpt === 'string' && rule.evidenceExcerpt.trim().length >= MIN_EVIDENCE_EXCERPT_CHARS;
+}
+
+/**
+ * Whether a rule's own excerpt appears in the text actually stored for its page.
+ *
+ * Needs the page, so only the WRITER can ask it; the projector has no database and must stay
+ * pure. That is why the writer stores nothing it has not checked here.
+ */
+function ruleIsSupportedBy(rule, extractedText) {
+  if (!ruleHasUsableExcerpt(rule)) return false;
+  return String(extractedText ?? '').includes(rule.evidenceExcerpt.trim());
 }
 
 /** A claim's set of door intervals, in a form two sources can be compared by. */
@@ -285,6 +321,10 @@ function projectAgePolicy(claims, today = new Date().toISOString().slice(0, 10))
     const doors = [];
 
     for (const rule of normaliseAgeRules(claim.valueJson)) {
+      // A rule that does not quote its source is not surfaced in any form. The writer refuses to
+      // store one, so reaching this means a row written by some other route, which is exactly
+      // where trusting it would be worst.
+      if (!ruleHasUsableExcerpt(rule)) continue;
       if (rule.effect === 'excludes' && mayGate) doors.push(rule);
       else caveats.push(caveatFrom(rule, claim));
     }
@@ -335,6 +375,9 @@ module.exports = {
   ALL_SCOPES,
   GATING_SOURCE_TYPES,
   GATING_CONFIDENCE,
+  MIN_EVIDENCE_EXCERPT_CHARS,
+  ruleHasUsableExcerpt,
+  ruleIsSupportedBy,
   isAgePolicyFieldKey,
   canonicalSourceUrl,
   agePolicyFieldKey,

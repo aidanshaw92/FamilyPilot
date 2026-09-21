@@ -105,9 +105,26 @@ second-hand summary as first-party evidence.
 
 Deriving instead of trusting makes that mismatch unrepresentable rather than merely detectable,
 and keeps the projector pure. The writer also refuses a row that did not fetch cleanly, and
-requires the claim's evidence excerpt to appear in the text actually stored for that page — so
-`confidence: 'high'` is a property of the fetch rather than the caller's opinion of its own input.
 `createApprovedClaim` rejects `agePolicy.*` keys outright, so there is no second way in.
+
+### Every rule carries its own proof
+
+`evidenceExcerpt` lives on the **rule**, not the claim. A claim-level excerpt would let one
+genuine quotation vouch for every rule beside it — including a second door nobody had read
+anywhere, which would then exclude families on the first door's evidence.
+
+A rule is stored, and later surfaced, only if its own excerpt is at least
+**15 characters** (the floor `trusted-evidence.js` already applies to an automatically published
+fact, pinned by test rather than copied) **and** occurs in the text stored for that page. The
+writer drops the rest and refuses the claim if nothing survives; the projector, which has no page
+to check against, drops any rule whose excerpt is missing or too short.
+
+This applies to caveats as well as doors. "Soft play is age 5 and over" reaches a parent as a
+statement of fact, so unsupported information stays unknown rather than becoming a confident
+sentence.
+
+`venue_claims.evidence_excerpt` remains as a summary for the claims UI. It is not the proof for
+anything.
 
 ### Source types
 
@@ -134,8 +151,14 @@ a second automatic approver (`source_evidence_auto_v2`) and stamps an unattended
 Two consequences, stated rather than discovered later:
 
 - A new automated actor added tomorrow cannot gate. Nothing has to remember to list it.
-- Until a producer stamps `human:<id>` via `humanApprover()`, no age-policy claim gates at all.
-  That is the fail-open direction: venues stay visible.
+- Until a producer stamps `human:<id>`, no age-policy claim gates at all. That is the fail-open
+  direction: venues stay visible.
+
+**`createAgePolicyClaim` never stamps.** `humanApprover()` prefixes any value it does not already
+recognise as a robot, so calling it inside the writer would mint `human:some_new_worker_v9` for a
+new automated producer and hand it a gating identity nobody listed. Stamping belongs at the
+boundary where a **person** actually approves something; the writer takes `isHumanApprover` or
+refuses. B3 and B4 must never call `humanApprover` merely because a worker is creating the record.
 
 This is **not** an authentication control. The enrichment API sits behind one shared admin token,
 so a caller holding it can assert any reviewer string. The rule stops an automated path inside this
