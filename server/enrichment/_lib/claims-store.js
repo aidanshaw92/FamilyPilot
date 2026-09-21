@@ -12,6 +12,13 @@ const {
 } = require('./validation');
 
 const { expiryDate } = require('./trusted-evidence');
+const {
+  isAgePolicyFieldKey,
+  venueRestrictionFromClaims,
+  ageCaveatsFromClaims,
+  PROJECTED_AGE_RESTRICTION,
+} = require('./age-policy');
+
 
 const FILE_CLAIMS_DIR = '.data';
 const FILE_CLAIMS_NAME = 'venue-claims.json';
@@ -136,10 +143,6 @@ function getEditorOverride(fieldKey, payload) {
   }
   if (fieldKey === 'minRecommendedAge') return payload.minRecommendedAge;
   if (fieldKey === 'maxRecommendedAge') return payload.maxRecommendedAge;
-  // Admission is a door policy, not advice. Editor-supplied only: age facts are never published
-  // from model output (docs/VENUE_DATA_AUTOMATION.md), and this one can exclude a venue.
-  if (fieldKey === 'minAdmissionAge') return payload.minAdmissionAge;
-  if (fieldKey === 'maxAdmissionAge') return payload.maxAdmissionAge;
   if (fieldKey === 'ageNotes') return payload.ageNotes;
   if (fieldKey === 'categoryConfirmed') return payload.categoryConfirmed;
   if (fieldKey === 'visitDurationMinutes') return payload.visitDurationMinutes;
@@ -154,8 +157,6 @@ function collectReviewedFieldKeys(editorPayload) {
 
   if (editorPayload.minRecommendedAge != null) fieldKeys.add('minRecommendedAge');
   if (editorPayload.maxRecommendedAge != null) fieldKeys.add('maxRecommendedAge');
-  if (editorPayload.minAdmissionAge != null) fieldKeys.add('minAdmissionAge');
-  if (editorPayload.maxAdmissionAge != null) fieldKeys.add('maxAdmissionAge');
   if (editorPayload.ageNotes) fieldKeys.add('ageNotes');
   if (editorPayload.categoryConfirmed) fieldKeys.add('categoryConfirmed');
   if (editorPayload.pushchairSuitability !== undefined) fieldKeys.add('pushchairSuitability');
@@ -565,17 +566,6 @@ function setNestedValue(target, fieldKey, value) {
     target.maxRecommendedAge = value;
     return;
   }
-  // Admission is a separate hop from the editor override above: an approved claim reaches the
-  // payload through here, and a key this allow-list does not name is dropped in silence -- the
-  // venue then reads `unknown`, which looks exactly like a venue with no policy.
-  if (fieldKey === 'minAdmissionAge') {
-    target.minAdmissionAge = value;
-    return;
-  }
-  if (fieldKey === 'maxAdmissionAge') {
-    target.maxAdmissionAge = value;
-    return;
-  }
   if (fieldKey === 'ageNotes') {
     target.ageNotes = value;
     return;
@@ -618,8 +608,27 @@ function projectActiveClaimsToPayload(activeClaims) {
 
   for (const claim of activeClaims) {
     if (!isClaimActive(claim)) continue;
+    // Age policy is not a scalar the payload carries verbatim: several sources may each state
+    // one, and only a trusted, non-conflicted, venue-scoped rule may become a gate. Handled
+    // below, from the claims themselves, so no per-key allow-list can drop it.
+    if (isAgePolicyFieldKey(claim.fieldKey)) continue;
     setNestedValue(payload, claim.fieldKey, claim.valueJson);
   }
+
+  /**
+   * The ONLY writer of the hard-gating read model.
+   *
+   * `venueAgeRestriction` is deliberately absent from `getEditorOverride`,
+   * `collectReviewedFieldKeys`, `setNestedValue` and `mergeEditorialFields`, so an editor payload
+   * cannot express it and `metadataRowFromPayload` can only ever persist what this line produced.
+   * A previous revision let a typed scalar reach the column directly, which meant a venue could be
+   * excluded on a value with no claim behind it at all.
+   */
+  const restriction = venueRestrictionFromClaims(activeClaims);
+  if (restriction) payload[PROJECTED_AGE_RESTRICTION] = restriction;
+
+  const caveats = ageCaveatsFromClaims(activeClaims);
+  if (caveats.length > 0) payload.ageCaveats = caveats;
 
   if (Object.keys(payload.familyFacilities).length === 0) delete payload.familyFacilities;
   if (Object.keys(payload.accessibility).length === 0) delete payload.accessibility;
@@ -693,8 +702,10 @@ function metadataRowFromPayload(familypilotPlaceId, payload, existing) {
     best_ages: bestAges,
     min_recommended_age: payload.minRecommendedAge ?? null,
     max_recommended_age: payload.maxRecommendedAge ?? null,
-    min_admission_age: payload.minAdmissionAge ?? null,
-    max_admission_age: payload.maxAdmissionAge ?? null,
+    // Null unless projectActiveClaimsToPayload put it there, under a Symbol an editor payload
+    // cannot express. "No claim" and "no restriction" are therefore the same state by
+    // construction rather than by convention.
+    venue_age_restriction: payload[PROJECTED_AGE_RESTRICTION] ?? null,
     age_notes: payload.ageNotes ?? null,
     terrain,
     extended_terrain: payload.extendedTerrain ?? null,
@@ -741,6 +752,7 @@ module.exports = {
   createApprovedClaim,
   isClaimActive,
   metadataRowFromPayload,
+  PROJECTED_AGE_RESTRICTION,
   INACTIVE_STATUSES,
   ACTIVE_STATUSES,
 };

@@ -100,11 +100,10 @@ export interface VenueFamilyMetadata {
   minRecommendedAge?: number;
   maxRecommendedAge?: number;
   /**
-   * Ages ADMITTED, not recommended. Absent means unknown, and unknown never excludes a venue.
-   * The only age fact permitted to make a venue ineligible -- see matching/age-admission.ts.
+   * Door policy in months, projected from trusted venue-scope age-policy claims. Absent means
+   * unknown, and unknown never excludes. Never written from an editor payload.
    */
-  minAdmissionAge?: number | null;
-  maxAdmissionAge?: number | null;
+  venueAgeRestriction?: import('@/src/types/day-request').VenueAgeRestriction | null;
   ageNotes?: string;
   terrain?: TerrainType;
   extendedTerrain?: import('@/src/types/enrichment').ExtendedTerrain;

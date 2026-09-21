@@ -1,22 +1,34 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  admissionMonthInterval,
   childIsAdmitted,
   describeAgeAdmission,
   evaluateAgeAdmission,
 } from '@/src/services/matching/age-admission';
 import { matchVenueToDayRequest } from '@/src/services/matching/day-request-matcher';
-import { DayRequest, MatchableVenueFacts } from '@/src/types/day-request';
+import { DayRequest, MatchableVenueFacts, VenueAgeRestriction } from '@/src/types/day-request';
 
 /**
- * P0-B2: a venue-level age prohibition, and the boundary between it and a recommendation.
+ * P0-B2, matcher half: what a projected venue restriction does once it reaches the matcher.
  *
- * B1 established that `minRecommendedAge` / `maxRecommendedAge` are advice and may never exclude a
- * venue. This suite defends the other half of that sentence: an admission policy IS allowed to
- * exclude, it is the ONLY age fact that is, and it must not quietly acquire the failure modes the
- * deprecated `childAgeFit` had — where an absent value rejected the venue.
+ * Everything arriving here is already trusted, in-lifetime, venue-scoped and non-conflicted —
+ * age-policy.test.ts covers which claims earn that. This file covers the two rules the matcher
+ * itself must hold: unknown never excludes, and any prohibited child excludes the family.
  */
+
+function restriction(
+  min: number | null,
+  max: number | null,
+  overrides: Partial<VenueAgeRestriction> = {},
+): VenueAgeRestriction {
+  return {
+    minMonthsInclusive: min,
+    maxMonthsExclusive: max,
+    sourceUrl: 'https://venue.example/visit',
+    checkedAt: '2026-09-21',
+    ...overrides,
+  };
+}
 
 const BASE_FACTS: MatchableVenueFacts = {
   placeId: 'v1',
@@ -26,8 +38,7 @@ const BASE_FACTS: MatchableVenueFacts = {
   enrichmentStatus: 'verified',
   minRecommendedAge: null,
   maxRecommendedAge: null,
-  minAdmissionAge: null,
-  maxAdmissionAge: null,
+  venueAgeRestriction: null,
   toilets: 'yes',
   babyChanging: 'yes',
   parking: 'yes',
@@ -53,76 +64,64 @@ function request(childAges: number[], childAgeMonthsList?: number[]): DayRequest
   } as unknown as DayRequest;
 }
 
-describe('the admitted interval', () => {
-  it('opens on the birthday and closes on the one after the maximum', () => {
-    // "admits 4 to 11" means admitted from the fourth birthday until the twelfth.
-    expect(admissionMonthInterval({ minAdmissionAge: 4, maxAdmissionAge: 11 })).toEqual({
-      minMonthsInclusive: 48,
-      maxMonthsExclusive: 144,
-    });
+describe('the admitted interval is half-open, in months', () => {
+  it('admits on the boundary month and not the month before', () => {
+    expect(childIsAdmitted(restriction(48, null), 48)).toBe(true);
+    expect(childIsAdmitted(restriction(48, null), 47)).toBe(false);
   });
 
-  it('leaves an unstated bound open rather than inventing one', () => {
-    expect(admissionMonthInterval({ minAdmissionAge: 4, maxAdmissionAge: null })).toEqual({
-      minMonthsInclusive: 48,
-      maxMonthsExclusive: null,
-    });
-    expect(admissionMonthInterval({ minAdmissionAge: null, maxAdmissionAge: 11 })).toEqual({
-      minMonthsInclusive: null,
-      maxMonthsExclusive: 144,
-    });
+  it('admits through the whole of the final admitted year', () => {
+    expect(childIsAdmitted(restriction(null, 144), 143)).toBe(true);
+    expect(childIsAdmitted(restriction(null, 144), 144)).toBe(false);
   });
 
-  it('admits a child on the exact boundary month, and not the month before', () => {
-    const facts = { minAdmissionAge: 4, maxAdmissionAge: null };
-    expect(childIsAdmitted(facts, 48)).toBe(true);
-    expect(childIsAdmitted(facts, 47)).toBe(false);
-  });
-
-  it('admits a child through the whole of their final admitted year', () => {
-    const facts = { minAdmissionAge: null, maxAdmissionAge: 11 };
-    expect(childIsAdmitted(facts, 143)).toBe(true); // 11y11m
-    expect(childIsAdmitted(facts, 144)).toBe(false); // the twelfth birthday
+  it('expresses a policy whole years cannot', () => {
+    // "Under 6 months not admitted" — the case that motivated storing months.
+    const babies = restriction(6, null);
+    expect(childIsAdmitted(babies, 5)).toBe(false);
+    expect(childIsAdmitted(babies, 6)).toBe(true);
   });
 });
 
 describe('unknown never excludes', () => {
-  it('reports unknown when the venue states no policy', () => {
-    expect(evaluateAgeAdmission({ minAdmissionAge: null, maxAdmissionAge: null }, [24])).toBe(
-      'unknown',
-    );
+  it('reports unknown when the venue records no restriction', () => {
+    expect(evaluateAgeAdmission({ venueAgeRestriction: null }, [24])).toBe('unknown');
+  });
+
+  it('reports unknown when a restriction states no bound at all', () => {
+    expect(evaluateAgeAdmission({ venueAgeRestriction: restriction(null, null) }, [24])).toBe('unknown');
   });
 
   it('reports unknown when there are no children to test', () => {
-    expect(evaluateAgeAdmission({ minAdmissionAge: 4, maxAdmissionAge: null }, [])).toBe('unknown');
+    expect(evaluateAgeAdmission({ venueAgeRestriction: restriction(48, null) }, [])).toBe('unknown');
   });
 
-  it('leaves a venue with no policy eligible', () => {
+  it('leaves a venue with no restriction eligible, emitting no evaluation at all', () => {
     const result = matchVenueToDayRequest(BASE_FACTS, request([2]));
     expect(result.eligible).toBe(true);
     expect(result.evaluations.some((e) => e.field === 'ageAdmission')).toBe(false);
   });
 });
 
-describe('a prohibition excludes, and a recommendation still does not', () => {
+describe('a restriction excludes, and a recommendation still does not', () => {
   it('excludes a venue that will turn the child away', () => {
-    const facts = { ...BASE_FACTS, minAdmissionAge: 5 };
+    const facts = { ...BASE_FACTS, venueAgeRestriction: restriction(60, null) };
     const result = matchVenueToDayRequest(facts, request([3]));
     expect(result.eligible).toBe(false);
-    expect(
-      result.evaluations.find((e) => e.field === 'ageAdmission'),
-    ).toMatchObject({ strength: 'required', outcome: 'unsuitable' });
+    expect(result.evaluations.find((e) => e.field === 'ageAdmission')).toMatchObject({
+      strength: 'required',
+      outcome: 'unsuitable',
+    });
   });
 
   it('keeps a venue whose RECOMMENDED range excludes the child but whose door does not', () => {
-    // The B1 guarantee, restated against B2: advice must not become a prohibition.
+    // The B1 guarantee, restated against B2: advice must never become a prohibition.
     const facts = { ...BASE_FACTS, minRecommendedAge: 8, maxRecommendedAge: 12 };
-    const result = matchVenueToDayRequest(facts, request([3]));
-    expect(result.eligible).toBe(true);
+    expect(matchVenueToDayRequest(facts, request([3])).eligible).toBe(true);
   });
 
   it('admits the family when every child is inside the policy', () => {
-    const facts = { ...BASE_FACTS, minAdmissionAge: 2, maxAdmissionAge: 12 };
+    const facts = { ...BASE_FACTS, venueAgeRestriction: restriction(24, 144) };
     const result = matchVenueToDayRequest(facts, request([3, 8]));
     expect(result.eligible).toBe(true);
     expect(result.evaluations.find((e) => e.field === 'ageAdmission')?.outcome).toBe('suitable');
@@ -131,50 +130,42 @@ describe('a prohibition excludes, and a recommendation still does not', () => {
 
 describe('one prohibited child excludes the whole family', () => {
   it('rejects when the toddler is turned away even though the sibling is admitted', () => {
-    // A parent cannot leave one child at home. The same shape as the B1 ruling that a child
-    // inside a range must not vouch for a sibling outside it.
-    const facts = { ...BASE_FACTS, minAdmissionAge: 5 };
-    const result = matchVenueToDayRequest(facts, request([2, 8]));
-    expect(result.eligible).toBe(false);
+    const facts = { ...BASE_FACTS, venueAgeRestriction: restriction(60, null) };
+    expect(matchVenueToDayRequest(facts, request([2, 8])).eligible).toBe(false);
   });
 
   it('rejects when the older child is above the maximum', () => {
-    const facts = { ...BASE_FACTS, maxAdmissionAge: 5 };
-    const result = matchVenueToDayRequest(facts, request([2, 8]));
-    expect(result.eligible).toBe(false);
+    const facts = { ...BASE_FACTS, venueAgeRestriction: restriction(null, 72) };
+    expect(matchVenueToDayRequest(facts, request([2, 8])).eligible).toBe(false);
   });
 
   it('uses month precision so a baby is not rounded into a prohibition', () => {
-    // A 7-month-old at an "admits 1 and over" venue. Rounding 7 months to 1 year would admit them.
-    const facts = { ...BASE_FACTS, minAdmissionAge: 1 };
+    const facts = { ...BASE_FACTS, venueAgeRestriction: restriction(12, null) };
     expect(matchVenueToDayRequest(facts, request([0], [7])).eligible).toBe(false);
     expect(matchVenueToDayRequest(facts, request([1], [12])).eligible).toBe(true);
   });
 });
 
 describe('what a parent is told', () => {
-  it('describes each shape of policy without naming the field', () => {
-    expect(describeAgeAdmission({ minAdmissionAge: 4, maxAdmissionAge: 11 })).toBe('Admits ages 4 to 11');
-    expect(describeAgeAdmission({ minAdmissionAge: 4, maxAdmissionAge: null })).toBe('Admits ages 4 and over');
-    expect(describeAgeAdmission({ minAdmissionAge: null, maxAdmissionAge: 11 })).toBe('Admits ages 11 and under');
-    expect(describeAgeAdmission({ minAdmissionAge: null, maxAdmissionAge: null })).toBeNull();
+  it('renders years when lossless and months when not', () => {
+    expect(describeAgeAdmission({ venueAgeRestriction: restriction(48, 144) })).toBe('Admits age 4 to age 11');
+    expect(describeAgeAdmission({ venueAgeRestriction: restriction(48, null) })).toBe('Admits age 4 and over');
+    expect(describeAgeAdmission({ venueAgeRestriction: restriction(null, 144) })).toBe('Admits age 11 and under');
+    // Months survive: "under 6 months" must not be rounded away in the wording either.
+    expect(describeAgeAdmission({ venueAgeRestriction: restriction(6, null) })).toBe('Admits 6 months and over');
+    expect(describeAgeAdmission({ venueAgeRestriction: null })).toBeNull();
   });
 
-  it('never leaks the raw field name into a reason', () => {
-    const facts = { ...BASE_FACTS, minAdmissionAge: 2 };
-    const result = matchVenueToDayRequest(facts, request([3]));
-    const text = JSON.stringify(result);
-    expect(text).not.toContain('minAdmissionAge');
+  it('never leaks a field name or a source URL into a reason', () => {
+    const facts = { ...BASE_FACTS, venueAgeRestriction: restriction(24, null) };
+    const text = JSON.stringify(matchVenueToDayRequest(facts, request([3])));
+    expect(text).not.toContain('venueAgeRestriction');
     expect(text).not.toContain('ageAdmission not confirmed');
+    expect(text).not.toContain('venue.example');
   });
 });
 
-describe('the prohibition reaches every surface that recommends a venue', () => {
-  /**
-   * The planner builds day plans through `matchVenueToDayRequest`, so the gate should propagate
-   * without the planner knowing about admission at all. Asserted rather than assumed: a second
-   * recommendation path that skipped the gate would put a family in front of a closed door.
-   */
+describe('the restriction reaches every surface that recommends a venue', () => {
   it('does not plan a venue that will turn a child away', async () => {
     const { planVenue } = await import('@/src/services/planning/planner');
     const family = {
@@ -189,13 +180,13 @@ describe('the prohibition reaches every surface that recommends a venue', () => 
     const journeys = { a: { outbound: 20, inbound: 20, source: 'estimated' as const } };
     const now = new Date('2026-09-10T08:00:00');
 
-    const open = planVenue({ ...BASE_FACTS, category: 'park' }, [family], journeys, options, now);
-    expect(open, 'a venue with no admission policy should still plan').not.toBeNull();
-
-    const prohibited = planVenue(
-      { ...BASE_FACTS, category: 'park', minAdmissionAge: 5 },
-      [family], journeys, options, now,
-    );
-    expect(prohibited, 'a venue that excludes the two-year-old must not be planned').toBeNull();
+    expect(planVenue({ ...BASE_FACTS, category: 'park' }, [family], journeys, options, now)).not.toBeNull();
+    expect(
+      planVenue(
+        { ...BASE_FACTS, category: 'park', venueAgeRestriction: restriction(60, null) },
+        [family], journeys, options, now,
+      ),
+      'a venue that excludes the two-year-old must not be planned',
+    ).toBeNull();
   });
 });

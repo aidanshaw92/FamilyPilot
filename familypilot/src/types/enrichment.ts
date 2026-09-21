@@ -115,9 +115,8 @@ export interface EnrichmentStats {
 export interface EnrichmentSavePayload {
   minRecommendedAge?: number | null;
   maxRecommendedAge?: number | null;
-  /** Ages ADMITTED, not recommended. Null is unknown and never excludes. */
-  minAdmissionAge?: number | null;
-  maxAdmissionAge?: number | null;
+  /** Door policy in months, projected from claims. Null is unknown and never excludes. */
+  venueAgeRestriction?: import('@/src/types/day-request').VenueAgeRestriction | null;
   ageNotes?: string;
   bestAges?: string;
   familyFacilities?: FamilyFacilitiesMap;

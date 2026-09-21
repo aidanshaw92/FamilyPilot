@@ -9,6 +9,14 @@ export interface DayConstraint<T> {
   value: T;
 }
 
+/** A venue-level door policy in months, half-open [min, max). Always carries its source. */
+export interface VenueAgeRestriction {
+  minMonthsInclusive: number | null;
+  maxMonthsExclusive: number | null;
+  sourceUrl: string;
+  checkedAt: string | null;
+}
+
 export type EnvironmentNeed = 'indoor' | 'outdoor' | 'either';
 export type EnergyNeed = 'high' | 'moderate' | 'low' | 'either';
 export type PushchairNeed = 'not_difficult';
@@ -113,12 +121,14 @@ export interface MatchableVenueFacts {
   minRecommendedAge: number | null;
   maxRecommendedAge: number | null;
   /**
-   * The ages a venue ADMITS, as opposed to the ages it recommends. Null means unknown, and
-   * unknown never excludes. This is the only age fact that may make a venue ineligible -- see
-   * services/matching/age-admission.ts.
+   * The venue's own door policy, in MONTHS, half-open [min, max) -- as opposed to the ages it
+   * recommends. Null means unknown, and unknown never excludes. The only age fact that may make a
+   * venue ineligible; see services/matching/age-admission.ts.
+   *
+   * Projected server-side from trusted, in-lifetime, non-conflicted venue-scope age-policy claims.
+   * An activity or accompaniment rule never reaches this field: those are caveats, not doors.
    */
-  minAdmissionAge: number | null;
-  maxAdmissionAge: number | null;
+  venueAgeRestriction: VenueAgeRestriction | null;
   toilets: TriState | 'unknown';
   babyChanging: TriState | 'unknown';
   parking: TriState | 'unknown';

@@ -10,7 +10,9 @@ const FIELD_MAP = {
   pushchairSuitability:'pushchairSuitability', environment:'environment',
 };
 function expiryDate(fieldKey, checkedAt) {
-  const days = /Facilities|accessibility|pushchair|sendInfo/.test(fieldKey) ? 30 : 90;
+  // agePolicy is short-lived deliberately: it is the only fact that removes a venue, so it must
+  // be re-read often. Mirrored by SHORT_LIVED in claim-freshness.js -- change both together.
+  const days = /Facilities|accessibility|pushchair|sendInfo|agePolicy/.test(fieldKey) ? 30 : 90;
   const date = new Date(checkedAt);
   if (!Number.isFinite(date.getTime())) return '1970-01-01';
   date.setUTCDate(date.getUTCDate()+days);
