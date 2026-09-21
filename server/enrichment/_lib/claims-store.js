@@ -3,7 +3,7 @@ const path = require('path');
 
 const { getSupabaseAdmin } = require('./supabase-admin');
 const { collectFieldEvidence } = require('./ai-draft-mapper');
-const { findEvidenceRecordBySourceUrl } = require('./evidence-store');
+const { findEvidenceRecordBySourceUrl, findEvidenceRecordForSource } = require('./evidence-store');
 const {
   buildBestAges,
   facilitiesFromTriState,
@@ -14,9 +14,13 @@ const {
 const { expiryDate } = require('./trusted-evidence');
 const {
   isAgePolicyFieldKey,
+  agePolicyFieldKey,
+  normaliseAgeRules,
   projectAgePolicy,
+  GATING_SOURCE_TYPES,
   PROJECTED_AGE_POLICY,
 } = require('./age-policy');
+const { humanApprover } = require('./approval-actors');
 
 
 const FILE_CLAIMS_DIR = '.data';
@@ -347,6 +351,137 @@ async function replaceActiveClaim(claim) {
   return rowToClaim(stored);
 }
 
+/**
+ * The ONLY writer of an age-policy claim.
+ *
+ * Every field the hard gate later reads is taken from the stored `venue_source_evidence` ROW,
+ * never from anything the caller passes alongside it. A foreign key proves only that SOME
+ * evidence row exists: it does not prove that row is for this venue, this URL, or the source type
+ * the caller stamped on the claim. So a caller could attach a genuine `council_page` row while
+ * labelling the claim `official_website`, and the projector -- which reads the claim's own copy
+ * of the provenance and deliberately performs no database query -- would treat second-hand
+ * summary as first-party evidence and remove venues on it.
+ *
+ * Deriving instead of trusting makes that mismatch unrepresentable rather than merely detectable.
+ * The projector stays pure; this is where the two are tied together.
+ *
+ * `createApprovedClaim` refuses age-policy keys for the same reason: there must be no second way
+ * in that skips this.
+ */
+/**
+ * Turn one stored evidence row into the provenance an age-policy claim may carry.
+ *
+ * Pure and exported so the refusals below can be tested directly rather than only through a store
+ * that is already scoped correctly -- the venue check in particular is a second line of defence,
+ * and a guard nothing can reach is a guard nothing can prove.
+ *
+ * Every value returned comes from the ROW. Nothing the caller supplied is carried through except
+ * the excerpt, and that has to appear in the page before it counts for anything.
+ */
+function agePolicyProvenanceFrom(record, familypilotPlaceId, evidenceExcerpt) {
+  if (!record) {
+    throw Object.assign(new Error(`No evidence record for this venue and source`), {
+      code: 'AGE_POLICY_NO_EVIDENCE',
+    });
+  }
+  if (record.familypilotPlaceId !== familypilotPlaceId) {
+    throw Object.assign(new Error('Evidence record belongs to a different venue'), {
+      code: 'AGE_POLICY_EVIDENCE_VENUE_MISMATCH',
+    });
+  }
+  if (!['ok', 'cached', 'fetched_truncated'].includes(record.fetchStatus)) {
+    throw Object.assign(new Error(`Evidence record for ${record.sourceUrl} did not fetch cleanly`), {
+      code: 'AGE_POLICY_EVIDENCE_NOT_FETCHED',
+    });
+  }
+
+  const fieldKey = agePolicyFieldKey(record.sourceUrl);
+  if (!fieldKey) {
+    throw Object.assign(new Error(`Unusable source URL: ${record.sourceUrl}`), {
+      code: 'AGE_POLICY_BAD_SOURCE_URL',
+    });
+  }
+
+  // The excerpt must actually appear in the text stored for this page. Without it, "high
+  // confidence" would be the caller's assertion about its own input; with it, the claim is
+  // pinned to words the fetcher really saw.
+  const excerpt = String(evidenceExcerpt ?? '').trim();
+  const quoted = excerpt.length > 0 && String(record.extractedText ?? '').includes(excerpt);
+  if (!quoted && GATING_SOURCE_TYPES.has(record.sourceType)) {
+    throw Object.assign(new Error('Age policy evidence excerpt is not present in the fetched page'), {
+      code: 'AGE_POLICY_EXCERPT_NOT_FOUND',
+    });
+  }
+
+  return {
+    fieldKey,
+    sourceUrl: record.sourceUrl,
+    sourceType: record.sourceType,
+    sourceEvidenceId: record.id,
+    evidenceExcerpt: excerpt || null,
+    confidence: quoted ? 'high' : 'medium',
+    checkedAt: String(record.retrievedAt).slice(0, 10),
+    validUntil: expiryDate(fieldKey, record.retrievedAt),
+    retrievedAt: record.retrievedAt,
+  };
+}
+
+/**
+ * The ONLY writer of an age-policy claim.
+ *
+ * Every field the hard gate later reads is taken from the stored `venue_source_evidence` ROW,
+ * never from anything the caller passes alongside it. A foreign key proves only that SOME
+ * evidence row exists: it does not prove that row is for this venue, this URL, or the source type
+ * the caller stamped on the claim. So a caller could attach a genuine `council_page` row while
+ * labelling the claim `official_website`, and the projector -- which reads the claim's own copy
+ * of the provenance and deliberately performs no database query -- would treat second-hand
+ * summary as first-party evidence and remove venues on it.
+ *
+ * Deriving instead of trusting makes that mismatch unrepresentable rather than merely detectable.
+ * The projector stays pure; this is where the two are tied together.
+ *
+ * `createApprovedClaim` refuses age-policy keys for the same reason: there must be no second way
+ * in that skips this.
+ */
+async function createAgePolicyClaim({ familypilotPlaceId, sourceUrl, rules, reviewedBy, evidenceExcerpt }) {
+  const approvedBy = humanApprover(reviewedBy);
+  if (!approvedBy) {
+    throw Object.assign(new Error('An age policy needs a human approver'), { code: 'AGE_POLICY_NO_HUMAN' });
+  }
+
+  const normalised = normaliseAgeRules({ rules });
+  if (normalised.length === 0) {
+    throw Object.assign(new Error('No readable age rules to record'), { code: 'AGE_POLICY_NO_RULES' });
+  }
+
+  // Scoped by venue inside the store, so a row belonging to another place cannot be returned --
+  // and a URL this venue has never been fetched at has no row at all.
+  const record = await findEvidenceRecordForSource(familypilotPlaceId, sourceUrl);
+  const provenance = agePolicyProvenanceFrom(record, familypilotPlaceId, evidenceExcerpt);
+
+  return replaceActiveClaim({
+    familypilotPlaceId,
+    fieldKey: provenance.fieldKey,
+    valueJson: {
+      rules: normalised,
+      sourceUrl: provenance.sourceUrl,
+      retrievedAt: provenance.retrievedAt,
+    },
+    confidence: provenance.confidence,
+    sourceUrl: provenance.sourceUrl,
+    evidenceExcerpt: provenance.evidenceExcerpt,
+    sourceType: provenance.sourceType,
+    sourceEvidenceId: provenance.sourceEvidenceId,
+    checkedAt: provenance.checkedAt,
+    validUntil: provenance.validUntil,
+    approvedAt: new Date().toISOString(),
+    approvedBy,
+    approvedFromDraftId: null,
+    status: 'active',
+    supersedesClaimId: null,
+  });
+}
+
 async function createApprovedClaim({
   familypilotPlaceId,
   fieldKey,
@@ -356,6 +491,13 @@ async function createApprovedClaim({
   draftId,
   checkedAt,
 }) {
+  if (isAgePolicyFieldKey(fieldKey)) {
+    // This path takes its provenance from caller-supplied `fieldEvidence`, which is exactly what
+    // a hard gate must not rest on. There is one writer for age policy and this is not it.
+    throw Object.assign(new Error('Use createAgePolicyClaim for an age-policy claim'), {
+      code: 'AGE_POLICY_WRONG_WRITER',
+    });
+  }
   const sourceEvidenceId = await resolveSourceEvidenceId(familypilotPlaceId, fieldEvidence, fieldKey);
   const claim = buildClaimRecord({
     familypilotPlaceId,
@@ -748,6 +890,8 @@ module.exports = {
   disputeClaim,
   expireClaim,
   createApprovedClaim,
+  createAgePolicyClaim,
+  agePolicyProvenanceFrom,
   isClaimActive,
   metadataRowFromPayload,
   PROJECTED_AGE_POLICY,

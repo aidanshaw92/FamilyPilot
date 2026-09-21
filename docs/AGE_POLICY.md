@@ -91,6 +91,24 @@ A rule may exclude only if its claim satisfies all of:
 
 Anything short of that projects as a caveat, never a door.
 
+### Provenance is derived, not accepted
+
+`createAgePolicyClaim` is the **only** writer of an age-policy claim, and every field the gate
+later reads — venue, source URL, source type, retrieved time, evidence id — is taken from the
+stored `venue_source_evidence` row. Nothing the caller passes alongside it is trusted.
+
+A foreign key proves only that *some* evidence row exists. It does not prove the row is for this
+venue, this URL, or the source type stamped on the claim — so a caller could attach a genuine
+`council_page` row while labelling the claim `official_website`, and the projector, which reads
+the claim's own copy of the provenance and deliberately performs no database query, would treat a
+second-hand summary as first-party evidence.
+
+Deriving instead of trusting makes that mismatch unrepresentable rather than merely detectable,
+and keeps the projector pure. The writer also refuses a row that did not fetch cleanly, and
+requires the claim's evidence excerpt to appear in the text actually stored for that page — so
+`confidence: 'high'` is a property of the fetch rather than the caller's opinion of its own input.
+`createApprovedClaim` rejects `agePolicy.*` keys outright, so there is no second way in.
+
 ### Source types
 
 There is one source taxonomy, `server/enrichment/_lib/source-types.js`, mirroring the CHECK on
@@ -161,9 +179,20 @@ excluding — the same ruling `normaliseAgeRules` already applies to a single in
 source URL — and **only** the URL, never the value or the evidence text, so re-reading a page
 supersedes that page's claim while other sources keep theirs.
 
-Canonicalisation lowercases the scheme and host (case-insensitive per RFC 3986), drops the default
-port and the fragment, trims one trailing slash, and leaves the **path and query exactly as they
-are**: `/Policy` and `/policy` may be different documents.
+Canonicalisation is deliberately conservative, because this identity decides what **supersedes**
+what. Two sources that should have been one stay two, disagree, and fail open — a venue nobody
+excluded. One identity that should have been two silently replaces a source's policy and leaves
+the survivor standing as an unopposed door. Only the second hides venues from families.
+
+So it normalises the **case** of the scheme and host (both case-insensitive per RFC 3986), the
+default port for whichever scheme it is, and the fragment. It does **not** normalise:
+
+- `http` vs `https` — they can serve different content. Deciding that a site moved to https is a
+  job for a producer that followed the redirect, not for a function looking at a string.
+- the case of the path or query — `/Policy` may be a different document from `/policy`.
+- a trailing slash — nothing in this codebase promises `/x` and `/x/` are the same fetched
+  resource (`findEvidenceRecordBySourceUrl` matches `source_url` exactly), so they are two
+  evidence rows and must be two claim identities.
 
 The digest must be collision-resistant, not merely short. Active-claim uniqueness is per
 `field_key` and `replaceActiveClaim` supersedes that key's row — so a collision would not fail open,
@@ -177,12 +206,24 @@ and the disagreement flag all survive through `getConsumerMetadata()` to the pla
 is age 5 and over" is worth knowing before driving there, and it is not a reason to hide the venue
 from a family with a three-year-old who will enjoy the rest of it.
 
+## What this model cannot say (open for B3)
+
+There is no way to record an explicit **positive** statement — "all ages welcome", "no age
+restrictions". An empty rule set means *nothing was found*, which is not the same as *a source
+said there is no restriction*, and the difference matters once publication is automatic: absence
+should stay quiet, while a positive statement could legitimately corroborate.
+
+B2 is deliberately not expanded for this. **B3's zero-write audit must scan for and report
+positive admission statements**, so we know from real pages whether a first-class `all_ages`
+assertion is needed before B4 publishes anything.
+
 ## Where the rules live
 
 | Concern | File |
 |---|---|
 | Projection, provenance, conflict | `server/enrichment/_lib/age-policy.js` |
 | Human-approval rule and actor registry | `server/enrichment/_lib/approval-actors.js` |
+| The only age-policy writer | `createAgePolicyClaim` in `server/enrichment/_lib/claims-store.js` |
 | Source taxonomy | `server/enrichment/_lib/source-types.js` |
 | Lifetime | `server/enrichment/_lib/trusted-evidence.js`, `claim-freshness.js` |
 | Matching and parent-facing wording | `familypilot/src/services/matching/age-admission.ts` |

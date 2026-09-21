@@ -89,8 +89,8 @@ describe('claim identity is the source, never the value', () => {
   });
 
   it('normalises only the parts of a URL that are case-INSENSITIVE', () => {
-    // Scheme and host are case-insensitive; a trailing slash names the same resource.
-    expect(agePolicyFieldKey('HTTPS://Venue.EXAMPLE/visit/')).toBe(
+    // Scheme and host are case-insensitive. Nothing else about the URL is touched.
+    expect(agePolicyFieldKey('HTTPS://Venue.EXAMPLE/visit')).toBe(
       agePolicyFieldKey('https://venue.example/visit'),
     );
   });
@@ -109,13 +109,26 @@ describe('claim identity is the source, never the value', () => {
   it('drops the fragment and a default port, which do not name a different resource', () => {
     expect(canonicalSourceUrl('https://venue.example:443/visit#ages')).toBe('https://venue.example/visit');
     expect(canonicalSourceUrl('https://venue.example/visit?tab=ages')).toBe('https://venue.example/visit?tab=ages');
+    expect(canonicalSourceUrl('https://venue.example:8443/visit')).toBe('https://venue.example:8443/visit');
   });
 
-  it('folds http and https into one source, so a site moving to https supersedes its own claim', () => {
-    // Forking here would leave the old policy active as a phantom second source, disagreeing
-    // with the page that replaced it -- the feature would stop working rather than misfire.
-    expect(agePolicyFieldKey('http://venue.example/visit')).toBe(agePolicyFieldKey('https://venue.example/visit'));
-    expect(canonicalSourceUrl('http://venue.example:80/visit')).toBe('https://venue.example/visit');
+  it('keeps http and https apart, because they can serve different content', () => {
+    // Folding them would mean the second claim SUPERSEDES the first rather than coexisting with
+    // it, leaving one source's policy standing unopposed. Inferring that a site moved to https
+    // belongs in a producer that followed the redirect, not in a function looking at a string.
+    expect(agePolicyFieldKey('http://venue.example/visit')).not.toBe(
+      agePolicyFieldKey('https://venue.example/visit'),
+    );
+    expect(canonicalSourceUrl('http://venue.example:80/visit')).toBe('http://venue.example/visit');
+    expect(canonicalSourceUrl('https://venue.example:443/visit')).toBe('https://venue.example/visit');
+  });
+
+  it('keeps a trailing slash, because nothing promises the two URLs are one fetched resource', () => {
+    // `findEvidenceRecordBySourceUrl` matches `source_url` exactly, so /visit and /visit/ are two
+    // evidence rows today. Two identities that fail open beat one that silently replaces a source.
+    expect(agePolicyFieldKey('https://venue.example/visit/')).not.toBe(
+      agePolicyFieldKey('https://venue.example/visit'),
+    );
   });
 
   it('gives different sources different keys, so both can be active at once', () => {
@@ -516,13 +529,9 @@ describe('the real editor-save path', () => {
     vi.useRealTimers();
   });
 
-  /** Seed a real evidence row and a real approved age-policy claim through the normal writers. */
-  async function seedApprovedPolicy(rules: unknown[], reviewedBy: string = EDITOR) {
-    const { createApprovedClaim } = await import('../../../server/enrichment/_lib/claims-store.js');
+  /** Store one evidence row exactly as the fetcher would. */
+  async function seedEvidence(overrides: Record<string, unknown> = {}) {
     const { saveEvidenceRecord } = await import('../../../server/enrichment/_lib/evidence-store.js');
-
-    // The evidence row is what `createApprovedClaim` resolves `sourceEvidenceId` from, and without
-    // it the claim cannot gate. That is the provenance rule working, not a setup detail.
     await saveEvidenceRecord({
       familypilotPlaceId: id,
       sourceUrl,
@@ -531,27 +540,40 @@ describe('the real editor-save path', () => {
       extractedText: 'Under 4s are not admitted to the museum.',
       fetchStatus: 'ok',
       httpStatus: 200,
-    });
-
-    const fieldKey = agePolicyFieldKey(sourceUrl);
-    await createApprovedClaim({
-      familypilotPlaceId: id,
-      fieldKey,
-      value: { rules },
-      fieldEvidence: {
-        [fieldKey]: {
-          sourceUrl,
-          sourceType: 'visitor_info',
-          confidence: 'high',
-          evidence: 'Under 4s are not admitted to the museum.',
-          retrievedAt: `${TODAY}T09:00:00Z`,
-        },
-      },
-      reviewedBy,
-      draftId: null,
-      checkedAt: TODAY,
+      ...overrides,
     });
   }
+
+  /** The writer is plain JS, so its return type is inferred as nullable. */
+  type WrittenClaim = {
+    fieldKey: string;
+    sourceType: string;
+    sourceEvidenceId: string | null;
+    checkedAt: string;
+    validUntil: string;
+  };
+
+  /** Write an age-policy claim through its only writer. */
+  async function seedApprovedPolicy(
+    rules: unknown[],
+    options: Record<string, unknown> = {},
+  ): Promise<WrittenClaim> {
+    const { createAgePolicyClaim } = await import('../../../server/enrichment/_lib/claims-store.js');
+    const written = await createAgePolicyClaim({
+      familypilotPlaceId: id,
+      sourceUrl,
+      rules,
+      reviewedBy: 'editor@familypilot',
+      evidenceExcerpt: 'Under 4s are not admitted to the museum.',
+      ...options,
+    });
+    expect(written, 'the writer must return the claim it stored').toBeTruthy();
+    return written as unknown as WrittenClaim;
+  }
+
+  const VENUE_DOOR = [
+    { scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null, statedAs: 'Under 4s not admitted' },
+  ];
 
   it('cannot persist a venue-excluding value through a normal save', async () => {
     /**
@@ -623,9 +645,8 @@ describe('the real editor-save path', () => {
     );
     const read = async () => (await getMetadata(id)) as unknown as AgeMetadata;
 
-    await seedApprovedPolicy([
-      { scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null, statedAs: 'Under 4s not admitted' },
-    ]);
+    await seedEvidence();
+    await seedApprovedPolicy(VENUE_DOOR);
 
     // A later, unrelated editorial save must not wipe the policy during rebuild.
     await saveMetadata(id, { checkedBy: 'editor@familypilot', minRecommendedAge: 5 }, { syncClaims: true });
@@ -635,21 +656,125 @@ describe('the real editor-save path', () => {
     expect(metadata.venueAgePolicy?.restrictions[0].minMonthsInclusive).toBe(48);
   });
 
-  it('never gates on a claim the auto-approver created, through the real path', async () => {
-    const { saveMetadata, getMetadata } = await import(
-      '../../../server/enrichment/_lib/enrichment-store.js'
+  it('refuses to write an age policy for an automated approver at all', async () => {
+    await seedEvidence();
+    await expect(seedApprovedPolicy(VENUE_DOOR, { reviewedBy: SOURCE_EVIDENCE_AUTO_APPROVER })).rejects.toThrow(
+      /human approver/i,
     );
-    const read = async () => (await getMetadata(id)) as unknown as AgeMetadata;
+  });
 
-    await seedApprovedPolicy(
-      [{ scope: 'venue', effect: 'excludes', minMonthsInclusive: 48, maxMonthsExclusive: null }],
-      SOURCE_EVIDENCE_AUTO_APPROVER,
+  it('refuses an age-policy claim through the generic claim writer', async () => {
+    // There must be no second way in. The generic path takes its provenance from caller-supplied
+    // `fieldEvidence`, which is exactly what a hard gate must not rest on.
+    const { createApprovedClaim } = await import('../../../server/enrichment/_lib/claims-store.js');
+    await seedEvidence();
+    await expect(
+      createApprovedClaim({
+        familypilotPlaceId: id,
+        fieldKey: agePolicyFieldKey(sourceUrl),
+        value: { rules: VENUE_DOOR },
+        fieldEvidence: {
+          [agePolicyFieldKey(sourceUrl)]: {
+            sourceUrl,
+            sourceType: 'official_website',
+            confidence: 'high',
+            evidence: 'Under 4s are not admitted to the museum.',
+            retrievedAt: `${TODAY}T09:00:00Z`,
+          },
+        },
+        reviewedBy: EDITOR,
+        draftId: null,
+        checkedAt: TODAY,
+      }),
+    ).rejects.toThrow(/createAgePolicyClaim/);
+  });
+
+  it('takes the source type from the stored evidence row, not from the caller', async () => {
+    /**
+     * The spoof this closes: a real `council_page` evidence row, a claim stamped
+     * `official_website`. The foreign key is satisfied and the projector -- which reads the
+     * claim's own copy of the provenance and performs no database query -- would treat a
+     * second-hand summary as first-party evidence and remove the venue.
+     */
+    const { saveMetadata } = await import('../../../server/enrichment/_lib/enrichment-store.js');
+    const { getConsumerMetadata } = await import(
+      '../../../server/enrichment/_lib/consumer-projection.js'
     );
+
+    await seedEvidence({ sourceType: 'council_page' });
+    const claim = await seedApprovedPolicy(VENUE_DOOR, { sourceType: 'official_website' });
+    expect(claim.sourceType, 'the row decides, not the caller').toBe('council_page');
+
     await saveMetadata(id, { checkedBy: 'editor@familypilot', minRecommendedAge: 5 }, { syncClaims: true });
 
-    const metadata = await read();
-    expect(metadata.venueAgePolicy?.restrictions).toHaveLength(0);
-    expect(metadata.venueAgePolicy?.caveats).toHaveLength(1);
+    const consumer = (await getConsumerMetadata(id)) as unknown as AgeMetadata;
+    expect(consumer.venueAgePolicy?.restrictions, 'a council page may not hold a door').toHaveLength(0);
+    expect(consumer.venueAgePolicy?.caveats).toHaveLength(1);
+  });
+
+  it('cannot back this venue\'s door with another venue\'s evidence row', async () => {
+    const { saveEvidenceRecord } = await import('../../../server/enrichment/_lib/evidence-store.js');
+    await saveEvidenceRecord({
+      familypilotPlaceId: 'fp-some-other-venue',
+      sourceUrl,
+      sourceType: 'official_website',
+      retrievedAt: `${TODAY}T09:00:00Z`,
+      extractedText: 'Under 4s are not admitted to the museum.',
+      fetchStatus: 'ok',
+      httpStatus: 200,
+    });
+
+    // The row exists and its URL matches; it just belongs to somewhere else.
+    await expect(seedApprovedPolicy(VENUE_DOOR)).rejects.toThrow(/No evidence record/);
+  });
+
+  it('refuses a wrong-venue row even if the store hands one back', async () => {
+    /**
+     * The store query is already scoped by venue, and the test above proves it. This proves the
+     * second line of defence, asserted against the pure validator so it can be reached at all:
+     * if the store ever returned a row for somewhere else -- a mis-scoped query, the Supabase
+     * branch this suite cannot exercise, a future refactor -- the writer still refuses. A guard
+     * nothing can reach is a guard nothing can prove.
+     */
+    const { agePolicyProvenanceFrom } = await import('../../../server/enrichment/_lib/claims-store.js');
+    const elsewhere = {
+      id: 'evidence-elsewhere',
+      familypilotPlaceId: 'fp-some-other-venue',
+      sourceUrl,
+      sourceType: 'official_website',
+      retrievedAt: `${TODAY}T09:00:00Z`,
+      extractedText: 'Under 4s are not admitted to the museum.',
+      fetchStatus: 'ok',
+    };
+
+    expect(() => agePolicyProvenanceFrom(elsewhere, id, 'Under 4s are not admitted to the museum.')).toThrow(
+      /different venue/,
+    );
+    // ...and the same row IS accepted for the venue it actually belongs to, so the refusal above
+    // is about the venue and not about something else being wrong with the record.
+    expect(
+      agePolicyProvenanceFrom(elsewhere, 'fp-some-other-venue', 'Under 4s are not admitted to the museum.')
+        .sourceType,
+    ).toBe('official_website');
+  });
+
+  it('refuses a door whose excerpt is not in the page that was fetched', async () => {
+    await seedEvidence({ extractedText: 'The cafe is open until four.' });
+    await expect(seedApprovedPolicy(VENUE_DOOR)).rejects.toThrow(/not present in the fetched page/);
+  });
+
+  it('refuses a source the fetcher never actually retrieved', async () => {
+    await seedEvidence({ fetchStatus: 'timeout' });
+    await expect(seedApprovedPolicy(VENUE_DOOR)).rejects.toThrow(/did not fetch cleanly/);
+  });
+
+  it('derives the lifetime and checked date from the row, not from today', async () => {
+    await seedEvidence({ retrievedAt: '2026-09-10T09:00:00Z' });
+    const claim = await seedApprovedPolicy(VENUE_DOOR);
+    expect(claim.checkedAt).toBe('2026-09-10');
+    expect(claim.validUntil, 'the 30-day age-policy lifetime, counted from the fetch').toBe('2026-10-10');
+    expect(claim.sourceEvidenceId).toBeTruthy();
+    expect(claim.fieldKey).toBe(agePolicyFieldKey(sourceUrl));
   });
 
   it('carries caveats all the way to the consumer read model', async () => {
@@ -664,6 +789,7 @@ describe('the real editor-save path', () => {
       '../../../server/enrichment/_lib/consumer-projection.js'
     );
 
+    await seedEvidence();
     await seedApprovedPolicy([
       { scope: 'activity', effect: 'caveat', minMonthsInclusive: 60, activity: 'soft play', statedAs: 'Soft play is 5+' },
       { scope: 'accompaniment', effect: 'caveat', maxMonthsExclusive: 24, accompaniment: { adultRequired: true } },

@@ -76,17 +76,26 @@ function isAgePolicyFieldKey(fieldKey) {
 /**
  * One source URL, in the form two references to the same page agree on.
  *
- * Only the parts of a URL that are defined to be case-insensitive are lowercased: the scheme and
- * the host. A path and a query are case-SENSITIVE per RFC 3986, and `/Policy` may be a different
- * document from `/policy`; an earlier revision lowercased the whole string, which silently merged
- * two sources into one claim identity. The default port and the fragment are dropped because
- * neither names a different resource.
+ * Deliberately conservative, because this identity decides what SUPERSEDES what. Two sources
+ * that should have been one stay two, disagree, and fail open -- a venue nobody excluded. One
+ * identity that should have been two silently replaces a source's policy and leaves the survivor
+ * standing as an unopposed door. Only the second failure hides venues from families, so every
+ * rule here errs towards keeping URLs apart.
  *
- * `http` and `https` on the same host and path fold to one identity. They are the same document
- * in practice, and a site moving to https mid-life would otherwise FORK its claim: the superseded
- * policy would stay active as a phantom second source and disagree with the page that replaced
- * it. That fails open rather than dangerously, but a feature that quietly stops working is its
- * own kind of wrong.
+ * Normalised: the scheme's and host's CASE (both defined case-insensitive), the default port for
+ * whichever scheme this is, and the fragment, which never names a different resource.
+ *
+ * NOT normalised, each for a reason:
+ *
+ * - **`http` vs `https` stay distinct.** They can serve different content, and an earlier
+ *   revision folded them on the argument that a site moving to https should supersede its own
+ *   claim. That inference belongs in a producer that has actually followed the redirect, not in
+ *   an identity function that is only looking at a string.
+ * - **Path and query keep their case**, which RFC 3986 makes significant: `/Policy` may be a
+ *   different document from `/policy`.
+ * - **A trailing slash is kept.** Nothing in this codebase promises `/x` and `/x/` are the same
+ *   fetched resource -- `findEvidenceRecordBySourceUrl` matches `source_url` EXACTLY -- so they
+ *   are two evidence rows today and must be two claim identities.
  */
 function canonicalSourceUrl(sourceUrl) {
   const raw = String(sourceUrl ?? '').trim();
@@ -107,10 +116,7 @@ function canonicalSourceUrl(sourceUrl) {
       ? ''
       : url.port;
 
-  // A trailing slash on a directory path is the same resource; a case difference is not.
-  const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '') : '';
-
-  return `https://${url.hostname.toLowerCase()}${port ? `:${port}` : ''}${path}${url.search}`;
+  return `${url.protocol}//${url.hostname.toLowerCase()}${port ? `:${port}` : ''}${url.pathname}${url.search}`;
 }
 
 /**
