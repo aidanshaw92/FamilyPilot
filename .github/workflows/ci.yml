@@ -45,3 +45,58 @@ jobs:
       - name: Test
         working-directory: familypilot
         run: npm test -- --run
+
+  privilege-model:
+    # The privilege work is the one part of this repo whose correctness lives in PostgreSQL rather
+    # than in TypeScript, and vitest has no database -- it can only read the migration's text. So
+    # this job runs the real thing: it rebuilds production's pre-migration privilege state in a
+    # throwaway PostgreSQL 17 (production's major version, where MAINTAIN exists), applies the
+    # migration, and asserts the resulting ACLs, including what a newly created table, sequence and
+    # function inherit. Without it, "CI is green" would say nothing at all about who can TRUNCATE a
+    # table.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      PGPASSWORD: postgres
+      PGHOST: localhost
+      PGUSER: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Confirm the server major version matches production
+        run: |
+          version=$(psql -Atc "show server_version_num")
+          echo "server_version_num=$version"
+          test "$version" -ge 170000 || { echo "expected PostgreSQL 17+, got $version"; exit 1; }
+
+      - name: Rebuild production's pre-migration privilege state
+        run: psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/fixture_production_acl_baseline.sql
+
+      - name: Assert the fixture really does reproduce the broad legacy ACL
+        # Guards against the fixture silently degrading into an empty database, which would make
+        # the migration trivially "pass" without ever subtracting anything.
+        run: psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/assert_fixture_baseline.sql
+
+      - name: Apply the migration
+        run: psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20260920210000_least_privilege_client_roles.sql
+
+      - name: Assert the resulting privilege model
+        run: psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/least_privilege_acl_check.sql
+
+      - name: Apply the migration a second time and re-assert
+        # Deploy safety: re-running a migration must not change the outcome.
+        run: |
+          psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20260920210000_least_privilege_client_roles.sql
+          psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/least_privilege_acl_check.sql

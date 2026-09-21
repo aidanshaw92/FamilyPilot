@@ -1,8 +1,11 @@
 -- Assert the privilege state that 20260920210000_least_privilege_client_roles.sql establishes.
 --
--- Runnable against any database that carries the migration -- the disposable local fixture before
--- the PR, and production after it is applied. It only reads the catalogue and creates three
--- throwaway `zz_probe*` objects, which it drops again; it touches no application row.
+-- Runnable against any database that carries the migration -- the throwaway database CI builds
+-- from checks/fixture_production_acl_baseline.sql, and production after it is applied. It reads
+-- the catalogue and creates four throwaway `zz_probe*` objects: a table, a sequence and a function
+-- in `public`, and one function in `extensions` to confirm that schema kept its platform baseline.
+-- All four are dropped again, every one is created inside a DO block so a failed assertion rolls
+-- them back, and no application row is read or written.
 --
 --   psql -v ON_ERROR_STOP=1 -d <db> -f least_privilege_acl_check.sql
 --
@@ -86,11 +89,36 @@ begin
 
   -- No table may carry a grant to PUBLIC, which would reach every role including anon.
   if exists (
-    select 1 from pg_class c, aclexplode(c.relacl) a
+    select 1 from pg_class c, aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) a
     where c.relnamespace = 'public'::regnamespace and c.relkind = 'r' and a.grantee = 0
   ) then
     failures := failures || 'a public table carries a grant to PUBLIC'::text;
   end if;
+
+  -- The matrix above is a fixed list. Any OTHER relation in `public` -- a table added later, a
+  -- view, or `schema_migration_log`, which scripts/apply-supabase-migrations.mjs creates on its
+  -- first run -- must also grant the client roles nothing. Without this the check would simply
+  -- not look at it.
+  for expected in
+    select c.relname as table_name, r.rolname as grantee
+    from pg_class c
+    cross join (select unnest(array['anon','authenticated']) as rolname) r
+    where c.relnamespace = 'public'::regnamespace
+      and c.relkind in ('r','p','v','m','f')
+      and c.relname <> all (array['canonical_venues','place_records','venue_claims',
+                                  'venue_family_metadata','venue_place_links',
+                                  'venue_enrichment_drafts','venue_source_evidence',
+                                  'planning_workspaces','planning_connections',
+                                  'venue_enrichment_jobs','venue_visit_reports','plan_invites'])
+  loop
+    if has_table_privilege(expected.grantee, format('public.%I', expected.table_name), 'SELECT')
+       or has_table_privilege(expected.grantee, format('public.%I', expected.table_name), 'INSERT')
+       or has_table_privilege(expected.grantee, format('public.%I', expected.table_name), 'UPDATE')
+       or has_table_privilege(expected.grantee, format('public.%I', expected.table_name), 'DELETE') then
+      failures := failures || format('%s / %s: relation is not in the reviewed matrix but grants a client privilege',
+                                     expected.table_name, expected.grantee);
+    end if;
+  end loop;
 
   if array_length(failures, 1) is not null then
     raise exception E'TABLE ACL CHECK FAILED:\n%', array_to_string(failures, E'\n');
@@ -132,11 +160,14 @@ begin
   end loop;
 
   -- Neither may carry a PUBLIC grant, which would reach every role including anon.
-  if exists (select 1 from pg_class c, aclexplode(c.relacl) a
+  -- coalesce() matters: a NULL acl is not "no privileges", it is the BUILT-IN default, and
+  -- aclexplode(NULL) returns no rows. Reading relacl/proacl directly would report "PUBLIC holds
+  -- nothing" in exactly the case where PUBLIC holds the built-in grant.
+  if exists (select 1 from pg_class c, aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) a
              where c.oid = 'public.zz_probe_table'::regclass and a.grantee = 0) then
     failures := failures || 'new table: PUBLIC holds a privilege'::text;
   end if;
-  if exists (select 1 from pg_class c, aclexplode(c.relacl) a
+  if exists (select 1 from pg_class c, aclexplode(coalesce(c.relacl, acldefault('S', c.relowner))) a
              where c.oid = 'public.zz_probe_sequence'::regclass and a.grantee = 0) then
     failures := failures || 'new sequence: PUBLIC holds a privilege'::text;
   end if;
@@ -163,7 +194,7 @@ begin
       failures := failures || format('new function: %s has EXECUTE before any per-function revoke -- is the PUBLIC revoke schema-scoped?', r)::text;
     end if;
   end loop;
-  if exists (select 1 from pg_proc pr, aclexplode(pr.proacl) a
+  if exists (select 1 from pg_proc pr, aclexplode(coalesce(pr.proacl, acldefault('f', pr.proowner))) a
              where pr.oid = 'public.zz_probe_function()'::regprocedure and a.grantee = 0) then
     failures := failures || 'new function: PUBLIC holds EXECUTE'::text;
   end if;
@@ -183,10 +214,26 @@ begin
     failures := failures || 'function: the per-function revoke also removed service_role EXECUTE'::text;
   end if;
 
+  -- The global PUBLIC revoke reaches EVERY schema, including ones this project does not own.
+  -- `extensions` holds 49 postgres-owned functions that rely on PUBLIC EXECUTE, so the migration
+  -- gives the default straight back there. A function created in `extensions` must therefore come
+  -- out exactly as it did before any of this ran: proacl NULL, the built-in default.
+  if (select to_regnamespace('extensions')) is not null then
+    execute 'create function extensions.zz_probe_ext_function() returns int language sql immutable as ''select 1''';
+    if (select proacl is not null from pg_proc where oid = 'extensions.zz_probe_ext_function()'::regprocedure) then
+      failures := failures || format('extensions: a new function no longer matches the platform baseline (proacl=%s)',
+                                     (select proacl::text from pg_proc where oid = 'extensions.zz_probe_ext_function()'::regprocedure))::text;
+    end if;
+    if not has_function_privilege('anon', 'extensions.zz_probe_ext_function()', 'EXECUTE') then
+      failures := failures || 'extensions: a new function lost PUBLIC EXECUTE -- an extension installed as postgres would break'::text;
+    end if;
+    execute 'drop function extensions.zz_probe_ext_function()';
+  end if;
+
   if array_length(failures, 1) is not null then
     raise exception E'NEW-OBJECT DEFAULT CHECK FAILED:\n%', array_to_string(failures, E'\n');
   end if;
-  raise notice 'PASS 2/3  a new table, sequence AND function grant anon/authenticated/PUBLIC nothing; service_role intact';
+  raise notice 'PASS 2/3  a new table, sequence AND function in public grant anon/authenticated/PUBLIC nothing; service_role intact; extensions keeps its platform baseline';
 
   -- 3. An explicit grant still works, and grants exactly what it names.
   execute 'grant select on table public.zz_probe_table to anon, authenticated';
@@ -213,8 +260,8 @@ end $$;
 
 do $$
 begin
-  if exists (select 1 from pg_class where relnamespace = 'public'::regnamespace and relname like 'zz\_probe%')
-     or exists (select 1 from pg_proc where pronamespace = 'public'::regnamespace and proname like 'zz\_probe%') then
+  if exists (select 1 from pg_class where relname like 'zz\_probe%')
+     or exists (select 1 from pg_proc where proname like 'zz\_probe%') then
     raise exception 'probe objects were not fully dropped';
   end if;
   raise notice 'CLEANUP    no zz_probe* object remains';

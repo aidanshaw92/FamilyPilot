@@ -1,6 +1,6 @@
 # Schema migration audit
 
-Generated: 2026-09-20T20:21:16.063Z
+Generated: 2026-09-21T10:55:28.530Z
 
 ## Committed migrations
 

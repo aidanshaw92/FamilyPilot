@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T20:21:16.063Z",
+  "generatedAt": "2026-09-21T10:55:28.530Z",
   "migrationFiles": [
     "001_initial_schema.sql",
     "002_place_records_and_metadata.sql",

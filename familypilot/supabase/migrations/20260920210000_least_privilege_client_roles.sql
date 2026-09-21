@@ -67,10 +67,11 @@ grant select, insert, update, delete
 -- this schema.
 --
 -- Deliberately NOT touching `ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin`. That is Supabase's
--- internal administrative superuser; `postgres` is not a member of it and could not execute the
--- statement, and no application object is created as that role, so altering it would be both
--- unnecessary and outside what this project owns. Its defaults remain platform-owned residual
--- state.
+-- internal administrative superuser; `postgres` is verified not to be a member of it and could not
+-- execute the statement, and no application object is created as that role, so altering it would
+-- be both unnecessary and outside what this project owns. Its defaults remain platform-owned
+-- residual state. Note this is a statement about `supabase_admin` DEFAULTS only -- `postgres`
+-- does own objects outside `public`, which is why the function revoke below needs care.
 --
 -- Sequences are included although `public` currently has none: leaving the default in place would
 -- hand the same broad access to the first identity-backed client table anyone adds.
@@ -96,20 +97,39 @@ alter default privileges for role postgres in schema public
 -- probe produced `{postgres=X/postgres,service_role=X/postgres}` with anon and authenticated
 -- false and service_role true. Nothing persisted.
 --
--- The PUBLIC revoke is deliberately global, because that is the only scope at which it works. It
--- applies to functions `postgres` creates in ANY schema, which is a tightening rather than a
--- change of behaviour for anything that exists today -- defaults affect future objects only, and
--- all eleven current functions already carry explicit grants. Worth knowing for later: an
--- extension installed AS `postgres` would no longer hand PUBLIC execute on its functions, and
--- would need an explicit grant. Supabase's own extensions are created by `supabase_admin`, whose
--- defaults this migration does not touch, so they are unaffected.
+-- Being global, that revoke reaches every schema, which is more than this project owns. The
+-- `extensions` schema is the case that matters: 49 of its 55 functions are owned by `postgres`,
+-- 48 of them carrying PUBLIC EXECUTE, because `create extension` was run as `postgres`. Defaults
+-- only affect future objects, so nothing breaks on the day this is applied -- but the next
+-- `CREATE EXTENSION` or `ALTER EXTENSION ... UPDATE` run as `postgres` would produce functions
+-- with no PUBLIC EXECUTE, and anything relying on them (an RLS policy, a column DEFAULT calling
+-- `uuid_generate_v4()`, Supabase's own internals) would start failing in a way that points
+-- nowhere near this migration.
+--
+-- So the global revoke is immediately given back for `extensions` alone. Verified on production
+-- inside a rolled-back transaction: a function created there afterwards has `proacl` NULL, which
+-- is byte-identical to the baseline before any of this ran -- not an approximation of it. The
+-- schema is owned by `postgres`, and its three existing default-privilege rows are all granted by
+-- `supabase_admin`, so this adds a row of its own rather than altering one of theirs.
+--
+-- `public`, `private` and any schema added later stay closed, which is the point.
+--
+-- This statement requires the `extensions` schema to exist. That is not a new dependency: 011
+-- already does `create extension if not exists pg_net with schema extensions`, which is also the
+-- concrete case this grant-back protects -- that statement runs as `postgres`, so re-running it or
+-- upgrading pg_net would, without the line below, produce functions PUBLIC cannot execute. If the
+-- schema were somehow absent the migration fails with `schema "extensions" does not exist` and the
+-- runner's transaction rolls the whole file back, leaving privileges untouched. Verified.
 --
 -- The anon/authenticated revoke stays scoped to `public`: those two roles have no business in this
 -- schema by default, and other schemas' defaults are not this migration's to change. EXECUTE is
 -- the only function privilege, so `revoke execute` and `revoke all` are equivalent here; the
--- privilege is named explicitly to keep the two statements readable as a pair.
+-- privilege is named explicitly to keep the statements readable as a set.
 alter default privileges for role postgres
   revoke execute on functions from public;
+
+alter default privileges for role postgres in schema extensions
+  grant execute on functions to public;
 
 alter default privileges for role postgres in schema public
   revoke execute on functions from anon, authenticated;

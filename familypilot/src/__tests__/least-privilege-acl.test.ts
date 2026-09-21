@@ -134,9 +134,11 @@ describe('least-privilege migration declares the intended desired state', () => 
       'alter default privileges for role postgres revoke execute on functions from public;',
     );
 
-    // And no statement may revoke from PUBLIC on functions while naming a schema.
+    // And no REVOKE may strip PUBLIC on functions while naming a schema. Restricted to revokes on
+    // purpose: the grant-back for `extensions` below is schema-scoped by design, and an earlier
+    // version of this loop would have had to be weakened to accommodate it.
     for (const statement of migration.match(/alter default privileges[^;]+;/g) ?? []) {
-      if (!/on functions/.test(statement)) continue;
+      if (!/on functions/.test(statement) || !/\brevoke\b/.test(statement)) continue;
       const grantees = statement.split(/\bfrom\b/)[1] ?? '';
       if (!/\bpublic\b/.test(grantees)) continue;
       expect(
@@ -144,6 +146,31 @@ describe('least-privilege migration declares the intended desired state', () => 
         `the PUBLIC function revoke must not be schema-scoped: ${statement}`,
       ).toBe(false);
     }
+  });
+
+  it('gives the global revoke straight back to the extensions schema', () => {
+    /**
+     * The global revoke reaches every schema, and `extensions` is not this project's to change:
+     * production has 49 postgres-owned functions there, 48 with PUBLIC EXECUTE, because
+     * `create extension` ran as postgres. Without this line the next CREATE/ALTER EXTENSION run as
+     * postgres would produce functions PUBLIC cannot execute, breaking callers far from here.
+     */
+    expect(migration).toContain(
+      'alter default privileges for role postgres in schema extensions grant execute on functions to public;',
+    );
+  });
+
+  it('keeps the schemas this project does own closed', () => {
+    // Only `extensions` may be given back. A grant-back naming public/private would undo the work.
+    const grantBacks = [...migration.matchAll(/alter default privileges for role postgres in schema ([a-z_]+) grant [^;]*on functions[^;]*to [^;]*public[^;]*;/g)];
+    expect(grantBacks.map((m) => m[1])).toEqual(['extensions']);
+  });
+
+  it('does not repeat the disproved claim that extensions are safe because supabase_admin owns them', () => {
+    // Production contradicts it: 49 of 55 functions in `extensions` are owned by postgres.
+    const raw = readMigration(MIGRATION_FILE).toLowerCase();
+    expect(raw).not.toContain('extensions are created by `supabase_admin`');
+    expect(raw).not.toContain('so they are unaffected');
   });
 
   it('revokes the client roles on functions within the public schema', () => {
@@ -252,11 +279,74 @@ describe('the live check script stays in step with the migration', () => {
     expect(Object.keys(expectedMatrix())).toHaveLength(24);
   });
 
+  it('asserts the extensions schema keeps its platform baseline', () => {
+    expect(check).toContain('extensions.zz_probe_ext_function');
+    expect(check).toContain('proacl is not null');
+  });
+
+  it('checks relations that are not in the fixed matrix too', () => {
+    // A thirteenth table -- schema_migration_log, which the migration runner creates on first use
+    // -- or a view would otherwise never be looked at.
+    expect(check).toContain('not in the reviewed matrix');
+    expect(check).toContain("relkind in ('r','p','v','m','f')");
+  });
+
+  it('never reads an acl column without allowing for NULL meaning the built-in default', () => {
+    // aclexplode(NULL) returns no rows, so a bare aclexplode(proacl) reports "PUBLIC holds
+    // nothing" in exactly the case where PUBLIC holds the built-in grant.
+    const bare = [...check.matchAll(/aclexplode\(\s*(?:c\.relacl|pr?\.proacl)\s*\)/g)];
+    expect(bare.map((m) => m[0]), 'every aclexplode must coalesce to acldefault()').toEqual([]);
+  });
+
   it('cleans up its probe objects inside the block that creates them', () => {
     // A failed assertion must roll the probes back rather than leave them in public.
     const block = check.slice(check.indexOf("execute 'create table public.zz_probe_table"));
     expect(block).toContain("execute 'drop table public.zz_probe_table'");
     expect(block).toContain("execute 'drop function public.zz_probe_function()'");
     expect(block).toContain("execute 'drop sequence public.zz_probe_sequence'");
+  });
+});
+
+describe('CI executes the privilege model against a real PostgreSQL', () => {
+  /**
+   * vitest can only read SQL; it cannot run it. Everything above would pass against a migration
+   * that is syntactically perfect and semantically wrong. The `privilege-model` job is what closes
+   * that, so its existence is itself part of the contract -- deleting it would leave this file
+   * looking green while nothing verified a single real privilege.
+   */
+  const workflow = fs.readFileSync(path.join(REPO_ROOT, '.github/workflows/ci.yml'), 'utf8');
+
+  it('runs a PostgreSQL 17 service, matching production', () => {
+    expect(workflow).toContain('privilege-model:');
+    expect(workflow).toContain('image: postgres:17');
+  });
+
+  it('builds the pre-migration baseline, guards it, applies the migration and asserts the result', () => {
+    for (const script of [
+      'checks/fixture_production_acl_baseline.sql',
+      'checks/assert_fixture_baseline.sql',
+      'migrations/20260920210000_least_privilege_client_roles.sql',
+      'checks/least_privilege_acl_check.sql',
+    ]) {
+      expect(workflow, `${script} should run in CI`).toContain(script);
+    }
+  });
+
+  it('applies the migration twice, so a re-run cannot change the outcome unnoticed', () => {
+    const applications = workflow.split('migrations/20260920210000_least_privilege_client_roles.sql').length - 1;
+    expect(applications).toBeGreaterThanOrEqual(2);
+  });
+
+  it('keeps the committed fixture in step with the tables the check asserts', () => {
+    const fixture = fs.readFileSync(
+      path.join(REPO_ROOT, 'familypilot/supabase/checks/fixture_production_acl_baseline.sql'),
+      'utf8',
+    );
+    for (const table of [...PUBLIC_READABLE, ...INTERNAL_ONLY, 'planning_workspaces',
+                         'planning_connections', 'venue_enrichment_jobs', 'venue_visit_reports', 'plan_invites']) {
+      expect(fixture, `${table} should exist in the fixture`).toContain(`public.${table} `);
+    }
+    // And it must create the extensions schema, or the grant-back is never exercised.
+    expect(fixture).toContain('create schema if not exists extensions');
   });
 });
