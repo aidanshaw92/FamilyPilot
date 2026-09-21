@@ -1,6 +1,6 @@
 # Schema migration audit
 
-Generated: 2026-09-20T08:07:03.246Z
+Generated: 2026-09-21T10:55:28.530Z
 
 ## Committed migrations
 
@@ -25,6 +25,8 @@ Generated: 2026-09-20T08:07:03.246Z
 - 20260913210000_automatic_area_sync_schedule.sql: (no create tables)
 - 20260913220000_area_sync_twice_weekly.sql: (no create tables)
 - 20260920090000_venue_source_evidence_http_status.sql: (no create tables)
+- 20260920120000_replace_venue_claim_rpc.sql: (no create tables)
+- 20260920210000_least_privilege_client_roles.sql: (no create tables)
 
 ## Expected operational tables
 
