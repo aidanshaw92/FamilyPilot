@@ -11,12 +11,21 @@
  * is that the audit bent the evidence to fit it.
  */
 
-const { normaliseAgeRules, claimMayGate, GATING_SOURCE_TYPES, MIN_EVIDENCE_EXCERPT_CHARS } = require('./age-policy');
+const {
+  normaliseAgeRules,
+  claimMayGate,
+  agePolicyFieldKey,
+  GATING_SOURCE_TYPES,
+  MIN_EVIDENCE_EXCERPT_CHARS,
+} = require('./age-policy');
+
+/** A stamped identity used only to ask "what if a person approved this?". Never written. */
+const SYNTHETIC_HUMAN = 'human:b3-audit';
 
 /** Sentences worth looking at. Deliberately broad: precision comes from classification, not this. */
 const AGE_SENTENCE = new RegExp(
   [
-    'under\\s*\\d', 'over\\s*\\d', '\\d\\s*(\\+|plus)\\b', 'ages?\\s*\\d',
+    'under\\s*\\d', 'over\\s*\\d', '\\d\\s*(\\+|plus)(?!\\d)', 'ages?\\s*\\d',
     '\\d\\s*[-–]\\s*\\d+\\s*(year|yr|month)', 'years?\\s*old', 'months?\\s*old',
     'accompanied', 'all ages', 'no age (restriction|limit)', 'age (restriction|limit|policy)',
     'under-?\\d+s\\b', 'adults? only', '\\d+s?\\s*and\\s*(over|under|above|below)\\b',
@@ -58,9 +67,21 @@ const HEIGHT_PATTERN = /\b\d{2,3}\s?cm\b|\bheight\b|\btall(er)?\b|\b\d(\.\d)?\s?
 const NON_AGE_UNIT = new RegExp(
   '\\b\\d[\\d,.]*\\s*(million|thousand|hundred|acres?|species|people|persons?|visitors?|floors?|' +
   'square|sq|metres?|meters?|miles?|minutes?|hours?|days?|weeks?|rooms?|exhibits?|zones?|items?|' +
-  'works?|paintings?|objects?|cm|kg|m|ft|%|pounds?)\\b',
+  'works?|paintings?|objects?|rides?|attractions?|experiences?|animals?|figures?|brands?|' +
+  'histories|cm|kg|m|ft|%|pounds?)\\b' +
+  // "over 260 years of Wedgwood" is not an age; "over 12 years old" is. Only the second keeps its number.
+  '|\\b\\d[\\d,.]*\\s*years?\\b(?!\\s*old)',
   'i',
 );
+
+/**
+ * Above this, a number is not a child-admission age.
+ *
+ * Learned from the corpus, where "50+ thrilling exhibits" became a 50-year minimum and "over 25
+ * rides" a 25-year one. This product plans days out for families, so an admission bound above 21
+ * is not a rule about the children it serves. "Adults only, 18+" still fits underneath.
+ */
+const MAX_PLAUSIBLE_AGE_MONTHS = 21 * 12;
 
 /**
  * Administrative wording that mentions an age without governing admission: benefit eligibility,
@@ -69,7 +90,13 @@ const NON_AGE_UNIT = new RegExp(
 const ADMIN_PATTERN = /\ballowance\b|\bDLA\b|\bPIP\b|\bpersonal independent\b|\beligibility\b|\bproof of\b|\bmembership\b|\bwaiver\b|\bcarer must\b|\bbenefit has been awarded\b|\bconcession\b/i;
 
 /** The sentence must talk about a PERSON'S age, not merely contain a number. */
-const AGE_CUE = /\bages?d?\b|\byears?\s*old\b|\bmonths?\s*old\b|\bchild(ren)?\b|\bkids?\b|\bbab(y|ies)\b|\binfants?\b|\btoddlers?\b|\badults?\b|\bunder-?\d+s\b|\bunder\s*\d+s\b|\byear olds?\b/i;
+const AGE_CUE = /\bages?d?\b|\byears?\s*old\b|\bmonths?\s*old\b|\bchild(ren)?\b|\bkids?\b|\bbab(y|ies)\b|\binfants?\b|\btoddlers?\b|\badults?\b|\bunder-?\d+s\b|\b(?:under|over|above)\s*\d+s?\b|\byear olds?\b|\b\d{1,2}\s*(?:\+|plus)(?!\d)/i;
+
+/**
+ * Positive wording that is genuinely ABOUT ADMISSION, as opposed to copy describing how broadly
+ * enjoyable a place is. "Children of all ages are welcome" is evidence; "fun for all ages" is not.
+ */
+const ADMISSION_POSITIVE = /\bno age (restriction|limit)s?\b|\bno minimum age\b|\ball ages\s*(are\s*)?(welcome|admitted)\b|\bchildren of all ages are (welcome|admitted)\b|\bwelcome at any age\b/i;
 
 const POSITIVE_PATTERN = /\ball ages\s*(are\s*)?(welcome|admitted|catered)?\b|\bno age (restriction|limit)s?\b|\bsuitable for all ages\b|\bwelcome at any age\b|\bchildren of all ages\b/i;
 
@@ -96,50 +123,139 @@ function containsAny(text, words) {
  * Returns null generously. Every shape not handled here becomes an "unreadable" candidate in the
  * report, which is the outcome that makes a model gap VISIBLE rather than silently absorbed.
  */
-function readBounds(sentence) {
-  const text = sentence.toLowerCase();
-
-  // Strip number phrases whose unit proves they are not ages, so "over 1 million visitors"
-  // cannot be read as a twelve-month minimum.
-  const cleaned = text.replace(new RegExp(NON_AGE_UNIT.source, 'gi'), ' ');
-  return readBoundsFrom(cleaned);
+/**
+ * Stage one: the age set the sentence MENTIONS. Says nothing about who may come in.
+ *
+ * Splitting this from the admitted interval is the fix for a real inversion: the previous parser
+ * mapped "over 12" straight to a MINIMUM, so "children aged 12 and over are not admitted" came
+ * out as "admits 12 and over" -- precisely the ages the sentence excludes, while excluding the
+ * younger children it admits. A lexical reading cannot produce a door until the sentence's
+ * polarity is known, so it no longer tries.
+ */
+function readAgeSet(sentence) {
+  const set = readAgeSetRaw(sentence);
+  if (!set) return null;
+  const bounds = [set.months, set.fromMonths, set.toMonths].filter((v) => typeof v === 'number');
+  if (bounds.some((v) => v > MAX_PLAUSIBLE_AGE_MONTHS)) return null;
+  return set;
 }
 
-function readBoundsFrom(text) {
+function readAgeSetRaw(sentence) {
+  const text = String(sentence ?? '').toLowerCase();
+  // Strip number phrases whose unit proves they are not ages ("over 1 million visitors").
+  const cleaned = text.replace(new RegExp(NON_AGE_UNIT.source, 'gi'), ' ');
 
-  // "under 6 months", "babies under 12 months"
-  let m = text.match(/under\s*(\d{1,2})\s*months?/);
-  if (m) return { minMonthsInclusive: Number(m[1]), maxMonthsExclusive: null, unit: 'months', form: 'under-N-months' };
+  let m = cleaned.match(/under\s*(\d{1,2})\s*months?/);
+  if (m) return { kind: 'below', months: Number(m[1]), inclusive: false, unit: 'months', form: 'under-N-months' };
 
-  m = text.match(/(\d{1,2})\s*[-–]\s*(\d{1,2})\s*months?/);
-  if (m) return { minMonthsInclusive: Number(m[1]), maxMonthsExclusive: Number(m[2]) + 1, unit: 'months', form: 'N-M-months' };
+  m = cleaned.match(/(\d{1,2})\s*[-\u2013]\s*(\d{1,2})\s*months?/);
+  if (m) return { kind: 'band', fromMonths: Number(m[1]), toMonths: Number(m[2]), unit: 'months', form: 'N-M-months' };
 
-  // "under 4s", "under 4 years", "under 4"
-  m = text.match(/under\s*(\d{1,2})s?\b(?!\s*(cm|months))/);
-  if (m) return { minMonthsInclusive: yearsToMonths(Number(m[1])), maxMonthsExclusive: null, unit: 'years', form: 'under-N' };
-
-  // "over 12s", "12 and over", "12+", "aged 12 or above"
-  m = text.match(/(?:over|above)\s*(\d{1,2})s?\b|\b(\d{1,2})\s*(?:\+|plus)\b|\b(\d{1,2})s?\s*(?:and|or)\s*(?:over|above)\b/);
+  // "N and under", "N or younger", "up to N" -- the bound itself is included.
+  m = cleaned.match(/\b(\d{1,2})s?\s*(?:and|or)\s*(?:under|below|younger)\b|\bup to\s*(\d{1,2})\b/);
   if (m) {
-    const n = Number(m[1] ?? m[2] ?? m[3]);
-    return { minMonthsInclusive: yearsToMonths(n), maxMonthsExclusive: null, unit: 'years', form: 'N-and-over' };
+    const n = Number(m[1] ?? m[2]);
+    return { kind: 'below', months: yearsToMonths(n), inclusive: true, unit: 'years', form: 'N-and-under' };
   }
 
+  // "under N", "under Ns" -- the bound itself is excluded.
+  m = cleaned.match(/under\s*(?:the age of\s*)?(\d{1,2})s?\b/);
+  if (m) return { kind: 'below', months: yearsToMonths(Number(m[1])), inclusive: false, unit: 'years', form: 'under-N' };
+
+  // "N and over", "N+", "aged N or above" -- the bound itself is included.
+  m = cleaned.match(/\b(\d{1,2})\s*(?:\+|plus)(?!\d)|\b(\d{1,2})s?\s*(?:and|or)\s*(?:over|above|older)\b/);
+  if (m) {
+    const n = Number(m[1] ?? m[2]);
+    return { kind: 'above', months: yearsToMonths(n), inclusive: true, unit: 'years', form: 'N-and-over' };
+  }
+
+  // "over N", "above N" -- ambiguous in English about whether N itself is included.
+  m = cleaned.match(/(?:over|above)\s*(\d{1,2})s?\b/);
+  if (m) return { kind: 'above', months: yearsToMonths(Number(m[1])), inclusive: false, unit: 'years', form: 'over-N' };
+
   // "ages 3-11", "3 to 11 years", "aged 5 - 12"
-  m = text.match(/ages?\s*(\d{1,2})\s*(?:[-–]|to)\s*(\d{1,2})|\b(\d{1,2})\s*(?:[-–]|to)\s*(\d{1,2})\s*years?\b/);
+  m = cleaned.match(/ages?\s*(\d{1,2})\s*(?:[-\u2013]|to)\s*(\d{1,2})|\b(\d{1,2})\s*(?:[-\u2013]|to)\s*(\d{1,2})\s*years?\b/);
   if (m) {
     const lo = Number(m[1] ?? m[3]);
     const hi = Number(m[2] ?? m[4]);
     if (Number.isFinite(lo) && Number.isFinite(hi) && lo < hi) {
-      return { minMonthsInclusive: yearsToMonths(lo), maxMonthsExclusive: yearsToMonths(hi + 1), unit: 'years', form: 'N-to-M' };
+      return { kind: 'band', fromMonths: yearsToMonths(lo), toMonths: yearsToMonths(hi), unit: 'years', form: 'N-to-M' };
     }
   }
 
-  // "12 and under", "under-5s and under"
-  m = text.match(/\b(\d{1,2})s?\s*(?:and|or)\s*(?:under|below)\b/);
-  if (m) return { minMonthsInclusive: null, maxMonthsExclusive: yearsToMonths(Number(m[1]) + 1), unit: 'years', form: 'N-and-under' };
-
   return null;
+}
+
+/** Wording that says the mentioned ages are TURNED AWAY. */
+const EXCLUDES_PATTERN = /\bnot admitted\b|\bnot permitted\b|\bnot allowed\b|\bno entry\b|\bmay not enter\b|\bcannot enter\b|\bare refused\b|\bprohibited\b/i;
+
+/** Wording that says the mentioned ages are THE ONES LET IN. */
+const ADMITTED_SET_PATTERN = /\bonly\b|\brestricted to\b|\blimited to\b|\bminimum age\b|\bmaximum age\b|\bmust be (?:aged|over|under|at least)\b/i;
+
+/**
+ * Which way round the sentence's age set points.
+ *
+ * `excluded`     the mentioned ages are turned away
+ * `admitted_set` the mentioned ages are the ones let in
+ * `described`    the ages are being talked about (recommended, priced, catered for), not gated
+ */
+function detectPolarity(text) {
+  if (EXCLUDES_PATTERN.test(text)) return 'excluded';
+  if (ADMITTED_SET_PATTERN.test(text)) return 'admitted_set';
+  return 'described';
+}
+
+/**
+ * Stage two: turn a mentioned age set plus a polarity into the interval B2 would ADMIT.
+ *
+ * Returns null wherever the transformation is not unambiguous, which fails open: no interval means
+ * no door. Where English is ambiguous about whether a bound is included ("over 12s" may mean 12+
+ * or 13+), the bound that admits MORE children is chosen, for the same reason -- a wrong guess
+ * should show a venue that turns a family away, never hide one that would have let them in.
+ */
+function toAdmittedInterval(ageSet, polarity) {
+  if (!ageSet) return null;
+
+  if (polarity === 'excluded') {
+    if (ageSet.kind === 'below') {
+      // Under-Ns turned away, so admission starts at the bound (or just past it when inclusive).
+      return { minMonthsInclusive: ageSet.inclusive ? ageSet.months + monthStep(ageSet) : ageSet.months, maxMonthsExclusive: null };
+    }
+    if (ageSet.kind === 'above') {
+      // Over-Ns turned away, so admission stops at the bound. Ambiguity resolved upwards.
+      return { minMonthsInclusive: null, maxMonthsExclusive: ageSet.inclusive ? ageSet.months : ageSet.months + monthStep(ageSet) };
+    }
+    // A band turned away leaves two disjoint admitted ranges, which B2 cannot represent.
+    return null;
+  }
+
+  if (polarity === 'admitted_set') {
+    if (ageSet.kind === 'above') {
+      return { minMonthsInclusive: ageSet.inclusive ? ageSet.months : ageSet.months + monthStep(ageSet), maxMonthsExclusive: null };
+    }
+    if (ageSet.kind === 'below') {
+      return { minMonthsInclusive: null, maxMonthsExclusive: ageSet.inclusive ? ageSet.months + monthStep(ageSet) : ageSet.months };
+    }
+    return { minMonthsInclusive: ageSet.fromMonths, maxMonthsExclusive: ageSet.toMonths + monthStep(ageSet) };
+  }
+
+  // `described`: the ages are an audience, not a door. No admitted interval is implied.
+  return null;
+}
+
+/** One step in whatever unit the set was written in, so a year rule does not shift by a month. */
+function monthStep(ageSet) {
+  return ageSet.unit === 'months' ? 1 : MONTHS_PER_YEAR;
+}
+
+/**
+ * The band a `described` sentence talks about, for reporting only. Never an admission interval.
+ */
+function describedBand(ageSet) {
+  if (!ageSet) return null;
+  if (ageSet.kind === 'band') return { minMonthsInclusive: ageSet.fromMonths, maxMonthsExclusive: ageSet.toMonths + monthStep(ageSet) };
+  if (ageSet.kind === 'above') return { minMonthsInclusive: ageSet.months, maxMonthsExclusive: null };
+  return { minMonthsInclusive: null, maxMonthsExclusive: ageSet.months };
 }
 
 /**
@@ -156,15 +272,36 @@ function classifyAgeSentence(sentence) {
   if (!AGE_SENTENCE.test(text)) return { category: 'no_age_signal', reasons: ['no age wording'], scope: null, effect: null, bounds: null };
 
   if (POSITIVE_PATTERN.test(text)) {
-    reasons.push('states a positive/all-ages position');
-    return {
-      category: 'positive_all_ages', scope: null, effect: null, bounds: null, reasons,
-      modelGap: 'B2 cannot represent an explicit positive statement; an empty rule set means absence, not "no restriction".',
-    };
+    /**
+     * "Suitable for all ages 4+" is not an all-ages statement. Reading the positive half and
+     * discarding the qualifier would turn contradictory marketing copy into the strongest
+     * possible evidence that a venue admits everyone -- the exact opposite of what it says.
+     * A positive claim only counts when nothing qualifies it.
+     */
+    const qualifier = readAgeSet(text);
+    if (qualifier) {
+      reasons.push('positive wording carried a numeric qualifier, so it is not an unconditional welcome');
+      return {
+        category: 'qualified_positive', scope: 'ambiguous', effect: 'caveat',
+        mentionedAgeSet: qualifier, bounds: describedBand(qualifier), reasons,
+        modelGap: 'Positive wording contradicted by its own bound; neither an all-ages fact nor a door.',
+      };
+    }
+    if (ADMISSION_POSITIVE.test(text)) {
+      reasons.push('states positively that there is no age bar to entry');
+      return {
+        category: 'positive_all_ages', scope: null, effect: null, bounds: null, reasons,
+        modelGap: 'B2 cannot represent an explicit positive statement; an empty rule set means absence, not "no restriction".',
+      };
+    }
+    reasons.push('all-ages wording used to describe an experience rather than admission');
+    return { category: 'marketing_all_ages', scope: null, effect: null, bounds: null, reasons };
   }
 
-  // A number is only an age if the sentence is talking about people's ages at all.
-  if (!AGE_CUE.test(text)) {
+  // A number is only an age if the sentence is talking about people's ages at all -- asked of the
+  // text with non-age number phrases removed, so "over 1 million visitors" is not age wording.
+  const withoutUnits = text.replace(new RegExp(NON_AGE_UNIT.source, 'gi'), ' ');
+  if (!AGE_CUE.test(withoutUnits)) {
     reasons.push('contains a number but no wording that makes it a person\'s age');
     return { category: 'not_an_age_statement', scope: null, effect: null, bounds: null, reasons };
   }
@@ -193,7 +330,11 @@ function classifyAgeSentence(sentence) {
     return { category: 'administrative_not_admission', scope: null, effect: null, bounds: null, reasons };
   }
 
-  const bounds = readBounds(text);
+  const ageSet = readAgeSet(text);
+  const polarity = detectPolarity(text);
+  const admitted = toAdmittedInterval(ageSet, polarity);
+  // For anything that is not a door, the interval reported is the band the sentence DESCRIBES.
+  const bounds = describedBand(ageSet);
   const isHeight = HEIGHT_PATTERN.test(text);
   const isPricing = containsAny(text, PRICING_WORDS);
   const isTemporary = containsAny(text, TEMPORARY_WORDS);
@@ -207,7 +348,7 @@ function classifyAgeSentence(sentence) {
     return { category: 'height_not_age', scope: null, effect: null, bounds: null, reasons };
   }
 
-  if (!bounds) {
+  if (!ageSet) {
     reasons.push('age wording present but no interval could be read');
     return { category: 'insufficient_evidence', scope: null, effect: null, bounds: null, reasons };
   }
@@ -258,8 +399,21 @@ function classifyAgeSentence(sentence) {
   }
 
   if (restricts && !recommends) {
-    reasons.push('states a condition of entry');
-    return { category: 'venue_restriction', scope: 'venue', effect: 'excludes', bounds, reasons };
+    if (!admitted) {
+      /**
+       * A condition of entry whose admitted interval cannot be derived unambiguously -- a band
+       * that is excluded leaves two disjoint admitted ranges, and `described` polarity implies no
+       * door at all. Failing open here is the whole point: no interval, no gate.
+       */
+      reasons.push('states a condition of entry, but the admitted interval cannot be derived unambiguously');
+      return { category: 'ambiguous_scope', scope: 'ambiguous', effect: 'caveat', mentionedAgeSet: ageSet, bounds, reasons,
+               modelGap: 'An entry condition whose admitted set B2 cannot represent.' };
+    }
+    reasons.push(`states a condition of entry (${polarity === 'excluded' ? 'the stated ages are turned away' : 'the stated ages are the ones admitted'})`);
+    return {
+      category: 'venue_restriction', scope: 'venue', effect: 'excludes',
+      mentionedAgeSet: ageSet, polarity, bounds: admitted, reasons,
+    };
   }
 
   if (recommends && restricts) {
@@ -272,42 +426,70 @@ function classifyAgeSentence(sentence) {
 }
 
 /**
- * Whether B2, as shipped, would let this candidate become a hard gate -- and why not when not.
+ * Two different questions, which the previous revision conflated into one meaningless answer.
  *
- * Asked by building the rule B2 would actually see and running the REAL predicates over it, so
- * this cannot drift from the shipped semantics the way a restatement would.
+ * `wouldGateNow` is always false, by construction: B3 writes nothing, so no claim and no human
+ * approval exist. Reporting that as "would become a hard gate: 0" said only "B3 is zero-write",
+ * which is true of every possible corpus including a perfect official-page prohibition.
+ *
+ * `eligibleToGateIfHumanApproved` is the question actually worth asking: if a person reviewed and
+ * approved this exact sentence tomorrow, would B2 turn it into a door? It is answered by building
+ * a synthetic claim IN MEMORY -- nothing is stored -- and running the REAL `claimMayGate` and
+ * `normaliseAgeRules`, so it cannot drift from the shipped semantics.
  */
-function wouldGateUnderB2(candidate, record) {
+function wouldGateUnderB2(candidate, record, today = new Date().toISOString().slice(0, 10)) {
   const blockers = [];
+  const isDoor = candidate.scope === 'venue' && candidate.effect === 'excludes';
 
-  if (candidate.scope !== 'venue' || candidate.effect !== 'excludes') {
+  if (!isDoor) {
     blockers.push(`scope/effect is ${candidate.scope ?? 'none'}/${candidate.effect ?? 'none'}, and only venue+excludes may gate`);
   }
+  if (!candidate.bounds || (candidate.bounds.minMonthsInclusive == null && candidate.bounds.maxMonthsExclusive == null)) {
+    blockers.push('no admitted interval could be derived from the sentence');
+  }
+
+  // A claim exactly as a human approval would produce it, held only in this function.
+  const syntheticClaim = {
+    status: 'active',
+    fieldKey: agePolicyFieldKey(record.sourceUrl),
+    sourceUrl: record.sourceUrl,
+    sourceType: record.sourceType,
+    sourceEvidenceId: 'b3-audit-synthetic',
+    confidence: 'high',
+    approvedBy: SYNTHETIC_HUMAN,
+    checkedAt: today,
+    validUntil: today,
+    valueJson: {
+      rules: [{
+        scope: candidate.scope,
+        effect: candidate.effect,
+        minMonthsInclusive: candidate.bounds?.minMonthsInclusive ?? null,
+        maxMonthsExclusive: candidate.bounds?.maxMonthsExclusive ?? null,
+        evidenceExcerpt: candidate.excerpt,
+      }],
+    },
+  };
+
   if (!GATING_SOURCE_TYPES.has(record.sourceType)) {
     blockers.push(`source type ${record.sourceType} is not one the gate admits`);
   }
   if (!candidate.excerpt || candidate.excerpt.length < MIN_EVIDENCE_EXCERPT_CHARS) {
     blockers.push(`excerpt is shorter than the ${MIN_EVIDENCE_EXCERPT_CHARS}-character floor`);
   }
-
-  // Run the real normaliser: if B2 cannot read the rule, it cannot gate on it.
-  const rules = candidate.bounds
-    ? normaliseAgeRules({
-        rules: [{
-          scope: candidate.scope, effect: candidate.effect,
-          minMonthsInclusive: candidate.bounds.minMonthsInclusive,
-          maxMonthsExclusive: candidate.bounds.maxMonthsExclusive,
-          evidenceExcerpt: candidate.excerpt,
-        }],
-      })
-    : [];
+  if (!claimMayGate(syntheticClaim, today)) {
+    blockers.push('claimMayGate refuses the claim even with a human approval');
+  }
+  const rules = normaliseAgeRules(syntheticClaim.valueJson);
   if (rules.length === 0) blockers.push('normaliseAgeRules drops the rule as unreadable');
   else if (rules[0].effect !== 'excludes') blockers.push('normaliseAgeRules demotes the rule to a caveat');
 
-  // Human approval is a separate, deliberate step: B3 writes nothing, so nothing is approved.
-  blockers.push('no human approval exists (B3 is zero-write)');
-
-  return { gates: false, blockers, humanReviewRequired: candidate.scope === 'venue' && candidate.effect === 'excludes' };
+  return {
+    // Never true in B3: there is no claim and nobody has approved anything.
+    wouldGateNow: false,
+    eligibleToGateIfHumanApproved: blockers.length === 0,
+    blockers,
+    humanReviewRequired: isDoor,
+  };
 }
 
 /** Split one page into the sentences worth classifying. */
@@ -324,28 +506,57 @@ function ageSentences(text) {
  * `records` are `venue_source_evidence` rows as `rowToRecord` returns them, optionally with a
  * `venueName`. Nothing is written, nothing is fetched: this reads what has already been stored.
  */
-function auditEvidence(records, { venueNames = {} } = {}) {
+function auditEvidence(records, { venueNames = {} } = {}, today = new Date().toISOString().slice(0, 10)) {
   const candidates = [];
+  const skipped = [];
   const venuesSeen = new Set();
   const venuesByCategory = {};
-  const sourceTypeCounts = {};
-  let pagesExamined = 0;
+  const pageSourceTypeCounts = {};
+  const candidateSourceTypeCounts = {};
+  const uniqueSentenceText = new Set();
+  const pagesSeen = new Set();
+  // Per call, not module level: shared mutable state across runs would make results order-dependent.
+  const pagesWithAgeSignalSeen = new Set();
+
+  let sentenceOccurrences = 0;
   let pagesWithAgeSignal = 0;
 
   for (const record of records || []) {
-    pagesExamined += 1;
     venuesSeen.add(record.familypilotPlaceId);
-    sourceTypeCounts[record.sourceType] = (sourceTypeCounts[record.sourceType] ?? 0) + 1;
+
+    /**
+     * Live mode hands one record per evidence PAGE; `--file` hands one record per SENTENCE. The
+     * previous revision counted records into a single `sourceTypeCounts`, so the same field meant
+     * "pages by source type" live and "statements by source type" offline -- two different
+     * denominators wearing one name. Pages are now counted by identity, so both modes agree.
+     */
+    const pageKey = `${record.familypilotPlaceId}~${record.sourceUrl}`;
+    if (!pagesSeen.has(pageKey)) {
+      pagesSeen.add(pageKey);
+      pageSourceTypeCounts[record.sourceType] = (pageSourceTypeCounts[record.sourceType] ?? 0) + 1;
+    }
 
     const sentences = record.ageSentences ?? ageSentences(record.extractedText);
-    if (sentences.length > 0) pagesWithAgeSignal += 1;
+    if (sentences.length > 0 && !pagesWithAgeSignalSeen.has(pageKey)) {
+      pagesWithAgeSignalSeen.add(pageKey);
+      pagesWithAgeSignal += 1;
+    }
 
     for (const sentence of sentences) {
+      sentenceOccurrences += 1;
+      uniqueSentenceText.add(sentence);
+
       const classified = classifyAgeSentence(sentence);
-      if (classified.category === 'no_age_signal') continue;
+      if (classified.category === 'no_age_signal') {
+        // Counted, never silently dropped: every input must appear on one side of the ledger.
+        skipped.push({ familypilotPlaceId: record.familypilotPlaceId, sourceUrl: record.sourceUrl, sentence, reason: 'no age wording' });
+        continue;
+      }
 
       const candidate = { ...classified, excerpt: sentence };
-      const verdict = wouldGateUnderB2(candidate, record);
+      const isDoor = classified.scope === 'venue' && classified.effect === 'excludes';
+      const verdict = wouldGateUnderB2(candidate, record, today);
+      candidateSourceTypeCounts[record.sourceType] = (candidateSourceTypeCounts[record.sourceType] ?? 0) + 1;
 
       candidates.push({
         familypilotPlaceId: record.familypilotPlaceId,
@@ -357,11 +568,20 @@ function auditEvidence(records, { venueNames = {} } = {}) {
         category: classified.category,
         proposedScope: classified.scope,
         proposedEffect: classified.effect,
-        proposedMinMonthsInclusive: classified.bounds?.minMonthsInclusive ?? null,
-        proposedMaxMonthsExclusive: classified.bounds?.maxMonthsExclusive ?? null,
-        boundsForm: classified.bounds?.form ?? null,
+        polarity: classified.polarity ?? null,
+        mentionedAgeSet: classified.mentionedAgeSet ?? null,
+        /**
+         * Two different things, deliberately not sharing a name. An ADMITTED interval is what B2
+         * would gate on; a MENTIONED band is merely the ages a sentence talks about. A caveat's
+         * band reported under an "admitted" name would read as a door to anyone skimming.
+         */
+        admittedMinMonthsInclusive: isDoor ? classified.bounds?.minMonthsInclusive ?? null : null,
+        admittedMaxMonthsExclusive: isDoor ? classified.bounds?.maxMonthsExclusive ?? null : null,
+        mentionedMinMonths: classified.bounds?.minMonthsInclusive ?? null,
+        mentionedMaxMonths: classified.bounds?.maxMonthsExclusive ?? null,
         activity: classified.activity ?? null,
-        wouldGateUnderB2: verdict.gates,
+        wouldGateNow: verdict.wouldGateNow,
+        eligibleToGateIfHumanApproved: verdict.eligibleToGateIfHumanApproved,
         whyNotGating: verdict.blockers,
         humanReviewRequired: verdict.humanReviewRequired,
         modelGap: classified.modelGap ?? null,
@@ -379,18 +599,26 @@ function auditEvidence(records, { venueNames = {} } = {}) {
 
   return {
     summary: {
-      pagesExamined,
+      // The ledger: every sentence that went in comes out on exactly one side.
+      sentenceOccurrences,
+      uniqueSentenceText: uniqueSentenceText.size,
+      classified: candidates.length,
+      explicitlySkipped: skipped.length,
+      accountsFor: sentenceOccurrences === candidates.length + skipped.length,
+      pagesExamined: pagesSeen.size,
       pagesWithAgeSignal,
       venuesWithEvidence: venuesSeen.size,
-      candidateCount: candidates.length,
       candidatesByCategory: byCategory,
       venuesByCategory: Object.fromEntries(Object.entries(venuesByCategory).map(([k, v]) => [k, v.size])),
-      sourceTypeCounts,
-      candidatesThatWouldGate: candidates.filter((c) => c.wouldGateUnderB2).length,
+      pageSourceTypeCounts,
+      candidateSourceTypeCounts,
+      wouldGateNow: candidates.filter((c) => c.wouldGateNow).length,
+      eligibleToGateIfHumanApproved: candidates.filter((c) => c.eligibleToGateIfHumanApproved).length,
       candidatesNeedingHumanReview: candidates.filter((c) => c.humanReviewRequired).length,
       modelGaps: candidates.filter((c) => c.modelGap).length,
     },
     candidates,
+    skipped,
   };
 }
 
@@ -398,7 +626,9 @@ module.exports = {
   AGE_SENTENCE,
   ACTIVITY_WORDS,
   ageSentences,
-  readBounds,
+  readAgeSet,
+  detectPolarity,
+  toAdmittedInterval,
   classifyAgeSentence,
   wouldGateUnderB2,
   auditEvidence,

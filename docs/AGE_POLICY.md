@@ -237,12 +237,12 @@ said there is no restriction*, and the difference matters once publication is au
 should stay quiet, while a positive statement could legitimately corroborate.
 
 B2 is deliberately not expanded for this. **B3's zero-write audit scanned for exactly this**, and
-the answer is in [AGE_EVIDENCE_AUDIT_B3.md](AGE_EVIDENCE_AUDIT_B3.md): a positive statement is the
-single most common age statement in the London catalogue (16 statements across 13 venues, 21.3% of
-everything found). A first-class `all_ages` assertion is recommended for B4.
+the answer is in [AGE_EVIDENCE_AUDIT_B3.md](AGE_EVIDENCE_AUDIT_B3.md): only **2 statements across 2
+venues** state a positive position about admission. That is not enough to justify extending the
+canonical model, so no `all_ages` fact is recommended for B4. The audit keeps counting it.
 
-That audit also found that **no venue-level age prohibition exists in the catalogue at all**, so
-the gate described above is currently correct and idle.
+That audit also found that **no venue-level age prohibition exists in the catalogue's stored
+evidence at all**, so the gate described above is currently correct and idle.
 
 ## Where the rules live
 
