@@ -8,7 +8,12 @@ const {saveEvidenceRecord}=require('../../../server/enrichment/_lib/evidence-sto
 const id='fp-google-auto-approve';
 const meta={url:'https://example.org/visit',sourceType:'official_website',retrievedAt:'2026-09-09T09:00:00Z'};
 const page='Toilets are available in the visitor centre. Baby changing facilities are available. Free on-site parking is available for visitors.';
-function bundle(text=page){const facts=extractEvidenceFromText(text,meta);return buildEvidenceBundle(id,[{...meta,fetchStatus:'ok',facts}],'official_website');}
+// `subjectScope` is what the pipeline now records at fetch time: this venue's own page. These
+// fixtures build bundles directly rather than through `gatherEvidenceForVenue`, so they have to
+// carry it, exactly as a real crawl of the venue's own site would. Omitting it fails closed, which
+// is asserted in venue-source-integrity.test.ts.
+const OWN_PAGE_SCOPE='venue_own_subtree';
+function bundle(text=page){const facts=extractEvidenceFromText(text,meta);return buildEvidenceBundle(id,[{...meta,fetchStatus:'ok',subjectScope:OWN_PAGE_SCOPE,facts}],'official_website');}
 let env:NodeJS.ProcessEnv;
 beforeEach(()=>{
  env={...process.env};delete process.env.SUPABASE_URL;delete process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -38,7 +43,7 @@ describe('source evidence automatic publication',()=>{
   for(const text of ['Baby changing facilities are closed today.','Baby changing facilities will open soon.','Parent and baby facilities are available.'])expect(buildAutoApprovePayload({},bundle(text)).payload.familyFacilities?.babyChanging).toBeUndefined();
  });
  it('checks fetched source text again and stores expiry and honest provenance',async()=>{
-  await saveEvidenceRecord({familypilotPlaceId:id,sourceUrl:meta.url,sourceType:meta.sourceType,retrievedAt:meta.retrievedAt,extractedText:page,extractedEvidence:[],fetchStatus:'ok'});
+  await saveEvidenceRecord({familypilotPlaceId:id,sourceUrl:meta.url,sourceType:meta.sourceType,subjectScope:OWN_PAGE_SCOPE,retrievedAt:meta.retrievedAt,extractedText:page,extractedEvidence:[],fetchStatus:'ok'});
   const result=await tryAutoApproveDraft(id);expect(result.approved).toBe(true);
   const claims=await getActiveClaims(id);expect(claims.length).toBeGreaterThan(0);
   expect(claims.every((c:any)=>c.approvedBy==='source_evidence_auto_v2'&&c.sourceEvidenceId&&c.validUntil==='2026-10-09')).toBe(true);
@@ -46,10 +51,10 @@ describe('source evidence automatic publication',()=>{
   const source=JSON.parse(result.metadata.enrichmentProvenance.sourceReference);expect(source.humanReviewed).toBe(false);
  });
  it('withdraws an automatic claim when a fresh source no longer supports it',async()=>{
-  await saveEvidenceRecord({familypilotPlaceId:id,sourceUrl:meta.url,sourceType:meta.sourceType,retrievedAt:meta.retrievedAt,extractedText:page,fetchStatus:'ok'});
+  await saveEvidenceRecord({familypilotPlaceId:id,sourceUrl:meta.url,sourceType:meta.sourceType,subjectScope:OWN_PAGE_SCOPE,retrievedAt:meta.retrievedAt,extractedText:page,fetchStatus:'ok'});
   await tryAutoApproveDraft(id);
   const file=path.join('.data','enrichment-drafts.json');const records=JSON.parse(fs.readFileSync(file,'utf8'));records.drafts[0].status='pending_review';fs.writeFileSync(file,JSON.stringify(records));
-  await saveEvidenceRecord({familypilotPlaceId:id,sourceUrl:meta.url,sourceType:meta.sourceType,retrievedAt:'2026-09-10T09:00:00Z',extractedText:'Toilets are available in the visitor centre.',fetchStatus:'ok'});
+  await saveEvidenceRecord({familypilotPlaceId:id,sourceUrl:meta.url,sourceType:meta.sourceType,subjectScope:OWN_PAGE_SCOPE,retrievedAt:'2026-09-10T09:00:00Z',extractedText:'Toilets are available in the visitor centre.',fetchStatus:'ok'});
   await tryAutoApproveDraft(id);
   expect((await getActiveClaims(id)).some((c:any)=>c.fieldKey==='familyFacilities.babyChanging')).toBe(false);
  });

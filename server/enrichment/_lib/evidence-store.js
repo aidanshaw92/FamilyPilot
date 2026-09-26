@@ -44,6 +44,12 @@ function rowToRecord(row) {
     fetchStatus: row.fetch_status,
     httpStatus: row.http_status ?? null,
     error: row.error,
+    /**
+     * What relationship to the crawl target was established when this page was stored. Null on
+     * rows written before the column existed, and null is NOT "fine": callers must fail closed.
+     */
+    subjectScope: row.subject_scope ?? null,
+    subjectScopeReason: row.subject_scope_reason ?? null,
   };
 }
 
@@ -86,6 +92,10 @@ async function saveEvidenceRecord(record) {
     extracted_text: record.extractedText ?? null,
     extracted_evidence: record.extractedEvidence ?? [],
     fetch_status: record.fetchStatus ?? 'ok',
+    // Recorded at fetch time, because it is the only moment the crawl still knows which venue it
+    // was crawling for and why it chose this page. Re-inferring it later is what went wrong.
+    subject_scope: record.subjectScope ?? null,
+    subject_scope_reason: record.subjectScopeReason ?? null,
     // Recorded as a number so a failure can be classified without matching on `error`, which is
     // prose assembled for humans and would silently reclassify claims if its wording changed.
     http_status: Number.isInteger(record.httpStatus) ? record.httpStatus : null,

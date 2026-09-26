@@ -1,7 +1,8 @@
 # P0 Venue Source Integrity — root cause, invariant, and plan
 
-Status: **Phases 1–3 complete (investigation, reproduction, design). No fix implemented yet, no
-production data changed.** This document is the gate before implementation.
+Status: **Phases 1–5 complete (investigation, reproduction, design, prevention fix, read-only
+audit). No production data changed; the repair is not written.** This document is the gate before
+the repair.
 
 The baseline (`docs/VENUE_INTELLIGENCE_BASELINE.md`, merged as `7c42255`) established that of 223
 usable facts FamilyPilot serves, only 55 have a source structurally tieable to the venue. It could
@@ -181,3 +182,131 @@ either.**
    claims lifecycle, with rollback, before/after invariants, and whether recommendations change.
 
 **No production mutation before that gate. B4 remains untouched.**
+
+---
+
+## Phase 4 — Implemented (prevention only)
+
+| # | boundary | change |
+| --- | --- | --- |
+| 1 | identity lost in discovery | **new** `source-identity.js`: `classifySubjectScope` decides the page↔venue relationship from real `place_records.website` values |
+| 2 | origin-rooted candidates | `buildCommonPathCandidates` now roots at the venue's own path. A venue owning its whole host is unaffected — 128 of 134 |
+| 3 | host-only link scoping | `mergePageCandidates` takes `{venue, catalogue}` and drops another catalogue venue's pages **before fetching**, reporting them in `diagnostics.linksRejectedAsOtherVenue` |
+| 4 | unconditional stamping | `evidence-pipeline` classifies at fetch time; `evidence-store` persists `subject_scope` / `subject_scope_reason`; a pre-column cached row is reclassified, never inherited as null |
+| 5 | no downstream check | `eligibleFact` fails closed unless the scope is `venue_own_subtree` or `venue_named_page`. **NULL fails closed**, and `reviewEvidence` returns a `withheld` list rather than dropping silently |
+| — | provenance lost in a reshape | `buildEvidenceBundle` rebuilt each source from a fixed key list and was **dropping `subjectScope`**. Because the gate fails closed, the effect was that every fact became ineligible, invisibly. Found by the existing suite; now pinned by its own test |
+
+Migration `20260926140000_venue_source_evidence_subject_scope.sql`: forward-only, additive, nullable,
+no backfill, no data touched, with a CHECK on the vocabulary and a partial index. Verified on a
+disposable PostgreSQL cluster — applied twice for idempotency, pre-existing row left NULL, invalid
+value rejected.
+
+### The deliberate exception, and why
+
+`familypilot-automatic-enrichment` runs **every minute**. `reconcileSourceClaims` *disputes* live
+claims, so enforcing the new rule there would have repaired production within the hour with nobody
+having approved it. It is therefore called with `{enforceSubjectScope:false}`, pinned by a test.
+**Prevention is live; repair is Phase 6, behind its own gate.**
+
+One live effect of merging is expected and is the fix working: the every-minute crawl will fetch
+fewer, better-scoped pages, and new evidence rows will carry a scope. No existing claim changes.
+
+## Phase 5 — Read-only audit of the 223 active informative claims
+
+| category | scope | claims | venues |
+| --- | --- | --- | --- |
+| **B** confirmed | `venue_own_subtree` | 138 | 48 |
+| **B** confirmed | `venue_named_page` | 14 | — |
+| **C** withheld, identity unestablished | `sibling_unverified` | 53 | — |
+| **A** proven cross-venue mismatch | `other_catalogue_venue` | **16** | **4** |
+| candidate **D** | `organisation_ancestor` | 2 | 1 |
+
+**Eligible 152 · withheld 71 · proven contaminated 16.**
+
+**Category D is currently empty by definition.** `organisation_ancestor` is *structurally* the
+operator's page, but applicability to the specific venue is not demonstrated, so it is withheld.
+Proving shared applicability is what the future shared/operator mechanism is for.
+
+### Category A, in full (16 claims, 4 venues)
+
+| served for | field | source page belongs to |
+| --- | --- | --- |
+| Horniman Butterfly House (7) | accessibleToilet, wheelchairAccessible, environment, babyChanging, parking, playground, toilets | Horniman Museum and Gardens |
+| Victoria and Albert Museum (5) | accessibleToilet, wheelchairAccessible, babyChanging, parking, pushchairSuitability | Young V&A / V&A East Storehouse |
+| Young V&A (3) | accessibleToilet, wheelchairAccessible, pushchairSuitability | V&A South Kensington / V&A East Storehouse |
+| Primrose Hill (1) | playground | The Regent's Park |
+
+Claim IDs are recorded in the Phase 6 proposal. **Horniman Butterfly House was invisible to the
+#110 heuristic entirely** — seven claims served from the parent museum's general pages.
+
+### The Tate and Wedgwood facts are category C, not A
+
+By the stated definition, A requires positive evidence the page belongs to *another catalogue
+venue*. Tate Liverpool and the Wedgwood Collection are not in the catalogue, so those 6 facts are
+**C**. They are nonetheless known-wrong from their own page titles, and the repair should treat
+them as A on that separate evidence. They are withheld either way.
+
+### The 20 sibling rows from Phase 3
+
+That figure was **page-level, on four hosts**, from the design sample; the claim-level population
+above is a different denominator, and the two should not be compared directly. Of those 20 pages,
+6 carry the known-contaminated facts (Tate Liverpool ×2 venues, Wedgwood ×2, V&A East Museum) and
+14 are operator-level pages believed legitimate.
+
+**I cannot independently prove the 14 are legitimate, and have not tried to.** Doing so requires
+reading the pages to establish that their content applies to the specific venue, and this
+environment has no outbound network access. Asserting legitimacy from the URL and title would be
+exactly the similarity reasoning this workstream exists to remove. They stay withheld until a
+shared/operator evidence model can demonstrate applicability.
+
+## Before / after
+
+| measure | before | after repair | note |
+| --- | --- | --- | --- |
+| usable facts served | 223 | 223 today | prevention does not touch live claims |
+| usable facts eligible | — | **152** | what could be republished |
+| identity-safe facts | 55 (#110 URL heuristic) | **152** | the provenance model proves far more, not less |
+| proven contaminated prevented | 0 | **16** | plus 6 known-wrong C facts |
+| facts withheld | 0 | **71** | retained, never deleted |
+| explainable venues (T3+) | 14 | **8** | |
+| venues with any eligible fact | — | 53 | |
+
+## Reconciliation
+
+All 223 claims were replayed through the real module and compared against an independently written
+SQL port. **They disagreed on four claims, and each disagreement was a real defect**:
+
+1. **Burgess Park ×2 (and 6 others).** The "names another catalogue venue" exclusion accepted
+   *either* signal, making it a veto: Burgess Park's own council page, titled "Burgess Park |
+   Southwark Council", was withheld because "Southwark Park" is in the catalogue. Fixed to require
+   both signals, the same bar the promotion clears.
+2. **London Fields ×3.** "London Eye" reduces to the single token `london` (`eye` is below the
+   length threshold) and vetoed London Fields' own page. Fixed: a venue whose tokens are a subset
+   of this one's is a weaker description, not a competing claim.
+3. **Heartwood Forest ×1.** Here the **module was right and the SQL was wrong** — the port omitted
+   the same-host guard, so it promoted a page on a different host. Cross-host naming is exactly the
+   open-web similarity matching that must not establish identity.
+
+Each is now pinned by a test. A **mutation pass killed 18 of 18** real mutants (control survived),
+including removing the link scoping, re-rooting common paths at the origin, promoting on one signal,
+dropping provenance at the bundle boundary, defaulting the gate off, and making reconciliation
+enforce (which would repair production on deploy).
+
+## Phase 6 — Proposed repair (NOT RUN)
+
+Not written. The proposal, for review:
+
+- **Scope:** the 16 category-A claims, plus the 6 known-wrong Tate/Wedgwood facts on their separate
+  title evidence. Nothing in C or D is touched.
+- **Action:** `disputeClaim` on each, which is the existing lifecycle's least-destructive route —
+  it deactivates without deleting, keeps the row, and is already how reconciliation withdraws a
+  fact. No evidence row is altered or removed.
+- **Rollback:** set `status` back to `active` for the recorded claim IDs; the ids, prior status and
+  timestamps are captured before the change.
+- **Before/after invariant:** served facts 223 → 201; no venue gains a fact; every disputed claim
+  has a recorded `subject_scope` explaining why.
+- **User-facing impact:** 4 venues lose facility facts they should never have shown. Horniman
+  Butterfly House loses all 7 and drops out of "explainable". Parents stop being told about
+  facilities that belong to a different building.
+
+**Not to be run until reviewed.**
