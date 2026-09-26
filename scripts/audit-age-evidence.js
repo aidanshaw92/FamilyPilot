@@ -8,6 +8,11 @@
  *   node scripts/audit-age-evidence.js                 # live, needs SUPABASE_URL + service role key
  *   node scripts/audit-age-evidence.js --file corpus   # offline, id~sourceType~date~url~sentence
  *   node scripts/audit-age-evidence.js --json          # machine-readable
+ *
+ * `--discovery pages=N,venues=M` feeds in a discovery total measured independently of this module
+ * (the SQL scan over production, or the live query below). The ledger then reconciles two
+ * implementations instead of balancing against itself, which is the only version of the check that
+ * can actually fail.
  */
 
 const fs = require('fs');
@@ -49,6 +54,19 @@ async function fromDatabase() {
   }));
 }
 
+/** `pages=104,venues=58,unquotable=23,unquotableVenues=10` -> the discovery totals to reconcile against. */
+function parseDiscovery(spec) {
+  const out = {};
+  for (const part of String(spec ?? '').split(',')) {
+    const [key, value] = part.split('=');
+    if (key === 'pages') out.pagesWithAgeWording = Number(value);
+    if (key === 'venues') out.venuesWithAgeWording = Number(value);
+    if (key === 'unquotable') out.unquotablePages = Number(value);
+    if (key === 'unquotableVenues') out.unquotableVenues = Number(value);
+  }
+  return out;
+}
+
 function pct(n, total) {
   return total === 0 ? '0.0%' : `${((n / total) * 100).toFixed(1)}%`;
 }
@@ -58,10 +76,13 @@ async function main() {
   const fileIndex = args.indexOf('--file');
   const records = fileIndex >= 0 ? fromFile(args[fileIndex + 1]) : await fromDatabase();
 
-  const { summary, candidates, skipped } = auditEvidence(records);
+  const discoveryIndex = args.indexOf('--discovery');
+  const discovery = discoveryIndex >= 0 ? parseDiscovery(args[discoveryIndex + 1]) : {};
+
+  const { summary, candidates, skipped, unextractable } = auditEvidence(records, { discovery });
 
   if (args.includes('--json')) {
-    process.stdout.write(JSON.stringify({ summary, candidates, skipped }, null, 2));
+    process.stdout.write(JSON.stringify({ summary, candidates, skipped, unextractable }, null, 2));
     return;
   }
 
@@ -74,7 +95,27 @@ async function main() {
   console.log(`unique sentence text            ${summary.uniqueSentenceText}`);
   console.log(`classified                      ${summary.classified}`);
   console.log(`explicitly skipped              ${summary.explicitlySkipped}`);
-  console.log(`accounts for every input        ${summary.accountsFor ? 'yes' : 'NO -- LEDGER BROKEN'}\n`);
+  console.log(`accounts for every input        ${summary.accountsFor ? 'yes' : 'NO -- LEDGER BROKEN'}`);
+
+  console.log('\nDiscovery ledger (pages, not sentences; expected totals measured independently)');
+  console.log(`  production says carry age wording  ${summary.expectedPagesWithAgeWording ?? '(not supplied)'}`);
+  console.log(`  yielded a quotable sentence        ${summary.pagesWithAgeSignal}`);
+  console.log(`  age wording, nothing quotable      ${summary.pagesWithAgeWordingButNoSentence + (summary.unquotablePagesFromDiscovery ?? 0)}`);
+  if (summary.unexplainedPages != null) {
+    console.log(`  unexplained                        ${summary.unexplainedPages}`);
+  }
+  if (summary.unexplainedVenues != null) {
+    console.log(`  unexplained venues                 ${summary.unexplainedVenues}`);
+  }
+  console.log(`  discovery reconciles               ${summary.discoveryAccountsFor ? 'yes' : 'NO -- COVERAGE GAP'}\n`);
+
+  if (unextractable.length > 0) {
+    console.log('Pages with age wording but no quotable sentence');
+    for (const page of unextractable) {
+      console.log(`  - ${page.sourceUrl} (${page.chars} chars): ${page.reason}`);
+    }
+    console.log();
+  }
 
   console.log('By category                     count    share    venues');
   for (const [category, count] of Object.entries(summary.candidatesByCategory).sort((a, b) => b[1] - a[1])) {

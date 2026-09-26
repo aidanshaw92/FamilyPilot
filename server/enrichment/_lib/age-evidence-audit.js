@@ -22,13 +22,44 @@ const {
 /** A stamped identity used only to ask "what if a person approved this?". Never written. */
 const SYNTHETIC_HUMAN = 'human:b3-audit';
 
-/** Sentences worth looking at. Deliberately broad: precision comes from classification, not this. */
+/**
+ * Sentences worth LOOKING at. Deliberately broad, and broader than classification on purpose.
+ *
+ * B3's conclusion is a negative one -- "no venue prohibition exists in the stored evidence" -- and
+ * a negative is only ever as good as the recall of the step that decided what to look at. Anything
+ * this pattern misses is invisible to every later stage, so precision belongs in
+ * `classifyAgeSentence`, which can afford to throw candidates away, and never here.
+ *
+ * The forms below were added after a review found real production wording the first version missed:
+ *
+ *   "Children aged 5--12 must have someone in the park supervising them at all times."
+ *
+ * a genuine accompaniment rule at Flip Out Brent Cross, missed because the detector had no generic
+ * `aged N` form and looked for "accompanied" but not "supervising".
+ */
 const AGE_SENTENCE = new RegExp(
   [
-    'under\\s*\\d', 'over\\s*\\d', '\\d\\s*(\\+|plus)(?!\\d)', 'ages?\\s*\\d',
-    '\\d\\s*[-–]\\s*\\d+\\s*(year|yr|month)', 'years?\\s*old', 'months?\\s*old',
-    'accompanied', 'all ages', 'no age (restriction|limit)', 'age (restriction|limit|policy)',
-    'under-?\\d+s\\b', 'adults? only', '\\d+s?\\s*and\\s*(over|under|above|below)\\b',
+    // Bare numeric forms.
+    'under\\s*\\d', 'over\\s*\\d', 'above\\s*\\d', 'below\\s*\\d',
+    '\\d\\s*(\\+|plus)(?!\\d)', '\\d+\\s*(?:or|and)\\s*(?:over|under|above|below|older|younger)',
+    // Generic "aged N" in any of its shapes, including ranges written with any dash.
+    'aged?\\s*\\d', 'ages?\\s*\\d', '\\d+\\s*[-\u2013\u2014]+\\s*\\d+\\s*(year|yr|month)',
+    'years?\\s*old', 'months?\\s*old', 'year olds?',
+    /**
+     * Month-unit ages, and "N years and over". Recall, not precision: this also matches cookie
+     * tables ("_fbp 3 months"), which `classifyAgeSentence` then discards. The reviewer's rule is
+     * that the front door is broad and the classifier is strict, because a form the door misses is
+     * invisible to the audit's negative conclusion while a form it over-admits is merely noise.
+     */
+    '\\d\\s*months?', '\\d+\\s*(?:year|yr)s?\\s*(?:or|and|&)\\s*(?:over|under|above|below|older|younger)',
+    '\\d+\\s*(?:year|yr)s?\\s*of age',
+    // "under/over the age of N", "minimum age is 5", "maximum age".
+    '(?:under|over|above|below)\\s*the\\s*age\\s*of\\s*\\d',
+    '(?:minimum|maximum)\\s*age', 'age\\s*(?:restriction|limit|policy|guidance|requirement)',
+    // Supervision and accompaniment, which are age rules even when no number is adjacent.
+    'accompanied', 'unaccompanied', 'accompany', 'supervis', 'must be with an adult',
+    // Positive admission wording.
+    'all ages', 'no age (?:restriction|limit)', 'adults? only',
   ].join('|'),
   'i',
 );
@@ -69,8 +100,18 @@ const NON_AGE_UNIT = new RegExp(
   'square|sq|metres?|meters?|miles?|minutes?|hours?|days?|weeks?|rooms?|exhibits?|zones?|items?|' +
   'works?|paintings?|objects?|rides?|attractions?|experiences?|animals?|figures?|brands?|' +
   'histories|cm|kg|m|ft|%|pounds?)\\b' +
-  // "over 260 years of Wedgwood" is not an age; "over 12 years old" is. Only the second keeps its number.
-  '|\\b\\d[\\d,.]*\\s*years?\\b(?!\\s*old)',
+  /**
+   * `N years` cuts both ways: "over 260 years of Wedgwood" is a span of history, "children under 13
+   * years" is an age. An earlier revision stripped every `N years` not followed by "old", which
+   * silently erased real bounds -- "aged 18 months to 5 years", "aged 18 years or over", "children
+   * under 4 years" all stopped parsing. The two contexts below are the ones the corpus actually
+   * uses for a non-age span, and nothing else is touched:
+   *   "N years of <not age>"  -- 260 years of Wedgwood, 14 years of art, 125 years of music
+   *   "for/valid/£ N years"   -- a membership or access-card validity, not a visitor's age
+   */
+  '|\\b\\d[\\d,.]*\\s*years?\\s+of\\s+(?!age\\b)' +
+  '|(?<=\\bfor\\s)\\b\\d[\\d,.]*\\s*years?\\b(?!\\s*old)' +
+  '|(?<=\\bvalid\\s)\\b\\d[\\d,.]*\\s*years?\\b(?!\\s*old)',
   'i',
 );
 
@@ -100,13 +141,23 @@ const ADMISSION_POSITIVE = /\bno age (restriction|limit)s?\b|\bno minimum age\b|
 
 const POSITIVE_PATTERN = /\ball ages\s*(are\s*)?(welcome|admitted|catered)?\b|\bno age (restriction|limit)s?\b|\bsuitable for all ages\b|\bwelcome at any age\b|\bchildren of all ages\b/i;
 
-const ACCOMPANIMENT_PATTERN = /\baccompanied\b|\bmust be with an adult\b|\bsupervised\b|\badult supervision\b|\bwith a (parent|carer|guardian|responsible adult)\b/i;
+const ACCOMPANIMENT_PATTERN = /\baccompanied\b|\bmust be with an adult\b|\bsupervis(?:e|es|ed|ing|ion|ory)\b|\bwith a (parent|carer|guardian|responsible adult)\b/i;
 
 /** Wording that recommends rather than restricts. */
 const RECOMMENDATION_PATTERN = /\brecommended\b|\bbest (for|suited)\b|\bideal for\b|\bsuitable for\b|\bdesigned for\b|\baimed at\b|\bgeared (to|towards)\b|\bperfect for\b/i;
 
 /** Wording that restricts rather than recommends. */
-const RESTRICTION_PATTERN = /\bnot admitted\b|\bnot permitted\b|\bnot allowed\b|\bno entry\b|\bmay not enter\b|\bare refused\b|\bonly\b|\bmust be (aged|over|under)\b|\brestricted to\b|\bminimum age\b|\bmaximum age\b|\badults? only\b|\bstrictly\b/i;
+/**
+ * A prohibition written as a negated admission rather than a negated verb: "No one under 14 is
+ * admitted". Without this the sentence reads as an ADMISSION and lands in `ambiguous_scope`, which
+ * fails open safely but understates what the audit can see.
+ */
+const NO_ONE_ADMITTED = /\bno\s+(?:one|child(?:ren)?|persons?|visitors?|guests?|under-?\d{1,2}s?)\b[^.]{0,80}?\b(?:is|are)\s+(?:admitted|allowed|permitted)\b/i;
+
+const RESTRICTION_PATTERN = new RegExp(
+  [/\bnot admitted\b|\bnot permitted\b|\bnot allowed\b|\bno entry\b|\bmay not enter\b|\bare refused\b|\bonly\b|\bmust be (aged|over|under|at least)\b|\brestricted to\b|\bminimum age\b|\bmaximum age\b|\badults? only\b|\bstrictly\b/.source, NO_ONE_ADMITTED.source].join('|'),
+  'i',
+);
 
 function yearsToMonths(years) {
   return Math.round(years * MONTHS_PER_YEAR);
@@ -148,11 +199,35 @@ function readAgeSetRaw(sentence) {
   let m = cleaned.match(/under\s*(\d{1,2})\s*months?/);
   if (m) return { kind: 'below', months: Number(m[1]), inclusive: false, unit: 'months', form: 'under-N-months' };
 
-  m = cleaned.match(/(\d{1,2})\s*[-\u2013]\s*(\d{1,2})\s*months?/);
+  m = cleaned.match(/(\d{1,2})\s*[-\u2013\u2014]+\s*(\d{1,2})\s*months?/);
   if (m) return { kind: 'band', fromMonths: Number(m[1]), toMonths: Number(m[2]), unit: 'months', form: 'N-M-months' };
 
+  /**
+   * Month-unit forms have to be read BEFORE the year forms below, or "over 18 months" is parsed by
+   * the generic "over N" rule and becomes eighteen YEARS -- a fifteen-fold error in the bound, in
+   * the direction that hides families.
+   */
+  m = cleaned.match(/(?:over|above)\s*(\d{1,2})\s*months?/);
+  if (m) return { kind: 'above', months: Number(m[1]), inclusive: false, unit: 'months', form: 'over-N-months' };
+
+  m = cleaned.match(/\b(\d{1,2})\s*months?\s*(?:and|or|&|&amp;)\s*(?:over|above|older)\b/);
+  if (m) return { kind: 'above', months: Number(m[1]), inclusive: true, unit: 'months', form: 'N-months-and-over' };
+
+  m = cleaned.match(/\b(\d{1,2})\s*months?\s*(?:and|or|&|&amp;)\s*(?:under|below|younger)\b/);
+  if (m) return { kind: 'below', months: Number(m[1]), inclusive: true, unit: 'months', form: 'N-months-and-under' };
+
+  // Mixed units: "aged 18 months to 5 years". Read in months, the finer of the two.
+  m = cleaned.match(/(\d{1,2})\s*months?\s*(?:to|[-\u2013\u2014]+)\s*(\d{1,2})\s*years?/);
+  if (m) return { kind: 'band', fromMonths: Number(m[1]), toMonths: yearsToMonths(Number(m[2])), unit: 'months', form: 'N-months-to-M-years' };
+
+  m = cleaned.match(/minimum\s*age\s*(?:is|of|:|=)?\s*(\d{1,2})\s*months?/);
+  if (m) return { kind: 'above', months: Number(m[1]), inclusive: true, unit: 'months', form: 'minimum-age-N-months' };
+
+  m = cleaned.match(/maximum\s*age\s*(?:is|of|:|=)?\s*(\d{1,2})\s*months?/);
+  if (m) return { kind: 'below', months: Number(m[1]), inclusive: true, unit: 'months', form: 'maximum-age-N-months' };
+
   // "N and under", "N or younger", "up to N" -- the bound itself is included.
-  m = cleaned.match(/\b(\d{1,2})s?\s*(?:and|or)\s*(?:under|below|younger)\b|\bup to\s*(\d{1,2})\b/);
+  m = cleaned.match(/\b(\d{1,2})s?\s*(?:and|or|&|&amp;)\s*(?:under|below|younger)\b|\bup to\s*(\d{1,2})\b/);
   if (m) {
     const n = Number(m[1] ?? m[2]);
     return { kind: 'below', months: yearsToMonths(n), inclusive: true, unit: 'years', form: 'N-and-under' };
@@ -163,7 +238,7 @@ function readAgeSetRaw(sentence) {
   if (m) return { kind: 'below', months: yearsToMonths(Number(m[1])), inclusive: false, unit: 'years', form: 'under-N' };
 
   // "N and over", "N+", "aged N or above" -- the bound itself is included.
-  m = cleaned.match(/\b(\d{1,2})\s*(?:\+|plus)(?!\d)|\b(\d{1,2})s?\s*(?:and|or)\s*(?:over|above|older)\b/);
+  m = cleaned.match(/\b(\d{1,2})\s*(?:\+|plus)(?!\d)|\b(\d{1,2})s?\s*(?:and|or|&|&amp;)\s*(?:over|above|older)\b/);
   if (m) {
     const n = Number(m[1] ?? m[2]);
     return { kind: 'above', months: yearsToMonths(n), inclusive: true, unit: 'years', form: 'N-and-over' };
@@ -173,8 +248,26 @@ function readAgeSetRaw(sentence) {
   m = cleaned.match(/(?:over|above)\s*(\d{1,2})s?\b/);
   if (m) return { kind: 'above', months: yearsToMonths(Number(m[1])), inclusive: false, unit: 'years', form: 'over-N' };
 
+  // "minimum age is 5", "minimum age of 5" -- a floor, stated without "over" or "and above".
+  m = cleaned.match(/\b(\d{1,2})\s*years?\s*(?:and|or|&|&amp;)\s*(?:over|above|older)\b/);
+  if (m) return { kind: 'above', months: yearsToMonths(Number(m[1])), inclusive: true, unit: 'years', form: 'N-years-and-over' };
+
+  m = cleaned.match(/\b(\d{1,2})\s*years?\s*(?:and|or|&|&amp;)\s*(?:under|below|younger)\b/);
+  if (m) return { kind: 'below', months: yearsToMonths(Number(m[1])), inclusive: true, unit: 'years', form: 'N-years-and-under' };
+
+  m = cleaned.match(/minimum\s*age\s*(?:is|of|:|=)?\s*(\d{1,2})/);
+  if (m) return { kind: 'above', months: yearsToMonths(Number(m[1])), inclusive: true, unit: 'years', form: 'minimum-age-N' };
+
+  // "maximum age is 12" -- a ceiling, likewise.
+  m = cleaned.match(/maximum\s*age\s*(?:is|of|:|=)?\s*(\d{1,2})/);
+  if (m) return { kind: 'below', months: yearsToMonths(Number(m[1])), inclusive: true, unit: 'years', form: 'maximum-age-N' };
+
+  // "must be aged 8", "must be at least 8", "must be 8 years of age".
+  m = cleaned.match(/must be\s*(?:aged\s*)?(?:at least\s*)?(\d{1,2})\b/);
+  if (m) return { kind: 'above', months: yearsToMonths(Number(m[1])), inclusive: true, unit: 'years', form: 'must-be-N' };
+
   // "ages 3-11", "3 to 11 years", "aged 5 - 12"
-  m = cleaned.match(/ages?\s*(\d{1,2})\s*(?:[-\u2013]|to)\s*(\d{1,2})|\b(\d{1,2})\s*(?:[-\u2013]|to)\s*(\d{1,2})\s*years?\b/);
+  m = cleaned.match(/age[ds]?\s*(\d{1,2})\s*(?:[-\u2013\u2014]+|to)\s*(\d{1,2})|\b(\d{1,2})\s*(?:[-\u2013\u2014]+|to)\s*(\d{1,2})\s*years?\b/);
   if (m) {
     const lo = Number(m[1] ?? m[3]);
     const hi = Number(m[2] ?? m[4]);
@@ -187,7 +280,10 @@ function readAgeSetRaw(sentence) {
 }
 
 /** Wording that says the mentioned ages are TURNED AWAY. */
-const EXCLUDES_PATTERN = /\bnot admitted\b|\bnot permitted\b|\bnot allowed\b|\bno entry\b|\bmay not enter\b|\bcannot enter\b|\bare refused\b|\bprohibited\b/i;
+const EXCLUDES_PATTERN = new RegExp(
+  [/\bnot admitted\b|\bnot permitted\b|\bnot allowed\b|\bno entry\b|\bmay not enter\b|\bcannot enter\b|\bare refused\b|\bprohibited\b/.source, NO_ONE_ADMITTED.source].join('|'),
+  'i',
+);
 
 /** Wording that says the mentioned ages are THE ONES LET IN. */
 const ADMITTED_SET_PATTERN = /\bonly\b|\brestricted to\b|\blimited to\b|\bminimum age\b|\bmaximum age\b|\bmust be (?:aged|over|under|at least)\b/i;
@@ -230,11 +326,20 @@ function toAdmittedInterval(ageSet, polarity) {
   }
 
   if (polarity === 'admitted_set') {
+    /**
+     * The fail-open direction FLIPS with the polarity, which the first version of this got wrong
+     * on one side. For an exclusion, admitting more means a wider bound; for an admitted set, it
+     * means a NARROWER one. "Only over 12s are admitted" read as 13+ would hide every
+     * twelve-year-old's family if the venue meant 12+ colloquially -- the opposite of the rule.
+     *
+     * So an ambiguous bound ("over 12", "under 12s") resolves towards letting more children in,
+     * here by keeping the bound itself inside the admitted set.
+     */
     if (ageSet.kind === 'above') {
-      return { minMonthsInclusive: ageSet.inclusive ? ageSet.months : ageSet.months + monthStep(ageSet), maxMonthsExclusive: null };
+      return { minMonthsInclusive: ageSet.months, maxMonthsExclusive: null };
     }
     if (ageSet.kind === 'below') {
-      return { minMonthsInclusive: null, maxMonthsExclusive: ageSet.inclusive ? ageSet.months + monthStep(ageSet) : ageSet.months };
+      return { minMonthsInclusive: null, maxMonthsExclusive: ageSet.months + monthStep(ageSet) };
     }
     return { minMonthsInclusive: ageSet.fromMonths, maxMonthsExclusive: ageSet.toMonths + monthStep(ageSet) };
   }
@@ -492,12 +597,59 @@ function wouldGateUnderB2(candidate, record, today = new Date().toISOString().sl
   };
 }
 
-/** Split one page into the sentences worth classifying. */
+/** Longest excerpt worth quoting as evidence. Beyond this it stops being a quotation. */
+const MAX_SENTENCE_CHARS = 400;
+const MIN_SENTENCE_CHARS = 12;
+
+/**
+ * Split one page into the sentences worth classifying.
+ *
+ * Two passes, because real extracted text is not prose. Sentence punctuation gets the first pass;
+ * blocks that are still too long are then split on the separators web pages actually use -- pipes,
+ * bullets, middots, tabs and runs of spaces left where markup used to be.
+ *
+ * Without the second pass, eleven venues' age wording was invisible to this audit: their pages
+ * carry no full stops at all, so the splitter produced single blocks of up to 4,752 characters
+ * which the length filter then discarded. A negative conclusion drawn over that corpus would have
+ * been measuring the extractor, not the venues.
+ */
 function ageSentences(text) {
-  return String(text ?? '')
+  // Deliberately NOT whitespace-collapsed yet: the runs of spaces left behind by stripped markup
+  // are the only separators some of these pages have, and collapsing first destroys them.
+  const blocks = String(text ?? '')
     .split(/(?<=[.!?])\s+|\n+/)
-    .map((s) => s.replace(/\s+/g, ' ').trim())
-    .filter((s) => s.length >= 12 && s.length <= 400 && AGE_SENTENCE.test(s));
+    .filter((block) => block.trim());
+
+  const out = [];
+  for (const block of blocks) {
+    const tidy = block.replace(/\s+/g, ' ').trim();
+    if (tidy.length <= MAX_SENTENCE_CHARS) {
+      out.push(tidy);
+      continue;
+    }
+    // Too long to quote: split again on the separators that survive HTML extraction.
+    for (const piece of block.split(/\s*[|\u2022\u00b7\u2013\u2014]\s*|\t+|\s{2,}/)) {
+      const trimmed = piece.replace(/\s+/g, ' ').trim();
+      if (trimmed) out.push(trimmed);
+    }
+  }
+
+  return out.filter(
+    (s) => s.length >= MIN_SENTENCE_CHARS && s.length <= MAX_SENTENCE_CHARS && AGE_SENTENCE.test(s),
+  );
+}
+
+/**
+ * Text that carries age wording but from which no quotable sentence could be extracted.
+ *
+ * Reported rather than dropped, so the audit's ledger reconciles at the DISCOVERY layer and a
+ * venue can never disappear silently between "the page mentions age" and "the audit saw it".
+ */
+function unextractableAgeText(text) {
+  const raw = String(text ?? '');
+  if (!AGE_SENTENCE.test(raw)) return null;
+  if (ageSentences(raw).length > 0) return null;
+  return { chars: raw.length, reason: 'age wording present, but no quotable sentence could be extracted' };
 }
 
 /**
@@ -506,7 +658,7 @@ function ageSentences(text) {
  * `records` are `venue_source_evidence` rows as `rowToRecord` returns them, optionally with a
  * `venueName`. Nothing is written, nothing is fetched: this reads what has already been stored.
  */
-function auditEvidence(records, { venueNames = {} } = {}, today = new Date().toISOString().slice(0, 10)) {
+function auditEvidence(records, { venueNames = {}, discovery = {} } = {}, today = new Date().toISOString().slice(0, 10)) {
   const candidates = [];
   const skipped = [];
   const venuesSeen = new Set();
@@ -517,6 +669,14 @@ function auditEvidence(records, { venueNames = {} } = {}, today = new Date().toI
   const pagesSeen = new Set();
   // Per call, not module level: shared mutable state across runs would make results order-dependent.
   const pagesWithAgeSignalSeen = new Set();
+  /**
+   * The DISCOVERY layer of the ledger. A page whose text carries age wording but from which no
+   * quotable sentence can be cut is the one way a venue could vanish between "production mentions
+   * age" and "the audit classified something", so it is recorded rather than dropped. Without this
+   * the corpus ledger balances trivially against itself and proves nothing about coverage.
+   */
+  const pagesWithAgeWordingSeen = new Set();
+  const pageDetail = new Map();
 
   let sentenceOccurrences = 0;
   let pagesWithAgeSignal = 0;
@@ -540,6 +700,19 @@ function auditEvidence(records, { venueNames = {} } = {}, today = new Date().toI
     if (sentences.length > 0 && !pagesWithAgeSignalSeen.has(pageKey)) {
       pagesWithAgeSignalSeen.add(pageKey);
       pagesWithAgeSignal += 1;
+    }
+
+    /**
+     * Resolved per PAGE after the loop, not per record: `--file` mode hands one record per
+     * sentence, so a page whose first record is unquotable may still yield sentences from a later
+     * one. Deciding early would book the same page on both sides of the ledger.
+     */
+    const raw = String(record.extractedText ?? '');
+    if (AGE_SENTENCE.test(raw)) {
+      pagesWithAgeWordingSeen.add(pageKey);
+      const detail = pageDetail.get(pageKey) ?? { familypilotPlaceId: record.familypilotPlaceId, sourceUrl: record.sourceUrl, longestText: '' };
+      if (raw.length > detail.longestText.length) detail.longestText = raw;
+      pageDetail.set(pageKey, detail);
     }
 
     for (const sentence of sentences) {
@@ -592,6 +765,26 @@ function auditEvidence(records, { venueNames = {} } = {}, today = new Date().toI
     }
   }
 
+  const unextractable = [...pagesWithAgeWordingSeen]
+    .filter((pageKey) => !pagesWithAgeSignalSeen.has(pageKey))
+    .map((pageKey) => {
+      const { familypilotPlaceId, sourceUrl, longestText } = pageDetail.get(pageKey);
+      /**
+       * Cross-check, not decoration. The page was resolved as unextractable by walking its
+       * records; `unextractableAgeText` reaches the same verdict from the raw text alone. If the
+       * two ever disagree the ledger says so instead of quietly reporting a clean reconciliation.
+       */
+      const verdict = unextractableAgeText(longestText);
+      return {
+        pageKey,
+        familypilotPlaceId,
+        sourceUrl,
+        chars: longestText.length,
+        reason: verdict?.reason ?? 'resolved unextractable per page, but the raw text is quotable',
+        agrees: Boolean(verdict),
+      };
+    });
+
   const byCategory = {};
   for (const candidate of candidates) {
     byCategory[candidate.category] = (byCategory[candidate.category] ?? 0) + 1;
@@ -607,6 +800,44 @@ function auditEvidence(records, { venueNames = {} } = {}, today = new Date().toI
       accountsFor: sentenceOccurrences === candidates.length + skipped.length,
       pagesExamined: pagesSeen.size,
       pagesWithAgeSignal,
+      /**
+       * The discovery ledger: every page whose text mentions age is either a page that yielded
+       * sentences or a page explicitly recorded as unextractable. Nothing falls between them.
+       */
+      pagesWithAgeWording: pagesWithAgeWordingSeen.size,
+      pagesWithAgeWordingButNoSentence: unextractable.length,
+      /**
+       * Reconciliation against a discovery total measured by something OTHER than this module --
+       * the SQL scan over production, or the live DB query. Without it the ledger only balances
+       * against itself, which proves nothing about recall. `unexplainedPages` is the number of
+       * pages production says carry age wording that this audit never saw at all.
+       */
+      expectedPagesWithAgeWording: discovery.pagesWithAgeWording ?? null,
+      expectedVenuesWithAgeWording: discovery.venuesWithAgeWording ?? null,
+      /**
+       * Pages the discovery scan itself resolved as carrying age wording it could not cut into a
+       * quotable sentence, and therefore never handed to this run. Declared rather than inferred,
+       * so a page that simply went missing between the two implementations shows up as
+       * `unexplainedPages > 0` instead of being absorbed into a derived figure.
+       */
+      unquotablePagesFromDiscovery: discovery.unquotablePages ?? null,
+      unquotableVenuesFromDiscovery: discovery.unquotableVenues ?? null,
+      unexplainedPages:
+        discovery.pagesWithAgeWording == null
+          ? null
+          : discovery.pagesWithAgeWording -
+            (pagesWithAgeSignal + unextractable.length + (discovery.unquotablePages ?? 0)),
+      unexplainedVenues:
+        discovery.venuesWithAgeWording == null
+          ? null
+          : discovery.venuesWithAgeWording - (venuesSeen.size + (discovery.unquotableVenues ?? 0)),
+      discoveryAccountsFor:
+        unextractable.every((u) => u.agrees) &&
+        (discovery.pagesWithAgeWording == null ||
+          discovery.pagesWithAgeWording ===
+            pagesWithAgeSignal + unextractable.length + (discovery.unquotablePages ?? 0)) &&
+        (discovery.venuesWithAgeWording == null ||
+          discovery.venuesWithAgeWording === venuesSeen.size + (discovery.unquotableVenues ?? 0)),
       venuesWithEvidence: venuesSeen.size,
       candidatesByCategory: byCategory,
       venuesByCategory: Object.fromEntries(Object.entries(venuesByCategory).map(([k, v]) => [k, v.size])),
@@ -619,6 +850,7 @@ function auditEvidence(records, { venueNames = {} } = {}, today = new Date().toI
     },
     candidates,
     skipped,
+    unextractable,
   };
 }
 
@@ -626,6 +858,7 @@ module.exports = {
   AGE_SENTENCE,
   ACTIVITY_WORDS,
   ageSentences,
+  unextractableAgeText,
   readAgeSet,
   detectPolarity,
   toAdmittedInterval,

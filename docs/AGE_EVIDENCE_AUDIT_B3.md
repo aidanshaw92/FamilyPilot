@@ -1,245 +1,243 @@
 # P0-B3 — zero-write age-evidence audit
 
-**Run:** 23 September 2026, against the live London catalogue, over the **complete** candidate
-corpus. **Nothing was written.** No claim created, no metadata altered, no draft approved, no age
-information published.
+What the venue pages FamilyPilot has already fetched actually say about age, and whether the
+P0-B2 venue-age-prohibition model can act on any of it.
 
-Reproduce with:
+**This audit writes nothing.** It creates no claim, approves no draft, touches no
+`venue_family_metadata` row and publishes no age information. That is enforced by a test that fails
+if either audit file so much as names a writer, not by a promise in this document.
+
+Reproduce it:
 
 ```bash
-node scripts/audit-age-evidence.js              # live, needs SUPABASE_URL + service-role key
-node scripts/audit-age-evidence.js --file <tsv> # offline
+# live, against the database (needs SUPABASE_URL + service-role key)
+node scripts/audit-age-evidence.js
+
+# offline, against a snapshot of the corpus
+node scripts/audit-age-evidence.js --file <corpus> \
+  --discovery pages=109,venues=59,unquotable=24,unquotableVenues=10
 ```
 
----
+Snapshot behind the figures below: **2026-09-26**, corpus md5 `a6f968c842299e2bf8a24629ebbf0ad2`,
+184 rows / 49 venues / 85 pages. `venue_source_evidence` is re-crawled continuously, so both the
+checksum and the counts move; every number here was measured against that one snapshot, and the
+checksum is what makes the snapshot verifiable rather than asserted.
 
 ## Verdict
 
-**The B2 semantics hold. The stored evidence contains nothing B2 could act on. B4 must not publish
-age policy automatically.**
+**The B2 model fits what the evidence actually contains, because the evidence contains no venue-level
+age prohibition at all.** Across 184 age-related statements from 49 venues, **zero** are a venue-level
+age door. Nothing in the stored corpus would become a restriction under B2 even with a human
+approval.
 
-Three findings carry that, in order of weight:
+That is a finding about the model's *safety*, not proof of its usefulness. B2 is built to publish a
+prohibition; the corpus offers none to publish. What the corpus does contain — accompaniment rules,
+activity and session audiences, price bands, companion-role rules — B2 correctly declines to treat
+as doors.
 
-1. **No venue-level age prohibition exists** in the catalogue's stored evidence. Nothing is
-   eligible to gate, even with a human approval.
-2. **The extractor, not the model, is the danger.** Before a guard was added, one sentence about
-   carer eligibility was eligible to become a door the moment anyone approved it.
-3. **The evidence is thin, and B3 cannot tell thin from silent.** 29.1% of venues have no usable
-   page text at all.
+Two independent implementations agree on the headline. The classifier in this PR returns
+`venue_restriction: 0`. A SQL scan over the whole clean corpus for any sentence combining
+gate wording (`not admitted`, `only`, `strictly`, `minimum age`, `must be aged`, `no one … is
+admitted`, …) with a parseable age set returns **4 sentences**, and none of them is an age door:
+
+| Sentence | What it is |
+| --- | --- |
+| "Babylon Park is suitable for everyone - there is no minimum age." | a positive |
+| "… there is no minimum age for access however the rollercoaster and drop tower have a minimum heigh…" | a positive, plus a height rule |
+| "Children must be strictly under 50kg to ride." (KT City Farm) | a weight limit on one ride |
+| "Children under 16 are not permitted to accompany a disabled visitor as an Essential Companion." (Woodside) | a companion-role rule |
 
 ## 1. What was examined
 
-Measured against production (read-only SQL):
+| | |
+| --- | --- |
+| venues in `venue_family_metadata` | 134 |
+| venues with at least one cleanly fetched page | 96 |
+| cleanly fetched pages | 427 |
+| pages whose text mentions age at all | 109 |
+| venues whose pages mention age at all | 59 |
+| pages that yielded a quotable sentence | 85 |
+| venues in the classified corpus | 49 |
+| age-related statements classified | 174 |
+| statements explicitly skipped, with a reason | 10 |
+| statement occurrences in | 184 |
 
-| | Count | Share of catalogue |
-|---|---|---|
-| Venues in the catalogue | 134 | — |
-| Venues with any stored evidence | 128 | 95.5% |
-| Evidence rows stored | 738 | — |
-| Rows that fetched cleanly | 458 | 62.1% |
-| Rows carrying extracted text | 453 | 61.4% |
+Candidate discovery is deliberately **broader** than classification. The front door matches any
+`under/over/above/below N`, `aged N`, `N+`, `N or older`, `N years/months`, `under the age of N`,
+`minimum/maximum age`, `N years of age`, plus every form of accompaniment and supervision wording
+and the positive phrasings. Precision lives in `classifyAgeSentence`, not in the detector, because a
+form the detector misses is invisible to a negative conclusion, while one it over-admits is merely
+noise the classifier discards. The corpus consequently includes cookie tables (`_fbp 3 months`) and
+marketing spans (`over 260 years of Wedgwood`); they classify as `not_an_age_statement`.
 
-Classifier input, the complete candidate set (88 rows, 35 venues — verified equal to the SQL count,
-not a sample):
+### The discovery ledger
 
-| | Count |
-|---|---|
-| Pages examined | 49 |
-| Sentence occurrences | 88 |
-| Unique sentence text | 74 |
-| **Classified** | **84** |
-| **Explicitly skipped** | **4** |
-| Ledger balances (`input = classified + skipped`) | **yes** |
+Two ledgers, at two layers. The inner one balances the corpus: `184 occurrences = 174 classified + 10
+explicitly skipped`. On its own that proves nothing — it balances against itself.
 
-Occurrences exceed unique text because several sentences appear at more than one venue — the
-Wedgwood, Horniman, Warner Bros. and DLA-eligibility texts each appear two or three times. Venues
-are counted by identity, so a repeated sentence never inflates a venue count.
+The outer one compares this module's page count against a discovery total measured by the SQL scan,
+which is a different implementation:
+
+| | pages | venues |
+| --- | --- | --- |
+| production says the text mentions age | 109 | 59 |
+| yielded a quotable sentence (this audit's corpus) | 85 | 49 |
+| age wording present, nothing quotable | 24 | 10 |
+| **unexplained** | **0** | **0** |
+
+`--discovery` feeds the expected totals in and the audit reports `unexplainedPages`. A page
+production says mentions age that this audit never received surfaces there; it cannot be absorbed
+into a derived figure.
+
+**The 24 unquotable pages were checked directly, not waved past.** They are pages whose extracted
+text carries age wording inside one long block with no sentence punctuation — up to 7,954 characters
+— so no quotation can be cut from them. A SQL scan of those 24 pages for prohibition wording
+(`not admitted`, `no entry`, `adults only`, `minimum age`, `must be aged N`, `no one … is admitted`)
+returns **0**. The closest wording any of them carries is
+`Guests under the age of 5 require a paying adult to accompany them on our equipment` (Flip Out
+Brent Cross, an accompaniment rule) and `Strictly for ages 5 & under` (Flip Out Watford, describing
+one priced session). The negative conclusion does not rest on unexamined pages.
 
 ## 2. Evidence coverage — and what this audit cannot tell you
 
-Per venue, across the whole catalogue:
+This audit establishes what the **currently stored evidence** says. It cannot distinguish a venue
+whose website is genuinely silent about age from a venue whose age page was never discovered or
+fetched.
 
-| Coverage band | Venues | Share |
-|---|---|---|
-| No evidence row at all | 6 | 4.5% |
-| Evidence exists but no clean text | 33 | 24.6% |
-| Clean text but no age wording | 45 | 33.6% |
-| Age wording found | 50 | 37.3% |
+| Venue coverage | count | share of 134 |
+| --- | --- | --- |
+| age signal found and classified | 49 | 36.6% |
+| clean page fetched, no age wording in it | 47 | 35.1% |
+| no cleanly fetched page at all | 38 | 28.4% |
 
-**The currently stored evidence contains no age wording for roughly two thirds of venues. B3 cannot
-distinguish true site silence from source-discovery and fetch coverage gaps.** Nearly a third of
-venues (29.1%) have no usable text at all, and source discovery deliberately samples a handful of
-homepage / family / FAQ / visitor / accessibility candidates rather than crawling every ticket,
-admission or activity page — which is exactly where age rules tend to live.
+Source discovery samples a small number of homepage / family / FAQ / visitor-info / accessibility
+candidates per venue. It does not exhaustively crawl ticket, admission or activity pages, which is
+where an age rule most often lives. So:
 
-This is a data-coverage finding, and it belongs to the upcoming P0 Venue Intelligence Completeness
-programme. B3 did not crawl anything to close it.
+> The currently stored evidence does not contain age wording for roughly two thirds of venues. B3
+> cannot distinguish true site silence from source-discovery and fetch coverage gaps without targeted
+> age-source discovery.
+
+That is a data-coverage finding and it feeds directly into P0 Venue Intelligence Completeness. It is
+**not** evidence that London venues do not restrict by age.
 
 ## 3. What the pages actually say
 
-84 classified statements across 35 venues:
+174 classified statements, 49 venues:
 
-| Category | Statements | Share | Venues |
-|---|---|---|---|
-| `marketing_all_ages` | 17 | 20.2% | 11 |
-| `not_an_age_statement` | 11 | 13.1% | 9 |
-| `mixed_statement` | 10 | 11.9% | 7 |
-| `administrative_not_admission` | 8 | 9.5% | 5 |
-| `insufficient_evidence` | 8 | 9.5% | 7 |
-| `pricing_not_admission` | 8 | 9.5% | 7 |
-| `accompaniment` | 7 | 8.3% | 5 |
-| `height_not_age` | 4 | 4.8% | 3 |
-| `companion_role_not_admission` | 4 | 4.8% | 4 |
-| `activity_restriction` | 2 | 2.4% | 2 |
-| `positive_all_ages` | 2 | 2.4% | 2 |
-| `ambiguous_scope` | 2 | 2.4% | 2 |
-| `qualified_positive` | 1 | 1.2% | 1 |
-| **`venue_restriction`** | **0** | **0.0%** | **0** |
+| category | statements | share | venues | what it means |
+| --- | --- | --- | --- | --- |
+| `marketing_all_ages` | 30 | 17.2% | 11 | "fun for all ages" as copy, not an admission position |
+| `not_an_age_statement` | 29 | 16.7% | 18 | a number with a non-age unit, or site furniture |
+| `insufficient_evidence` | 28 | 16.1% | 22 | age wording with no bound this model can read |
+| `pricing_not_admission` | 18 | 10.3% | 11 | free/discounted under N, which is not a door |
+| `mixed_statement` | 13 | 7.5% | 9 | two facts in one sentence |
+| `ambiguous_scope` | 12 | 6.9% | 9 | a real bound, but venue or activity is unclear |
+| `administrative_not_admission` | 11 | 6.3% | 8 | DLA/PIP eligibility, membership tiers, waivers |
+| `activity_restriction` | 10 | 5.7% | 6 | a session or ride audience, not the venue |
+| `accompaniment` | 8 | 4.6% | 6 | under-Ns need an adult, which is a caveat |
+| `companion_role_not_admission` | 5 | 2.9% | 4 | who may act as a carer, not who may enter |
+| `height_not_age` | 4 | 2.3% | 3 | 1.2m, 50kg |
+| `positive_all_ages` | 2 | 1.1% | 2 | an explicit positive admission position |
+| `temporary_restriction` | 2 | 1.1% | 1 | a dated event's age guide |
+| `recommendation` | 1 | 0.6% | 1 | "recommended for ages 3-11" |
+| `qualified_positive` | 1 | 0.6% | 1 | "all ages 4+", which contradicts itself |
+| **`venue_restriction`** | **0** | **0.0%** | **0** | **a venue-level age door** |
 
-Source types, pages / statements: `visitor_info` 25/44 · `official_website` 14/29 ·
-`accessibility_page` 6/6 · `family_page` 3/4 · `faq_page` 1/1.
-
-Against the shipped B2 semantics:
-
-| | Count |
-|---|---|
-| Would gate **now** | 0 — and always 0, because B3 writes nothing |
-| **Eligible to gate if a human approved it** | **0** |
-| Would need human review | 0 |
-| Expose a model gap | 13 (15.5%) |
-
-Those first two rows are different questions. "Would gate now" is trivially zero for any corpus; the
-one worth asking is whether a person clicking approve tomorrow would produce a door. It is answered
-by building a synthetic claim in memory — nothing stored — and running the **real** `claimMayGate`
-and `normaliseAgeRules`, so it cannot drift from the shipped code.
-
-**No sentence in the catalogue is eligible to become a door.** The B2 gate is correct and idle.
+By source type (pages / statements): `visitor_info` 49/95, `official_website` 21/55,
+`family_page` 7/16, `accessibility_page` 7/7, `faq_page` 1/1.
 
 ## 4. The finding that decides B4
 
-The first run of this audit found exactly one candidate venue restriction:
+**B2 is safe to keep and premature to publish from.**
 
-> **"Children under 16 are not permitted to accompany a disabled visitor as an Essential
-> Companion."** — Woodside Animal Farm, `visitor_info`
+- 0 of 174 statements are a venue-level prohibition.
+- 0 are eligible to gate even if a human approved them (`eligibleToGateIfHumanApproved`).
+- So B4 would publish nothing from the current corpus.
 
-That is about who may act as a **carer**. It says nothing about admission. A naive reader sees
-"under 16" and "not permitted" and produces a door at 192 months.
+The two gate questions are kept apart, because conflating them produced a metric that could not
+fail:
 
-Published, Woodside Animal Farm would have been hidden from **every family with a child under
-sixteen** — very nearly every family this product serves — and nobody would have known why.
+- `wouldGateNow` — always 0 in B3, by definition: no claim, no approval, no write.
+- `eligibleToGateIfHumanApproved` — does this candidate pass every *non-human* B2 gate? Measured by
+  building a synthetic in-memory claim (real source URL and type, synthetic evidence id,
+  `confidence: high`, the real derived field key, a valid lifetime, `human:b3-audit`) and running the
+  **real** `claimMayGate()` and `normaliseAgeRules()`. Nothing is written.
 
-It was **eligible to gate**: official-type source, long excerpt, readable interval, and
-`claimMayGate` satisfied. One human click stood between it and production.
+A genuine door is pinned in the tests: `Under 4s are not admitted.` from an official page returns
+`eligibleToGateIfHumanApproved: true`. The metric can therefore be positive, and is 0 here because
+the corpus is empty of doors, not because the code says so.
 
-Two things follow:
+## 5. The accompaniment conclusion, stated narrowly
 
-1. **The B2 model was not wrong. The extractor was.** Every B2 semantic behaved correctly.
-2. **A single barrier is too thin.** Human approval was the only thing in the way.
+Eight accompaniment statements across six venues (Woodside "all visitors under 16 must be
+accompanied", Paradox "under the age of 14", RAF Museum "under 11", KT City Farm "under 8 years
+old", SEA LIFE "15 and under … by an adult aged 18 years or over", Flip Out "aged 5-12 … someone
+supervising them").
 
-The classifier now has a `companion_role_not_admission` guard and a named regression. But it was
-written *after* seeing the failure — which is the point. The next corpus holds a sentence nobody has
-thought of yet.
+None of these is a venue-level prohibition: a FamilyPilot family arrives with an adult, so none of
+them turns a family away. That is the only claim made here. Party composition, adult-to-child ratios
+and minimum carer ages (SEA LIFE's "18 years or over", Madame Tussauds' "carer must be 14+") can
+still affect feasibility for a specific family, and this audit does not model that.
 
-## 5. Extraction defects this audit found in itself
+## 6. Extraction and classification defects this audit found in itself
 
-Running against real pages, rather than crafted examples, is what surfaced these. All are fixed and
-pinned by tests.
+Each was found by running against the real corpus or by mutating the code, not by reading it. Each
+has a regression.
 
-| Defect | Real wording | Was | Now |
-|---|---|---|---|
-| **Inverted door** | "Children aged 12 and over are not admitted" | `min = 144` — admitted exactly the excluded ages | `max = 144` |
-| Carer rule read as admission | "under 16 … not permitted to accompany" | venue restriction | companion role |
-| Counted things read as ages | "over 25 rides", "50+ exhibits", "over 100 animals" | ages 25 / 50 / 100 | not an age |
-| Duration read as age | "over 260 years of Wedgwood" | age 260 | not an age |
-| Qualified positive | "suitable for all ages 4+" | unconditional all-ages | qualified, fails open |
-| Height and weight | "under 1.2m", "under 50kg" | ages | not ages |
+| Defect | What it produced | Fix |
+| --- | --- | --- |
+| `wouldGateUnderB2` never called `claimMayGate` | the headline metric was 0 for every possible corpus | split into `wouldGateNow` / `eligibleToGateIfHumanApproved`, both from the real gate |
+| polarity ignored | "over 12s are not admitted" became a MINIMUM of 144, admitting exactly the excluded ages | two-stage parse: read the mentioned age set, then transform by polarity |
+| fail-open resolved upwards on both sides | "Only over 12s are admitted" became 13+, hiding every 12-year-old's family | the safe direction flips with polarity; an admitted set resolves to the SMALLER minimum |
+| `positive_all_ages` matched before qualifiers | "suitable for all ages 4+" became an unconditional all-ages assertion | `qualified_positive`; the all-ages count fell from 16/13 venues to 2/2 |
+| non-age units read as ages | "over 25 rides" → age 25, "50+ exhibits" → 50, "over 260 years" → 260 | a unit list, plus a 21-year ceiling on any admission bound |
+| blanket `N years` stripping | erased real bounds: "aged 18 months to 5 years", "aged 18 years or over", "children under 4 years" | strip only `N years of <not age>` and `for/valid N years` |
+| month units read as years | "over 18 months" → eighteen years, a fifteen-fold error that hides families | month-unit rules read before the year rules |
+| no generic `aged N` / supervision form | Flip Out's "Children aged 5--12 must have someone … supervising them" was classified `insufficient_evidence` | `supervis(e\|es\|ed\|ing\|ion\|ory)`, and a broader front door |
+| no bound form without a directional word | "the minimum age is 5", "must be aged 8" parsed to nothing | `minimum/maximum age is N`, `must be (aged\|at least) N`, `N years and over` |
+| prohibition written as a negated admission | "No one under the age of 14 is admitted" fell to `ambiguous_scope` | `NO_ONE_ADMITTED`, in both the excludes and restriction patterns |
+| source-type counts changed meaning with input mode | "pages by source type" live, "statements by source type" offline | separate `pageSourceTypeCounts` / `candidateSourceTypeCounts`, counted by page identity |
+| the ledger balanced only against itself | a page production found and the audit never saw would vanish | `--discovery` reconciles against an independently measured total |
 
-The inversion is the serious one. A lexical parser cannot produce an admission interval before the
-sentence's polarity is known, so it no longer tries: stage one reads the age set a sentence
-*mentions*, stage two turns it into an *admitted* interval only once the sentence is known to
-exclude, to admit, or merely to describe. Where English is ambiguous ("over 12s" may mean 12+ or
-13+), the bound that admits **more** children is chosen — a wrong guess should show a venue that
-turns a family away, never hide one that would have let them in.
-
-## 6. Adversarial checks, against real wording
-
-| Challenge | Real example | Classified |
-|---|---|---|
-| Recommendation vs restriction | "the recommended age of the attraction is children aged 6 and over" | recommendation |
-| Accompaniment | "Children aged under 8 years old must be accompanied by an adult" | accompaniment |
-| Accompaniment framed as entry | "Children under 16 must be accompanied by an adult **to be permitted entry**" | accompaniment |
-| Activity-only limit | "dedicated sessions … for children aged 5 and under" | activity |
-| Ticket pricing | "Children under 4 years old can enter the museum for free" | pricing |
-| Benefit eligibility | "Disability Living Allowance for children under 16 … aged 16-64" | administrative |
-| Membership tiers | "Family membership, for two adults and two children under 18" | administrative |
-| Carer role | "The carer must be 14+ years old" | companion role |
-| Height / weight | "under 1.2m", "strictly under 50kg to ride" | not an age |
-| Months | "Babies under 6 months are not admitted" | months preserved |
-| Two facts in one sentence | "children under 2 go free **but** the recommended age … is 6 and over" | mixed, flagged |
-| Positive statement | "there is no minimum age for access" | positive |
-| Qualified positive | "suitable for all ages 4+" | qualified, not all-ages |
-
-**Accompaniment is the most common genuine age rule** — 7 statements across 5 venues — and some of
-it is phrased as an entry condition. B2 treats it as a caveat that never excludes. On this evidence
-that is right: **none of the seven is a venue-level prohibition**, and an accompanying adult is
-present by construction on a family day out.
-
-Stated narrowly on purpose: this says these seven rules are not doors. It does not say accompaniment
-can never affect feasibility. Adult-to-child ratios ("maximum 4 children per adult"), minimum adult
-ages ("an adult aged 18 years or over") and party composition are all present in the corpus and
-could matter to a real plan later.
+Nine mutations were applied to the guards above; all nine were killed by the suite.
 
 ## 7. Model gaps found
 
-| Gap | Frequency | Recommendation |
-|---|---|---|
-| One sentence carrying two age facts | 10 statements, 7 venues | Keep flagging; never attribute a bound to the wrong fact |
-| No way to state "all ages welcome" positively | **2 statements, 2 venues** | **Not yet justified. Re-measure after coverage improves.** |
-| Positive wording contradicted by its own bound | 1 statement | Keep failing open |
+16 statements (9.2%) expose something B2 cannot represent. None is a reason to change B2 now.
 
-**A correction to the previous revision of this report.** It claimed positive all-ages statements
-were the single largest category — 16 statements across 13 venues, 21.3% — and recommended a
-first-class `all_ages` fact on that basis. That figure was an artefact of an over-eager classifier
-that matched "all ages" anywhere, including marketing copy like "fun for all ages" and "over 260
-years of Wedgwood to life for all ages". With admission wording separated from marketing copy, the
-real figure is **2 statements across 2 venues (2.4%)**:
+1. **Sentence-level evidence cannot attribute one interval to the right fact when a sentence states
+   two** (13). "children under the age of 2* go free but the recommended age of the attraction is
+   children aged 6 and over" carries a price bound and a recommendation. B2's field key is derived
+   per source URL, so both would land on one key. Handled by classifying as `mixed_statement` and
+   failing open.
+2. **B2 cannot represent an explicit positive** (2). An empty rule set means "no evidence", not "no
+   restriction", so "Children of all ages are welcome" cannot be published as a positive fact.
+   **The earlier recommendation to add an `all_ages` fact is withdrawn**: only 2 statements across 2
+   venues (Babylon Park, Paradox Museum) state a positive admission position. That is not enough
+   evidence to extend the model.
+3. **Positive wording contradicted by its own bound** (1). "suitable for all ages 4+" is neither an
+   all-ages fact nor a door. Failing open is right.
 
-- "Age requirement: Babylon Park is perfect for adults and children of all ages — **there is no
-  minimum age for access**"
-- "Children of all ages are welcome at Paradox Museum London."
-
-Two venues is not a basis for extending the canonical model. **The recommendation is withdrawn**:
-do not add an `all_ages` fact for B4. Keep classifying and counting it, and revisit once evidence
-coverage improves — at which point this audit re-run gives the number directly.
+An excluded *band* ("ages 5 to 10 are not admitted") would admit two disjoint ranges, which B2
+cannot express; it fails open. No such sentence exists in the corpus.
 
 ## 8. The decision
 
-**Does the B2 model fit the real London evidence well enough to publish safely?**
-
-**The semantics: yes.** Every ruling was tested against real wording and held. Recommendation stays
-advice, activity rules stay caveats, accompaniment stays a caveat, months survive, and fail-open
-held everywhere — including on the one sentence that would have done real damage.
-
-**Automated publication: no.** Because:
-
-- there is **nothing to publish** — zero venue restrictions, zero eligible candidates;
-- the only candidate ever produced was **catastrophically wrong**, and one human click was the only
-  thing stopping it;
-- the corpus is **too thin to conclude from** — 29.1% of venues have no usable text.
-
-**Recommended B4 shape:** human-reviewed publication only, with this audit's classification serving
-as a queue for a person rather than an input to a writer. Automated publication should stay
-unavailable until a corpus exists that actually contains venue-level doors, and until more than one
-barrier stands between an extractor and a gate.
-
-**Before B4 writes anything**, close the `function_search_path_mutable` advisory on
-`venue_age_bounds_are_valid` and `venue_age_policy_is_valid` in a small separate migration.
+- **Keep B2 as shipped.** It is correct on this evidence and publishes nothing wrong.
+- **Do not start B4 on this corpus.** There is nothing to publish.
+- **B4 needs age-source discovery first.** Two thirds of venues have no stored age wording, and that
+  is a coverage gap, not silence. This is P0 Venue Intelligence Completeness.
+- **Do not extend B2 with an `all_ages` fact yet.** 2 statements is not a mandate.
+- Separately, and not in this PR: Supabase's security advisor reports `function_search_path_mutable`
+  for `venue_age_bounds_are_valid` and `venue_age_policy_is_valid`. Fix that in its own small
+  migration **before** B4 is allowed to write age policy.
 
 ## 9. Where this lives
 
-| Concern | File |
-|---|---|
-| Classifier and audit | `server/enrichment/_lib/age-evidence-audit.js` |
-| CLI | `scripts/audit-age-evidence.js` |
-| Tests, incl. the Woodside and polarity regressions | `familypilot/src/__tests__/age-evidence-audit.test.ts` |
-| The B2 model this audits | `docs/AGE_POLICY.md` |
+| File | Role |
+| --- | --- |
+| `server/enrichment/_lib/age-evidence-audit.js` | the classifier, the two-stage age parser, the ledger |
+| `scripts/audit-age-evidence.js` | the CLI, live or `--file`, with `--discovery` reconciliation |
+| `familypilot/src/__tests__/age-evidence-audit.test.ts` | 79 tests, including the structural zero-write assertion |
+| `docs/AGE_POLICY.md` | the P0-B2 model this audit measures |
