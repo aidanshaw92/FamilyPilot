@@ -17,14 +17,23 @@
 const fs = require('fs');
 const {
   FIELD_INVENTORY,
-  FIELD_STATES,
+  CLAIM_STATES,
+  PROVIDER_STATES,
+  DERIVED_STATES,
   auditCatalogue,
   readinessTier,
   buildVenueRows,
 } = require('../server/enrichment/_lib/venue-readiness-audit');
 
-/** Fixture code -> state. `.` is unknown, which is the default and must stay the default. */
-const CODE_TO_STATE = {
+/**
+ * Fixture codes, one vocabulary per origin.
+ *
+ * Provider and derived fields deliberately do NOT share the claim vocabulary: "the venue has a
+ * photo" and "a source confirmed baby changing three days ago" are different kinds of statement,
+ * and the first revision of this audit merged them into one `confirmed_fresh` total that meant
+ * nothing.
+ */
+const CLAIM_CODES = {
   F: 'confirmed_fresh',
   R: 'confirmed_refresh_due',
   S: 'stale',
@@ -33,14 +42,23 @@ const CODE_TO_STATE = {
   U: 'unsupported',
   '.': 'unknown',
 };
+const PROVIDER_CODES = { P: 'present', M: 'missing' };
+const DERIVED_CODES = { A: 'available', N: 'unavailable' };
 
+function codeTableFor(origin) {
+  if (origin === 'claim') return CLAIM_CODES;
+  if (origin === 'provider') return PROVIDER_CODES;
+  return DERIVED_CODES;
+}
+
+/** `id~status~activeClaimCount~<one code per field>` */
 function fromFile(path) {
   return fs
     .readFileSync(path, 'utf8')
     .split('\n')
     .filter((line) => line.trim() && line.includes('~'))
     .map((line, index) => {
-      const [familypilotPlaceId, enrichmentStatus, codes] = line.split('~');
+      const [familypilotPlaceId, enrichmentStatus, activeClaims, codes] = line.split('~');
       if ((codes ?? '').length !== FIELD_INVENTORY.length) {
         throw new Error(
           `line ${index + 1}: expected ${FIELD_INVENTORY.length} state codes, got ${(codes ?? '').length}`,
@@ -48,11 +66,19 @@ function fromFile(path) {
       }
       const fieldStates = {};
       [...codes].forEach((code, position) => {
-        const state = CODE_TO_STATE[code];
-        if (!state) throw new Error(`line ${index + 1}: unknown state code ${JSON.stringify(code)}`);
-        fieldStates[FIELD_INVENTORY[position].key] = state;
+        const field = FIELD_INVENTORY[position];
+        const state = codeTableFor(field.origin)[code];
+        if (!state) {
+          throw new Error(`line ${index + 1}: unknown state code ${JSON.stringify(code)} for ${field.origin} field ${field.key}`);
+        }
+        fieldStates[field.key] = state;
       });
-      return { familypilotPlaceId, enrichmentStatus, fieldStates };
+      return {
+        familypilotPlaceId,
+        enrichmentStatus,
+        activeClaimCount: Number(activeClaims),
+        fieldStates,
+      };
     });
 }
 
@@ -65,8 +91,9 @@ async function fromDatabase() {
   const [places, metadata, claims, drafts] = await Promise.all([
     supabase.from('place_records').select('familypilot_place_id, name, lat, lng, category, photos, opening_hours, website'),
     supabase.from('venue_family_metadata').select('*'),
-    supabase.from('venue_claims').select('familypilot_place_id, field_key, value_json, status, approved_by, valid_until'),
-    supabase.from('venue_enrichment_drafts').select('familypilot_place_id, status').eq('status', 'pending_review'),
+    supabase.from('venue_claims').select('familypilot_place_id, field_key, value_json, status, approved_by, valid_until, checked_at'),
+    // draft_json is needed: a candidate is a FIELD, not a venue.
+    supabase.from('venue_enrichment_drafts').select('familypilot_place_id, status, draft_json').eq('status', 'pending_review'),
   ]);
   for (const result of [places, metadata, claims, drafts]) {
     if (result.error) throw new Error(result.error.message);
@@ -93,7 +120,7 @@ async function main() {
   const expected = expectedIndex >= 0 ? { venues: Number(args[expectedIndex + 1]) } : {};
 
   const result = auditCatalogue(venues, { expected });
-  const { summary, byField, gatedHoldingUsableFacts } = result;
+  const { summary, byField, blockedHoldingUsableFacts } = result;
 
   if (args.includes('--json')) {
     process.stdout.write(JSON.stringify({ ...result, venues: venues.map((v) => ({ ...v, readiness: readinessTier(v) })) }, null, 2));
@@ -101,50 +128,66 @@ async function main() {
   }
 
   const total = summary.venues;
-  console.log(`\nP0 Venue Intelligence baseline (ZERO WRITE)\n${'='.repeat(74)}`);
+  console.log(`\nP0 Venue Intelligence baseline (ZERO WRITE)\n${'='.repeat(78)}`);
   console.log(`venues                          ${total}`);
-  console.log(`fields per venue                ${summary.fields}`);
-  console.log(`venue/field cells               ${summary.cells}`);
-  console.log(`every cell in exactly one state ${summary.accountsForEveryCell ? 'yes' : 'NO -- LEDGER BROKEN'}`);
+  console.log(`claim cells   ${String(summary.claimCells).padStart(5)}  ledger balances ${summary.claimLedgerBalances ? 'yes' : 'NO'}`);
+  console.log(`provider cells${String(summary.providerCells).padStart(5)}  ledger balances ${summary.providerLedgerBalances ? 'yes' : 'NO'}`);
+  console.log(`derived cells ${String(summary.derivedCells).padStart(5)}  ledger balances ${summary.derivedLedgerBalances ? 'yes' : 'NO'}`);
   if (summary.expectedVenues != null) {
     console.log(`production says venues          ${summary.expectedVenues}`);
     console.log(`unexplained                     ${summary.unexplainedVenues}  ${summary.reconciles ? '(reconciles)' : 'NO -- COVERAGE GAP'}`);
   }
 
-  console.log('\nThe question that matters: can FamilyPilot explain itself to a parent?');
+  console.log('\nCan FamilyPilot explain itself to a parent?  (consumer-path semantics)');
   for (const tier of ['T0', 'T1', 'T2', 'T3', 'T4']) {
     const n = summary.byTier[tier] ?? 0;
-    const label = { T0: 'status-gated: serves no facts at all', T1: 'identity only: servable, zero facts',
-      T2: 'thin: some facts, no coherent story', T3: 'explainable: facility + environment',
-      T4: 'confidently recommendable (planner-ready)' }[tier];
+    const label = {
+      T0: 'consumer serves no family facts (ai_draft, or no active claims)',
+      T1: 'identity only: servable, zero usable facts',
+      T2: 'thin: some facts, no coherent story',
+      T3: 'explainable: facility + environment',
+      T4: 'confidently recommendable (planner-ready)',
+    }[tier];
     console.log(`  ${tier}  ${String(n).padStart(3)}  ${pct(n, total).padStart(6)}  ${label}`);
   }
   console.log(`\n  recommendation-ready (T4)     ${summary.recommendationReady}   ${pct(summary.recommendationReady, total)}`);
   console.log(`  explainable at all (T3+T4)    ${summary.explainable}   ${pct(summary.explainable, total)}`);
 
-  console.log('\nVerified work the status gate is discarding');
-  console.log(`  gated venues holding usable facts  ${summary.gatedHoldingUsableFacts}`);
-  console.log(`  usable facts discarded             ${summary.discardedUsableFacts}`);
-  for (const v of gatedHoldingUsableFacts) {
-    console.log(`    - ${v.familypilotPlaceId}  ${v.usableFacts} fact(s)`);
+  console.log('\nFacts withheld by the consumer block (ai_draft only)');
+  console.log(`  venues                        ${summary.blockedHoldingUsableFacts}`);
+  console.log(`  usable claim-backed facts     ${summary.factsWithheldByConsumerBlock}`);
+  for (const v of blockedHoldingUsableFacts) {
+    console.log(`    - ${v.familypilotPlaceId}  [${v.enrichmentStatus}]  ${v.usableFacts} fact(s)`);
   }
 
-  console.log('\nField coverage            usable   %of all   servable   %  origin      state breakdown');
-  const ordered = [...FIELD_INVENTORY].sort((a, b) => (byField[b.key].usable - byField[a.key].usable) || a.key.localeCompare(b.key));
-  for (const field of ordered) {
+  console.log('\nClaim-backed fields       usable   %of134  servable   %      state breakdown');
+  const claimFields = FIELD_INVENTORY.filter((f) => f.origin === 'claim')
+    .sort((a, b) => (byField[b.key].usable - byField[a.key].usable) || a.key.localeCompare(b.key));
+  for (const field of claimFields) {
     const row = byField[field.key];
-    const states = FIELD_STATES.filter((s) => row[s] > 0).map((s) => `${s}=${row[s]}`).join(' ');
+    const states = CLAIM_STATES.filter((s) => row[s] > 0).map((s) => `${s}=${row[s]}`).join(' ');
     console.log(
       `  ${field.key.padEnd(22)}${String(row.usable).padStart(4)}  ${pct(row.usable, total).padStart(7)}` +
-      `   ${String(row.usableAndServable).padStart(4)}  ${pct(row.usableAndServable, total).padStart(6)}` +
-      `  ${field.origin.padEnd(9)}  ${states}`,
+      `   ${String(row.servable).padStart(4)}  ${pct(row.servable, total).padStart(6)}   ${states}`,
     );
   }
 
-  console.log('\nCells by state');
-  for (const state of FIELD_STATES) {
-    console.log(`  ${state.padEnd(28)}${String(summary.byState[state]).padStart(5)}  ${pct(summary.byState[state], summary.cells)}`);
+  console.log('\nProvider fields (availability, NOT claim freshness)');
+  for (const field of FIELD_INVENTORY.filter((f) => f.origin === 'provider')) {
+    const row = byField[field.key];
+    console.log(`  ${field.key.padEnd(22)}present=${String(row.present).padStart(3)}  missing=${String(row.missing).padStart(3)}  ${pct(row.present, total)}`);
   }
+  console.log('\nDerived fields (capability, NOT confirmed data)');
+  for (const field of FIELD_INVENTORY.filter((f) => f.origin === 'derived')) {
+    const row = byField[field.key];
+    console.log(`  ${field.key.padEnd(22)}available=${String(row.available).padStart(3)}  unavailable=${String(row.unavailable).padStart(3)}  ${pct(row.available, total)}`);
+  }
+
+  console.log('\nClaim cells by state');
+  for (const state of CLAIM_STATES) {
+    console.log(`  ${state.padEnd(28)}${String(summary.claimStateTotals[state]).padStart(5)}  ${pct(summary.claimStateTotals[state], summary.claimCells)}`);
+  }
+  console.log(`\nprovider: ${JSON.stringify(summary.providerStateTotals)}   derived: ${JSON.stringify(summary.derivedStateTotals)}`);
   console.log();
 }
 

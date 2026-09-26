@@ -1,23 +1,39 @@
 # P0 Venue Intelligence — baseline readiness audit
 
-What FamilyPilot could honestly tell a parent today, measured rather than estimated.
+What FamilyPilot could honestly tell a parent today, measured against what the production consumer
+path actually serves.
 
 **This audit writes nothing.** No claim, no draft approval, no metadata change. Enforced by a test
 that fails if either audit file so much as names a writer.
 
-Reproduce it:
-
 ```bash
-# live, against the database (needs SUPABASE_URL + service-role key)
-node scripts/audit-venue-readiness.js
-
-# offline, against a snapshot
-node scripts/audit-venue-readiness.js --file <catalogue> --expect-venues 134
+node scripts/audit-venue-readiness.js                                      # live
+node scripts/audit-venue-readiness.js --file <catalogue> --expect-venues 134  # offline snapshot
 ```
 
-Snapshot: **2026-09-26**, 134 venues, fixture md5 `7800ca19ff0b3bc554eaf7d325366200` (computed in
-SQL, verified byte-for-byte locally). 22 fields × 134 venues = 2,948 cells, every one booked in
-exactly one state.
+Snapshot: **2026-09-26**, 134 venues, fixture md5 `0d4ab84152d03ff476d6a2e6a195f448` (computed in
+SQL, verified byte-for-byte locally). Every tier and field figure below is reproduced independently
+by SQL written against the same rules.
+
+## Three rules this audit had to be corrected on
+
+Stated up front because the first revision got all three wrong, and each error moved the headline.
+
+1. **Trust is not reinvented here.** `isClaimActive` from `claims-store` is imported, because it is
+   the predicate `getConsumerMetadata` itself uses. It accepts a **source-evidence auto-published**
+   claim, because the product deliberately trusts those for ordinary facility facts, and rejects the
+   legacy `ai_auto_approved` approver that predates source proof. The strict `human:` rule belongs to
+   age-policy gating alone. Production holds **223 active `source_evidence_auto_v2` claims, 4 editor
+   claims and zero `human:` claims**, so the previous report's "human-approved" was simply false.
+2. **Servability follows the consumer projection, not the raw status column.** `getConsumerMetadata`
+   hard-stops on `ai_draft` only; a `provider_only` row with active claims is projected and returned
+   as consumer-`enriched`. The previous revision treated `provider_only` as gated and so claimed the
+   gate was discarding facts the server is designed to serve.
+3. **A candidate is a field, not a venue.** A pending draft makes a field a candidate only if the
+   draft asserts something for *that* field.
+
+Provider availability and derived capability are kept **out** of the claim ledger. Having
+coordinates means Eat Nearby can answer a question; it is not confirmed restaurant data.
 
 ## The answer to the question that was asked
 
@@ -26,89 +42,93 @@ exactly one state.
 
 **Zero.** Not one venue has the facts the day planner needs.
 
-| tier | venues | share | what FamilyPilot can say |
+| tier | venues | share | what the consumer path can say |
 | --- | --- | --- | --- |
-| **T0** status-gated | **70** | **52.2%** | nothing at all about the family fit |
-| **T1** identity only | 1 | 0.7% | it exists, and where it is |
-| **T2** thin | 49 | 36.6% | one or two facts, no coherent story |
-| **T3** explainable | 14 | 10.4% | why it suits a family, but not how it fits a day |
+| **T0** serves no family facts | **67** | **50.0%** | nothing — `ai_draft`, or no active claims |
+| **T1** identity only | 0 | 0.0% | — |
+| **T2** thin | 53 | 39.6% | one or two facts, no coherent story |
+| **T3** explainable | 14 | 10.4% | why it suits a family, not how it fits a day |
 | **T4** recommendation-ready | **0** | **0.0%** | the full answer |
 
-So the honest headline is not "80% ready". It is: **10.4% of the catalogue can be explained at all,
-and 0% can be planned around.** Coverage, not the data model, is now the binding constraint.
+**10.4% can be explained at all; 0% can be planned around.** Coverage is the binding constraint.
 
-The tiers are cumulative and each names what the product can *say*, not how many columns are
-non-null. T4's requirements are the planner's actual inputs: without a visit duration it cannot
-place a venue in a day, and without recommended ages it cannot rank it for these children.
+T0 is 67: the 66 `ai_draft` rows plus one `enriched` venue whose only claim is disputed. The four
+raw `provider_only` venues are **not** T0 — they hold active claims, so the projection serves them.
 
-## Field coverage
+## Claim-backed coverage
 
-`usable` means an active, human-approved, in-lifetime claim whose value says something.
-`servable` subtracts the venues whose enrichment status makes the matcher ignore it.
+2,010 claim cells (134 × 15). `usable` = an active, consumer-trusted, in-lifetime claim whose value
+says something. `servable` = of those, the ones the consumer path would actually project.
 
-| field | usable | % of 134 | servable | % | origin |
-| --- | --- | --- | --- | --- | --- |
-| category | 134 | 100.0% | 134 | 100.0% | provider |
-| identity / name | 134 | 100.0% | 134 | 100.0% | provider |
-| location | 134 | 100.0% | 134 | 100.0% | provider |
-| nearby restaurants | 134 | 100.0% | 134 | 100.0% | **derived** |
-| photos | 128 | 95.5% | 128 | 95.5% | provider |
-| website | 128 | 95.5% | 128 | 95.5% | provider |
-| opening hours | 118 | 88.1% | 118 | 88.1% | provider |
-| accessible toilet | 39 | 29.1% | 37 | 27.6% | claim |
-| playground | 35 | 26.1% | 35 | 26.1% | claim |
-| parking | 29 | 21.6% | 29 | 21.6% | claim |
-| baby changing | 27 | 20.1% | 27 | 20.1% | claim |
-| toilets | 25 | 18.7% | 25 | 18.7% | claim |
-| free parking | 20 | 14.9% | 20 | 14.9% | claim |
-| wheelchair access | 19 | 14.2% | 17 | 12.7% | claim |
-| indoor / outdoor | 18 | 13.4% | 17 | 12.7% | claim |
-| pushchair suitability | 8 | 6.0% | 8 | 6.0% | claim |
-| sensory sessions | 2 | 1.5% | 2 | 1.5% | claim |
-| café on site | 1 | 0.7% | 1 | 0.7% | claim |
-| energy level | **0** | 0.0% | 0 | 0.0% | claim |
-| **visit duration** | **0** | 0.0% | 0 | 0.0% | claim |
-| **recommended ages** | **0** | 0.0% | 0 | 0.0% | claim |
-| **hard age restriction** | **0** | 0.0% | 0 | 0.0% | claim |
+| field | usable | % of 134 | servable |
+| --- | --- | --- | --- |
+| accessible toilet | 39 | 29.1% | 39 |
+| playground | 35 | 26.1% | 35 |
+| parking | 29 | 21.6% | 29 |
+| baby changing | 27 | 20.1% | 27 |
+| toilets | 25 | 18.7% | 25 |
+| free parking | 20 | 14.9% | 20 |
+| wheelchair access | 19 | 14.2% | 19 |
+| indoor / outdoor | 18 | 13.4% | 18 |
+| pushchair suitability | 8 | 6.0% | 8 |
+| sensory sessions | 2 | 1.5% | 2 |
+| café on site | 1 | 0.7% | 1 |
+| energy level | **0** | 0.0% | 0 |
+| **visit duration** | **0** | 0.0% | 0 |
+| **recommended ages** | **0** | 0.0% | 0 |
+| **hard age restriction** | **0** | 0.0% | 0 |
 
-Cells by state: `confirmed_fresh` 1,133 (38.4%) · `candidate_not_publishable` 1,004 (34.1%) ·
-`unknown` 809 (27.4%) · `conflicting` 2 (0.1%) · `refresh_due` 0 · `stale` 0 · **`unsupported` 0**.
+Claim cells by state: `confirmed_fresh` **223 (11.1%)** · `unknown` **1,785 (88.8%)** ·
+`conflicting` 2 (0.1%) · `refresh_due` 0 · `stale` 0 · `unsupported` **0** ·
+`candidate_not_publishable` **0**.
 
-Two things worth reading twice:
+`servable` equals `usable` for every field: **no venue that holds a usable claim is blocked**. The
+previous report's "5 verified facts thrown away by the gate" was an artefact of treating
+`provider_only` as gated, and is withdrawn.
 
-- **`unsupported` is zero.** Every value in the read model has a claim behind it. The single-writer
-  discipline from P0-B0/B2 is holding; there is no drifted editorial data to clean up.
-- **`refresh_due` and `stale` are both zero.** Nothing is near expiry, because almost everything was
-  claimed inside the last few weeks. Freshness is not yet a problem. It will become one: the 30-day
-  facility lifetime means today's 39-venue best case decays to zero within a month without a working
-  replenisher, so coverage gained now has to be *held*.
+`unsupported` being zero is real good news: every value in the read model has a claim behind it, so
+the single-writer discipline from B0/B2 is holding.
 
-## Five findings that decide what to build next
+Provider availability, reported separately: identity, location and category 134/134; photos and
+website 128/134 (95.5%); opening hours 118/134 (88.1%). Derived capability: `nearby_restaurants`
+available for 134/134, because every venue has coordinates — a capability, not confirmed data.
 
-### 1. The status gate silently hides half the catalogue — and it is the cheapest win
+## The automation bottleneck
 
-70 of 134 venues (52.2%) are `ai_draft` or `provider_only`. `extractMatchableFacts` returns **every**
-fact as unknown for those, whatever is stored. They cannot be recommended on any family criterion,
-and no amount of extraction changes that until a human reviews them.
+**The 67 "pending review" drafts are not a review backlog. Every one of them is empty.**
 
-67 drafts sit in `pending_review`, across 67 venues — a near 1:1 backlog. The pipeline generates
-faster than anyone approves, and an unreviewed draft contributes exactly nothing.
+All 67 pending drafts assert **nothing**: zero informative leaves between them, 61 of them labelled
+`evidence_backed`. There is nothing for an editor to approve, so `candidate_not_publishable` is 0,
+not the 1,004 the previous revision reported. Clearing the backlog by hand would achieve literally
+nothing.
 
-Concretely wasteful right now: **4 gated venues already hold 5 usable, human-approved, in-date
-claims** that the status gate discards. That is verified work thrown away.
+Split by why each venue's draft came out empty:
 
-### 2. Four fields have no automatic extraction path at all
+| cause | venues | share of 67 | what it is |
+| --- | --- | --- | --- |
+| no usable evidence at all | **39** | 58% | discovery / fetch gap (205 failed pages between them) |
+| evidence, but none fresh *and* official | 5 | 7% | source recency / quality gap |
+| fresh official pages **and still zero claims** | **23** | 34% | the automation had what it needed and published nothing |
+| genuinely needs human judgement | **0** | 0% | nothing is waiting on a person |
 
-`FIELD_MAP` in `trusted-evidence.js` supports eleven field keys: toilets, babyChanging, parking,
-freeParking, cafe, playground, wheelchairAccessible, accessibleToilet, sensoryFriendlySessions,
-pushchairSuitability, environment.
+For the 23, the cause is specific and measurable: of their **89 fresh official pages, 76 mention no
+extractable facility wording at all**. Only 1 mentions baby changing, 8 parking, 4 access, 1
+toilets, 2 a playground. By page type, 59 are `visitor_info` (8 with facility wording, averaging
+2,817 characters — landing pages, not facilities pages) and only **5 are accessibility pages and 2
+FAQ pages across all 23 venues**.
 
-**visit duration, recommended ages, energy level and hard age restrictions are not in it.** Their 0%
-coverage is not a crawling shortfall — there is no pipeline that could ever populate them. Two of
-those four are exactly what T4 requires, which is why T4 is empty and would stay empty however much
-source discovery improved.
+So the bottleneck is **source-discovery targeting**: the crawler fetches the wrong pages. Not the
+extractor, which works on text that carries the wording, and not the reviewer, who has nothing to
+review.
 
-### 3. Extraction can confirm a facility but almost never its absence
+## Other findings that survive the corrected accounting
+
+**Four fields have no automatic extraction path.** `FIELD_MAP` in `trusted-evidence.js` supports
+eleven keys. Visit duration, recommended ages, energy level and hard age restrictions are not among
+them, so no pipeline could populate them. Two of the four are exactly what T4 requires — **T4 would
+stay empty however much source discovery improved**.
+
+**Extraction can confirm a facility but almost never its absence.**
 
 | field | `yes` | `no` |
 | --- | --- | --- |
@@ -122,71 +142,56 @@ source discovery improved.
 | free parking | 6 | 14 |
 | wheelchair access | 18 | 1 |
 
-Six of nine covered tri-state fields have **never once** recorded a `no`. The three that do are the
-three whose absence a page tends to state outright ("no parking on site", "parking charges apply"). A page that says nothing about baby
-changing is indistinguishable from a page that says there is none, so FamilyPilot can tell a parent
-"there is baby changing" but essentially never "there isn't". For a parent with a baby that is the
-more decision-changing answer, and the facility score treats `no` as 25% credit rather than
-excluding — so absence evidence is safe to publish and currently unobtainable.
+Six of nine covered tri-state fields have never once recorded a `no`. The three that do are the ones
+a page tends to state outright ("no parking on site", "parking charges apply"). So FamilyPilot can
+say "there is baby changing" and essentially never "there isn't" — the more decision-changing answer
+for a parent with a baby, and safe to publish, since the facility score treats `no` as partial
+credit rather than exclusion.
 
-### 4. A third of all fetches fail, and blocking is the main cause
+**A third of all fetches fail, mostly blocked.** 835 evidence rows, 280 failures (33.5%): blocked
+**162**, error 106, truncated 28, timeout 7, non-html 4, too-large 1. 95 venues have at least one
+page with usable text; 33 have evidence rows but no clean text; 6 have no evidence row at all.
 
-835 evidence rows, 280 of them failures (33.5%):
-
-| status | rows |
-| --- | --- |
-| ok | 527 |
-| blocked | **162** |
-| error | 106 |
-| fetched_truncated | 28 |
-| timeout | 7 |
-| non_html | 4 |
-| too_large | 1 |
-
-Venue coverage behind that: 95 venues have at least one page with usable text (4.4 clean pages each
-on average, 5 venues on a single page), **33 have evidence rows but no clean text at all**, and **6
-have no evidence row whatsoever**. Blocking is the single biggest lever on source coverage and is an
-infrastructure problem, not an extraction one.
-
-### 5. One field should never be stored
-
-`nearby_restaurants` is at 100% because Eat Nearby resolves it per request from the venue's
-coordinates. Storing it per venue would create a second copy to keep fresh for no gain. It is listed
-in the inventory so the picture is complete, and flagged `derived` so nobody targets it.
+**Freshness is not yet a problem, and will become one.** `refresh_due` and `stale` are both 0,
+because almost every claim was made in the last few weeks. The 30-day facility lifetime means
+today's 39-venue best case decays to nothing within a month unless the replenisher works.
 
 ## Recommended implementation order
 
-Ordered by product impact per unit of work, not by how empty the column is.
+Every step is an automation fix. None asks an editor to work through venues by hand.
 
-1. **Clear the review backlog, and reconsider the gate.** 67 drafts across 67 venues; approving them
-   is the only change that can move 52% of the catalogue off T0. Worth asking separately whether a
-   venue with human-approved claims should be gated by `ai_draft` at all — the 4 venues losing 5
-   verified facts suggest the status and the claims are answering different questions.
-2. **Add visit duration and recommended ages to the extraction path.** Two fields, and T4 is
-   unreachable without them. Highest ceiling of anything on this list: they convert T3 venues into
-   recommendable ones directly.
-3. **Fix blocked fetches.** 162 blocked rows and 33 venues with no usable text. Until this moves,
-   extraction improvements have nothing to read.
+1. **Fix source-discovery targeting.** The single highest-leverage change: 23 venues have fresh
+   official pages that do not contain facility statements, and only 7 accessibility/FAQ pages were
+   found across them. Discovering and fetching the pages that actually carry facilities — accessibility,
+   plan-your-visit, FAQ — converts existing crawl budget into publishable facts with no new fields
+   and no human step.
+2. **Fix blocked fetches.** 162 blocked rows and 39 of the 67 empty-draft venues have no usable
+   evidence at all. Until this moves, better targeting has less to aim at.
+3. **Add visit duration and recommended ages to the extraction path.** Two fields, and T4 is
+   unreachable without them. Highest ceiling once 1 and 2 land.
 4. **Teach the extractor to record absence.** Makes `no` expressible for the six fields that have
-   never recorded one, which roughly doubles the decision value of existing coverage without any new
-   crawling.
-5. **Then targeted source discovery, age included as one field among many.** Per the B3 finding,
-   age-source discovery belongs here rather than as its own crawler. Once source coverage materially
-   improves, re-run P0-B3 and only then reconsider B4.
-6. **Then the replenisher.** Nothing is stale today, but the 30-day facility lifetime means coverage
-   won gains nothing if it cannot be held.
+   never recorded one, roughly doubling the decision value of existing coverage with no new crawling.
+5. **Stop generating empty drafts, or stop calling them pending review.** 67 rows that assert nothing
+   sit in a queue implying human work. Either the generator should not emit them or they should be
+   marked so they never look like a backlog.
+6. **Then the replenisher**, before the 30-day lifetimes start expiring.
+
+Age-source discovery is one field inside step 1, not a separate crawler. Once source coverage
+materially improves, re-run P0-B3 and only then reconsider B4.
 
 ## What this audit does not establish
 
-- **Grace is an upper bound, not exact.** `stale` requires the claim's own source to have failed
+- **`stale` is an upper bound.** Real grace requires the claim's own source to have failed
   *transiently*, which cannot be seen from claim rows alone. It is 0 in this snapshot either way.
-- **It measures stored evidence, not the venues' websites.** As in P0-B3, an absent fact may be site
-  silence or a discovery gap; this audit cannot tell them apart.
-- **Tier thresholds are a product judgement.** The states and freshness rules are taken from the
-  shipped code; which combination counts as "explainable" is a choice, stated here so it can be
-  argued with rather than buried in a percentage.
-- **The catalogue is live.** Claims, drafts and evidence all move. The fixture checksum and snapshot
-  date are recorded so any number here can be re-derived exactly.
+- **It measures stored evidence, not venues' websites.** As in P0-B3, an absent fact may be site
+  silence or a discovery gap.
+- **Consumer-path parity is modelled, not executed.** `consumerServesFacts` mirrors
+  `getConsumerMetadata`'s two stopping conditions and is tested against them, but this audit does not
+  call the projection itself, so a future divergence would need a test to catch it. One further
+  condition is not modelled: the projection also drops fields a parent report has put in
+  `needs_recheck`. `venue_visit_reports` is empty, so that path suppresses nothing today.
+- **Tier thresholds are a product judgement**, stated so they can be argued with.
+- **The catalogue is live.** The checksum and date are recorded so any number can be re-derived.
 
 ## Where this lives
 
@@ -194,5 +199,6 @@ Ordered by product impact per unit of work, not by how empty the column is.
 | --- | --- |
 | `server/enrichment/_lib/venue-readiness-audit.js` | field inventory, state classification, readiness tiers |
 | `scripts/audit-venue-readiness.js` | the CLI, live or `--file`, with `--expect-venues` reconciliation |
-| `familypilot/src/__tests__/venue-readiness-audit.test.ts` | 30 tests, including the structural zero-write assertion |
+| `familypilot/src/__tests__/venue-readiness-audit.test.ts` | 39 tests, including the structural zero-write assertion |
+| `server/enrichment/_lib/consumer-projection.js` | the semantics this audit mirrors |
 | `docs/AGE_EVIDENCE_AUDIT_B3.md` | the age-specific audit this generalises |
