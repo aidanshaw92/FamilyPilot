@@ -236,9 +236,13 @@ restrictions". An empty rule set means *nothing was found*, which is not the sam
 said there is no restriction*, and the difference matters once publication is automatic: absence
 should stay quiet, while a positive statement could legitimately corroborate.
 
-B2 is deliberately not expanded for this. **B3's zero-write audit must scan for and report
-positive admission statements**, so we know from real pages whether a first-class `all_ages`
-assertion is needed before B4 publishes anything.
+B2 is deliberately not expanded for this. **B3's zero-write audit scanned for exactly this**, and
+the answer is in [AGE_EVIDENCE_AUDIT_B3.md](AGE_EVIDENCE_AUDIT_B3.md): only **2 statements across 2
+venues** state a positive position about admission. That is not enough to justify extending the
+canonical model, so no `all_ages` fact is recommended for B4. The audit keeps counting it.
+
+That audit also found that **no venue-level age prohibition exists in the catalogue's stored
+evidence at all**, so the gate described above is currently correct and idle.
 
 ## Where the rules live
 
