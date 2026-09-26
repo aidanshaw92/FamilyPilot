@@ -142,3 +142,57 @@ jobs:
         run: |
           psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20260921120000_venue_age_policy.sql
           psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/venue_age_policy_shape_check.sql
+
+      - name: Prove the validators are caller-dependent BEFORE the search_path pin
+        # The counterfactual, run against the real functions while they are still unpinned. Without
+        # this step the next one could pass on a database where the pin was never needed, and the
+        # migration would be verified against nothing.
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          do $$
+          declare
+            -- Valid bounds: a real minimum and an explicit null maximum. The validator must return
+            -- TRUE for this on a clean path, which is what makes the shadowed result meaningful --
+            -- a payload that is false either way would prove nothing.
+            valid jsonb := '{"minMonthsInclusive": 48, "maxMonthsExclusive": null}'::jsonb;
+            clean_verdict boolean;
+            shadowed_verdict boolean;
+          begin
+            set local search_path = pg_catalog, public;
+            clean_verdict := public.venue_age_bounds_are_valid(valid);
+            if not clean_verdict then
+              raise exception 'the validator rejects valid bounds on a clean path; the probe payload is wrong';
+            end if;
+
+            create schema ci_unpinned_probe;
+            create function ci_unpinned_probe.jsonb_typeof(jsonb)
+              returns text language sql immutable as 'select ''array''';
+            set local search_path = ci_unpinned_probe, public, pg_catalog;
+            shadowed_verdict := public.venue_age_bounds_are_valid(valid);
+
+            if shadowed_verdict = clean_verdict then
+              raise exception 'the unpinned validator ignored a shadowed jsonb_typeof, so the pin cannot be shown to matter';
+            end if;
+            raise notice 'unpinned validator is caller-dependent (clean %, shadowed %), as expected before the pin',
+              clean_verdict, shadowed_verdict;
+
+            reset search_path;
+            drop schema ci_unpinned_probe cascade;
+          end;
+          $$;
+          SQL
+
+      - name: Pin the age-policy validators' search_path
+        run: psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20260926090000_age_policy_function_search_path.sql
+
+      - name: Assert the pin holds and the validators still resolve every name they use
+        run: |
+          psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/age_policy_search_path_check.sql
+          psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/venue_age_policy_shape_check.sql
+
+      - name: Apply the search_path migration a second time and re-assert
+        # Deploy safety: ALTER FUNCTION ... SET is idempotent, and this is what proves it.
+        run: |
+          psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20260926090000_age_policy_function_search_path.sql
+          psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/age_policy_search_path_check.sql
+          psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/venue_age_policy_shape_check.sql
