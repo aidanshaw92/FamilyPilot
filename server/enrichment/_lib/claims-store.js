@@ -670,15 +670,29 @@ async function listClaimsWithFreshness(familypilotPlaceId, today = new Date().to
 
 async function getActiveClaims(familypilotPlaceId) {
   const claims = await listClaimsForVenue(familypilotPlaceId, { status: 'active' });
-  return claims.filter(isClaimActive);
+  // Wrapped, never passed bare: `filter` supplies the element INDEX as the second argument, which
+  // would land in `today` and silently replace the wall clock with a number.
+  return claims.filter((claim) => isClaimActive(claim));
 }
 
-function isClaimActive(claim) {
+/**
+ * `today` defaults to the wall clock so every production caller is unchanged, and can be passed
+ * explicitly so a historical snapshot is reproducible. The readiness audit checksums a dated
+ * snapshot; without an injectable date it could not replay that snapshot from the same rows later,
+ * and any test pinning a date would quietly become a time bomb once its fixture expiries passed.
+ */
+function isClaimActive(claim, today = new Date().toISOString().slice(0, 10)) {
+  if (typeof today !== 'string') {
+    // Almost always `array.filter(isClaimActive)`, which hands over the index. Failing loudly is
+    // the only safe answer: a numeric "date" compares as a string and quietly declares every claim
+    // active, so the consumer would serve expired facts and nothing would look wrong.
+    throw new TypeError(`isClaimActive: today must be an ISO date string, got ${typeof today}`);
+  }
   if (!ACTIVE_STATUSES.has(claim.status)) return false;
   // Legacy automatic approvals did not require source proof. Do not treat them as verified.
   if (claim.approvedBy === 'ai_auto_approved') return false;
   const until = claim.validUntil || expiryDate(claim.fieldKey, claim.checkedAt);
-  return until >= new Date().toISOString().slice(0,10);
+  return until >= today.slice(0, 10);
 }
 
 function setNestedValue(target, fieldKey, value) {
