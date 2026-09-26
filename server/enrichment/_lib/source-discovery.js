@@ -7,6 +7,7 @@ const {
   findRelevantLinks,
   COMMON_PATH_SEGMENTS,
 } = require('./html-text-extractor');
+const { classifySubjectScope } = require('./source-identity');
 
 const DISCOVERED_LINK_BOOST = 200;
 const COMMON_PATH_BASE_SCORE = 15;
@@ -75,16 +76,25 @@ function normalisePageUrl(url, baseUrl) {
   }
 }
 
+/**
+ * Speculative `/visit`, `/accessibility`, `/facilities` … candidates for a venue's site.
+ *
+ * Rooted at the venue's OWN path, not at the origin. Rooting at the origin discarded the venue
+ * entirely: crawling Tate Britain, whose website is `/visit/tate-britain`, it asked tate.org.uk for
+ * `/visit` and `/accessibility` -- the organisation's pages, not the gallery's -- and 315 of the
+ * 835 stored evidence rows came from exactly that. A venue that owns its whole host has an empty
+ * path and is unaffected, which is the overwhelming majority of the catalogue.
+ */
 function buildCommonPathCandidates(homepageUrl, maxCandidates = 8) {
   const base = new URL(homepageUrl);
-  const origin = base.origin;
+  const root = `${base.origin}${base.pathname.replace(/\/+$/, '')}`;
   const candidates = [];
 
   for (const segment of PATH_PRIORITY) {
     if (!COMMON_PATH_SEGMENTS.includes(segment)) continue;
     const paths = [`/${segment}`, `/${segment}/`];
     for (const path of paths) {
-      const url = normalisePageUrl(`${origin}${path}`, homepageUrl);
+      const url = normalisePageUrl(`${root}${path}`, homepageUrl);
       if (!url) continue;
       candidates.push({
         url,
@@ -126,15 +136,40 @@ function discoverSourceUrls({ website, googleDescription }) {
   };
 }
 
-function mergePageCandidates(homepageUrl, existingPages, html, maxPages = 5) {
+/**
+ * `venue` and `catalogue` scope the crawl to the venue, which is the fix for the defect that let
+ * Tate Britain's crawl walk into the Tate Liverpool page through the site's global nav.
+ *
+ * A candidate that is, or sits beneath, ANOTHER catalogue venue's website is dropped here and
+ * never fetched. That is the one rejection strong enough to make at discovery time, because it
+ * compares against real stored `place_records.website` values rather than guessing from slugs.
+ * Everything else is still fetched -- withholding happens later, on recorded provenance, so the
+ * evidence exists to audit and to recover.
+ *
+ * Passing no `venue` leaves behaviour exactly as it was, so callers migrate one at a time.
+ */
+function mergePageCandidates(homepageUrl, existingPages, html, maxPages = 5, context = {}) {
   const homepageKey = normalisePageUrl(homepageUrl, homepageUrl)?.replace(/\/$/, '');
   const discovered = [];
   const commonPaths = [];
+  const rejected = [];
+
+  const { venue = null, catalogue = [] } = context;
+  const belongsToAnotherVenue = (url) => {
+    if (!venue) return null;
+    const verdict = classifySubjectScope({ sourceUrl: url, venue, catalogue });
+    return verdict.scope === 'other_catalogue_venue' ? verdict : null;
+  };
 
   const linked = html ? findRelevantLinks(html, homepageUrl, maxPages * 6) : [];
   for (const link of linked) {
     const key = normalisePageUrl(link.url, homepageUrl)?.replace(/\/$/, '');
     if (!key || key === homepageKey) continue;
+    const foreign = belongsToAnotherVenue(link.url);
+    if (foreign) {
+      rejected.push({ url: link.url, reason: foreign.reason, ownedBy: foreign.ownedBy });
+      continue;
+    }
     discovered.push({
       url: link.url,
       sourceType: classifyLinkedUrl(link.url, link.anchorText),
@@ -149,6 +184,11 @@ function mergePageCandidates(homepageUrl, existingPages, html, maxPages = 5) {
     const key = candidate.url.replace(/\/$/, '');
     if (key === homepageKey) continue;
     if (discovered.some((d) => d.url.replace(/\/$/, '') === key)) continue;
+    const foreign = belongsToAnotherVenue(candidate.url);
+    if (foreign) {
+      rejected.push({ url: candidate.url, reason: foreign.reason, ownedBy: foreign.ownedBy });
+      continue;
+    }
     commonPaths.push(candidate);
   }
 
@@ -200,6 +240,8 @@ function mergePageCandidates(homepageUrl, existingPages, html, maxPages = 5) {
         speculative: p.speculative ?? false,
       })),
       reserveCount: reserveCandidates.length,
+      // Named, not silently dropped: a crawl that refuses a page should be able to say which and why.
+      linksRejectedAsOtherVenue: rejected,
     },
   };
 }
