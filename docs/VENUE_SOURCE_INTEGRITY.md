@@ -456,30 +456,67 @@ production en masse. That exception makes scope invisible **in both directions**
 cannot support a claim, and nothing stopped it refuting one. `babyChanging` survived only because the
 sibling page happened to agree.
 
-### The fix
+### The first attempt, and why it was not enough
 
-Publication already asked "may this source speak *for* this venue?". Nothing asked whether it may
-speak *against* it. `mergeEvidenceBundles` now answers both: for each field, the verdict is computed
-from the candidates whose source has an eligible scope, when any exist.
+`mergeEvidenceBundles` was changed so each field's verdict comes from the candidates whose source has
+an eligible scope, where any exist, with a fallback to all candidates so a field never vanishes from
+the bundle. That stopped the contradiction. Review round 3 found it left the mirror image standing:
 
-**It is a precedence, not an exclusion, and the difference is the whole safety property.** Dropping
-ineligible evidence outright would delete the field from the bundle wherever every source for it is
-ineligible — and a vanished field is exactly what `reconcileSourceClaims` disputes on. Horniman
-Butterfly House's seven claims all come from `other_catalogue_venue` pages, so a blanket exclusion
-would have disputed them on the cron's next run: the unreviewed mass repair the exception exists to
-prevent. Ineligible evidence therefore still speaks where nothing eligible does, which lets those
-claims reach their normal expiry instead of being withdrawn by a deploy. It still cannot publish —
-`eligibleFact` checks the source's own scope, independently of the merge.
+- Young V&A's own page is refreshed tomorrow and no longer mentions parking.
+- A `sibling_unverified` page still says parking is available.
+- No eligible parking candidate exists, so the merge **falls back** to the sibling's value.
+- Reconciliation, reading a scope-blind verdict, sees `parking = yes` and **keeps the claim alive.**
 
-A bundle carrying no provenance at all (legacy rows, the batch runner, older fixtures) has no
-eligible candidate for any field and falls back for all of them, so its verdicts are unchanged. The
-change is deliberately invisible until provenance exists.
+An unusable source could no longer refute a claim, but it could still preserve one. Same asymmetry,
+opposite sign. The fallback I had reached for as a safety property was doing the damage.
 
-Six regression tests, every string taken verbatim from the production canary, including the
-scope-blind reading that is what actually disputed the claim, and the Horniman case in both
-directions. Two mutants — merging blind to scope again, and exclusion instead of precedence — are
-killed by 3 tests each; the second is also caught by the cached-row suite, which is how the
-mass-repair risk stays pinned.
+### The invariant, stated once
+
+> Evidence that may not establish a venue-specific fact may not establish, contradict, refresh,
+> preserve or withdraw that fact.
+
+A merge cannot enforce that, because it does not know which page any particular claim came from. So
+the control moved into `reconcileSourceClaims`, on each claim's own provenance:
+
+1. Find the source backing **this** claim — `claim.sourceUrl`, refreshed at or after the claim was
+   last checked, and fetched cleanly.
+2. Not refreshed this run, or not fetched cleanly → leave the claim alone. A failed fetch cannot
+   establish absence; the claim reaches its normal expiry.
+3. Backing scope NULL or ineligible → **skip.** This is now where Phase 6 stays gated, and it is
+   stronger than the old scope-blind verdict: it cannot be defeated by a page that simply was not
+   fetched on a given run.
+4. Backing source eligible → that **same page** must still carry the claim's field and value.
+5. It no longer does → dispute, however many ineligible siblings agree. This is also the freshness
+   policy the rest of the system already states: a claim is withdrawn when its own refreshed source
+   stops supporting it, not when some other page still does.
+6. Conflict is judged separately and only among eligible venue-specific sources. Two pages that may
+   both speak for this venue disagreeing is real, and still withdraws the field.
+7. Ineligible sources stay in the bundle for diagnostics and the withheld ledger, and count for
+   nothing here — not as confirmation, not as contradiction.
+
+`reconcileSourceClaims` no longer calls `reviewEvidence` at all. The merge keeps its
+eligible-candidate precedence, which is right for publication and for what the audit reports, but it
+is **no longer what protects live claims.**
+
+This also closes a pre-existing bug nobody had named: reconciliation used the bundle-wide verdict, so
+another legitimate eligible page could keep a claim alive after the specific page behind it had
+stopped saying it.
+
+### Verification
+
+Twelve regressions drive the real `reconcileSourceClaims` against the real file-backed store, not a
+hand-built verdict: own page drops the fact while a sibling still asserts it → disputed; own page
+disagrees while a sibling agrees → disputed; own page still says it and only a sibling disagrees →
+kept; two eligible pages disagree → withdrawn; all four ineligible backing scopes → skipped, not
+disputed; not refetched, failed fetch, and a refresh predating the claim's own check → all left
+alone; and the original Young V&A canary case → kept.
+
+Five mutants on the new boundary, each killed: dropping the scope skip (5 tests), judging from the
+merged bundle instead of the backing page (1), letting ineligible sources into conflict detection (2),
+dropping the clean-fetch guard (1), and dropping the refreshed-at-or-after guard (1).
+
+1141 tests, `tsc --noEmit` clean, web export clean, #110 replay unchanged at 134 venues / 223 usable /
+55 identity-safe.
 
 ### Still outstanding
 

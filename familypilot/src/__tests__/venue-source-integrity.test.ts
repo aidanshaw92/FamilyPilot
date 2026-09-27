@@ -365,16 +365,27 @@ describe('FIXED 7: the publication gate fails closed on unestablished provenance
   });
 
   /**
-   * The one place enforcement is deliberately off. `reconcileSourceClaims` DISPUTES live claims,
-   * and `familypilot-automatic-enrichment` runs every minute, so enforcing there would repair
-   * production within the hour with nobody having approved it. Repair is Phase 6.
+   * Review round 3 moved the Phase 6 gate out of here.
+   *
+   * It used to live in a scope-blind bundle verdict: `reconcileSourceClaims` called
+   * `reviewEvidence(bundle, {enforceSubjectScope:false})` so that deploying could not dispute
+   * hundreds of contaminated claims within the hour. That worked, but it also let unusable evidence
+   * confirm and contradict live claims. The gate now sits on each claim's OWN backing provenance
+   * (FIXED 14), which is both narrower and stronger -- it cannot be defeated by a page that simply
+   * was not fetched on a given run.
    */
-  it('leaves reconciliation unenforced, so a deploy cannot silently repair production', () => {
+  it('no longer lets a scope-blind bundle verdict decide a live claim', () => {
+    // The option still exists and still behaves, for the audit tooling that reads both readings.
     expect(reviewEvidence(bundle('https://www.tate.org.uk/visit/tate-liverpool', null),
       { enforceSubjectScope: false }).eligible).toBe(true);
+
+    // But reconciliation must not be what reaches for it, or the old asymmetry comes straight back.
     const autoApprove = fs.readFileSync(
       path.join(__dirname, '../../../server/enrichment/_lib/auto-approve.js'), 'utf8');
-    expect(autoApprove).toContain('reviewEvidence(bundle, {enforceSubjectScope:false})');
+    expect(autoApprove, 'reconciliation must not consult a scope-blind verdict')
+      .not.toContain('enforceSubjectScope:false');
+    expect(autoApprove, 'the gate is now the claim\'s own backing scope')
+      .toContain('if (!isEligibleScope(backing.subjectScope)) continue;');
   });
 });
 
@@ -907,5 +918,164 @@ describe('FIXED 13: evidence that may not establish a fact may not contest one e
       source(SIBLING, null, [siblingParkingYes, siblingParkingNo]),
     );
     expect(parkingFact(bundle)?.evidenceStatus).toBe('conflict');
+  });
+});
+
+/**
+ * Review round 3, the remaining asymmetry.
+ *
+ * Round 2 stopped an ineligible page CONTRADICTING a venue's own fact. It did not stop one
+ * PRESERVING a claim: when the venue's own page stops mentioning parking, `mergeEvidenceBundles`
+ * falls back to all candidates, hands back a withheld sibling's value, and the old reconciliation
+ * read that as confirmation. Same asymmetry, opposite sign.
+ *
+ * The invariant, in full: evidence that may not establish a venue-specific fact may not establish,
+ * contradict, refresh, preserve or withdraw it. That cannot be enforced in a merge, which does not
+ * know which page any given claim came from, so it is enforced in `reconcileSourceClaims` against
+ * each claim's own backing source. These tests drive the real function against the real store.
+ */
+describe('FIXED 14: a live claim answers to its own backing page, and to nothing else', () => {
+  const VENUE = 'fp-reconcile-venue';
+  const OWN = 'https://www.vam.ac.uk/young/visit';
+  const OWN_OTHER = 'https://www.vam.ac.uk/young/accessibility';
+  const SIBLING = 'https://www.vam.ac.uk/east/museum/visit';
+  const CHECKED_AT = '2026-09-20';
+  const REFRESHED = '2026-09-27T09:10:18.282Z';
+
+  let env: NodeJS.ProcessEnv;
+
+  beforeEach(() => {
+    env = { ...process.env };
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    fs.mkdirSync('.data', { recursive: true });
+    fs.writeFileSync(path.join('.data', 'venue-claims.json'), JSON.stringify({ claims: [] }));
+    vi.resetModules();
+  });
+  afterEach(() => { process.env = env; vi.resetModules(); });
+
+  const fact = (sourceUrl: string, field: string, value: string) => ({
+    field, value, confidence: 'high',
+    evidenceText: `${field} ${value} stated on the page in enough words to pass the length gate.`,
+    sourceUrl, sourceType: 'visitor_info', retrievedAt: REFRESHED,
+  });
+
+  const source = (
+    url: string,
+    subjectScope: string | null,
+    facts: unknown[],
+    fetchStatus = 'ok',
+    retrievedAt = REFRESHED,
+  ) => ({ url, sourceType: 'visitor_info', fetchStatus, retrievedAt, subjectScope, facts });
+
+  /** One active automatic claim, written through the real writer. */
+  async function seedClaim(fieldKey: string, value: string, sourceUrl: string) {
+    const { replaceActiveClaim } = await import('../../../server/enrichment/_lib/claims-store.js');
+    const { REVIEWED_BY } = await import('../../../server/enrichment/_lib/auto-approve.js');
+    return replaceActiveClaim({
+      familypilotPlaceId: VENUE, fieldKey, valueJson: value, confidence: 'high',
+      sourceUrl, sourceType: 'visitor_info', sourceEvidenceId: null,
+      evidenceExcerpt: 'Stated on the page.', checkedAt: CHECKED_AT, validUntil: '2026-10-20',
+      approvedAt: `${CHECKED_AT}T12:00:00Z`, approvedBy: REVIEWED_BY,
+      approvedFromDraftId: null, status: 'active', supersedesClaimId: null,
+    });
+  }
+
+  async function reconcileWith(sources: unknown[]) {
+    const { reconcileSourceClaims } = await import('../../../server/enrichment/_lib/auto-approve.js');
+    await reconcileSourceClaims(VENUE, buildEvidenceBundle(VENUE, sources, 'official_website'));
+  }
+
+  async function statusOf(fieldKey: string) {
+    const { listClaimsForVenue } = await import('../../../server/enrichment/_lib/claims-store.js');
+    const claims = await listClaimsForVenue(VENUE, {});
+    return claims.find((c: { fieldKey: string }) => c.fieldKey === fieldKey)?.status ?? null;
+  }
+
+  it('disputes the claim when its own page drops the fact, however loudly a sibling agrees', async () => {
+    // The exact regression round 2 missed: no eligible parking candidate, so the merge fell back to
+    // the sibling and the old code read a withheld page as confirmation.
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'toilets', 'yes')]),   // refreshed, parking gone
+      source(SIBLING, 'sibling_unverified', [fact(SIBLING, 'parking', 'yes')]),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('disputed');
+  });
+
+  it('does not count an ineligible page as confirmation when the value disagrees either', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'no')]),    // own page now says no
+      source(SIBLING, 'sibling_unverified', [fact(SIBLING, 'parking', 'yes')]),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('disputed');
+  });
+
+  it('keeps the claim when its own page still says it and only a sibling disagrees', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(SIBLING, 'sibling_unverified', [fact(SIBLING, 'parking', 'no')]),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
+  });
+
+  it('withdraws the field when two pages that MAY speak for the venue disagree', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(OWN_OTHER, 'venue_named_page', [fact(OWN_OTHER, 'parking', 'no')]),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('disputed');
+  });
+
+  /**
+   * The Phase 6 gate, restated on provenance. Horniman Butterfly House's seven claims all rest on
+   * `other_catalogue_venue` pages; the every-minute cron must not repair them on deploy.
+   */
+  it.each([
+    ['not recorded', null],
+    ['an unverified sibling', 'sibling_unverified'],
+    ['the operator\'s page', 'organisation_ancestor'],
+    ['another catalogue venue\'s page', 'other_catalogue_venue'],
+  ])('skips a claim whose own backing page is %s, rather than disputing it', async (_label, scope) => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    // The page is refreshed and no longer states parking -- and is still left alone, because
+    // withdrawing it is a reviewed decision, not an automatic one.
+    await reconcileWith([source(OWN, scope as string | null, [fact(OWN, 'toilets', 'yes')])]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
+  });
+
+  it('leaves the claim alone when its page was not refetched this run', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([source(SIBLING, 'sibling_unverified', [fact(SIBLING, 'parking', 'no')])]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
+  });
+
+  it('leaves the claim alone when its page failed to fetch, since absence is not evidence', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([source(OWN, 'venue_own_subtree', [], 'error')]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
+  });
+
+  it('leaves the claim alone when the refresh predates the claim\'s own check', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'toilets', 'yes')], 'ok', '2026-09-01T00:00:00Z'),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
+  });
+
+  it('still passes the Young V&A canary case that started all this', async () => {
+    // Own page states parking once; the withheld sibling contradicts ITSELF. The claim must survive.
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(SIBLING, 'sibling_unverified', [
+        fact(SIBLING, 'parking', 'yes'), fact(SIBLING, 'parking', 'no'),
+      ]),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
   });
 });
