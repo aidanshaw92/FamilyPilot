@@ -114,11 +114,19 @@ future run over Young V&A will reach the same conflict and dispute it again — 
 cosmetic until the asymmetry is fixed. And the draft `cf339d42` is still `pending_review`; approving
 it would write metadata from the current bundle.
 
-## Proposed fix (not written)
+## The fix (now written, not deployed)
 
 Make withholding symmetric: a source whose `subject_scope` is not eligible must be excluded from
 conflict detection for a venue-specific field, not merely from publication. The scope-blind
 reconciliation exception then keeps its original purpose — not disputing en masse on deploy — while
 losing its power to let unusable evidence veto usable evidence.
 
-That belongs in its own reviewed change, with the canary re-run afterwards, **before** Phase 6.
+Written as a **precedence, not an exclusion**: the per-field verdict is computed from eligible-scope
+candidates where any exist, and ineligible evidence still speaks where nothing eligible does. That
+second half is load-bearing — a blanket exclusion would delete the field wherever every source is
+ineligible, and a vanished field is what reconciliation disputes on, so it would have withdrawn
+Horniman Butterfly House's seven claims on the cron's next run.
+
+Six regression tests from this canary's own production strings; two mutants killed by 3 tests each.
+1129 tests, typecheck clean, web export clean, #110 replay unchanged. **Not merged, not deployed.**
+Order from here: deploy the fix, restore `e1cd19d8…`, re-run this canary, then Phase 6.

@@ -787,3 +787,125 @@ describe('FIXED 12: a hard age gate needs a recorded relationship to the venue',
     }
   });
 });
+
+/**
+ * The Young V&A production canary, 2026-09-27.
+ *
+ * The prevention fix shipped and worked: both other-catalogue-venue pages were rejected before being
+ * fetched. That freed room in the five-page crawl budget, the reserve filled it with
+ * `vam.ac.uk/east/museum/visit` -- V&A East Museum, NOT a catalogue venue, so `sibling_unverified`:
+ * fetched, recorded, withheld -- and that page states parking both ways. Merged blind to scope,
+ * parking became a conflict and reconciliation disputed Young V&A's parking claim: a true fact, read
+ * off the venue's own page, withdrawn on the word of a page not allowed to speak for it.
+ *
+ * Every string below is the production text, verbatim from the canary.
+ */
+describe('FIXED 13: evidence that may not establish a fact may not contest one either', () => {
+  const OWN = 'https://www.vam.ac.uk/young/visit';
+  const SIBLING = 'https://www.vam.ac.uk/east/museum/visit';
+  const now = () => new Date().toISOString();
+
+  const fact = (sourceUrl: string, field: string, value: string, evidenceText: string) => ({
+    field, value, confidence: 'high', evidenceText, sourceUrl,
+    sourceType: 'visitor_info', retrievedAt: now(),
+  });
+
+  /** Young V&A's own page: parking, stated once, unambiguously. */
+  const ownParking = fact(OWN, 'parking', 'yes',
+    'Buggy park ​Buggy parking is available in the Welcome Area near the main entrance.');
+  /** V&A East Museum's page, which contradicts itself and is not this venue's. */
+  const siblingParkingYes = fact(SIBLING, 'parking', 'yes',
+    'Buggy park ​Buggy parking is available located on the Lower Ground floor.');
+  const siblingParkingNo = fact(SIBLING, 'parking', 'no',
+    'There is no parking provided or managed by the V&A.');
+
+  const source = (url: string, subjectScope: string | null, facts: unknown[]) => ({
+    url, sourceType: 'visitor_info', fetchStatus: 'ok', retrievedAt: now(), subjectScope, facts,
+  });
+
+  const bundleOf = (...sources: unknown[]) => buildEvidenceBundle('fp-young-va', sources, 'official_website');
+  const parkingFact = (bundle: { facts: Array<{ field: string }> }) =>
+    bundle.facts.find((f) => f.field === 'parking') as
+      { field: string; value: string; evidenceStatus?: string; sourceUrl: string | null } | undefined;
+
+  it('does not let a withheld sibling page conflict the venue\'s own fact', () => {
+    const bundle = bundleOf(
+      source(OWN, 'venue_own_subtree', [ownParking]),
+      source(SIBLING, 'sibling_unverified', [siblingParkingYes, siblingParkingYes, siblingParkingYes, siblingParkingNo]),
+    );
+
+    const parking = parkingFact(bundle);
+    expect(parking?.evidenceStatus, 'the sibling may not manufacture a conflict').not.toBe('conflict');
+    expect(parking?.value, 'the venue\'s own page decides').toBe('yes');
+    expect(parking?.sourceUrl).toBe(OWN);
+  });
+
+  it('publishes the venue\'s own fact, where before the canary it was withdrawn', () => {
+    const review = reviewEvidence(bundleOf(
+      source(OWN, 'venue_own_subtree', [ownParking]),
+      source(SIBLING, 'sibling_unverified', [siblingParkingYes, siblingParkingNo]),
+    ));
+    expect(review.eligible).toBe(true);
+    expect(review.payload.familyFacilities.parking).toBe('yes');
+  });
+
+  /**
+   * The exact mechanism of the canary failure. `reconcileSourceClaims` disputes a live claim when
+   * `review.payload` has no value for its field, and it runs with enforcement OFF. So the regression
+   * is only really pinned by asserting the value survives in THAT reading too.
+   */
+  it('keeps the value defined for scope-blind reconciliation, so the claim is not disputed', () => {
+    const review = reviewEvidence(bundleOf(
+      source(OWN, 'venue_own_subtree', [ownParking]),
+      source(SIBLING, 'sibling_unverified', [siblingParkingYes, siblingParkingNo]),
+    ), { enforceSubjectScope: false });
+    expect(review.payload.familyFacilities?.parking,
+      'undefined here is what disputed Young V&A\'s parking claim in production').toBe('yes');
+  });
+
+  it('still conflicts when two pages that MAY speak for the venue disagree', () => {
+    const other = 'https://www.vam.ac.uk/young/accessibility';
+    const bundle = bundleOf(
+      source(OWN, 'venue_own_subtree', [ownParking]),
+      source(other, 'venue_named_page', [fact(other, 'parking', 'no',
+        'There is no parking provided or managed by the V&A.')]),
+    );
+    expect(parkingFact(bundle)?.evidenceStatus, 'a real disagreement must still read as one').toBe('conflict');
+    expect(reviewEvidence(bundle).payload.familyFacilities?.parking).toBeUndefined();
+  });
+
+  /**
+   * The other half of the rule, and the reason this is a precedence and not an exclusion.
+   *
+   * Horniman Butterfly House's seven claims all come from `other_catalogue_venue` pages. Dropping
+   * ineligible evidence outright would delete the field from the bundle, and a vanished field is
+   * exactly what `reconcileSourceClaims` disputes on -- so the cron would have repaired production
+   * unreviewed on its next run. Ineligible evidence still speaks where nothing eligible does.
+   */
+  it('lets ineligible evidence hold a field open when nothing eligible speaks, but never publish it', () => {
+    const parent = 'https://www.horniman.ac.uk/plan-your-visit/';
+    const bundle = bundleOf(source(parent, 'other_catalogue_venue', [
+      fact(parent, 'toilets', 'yes', 'Toilets are available on the ground floor near the entrance.'),
+    ]));
+
+    // Present, so reconciliation does not read the field as gone and withdraw the live claim.
+    expect(bundle.facts.find((f: { field: string }) => f.field === 'toilets')?.value).toBe('yes');
+    expect(reviewEvidence(bundle, { enforceSubjectScope: false }).payload.familyFacilities?.toilets).toBe('yes');
+
+    // But publication is decided by the source's own scope, so it is still refused.
+    const enforced = reviewEvidence(bundle);
+    expect(enforced.eligible).toBe(false);
+    expect(enforced.reason).toBe('withheld_source_identity_unestablished');
+    expect(enforced.withheld[0].subjectScope).toBe('other_catalogue_venue');
+  });
+
+  it('leaves a bundle carrying no provenance behaving exactly as it did before', () => {
+    // Legacy rows and the batch runner have no scope anywhere, so no candidate is eligible and every
+    // field falls back. A pre-provenance bundle must not silently change verdicts.
+    const bundle = bundleOf(
+      source(OWN, null, [ownParking]),
+      source(SIBLING, null, [siblingParkingYes, siblingParkingNo]),
+    );
+    expect(parkingFact(bundle)?.evidenceStatus).toBe('conflict');
+  });
+});

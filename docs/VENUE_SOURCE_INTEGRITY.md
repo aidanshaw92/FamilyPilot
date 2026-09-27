@@ -424,6 +424,71 @@ Primrose Hill served from a Regent's Park page.
 changed since the snapshot was taken. The repair set is regenerated from the then-current active
 claims after step 5 above, and the exact IDs plus rollback data go up for approval then.
 
+## Review round 3 — the canary found the fix refuting its own evidence
+
+The Young V&A canary (`docs/snapshots/venue-source-integrity-canary-2026-09-27/`) ran through the real
+every-minute worker on 2026-09-27 and completed in 41 seconds. Seven of eight predictions held: both
+other-catalogue-venue pages were rejected before being fetched, every fetched page carries a persisted
+scope, `/wedgwood/visit` was retained and withheld, no other venue moved, and none of the four claims
+whose sources are now ineligible was withdrawn.
+
+The eighth failed, and it was worth the whole exercise.
+
+### What happened
+
+Rejecting two pages freed two slots in the `MAX_PAGES = 5` budget, and the reserve filled one with
+`vam.ac.uk/east/museum/visit` — **V&A East Museum, not a catalogue venue**, so `sibling_unverified`:
+fetched, recorded, withheld. That page states parking both ways:
+
+```
+yes  "Buggy park ​Buggy parking is available located on the Lower Ground floor."   (x3)
+no   "There is no parking provided or managed by the V&A."
+```
+
+Young V&A's own page says it once: `yes`, "Buggy parking is available in the Welcome Area near the
+main entrance." `mergeEvidenceBundles` unioned the facts blind to scope, so parking became a
+**conflict**; the draft recorded the collapse as `{"field":"parking","value":"unknown"}`;
+`eligibleFact` drops a conflicted fact; and `reconcileSourceClaims` disputed claim `e1cd19d8…` — a
+**true fact, from the venue's own page, withdrawn on the word of a page not allowed to speak for it.**
+
+Reconciliation runs with `{enforceSubjectScope: false}`, the exception that stops a deploy repairing
+production en masse. That exception makes scope invisible **in both directions**: a withheld source
+cannot support a claim, and nothing stopped it refuting one. `babyChanging` survived only because the
+sibling page happened to agree.
+
+### The fix
+
+Publication already asked "may this source speak *for* this venue?". Nothing asked whether it may
+speak *against* it. `mergeEvidenceBundles` now answers both: for each field, the verdict is computed
+from the candidates whose source has an eligible scope, when any exist.
+
+**It is a precedence, not an exclusion, and the difference is the whole safety property.** Dropping
+ineligible evidence outright would delete the field from the bundle wherever every source for it is
+ineligible — and a vanished field is exactly what `reconcileSourceClaims` disputes on. Horniman
+Butterfly House's seven claims all come from `other_catalogue_venue` pages, so a blanket exclusion
+would have disputed them on the cron's next run: the unreviewed mass repair the exception exists to
+prevent. Ineligible evidence therefore still speaks where nothing eligible does, which lets those
+claims reach their normal expiry instead of being withdrawn by a deploy. It still cannot publish —
+`eligibleFact` checks the source's own scope, independently of the merge.
+
+A bundle carrying no provenance at all (legacy rows, the batch runner, older fixtures) has no
+eligible candidate for any field and falls back for all of them, so its verdicts are unchanged. The
+change is deliberately invisible until provenance exists.
+
+Six regression tests, every string taken verbatim from the production canary, including the
+scope-blind reading that is what actually disputed the claim, and the Horniman case in both
+directions. Two mutants — merging blind to scope again, and exclusion instead of precedence — are
+killed by 3 tests each; the second is also caught by the cached-row suite, which is how the
+mass-repair risk stays pinned.
+
+### Still outstanding
+
+- Claim `e1cd19d8…` (Young V&A `familyFacilities.parking`) is **still disputed in production**. The
+  restore is one statement against the captured id and is not executed: it removed a true fact rather
+  than publishing a false one, so there is no emergency, and it would be undone by the next crawl
+  until this fix is deployed. Deploy first, then restore, then re-run the canary.
+- Phase 6 is **not** regenerated. The canary did not pass, so the repair stays gated.
+
 ## Phase 6 — Proposed repair (NOT RUN)
 
 Not written. The shape of the proposal, for review. **Every count below is from the 2026-09-26
