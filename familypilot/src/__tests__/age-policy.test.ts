@@ -616,7 +616,15 @@ describe('the real editor-save path', () => {
     vi.useRealTimers();
   });
 
-  /** Store one evidence row exactly as the fetcher would. */
+  /**
+   * Store one evidence row exactly as the fetcher would.
+   *
+   * `subjectScope` is part of "exactly as the fetcher would": since the source-integrity fix the
+   * pipeline classifies every page it stores, and the age-policy writer refuses a row whose
+   * relationship to the venue was never recorded. The default is the ordinary case -- the venue's
+   * own page -- so a test about age rules is not also a test about provenance; the tests that ARE
+   * about provenance override it.
+   */
   async function seedEvidence(overrides: Record<string, unknown> = {}) {
     const { saveEvidenceRecord } = await import('../../../server/enrichment/_lib/evidence-store.js');
     await saveEvidenceRecord({
@@ -627,6 +635,8 @@ describe('the real editor-save path', () => {
       extractedText: PAGE_TEXT,
       fetchStatus: 'ok',
       httpStatus: 200,
+      subjectScope: 'venue_own_subtree',
+      subjectScopeReason: 'under_own_website',
       ...overrides,
     });
   }
@@ -893,6 +903,8 @@ describe('the real editor-save path', () => {
       retrievedAt: `${TODAY}T09:00:00Z`,
       extractedText: PAGE_TEXT,
       fetchStatus: 'ok',
+      subjectScope: 'venue_own_subtree',
+      subjectScopeReason: 'under_own_website',
     };
 
     expect(() => agePolicyProvenanceFrom(elsewhere, id)).toThrow(/different venue/);

@@ -150,6 +150,40 @@ function placeRowToRecord(row) {
   };
 }
 
+/**
+ * Every catalogue venue's identity, as source-integrity classification needs it.
+ *
+ * Source discovery has to know which OTHER venues live on the host it is crawling, or it cannot
+ * tell a venue's own deeper page from a sibling venue's front door. These are stored identifiers,
+ * not guesses: the comparison downstream is exact.
+ */
+async function listVenueIdentities() {
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const rows = [];
+    const pageSize = 1000;
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await supabase
+        .from('place_records')
+        .select('familypilot_place_id, name, website')
+        .range(from, from + pageSize - 1);
+      if (error) throw new Error(error.message);
+      rows.push(...(data ?? []));
+      // A truncated page would silently shrink the set of venues we can recognise, which turns a
+      // sibling venue's page back into an unrecognised one. Keep going until a page is short.
+      if (!data || data.length < pageSize) break;
+    }
+    return rows
+      .filter((row) => row.website)
+      .map((row) => ({ familypilotPlaceId: row.familypilot_place_id, name: row.name, website: row.website }));
+  }
+
+  const store = readFileStore();
+  return (store.places ?? [])
+    .filter((row) => row.website)
+    .map((row) => ({ familypilotPlaceId: row.familypilot_place_id, name: row.name, website: row.website }));
+}
+
 async function upsertPlaceRecord(place) {
   const supabase = getSupabaseAdmin();
   const record = {
@@ -548,6 +582,7 @@ function getStorageMode() {
 
 module.exports = {
   upsertPlaceRecord,
+  listVenueIdentities,
   upsertPlaceRecords,
   reclassifyProviderOnlyPlaceRecords,
   listPlaceRecordsForOpeningHours,

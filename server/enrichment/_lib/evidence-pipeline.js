@@ -9,6 +9,8 @@ const { discoverSourceUrls, mergePageCandidates } = require('./source-discovery'
 const { fetchOfficialPage } = require('./source-fetcher');
 const { extractEvidenceFromText, buildEvidenceBundle } = require('./evidence-extractor');
 const { getCachedEvidence, saveEvidenceRecord } = require('./evidence-store');
+const { listVenueIdentities } = require('./enrichment-store');
+const { classifySubjectScope } = require('./source-identity');
 
 const MAX_PAGES = Number(process.env.SOURCE_MAX_PAGES || 5);
 
@@ -41,8 +43,46 @@ async function ensurePlaceDetails(familypilotId, placeRow) {
 }
 
 async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
+  /**
+   * Decide whose page this is BEFORE storing it, and store the verdict with it.
+   *
+   * The old pipeline stamped `familypilot_place_id` on every fetched page and moved on, so the
+   * assertion "this page is evidence for venue X" was created by the act of crawling and could
+   * never afterwards be checked. Classifying here, where the crawl still knows what it was doing
+   * and why, is the whole fix: everything downstream reads a recorded relationship instead of
+   * re-inferring one from a URL.
+   */
+  const { venue = null, catalogue = [] } = options;
+  const scopeFor = (sourceUrl, pageTitle) => (venue
+    ? classifySubjectScope({ sourceUrl, pageTitle, venue, catalogue })
+    : { scope: null, reason: null });
   const cached = options.forceRefresh ? null : await getCachedEvidence(familypilotPlaceId, page.url);
   if (cached) {
+    /**
+     * A row cached before this column existed carries NO recorded verdict, and a verdict computed
+     * here and now is not one the database holds.
+     *
+     * The first version of this branch reclassified such a row and returned the inferred scope.
+     * That looked like the careful thing to do and was not: a claim approved from it would point at
+     * an evidence row whose `subject_scope` is still NULL, so the provenance behind a published
+     * fact would exist only in the memory of one worker run. That is the original defect's exact
+     * shape -- an assertion manufactured by the act of crawling -- and it breaks this workstream's
+     * own invariant, that a served fact is backed by a RECORDED relationship.
+     *
+     * So the stored scope is passed through exactly as stored, null included, and a null fails
+     * closed at `eligibleFact`. The reclassification is kept only as a diagnostic: it is what a
+     * separately reviewed backfill would propose, never something this path may publish from.
+     *
+     * Nothing is written here, deliberately. `familypilot-automatic-enrichment` runs every minute,
+     * so backfilling provenance from this branch would quietly make the cron a provenance writer
+     * and re-qualify hundreds of legacy rows with nobody having reviewed one of them.
+     *
+     * A legacy row recovers without any backfill in the ordinary case: the cache is fresh for at
+     * most 14 days (`evidence-store.CACHE_TTL_DAYS`), so the row falls out of cache and the next
+     * crawl refetches it and records the scope properly on the way in.
+     */
+    const recorded = Boolean(cached.subjectScope);
+    const inferred = recorded ? null : scopeFor(cached.sourceUrl, cached.pageTitle);
     const facts = extractEvidenceFromText(cached.extractedText || '', { url: cached.sourceUrl, sourceType: cached.sourceType, retrievedAt: cached.retrievedAt });
     return {
       url: cached.sourceUrl,
@@ -53,15 +93,23 @@ async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
       facts,
       extractedText: cached.extractedText,
       html: null,
+      subjectScope: cached.subjectScope ?? null,
+      subjectScopeReason: recorded ? cached.subjectScopeReason : 'cached_row_predates_provenance',
+      subjectScopeRecorded: recorded,
+      inferredSubjectScope: inferred?.scope ?? null,
+      inferredSubjectScopeReason: inferred?.reason ?? null,
     };
   }
 
   const fetched = await fetchOfficialPage(page.url);
   if (!fetched.ok) {
+    const failedScope = scopeFor(page.url, null);
     await saveEvidenceRecord({
       familypilotPlaceId,
       sourceUrl: page.url,
       sourceType: page.sourceType,
+      subjectScope: failedScope.scope,
+      subjectScopeReason: failedScope.reason,
       fetchStatus: fetched.fetchStatus,
       httpStatus: fetched.httpStatus ?? null,
       error: fetched.error,
@@ -86,10 +134,15 @@ async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
     pageTitle: fetched.pageTitle ?? null,
   });
 
+  // The page title is part of the verdict, so classify only once it is known.
+  const scope = scopeFor(fetched.url, fetched.pageTitle ?? null);
+
   await saveEvidenceRecord({
     familypilotPlaceId,
     sourceUrl: fetched.url,
     sourceType: page.sourceType,
+    subjectScope: scope.scope,
+    subjectScopeReason: scope.reason,
     pageTitle: fetched.pageTitle,
     retrievedAt: fetched.retrievedAt,
     contentHash: fetched.contentHash,
@@ -108,11 +161,28 @@ async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
     extractedText: fetched.extractedText,
     html: fetched.html,
     truncated: fetched.truncated ?? false,
+    subjectScope: scope.scope,
+    subjectScopeReason: scope.reason,
+    // This page was just classified and stored in the same breath, so the scope above is a
+    // recorded one. The cached branch is the only place that can be false.
+    subjectScopeRecorded: true,
   };
 }
 
 async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}) {
   const enrichedPlace = await ensurePlaceDetails(familypilotPlaceId, placeRow);
+
+  /**
+   * Who this crawl is for, and who else shares the sites it may touch. Without the second half a
+   * crawl cannot tell a venue's own deeper page from a sibling venue's front door.
+   */
+  const catalogue = options.catalogue ?? (await listVenueIdentities());
+  const venue = {
+    familypilotPlaceId,
+    name: enrichedPlace?.name ?? placeRow?.name ?? null,
+    website: enrichedPlace?.website ?? null,
+  };
+  const pageOptions = { ...options, venue, catalogue };
   const discovery = discoverSourceUrls({
     website: enrichedPlace?.website,
     googleDescription: enrichedPlace?.description,
@@ -152,13 +222,14 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
   }
 
   const homepage = discovery.pages[0];
-  const homeResult = await fetchAndExtractPage(familypilotPlaceId, homepage, options);
+  const homeResult = await fetchAndExtractPage(familypilotPlaceId, homepage, pageOptions);
 
   const { pages, reserveCandidates, diagnostics: discoveryDiagnostics } = mergePageCandidates(
     homepage.url,
     discovery.pages,
     homeResult.html,
     MAX_PAGES,
+    { venue, catalogue },
   );
 
   const sources = [];
@@ -222,7 +293,7 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
     attemptedUrls.add(urlKey);
     fetchAttempts += 1;
 
-    const result = await fetchAndExtractPage(familypilotPlaceId, next, options);
+    const result = await fetchAndExtractPage(familypilotPlaceId, next, pageOptions);
     recordResult(result);
 
     if (isQuickFailure(result) && reserve.length && fetchAttempts < maxAttempts) {
@@ -233,6 +304,19 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
   const diagnostics = {
     linksDiscovered: discoveryDiagnostics.linksDiscovered,
     linksSelected: discoveryDiagnostics.linksSelected,
+    linksRejectedAsOtherVenue: discoveryDiagnostics.linksRejectedAsOtherVenue ?? [],
+    /**
+     * Cache hits whose stored row predates the provenance column, with the facts they are
+     * consequently NOT publishing. Reported rather than acted on: this is the input a reviewed
+     * backfill would work from, and without it the withholding would be invisible.
+     */
+    cachedRowsMissingProvenance: sources
+      .filter((s) => s.subjectScopeRecorded === false)
+      .map((s) => ({
+        url: s.url,
+        inferredSubjectScope: s.inferredSubjectScope ?? null,
+        factCount: (s.facts ?? []).length,
+      })),
     reserveCount: discoveryDiagnostics.reserveCount ?? reserve.length,
     pagesFetched,
     pagesFailed,

@@ -411,6 +411,14 @@ function buildEvidenceBundle(venueId, sources, sourceStatus, diagnostics = null)
       retrievedAt: s.retrievedAt,
       fetchStatus: s.fetchStatus,
       error: s.error ?? null,
+      /**
+       * Provenance has to survive this reshape. This function rebuilds each source from a fixed
+       * list of keys, so anything not named here is silently dropped -- which is exactly how venue
+       * identity was lost in the first place. `subjectScope` is the record of whose page this is;
+       * losing it here would make every fact fail closed and, worse, would do so invisibly.
+       */
+      subjectScope: s.subjectScope ?? null,
+      subjectScopeReason: s.subjectScopeReason ?? null,
       facts: s.facts ?? [],
     })),
     facts: mergeEvidenceBundles(sources),

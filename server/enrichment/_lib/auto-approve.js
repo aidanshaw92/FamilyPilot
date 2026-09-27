@@ -62,7 +62,15 @@ async function tryAutoApproveDraft(familypilotId, options = {}) {
 async function reconcileSourceClaims(id, bundle) {
   const {listClaimsForVenue, disputeClaim} = require('./claims-store');
   const {FIELD_MAP} = require('./trusted-evidence');
-  const review = require('./trusted-evidence').reviewEvidence(bundle);
+  /**
+   * Deliberately NOT enforcing subject scope here.
+   *
+   * This function disputes live claims. `familypilot-automatic-enrichment` runs every minute, so
+   * enforcing the new provenance rule at this point would silently repair production within the
+   * hour -- hundreds of claims disputed with nobody having reviewed the change. Prevention is live
+   * (see `eligibleFact`); repairing what is already published is Phase 6, behind its own gate.
+   */
+  const review = require('./trusted-evidence').reviewEvidence(bundle, {enforceSubjectScope:false});
   const claims = await listClaimsForVenue(id, {status:'active'});
   for (const claim of claims) {
     if (![REVIEWED_BY, AI_AUTO_APPROVER].includes(claim.approvedBy)) continue;
