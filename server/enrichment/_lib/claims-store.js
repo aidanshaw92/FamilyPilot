@@ -21,6 +21,7 @@ const {
   PROJECTED_AGE_POLICY,
 } = require('./age-policy');
 const { isHumanApprover } = require('./approval-actors');
+const { isEligibleScope } = require('./source-identity');
 
 
 const FILE_CLAIMS_DIR = '.data';
@@ -375,6 +376,31 @@ function agePolicyProvenanceFrom(record, familypilotPlaceId) {
     throw Object.assign(new Error(`Evidence record for ${record.sourceUrl} did not fetch cleanly`), {
       code: 'AGE_POLICY_EVIDENCE_NOT_FETCHED',
     });
+  }
+  /**
+   * Whose page is this? Checked here because the row belonging to this venue is not the same
+   * question as the PAGE being about this venue -- the crawl stamped the first on every page it
+   * touched, which is how a sister museum's facilities came to be served as this venue's.
+   *
+   * Age policy is the only claim that removes a venue from a family's results outright, so it gets
+   * the strictest reading of the provenance rule and takes it from the STORED row:
+   *
+   *   - NULL                     a row written before provenance was recorded. Unknown, not fine.
+   *   - sibling_unverified       same site, relationship never established.
+   *   - organisation_ancestor    the operator's page; applicability to this venue not demonstrated.
+   *   - other_catalogue_venue    positively somebody else's page.
+   *
+   * All four refuse. There are currently 0 age-policy claims, so closing this costs nothing today
+   * and means the age work cannot later be built on top of the gap.
+   */
+  if (!isEligibleScope(record.subjectScope)) {
+    throw Object.assign(
+      new Error(
+        `Evidence record for ${record.sourceUrl} has no established relationship to this venue `
+        + `(subject scope: ${record.subjectScope ?? 'not recorded'})`,
+      ),
+      { code: 'AGE_POLICY_EVIDENCE_SUBJECT_SCOPE_UNESTABLISHED' },
+    );
   }
 
   const fieldKey = agePolicyFieldKey(record.sourceUrl);

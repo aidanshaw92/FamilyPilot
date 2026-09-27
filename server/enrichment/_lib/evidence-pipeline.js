@@ -58,11 +58,31 @@ async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
     : { scope: null, reason: null });
   const cached = options.forceRefresh ? null : await getCachedEvidence(familypilotPlaceId, page.url);
   if (cached) {
-    // A row cached before this column existed carries no verdict. Reclassify rather than inherit
-    // a null, so an old cache entry cannot quietly bypass the gate.
-    const cachedScope = cached.subjectScope
-      ? { scope: cached.subjectScope, reason: cached.subjectScopeReason }
-      : scopeFor(cached.sourceUrl, cached.pageTitle);
+    /**
+     * A row cached before this column existed carries NO recorded verdict, and a verdict computed
+     * here and now is not one the database holds.
+     *
+     * The first version of this branch reclassified such a row and returned the inferred scope.
+     * That looked like the careful thing to do and was not: a claim approved from it would point at
+     * an evidence row whose `subject_scope` is still NULL, so the provenance behind a published
+     * fact would exist only in the memory of one worker run. That is the original defect's exact
+     * shape -- an assertion manufactured by the act of crawling -- and it breaks this workstream's
+     * own invariant, that a served fact is backed by a RECORDED relationship.
+     *
+     * So the stored scope is passed through exactly as stored, null included, and a null fails
+     * closed at `eligibleFact`. The reclassification is kept only as a diagnostic: it is what a
+     * separately reviewed backfill would propose, never something this path may publish from.
+     *
+     * Nothing is written here, deliberately. `familypilot-automatic-enrichment` runs every minute,
+     * so backfilling provenance from this branch would quietly make the cron a provenance writer
+     * and re-qualify hundreds of legacy rows with nobody having reviewed one of them.
+     *
+     * A legacy row recovers without any backfill in the ordinary case: the cache is fresh for at
+     * most 14 days (`evidence-store.CACHE_TTL_DAYS`), so the row falls out of cache and the next
+     * crawl refetches it and records the scope properly on the way in.
+     */
+    const recorded = Boolean(cached.subjectScope);
+    const inferred = recorded ? null : scopeFor(cached.sourceUrl, cached.pageTitle);
     const facts = extractEvidenceFromText(cached.extractedText || '', { url: cached.sourceUrl, sourceType: cached.sourceType, retrievedAt: cached.retrievedAt });
     return {
       url: cached.sourceUrl,
@@ -73,8 +93,11 @@ async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
       facts,
       extractedText: cached.extractedText,
       html: null,
-      subjectScope: cachedScope.scope,
-      subjectScopeReason: cachedScope.reason,
+      subjectScope: cached.subjectScope ?? null,
+      subjectScopeReason: recorded ? cached.subjectScopeReason : 'cached_row_predates_provenance',
+      subjectScopeRecorded: recorded,
+      inferredSubjectScope: inferred?.scope ?? null,
+      inferredSubjectScopeReason: inferred?.reason ?? null,
     };
   }
 
@@ -140,6 +163,9 @@ async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
     truncated: fetched.truncated ?? false,
     subjectScope: scope.scope,
     subjectScopeReason: scope.reason,
+    // This page was just classified and stored in the same breath, so the scope above is a
+    // recorded one. The cached branch is the only place that can be false.
+    subjectScopeRecorded: true,
   };
 }
 
@@ -279,6 +305,18 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
     linksDiscovered: discoveryDiagnostics.linksDiscovered,
     linksSelected: discoveryDiagnostics.linksSelected,
     linksRejectedAsOtherVenue: discoveryDiagnostics.linksRejectedAsOtherVenue ?? [],
+    /**
+     * Cache hits whose stored row predates the provenance column, with the facts they are
+     * consequently NOT publishing. Reported rather than acted on: this is the input a reviewed
+     * backfill would work from, and without it the withholding would be invisible.
+     */
+    cachedRowsMissingProvenance: sources
+      .filter((s) => s.subjectScopeRecorded === false)
+      .map((s) => ({
+        url: s.url,
+        inferredSubjectScope: s.inferredSubjectScope ?? null,
+        factCount: (s.facts ?? []).length,
+      })),
     reserveCount: discoveryDiagnostics.reserveCount ?? reserve.length,
     pagesFetched,
     pagesFailed,

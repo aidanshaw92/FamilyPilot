@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -523,5 +523,267 @@ describe('FIXED 10: promotion cannot reach across hosts or be vetoed by a vaguer
       sourceUrl: 'https://www.rmg.co.uk/plan-your-visit/accessibility-cutty-sark-and-queens-house',
       pageTitle: "Accessibility at Cutty Sark and the Queen's House", venue: cat[0], catalogue: cat,
     }).scope).toBe('sibling_unverified');
+  });
+});
+
+/**
+ * Review round 2, finding 1.
+ *
+ * The first cut of the cached branch in `fetchAndExtractPage` reclassified a row whose
+ * `subject_scope` was NULL and returned the inferred verdict in the bundle. The gate then saw an
+ * eligible scope, so a NEW claim could be approved against an evidence row that still held no
+ * provenance at all -- the invariant this whole workstream exists to establish, broken by the code
+ * establishing it. Provenance that lives only in one worker's memory is not provenance.
+ *
+ * Driven through the real pipeline against the real file-backed store, because the defect was in
+ * the seam between them and a hand-built bundle would have missed it entirely.
+ */
+describe('FIXED 11: a cache hit whose row predates provenance cannot publish, and is not backfilled', () => {
+  const VENUE = 'fp-legacy-cache-venue';
+  const WEBSITE = 'https://legacy.example/visit';
+  const PAGE_TEXT = 'Toilets are available on the ground floor near the entrance.';
+  const catalogue = [{ familypilotPlaceId: VENUE, name: 'Legacy Cache Venue', website: WEBSITE }];
+  const placeRow = { name: 'Legacy Cache Venue', website: WEBSITE, description: 'A venue.' };
+
+  let env: NodeJS.ProcessEnv;
+
+  beforeEach(() => {
+    env = { ...process.env };
+    // No Supabase credentials: the store falls back to `.data`, which this suite owns.
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    /**
+     * One page per crawl. The homepage is the cached row under test; capping attempts at one means
+     * the loop never reaches a candidate it would have to fetch, so the test needs no network and
+     * no fetcher double. `MAX_PAGES` is read at module load, hence the reset below.
+     */
+    process.env.SOURCE_MAX_PAGES = '1';
+    fs.mkdirSync('.data', { recursive: true });
+    fs.writeFileSync(path.join('.data', 'venue-source-evidence.json'), JSON.stringify({ records: [] }));
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    process.env = env;
+    vi.resetModules();
+  });
+
+  /** One stored page, exactly as the pre-provenance pipeline left it when `subjectScope` is omitted. */
+  async function seedCachedPage(subjectScope: string | null) {
+    const { saveEvidenceRecord } = await import('../../../server/enrichment/_lib/evidence-store.js');
+    await saveEvidenceRecord({
+      familypilotPlaceId: VENUE,
+      sourceUrl: WEBSITE,
+      sourceType: 'official_website',
+      pageTitle: 'Visit | Legacy Cache Venue',
+      retrievedAt: new Date().toISOString(),
+      extractedText: PAGE_TEXT,
+      fetchStatus: 'ok',
+      httpStatus: 200,
+      ...(subjectScope ? { subjectScope, subjectScopeReason: 'under_own_website' } : {}),
+    });
+  }
+
+  /** The pipeline is plain JS, so the shape this test actually asserts on is named here. */
+  type CrawledBundle = {
+    facts: Array<{ field: string }>;
+    sources: Array<{
+      url: string;
+      fetchStatus: string;
+      subjectScope: string | null;
+      subjectScopeReason: string | null;
+    }>;
+    diagnostics: {
+      cachedRowsMissingProvenance: Array<{
+        url: string;
+        inferredSubjectScope: string | null;
+        factCount: number;
+      }>;
+    };
+  };
+
+  async function crawl(): Promise<CrawledBundle> {
+    const { gatherEvidenceForVenue } = await import('../../../server/enrichment/_lib/evidence-pipeline.js');
+    return (await gatherEvidenceForVenue(VENUE, placeRow, { catalogue })) as unknown as CrawledBundle;
+  }
+
+  async function storedScope() {
+    const store = JSON.parse(fs.readFileSync(path.join('.data', 'venue-source-evidence.json'), 'utf8'));
+    return store.records.map((r: Record<string, unknown>) => r.subject_scope ?? null);
+  }
+
+  it('carries the stored null through instead of an inference, and withholds the fact', async () => {
+    await seedCachedPage(null);
+    const bundle = await crawl();
+
+    const source = bundle.sources.find((s) => s.url === WEBSITE);
+    expect(source, 'the cached page must still be in the bundle').toBeTruthy();
+    expect(source?.fetchStatus).toBe('cached');
+    expect(source?.subjectScope, 'what the DATABASE holds, not what this run worked out').toBeNull();
+    expect(source?.subjectScopeReason).toBe('cached_row_predates_provenance');
+
+    // The fact is genuinely publishable in every other respect: high confidence, official source,
+    // fetched cleanly, recent, real excerpt. Only the missing provenance stops it.
+    expect(bundle.facts.some((f) => f.field === 'toilets')).toBe(true);
+
+    const review = reviewEvidence(bundle);
+    expect(review.eligible, 'a legacy cache row must not create a new claim').toBe(false);
+    expect(review.reason).toBe('withheld_source_identity_unestablished');
+    expect(review.withheld).toEqual([
+      { field: 'familyFacilities.toilets', sourceUrl: WEBSITE, subjectScope: null },
+    ]);
+  });
+
+  it('would have published it if the inference were trusted, which is the whole point', async () => {
+    await seedCachedPage(null);
+    const bundle = await crawl();
+
+    /**
+     * The inference is recorded as a diagnostic so the withholding is visible and a reviewed
+     * backfill has something to work from. That it says `venue_own_subtree` -- publishable, had the
+     * code acted on it -- is exactly why acting on it was wrong.
+     */
+    expect(bundle.diagnostics.cachedRowsMissingProvenance).toEqual([
+      { url: WEBSITE, inferredSubjectScope: 'venue_own_subtree', factCount: 1 },
+    ]);
+  });
+
+  it('does not backfill the row, so the every-minute cron cannot become a provenance writer', async () => {
+    await seedCachedPage(null);
+    expect(await storedScope()).toEqual([null]);
+    await crawl();
+    expect(await storedScope(), 'the crawl must not write provenance it only guessed').toEqual([null]);
+  });
+
+  it('publishes the same fact once the scope is actually recorded on the row', async () => {
+    // The contrast case: identical row, identical text, provenance present. Proves the refusal
+    // above is about the missing record and not about something else being wrong with the fixture.
+    await seedCachedPage('venue_own_subtree');
+    const bundle = await crawl();
+
+    const source = bundle.sources.find((s) => s.url === WEBSITE);
+    expect(source?.subjectScope).toBe('venue_own_subtree');
+    expect(bundle.diagnostics.cachedRowsMissingProvenance).toEqual([]);
+
+    const review = reviewEvidence(bundle);
+    expect(review.eligible).toBe(true);
+    expect(review.payload.familyFacilities.toilets).toBe('yes');
+  });
+});
+
+/**
+ * Review round 2, finding 2.
+ *
+ * `agePolicyProvenanceFrom` derives every field of a hard age gate from the stored evidence row --
+ * venue, fetch status, URL, source type -- and until now not the one thing that says the page is
+ * about this venue. An age policy is the only claim that removes a venue from a family's results
+ * outright, so it is the worst possible place for a sibling site's rule to land.
+ *
+ * There are 0 age-policy claims in production today, so this closes the gap before anything can be
+ * built on it.
+ */
+describe('FIXED 12: a hard age gate needs a recorded relationship to the venue', () => {
+  const VENUE = 'fp-age-scope-venue';
+  const SOURCE = 'https://age.example/visit';
+  const PAGE_TEXT = 'Under 4s are not admitted to the museum.';
+
+  const record = (subjectScope: string | null) => ({
+    id: 'evidence-age-scope',
+    familypilotPlaceId: VENUE,
+    sourceUrl: SOURCE,
+    sourceType: 'official_website',
+    retrievedAt: '2026-09-21T09:00:00Z',
+    extractedText: PAGE_TEXT,
+    fetchStatus: 'ok',
+    subjectScope,
+    subjectScopeReason: subjectScope ? 'recorded_by_the_crawl' : null,
+  });
+
+  async function provenance() {
+    const { agePolicyProvenanceFrom } = await import('../../../server/enrichment/_lib/claims-store.js');
+    return agePolicyProvenanceFrom;
+  }
+
+  it('accepts the venue\'s own page', async () => {
+    const agePolicyProvenanceFrom = await provenance();
+    expect(agePolicyProvenanceFrom(record('venue_own_subtree'), VENUE).sourceUrl).toBe(SOURCE);
+  });
+
+  it('accepts a page that names only this venue, in both URL and title', async () => {
+    const agePolicyProvenanceFrom = await provenance();
+    expect(agePolicyProvenanceFrom(record('venue_named_page'), VENUE).sourceUrl).toBe(SOURCE);
+  });
+
+  /**
+   * Every one of the evidence rows in production today is in this state: the column does not exist
+   * yet, so nothing has a scope. Unknown must refuse, not pass.
+   */
+  it.each([
+    ['not recorded at all', null],
+    ['an unverified sibling on the same site', 'sibling_unverified'],
+    ['the operator\'s page above this venue', 'organisation_ancestor'],
+    ['positively another catalogue venue\'s page', 'other_catalogue_venue'],
+  ])('refuses a row whose relationship is %s', async (_label, scope) => {
+    const agePolicyProvenanceFrom = await provenance();
+    let thrown: (Error & { code?: string }) | null = null;
+    try {
+      agePolicyProvenanceFrom(record(scope as string | null), VENUE);
+    } catch (error) {
+      thrown = error as Error & { code?: string };
+    }
+    expect(thrown, 'it must refuse, not return provenance').toBeTruthy();
+    expect(thrown?.code).toBe('AGE_POLICY_EVIDENCE_SUBJECT_SCOPE_UNESTABLISHED');
+    expect(thrown?.message).toContain('no established relationship');
+  });
+
+  it('refuses through the real writer too, not only the validator', async () => {
+    const env = { ...process.env };
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    vi.resetModules();
+    try {
+      fs.mkdirSync('.data', { recursive: true });
+      for (const [file, data] of Object.entries({
+        'venue-claims.json': { claims: [] },
+        'venue-source-evidence.json': { records: [] },
+      })) {
+        fs.writeFileSync(path.join('.data', file), JSON.stringify(data));
+      }
+
+      const { saveEvidenceRecord } = await import('../../../server/enrichment/_lib/evidence-store.js');
+      const { createAgePolicyClaim } = await import('../../../server/enrichment/_lib/claims-store.js');
+      const { humanApprover } = await import('../../../server/enrichment/_lib/approval-actors.js');
+
+      // A row with no provenance, exactly as production holds 875 of them today.
+      await saveEvidenceRecord({
+        familypilotPlaceId: VENUE,
+        sourceUrl: SOURCE,
+        sourceType: 'official_website',
+        retrievedAt: new Date().toISOString(),
+        extractedText: PAGE_TEXT,
+        fetchStatus: 'ok',
+        httpStatus: 200,
+      });
+
+      await expect(createAgePolicyClaim({
+        familypilotPlaceId: VENUE,
+        sourceUrl: SOURCE,
+        rules: [{
+          scope: 'venue',
+          effect: 'excludes',
+          minMonthsInclusive: 48,
+          maxMonthsExclusive: null,
+          statedAs: 'Under 4s not admitted',
+          evidenceExcerpt: PAGE_TEXT,
+        }],
+        reviewedBy: humanApprover('editor@familypilot'),
+      })).rejects.toThrow(/no established relationship/);
+
+      const claims = JSON.parse(fs.readFileSync(path.join('.data', 'venue-claims.json'), 'utf8'));
+      expect(claims.claims, 'nothing may be written on the way to refusing').toHaveLength(0);
+    } finally {
+      process.env = env;
+      vi.resetModules();
+    }
   });
 });

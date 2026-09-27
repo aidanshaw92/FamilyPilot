@@ -292,9 +292,97 @@ including removing the link scoping, re-rooting common paths at the origin, prom
 dropping provenance at the bundle boundary, defaulting the gate off, and making reconciliation
 enforce (which would repair production on deploy).
 
+## Review round 2 — two gaps found on `18053cb`
+
+Both were found by review, not by the test suite, and both are the same mistake in different
+clothes: provenance that exists somewhere other than the stored row.
+
+### Finding 1 — a cache hit was trusted on an inference the database did not hold
+
+`fetchAndExtractPage` reclassified a cached row whose `subject_scope` was NULL and returned the
+inferred verdict in the bundle. The gate then saw an eligible scope, so a **new claim could be
+approved against an evidence row that still carried no provenance at all**. The provenance existed
+only in the memory of one worker run — the original defect's shape exactly, produced by the code
+written to remove it.
+
+Fixed: the stored scope is passed through as stored, null included, and null fails closed at
+`eligibleFact`. The reclassification survives only as a diagnostic
+(`diagnostics.cachedRowsMissingProvenance`), which is what a separately reviewed backfill would
+work from.
+
+**Nothing is backfilled here.** `familypilot-automatic-enrichment` runs every minute; writing
+provenance from this branch would make the cron a provenance writer and silently re-qualify
+hundreds of legacy rows with nobody having reviewed one.
+
+**Recovery needs no backfill in the ordinary case.** `getCachedEvidence` only returns a row fetched
+within `CACHE_TTL_DAYS` (capped at 14). A legacy row therefore falls out of cache within 14 days of
+its last fetch and the next crawl refetches it and records the scope on the way in.
+
+**Expected transitional effect, stated plainly:** between applying the migration and the cache
+turning over, cached pages publish **no new** facility facts. Existing claims are untouched; this
+delays new ones by at most 14 days per page. That is the fail-closed behaviour working, not a
+regression.
+
+### Finding 2 — the hard age gate never checked the relationship
+
+`agePolicyProvenanceFrom` derived every field of an age policy from the stored row — venue, fetch
+status, URL, source type — and not the one thing that says the page is *about* this venue. An age
+policy is the only claim that removes a venue from a family's results outright, so a sibling site's
+rule landing there is the worst case in the system.
+
+Fixed: `isEligibleScope(record.subjectScope)` is required, failing with
+`AGE_POLICY_EVIDENCE_SUBJECT_SCOPE_UNESTABLISHED`. NULL, `sibling_unverified`,
+`organisation_ancestor` and `other_catalogue_venue` all refuse.
+
+**Live impact today: none.** `createAgePolicyClaim` has no non-test caller anywhere in the
+repository (the age-policy work is deferred), and production holds **0** active age-policy claims.
+Closing it now means that work cannot be built on top of the gap. Once it is built, an editor will
+need an evidence row fetched *after* the migration, since every row predating it reads as unknown.
+
+## Order of operations for release
+
+The additive migration goes in **before** the code, because the new code reads and writes
+`subject_scope` and the crawl runs every minute.
+
+1. Fix and re-review the two findings above. ← *this PR*
+2. Apply `20260926140000_venue_source_evidence_subject_scope.sql` to production.
+3. Verify: column and CHECK present, partial index present, ACL/RLS unchanged, every existing
+   evidence row still NULL, no claim changed.
+4. Merge and deploy #111.
+5. Observe several enrichment cycles: no existing claim's status changed, new and refreshed evidence
+   rows carry a scope, and legacy NULL cache rows publish nothing.
+6. Only then regenerate the repair set and seek repair approval.
+
+Applying a migration and merging are both outside what this PR does.
+
+## The Phase 5 repair set is stale and must be regenerated
+
+Re-measured read-only against production at **2026-09-27 07:06 UTC**:
+
+| measure | at the audit (2026-09-26) | now | note |
+| --- | --- | --- | --- |
+| active claims | 223 | **224** | the worker has kept running |
+| active claims touched since the audit | — | **42** (40 re-checked) | |
+| active claims past their `valid_until` | — | 1 | reads expired, still `active` |
+| active claims with no `source_url` | — | 4 | no provenance to classify |
+| `venue_source_evidence` rows | 835 | **875** | |
+| `subject_scope` column | absent | **absent** | migration not applied |
+| active age-policy claims | 0 | **0** | |
+
+The known errors **are** still live — re-checked by listing the four category-A venues' active
+claims and their source URLs, which still show Horniman Butterfly House served from the parent
+museum's `/plan-your-visit/`, both V&A sites served from each other and from `/wedgwood/visit`, and
+Primrose Hill served from a Regent's Park page.
+
+**The old "16 + 6" set must not be run blindly.** Forty-two of the claims in that population have
+changed since the snapshot was taken. The repair set is regenerated from the then-current active
+claims after step 5 above, and the exact IDs plus rollback data go up for approval then.
+
 ## Phase 6 — Proposed repair (NOT RUN)
 
-Not written. The proposal, for review:
+Not written. The shape of the proposal, for review. **Every count below is from the 2026-09-26
+snapshot and is stale** (see above): the set is regenerated from live rows before anything is
+proposed for approval.
 
 - **Scope:** the 16 category-A claims, plus the 6 known-wrong Tate/Wedgwood facts on their separate
   title evidence. Nothing in C or D is touched.
