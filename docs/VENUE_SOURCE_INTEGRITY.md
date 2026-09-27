@@ -318,10 +318,26 @@ hundreds of legacy rows with nobody having reviewed one.
 within `CACHE_TTL_DAYS` (capped at 14). A legacy row therefore falls out of cache within 14 days of
 its last fetch and the next crawl refetches it and records the scope on the way in.
 
-**Expected transitional effect, stated plainly:** between applying the migration and the cache
-turning over, cached pages publish **no new** facility facts. Existing claims are untouched; this
-delays new ones by at most 14 days per page. That is the fail-closed behaviour working, not a
-regression.
+**Correction, 2026-09-27 07:45 UTC.** While preparing to observe the rollout I traced the live
+callers and found the transitional effect claimed here was wrong. Both HTTP entry points into
+enrichment — the manual `action=generate` and the automation's `action=automation-run`
+(`api/enrichment/index.js`) — pass `sourceOnly: true`, and `draft-store.js` turns that into
+`gatherEvidenceForVenue(..., {forceRefresh: true})`. **`forceRefresh` bypasses the cache entirely**,
+so the every-minute automatic path never takes the cached branch at all.
+
+Two consequences, and the second is the one that matters:
+
+- There is **no transitional withholding window** on the automatic path. Every page the worker
+  touches is refetched and gets a `subject_scope` written on the way in, from the first venue it
+  processes. The earlier claim of "no new facility facts for up to 14 days" does not apply.
+- The cached branch is reached only by a caller that does **not** pass `sourceOnly` — today that is
+  the internal batch runner in `draft-store.js`, which calls `generateDraftForVenue(id)` with no
+  options. So finding 1's fix is defence in depth for that path and for any future caller, and
+  **"legacy cached NULL rows remain withheld" cannot be demonstrated through the automation path.**
+  It is demonstrated by the integration test, which drives the real pipeline over a real cached row.
+
+The fix itself is unchanged and still correct: a runtime inference must never stand in for a
+recorded relationship, whichever caller reaches it.
 
 ### Finding 2 — the hard age gate never checked the relationship
 
@@ -339,18 +355,48 @@ repository (the age-policy work is deferred), and production holds **0** active 
 Closing it now means that work cannot be built on top of the gap. Once it is built, an editor will
 need an evidence row fetched *after* the migration, since every row predating it reads as unknown.
 
+## What the every-minute worker actually does
+
+Measured read-only at 2026-09-27 07:43 UTC, because "runs every minute" and "does something every
+minute" are different claims and the rollout plan depends on the second.
+
+- `familypilot-automatic-enrichment` is `* * * * *` and fires reliably: **720 of 720 runs succeeded**
+  in the twelve hours to 07:43 UTC. But a `succeeded` cron run only means the `net.http_post` was
+  queued, not that any venue was processed.
+- The worker is **queue-driven**. It calls `claim_next_venue_enrichment_job`, and if nothing is
+  claimable it returns `processed: 0`. `venue_enrichment_jobs` currently holds 132 `completed` and 2
+  `failed` rows and **0 pending, 0 processing**.
+- The only enqueuer is `refresh_venue_data()`, the `familypilot-venue-freshness` job at `17 * * * *`.
+  It is **gated to once per UTC day** by `private.venue_data_settings.last_refresh`, which already
+  reads `2026-09-27`. Every remaining run today returns 0.
+- So the last real enrichment was **00:42 UTC today**, and the next natural enqueue is the **00:17
+  UTC run on 2026-09-28**, which will queue up to **50** venues at once.
+
+**This means "observe several automatic-enrichment cycles" observes no-ops until then.** The first
+real exposure of the new code would otherwise be an unattended 50-venue batch overnight, which is
+the wrong shape for a first observation. A single deliberately chosen venue, enqueued under explicit
+approval, gives a controlled and observable first run instead.
+
 ## Order of operations for release
 
 The additive migration goes in **before** the code, because the new code reads and writes
 `subject_scope` and the crawl runs every minute.
 
-1. Fix and re-review the two findings above. ← *this PR*
-2. Apply `20260926140000_venue_source_evidence_subject_scope.sql` to production.
-3. Verify: column and CHECK present, partial index present, ACL/RLS unchanged, every existing
-   evidence row still NULL, no claim changed.
-4. Merge and deploy #111.
-5. Observe several enrichment cycles: no existing claim's status changed, new and refreshed evidence
-   rows carry a scope, and legacy NULL cache rows publish nothing.
+1. ~~Fix and re-review the two findings above.~~ **Done**, `2e6ed13`.
+2. ~~Apply the migration to production.~~ **Done** 2026-09-27 07:42:27 UTC, recorded once as version
+   `20260927074227`, name `venue_source_evidence_subject_scope`. (Production records apply-time
+   versions and matches the repo by NAME, not by filename timestamp: compare repo
+   `20260926090000_age_policy_function_search_path` against production `20260926101957`.)
+3. ~~Verify.~~ **Done**, ten gates against a pre-migration baseline taken at 07:41:39 UTC. Both
+   columns nullable with no default; CHECK exactly the five scopes plus NULL; partial index present;
+   **0** rows anywhere carry a scope or reason; 875 → 875 rows with an **identical id md5**
+   (`0f9932be…`), so the count did not merely coincide; claim id/status md5 identical
+   (`28a1bf4f…`), `max(updated_at)` unmoved at 00:42:11; 0 active agePolicy; 0 non-null
+   `venue_age_policy`; owner `postgres`, RLS on and not forced, 0 policies, ACL md5 identical
+   (`postgres` and `service_role` only), no `anon`/`authenticated` column grants.
+4. ~~Merge and deploy.~~ Merged as `0f6ce93`; the production deploy is a separate step and must be
+   confirmed READY before the code is called live.
+5. Observe real enrichment cycles — see the section above: this needs a venue in the queue.
 6. Only then regenerate the repair set and seek repair approval.
 
 Applying a migration and merging are both outside what this PR does.
