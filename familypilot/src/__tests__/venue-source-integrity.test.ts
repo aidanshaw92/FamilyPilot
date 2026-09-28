@@ -1067,6 +1067,86 @@ describe('FIXED 14: a live claim answers to its own backing page, and to nothing
     expect(await statusOf('familyFacilities.parking')).toBe('active');
   });
 
+  /**
+   * Review round 4. Conflict evidence must be freshness-bounded as well as eligible.
+   *
+   * `verifiedBundleForVenue` keeps the latest stored successful row per URL with no recency filter,
+   * so a legitimate page last fetched weeks ago still sits in today's bundle. Without this guard it
+   * withdrew a claim refreshed today -- the same staleness this function polices, pointed the other
+   * way.
+   */
+  const STALE = '2026-08-01T00:00:00Z';   // well before CHECKED_AT
+  const NEWER = '2026-09-28T09:00:00Z';   // after CHECKED_AT
+
+  it('does not let an OLD eligible page overrule a newer claim', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      // Legitimate, eligible, cleanly fetched -- and read in August. It does not get a vote.
+      source(OWN_OTHER, 'venue_named_page', [fact(OWN_OTHER, 'parking', 'no')], 'ok', STALE),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
+  });
+
+  it('does let a NEWER eligible page withdraw the field', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(OWN_OTHER, 'venue_named_page', [fact(OWN_OTHER, 'parking', 'no')], 'ok', NEWER),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('disputed');
+  });
+
+  it('ignores a failed eligible page even when its stored value disagrees', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(OWN_OTHER, 'venue_named_page', [fact(OWN_OTHER, 'parking', 'no')], 'error', STALE),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
+  });
+
+  it.each([
+    ['older than the claim', STALE],
+    ['newer than the claim', NEWER],
+  ])('leaves an ineligible page irrelevant when it is %s', async (_label, retrievedAt) => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(SIBLING, 'sibling_unverified', [fact(SIBLING, 'parking', 'no')], 'ok', retrievedAt),
+    ]);
+    expect(await statusOf('familyFacilities.parking'),
+      'age never rescues a source that may not speak for the venue').toBe('active');
+  });
+
+  /**
+   * The boundary itself: "at or after the claim's check" means AT counts.
+   *
+   * A mutation pass caught this. Flipping `>=` to `>` left all 75 tests green, because every fixture
+   * happened to sit strictly after `CHECKED_AT` -- so the suite was asserting the rule's spirit and
+   * not its edge. Both callers of the predicate get a case that only passes under `>=`.
+   */
+  const EXACTLY_AT_CHECK = `${CHECKED_AT}T00:00:00Z`;
+
+  it('treats a backing page read exactly at the claim\'s check as a refresh', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    // Under `>` this page would not be found at all, the claim would be skipped, and it would
+    // survive for the wrong reason. Under `>=` it is a refresh that no longer states parking.
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'toilets', 'yes')], 'ok', EXACTLY_AT_CHECK),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('disputed');
+  });
+
+  it('lets a conflicting page read exactly at the claim\'s check count', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(OWN_OTHER, 'venue_named_page', [fact(OWN_OTHER, 'parking', 'no')], 'ok', EXACTLY_AT_CHECK),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('disputed');
+  });
+
   it('still passes the Young V&A canary case that started all this', async () => {
     // Own page states parking once; the withheld sibling contradicts ITSELF. The claim must survive.
     await seedClaim('familyFacilities.parking', 'yes', OWN);

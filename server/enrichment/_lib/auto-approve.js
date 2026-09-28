@@ -92,8 +92,9 @@ async function tryAutoApproveDraft(familypilotId, options = {}) {
  *   5. It no longer does -> dispute, however many ineligible siblings happen to agree. This is also
  *      the freshness policy the rest of the system states: a claim is withdrawn when its own
  *      refreshed source stops supporting it, not when some other page still does.
- *   6. Conflict is judged separately and only among eligible venue-specific sources. Two pages that
- *      may both speak for this venue disagreeing is a real conflict and still withdraws the field.
+ *   6. Conflict is judged separately, and only among eligible venue-specific sources whose reading is
+ *      at least as fresh as the claim. Two such pages disagreeing is a real conflict and still
+ *      withdraws the field; an older page does not get to overrule a newer claim.
  *   7. Ineligible sources stay in the bundle for diagnostics and the withheld ledger, and count for
  *      nothing here -- not as confirmation, not as contradiction.
  *
@@ -107,6 +108,21 @@ async function reconcileSourceClaims(id, bundle) {
 
   const sources = bundle?.sources ?? [];
   const FETCHED_CLEANLY = ['ok', 'cached', 'fetched_truncated'];
+  /**
+   * Whether this source's reading is current enough to say anything about a claim last checked on
+   * `checkedAt` -- cleanly fetched, and retrieved at or after that check.
+   *
+   * ONE predicate, used for the claim's own page AND for any page allowed to contradict it. They
+   * were separate conditions at first and the conflict side simply did not have this one, which let
+   * stale evidence withdraw a fresh claim: `verifiedBundleForVenue` keeps the latest stored
+   * successful row per URL with no recency filter at all, so a legitimate page last fetched in
+   * August sits in today's bundle and, saying `parking=no`, disputed a claim refreshed today. A
+   * stale reading is no more admissible against a claim than an unusable one, so the two callers
+   * share the test and cannot drift apart again.
+   */
+  const refreshedFor = (source, checkedAt) =>
+    FETCHED_CLEANLY.includes(source.fetchStatus)
+    && Date.parse(source.retrievedAt) >= Date.parse(checkedAt);
   // Read straight off each source's own facts. Never the merged verdict: the merge cannot say which
   // page a given claim came from, which is precisely the distinction this function turns on.
   const statesValue = (source, field, value) =>
@@ -120,9 +136,7 @@ async function reconcileSourceClaims(id, bundle) {
     if (!field) continue;
 
     // (1) and (2)
-    const backing = sources.find(s=>s.url===claim.sourceUrl
-      && Date.parse(s.retrievedAt)>=Date.parse(claim.checkedAt)
-      && FETCHED_CLEANLY.includes(s.fetchStatus));
+    const backing = sources.find(s=>s.url===claim.sourceUrl && refreshedFor(s, claim.checkedAt));
     if (!backing) continue;
 
     // (3) the Phase 6 gate, stated on provenance rather than on whether a page happened to be fetched
@@ -134,10 +148,16 @@ async function reconcileSourceClaims(id, bundle) {
       continue;
     }
 
-    // (6) and (7)
+    /**
+     * (6) and (7). A source joins the conflict set only if it may speak for this venue AND its
+     * reading is at least contemporaneous with the claim. Without the second test an older
+     * successful page withdraws a newer claim, which is the same staleness this function exists to
+     * police -- just pointed the other way.
+     */
     const eligibleValues = new Set();
     for (const source of sources) {
       if (!isEligibleScope(source.subjectScope)) continue;
+      if (!refreshedFor(source, claim.checkedAt)) continue;
       for (const fact of source.facts ?? []) {
         if (fact.field === field && fact.value !== 'unknown') eligibleValues.add(fact.value);
       }

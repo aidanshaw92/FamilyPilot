@@ -502,20 +502,48 @@ This also closes a pre-existing bug nobody had named: reconciliation used the bu
 another legitimate eligible page could keep a claim alive after the specific page behind it had
 stopped saying it.
 
+### Round 4 — conflict evidence has to be fresh as well as eligible
+
+Review caught one more asymmetry, this time about time rather than identity. The conflict set admitted
+any eligible source in the bundle, and `verifiedBundleForVenue` keeps the latest stored successful row
+per URL **with no recency filter at all**. So a legitimate eligible page last fetched in August sits
+in today's bundle, and saying `parking=no` it withdrew a claim refreshed today — the same staleness the
+function polices on the backing page, pointed the other way.
+
+Both callers now share one predicate, `refreshedFor(source, checkedAt)`: cleanly fetched, and retrieved
+at or after the claim's check. They were separate conditions and the conflict side simply lacked this
+one, so sharing the test is what stops them drifting apart again. An older page does not get to
+overrule a newer claim.
+
 ### Verification
 
-Twelve regressions drive the real `reconcileSourceClaims` against the real file-backed store, not a
-hand-built verdict: own page drops the fact while a sibling still asserts it → disputed; own page
-disagrees while a sibling agrees → disputed; own page still says it and only a sibling disagrees →
-kept; two eligible pages disagree → withdrawn; all four ineligible backing scopes → skipped, not
-disputed; not refetched, failed fetch, and a refresh predating the claim's own check → all left
-alone; and the original Young V&A canary case → kept.
+Nineteen regressions drive the real `reconcileSourceClaims` against the real file-backed store, not a
+hand-built verdict:
 
-Five mutants on the new boundary, each killed: dropping the scope skip (5 tests), judging from the
-merged bundle instead of the backing page (1), letting ineligible sources into conflict detection (2),
-dropping the clean-fetch guard (1), and dropping the refreshed-at-or-after guard (1).
+- own page drops the fact while a sibling still asserts it → disputed;
+- own page disagrees while a sibling agrees → disputed;
+- own page still says it and only a sibling disagrees → kept;
+- two contemporaneous eligible pages disagree → withdrawn;
+- all four ineligible backing scopes → skipped, not disputed;
+- not refetched, failed fetch, and a refresh predating the claim's check → all left alone;
+- an **older** eligible page disagreeing → kept; a **newer** one → withdrawn;
+- a failed eligible page → ignored whatever it stored;
+- an ineligible page → irrelevant whether older or newer than the claim;
+- a page read **exactly at** the claim's check → counts, as backing and as conflict;
+- and the original Young V&A canary case → kept.
 
-1141 tests, `tsc --noEmit` clean, web export clean, #110 replay unchanged at 134 venues / 223 usable /
+**Seven mutants on this boundary, each killed**: dropping the scope skip (5 tests), judging from the
+merged bundle instead of the backing page (1), letting ineligible sources into conflict detection (3),
+dropping the clean-fetch half of the freshness predicate (1), dropping its recency half (2), removing
+recency from the conflict set alone (2), and flipping `>=` to `>` (2).
+
+That last one is worth recording, because it **survived the first pass with all 75 tests green.** Every
+fixture happened to sit strictly after the claim's check, so the suite asserted the rule's spirit and
+never its edge — "at or after" was not actually tested at all. Two cases now sit exactly on the
+boundary, one per caller, and each fails under `>`. A surviving mutant is the only thing that reliably
+exposes that kind of gap.
+
+1148 tests, `tsc --noEmit` clean, web export clean, #110 replay unchanged at 134 venues / 223 usable /
 55 identity-safe.
 
 ### Still outstanding
