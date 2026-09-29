@@ -1147,6 +1147,76 @@ describe('FIXED 14: a live claim answers to its own backing page, and to nothing
     expect(await statusOf('familyFacilities.parking')).toBe('disputed');
   });
 
+  /**
+   * Review round 5, from a real false withdrawal in production on 2026-09-29.
+   *
+   * Belmont Children's Farm, claim `7a37949d…`, `environment=mixed` from `belmontfarm.co.uk`. The
+   * September reading was `ok` at 8000 characters and carried the indoor/outdoor wording. The refresh
+   * came back `fetched_truncated` at **770 characters** with no facts at all. The fact had not gone
+   * from the page; it was past the point where the fetch stopped. Reconciliation read the prefix as
+   * the whole page and disputed a true claim.
+   *
+   * "I saw this statement" and "this statement is nowhere on the page" need different evidence.
+   */
+  const BELMONT = 'https://www.belmontfarm.co.uk/';
+
+  it('disputes when a COMPLETE read no longer states the fact', async () => {
+    await seedClaim('environment', 'mixed', BELMONT);
+    await reconcileWith([source(BELMONT, 'venue_own_subtree', [fact(BELMONT, 'toilets', 'yes')], 'ok')]);
+    expect(await statusOf('environment')).toBe('disputed');
+  });
+
+  it('does NOT dispute when a truncated read merely omits the fact', async () => {
+    // The production case, reproduced: eligible, refreshed, and cut short at 770 characters.
+    await seedClaim('environment', 'mixed', BELMONT);
+    await reconcileWith([source(BELMONT, 'venue_own_subtree', [], 'fetched_truncated')]);
+    expect(await statusOf('environment'),
+      'silence in a prefix is not a denial').toBe('active');
+  });
+
+  it('keeps the claim when a truncated read still states the same value', async () => {
+    await seedClaim('environment', 'mixed', BELMONT);
+    await reconcileWith([
+      source(BELMONT, 'venue_own_subtree', [fact(BELMONT, 'environment', 'mixed')], 'fetched_truncated'),
+    ]);
+    expect(await statusOf('environment')).toBe('active');
+  });
+
+  /**
+   * The behaviour this pins by decision rather than by bug report: truncation limits what a page can
+   * DENY, not what it can ASSERT. A cut-short page that explicitly states the opposite has been read
+   * saying so, which is positive evidence of a disagreement, so it still withdraws the field.
+   */
+  it('lets a truncated eligible page that explicitly states the opposite create a conflict', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(OWN_OTHER, 'venue_named_page', [fact(OWN_OTHER, 'parking', 'no')], 'fetched_truncated'),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('disputed');
+  });
+
+  it.each([
+    ['a failed fetch', 'error'],
+    ['a timeout', 'timeout'],
+  ])('never withdraws on %s', async (_label, fetchStatus) => {
+    await seedClaim('environment', 'mixed', BELMONT);
+    await reconcileWith([source(BELMONT, 'venue_own_subtree', [], fetchStatus)]);
+    expect(await statusOf('environment')).toBe('active');
+  });
+
+  /**
+   * `cached` is excluded from the complete-enough set as well, which is a judgement beyond the
+   * reported bug: `fetchAndExtractPage` stamps `fetchStatus: 'cached'` unconditionally and
+   * `getCachedEvidence` does not filter on status, so a row originally stored as `fetched_truncated`
+   * comes back as `cached` and its completeness cannot be known from the status. Unknown fails closed.
+   */
+  it('does not withdraw on a cached read either, since its completeness is unknowable', async () => {
+    await seedClaim('environment', 'mixed', BELMONT);
+    await reconcileWith([source(BELMONT, 'venue_own_subtree', [], 'cached')]);
+    expect(await statusOf('environment')).toBe('active');
+  });
+
   it('still passes the Young V&A canary case that started all this', async () => {
     // Own page states parking once; the withheld sibling contradicts ITSELF. The claim must survive.
     await seedClaim('familyFacilities.parking', 'yes', OWN);

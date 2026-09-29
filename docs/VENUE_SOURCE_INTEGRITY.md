@@ -515,9 +515,53 @@ at or after the claim's check. They were separate conditions and the conflict si
 one, so sharing the test is what stops them drifting apart again. An older page does not get to
 overrule a newer claim.
 
+### Round 5 — a truncated page cannot prove a fact is gone
+
+Found in production, not in review: **Belmont Children's Farm lost a true fact overnight on
+2026-09-29.**
+
+Claim `7a37949d…`, `environment=mixed`, from `belmontfarm.co.uk`:
+
+| reading | status | chars | facts |
+| --- | --- | --- | --- |
+| 2026-09-14 | `ok` | 8000 | `environment=mixed` |
+| 2026-09-29 00:19 | `fetched_truncated` | **770** | none |
+
+The backing page was eligible, refreshed, and cleanly fetched by the predicate's reckoning, so rule 5
+read "no longer states the value" and disputed the claim. But the fact had not gone from the page — it
+sat past the point where the bounded fetch stopped.
+
+`refreshedFor` was answering two different questions with one test:
+
+- *did I see this statement?* — a truncated capture answers this fine, for what it contains;
+- *is this statement nowhere on the page?* — a truncated capture cannot answer this at all.
+
+So the predicate is split. `usableFor` gates reading explicit evidence (`ok`, `cached`,
+`fetched_truncated`, retrieved at or after the claim's check). `isCompleteRead` gates arguing
+**absence**, and admits `ok` only.
+
+`cached` is excluded from the complete set too, which goes beyond the reported bug and is a judgement:
+`fetchAndExtractPage` stamps `fetchStatus: 'cached'` unconditionally and `getCachedEvidence` does not
+filter on status, so a row stored as `fetched_truncated` resurfaces as `cached` with its completeness
+unknowable. Unknown fails closed. The cost is bounded — the automation path always runs with
+`forceRefresh` and never takes that branch, and a claim nothing re-confirms still reaches its own
+`validUntil`.
+
+**Conflict keeps using `usableFor`, by decision.** Truncation limits what a page can *deny*, not what
+it can *assert*: a cut-short page that explicitly states the opposite value has been read saying so,
+which is positive evidence of disagreement rather than an argument from absence. So it still withdraws
+the field, and a test pins that.
+
+A second mutation survivor in this round was answered by changing the code, not the tests. A recency
+test inside the completeness predicate could not be killed: it is reached only after `usableFor` has
+accepted the same source for the same claim, and the usable statuses are a superset of the complete
+ones, so recency is already established and the condition was dead. `isCompleteRead` now takes only the
+source, which makes the redundancy impossible to reintroduce rather than leaving a guard that looks
+load-bearing and is not.
+
 ### Verification
 
-Nineteen regressions drive the real `reconcileSourceClaims` against the real file-backed store, not a
+Twenty-eight regressions drive the real `reconcileSourceClaims` against the real file-backed store, not a
 hand-built verdict:
 
 - own page drops the fact while a sibling still asserts it → disputed;
@@ -530,12 +574,19 @@ hand-built verdict:
 - a failed eligible page → ignored whatever it stored;
 - an ineligible page → irrelevant whether older or newer than the claim;
 - a page read **exactly at** the claim's check → counts, as backing and as conflict;
+- a **complete** read that drops the fact → disputed; a **truncated** read that omits it → kept;
+- a truncated read still stating the value → kept; one explicitly stating the opposite → withdrawn;
+- a `cached` read → never withdraws, its completeness being unknowable;
+- failed and timeout reads → never withdraw;
 - and the original Young V&A canary case → kept.
 
-**Seven mutants on this boundary, each killed**: dropping the scope skip (5 tests), judging from the
+**Thirteen mutants on this boundary, each killed**: dropping the scope skip (5 tests), judging from the
 merged bundle instead of the backing page (1), letting ineligible sources into conflict detection (3),
 dropping the clean-fetch half of the freshness predicate (1), dropping its recency half (2), removing
-recency from the conflict set alone (2), and flipping `>=` to `>` (2).
+recency from the conflict set alone (2), flipping `>=` to `>` (2), letting a truncated read establish
+absence -- the Belmont bug itself (2), admitting `fetched_truncated` to the complete set (1), admitting
+`cached` to it (1), making the conflict set demand a complete read (2), dropping `fetched_truncated`
+from the usable set (1), and making `isCompleteRead` always true (2).
 
 That last one is worth recording, because it **survived the first pass with all 75 tests green.** Every
 fixture happened to sit strictly after the claim's check, so the suite asserted the rule's spirit and
@@ -543,7 +594,7 @@ never its edge — "at or after" was not actually tested at all. Two cases now s
 boundary, one per caller, and each fails under `>`. A surviving mutant is the only thing that reliably
 exposes that kind of gap.
 
-1148 tests, `tsc --noEmit` clean, web export clean, #110 replay unchanged at 134 venues / 223 usable /
+1155 tests, `tsc --noEmit` clean, web export clean, #110 replay unchanged at 134 venues / 223 usable /
 55 identity-safe.
 
 ### Still outstanding
