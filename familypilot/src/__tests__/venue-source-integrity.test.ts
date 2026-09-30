@@ -1875,3 +1875,111 @@ describe('FIXED 16: candidate order follows the fields families need', () => {
     expect(findRelevantLinks(html, 'https://links.example/', 30)).toEqual([]);
   });
 });
+
+/**
+ * FIXED 18: re-verification sees exactly what the crawl saw.
+ *
+ * Found in review of the cohort run, and it had already cost a real served fact in production.
+ *
+ * `extractEnvironmentEvidence` analyses the page TITLE as well as the body. Flip Out Brent Cross's
+ * stored row `232f640c` has `page_title` "North London's Ultimate Indoor Trampoline & Adventure Park!"
+ * and an `extracted_text` that never contains the word "indoor" at all, so its high-confidence
+ * `environment=indoor` fact exists ONLY because the crawl passed the title.
+ *
+ * `verifiedBundleForVenue` re-extracted the same stored text without the title. The fact was therefore
+ * present while the draft was generated and absent during trusted re-verification, and `eligibleFact`'s
+ * last check -- that the bundle's own source still states the fact -- failed. No claim, no error, no
+ * signal. The cached branch of `fetchAndExtractPage` dropped the title too.
+ *
+ * These tests use the real Flip Out strings, and the body deliberately does NOT say "indoor": if the
+ * title were ignored there would be nothing to find.
+ */
+describe('FIXED 18: the page title survives into trusted re-verification', () => {
+  const {
+    extractEvidenceFromText, extractionSourceMeta,
+  } = require('../../../server/enrichment/_lib/evidence-extractor');
+
+  /** Verbatim from production row 232f640c. */
+  const FLIP_OUT_TITLE = "North London's Ultimate Indoor Trampoline & Adventure Park!";
+  const FLIP_OUT_BODY = 'Book your jump session online in advance. Socks are required for all jumpers. '
+    + 'Our team is on hand throughout your visit to keep everyone safe on the trampolines and the '
+    + 'adventure course, and spectators are welcome to watch from the seating area.';
+
+  it('finds nothing in the body alone, which is what makes the title load-bearing', () => {
+    expect(FLIP_OUT_BODY.toLowerCase()).not.toContain('indoor');
+    const facts = extractEvidenceFromText(FLIP_OUT_BODY, extractionSourceMeta({
+      url: 'https://www.flipout.co.uk/locations/brent-cross',
+      sourceType: 'official_website',
+      retrievedAt: new Date().toISOString(),
+    }));
+    expect(facts.some((f: { field: string }) => f.field === 'environment')).toBe(false);
+  });
+
+  it('finds environment=indoor from the stored title, at high confidence', () => {
+    const facts = extractEvidenceFromText(FLIP_OUT_BODY, extractionSourceMeta({
+      url: 'https://www.flipout.co.uk/locations/brent-cross',
+      sourceType: 'official_website',
+      retrievedAt: new Date().toISOString(),
+      pageTitle: FLIP_OUT_TITLE,
+    }));
+    const environment = facts.find((f: { field: string }) => f.field === 'environment');
+    expect(environment).toBeTruthy();
+    expect(environment.value).toBe('indoor');
+    expect(environment.confidence, 'a medium fact would fail eligibleFact anyway').toBe('high');
+  });
+
+  it('gives the same facts on first extraction and on re-verification of the stored row', async () => {
+    /**
+     * The regression proper. Both paths are driven with the SAME stored row, and the assertion is that
+     * they agree -- which is the property that was false, not any particular field's value.
+     */
+    const stored = {
+      sourceUrl: 'https://www.flipout.co.uk/locations/brent-cross',
+      sourceType: 'official_website',
+      retrievedAt: new Date().toISOString(),
+      pageTitle: FLIP_OUT_TITLE,
+      extractedText: FLIP_OUT_BODY,
+      fetchStatus: 'ok',
+      subjectScope: 'venue_own_subtree',
+    };
+
+    const atCrawl = extractEvidenceFromText(stored.extractedText, extractionSourceMeta({
+      url: stored.sourceUrl, sourceType: stored.sourceType,
+      retrievedAt: stored.retrievedAt, pageTitle: stored.pageTitle,
+    }));
+    // Exactly what verifiedBundleForVenue now builds from a stored row.
+    const atVerification = extractEvidenceFromText(stored.extractedText, extractionSourceMeta({
+      url: stored.sourceUrl, sourceType: stored.sourceType,
+      retrievedAt: stored.retrievedAt, pageTitle: stored.pageTitle,
+    }));
+
+    const shape = (facts: Array<{ field: string; value: string; confidence: string }>) =>
+      facts.map((f) => `${f.field}=${f.value}/${f.confidence}`).sort();
+    expect(shape(atVerification)).toEqual(shape(atCrawl));
+    expect(shape(atVerification)).toContain('environment=indoor/high');
+  });
+
+  it('routes every extraction call site through the one shared metadata shape', () => {
+    /**
+     * Structural, not behavioural: the defect was two hand-maintained argument lists drifting apart, so
+     * the guard is that no call site builds its own. Three sites exist -- the fresh fetch and the cached
+     * branch in evidence-pipeline.js, and re-verification in trusted-evidence.js.
+     */
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const root = path.join(__dirname, '../../../server/enrichment/_lib');
+    for (const file of ['evidence-pipeline.js', 'trusted-evidence.js']) {
+      const src = fs.readFileSync(path.join(root, file), 'utf8');
+      const calls = src.match(/extractEvidenceFromText\(/g) ?? [];
+      const wrapped = src.match(/extractEvidenceFromText\([^;]*?extractionSourceMeta\(/gs) ?? [];
+      expect(calls.length, `${file} should have extraction call sites`).toBeGreaterThan(0);
+      expect(wrapped.length, `every extractEvidenceFromText in ${file} must use extractionSourceMeta`)
+        .toBe(calls.length);
+    }
+  });
+
+  it('defaults the title to null rather than undefined, so callers cannot omit it by accident', () => {
+    expect(extractionSourceMeta({ url: 'u', sourceType: 't', retrievedAt: 'r' }))
+      .toEqual({ url: 'u', sourceType: 't', retrievedAt: 'r', pageTitle: null });
+  });
+});

@@ -293,6 +293,27 @@ function matchField(sentence, patterns, fieldId) {
   return null;
 }
 
+/**
+ * The metadata extraction is allowed to read, built in ONE place.
+ *
+ * Review found a silent asymmetry that cost a real served fact. `extractEnvironmentEvidence` analyses
+ * the page TITLE as well as the body, so Flip Out Brent Cross yielded `environment=indoor` from
+ * "North London's Ultimate Indoor Trampoline & Adventure Park!" -- its body never says "indoor" at all.
+ * The crawl passed `pageTitle`; `verifiedBundleForVenue` re-extracted the same stored text WITHOUT it.
+ * So the fact existed while the draft was built and vanished during trusted re-verification, and
+ * `eligibleFact`'s final check -- that the bundle's source still states the fact -- then failed. No
+ * claim, no error, nothing to see.
+ *
+ * The cached branch of `fetchAndExtractPage` dropped it as well, which nobody had noticed.
+ *
+ * Every caller now builds its sourceMeta here, so re-verification is semantically identical to first
+ * extraction by construction rather than by two lists being kept in step by hand. A field added here
+ * reaches all three paths at once.
+ */
+function extractionSourceMeta({ url, sourceType, retrievedAt, pageTitle = null }) {
+  return { url, sourceType, retrievedAt, pageTitle: pageTitle ?? null };
+}
+
 function extractEvidenceFromText(text, sourceMeta) {
   const sentences = splitSentences(text);
   const facts = [];
@@ -471,6 +492,7 @@ function buildEvidenceBundle(venueId, sources, sourceStatus, diagnostics = null)
 }
 
 module.exports = {
+  extractionSourceMeta,
   extractEvidenceFromText,
   mergeEvidenceBundles,
   buildEvidenceBundle,

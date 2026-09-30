@@ -35,15 +35,44 @@ Per field, all ten: baby changing 1→1, toilets 0→0, parking 3→3, free park
 
 The crawl change did exactly what it was built to do. Everything after it did not.
 
-### Break 1 — extraction: 47 of 60 usable pages produced zero facts
+### Break 1 — extraction, restated (corrected)
 
-78% of the pages we now successfully fetch, on the venue's own site, in eligible scope, yield nothing.
-This is the dominant loss and it is not a discovery problem. The two venues flagged in the baseline as
+**"47 usable pages and the extractor failed on all of them" was too crude a framing** and is corrected
+here. `fetch_status = ok` does not mean a page carried readable evidence text: Crossrail Place Roof
+Garden has **six fresh `ok`, eligible rows with completely empty `extracted_text` and an empty title** —
+empty shells, not failed extractions.
+
+The chain is five stages, not three:
+
+**HTTP usable → readable extracted content → eligible provenance → extracted facts → trusted review → claim**
+
+Measured over the fresh cohort rows (eligible scope, `ok` or `fetched_truncated`):
+
+| | Count |
+| --- | --- |
+| Eligible HTTP-usable rows | 51 (51 distinct URLs, no duplicates; 5 `fetched_truncated`) |
+| Empty `extracted_text` | **6** |
+| Substantive text | 45 |
+| Substantive, zero facts | **33** |
+| Substantive, with facts | 12 |
+
+A reconciliation note, because an independent check produced different denominators (~48 / ~41 / ~30):
+the 6 empty-text rows agree exactly; the row total does not, and excluding `fetched_truncated` gives 46
+rather than 48, so neither predicate reproduces it. The "zero-fact pages containing family vocabulary"
+figure is purely a matter of regex breadth — 4 on facility nouns only (`toilet`, `baby chang`,
+`pushchair`, `buggy`, `playground`, `car park`, `free parking`), 24 if generic words (`accessib`,
+`indoor`, `outdoor`, `changing`) count. **The corpus below fixes one written-down predicate** so this
+cannot drift again.
+
+So extraction is still the dominant loss, but 33 substantive zero-fact pages is the number, not 47. The two venues flagged in the baseline as
 the test of this — Crossrail Place Roof Garden and Hanwell Zoo, each with 5 usable pages and zero served
 fields — went to 6 usable pages each and **still serve zero**. That was the pre-registered prediction and
 it came out on the "extraction is the bottleneck" side.
 
-### Break 2 — publication: 2 new facts extracted and never published
+### Break 2 — publication: 1 real bug, not 2 (corrected)
+
+**This section was wrong in the first version of this file and is corrected here.** It claimed two
+publication gaps. Only one is a bug.
 
 Of 16 distinct venue-field facts from eligible, usable pages:
 
@@ -51,11 +80,35 @@ Of 16 distinct venue-field facts from eligible, usable pages:
 - **1 was correctly withheld**: Paradox Museum's own pages state `wheelchairAccessible` both **yes** and
   **no**. A genuine eligible-source conflict, withheld exactly as rounds 3–5 intended. This is the system
   working, not a loss;
-- **2 were extracted, eligible, in scope — and produced no claim row at all, in any status**:
-  - Babylon Park London — `pushchairSuitability = good`
-  - Flip Out Brent Cross — `environment = indoor`
+- **Babylon Park London `pushchairSuitability = good` is NOT a publication miss.** The stored fact on
+  row `2fb9ab5e` has `confidence = medium`, and `trusted-evidence.eligibleFact()` requires
+  `fact.confidence === 'high'` (line 38). No claim is the intended fail-closed behaviour. Calling this a
+  bug was my error;
+- **Flip Out Brent Cross `environment = indoor` IS a real re-verification bug.** Root cause below.
 
-Those two are the publication gap and the concrete next thing to diagnose.
+#### The Flip Out bug, from the stored row
+
+Row `232f640c`, `venue_own_subtree`, `ok`:
+
+| | |
+| --- | --- |
+| `page_title` | "North London's Ultimate Indoor Trampoline & Adventure Park!" |
+| title contains "indoor" | **yes** |
+| body text contains "indoor" | **no** |
+| extracted fact | `environment=indoor`, confidence **high** |
+| claim | **none, in any status** |
+
+`extractEnvironmentEvidence` analyses `buildAnalysisText(text, sourceMeta?.pageTitle)` — the title as
+well as the body. The crawl passed the title, so the fact exists. `verifiedBundleForVenue` re-extracted
+the same stored text *without* it, so the fact vanished during trusted re-verification, and
+`eligibleFact`'s final check — that the bundle's own source still states the fact — failed. No claim, no
+error, no signal.
+
+Fixed by giving all three extraction call sites one shared metadata shape, `extractionSourceMeta`. The
+cached branch of `fetchAndExtractPage` dropped the title too, which nobody had noticed; it is the same
+defect and is fixed in the same change. `extractEnvironmentEvidence` is currently the only extractor
+reading beyond `url` / `sourceType` / `retrievedAt`, so today the asymmetry costs exactly the environment
+field — but the fix is structural, and a test asserts every call site routes through the shared shape.
 
 ### Claims lost to conflict
 
@@ -94,8 +147,9 @@ This is the middle branch, cleanly: **pages increased substantially and served f
 all.** So the decision is not to roll the discovery change outward and not to increase crawl volume
 again. The next work is extraction and publication, in that order of size:
 
-1. **Extraction.** 47 usable, in-scope pages yielding zero facts is where the coverage is. Worth starting
-   from the actual stored `extracted_text` of those 47 pages rather than from theory.
+1. **Extraction.** 33 substantive, in-scope pages yielding zero facts is where the coverage is, worked
+   from the stored text in `extraction-corpus.md`, not from theory. An `ok` page with empty text is not
+   an extraction failure and must not inflate the usable-page metric.
 2. **Publication.** Two extracted, eligible facts that produced no claim row is a small, sharp,
    reproducible bug with two named cases to test against.
 

@@ -1,5 +1,5 @@
 /** Only server-extracted, recent official facts can be published automatically. */
-const { extractEvidenceFromText, buildEvidenceBundle } = require('./evidence-extractor');
+const { extractEvidenceFromText, buildEvidenceBundle, extractionSourceMeta } = require('./evidence-extractor');
 const { listEvidenceForVenue } = require('./evidence-store');
 // One taxonomy, shared with the age-policy gate. See source-types.js for why council_page is out.
 const { OFFICIAL_SOURCE_TYPES: SOURCE_TYPES } = require('./source-types');
@@ -86,7 +86,9 @@ async function verifiedBundleForVenue(id) {
     // precisely the mistake that let a crawl's assumption become a finding.
     subjectScope:r.subjectScope??null,subjectScopeReason:r.subjectScopeReason??null,
     // Re-extract from fetched text, never trust cached/model-generated facts.
-    facts:extractEvidenceFromText(r.extractedText,{url:r.sourceUrl,sourceType:r.sourceType,retrievedAt:r.retrievedAt})}));
+    // Re-verification must see exactly what the crawl saw, page title included: see
+    // `extractionSourceMeta`. Dropping the title here silently withheld a high-confidence fact.
+    facts:extractEvidenceFromText(r.extractedText,extractionSourceMeta({url:r.sourceUrl,sourceType:r.sourceType,retrievedAt:r.retrievedAt,pageTitle:r.pageTitle}))}));
   return buildEvidenceBundle(id,sources,'official_website');
 }
 module.exports={expiryDate,reviewEvidence,eligibleFact,verifiedBundleForVenue,FIELD_MAP,SOURCE_TYPES};

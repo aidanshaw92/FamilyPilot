@@ -7,7 +7,7 @@ const { getGooglePlace } = require('../../places/lib/google-places');
 const { upsertPlaceRecord } = require('./enrichment-store');
 const { discoverSourceUrls, mergePageCandidates } = require('./source-discovery');
 const { fetchOfficialPage } = require('./source-fetcher');
-const { extractEvidenceFromText, buildEvidenceBundle } = require('./evidence-extractor');
+const { extractEvidenceFromText, buildEvidenceBundle, extractionSourceMeta } = require('./evidence-extractor');
 const { getCachedEvidence, saveEvidenceRecord } = require('./evidence-store');
 const { listVenueIdentities } = require('./enrichment-store');
 const { classifySubjectScope } = require('./source-identity');
@@ -155,7 +155,12 @@ async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
      */
     const recorded = Boolean(cached.subjectScope);
     const inferred = recorded ? null : scopeFor(cached.sourceUrl, cached.pageTitle);
-    const facts = extractEvidenceFromText(cached.extractedText || '', { url: cached.sourceUrl, sourceType: cached.sourceType, retrievedAt: cached.retrievedAt });
+    // The stored title travels with the stored text. This branch dropped it, which is the same
+    // defect review found in re-verification.
+    const facts = extractEvidenceFromText(cached.extractedText || '', extractionSourceMeta({
+      url: cached.sourceUrl, sourceType: cached.sourceType, retrievedAt: cached.retrievedAt,
+      pageTitle: cached.pageTitle,
+    }));
     return {
       url: cached.sourceUrl,
       sourceType: cached.sourceType,
@@ -203,12 +208,12 @@ async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
     };
   }
 
-  const facts = extractEvidenceFromText(fetched.extractedText, {
+  const facts = extractEvidenceFromText(fetched.extractedText, extractionSourceMeta({
     url: fetched.url,
     sourceType: page.sourceType,
     retrievedAt: fetched.retrievedAt,
-    pageTitle: fetched.pageTitle ?? null,
-  });
+    pageTitle: fetched.pageTitle,
+  }));
 
   // The page title is part of the verdict, so classify only once it is known.
   const scope = scopeFor(fetched.url, fetched.pageTitle ?? null);
