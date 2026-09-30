@@ -129,16 +129,30 @@ Production blast radius, measured across all eight venues serving this field: **
 the only one whose verdict its own source contradicts. Woodside Animal Farm also has explicit denial
 text but publishes `difficult`, which is the cautious end.
 
-**2. Thorpe Park serves both `parking = yes` and `freeParking = yes`, and its own page prices parking at
-£12.** `freeParking` matched "Free parking" inside a hotel short-break bundle on the homepage: "An
-overnight stay with 2 day theme park entry, including Fright Nights Buffet breakfast **Free parking**
-Wi-Fi." That is a package perk, not day-visitor parking. The venue's own directions page says "Car
-Parking tickets are £12, with Priority Parking available for £20." No conflict was raised because the
-`freeParking` negatives are `paid parking`, `pay and display`, `parking charges`, `parking fee` — none
-of which matches "Parking tickets are £12".
+**2. Thorpe Park serves `freeParking = yes` from a package perk.** `freeParking` matched "Free
+parking" inside a hotel short-break bundle on the homepage: "An overnight stay with 2 day theme park
+entry, including Fright Nights Buffet breakfast **Free parking** Wi-Fi." That is a package perk, not
+day-visitor parking, and the same page later prices it: "Free parking (worth £12)". No conflict was
+raised because the `freeParking` negatives are `paid parking`, `pay and display`, `parking charges`,
+`parking fee` — none of which matches "Parking tickets are £12".
 
-**3. Babylon Park London serves `familyFacilities.playground = yes` from marketing metaphor**: "rack up
-high scores in an **epic arcade playground**!" That is an arcade, not a playground.
+*Corrected 2026-09-30, after review.* This entry originally called Thorpe Park a contradictory pair,
+claiming both `parking = yes` and `freeParking = yes` were wrong together. **`parking = yes` is
+correct.** Its directions page says "Car Parking tickets are £12, with Priority Parking available for
+£20", which proves parking exists; a price is evidence of availability, not of absence. Only
+`freeParking = yes` is the false fact. The over-broad reading was mine, not the data's.
+
+**3. Babylon Park London serves `familyFacilities.playground = yes` partly from marketing metaphor**:
+"rack up high scores in an **epic arcade playground**!" An arcade is not a playground, so that phrase
+should not be producing the fact.
+
+But the fact is not simply false, and this entry originally implied it was. Review established that
+the same official page also states the venue has **soft play areas for toddlers and kids**. So there
+is real family-facility substance on the page; what is missing is a distinction the claim model does
+not yet make. The product concept treats soft play and playgrounds as different things, while the
+only field available is `familyFacilities.playground`. That makes this a field-semantics question
+first and an extraction question second: what `playground = yes` is meant to promise a parent has to
+be defined before the extraction is changed. Recorded, deliberately not fixed.
 
 ## A fourth issue, in diagnostics rather than data
 
