@@ -70,54 +70,86 @@ So on one page, in one run, both halves of round 5 held:
 
 Both original rows are left `disputed` as history. Nothing was flipped back.
 
-## Phase 6 repair audit, from live rows
+## Phase 6 repair audit — corrected 2026-09-30
 
-Every **active** claim with a `source_url`, classified by its backing evidence row's `subject_scope`:
+**The first version of this section was wrong, and the error was in the wording as much as the
+numbers.** It said the split was "by the claim's backing evidence row". It was not: the query joined
+each claim to the NEWEST evidence row for the same `source_url`, which is a different thing. Several
+claims still point at an older NULL-provenance row while a newer row for that URL has since been
+classified, so the two readings disagree. Corrected by the product owner and re-verified here.
 
-| category | scope | claims | venues |
-| --- | --- | --- | --- |
-| **B — eligible** | `venue_own_subtree` | 45 | 12 |
-| **B — eligible** | `venue_named_page` | 1 | 1 |
-| **A — ineligible** | `sibling_unverified` | 6 | 5 |
-| **A — ineligible** | `organisation_ancestor` | 2 | 1 |
-| **A — ineligible** | `other_catalogue_venue` | **1** | 1 |
-| **D — no provenance** | NULL, not yet re-crawled | 167 | 51 |
+### Two readings, never to be conflated again
 
-### The repair set has collapsed from 16 to 9, and only 1 is a proven cross-venue error
+| reading | definition | use |
+| --- | --- | --- |
+| **claim provenance** | the row `venue_claims.source_evidence_id` actually references | what a claim rests on; the only basis for judging a claim |
+| **latest URL classification** | the newest `venue_source_evidence` row for the same `source_url` | what the crawler currently thinks of that page; useful for coverage and for what may be published next |
 
-| id | venue | field | value | source | scope |
-| --- | --- | --- | --- | --- | --- |
-| `2d142209…` | Primrose Hill | playground | yes | royalparks.org.uk `/visit/parks/regents-park-primrose-hill/primrose-hill` | **other_catalogue_venue** |
-| `1001dc22…` | Hatfield Park | freeParking | yes | hatfield-house.co.uk `/your-visit/` | organisation_ancestor |
-| `861006ab…` | Hatfield Park | parking | yes | hatfield-house.co.uk `/your-visit/` | organisation_ancestor |
-| `7dd9ee7c…` | Hatfield Park | accessibleToilet | yes | `/your-visit/faqs/` | sibling_unverified |
-| `877e4a7e…` | Hatfield Park | wheelchairAccessible | yes | `/your-visit/faqs/` | sibling_unverified |
-| `adb1b85d…` | Heartwood Forest | toilets | yes | woodlandtrust.org.uk `/visiting-woods/woods/heartwood-forest/` | sibling_unverified |
-| `41d3e07e…` | Stanborough Park Water Sports Centre | environment | outdoor | better.org.uk `/venue-hire` | sibling_unverified |
-| `d249d9ac…` | Stockwood Park | freeParking | **no** | luton.gov.uk `/parking-streets-transport` | sibling_unverified |
-| `ab9967e4…` | Young V&A | toilets | yes | vam.ac.uk `/wedgwood/visit` | sibling_unverified |
+### Claim provenance — the authoritative reading
 
-The original proposal was 16 category-A claims plus 6 known-wrong facts. **Horniman Butterfly House's
-seven, and the V&A / Young V&A cross-venue claims, are no longer in the set** — they were either
-re-sourced from the venue's own pages by ordinary re-crawling, or their backing rows have not yet been
-re-read and so now read as D.
+Active claims with a `source_url`, joined on `source_evidence_id`:
+
+| scope | claims |
+| --- | --- |
+| `venue_own_subtree` | 45 |
+| `venue_named_page` | 1 |
+| `sibling_unverified` | **3** |
+| NULL, not yet re-crawled | **174** |
+
+**46 eligible / 3 ineligible / 174 no provenance.** The earlier "9 ineligible / 167 NULL" was the
+latest-URL reading mislabelled as claim provenance.
+
+This makes the case against repair stronger, not weaker: only **three** active claims rest on
+provenance that is recorded and ineligible, and 174 rest on rows written before the column existed.
+
+## Primrose Hill is NOT a proven cross-venue error, and that matters more than the counts
+
+The earlier version called `2d142209…` (Primrose Hill playground) "the one proven cross-venue error".
+That was wrong. The page reads:
+
+```
+page_title:  Primrose Hill | The Royal Parks
+extracted:   "Primrose Hill playground  Primrose Hill Playground improvement works are now
+              complete, but the new shrubs and young trees need time to establish."
+fact:        playground=yes
+```
+
+The page is **about Primrose Hill**, and its own text says so. It classifies as
+`other_catalogue_venue` with reason `under_another_catalogue_venue` solely because its URL sits beneath
+The Regent's Park's catalogue path (`/visit/parks/regents-park-primrose-hill/...`).
+
+### The general lesson
+
+`other_catalogue_venue` was described in #110 and #111 as the hard reject that "rests on nothing else"
+— exact and ID-based rather than similarity. That is true, and it is still the right rule for
+**withholding new publication**: a URL owned by another catalogue venue is a page we cannot safely
+attribute, so we decline to publish from it.
+
+But it is a statement about **URL ownership, not about subject matter.** Primrose Hill is the concrete
+proof: the strongest verdict in the vocabulary was structurally correct and substantively wrong about
+what the page describes.
+
+**So the classifier must never be used on its own to delete or dispute an existing fact.** Withholding
+on unproven identity is conservative; withdrawing on it is not. Nothing in the nine, and nothing in the
+three, may be disputed from the classifier alone.
 
 ## Recommendation: do not run a bulk repair
 
-The evidence now argues against one.
-
 1. **Re-crawling heals contamination by itself** where the venue's own page carries the fact. Young V&A
    demonstrated three claims healed in a single 51-second run, with no repair and no risk.
-2. **167 of 222 active claims (75%) have no provenance yet.** Their venues have not been re-crawled
-   under the new code. Disputing on D would be exactly the bulk invalidation-from-unestablished that
-   was ruled out from the start.
-3. **The truly proven error is one claim.** Only `2d142209…` (Primrose Hill) rests on a page positively
-   owned by another catalogue venue.
+2. **174 of 223 active sourced claims have no provenance yet.** Disputing on that would be exactly the
+   bulk invalidation-from-unestablished ruled out from the start.
+3. **There is no proven cross-venue error left to repair.** The one candidate is evidenced as correct.
+4. **The classifier is not a content verdict.** Per Primrose Hill, a structural reject can be right
+   about ownership and wrong about subject.
 
-Proposed instead, for approval: let the natural refresh cycle re-crawl the catalogue under the new
-code, re-run this audit afterwards, and consider disputes only for claims that **remain** ineligible
-once their own venue has been re-read. That is fewer writes, no guessing, and it uses the mechanism
-that has already proven it works.
+Proposed and agreed: let the natural refresh cycle re-crawl the catalogue under the new code, re-run
+this audit on the **claim-provenance** reading, and consider disputes only for claims that remain
+ineligible after their own venue has been re-read — and then only with content evidence, never on the
+classifier alone.
+
+**Source integrity closes here as a workstream.** No further reconciliation or integrity PR without a
+real production failure, a direct safety dependency, or a material coverage gain.
 
 ## Known limitation, measured and deliberately not chased
 
