@@ -1,5 +1,5 @@
 /** Only server-extracted, recent official facts can be published automatically. */
-const { extractEvidenceFromText, buildEvidenceBundle, extractionSourceMeta } = require('./evidence-extractor');
+const { extractEvidenceFromText, buildEvidenceBundle, extractionSourceMeta, isEvidenceBearingSource } = require('./evidence-extractor');
 const { listEvidenceForVenue } = require('./evidence-store');
 // One taxonomy, shared with the age-policy gate. See source-types.js for why council_page is out.
 const { OFFICIAL_SOURCE_TYPES: SOURCE_TYPES } = require('./source-types');
@@ -81,7 +81,7 @@ async function verifiedBundleForVenue(id) {
   const records=await listEvidenceForVenue(id);
   const latest=new Map();
   for(const record of records)if(!latest.has(record.sourceUrl))latest.set(record.sourceUrl,record);
-  const sources=[...latest.values()].filter(r=>SOURCE_TYPES.has(r.sourceType)&&['ok','cached','fetched_truncated'].includes(r.fetchStatus)&&r.extractedText).map(r=>({url:r.sourceUrl,sourceType:r.sourceType,retrievedAt:r.retrievedAt,fetchStatus:r.fetchStatus,
+  const sources=[...latest.values()].filter(r=>SOURCE_TYPES.has(r.sourceType)&&['ok','cached','fetched_truncated'].includes(r.fetchStatus)&&isEvidenceBearingSource(r)).map(r=>({url:r.sourceUrl,sourceType:r.sourceType,retrievedAt:r.retrievedAt,fetchStatus:r.fetchStatus,
     // Carried from the stored row, never recomputed here: re-deriving provenance downstream is
     // precisely the mistake that let a crawl's assumption become a finding.
     subjectScope:r.subjectScope??null,subjectScopeReason:r.subjectScopeReason??null,

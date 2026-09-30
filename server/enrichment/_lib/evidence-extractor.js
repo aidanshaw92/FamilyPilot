@@ -71,12 +71,35 @@ const FIELD_PATTERNS = [
       /no\s+parking/i,
       /no\s+on.?site\s+parking/i,
       /parking\s+is\s+not\s+available/i,
+      // Graffiti Tunnel 562d8a7f: "car parking is not allowed at Leake Street Arches." An explicit
+      // negative is as useful to a parent as a positive, and was being missed.
+      /(?:car\s+)?parking\s+is\s+not\s+(?:allowed|permitted)/i,
       /(?:do\s+not|don't|does\s+not|doesn't)\s+(?:have|offer|provide)\s+(?:any\s+)?(?:on.?site\s+)?parking/i,
     ],
   },
   {
     field: 'cafe',
-    yes: [/caf[eé]\s+(on\s+site|available)/i, /coffee\s+shop/i, /refreshments?\s+available/i],
+    /**
+     * The two added patterns come from real cohort rows that stated a cafe plainly and were missed:
+     *
+     *   Courtauld 470f50cc  "the Courtauld Cafe all-day restaurant and cafe is located on the ground
+     *                        floor across from the gallery entrance"
+     *   Mudchute  fbf5e649  "The cafe is dog friendly so they are allowed in the courtyard"
+     *
+     * Both are tied to the venue's own cafe. What they must NOT do is promote a cafe that merely
+     * appears in the text: Golders Hill's row names a City of London "Forget Me Not Memory Cafe", and
+     * Winter Wonderland's names "the Serpentine Bar & Kitchen cafe" as the provider of a bicycle rack.
+     * Neither is followed by `is <something>`, so neither matches.
+     *
+     * "is closed" is excluded: a permanently closed cafe is not a facility to tell a parent about.
+     */
+    yes: [
+      /caf[eé]\s+(on\s+site|available)/i,
+      /coffee\s+shop/i,
+      /refreshments?\s+available/i,
+      /caf[eé]\s+is\s+(?:located|situated)\s+(?:on|in|at|within)\b/i,
+      /\bthe\s+caf[eé]\s+is\s+(?!closed|permanently|temporarily|currently)\w+/i,
+    ],
     no: [/no\s+caf[eé]/i],
   },
   {
@@ -294,6 +317,29 @@ function matchField(sentence, patterns, fieldId) {
 }
 
 /**
+ * Is this stored page capable of carrying evidence at all?
+ *
+ * `fetch_status = ok` does not mean a page had anything to read. Crossrail Place Roof Garden came back
+ * from the cohort run with SIX fresh `ok`, eligible rows whose `extracted_text` and `page_title` are
+ * both completely empty -- shells that satisfied the usable-page target as though evidence had been
+ * obtained, which is why that venue shows "6 usable pages" and serves nothing.
+ *
+ * Deliberately not a minimum character count. Flip Out Brent Cross's `environment=indoor` comes from a
+ * page TITLE whose body never says "indoor", so a length threshold on body text would discard a
+ * legitimate fact. The rule is "has something readable to extract FROM" -- body text, or a title, or
+ * both. All six shells have neither, so the two classes separate without a magic number.
+ *
+ * One definition, used by the crawl's usable-page accounting, the usable-page target, the diagnostics
+ * and trusted re-verification alike. Re-verification used to test `r.extractedText` on its own, which
+ * would have dropped a title-only fact even after the title was threaded through.
+ */
+function isEvidenceBearingSource({ extractedText, pageTitle } = {}) {
+  const hasBody = typeof extractedText === 'string' && extractedText.trim() !== '';
+  const hasTitle = typeof pageTitle === 'string' && pageTitle.trim() !== '';
+  return hasBody || hasTitle;
+}
+
+/**
  * The metadata extraction is allowed to read, built in ONE place.
  *
  * Review found a silent asymmetry that cost a real served fact. `extractEnvironmentEvidence` analyses
@@ -492,6 +538,7 @@ function buildEvidenceBundle(venueId, sources, sourceStatus, diagnostics = null)
 }
 
 module.exports = {
+  isEvidenceBearingSource,
   extractionSourceMeta,
   extractEvidenceFromText,
   mergeEvidenceBundles,

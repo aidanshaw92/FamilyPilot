@@ -1983,3 +1983,132 @@ describe('FIXED 18: the page title survives into trusted re-verification', () =>
       .toEqual({ url: 'u', sourceType: 't', retrievedAt: 'r', pageTitle: null });
   });
 });
+
+/**
+ * FIXED 19: an evidence-bearing page, and the extraction misses the corpus proved.
+ *
+ * Every pattern added here is tied to a real row from the 2026-09-30 cohort, quoted verbatim, and
+ * every negative counterexample is also a real row. The cohort's lesson was that the crawl works and
+ * extraction does not, so the rule for this block is: change extraction only where a stored page said
+ * something plainly and we missed it. Unknown stays unknown.
+ */
+describe('FIXED 19: evidence-bearing pages, and misses proved by stored content', () => {
+  const {
+    extractEvidenceFromText, extractionSourceMeta, isEvidenceBearingSource,
+  } = require('../../../server/enrichment/_lib/evidence-extractor');
+
+  const fields = (text: string, pageTitle?: string) => extractEvidenceFromText(text, extractionSourceMeta({
+    url: 'https://venue.example/plan-your-visit',
+    sourceType: 'official_website',
+    retrievedAt: new Date().toISOString(),
+    pageTitle,
+  })).map((f: { field: string; value: string }) => `${f.field}=${f.value}`);
+
+  describe('an ok page is not automatically an evidence-bearing page', () => {
+    it('rejects the Crossrail shells: fetched cleanly, nothing to read', () => {
+      // Six fresh `ok`, eligible rows from Crossrail Place Roof Garden have empty text AND empty title.
+      // They counted towards the usable-page target, which is why the venue shows six usable pages and
+      // serves nothing.
+      expect(isEvidenceBearingSource({ extractedText: '', pageTitle: '' })).toBe(false);
+      expect(isEvidenceBearingSource({ extractedText: '   ', pageTitle: null })).toBe(false);
+      expect(isEvidenceBearingSource({})).toBe(false);
+    });
+
+    it('accepts a title-only page, because a title can carry a fact', () => {
+      // Flip Out Brent Cross: the body never says "indoor", the title does. A minimum character count
+      // on body text would throw this away, which is why the rule is not a length threshold.
+      expect(isEvidenceBearingSource({
+        extractedText: '', pageTitle: "North London's Ultimate Indoor Trampoline & Adventure Park!",
+      })).toBe(true);
+      expect(fields('Book your jump session online in advance. Socks are required.',
+        "North London's Ultimate Indoor Trampoline & Adventure Park!")).toContain('environment=indoor');
+    });
+
+    it('is the same rule the trusted re-verification applies, not a second opinion', () => {
+      /**
+       * Re-verification used to select sources on `r.extractedText` alone, so a title-only fact would
+       * still have vanished even after the title was threaded through. Both paths now call this.
+       */
+      const src = require('node:fs').readFileSync(
+        require('node:path').join(__dirname, '../../../server/enrichment/_lib/trusted-evidence.js'), 'utf8');
+      expect(src).toContain('isEvidenceBearingSource(r)');
+      expect(src, 'the bare truthy test must be gone').not.toMatch(/&&\s*r\.extractedText\s*\)/);
+    });
+  });
+
+  describe('cafe: two pages said it plainly and were missed', () => {
+    it('Courtauld 470f50cc — "the Courtauld Cafe ... is located on the ground floor"', () => {
+      expect(fields('Striking, stylish, yet relaxed and welcoming, the Courtauld Cafe all-day restaurant '
+        + 'and cafe is located on the ground floor across from the gallery entrance.')).toContain('cafe=yes');
+    });
+
+    it('Mudchute fbf5e649 — "The cafe is dog friendly"', () => {
+      expect(fields('The cafe is dog friendly so they are allowed in the courtyard and in the pets '
+        + 'corner as long as they are on leads.')).toContain('cafe=yes');
+    });
+
+    it('does not turn somebody else’s cafe into this venue’s cafe', () => {
+      // Golders Hill d5ee5224: a City of London "Forget Me Not Memory Cafe" in unrelated hydrated
+      // content. Winter Wonderland 7f2741c8: a bike rack provided by a separate Hyde Park cafe.
+      expect(fields('Find the Forget Me Not Memory Cafe at our community services page.'))
+        .not.toContain('cafe=yes');
+      expect(fields('A public bicycle rack is provided by the Serpentine Bar & Kitchen cafe.'))
+        .not.toContain('cafe=yes');
+    });
+
+    it('does not report a closed cafe as a facility', () => {
+      expect(fields('The cafe is closed for refurbishment until the spring.')).not.toContain('cafe=yes');
+    });
+  });
+
+  describe('parking: an explicit negative is as useful to a parent as a positive', () => {
+    it('Graffiti Tunnel 562d8a7f — "car parking is not allowed at Leake Street Arches"', () => {
+      expect(fields('Please note, car parking is not allowed at Leake Street Arches. The nearest car '
+        + 'park is Britannia Parking on Upper Marsh.')).toContain('parking=no');
+    });
+
+    it('does not read nearby public car parks as venue parking', () => {
+      // Courtauld 6f245581, verbatim. The venue has no car park; this sentence says where other ones are.
+      expect(fields('For those unable to visit using public transport, the nearest public car parks are '
+        + 'at Drury Lane to the north or the Southbank Centre to the south.').join(','))
+        .not.toMatch(/parking=/);
+    });
+
+    it('does not read street or blue-badge parking around a park as venue parking', () => {
+      // Winter Wonderland 7f2741c8, verbatim fragments.
+      expect(fields('If you have any questions regarding accessible parking, please feel free to '
+        + 'contact a member of our team.').join(',')).not.toMatch(/parking=yes/);
+      expect(fields('For information regarding blue badge parking locations, please visit here.')
+        .join(',')).not.toMatch(/parking=yes/);
+    });
+
+    it('does not read limited nearby street parking as venue parking', () => {
+      // Hanwell Zoo 69644dc4, verbatim: nearby, on-street and chargeable, not the venue's own.
+      expect(fields('There is limited parking near to the zoo. Limited on street parking for which '
+        + 'there is a small charge.').join(',')).not.toMatch(/parking=yes/);
+    });
+  });
+
+  describe('things the corpus shows must NOT become venue facts', () => {
+    it('station buggy advice is not venue pushchair suitability', () => {
+      // Winter Wonderland 7f2741c8, verbatim.
+      expect(fields('If you require step-free access or are travelling with a buggy, it is advised to '
+        + 'use Green Park or Bond Street stations to make use of the lift facilities.').join(','))
+        .not.toMatch(/pushchairSuitability=/);
+    });
+
+    it('a wheelchair ticket category is not a blanket accessibility claim', () => {
+      // London Cable Car 3d8cf357, verbatim: a price list, not a statement about the venue.
+      expect(fields('A Round Trip Experience Adult 16+ Current price, Adult 16+: £25 Wheelchair '
+        + 'User- Adult 16+ Current price, Wheelchair User- Adult 16+: £25 View details').join(','))
+        .not.toMatch(/wheelchairAccessible=yes/);
+    });
+
+    it('website accessibility is not physical accessibility', () => {
+      // Hanwell Zoo 636e31cd, verbatim: a WCAG statement, nothing to do with visiting the zoo.
+      expect(fields('Hanwell Zoo is committed to providing a website that is accessible to the widest '
+        + 'possible audience, regardless of technology and ability. This website looks to conforming to '
+        + "level 'AA'.").join(',')).not.toMatch(/wheelchairAccessible|accessibleToilet/);
+    });
+  });
+});

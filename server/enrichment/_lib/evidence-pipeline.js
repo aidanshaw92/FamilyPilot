@@ -7,7 +7,7 @@ const { getGooglePlace } = require('../../places/lib/google-places');
 const { upsertPlaceRecord } = require('./enrichment-store');
 const { discoverSourceUrls, mergePageCandidates } = require('./source-discovery');
 const { fetchOfficialPage } = require('./source-fetcher');
-const { extractEvidenceFromText, buildEvidenceBundle, extractionSourceMeta } = require('./evidence-extractor');
+const { extractEvidenceFromText, buildEvidenceBundle, extractionSourceMeta, isEvidenceBearingSource } = require('./evidence-extractor');
 const { getCachedEvidence, saveEvidenceRecord } = require('./evidence-store');
 const { listVenueIdentities } = require('./enrichment-store');
 const { classifySubjectScope } = require('./source-identity');
@@ -330,14 +330,27 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
   const pagesFailed = [];
   const pagesFetched = [];
   const evidenceByPage = [];
+  /** Fetched cleanly, nothing to read: reported so the loss is visible rather than silent. */
+  const emptyShells = [];
   let fetchAttempts = 0;
 
   const recordResult = (result) => {
     sources.push(result);
-    const usable =
+    /**
+     * A successful HTTP status is not evidence. Six fresh `ok` rows from Crossrail Place Roof Garden
+     * carried no text and no title at all, and each counted towards the usable-page target as though a
+     * page had been read. `isEvidenceBearingSource` is the same rule trusted re-verification applies,
+     * so a page cannot be usable here and invisible there.
+     */
+    const fetchSucceeded =
       result.fetchStatus === 'ok' ||
       result.fetchStatus === 'cached' ||
       result.fetchStatus === 'fetched_truncated';
+    const usable = fetchSucceeded && isEvidenceBearingSource({
+      extractedText: result.extractedText,
+      pageTitle: result.pageTitle,
+    });
+    if (fetchSucceeded && !usable) emptyShells.push({ url: result.url, fetchStatus: result.fetchStatus });
 
     if (usable) {
       pagesFetched.push({
@@ -483,6 +496,7 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
      * thorough one look identical in the stored bundle, and the budgets could not be tuned on evidence.
      */
     usablePageCount: usablePageCount(),
+    emptyShells,
     candidatesRemaining: queue.length,
     stopReason,
     /**

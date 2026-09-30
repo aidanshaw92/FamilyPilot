@@ -15,7 +15,7 @@ and subject_scope in ('venue_own_subtree','venue_named_page')
 and jsonb_array_length(coalesce(extracted_evidence,'[]'::jsonb)) = 0
 ```
 
-That yields **39 rows**: 6 with empty `extracted_text` and 33 with substantive text. The earlier
+That yields **39 rows**: 6 with empty `extracted_text` and 33 with non-empty text. The earlier
 "47 usable pages" figure conflated these two populations and is superseded.
 
 ## Classification (to be filled from the stored text, not from the URL)
@@ -44,7 +44,7 @@ This is why the venue has "6 usable pages" and serves nothing.
 **Consequence for the crawl metric:** these six satisfied the usable-page target as though evidence had
 been obtained. An evidence-bearing-page rule is needed — see below.
 
-## The 33 substantive zero-fact pages
+## The 33 non-empty zero-fact pages
 
 `vocab` is the facility/accessibility vocabulary actually present in the stored text.
 
@@ -122,3 +122,100 @@ stays unknown. Positive and explicit-negative cases for toilets, baby changing, 
 accessible toilet, wheelchair access, pushchair / buggy, café, playground, indoor / outdoor. **No** visit
 duration and **no** recommended ages in this PR. Rerun the frozen 18 offline; success is served-to-parent
 fields increasing, not extractor test count.
+
+
+---
+
+# Classification result
+
+"Non-empty" is not "substantive": one row is 59 characters and several are stylesheets. The point of
+classifying was to find out which, and it changed the answer.
+
+| Class | Rows | Share |
+| --- | --- | --- |
+| 4 — content extraction failure | **10** | 26% |
+| 3 — ambiguous, must stay unknown | 6 | 15% |
+| 2 — explicit fact missed | **3** | 8% |
+| 5 — eligible but irrelevant | 3 | 8% |
+| 1 — true zero | 17 | 44% |
+
+Eighteen rows were read from their stored content directly. The remaining twenty-one were classified on
+title, vocabulary profile and opening text, and are marked provisional: they are class 1 or 5 candidates
+and none of them drove a code change here.
+
+## Class 4 — content extraction failure (10)
+
+Not an extractor problem at all. The useful page content never reached `extracted_text`.
+
+| Rows | What is actually stored |
+| --- | --- |
+| Crossrail ×6 (`4179cb6a`, `2efead2f`, `eb0aa3d0`, `2cb5a157`, `f4fb19fa`, `1d020bbd`) | nothing: empty text **and** empty title |
+| Belmont `04fc7c88`, `9f8601b4` | 8 000 chars of raw Squarespace CSS: `.fe-65b40348… { --grid-gutter: calc(var(--sqs-mobile-site-gutter, 6vw) - 11.0px); … }` |
+| Mudchute `4c72b474` | carousel chrome: "Slide 1 Slide 1 (current slide) Slide 2 Slide 2 (current slide)…" |
+| Golders Hill `d5ee5224` | escaped JSON payload: `\u003Cli\u003E\u003Ca title=\"The Forget Me Not Memory Cafe\" href=…` — and that café is a City of London community service, not the zoo's |
+
+The Belmont pages are the clearest case: `extractRelevantParagraphs` scores chunks for content keywords
+and, when nothing scores, falls back to `text.slice(0, maxChars)`. Both rows sit at exactly 7 999 and
+8 000 characters, so the cap is full of stylesheet. **No regex can fix these rows.** Widening patterns
+against this population would only invent facts from markup.
+
+## Class 2 — explicit fact missed (3), each now fixed
+
+| Row | Stored wording, verbatim | Field |
+| --- | --- | --- |
+| Courtauld `470f50cc` | "the Courtauld Café all-day restaurant and café **is located on the ground floor** across from the gallery entrance" | `cafe=yes` |
+| Mudchute `fbf5e649` | "**The cafe is dog friendly** so they are allowed in the courtyard and in the pets corner" | `cafe=yes` |
+| Graffiti Tunnel `562d8a7f` | "Please note, **car parking is not allowed at Leake Street Arches**." | `parking=no` |
+
+The third is an explicit negative, which is as useful to a parent as a positive and was being dropped.
+
+## Class 3 — ambiguous, and deliberately still unknown (6)
+
+These are the reason to add patterns narrowly. Each is now a **negative test**.
+
+| Row | Wording | Why it must not publish |
+| --- | --- | --- |
+| Winter Wonderland `7f2741c8` | "travelling with a buggy, it is advised to use Green Park or Bond Street stations" | transport advice, not venue pushchair suitability |
+| Winter Wonderland `7f2741c8` | "questions regarding accessible parking, please contact"; "blue badge parking locations" | not a statement that parking is available |
+| Courtauld `6f245581` | "the nearest public car parks are at Drury Lane" | explicitly *other* car parks |
+| Hanwell `69644dc4` | "limited parking near to the zoo… on street parking for which there is a small charge" | nearby, on-street, chargeable — not the venue's |
+| London Cable Car `3d8cf357` | "Wheelchair User- Adult 16+: £25" | a ticket category, not an accessibility claim |
+| Mudchute `0769690c` | entire page: "No access to Mudchute Toilets when the Courtyard is closed." | toilets exist, but the sentence is a restriction notice; publishing `toilets=yes` from it overstates |
+| Thorpe Park `fa4626b1` | "This video highlights available facilities, step-free access…" | describes a video, not the site |
+
+## Class 5 — eligible but irrelevant (3)
+
+Hanwell `636e31cd` is the instructive one: its "Accessibility" page is a **WCAG website statement** —
+"committed to providing a website that is accessible… conforming to level 'AA'". Six Hanwell rows match
+the string `accessib` and not one is about visiting the zoo. A vocabulary hit is not a signal.
+
+## Explicit misses by field
+
+| Field | Misses |
+| --- | --- |
+| `familyFacilities.cafe` | 2 |
+| `familyFacilities.parking` (explicit negative) | 1 |
+| toilets, baby changing, free parking, accessible toilet, wheelchair access, pushchair, playground, indoor/outdoor | 0 |
+
+Only two of the ten fields had a demonstrated miss. That is the honest yield, and it is why this PR adds
+two patterns rather than nine.
+
+## Predicted effect on the frozen 18, offline
+
+| Venue | Field | Source |
+| --- | --- | --- |
+| The Courtauld Gallery | `cafe=yes` | new pattern, row `470f50cc` |
+| Mudchute Park and Farm | `cafe=yes` | new pattern, row `fbf5e649` |
+| The Graffiti Tunnel | `parking=no` | new pattern, row `562d8a7f` |
+| Flip Out Brent Cross | `environment=indoor` | the re-verification title fix, row `232f640c` |
+
+**Served core fields 12 → 16**, from 11 venues serving nothing to 9. Predicted from stored text against
+the new patterns; the run itself is what confirms it.
+
+## What this says about the next round
+
+The largest class is **content extraction failure (10 of 39)**, not missed wording. Crossrail stores
+nothing at all, Belmont stores stylesheets, Mudchute's homepage stores carousel labels, Golders Hill
+stores another site's JSON. `extractPageContent` and `extractRelevantParagraphs` are the next target,
+and the `emptyShells` diagnostic added here makes the first of those visible per crawl instead of
+silently counting as a usable page.
