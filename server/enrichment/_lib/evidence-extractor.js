@@ -98,7 +98,12 @@ const FIELD_PATTERNS = [
       /coffee\s+shop/i,
       /refreshments?\s+available/i,
       /caf[eé]\s+is\s+(?:located|situated)\s+(?:on|in|at|within)\b/i,
-      /\bthe\s+caf[eé]\s+is\s+(?!closed|permanently|temporarily|currently)\w+/i,
+      // Narrowed to the construction the corpus actually demonstrated. The first version was
+      // `the café is <any word>`, which publishes cafe=yes for "The cafe is nearby", "The cafe is
+      // across the road" and "The cafe is five minutes away" -- all plausible sentences on a venue's own
+      // visitor page, all describing somebody else's café. Exactly the false positive this workstream
+      // exists to avoid, and it was mine. Generalising waits for corpus evidence that earns it.
+      /\bthe\s+caf[eé]\s+is\s+dog[\s-]friendly/i,
     ],
     no: [/no\s+caf[eé]/i],
   },
@@ -326,17 +331,26 @@ function matchField(sentence, patterns, fieldId) {
  *
  * Deliberately not a minimum character count. Flip Out Brent Cross's `environment=indoor` comes from a
  * page TITLE whose body never says "indoor", so a length threshold on body text would discard a
- * legitimate fact. The rule is "has something readable to extract FROM" -- body text, or a title, or
- * both. All six shells have neither, so the two classes separate without a magic number.
+ * legitimate fact.
+ *
+ * But "has a title" is not the rule either, and the first version of this function got that wrong:
+ * `hasBody || hasTitle` let a body-less page titled "Accessibility" or "FAQ" count as evidence, so six
+ * such shells could still stop the crawl at `USABLE_PAGE_TARGET` with nothing extracted. Flip Out shows
+ * that a title CAN carry a fact, not that any title is evidence.
+ *
+ * So the rule is semantic: readable body text, or a title that actually yields a fact on re-extraction.
  *
  * One definition, used by the crawl's usable-page accounting, the usable-page target, the diagnostics
  * and trusted re-verification alike. Re-verification used to test `r.extractedText` on its own, which
  * would have dropped a title-only fact even after the title was threaded through.
  */
-function isEvidenceBearingSource({ extractedText, pageTitle } = {}) {
+function isEvidenceBearingSource({ extractedText, facts } = {}) {
   const hasBody = typeof extractedText === 'string' && extractedText.trim() !== '';
-  const hasTitle = typeof pageTitle === 'string' && pageTitle.trim() !== '';
-  return hasBody || hasTitle;
+  // A title earns its place only by producing a fact. Callers pass the facts they RE-EXTRACTED, never
+  // the stored `extracted_evidence`, so the question asked is always "can this page still yield
+  // something?" and not "did it once appear to?".
+  const titleYieldedAFact = Array.isArray(facts) && facts.length > 0;
+  return hasBody || titleYieldedAFact;
 }
 
 /**

@@ -81,14 +81,28 @@ async function verifiedBundleForVenue(id) {
   const records=await listEvidenceForVenue(id);
   const latest=new Map();
   for(const record of records)if(!latest.has(record.sourceUrl))latest.set(record.sourceUrl,record);
-  const sources=[...latest.values()].filter(r=>SOURCE_TYPES.has(r.sourceType)&&['ok','cached','fetched_truncated'].includes(r.fetchStatus)&&isEvidenceBearingSource(r)).map(r=>({url:r.sourceUrl,sourceType:r.sourceType,retrievedAt:r.retrievedAt,fetchStatus:r.fetchStatus,
-    // Carried from the stored row, never recomputed here: re-deriving provenance downstream is
-    // precisely the mistake that let a crawl's assumption become a finding.
-    subjectScope:r.subjectScope??null,subjectScopeReason:r.subjectScopeReason??null,
-    // Re-extract from fetched text, never trust cached/model-generated facts.
-    // Re-verification must see exactly what the crawl saw, page title included: see
-    // `extractionSourceMeta`. Dropping the title here silently withheld a high-confidence fact.
-    facts:extractEvidenceFromText(r.extractedText,extractionSourceMeta({url:r.sourceUrl,sourceType:r.sourceType,retrievedAt:r.retrievedAt,pageTitle:r.pageTitle}))}));
+  /**
+   * Extract FIRST, then decide whether the page is evidence-bearing, because the test is now "did
+   * re-extraction yield anything?" and not "is there a title?". Written as a loop rather than a filter
+   * chain so the order is impossible to misread: the facts the rule judges are the ones this function
+   * just derived, never the stored `extracted_evidence`.
+   */
+  const candidates=[...latest.values()].filter(r=>SOURCE_TYPES.has(r.sourceType)
+    &&['ok','cached','fetched_truncated'].includes(r.fetchStatus));
+  const sources=[];
+  for(const r of candidates){
+    // Re-extract from fetched text, never trust cached/model-generated facts. Re-verification must see
+    // exactly what the crawl saw, page title included: see `extractionSourceMeta`. Dropping the title
+    // here silently withheld a high-confidence fact. An empty body is passed through deliberately, so a
+    // title-only page still gets its chance to produce one.
+    const facts=extractEvidenceFromText(r.extractedText||'',extractionSourceMeta({url:r.sourceUrl,sourceType:r.sourceType,retrievedAt:r.retrievedAt,pageTitle:r.pageTitle}));
+    if(!isEvidenceBearingSource({extractedText:r.extractedText,facts}))continue;
+    sources.push({url:r.sourceUrl,sourceType:r.sourceType,retrievedAt:r.retrievedAt,fetchStatus:r.fetchStatus,
+      // Carried from the stored row, never recomputed here: re-deriving provenance downstream is
+      // precisely the mistake that let a crawl's assumption become a finding.
+      subjectScope:r.subjectScope??null,subjectScopeReason:r.subjectScopeReason??null,
+      facts});
+  }
   return buildEvidenceBundle(id,sources,'official_website');
 }
 module.exports={expiryDate,reviewEvidence,eligibleFact,verifiedBundleForVenue,FIELD_MAP,SOURCE_TYPES};

@@ -2005,34 +2005,75 @@ describe('FIXED 19: evidence-bearing pages, and misses proved by stored content'
   })).map((f: { field: string; value: string }) => `${f.field}=${f.value}`);
 
   describe('an ok page is not automatically an evidence-bearing page', () => {
+    /** As a caller does it: re-extract, then judge the page on what came back. */
+    const bearing = (body: string, title?: string) => isEvidenceBearingSource({
+      extractedText: body,
+      facts: extractEvidenceFromText(body, extractionSourceMeta({
+        url: 'https://venue.example/p', sourceType: 'official_website',
+        retrievedAt: new Date().toISOString(), pageTitle: title,
+      })),
+    });
+
     it('rejects the Crossrail shells: fetched cleanly, nothing to read', () => {
       // Six fresh `ok`, eligible rows from Crossrail Place Roof Garden have empty text AND empty title.
       // They counted towards the usable-page target, which is why the venue shows six usable pages and
       // serves nothing.
-      expect(isEvidenceBearingSource({ extractedText: '', pageTitle: '' })).toBe(false);
-      expect(isEvidenceBearingSource({ extractedText: '   ', pageTitle: null })).toBe(false);
+      expect(bearing('', '')).toBe(false);
+      expect(bearing('   ')).toBe(false);
       expect(isEvidenceBearingSource({})).toBe(false);
     });
 
-    it('accepts a title-only page, because a title can carry a fact', () => {
+    it('rejects a body-less page whose title is just chrome', () => {
+      /**
+       * Review caught this: the first version of the rule was `hasBody || hasTitle`, so a page with no
+       * body and a title of "Accessibility" or "FAQ" counted as evidence, and six such shells could
+       * still stop the crawl at the usable-page target with nothing extracted. Flip Out proves a title
+       * CAN carry a fact, not that any title is evidence.
+       */
+      expect(bearing('', 'Accessibility')).toBe(false);
+      expect(bearing('', 'FAQ')).toBe(false);
+      expect(bearing('', 'Plan your visit')).toBe(false);
+      expect(bearing('', 'Contact Us')).toBe(false);
+    });
+
+    it('accepts a title-only page when the title actually produces a fact', () => {
       // Flip Out Brent Cross: the body never says "indoor", the title does. A minimum character count
-      // on body text would throw this away, which is why the rule is not a length threshold.
-      expect(isEvidenceBearingSource({
-        extractedText: '', pageTitle: "North London's Ultimate Indoor Trampoline & Adventure Park!",
-      })).toBe(true);
+      // on body text would throw this away, which is why the rule is not a length threshold -- and the
+      // fact itself, not the mere presence of a title, is what admits the page.
+      expect(bearing('', "North London's Ultimate Indoor Trampoline & Adventure Park!")).toBe(true);
       expect(fields('Book your jump session online in advance. Socks are required.',
         "North London's Ultimate Indoor Trampoline & Adventure Park!")).toContain('environment=indoor');
     });
 
-    it('is the same rule the trusted re-verification applies, not a second opinion', () => {
+    it('accepts any page with readable body text, fact or not', () => {
+      // Body text is still worth reading even when today's patterns find nothing in it: that is the
+      // zero-fact population the corpus exists to work through, not a page to discard.
+      expect(bearing('Our opening hours vary by season, please check before travelling.')).toBe(true);
+    });
+
+    it('cannot let generic title-only shells satisfy the usable-page target', () => {
+      /**
+       * The consequence the review named. Six chrome-titled shells must contribute nothing, so a crawl
+       * that met them would keep going rather than stop at USABLE_PAGE_TARGET.
+       */
+      const shells = ['Accessibility', 'FAQ', 'Plan your visit', 'Facilities', 'Families', 'Contact Us'];
+      expect(shells.filter((title) => bearing('', title))).toHaveLength(0);
+    });
+
+    it('is the same rule the trusted re-verification applies, and it judges re-extracted facts', () => {
       /**
        * Re-verification used to select sources on `r.extractedText` alone, so a title-only fact would
-       * still have vanished even after the title was threaded through. Both paths now call this.
+       * still have vanished even after the title was threaded through. It must also extract BEFORE
+       * judging, and judge the facts it just derived rather than the stored `extracted_evidence`.
        */
       const src = require('node:fs').readFileSync(
         require('node:path').join(__dirname, '../../../server/enrichment/_lib/trusted-evidence.js'), 'utf8');
-      expect(src).toContain('isEvidenceBearingSource(r)');
+      expect(src).toContain('isEvidenceBearingSource({extractedText:r.extractedText,facts})');
       expect(src, 'the bare truthy test must be gone').not.toMatch(/&&\s*r\.extractedText\s*\)/);
+      expect(src, 'must never judge on stored evidence').not.toMatch(/extractedEvidence/);
+      // extraction must precede the decision
+      expect(src.indexOf('const facts=extractEvidenceFromText'))
+        .toBeLessThan(src.indexOf('isEvidenceBearingSource({extractedText:r.extractedText,facts})'));
     });
   });
 
@@ -2058,6 +2099,22 @@ describe('FIXED 19: evidence-bearing pages, and misses proved by stored content'
 
     it('does not report a closed cafe as a facility', () => {
       expect(fields('The cafe is closed for refurbishment until the spring.')).not.toContain('cafe=yes');
+    });
+
+    it('does not read an off-site cafe as the venue\u2019s own', () => {
+      /**
+       * Review caught this, and it was mine. My first rule was `the café is <any word>`, which publishes
+       * cafe=yes for all three of these -- plausible sentences on a venue's own visitor page, every one
+       * describing somebody else's café. The rule is now the construction the corpus demonstrated.
+       */
+      for (const prose of [
+        'The cafe is nearby.',
+        'The cafe is across the road from the venue.',
+        'The cafe is five minutes away.',
+        'The cafe is run by an independent operator in the neighbouring building.',
+      ]) {
+        expect(fields(prose), prose).not.toContain('cafe=yes');
+      }
     });
   });
 

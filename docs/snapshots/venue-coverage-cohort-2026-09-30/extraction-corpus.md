@@ -100,7 +100,31 @@ been obtained. An evidence-bearing-page rule is needed — see below.
 - **Hanwell Zoo**, six pages all matching only "accessib" — likely nav-chrome "Accessibility" links
   rather than statements, i.e. class 3 or 5. A caution against treating the word as a signal.
 
-## The evidence-bearing-page rule, to be decided in the extraction PR
+## The evidence-bearing-page rule, as implemented
+
+Two review rounds landed on a **semantic** rule rather than a structural one:
+
+```js
+hasBody || reExtractedFacts.length > 0
+```
+
+- **readable body text** — evidence-bearing, whether or not today's patterns find anything in it. That
+  zero-fact population is the corpus to work through, not pages to discard.
+- **no body, but a title that yields a fact** — evidence-bearing. Flip Out's `environment=indoor` comes
+  from its title alone.
+- **no body, and a title that yields nothing** — not evidence-bearing. The first version of the rule was
+  `hasBody || hasTitle`, which would have let a body-less page titled "Accessibility" or "FAQ" consume a
+  usable-page slot with nothing extracted. A title CAN carry a fact; that is not the same as any title
+  being evidence.
+
+No character minimum anywhere. Callers pass the facts they **re-extracted**, never the stored
+`extracted_evidence`, so the question is always "can this page still yield something?".
+
+Worth recording precisely: **no fresh cohort row had an empty body with a non-empty title**, so the
+permissive version never actually miscounted in this run. The fix prevents a future miscount rather than
+correcting a past one.
+
+## The rule's original statement, for the record
 
 An `ok` page with empty or near-empty `extracted_text` must not count as a usable page, satisfy the
 six-usable-page target, or appear as an extraction failure. But the rule cannot simply be "short text

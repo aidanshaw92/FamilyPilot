@@ -348,7 +348,9 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
       result.fetchStatus === 'fetched_truncated';
     const usable = fetchSucceeded && isEvidenceBearingSource({
       extractedText: result.extractedText,
-      pageTitle: result.pageTitle,
+      // The facts this very crawl extracted, title included: a body-less page counts only if it
+      // produced something.
+      facts: result.facts,
     });
     if (fetchSucceeded && !usable) emptyShells.push({ url: result.url, fetchStatus: result.fetchStatus });
 
