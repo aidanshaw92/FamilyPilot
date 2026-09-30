@@ -7,7 +7,7 @@ const { getGooglePlace } = require('../../places/lib/google-places');
 const { upsertPlaceRecord } = require('./enrichment-store');
 const { discoverSourceUrls, mergePageCandidates } = require('./source-discovery');
 const { fetchOfficialPage } = require('./source-fetcher');
-const { extractEvidenceFromText, buildEvidenceBundle } = require('./evidence-extractor');
+const { extractEvidenceFromText, buildEvidenceBundle, extractionSourceMeta, isEvidenceBearingSource } = require('./evidence-extractor');
 const { getCachedEvidence, saveEvidenceRecord } = require('./evidence-store');
 const { listVenueIdentities } = require('./enrichment-store');
 const { classifySubjectScope } = require('./source-identity');
@@ -155,7 +155,12 @@ async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
      */
     const recorded = Boolean(cached.subjectScope);
     const inferred = recorded ? null : scopeFor(cached.sourceUrl, cached.pageTitle);
-    const facts = extractEvidenceFromText(cached.extractedText || '', { url: cached.sourceUrl, sourceType: cached.sourceType, retrievedAt: cached.retrievedAt });
+    // The stored title travels with the stored text. This branch dropped it, which is the same
+    // defect review found in re-verification.
+    const facts = extractEvidenceFromText(cached.extractedText || '', extractionSourceMeta({
+      url: cached.sourceUrl, sourceType: cached.sourceType, retrievedAt: cached.retrievedAt,
+      pageTitle: cached.pageTitle,
+    }));
     return {
       url: cached.sourceUrl,
       sourceType: cached.sourceType,
@@ -203,12 +208,12 @@ async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
     };
   }
 
-  const facts = extractEvidenceFromText(fetched.extractedText, {
+  const facts = extractEvidenceFromText(fetched.extractedText, extractionSourceMeta({
     url: fetched.url,
     sourceType: page.sourceType,
     retrievedAt: fetched.retrievedAt,
-    pageTitle: fetched.pageTitle ?? null,
-  });
+    pageTitle: fetched.pageTitle,
+  }));
 
   // The page title is part of the verdict, so classify only once it is known.
   const scope = scopeFor(fetched.url, fetched.pageTitle ?? null);
@@ -325,14 +330,29 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
   const pagesFailed = [];
   const pagesFetched = [];
   const evidenceByPage = [];
+  /** Fetched cleanly, nothing to read: reported so the loss is visible rather than silent. */
+  const emptyShells = [];
   let fetchAttempts = 0;
 
   const recordResult = (result) => {
     sources.push(result);
-    const usable =
+    /**
+     * A successful HTTP status is not evidence. Six fresh `ok` rows from Crossrail Place Roof Garden
+     * carried no text and no title at all, and each counted towards the usable-page target as though a
+     * page had been read. `isEvidenceBearingSource` is the same rule trusted re-verification applies,
+     * so a page cannot be usable here and invisible there.
+     */
+    const fetchSucceeded =
       result.fetchStatus === 'ok' ||
       result.fetchStatus === 'cached' ||
       result.fetchStatus === 'fetched_truncated';
+    const usable = fetchSucceeded && isEvidenceBearingSource({
+      extractedText: result.extractedText,
+      // The facts this very crawl extracted, title included: a body-less page counts only if it
+      // produced something.
+      facts: result.facts,
+    });
+    if (fetchSucceeded && !usable) emptyShells.push({ url: result.url, fetchStatus: result.fetchStatus });
 
     if (usable) {
       pagesFetched.push({
@@ -478,6 +498,7 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
      * thorough one look identical in the stored bundle, and the budgets could not be tuned on evidence.
      */
     usablePageCount: usablePageCount(),
+    emptyShells,
     candidatesRemaining: queue.length,
     stopReason,
     /**
