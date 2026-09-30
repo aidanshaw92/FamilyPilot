@@ -12,14 +12,61 @@ const { getCachedEvidence, saveEvidenceRecord } = require('./evidence-store');
 const { listVenueIdentities } = require('./enrichment-store');
 const { classifySubjectScope } = require('./source-identity');
 
-const MAX_PAGES = Number(process.env.SOURCE_MAX_PAGES || 5);
+const { PAGE_BUDGET_MS } = require('./source-fetcher');
 
-function isQuickFailure(result) {
-  return (
-    result.fetchStatus === 'error' &&
-    (result.error === 'HTTP 404' || String(result.error).includes('404'))
-  );
-}
+/**
+ * Three separate ceilings, because one number was doing three incompatible jobs.
+ *
+ * The old crawl had a single `MAX_PAGES = 5`, used at once as the candidate-list length, the fetch
+ * attempt limit and the stored-page limit. Two consequences, both measured rather than supposed:
+ *
+ *  1. A FAILED fetch consumed a page slot. 33.7% of 953 stored evidence rows are non-usable (321
+ *     failed or blocked, 187 of those Cloudflare), so a venue whose first guesses 404 ended the crawl
+ *     with one or two usable pages. 56 of 234 crawl rounds produced no usable page beyond nothing,
+ *     and 35 produced only the homepage.
+ *  2. The "reserve" list was unreachable. With the queue holding exactly `MAX_PAGES - 1` candidates,
+ *     `if (!next && reserve.length)` could only fire once the queue had emptied, and the queue emptied
+ *     exactly as the attempt budget ran out. The `isQuickFailure -> continue` beside it looked like a
+ *     retry and refunded nothing: the attempt had already been counted. So a venue whose four selected
+ *     guesses all 404'd never reached `/accessibility` or `/facilities`, which sat in that reserve.
+ *
+ * Split apart, each ceiling answers one question:
+ *
+ *   USABLE_PAGE_TARGET   how many pages worth reading are ENOUGH -- stop succeeding early.
+ *   MAX_FETCH_ATTEMPTS   how many URLs may be tried, successful or not -- absorb the 33.7%.
+ *   CRAWL_BUDGET_MS      how long the crawl may take -- protect the worker regardless of either.
+ *
+ * Why 10 attempts: at the measured 66.3% usable rate, six usable pages needs 9.05 attempts in
+ * expectation, so 10 is the first ceiling that does not routinely truncate the target. Expected cost
+ * per venue rises from the measured 4.07 attempts to roughly 8.7 (+4.6), and the catalogue-wide worst
+ * case is 134 x 10 = 1,340 fetches per full pass against about 545 today. `refresh_venue_data` enqueues
+ * at most 50 venues a day, so the daily worst case is 500 fetches against about 204 today.
+ *
+ * Why the wall clock is not optional: the enrichment worker aborts its call to the API after 50s
+ * (`enrichment-worker/index.ts`), while Vercel lets the function run to 60s. An overrun therefore
+ * marks the job FAILED in `venue_enrichment_jobs` while the function keeps going and may still publish
+ * claims -- a correctness hazard, not a latency one. Ten attempts alone cannot be trusted against it:
+ * measured spans reach 20.48s p99 and 26.78s max at only 4.07 attempts.
+ *
+ * Why 28s: measured over 128 completed jobs, the tail from the last fetch to job completion (extraction,
+ * reconciliation, claim publication, response) is 2.40s p50, 6.25s p99, 11.33s max. Reserving 12s for
+ * that tail, 5s for the unmeasured head before the first fetch (auth, metadata and place reads, and a
+ * possible Google Places call) and 5s of margin leaves 50 - 22 = 28s for the crawl. A new fetch starts
+ * only while `PAGE_BUDGET_MS` still fits inside that 28s, and one page is itself bounded, so the crawl
+ * cannot exceed 28s however slow the site is.
+ */
+const USABLE_PAGE_TARGET = Number(
+  // SOURCE_MAX_PAGES is honoured as the usable target so existing deployments and tests that pin it
+  // keep their meaning: it always described how many readable pages a crawl wanted.
+  process.env.SOURCE_USABLE_PAGE_TARGET || process.env.SOURCE_MAX_PAGES || 6,
+);
+const MAX_FETCH_ATTEMPTS = Number(
+  process.env.SOURCE_MAX_FETCH_ATTEMPTS || Math.max(10, USABLE_PAGE_TARGET),
+);
+const CRAWL_BUDGET_MS = Number(process.env.SOURCE_CRAWL_BUDGET_MS || 28000);
+
+/** Retained under its old name: it is still the number of readable pages a crawl aims for. */
+const MAX_PAGES = USABLE_PAGE_TARGET;
 
 async function ensurePlaceDetails(familypilotId, placeRow) {
   if (placeRow?.website && placeRow?.description) {
@@ -109,7 +156,11 @@ async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
     };
   }
 
-  const fetched = await fetchOfficialPage(page.url);
+  const fetched = await fetchOfficialPage(page.url, {
+    // The caller's crawl deadline reserved exactly this much for the page; honour it, so a slow
+    // redirect chain cannot push the crawl past the budget the caller proved safe.
+    budgetMs: options.pageBudgetMs,
+  });
   if (!fetched.ok) {
     const failedScope = scopeFor(page.url, null);
     await saveEvidenceRecord({
@@ -190,7 +241,14 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
     name: enrichedPlace?.name ?? placeRow?.name ?? null,
     website: enrichedPlace?.website ?? null,
   };
-  const pageOptions = { ...options, venue, catalogue };
+  /**
+   * Injectable so the wall-clock guard is testable without sleeping. Production passes nothing.
+   */
+  const clock = options.clock ?? (() => Date.now());
+  const crawlStartedAt = clock();
+  const crawlDeadlineAt = crawlStartedAt + CRAWL_BUDGET_MS;
+
+  const pageOptions = { ...options, venue, catalogue, pageBudgetMs: PAGE_BUDGET_MS };
   const discovery = discoverSourceUrls({
     website: enrichedPlace?.website,
     googleDescription: enrichedPlace?.description,
@@ -236,7 +294,7 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
     homepage.url,
     discovery.pages,
     homeResult.html,
-    MAX_PAGES,
+    USABLE_PAGE_TARGET,
     { venue, catalogue },
   );
 
@@ -247,10 +305,17 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
   const evidenceByPage = [];
 
   const homepageKey = homepage.url.replace(/\/$/, '');
-  const queue = pages.filter((p) => p.url.replace(/\/$/, '') !== homepageKey);
-  const reserve = [...reserveCandidates];
+  /**
+   * ONE queue, in score order. `mergePageCandidates` splits its ordered list into `pages` (the first
+   * `USABLE_PAGE_TARGET - 1`) and `reserveCandidates` (the rest); concatenating them restores that
+   * order exactly. The split stays as a diagnostic -- "what we expected to need" versus "what we held
+   * back" -- but it no longer gates fetching, which is what made the reserve unreachable.
+   */
+  const queue = [
+    ...pages.filter((p) => p.url.replace(/\/$/, '') !== homepageKey),
+    ...reserveCandidates.filter((p) => p.url.replace(/\/$/, '') !== homepageKey),
+  ];
   let fetchAttempts = 0;
-  const maxAttempts = MAX_PAGES;
 
   const recordResult = (result) => {
     sources.push(result);
@@ -291,21 +356,34 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
   attemptedUrls.add(homepageKey);
   fetchAttempts += 1;
 
-  while (fetchAttempts < maxAttempts && sources.length < MAX_PAGES + 1) {
-    let next = queue.shift();
-    if (!next && reserve.length) next = reserve.shift();
-    if (!next) break;
+  /**
+   * `pagesFetched` holds exactly the usable pages (ok / cached / fetched_truncated), so counting it is
+   * the whole of "a failed fetch consumes an attempt but not a usable-page slot".
+   */
+  const usablePageCount = () => pagesFetched.length;
+  let stopReason = null;
 
-    const urlKey = next.url.replace(/\/$/, '');
-    if (attemptedUrls.has(urlKey)) continue;
-    attemptedUrls.add(urlKey);
-    fetchAttempts += 1;
+  while (!stopReason) {
+    if (usablePageCount() >= USABLE_PAGE_TARGET) {
+      stopReason = 'usable_page_target';
+    } else if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
+      stopReason = 'attempt_ceiling';
+    } else if (clock() + PAGE_BUDGET_MS > crawlDeadlineAt) {
+      // Refuse to START what cannot finish inside the budget. Nothing in flight is interrupted, so
+      // the crawl always stops on a whole page, with its evidence stored and its facts extracted.
+      stopReason = 'wall_clock';
+    } else if (queue.length === 0) {
+      stopReason = 'candidates_exhausted';
+    } else {
+      const next = queue.shift();
+      const urlKey = next.url.replace(/\/$/, '');
+      // A duplicate was never fetched, so it costs no attempt -- only a loop iteration.
+      if (attemptedUrls.has(urlKey)) continue;
+      attemptedUrls.add(urlKey);
+      fetchAttempts += 1;
 
-    const result = await fetchAndExtractPage(familypilotPlaceId, next, pageOptions);
-    recordResult(result);
-
-    if (isQuickFailure(result) && reserve.length && fetchAttempts < maxAttempts) {
-      continue;
+      const result = await fetchAndExtractPage(familypilotPlaceId, next, pageOptions);
+      recordResult(result);
     }
   }
 
@@ -325,13 +403,31 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
         inferredSubjectScope: s.inferredSubjectScope ?? null,
         factCount: (s.facts ?? []).length,
       })),
-    reserveCount: discoveryDiagnostics.reserveCount ?? reserve.length,
+    // `reserve` no longer exists as a separate list, and the `?? reserve.length` fallback that stood
+    // here would have thrown a ReferenceError had `reserveCount` ever been absent. Kept as the same
+    // diagnostic key -- how many candidates were held back from the initial selection -- with the live
+    // remainder reported alongside it as `candidatesRemaining`.
+    reserveCount: discoveryDiagnostics.reserveCount ?? 0,
     pagesFetched,
     pagesFailed,
     evidenceByPage,
     homepageFetchStatus: homeResult.fetchStatus,
     homepageFetchError: homeResult.error ?? null,
     fetchAttempts,
+    /**
+     * Which ceiling ended the crawl, and the numbers to judge it by. Without this a short crawl and a
+     * thorough one look identical in the stored bundle, and the budgets could not be tuned on evidence.
+     */
+    usablePageCount: usablePageCount(),
+    candidatesRemaining: queue.length,
+    stopReason,
+    crawlElapsedMs: clock() - crawlStartedAt,
+    budgets: {
+      usablePageTarget: USABLE_PAGE_TARGET,
+      maxFetchAttempts: MAX_FETCH_ATTEMPTS,
+      crawlBudgetMs: CRAWL_BUDGET_MS,
+      pageBudgetMs: PAGE_BUDGET_MS,
+    },
   };
 
   return buildEvidenceBundle(familypilotPlaceId, sources, discovery.sourceStatus, diagnostics);
@@ -341,4 +437,7 @@ module.exports = {
   gatherEvidenceForVenue,
   ensurePlaceDetails,
   MAX_PAGES,
+  USABLE_PAGE_TARGET,
+  MAX_FETCH_ATTEMPTS,
+  CRAWL_BUDGET_MS,
 };

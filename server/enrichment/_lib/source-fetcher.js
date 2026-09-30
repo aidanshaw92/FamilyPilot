@@ -7,6 +7,16 @@ const { assertSafeUrl } = require('./source-fetch-security');
 const { extractPageContent, isCloudflareChallenge } = require('./html-text-extractor');
 
 const FETCH_TIMEOUT_MS = Number(process.env.SOURCE_FETCH_TIMEOUT_MS || 6000);
+/**
+ * Wall clock for ONE page, redirect chain included.
+ *
+ * `FETCH_TIMEOUT_MS` bounds a single HTTP hop, and `fetchWithRedirects` restarts it on every hop, so
+ * a page behind the maximum three redirects could occupy 4 x 6s = 24s -- half the worker's 50s budget
+ * on one URL. Nothing measured comes close (per-page max across 208 crawl rounds: 6.29s), so a 12s
+ * page budget cuts off nothing observed while making the worst case arithmetic rather than a hope.
+ * It matters because the caller's crawl deadline reserves exactly this much for a fetch it starts.
+ */
+const PAGE_BUDGET_MS = Number(process.env.SOURCE_PAGE_BUDGET_MS || 12000);
 const MAX_RESPONSE_BYTES = Number(process.env.SOURCE_FETCH_MAX_BYTES || 512 * 1024);
 const MAX_REDIRECTS = 3;
 const USER_AGENT =
@@ -67,10 +77,17 @@ async function readBoundedHtml(response, maxBytes) {
   };
 }
 
-async function fetchWithRedirects(urlString, redirectCount = 0) {
+async function fetchWithRedirects(urlString, redirectCount = 0, deadlineAt = null) {
+  // One deadline for the whole chain: set on the first hop, carried by every redirect.
+  const chainDeadlineAt = deadlineAt ?? Date.now() + PAGE_BUDGET_MS;
+  const remainingMs = chainDeadlineAt - Date.now();
+  if (remainingMs <= 0) {
+    return { status: 'timeout', html: null, error: 'Page budget exhausted' };
+  }
+
   const parsed = await assertSafeUrl(urlString);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), Math.min(FETCH_TIMEOUT_MS, remainingMs));
 
   try {
     const response = await fetch(parsed.toString(), {
@@ -89,7 +106,7 @@ async function fetchWithRedirects(urlString, redirectCount = 0) {
       if (!location) throw new Error('Redirect without location');
       if (redirectCount >= MAX_REDIRECTS) throw new Error('Too many redirects');
       const nextUrl = new URL(location, parsed.toString()).toString();
-      return fetchWithRedirects(nextUrl, redirectCount + 1);
+      return fetchWithRedirects(nextUrl, redirectCount + 1, chainDeadlineAt);
     }
 
     if (response.status === 403 || response.status === 401) {
@@ -149,8 +166,11 @@ async function fetchWithRedirects(urlString, redirectCount = 0) {
   }
 }
 
-async function fetchOfficialPage(urlString) {
-  const result = await fetchWithRedirects(urlString);
+async function fetchOfficialPage(urlString, options = {}) {
+  const budgetMs = Number.isFinite(options.budgetMs) && options.budgetMs > 0
+    ? options.budgetMs
+    : PAGE_BUDGET_MS;
+  const result = await fetchWithRedirects(urlString, 0, Date.now() + budgetMs);
   const usable =
     (result.status === 'ok' || result.status === 'fetched_truncated') && result.html;
 
@@ -195,4 +215,5 @@ module.exports = {
   hashContent,
   MAX_RESPONSE_BYTES,
   FETCH_TIMEOUT_MS,
+  PAGE_BUDGET_MS,
 };
