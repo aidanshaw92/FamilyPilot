@@ -170,6 +170,36 @@ describe('freeParking: universal offers are not mistaken for conditions', () => 
     ).toBe('yes');
   });
 
+  it('keeps yes when "only" restricts where the parking is, not who may use it', () => {
+    // A location restriction says nothing about entitlement. The product already accepts this shape:
+    // Headstone Manor keeps its yes from "free parking to the rear of the building". An earlier
+    // version of the guard accepted "only" anywhere within 60 characters of the phrase and suppressed
+    // all four of these.
+    expect(extract('Free parking is only available in the main car park.')?.value).toBe('yes');
+    expect(extract('Free parking is available only in the rear car park.')?.value).toBe('yes');
+    expect(extract('Free parking is available only at the visitor centre.')?.value).toBe('yes');
+    expect(extract('Free parking is only on the north side of the park.')?.value).toBe('yes');
+  });
+
+  it('suppresses "only" when it binds to a visitor class, a time or a booking', () => {
+    // The mirror image of the location cases: same word, genuinely restricting this time.
+    expect(extract('Free parking is available to members only.')).toBeUndefined();
+    expect(extract('Free parking is for permit holders only.')).toBeUndefined();
+    expect(extract('Free parking is available on weekends only.')).toBeUndefined();
+    expect(extract('Free parking is included with overnight stays only.')).toBeUndefined();
+    expect(extract('Free parking is available for Blue Badge holders only.')).toBeUndefined();
+    expect(extract('Free parking is available to pre-booked visitors only.')).toBeUndefined();
+    expect(extract('Free parking for 2 hours only.')).toBeUndefined();
+    expect(extract('Free parking is only available to residents.')).toBeUndefined();
+  });
+
+  it('suppresses the restriction stated before the phrase, not after it', () => {
+    // A separate clause handles this word order, and neither "only" rule above reaches it: both
+    // require "free parking" to come first. Mutation testing found this clause had no test at all.
+    expect(extract('Members only free parking.')).toBeUndefined();
+    expect(extract('Permit holders only free parking is available.')).toBeUndefined();
+  });
+
   it('still suppresses the same words when they do restrict the offer', () => {
     // The mirror image of the four cases above, so the tightening cannot be satisfied by a guard
     // that simply never fires.

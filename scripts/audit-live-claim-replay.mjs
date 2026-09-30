@@ -45,6 +45,87 @@ const EXPECTED_CHANGES = [
   'Thorpe Park|familyFacilities.freeParking',
 ];
 
+/**
+ * Every claim the cohort must contain, so the run cannot pass by having fewer rows to disagree with.
+ * Checking only "the changed set equals the expected four" would exit zero after deleting any of the
+ * 26 unchanged rows, which is exactly the kind of quiet shrinkage this file exists to prevent.
+ */
+const EXPECTED_CLAIM_KEYS = [
+  'Burgess Park|familyFacilities.freeParking',
+  'Colne Valley Regional Park|familyFacilities.freeParking',
+  'De Havilland Aircraft Museum|familyFacilities.freeParking',
+  'Dulwich Park|familyFacilities.freeParking',
+  'Flip Out Canary Wharf|familyFacilities.freeParking',
+  'Gunnersbury Park|familyFacilities.freeParking',
+  'Hatfield Park|familyFacilities.freeParking',
+  'Headstone Manor and Museum|familyFacilities.freeParking',
+  'Hillside Gardens Park|familyFacilities.freeParking',
+  'Kentish Town City Farm|familyFacilities.freeParking',
+  'Madame Tussauds London|pushchairSuitability',
+  'Mayow Park|familyFacilities.freeParking',
+  'Paradox Museum London|pushchairSuitability',
+  'Queen Elizabeth Olympic Park|familyFacilities.freeParking',
+  'Royal Air Force Museum London|familyFacilities.freeParking',
+  'Royal Air Force Museum London|pushchairSuitability',
+  'SEA LIFE London Aquarium|pushchairSuitability',
+  'Stanborough Park Water Sports Centre|familyFacilities.freeParking',
+  'Stockwood Park|familyFacilities.freeParking',
+  'Sydenham Hill Wood|familyFacilities.freeParking',
+  'Thorpe Park|familyFacilities.freeParking',
+  'V&A East Storehouse|pushchairSuitability',
+  'Verulamium Park|familyFacilities.freeParking',
+  'Victoria Park|familyFacilities.freeParking',
+  'Victoria and Albert Museum|pushchairSuitability',
+  'Walthamstow Wetlands, London Wildlife Trust|familyFacilities.freeParking',
+  'Whitechapel Gallery|familyFacilities.freeParking',
+  'Woodside Animal Farm|familyFacilities.freeParking',
+  'Woodside Animal Farm|pushchairSuitability',
+  'Young V&A|pushchairSuitability',
+];
+
+const EXPECTED_TOTAL = 30;
+const EXPECTED_PER_FIELD = { pushchairSuitability: 8, 'familyFacilities.freeParking': 22 };
+
+/**
+ * Everything that must hold for the run to be trustworthy, not just "the right four moved".
+ * Each returns a list of failure strings so the report names every problem at once.
+ */
+function checkCohort(rows, results) {
+  const failures = [];
+  const keys = rows.map((r) => `${r.venue}|${r.field}`);
+
+  if (rows.length !== EXPECTED_TOTAL) {
+    failures.push(`fixture holds ${rows.length} rows, expected ${EXPECTED_TOTAL}`);
+  }
+
+  const duplicates = [...new Set(keys.filter((k, i) => keys.indexOf(k) !== i))];
+  if (duplicates.length > 0) failures.push(`duplicate fixture keys: ${duplicates.join(', ')}`);
+
+  for (const [field, expected] of Object.entries(EXPECTED_PER_FIELD)) {
+    const actual = rows.filter((r) => r.field === field).length;
+    if (actual !== expected) failures.push(`${field}: ${actual} claims, expected ${expected}`);
+  }
+
+  const present = new Set(keys);
+  const absent = EXPECTED_CLAIM_KEYS.filter((k) => !present.has(k));
+  const extra = [...present].filter((k) => !EXPECTED_CLAIM_KEYS.includes(k));
+  if (absent.length > 0) failures.push(`missing from fixture: ${absent.join(', ')}`);
+  if (extra.length > 0) failures.push(`unexpected in fixture: ${extra.join(', ')}`);
+
+  // An unchanged claim must be unchanged in confidence too. A value that holds while its confidence
+  // slips from high is a silent downgrade: `eligibleFact` requires high, so the claim stops being
+  // published even though a value-only comparison shows nothing moved.
+  for (const r of results.filter((x) => !x.changed)) {
+    if (r.afterConfidence !== r.beforeConfidence) {
+      failures.push(
+        `${r.key}: value held at ${r.before} but confidence moved ${r.beforeConfidence} -> ${r.afterConfidence}`,
+      );
+    }
+  }
+
+  return failures;
+}
+
 function parseArgs(argv) {
   const args = { json: false, fixture: null };
   for (let i = 0; i < argv.length; i += 1) {
@@ -97,12 +178,22 @@ const changedKeys = changed.map((r) => r.key).sort();
 
 const unexpected = changedKeys.filter((k) => !EXPECTED_CHANGES.includes(k));
 const missing = EXPECTED_CHANGES.filter((k) => !changedKeys.includes(k));
-const ok = unexpected.length === 0 && missing.length === 0;
+const cohortFailures = checkCohort(rows, results);
+const ok = unexpected.length === 0 && missing.length === 0 && cohortFailures.length === 0;
 
 if (args.json) {
   console.log(
     JSON.stringify(
-      { fixture: fixturePath, total: results.length, changed: changed.length, results, unexpected, missing, ok },
+      {
+        fixture: fixturePath,
+        total: results.length,
+        changed: changed.length,
+        results,
+        unexpected,
+        missing,
+        cohortFailures,
+        ok,
+      },
       null,
       2,
     ),
@@ -125,8 +216,16 @@ if (args.json) {
     console.log(`changed: ${group.filter((r) => r.changed).length} of ${group.length}`);
   }
   console.log(`\ntotal: ${changed.length} changed of ${results.length}`);
+  console.log(
+    `cohort: ${results.length}/${EXPECTED_TOTAL} claims, ` +
+      Object.entries(EXPECTED_PER_FIELD)
+        .map(([f, n]) => `${f} ${results.filter((r) => r.field === f).length}/${n}`)
+        .join(', ') +
+      `, no duplicate keys, ${results.length - changed.length} unchanged in value and confidence`,
+  );
   if (unexpected.length > 0) console.log(`UNEXPECTED changes: ${unexpected.join(', ')}`);
   if (missing.length > 0) console.log(`EXPECTED but unchanged: ${missing.join(', ')}`);
+  for (const failure of cohortFailures) console.log(`COHORT FAILURE: ${failure}`);
   console.log(ok ? 'RESULT: matches the intended cohort exactly' : 'RESULT: DOES NOT MATCH');
 }
 

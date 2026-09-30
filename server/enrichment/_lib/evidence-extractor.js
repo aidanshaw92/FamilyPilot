@@ -267,6 +267,40 @@ function hasRestrictedParking(sentence) {
  * The condition is not modelled anywhere yet, so a conditional entitlement fails closed to unknown
  * rather than being flattened into yes or asserted as no.
  */
+/**
+ * The things "only" must bind to for it to restrict an ENTITLEMENT rather than a place.
+ *
+ * "Free parking is only available in the main car park" restricts WHERE the free parking is, not WHO
+ * gets it or WHEN. That is the same semantic shape the product already accepts elsewhere: Headstone
+ * Manor keeps its `yes` from "free parking to the rear of the building". A bare "only" anywhere after
+ * the phrase cannot tell a location apart from a condition, so "only" is required to attach to one of
+ * these instead: a class of visitor, a time, or a booking.
+ *
+ * A positive vocabulary rather than a blacklist of places, so an unlisted location ("only in the
+ * lower field", "only at the north gate") keeps its claim by default instead of needing to be
+ * enumerated.
+ */
+const ONLY_RESTRICTOR =
+  '(?:members?|residents?|permit\\s+holders?|blue\\s+badge(?:\\s+(?:badge\\s+)?holders?)?' +
+  '|disabled(?:\\s+(?:badge\\s+)?holders?|\\s+visitors?|\\s+drivers?)?' +
+  '|season\\s+ticket(?:\\s+holders?)?|ticket\\s+holders?|staff|hotel\\s+guests?|guests?' +
+  '|pre.?booked(?:\\s+\\w+)?|customers?|patrons?' +
+  '|weekends?|weekdays?|bank\\s+holidays?|sundays?|saturdays?|off.?peak' +
+  '|overnight\\s+stays?|short\\s+breaks?|packages?|bookings?' +
+  '|\\d+\\s*(?:hours?|hrs?|minutes?|mins?))';
+
+/** "... to members only", "... on weekends only", "... with overnight stays only". */
+const ONLY_AFTER_RESTRICTOR = new RegExp(
+  `\\bfree\\s+parking\\b[^.!?]{0,40}\\b(?:to|for|with|on|during)\\s+${ONLY_RESTRICTOR}\\b[^.!?]{0,20}\\bonly\\b`,
+  'i',
+);
+
+/** "... only available to members", "... only for permit holders". */
+const ONLY_BEFORE_RESTRICTOR = new RegExp(
+  `\\bfree\\s+parking\\b[^.!?]{0,40}\\bonly\\b[^.!?]{0,30}\\b(?:to|for|with|on|during)\\s+${ONLY_RESTRICTOR}\\b`,
+  'i',
+);
+
 function hasConditionalFreeParking(sentence) {
   return (
     // ---- Restricted to an entitlement class -------------------------------------------------
@@ -277,9 +311,12 @@ function hasConditionalFreeParking(sentence) {
       sentence,
     ) ||
     // ---- Restricted by an explicit "only" ---------------------------------------------------
-    // "only" is the restriction, stated by the venue. "for members and non-members alike" has no
-    // "only" and is therefore not a restriction, whichever category words it happens to contain.
-    /\bfree\s+parking\b[^.!?]{0,60}\bonly\b/i.test(sentence) ||
+    // "only" must bind to a visitor class, a time or a booking -- see ONLY_RESTRICTOR. An earlier
+    // version accepted "only" anywhere within 60 characters of the phrase, which suppressed four
+    // location restrictions ("only available in the main car park", "available only in the rear car
+    // park"), and a location says nothing about who is entitled to park free.
+    ONLY_AFTER_RESTRICTOR.test(sentence) ||
+    ONLY_BEFORE_RESTRICTOR.test(sentence) ||
     /\b(?:blue\s+badge|disabled|members?|residents?|season\s+ticket|permit)\s*(?:holders?)?\s+only\b[^.!?]{0,60}\bfree\s+parking\b/i.test(
       sentence,
     ) ||

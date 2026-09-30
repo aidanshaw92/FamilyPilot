@@ -115,12 +115,35 @@ category word. Each rule now requires a construction that actually restricts the
 | --- | --- | --- |
 | named days | `on <days>` | a day word nearby |
 | entitlement class | `for <class> holders` | the word "disabled" or "member" after "for" |
-| restricted group | an explicit `only` | a group word nearby |
+| restricted group | `only` bound to a visitor class, a time or a booking | `only` anywhere after the phrase |
 | duration | a digit-plus-unit adjacent to the phrase | any number in the sentence |
 | package | the package stated to `include` the parking | a package word nearby |
 
 "including weekends" widens an offer; "on weekends" limits it. Proximity cannot tell those apart, and
 that distinction is the whole fix.
+
+### Second tightening: "only" must restrict an entitlement, not a location
+
+Review found the `only` rule still grammatically unscoped: it accepted `only` anywhere within 60
+characters of the phrase, which cannot tell a restricted entitlement from a restricted *place*.
+Confirmed against the code first, and it suppressed four location statements:
+
+| Sentence | Before | Now |
+| --- | --- | --- |
+| "Free parking is only available in the main car park." | suppressed | **yes** |
+| "Free parking is available only in the rear car park." | suppressed | **yes** |
+| "Free parking is available only at the visitor centre." | suppressed | **yes** |
+| "Free parking is only on the north side of the park." | suppressed | **yes** |
+
+Where the free parking *is* says nothing about who is entitled to it, and the product already accepts
+that shape: Headstone Manor keeps its `yes` from "free parking to the rear of the building".
+
+`only` now has to bind to a restrictor — a visitor class, a time, or a booking — in either word order
+("to members only", "only available to residents", "Members only free parking"). The restrictor is a
+positive vocabulary rather than a blacklist of places, so an unlisted location such as "only in the
+lower field" keeps its claim by default instead of having to be enumerated. The eight genuinely
+conditional shapes in the same grammar stay suppressed: members, permit holders, Blue Badge holders,
+weekends, overnight stays, pre-booked visitors, a duration, and residents.
 
 Probed beyond the three counterexamples with 18 further sentences — 8 that must keep their claim and
 10 that must lose it — including the deliberately awkward "We offer free parking to all visitors,
@@ -149,9 +172,25 @@ node scripts/audit-live-claim-replay.mjs --json   # machine-readable
 
 The fixture `replay-input.json` holds all 30 active claims as production served them on 2026-09-30,
 each with the stored source text behind it. The script re-derives the before/after table from the
-working tree and **exits non-zero if the changed set is anything other than the four intended
-claims**, so it is a regression check and not just a report. Its output is committed as
-`replay-output.txt`.
+working tree and its output is committed as `replay-output.txt`.
+
+It exits non-zero unless **all** of the following hold, so it is a regression check and not just a
+report. Checking only "the changed set equals the expected four" would have exited zero after
+deleting any of the 26 unchanged rows, which is the quiet shrinkage these assertions exist to stop:
+
+- the changed set is exactly Paradox + Thorpe + Flip Out + Stanborough
+- the fixture holds exactly 30 rows, 8 `pushchairSuitability` and 22 `familyFacilities.freeParking`
+- no claim key is duplicated
+- the fixture's claim keys match a pinned list of all 30, so a substitution that preserves the count
+  is still caught
+- each of the 26 unchanged claims is identical in **confidence as well as value** — a value that
+  holds while confidence slips from `high` is a silent unpublishing, because `eligibleFact` requires
+  `high`
+
+Each assertion was verified by deliberately violating it: deleting an unchanged row, dropping a
+pushchair row, duplicating a key, renaming a venue while keeping the count at 30, and moving one
+unchanged claim's confidence. All five exit non-zero and name the failure; the untampered fixture
+exits zero.
 
 Before is the value production is serving; after is what the corrected code produces.
 
@@ -187,11 +226,11 @@ deciding one, but the replay is not a full pipeline simulation and is not presen
 
 ## Verification
 
-- 1239 tests pass across 66 files; `tsc --noEmit` clean. 33 tests are new.
+- 1242 tests pass across 66 files; `tsc --noEmit` clean. 36 tests are new.
 - Every test sentence is production wording. The two that are not whole sentences are the two halves
   of Flip Out's own sentence, used because it carries both a duration limit and a named-days limit, so
   neither clause is independently proven by the whole sentence.
-- **19 mutants, 19 killed.** Each reverts one part of the fix: both interrogative guards, the pram
+- **23 mutants, 23 killed.** Each reverts one part of the fix: both interrogative guards, the pram
   denial, the plural-aware denial, the leading-"No" mask, the mask itself, positives reading unmasked
   text on three separate paths, the sentence-length filter, the conditional guard as a whole, five of
   its clauses individually, and three mutants that loosen the tightening back toward proximity.
@@ -215,3 +254,19 @@ Nothing has changed in production. No claim was edited by hand and no venue was 
 
 The four claims above are still being served as they are. The intended repair is a targeted re-crawl
 of the affected venues after deployment, so the claims self-heal through the normal pipeline.
+
+## Appendix: the third review round
+
+Two changes, both from review of `d453389`.
+
+**The `only` rule was still unscoped** — see "Second tightening" above. Four location restrictions
+were being suppressed.
+
+**The replay assertion was too weak.** It checked only the changed set, so it would have passed on a
+shrinking fixture. It now enforces cohort completeness and confidence stability, and each new
+assertion was proved by violating it.
+
+Mutation testing found one more gap while verifying this round: the clause handling a restriction
+stated *before* the phrase ("Members only free parking") had **no test at all**. Neither `only` rule
+reaches that word order, since both require "free parking" first, so the clause is load-bearing
+rather than redundant and the answer was a test. 23 mutants, 23 killed, no survivors.

@@ -38,4 +38,5 @@ Woodside Animal Farm                         yes/high         yes/high         n
 changed: 3 of 22
 
 total: 4 changed of 30
+cohort: 30/30 claims, pushchairSuitability 8/8, familyFacilities.freeParking 22/22, no duplicate keys, 26 unchanged in value and confidence
 RESULT: matches the intended cohort exactly
