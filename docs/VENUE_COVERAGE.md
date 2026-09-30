@@ -227,43 +227,92 @@ cut short. Those writes are inside the measured spans above (25.17 s max crawl s
 which is the evidence the 5 s margin rests on. Bounding them would mean a timeout on the Supabase client,
 which is wider than this change.
 
-## The controlled cohort (proposed, not yet run)
+## The controlled cohort (frozen, not yet run)
 
-20 venues, selected from coverage gaps by query alone. No website was inspected before selection, and
-the tie-break inside each stratum is `md5(venue_id)` so the pick cannot be steered towards venues whose
-pages are already known. At most three venues per category.
+18 venues, selected from coverage gaps by query alone. No website was inspected before selection, and
+the tie-break inside every group is `md5(venue_id)`, so the pick cannot be steered towards venues whose
+pages are already known.
 
-| Stratum | n | What it tests |
-| --- | --- | --- |
-| A — pages read, no facts served | 7 | Were the wrong pages being read? |
-| B — few usable pages | 7 | Does absorbing failures find more? |
-| C — 4+ pages but 1 field served | 4 | Was the budget spent on generic visit pages? |
-| D — nothing usable | 2 | Control: Cloudflare-blocked sites should not improve |
+### A correction: the first cohort's category cap did not exist
 
-| Stratum | Venue | Category | Fields served | Usable pages |
-| --- | --- | --- | --- | --- |
-| A | The Courtauld Gallery | museum | 0 | 5 |
-| A | Wimbledon Lawn Tennis Museum | museum | 0 | 6 |
-| A | Burgh House | museum | 0 | 5 |
-| A | Crossrail Place Roof Garden | park | 0 | 5 |
-| A | The Regent's Park | park | 0 | 5 |
-| A | The Rookery | park | 0 | 3 |
-| A | London Cable Car | attraction | 0 | 2 |
-| B | Belmont Children's Farm | farm | 1 | 3 |
-| B | Hyde Park Corner | park | 1 | 3 |
-| B | Heartwood Forest | park | 1 | 1 |
-| B | Streatham Common | park | 2 | 3 |
-| B | Paradox Museum London | museum | 1 | 1 |
-| B | Babylon Park London | soft_play | 2 | 1 |
-| B | Flip Out Brent Cross | soft_play | 2 | 2 |
-| C | the Design Museum | museum | 1 | 5 |
-| C | Diana Princess of Wales Memorial Playground | park | 1 | 5 |
-| C | Ashburton Park | park | 1 | 4 |
-| C | Hampstead Heath | park | 1 | 4 |
-| D | Churchill War Rooms | attraction | 0 | 0 |
-| D | National Portrait Gallery | museum | 0 | 0 |
+The first version of this section claimed "at most three venues per category". It was not true. The SQL
+ranked with
 
-Selection query, run read-only against production:
+```sql
+row_number() over (partition by stratum, category ...)
+```
+
+which caps three per category **per stratum**, not three per category. Run against production it gave
+park 9, museum 6, attraction 2, soft_play 2, farm 1 — 15 of 20 venues from two categories, with
+**activity and zoo contributing nothing at all**. Since the cohort exists to test whether the discovery
+change generalises across site structures, that was materially less diverse than the document claimed.
+Found in review, confirmed by re-running the documented query.
+
+### What changed
+
+- A genuine **global** cap of three per category, enforced once across the whole cohort.
+- Within a category, a **round-robin across strata**: each category offers its best candidate from each
+  stratum before any category takes a second from the same stratum, so a category's slots land in
+  different strata wherever it has them.
+- The two blocked controls are chosen first and by the same rule as before, so they cannot be crowded
+  out; the category they sit in then has one slot fewer.
+- A/B/C candidates are restricted to `fields_served <= 2`. Without it a well-served venue wins a
+  category's C slot — the first run of the corrected query put Horniman Butterfly House, which already
+  serves 7 of the 10 fields, into the zoo slot. The cohort is meant to be coverage gaps.
+
+A first attempt at the fix is worth recording because it failed differently: ordering the round-robin
+with the D stratum first gave **every** category its blocked venue, spending 7 of 21 slots on controls
+that by definition cannot improve. Exactly two controls is the design.
+
+### Composition
+
+| Category | Venues | A | B | C | D |
+| --- | --- | --- | --- | --- | --- |
+| activity | 3 | 2 | 0 | 1 | 0 |
+| attraction | 3 | 2 | 0 | 0 | 1 |
+| farm | 2 | 0 | 1 | 1 | 0 |
+| museum | 3 | 1 | 1 | 0 | 1 |
+| park | 3 | 1 | 1 | 1 | 0 |
+| soft_play | 2 | 0 | 2 | 0 | 0 |
+| zoo | 2 | 2 | 0 | 0 | 0 |
+| **total** | **18** | **8** | **5** | **3** | **2** |
+
+All seven catalogue categories are represented, none with more than three. The strata are less even than
+the original 7/7/4/2 because the category cap binds first; the parks and museums that used to fill A and
+B now hold three slots between them rather than fifteen.
+
+| Stratum | What it tests |
+| --- | --- |
+| A — pages read, no facts served | Were the wrong pages being read? |
+| B — few usable pages | Does absorbing failures find more? |
+| C — 4+ pages, 1–2 fields served | Was the budget spent on generic visit pages? |
+| D — nothing usable | Control: Cloudflare-blocked sites should not improve |
+
+### The frozen 18
+
+| Stratum | Venue | Category | Fields | Usable pages | `familypilot_place_id` |
+| --- | --- | --- | --- | --- | --- |
+| A | Rowans Tenpin Bowl | activity | 0 | 1 | `fp-google-ChIJ4ytTKIUbdkgRWA5R15k-IiQ` |
+| A | Hyde Park Winter Wonderland | activity | 0 | 5 | `fp-google-ChIJT8Zf9BwFdkgRK-CapYKxUBQ` |
+| A | London Cable Car | attraction | 0 | 2 | `fp-google-ChIJzctoGW2p2EcRPZRecMnPjCM` |
+| A | The Graffiti Tunnel | attraction | 0 | 2 | `fp-google-ChIJkSkaX7gEdkgRXGkVq9DzCcI` |
+| A | The Courtauld Gallery | museum | 0 | 5 | `fp-google-ChIJJUQ-d8oEdkgR-JVIDfRa6aY` |
+| A | Crossrail Place Roof Garden | park | 0 | 5 | `fp-google-ChIJEzFv5rACdkgRLA2fgj3u0ZY` |
+| A | Hanwell Zoo | zoo | 0 | 5 | `fp-google-ChIJHQ0TmmENdkgRStqMV2LSW5M` |
+| A | Golders Hill Park Zoo | zoo | 0 | 3 | `fp-google-ChIJv9tbXcsRdkgRdSU67tQcC2w` |
+| B | Belmont Children's Farm | farm | 1 | 3 | `fp-google-ChIJ_zIJCh8XdkgRnCvSmVMa1iY` |
+| B | Paradox Museum London | museum | 1 | 1 | `fp-google-ChIJQzfybmYFdkgR1tFou0zyzYQ` |
+| B | Hyde Park Corner | park | 1 | 3 | `fp-google-ChIJl9GLq5sFdkgRprpfoNR3t3Q` |
+| B | Babylon Park London | soft_play | 2 | 1 | `fp-google-ChIJ7_PV980bdkgROekbwOVWVfo` |
+| B | Flip Out Brent Cross | soft_play | 2 | 2 | `fp-google-ChIJb5wm6eQQdkgR-qbm_aXw0xw` |
+| C | Thorpe Park | activity | 2 | 4 | `fp-google-ChIJYQVF6Hh3dkgRKW4X8lXi-HI` |
+| C | Mudchute Park and Farm | farm | 2 | 5 | `fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI` |
+| C | Diana Princess of Wales Memorial Playground | park | 1 | 5 | `fp-google-ChIJ_X4Ce_0PdkgREqwQu2aBoOY` |
+| D | Churchill War Rooms | attraction | 0 | 0 | `fp-google-ChIJq4lX1doEdkgR5JXPstgQjc0` |
+| D | National Portrait Gallery | museum | 0 | 0 | `fp-google-ChIJeclqF84EdkgRYkL4mtJ7rLM` |
+
+These 18 IDs are the cohort. The query below produced them and is kept for audit, but the run uses the
+frozen list: a later claim or crawl would otherwise change the strata under it and quietly reselect.
 
 ```sql
 with core_fields(field_key) as (values
@@ -281,40 +330,52 @@ served as (
 ),
 crawl as (
   select familypilot_place_id vid,
-         count(distinct source_url) filter (where fetch_status in ('ok','fetched_truncated')) usable_urls,
-         count(distinct source_url) tried_urls,
-         count(*) filter (where fetch_status = 'blocked') blocked_rows
+         count(distinct source_url) filter (where fetch_status in ('ok','fetched_truncated')) usable_urls
   from venue_source_evidence group by 1
 ),
 pool as (
   select p.familypilot_place_id vid, p.name, p.category,
          coalesce(s.served_fields,0) fields_served,
          coalesce(cr.usable_urls,0) usable_urls,
-         case
-           when coalesce(cr.usable_urls,0) = 0 then 'D_nothing_usable'
-           when coalesce(s.served_fields,0) = 0 then 'A_pages_no_facts'
-           when coalesce(cr.usable_urls,0) <= 3 then 'B_few_pages'
-           else 'C_budget_on_generic'
-         end as stratum
+         case when coalesce(cr.usable_urls,0) = 0 then 'D_nothing_usable'
+              when coalesce(s.served_fields,0) = 0 then 'A_pages_no_facts'
+              when coalesce(cr.usable_urls,0) <= 3 then 'B_few_pages'
+              else 'C_budget_on_generic' end as stratum
   from place_records p
   left join served s on s.vid = p.familypilot_place_id
   left join crawl cr on cr.vid = p.familypilot_place_id
   where p.website is not null
 ),
+-- Exactly two blocked controls, picked first so the category cap cannot crowd them out.
+controls as (
+  select * from (
+    select *, row_number() over (order by fields_served asc, md5(vid)) rn
+    from pool where stratum = 'D_nothing_usable'
+  ) d where rn <= 2
+),
+-- Genuine coverage gaps only.
+gaps as (
+  select * from pool where stratum <> 'D_nothing_usable' and fields_served <= 2
+),
 ranked as (
   select *,
-    row_number() over (partition by stratum order by fields_served asc, md5(vid)) rn_stratum,
-    row_number() over (partition by stratum, category order by fields_served asc, md5(vid)) rn_cat
-  from pool
+    row_number() over (partition by category, stratum order by fields_served asc, md5(vid)) as k,
+    case stratum when 'A_pages_no_facts' then 1 when 'B_few_pages' then 2 else 3 end as sp
+  from gaps
+),
+-- Three per category ACROSS the cohort, less whatever the controls already hold there.
+quota as (
+  select r.*, 3 - coalesce((select count(*) from controls c where c.category = r.category), 0) as slots
+  from ranked r
+),
+picked as (
+  select *, row_number() over (partition by category order by k, sp, fields_served, md5(vid)) as rn_cat
+  from quota
 )
 select stratum, vid, name, category, fields_served, usable_urls
-from ranked
-where rn_cat <= 3
-  and ((stratum = 'A_pages_no_facts'    and rn_stratum <= 11)
-    or (stratum = 'B_few_pages'         and rn_stratum <= 7)
-    or (stratum = 'C_budget_on_generic' and rn_stratum <= 4)
-    or (stratum = 'D_nothing_usable'    and rn_stratum <= 2))
-order by stratum, fields_served, md5(vid);
+from picked where rn_cat <= slots
+union all
+select stratum, vid, name, category, fields_served, usable_urls from controls;
 ```
 
 ### What the cohort run will report
@@ -327,4 +388,4 @@ plus which candidate type won each slot (real link or speculative guess), the st
 elapsed crawl time, and cohort before → after counts for the ten fields in the table at the top —
 gross gains and any disputes separately.
 
-Nothing is requeued until that plan is approved.
+Nothing is requeued until the frozen cohort above is approved.
