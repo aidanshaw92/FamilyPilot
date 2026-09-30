@@ -114,6 +114,72 @@ describe('freeParking: conditional entitlements fail closed (production wording)
   });
 });
 
+/**
+ * The first version of the conditional guard keyed on PROXIMITY to words like weekends, members and
+ * disabled, rather than on those words actually restricting the entitlement. Review caught it with
+ * these three sentences, each of which the guard suppressed even though all three grant free parking
+ * to everyone. Failing closed in this direction deletes true facts, which is its own kind of wrong.
+ *
+ * The rules now require a restricting construction: "on <days>", "for <class> holders", an explicit
+ * "only", a duration allowance, or a package stated to include the parking.
+ */
+describe('freeParking: universal offers are not mistaken for conditions', () => {
+  const extract = (text: string) =>
+    extractEvidenceFromText(text, {
+      url: 'https://venue.example/visit',
+      sourceType: 'official_website',
+      retrievedAt: '2026-09-30T18:00:00.000Z',
+    }).find((f: { field: string }) => f.field === 'freeParking');
+
+  it('keeps yes when named days widen the offer instead of limiting it', () => {
+    // "including weekends" is the opposite of "on weekends", and proximity cannot tell them apart.
+    expect(
+      extract('Free parking is available every day, including weekends and bank holidays.')?.value,
+    ).toBe('yes');
+  });
+
+  it('keeps yes when an inclusive day word sits right next to the phrase', () => {
+    // The sentence above has 35 characters between "free parking" and "weekends", so it would also
+    // survive a guard that merely narrowed its proximity window -- it does not prove the "on"
+    // requirement is doing the work. Mutation testing caught that. Twelve characters here, so only
+    // requiring the restricting preposition can keep this claim.
+    expect(extract('Free parking, including weekends and bank holidays.')?.value).toBe('yes');
+  });
+
+  it('keeps yes when a package is mentioned but is not what grants the parking', () => {
+    // Likewise for the package rule: the package must be stated to INCLUDE the parking. A venue
+    // that sells short breaks and also happens to offer free parking to everyone keeps its claim.
+    expect(
+      extract('Our short break packages are popular, and free parking is available to all visitors.')
+        ?.value,
+    ).toBe('yes');
+  });
+
+  it('keeps yes when a group word appears without restricting anything', () => {
+    expect(extract('Free parking is available for members and non-members alike.')?.value).toBe('yes');
+  });
+
+  it('keeps yes when "disabled" describes who is included, not who is eligible', () => {
+    expect(extract('Free parking for all, including disabled visitors.')?.value).toBe('yes');
+  });
+
+  it('keeps yes when Blue Badge holders are named as one included group among others', () => {
+    expect(
+      extract('We offer free parking to all visitors, including Blue Badge holders and families.')
+        ?.value,
+    ).toBe('yes');
+  });
+
+  it('still suppresses the same words when they do restrict the offer', () => {
+    // The mirror image of the four cases above, so the tightening cannot be satisfied by a guard
+    // that simply never fires.
+    expect(extract('Free parking on bank holidays.')).toBeUndefined();
+    expect(extract('Free parking is available for permit holders only.')).toBeUndefined();
+    expect(extract('Free parking for Blue Badge holders.')).toBeUndefined();
+    expect(extract('Our short break packages include free parking.')).toBeUndefined();
+  });
+});
+
 describe('freeParking: unconditional statements still publish yes (production wording)', () => {
   const extract = (text: string) =>
     extractEvidenceFromText(text, {

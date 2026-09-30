@@ -269,24 +269,43 @@ function hasRestrictedParking(sentence) {
  */
 function hasConditionalFreeParking(sentence) {
   return (
-    // Accessibility-only entitlement.
-    /\bfree\s+parking\b[^.!?]{0,40}\bfor\b[^.!?]{0,20}\b(?:blue\s+badge|disabled)\b/i.test(sentence) ||
-    // Time-limited: a duration allowance, or named days only.
-    /\b\d+\s*(?:hours?|hrs?|minutes?|mins?)\b[^.!?]{0,20}\bfree\s+parking\b/i.test(sentence) ||
-    /\bfree\s+parking\b[^.!?]{0,20}\bfor\s+\d+\s*(?:hours?|hrs?|minutes?|mins?)\b/i.test(sentence) ||
-    /\bfirst\s+\d+\s*(?:hours?|hrs?|minutes?|mins?)\b[^.!?]{0,40}\bfree\b/i.test(sentence) ||
-    /\bfree\s+parking\b[^.!?]{0,60}\b(?:weekends?|bank\s+holidays?|sundays?|saturdays?|off.?peak)\b/i.test(
+    // ---- Restricted to an entitlement class -------------------------------------------------
+    // Proved by "holders", which names a class of permit rather than a kind of visitor. Requires
+    // "for <class> holders", so "for all, including disabled visitors" is untouched: there the word
+    // after "for" is "all", and "disabled" qualifies who is included, not who is eligible.
+    /\bfree\s+parking\b[^.!?]{0,30}\bfor\s+(?:blue\s+badge|disabled)\s+(?:badge\s+)?holders?\b/i.test(
       sentence,
     ) ||
-    // Bundled into a booking, package or stay.
-    /\b(?:short\s+break|package|overnight\s+stay|when\s+you\s+book|pre.?book|with\s+(?:a|your)\s+(?:booking|ticket|stay))\b[^.!?]{0,120}\bfree\s+parking\b/i.test(
+    // ---- Restricted by an explicit "only" ---------------------------------------------------
+    // "only" is the restriction, stated by the venue. "for members and non-members alike" has no
+    // "only" and is therefore not a restriction, whichever category words it happens to contain.
+    /\bfree\s+parking\b[^.!?]{0,60}\bonly\b/i.test(sentence) ||
+    /\b(?:blue\s+badge|disabled|members?|residents?|season\s+ticket|permit)\s*(?:holders?)?\s+only\b[^.!?]{0,60}\bfree\s+parking\b/i.test(
       sentence,
     ) ||
-    /\bfree\s+parking\b[^.!?]{0,120}\b(?:short\s+break|package|overnight\s+stay|when\s+you\s+book)\b/i.test(
+    // ---- Restricted by a duration allowance -------------------------------------------------
+    // A quantity of free time IS the condition, so a bare digit-plus-unit adjacent to the phrase is
+    // enough. No sentence offering parking free of charge outright states an hour count.
+    /\b\d+\s*(?:hours?|hrs?|minutes?|mins?)\s*(?:of\s+)?free\s+parking\b/i.test(sentence) ||
+    /\bfree\s+parking\b[^.!?]{0,20}\bfor\s+(?:the\s+first\s+)?\d+\s*(?:hours?|hrs?|minutes?|mins?)\b/i.test(
       sentence,
     ) ||
-    // Restricted to a named group.
-    /\bfree\s+parking\b[^.!?]{0,40}\bfor\b[^.!?]{0,20}\b(?:residents|members|season\s+ticket)\b/i.test(
+    /\bfirst\s+\d+\s*(?:hours?|hrs?|minutes?|mins?)\b[^.!?]{0,30}\bfree\b/i.test(sentence) ||
+    // ---- Restricted to named days -----------------------------------------------------------
+    // Requires the restricting preposition "on <days>", not a day word in the vicinity. That is the
+    // difference between "free parking ON weekends" and "free parking every day, INCLUDING
+    // weekends" -- the first limits the offer, the second widens it, and proximity cannot tell them
+    // apart. Flip Out Canary Wharf's live sentence is the first shape.
+    /\bfree\s+parking\b[^.!?]{0,30}\bon\s+(?:weekends?|bank\s+holidays?|sundays?|saturdays?|off.?peak)\b/i.test(
+      sentence,
+    ) ||
+    // ---- Bundled into a package or booking --------------------------------------------------
+    // The package must be stated to CONTAIN the parking ("short break includes ... free parking"),
+    // which is Thorpe Park's live wording, or the parking must be conditioned on booking.
+    /\b(?:short\s+break|package|overnight\s+stay|room\s+rate)\b[^.!?]{0,140}\binclud(?:e|es|ed|ing)\b[^.!?]{0,180}\bfree\s+parking\b/i.test(
+      sentence,
+    ) ||
+    /\bfree\s+parking\b[^.!?]{0,60}\b(?:with\s+(?:a|your)\s+(?:booking|ticket|stay)|when\s+you\s+book|pre.?booked\s+only)\b/i.test(
       sentence,
     )
   );

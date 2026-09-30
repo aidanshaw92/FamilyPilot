@@ -96,6 +96,37 @@ visitor-scoped: Hatfield's free parking is stated for The Stable Yard, and Syden
 would be invented rather than derived, which the brief rules out, and Sydenham's is arguably a
 subject-scope question (the text names a different wood) that belongs to a fenced-off workstream.
 
+### Tightened after review: a condition must restrict, not merely co-occur
+
+The first version of these rules keyed on **proximity** to words like weekends, members, residents and
+disabled. Review found three unconditional sentences it wrongly suppressed, and all three were
+confirmed against the code before anything was changed:
+
+| Sentence | First version | Now |
+| --- | --- | --- |
+| "Free parking is available every day, including weekends and bank holidays." | suppressed | **yes** |
+| "Free parking is available for members and non-members alike." | suppressed | **yes** |
+| "Free parking for all, including disabled visitors." | suppressed | **yes** |
+
+That is failing closed in the wrong direction: deleting true facts on the strength of a nearby
+category word. Each rule now requires a construction that actually restricts the entitlement:
+
+| Condition | Requires | Not merely |
+| --- | --- | --- |
+| named days | `on <days>` | a day word nearby |
+| entitlement class | `for <class> holders` | the word "disabled" or "member" after "for" |
+| restricted group | an explicit `only` | a group word nearby |
+| duration | a digit-plus-unit adjacent to the phrase | any number in the sentence |
+| package | the package stated to `include` the parking | a package word nearby |
+
+"including weekends" widens an offer; "on weekends" limits it. Proximity cannot tell those apart, and
+that distinction is the whole fix.
+
+Probed beyond the three counterexamples with 18 further sentences — 8 that must keep their claim and
+10 that must lose it — including the deliberately awkward "We offer free parking to all visitors,
+including Blue Badge holders and families.", which names an entitlement class inclusively and keeps
+its `yes`. All 18 behave correctly.
+
 ### What was deliberately not used
 
 `hasRestrictedParking`, the guard `parking` already uses, was left out of the `freeParking` path even
@@ -109,8 +140,20 @@ a test for it.
 
 ## Offline replay of every affected active claim
 
-Every active claim in both fields, re-extracted from its own stored source text through the corrected
-code. Before is the value production is serving; after is what the corrected code produces.
+Reproducible from the repository rather than only reported:
+
+```
+node scripts/audit-live-claim-replay.mjs          # the table below
+node scripts/audit-live-claim-replay.mjs --json   # machine-readable
+```
+
+The fixture `replay-input.json` holds all 30 active claims as production served them on 2026-09-30,
+each with the stored source text behind it. The script re-derives the before/after table from the
+working tree and **exits non-zero if the changed set is anything other than the four intended
+claims**, so it is a regression check and not just a report. Its output is committed as
+`replay-output.txt`.
+
+Before is the value production is serving; after is what the corrected code produces.
 
 | Field | Active claims | Changed | Unchanged |
 | --- | --- | --- | --- |
@@ -144,15 +187,23 @@ deciding one, but the replay is not a full pipeline simulation and is not presen
 
 ## Verification
 
-- 1232 tests pass across 66 files; `tsc --noEmit` clean. 26 tests are new.
+- 1239 tests pass across 66 files; `tsc --noEmit` clean. 33 tests are new.
 - Every test sentence is production wording. The two that are not whole sentences are the two halves
   of Flip Out's own sentence, used because it carries both a duration limit and a named-days limit, so
   neither clause is independently proven by the whole sentence.
-- **14 mutants, 14 killed.** Each reverts one part of the fix: both interrogative guards, the pram
+- **19 mutants, 19 killed.** Each reverts one part of the fix: both interrogative guards, the pram
   denial, the plural-aware denial, the leading-"No" mask, the mask itself, positives reading unmasked
-  text on three separate paths, the conditional guard, and four of its clauses individually.
-- Two mutants survived the first round and were answered by changing code, not by adding assertions:
-  a redundant reversed denial pattern and the `hasRestrictedParking` reuse were both deleted.
+  text on three separate paths, the sentence-length filter, the conditional guard as a whole, five of
+  its clauses individually, and three mutants that loosen the tightening back toward proximity.
+- Survivors were answered by changing code or fixing a weak test, never by adding an assertion to a
+  passing one. A redundant reversed denial pattern and the `hasRestrictedParking` reuse were deleted.
+- **Two of the loosening mutants survived the first round, and that was the most useful result of the
+  pass.** `M17` reverted the named-days rule to bare proximity and no test noticed, because the
+  counterexample from review has 35 characters between "free parking" and "weekends" — wider than the
+  rule's own 30-character window. The test was passing on window width, not on the `on` requirement
+  it was meant to prove. Two sharper counterexamples now pin it: "Free parking, including weekends and
+  bank holidays." at twelve characters, and "Our short break packages are popular, and free parking is
+  available to all visitors." for the package rule.
 - One of my own tests passed for the wrong reason and was rewritten: it asserted that Paradox's Zero
   Gravity sentence yields nothing, which is true only because that sentence never names a pushchair,
   so it proved nothing about negation. It is now two tests, one stating that gate explicitly and one
