@@ -2110,6 +2110,8 @@ describe('FIXED 19: evidence-bearing pages, and misses proved by stored content'
       for (const prose of [
         'The cafe is nearby.',
         'The cafe is across the road from the venue.',
+        // The exact sentence named in review, kept verbatim rather than as two halves.
+        'The cafe is nearby, across the road from the venue.',
         'The cafe is five minutes away.',
         'The cafe is run by an independent operator in the neighbouring building.',
       ]) {
