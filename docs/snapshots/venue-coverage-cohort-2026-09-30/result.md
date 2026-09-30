@@ -13,7 +13,7 @@ Not one of the 18 venues gained a field. Not one lost a field.
 | | Before | After |
 | --- | --- | --- |
 | Cohort core fields served (of 180 possible) | 12 | **12** |
-| Venues serving nothing | 11 | **11** |
+| Venues serving nothing | 10 | **10** |
 | Cohort active claims | 12 | 12 |
 | Cohort disputed | 1 | 1 |
 

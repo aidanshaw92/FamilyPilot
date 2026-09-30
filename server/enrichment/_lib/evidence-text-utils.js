@@ -53,8 +53,30 @@ function cleanEvidenceSnippet(text) {
   return cleaned.slice(0, 400);
 }
 
+/**
+ * Is this sentence a question rather than a statement of fact?
+ *
+ * FAQ pages concatenate their question headings into the body text, so "Are prams allowed?" arrives
+ * looking exactly like prose. Paradox Museum London published `pushchairSuitability = good` because
+ * that heading satisfied a welcome pattern on the substring "prams allowed", while the two explicit
+ * denials further up the same page ("the space is not accessible for prams/strollers") matched nothing.
+ * A question is evidence of neither availability nor absence.
+ *
+ * One definition, shared by the field-pattern extractor and the pushchair classifier. The extractor
+ * had this rule; the pushchair classifier did not, which is how the same page produced opposite
+ * readings of the same sentence.
+ */
+function isInterrogativeSentence(sentence) {
+  const value = String(sentence ?? '').trim();
+  return (
+    /\?$/.test(value) ||
+    (/^(?:are|is|do|does|can|where|what|when|how|will|have)\b/i.test(value) && !/[.!]\s*$/.test(value))
+  );
+}
+
 module.exports = {
   cleanEvidenceSnippet,
   stripNavFragmentPrefixes,
+  isInterrogativeSentence,
   NAV_FRAGMENT_PATTERNS,
 };

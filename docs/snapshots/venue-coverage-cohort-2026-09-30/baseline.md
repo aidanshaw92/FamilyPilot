@@ -48,7 +48,7 @@ Served = distinct core fields served to parents, of the ten. Eligible scope = ev
 
 ## What stands out before the run
 
-**11 of 18 venues serve nothing at all**, and the cohort holds 12 served core fields across 18 venues
+**10 of 18 venues serve nothing at all**, and the cohort holds 12 served core fields across 18 venues
 out of a possible 180. That is the number the run has to move.
 
 **109 of 141 evidence rows carry a null `subject_scope`** — rows stored before the provenance column
@@ -62,3 +62,12 @@ each have 5 usable pages and serve nothing**, so more pages alone will not help 
 zero, the problem is extraction, not discovery.
 
 The two controls have 0 usable URLs and 5 blocked rows each. They should stay at zero.
+
+## Correction, 2026-09-30 18:21 UTC
+
+This file first said **11 of 18 venues serve nothing**. That was my arithmetic error, not a data
+change. Counting the Served column of the table above gives ten zero rows (Winter Wonderland, Rowans,
+Churchill, Cable Car, Graffiti Tunnel, National Portrait Gallery, Courtauld, Crossrail, Golders Hill,
+Hanwell) and eight non-zero rows summing to 12. The corrected figure is **10**, so the second run's
+prediction is **10 → 8**, not 11 → 9. The wrong figure also reached `result.md` (corrected there) and
+the body of PR #114, which is now immutable merged history; this note is the record.

@@ -1,4 +1,4 @@
-const { cleanEvidenceSnippet } = require('./evidence-text-utils');
+const { cleanEvidenceSnippet, isInterrogativeSentence } = require('./evidence-text-utils');
 const { extractPushchairEvidence } = require('./pushchair-evidence');
 const { extractEnvironmentEvidence } = require('./environment-evidence');
 const { isEligibleScope } = require('./source-identity');
@@ -246,6 +246,108 @@ function hasRestrictedParking(sentence) {
   );
 }
 
+/**
+ * Is this "free parking" wording an entitlement that only some visitors, or only some times, get?
+ *
+ * A parent-facing "Free parking" badge is a promise to a family arriving by car on an ordinary day. It
+ * must not be produced by a conditional entitlement. Every pattern below is taken from a sentence that
+ * was live in production behind an active `freeParking = yes` claim:
+ *
+ *   package/booking   Thorpe Park            "Every Thorpe Park short break includes: An overnight stay
+ *                                             ... Free parking Wi-Fi ... Free parking (worth £12)"
+ *                                             -- while its own directions page prices day parking at £12
+ *   time-limited      Flip Out Canary Wharf  "You can also enjoy 3 Hours FREE parking on Weekends &
+ *                                             Bank Holidays!"
+ *   accessibility     Stanborough Park       "Charges start at £1.50, with reduced rates for residents
+ *                                             and free parking for Blue Badge holders"
+ *   accessibility     Whitechapel Gallery    "Free parking for Blue Badge holders is available at the
+ *                                             top of Osborn Street" (already `no` from other wording,
+ *                                             so it stands as a counterexample rather than a fix)
+ *
+ * The condition is not modelled anywhere yet, so a conditional entitlement fails closed to unknown
+ * rather than being flattened into yes or asserted as no.
+ */
+/**
+ * The things "only" must bind to for it to restrict an ENTITLEMENT rather than a place.
+ *
+ * "Free parking is only available in the main car park" restricts WHERE the free parking is, not WHO
+ * gets it or WHEN. That is the same semantic shape the product already accepts elsewhere: Headstone
+ * Manor keeps its `yes` from "free parking to the rear of the building". A bare "only" anywhere after
+ * the phrase cannot tell a location apart from a condition, so "only" is required to attach to one of
+ * these instead: a class of visitor, a time, or a booking.
+ *
+ * A positive vocabulary rather than a blacklist of places, so an unlisted location ("only in the
+ * lower field", "only at the north gate") keeps its claim by default instead of needing to be
+ * enumerated.
+ */
+const ONLY_RESTRICTOR =
+  '(?:members?|residents?|permit\\s+holders?|blue\\s+badge(?:\\s+(?:badge\\s+)?holders?)?' +
+  '|disabled(?:\\s+(?:badge\\s+)?holders?|\\s+visitors?|\\s+drivers?)?' +
+  '|season\\s+ticket(?:\\s+holders?)?|ticket\\s+holders?|staff|hotel\\s+guests?|guests?' +
+  '|pre.?booked(?:\\s+\\w+)?|customers?|patrons?' +
+  '|weekends?|weekdays?|bank\\s+holidays?|sundays?|saturdays?|off.?peak' +
+  '|overnight\\s+stays?|short\\s+breaks?|packages?|bookings?' +
+  '|\\d+\\s*(?:hours?|hrs?|minutes?|mins?))';
+
+/** "... to members only", "... on weekends only", "... with overnight stays only". */
+const ONLY_AFTER_RESTRICTOR = new RegExp(
+  `\\bfree\\s+parking\\b[^.!?]{0,40}\\b(?:to|for|with|on|during)\\s+${ONLY_RESTRICTOR}\\b[^.!?]{0,20}\\bonly\\b`,
+  'i',
+);
+
+/** "... only available to members", "... only for permit holders". */
+const ONLY_BEFORE_RESTRICTOR = new RegExp(
+  `\\bfree\\s+parking\\b[^.!?]{0,40}\\bonly\\b[^.!?]{0,30}\\b(?:to|for|with|on|during)\\s+${ONLY_RESTRICTOR}\\b`,
+  'i',
+);
+
+function hasConditionalFreeParking(sentence) {
+  return (
+    // ---- Restricted to an entitlement class -------------------------------------------------
+    // Proved by "holders", which names a class of permit rather than a kind of visitor. Requires
+    // "for <class> holders", so "for all, including disabled visitors" is untouched: there the word
+    // after "for" is "all", and "disabled" qualifies who is included, not who is eligible.
+    /\bfree\s+parking\b[^.!?]{0,30}\bfor\s+(?:blue\s+badge|disabled)\s+(?:badge\s+)?holders?\b/i.test(
+      sentence,
+    ) ||
+    // ---- Restricted by an explicit "only" ---------------------------------------------------
+    // "only" must bind to a visitor class, a time or a booking -- see ONLY_RESTRICTOR. An earlier
+    // version accepted "only" anywhere within 60 characters of the phrase, which suppressed four
+    // location restrictions ("only available in the main car park", "available only in the rear car
+    // park"), and a location says nothing about who is entitled to park free.
+    ONLY_AFTER_RESTRICTOR.test(sentence) ||
+    ONLY_BEFORE_RESTRICTOR.test(sentence) ||
+    /\b(?:blue\s+badge|disabled|members?|residents?|season\s+ticket|permit)\s*(?:holders?)?\s+only\b[^.!?]{0,60}\bfree\s+parking\b/i.test(
+      sentence,
+    ) ||
+    // ---- Restricted by a duration allowance -------------------------------------------------
+    // A quantity of free time IS the condition, so a bare digit-plus-unit adjacent to the phrase is
+    // enough. No sentence offering parking free of charge outright states an hour count.
+    /\b\d+\s*(?:hours?|hrs?|minutes?|mins?)\s*(?:of\s+)?free\s+parking\b/i.test(sentence) ||
+    /\bfree\s+parking\b[^.!?]{0,20}\bfor\s+(?:the\s+first\s+)?\d+\s*(?:hours?|hrs?|minutes?|mins?)\b/i.test(
+      sentence,
+    ) ||
+    /\bfirst\s+\d+\s*(?:hours?|hrs?|minutes?|mins?)\b[^.!?]{0,30}\bfree\b/i.test(sentence) ||
+    // ---- Restricted to named days -----------------------------------------------------------
+    // Requires the restricting preposition "on <days>", not a day word in the vicinity. That is the
+    // difference between "free parking ON weekends" and "free parking every day, INCLUDING
+    // weekends" -- the first limits the offer, the second widens it, and proximity cannot tell them
+    // apart. Flip Out Canary Wharf's live sentence is the first shape.
+    /\bfree\s+parking\b[^.!?]{0,30}\bon\s+(?:weekends?|bank\s+holidays?|sundays?|saturdays?|off.?peak)\b/i.test(
+      sentence,
+    ) ||
+    // ---- Bundled into a package or booking --------------------------------------------------
+    // The package must be stated to CONTAIN the parking ("short break includes ... free parking"),
+    // which is Thorpe Park's live wording, or the parking must be conditioned on booking.
+    /\b(?:short\s+break|package|overnight\s+stay|room\s+rate)\b[^.!?]{0,140}\binclud(?:e|es|ed|ing)\b[^.!?]{0,180}\bfree\s+parking\b/i.test(
+      sentence,
+    ) ||
+    /\bfree\s+parking\b[^.!?]{0,60}\b(?:with\s+(?:a|your)\s+(?:booking|ticket|stay)|when\s+you\s+book|pre.?booked\s+only)\b/i.test(
+      sentence,
+    )
+  );
+}
+
 const EVIDENCE_ANCHORS = {
   toilets: /\b(?:public\s+)?toilets?|restrooms?\b/i,
   babyChanging: /\b(?:baby|nappy)\s+chang(?:e|ing)|changing\s+table\s+for\s+babies|parent\s+and\s+baby\s+facilit/i,
@@ -267,8 +369,7 @@ function extractEvidenceWindow(sentence, fieldId) {
 }
 
 function isQuestionOnlyEvidence(sentence) {
-  const value = sentence.trim();
-  return /\?$/.test(value) || /^(?:are|is|do|does|can|where|what|when|how|will|have)\b/i.test(value) && !/[.!]\s*$/.test(value);
+  return isInterrogativeSentence(sentence);
 }
 
 function isSuspiciousEmbeddedContent(sentence) {
@@ -314,6 +415,17 @@ function matchField(sentence, patterns, fieldId) {
     if (/\b(?:not|without|unavailable|closed|broken|planned|proposed|soon|will|temporarily)\b|\bno\s+(?!charge|fee)/i.test(sentence)) continue;
     if (fieldId === 'parking' && hasParkingNegation(sentence)) continue;
     if (fieldId === 'parking' && !isExplicitParkingStatement(sentence)) continue;
+    // A conditional entitlement is not a general "Free parking" promise to a family arriving by car.
+    //
+    // Deliberately NOT also `hasRestrictedParking` here, though that is the guard `parking` uses.
+    // It matches bare "disabled parking" wording, so on a single sentence like "All car parking is
+    // free. There are designated disabled parking bays." -- Woodside Animal Farm's real text, one
+    // period away from being one sentence -- it would suppress a legitimate unconditional yes.
+    // `hasConditionalFreeParking` already covers every conditional shape found in production,
+    // including both Blue Badge ones, so the broader guard would only cost true claims.
+    if (fieldId === 'freeParking' && hasConditionalFreeParking(sentence)) {
+      continue;
+    }
     if (fieldId === 'toilets' && (hasToiletNegation(sentence) || isScopedToiletClosure(sentence))) continue;
     if (fieldId === 'babyChanging' && !isExplicitBabyChangingStatement(sentence)) continue;
     return { value: 'yes', confidence: 'high' };
