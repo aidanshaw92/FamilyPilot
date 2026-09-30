@@ -21,21 +21,59 @@ const PAGE_TYPE_PATTERNS = [
   { type: 'visitor_info', pattern: /\/visit\b|getting.?here|visitor.?information|plan.?your.?visit/i },
 ];
 
+/**
+ * The order speculative `/segment` guesses are tried in, best first.
+ *
+ * Ordered by which FIELDS a page type carries, not by how often such a page turns out to exist. The
+ * previous order was the reverse, and it is why coverage stalled: the four slots a crawl actually
+ * reached were spent on `/visit`, `/plan-your-visit`, `/visitor-information` and `/your-visit`, four
+ * pages that say much the same thing, while `/facilities` -- the page that names toilets and baby
+ * changing -- was tried on three URLs in the entire catalogue.
+ *
+ * Measured yield across 953 stored evidence rows, for the record, because it argues both ways:
+ *
+ *   /visit                208 rows, 145 usable (70%)   highest hit rate of any guess
+ *   /plan-your-visit      184 rows, 115 usable (62%)
+ *   /accessibility         50 rows,  40 usable (80%)
+ *   /parking               28 rows,  26 usable (93%)
+ *   /faq                   25 rows,  21 usable (84%)
+ *   /family                18 rows,  18 usable (100%)
+ *   /getting-here          14 rows,  13 usable (93%)
+ *   /facilities             3 rows,   2 usable          barely tried
+ *   /your-visit            69 rows,  12 usable (17%)   worst performer, previously slot 4
+ *   /visitor-information   70 rows,   7 usable (10%)   second worst, previously slot 3
+ *   /toilets, /baby-changing, /children, /kids    never tried, yield unknown
+ *
+ * So `/visit` and `/plan-your-visit` are demoted DESPITE the best hit rates: their pages are the ones
+ * already crawled, and another copy of the same generic page is not another family fact. They sit
+ * mid-list rather than last, because the attempt ceiling still reaches them on most venues. The two
+ * genuinely weak guesses, `/your-visit` and `/visitor-information`, are demoted on their own numbers.
+ *
+ * `/toilets` and `/baby-changing` are last of the topical guesses precisely because their yield is
+ * unknown; the controlled cohort measures it before they are trusted any further up.
+ */
 const PATH_PRIORITY = [
-  'visit',
-  'plan-your-visit',
-  'visitor-information',
-  'your-visit',
   'accessibility',
-  'access',
   'facilities',
+  'family',
+  'families',
   'faq',
   'faqs',
-  'getting-here',
   'parking',
-  'family',
+  'getting-here',
+  // A weaker synonym than `/accessibility`, and on some sites an unrelated page, so it follows the
+  // distinct topics rather than sitting next to the segment it duplicates.
+  'access',
+  'plan-your-visit',
+  'visit',
+  'children',
+  'kids',
   'parents',
   'admission',
+  'toilets',
+  'baby-changing',
+  'your-visit',
+  'visitor-information',
   'contact',
   'venue',
   'location',
@@ -180,7 +218,12 @@ function mergePageCandidates(homepageUrl, existingPages, html, maxPages = 5, con
     });
   }
 
-  for (const candidate of buildCommonPathCandidates(homepageUrl, 20)) {
+  /**
+   * Generate the whole priority list. It was 20 against a 17-entry list, so the cap never bit; the
+   * list is now longer than 20, and a hard 20 would silently drop its tail. Which candidates are
+   * actually FETCHED is decided by the crawl budgets in evidence-pipeline.js, where it can be seen.
+   */
+  for (const candidate of buildCommonPathCandidates(homepageUrl, PATH_PRIORITY.length)) {
     const key = candidate.url.replace(/\/$/, '');
     if (key === homepageKey) continue;
     if (discovered.some((d) => d.url.replace(/\/$/, '') === key)) continue;

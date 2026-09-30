@@ -2,6 +2,19 @@
  * Extract compact readable text from HTML for evidence research.
  */
 
+/**
+ * Anchor text and path words that mark a REAL internal link as visitor or facility information.
+ *
+ * These only rank links a venue's own homepage already publishes, so a term here costs nothing when
+ * a site does not use it -- unlike a speculative path, which spends a fetch attempt on a guess. That
+ * asymmetry is why the family-facility terms below are added here first and to the speculative list
+ * only where the corpus already shows them paying: if the homepage tells us where its baby-changing
+ * information lives, following that link beats guessing `/baby-changing` every time.
+ *
+ * `baby` alone is deliberately absent: it matches pushchair-shop and baby-class pages far more often
+ * than facility pages. Only the compound forms are trusted. `buggy` likewise appears only in the
+ * compounds that are unambiguously facility information, never on its own.
+ */
 const LINK_KEYWORDS_STRONG = [
   'plan your visit',
   'plan-your-visit',
@@ -16,15 +29,51 @@ const LINK_KEYWORDS_STRONG = [
   'faq',
   'faqs',
   'family',
+  'families',
+  'children',
+  'childrens',
+  'kids',
   'parents',
   'admission',
   'parking',
   'visit',
   'visitor',
   'plan your day',
+  'baby changing',
+  'baby-changing',
+  'changing places',
+  'toilet',
+  'toilets',
+  'pushchair',
+  'pushchairs',
+  'buggy park',
+  'buggy storage',
 ];
 
 const LINK_KEYWORDS_WEAK = ['contact', 'location', 'directions', 'opening', 'venue'];
+
+/**
+ * Strong keywords that count in ANCHOR TEXT only when that anchor is a label rather than prose.
+ *
+ * A path segment is site structure: `/families` exists because someone built a families page. The same
+ * word inside a sentence is not evidence of anything -- "We help families find jobs" is a careers
+ * link, and adding `families` to the strong list promptly selected one. So these terms score at full
+ * strength in a URL path, and in anchor text only when the anchor reads like navigation: at most four
+ * words. "Toilets and baby changing" qualifies; the careers sentence does not.
+ *
+ * `family` is included although it predates this list: it carries exactly the same hazard, and the
+ * guard can only ever remove a false positive.
+ */
+const LABEL_ONLY_ANCHOR_KEYWORDS = new Set([
+  'family', 'families', 'children', 'childrens', 'kids',
+  'baby changing', 'baby-changing', 'changing places',
+  'toilet', 'toilets', 'pushchair', 'pushchairs', 'buggy park', 'buggy storage',
+]);
+
+/** Navigation labels are short noun phrases; prose is not. */
+function isLabelLikeAnchor(anchorText) {
+  return anchorText.trim().split(/\s+/).filter(Boolean).length <= 4;
+}
 
 /** @deprecated use STRONG + WEAK lists */
 const LINK_KEYWORDS = [...LINK_KEYWORDS_STRONG, ...LINK_KEYWORDS_WEAK];
@@ -79,10 +128,15 @@ const CONTENT_KEYWORDS = [
   'step-free', 'lift', 'terrain', 'path', 'playground', 'microwave', 'shade', 'pram',
 ];
 
+/**
+ * The allow-list of segments a speculative `/segment` guess may be built from. `PATH_PRIORITY` in
+ * source-discovery.js decides their ORDER; this list decides which exist at all. Both are edited
+ * together -- a segment present in only one of them is silently never generated.
+ */
 const COMMON_PATH_SEGMENTS = [
   'visit', 'plan-your-visit', 'visitor-information', 'your-visit', 'accessibility', 'access',
-  'facilities', 'faq', 'faqs', 'getting-here', 'parking', 'family', 'parents',
-  'admission', 'contact', 'venue', 'location',
+  'facilities', 'faq', 'faqs', 'getting-here', 'parking', 'family', 'families', 'children', 'kids',
+  'parents', 'admission', 'toilets', 'baby-changing', 'contact', 'venue', 'location',
 ];
 
 function decodeHtmlEntities(text) {
@@ -218,7 +272,11 @@ function scoreLink(url, anchorText) {
     if (includesKeyword(path, kw)) {
       score += kw.includes(' ') ? 12 : 10;
       matched.push(`path:${kw}`);
-    } else if (anchor.length <= 60 && includesKeyword(anchor, kw)) {
+    } else if (
+      anchor.length <= 60
+      && includesKeyword(anchor, kw)
+      && (!LABEL_ONLY_ANCHOR_KEYWORDS.has(kw) || isLabelLikeAnchor(anchor))
+    ) {
       score += kw.includes(' ') ? 8 : 6;
       matched.push(`anchor:${kw}`);
     }

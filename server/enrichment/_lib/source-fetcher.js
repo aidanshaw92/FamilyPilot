@@ -7,6 +7,16 @@ const { assertSafeUrl } = require('./source-fetch-security');
 const { extractPageContent, isCloudflareChallenge } = require('./html-text-extractor');
 
 const FETCH_TIMEOUT_MS = Number(process.env.SOURCE_FETCH_TIMEOUT_MS || 6000);
+/**
+ * Wall clock for ONE page, redirect chain included.
+ *
+ * `FETCH_TIMEOUT_MS` bounds a single HTTP hop, and `fetchWithRedirects` restarts it on every hop, so
+ * a page behind the maximum three redirects could occupy 4 x 6s = 24s -- half the worker's 50s budget
+ * on one URL. Nothing measured comes close (per-page max across 208 crawl rounds: 6.29s), so a 12s
+ * page budget cuts off nothing observed while making the worst case arithmetic rather than a hope.
+ * It matters because the caller's crawl deadline reserves exactly this much for a fetch it starts.
+ */
+const PAGE_BUDGET_MS = Number(process.env.SOURCE_PAGE_BUDGET_MS || 12000);
 const MAX_RESPONSE_BYTES = Number(process.env.SOURCE_FETCH_MAX_BYTES || 512 * 1024);
 const MAX_REDIRECTS = 3;
 const USER_AGENT =
@@ -67,10 +77,68 @@ async function readBoundedHtml(response, maxBytes) {
   };
 }
 
-async function fetchWithRedirects(urlString, redirectCount = 0) {
-  const parsed = await assertSafeUrl(urlString);
+/**
+ * `assertSafeUrl` inside the page deadline.
+ *
+ * Review finding: the deadline was computed, then `assertSafeUrl` ran a `dns/promises.lookup` with no
+ * timeout and no signal, and only then was the HTTP timer armed -- using the now-stale pre-DNS
+ * remainder. A slow resolver could therefore push one page past `PAGE_BUDGET_MS`, so "one page, one
+ * wall clock" was not true.
+ *
+ * The lookup itself cannot be cancelled, so it is raced against the deadline. Two details make that
+ * safe rather than merely tidy:
+ *
+ *  - The safety promise is converted to a settled VALUE (`{parsed}` or `{error}`) before the race, so a
+ *    rejection arriving after the race has been lost cannot surface as an unhandled rejection.
+ *  - When the deadline wins, this returns before the safety result is ever read, so a validation that
+ *    completes later can never initiate a fetch. That is the property the finding asked for.
+ *
+ * A validation ERROR is rethrown rather than folded into a status, because refusing an unsafe URL is
+ * not a fetch outcome and never was: SSRF rejection propagates exactly as it did before.
+ */
+const DEADLINE_LOST = Symbol('page_deadline_expired');
+
+async function resolveWithinPageDeadline(urlString, chainDeadlineAt) {
+  const remainingMs = chainDeadlineAt - Date.now();
+  if (remainingMs <= 0) return DEADLINE_LOST;
+
+  const settled = assertSafeUrl(urlString).then(
+    (parsed) => ({ parsed }),
+    (error) => ({ error }),
+  );
+
+  let timer;
+  const expiry = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(DEADLINE_LOST), remainingMs);
+  });
+
+  try {
+    const outcome = await Promise.race([settled, expiry]);
+    if (outcome === DEADLINE_LOST) return DEADLINE_LOST;
+    if (outcome.error) throw outcome.error;
+    return outcome.parsed;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchWithRedirects(urlString, redirectCount = 0, deadlineAt = null) {
+  // One deadline for the whole chain: set on the first hop, carried by every redirect.
+  const chainDeadlineAt = deadlineAt ?? Date.now() + PAGE_BUDGET_MS;
+
+  const parsed = await resolveWithinPageDeadline(urlString, chainDeadlineAt);
+  if (parsed === DEADLINE_LOST) {
+    return { status: 'timeout', html: null, error: 'Page budget exhausted' };
+  }
+
+  // Recomputed AFTER validation: whatever DNS spent is spent, and the HTTP hop gets only what is left.
+  const httpRemainingMs = chainDeadlineAt - Date.now();
+  if (httpRemainingMs <= 0) {
+    return { status: 'timeout', html: null, error: 'Page budget exhausted' };
+  }
+
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), Math.min(FETCH_TIMEOUT_MS, httpRemainingMs));
 
   try {
     const response = await fetch(parsed.toString(), {
@@ -89,7 +157,7 @@ async function fetchWithRedirects(urlString, redirectCount = 0) {
       if (!location) throw new Error('Redirect without location');
       if (redirectCount >= MAX_REDIRECTS) throw new Error('Too many redirects');
       const nextUrl = new URL(location, parsed.toString()).toString();
-      return fetchWithRedirects(nextUrl, redirectCount + 1);
+      return fetchWithRedirects(nextUrl, redirectCount + 1, chainDeadlineAt);
     }
 
     if (response.status === 403 || response.status === 401) {
@@ -149,8 +217,11 @@ async function fetchWithRedirects(urlString, redirectCount = 0) {
   }
 }
 
-async function fetchOfficialPage(urlString) {
-  const result = await fetchWithRedirects(urlString);
+async function fetchOfficialPage(urlString, options = {}) {
+  const budgetMs = Number.isFinite(options.budgetMs) && options.budgetMs > 0
+    ? options.budgetMs
+    : PAGE_BUDGET_MS;
+  const result = await fetchWithRedirects(urlString, 0, Date.now() + budgetMs);
   const usable =
     (result.status === 'ok' || result.status === 'fetched_truncated') && result.html;
 
@@ -195,4 +266,5 @@ module.exports = {
   hashContent,
   MAX_RESPONSE_BYTES,
   FETCH_TIMEOUT_MS,
+  PAGE_BUDGET_MS,
 };

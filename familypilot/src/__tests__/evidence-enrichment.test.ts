@@ -82,15 +82,30 @@ describe('official source discovery', () => {
       5,
     );
     expect(pages.length).toBeGreaterThan(1);
-    expect(pages.some((p) => /\/visit\b/i.test(p.url))).toBe(true);
+    /**
+     * Updated with the coverage reordering: the assertion was `/visit`, which is now the eleventh
+     * speculative candidate rather than the first. What this test is for -- that a homepage with no
+     * parseable links still expands into visitor-information pages -- is unchanged, so it now names the
+     * pages the new order actually selects, and checks separately that `/visit` is still generated.
+     */
+    expect(pages.some((p) => /\/accessibility$/i.test(p.url))).toBe(true);
+    expect(pages.some((p) => /\/facilities$/i.test(p.url))).toBe(true);
     expect(diagnostics.linksSelected.length).toBeGreaterThan(1);
+
+    const everyCandidate = buildCommonPathCandidates('https://headstonemanor.org/', 40).map((c) => c.url);
+    expect(everyCandidate).toContain('https://headstonemanor.org/visit');
   });
 
   it('includes common path templates for Headstone Manor domain', () => {
-    const candidates = buildCommonPathCandidates('https://headstonemanor.org/', 10);
-    expect(candidates.some((c) => c.url.includes('/visit'))).toBe(true);
-    expect(candidates.some((c) => c.url.includes('/accessibility'))).toBe(true);
-    expect(candidates.some((c) => c.url.includes('/faq'))).toBe(true);
+    // The first ten of the reordered list: field-specific pages first, generic visit pages after.
+    const firstTen = buildCommonPathCandidates('https://headstonemanor.org/', 10).map((c) => c.url);
+    expect(firstTen.some((u) => u.endsWith('/accessibility'))).toBe(true);
+    expect(firstTen.some((u) => u.endsWith('/facilities'))).toBe(true);
+    expect(firstTen.some((u) => u.endsWith('/faq'))).toBe(true);
+
+    const everyCandidate = buildCommonPathCandidates('https://headstonemanor.org/', 40).map((c) => c.url);
+    expect(everyCandidate).toContain('https://headstonemanor.org/visit');
+    expect(everyCandidate).toContain('https://headstonemanor.org/plan-your-visit');
   });
 });
 
@@ -287,10 +302,10 @@ describe('Headstone Manor single-page failure regression', () => {
       5,
     );
 
-    // Even with challenge HTML, common paths should add /visit/, /faq/, etc.
+    // Even with challenge HTML, common paths should add /accessibility, /facilities, /faq, etc.
     expect(oldWouldBe.length).toBeGreaterThan(1);
     expect(oldWouldBe.map((p) => p.url)).toContain('https://headstonemanor.org/');
-    expect(oldWouldBe.some((p) => /\/visit/i.test(p.url))).toBe(true);
+    expect(oldWouldBe.some((p) => /\/(accessibility|facilities|faq)$/i.test(p.url))).toBe(true);
   });
 
   it('diagnostics report discovered vs selected links and per-page evidence', () => {
