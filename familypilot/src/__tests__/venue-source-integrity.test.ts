@@ -365,16 +365,27 @@ describe('FIXED 7: the publication gate fails closed on unestablished provenance
   });
 
   /**
-   * The one place enforcement is deliberately off. `reconcileSourceClaims` DISPUTES live claims,
-   * and `familypilot-automatic-enrichment` runs every minute, so enforcing there would repair
-   * production within the hour with nobody having approved it. Repair is Phase 6.
+   * Review round 3 moved the Phase 6 gate out of here.
+   *
+   * It used to live in a scope-blind bundle verdict: `reconcileSourceClaims` called
+   * `reviewEvidence(bundle, {enforceSubjectScope:false})` so that deploying could not dispute
+   * hundreds of contaminated claims within the hour. That worked, but it also let unusable evidence
+   * confirm and contradict live claims. The gate now sits on each claim's OWN backing provenance
+   * (FIXED 14), which is both narrower and stronger -- it cannot be defeated by a page that simply
+   * was not fetched on a given run.
    */
-  it('leaves reconciliation unenforced, so a deploy cannot silently repair production', () => {
+  it('no longer lets a scope-blind bundle verdict decide a live claim', () => {
+    // The option still exists and still behaves, for the audit tooling that reads both readings.
     expect(reviewEvidence(bundle('https://www.tate.org.uk/visit/tate-liverpool', null),
       { enforceSubjectScope: false }).eligible).toBe(true);
+
+    // But reconciliation must not be what reaches for it, or the old asymmetry comes straight back.
     const autoApprove = fs.readFileSync(
       path.join(__dirname, '../../../server/enrichment/_lib/auto-approve.js'), 'utf8');
-    expect(autoApprove).toContain('reviewEvidence(bundle, {enforceSubjectScope:false})');
+    expect(autoApprove, 'reconciliation must not consult a scope-blind verdict')
+      .not.toContain('enforceSubjectScope:false');
+    expect(autoApprove, 'the gate is now the claim\'s own backing scope')
+      .toContain('if (!isEligibleScope(backing.subjectScope)) continue;');
   });
 });
 
@@ -785,5 +796,436 @@ describe('FIXED 12: a hard age gate needs a recorded relationship to the venue',
       process.env = env;
       vi.resetModules();
     }
+  });
+});
+
+/**
+ * The Young V&A production canary, 2026-09-27.
+ *
+ * The prevention fix shipped and worked: both other-catalogue-venue pages were rejected before being
+ * fetched. That freed room in the five-page crawl budget, the reserve filled it with
+ * `vam.ac.uk/east/museum/visit` -- V&A East Museum, NOT a catalogue venue, so `sibling_unverified`:
+ * fetched, recorded, withheld -- and that page states parking both ways. Merged blind to scope,
+ * parking became a conflict and reconciliation disputed Young V&A's parking claim: a true fact, read
+ * off the venue's own page, withdrawn on the word of a page not allowed to speak for it.
+ *
+ * Every string below is the production text, verbatim from the canary.
+ */
+describe('FIXED 13: evidence that may not establish a fact may not contest one either', () => {
+  const OWN = 'https://www.vam.ac.uk/young/visit';
+  const SIBLING = 'https://www.vam.ac.uk/east/museum/visit';
+  const now = () => new Date().toISOString();
+
+  const fact = (sourceUrl: string, field: string, value: string, evidenceText: string) => ({
+    field, value, confidence: 'high', evidenceText, sourceUrl,
+    sourceType: 'visitor_info', retrievedAt: now(),
+  });
+
+  /** Young V&A's own page: parking, stated once, unambiguously. */
+  const ownParking = fact(OWN, 'parking', 'yes',
+    'Buggy park ​Buggy parking is available in the Welcome Area near the main entrance.');
+  /** V&A East Museum's page, which contradicts itself and is not this venue's. */
+  const siblingParkingYes = fact(SIBLING, 'parking', 'yes',
+    'Buggy park ​Buggy parking is available located on the Lower Ground floor.');
+  const siblingParkingNo = fact(SIBLING, 'parking', 'no',
+    'There is no parking provided or managed by the V&A.');
+
+  const source = (url: string, subjectScope: string | null, facts: unknown[]) => ({
+    url, sourceType: 'visitor_info', fetchStatus: 'ok', retrievedAt: now(), subjectScope, facts,
+  });
+
+  const bundleOf = (...sources: unknown[]) => buildEvidenceBundle('fp-young-va', sources, 'official_website');
+  const parkingFact = (bundle: { facts: Array<{ field: string }> }) =>
+    bundle.facts.find((f) => f.field === 'parking') as
+      { field: string; value: string; evidenceStatus?: string; sourceUrl: string | null } | undefined;
+
+  it('does not let a withheld sibling page conflict the venue\'s own fact', () => {
+    const bundle = bundleOf(
+      source(OWN, 'venue_own_subtree', [ownParking]),
+      source(SIBLING, 'sibling_unverified', [siblingParkingYes, siblingParkingYes, siblingParkingYes, siblingParkingNo]),
+    );
+
+    const parking = parkingFact(bundle);
+    expect(parking?.evidenceStatus, 'the sibling may not manufacture a conflict').not.toBe('conflict');
+    expect(parking?.value, 'the venue\'s own page decides').toBe('yes');
+    expect(parking?.sourceUrl).toBe(OWN);
+  });
+
+  it('publishes the venue\'s own fact, where before the canary it was withdrawn', () => {
+    const review = reviewEvidence(bundleOf(
+      source(OWN, 'venue_own_subtree', [ownParking]),
+      source(SIBLING, 'sibling_unverified', [siblingParkingYes, siblingParkingNo]),
+    ));
+    expect(review.eligible).toBe(true);
+    expect(review.payload.familyFacilities.parking).toBe('yes');
+  });
+
+  /**
+   * The exact mechanism of the canary failure. `reconcileSourceClaims` disputes a live claim when
+   * `review.payload` has no value for its field, and it runs with enforcement OFF. So the regression
+   * is only really pinned by asserting the value survives in THAT reading too.
+   */
+  it('keeps the value defined for scope-blind reconciliation, so the claim is not disputed', () => {
+    const review = reviewEvidence(bundleOf(
+      source(OWN, 'venue_own_subtree', [ownParking]),
+      source(SIBLING, 'sibling_unverified', [siblingParkingYes, siblingParkingNo]),
+    ), { enforceSubjectScope: false });
+    expect(review.payload.familyFacilities?.parking,
+      'undefined here is what disputed Young V&A\'s parking claim in production').toBe('yes');
+  });
+
+  it('still conflicts when two pages that MAY speak for the venue disagree', () => {
+    const other = 'https://www.vam.ac.uk/young/accessibility';
+    const bundle = bundleOf(
+      source(OWN, 'venue_own_subtree', [ownParking]),
+      source(other, 'venue_named_page', [fact(other, 'parking', 'no',
+        'There is no parking provided or managed by the V&A.')]),
+    );
+    expect(parkingFact(bundle)?.evidenceStatus, 'a real disagreement must still read as one').toBe('conflict');
+    expect(reviewEvidence(bundle).payload.familyFacilities?.parking).toBeUndefined();
+  });
+
+  /**
+   * The other half of the rule, and the reason this is a precedence and not an exclusion.
+   *
+   * Horniman Butterfly House's seven claims all come from `other_catalogue_venue` pages. Dropping
+   * ineligible evidence outright would delete the field from the bundle, and a vanished field is
+   * exactly what `reconcileSourceClaims` disputes on -- so the cron would have repaired production
+   * unreviewed on its next run. Ineligible evidence still speaks where nothing eligible does.
+   */
+  it('lets ineligible evidence hold a field open when nothing eligible speaks, but never publish it', () => {
+    const parent = 'https://www.horniman.ac.uk/plan-your-visit/';
+    const bundle = bundleOf(source(parent, 'other_catalogue_venue', [
+      fact(parent, 'toilets', 'yes', 'Toilets are available on the ground floor near the entrance.'),
+    ]));
+
+    // Present, so reconciliation does not read the field as gone and withdraw the live claim.
+    expect(bundle.facts.find((f: { field: string }) => f.field === 'toilets')?.value).toBe('yes');
+    expect(reviewEvidence(bundle, { enforceSubjectScope: false }).payload.familyFacilities?.toilets).toBe('yes');
+
+    // But publication is decided by the source's own scope, so it is still refused.
+    const enforced = reviewEvidence(bundle);
+    expect(enforced.eligible).toBe(false);
+    expect(enforced.reason).toBe('withheld_source_identity_unestablished');
+    expect(enforced.withheld[0].subjectScope).toBe('other_catalogue_venue');
+  });
+
+  it('leaves a bundle carrying no provenance behaving exactly as it did before', () => {
+    // Legacy rows and the batch runner have no scope anywhere, so no candidate is eligible and every
+    // field falls back. A pre-provenance bundle must not silently change verdicts.
+    const bundle = bundleOf(
+      source(OWN, null, [ownParking]),
+      source(SIBLING, null, [siblingParkingYes, siblingParkingNo]),
+    );
+    expect(parkingFact(bundle)?.evidenceStatus).toBe('conflict');
+  });
+});
+
+/**
+ * Review round 3, the remaining asymmetry.
+ *
+ * Round 2 stopped an ineligible page CONTRADICTING a venue's own fact. It did not stop one
+ * PRESERVING a claim: when the venue's own page stops mentioning parking, `mergeEvidenceBundles`
+ * falls back to all candidates, hands back a withheld sibling's value, and the old reconciliation
+ * read that as confirmation. Same asymmetry, opposite sign.
+ *
+ * The invariant, in full: evidence that may not establish a venue-specific fact may not establish,
+ * contradict, refresh, preserve or withdraw it. That cannot be enforced in a merge, which does not
+ * know which page any given claim came from, so it is enforced in `reconcileSourceClaims` against
+ * each claim's own backing source. These tests drive the real function against the real store.
+ */
+describe('FIXED 14: a live claim answers to its own backing page, and to nothing else', () => {
+  const VENUE = 'fp-reconcile-venue';
+  const OWN = 'https://www.vam.ac.uk/young/visit';
+  const OWN_OTHER = 'https://www.vam.ac.uk/young/accessibility';
+  const SIBLING = 'https://www.vam.ac.uk/east/museum/visit';
+  const CHECKED_AT = '2026-09-20';
+  const REFRESHED = '2026-09-27T09:10:18.282Z';
+
+  let env: NodeJS.ProcessEnv;
+
+  beforeEach(() => {
+    env = { ...process.env };
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    fs.mkdirSync('.data', { recursive: true });
+    fs.writeFileSync(path.join('.data', 'venue-claims.json'), JSON.stringify({ claims: [] }));
+    vi.resetModules();
+  });
+  afterEach(() => { process.env = env; vi.resetModules(); });
+
+  const fact = (sourceUrl: string, field: string, value: string) => ({
+    field, value, confidence: 'high',
+    evidenceText: `${field} ${value} stated on the page in enough words to pass the length gate.`,
+    sourceUrl, sourceType: 'visitor_info', retrievedAt: REFRESHED,
+  });
+
+  const source = (
+    url: string,
+    subjectScope: string | null,
+    facts: unknown[],
+    fetchStatus = 'ok',
+    retrievedAt = REFRESHED,
+  ) => ({ url, sourceType: 'visitor_info', fetchStatus, retrievedAt, subjectScope, facts });
+
+  /** One active automatic claim, written through the real writer. */
+  async function seedClaim(fieldKey: string, value: string, sourceUrl: string) {
+    const { replaceActiveClaim } = await import('../../../server/enrichment/_lib/claims-store.js');
+    const { REVIEWED_BY } = await import('../../../server/enrichment/_lib/auto-approve.js');
+    return replaceActiveClaim({
+      familypilotPlaceId: VENUE, fieldKey, valueJson: value, confidence: 'high',
+      sourceUrl, sourceType: 'visitor_info', sourceEvidenceId: null,
+      evidenceExcerpt: 'Stated on the page.', checkedAt: CHECKED_AT, validUntil: '2026-10-20',
+      approvedAt: `${CHECKED_AT}T12:00:00Z`, approvedBy: REVIEWED_BY,
+      approvedFromDraftId: null, status: 'active', supersedesClaimId: null,
+    });
+  }
+
+  async function reconcileWith(sources: unknown[]) {
+    const { reconcileSourceClaims } = await import('../../../server/enrichment/_lib/auto-approve.js');
+    await reconcileSourceClaims(VENUE, buildEvidenceBundle(VENUE, sources, 'official_website'));
+  }
+
+  async function statusOf(fieldKey: string) {
+    const { listClaimsForVenue } = await import('../../../server/enrichment/_lib/claims-store.js');
+    const claims = await listClaimsForVenue(VENUE, {});
+    return claims.find((c: { fieldKey: string }) => c.fieldKey === fieldKey)?.status ?? null;
+  }
+
+  it('disputes the claim when its own page drops the fact, however loudly a sibling agrees', async () => {
+    // The exact regression round 2 missed: no eligible parking candidate, so the merge fell back to
+    // the sibling and the old code read a withheld page as confirmation.
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'toilets', 'yes')]),   // refreshed, parking gone
+      source(SIBLING, 'sibling_unverified', [fact(SIBLING, 'parking', 'yes')]),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('disputed');
+  });
+
+  it('does not count an ineligible page as confirmation when the value disagrees either', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'no')]),    // own page now says no
+      source(SIBLING, 'sibling_unverified', [fact(SIBLING, 'parking', 'yes')]),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('disputed');
+  });
+
+  it('keeps the claim when its own page still says it and only a sibling disagrees', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(SIBLING, 'sibling_unverified', [fact(SIBLING, 'parking', 'no')]),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
+  });
+
+  it('withdraws the field when two pages that MAY speak for the venue disagree', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(OWN_OTHER, 'venue_named_page', [fact(OWN_OTHER, 'parking', 'no')]),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('disputed');
+  });
+
+  /**
+   * The Phase 6 gate, restated on provenance. Horniman Butterfly House's seven claims all rest on
+   * `other_catalogue_venue` pages; the every-minute cron must not repair them on deploy.
+   */
+  it.each([
+    ['not recorded', null],
+    ['an unverified sibling', 'sibling_unverified'],
+    ['the operator\'s page', 'organisation_ancestor'],
+    ['another catalogue venue\'s page', 'other_catalogue_venue'],
+  ])('skips a claim whose own backing page is %s, rather than disputing it', async (_label, scope) => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    // The page is refreshed and no longer states parking -- and is still left alone, because
+    // withdrawing it is a reviewed decision, not an automatic one.
+    await reconcileWith([source(OWN, scope as string | null, [fact(OWN, 'toilets', 'yes')])]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
+  });
+
+  it('leaves the claim alone when its page was not refetched this run', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([source(SIBLING, 'sibling_unverified', [fact(SIBLING, 'parking', 'no')])]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
+  });
+
+  it('leaves the claim alone when its page failed to fetch, since absence is not evidence', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([source(OWN, 'venue_own_subtree', [], 'error')]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
+  });
+
+  it('leaves the claim alone when the refresh predates the claim\'s own check', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'toilets', 'yes')], 'ok', '2026-09-01T00:00:00Z'),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
+  });
+
+  /**
+   * Review round 4. Conflict evidence must be freshness-bounded as well as eligible.
+   *
+   * `verifiedBundleForVenue` keeps the latest stored successful row per URL with no recency filter,
+   * so a legitimate page last fetched weeks ago still sits in today's bundle. Without this guard it
+   * withdrew a claim refreshed today -- the same staleness this function polices, pointed the other
+   * way.
+   */
+  const STALE = '2026-08-01T00:00:00Z';   // well before CHECKED_AT
+  const NEWER = '2026-09-28T09:00:00Z';   // after CHECKED_AT
+
+  it('does not let an OLD eligible page overrule a newer claim', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      // Legitimate, eligible, cleanly fetched -- and read in August. It does not get a vote.
+      source(OWN_OTHER, 'venue_named_page', [fact(OWN_OTHER, 'parking', 'no')], 'ok', STALE),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
+  });
+
+  it('does let a NEWER eligible page withdraw the field', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(OWN_OTHER, 'venue_named_page', [fact(OWN_OTHER, 'parking', 'no')], 'ok', NEWER),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('disputed');
+  });
+
+  it('ignores a failed eligible page even when its stored value disagrees', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(OWN_OTHER, 'venue_named_page', [fact(OWN_OTHER, 'parking', 'no')], 'error', STALE),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
+  });
+
+  it.each([
+    ['older than the claim', STALE],
+    ['newer than the claim', NEWER],
+  ])('leaves an ineligible page irrelevant when it is %s', async (_label, retrievedAt) => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(SIBLING, 'sibling_unverified', [fact(SIBLING, 'parking', 'no')], 'ok', retrievedAt),
+    ]);
+    expect(await statusOf('familyFacilities.parking'),
+      'age never rescues a source that may not speak for the venue').toBe('active');
+  });
+
+  /**
+   * The boundary itself: "at or after the claim's check" means AT counts.
+   *
+   * A mutation pass caught this. Flipping `>=` to `>` left all 75 tests green, because every fixture
+   * happened to sit strictly after `CHECKED_AT` -- so the suite was asserting the rule's spirit and
+   * not its edge. Both callers of the predicate get a case that only passes under `>=`.
+   */
+  const EXACTLY_AT_CHECK = `${CHECKED_AT}T00:00:00Z`;
+
+  it('treats a backing page read exactly at the claim\'s check as a refresh', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    // Under `>` this page would not be found at all, the claim would be skipped, and it would
+    // survive for the wrong reason. Under `>=` it is a refresh that no longer states parking.
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'toilets', 'yes')], 'ok', EXACTLY_AT_CHECK),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('disputed');
+  });
+
+  it('lets a conflicting page read exactly at the claim\'s check count', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(OWN_OTHER, 'venue_named_page', [fact(OWN_OTHER, 'parking', 'no')], 'ok', EXACTLY_AT_CHECK),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('disputed');
+  });
+
+  /**
+   * Review round 5, from a real false withdrawal in production on 2026-09-29.
+   *
+   * Belmont Children's Farm, claim `7a37949d…`, `environment=mixed` from `belmontfarm.co.uk`. The
+   * September reading was `ok` at 8000 characters and carried the indoor/outdoor wording. The refresh
+   * came back `fetched_truncated` at **770 characters** with no facts at all. The fact had not gone
+   * from the page; it was past the point where the fetch stopped. Reconciliation read the prefix as
+   * the whole page and disputed a true claim.
+   *
+   * "I saw this statement" and "this statement is nowhere on the page" need different evidence.
+   */
+  const BELMONT = 'https://www.belmontfarm.co.uk/';
+
+  it('disputes when a COMPLETE read no longer states the fact', async () => {
+    await seedClaim('environment', 'mixed', BELMONT);
+    await reconcileWith([source(BELMONT, 'venue_own_subtree', [fact(BELMONT, 'toilets', 'yes')], 'ok')]);
+    expect(await statusOf('environment')).toBe('disputed');
+  });
+
+  it('does NOT dispute when a truncated read merely omits the fact', async () => {
+    // The production case, reproduced: eligible, refreshed, and cut short at 770 characters.
+    await seedClaim('environment', 'mixed', BELMONT);
+    await reconcileWith([source(BELMONT, 'venue_own_subtree', [], 'fetched_truncated')]);
+    expect(await statusOf('environment'),
+      'silence in a prefix is not a denial').toBe('active');
+  });
+
+  it('keeps the claim when a truncated read still states the same value', async () => {
+    await seedClaim('environment', 'mixed', BELMONT);
+    await reconcileWith([
+      source(BELMONT, 'venue_own_subtree', [fact(BELMONT, 'environment', 'mixed')], 'fetched_truncated'),
+    ]);
+    expect(await statusOf('environment')).toBe('active');
+  });
+
+  /**
+   * The behaviour this pins by decision rather than by bug report: truncation limits what a page can
+   * DENY, not what it can ASSERT. A cut-short page that explicitly states the opposite has been read
+   * saying so, which is positive evidence of a disagreement, so it still withdraws the field.
+   */
+  it('lets a truncated eligible page that explicitly states the opposite create a conflict', async () => {
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(OWN_OTHER, 'venue_named_page', [fact(OWN_OTHER, 'parking', 'no')], 'fetched_truncated'),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('disputed');
+  });
+
+  it.each([
+    ['a failed fetch', 'error'],
+    ['a timeout', 'timeout'],
+  ])('never withdraws on %s', async (_label, fetchStatus) => {
+    await seedClaim('environment', 'mixed', BELMONT);
+    await reconcileWith([source(BELMONT, 'venue_own_subtree', [], fetchStatus)]);
+    expect(await statusOf('environment')).toBe('active');
+  });
+
+  /**
+   * `cached` is excluded from the complete-enough set as well, which is a judgement beyond the
+   * reported bug: `fetchAndExtractPage` stamps `fetchStatus: 'cached'` unconditionally and
+   * `getCachedEvidence` does not filter on status, so a row originally stored as `fetched_truncated`
+   * comes back as `cached` and its completeness cannot be known from the status. Unknown fails closed.
+   */
+  it('does not withdraw on a cached read either, since its completeness is unknowable', async () => {
+    await seedClaim('environment', 'mixed', BELMONT);
+    await reconcileWith([source(BELMONT, 'venue_own_subtree', [], 'cached')]);
+    expect(await statusOf('environment')).toBe('active');
+  });
+
+  it('still passes the Young V&A canary case that started all this', async () => {
+    // Own page states parking once; the withheld sibling contradicts ITSELF. The claim must survive.
+    await seedClaim('familyFacilities.parking', 'yes', OWN);
+    await reconcileWith([
+      source(OWN, 'venue_own_subtree', [fact(OWN, 'parking', 'yes')]),
+      source(SIBLING, 'sibling_unverified', [
+        fact(SIBLING, 'parking', 'yes'), fact(SIBLING, 'parking', 'no'),
+      ]),
+    ]);
+    expect(await statusOf('familyFacilities.parking')).toBe('active');
   });
 });

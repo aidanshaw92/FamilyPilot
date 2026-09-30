@@ -80,6 +80,14 @@ async function fetchAndExtractPage(familypilotPlaceId, page, options = {}) {
      * A legacy row recovers without any backfill in the ordinary case: the cache is fresh for at
      * most 14 days (`evidence-store.CACHE_TTL_DAYS`), so the row falls out of cache and the next
      * crawl refetches it and records the scope properly on the way in.
+     *
+     * Which callers actually get here, because it is easy to assume the wrong ones: BOTH HTTP entry
+     * points in `api/enrichment/index.js` pass `sourceOnly: true`, and `draft-store.js` turns that
+     * into `forceRefresh: true`, which skips this branch outright. So the every-minute automation
+     * never reads the cache and always records a scope. Today the only caller that lands here is the
+     * internal batch runner in `draft-store.js`, which calls `generateDraftForVenue(id)` with no
+     * options. That makes this guard defence in depth rather than the hot path -- and it is exactly
+     * why it has to be right: nothing loud happens when it is wrong.
      */
     const recorded = Boolean(cached.subjectScope);
     const inferred = recorded ? null : scopeFor(cached.sourceUrl, cached.pageTitle);

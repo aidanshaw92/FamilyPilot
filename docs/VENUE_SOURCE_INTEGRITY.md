@@ -318,10 +318,26 @@ hundreds of legacy rows with nobody having reviewed one.
 within `CACHE_TTL_DAYS` (capped at 14). A legacy row therefore falls out of cache within 14 days of
 its last fetch and the next crawl refetches it and records the scope on the way in.
 
-**Expected transitional effect, stated plainly:** between applying the migration and the cache
-turning over, cached pages publish **no new** facility facts. Existing claims are untouched; this
-delays new ones by at most 14 days per page. That is the fail-closed behaviour working, not a
-regression.
+**Correction, 2026-09-27 07:45 UTC.** While preparing to observe the rollout I traced the live
+callers and found the transitional effect claimed here was wrong. Both HTTP entry points into
+enrichment — the manual `action=generate` and the automation's `action=automation-run`
+(`api/enrichment/index.js`) — pass `sourceOnly: true`, and `draft-store.js` turns that into
+`gatherEvidenceForVenue(..., {forceRefresh: true})`. **`forceRefresh` bypasses the cache entirely**,
+so the every-minute automatic path never takes the cached branch at all.
+
+Two consequences, and the second is the one that matters:
+
+- There is **no transitional withholding window** on the automatic path. Every page the worker
+  touches is refetched and gets a `subject_scope` written on the way in, from the first venue it
+  processes. The earlier claim of "no new facility facts for up to 14 days" does not apply.
+- The cached branch is reached only by a caller that does **not** pass `sourceOnly` — today that is
+  the internal batch runner in `draft-store.js`, which calls `generateDraftForVenue(id)` with no
+  options. So finding 1's fix is defence in depth for that path and for any future caller, and
+  **"legacy cached NULL rows remain withheld" cannot be demonstrated through the automation path.**
+  It is demonstrated by the integration test, which drives the real pipeline over a real cached row.
+
+The fix itself is unchanged and still correct: a runtime inference must never stand in for a
+recorded relationship, whichever caller reaches it.
 
 ### Finding 2 — the hard age gate never checked the relationship
 
@@ -339,18 +355,48 @@ repository (the age-policy work is deferred), and production holds **0** active 
 Closing it now means that work cannot be built on top of the gap. Once it is built, an editor will
 need an evidence row fetched *after* the migration, since every row predating it reads as unknown.
 
+## What the every-minute worker actually does
+
+Measured read-only at 2026-09-27 07:43 UTC, because "runs every minute" and "does something every
+minute" are different claims and the rollout plan depends on the second.
+
+- `familypilot-automatic-enrichment` is `* * * * *` and fires reliably: **720 of 720 runs succeeded**
+  in the twelve hours to 07:43 UTC. But a `succeeded` cron run only means the `net.http_post` was
+  queued, not that any venue was processed.
+- The worker is **queue-driven**. It calls `claim_next_venue_enrichment_job`, and if nothing is
+  claimable it returns `processed: 0`. `venue_enrichment_jobs` currently holds 132 `completed` and 2
+  `failed` rows and **0 pending, 0 processing**.
+- The only enqueuer is `refresh_venue_data()`, the `familypilot-venue-freshness` job at `17 * * * *`.
+  It is **gated to once per UTC day** by `private.venue_data_settings.last_refresh`, which already
+  reads `2026-09-27`. Every remaining run today returns 0.
+- So the last real enrichment was **00:42 UTC today**, and the next natural enqueue is the **00:17
+  UTC run on 2026-09-28**, which will queue up to **50** venues at once.
+
+**This means "observe several automatic-enrichment cycles" observes no-ops until then.** The first
+real exposure of the new code would otherwise be an unattended 50-venue batch overnight, which is
+the wrong shape for a first observation. A single deliberately chosen venue, enqueued under explicit
+approval, gives a controlled and observable first run instead.
+
 ## Order of operations for release
 
 The additive migration goes in **before** the code, because the new code reads and writes
 `subject_scope` and the crawl runs every minute.
 
-1. Fix and re-review the two findings above. ← *this PR*
-2. Apply `20260926140000_venue_source_evidence_subject_scope.sql` to production.
-3. Verify: column and CHECK present, partial index present, ACL/RLS unchanged, every existing
-   evidence row still NULL, no claim changed.
-4. Merge and deploy #111.
-5. Observe several enrichment cycles: no existing claim's status changed, new and refreshed evidence
-   rows carry a scope, and legacy NULL cache rows publish nothing.
+1. ~~Fix and re-review the two findings above.~~ **Done**, `2e6ed13`.
+2. ~~Apply the migration to production.~~ **Done** 2026-09-27 07:42:27 UTC, recorded once as version
+   `20260927074227`, name `venue_source_evidence_subject_scope`. (Production records apply-time
+   versions and matches the repo by NAME, not by filename timestamp: compare repo
+   `20260926090000_age_policy_function_search_path` against production `20260926101957`.)
+3. ~~Verify.~~ **Done**, ten gates against a pre-migration baseline taken at 07:41:39 UTC. Both
+   columns nullable with no default; CHECK exactly the five scopes plus NULL; partial index present;
+   **0** rows anywhere carry a scope or reason; 875 → 875 rows with an **identical id md5**
+   (`0f9932be…`), so the count did not merely coincide; claim id/status md5 identical
+   (`28a1bf4f…`), `max(updated_at)` unmoved at 00:42:11; 0 active agePolicy; 0 non-null
+   `venue_age_policy`; owner `postgres`, RLS on and not forced, 0 policies, ACL md5 identical
+   (`postgres` and `service_role` only), no `anon`/`authenticated` column grants.
+4. ~~Merge and deploy.~~ Merged as `0f6ce93`; the production deploy is a separate step and must be
+   confirmed READY before the code is called live.
+5. Observe real enrichment cycles — see the section above: this needs a venue in the queue.
 6. Only then regenerate the repair set and seek repair approval.
 
 Applying a migration and merging are both outside what this PR does.
@@ -377,6 +423,187 @@ Primrose Hill served from a Regent's Park page.
 **The old "16 + 6" set must not be run blindly.** Forty-two of the claims in that population have
 changed since the snapshot was taken. The repair set is regenerated from the then-current active
 claims after step 5 above, and the exact IDs plus rollback data go up for approval then.
+
+## Review round 3 — the canary found the fix refuting its own evidence
+
+The Young V&A canary (`docs/snapshots/venue-source-integrity-canary-2026-09-27/`) ran through the real
+every-minute worker on 2026-09-27 and completed in 41 seconds. Seven of eight predictions held: both
+other-catalogue-venue pages were rejected before being fetched, every fetched page carries a persisted
+scope, `/wedgwood/visit` was retained and withheld, no other venue moved, and none of the four claims
+whose sources are now ineligible was withdrawn.
+
+The eighth failed, and it was worth the whole exercise.
+
+### What happened
+
+Rejecting two pages freed two slots in the `MAX_PAGES = 5` budget, and the reserve filled one with
+`vam.ac.uk/east/museum/visit` — **V&A East Museum, not a catalogue venue**, so `sibling_unverified`:
+fetched, recorded, withheld. That page states parking both ways:
+
+```
+yes  "Buggy park ​Buggy parking is available located on the Lower Ground floor."   (x3)
+no   "There is no parking provided or managed by the V&A."
+```
+
+Young V&A's own page says it once: `yes`, "Buggy parking is available in the Welcome Area near the
+main entrance." `mergeEvidenceBundles` unioned the facts blind to scope, so parking became a
+**conflict**; the draft recorded the collapse as `{"field":"parking","value":"unknown"}`;
+`eligibleFact` drops a conflicted fact; and `reconcileSourceClaims` disputed claim `e1cd19d8…` — a
+**true fact, from the venue's own page, withdrawn on the word of a page not allowed to speak for it.**
+
+Reconciliation runs with `{enforceSubjectScope: false}`, the exception that stops a deploy repairing
+production en masse. That exception makes scope invisible **in both directions**: a withheld source
+cannot support a claim, and nothing stopped it refuting one. `babyChanging` survived only because the
+sibling page happened to agree.
+
+### The first attempt, and why it was not enough
+
+`mergeEvidenceBundles` was changed so each field's verdict comes from the candidates whose source has
+an eligible scope, where any exist, with a fallback to all candidates so a field never vanishes from
+the bundle. That stopped the contradiction. Review round 3 found it left the mirror image standing:
+
+- Young V&A's own page is refreshed tomorrow and no longer mentions parking.
+- A `sibling_unverified` page still says parking is available.
+- No eligible parking candidate exists, so the merge **falls back** to the sibling's value.
+- Reconciliation, reading a scope-blind verdict, sees `parking = yes` and **keeps the claim alive.**
+
+An unusable source could no longer refute a claim, but it could still preserve one. Same asymmetry,
+opposite sign. The fallback I had reached for as a safety property was doing the damage.
+
+### The invariant, stated once
+
+> Evidence that may not establish a venue-specific fact may not establish, contradict, refresh,
+> preserve or withdraw that fact.
+
+A merge cannot enforce that, because it does not know which page any particular claim came from. So
+the control moved into `reconcileSourceClaims`, on each claim's own provenance:
+
+1. Find the source backing **this** claim — `claim.sourceUrl`, refreshed at or after the claim was
+   last checked, and fetched cleanly.
+2. Not refreshed this run, or not fetched cleanly → leave the claim alone. A failed fetch cannot
+   establish absence; the claim reaches its normal expiry.
+3. Backing scope NULL or ineligible → **skip.** This is now where Phase 6 stays gated, and it is
+   stronger than the old scope-blind verdict: it cannot be defeated by a page that simply was not
+   fetched on a given run.
+4. Backing source eligible → that **same page** must still carry the claim's field and value.
+5. It no longer does → dispute, however many ineligible siblings agree. This is also the freshness
+   policy the rest of the system already states: a claim is withdrawn when its own refreshed source
+   stops supporting it, not when some other page still does.
+6. Conflict is judged separately and only among eligible venue-specific sources. Two pages that may
+   both speak for this venue disagreeing is real, and still withdraws the field.
+7. Ineligible sources stay in the bundle for diagnostics and the withheld ledger, and count for
+   nothing here — not as confirmation, not as contradiction.
+
+`reconcileSourceClaims` no longer calls `reviewEvidence` at all. The merge keeps its
+eligible-candidate precedence, which is right for publication and for what the audit reports, but it
+is **no longer what protects live claims.**
+
+This also closes a pre-existing bug nobody had named: reconciliation used the bundle-wide verdict, so
+another legitimate eligible page could keep a claim alive after the specific page behind it had
+stopped saying it.
+
+### Round 4 — conflict evidence has to be fresh as well as eligible
+
+Review caught one more asymmetry, this time about time rather than identity. The conflict set admitted
+any eligible source in the bundle, and `verifiedBundleForVenue` keeps the latest stored successful row
+per URL **with no recency filter at all**. So a legitimate eligible page last fetched in August sits
+in today's bundle, and saying `parking=no` it withdrew a claim refreshed today — the same staleness the
+function polices on the backing page, pointed the other way.
+
+Both callers now share one predicate, `refreshedFor(source, checkedAt)`: cleanly fetched, and retrieved
+at or after the claim's check. They were separate conditions and the conflict side simply lacked this
+one, so sharing the test is what stops them drifting apart again. An older page does not get to
+overrule a newer claim.
+
+### Round 5 — a truncated page cannot prove a fact is gone
+
+Found in production, not in review: **Belmont Children's Farm lost a true fact overnight on
+2026-09-29.**
+
+Claim `7a37949d…`, `environment=mixed`, from `belmontfarm.co.uk`:
+
+| reading | status | chars | facts |
+| --- | --- | --- | --- |
+| 2026-09-14 | `ok` | 8000 | `environment=mixed` |
+| 2026-09-29 00:19 | `fetched_truncated` | **770** | none |
+
+The backing page was eligible, refreshed, and cleanly fetched by the predicate's reckoning, so rule 5
+read "no longer states the value" and disputed the claim. But the fact had not gone from the page — it
+sat past the point where the bounded fetch stopped.
+
+`refreshedFor` was answering two different questions with one test:
+
+- *did I see this statement?* — a truncated capture answers this fine, for what it contains;
+- *is this statement nowhere on the page?* — a truncated capture cannot answer this at all.
+
+So the predicate is split. `usableFor` gates reading explicit evidence (`ok`, `cached`,
+`fetched_truncated`, retrieved at or after the claim's check). `isCompleteRead` gates arguing
+**absence**, and admits `ok` only.
+
+`cached` is excluded from the complete set too, which goes beyond the reported bug and is a judgement:
+`fetchAndExtractPage` stamps `fetchStatus: 'cached'` unconditionally and `getCachedEvidence` does not
+filter on status, so a row stored as `fetched_truncated` resurfaces as `cached` with its completeness
+unknowable. Unknown fails closed. The cost is bounded — the automation path always runs with
+`forceRefresh` and never takes that branch, and a claim nothing re-confirms still reaches its own
+`validUntil`.
+
+**Conflict keeps using `usableFor`, by decision.** Truncation limits what a page can *deny*, not what
+it can *assert*: a cut-short page that explicitly states the opposite value has been read saying so,
+which is positive evidence of disagreement rather than an argument from absence. So it still withdraws
+the field, and a test pins that.
+
+A second mutation survivor in this round was answered by changing the code, not the tests. A recency
+test inside the completeness predicate could not be killed: it is reached only after `usableFor` has
+accepted the same source for the same claim, and the usable statuses are a superset of the complete
+ones, so recency is already established and the condition was dead. `isCompleteRead` now takes only the
+source, which makes the redundancy impossible to reintroduce rather than leaving a guard that looks
+load-bearing and is not.
+
+### Verification
+
+Twenty-eight regressions drive the real `reconcileSourceClaims` against the real file-backed store, not a
+hand-built verdict:
+
+- own page drops the fact while a sibling still asserts it → disputed;
+- own page disagrees while a sibling agrees → disputed;
+- own page still says it and only a sibling disagrees → kept;
+- two contemporaneous eligible pages disagree → withdrawn;
+- all four ineligible backing scopes → skipped, not disputed;
+- not refetched, failed fetch, and a refresh predating the claim's check → all left alone;
+- an **older** eligible page disagreeing → kept; a **newer** one → withdrawn;
+- a failed eligible page → ignored whatever it stored;
+- an ineligible page → irrelevant whether older or newer than the claim;
+- a page read **exactly at** the claim's check → counts, as backing and as conflict;
+- a **complete** read that drops the fact → disputed; a **truncated** read that omits it → kept;
+- a truncated read still stating the value → kept; one explicitly stating the opposite → withdrawn;
+- a `cached` read → never withdraws, its completeness being unknowable;
+- failed and timeout reads → never withdraw;
+- and the original Young V&A canary case → kept.
+
+**Thirteen mutants on this boundary, each killed**: dropping the scope skip (5 tests), judging from the
+merged bundle instead of the backing page (1), letting ineligible sources into conflict detection (3),
+dropping the clean-fetch half of the freshness predicate (1), dropping its recency half (2), removing
+recency from the conflict set alone (2), flipping `>=` to `>` (2), letting a truncated read establish
+absence -- the Belmont bug itself (2), admitting `fetched_truncated` to the complete set (1), admitting
+`cached` to it (1), making the conflict set demand a complete read (2), dropping `fetched_truncated`
+from the usable set (1), and making `isCompleteRead` always true (2).
+
+That last one is worth recording, because it **survived the first pass with all 75 tests green.** Every
+fixture happened to sit strictly after the claim's check, so the suite asserted the rule's spirit and
+never its edge — "at or after" was not actually tested at all. Two cases now sit exactly on the
+boundary, one per caller, and each fails under `>`. A surviving mutant is the only thing that reliably
+exposes that kind of gap.
+
+1155 tests, `tsc --noEmit` clean, web export clean, #110 replay unchanged at 134 venues / 223 usable /
+55 identity-safe.
+
+### Still outstanding
+
+- Claim `e1cd19d8…` (Young V&A `familyFacilities.parking`) is **still disputed in production**. The
+  restore is one statement against the captured id and is not executed: it removed a true fact rather
+  than publishing a false one, so there is no emergency, and it would be undone by the next crawl
+  until this fix is deployed. Deploy first, then restore, then re-run the canary.
+- Phase 6 is **not** regenerated. The canary did not pass, so the repair stays gated.
 
 ## Phase 6 — Proposed repair (NOT RUN)
 

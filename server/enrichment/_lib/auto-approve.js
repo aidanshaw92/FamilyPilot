@@ -57,30 +57,160 @@ async function tryAutoApproveDraft(familypilotId, options = {}) {
   };
 }
 
-// Withdraw automatic facts when the same successfully fetched page no longer supports them.
-// A failed fetch cannot establish absence: existing facts instead reach their normal expiry.
+/**
+ * Withdraw an automatic fact when the page it came from no longer says it.
+ *
+ * ONE INVARIANT GOVERNS THIS FUNCTION:
+ *
+ *   Evidence that may not establish a venue-specific fact may not establish, contradict, refresh,
+ *   preserve or withdraw that fact.
+ *
+ * Both halves matter, and the second is the one that took three attempts to get right.
+ *
+ * The first version read a bundle-wide verdict computed with `{enforceSubjectScope: false}`. The
+ * Young V&A canary showed what that costs: a withheld sibling page contradicting itself turned the
+ * venue's OWN parking fact into a conflict and this function disputed a true claim.
+ *
+ * The second version fixed conflicts inside `mergeEvidenceBundles` -- eligible candidates decide a
+ * field where any exist, with a fallback to all candidates so a field never vanishes. That stopped
+ * the contradiction but left the mirror image: when the venue's own page stops mentioning parking
+ * and an ineligible sibling still asserts it, the fallback hands back the sibling's value and this
+ * function READ IT AS CONFIRMATION. An unusable source could not refute a claim any more, but it
+ * could still keep one alive. Same asymmetry, opposite sign.
+ *
+ * So the control belongs here, on the claim's own provenance, not in a merge that cannot know which
+ * page any particular claim came from:
+ *
+ *   1. Find the source backing THIS claim -- `claim.sourceUrl`, refreshed at or after the claim was
+ *      last checked, and actually fetched cleanly.
+ *   2. Not refreshed this run, or not fetched cleanly? Leave the claim alone. A failed fetch cannot
+ *      establish absence; the claim reaches its normal expiry instead.
+ *   3. Backing source NULL or ineligible scope? SKIP. This is what keeps Phase 6 gated: Horniman
+ *      Butterfly House's seven claims all rest on `other_catalogue_venue` pages, and repairing them
+ *      is a reviewed decision, not something the every-minute cron does on deploy.
+ *   4. Backing source eligible? Then THAT SAME PAGE must still carry the claim's field AND value.
+ *   5. It no longer does -> dispute, however many ineligible siblings happen to agree, BUT only when
+ *      that reading was complete. A `fetched_truncated` capture cannot establish absence, so it
+ *      leaves the claim alone. This is also the freshness policy the rest of the system states: a
+ *      claim is withdrawn when its own refreshed source stops supporting it, not when some other
+ *      page still does.
+ *   6. Conflict is judged separately, and only among eligible venue-specific sources whose reading is
+ *      at least as fresh as the claim. Two such pages disagreeing is a real conflict and still
+ *      withdraws the field; an older page does not get to overrule a newer claim.
+ *   7. Ineligible sources stay in the bundle for diagnostics and the withheld ledger, and count for
+ *      nothing here -- not as confirmation, not as contradiction.
+ *
+ * `mergeEvidenceBundles` keeps its eligible-candidate precedence, which is right for publication and
+ * for what the audit reports. It is no longer what protects live claims.
+ */
 async function reconcileSourceClaims(id, bundle) {
   const {listClaimsForVenue, disputeClaim} = require('./claims-store');
   const {FIELD_MAP} = require('./trusted-evidence');
+  const {isEligibleScope} = require('./source-identity');
+
+  const sources = bundle?.sources ?? [];
+
   /**
-   * Deliberately NOT enforcing subject scope here.
+   * TWO different questions, deliberately not one predicate.
    *
-   * This function disputes live claims. `familypilot-automatic-enrichment` runs every minute, so
-   * enforcing the new provenance rule at this point would silently repair production within the
-   * hour -- hundreds of claims disputed with nobody having reviewed the change. Prevention is live
-   * (see `eligibleFact`); repairing what is already published is Phase 6, behind its own gate.
+   * "Did I see this statement?" and "is this statement no longer anywhere on the page?" need
+   * different evidence, and conflating them withdrew a true fact in production on 2026-09-29.
+   *
+   * Belmont Children's Farm, claim `7a37949d…`, `environment=mixed` from `belmontfarm.co.uk`. The
+   * September reading was `ok`, 8000 characters, and carried the indoor/outdoor wording. The refresh
+   * came back `fetched_truncated` at **770 characters** and carried no facts at all. The fact was not
+   * absent from the page; it was past the point where the fetch stopped. Reconciliation read the
+   * prefix as the whole page and disputed the claim.
+   *
+   * A bounded fetch is, by definition, a partial view. It can confirm what it contains and can prove
+   * nothing about what it does not reach.
    */
-  const review = require('./trusted-evidence').reviewEvidence(bundle, {enforceSubjectScope:false});
+
+  /** Statuses whose captured text may be read as explicit evidence of what it does contain. */
+  const USABLE_FETCH = ['ok', 'cached', 'fetched_truncated'];
+  /**
+   * Statuses whose capture is complete enough for ABSENCE to mean anything.
+   *
+   * `fetched_truncated` is excluded for the reason above. `cached` is excluded too, and that is a
+   * judgement rather than a transcription of the bug: `fetchAndExtractPage` stamps `fetchStatus:
+   * 'cached'` on its cached branch unconditionally, and `getCachedEvidence` selects the newest row
+   * without filtering on status -- so a row originally stored as `fetched_truncated` resurfaces as
+   * `cached` and its completeness is unknowable from the status alone. Unknown fails closed, which is
+   * this workstream's governing principle. The cost is small and bounded: the automation path always
+   * runs with `forceRefresh` and so never takes that branch, and a claim nothing can re-confirm still
+   * reaches its own `validUntil` expiry rather than living forever.
+   */
+  const COMPLETE_FETCH = ['ok'];
+
+  /**
+   * Current enough to read an explicit statement from: usable status, and retrieved at or after the
+   * claim's check. Used for the claim's own page AND for any page allowed to contradict it, so the
+   * recency rule cannot come adrift between them again.
+   */
+  const usableFor = (source, checkedAt) =>
+    USABLE_FETCH.includes(source.fetchStatus)
+    && Date.parse(source.retrievedAt) >= Date.parse(checkedAt);
+
+  /**
+   * Complete enough to argue that a previously supported fact has gone.
+   *
+   * Completeness only, with no recency test of its own. A mutation pass proved that adding one here
+   * is dead: this is reached at a single site, after `usableFor` has already accepted the same source
+   * for the same claim, and `USABLE_FETCH` is a superset of `COMPLETE_FETCH` -- so recency is
+   * established before this can be asked. Taking only the source makes the redundancy impossible to
+   * reintroduce rather than merely commented away, and leaves each predicate about one thing.
+   */
+  const isCompleteRead = (source) => COMPLETE_FETCH.includes(source.fetchStatus);
+  // Read straight off each source's own facts. Never the merged verdict: the merge cannot say which
+  // page a given claim came from, which is precisely the distinction this function turns on.
+  const statesValue = (source, field, value) =>
+    (source?.facts ?? []).some((fact) => fact.field === field && fact.value === value);
+
   const claims = await listClaimsForVenue(id, {status:'active'});
   for (const claim of claims) {
     if (![REVIEWED_BY, AI_AUTO_APPROVER].includes(claim.approvedBy)) continue;
-    const source = bundle.sources.find(s=>s.url===claim.sourceUrl && Date.parse(s.retrievedAt)>=Date.parse(claim.checkedAt));
-    if (!source) continue;
     const field = Object.keys(FIELD_MAP).find(key=>FIELD_MAP[key]===claim.fieldKey);
-    const fact = bundle.facts.find(f=>f.field===field);
-    const parts = claim.fieldKey.split('.');
-    const value = parts.length===2 ? review.payload[parts[0]]?.[parts[1]] : review.payload[parts[0]];
-    if (!fact || value===undefined) await disputeClaim(claim.id);
+    // A claim outside the facility vocabulary (an age policy, say) is not this function's business.
+    if (!field) continue;
+
+    // (1) and (2)
+    const backing = sources.find(s=>s.url===claim.sourceUrl && usableFor(s, claim.checkedAt));
+    if (!backing) continue;
+
+    // (3) the Phase 6 gate, stated on provenance rather than on whether a page happened to be fetched
+    if (!isEligibleScope(backing.subjectScope)) continue;
+
+    // (4) and (5)
+    if (!statesValue(backing, field, claim.valueJson)) {
+      /**
+       * The page no longer says it -- but only a COMPLETE read can turn that into a withdrawal. On a
+       * truncated capture the statement may simply lie beyond where the fetch stopped, so the claim
+       * is left exactly as it is and reaches its normal expiry if nothing re-confirms it. Silence in
+       * a prefix is not a denial.
+       */
+      if (isCompleteRead(backing)) await disputeClaim(claim.id);
+      continue;
+    }
+
+    /**
+     * (6) and (7). A source joins the conflict set only if it may speak for this venue AND its
+     * reading is at least contemporaneous with the claim. Without the second test an older
+     * successful page withdraws a newer claim, which is the same staleness this function exists to
+     * police -- just pointed the other way.
+     *
+     * `usableFor`, not `isCompleteRead`, on purpose: a truncated page that EXPLICITLY states the
+     * opposite value has been read saying so, and that is positive evidence of a disagreement rather
+     * than an argument from absence. Truncation limits what a page can deny, not what it can assert.
+     */
+    const eligibleValues = new Set();
+    for (const source of sources) {
+      if (!isEligibleScope(source.subjectScope)) continue;
+      if (!usableFor(source, claim.checkedAt)) continue;
+      for (const fact of source.facts ?? []) {
+        if (fact.field === field && fact.value !== 'unknown') eligibleValues.add(fact.value);
+      }
+    }
+    if (eligibleValues.size > 1) await disputeClaim(claim.id);
   }
 }
 
@@ -150,5 +280,8 @@ module.exports = {
   buildAutoApprovePayload,
   tryAutoApproveDraft,
   autoApprovePendingBatch,
+  // Exported so the reconciliation boundary can be asserted directly. It decides whether a live
+  // claim survives, so it is tested against the real store rather than through a grep for a string.
+  reconcileSourceClaims,
   REVIEWED_BY,
 };

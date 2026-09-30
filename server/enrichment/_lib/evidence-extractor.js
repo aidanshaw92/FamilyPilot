@@ -1,6 +1,7 @@
 const { cleanEvidenceSnippet } = require('./evidence-text-utils');
 const { extractPushchairEvidence } = require('./pushchair-evidence');
 const { extractEnvironmentEvidence } = require('./environment-evidence');
+const { isEligibleScope } = require('./source-identity');
 
 const FIELD_PATTERNS = [
   {
@@ -335,7 +336,40 @@ function extractEvidenceFromText(text, sourceMeta) {
   return facts;
 }
 
+/**
+ * Merge the per-source facts into one verdict per field.
+ *
+ * WITHHOLDING HAS TO BE SYMMETRIC, and this is where that is enforced.
+ *
+ * Found by the Young V&A production canary on 2026-09-27. Rejecting two other-catalogue-venue pages
+ * freed room in the crawl budget, which the reserve filled with `vam.ac.uk/east/museum/visit` -- V&A
+ * East Museum, not a catalogue venue, so `sibling_unverified`: fetched, recorded, WITHHELD. That page
+ * states parking both ways ("Buggy parking is available..." and "There is no parking provided or
+ * managed by the V&A"). Merged blind to scope, parking became a conflict, `eligibleFact` dropped the
+ * conflicted fact, and reconciliation disputed Young V&A's parking claim -- a true fact, read off the
+ * venue's OWN page, withdrawn on the word of a page that was not allowed to speak for it at all.
+ *
+ * Publication already asked "may this source speak FOR this venue?". Nothing asked whether it may
+ * speak AGAINST it. So the rule is: only evidence that could establish a field may contest it.
+ *
+ * The fallback matters as much as the filter. Excluding ineligible sources outright would delete the
+ * field from the bundle whenever every source for it is ineligible -- and `reconcileSourceClaims`
+ * disputes a claim whose field has vanished. Horniman Butterfly House's seven claims all come from
+ * `other_catalogue_venue` pages, so a blanket exclusion would have disputed them the moment the cron
+ * next ran: exactly the unreviewed mass repair the `enforceSubjectScope: false` exception exists to
+ * prevent. Ineligible evidence therefore still speaks where nothing eligible does, which keeps those
+ * claims reaching their normal expiry instead of being withdrawn by a deploy. It still cannot
+ * PUBLISH: `eligibleFact` checks the source's own scope, independently of this merge.
+ *
+ * A bundle carrying no scope information at all -- legacy rows, the batch runner, older fixtures --
+ * has no eligible candidate for any field and so falls back for all of them, which is the behaviour
+ * this function had before. The change is deliberately invisible until provenance exists.
+ */
 function mergeEvidenceBundles(sources) {
+  // Scope lives on the source, facts only carry their url, so index one by the other.
+  const scopeByUrl = new Map((sources ?? []).map((source) => [source.url, source.subjectScope ?? null]));
+  const fromEligibleSource = (fact) => isEligibleScope(scopeByUrl.get(fact.sourceUrl));
+
   const byField = new Map();
   for (const source of sources) {
     for (const fact of source.facts ?? []) {
@@ -345,7 +379,9 @@ function mergeEvidenceBundles(sources) {
     }
   }
 
-  return [...byField.entries()].map(([field, candidates]) => {
+  return [...byField.entries()].map(([field, allCandidates]) => {
+    const eligibleCandidates = allCandidates.filter(fromEligibleSource);
+    const candidates = eligibleCandidates.length > 0 ? eligibleCandidates : allCandidates;
     const values = [...new Set(candidates.map((fact) => fact.value).filter((value) => value !== 'unknown'))];
     if (values.length > 1) {
       return {
