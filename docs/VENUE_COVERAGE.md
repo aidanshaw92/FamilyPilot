@@ -72,8 +72,9 @@ Verified by running the real `mergePageCandidates`: for a venue owning its host,
 | --- | --- | --- |
 | `USABLE_PAGE_TARGET` | 6 | How many readable pages are enough? |
 | `MAX_FETCH_ATTEMPTS` | 10 | How many URLs may be tried, successful or not? |
-| `CRAWL_BUDGET_MS` | 28 000 | How long may the crawl take, regardless of either? |
-| `PAGE_BUDGET_MS` | 12 000 | How long may one page take, redirects included? |
+| `GATHER_BUDGET_MS` | 33 000 | How long may all of this take, measured from entry? |
+| `PAGE_BUDGET_MS` | 12 000 | How long may one page take, DNS and redirects included? |
+| `MIN_PAGE_WINDOW_MS` | 4 000 | How small a window is not worth starting a page in? |
 
 A failed fetch consumes an attempt and never a usable-page slot: `usablePageCount()` counts
 `pagesFetched`, which holds only `ok` / `cached` / `fetched_truncated`.
@@ -90,8 +91,8 @@ therefore calls `fail_venue_enrichment_job` while the function runs on and may s
 a correctness hazard, not a latency one. Ten attempts alone cannot be trusted against it: measured
 crawl spans already reach 20.48 s p99 and 26.78 s max at only 4.07 attempts.
 
-**Why 28 s.** Measured over 128 completed jobs (`completed_at` against the evidence rows of the same
-round):
+**Why 33 s, from function entry.** Measured over 128 completed jobs (`completed_at` against the evidence
+rows of the same round):
 
 | Measure | p50 | p95 | p99 | max |
 | --- | --- | --- | --- | --- |
@@ -99,16 +100,39 @@ round):
 | Last fetch → job completed (the tail) | 2.40 s | 4.69 s | 6.25 s | 11.33 s |
 | One page (208 rounds) | 0.61 s | 2.44 s | 6.07 s | 6.29 s |
 
-Reserving 12 s for the tail, 5 s for the unmeasured head before the first fetch (auth, metadata and
-place reads, a possible Google Places call) and 5 s of margin leaves 50 − 22 = **28 s** for the crawl.
-A fetch is started only while `PAGE_BUDGET_MS` still fits inside that 28 s, and one page is itself
-bounded, so the crawl cannot exceed 28 s however slow the site is. The guard never interrupts a fetch in
-flight: the crawl always stops on a whole page, with its evidence stored.
+The first version of this budget was 28 s **starting at the first fetch**, with 5 s reserved for the head
+in arithmetic only. Review rejected that, correctly: `googleRequest` in `server/places/lib/google-places.js`
+uses `AbortSignal.timeout(15000)`, so `ensurePlaceDetails` alone can spend 15 s, and the crawl then got a
+fresh 28 s regardless — a real worst case of 15 + 28 + 11.33 = **54.3 s** against a 50 s abort. The
+assumption about the head was the defect.
 
-**Why a per-page budget exists at all.** `FETCH_TIMEOUT_MS` bounds one HTTP hop and was restarted on
-every redirect, so a page behind the maximum three redirects could hold 4 × 6 s = 24 s while the crawl
-guard had reserved 12 s for it. One deadline now covers the whole chain. Nothing measured comes close
-(per-page max 6.29 s), so the cap cuts off nothing observed and makes the worst case arithmetic.
+There is now one budget, measured from `gatherEvidenceForVenue`'s entry, that the head and the crawl
+share: 50 − 11.33 (measured tail max) − 5 (margin) = 33.67, taken as **33 s**. A slow head eats into page
+fetching, which is the right trade — fewer pages beats a job the worker has already abandoned. Every page
+is started only while at least `MIN_PAGE_WINDOW_MS` remains, and is handed
+`min(PAGE_BUDGET_MS, remaining)`, never more. The homepage is subject to the same rule: if the head has
+spent the budget, nothing is fetched and the gather returns an empty bundle, which fails closed
+everywhere downstream. The guard never interrupts a fetch in flight, so the crawl always stops on a whole
+page with its evidence stored.
+
+`MIN_PAGE_WINDOW_MS` is 4 s because per-page p95 is 2.44 s: below that the fetch would most likely be cut
+off mid-read and waste an attempt.
+
+**Why a per-page budget exists at all, and why it covers DNS.** `FETCH_TIMEOUT_MS` bounds one HTTP hop and
+was restarted on every redirect, so a page behind the maximum three redirects could hold 4 × 6 s = 24 s
+while the crawl guard had reserved 12 s for it. One deadline now covers the whole chain.
+
+Review found a second hole in the same claim: the deadline was computed, then `assertSafeUrl` ran a
+`dns/promises.lookup` with **no timeout and no signal**, and the HTTP timer was armed afterwards from the
+now-stale pre-DNS remainder. So resolution time sat outside the page budget entirely. Now the page
+deadline covers validation as well: resolution is raced against it, the remainder is recomputed after
+validation before the HTTP hop starts, and a validation that completes after the deadline has passed can
+never initiate a fetch. The lookup itself cannot be cancelled, so the safety promise is converted to a
+settled value before the race (no late unhandled rejection), and a validation *error* is still rethrown —
+refusing an unsafe URL is not a fetch outcome and never was.
+
+Nothing measured comes near these caps (per-page max 6.29 s), so they cut off nothing observed and make
+the worst case arithmetic rather than a hope.
 
 ### Candidate order: by field, not by hit rate
 
@@ -164,14 +188,24 @@ candidate type won each slot.
 
 ### Verification
 
-- 1 176 tests pass, 65 files; `tsc --noEmit` clean.
-- 11 mutants aimed at the new logic, all killed. Two survived the first pass and were answered by
-  adding the missing tests, not by loosening assertions: dropping the chain deadline from the recursive
-  redirect call, and putting a hard `20` back in place of the candidate list's own length.
+- 1 183 tests pass, 65 files; `tsc --noEmit` clean.
+- 15 mutants aimed at the new logic. All killed but one, and the survivors were answered by adding the
+  missing tests rather than loosening assertions: the chain deadline dropped from the recursive redirect
+  call; a hard `20` restored over the candidate list's own length; the gather deadline read moved back to
+  after the head; and the race around URL validation removed — which needed a test asserting the call
+  *returns* at the budget rather than when a hanging resolver answers, since the recomputed remainder
+  already produced the same status.
+- The one mutant left alive is equivalent, not a gap: disabling the `DEADLINE_LOST` branch changes no
+  observable outcome, because the timer having fired means `Date.now() >= chainDeadlineAt`, so the
+  post-validation recomputation returns the identical timeout. The branch is kept for intent and as
+  protection if that recomputation is ever changed.
 - The before half is run as code: the same 404 scenario with the ceilings collapsed back to one number
   of five loses `/parking` and serves the homepage alone.
 - The redirect-deadline test runs offline by construction — an IP-literal host skips DNS and
   `globalThis.fetch` is replaced — and separates a carried deadline (~400 ms) from a per-hop timer (6 s).
+- The head is modelled inside the gather, not before the call: the fake clock charges the head cost on
+  its second read, which is where the pipeline records `headElapsedMs`. Charging it before the call is
+  exactly the mistake review found, and would have tested nothing.
 
 ### Expected effects to watch, including an unwelcome one
 
@@ -182,9 +216,16 @@ says otherwise will have that claim disputed rather than served. That is the int
 rounds 3–5 — a contradiction inside a venue's own site is not a fact — but it means the cohort's net
 change may be smaller than its gross gain, and both need reporting separately.
 
-Residual risks: 10 sequential requests to one host inside 28 s where there were 4, with no per-host
+Residual risks: 10 sequential requests to one host inside 33 s where there were 4, with no per-host
 delay and no `robots.txt` check (both pre-existing); and roughly 4.6 extra evidence rows per crawl round,
 each capped at 8 000 characters of extracted text.
+
+One piece of the request is still unbounded, stated precisely rather than claimed away: the per-page
+`saveEvidenceRecord` write has no timeout of its own. The guard measures real elapsed time between pages,
+so a slow write consumes the window and the next page is refused — but a write already in flight is not
+cut short. Those writes are inside the measured spans above (25.17 s max crawl span, 11.33 s max tail),
+which is the evidence the 5 s margin rests on. Bounding them would mean a timeout on the Supabase client,
+which is wider than this change.
 
 ## The controlled cohort (proposed, not yet run)
 

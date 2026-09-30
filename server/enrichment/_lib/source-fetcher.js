@@ -77,17 +77,68 @@ async function readBoundedHtml(response, maxBytes) {
   };
 }
 
+/**
+ * `assertSafeUrl` inside the page deadline.
+ *
+ * Review finding: the deadline was computed, then `assertSafeUrl` ran a `dns/promises.lookup` with no
+ * timeout and no signal, and only then was the HTTP timer armed -- using the now-stale pre-DNS
+ * remainder. A slow resolver could therefore push one page past `PAGE_BUDGET_MS`, so "one page, one
+ * wall clock" was not true.
+ *
+ * The lookup itself cannot be cancelled, so it is raced against the deadline. Two details make that
+ * safe rather than merely tidy:
+ *
+ *  - The safety promise is converted to a settled VALUE (`{parsed}` or `{error}`) before the race, so a
+ *    rejection arriving after the race has been lost cannot surface as an unhandled rejection.
+ *  - When the deadline wins, this returns before the safety result is ever read, so a validation that
+ *    completes later can never initiate a fetch. That is the property the finding asked for.
+ *
+ * A validation ERROR is rethrown rather than folded into a status, because refusing an unsafe URL is
+ * not a fetch outcome and never was: SSRF rejection propagates exactly as it did before.
+ */
+const DEADLINE_LOST = Symbol('page_deadline_expired');
+
+async function resolveWithinPageDeadline(urlString, chainDeadlineAt) {
+  const remainingMs = chainDeadlineAt - Date.now();
+  if (remainingMs <= 0) return DEADLINE_LOST;
+
+  const settled = assertSafeUrl(urlString).then(
+    (parsed) => ({ parsed }),
+    (error) => ({ error }),
+  );
+
+  let timer;
+  const expiry = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(DEADLINE_LOST), remainingMs);
+  });
+
+  try {
+    const outcome = await Promise.race([settled, expiry]);
+    if (outcome === DEADLINE_LOST) return DEADLINE_LOST;
+    if (outcome.error) throw outcome.error;
+    return outcome.parsed;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchWithRedirects(urlString, redirectCount = 0, deadlineAt = null) {
   // One deadline for the whole chain: set on the first hop, carried by every redirect.
   const chainDeadlineAt = deadlineAt ?? Date.now() + PAGE_BUDGET_MS;
-  const remainingMs = chainDeadlineAt - Date.now();
-  if (remainingMs <= 0) {
+
+  const parsed = await resolveWithinPageDeadline(urlString, chainDeadlineAt);
+  if (parsed === DEADLINE_LOST) {
     return { status: 'timeout', html: null, error: 'Page budget exhausted' };
   }
 
-  const parsed = await assertSafeUrl(urlString);
+  // Recomputed AFTER validation: whatever DNS spent is spent, and the HTTP hop gets only what is left.
+  const httpRemainingMs = chainDeadlineAt - Date.now();
+  if (httpRemainingMs <= 0) {
+    return { status: 'timeout', html: null, error: 'Page budget exhausted' };
+  }
+
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), Math.min(FETCH_TIMEOUT_MS, remainingMs));
+  const timer = setTimeout(() => controller.abort(), Math.min(FETCH_TIMEOUT_MS, httpRemainingMs));
 
   try {
     const response = await fetch(parsed.toString(), {

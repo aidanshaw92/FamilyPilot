@@ -1259,10 +1259,10 @@ describe('FIXED 15: three separate crawl ceilings, so a failed fetch no longer e
 
   /** The measured worst case for everything after the last fetch, over 128 completed jobs. */
   const MEASURED_TAIL_MAX_MS = 11333;
-  /** Reserved for the unmeasured head before the first fetch: auth, metadata and place reads. */
-  const HEAD_RESERVE_MS = 5000;
   /** `enrichment-worker/index.ts`: AbortSignal.timeout(50000) on the call to the API. */
   const WORKER_ABORT_MS = 50000;
+  /** `google-places.js`: AbortSignal.timeout(15000) -- what the old 5s head reserve got wrong. */
+  const GOOGLE_PLACES_TIMEOUT_MS = 15000;
 
   /**
    * The server modules are plain CommonJS loaded by Node, not through Vite's module graph, so
@@ -1288,6 +1288,8 @@ describe('FIXED 15: three separate crawl ceilings, so a failed fetch no longer e
     delete process.env.SOURCE_USABLE_PAGE_TARGET;
     delete process.env.SOURCE_MAX_FETCH_ATTEMPTS;
     delete process.env.SOURCE_CRAWL_BUDGET_MS;
+    delete process.env.SOURCE_GATHER_BUDGET_MS;
+    delete process.env.SOURCE_MIN_PAGE_WINDOW_MS;
     fs.mkdirSync('.data', { recursive: true });
     fs.writeFileSync(path.join('.data', 'venue-source-evidence.json'), JSON.stringify({ records: [] }));
     attempts = [];
@@ -1315,7 +1317,18 @@ describe('FIXED 15: three separate crawl ceilings, so a failed fetch no longer e
     require(FETCHER).fetchOfficialPage = async (url: string, opts: { budgetMs?: number } = {}) => {
       attempts.push({ url, budgetMs: opts.budgetMs });
       const outcome = outcomeFor(url);
-      nowMs += outcome.durationMs ?? 0;
+      /**
+       * The fake honours the budget it was handed, because the real fetcher does: the abort fires at
+       * the budget and the page comes back as a timeout. Letting the fake overrun would have made the
+       * elapsed-time assertions below meaningless -- it would measure a page the production code could
+       * not actually run that long.
+       */
+      const wanted = outcome.durationMs ?? 0;
+      const allowed = opts.budgetMs ?? Number.POSITIVE_INFINITY;
+      nowMs += Math.min(wanted, allowed);
+      if (wanted > allowed) {
+        return { ok: false, fetchStatus: 'timeout', error: 'Fetch timeout', url, html: null };
+      }
       if (!outcome.ok) {
         return { ok: false, fetchStatus: 'error', httpStatus: 404, error: 'HTTP 404', url, html: null };
       }
@@ -1338,11 +1351,27 @@ describe('FIXED 15: three separate crawl ceilings, so a failed fetch no longer e
     // Re-bind: the pipeline destructures `fetchOfficialPage` at load, so it must load after the swap.
     delete require.cache[PIPELINE];
     const { gatherEvidenceForVenue } = require(PIPELINE);
+
+    /**
+     * `headMs` models the head -- `ensurePlaceDetails` (a Google Places call with its own 15s timeout)
+     * and `listVenueIdentities` -- costing wall time. It has to be charged INSIDE the gather, after the
+     * deadline is set, or it would not test anything: charging it before the call is exactly the
+     * mistake the review found. The pipeline reads the clock first for `gatherStartedAt` and second for
+     * `headElapsedMs`, immediately after the head, so the cost lands on the second read.
+     */
+    const headMs = (options.headMs as number) ?? 0;
+    let clockReads = 0;
+    const clock = () => {
+      clockReads += 1;
+      if (clockReads === 2) nowMs += headMs;
+      return nowMs;
+    };
+
     const bundle = await gatherEvidenceForVenue(VENUE, placeRow, {
       catalogue,
       // The production automation path: both HTTP entry points pass sourceOnly, which becomes this.
       forceRefresh: true,
-      clock: () => nowMs,
+      clock,
       ...options,
     });
     return bundle as unknown as {
@@ -1352,8 +1381,13 @@ describe('FIXED 15: three separate crawl ceilings, so a failed fetch no longer e
         usablePageCount: number;
         candidatesRemaining: number;
         stopReason: string;
-        crawlElapsedMs: number;
-        budgets: { usablePageTarget: number; maxFetchAttempts: number; crawlBudgetMs: number; pageBudgetMs: number };
+        gatherElapsedMs: number;
+        headElapsedMs: number;
+        homepageFetchStatus: string;
+        budgets: {
+          usablePageTarget: number; maxFetchAttempts: number;
+          gatherBudgetMs: number; pageBudgetMs: number; minPageWindowMs: number;
+        };
       };
     };
   }
@@ -1420,14 +1454,14 @@ describe('FIXED 15: three separate crawl ceilings, so a failed fetch no longer e
     expect(bundle.diagnostics.candidatesRemaining).toBeGreaterThan(0);
   });
 
-  it('stops starting fetches once the wall clock leaves no room for one, and stops cleanly', async () => {
-    // 5s a page: the fourth start would sit at 20s, and 20s + a 12s page budget exceeds the 28s crawl
-    // budget, so it is never begun.
+  it('stops starting fetches once the window is too small for one, and stops cleanly', async () => {
+    // 5s a page against a 33s budget: six pages start, at 0, 5, 10, 15, 20 and 25 (8s left, above the
+    // 4s minimum). After 30s only 3s remain, so the seventh start is refused.
     const bundle = await crawl(() => ({ ok: false, durationMs: 5000 }));
 
     expect(bundle.diagnostics.stopReason).toBe('wall_clock');
-    expect(bundle.diagnostics.fetchAttempts).toBe(4);
-    expect(bundle.diagnostics.crawlElapsedMs).toBe(20000);
+    expect(bundle.diagnostics.fetchAttempts).toBe(6);
+    expect(bundle.diagnostics.gatherElapsedMs).toBe(30000);
     expect(bundle.diagnostics.candidatesRemaining).toBeGreaterThan(0);
 
     /**
@@ -1437,26 +1471,83 @@ describe('FIXED 15: three separate crawl ceilings, so a failed fetch no longer e
     const stored = JSON.parse(fs.readFileSync(path.join('.data', 'venue-source-evidence.json'), 'utf8'));
     expect(stored.records.map((r: { source_url: string }) => r.source_url).sort())
       .toEqual(attempts.map((a) => a.url).sort());
-    expect(bundle.sources).toHaveLength(4);
+    expect(bundle.sources).toHaveLength(6);
   });
 
   it('cannot push the worker into its 50-second abort, even when every page takes its full budget', async () => {
     const bundle = await crawl(() => ({ ok: true, durationMs: 12000 }));
 
-    expect(bundle.diagnostics.stopReason).toBe('wall_clock');
-    expect(bundle.diagnostics.crawlElapsedMs).toBeLessThanOrEqual(bundle.diagnostics.budgets.crawlBudgetMs);
+    expect(bundle.diagnostics.gatherElapsedMs)
+      .toBeLessThanOrEqual(bundle.diagnostics.budgets.gatherBudgetMs);
 
     /**
-     * The derivation, asserted rather than asserted-in-a-comment: the crawl ceiling plus the measured
-     * worst case for everything after the last fetch plus the reserve for everything before the first
-     * must still fit inside the worker's abort. An overrun is not merely slow -- the worker marks the
-     * job FAILED while the Vercel function runs on to 60s and may still publish claims.
+     * The derivation, asserted rather than asserted-in-a-comment: the gather ceiling plus the measured
+     * worst case for everything after the last fetch must fit inside the worker's abort. An overrun is
+     * not merely slow -- the worker marks the job FAILED while the Vercel function runs on to 60s and
+     * may still publish claims.
+     *
+     * This assertion only means anything because the budget now starts at gather ENTRY. While it began
+     * at the first fetch, the same sum was true and the request could still take
+     * 15s (Google) + 28s + 11.33s = 54.3s.
      */
-    expect(bundle.diagnostics.budgets.crawlBudgetMs + MEASURED_TAIL_MAX_MS + HEAD_RESERVE_MS)
+    expect(bundle.diagnostics.budgets.gatherBudgetMs + MEASURED_TAIL_MAX_MS)
       .toBeLessThan(WORKER_ABORT_MS);
+    expect(GOOGLE_PLACES_TIMEOUT_MS + bundle.diagnostics.budgets.gatherBudgetMs + MEASURED_TAIL_MAX_MS,
+      'the old shape, kept here as the thing that must no longer be possible')
+      .toBeGreaterThan(WORKER_ABORT_MS);
   });
 
-  it('hands every fetch the page budget the crawl deadline reserved for it', async () => {
+  it('does not hand the page loop a fresh budget after a slow head', async () => {
+    /**
+     * Review blocker 2, as a regression. The head spends 30s of the 33s budget -- less than the 15s
+     * Google timeout plus a catalogue read could plausibly cost together -- and what remains is 3s,
+     * below the minimum page window. Under the old shape the crawl would have started here with a full
+     * 28s in hand.
+     */
+    const bundle = await crawl(() => ({ ok: true }), { headMs: 30000 });
+
+    expect(bundle.diagnostics.headElapsedMs).toBe(30000);
+    expect(bundle.diagnostics.stopReason).toBe('wall_clock_before_homepage');
+    expect(attempts, 'no page may be fetched at all').toEqual([]);
+    expect(bundle.diagnostics.fetchAttempts).toBe(0);
+    expect(bundle.diagnostics.homepageFetchStatus).toBe('not_attempted');
+    expect(bundle.diagnostics.gatherElapsedMs)
+      .toBeLessThanOrEqual(bundle.diagnostics.budgets.gatherBudgetMs);
+
+    // An empty gather fails closed: no facts to publish, and no backing page for reconciliation to
+    // read, so it withdraws nothing either.
+    expect(bundle.sources).toEqual([]);
+    const review = reviewEvidence(bundle);
+    expect(review.eligible).toBe(false);
+  });
+
+  it('charges a partly slow head to the same budget, leaving fewer pages rather than more time', async () => {
+    // 20s of head leaves 13s: pages at 5s each start at 20, 25 (8s left) and stop at 30s with 3s left.
+    const bundle = await crawl(() => ({ ok: false, durationMs: 5000 }), { headMs: 20000 });
+
+    expect(bundle.diagnostics.headElapsedMs).toBe(20000);
+    expect(bundle.diagnostics.fetchAttempts).toBe(2);
+    expect(bundle.diagnostics.stopReason).toBe('wall_clock');
+    expect(bundle.diagnostics.gatherElapsedMs).toBe(30000);
+  });
+
+  it('never hands a page more time than the gather has left', async () => {
+    /**
+     * The other half of the same finding: a page started near the end must get a REDUCED budget, not
+     * the full 12s, or the fetch it starts could outlive the window that authorised it.
+     */
+    const bundle = await crawl(() => ({ ok: false, durationMs: 5000 }), { headMs: 18000 });
+
+    expect(attempts.length).toBeGreaterThan(1);
+    expect(attempts[0].budgetMs, '15s left at the first page, so the full budget applies').toBe(12000);
+    const last = attempts[attempts.length - 1];
+    expect(last.budgetMs).toBeLessThan(12000);
+    expect(last.budgetMs).toBeGreaterThanOrEqual(bundle.diagnostics.budgets.minPageWindowMs);
+    // Every budget handed out was within what remained at the time it was handed out.
+    expect(attempts.every((a) => (a.budgetMs ?? 0) <= 12000)).toBe(true);
+  });
+
+  it('hands a page the full budget while the window allows it', async () => {
     // Without this the per-page cap would be decorative, and a redirect chain could outlast the
     // window the wall-clock guard proved safe.
     const bundle = await crawl(() => ({ ok: true }));
@@ -1540,11 +1631,117 @@ describe('FIXED 17: one page, one wall clock, redirects included', () => {
     }
   });
 
+  /**
+   * Review blocker 1, as two regressions.
+   *
+   * The deadline was computed, then `assertSafeUrl` ran a `dns/promises.lookup` with no timeout, and the
+   * HTTP timer was armed afterwards from the stale pre-DNS remainder. A slow resolver could push one
+   * page past its budget, so the page budget the crawl guard relies on was not actually a bound.
+   */
+  describe('the page budget covers URL safety and DNS, not only HTTP', () => {
+    const SECURITY = require.resolve('../../../server/enrichment/_lib/source-fetch-security.js');
+    const FETCHER = require.resolve('../../../server/enrichment/_lib/source-fetcher.js');
+    const realAssert = require(SECURITY).assertSafeUrl;
+    const realFetch = globalThis.fetch;
+
+    /** Replaces resolution with one that takes `delayMs`, and re-binds the fetcher onto it. */
+    function withSlowResolution(delayMs: number) {
+      require(SECURITY).assertSafeUrl = async (urlString: string) => {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        return new URL(urlString);
+      };
+      delete require.cache[FETCHER];
+      return require(FETCHER);
+    }
+
+    afterEach(() => {
+      require(SECURITY).assertSafeUrl = realAssert;
+      globalThis.fetch = realFetch;
+      delete require.cache[FETCHER];
+    });
+
+    it('starts no network fetch when resolution consumes the whole page budget', async () => {
+      let fetchCalls = 0;
+      globalThis.fetch = (async () => {
+        fetchCalls += 1;
+        return { status: 200, headers: new Headers({ 'content-type': 'text/html' }) } as unknown as Response;
+      }) as unknown as typeof globalThis.fetch;
+
+      const fetcher = withSlowResolution(300);
+      const result = await fetcher.fetchWithRedirects('https://slow-dns.example/page', 0, Date.now() + 100);
+
+      expect(result).toEqual({ status: 'timeout', html: null, error: 'Page budget exhausted' });
+      /**
+       * The lookup cannot be cancelled, so it is still running when this returns. What matters is that
+       * its result can never start a fetch -- which is the property the finding asked for, and the
+       * reason this waits past the resolution before asserting.
+       */
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      expect(fetchCalls, 'a validation that finishes late must not initiate a fetch').toBe(0);
+    });
+
+    it('does not wait for a hanging resolver to finish before giving up on the page', async () => {
+      /**
+       * Added because a mutant survived: replacing the race with a plain `await` still returned a
+       * timeout, since the remainder is recomputed after resolution. What it lost is the property that
+       * actually protects the gather -- a resolver hanging far past the budget would hold the page for
+       * as long as it hangs, and the gather guard can only refuse to START pages, not shorten one in
+       * flight. So the value here is the elapsed time, not the status.
+       */
+      let fetchCalls = 0;
+      globalThis.fetch = (async () => {
+        fetchCalls += 1;
+        return { status: 500 } as unknown as Response;
+      }) as unknown as typeof globalThis.fetch;
+
+      const fetcher = withSlowResolution(1500);
+      const startedAt = Date.now();
+      const result = await fetcher.fetchWithRedirects('https://hanging-dns.example/page', 0, Date.now() + 100);
+      const elapsed = Date.now() - startedAt;
+
+      expect(result.status).toBe('timeout');
+      expect(elapsed, 'must give up at the budget, not when the resolver eventually answers')
+        .toBeLessThan(600);
+      expect(fetchCalls).toBe(0);
+    });
+
+    it('gives the HTTP hop only what resolution left, not the pre-resolution remainder', async () => {
+      // Never answers, so the only thing that can end it is the abort signal.
+      globalThis.fetch = (async (_url: string, init: { signal: AbortSignal }) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal.addEventListener('abort', () => {
+            reject(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+          });
+        })) as unknown as typeof globalThis.fetch;
+
+      const fetcher = withSlowResolution(250);
+      const startedAt = Date.now();
+      const result = await fetcher.fetchWithRedirects('https://slow-dns.example/page', 0, Date.now() + 400);
+      const elapsed = Date.now() - startedAt;
+
+      expect(result.status).toBe('timeout');
+      // Under the old code the timer was armed with the full 400ms AFTER 250ms of resolution, giving
+      // 650ms for a page budgeted at 400ms.
+      expect(elapsed).toBeLessThan(600);
+      expect(elapsed).toBeGreaterThanOrEqual(250);
+    });
+
+    it('still propagates a refusal rather than turning an unsafe URL into a fetch outcome', async () => {
+      // The race must not change what happens when validation REFUSES: SSRF rejection still throws.
+      require(SECURITY).assertSafeUrl = async () => { throw new Error('Blocked private IP'); };
+      delete require.cache[FETCHER];
+      const fetcher = require(FETCHER);
+      await expect(fetcher.fetchWithRedirects('https://unsafe.example/', 0, Date.now() + 5000))
+        .rejects.toThrow('Blocked private IP');
+    });
+  });
+
   it('reserves less per page than the crawl guard sets aside for one', () => {
     // The arithmetic the wall-clock guard rests on. If the page budget ever exceeded what the crawl
     // reserves, a fetch it started could outlive the crawl deadline.
-    const { CRAWL_BUDGET_MS } = require('../../../server/enrichment/_lib/evidence-pipeline');
-    expect(PAGE_BUDGET_MS).toBeLessThan(CRAWL_BUDGET_MS);
+    const { GATHER_BUDGET_MS, MIN_PAGE_WINDOW_MS } = require('../../../server/enrichment/_lib/evidence-pipeline');
+    expect(PAGE_BUDGET_MS).toBeLessThan(GATHER_BUDGET_MS);
+    expect(MIN_PAGE_WINDOW_MS).toBeLessThan(PAGE_BUDGET_MS);
     expect(FETCH_TIMEOUT_MS).toBeLessThanOrEqual(PAGE_BUDGET_MS);
     // A three-redirect chain under the old per-hop timer: what the page budget now prevents.
     expect(FETCH_TIMEOUT_MS * 4).toBeGreaterThan(PAGE_BUDGET_MS);
