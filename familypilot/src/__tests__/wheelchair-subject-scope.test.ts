@@ -126,9 +126,10 @@ describe('the nouns deliberately left out of the list', () => {
 
   it('leaves out lift, which the corpus never makes the subject of the claim', () => {
     // Both corpus lift sentences put the claim on something else -- "the rooms", "all [3 floors]" --
-    // and neither backs a served claim (Hatfield Park has no wheelchairAccessible claim at all), so
-    // there is no evidence for a rule about lifts in either direction. They keep their fact here
-    // because no listed noun is their subject, not because `lift` was weighed and excluded.
+    // and neither backs a served claim: SEA LIFE's served `yes` comes from another sentence on the
+    // same page, and Hatfield Park's claim from the lift sentence is disputed. So there is no
+    // evidence for a rule about lifts in either direction. They keep their fact here because no
+    // listed noun is their subject, not because `lift` was weighed and excluded.
     expect(wheelchair('There is a lift within the House and the rooms are wheelchair accessible')).toBe('yes');
     expect(wheelchair('Wheelchair Users The aquarium is based over 3 floors and all are wheelchair '
       + 'accessible via separate standard lifts')).toBe('yes');
