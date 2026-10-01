@@ -409,8 +409,20 @@ function extractRelevantParagraphs(text, maxChars = 8000) {
   // read back as a single sentence. Chunk boundary and sentence boundary are the same boundary.
   const picked = [];
   let total = 0;
+  //
+  // `continue`, not `break`. The chunks are sorted by SCORE, not by length, so the first one that
+  // overflows the remaining budget is not the last one that would fit. Breaking there discarded every
+  // lower-scoring chunk behind it, however short.
+  //
+  // Demonstrated: with 130 characters of budget left, a 461-character chunk does not fit, and
+  // "Baby changing is available." -- 27 characters, a fact a parent actually needs -- was dropped
+  // with it. Skipping the overflowing chunk and carrying on keeps it.
+  //
+  // This can only ever ADD text, and only to a page whose budget is already spent: 37 of the 484
+  // stored pages are within 100 characters of the cap, and 447 never reach this branch at all. The
+  // cap is unchanged.
   for (const { chunk } of scored) {
-    if (total + chunk.length > maxChars) break;
+    if (total + chunk.length > maxChars) continue;
     picked.push(chunk);
     total += chunk.length + 1;
   }

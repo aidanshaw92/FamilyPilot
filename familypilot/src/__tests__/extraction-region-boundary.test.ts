@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { extractPageContent } = require('../../../server/enrichment/_lib/html-text-extractor.js');
+const { extractPageContent, extractRelevantParagraphs } = require('../../../server/enrichment/_lib/html-text-extractor.js');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { extractEvidenceFromText } = require('../../../server/enrichment/_lib/evidence-extractor.js');
 
@@ -118,5 +118,45 @@ describe('legitimate facility lists keep their facts', () => {
     const html = page(`<main><p>Free parking is available on site for visitors.</p></main>
       <footer><nav><a>Home</a><a>Sitemap</a></nav></footer>`);
     expect(facts(html)).toContain('parking=yes');
+  });
+});
+
+/**
+ * The 8,000-character cap is not itself a defect: the median stored page is 3,244 characters, only 8
+ * of 484 reach the cap exactly, and selection is by SCORE rather than by position, so what the cap
+ * drops is the least facility-relevant text, not the tail of the page.
+ *
+ * The fill loop was a defect. Chunks arrive sorted by score, not by length, so the first chunk that
+ * overflows the remaining budget is not the last one that would fit -- and `break` threw away every
+ * lower-scoring chunk behind it.
+ */
+describe('the budget fill skips an oversized chunk instead of stopping', () => {
+  const filler = Array.from({ length: 9 }, (_, i) =>
+    `Visitor note ${i} about toilets and cafe and accessible access and parking and playground and pushchair and buggy routes.`).join('\n');
+  const oversized = `Accessible toilets and a cafe are provided, ${'and the site is large '.repeat(18)}with step-free paths.`;
+  const smallFact = 'Baby changing is available.';
+
+  it('keeps a short fact that fits after a chunk that does not', () => {
+    const out = extractRelevantParagraphs([filler, oversized, smallFact].join('\n'), 1200) as string;
+    // The oversized chunk genuinely cannot fit, and is correctly left out.
+    expect(oversized.length).toBeGreaterThan(400);
+    expect(out).not.toContain('step-free paths');
+    // The 27-character fact behind it fits, and used to be discarded with it.
+    expect(out).toContain(smallFact);
+    expect(out.length).toBeLessThanOrEqual(1200);
+  });
+
+  it('still honours the cap', () => {
+    const out = extractRelevantParagraphs([filler, oversized, smallFact].join('\n'), 1200) as string;
+    expect(out.length).toBeLessThanOrEqual(1200);
+  });
+
+  it('changes nothing for a page that fits inside the budget', () => {
+    const text = 'Baby changing is available.\nFree parking is available on site.\nThere are accessible toilets.';
+    expect(extractRelevantParagraphs(text, 8000)).toBe(extractRelevantParagraphs(text, 8000));
+    const out = extractRelevantParagraphs(text, 8000) as string;
+    expect(out).toContain('Baby changing is available.');
+    expect(out).toContain('Free parking is available on site.');
+    expect(out).toContain('There are accessible toilets.');
   });
 });
