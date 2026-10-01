@@ -43,6 +43,38 @@ begin
 end;
 $$;
 
+-- 2b. The GRANT list in a migration is not the resulting privilege set. Supabase's `postgres`-owned
+--     default ACL for schema public already hands service_role ALL privileges on every new public
+--     table, so 20261001090000's narrow grant was a no-op in production and the counter arrived
+--     deletable. 20261001140000 revokes that, and this asserts the outcome rather than the grant --
+--     the only check that would have caught it, because a plain CI Postgres has no such default ACL.
+do $$
+begin
+  if not has_table_privilege('service_role', 'public.google_places_usage', 'SELECT') then
+    raise exception 'service_role cannot read google_places_usage, so the daily budget cannot be primed';
+  end if;
+
+  if has_table_privilege('service_role', 'public.google_places_usage', 'DELETE') then
+    raise exception 'service_role can DELETE from google_places_usage; the spend record is not append-only';
+  end if;
+
+  if has_table_privilege('service_role', 'public.google_places_usage', 'TRUNCATE') then
+    raise exception 'service_role can TRUNCATE google_places_usage; the spend record is not append-only';
+  end if;
+
+  -- The security half, asserted against the ACL and not only by the read probe below, so a grant
+  -- made by some later migration is caught even if it somehow failed to produce a readable row.
+  if has_table_privilege('anon', 'public.google_places_usage', 'SELECT')
+     or has_table_privilege('authenticated', 'public.google_places_usage', 'SELECT')
+     or has_table_privilege('anon', 'public.place_search_cache', 'SELECT')
+     or has_table_privilege('authenticated', 'public.place_search_cache', 'SELECT') then
+    raise exception 'a client role holds SELECT on a places cost-control table';
+  end if;
+
+  raise notice 'the spend record is append-only for service_role and invisible to client roles';
+end;
+$$;
+
 -- 3. anon and authenticated must be refused both tables and the counter.
 do $$
 declare
