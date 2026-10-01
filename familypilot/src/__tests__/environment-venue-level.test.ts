@@ -178,3 +178,42 @@ describe('venueLevelSetting is the seam the rules are built on', () => {
     });
   });
 });
+
+describe('the feature-phrase mask may not reach across the name of the venue', () => {
+  /**
+   * A regression, found by replaying the live pipeline against production rather than by a fixture.
+   *
+   * Belmont Children's Farm publishes "Indoor & Outdoor Visitors Farm Soft Play Cafe" on its home
+   * page. `soft play` is a feature noun two words past "Outdoor", so the two-modifier run matched
+   * "Outdoor Visitors Farm Soft Play", masked the venue's own "Outdoor", and the farm was classified
+   * `indoor` -- from a sentence that says "Indoor & Outdoor" in as many words. The claim reached
+   * production before this test existed.
+   *
+   * The sentences below are the real stored excerpts, including the CSS noise the extractor sees.
+   */
+  const BELMONT_HOME = 'Indoor & Outdoor Visitors Farm Soft Play Cafe The Farm Please note the farm will be cl';
+  const BELMONT_STORED = 'ment-wrapper } Indoor & Outdoor Visitors Farm { --stroke-style';
+
+  it('keeps the venue-level reading when a venue noun sits between the prefix and a feature noun', () => {
+    expect(classifyEnvironment(BELMONT_HOME)?.value).toBe('mixed');
+    expect(classifyEnvironment(BELMONT_STORED)?.value).toBe('mixed');
+    expect(classifyEnvironment('Indoor & Outdoor Visitors Farm')?.value).toBe('mixed');
+  });
+
+  it('leaves venueLevelSetting seeing both sides, which is where the bug actually was', () => {
+    expect(venueLevelSetting(BELMONT_HOME)).toEqual({ indoor: true, outdoor: true });
+  });
+
+  it('still masks a feature phrase whose modifiers are not the venue', () => {
+    // The four corpus cases the two-modifier run was widened for must keep working.
+    expect(classifyEnvironment('There is a single outdoor basketball court.')).toBeNull();
+    expect(classifyEnvironment("Join its outdoor kids' camp this summer.")).toBeNull();
+    expect(classifyEnvironment('The cafe has outdoor seating area for visitors.')).toBeNull();
+    expect(classifyEnvironment('Open-air skating rink. Museum entry not included.')).toBeNull();
+  });
+
+  it('does not mask a prefix that genuinely describes the venue type', () => {
+    expect(classifyEnvironment('An open-air museum in the Chilterns.')?.value).toBe('outdoor');
+    expect(classifyEnvironment('An entirely outdoor park with woodland trails.')?.value).toBe('outdoor');
+  });
+});
