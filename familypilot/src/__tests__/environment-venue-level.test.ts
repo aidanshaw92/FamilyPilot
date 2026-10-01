@@ -217,3 +217,53 @@ describe('the feature-phrase mask may not reach across the name of the venue', (
     expect(classifyEnvironment('An entirely outdoor park with woodland trails.')?.value).toBe('outdoor');
   });
 });
+
+describe('the mixed short-circuit reads the masked sentence, like every other verdict', () => {
+  /**
+   * Found by replaying the live pipeline over the contaminated-extraction cohort, not by a fixture.
+   *
+   * `classifyEnvironment` tested MIXED_PATTERNS against the RAW sentence before consulting
+   * `venueLevelSetting`. The Horniman Museum's food-and-drink page says "Indoor and outdoor seating
+   * is available for Cafe purchases only"; that matched a mixed pattern and published
+   * `environment = mixed` for an indoor museum, while `venueLevelSetting` on the very same sentence
+   * correctly reported neither side. Cafe seating is a feature. The mask existing in one code path
+   * and not the other is how a feature phrase became a venue verdict.
+   *
+   * The second case is the same family: `&` is not a word character, so the modifier run could not
+   * bridge it and only "outdoor seating" was masked, leaving a bare "Indoor" to win outright.
+   */
+  it('does not call a venue mixed because a feature mentions both sides', () => {
+    expect(classifyEnvironment('Indoor and outdoor seating is available for Cafe purchases only')).toBeNull();
+    expect(classifyEnvironment('There is indoor and outdoor seating.')).toBeNull();
+  });
+
+  it('masks a feature phrase joined by an ampersand, not just by "and"', () => {
+    expect(classifyEnvironment('Indoor & outdoor seating available')).toBeNull();
+    expect(venueLevelSetting('Indoor & outdoor seating available')).toEqual({ indoor: false, outdoor: false });
+  });
+
+  it('still reaches mixed on a genuine venue-level statement', () => {
+    expect(classifyEnvironment('There is plenty to do indoors and outdoors at the museum.')?.value).toBe('mixed');
+    expect(classifyEnvironment('Whatever the weather, there is lots to do indoors and outdoors.')?.value).toBe('mixed');
+    // Belmont, whose banner names the venue between the prefix and a feature noun.
+    expect(classifyEnvironment('Indoor & Outdoor Visitors Farm Soft Play Cafe')?.value).toBe('mixed');
+  });
+
+  it('agrees with venueLevelSetting on every sentence, which is the invariant that broke', () => {
+    for (const sentence of [
+      'Indoor and outdoor seating is available for Cafe purchases only',
+      'Indoor & outdoor seating available',
+      'the heated indoor soft play centre and cafe serving fresh sandwiches',
+      'There is plenty to do indoors and outdoors at the museum.',
+      'Indoor & Outdoor Visitors Farm',
+    ]) {
+      const { indoor, outdoor } = venueLevelSetting(sentence);
+      const verdict = classifyEnvironment(sentence);
+      if (!indoor && !outdoor) {
+        expect(verdict, `expected no verdict for: ${sentence}`).toBeNull();
+      } else {
+        expect(verdict, `expected a verdict for: ${sentence}`).not.toBeNull();
+      }
+    }
+  });
+});
