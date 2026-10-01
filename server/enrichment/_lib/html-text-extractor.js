@@ -149,6 +149,48 @@ function decodeHtmlEntities(text) {
     .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 }
 
+/**
+ * Elements whose TEXT is never page content, however deeply they sit inside an article.
+ *
+ * `stripTags` removes tags but keeps the text between them, which is right for prose and catastrophic
+ * for these: a `<style>` block inside `<main>` contributes its whole stylesheet as "evidence". On
+ * 2026-10-01, of 688 fetched evidence rows, 54 carried CSS, 80 carried JSON-LD or escaped JSON and 103
+ * carried inline JavaScript -- 197 rows, 28.6%, contaminated. Belmont Children's Farm's stored text
+ * begins `.fe-65b40341bcdc4b1fc633a8a6 { --grid-gutter: calc(var(--sqs-mobile-site-gutter, 6vw)...`
+ * and runs to the full 8000-character cap, so its real prose never reached the extractor at all. Its
+ * published `environment = mixed` cites, verbatim, `ment-wrapper } Indoor & Outdoor Visitors Farm {
+ * --stroke-style`.
+ *
+ * `stripHtml` already dropped script and style for the whole-body fallback. `extractRegion` did not,
+ * so the main/article/footer path carried everything straight through. Removed once, up front, so
+ * every path downstream sees the same cleaned HTML.
+ */
+const NON_CONTENT_ELEMENTS = ['script', 'style', 'noscript', 'template', 'svg'];
+
+/**
+ * Raw-text elements only. Per the HTML parsing spec, everything after an unclosed `<script>` or
+ * `<style>` is that element's text until a closing tag appears, so consuming to end of input matches
+ * what a browser does -- and matters here because pages arrive truncated (`fetch_status =
+ * fetched_truncated`), which is exactly how an unclosed `<style>` ends up as the tail of the input.
+ * The others are normal elements: an unclosed `<svg>` does not swallow the document, so eating to the
+ * end for those would silently discard real prose.
+ */
+const RAW_TEXT_ELEMENTS = new Set(['script', 'style']);
+
+function removeNonContentElements(html) {
+  let cleaned = String(html ?? '').replace(/<!--[\s\S]*?-->/g, ' ');
+  for (const tag of NON_CONTENT_ELEMENTS) {
+    cleaned = cleaned.replace(
+      new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}\\s*>`, 'gi'),
+      ' ',
+    );
+    if (RAW_TEXT_ELEMENTS.has(tag)) {
+      cleaned = cleaned.replace(new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*$`, 'i'), ' ');
+    }
+  }
+  return cleaned;
+}
+
 function stripTags(html) {
   return decodeHtmlEntities(html.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
 }
@@ -162,6 +204,14 @@ function stripHtml(html) {
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function removeRegions(html, tagNames) {
+  let out = String(html ?? '');
+  for (const tag of tagNames) {
+    out = out.replace(new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}\\s*>`, 'gi'), ' ');
+  }
+  return out;
 }
 
 function extractRegion(html, tagName) {
@@ -188,13 +238,148 @@ function scoreText(text, keywords = CONTENT_KEYWORDS) {
   return score;
 }
 
+/**
+ * Does this chunk look like code or markup residue rather than a sentence a person wrote?
+ *
+ * A second line of defence behind `removeNonContentElements`. Element removal handles the proven
+ * cases, but escaped JSON reaches the text through other routes -- a framework's hydration payload
+ * printed into the body, a feed rendered as literal text -- and once such a chunk is in the pool the
+ * field extractors read it as prose. Nando's publishes `environment = outdoor` from
+ * `:"LocationFeatureSpecification","name":"Outdoor seating","value":true}`: a restaurant with a patio,
+ * classified as an outdoor venue.
+ *
+ * Every test requires STRUCTURE, never a bare punctuation mark, because real visitor prose is full of
+ * colons and the odd bracket: "Parking charges: \u00a31.50 per hour", "Open 9:00-17:00 (last entry
+ * 16:30)", "Baby changing: in the main toilets". None of those may be discarded.
+ *
+ * An earlier version also rejected a chunk whose density of `{}();=<>` passed a threshold. Replayed
+ * over the stored corpus it threw away plain English: "From Waterloo Station (5-minute walk): Exit the
+ * station via Exit 6 (York Road) or follow signs for Leake Street.", "2) Accessibility Regulations
+ * 2018 (the 'accessibility regulations').", "Visit our passholder pre-book page to book your visit(s)
+ * here." Travel directions and numbered lists are full of brackets. A punctuation count cannot prove
+ * that text is code, so it is gone; the structural rules each prove the thing they test.
+ */
+/**
+ * Excise code and markup spans from a chunk, keeping the prose around them.
+ *
+ * Rejecting a whole chunk was the first design and it was wrong. Replayed over all 670 stored texts it
+ * lost five correct facts and flipped two values, because sites glue residue onto real sentences:
+ *
+ *   Horniman        ".cls-1{fill:#fff;} Asset 1 Toggle navigation Search Plan Your Visit ..."
+ *   Sydenham Hill   "Know before you go .st0{fill-rule:evenodd;clip-rule:evenodd;fill:#777} Size 11
+ *                    hectares Access There are four ..."   <- an inline SVG stylesheet, and the chunk
+ *                    carrying the venue's own Access statement
+ *   Chiltern        "Plan your visit - Chiltern Open Air Museum ... <section data-test="page-section"
+ *                    class='page-section ...'"             <- a raw tag the old extractor leaked
+ *
+ * Dropping those chunks removed the evidence that said `wheelchairAccessible = yes`, and a sentence
+ * about the nearby railway station -- "The station is not wheelchair accessible" -- won instead. A
+ * guard that turns a correct yes into a confident no is worse than the contamination it removes.
+ */
+function stripCodeResidue(chunk) {
+  let out = String(chunk ?? '');
+
+  // Raw HTML tags, and any unterminated tag running to the end of the chunk.
+  out = out.replace(/<[^<>]*>/g, ' ').replace(/<[a-zA-Z/][^<>]*$/, ' ');
+
+  // CSS rule blocks, with or without their selector, repeatedly for nested/consecutive blocks.
+  for (let i = 0; i < 4; i += 1) {
+    out = out.replace(/[.#]?[a-zA-Z0-9_\-]*[.#:][a-zA-Z0-9_\-]*\s*\{[^{}]*\}/g, ' ');
+    out = out.replace(/\{[^{}]*[a-z-]+\s*:\s*[^{}]*\}/gi, ' ');
+  }
+  out = out.replace(/@(?:media|supports|font-face|keyframes|import)\b[^{]*\{[\s\S]*?\}/gi, ' ');
+  // A stray declaration or brace left by an already-truncated block.
+  out = out.replace(/--[a-z][a-z0-9-]*\s*:[^;}]*[;}]?/gi, ' ');
+  // A declaration left behind by a block that was already truncated. Restricted to real CSS property
+  // names: a generic `word: value;` rule ate Mayow Park's "Facilities include: play area cafe outdoor
+  // gym nature reserve", and with it a correct playground fact.
+  out = out.replace(
+    /\b(?:color|background(?:-[a-z]+)?|font(?:-[a-z]+)?|margin(?:-[a-z]+)?|padding(?:-[a-z]+)?|border(?:-[a-z]+)?|width|height|min-width|max-width|min-height|max-height|display|position|top|right|bottom|left|z-index|flex(?:-[a-z]+)?|grid(?:-[a-z]+)?|gap|opacity|overflow(?:-[a-z]+)?|text-[a-z]+|line-height|letter-spacing|fill|stroke(?:-[a-z]+)?|clip-rule|fill-rule|transform|transition|content|cursor|visibility)\s*:\s*[^;{}]{0,60}[;}]?/gi,
+    ' ',
+  );
+
+  // Bare selector residue, left once a block's braces have gone. Swanley Park's stored text carries
+  // `> :where( > ) > > > > , > > > > > > , [data-kb-block="kb-adv-heading1921_84b352-b0"] mark`.
+  out = out.replace(/:(?:where|is|not|has|nth-child|nth-of-type)\s*\([^)]*\)/gi, ' ');
+  out = out.replace(/\[[a-zA-Z-]+(?:[~^|$*]?=\s*["'][^"']*["'])?\]/g, ' ');
+  out = out.replace(/(?:\s[>~+,]\s*){2,}/g, ' ');
+
+  // JSON objects carrying quoted keys.
+  for (let i = 0; i < 4; i += 1) {
+    out = out.replace(/\{[^{}]*"[^"]+"\s*:[^{}]*\}/g, ' ');
+  }
+  out = out.replace(/"[a-zA-Z_@][a-zA-Z0-9_-]*"\s*:\s*("[^"]*"|true|false|null|-?\d+(?:\.\d+)?)/g, ' ');
+  out = out.replace(/\\u[0-9a-fA-F]{4}/g, ' ');
+
+  // JavaScript, in two passes.
+  //
+  // First, bounded call expressions, because a script is not always a suffix: a WordPress theme emits
+  // `UNCODE.initRow(document.getElementById("row-unique-4")); From an annual dog show to
+  // family-friendly Open Days ...` -- the code comes FIRST and real prose follows it. Cutting from the
+  // marker to the end of the chunk, which an earlier version did, discarded that prose.
+  for (let i = 0; i < 3; i += 1) {
+    out = out.replace(
+      /\b[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+\s*\([^()]*(?:\([^()]*\)[^()]*)*\)\s*;?/g,
+      ' ',
+    );
+  }
+  out = out.replace(/\b(?:function\s*\([^)]*\)|\([^)]*\)\s*=>)\s*\{[^{}]*\}\s*\)?\s*;?/g, ' ');
+
+  // Then anything still carrying a JS marker is unbalanced or truncated code, which has no reliable
+  // end delimiter left, so the remainder of the chunk goes. Gladstone Park's text ends
+  // `... in this park window ('DOMContentLoaded', (e) => { const map = L ('map', { scrol`.
+  out = out.replace(
+    /(?:\bfunction\s*\(|\)\s*=>|=>\s*\{|\bwindow\.|\bdocument\.|addEventListener|DOMContentLoaded|\bwindow\s*\()[\s\S]*$/,
+    ' ',
+  );
+
+  return out.replace(/\s+/g, ' ').trim();
+}
+
+function looksLikeCodeOrMarkup(chunk) {
+  return (
+    // CSS declaration: a brace followed by `property: value`, or a custom property.
+    /\{[^}]{0,200}[a-z-]+\s*:\s*[^;}]+[;}]/i.test(chunk) ||
+    /--[a-z][a-z0-9-]*\s*:/i.test(chunk) ||
+    // CSS at-rule.
+    /@(?:media|supports|font-face|keyframes|import)\b/i.test(chunk) ||
+    // JSON: a quoted key followed by a colon and a JSON value opener.
+    /"[a-zA-Z_@][a-zA-Z0-9_-]*"\s*:\s*[{["']/.test(chunk) ||
+    /"@(?:context|type|graph|id)"/i.test(chunk) ||
+    // Escaped-unicode payloads, the signature of JSON embedded in an attribute or body.
+    /\\u[0-9a-fA-F]{4}/.test(chunk) ||
+    // JavaScript.
+    /\bfunction\s*\(|\)\s*=>|=>\s*\{|\bwindow\.|\bdocument\.|addEventListener|DOMContentLoaded/.test(
+      chunk,
+    )
+  );
+}
+
 function extractRelevantParagraphs(text, maxChars = 8000) {
   const chunks = text
     .split(/(?:\n|\r|•|·|\u2022|(?<=[.!?])\s+)/)
     .map((s) => s.replace(/^[\s\-–—*]+/, '').trim())
-    .filter((s) => s.length > 15);
+    .filter((s) => s.length > 15)
+    // Clean first, then judge. A chunk is only discarded when nothing usable survives the cleaning,
+    // so prose that merely sits next to a stylesheet keeps its fact.
+    .map((s) => stripCodeResidue(s))
+    .filter((s) => s.length > 15 && !looksLikeCodeOrMarkup(s));
 
-  const scored = chunks
+  // Deduplicate. extractPageContent concatenates main, article, footer AND a whole-body fallback, so
+  // every chunk inside <main> arrives at least twice and the budget pays for each copy. Golders Hill
+  // Park's stored text is its breadcrumb repeated to the full 8000 characters. Dropping a source
+  // region instead would risk losing a page whose <main> is a thin shell, so every region stays and
+  // only the repetition goes.
+  const seen = new Set();
+  const unique = [];
+  for (const chunk of chunks) {
+    const key = chunk.toLowerCase().replace(/\s+/g, ' ');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(chunk);
+  }
+
+  const scored = unique
     .map((chunk) => ({ chunk, score: scoreText(chunk) }))
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score);
@@ -208,17 +393,35 @@ function extractRelevantParagraphs(text, maxChars = 8000) {
   }
 
   if (picked.length === 0) {
-    return text.slice(0, maxChars);
+    // No chunk matched a content keyword. The fallback exists because the field extractors look for
+    // their own wording, not CONTENT_KEYWORDS, so a page saying only "We have highchairs" must still
+    // reach them. It used to return `text` verbatim, which handed back the raw contaminated input and
+    // bypassed the cleaning entirely -- a JSON-LD payload sailed straight through on any page with no
+    // keyword hit. It returns the cleaned chunks instead, and nothing at all when none survive, which
+    // isEvidenceBearingSource then correctly reads as a page with no evidence on it.
+    return unique.join(' ').slice(0, maxChars);
   }
   return picked.join(' ').slice(0, maxChars);
 }
 
 function extractPageContent(html, maxChars = 8000) {
+  // Cleaned once, up front. The title is read from the ORIGINAL html: <title> lives in <head>
+  // alongside the elements being removed, and an unclosed <style> earlier in head would otherwise
+  // take the title with it. Flip Out Brent Cross's `environment = indoor` comes from its title alone.
   const title = extractTitle(html);
-  const main = extractRegion(html, 'main');
-  const article = extractRegion(html, 'article');
-  const footer = extractRegion(html, 'footer');
-  const bodyFallback = stripHtml(html);
+  const cleaned = removeNonContentElements(html);
+  const main = extractRegion(cleaned, 'main');
+  const article = extractRegion(cleaned, 'article');
+  const footer = extractRegion(cleaned, 'footer');
+
+  // The fallback covers what the named regions did NOT. Previously it was the whole body, so every
+  // chunk inside <main> arrived twice and the 8000-character budget paid for both copies; 78 of 688
+  // stored rows sit exactly at the cap, with real prose crowded out behind the repetition. Removing
+  // the regions already captured makes the four sources a partition instead of an overlap, so the
+  // union of text is unchanged and only the duplication goes. Text dedupe cannot do this job: the two
+  // copies differ at their edges, because the body version runs the heading into the paragraph and so
+  // splits into differently-bounded chunks.
+  const bodyFallback = stripHtml(removeRegions(cleaned, ['main', 'article', 'footer']));
 
   const combined = [main, article, footer, bodyFallback].filter(Boolean).join(' ');
   const relevant = extractRelevantParagraphs(combined, maxChars);
@@ -385,6 +588,10 @@ function isCloudflareChallenge(html) {
 
 module.exports = {
   extractPageContent,
+  extractRelevantParagraphs,
+  removeNonContentElements,
+  looksLikeCodeOrMarkup,
+  stripCodeResidue,
   findRelevantLinks,
   findLinkedPages,
   stripHtml,
