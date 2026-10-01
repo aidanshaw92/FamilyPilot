@@ -167,6 +167,7 @@ async function reconcileSourceClaims(id, bundle) {
     (source?.facts ?? []).some((fact) => fact.field === field && fact.value === value);
 
   const claims = await listClaimsForVenue(id, {status:'active'});
+  let withdrawn = 0;
   for (const claim of claims) {
     if (![REVIEWED_BY, AI_AUTO_APPROVER].includes(claim.approvedBy)) continue;
     const field = Object.keys(FIELD_MAP).find(key=>FIELD_MAP[key]===claim.fieldKey);
@@ -188,7 +189,10 @@ async function reconcileSourceClaims(id, bundle) {
        * is left exactly as it is and reaches its normal expiry if nothing re-confirms it. Silence in
        * a prefix is not a denial.
        */
-      if (isCompleteRead(backing)) await disputeClaim(claim.id);
+      if (isCompleteRead(backing)) {
+        await disputeClaim(claim.id);
+        withdrawn += 1;
+      }
       continue;
     }
 
@@ -210,8 +214,55 @@ async function reconcileSourceClaims(id, bundle) {
         if (fact.field === field && fact.value !== 'unknown') eligibleValues.add(fact.value);
       }
     }
-    if (eligibleValues.size > 1) await disputeClaim(claim.id);
+    if (eligibleValues.size > 1) {
+      await disputeClaim(claim.id);
+      withdrawn += 1;
+    }
   }
+
+  /**
+   * A WITHDRAWAL THAT DOES NOT LEAVE THE SERVING SURFACE IS NOT A WITHDRAWAL.
+   *
+   * `disputeClaim` sets the claim's status and stops there. What a parent reads is the projection in
+   * `venue_family_metadata`, which is rebuilt from active claims -- so until something rebuilds it,
+   * the withdrawn value is still on the venue page.
+   *
+   * The admin endpoint remembers to do this; this function did not, and the one caller above returns
+   * EARLY when the review that follows is ineligible:
+   *
+   *   reconcileSourceClaims(...)        <- disputes the claims
+   *   review = reviewEvidence(...)
+   *   if (!review.eligible) return;     <- no publish, so no projection rebuild
+   *   approveDraft(...)                 <- this is what would have rebuilt it
+   *
+   * Those two conditions coincide exactly when every claim for a field has just been withdrawn,
+   * which is the case that matters most. Found in the production audit on 2026-10-01: Crystal Palace
+   * Park was still serving `playground`, `toilets` and `accessibleToilet` as `yes`, and Swanley Park
+   * `playground = yes`, from claims disputed on 11 September -- twenty days of a withdrawn fact on a
+   * live venue page. Both venues' projections carried the publication timestamp, never updated since.
+   *
+   * Rebuilt here, once per venue rather than once per claim, and only when something was actually
+   * withdrawn, so a run that changes nothing writes nothing.
+   *
+   * `fromClaims: true` is explicit rather than load-bearing, and a mutation pass says so: removing it
+   * changes no outcome, because `saveMetadata` falls through to the same rebuild whenever the venue
+   * still has active claims, and when it has none the minimal payload below clears the field anyway.
+   * It stays because it states the intent and does not depend on that coincidence holding.
+   */
+  if (withdrawn > 0) {
+    const { getMetadata, saveMetadata } = require('./enrichment-store');
+    const existing = await getMetadata(id);
+    await saveMetadata(
+      id,
+      {
+        lastChecked: existing?.lastChecked ?? new Date().toISOString().slice(0, 10),
+        checkedBy: existing?.checkedBy ?? REVIEWED_BY,
+      },
+      { fromClaims: true },
+    );
+  }
+
+  return { withdrawn };
 }
 
 const DEFAULT_BATCH_SIZE = 10;
