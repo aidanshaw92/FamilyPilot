@@ -205,6 +205,109 @@ function countCall(scope) {
   dayCounts.set(key, (dayCounts.get(key) || 0) + 1);
 }
 
+// --- the daily cap across instances ---------------------------------------------------------------
+
+/**
+ * The counters above are per-process, and a Vercel deployment runs many processes. On their own they
+ * bound a runaway loop inside one warm instance -- which is worth having -- but they are NOT a daily
+ * spending cap, because ten instances each counting to 2000 spend 20000.
+ *
+ * So the real daily figure lives in Postgres (`public.google_places_usage`), and this module works
+ * with it in two directions:
+ *
+ *  - `primePlacesBudget()` reads today's totals into the in-process map. Handlers and jobs call it
+ *    once at entry, so the synchronous check at each call site is made against a number that
+ *    includes what every other instance has already spent.
+ *  - each billable call increments the stored figure fire-and-forget, so counting never adds a
+ *    database round trip to the request path and a counter failure can never fail a request.
+ *
+ * The cap therefore lags by at most one priming interval. That is stated rather than hidden: it is a
+ * bound on overshoot, not a guarantee of the exact figure, and it is the honest thing a serverless
+ * runtime can offer without a synchronous read per call.
+ */
+const PRIME_TTL_MS = 60_000;
+let primedAt = 0;
+let primedDay = '';
+
+function usageRecorder() {
+  try {
+    // Required lazily: this module must stay loadable, and the gate must stay enforceable, in a
+    // process with no Supabase configuration at all -- a script, a test, a local dev server.
+    const { getSupabaseAdmin } = require('../../enrichment/_lib/supabase-admin');
+    return getSupabaseAdmin();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Loads today's billable totals from the shared store into this process's counters. Safe to call on
+ * every request: it re-reads at most once a minute, and a failure leaves the per-process counters in
+ * place rather than opening the gate.
+ *
+ * @param {{ client?: unknown }} [options] - `client` overrides the Supabase client, for callers that
+ *   already hold one and for tests.
+ * @returns {Promise<boolean>} whether the figures now reflect the shared store.
+ */
+async function primePlacesBudget(options = {}) {
+  const day = today();
+  if (day === primedDay && Date.now() - primedAt < PRIME_TTL_MS) return true;
+
+  // `client` is injected the same way `createOpeningHoursBackfillDeps` injects its store: it lets the
+  // priming logic be exercised without a database, rather than being taken on trust.
+  const supabase = options.client ?? usageRecorder();
+  if (!supabase) return false;
+
+  try {
+    const { data, error } = await supabase
+      .from('google_places_usage')
+      .select('scope, calls')
+      .eq('usage_day', day)
+      .eq('environment', environmentName());
+    if (error) throw new Error(error.message);
+
+    for (const row of data ?? []) {
+      const key = `${day}:${row.scope}`;
+      // Max, not assignment: this process may already have counted calls the store has not caught
+      // up with, and the higher figure is the safer one to enforce against.
+      dayCounts.set(key, Math.max(dayCounts.get(key) || 0, Number(row.calls) || 0));
+    }
+    primedDay = day;
+    primedAt = Date.now();
+    return true;
+  } catch (error) {
+    console.warn(
+      JSON.stringify({
+        tag: 'google_places_budget_prime_failed',
+        message: error instanceof Error ? error.message : 'prime failed',
+      }),
+    );
+    return false;
+  }
+}
+
+/** Fire-and-forget. Never awaited on a request path, and never allowed to reject. */
+function persistCall(scope, sku) {
+  const supabase = usageRecorder();
+  if (!supabase) return;
+  try {
+    const result = supabase.rpc('record_google_places_usage', {
+      p_sku: sku,
+      p_scope: scope,
+      p_environment: environmentName(),
+      p_calls: 1,
+    });
+    if (result && typeof result.then === 'function') {
+      result.then(
+        () => undefined,
+        () => undefined,
+      );
+    }
+  } catch {
+    // A counter is observability, not correctness. It must never break the request it counts.
+  }
+}
+
 // --- attribution --------------------------------------------------------------------------------
 
 /**
@@ -272,6 +375,7 @@ function assertPlacesAllowed({ scope, reason, subject, jobId }) {
 
   countCall(scope);
   logBillableCall({ scope, sku: SCOPES[scope].sku, reason, subject, jobId });
+  persistCall(scope, SCOPES[scope].sku);
 }
 
 // --- in-flight coalescing -----------------------------------------------------------------------
@@ -305,6 +409,8 @@ function resetPlacesBudget() {
   windowCalls = 0;
   dayCounts.clear();
   inFlight.clear();
+  primedAt = 0;
+  primedDay = '';
 }
 
 function placesBudgetSnapshot() {
@@ -327,6 +433,7 @@ module.exports = {
   PlacesDisabledError,
   PlacesBudgetExceededError,
   assertPlacesAllowed,
+  primePlacesBudget,
   isPlacesEnabled,
   describeScope,
   dedupe,

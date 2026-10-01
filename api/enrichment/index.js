@@ -1,4 +1,5 @@
 const { searchGoogle, getGooglePlace } = require('../../server/places/lib/google-places');
+const { primePlacesBudget } = require('../../server/places/lib/places-budget');
 const { verifyEnrichmentAuth, isAuthConfigured } = require('../../server/enrichment/_lib/auth');
 const { consumeAutomationDispatch } = require('../../server/enrichment/_lib/automation-store');
 const {
@@ -53,6 +54,11 @@ module.exports = async function handler(req, res) {
   if (!action) {
     return res.status(400).json({ error: 'Missing action parameter' });
   }
+
+  // Loads today's shared billable total before any action can spend. This is the entry point the
+  // cron-driven enrichment worker and area sync both come through, so it is where a runaway
+  // automatic workload is stopped by the daily cap rather than by whatever one instance has counted.
+  await primePlacesBudget();
 
   switch (action) {
     case 'config':

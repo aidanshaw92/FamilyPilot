@@ -531,6 +531,126 @@ describe('repeat renders are absorbed rather than re-bought', () => {
   });
 });
 
+
+describe('the daily cap counts what other instances have spent', () => {
+  /**
+   * The per-process counters bound a loop inside one warm serverless instance. They are not a daily
+   * cap on their own, because ten instances each counting to the limit spend ten times it. The cap
+   * becomes real only because `primePlacesBudget` loads the shared total from Postgres first, and
+   * these tests are what hold that distinction in place.
+   */
+  /**
+   * The shape `primePlacesBudget` reads: one `from().select().eq().eq()` chain that resolves to
+   * today's rows for this environment.
+   */
+  function usageClient(rows: Array<{ scope: string; calls: number }>) {
+    const client: { from: ReturnType<typeof vi.fn>; [key: string]: unknown } = {
+      from: vi.fn(),
+    };
+    let eqCalls = 0;
+    client.from = vi.fn(() => client);
+    client.select = vi.fn(() => client);
+    client.eq = vi.fn(() => {
+      eqCalls += 1;
+      return eqCalls >= 2 ? Promise.resolve({ data: rows, error: null }) : client;
+    });
+    client.rpc = vi.fn(async () => ({ data: 1, error: null }));
+    return client;
+  }
+
+  it('refuses a call that is under this process\'s count but over the shared total', async () => {
+    process.env.GOOGLE_PLACES_ALLOW_LIVE_TEST = 'true';
+    process.env.VERCEL_ENV = 'production';
+    process.env.GOOGLE_PLACES_MAX_CALLS_PER_DAY = '10';
+    process.env.GOOGLE_PLACES_MAX_CALLS_PER_WINDOW = '1000';
+
+    const budget = await loadBudget();
+
+    // Before priming, this process has spent nothing, so the gate would allow it.
+    expect(budget.isPlacesEnabled('discovery')).toBe(true);
+    const primed = await budget.primePlacesBudget({ client: usageClient([{ scope: 'discovery', calls: 10 }]) });
+    expect(primed).toBe(true);
+
+    expect(() => budget.assertPlacesAllowed({ scope: 'discovery', reason: 'london_grid' })).toThrow(
+      /calls already made today/,
+    );
+  });
+
+  it('never lowers a count the shared store has not caught up with', async () => {
+    // The store lags, so taking its figure as gospel would let a process that has just spent forget
+    // that it did. Max, not assignment.
+    process.env.GOOGLE_PLACES_ALLOW_LIVE_TEST = 'true';
+    process.env.VERCEL_ENV = 'production';
+    process.env.GOOGLE_PLACES_MAX_CALLS_PER_DAY = '3';
+    process.env.GOOGLE_PLACES_MAX_CALLS_PER_WINDOW = '1000';
+
+    const budget = await loadBudget();
+
+    for (let i = 0; i < 3; i += 1) {
+      budget.assertPlacesAllowed({ scope: 'discovery', reason: 'london_grid' });
+    }
+    await budget.primePlacesBudget({ client: usageClient([{ scope: 'discovery', calls: 0 }]) });
+    expect(() => budget.assertPlacesAllowed({ scope: 'discovery', reason: 'london_grid' })).toThrow(
+      /calls already made today/,
+    );
+  });
+
+  it('a failed read keeps the counts it already had, and retries next time', async () => {
+    // A mutation test showed the error path was untested: making it report success broke nothing.
+    // What actually matters on that path is that the count this process has accrued survives, and
+    // that the failure is not cached as "primed" -- otherwise a transient error would blind the cap
+    // for a full TTL window.
+    process.env.GOOGLE_PLACES_ALLOW_LIVE_TEST = 'true';
+    process.env.VERCEL_ENV = 'production';
+    process.env.GOOGLE_PLACES_MAX_CALLS_PER_DAY = '2';
+    process.env.GOOGLE_PLACES_MAX_CALLS_PER_WINDOW = '1000';
+    const budget = await loadBudget();
+
+    budget.assertPlacesAllowed({ scope: 'discovery', reason: 'london_grid' });
+
+    const failing: Record<string, unknown> = {};
+    failing.from = vi.fn(() => failing);
+    failing.select = vi.fn(() => failing);
+    let eqCalls = 0;
+    failing.eq = vi.fn(() => {
+      eqCalls += 1;
+      return eqCalls >= 2 ? Promise.resolve({ data: null, error: { message: 'connection reset' } }) : failing;
+    });
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    expect(await budget.primePlacesBudget({ client: failing })).toBe(false);
+    warnSpy.mockRestore();
+
+    // The accrued count survived, so the cap still bites after one more call.
+    budget.assertPlacesAllowed({ scope: 'discovery', reason: 'london_grid' });
+    expect(() => budget.assertPlacesAllowed({ scope: 'discovery', reason: 'london_grid' })).toThrow(
+      /calls already made today/,
+    );
+
+    // The failure was not recorded as a successful prime, so the next call reads again rather than
+    // sitting behind the one-minute TTL. Asserted on the client being QUERIED, not on the returned
+    // boolean: a mutant that cached the failure as primed returned true from the TTL short-circuit
+    // and passed an earlier version of this test without ever reading anything.
+    const recovered = usageClient([{ scope: 'discovery', calls: 0 }]);
+    expect(await budget.primePlacesBudget({ client: recovered })).toBe(true);
+    expect(recovered.from).toHaveBeenCalledWith('google_places_usage');
+  });
+
+  it('does not open the gate when the shared store is unreachable', async () => {
+    // A counter outage must not become a spending licence. With no Supabase configured, priming
+    // reports false and the per-process ceilings stay in force.
+    process.env.GOOGLE_PLACES_ALLOW_LIVE_TEST = 'true';
+    process.env.VERCEL_ENV = 'production';
+    process.env.GOOGLE_PLACES_MAX_CALLS_PER_WINDOW = '1';
+    const budget = await loadBudget();
+    expect(await budget.primePlacesBudget()).toBe(false);
+    budget.assertPlacesAllowed({ scope: 'discovery', reason: 'london_grid' });
+    expect(() => budget.assertPlacesAllowed({ scope: 'discovery', reason: 'london_grid' })).toThrow(
+      /budget exceeded/i,
+    );
+  });
+});
+
 interface MockResponse {
   statusCode: number;
   headers: Record<string, string>;

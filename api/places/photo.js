@@ -26,6 +26,7 @@
 const {
   assertPlacesAllowed,
   dedupe,
+  primePlacesBudget,
   PlacesDisabledError,
   PlacesBudgetExceededError,
 } = require('../../server/places/lib/places-budget');
@@ -110,6 +111,10 @@ module.exports = async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-store');
     return res.status(400).end();
   }
+
+  // Loads today's shared billable total before anything can spend, so the daily cap counts what
+  // every other serverless instance has already bought rather than only this one.
+  await primePlacesBudget();
 
   const key = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY;
   if (!key) {

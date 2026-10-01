@@ -9,6 +9,7 @@ const {
 const {
   isPlacesEnabled,
   describeScope,
+  primePlacesBudget,
   PlacesDisabledError,
   PlacesBudgetExceededError,
 } = require('../../server/places/lib/places-budget');
@@ -92,6 +93,10 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+
+  // Loads today's shared billable total before anything can spend, so the daily cap counts what
+  // every other serverless instance has already bought rather than only this one.
+  await primePlacesBudget();
 
   const latitude = Number(req.query.lat);
   const longitude = Number(req.query.lng);

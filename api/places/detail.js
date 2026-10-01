@@ -5,6 +5,7 @@ const { getPlaceRecord } = require('../../server/enrichment/_lib/enrichment-stor
 const {
   isPlacesEnabled,
   describeScope,
+  primePlacesBudget,
   PlacesDisabledError,
   PlacesBudgetExceededError,
 } = require('../../server/places/lib/places-budget');
@@ -76,6 +77,10 @@ module.exports = async function handler(req, res) {
 
   const id = req.query.id;
   if (!id) return res.status(400).json({ error: 'Missing id', fallbackAvailable: true });
+
+  // Loads today's shared billable total before anything can spend, so the daily cap counts what
+  // every other serverless instance has already bought rather than only this one.
+  await primePlacesBudget();
 
   let canonicalIdentity = null;
   try {

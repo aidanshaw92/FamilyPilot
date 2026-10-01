@@ -239,11 +239,28 @@ Stored as `factors: { age: 95, distance: 88, ... }` and `explanation: string[]`.
 
 ## Environment Variables
 
+Anything prefixed `EXPO_PUBLIC_` is **compiled into the browser bundle and the app binary**. It is
+public. Only values that are safe for anyone to read belong there.
+
 ```
 EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_ANON_KEY=
 EXPO_PUBLIC_MAPBOX_TOKEN=
-EXPO_PUBLIC_GOOGLE_PLACES_KEY=
 ```
 
-All providers check for env vars and fall back to mock data in development.
+Server-only, never `EXPO_PUBLIC_`:
+
+```
+GOOGLE_PLACES_API_KEY=
+GOOGLE_MAPS_API_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+`EXPO_PUBLIC_GOOGLE_PLACES_KEY` was listed here previously and has been removed. Nothing in the code
+has ever read it, and it must never be set: a Google Places key in a client bundle is a key anyone can
+spend. The client reaches Places only through `EXPO_PUBLIC_PLACES_API_URL`, which points at this
+project's own `/api/places` proxy. See `docs/GOOGLE_PLACES_COST_CONTROL.md`.
+
+All providers check for env vars and fall back to mock data in development. Google Places is the
+exception: it is **off** outside production and fails visibly rather than falling back, because a
+silent fallback to a live billable call is how the September 2026 bill happened.
