@@ -3,52 +3,6 @@ const { extractPushchairEvidence } = require('./pushchair-evidence');
 const { extractEnvironmentEvidence } = require('./environment-evidence');
 const { isEligibleScope } = require('./source-identity');
 
-/**
- * What makes a sentence say this venue has a playground.
- *
- * Named rather than inlined because `isSoftPlayOnlyPlayground` below re-tests exactly these against
- * the same sentence with the soft-play wording removed. Two copies of this list would drift, and a
- * drift would reopen the false positive quietly.
- */
-const PLAYGROUND_PATTERNS = [/playground/i, /play\s+area/i];
-
-/**
- * Soft play, in the forms a venue's own page writes it. Used only to take the phrase OUT of a
- * sentence before the playground patterns are re-tested; it never publishes anything itself.
- *
- * The optional noun is listed explicitly rather than matched loosely, because the whole point is to
- * remove "soft play area" without also removing the second "play area" in "soft play area and a
- * large play area outside".
- */
-const SOFT_PLAY_PHRASE =
-  /\bsoft[\s-]?play(?:\s+(?:area|areas|zone|zones|centre|center|room|rooms|frame|structure|barn|village|session|sessions))?\b/gi;
-
-/**
- * Is the only play facility in this sentence a soft play one?
- *
- * FamilyPilot has already decided that soft play and a playground are different things, in every
- * place the decision shows up: `FacilityType` carries both `playground` and `soft_play`,
- * `FacilityGrid` draws them as separate chips with separate labels, `format-category` names soft play
- * in its own right, `plan-categories` filters `soft_play` by venue category, and -- the one that
- * settles it -- `buildFacilityMissingCaution` matches a parent's must-haves by exact membership, so a
- * family who asked for a playground is NOT satisfied by soft play. The extractor was the only part of
- * the system that disagreed: `play\s+area` matched "our Soft Play area" and published
- * `playground = yes` at high confidence, which is served to parents.
- *
- * Measured in production on 2026-10-01: of 38 active, served `familyFacilities.playground` claims,
- * three have excerpts mentioning soft play, and exactly one -- Belmont Children's Farm, from
- * "...before visiting our Soft Play area." -- rests on soft-play wording alone. The other two are
- * Flip Out venues whose pages list a "Ninja Playground" by name alongside their soft play, so the
- * literal word is present and this guard leaves them untouched. Whether a trampoline park's indoor
- * "Ninja Playground" is a playground in FamilyPilot's sense is a narrower, separate question; it is
- * recorded rather than answered here, because widening a guess past the wording the product contract
- * actually settles is how the original false positive got in.
- */
-function isSoftPlayOnlyPlayground(sentence) {
-  const withoutSoftPlay = sentence.replace(SOFT_PLAY_PHRASE, ' ');
-  return !PLAYGROUND_PATTERNS.some((re) => re.test(withoutSoftPlay));
-}
-
 const FIELD_PATTERNS = [
   {
     field: 'toilets',
@@ -165,7 +119,7 @@ const FIELD_PATTERNS = [
   },
   {
     field: 'playground',
-    yes: PLAYGROUND_PATTERNS,
+    yes: [/playground/i, /play\s+area/i],
     no: [/no\s+playground/i],
   },
   {
@@ -474,8 +428,6 @@ function matchField(sentence, patterns, fieldId) {
     }
     if (fieldId === 'toilets' && (hasToiletNegation(sentence) || isScopedToiletClosure(sentence))) continue;
     if (fieldId === 'babyChanging' && !isExplicitBabyChangingStatement(sentence)) continue;
-    // Soft play is a different facility, and a parent who asked for a playground is not served by it.
-    if (fieldId === 'playground' && isSoftPlayOnlyPlayground(sentence)) continue;
     return { value: 'yes', confidence: 'high' };
   }
   return null;
@@ -726,7 +678,6 @@ module.exports = {
   hasToiletNegation,
   isExplicitBabyChangingStatement,
   isQuestionOnlyEvidence,
-  isSoftPlayOnlyPlayground,
   isSuspiciousEmbeddedContent,
   isScopedToiletClosure,
   hasVenueWideToiletAbsence,
