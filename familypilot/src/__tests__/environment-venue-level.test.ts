@@ -66,6 +66,29 @@ describe('a feature is not a setting', () => {
     ).toBeNull();
   });
 
+  it('does not let the SAME attraction back in under a different noun (Queen\'s House, production)', () => {
+    // The test above was written from the stored evidence, which said "Open-air skating", and
+    // `skating` is what it put in the feature list. The live page says it another way. Withdrawing
+    // the claim and refetching republished `outdoor` for an indoor Greenwich museum on the first run
+    // afterwards, from this sentence -- the same separate ice rink, a noun the list did not have.
+    expect(
+      classify(
+        'Book now for your chance to skate on the most beautiful outdoor ice rink in London Find more '
+        + 'things to do World-famous artworks, captivating architecture',
+      ),
+    ).toBeNull();
+    // Both nouns, so neither wording can reintroduce it.
+    expect(classify('The outdoor rink is open until January.')).toBeNull();
+    expect(classify('Open-air skating returns this winter.')).toBeNull();
+  });
+
+  it('still reads an outdoor venue that is not a rink', () => {
+    // The mask is a closed list for a reason: it must not swallow the venue itself.
+    expect(classify('This is an outdoor museum set in 20 acres of parkland.')).toBe('outdoor');
+    expect(classify('The galleries are entirely indoors.')).toBe('indoor');
+    expect(classify('Our indoor galleries and outdoor courtyard are both open today.')).toBe('mixed');
+  });
+
   it('allows modifiers between the prefix and the feature noun (production)', () => {
     // Two real cases an earlier version of the pattern missed, because a word sits in between.
     expect(
