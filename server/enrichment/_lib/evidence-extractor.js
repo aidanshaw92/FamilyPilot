@@ -267,7 +267,7 @@ const FIELD_PATTERNS = [
       /(?:large\s+)?free\s+car\s+park/i,
       /car\s+park(?:ing)?\s+(is\s+)?available/i,
       /car\s+park\s+(is\s+)?(?:provided|on site|on-site)/i,
-      /visitor\s+car\s+park/i,
+      /visitors?\s+car\s+park/i,
       /parking\s+spaces\s+(are\s+)?provided/i,
       /(?:cars|vehicles|minibuses|coaches)\s+(?:are\s+)?welcome\s+to\s+use\s+(?:our\s+)?(?:large\s+)?(?:free\s+)?car\s+park/i,
     ],
@@ -350,7 +350,7 @@ function hasExplicitParkingAvailability(sentence) {
     /(?:large\s+)?free\s+car\s+park/i.test(sentence) ||
     /car\s+park(?:ing)?\s+(is\s+)?available/i.test(sentence) ||
     /car\s+park\s+(is\s+)?(?:provided|on site|on-site)/i.test(sentence) ||
-    /visitor\s+car\s+park/i.test(sentence) ||
+    /visitors?\s+car\s+park/i.test(sentence) ||
     /parking\s+spaces\s+(are\s+)?provided/i.test(sentence) ||
     /(?:cars|vehicles|minibuses|coaches)\s+(?:are\s+)?welcome\s+to\s+use\s+(?:our\s+)?(?:large\s+)?(?:free\s+)?car\s+park/i.test(
       sentence,
@@ -385,7 +385,7 @@ function isExplicitParkingStatement(sentence) {
 
   if (
     /\bparking\s+(?:is\s+)?(?:located|can\s+be\s+found)\b/i.test(sentence) &&
-    !/\bon.?site\b|\bvisitor\s+car\s+park\b|\bparking\s+(?:is\s+)?available\b|\bparking\s+(?:is\s+)?provided\b/i.test(
+    !/\bon.?site\b|\bvisitors?\s+car\s+park\b|\bparking\s+(?:is\s+)?available\b|\bparking\s+(?:is\s+)?provided\b/i.test(
       lower,
     )
   ) {
