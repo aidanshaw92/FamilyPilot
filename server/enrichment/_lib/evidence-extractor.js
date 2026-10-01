@@ -833,8 +833,79 @@ function extractionSourceMeta({ url, sourceType, retrievedAt, pageTitle = null }
   return { url, sourceType, retrievedAt, pageTitle: pageTitle ?? null };
 }
 
+/**
+ * Is this line the page's own <title>, echoed as site chrome?
+ *
+ * Beckenham Place Park served `familyFacilities.playground = yes`. Its evidence was the site's SEO
+ * title, which lists every amenity the park has and is repeated at the top of every page:
+ *
+ *   "Free activities for children and young people -- Beckenham Place Park - Borough of Lewisham |
+ *    Playgrounds - Cycle Routes - Walking - Nature trails - BMX & Skate Park - Swimming Lake -
+ *    Parkrun - Venue Hire | South East London UK Back All Events Lake Pl..."
+ *
+ * The word "Playgrounds" is inside the title. Sitewide navigation cannot establish a venue fact, so
+ * the line is dropped before anything reads it.
+ *
+ * TWO CONDITIONS, both measured over the newest row per (venue, url) -- 1,552 lines across the
+ * stored corpus:
+ *
+ *   the line starts with the page title           81 lines
+ *   ... and carries no sentence terminator        47 lines
+ *
+ * All 47 are chrome: a title followed by "Skip to content", a cookie banner, or a nav list. None is
+ * venue prose. Exactly ONE backs a served claim -- Beckenham's playground -- so the rule retires
+ * that one and nothing else, while also closing 42 lines that could have established a fact but
+ * happen not to today: Hatfield Park's "Getting here - free parking for visitors" banner, London
+ * Museum Docklands' "Gift shop and cafe" title, Burgess Park's "Parking, streets and transport".
+ *
+ * A LENGTH THRESHOLD WAS CONSIDERED AND REJECTED. An earlier draft also required 200+ characters,
+ * which would have fired on Beckenham's five lines and nothing else in the entire corpus -- a rule
+ * fitted to one venue. The measurement above is why it is gone: the 42 shorter lines are the same
+ * chrome, and several of them carry facility words.
+ *
+ * THE PREFIX TEST IS A CHOICE ON PRINCIPLE, NOT A MEASURED ONE, and that is worth stating plainly.
+ * Requiring the title at the START of the line is narrower than allowing it anywhere, but on the
+ * current corpus the two differ on exactly ONE line: Hillside Gardens Park's "Breadcrumb Home
+ * Parking Parking Parking permits ..." from Lambeth Council, whose title is "Parking | Lambeth
+ * Council". That line is chrome too, so the data does not decide between them. The reason to keep
+ * `startsWith` is that a title echoed at the top of a line is the signature of site chrome, whereas
+ * a title echoed inside prose is not -- and an earlier draft that matched the title ANYWHERE hit 236
+ * of 453 pages, which is the broad rule this one replaced.
+ *
+ * Entities are normalised away on both sides because the two do not agree: the stored title holds a
+ * bare "&" where the text holds "&amp;", and Dulwich Park's title holds a literal en dash where its
+ * text holds "&#8211;". The stored title is also capped at 200 characters, which is harmless for a
+ * prefix test even when the cap lands mid-word.
+ */
+function normaliseForTitleMatch(value) {
+  return String(value ?? '')
+    .replace(/&[a-z]+;|&#\d+;/gi, ' ')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function isPageTitleChrome(line, pageTitle) {
+  const title = normaliseForTitleMatch(pageTitle);
+  if (!title) return false;
+  // A statement ends somewhere. Chrome does not.
+  if (/[.!?]/.test(String(line ?? ''))) return false;
+  return normaliseForTitleMatch(line).startsWith(title);
+}
+
+/** Drop the title-echo chrome lines, and nothing else, before any field reads the page. */
+function stripPageTitleChrome(text, pageTitle) {
+  if (!pageTitle) return String(text ?? '');
+  return String(text ?? '')
+    .split(/\r?\n/)
+    .filter((line) => !isPageTitleChrome(line, pageTitle))
+    .join('\n');
+}
+
 function extractEvidenceFromText(text, sourceMeta) {
-  const sentences = splitSentences(text);
+  // Every path below reads the chrome-free text, so sitewide navigation cannot establish a fact in
+  // any field, nor reach the excerpt a parent is shown.
+  const readableText = stripPageTitleChrome(text, sourceMeta.pageTitle);
+  const sentences = splitSentences(readableText);
   const facts = [];
 
   for (const pattern of FIELD_PATTERNS) {
@@ -863,12 +934,12 @@ function extractEvidenceFromText(text, sourceMeta) {
     }
   }
 
-  const pushchairFact = extractPushchairEvidence(text, sourceMeta);
+  const pushchairFact = extractPushchairEvidence(readableText, sourceMeta);
   if (pushchairFact) {
     facts.push(pushchairFact);
   }
 
-  const environmentFact = extractEnvironmentEvidence(text, sourceMeta);
+  const environmentFact = extractEnvironmentEvidence(readableText, sourceMeta);
   if (environmentFact) {
     facts.push(environmentFact);
   }
@@ -1028,6 +1099,8 @@ module.exports = {
   isSoftPlayOnlyPlayground,
   isIndoorAttractionOnlyPlayground,
   isNonVenueWheelchairSubject,
+  isPageTitleChrome,
+  stripPageTitleChrome,
   hasOffSiteParking,
   isNonVehicleParkingOnly,
   isCycleTravelContext,
