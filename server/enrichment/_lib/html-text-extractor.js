@@ -214,6 +214,24 @@ function removeRegions(html, tagNames) {
   return out;
 }
 
+/**
+ * A region's text, with a chunk boundary between separate regions.
+ *
+ * The newline is load-bearing. `extractRelevantParagraphs` splits on newline, bullet, or
+ * sentence-end, and chrome has no sentence-end in it: a link list is "Home News & Events The Park
+ * Activities" with nothing to split on. Joined with a space, the last text of one region and the
+ * first of the next become ONE chunk, and that chunk is scored and kept or dropped as a unit.
+ *
+ * Waterlow Park's `playground = yes` is exactly that. Its `<main>` ends "Facilities Opening times
+ * Car park" and its `<footer>` sitemap reads "Back To Top Home News & Events The Park Activities --
+ * volunteering, play areas, sports The Friends Sitemap". The footer alone scores ZERO against
+ * CONTENT_KEYWORDS, so on its own it is discarded. Fused to the content before it, the pair scores on
+ * "facilities", the whole thing is kept, and "play areas" publishes a playground the page never
+ * claims. The park does have playgrounds; this page does not say so.
+ *
+ * This only ever SPLITS. No text leaves the pool, so no page can lose a fact to it -- which is why it
+ * is separable from the harder question of whether `<nav>` and `<footer>` should be read at all.
+ */
 function extractRegion(html, tagName) {
   const regex = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`, 'gi');
   const parts = [];
@@ -221,7 +239,7 @@ function extractRegion(html, tagName) {
   while ((match = regex.exec(html)) !== null) {
     parts.push(stripTags(match[1]));
   }
-  return parts.join(' ');
+  return parts.join('\n');
 }
 
 function extractTitle(html) {
@@ -384,10 +402,27 @@ function extractRelevantParagraphs(text, maxChars = 8000) {
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score);
 
+  // Joined with a newline, not a space, for the same reason the regions are. `splitSentences` in
+  // evidence-extractor.js uses an IDENTICAL splitter -- newline, bullet, or sentence-end -- so a
+  // boundary kept here survives all the way to the field matcher, and one dropped here is silently
+  // undone at the last step: two chunks selected separately would be re-fused in the stored text and
+  // read back as a single sentence. Chunk boundary and sentence boundary are the same boundary.
   const picked = [];
   let total = 0;
+  //
+  // `continue`, not `break`. The chunks are sorted by SCORE, not by length, so the first one that
+  // overflows the remaining budget is not the last one that would fit. Breaking there discarded every
+  // lower-scoring chunk behind it, however short.
+  //
+  // Demonstrated: with 130 characters of budget left, a 461-character chunk does not fit, and
+  // "Baby changing is available." -- 27 characters, a fact a parent actually needs -- was dropped
+  // with it. Skipping the overflowing chunk and carrying on keeps it.
+  //
+  // This can only ever ADD text, and only to a page whose budget is already spent: 37 of the 484
+  // stored pages are within 100 characters of the cap, and 447 never reach this branch at all. The
+  // cap is unchanged.
   for (const { chunk } of scored) {
-    if (total + chunk.length > maxChars) break;
+    if (total + chunk.length > maxChars) continue;
     picked.push(chunk);
     total += chunk.length + 1;
   }
@@ -399,9 +434,9 @@ function extractRelevantParagraphs(text, maxChars = 8000) {
     // bypassed the cleaning entirely -- a JSON-LD payload sailed straight through on any page with no
     // keyword hit. It returns the cleaned chunks instead, and nothing at all when none survive, which
     // isEvidenceBearingSource then correctly reads as a page with no evidence on it.
-    return unique.join(' ').slice(0, maxChars);
+    return unique.join('\n').slice(0, maxChars);
   }
-  return picked.join(' ').slice(0, maxChars);
+  return picked.join('\n').slice(0, maxChars);
 }
 
 function extractPageContent(html, maxChars = 8000) {
@@ -423,7 +458,7 @@ function extractPageContent(html, maxChars = 8000) {
   // splits into differently-bounded chunks.
   const bodyFallback = stripHtml(removeRegions(cleaned, ['main', 'article', 'footer']));
 
-  const combined = [main, article, footer, bodyFallback].filter(Boolean).join(' ');
+  const combined = [main, article, footer, bodyFallback].filter(Boolean).join('\n');
   const relevant = extractRelevantParagraphs(combined, maxChars);
   return { title, text: relevant };
 }
