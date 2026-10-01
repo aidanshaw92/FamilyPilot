@@ -15,6 +15,17 @@ const TERRAIN_TERMS =
 
 const WELCOME_PATTERNS = [
   /\b(bugg(y|ies)|pram(s)?|pushchair(s)?|stroller(s)?)\s+(are\s+)?(welcome|allowed|permitted)\b/i,
+  // "Accessible for buggies" is how a venue says yes without using a welcome verb, and leaving it
+  // out cost a served fact its meaning. Woodside Animal Farm's own page says "Buggies The whole park
+  // is accessible for buggies but please note that for fire safety reasons buggies are not permitted
+  // in the PlayBarn" -- and served `difficult`, which reads to a parent as hard going with a
+  // pushchair, about a farm that states the opposite in the same sentence. With the welcome seen,
+  // the venue-wide statement and the scoped exclusion meet at `mixed`, which is what the page says.
+  //
+  // Safe for the negative cases because positives read the MASKED text: Paradox Museum London's
+  // "the space is not accessible for prams/strollers" is already blanked by NEGATED_POSITIVE, so it
+  // stays `difficult`.
+  /\baccessible\s+(?:for|to)\s+(?:bugg(?:y|ies)|pram(?:s)?|pushchair(?:s)?|stroller(?:s)?)\b/i,
   /\b(welcome|allowed|permitted)\b[^.]{0,40}\b(bugg(y|ies)|pram(s)?|pushchair(s)?|stroller(s)?)\b/i,
   /\b(bugg(y|ies)|pram(s)?|pushchair(s)?|stroller(s)?)\s+(can|may)\s+(be\s+)?(used|brought|taken)\b/i,
 ];

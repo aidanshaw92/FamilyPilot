@@ -65,12 +65,15 @@ describe('the pushchair sense of buggy still decides the field', () => {
     expect(verdict('Buggies are welcome throughout the farm.')).toBe('good');
   });
 
-  it('keeps Woodside Animal Farm, whose real text mixes both', () => {
-    // Verbatim, and the venue's served `difficult`. "buggy park" is NOT masked: it is where you
-    // leave a pushchair, which is a real limitation.
+  it('reads Woodside Animal Farm as mixed, which is what its page says', () => {
+    // Verbatim. This expectation was `difficult` when the test was first written, matching the
+    // served value -- and the served value was wrong. The page says the whole park IS accessible for
+    // buggies and that one building is not, so `difficult` ("hard going with a pushchair") told a
+    // parent the opposite of the sentence it came from. "buggy park" is still NOT masked: it is
+    // where you leave a pushchair, which is a real limitation.
     expect(verdict('Buggies The whole park is accessible for buggies but please note that for fire '
       + 'safety reasons buggies are not permitted in the PlayBarn. We do have an undercover buggy '
-      + 'park, which is a safe dry place to leave your buggy.')).toBe('difficult');
+      + 'park, which is a safe dry place to leave your buggy.')).toBe('mixed');
   });
 
   it('still reads buggy hire, which at a visitor attraction is a pushchair to borrow', () => {
