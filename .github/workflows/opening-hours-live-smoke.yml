@@ -156,13 +156,24 @@ jobs:
             grep -i '^location:' /tmp/headers | sed 's/?.*//' || echo "  (none)"
           fi
 
-          # A 503 from a working build is the cost gate, not an outage, and it names itself in the
-          # body. Distinguishing the two here is what stops this check being read as "Google broke".
+          # A 503 here is the cost gate, not an outage, and it names itself in the body. The two are
+          # treated differently ON PURPOSE:
+          #
+          #   - Gate CLOSED: the owner has not authorised Preview deployments to spend on Google. That
+          #     is a legitimate choice, not a regression, so this check stands down with a loud notice
+          #     saying exactly what it did NOT prove. Failing instead would block every future pull
+          #     request touching the mapper behind a spending decision nobody has been asked to make.
+          #   - Gate OPEN but a stored copy served (handled in assert-live-opening-hours.mjs): spend IS
+          #     authorised and the check still is not doing its job. That is a failure, and one more
+          #     variable fixes it.
+          #
+          # What is never acceptable is passing quietly in either case. Run #4 did exactly that.
           if [ "$code" = "503" ] || [ "$code" = "429" ]; then
             if grep -q 'PLACES_DISABLED\|PLACES_BUDGET_EXCEEDED' /tmp/detail.json 2>/dev/null; then
               echo "gate response:"; head -c 400 /tmp/detail.json
-              echo "::error::The preview build refused the request on cost grounds, not because the mapper is wrong. Google Places is off outside production by design. To let this check make its one Place Details call, set these in the Vercel project's PREVIEW environment: GOOGLE_PLACES_ENABLED=true, GOOGLE_PLACES_DISCOVERY_ENABLED=false, GOOGLE_PLACES_PHOTOS_ENABLED=false, GOOGLE_PLACES_MAX_CALLS_PER_DAY=25, PLACES_DETAIL_FRESH_DAYS=0. See docs/GOOGLE_PLACES_COST_CONTROL.md."
-              exit 1
+              echo "::warning::NOT PROVEN: Google Places is switched off for Preview deployments, so this run did not check a live Google response against this branch's mapper. The unit tests still pin the mapper to Google's published schema; what is unverified is whether Google still sends that schema. To enable the single billable Place Details call this needs, set the following in the Vercel project's PREVIEW environment: GOOGLE_PLACES_ENABLED=true, GOOGLE_PLACES_DISCOVERY_ENABLED=false, GOOGLE_PLACES_PHOTOS_ENABLED=false, GOOGLE_PLACES_REFRESH_ENABLED=false, GOOGLE_PLACES_MAX_CALLS_PER_DAY=25, PLACES_DETAIL_FRESH_DAYS=0. See docs/GOOGLE_PLACES_COST_CONTROL.md."
+              echo "standing down: the cost gate is closed for Preview, which is a configuration choice rather than a failure"
+              exit 0
             fi
           fi
 

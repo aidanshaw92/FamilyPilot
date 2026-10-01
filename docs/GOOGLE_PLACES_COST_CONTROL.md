@@ -167,8 +167,11 @@ proving nothing while green. `assert-live-opening-hours.mjs` now fails on `cache
 variable, so the gap announces itself rather than hiding behind a pass. Zero days means Preview always
 refreshes, which is what Preview is for.
 
-If you would rather no Preview deployment can ever spend, set nothing at all and let the smoke test
-fail — it prints the exact variables it needs, so the failure explains itself.
+If you would rather no Preview deployment can ever spend, **set nothing at all**. The smoke test then
+stands down with a `NOT PROVEN` warning naming the variables, rather than failing — a closed gate is a
+choice you have made, not a regression, and failing would block every future pull request touching the
+mapper behind a spending decision. What it will never do again is pass quietly: the one case it treats
+as a hard failure is spend being authorised while the check still reads a stored copy.
 
 **Development:** set nothing. Google is off.
 
