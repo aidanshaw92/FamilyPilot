@@ -106,3 +106,89 @@ is simply not for cars. A separate evidence-driven rule, not a reopening of Q3.
 
 `familyFacilities.playground = yes` rests on a sentence about the cafe being next to the Kusuma Nature
 Play Area. The play area is the Horniman's own, so the value is right and the provenance is oblique.
+
+---
+
+# Widen, and the result
+
+Deployment `dpl_C3pcUx38TT9RJWdtnpkbSvQwzuUR` confirmed READY on `9e53d033` (the masked-verdict fix)
+before the queue was touched. Horniman was then re-run to repair the false `environment = mixed` the
+canary had introduced: **disputed**, its other six claims preserved. Then the remaining 11 priority
+venues, 17 rows at cap, 31 served claims.
+
+**Predicted Google Places calls: 0. Actual: 0.**
+
+## Priority cohort: cleared
+
+Measured on the **newest row per (venue, url)**, which is what `getCachedEvidence` actually serves --
+the earlier 214 counted superseded history and was not a progress metric at all:
+
+| | before | after |
+|---|---|---|
+| priority rows (dirty + at 8,000-char cap + eligible scope) | 24 | **0** |
+| priority venues | 14 | **0** |
+| dirty newest rows, all classes | 93 | 93 |
+| of those, eligible but below the cap | 44 | 44 |
+| of those, ineligible scope | 49 | 49 |
+
+Nothing below the cap or on ineligible scope was touched, deliberately. Displacement is unproven
+below the cap, and on ineligible scope subject scope fails closed so a repair cannot publish or
+withdraw anything. Those 93 clear on their own through the daily 50-venue refresh.
+
+## Preservation: 9 of 11 venues at delta zero
+
+| venue | served before | after | delta |
+|---|---|---|---|
+| ASK Italian | 2 | 1 | **−1** |
+| Beckenham Place Park | 4 | 5 | **+1** |
+| Belmont Children's Farm, Golders Hill Park, Saatchi Gallery, Sydenham Hill Wood, The Graffiti Tunnel, The National Gallery, Victoria and Albert Museum, William Morris Gallery, Young V&A | | | 0 |
+
+Both movements are correct, and both were the point of the exercise.
+
+**ASK Italian lost `environment = outdoor`.** Its excerpt was an uppercase facility list:
+"Facilities ACCESSIBILITY BABY CHANGING **OUTDOOR SEATING** Contact Address 23-24 Gloucest..." -- a
+restaurant classified as an outdoor venue because its facilities list mentions outdoor seating. The
+same shape as the Nando's JSON-LD case in the original audit, and the deployed feature mask now
+suppresses it. The claim had been published off the JSON-LD-contaminated capture; the clean
+re-extraction does not yield it.
+
+**Beckenham Place Park gained `familyFacilities.cafe = yes`**, from its own page: "Businesses in the
+park The Homestead Café ... is located in the Homestead courtyard." `venue_own_subtree`,
+`fetch_status = ok`. A fact that CSS had been crowding out of the 8,000-character budget -- which is
+precisely the benefit this workstream was predicted to deliver, and the only one it actually produced.
+
+## Whole-workstream claim arithmetic
+
+```
+  189 served at the start
+-   1 Woodside   environment=indoor   ("the heated indoor soft play centre")   latent Q2, cleared
+-   1 ASK Italian environment=outdoor ("OUTDOOR SEATING" facility list)        latent Q2, cleared
++   1 Horniman   environment=mixed    introduced by the canary, then withdrawn
+-   1 Horniman   environment=mixed    withdrawn after the fix deployed
++   1 Beckenham  cafe=yes             crowding-out recovery
+= 188 served     ... 188 actual
+```
+
+Plus two claims **re-pointed**, not counted above because the value did not change: V&A East
+Storehouse's `wheelchairAccessible` and `pushchairSuitability` moved off
+`vam.ac.uk/east/museum/visit` (`sibling_unverified`, a different V&A East building) onto the venue's
+own `/east/storehouse/visit`.
+
+## Findings recorded, not acted on
+
+**Horniman `familyFacilities.parking = yes` still cites "Buggy parking is available in Gallery
+Square."** Buggy storage is not car parking, and the UI renders the value as "Parking confirmed on
+site". The off-site guard cannot catch it because the parking *is* on site -- it is simply not for
+cars. Needs its own evidence-driven rule.
+
+**Navigation chrome is a fourth residue class.** Beckenham's `playground = yes` is true but its
+excerpt is a menu dump: "Playgrounds - Cycle Routes - Walking - Nature trails - BMX Skate Park -
+Swimming Lake - Parkrun - Venue Hire". The audit saw the same family in Golders Hill Park, whose
+stored text was its own breadcrumb repeated to the cap. Neither CSS, JSON nor JS catches it, and a
+nav menu naming every facility in a borough is a provenance that cannot distinguish one venue's
+playground from the next page's.
+
+**Clean pages can still sit at the cap.** Four of Horniman's six refreshed rows are at 8,000
+characters with no contamination at all, which is why its average length fell only 4% against
+Woodside's 49%. Crowding-out from sheer page length is a different problem from residue, and this
+workstream does not address it.
