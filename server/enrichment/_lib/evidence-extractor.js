@@ -71,6 +71,103 @@ function hasOffSiteParking(sentence) {
   );
 }
 
+/**
+ * Parking for things that are not cars, in the forms venues' own pages write it.
+ *
+ * `familyFacilities.parking = yes` renders to a parent as "Parking confirmed on site", so it is a
+ * claim about somewhere to leave a CAR. A buggy park is somewhere to leave a pushchair, and a bike
+ * rack is somewhere to leave a bicycle; a family driving to either is no better off.
+ *
+ * Measured in production on 2026-10-01, three served claims rest on this wording alone:
+ *
+ *   Horniman Museum and Gardens  parking=yes  "Buggy parking is available in Gallery Square."
+ *   Young V&A                    parking=yes  "Buggy park  Buggy parking is available in the Welcome
+ *                                              Area near the main entrance."
+ *   William Morris Gallery       parking=yes  "Cycling Bicycle parking is available at the Gallery."
+ *
+ * The qualifier and noun lists are corpus-derived rather than imagined. Occurrences across all stored
+ * evidence: buggy park 85, buggy parking 38, bike parking 21, bicycle parking 13, bike racks 11,
+ * cycle racks 9, cycle parking 6, buggy bay 5, buggy storage 3, pushchair storage 2, pram storage 2,
+ * bicycle rack 2, cycle bays 1.
+ *
+ * Deliberately NOT included, because every one of them IS car parking and together they are the bulk
+ * of the corpus: accessible parking (92), blue badge parking (73), priority parking (66), controlled
+ * parking (44), resident parking (22), coach parking (18), permit parking. A guard that swept
+ * "<word> parking" generally would delete more true facts than false ones.
+ */
+const NON_VEHICLE_PARKING_PHRASE =
+  /\b(?:buggy|buggies|pram|prams|pushchair|pushchairs|stroller|strollers|bike|bikes|bicycle|bicycles|cycle|cycles)\s+(?:park(?:ing)?|bay|bays|storage|store|rack|racks|shelter)\b/gi;
+
+/**
+ * Is the only parking in this sentence for something other than a car?
+ *
+ * Takes the phrase OUT and re-tests the field's own availability patterns, exactly as
+ * `isSoftPlayOnlyPlayground` does, rather than rejecting the whole sentence. Sites glue the two
+ * together -- "Bicycle parking is available at the Gallery" sits one clause from a car park on more
+ * than one page in the cohort -- and dropping a sentence that states both would cost a true fact.
+ *
+ * Suppresses a positive only. The `no` patterns are decided before the `yes` loop runs, so Kentish
+ * Town City Farm's "No parking directly outside the farm ... Bicycle parking inside the farm" keeps
+ * its correct `parking = no`, which a sentence-rejecting guard would have disturbed.
+ */
+function isNonVehicleParkingOnly(sentence, yesPatterns) {
+  const withoutNonVehicle = String(sentence ?? '').replace(NON_VEHICLE_PARKING_PHRASE, ' ');
+  return !(yesPatterns ?? []).some((re) => re.test(withoutNonVehicle));
+}
+
+/**
+ * How a page says "arrive by bike", and how it says "arrive by car".
+ *
+ * Both lists are matched on the sentence AFTER `NON_VEHICLE_PARKING_PHRASE` has been taken out, which
+ * is what makes the pair safe. "Free parking is available and there are cycle racks too" loses its
+ * only cycling word to the mask and keeps its true `yes`; a sentence that still names a bike after
+ * masking is naming it as the way the visitor travelled.
+ *
+ * Occurrences across every stored page on 2026-10-01. Cycling side: cycling 45, bike 35, cycle 35,
+ * bicycle 22, bikes 12, bicycles 10, cyclists 5; `biking`, `cycles` and `cyclist` appear zero times
+ * and are morphological completions rather than observed wording. Motor side: car 443, vehicle 141,
+ * coach 115, bus 89, vehicles 55, drive 44, cars 35, buses 31, coaches 19, drivers 16, van 16,
+ * driving 14, motorcycle 5, minibuses 3, motorists 2, driver 1. `parked` is left OFF it:
+ * it is a parking word rather than a travel-mode one, and on the motor side it would spare
+ * "Bikes can be parked by the gate and parking is available" for no reason.
+ *
+ * The two lists are deliberately asymmetric. A term on the cycling side can SUPPRESS a positive, so
+ * that side stays close to the morphology actually seen. A term on the motor side only ever KEEPS a
+ * positive, so that side is generous -- `bus` and `coach` are in it even though a bus is not the
+ * family's car, because a sentence about motor transport in general is not one we want to call cycle
+ * parking. Measured against the live corpus that generosity costs nothing: the rule still reaches
+ * every false positive the phrase guard cannot see.
+ */
+const CYCLE_TRAVEL_TERM =
+  /\b(?:bike|bikes|biking|bicycle|bicycles|cycle|cycles|cycling|cyclist|cyclists)\b/i;
+
+const MOTOR_TRAVEL_TERM =
+  /\b(?:car|cars|vehicle|vehicles|coach|coaches|minibus|minibuses|bus|buses|van|vans|lorry|lorries|motorbike|motorbikes|motorcycle|motorcycles|drive|drives|driving|driver|drivers|motorist|motorists)\b/i;
+
+/**
+ * Is the parking in this sentence the cycle parking a cyclist is being told about?
+ *
+ * The phrase guard above needs the two words next to each other. One page in the cohort never writes
+ * them that way:
+ *
+ *   the Design Museum  parking=yes  "Using a bike is a fantastic way to travel to the museum safely
+ *                                    where a number of parking spaces are provided."
+ *
+ * Nothing in "a number of parking spaces are provided" is wrong on its own -- it is `parking spaces
+ * (are) provided`, a pattern that earns a `yes` on dozens of real car parks. What makes it false here
+ * is the subject of the sentence, which is a bike and only a bike.
+ *
+ * So the rule is about travel mode, not about parking wording: a sentence that names a bike and names
+ * no motor vehicle is describing somewhere to leave a bike. Measured over every stored page on
+ * 2026-10-01, five distinct parking-positive sentences across three venues are in that shape, and
+ * four of them the phrase guard or the interrogative filter already rejects. It changes exactly one
+ * verdict, and no sentence in the corpus loses a car park to it.
+ */
+function isCycleTravelContext(sentence) {
+  const masked = String(sentence ?? '').replace(NON_VEHICLE_PARKING_PHRASE, ' ');
+  return CYCLE_TRAVEL_TERM.test(masked) && !MOTOR_TRAVEL_TERM.test(masked);
+}
+
 const PLAYGROUND_PATTERNS = [/playground/i, /play\s+area/i];
 
 /**
@@ -537,8 +634,14 @@ function matchField(sentence, patterns, fieldId) {
     if (fieldId === 'babyChanging' && !isExplicitBabyChangingStatement(sentence)) continue;
     // Soft play is a different facility, and a parent who asked for a playground is not served by it.
     if (fieldId === 'playground' && isSoftPlayOnlyPlayground(sentence)) continue;
-    // "Parking confirmed on site" must not be said about a car park down the road.
-    if ((fieldId === 'parking' || fieldId === 'freeParking') && hasOffSiteParking(sentence)) continue;
+    if (fieldId === 'parking' || fieldId === 'freeParking') {
+      // "Parking confirmed on site" must not be said about a car park down the road,
+      if (hasOffSiteParking(sentence)) continue;
+      // about a buggy park,
+      if (isNonVehicleParkingOnly(sentence, patterns.yes)) continue;
+      // or about the bike parking on a page's cycling directions.
+      if (isCycleTravelContext(sentence)) continue;
+    }
     return { value: 'yes', confidence: 'high' };
   }
   return null;
@@ -791,6 +894,8 @@ module.exports = {
   isQuestionOnlyEvidence,
   isSoftPlayOnlyPlayground,
   hasOffSiteParking,
+  isNonVehicleParkingOnly,
+  isCycleTravelContext,
   isSuspiciousEmbeddedContent,
   isScopedToiletClosure,
   hasVenueWideToiletAbsence,
