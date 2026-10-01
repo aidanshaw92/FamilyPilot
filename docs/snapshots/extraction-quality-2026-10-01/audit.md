@@ -172,3 +172,77 @@ question, and it is an owner decision, not an engineering one.
 
 Still open from earlier work, untouched here: Hatfield Park and Sydenham Hill Wood's area-scoped
 `freeParking = yes`, Nando's conditional `freeParking = yes`, and Babylon Park's `playground = yes`.
+
+## Production repair, 02:48 to 02:51 UTC
+
+Merge `c4ddc07`, deployment `dpl_3pYkqiXq39UYhfKHnjgqJNmeNKAM` confirmed READY on that commit before
+the queue was touched. Three venues re-crawled through the normal pipeline; no claim edited by hand.
+
+### Scope, and why it is three rather than thirty-four
+
+47 venues carry contaminated rows and 34 of those serve 111 claims. Re-crawling all 34 would put 111
+served claims in motion, and the pre-merge replay could not predict served-claim outcomes: it works on
+stored text, so it exercises the chunk cleaning but not `removeNonContentElements`, which needs HTML
+that is not retained. So the repair took the three venues with **demonstrated junk provenance** —
+Belmont (CSS), Gladstone Park (inline JS), Nando's (JSON-LD) — and the wider rollout becomes a separate
+step decided from real post-fix evidence. Same frozen-cohort-then-roll-outward pattern as the coverage
+workstream.
+
+### Result
+
+All three jobs completed on one attempt, no errors.
+
+| Venue | Field | Before | After | Provenance |
+| --- | --- | --- | --- | --- |
+| Belmont Children's Farm | `environment` | mixed/high, excerpt was `ment-wrapper } Indoor & Outdoor Visitors Farm { --stroke-style` | **mixed/high**, excerpt `Indoor & Outdoor Visitors Farm Soft Play Café The Farm ...` | **repaired** |
+| Belmont Children's Farm | `familyFacilities.playground` | not served | **yes/high** (new) | clean, but see below |
+| Gladstone Park | `environment` | outdoor/high, JS in the row | **outdoor/high** | **repaired** |
+| Gladstone Park | `familyFacilities.playground` | yes/high, JS in the row | **yes/high** | **repaired** |
+| Nando's | `environment` | outdoor/high from JSON-LD | **outdoor/high** from the rendered amenity list | route closed, claim persists |
+| Nando's | `babyChanging`, `freeParking`, `parking` | yes/high | **yes/high** | unchanged |
+
+**Zero served claims now carry junk provenance**, down from three.
+
+Of the 12 rows refreshed across the three venues, **0 are still contaminated**. Average stored length
+fell from 4,246 characters to 2,524, a 41% reduction, with inline JS eliminated. Same URL, re-crawled:
+Gladstone's `brent.gov.uk/parks-leisure-and-healthy-l...` went 4,787 → 1,647 characters and from
+`has_js = true` to false.
+
+24 rows at these venues were **not** refreshed and 8 of those are still contaminated. They are URLs the
+current candidate ordering no longer visits, so they clear only if the crawl returns to them. They back
+no served claim.
+
+### Blast radius
+
+| Check | Value |
+| --- | --- |
+| Claims touched outside the three venues | **0** |
+| Evidence rows touched outside the three | **0** |
+| Jobs run outside the three | **0** |
+| `last_refresh` | `2026-10-01`, unchanged by this operation |
+| Queue | drained to 0 |
+
+Claim counts reconcile from an independent arithmetic check:
+
+```
+  242 served before
++   8 new active (7 recreations + 1 genuinely new)
+-   7 superseded
+-   0 disputed          <- nothing was withdrawn
+= 243 predicted   ... 243 actual
+```
+
+### What the repair surfaced, fenced rather than decided
+
+**Belmont's new `playground = yes` comes from soft play**: "...review our Rules & Regulations before
+visiting our Soft Play area". The crowding-out fix worked exactly as intended — real prose now fits in
+the budget where Squarespace CSS used to sit — but the fact it surfaced is a **new instance of the open
+Babylon Park question**, whether `familyFacilities.playground` covers soft play. It is a coverage gain
+only if the answer is yes. Recorded, not decided.
+
+**Nando's `parking` and `freeParking` both rest on "Nearby"**: the refreshed excerpt reads "Sunday 12pm
+- 10pm Nearby If you're driving, there's free parking a[t]...". That is parking *near* the restaurant,
+not at it, which belongs to the subject-scope question already open on Hatfield Park and Sydenham Hill
+Wood rather than to this workstream.
+
+Both are owner decisions about what a field promises a parent. Neither was touched.
