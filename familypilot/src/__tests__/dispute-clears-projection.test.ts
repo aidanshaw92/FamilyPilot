@@ -144,7 +144,42 @@ describe('automatic reconciliation clears what it withdraws', () => {
     expect(metadata?.familyFacilities?.toilets).toBe('yes');
   });
 
-  it('writes nothing when it withdraws nothing', async () => {
+  it('repairs a projection left behind by a withdrawal from weeks ago', async () => {
+    // Counting this run's own withdrawals fixes the defect forward and repairs nothing already
+    // broken: a claim disputed on 11 September is disputed again by nobody. This is the case the
+    // production audit actually found -- Crystal Palace Park and Swanley Park, four values between
+    // them, every claim disputed and the page still showing them.
+    await seedClaimAndProjection();
+    const { listClaimsForVenue, disputeClaim } = await import('../../../server/enrichment/_lib/claims-store.js');
+    const seeded = await listClaimsForVenue(VENUE, {}) as Array<{ id: string; fieldKey: string }>;
+    await disputeClaim(seeded[0].id);
+
+    // The projection still says yes, exactly as production did.
+    expect(await projectedPlayground()).toBe('yes');
+
+    // A later run that withdraws NOTHING must still clean this up.
+    const { reconcileSourceClaims } = await import('../../../server/enrichment/_lib/auto-approve.js');
+    await reconcileSourceClaims(VENUE, buildEvidenceBundle(VENUE, [source([fact('toilets', 'yes')])], 'official_website'));
+
+    expect(await projectedPlayground()).toBeNull();
+  });
+
+  it('writes nothing for a venue that has no claims and shows nothing', async () => {
+    // The self-heal asks whether a parent can currently see a fact with nothing behind it. For a
+    // venue with neither claims nor projected facts the answer is no, so every run must leave the
+    // row alone rather than rewriting it forever.
+    const { saveMetadata, getMetadata } = await import('../../../server/enrichment/_lib/enrichment-store.js');
+    await saveMetadata(VENUE, { lastChecked: CHECKED_AT, checkedBy: 'enrichment-admin' });
+    const before = await getMetadata(VENUE) as { updatedAt?: string } | null;
+
+    const { reconcileSourceClaims } = await import('../../../server/enrichment/_lib/auto-approve.js');
+    await reconcileSourceClaims(VENUE, buildEvidenceBundle(VENUE, [source([fact('toilets', 'yes')])], 'official_website'));
+
+    const after = await getMetadata(VENUE) as { updatedAt?: string } | null;
+    expect(after?.updatedAt).toBe(before?.updatedAt);
+  });
+
+  it('writes nothing when it withdraws nothing and the page already agrees', async () => {
     await seedClaimAndProjection();
     const { getMetadata } = await import('../../../server/enrichment/_lib/enrichment-store.js');
     const before = await getMetadata(VENUE) as { updatedAt?: string } | null;

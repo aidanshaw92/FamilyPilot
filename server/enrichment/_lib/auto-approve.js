@@ -103,6 +103,41 @@ async function tryAutoApproveDraft(familypilotId, options = {}) {
  * `mergeEvidenceBundles` keeps its eligible-candidate precedence, which is right for publication and
  * for what the audit reports. It is no longer what protects live claims.
  */
+/**
+ * Does the venue page still show claim-backed facts that no active claim supports?
+ *
+ * Counting this run's own withdrawals fixes the defect going forward and repairs nothing already
+ * broken: a claim disputed weeks ago is disputed again by nobody, so the rebuild never fires and the
+ * stale value sits there for good. This is the self-heal, and it is deliberately narrow.
+ *
+ * Only the zero-active-claims case, because that is the only drift the production audit actually
+ * found -- Crystal Palace Park and Swanley Park, four values between them, both projected on
+ * 11 September with every claim disputed since. Where SOME claims remain, `rebuildMetadataPayloadFromClaims`
+ * returns a payload and the ordinary publish path already rewrites the row, so there is no evidence
+ * of drift to chase there and no rule invented for it.
+ *
+ * Reading the projection rather than diffing payloads on purpose: the question is whether a parent
+ * can currently see a fact with nothing behind it, which is exactly what the audit query asked.
+ */
+async function projectionOutlivesItsClaims(id) {
+  const { getMetadata } = require('./enrichment-store');
+  const { venueHasActiveClaims } = require('./claims-store');
+  // With claims still live, the rebuild below is the publisher's job, not a repair.
+  if (await venueHasActiveClaims(id)) return false;
+
+  const metadata = await getMetadata(id);
+  if (!metadata) return false;
+
+  const projected = [
+    ...Object.values(metadata.familyFacilities ?? {}),
+    ...Object.values(metadata.accessibility ?? {}),
+    metadata.pushchairSuitability,
+    metadata.environment,
+    metadata.energyLevel,
+  ];
+  return projected.some((value) => value !== null && value !== undefined && value !== '');
+}
+
 async function reconcileSourceClaims(id, bundle) {
   const {listClaimsForVenue, disputeClaim} = require('./claims-store');
   const {FIELD_MAP} = require('./trusted-evidence');
@@ -249,7 +284,7 @@ async function reconcileSourceClaims(id, bundle) {
    * still has active claims, and when it has none the minimal payload below clears the field anyway.
    * It stays because it states the intent and does not depend on that coincidence holding.
    */
-  if (withdrawn > 0) {
+  if (withdrawn > 0 || (await projectionOutlivesItsClaims(id))) {
     const { getMetadata, saveMetadata } = require('./enrichment-store');
     const existing = await getMetadata(id);
     await saveMetadata(
