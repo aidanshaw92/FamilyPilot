@@ -41,6 +41,10 @@ const MIXED_PATTERNS = [
   /\b(limited access|significant limitations|many steps|steep|hilly|largely inaccessible)\b/i,
   /\b(not all (routes|areas|paths|buildings)|difficult terrain|very uneven)\b/i,
   /\b(mostly|largely)\s+(gravel|uneven|inaccessible)\b/i,
+  // "Leave your buggy here" is a limitation, not a welcome: part of the venue cannot be done with a
+  // pushchair. 17 occurrences across the stored corpus, and before this it supported nothing -- so a
+  // page that both welcomed buggies AND asked visitors to park them read as an unqualified `good`.
+  /\bleave\s+(?:your\s+)?(?:bugg(?:y|ies)|pushchairs?|prams?|strollers?)\b/i,
 ];
 
 const CAVEAT_PATTERNS = [
@@ -183,11 +187,44 @@ function classifyPushchairSuitability(rawText) {
     return { value: 'good', confidence: 'medium' };
   }
 
+  /**
+   * A WHEELCHAIR near "step-free" is not evidence about a pushchair.
+   *
+   * This file's own first line says it "does not infer from venue type or wheelchair/accessibility
+   * wording alone", and the step-free pair here did exactly that: `wheelchair` was an alternative, so
+   * "entrances are step-free and wheelchair accessible" published a PUSHCHAIR verdict, with the only
+   * pushchair word anywhere else on the page.
+   *
+   * Counted across every stored page: `step-free ... wheelchair` within 50 characters occurs 26 times
+   * (24 of them the one phrase "step-free and wheelchair accessible"), while `step-free ...
+   * pushchair|buggy|pram` occurs 2 times and the reverse order 0. The wheelchair alternative was
+   * doing almost all the work, in the wrong field -- and FamilyPilot already has
+   * `accessibility.wheelchairAccessible` for that question.
+   *
+   * Two served claims rested on it:
+   *
+   *   Victoria and Albert Museum  good  "The Cromwell Road and Exhibition Road entrances are
+   *                                      step-free and wheelchair accessible. Access The nearest
+   *                                      step-free tube stations are ..."   <- about tube stations
+   *   V&A East Storehouse         good  "We encourage you to leave buggies here before heading to
+   *                                      the upper levels Access Our entrance is step-free ..."
+   *                                                                         <- says the opposite
+   *
+   * `wide aisles` keeps both terms: that phrase is about width, which a pushchair and a wheelchair
+   * need in the same way, and it is only ever read alongside a pushchair term already on the page.
+   *
+   * The step-free pair is NARROWED, not re-aimed. A first attempt also widened its pushchair side to
+   * `buggy|buggies|pram`, which promptly republished a verdict for Winter Wonderland's station advice
+   * -- "If you require step-free access or are travelling with a buggy, it is advised to use Green
+   * Park or Bond Street stations" -- a case venue-source-integrity.test.ts already pins as something
+   * the corpus shows must NOT become a venue fact. Removing a term and adding one are separate
+   * changes; only the removal was wanted.
+   */
   const ACCESS_ROUTE_PATTERNS = [
     /\bwide\s+aisles\b[^.!?]{0,50}\b(wheelchair(s)?|pushchair(s)?|buggy|buggies|pram(s)?)\b/i,
     /\b(wheelchair(s)?|pushchair(s)?|buggy|buggies|pram(s)?)\b[^.!?]{0,50}\bwide\s+aisles\b/i,
-    /\b(wheelchair(s)?|pushchair(s)?)\b[^.!?]{0,50}\b(step.?free|lifts?\s+to)\b/i,
-    /\b(step.?free)\b[^.!?]{0,50}\b(wheelchair(s)?|pushchair(s)?)\b/i,
+    /\b(pushchair(s)?)\b[^.!?]{0,50}\b(step.?free|lifts?\s+to)\b/i,
+    /\b(step.?free)\b[^.!?]{0,50}\b(pushchair(s)?)\b/i,
   ];
 
   // This is the branch that actually published Paradox Museum's `good`, once the FAQ heading had
