@@ -50,7 +50,6 @@ env:
   # A pull_request event carries no inputs, so a pull request always gets the fixture. Spending has
   # to be asked for by name.
   DATA_SOURCE: ${{ inputs.data_source || 'fixture' }}
-  FIXTURE_API_BASE: http://localhost:4174/api/places
 
 jobs:
   capture:
@@ -77,8 +76,14 @@ jobs:
         working-directory: familypilot
         run: npx playwright install --with-deps chromium
 
-      # Resolves to the fixture unless a dispatch explicitly asked for production. Doing it in one
-      # place means no later step can reach production by forgetting a condition.
+      # Resolves once, so no later step can reach production by forgetting a condition. On the fixture
+      # path the API base is left EMPTY on purpose: the fixture serves the bundle and the API from one
+      # origin, so the client's own `window.location.origin` fallback finds it and there is no
+      # environment variable to inline. That matters -- an earlier version ran the fixture on a second
+      # port and relied on `EXPO_PUBLIC_PLACES_API_URL` being compiled into the bundle. Verified
+      # locally on 2026-10-01: it was not, the client fell back to its own origin, got a 404, and
+      # `fallbackSearch` served two demo venues while the run still printed a venue name. Same origin
+      # removes the dependency entirely.
       - name: Choose the places API
         id: api
         run: |
@@ -86,22 +91,10 @@ jobs:
             base="${{ inputs.api_base }}"
             echo "::warning::Running against production. This makes billable Google Places requests."
           else
-            base="$FIXTURE_API_BASE"
+            base=""
           fi
           echo "base=$base" >> "$GITHUB_OUTPUT"
-          echo "using $base"
-
-      - name: Serve the places fixture
-        if: env.DATA_SOURCE != 'production'
-        working-directory: familypilot
-        run: |
-          node scripts/serve-places-fixture.mjs 4174 &
-          for i in $(seq 1 20); do
-            curl -sf -o /dev/null "http://localhost:4174/api/places/search?lat=51.5074&lng=-0.1278&radiusKm=40&scope=london&intent=explore" && break
-            sleep 1
-          done
-          curl -sf -o /dev/null "http://localhost:4174/api/places/search?lat=51.5074&lng=-0.1278&radiusKm=40&scope=london&intent=explore" \
-            || { echo "::error::places fixture never came up"; exit 1; }
+          echo "using ${base:-the same-origin fixture}"
 
       # Only on the production path, and only once. Fails early and legibly if the deployed API is
       # unreachable or serving mock data, because without real rows carrying photo references there
@@ -131,11 +124,32 @@ jobs:
       - name: Build this branch against the chosen API
         working-directory: familypilot
         env:
-          # The client reads this for /api/places/* and derives the photo origin from it.
+          # Empty on the fixture path, so the client falls back to the origin it is served from. On the
+          # production path this is what points the bundle at the deployed API.
           EXPO_PUBLIC_PLACES_API_URL: ${{ steps.api.outputs.base }}
         run: npx expo export --platform web
 
+      # The fixture is both the static server and the places API, on one origin. Checked for the
+      # bundle AND for a venue photograph, because a static server that came up while the API did not
+      # would still pass a bare index-page check and then quietly fall back to demo venues.
+      - name: Serve the bundle and the fixture API together
+        if: env.DATA_SOURCE != 'production'
+        working-directory: familypilot
+        run: |
+          node scripts/serve-places-fixture.mjs 4173 dist &
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://localhost:4173/ && break
+            sleep 2
+          done
+          curl -sf -o /dev/null http://localhost:4173/ || { echo "::error::fixture server never came up"; exit 1; }
+          curl -sf -o /dev/null "http://localhost:4173/api/places/search?lat=51.5074&lng=-0.1278&radiusKm=40&scope=london&intent=explore" \
+            || { echo "::error::fixture served the bundle but not the places API"; exit 1; }
+          curl -sf -o /dev/null -w 'fixture photo: %{http_code} %{content_type}\n' \
+            "http://localhost:4173/api/places/photo?id=FIXTUREnotArealPlaceId0000&index=0" \
+            || { echo "::error::fixture served no venue photograph"; exit 1; }
+
       - name: Serve the bundle
+        if: env.DATA_SOURCE == 'production'
         working-directory: familypilot
         run: |
           npx serve dist -l 4173 --no-clipboard &

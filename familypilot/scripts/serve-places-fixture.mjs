@@ -19,12 +19,26 @@
  * cached temporarily, so committing real venue names, addresses and photographs as a test fixture
  * would be a retention problem as well as a cost one. Nothing here came from Google.
  *
- * Usage: node scripts/serve-places-fixture.mjs [port]
+ * It serves the exported web bundle too, on the same origin as the API. That is not a convenience:
+ * `places-api-client.ts` and `place-photo-url.ts` resolve their base URL from
+ * `EXPO_PUBLIC_PLACES_API_URL` and fall back to `window.location.origin`, and an earlier version of
+ * this fixture ran the API on a second port and relied on that variable being inlined into the
+ * bundle by `expo export`. It was not: the built bundle contained no trace of the URL, the client
+ * fell back to its own origin, got a 404 from the static server, and `fallbackSearch` quietly served
+ * the two demo venues from `server/places/lib/fallback.js` instead. The run still printed a venue
+ * name and still said "0/3 layers are showing a decoded photograph", which is exactly the kind of
+ * half-working green that hides a problem. Serving both from one origin is also how production
+ * actually works, so there is nothing left to inline and nothing left to get wrong.
+ *
+ * Usage: node scripts/serve-places-fixture.mjs [port] [distDir]
  */
 import { createServer } from 'node:http';
+import { createReadStream, existsSync, statSync } from 'node:fs';
+import { extname, join, normalize, resolve } from 'node:path';
 import { deflateSync } from 'node:zlib';
 
-const PORT = Number(process.argv[2] || 4174);
+const PORT = Number(process.argv[2] || 4173);
+const DIST = resolve(process.argv[3] || join(process.cwd(), 'dist'));
 
 /**
  * Fifteen venues, because that is the deck length the gesture harness walks end to end. Coordinates
@@ -176,6 +190,57 @@ const IMAGES = [
   buildPng(800, 591, [104, 118, 140]),
 ];
 
+const CONTENT_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.ico': 'image/x-icon',
+  '.webp': 'image/webp',
+  '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.txt': 'text/plain; charset=utf-8',
+};
+
+/**
+ * Resolves a request path inside the exported bundle: the file itself, then `<path>.html`, then
+ * `<path>/index.html`, then `index.html` as the single-page fallback so client-side routes such as
+ * `/venue/<id>` load. `normalize` plus the prefix check keeps a `..` out of the served tree.
+ */
+function resolveStaticFile(pathname) {
+  const requested = normalize(join(DIST, decodeURIComponent(pathname)));
+  if (!requested.startsWith(DIST)) return null;
+
+  const candidates = [requested, `${requested}.html`, join(requested, 'index.html')];
+  for (const candidate of candidates) {
+    if (existsSync(candidate) && statSync(candidate).isFile()) return candidate;
+  }
+  const fallback = join(DIST, 'index.html');
+  return existsSync(fallback) ? fallback : null;
+}
+
+function sendStatic(res, pathname) {
+  const file = resolveStaticFile(pathname);
+  if (!file) {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    return res.end('not found');
+  }
+  res.writeHead(200, {
+    'Content-Type': CONTENT_TYPES[extname(file).toLowerCase()] || 'application/octet-stream',
+    'Cache-Control': 'no-store',
+  });
+  return createReadStream(file).pipe(res);
+}
+
 function sendJson(res, status, body) {
   const payload = JSON.stringify(body);
   res.writeHead(status, {
@@ -236,10 +301,22 @@ const server = createServer((req, res) => {
     return sendJson(res, 200, { runtime: { configuredProvider: 'fixture' }, probe: null });
   }
 
-  return sendJson(res, 404, { error: 'Not found' });
+  // Any other /api/ path is a route this fixture has not been taught. Answering it with the bundle's
+  // index.html would hand the client HTML where it expected JSON and produce a confusing parse error,
+  // so say so plainly instead.
+  if (url.pathname.startsWith('/api/')) {
+    return sendJson(res, 404, { error: `fixture has no route for ${url.pathname}` });
+  }
+
+  return sendStatic(res, url.pathname);
 });
 
 server.listen(PORT, () => {
-  console.log(`places fixture serving ${PLACES.length} synthetic venues on http://localhost:${PORT}`);
+  console.log(`places fixture: ${PLACES.length} synthetic venues on http://localhost:${PORT}`);
+  if (existsSync(join(DIST, 'index.html'))) {
+    console.log(`serving the exported bundle from ${DIST} on the same origin`);
+  } else {
+    console.log(`WARNING: no index.html under ${DIST}; run \`npm run build:web\` first`);
+  }
   console.log('No Google Places request is made by this server. Nothing here is Google content.');
 });
