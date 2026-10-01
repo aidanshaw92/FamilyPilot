@@ -82,13 +82,13 @@ function collectRelevantSentences(text) {
   // an FAQ heading ("Are prams allowed?") carries no fact, so it must not qualify the page for
   // classification either -- unknown is the correct answer there, and was not what production gave.
   const sentences = splitSentences(text).filter((s) => !isInterrogativeSentence(s));
-  if (!sentences.some((s) => PUSHCHAIR_TERMS.test(s))) {
+  if (!sentences.some((s) => hasPushchairSpecificTerm(s))) {
     return [];
   }
 
   return sentences.filter(
     (s) =>
-      PUSHCHAIR_TERMS.test(s) ||
+      hasPushchairSpecificTerm(s) ||
       (TERRAIN_TERMS.test(s) && /access|route|path|building|site|visit|step/i.test(s)),
   );
 }
@@ -116,12 +116,36 @@ const NEGATED_POSITIVE =
 const NEGATED_BY_LEADING_NO =
   /\bno\s+(?:pushchairs?|buggies|buggy|prams?|strollers?)\s+(?:are\s+)?(?:allowed|permitted|welcome(?:d)?)\b/gi;
 
+/**
+ * A golf buggy is a vehicle, and a "buggy service" is a ride. Neither is a pushchair.
+ *
+ * Hatfield Park serves `pushchairSuitability = difficult` off "Please note there is currently no
+ * buggy service at Hatfield Park" -- a suspended golf-buggy shuttle, read as a statement that the
+ * grounds defeat a pram. The same site says twice what its buggy is: "a golf buggy is available to
+ * assist those who may need help from the car park to the Stable Yard and/or the entrance to the
+ * House & Gardens."
+ *
+ * Masked rather than removed from PUSHCHAIR_TERMS, because "buggy" alone is the commonest UK word
+ * for a pushchair and this whole field depends on reading it that way. Only these compounds name a
+ * vehicle. `hire` and `rental` are deliberately NOT here: "buggy hire" at a visitor attraction
+ * usually IS a pushchair to borrow.
+ *
+ * Masking can only move a verdict towards unknown, never towards a wrong one, which is the safe
+ * direction for a word this ambiguous.
+ */
+const NON_PUSHCHAIR_BUGGY =
+  /\b(?:golf|mobility)[\s-]+bugg(?:y|ies)\b|\bbugg(?:y|ies)[\s-]+(?:services?|shuttles?|rides?|tours?)\b/gi;
+
+function maskNonPushchairBuggy(text) {
+  return String(text ?? '').replace(NON_PUSHCHAIR_BUGGY, ' XBUGGYVEHICLEX ');
+}
+
 function maskNegatedPositives(text) {
   return text.replace(NEGATED_POSITIVE, ' XNEGATEDX ').replace(NEGATED_BY_LEADING_NO, ' XNEGATEDX ');
 }
 
 function hasPushchairSpecificTerm(text) {
-  return PUSHCHAIR_TERMS.test(text);
+  return PUSHCHAIR_TERMS.test(maskNonPushchairBuggy(text));
 }
 
 /**
@@ -149,7 +173,7 @@ function dropInterrogatives(text) {
  * not, and the same FAQ heading was read two different ways on the same page.
  */
 function classifyPushchairSuitability(rawText) {
-  const combinedText = rawText ? dropInterrogatives(rawText) : '';
+  const combinedText = rawText ? maskNonPushchairBuggy(dropInterrogatives(rawText)) : '';
   if (!combinedText || !hasPushchairSpecificTerm(combinedText)) {
     return null;
   }
@@ -323,6 +347,7 @@ module.exports = {
   classifyPushchairSuitability,
   collectRelevantSentences,
   hasPushchairSpecificTerm,
+  maskNonPushchairBuggy,
   cleanEvidenceSnippet,
   PUSHCHAIR_TERMS,
   WHEELCHAIR_TERMS,
