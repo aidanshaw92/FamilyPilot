@@ -155,7 +155,18 @@ GOOGLE_PLACES_REFRESH_ENABLED=false
 GOOGLE_GEOCODING_ENABLED=false
 GOOGLE_JOURNEYS_ENABLED=false
 GOOGLE_PLACES_MAX_CALLS_PER_DAY=25
+PLACES_DETAIL_FRESH_DAYS=0
 ```
+
+`PLACES_DETAIL_FRESH_DAYS=0` is the one that is easy to miss, and it was missed. Without it
+`/api/places/detail` serves the stored copy of a venue and reports `provider: "google"` — correctly,
+since the data did come from Google — so the smoke test passed all eight assertions against a copy of
+Whitechapel Gallery fetched 0.45 days earlier, without Google being contacted at all. The check exists
+precisely to prove that Google's live response still carries what the mapper expects, and it was
+proving nothing while green. `assert-live-opening-hours.mjs` now fails on `cached: true` and names this
+variable, so the gap announces itself rather than hiding behind a pass. Zero days means Preview always
+refreshes, which is what Preview is for.
+
 If you would rather no Preview deployment can ever spend, set nothing at all and let the smoke test
 fail — it prints the exact variables it needs, so the failure explains itself.
 

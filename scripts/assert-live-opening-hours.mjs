@@ -40,6 +40,35 @@ if (payload.provider !== 'google') {
   process.exit(1);
 }
 
+/**
+ * `provider: "google"` is no longer sufficient on its own, and this check exists because the
+ * `provider` guard above was silently defeated.
+ *
+ * The 2026-10 Google Places cost work made `/api/places/detail` read `place_records` before calling
+ * Google, and it reports `provider: "google"` for a stored copy too -- correctly, since the data did
+ * originate from Google. But run #4 of this workflow then passed all eight assertions against a copy
+ * of Whitechapel Gallery fetched 0.45 days earlier, without Google being contacted at all. Every
+ * assertion was green and the thing this check exists to prove -- that Google's live response still
+ * carries what the mapper expects, which is the half a fixture can never prove -- was not tested.
+ *
+ * So a stored answer is now a failure here, not a pass. `cached` and `storedAgeDays` come straight
+ * from the endpoint.
+ */
+if (payload.cached === true) {
+  console.error(
+    `::error::the preview served a STORED copy of this venue (cached: true, storedAgeDays: ${
+      payload.storedAgeDays ?? 'unknown'
+    }), so no live Google response was mapped and this check proves nothing. ` +
+      'Set PLACES_DETAIL_FRESH_DAYS=0 in the Vercel project\'s PREVIEW environment so a preview ' +
+      'always refreshes from Google, which is what Preview is for. See ' +
+      'docs/GOOGLE_PLACES_COST_CONTROL.md.',
+  );
+  process.exit(1);
+}
+
+console.log('served from store :', payload.cached === true);
+console.log('cache state       :', payload.cacheState ?? 'n/a');
+
 console.log('\nmapped opening_hours:');
 console.log(JSON.stringify(hours, null, 2));
 

@@ -15,6 +15,12 @@ name: Opening hours live smoke test
 # `server/places/lib/google-places.js`. That is the cheapest possible way to answer "does Google
 # still send what this mapper expects", and it is deliberately not the expensive discovery SKU.
 #
+# It must be a LIVE request to mean anything. `/api/places/detail` now reads `place_records` before
+# calling Google and reports `provider: "google"` for a stored copy too, which silently turned run #4
+# of this workflow into a check against data fetched hours earlier -- eight green assertions proving
+# nothing. `assert-live-opening-hours.mjs` therefore fails on `cached: true`, and the Preview
+# environment needs `PLACES_DETAIL_FRESH_DAYS=0` so a preview always refreshes.
+#
 # It does require the Preview environment to permit that one call. Google Places is off by default
 # outside production (see server/places/lib/places-budget.js), so the Vercel Preview environment
 # needs a narrow allowance — details only, no discovery, no photos, and a low daily cap. The exact
@@ -155,7 +161,7 @@ jobs:
           if [ "$code" = "503" ] || [ "$code" = "429" ]; then
             if grep -q 'PLACES_DISABLED\|PLACES_BUDGET_EXCEEDED' /tmp/detail.json 2>/dev/null; then
               echo "gate response:"; head -c 400 /tmp/detail.json
-              echo "::error::The preview build refused the request on cost grounds, not because the mapper is wrong. Google Places is off outside production by design. To let this check make its one Place Details call, set these in the Vercel project's PREVIEW environment: GOOGLE_PLACES_ENABLED=true, GOOGLE_PLACES_DISCOVERY_ENABLED=false, GOOGLE_PLACES_PHOTOS_ENABLED=false, GOOGLE_PLACES_MAX_CALLS_PER_DAY=25. See docs/GOOGLE_PLACES_COST_CONTROL.md."
+              echo "::error::The preview build refused the request on cost grounds, not because the mapper is wrong. Google Places is off outside production by design. To let this check make its one Place Details call, set these in the Vercel project's PREVIEW environment: GOOGLE_PLACES_ENABLED=true, GOOGLE_PLACES_DISCOVERY_ENABLED=false, GOOGLE_PLACES_PHOTOS_ENABLED=false, GOOGLE_PLACES_MAX_CALLS_PER_DAY=25, PLACES_DETAIL_FRESH_DAYS=0. See docs/GOOGLE_PLACES_COST_CONTROL.md."
               exit 1
             fi
           fi
