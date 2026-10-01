@@ -29,6 +29,22 @@ interface VenueImageProps {
    * deck's swipe as soon as real photographs started loading in place of the gradient fallback.
    */
   pointerEvents?: 'auto' | 'none';
+  /**
+   * Every photograph a parent sees costs real money. A proxy request that misses the CDN buys a
+   * Place Details call AND a Place Photos call from Google, so one off-screen thumbnail is two
+   * billable requests for an image nobody looked at.
+   *
+   * Measured on 2026-10-01 at an iPhone viewport (390x844) against the local fixture: Explore
+   * mounted 15 photo elements and fired 12 proxy requests, while only FOUR were on screen. Eleven
+   * rows sat between 891px and 2511px down the page, below the fold, each one bought on open.
+   *
+   * `loading` is expo-image's own pass-through to the HTML attribute, so the browser decides what
+   * "near the viewport" means and nothing about the layout changes. The default is 'lazy' because
+   * an image that IS in the viewport still loads immediately under that attribute -- Home's deck
+   * measured 3 photographs all fully visible at 86-100% opacity, and all three still load. Pass
+   * 'eager' only where a photograph must be fetched before it can possibly be scrolled into view.
+   */
+  loading?: 'lazy' | 'eager';
 }
 
 const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -58,9 +74,9 @@ function categoryGradient(category?: string): readonly [string, string] {
 /** Only show the venue's actual photo. Stock photography must not impersonate a place. Without
  * one, a category-owned gradient + icon reads as a designed placeholder rather than a broken
  * image — and upgrades to a real photo the moment one exists, with no layout change. */
-export function VenueImage({uri,category,alt,style,borderRadius=radius.md,showCredit=true,pointerEvents='auto'}:VenueImageProps){
- const [loading,setLoading]=useState(Boolean(uri));const [failed,setFailed]=useState(false);
- useEffect(()=>{setLoading(Boolean(uri));setFailed(false);},[uri]);
+export function VenueImage({uri,category,alt,style,borderRadius=radius.md,showCredit=true,pointerEvents='auto',loading='lazy'}:VenueImageProps){
+ const [pending,setPending]=useState(Boolean(uri));const [failed,setFailed]=useState(false);
+ useEffect(()=>{setPending(Boolean(uri));setFailed(false);},[uri]);
  const credit=showCredit&&!failed?photoCredit(uri):null;
  const icon = category ? CATEGORY_ICONS[category] : undefined;
  const [gradientStart, gradientEnd] = categoryGradient(category);
@@ -73,8 +89,8 @@ export function VenueImage({uri,category,alt,style,borderRadius=radius.md,showCr
     <Ionicons name={icon ?? 'image-outline'} size={30} color="rgba(255,255,255,0.92)" importantForAccessibility="no" />
    </LinearGradient>
   :<>
-   {loading?<Skeleton height={120} borderRadius={borderRadius} style={StyleSheet.absoluteFill}/>:null}
-   <Image source={{uri}} style={styles.image} contentFit="cover" transition={200} accessibilityLabel={alt} onLoad={()=>setLoading(false)} onError={()=>{setFailed(true);setLoading(false);}}/>
+   {pending?<Skeleton height={120} borderRadius={borderRadius} style={StyleSheet.absoluteFill}/>:null}
+   <Image source={{uri}} style={styles.image} contentFit="cover" transition={200} loading={loading} accessibilityLabel={alt} onLoad={()=>setPending(false)} onError={()=>{setFailed(true);setPending(false);}}/>
   </>}
   {credit ? <View style={{position:'absolute',bottom:0,left:0,right:0,backgroundColor:'rgba(0,0,0,0.55)',padding:3}}><Text variant="caption" color="#FFFFFF" numberOfLines={1}>{credit} · Google</Text></View> : null}
  </View>;
