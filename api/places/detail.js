@@ -1,6 +1,42 @@
 const { getGooglePlace } = require('../../server/places/lib/google-places');
 const { MOCK_FALLBACK } = require('../../server/places/lib/fallback');
 const { getCanonicalIdentity, resolvePrimaryPlaceId } = require('../../server/places/lib/canonical-venues');
+const { getPlaceRecord } = require('../../server/enrichment/_lib/enrichment-store');
+const {
+  isPlacesEnabled,
+  describeScope,
+  primePlacesBudget,
+  PlacesDisabledError,
+  PlacesBudgetExceededError,
+} = require('../../server/places/lib/places-budget');
+
+/**
+ * How this endpoint decides whether to spend.
+ *
+ * It used to call Place Details unconditionally for every `fp-google-*` id, with no cache and no
+ * look at `place_records` -- so opening the same venue twice bought the same data twice, and the
+ * CI visual-regression job's venue navigation bought it again on every run.
+ *
+ * Now the stored copy is read first. Two windows govern it:
+ *
+ *  - Inside STORED_FRESH_DAYS the stored copy is served and Google is not called at all.
+ *  - Between that and STORED_MAX_DAYS it is served, and a refresh is attempted only if the details
+ *    scope is enabled.
+ *
+ * STORED_MAX_DAYS is 30 because the Google Maps Platform terms permit caching Places content
+ * temporarily rather than indefinitely, and 30 days is the limit they state. A copy older than that
+ * is not served from cache: either Google is called, or the request fails visibly. Place IDs are
+ * the exception -- those may be stored indefinitely, which is why `place_records` keeps its rows
+ * rather than deleting them.
+ */
+const STORED_FRESH_DAYS = Number(process.env.PLACES_DETAIL_FRESH_DAYS || 7);
+const STORED_MAX_DAYS = 30;
+
+function ageInDays(fetchedAt) {
+  const timestamp = Date.parse(fetchedAt || '');
+  if (!Number.isFinite(timestamp)) return Infinity;
+  return (Date.now() - timestamp) / 86_400_000;
+}
 
 const MOCK_DETAILS = {
   'venue-1': {
@@ -42,6 +78,10 @@ module.exports = async function handler(req, res) {
   const id = req.query.id;
   if (!id) return res.status(400).json({ error: 'Missing id', fallbackAvailable: true });
 
+  // Loads today's shared billable total before anything can spend, so the daily cap counts what
+  // every other serverless instance has already bought rather than only this one.
+  await primePlacesBudget();
+
   let canonicalIdentity = null;
   try {
     canonicalIdentity = await getCanonicalIdentity(id);
@@ -61,15 +101,61 @@ module.exports = async function handler(req, res) {
       ? canonicalIdentity.primaryFamilypilotPlaceId
       : id;
 
+  let servedFromStore = false;
+  let storedAgeDays = null;
+
   if (configuredProvider === 'google' && lookupId.startsWith('fp-google-')) {
+    let stored = null;
     try {
-      const place = await getGooglePlace(lookupId);
-      if (place) {
-        detail = { place, metadata: null };
-        provider = 'google';
-      }
+      stored = await getPlaceRecord(lookupId);
     } catch (error) {
-      errors.push(`google: ${error instanceof Error ? error.message : 'provider failed'}`);
+      errors.push(`store: ${error instanceof Error ? error.message : 'store unavailable'}`);
+    }
+
+    const storedAge = stored ? ageInDays(stored.fetchedAt) : Infinity;
+    const storedIsServable = Boolean(stored) && storedAge < STORED_MAX_DAYS;
+    const storedIsFresh = storedIsServable && storedAge < STORED_FRESH_DAYS;
+
+    if (storedIsFresh) {
+      // The whole point of the change: no Google request on the common path.
+      detail = { place: stored, metadata: null };
+      provider = 'google';
+      servedFromStore = true;
+      storedAgeDays = Number(storedAge.toFixed(2));
+    } else {
+      try {
+        const place = await getGooglePlace(lookupId, { reason: 'venue_detail_open' });
+        if (place) {
+          detail = { place, metadata: null };
+          provider = 'google';
+        }
+      } catch (error) {
+        const disabled =
+          error instanceof PlacesDisabledError || error instanceof PlacesBudgetExceededError;
+        errors.push(`google: ${error instanceof Error ? error.message : 'provider failed'}`);
+        if (disabled && storedIsServable) {
+          // Switched off, but we hold a copy Google's terms still let us serve. Showing it beats
+          // showing nothing, and the response says plainly that it was not refreshed.
+          detail = { place: stored, metadata: null };
+          provider = 'google';
+          servedFromStore = true;
+          storedAgeDays = Number(storedAge.toFixed(2));
+          fallbackUsed = true;
+          fallbackReason = `served from store: ${error.detail || error.message}`;
+        } else if (disabled) {
+          // Nothing stored, or the stored copy has outlived what we may cache. Fail loudly rather
+          // than substituting a demo venue for a real one the parent asked for.
+          res.setHeader('Cache-Control', 'no-store');
+          return res.status(error instanceof PlacesBudgetExceededError ? 429 : 503).json({
+            error: 'Live venue details are unavailable',
+            code: error.code,
+            scope: error.scope,
+            detail: error.detail,
+            requestedPlaceId: id,
+            fallbackAvailable: false,
+          });
+        }
+      }
     }
   }
 
@@ -108,13 +194,21 @@ module.exports = async function handler(req, res) {
     // Metadata load is best-effort — provider facts still returned
   }
 
+  // A venue page that is reloaded, or opened by several family members at once, must not re-invoke
+  // this function. The body carries enrichment metadata that does change, so the browser is told to
+  // revalidate while the CDN absorbs the repeats.
+  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
+
   return res.status(200).json({
     ...detail,
     requestedPlaceId: id,
     canonicalIdentity,
     provider,
     configuredProvider,
-    cached: false,
+    cached: servedFromStore,
+    storedAgeDays,
+    placesEnabled: isPlacesEnabled('details'),
+    placesScope: describeScope('details'),
     fetchedAt,
     fallbackUsed,
     fallbackReason,

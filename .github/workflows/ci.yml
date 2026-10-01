@@ -196,3 +196,23 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20260926090000_age_policy_function_search_path.sql
           psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/age_policy_search_path_check.sql
           psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/venue_age_policy_shape_check.sql
+
+      - name: Apply the Places cost-control migration
+        # The Google Places search cache and the daily billable-request counter. Both have RLS enabled
+        # with no policy, so they work only because service_role bypasses RLS and holds explicit table
+        # grants -- which is exactly the arrangement the next step asserts.
+        run: psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20261001090000_place_search_cache.sql
+
+      - name: Assert the cost-control tables work for service_role and are closed to everyone else
+        # The failure mode this guards against is SILENT SPEND. If a future migration revoked a grant,
+        # the search cache would return zero rows, every search would miss, and /api/places/search
+        # would go back to buying nine billable Google Nearby Search requests per page load -- with a
+        # green test suite throughout, because no TypeScript test can see a Postgres privilege.
+        # Verified against production's own configuration on 2026-10-01: service_role has
+        # rolbypassrls, and venue_enrichment_jobs and venue_source_evidence already use this pattern.
+        run: psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/places_cost_control_check.sql
+
+      - name: Apply the cost-control migration a second time and re-assert
+        run: |
+          psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20261001090000_place_search_cache.sql
+          psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/places_cost_control_check.sql

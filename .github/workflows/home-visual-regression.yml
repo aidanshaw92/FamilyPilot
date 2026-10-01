@@ -1,16 +1,27 @@
 name: Home visual regression
 
-# Measures the rendered Home screen against the locked Figma frame "01 — Home", with real
-# production data and real venue photography behind it.
+# Measures the rendered Home screen against the locked Figma frame "01 — Home".
 #
-# It builds the branch under test, points it at the deployed places API, serves it locally and
-# drives it with a browser — so the run reviews the change, not whatever is currently deployed.
-# The 88 assertions are tied to the frame's own node ids (8:4, 40:2, 7:31, 9:2), so a drift from
-# the approved design fails a build instead of surviving to a design review.
+# It builds the branch under test, serves it locally and drives it with a browser, so the run
+# reviews the change rather than whatever is currently deployed. The 88 assertions are tied to the
+# frame's own node ids (8:4, 40:2, 7:31, 9:2), so a drift from the approved design fails a build
+# instead of surviving to a design review. It also runs the deck's gesture harness end to end: the
+# swipe, the clamp at either end of the deck, and tap-versus-swipe disambiguation on a photograph.
 #
-# It also runs the deck's gesture harness against production's data volume, which is what catches
-# behaviour a handful of fixtures cannot: the swipe, the clamp at either end of a long deck, and
-# the tap-versus-swipe disambiguation on a real photograph.
+# WHERE ITS DATA COMES FROM, AND WHY THAT CHANGED
+#
+# This workflow used to point the build at PRODUCTION and ran on every pull request touching
+# `familypilot/**`. It ran 49 times in September 2026, and each run loaded Home in eight fresh
+# browser contexts. Every one of those cost nine billable Google Nearby Search requests -- the
+# nine-point London grid in `api/places/search.js` -- plus a Place Details and a Place Photos call
+# for each photograph, through a proxy that set `Cache-Control: no-store`. Roughly 150 billable
+# Google requests per run, for a check that measures geometry.
+#
+# So the default is now a local fixture (`familypilot/scripts/serve-places-fixture.mjs`): fifteen
+# synthetic venues and generated images, no network, no spend, and deterministic -- the old job could
+# fail because production's data had changed rather than because the design had. The live path is
+# kept, because "does the real API still serve photographs" is a genuine question, but it is now an
+# explicit `workflow_dispatch` choice rather than something every pull request pays for.
 
 on:
   pull_request:
@@ -19,8 +30,16 @@ on:
       - '.github/workflows/home-visual-regression.yml'
   workflow_dispatch:
     inputs:
+      data_source:
+        description: Where Home's venue data comes from. "production" makes billable Google requests.
+        required: true
+        default: fixture
+        type: choice
+        options:
+          - fixture
+          - production
       api_base:
-        description: Base URL of the deployed places API
+        description: Base URL of the deployed places API (only used when data_source is production)
         required: false
         default: https://family-pilot-seven.vercel.app/api/places
 
@@ -28,8 +47,9 @@ permissions:
   contents: read
 
 env:
-  # A pull_request event carries no inputs, so the dispatch input only overrides this when given.
-  API_BASE: ${{ inputs.api_base || 'https://family-pilot-seven.vercel.app/api/places' }}
+  # A pull_request event carries no inputs, so a pull request always gets the fixture. Spending has
+  # to be asked for by name.
+  DATA_SOURCE: ${{ inputs.data_source || 'fixture' }}
 
 jobs:
   capture:
@@ -56,13 +76,34 @@ jobs:
         working-directory: familypilot
         run: npx playwright install --with-deps chromium
 
-      # Fail early and legibly if the deployed API is unreachable or serving mock data — without
-      # real rows carrying photo references there is nothing to photograph.
-      - name: Check the deployed places API
+      # Resolves once, so no later step can reach production by forgetting a condition. On the fixture
+      # path the API base is left EMPTY on purpose: the fixture serves the bundle and the API from one
+      # origin, so the client's own `window.location.origin` fallback finds it and there is no
+      # environment variable to inline. That matters -- an earlier version ran the fixture on a second
+      # port and relied on `EXPO_PUBLIC_PLACES_API_URL` being compiled into the bundle. Verified
+      # locally on 2026-10-01: it was not, the client fell back to its own origin, got a 404, and
+      # `fallbackSearch` served two demo venues while the run still printed a venue name. Same origin
+      # removes the dependency entirely.
+      - name: Choose the places API
         id: api
         run: |
+          if [ "$DATA_SOURCE" = "production" ]; then
+            base="${{ inputs.api_base }}"
+            echo "::warning::Running against production. This makes billable Google Places requests."
+          else
+            base=""
+          fi
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "using ${base:-the same-origin fixture}"
+
+      # Only on the production path, and only once. Fails early and legibly if the deployed API is
+      # unreachable or serving mock data, because without real rows carrying photo references there
+      # is nothing to photograph.
+      - name: Check the deployed places API
+        if: env.DATA_SOURCE == 'production'
+        run: |
           set -o pipefail
-          url="$API_BASE/search?lat=51.5074&lng=-0.1278&radiusKm=40&scope=london&intent=explore"
+          url="${{ steps.api.outputs.base }}/search?lat=51.5074&lng=-0.1278&radiusKm=40&scope=london&intent=explore"
           echo "GET $url"
           code=$(curl -sS -o /tmp/search.json -w '%{http_code}' --max-time 60 "$url") || true
           echo "status: $code"
@@ -75,31 +116,40 @@ jobs:
             const d = JSON.parse(require("fs").readFileSync("/tmp/search.json", "utf8"));
             const withPhotos = (d.places || []).filter((p) => (p.photos || []).length > 0);
             console.log("provider:", d.provider, "places:", (d.places || []).length, "with photos:", withPhotos.length);
+            console.log("cacheState:", d.cacheState, "placesEnabled:", d.placesEnabled);
             if (d.provider === "mock") { console.log("::error::API is serving mock data"); process.exit(1); }
             if (withPhotos.length === 0) { console.log("::error::no place carries a photo reference"); process.exit(1); }
-            const sample = withPhotos[0];
-            console.log("sample venue:", sample.name, "|", sample.familypilotId);
-            console.log("sample photo path:", sample.photos[0]);
           '
-          # Follow one photo the whole way, so the log records that the proxy really resolves.
-          first=$(node -e '
-            const d = JSON.parse(require("fs").readFileSync("/tmp/search.json", "utf8"));
-            const p = (d.places || []).find((x) => (x.photos || []).length > 0);
-            process.stdout.write(p.photos[0]);
-          ')
-          origin="${API_BASE%/api/places}"
-          echo "resolving $origin$first"
-          curl -sS -o /dev/null -w 'photo: %{http_code} -> %{url_effective}\n' -L --max-time 60 "$origin$first"
 
-      - name: Build this branch against the deployed API
+      - name: Build this branch against the chosen API
         working-directory: familypilot
         env:
-          # The client reads this for /api/places/* and derives the photo origin from it, so a
-          # locally served bundle fetches production data and production photographs.
-          EXPO_PUBLIC_PLACES_API_URL: ${{ env.API_BASE }}
+          # Empty on the fixture path, so the client falls back to the origin it is served from. On the
+          # production path this is what points the bundle at the deployed API.
+          EXPO_PUBLIC_PLACES_API_URL: ${{ steps.api.outputs.base }}
         run: npx expo export --platform web
 
+      # The fixture is both the static server and the places API, on one origin. Checked for the
+      # bundle AND for a venue photograph, because a static server that came up while the API did not
+      # would still pass a bare index-page check and then quietly fall back to demo venues.
+      - name: Serve the bundle and the fixture API together
+        if: env.DATA_SOURCE != 'production'
+        working-directory: familypilot
+        run: |
+          node scripts/serve-places-fixture.mjs 4173 dist &
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://localhost:4173/ && break
+            sleep 2
+          done
+          curl -sf -o /dev/null http://localhost:4173/ || { echo "::error::fixture server never came up"; exit 1; }
+          curl -sf -o /dev/null "http://localhost:4173/api/places/search?lat=51.5074&lng=-0.1278&radiusKm=40&scope=london&intent=explore" \
+            || { echo "::error::fixture served the bundle but not the places API"; exit 1; }
+          curl -sf -o /dev/null -w 'fixture photo: %{http_code} %{content_type}\n' \
+            "http://localhost:4173/api/places/photo?id=FIXTUREnotArealPlaceId0000&index=0" \
+            || { echo "::error::fixture served no venue photograph"; exit 1; }
+
       - name: Serve the bundle
+        if: env.DATA_SOURCE == 'production'
         working-directory: familypilot
         run: |
           npx serve dist -l 4173 --no-clipboard &

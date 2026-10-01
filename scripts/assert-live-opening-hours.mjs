@@ -40,6 +40,65 @@ if (payload.provider !== 'google') {
   process.exit(1);
 }
 
+/**
+ * `provider: "google"` is no longer sufficient on its own, and this check exists because the
+ * `provider` guard above was silently defeated.
+ *
+ * The 2026-10 Google Places cost work made `/api/places/detail` read `place_records` before calling
+ * Google, and it reports `provider: "google"` for a stored copy too -- correctly, since the data did
+ * originate from Google. But run #4 of this workflow then passed all eight assertions against a copy
+ * of Whitechapel Gallery fetched 0.45 days earlier, without Google being contacted at all. Every
+ * assertion was green and the thing this check exists to prove -- that Google's live response still
+ * carries what the mapper expects, which is the half a fixture can never prove -- was not tested.
+ *
+ * A stored answer is therefore never a pass. Which KIND of not-a-pass depends on why, and the
+ * distinction is read from the response body rather than its status code:
+ *
+ *   - `placesEnabled: false` -- the owner has not authorised Preview deployments to spend on Google.
+ *     A legitimate choice, so this stands down with a loud NOT PROVEN warning and exits 0, rather
+ *     than blocking every future pull request behind a spending decision nobody has been asked to
+ *     make.
+ *   - `placesEnabled: true` -- spend IS authorised and the freshness window hid the live call anyway.
+ *     That is a misconfiguration and a hard failure; one variable fixes it.
+ *
+ * The first attempt at this keyed the stand-down on a 503 from the cost gate, which was wrong: when
+ * the stored copy is fresh the endpoint serves it and returns 200 WITHOUT ever consulting the gate,
+ * so the 503 branch was unreachable for exactly the case it was written for. Run #7 failed on that.
+ */
+const PREVIEW_VARS =
+  'GOOGLE_PLACES_ENABLED=true, GOOGLE_PLACES_DISCOVERY_ENABLED=false, ' +
+  'GOOGLE_PLACES_PHOTOS_ENABLED=false, GOOGLE_PLACES_REFRESH_ENABLED=false, ' +
+  'GOOGLE_PLACES_MAX_CALLS_PER_DAY=25, PLACES_DETAIL_FRESH_DAYS=0';
+
+if (payload.cached === true) {
+  const age = payload.storedAgeDays ?? 'unknown';
+  if (payload.placesEnabled === false) {
+    console.log(
+      `::warning::NOT PROVEN: the preview served a stored copy of this venue (storedAgeDays: ${age}) ` +
+        'because Google Places is switched off for Preview deployments, so no live Google response was ' +
+        'mapped. The unit tests still pin the mapper to Google\'s published schema; what is unverified ' +
+        `is whether Google still sends that schema. To enable the single billable Place Details call ` +
+        `this needs, set in the Vercel project's PREVIEW environment: ${PREVIEW_VARS}. ` +
+        'See docs/GOOGLE_PLACES_COST_CONTROL.md.',
+    );
+    console.log(
+      'standing down: the cost gate is closed for Preview, which is a configuration choice rather than a failure',
+    );
+    process.exit(0);
+  }
+
+  console.error(
+    `::error::the preview served a STORED copy of this venue (cached: true, storedAgeDays: ${age}) even ` +
+      'though Google Places IS enabled here, so no live Google response was mapped and this check proves ' +
+      'nothing. Set PLACES_DETAIL_FRESH_DAYS=0 in the Vercel project\'s PREVIEW environment so a preview ' +
+      'always refreshes from Google, which is what Preview is for. See docs/GOOGLE_PLACES_COST_CONTROL.md.',
+  );
+  process.exit(1);
+}
+
+console.log('served from store :', payload.cached === true);
+console.log('cache state       :', payload.cacheState ?? 'n/a');
+
 console.log('\nmapped opening_hours:');
 console.log(JSON.stringify(hours, null, 2));
 

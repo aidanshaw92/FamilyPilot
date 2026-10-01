@@ -1,4 +1,5 @@
 const { searchGoogle, getGooglePlace } = require('../../server/places/lib/google-places');
+const { primePlacesBudget } = require('../../server/places/lib/places-budget');
 const { verifyEnrichmentAuth, isAuthConfigured } = require('../../server/enrichment/_lib/auth');
 const { consumeAutomationDispatch } = require('../../server/enrichment/_lib/automation-store');
 const {
@@ -53,6 +54,11 @@ module.exports = async function handler(req, res) {
   if (!action) {
     return res.status(400).json({ error: 'Missing action parameter' });
   }
+
+  // Loads today's shared billable total before any action can spend. This is the entry point the
+  // cron-driven enrichment worker and area sync both come through, so it is where a runaway
+  // automatic workload is stopped by the daily cap rather than by whatever one instance has counted.
+  await primePlacesBudget();
 
   switch (action) {
     case 'config':
@@ -178,7 +184,10 @@ async function handleSync(req, res) {
   }
 
   try {
-    const places = await searchGoogle(lat, lng, radiusKm, { intent });
+    // Area sync is the one path whose job is to buy discovery, so it bills against `discovery` and
+    // is bounded by the gate's per-window and per-day limits rather than by anything here. One call,
+    // one billable Nearby Search; the cron that drives it runs twice a week.
+    const places = await searchGoogle(lat, lng, radiusKm, { intent, reason: 'area_sync' });
     await upsertPlaceRecords(places);
     const reclassified = await reclassifyProviderOnlyPlaceRecords();
     return res.status(200).json({
@@ -236,7 +245,7 @@ async function handleVenue(req, res) {
     try {
       let place = null;
       if (id.startsWith('fp-google-')) {
-        place = await getGooglePlace(id);
+        place = await getGooglePlace(id, { scope: 'refresh', reason: 'admin_venue_refresh' });
         if (place) await upsertPlaceRecord(place);
       }
       const metadata = await getMetadata(id);

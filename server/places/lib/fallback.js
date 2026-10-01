@@ -1,5 +1,9 @@
 const { searchGoogle } = require('./google-places');
 const { searchOsm } = require('./osm-places');
+const {
+  PlacesDisabledError,
+  PlacesBudgetExceededError,
+} = require('./places-budget');
 
 const MOCK_FALLBACK = [
   {
@@ -39,6 +43,20 @@ const SEARCH_CHAIN = {
   mock: [{ name: 'mock', search: async () => MOCK_FALLBACK }],
 };
 
+/**
+ * The chain exists for provider OUTAGES: Google is down, so try OpenStreetMap, then demo venues
+ * rather than showing a parent an empty London.
+ *
+ * A cost control is not an outage, and must not be laundered into one. When the kill switch is off
+ * or the budget is spent, degrading to OSM would hide the fact that Google was deliberately
+ * disabled, and the caller would report a data problem instead of a configuration one. So those two
+ * errors are re-thrown out of the chain for the handler to surface, which is what makes the switch
+ * fail visibly rather than silently.
+ */
+function isCostControlError(error) {
+  return error instanceof PlacesDisabledError || error instanceof PlacesBudgetExceededError;
+}
+
 async function searchWithFallback(lat, lng, radiusKm, configuredProvider, options = {}) {
   const chain = SEARCH_CHAIN[configuredProvider] || SEARCH_CHAIN.mock;
   const errors = [];
@@ -54,6 +72,7 @@ async function searchWithFallback(lat, lng, radiusKm, configuredProvider, option
         fallbackReason: i > 0 ? errors.join(' → ') : undefined,
       };
     } catch (error) {
+      if (isCostControlError(error)) throw error;
       errors.push(`${step.name}: ${error instanceof Error ? error.message : 'provider failed'}`);
     }
   }
@@ -66,4 +85,4 @@ async function searchWithFallback(lat, lng, radiusKm, configuredProvider, option
   };
 }
 
-module.exports = { searchWithFallback, MOCK_FALLBACK };
+module.exports = { searchWithFallback, MOCK_FALLBACK, isCostControlError };

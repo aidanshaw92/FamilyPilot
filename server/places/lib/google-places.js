@@ -14,6 +14,7 @@ const {
   recordAliasPairs,
   getCanonicalIdentity,
 } = require('./canonical-venues');
+const { assertPlacesAllowed, dedupe } = require('./places-budget');
 
 const SEARCH_FIELD_MASK = [
   'places.id',
@@ -181,6 +182,15 @@ function googlePlaceToRecord(place, intent) {
  * so a photo is stored as a path to our own proxy. The attribution Google requires alongside the
  * image rides on the query: the photographer's name, their Google Maps profile, and a link to the
  * photo itself, so the app can credit and link without a second API call.
+ *
+ * The reference itself is deliberately NOT carried here, and `london-browsing.test.ts` pins that.
+ * Writing it into the path would let `api/places/photo.js` call the media endpoint directly and skip
+ * a Place Details purchase per image, which during the 2026-10 cost work looked like free money. It
+ * was rejected: a reference may expire, and `place_records` rows are long-lived, so a stale one
+ * costs an extra failed media call before the lookup it was meant to avoid -- a speculative saving
+ * bought with a certain new failure mode, against an invariant the project had already set. The
+ * repeat-render cost is solved instead by making the proxy's redirect cacheable and coalescing
+ * concurrent lookups, neither of which persists anything new.
  */
 function photoProxyPath(placeId, index, photo) {
   const params = new URLSearchParams({ id: placeId, index: String(index) });
@@ -193,7 +203,19 @@ function photoProxyPath(placeId, index, photo) {
   return `/api/places/photo?${params.toString()}`;
 }
 
+/**
+ * The only place in this module that reaches Google, and the only place that may. The gate is here
+ * rather than in each caller so a function added later cannot spend by forgetting to ask: every
+ * request names the scope it bills against, and an unnamed scope is rejected by the gate.
+ */
 async function googleRequest(url, options) {
+  assertPlacesAllowed({
+    scope: options.scope,
+    reason: options.reason,
+    subject: options.subject,
+    jobId: options.jobId,
+  });
+
   let response;
   try {
     response = await fetch(url, {
@@ -231,6 +253,12 @@ async function searchGoogle(lat, lng, radiusKm, options = {}) {
   const data = await googleRequest(`${PLACES_BASE_URL}/places:searchNearby`, {
     method: 'POST',
     fieldMask: SEARCH_FIELD_MASK,
+    // `scope` decides which switch and which daily counter this request answers to. Callers that
+    // are not venue discovery (the reachability probe) override it.
+    scope: options.scope || 'discovery',
+    reason: options.reason || 'nearby_search',
+    subject: `${lat.toFixed(4)},${lng.toFixed(4)} r=${radiusKm}km ${intent}`,
+    jobId: options.jobId,
     body: {
       includedPrimaryTypes: includedTypes,
       maxResultCount: intent === 'explore' ? EXPLORE_MAX_CANDIDATES : RESULT_LIMIT,
@@ -274,15 +302,35 @@ async function searchGoogle(lat, lng, radiusKm, options = {}) {
   });
 }
 
-async function getGooglePlace(familypilotId) {
+/**
+ * `options.scope` lets a background refresh bill against `refresh` rather than `details`, so the
+ * two can be switched off independently -- a parent opening a venue is not the same spend as a
+ * cron re-buying 136 of them.
+ *
+ * Concurrent lookups of the same place are coalesced. Three deck layers mounting at once used to
+ * be three Place Details purchases of the same venue.
+ */
+async function getGooglePlace(familypilotId, options = {}) {
   if (!familypilotId.startsWith('fp-google-')) return null;
   const placeId = familypilotId.slice('fp-google-'.length);
   if (!placeId) return null;
 
+  const scope = options.scope === 'refresh' ? 'refresh' : 'details';
+  return dedupe(`details:${scope}:${placeId}`, () => fetchGooglePlace(placeId, scope, options));
+}
+
+async function fetchGooglePlace(placeId, scope, options) {
   try {
     const place = await googleRequest(
       `${PLACES_BASE_URL}/places/${encodeURIComponent(placeId)}`,
-      { method: 'GET', fieldMask: DETAIL_FIELD_MASK },
+      {
+        method: 'GET',
+        fieldMask: DETAIL_FIELD_MASK,
+        scope,
+        reason: options.reason || 'place_details',
+        subject: `fp-google-${placeId}`,
+        jobId: options.jobId,
+      },
     );
     const { mapGoogleCategory: mapCat } = require('./places-quality');
     const category = mapCat(place.primaryType, place.types || [], place.displayName?.text);
@@ -297,7 +345,11 @@ async function getGooglePlace(familypilotId) {
 
 async function probeGoogle(lat, lng) {
   try {
-    const places = await searchGoogle(lat, lng, 5, { intent: 'explore' });
+    const places = await searchGoogle(lat, lng, 5, {
+      intent: 'explore',
+      scope: 'probe',
+      reason: 'status_probe',
+    });
     return {
       ok: true,
       count: places.length,

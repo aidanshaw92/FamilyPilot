@@ -184,6 +184,57 @@ async function listVenueIdentities() {
     .map((row) => ({ familypilotPlaceId: row.familypilot_place_id, name: row.name, website: row.website }));
 }
 
+/**
+ * Every column of a stored place, mapped back to the provider-record shape.
+ *
+ * `placeRowToRecord` above deliberately carries only the fields the enrichment queue needs. The
+ * places API needs the whole thing, because reading it is what stops `/api/places/detail` buying
+ * a Place Details call for a venue we already hold. Google's Maps Platform terms allow a place ID
+ * to be stored indefinitely; the rest of this content is cached, and `fetched_at` is what lets a
+ * caller decide whether the copy is fresh enough to serve.
+ */
+function placeRowToFullRecord(row) {
+  if (!row) return null;
+  return {
+    familypilotId: row.familypilot_place_id,
+    externalId: row.external_id,
+    provider: row.provider,
+    name: row.name,
+    category: row.category,
+    latitude: row.lat,
+    longitude: row.lng,
+    address: row.address ?? undefined,
+    description: row.description ?? undefined,
+    website: row.website ?? undefined,
+    phone: row.phone ?? undefined,
+    photos: row.photos || [],
+    openingHours: row.opening_hours ?? undefined,
+    isOpen: row.is_open == null ? undefined : row.is_open,
+    fetchedAt: row.fetched_at,
+    enrichmentStatus: 'provider_only',
+    googlePrimaryType: row.field_provenance?.googlePrimaryType,
+    googleTypes: row.field_provenance?.googleTypes || [],
+  };
+}
+
+/** One stored place, or null when we do not hold it. Never reaches a provider. */
+async function getPlaceRecord(familypilotId) {
+  if (!familypilotId) return null;
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('place_records')
+      .select('*')
+      .eq('familypilot_place_id', familypilotId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return placeRowToFullRecord(data);
+  }
+
+  const store = readFileStore();
+  return placeRowToFullRecord((store.places ?? {})[familypilotId] ?? null);
+}
+
 async function upsertPlaceRecord(place) {
   const supabase = getSupabaseAdmin();
   const record = {
@@ -582,6 +633,8 @@ function getStorageMode() {
 
 module.exports = {
   upsertPlaceRecord,
+  getPlaceRecord,
+  placeRowToFullRecord,
   listVenueIdentities,
   upsertPlaceRecords,
   reclassifyProviderOnlyPlaceRecords,

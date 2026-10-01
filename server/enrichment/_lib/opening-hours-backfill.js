@@ -263,7 +263,10 @@ function createOpeningHoursBackfillDeps() {
 
   return {
     listRows: listPlaceRecordsForOpeningHours,
-    fetchPlace: getGooglePlace,
+    // A backfill is a refresh, not a parent opening a venue, so it bills against the scope that can
+    // be switched off independently of the app.
+    fetchPlace: (familypilotId) =>
+      getGooglePlace(familypilotId, { scope: 'refresh', reason: 'opening_hours_backfill' }),
     updateRow: updatePlaceRecordOpeningHours,
     sleep: defaultSleep,
   };

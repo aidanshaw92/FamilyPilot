@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 /**
  * Live audit script — compares legacy vs quality-pass Explore filtering.
- * Usage: node scripts/audit-google-quality.mjs
+ *
+ * This costs money: six locations, two Nearby Search requests each, so TWELVE billable Google
+ * requests per run. It therefore requires `--live` as well as the usual environment switches, so
+ * that running it by accident or from a script is not enough to spend.
+ *
+ * Usage: GOOGLE_PLACES_ENABLED=true node scripts/audit-google-quality.mjs --live
  */
 import { readFileSync, writeFileSync } from 'fs';
 import { createRequire } from 'module';
@@ -13,6 +18,21 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 
 const { searchGoogle } = require(join(root, 'server/places/lib/google-places.js'));
+const { assertPlacesAllowed, placesBudgetSnapshot } = require(
+  join(root, 'server/places/lib/places-budget.js'),
+);
+
+const BILLABLE_CALLS_PER_RUN = 12;
+
+if (!process.argv.includes('--live')) {
+  console.error(
+    `This audit makes ${BILLABLE_CALLS_PER_RUN} billable Google Places requests.\n` +
+      'Re-run with --live to confirm you intend to spend, e.g.\n' +
+      '  GOOGLE_PLACES_ENABLED=true node scripts/audit-google-quality.mjs --live',
+  );
+  console.error(JSON.stringify(placesBudgetSnapshot(), null, 2));
+  process.exit(2);
+}
 
 const LEGACY_INCLUDED = ['park', 'museum', 'restaurant', 'cafe', 'zoo'];
 const IRRELEVANT_CATEGORIES = new Set(['hotel', 'shop', 'restaurant', 'cafe']);
@@ -59,6 +79,14 @@ async function fetchLegacySample(lat, lng) {
   const key = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY;
   if (!key) throw new Error('GOOGLE_PLACES_API_KEY not set');
 
+  // The legacy comparison deliberately bypasses `google-places.js` so it can send the OLD field
+  // mask, but it must not bypass the gate with it.
+  assertPlacesAllowed({
+    scope: 'discovery',
+    reason: 'audit_legacy_sample',
+    subject: `${lat},${lng}`,
+  });
+
   const response = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
     method: 'POST',
     headers: {
@@ -90,7 +118,10 @@ async function runAudit() {
   for (const loc of AUDIT_LOCATIONS) {
     process.stdout.write(`Auditing ${loc.name}… `);
     const legacy = await fetchLegacySample(loc.lat, loc.lng);
-    const filtered = await searchGoogle(loc.lat, loc.lng, 15, { intent: 'explore' });
+    const filtered = await searchGoogle(loc.lat, loc.lng, 15, {
+      intent: 'explore',
+      reason: 'audit_quality_sample',
+    });
 
     const legacyIrrelevant = legacy.filter((p) => {
       return IRRELEVANT_CATEGORIES.has(p.category) ||

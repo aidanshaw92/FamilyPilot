@@ -4,6 +4,10 @@
  */
 
 const { getGooglePlace } = require('../../places/lib/google-places');
+const {
+  PlacesDisabledError,
+  PlacesBudgetExceededError,
+} = require('../../places/lib/places-budget');
 const { upsertPlaceRecord } = require('./enrichment-store');
 const { discoverSourceUrls, mergePageCandidates } = require('./source-discovery');
 const { fetchOfficialPage } = require('./source-fetcher');
@@ -85,13 +89,62 @@ const MIN_PAGE_WINDOW_MS = Number(process.env.SOURCE_MIN_PAGE_WINDOW_MS || 4000)
 /** Retained under its old name: it is still the number of readable pages a crawl aims for. */
 const MAX_PAGES = USABLE_PAGE_TARGET;
 
-async function ensurePlaceDetails(familypilotId, placeRow) {
-  if (placeRow?.website && placeRow?.description) {
+/**
+ * How long a stored Google record is trusted before this pipeline re-buys Place Details for it.
+ *
+ * This number replaces a guard that could never be satisfied. The old condition was
+ * `placeRow.website && placeRow.description`, and `description` comes from Google's
+ * `editorialSummary` -- which Google simply does not supply for most places. Measured against
+ * production on 2026-10-01: of 136 stored Google venues, 129 have a website but only 44 have a
+ * description. So 93 venues, 68% of the catalogue, failed the guard on every single enrichment run
+ * and bought a Place Details call to re-learn that Google still had no editorial summary for them.
+ * The guard was not caching badly; it was asking for something that was never coming.
+ *
+ * Freshness is the right condition because it records the negative result: "we asked Google about
+ * this place recently" is the fact that makes a second ask pointless, whether or not the answer was
+ * complete. A website is still required outright, because without one the crawler has nothing to
+ * fetch -- that is a capability gap, not a staleness one.
+ */
+const DETAILS_REFRESH_DAYS = Number(process.env.ENRICHMENT_DETAILS_REFRESH_DAYS || 14);
+
+function placeRowAgeDays(placeRow) {
+  const timestamp = Date.parse(placeRow?.fetched_at || '');
+  if (!Number.isFinite(timestamp)) return Infinity;
+  return (Date.now() - timestamp) / 86_400_000;
+}
+
+async function ensurePlaceDetails(familypilotId, placeRow, options = {}) {
+  if (placeRow?.website && placeRowAgeDays(placeRow) < DETAILS_REFRESH_DAYS) {
     return placeRow;
   }
   if (!familypilotId.startsWith('fp-google-')) return placeRow;
 
-  const live = await getGooglePlace(familypilotId);
+  let live = null;
+  try {
+    live = await getGooglePlace(familypilotId, {
+      scope: 'refresh',
+      reason: 'enrichment_place_details',
+      jobId: options.jobId,
+    });
+  } catch (error) {
+    if (error instanceof PlacesDisabledError || error instanceof PlacesBudgetExceededError) {
+      // Enrichment reads websites, extracts evidence and reconciles claims. All of that works on
+      // the stored row. Refusing to run at all because a refresh was switched off would make the
+      // cost control look like an enrichment outage, so the crawl proceeds on what we hold and the
+      // decision is on the record in the gate's own log.
+      console.warn(
+        JSON.stringify({
+          tag: 'enrichment_place_details_skipped',
+          familypilotPlaceId: familypilotId,
+          code: error.code,
+          detail: error.detail,
+        }),
+      );
+      return placeRow;
+    }
+    throw error;
+  }
+
   if (live) {
     await upsertPlaceRecord(live);
     return {
@@ -101,6 +154,8 @@ async function ensurePlaceDetails(familypilotId, placeRow) {
       phone: live.phone ?? placeRow?.phone,
       opening_hours: live.openingHours ?? placeRow?.opening_hours,
       address: live.address ?? placeRow?.address,
+      // The refresh is only worth skipping next time if its timestamp is what the guard reads.
+      fetched_at: live.fetchedAt ?? new Date().toISOString(),
     };
   }
   return placeRow;
