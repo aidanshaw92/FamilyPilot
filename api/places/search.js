@@ -1,5 +1,27 @@
 const { searchWithFallback } = require('../../server/places/lib/fallback');
 const { reorderByEnrichment } = require('../../server/places/lib/places-quality');
+const {
+  buildSearchCacheKey,
+  readSearchCache,
+  writeSearchCache,
+  ttlHours,
+} = require('../../server/places/lib/search-cache');
+const {
+  isPlacesEnabled,
+  describeScope,
+  PlacesDisabledError,
+  PlacesBudgetExceededError,
+} = require('../../server/places/lib/places-budget');
+
+/**
+ * The London grid below is the single most expensive thing this repository does: nine overlapping
+ * Nearby Search requests, which Google bills individually. It used to run on every page load, for
+ * every anonymous visitor, with `Cache-Control: no-store` on the response.
+ *
+ * LONDON_AREAS is a fixed array rather than anything computed, and LONDON_AREA_CEILING asserts that
+ * it stays fixed. A bug must not be able to widen the grid and search all of London repeatedly.
+ */
+const LONDON_AREA_CEILING = 9;
 
 function getConfiguredProvider() {
   return (process.env.PLACES_PROVIDER || 'mock').toLowerCase();
@@ -27,9 +49,45 @@ function mergeLondonBatches(batches, limit = 90) {
   };
 }
 
+/**
+ * A London-wide grid gives parents useful coverage in every direction rather than a
+ * central-London-heavy result set. Twelve-kilometre circles intentionally overlap so venues near
+ * area boundaries are still discovered and then de-duplicated.
+ *
+ * Nine areas is nine billable Nearby Search requests. The ceiling below is an assertion, not a
+ * limit to tune: if someone adds a tenth area, this throws rather than silently costing more.
+ */
+const LONDON_AREAS = [
+  [51.5074, -0.1278], // central
+  [51.6030, -0.1700], // north
+  [51.5900, -0.3300], // north-west
+  [51.5900, 0.0600], // north-east
+  [51.5100, -0.3300], // west
+  [51.5200, 0.1000], // east
+  [51.4400, -0.2500], // south-west
+  [51.4200, -0.1000], // south
+  [51.4500, 0.0800], // south-east
+];
+
+async function searchLondonGrid(configuredProvider, intent) {
+  if (LONDON_AREAS.length > LONDON_AREA_CEILING) {
+    throw new Error(
+      `London grid has ${LONDON_AREAS.length} areas, above the ${LONDON_AREA_CEILING} billable requests this path is allowed`,
+    );
+  }
+  const batches = await Promise.all(
+    LONDON_AREAS.map(([lat, lng]) =>
+      searchWithFallback(lat, lng, 12, configuredProvider, { intent, reason: 'london_grid' }),
+    ),
+  );
+  return mergeLondonBatches(batches);
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  // Replaced at the end of a successful response. Kept here so every early return and error path
+  // is uncacheable by default: a cached 503 would outlive the switch that caused it.
   res.setHeader('Cache-Control', 'no-store');
 
   if (req.method === 'OPTIONS') return res.status(204).end();
@@ -46,31 +104,74 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid coordinates', fallbackAvailable: true });
   }
 
-  let result;
-  if (req.query.scope === 'london' && intent === 'explore') {
-    // A London-wide grid gives parents useful coverage in every direction rather than a
-    // central-London-heavy result set. Twelve-kilometre circles intentionally overlap so
-    // venues near area boundaries are still discovered and then de-duplicated below.
-    const areas = [
-      [51.5074, -0.1278], // central
-      [51.6030, -0.1700], // north
-      [51.5900, -0.3300], // north-west
-      [51.5900, 0.0600], // north-east
-      [51.5100, -0.3300], // west
-      [51.5200, 0.1000], // east
-      [51.4400, -0.2500], // south-west
-      [51.4200, -0.1000], // south
-      [51.4500, 0.0800], // south-east
-    ];
-    const batches = await Promise.all(
-      areas.map(([lat, lng]) => searchWithFallback(lat, lng, 12, configuredProvider, { intent })),
-    );
-    result = mergeLondonBatches(batches);
-  } else {
-    result = await searchWithFallback(latitude, longitude, radiusKm, configuredProvider, { intent });
+  const isLondonGrid = req.query.scope === 'london' && intent === 'explore';
+  const categories = typeof req.query.categories === 'string' && req.query.categories
+    ? req.query.categories.split(',').map((value) => value.trim()).filter(Boolean)
+    : [];
+  const cacheKey = buildSearchCacheKey({
+    scope: isLondonGrid ? 'london' : 'nearby',
+    intent,
+    lat: isLondonGrid ? 51.5074 : latitude,
+    lng: isLondonGrid ? -0.1278 : longitude,
+    radiusKm: isLondonGrid ? 40 : radiusKm,
+    categories,
+  });
+
+  let cached = null;
+  try {
+    cached = await readSearchCache(cacheKey);
+  } catch (error) {
+    console.warn(JSON.stringify({ tag: 'places_search_cache_read_failed', message: error?.message || 'read failed' }));
   }
+
+  let result;
+  let cacheState = 'miss';
+
+  if (cached?.fresh) {
+    // The common path, and the whole point: a repeat search within the cache window reaches Postgres
+    // instead of Google. Nine billable requests become none.
+    result = cached.payload;
+    cacheState = 'hit';
+  } else {
+    try {
+      result = isLondonGrid
+        ? await searchLondonGrid(configuredProvider, intent)
+        : await searchWithFallback(latitude, longitude, radiusKm, configuredProvider, { intent });
+    } catch (error) {
+      const blocked =
+        error instanceof PlacesDisabledError || error instanceof PlacesBudgetExceededError;
+      if (blocked && cached) {
+        // Switched off or over budget, but we hold a copy within what we may serve. A parent sees
+        // London; the response says plainly that it was not refreshed.
+        result = cached.payload;
+        cacheState = 'stale';
+      } else if (blocked) {
+        // Nothing to serve and we may not buy it. Fail visibly rather than falling through to the
+        // demo venues, which would make a cost control look like a data outage.
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(error instanceof PlacesBudgetExceededError ? 429 : 503).json({
+          error: 'Live places are unavailable',
+          code: error.code,
+          scope: error.scope,
+          detail: error.detail,
+          fallbackAvailable: false,
+        });
+      } else {
+        throw error;
+      }
+    }
+  }
+
   if (result.provider === 'mock' && configuredProvider !== 'mock') {
+    res.setHeader('Cache-Control', 'no-store');
     return res.status(503).json({ error: 'Live places are temporarily unavailable. Please retry.' });
+  }
+
+  if (cacheState === 'miss' && result.provider !== 'mock') {
+    await writeSearchCache(cacheKey, result, {
+      provider: result.provider,
+      billableCalls: isLondonGrid ? LONDON_AREA_CEILING : 1,
+    });
   }
 
   let places = result.places;
@@ -115,12 +216,24 @@ module.exports = async function handler(req, res) {
     // Best-effort metadata overlay
   }
 
+  // The CDN is the second line of defence after the Postgres cache: it answers repeat loads without
+  // invoking this function at all. Bounded by the same window the store uses, so the two cannot
+  // disagree about how old the data may be.
+  res.setHeader(
+    'Cache-Control',
+    `public, max-age=60, s-maxage=${Math.round(ttlHours() * 3600)}, stale-while-revalidate=600`,
+  );
+
   return res.status(200).json({
     places,
     provider: result.provider,
     configuredProvider,
     intent,
-    cached: false,
+    cached: cacheState !== 'miss',
+    cacheState,
+    cacheAgeHours: cached ? Number(cached.ageHours.toFixed(2)) : null,
+    placesEnabled: isPlacesEnabled('discovery'),
+    placesScope: describeScope('discovery'),
     fetchedAt,
     fallbackUsed: result.fallbackUsed,
     fallbackReason: result.fallbackReason,

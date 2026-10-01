@@ -178,7 +178,10 @@ async function handleSync(req, res) {
   }
 
   try {
-    const places = await searchGoogle(lat, lng, radiusKm, { intent });
+    // Area sync is the one path whose job is to buy discovery, so it bills against `discovery` and
+    // is bounded by the gate's per-window and per-day limits rather than by anything here. One call,
+    // one billable Nearby Search; the cron that drives it runs twice a week.
+    const places = await searchGoogle(lat, lng, radiusKm, { intent, reason: 'area_sync' });
     await upsertPlaceRecords(places);
     const reclassified = await reclassifyProviderOnlyPlaceRecords();
     return res.status(200).json({
@@ -236,7 +239,7 @@ async function handleVenue(req, res) {
     try {
       let place = null;
       if (id.startsWith('fp-google-')) {
-        place = await getGooglePlace(id);
+        place = await getGooglePlace(id, { scope: 'refresh', reason: 'admin_venue_refresh' });
         if (place) await upsertPlaceRecord(place);
       }
       const metadata = await getMetadata(id);

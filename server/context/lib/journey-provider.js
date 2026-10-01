@@ -1,5 +1,15 @@
 const { estimateDriveMinutes } = require('./geo-utils');
+const {
+  assertPlacesAllowed,
+  PlacesDisabledError,
+  PlacesBudgetExceededError,
+} = require('../../places/lib/places-budget');
 
+/**
+ * Distance Matrix bills per origin-destination ELEMENT, not per request, so one call here is up to
+ * 25 billable units. The cap was already in place; what was missing is that nothing stopped the
+ * call being made at all from a public unauthenticated endpoint.
+ */
 const MAX_DESTINATIONS = 25;
 
 function estimateJourneys(origin, destinations) {
@@ -91,6 +101,14 @@ async function getDriveTimes(origin, destinations) {
   }
 
   try {
+    // Distance Matrix is billable, so it answers to the same gate as Places. The estimated-journey
+    // fallback below is already a first-class result the API labels as `source: 'estimated'`, so a
+    // closed gate degrades the accuracy of a drive time rather than breaking the planner.
+    assertPlacesAllowed({
+      scope: 'journeys',
+      reason: 'drive_times',
+      subject: `${validDestinations.length} destinations`,
+    });
     const journeys = await fetchGoogleDistanceMatrix(origin, validDestinations, apiKey);
     const source = journeys.some((journey) => journey.source === 'live') ? 'live' : 'estimated';
     return {
@@ -99,11 +117,15 @@ async function getDriveTimes(origin, destinations) {
       source,
       fetchedAt: new Date().toISOString(),
     };
-  } catch {
+  } catch (error) {
+    const blocked =
+      error instanceof PlacesDisabledError || error instanceof PlacesBudgetExceededError;
     return {
       journeys: estimateJourneys(origin, validDestinations),
       provider: 'fallback',
       source: 'estimated',
+      // Named so a reader of the response can tell a switched-off journey API from a broken one.
+      fallbackReason: blocked ? error.code : undefined,
       fetchedAt: new Date().toISOString(),
     };
   }
