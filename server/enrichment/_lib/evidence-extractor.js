@@ -168,6 +168,98 @@ function isCycleTravelContext(sentence) {
   return CYCLE_TRAVEL_TERM.test(masked) && !MOTOR_TRAVEL_TERM.test(masked);
 }
 
+/**
+ * Whose accessibility is this sentence about?
+ *
+ * `accessibility.wheelchairAccessible` is a claim about THE VENUE: a wheelchair user can visit it.
+ * The field had no guard at all -- any sentence containing "wheelchair accessible" published `yes` --
+ * so a sentence about one café, one toilet, or somebody else's bus route spoke for the whole place.
+ * Measured on 2026-10-01, 5 of the 16 served claims were that:
+ *
+ *   The Wallace Collection   "All bus routes are wheelchair accessible."          <- about buses
+ *   Rickmansworth Aquadrome  "There is a wheelchair accessible fishing swim
+ *                             located on Batchworth Lake."                        <- one platform
+ *   National Maritime Museum "All our cafés are wheelchair accessible and
+ *                             welcome Guide Dogs ..."                             <- the cafés
+ *   Victoria Park            "toilets have an accessible cubicle and both our
+ *                             cafés are accessible for wheelchair users."         <- toilets, cafés
+ *   Horniman                 "Toilets are located off Gallery Square downstairs,
+ *                             and they are wheelchair accessible."                <- the toilets
+ *
+ * This is the same subject-of-the-statement problem as `hasOffSiteParking`, and it suppresses a
+ * positive only, the same way. `patterns.no` is matched and returned BEFORE the `yes` loop this
+ * guard sits in, so a legitimate venue-level `no` -- "Hyde Park Corner is not wheelchair
+ * accessible" -- can never be suppressed here.
+ *
+ * The negative side has the same subject problem and is deliberately NOT fixed here. Sydenham Hill
+ * Wood's page says "The station is not wheelchair accessible on either side", which publishes `no`
+ * about a railway station. That costs no false fact: the same page also says its entrances are
+ * accessible, the two values conflict, and reconciliation disputes both, so the field reads unknown.
+ * Suppressing the station would publish the surviving positive instead -- and that positive is about
+ * "the two entrances into Dulwich Wood", a neighbouring wood, which is the other-venue problem
+ * rather than evidence about this one. Unknown is the correct answer here, so it is left alone.
+ *
+ * THE LIST IS CORPUS-DERIVED, AND WHAT IS LEFT OUT MATTERS MORE THAN WHAT IS IN. The stored corpus
+ * holds 97 wheelchair-accessible spans across 27 venues. Every noun below is one of those spans'
+ * actual subjects. Nouns are NOT added speculatively, for two reasons.
+ *
+ *   An unattested noun cannot be tested against anything real. A test for it can only restate the
+ *   regex, and a test that restates the regex passes however wrong the regex is.
+ *
+ *   Worse, a noun that can name the venue ITSELF turns this guard into a false negative. The
+ *   catalogue holds 14 restaurants and 3 cafés, and a café's own page says "our café is wheelchair
+ *   accessible" about the very place the parent is reading about. So `restaurant` is absent, and
+ *   `café` is matched only in the PLURAL -- which is how both real facility sentences put it ("All
+ *   our cafés", "both our cafés"), and is not how a single café describes itself.
+ *
+ *   `entrance` is absent for that same reason, and it is the most common noun of all: 25 of the 97
+ *   spans. "Our entrance is step-free and wheelchair accessible" is how the V&A, Young V&A and V&A
+ *   East Storehouse each say that a wheelchair user can get in, and each serves a correct `yes`
+ *   from it.
+ *
+ * `lift` is absent because the corpus never makes a lift the SUBJECT of the claim: it appears as the
+ * means ("all are wheelchair accessible via separate standard lifts") or as a neighbouring fact
+ * ("There is a lift in the House, and the rooms are wheelchair-accessible"). Neither sentence backs
+ * a served claim -- Hatfield Park has no wheelchairAccessible claim of any status -- so neither is
+ * evidence for a rule about lifts in either direction.
+ */
+const WHEELCHAIR_NON_VENUE_SUBJECT =
+  'toilets?|bathrooms?|caf(?:e|\u00e9)s|fishing\\s+swims?|bus(?:es)?|stations?';
+
+const WHEELCHAIR_CLAIM = '(?:wheelchair[\\s-]accessible|accessible\\s+(?:for|to)\\s+wheelchair)';
+
+/**
+ * Both word orders, because the corpus uses both. The 70-character window on the subject-first shape
+ * is not arbitrary: Horniman's sentence puts 52 characters and a pronoun between "Toilets" and the
+ * verb that carries the claim ("Toilets are located off Gallery Square downstairs, and they are
+ * wheelchair accessible"), and a tighter window misses it.
+ */
+const WHEELCHAIR_SUBJECT_FIRST = new RegExp(
+  `\\b(?:${WHEELCHAIR_NON_VENUE_SUBJECT})\\b[^.!?]{0,70}\\b(?:is|are)\\b[^.!?]{0,20}${WHEELCHAIR_CLAIM}`,
+  'i',
+);
+
+const WHEELCHAIR_CLAIM_FIRST = new RegExp(
+  `\\bwheelchair[\\s-]accessible\\s+(?:${WHEELCHAIR_NON_VENUE_SUBJECT})\\b`,
+  'i',
+);
+
+/**
+ * There is deliberately NO "but this sentence sounds venue-level" escape hatch. An earlier draft had
+ * one, and it was both useless and dangerous: useless because, once the noun list holds only
+ * attested non-venue nouns, no sentence in the corpus needs rescuing (Headstone Manor's "The Great
+ * Barn, Small Barn and Visitor Centre/The Moat Cafe are all wheelchair accessible" is spared by the
+ * plural-only café pattern, and Frameless's and Flip Out's toilets come AFTER the claim, where no
+ * subject can sit); dangerous because the escape hatch is what let a false positive through -- it
+ * allowed `gallery`, and the Horniman's toilets are "located off Gallery Square".
+ */
+
+/** Is the thing described as wheelchair accessible something other than this venue? */
+function isNonVenueWheelchairSubject(sentence) {
+  const text = String(sentence ?? '');
+  return WHEELCHAIR_SUBJECT_FIRST.test(text) || WHEELCHAIR_CLAIM_FIRST.test(text);
+}
+
 const PLAYGROUND_PATTERNS = [/playground/i, /play\s+area/i];
 
 /**
@@ -667,6 +759,8 @@ function matchField(sentence, patterns, fieldId) {
     }
     if (fieldId === 'toilets' && (hasToiletNegation(sentence) || isScopedToiletClosure(sentence))) continue;
     if (fieldId === 'babyChanging' && !isExplicitBabyChangingStatement(sentence)) continue;
+    // A café's or a bus route's accessibility is not the venue's.
+    if (fieldId === 'wheelchairAccessible' && isNonVenueWheelchairSubject(sentence)) continue;
     // Soft play is a different facility, and a parent who asked for a playground is not served by it.
     if (fieldId === 'playground' && isSoftPlayOnlyPlayground(sentence)) continue;
     // Nor is an arcade, a trampoline park's named attraction, or a museum gallery exhibit.
@@ -931,6 +1025,7 @@ module.exports = {
   isQuestionOnlyEvidence,
   isSoftPlayOnlyPlayground,
   isIndoorAttractionOnlyPlayground,
+  isNonVenueWheelchairSubject,
   hasOffSiteParking,
   isNonVehicleParkingOnly,
   isCycleTravelContext,
