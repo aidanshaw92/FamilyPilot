@@ -76,6 +76,11 @@ const FEATURE_NOUNS = [
   'market(?:s)?',
   'cinema(?:s)?',
   'skating',
+  // `skating` alone was derived from one wording of one page and missed the next. Queen's House's
+  // stored evidence said "Open-air skating"; the live page now says "the most beautiful outdoor ice
+  // rink in London", and the indoor Greenwich museum went back to `outdoor` on the first refetch
+  // after the claim was withdrawn. Same separate attraction, same defect, a different noun.
+  '(?:ice\\s+)?rink(?:s)?',
   'swimming(?:\\s+pool)?',
   'track(?:s)?',
   'trail(?:s)?',
