@@ -199,9 +199,30 @@ jobs:
 
       - name: Apply the Places cost-control migration
         # The Google Places search cache and the daily billable-request counter. Both have RLS enabled
-        # with no policy, so they work only because service_role bypasses RLS and holds explicit table
-        # grants -- which is exactly the arrangement the next step asserts.
+        # with no policy, so they work only because service_role bypasses RLS and can reach the tables
+        # -- which is exactly the arrangement the next steps assert.
         run: psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20261001090000_place_search_cache.sql
+
+      - name: Prove the narrow GRANT is defeated by the default ACL BEFORE the revoke
+        # The counterfactual for 20261001140000. 20261001090000 grants service_role only
+        # select/insert/update on the counter, but the fixture's postgres-owned default ACL for schema
+        # public already hands it ALL privileges, so the grant subtracts nothing and the spend record
+        # arrives deletable. Without this step the next migration could pass on a database where it was
+        # never needed, and the revoke would be verified against nothing.
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          do $$
+          begin
+            if not has_table_privilege('service_role', 'public.google_places_usage', 'DELETE') then
+              raise exception 'service_role already lacks DELETE, so the revoke cannot be shown to matter';
+            end if;
+            raise notice 'confirmed: the narrow grant left service_role able to delete the spend record';
+          end;
+          $$;
+          SQL
+
+      - name: Make the spend record append-only
+        run: psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20261001140000_places_usage_append_only.sql
 
       - name: Assert the cost-control tables work for service_role and are closed to everyone else
         # The failure mode this guards against is SILENT SPEND. If a future migration revoked a grant,
@@ -212,7 +233,9 @@ jobs:
         # rolbypassrls, and venue_enrichment_jobs and venue_source_evidence already use this pattern.
         run: psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/places_cost_control_check.sql
 
-      - name: Apply the cost-control migration a second time and re-assert
+      - name: Apply both cost-control migrations a second time and re-assert
+        # Deploy safety, and specifically: re-running 20261001090000 must not hand the DELETE back.
         run: |
           psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20261001090000_place_search_cache.sql
+          psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20261001140000_places_usage_append_only.sql
           psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/places_cost_control_check.sql

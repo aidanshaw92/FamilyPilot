@@ -240,6 +240,31 @@ minute per process, so with many concurrent serverless instances it bounds overs
 enforcing an exact figure. It is a ceiling with a lag, not a transactional limit. The Google Cloud
 quotas in the next section are the hard limit.
 
+### The spend record is append-only
+
+`public.google_places_usage` is the only account of what was spent before Google's bill arrives, so
+the role that writes it cannot erase it. Verified against production on 2026-10-01:
+
+```
+public.google_places_usage  postgres=arwdDxtm/postgres | service_role=arwxtm/postgres
+```
+
+`service_role` holds SELECT, INSERT and UPDATE; DELETE and TRUNCATE are revoked. `anon` and
+`authenticated` hold nothing on either cost-control table, and nothing on the two counting functions.
+
+This needed a second migration, and the reason is worth keeping. `20261001090000_place_search_cache.sql`
+granted `service_role` exactly `select, insert, update` -- and that grant changed nothing, because this
+project's `postgres`-owned default ACL for schema `public` already hands `service_role` **all**
+privileges on every new table there. A narrower `grant` subtracts nothing; only a `revoke` does, which
+is what `20261001140000_places_usage_append_only.sql` is for.
+
+**A GRANT list in a migration is not the resulting privilege set.** CI had modelled the default ACL
+faithfully all along and applied this migration against it; what was missing was any assertion about
+the privilege that came out the other end. `places_cost_control_check.sql` now asserts the outcome,
+and CI proves the counterfactual first -- that `service_role` really can delete the spend record
+before the revoke runs -- so the revoke is verified against a real condition rather than a clean
+database where it was never needed.
+
 ---
 
 ## 5. Google Cloud settings to apply by hand

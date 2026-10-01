@@ -1,0 +1,34 @@
+-- Makes the cost-evidence table append-only for the role that writes it.
+--
+-- Why this exists: 20261001090000_place_search_cache.sql granted service_role only
+-- `select, insert, update` on public.google_places_usage, and its sibling check asserts the counter
+-- cannot be wound back. Verified against production on 2026-10-01, that grant had no effect on the
+-- resulting privilege set. This project's `postgres`-owned default ACL for schema public
+-- (narrowed by 20260920210000_least_privilege_client_roles.sql) reads
+--   postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+-- so every new public table already arrives with ALL privileges for service_role, and a narrower
+-- `grant` adds nothing. The intended posture therefore has to be written as a revoke.
+--
+-- A GRANT list in a migration is not the resulting privilege set. CI's fixture
+-- (fixture_production_acl_baseline.sql) does model these default privileges, and the places
+-- migration is applied against it in the same job, so CI reproduced the condition exactly -- it
+-- simply never asserted the resulting privilege, only that anon and authenticated were refused and
+-- that the counter could not be wound back by a negative figure. The gap was a missing assertion,
+-- not a missing fixture, and places_cost_control_check.sql now asserts the outcome. Reproduced in a
+-- scratch database on 2026-10-01: with production's default ACL in place, applying 20261001090000
+-- alone leaves service_role with DELETE and TRUNCATE on the counter; the updated check fails on that
+-- state and passes once this revoke is applied.
+--
+-- What is NOT revoked, deliberately: anon and authenticated are already absent from both tables'
+-- ACLs (that same default ACL never grants to them, and the previous migration revokes as well),
+-- and service_role keeps DELETE on place_search_cache because that is a cache -- losing rows there
+-- costs money, which is the opposite of a disclosure risk, and the previous migration grants it
+-- explicitly. Nothing in the code deletes from either table directly: the serving path issues
+-- select + upsert on the cache and select + record_google_places_usage() on the counter, and purging
+-- goes through purge_expired_place_search_cache(), a SECURITY DEFINER function owned by the
+-- migration owner, so it is unaffected by this revoke.
+--
+-- The point of the revoke is that google_places_usage is the only record of what was spent before
+-- Google's bill arrives. A bug on the request path must not be able to erase it.
+
+revoke delete, truncate on table public.google_places_usage from service_role;

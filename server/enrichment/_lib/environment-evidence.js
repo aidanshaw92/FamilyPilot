@@ -85,13 +85,36 @@ const FEATURE_NOUNS = [
  * reads venue-level, because `museum` is not a feature noun.
  */
 /**
+ * Nouns that name a VENUE rather than a feature of one. The modifier run below may not cross one.
+ *
+ * Belmont Children's Farm is why this exists, and it was a regression in the first version of this
+ * module rather than a theory. Its home page reads "Indoor & Outdoor Visitors Farm Soft Play Cafe",
+ * and `soft play` is a feature noun two words further on, so the run matched
+ * "Outdoor Visitors Farm Soft Play" and masked the venue's own "Outdoor". The farm came out
+ * `indoor` -- off a sentence that says "Indoor & Outdoor" in as many words. Caught by replaying the
+ * live pipeline against production, not by the unit tests, because no fixture happened to put a
+ * venue noun between a prefix and a feature noun.
+ *
+ * The rule this encodes: if the word after `outdoor` names the venue, then `outdoor` describes the
+ * venue, and masking it discards exactly the signal this field exists to carry.
+ */
+const VENUE_NOUNS = [
+  'farm', 'farmyard', 'museum', 'gallery', 'park', 'zoo', 'aquarium', 'house', 'palace',
+  'castle', 'garden', 'gardens', 'cent(?:re|er)', 'venue', 'site', 'attraction', 'visitor',
+  'visitors', 'reserve', 'wood', 'woods', 'forest', 'common', 'heath',
+];
+
+/**
  * Up to two modifiers may sit between the prefix and the feature noun, because production puts them
  * there: Burgess Park's "a single outdoor basketball court" and Chiswick House's "its outdoor kids'
  * camp" both have one, and an earlier version of this pattern missed both. The run is bounded to word
- * characters, apostrophes and hyphens, so it cannot reach across punctuation into the next clause.
+ * characters, apostrophes and hyphens, so it cannot reach across punctuation into the next clause --
+ * and, per VENUE_NOUNS above, it cannot reach across the name of the venue either.
  */
 const FEATURE_PHRASE = new RegExp(
-  `\\b(?:(?:in|out)door|open[\\s-]air)\\s+(?:[\\w’'-]+\\s+){0,2}(?:${FEATURE_NOUNS.join('|')})\\b`,
+  `\\b(?:(?:in|out)door|open[\\s-]air)\\s+`
+    + `(?:(?!(?:${VENUE_NOUNS.join('|')})\\b)[\\w’'-]+\\s+){0,2}`
+    + `(?:${FEATURE_NOUNS.join('|')})\\b`,
   'gi',
 );
 
