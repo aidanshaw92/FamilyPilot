@@ -10,6 +10,67 @@ const { isEligibleScope } = require('./source-identity');
  * the same sentence with the soft-play wording removed. Two copies of this list would drift, and a
  * drift would reopen the false positive quietly.
  */
+/**
+ * Parking that is somewhere else.
+ *
+ * `familyFacilities.parking = yes` means the venue has parking ON SITE, and that is not an
+ * interpretation -- `match-explanations.formatTriStateReason` renders the value to parents as
+ * "Parking confirmed **on site**". The nuance has its own home too: `parkingInfo` is a free-text
+ * field whose own examples are "Small car park behind the building", "Street parking only" and "Free
+ * parking on site". So the boolean is the strict claim and the prose carries the rest, exactly as
+ * `soft_play` sits beside `playground` and `mixed` beside `outdoor`.
+ *
+ * The extractor accepted off-site parking as the venue's own. Measured in production on 2026-10-01,
+ * four served claims say "confirmed on site" about somebody else's car park:
+ *
+ *   Flip Out Watford   parking=yes      "Parking is available at the Harlequin Shopping Centre car parks"
+ *   Nando's            parking=yes      "Nearby ... free parking at Finchley Lido Leisure Centre and
+ *                                        we're a one-minute walk away"
+ *   Nando's            freeParking=yes  same sentence
+ *   Whitechapel Gallery parking=yes     "Buckle Street Multistorey Car Park, Buckle Street, London"
+ *
+ * The defect was asymmetric, which is the interesting part: the extractor already reads a NEGATIVE
+ * on-site statement correctly -- Flip Out Brent Cross is `parking = no` from "We do not have on-site
+ * parking, however, there is a small retail park opposite" -- but accepted a positive off-site one.
+ *
+ * Two signal families, both taken from that corpus rather than imagined. Adjacency, because a venue
+ * describing a walk to the car park is describing someone else's; and the named third-party facility
+ * types that actually appear. Deliberately NOT a general "at <place name>" rule: "free parking at the
+ * farm" and "parking at the visitor centre" are the venue's own, and no reliable signal separates a
+ * venue's own named building from a neighbour's.
+ */
+const OFF_SITE_ADJACENCY = [
+  /\bnear\s?by\b/i,
+  /\bnearby\b/i,
+  /\b\d+[\s-]?minutes?[\s'’]*\s*walk\b/i,
+  /\bminutes?[\s'’]+\s*walk\b/i,
+  /\bacross\s+the\s+road\b/i,
+  /\bopposite\b/i,
+  /\bin\s+the\s+local\s+area\b/i,
+  /\ba\s+short\s+walk\b/i,
+  /\bdown\s+the\s+road\b/i,
+  /\baround\s+the\s+corner\b/i,
+];
+
+const OFF_SITE_FACILITY = [
+  /\bshopping\s+cent(?:re|er)\b/i,
+  /\bleisure\s+cent(?:re|er)\b/i,
+  /\bretail\s+park\b/i,
+  /\bNCP\b/,
+  /\bmulti[\s-]?stor(?:e)?y\b/i,
+];
+
+/**
+ * Does this sentence put the parking somewhere other than here? Suppresses a positive only; a
+ * negative on-site statement is decided before this is consulted and is unaffected.
+ */
+function hasOffSiteParking(sentence) {
+  return (
+    OFF_SITE_ADJACENCY.some((re) => re.test(sentence)) ||
+    OFF_SITE_FACILITY.some((re) => re.test(sentence))
+  );
+}
+
 const PLAYGROUND_PATTERNS = [/playground/i, /play\s+area/i];
 
 /**
@@ -476,6 +537,8 @@ function matchField(sentence, patterns, fieldId) {
     if (fieldId === 'babyChanging' && !isExplicitBabyChangingStatement(sentence)) continue;
     // Soft play is a different facility, and a parent who asked for a playground is not served by it.
     if (fieldId === 'playground' && isSoftPlayOnlyPlayground(sentence)) continue;
+    // "Parking confirmed on site" must not be said about a car park down the road.
+    if ((fieldId === 'parking' || fieldId === 'freeParking') && hasOffSiteParking(sentence)) continue;
     return { value: 'yes', confidence: 'high' };
   }
   return null;
@@ -727,6 +790,7 @@ module.exports = {
   isExplicitBabyChangingStatement,
   isQuestionOnlyEvidence,
   isSoftPlayOnlyPlayground,
+  hasOffSiteParking,
   isSuspiciousEmbeddedContent,
   isScopedToiletClosure,
   hasVenueWideToiletAbsence,
