@@ -220,8 +220,10 @@ function isCycleTravelContext(sentence) {
  * `lift` is absent because the corpus never makes a lift the SUBJECT of the claim: it appears as the
  * means ("all are wheelchair accessible via separate standard lifts") or as a neighbouring fact
  * ("There is a lift in the House, and the rooms are wheelchair-accessible"). Neither sentence backs
- * a served claim -- Hatfield Park has no wheelchairAccessible claim of any status -- so neither is
- * evidence for a rule about lifts in either direction.
+ * a served claim: SEA LIFE's served `yes` comes from a different sentence on the same page ("our
+ * aquarium is fully wheelchair accessible throughout"), and Hatfield Park's claim from the lift
+ * sentence is DISPUTED, not served. So neither is evidence for a rule about lifts in either
+ * direction.
  */
 const WHEELCHAIR_NON_VENUE_SUBJECT =
   'toilets?|bathrooms?|caf(?:e|\u00e9)s|fishing\\s+swims?|bus(?:es)?|stations?';
