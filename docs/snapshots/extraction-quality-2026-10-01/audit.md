@@ -246,3 +246,64 @@ not at it, which belongs to the subject-scope question already open on Hatfield 
 Wood rather than to this workstream.
 
 Both are owner decisions about what a field promises a parent. Neither was touched.
+
+## Excerpt auditability, and a premise of mine that was wrong
+
+An excerpt is the only thing a reviewer sees to judge a claim by, so one that omits its own reasoning
+makes a sound claim look invented. During review of #115 I asserted that `evidence_excerpt` "is not
+reliably the sentence that matched", citing The Courtauld Gallery.
+
+**That assertion was wrong, and it reached the #115 audit document.** It rested on reading the first 70
+characters of the excerpt, because my own SQL truncated it with `left(ex, 70)`. The full 242-character
+stored excerpt reads "...the Courtauld Café all-day restaurant and **café is located on the ground
+floor** across from the gallery entrance" — it contains its trigger. Queen Elizabeth Olympic Park,
+which my topic-keyword proxy also flagged, stores "...has on-street **pay and display** spaces", and
+"pay and display" is precisely the rule that produced its `freeParking = no`.
+
+Measured properly over all 670 stored texts and 1,260 field-pattern facts: **zero excerpts are missing
+the wording that triggered them, before or after any change.** The field patterns window a sentence
+with 320 characters of trailing context, which in practice reaches the trigger.
+
+So the field-pattern half of this fix was deleted rather than shipped. An earlier version re-anchored
+those excerpts on the matched rule and gave `freeParking` its own anchor entry; the replay showed it
+fixed nothing, and the `freeParking` anchor was **actively dangerous**: `EVIDENCE_ANCHORS` windows a
+sentence BEFORE matching as well as after, so it shrank the text the rules read, dropped "short break
+includes" out of range, stopped `hasConditionalFreeParking` firing and republished Thorpe Park's false
+`freeParking = yes` from #115. Four value changes across the corpus, found by replay, not by reading
+the diff. Reverted in full.
+
+### What was kept
+
+`pushchairSuitability` is different in kind. Its verdict is reached over several sentences at once, so
+there is no matching offset to window on, and the excerpt was simply the relevant sentences in page
+order cut to 400 characters — the reasoning fell off the end. Paradox Museum London's `difficult` rests
+on "the space is not accessible for prams/strollers", but its stored excerpt began with the Zero
+Gravity Room and never reached it.
+
+`orderByDecidingSentence` now leads with the sentence carrying the rule that decided the verdict,
+preferring one that names a pushchair so the excerpt states its own subject. Both positive verdicts
+require `hasWelcome`, so the welcome statement leads for `good` and `excellent` alike; leading
+`excellent` on its terrain wording would reproduce the very problem being fixed.
+
+Corpus result: 49 pushchair facts, **0 value changes**, 6 excerpts reordered. A negation mask on the
+selection path was written and then deleted as unreachable — any sentence falsely matching a welcome
+pattern also trips `DIFFICULT_PATTERNS`, forcing a non-positive verdict, and across all 39
+positive-verdict facts masking changes the choice zero times.
+
+1,278 tests across 68 files, typecheck clean, 6 of 6 mutants killed.
+
+### Finding recorded, not acted on: ACCESS_ROUTE_PATTERNS
+
+**Young V&A is NOT repaired by this**, and I had claimed it would be. Its `pushchairSuitability = good`
+comes from `ACCESS_ROUTE_PATTERNS`, which infers suitability from wheelchair or step-free wording merely
+*near* a pushchair term, with no welcome statement anywhere on the page — so there is nothing to
+promote and its excerpt stays "Our entrance is step-free and wheelchair accessible."
+
+The pushchair term that qualifies the page is "**Buggy park ​Buggy parking is available in the Welcome
+Area near the main entrance**". That is somewhere to LEAVE a buggy, which is weak evidence for taking
+one round and arguably evidence against it — Paradox Museum says both at once: "pram storage is
+available at the entrance" alongside "the space is not accessible for prams/strollers".
+
+**12 of 49 pushchair facts in production rest on this pattern class.** That is a classification
+question, not an excerpt one, and it belongs to the semantic review of what `pushchairSuitability`
+promises rather than to a blind change.

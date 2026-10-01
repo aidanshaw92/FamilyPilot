@@ -209,6 +209,53 @@ function classifyPushchairSuitability(rawText) {
   return null;
 }
 
+/**
+ * The pattern group that justifies each verdict, so the excerpt can lead with the sentence that
+ * produced it. The verdict is reached over the whole combined text, so there is no single matching
+ * offset to window on as there is for the field patterns; what there is, is the sentence carrying the
+ * rule that decided it.
+ */
+const VERDICT_PATTERNS = {
+  difficult: DIFFICULT_PATTERNS,
+  mixed: [...DIFFICULT_PATTERNS, ...MIXED_PATTERNS],
+  // Both positive verdicts REQUIRE hasWelcome, so the welcome statement is the pushchair-specific
+  // evidence in each. `excellent` is only reached by adding terrain wording such as "step-free" on
+  // top, and leading with that reproduces the Young V&A problem: a pushchairSuitability excerpt whose
+  // first sentence is about a step-free entrance and never mentions a pram.
+  good: WELCOME_PATTERNS,
+  excellent: WELCOME_PATTERNS,
+};
+
+/**
+ * Put the deciding sentence first.
+ *
+ * The excerpt used to be the relevant sentences joined in page order and cut to 400 characters, so
+ * the reasoning often fell off the end. Paradox Museum London's `difficult` rests on "the space is not
+ * accessible for prams/strollers", but the stored excerpt began "However, please note: The Zero
+ * Gravity Room is not wheelchair accessible A few exhibits are not..." and never reached it. Young
+ * V&A's `good` stored "Our entrance is step-free and wheelchair accessible." with no pushchair term in
+ * it at all.
+ */
+function orderByDecidingSentence(relevant, value) {
+  const patterns = VERDICT_PATTERNS[value];
+  if (!patterns) return relevant;
+  // Deliberately NOT negation-masked. A mask here would be unreachable: any sentence that falsely
+  // matches a welcome pattern unmasked ("No prams allowed") also trips DIFFICULT_PATTERNS, which
+  // forces mixed or difficult, so it can never be the deciding sentence of a positive verdict.
+  // Checked across all 39 positive-verdict facts in the stored corpus: masking changes the choice
+  // zero times. The mask stays where it is load-bearing, in classifyPushchairSuitability.
+  const matchesVerdict = (sentence) => patterns.some((re) => re.test(sentence));
+
+  // Prefer a deciding sentence that also NAMES a pushchair, so the excerpt states its own subject. An
+  // `excellent` verdict is decided by EXCELLENT_PATTERNS, which match terrain wording like "step-free"
+  // -- true of the venue but silent about prams, and leading with it reproduces exactly the Young V&A
+  // problem of a pushchairSuitability excerpt with no pushchair term in it.
+  let index = relevant.findIndex((s) => matchesVerdict(s) && PUSHCHAIR_TERMS.test(s));
+  if (index === -1) index = relevant.findIndex(matchesVerdict);
+  if (index <= 0) return relevant;
+  return [relevant[index], ...relevant.slice(0, index), ...relevant.slice(index + 1)];
+}
+
 function extractPushchairEvidence(text, sourceMeta) {
   const relevant = collectRelevantSentences(text);
   if (relevant.length === 0) return null;
@@ -217,7 +264,9 @@ function extractPushchairEvidence(text, sourceMeta) {
   const classification = classifyPushchairSuitability(combined);
   if (!classification) return null;
 
-  const evidenceText = cleanEvidenceSnippet(combined);
+  const evidenceText = cleanEvidenceSnippet(
+    orderByDecidingSentence(relevant, classification.value).join(' '),
+  );
   if (!evidenceText) return null;
 
   return {
@@ -233,6 +282,7 @@ function extractPushchairEvidence(text, sourceMeta) {
 
 module.exports = {
   extractPushchairEvidence,
+  orderByDecidingSentence,
   classifyPushchairSuitability,
   collectRelevantSentences,
   hasPushchairSpecificTerm,
