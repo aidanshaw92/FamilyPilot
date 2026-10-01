@@ -50,7 +50,15 @@ const FEATURE_NOUNS = [
   'gym(?:s)?',
   'pool(?:s)?',
   'terrace(?:s)?',
-  'courtyard(?:s)?',
+  // `courtyard` was here and is deliberately not any more. The committed contract says
+  // "Our indoor galleries and outdoor courtyard are both open today" is MIXED, while "The galleries
+  // are entirely indoors. There is outdoor seating on the forecourt." is INDOOR -- so the product's
+  // position is that a courtyard is part of the venue you can be in, and seating is furniture. While
+  // `courtyard` sat in this list those two tests could not both hold on masked text, and the only
+  // reason they appeared to was that the mixed short-circuit read the sentence unmasked. That is the
+  // same unmasked read that published `environment = mixed` for the Horniman from "Indoor and outdoor
+  // seating is available for Cafe purchases only". Removing it aligns the list with the contract
+  // rather than changing the contract to suit the list.
   'patio(?:s)?',
   'court(?:s)?',
   'pitch(?:es)?',
@@ -113,7 +121,7 @@ const VENUE_NOUNS = [
  */
 const FEATURE_PHRASE = new RegExp(
   `\\b(?:(?:in|out)door|open[\\s-]air)\\s+`
-    + `(?:(?!(?:${VENUE_NOUNS.join('|')})\\b)[\\w’'-]+\\s+){0,2}`
+    + `(?:(?!(?:${VENUE_NOUNS.join('|')})\\b)[\\w’'&/-]+\\s+){0,2}`
     + `(?:${FEATURE_NOUNS.join('|')})\\b`,
   'gi',
 );
@@ -124,8 +132,19 @@ const FEATURE_PHRASE = new RegExp(
  * Returns `{ indoor, outdoor }`. Both false means the sentence has nothing venue-level to say, even
  * if the words "indoor" or "outdoor" appear in it.
  */
+/**
+ * Remove every feature phrase from a sentence, leaving only wording that could be venue-level.
+ *
+ * Extracted into its own function because having the mask applied in ONE place and not the other is
+ * exactly how a feature phrase reached production as a venue verdict. Both the mixed test and
+ * `venueLevelSetting` must see the same masked text, or the two disagree and the unmasked one wins.
+ */
+function maskFeaturePhrases(sentence) {
+  return String(sentence ?? '').replace(FEATURE_PHRASE, ' ');
+}
+
 function venueLevelSetting(sentence) {
-  const withoutFeatures = sentence.replace(FEATURE_PHRASE, ' ');
+  const withoutFeatures = maskFeaturePhrases(sentence);
   return {
     indoor: INDOOR_PATTERNS.some((re) => re.test(withoutFeatures)),
     outdoor: OUTDOOR_PATTERNS.some((re) => re.test(withoutFeatures)),
@@ -184,8 +203,16 @@ function classifyEnvironment(analysisText) {
 
   const sentences = splitSentences(analysisText);
 
+  /**
+   * The "says both in one sentence" short-circuit. It tests the MASKED sentence, which it did not
+   * always do, and that was a live defect rather than a hypothetical: the Horniman's
+   * "Indoor and outdoor seating is available for Cafe purchases only" matched a mixed pattern on the
+   * raw text and published `environment = mixed` for an indoor museum, while `venueLevelSetting`
+   * on the very same sentence correctly reported neither side. Cafe seating is a feature; the whole
+   * point of this field is that it describes the venue.
+   */
   for (const sentence of sentences) {
-    if (MIXED_PATTERNS.some((re) => re.test(sentence))) {
+    if (MIXED_PATTERNS.some((re) => re.test(maskFeaturePhrases(sentence)))) {
       return { value: 'mixed', confidence: 'high', evidenceText: extractEnvironmentEvidenceClause(sentence) };
     }
   }
@@ -250,6 +277,7 @@ module.exports = {
   classifyEnvironment,
   buildAnalysisText,
   venueLevelSetting,
+  maskFeaturePhrases,
   MIXED_PATTERNS,
   FEATURE_PHRASE,
 };
