@@ -207,6 +207,41 @@ function isSoftPlayOnlyPlayground(sentence) {
   return !PLAYGROUND_PATTERNS.some((re) => re.test(withoutSoftPlay));
 }
 
+/**
+ * An indoor attraction that has the word "playground" in its NAME.
+ *
+ * `playground` means outdoor play equipment at the venue, which is why it sits beside `soft_play` as
+ * a separate field rather than subsuming it. Three wordings defeat that, and all three are served in
+ * production on 2026-10-01:
+ *
+ *   Babylon Park London      "rack up high scores in an epic arcade playground!"
+ *   Flip Out Canary Wharf    "Ninja Playground, Soft Play, Ball Pits"
+ *   Flip Out Watford         "Sportz Zone, Ninja Playground, Soft Play"
+ *   London Museum Docklands  "Get hands-on in our interactive play area for under-8s"
+ *
+ * Babylon Park is an indoor amusement arcade and the phrase is a marketing metaphor; the Flip Out
+ * "Ninja Playground" is a named attraction inside a trampoline park; Docklands' is a gallery exhibit.
+ * A parent who filtered for a playground and was sent to any of them has been told something false.
+ *
+ * The list is exactly what the corpus attests, counted across every stored page: ninja playground 7,
+ * interactive play area 2, arcade playground 1. `indoor play area`, `indoor playground`,
+ * `virtual play`, `digital playground`, `sensory play area` and `ninja warrior` all appear ZERO times
+ * and are left out rather than imagined.
+ *
+ * What it must NOT touch, and why the mask-and-retest shape matters: children's play(ground|area) 27,
+ * nature play area 14, outdoor play area 5, adventure playground 2, natural play area 2. Those are
+ * real playgrounds, several of them in the same sentence as other facilities, so the phrase is taken
+ * OUT and the playground patterns re-tested -- exactly as `isSoftPlayOnlyPlayground` does -- rather
+ * than the sentence being rejected.
+ */
+const INDOOR_ATTRACTION_PLAY_PHRASE =
+  /\b(?:arcade|ninja)\s+playgrounds?\b|\binteractive\s+play\s+areas?\b/gi;
+
+function isIndoorAttractionOnlyPlayground(sentence) {
+  const withoutAttraction = String(sentence ?? '').replace(INDOOR_ATTRACTION_PLAY_PHRASE, ' ');
+  return !PLAYGROUND_PATTERNS.some((re) => re.test(withoutAttraction));
+}
+
 const FIELD_PATTERNS = [
   {
     field: 'toilets',
@@ -267,7 +302,7 @@ const FIELD_PATTERNS = [
       /(?:large\s+)?free\s+car\s+park/i,
       /car\s+park(?:ing)?\s+(is\s+)?available/i,
       /car\s+park\s+(is\s+)?(?:provided|on site|on-site)/i,
-      /visitor\s+car\s+park/i,
+      /visitors?\s+car\s+park/i,
       /parking\s+spaces\s+(are\s+)?provided/i,
       /(?:cars|vehicles|minibuses|coaches)\s+(?:are\s+)?welcome\s+to\s+use\s+(?:our\s+)?(?:large\s+)?(?:free\s+)?car\s+park/i,
     ],
@@ -350,7 +385,7 @@ function hasExplicitParkingAvailability(sentence) {
     /(?:large\s+)?free\s+car\s+park/i.test(sentence) ||
     /car\s+park(?:ing)?\s+(is\s+)?available/i.test(sentence) ||
     /car\s+park\s+(is\s+)?(?:provided|on site|on-site)/i.test(sentence) ||
-    /visitor\s+car\s+park/i.test(sentence) ||
+    /visitors?\s+car\s+park/i.test(sentence) ||
     /parking\s+spaces\s+(are\s+)?provided/i.test(sentence) ||
     /(?:cars|vehicles|minibuses|coaches)\s+(?:are\s+)?welcome\s+to\s+use\s+(?:our\s+)?(?:large\s+)?(?:free\s+)?car\s+park/i.test(
       sentence,
@@ -385,7 +420,7 @@ function isExplicitParkingStatement(sentence) {
 
   if (
     /\bparking\s+(?:is\s+)?(?:located|can\s+be\s+found)\b/i.test(sentence) &&
-    !/\bon.?site\b|\bvisitor\s+car\s+park\b|\bparking\s+(?:is\s+)?available\b|\bparking\s+(?:is\s+)?provided\b/i.test(
+    !/\bon.?site\b|\bvisitors?\s+car\s+park\b|\bparking\s+(?:is\s+)?available\b|\bparking\s+(?:is\s+)?provided\b/i.test(
       lower,
     )
   ) {
@@ -634,6 +669,8 @@ function matchField(sentence, patterns, fieldId) {
     if (fieldId === 'babyChanging' && !isExplicitBabyChangingStatement(sentence)) continue;
     // Soft play is a different facility, and a parent who asked for a playground is not served by it.
     if (fieldId === 'playground' && isSoftPlayOnlyPlayground(sentence)) continue;
+    // Nor is an arcade, a trampoline park's named attraction, or a museum gallery exhibit.
+    if (fieldId === 'playground' && isIndoorAttractionOnlyPlayground(sentence)) continue;
     if (fieldId === 'parking' || fieldId === 'freeParking') {
       // "Parking confirmed on site" must not be said about a car park down the road,
       if (hasOffSiteParking(sentence)) continue;
@@ -893,6 +930,7 @@ module.exports = {
   isExplicitBabyChangingStatement,
   isQuestionOnlyEvidence,
   isSoftPlayOnlyPlayground,
+  isIndoorAttractionOnlyPlayground,
   hasOffSiteParking,
   isNonVehicleParkingOnly,
   isCycleTravelContext,

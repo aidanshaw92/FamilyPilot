@@ -155,3 +155,31 @@ describe('a sentence whose only traveller is a cyclist does not establish car pa
     expect(isCycleTravelContext('Parking is available on site.')).toBe(false);
   });
 });
+
+/**
+ * Found while repairing a claim, not while hunting for coverage.
+ *
+ * Hatfield Park served `parking = yes` on `hatfield-house.co.uk/your-visit/` -- the ESTATE's page,
+ * scoped `organisation_ancestor`, so ineligible. Re-pointing it needed the park's own eligible page,
+ * which says "please enter via George\u2019s Gate for our main visitors car park", and that yielded
+ * nothing: the pattern was `visitor car park`, singular only.
+ *
+ * Counted across every stored page, the plural is the MORE common form -- "visitors car park" 7
+ * occurrences against "visitor car park" 2 -- so the pattern had been missing the majority wording
+ * all along. One character, in all three copies the file keeps in sync.
+ */
+describe('a visitors car park is a visitor car park', () => {
+  it('reads the plural, which is the form most pages use', () => {
+    expect(parkingFacts('All those attending in a vehicle please enter via George\u2019s Gate for our main visitors car park (AL9 5HX).')).toContain('parking=yes');
+  });
+
+  it('still reads the singular', () => {
+    expect(parkingFacts('Visitor car park is available.')).toContain('parking=yes');
+  });
+
+  it('does not let the plural defeat the restricted-parking guard', () => {
+    // Hatfield's other sentence. "Disabled parking" is an entitlement for some visitors, not a
+    // general yes, and widening the noun must not have reopened that.
+    expect(parkingFacts('Disabled parking is available within the main Visitor car park accessed through George\u2019s Gate.')).toEqual([]);
+  });
+});

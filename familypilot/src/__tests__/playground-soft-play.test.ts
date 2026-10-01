@@ -127,30 +127,58 @@ describe('the guard is scoped to the playground decision only', () => {
   });
 });
 
-describe('what this deliberately does NOT change', () => {
+describe('an indoor attraction with "playground" in its name is not a playground', () => {
   /**
-   * Each of these keeps `playground = yes` in production and is a separate question, recorded rather
-   * than guessed at. They are pinned here so that a later change to any of them is a visible decision
-   * instead of a silent side effect of this one.
+   * THIS IS THE DELIBERATE DECISION THE EARLIER PIN ASKED FOR.
+   *
+   * These two cases used to assert `playground = yes`, under a block that said each was "a separate
+   * question, recorded rather than guessed at ... pinned here so that a later change to any of them
+   * is a visible decision instead of a silent side effect". The expectations are changed here, on
+   * purpose, with the reasoning written down -- not quietly adjusted to let a new guard pass.
+   *
+   * What changed is the evidence, not the taste. A production sweep of all 30 served
+   * `playground = yes` claims found these are the venues a parent filtering for a playground would
+   * be sent to wrongly: Babylon Park is an indoor amusement arcade whose sentence is a marketing
+   * metaphor about arcade games, and the Flip Out "Ninja Playground" is a named attraction inside a
+   * trampoline park, beside Soft Play and Ball Pits in the very same list. `playground` sits next to
+   * `soft_play` as a separate field precisely so that indoor attractions do not answer for outdoor
+   * play equipment.
    */
-  it('leaves a branded "Ninja Playground" alone (Flip Out, three venues)', () => {
-    expect(
-      playgroundFact(
-        'Children under 1.2m can still enjoy a wide range of attractions including Drift Trikes, Inflatables, Sportz Zone, Ninja Playground, Soft Play, Solo Trampolines, Donut Ring, Slides and PS5 Stations.',
-      )?.value,
-    ).toBe('yes');
-  });
-
-  it('leaves a metaphorical "arcade playground" alone (Babylon Park)', () => {
-    // Worth noting: Babylon Park was originally flagged as a soft-play question. It is not -- the
-    // trigger is this marketing sentence about arcade games, which the replay established and this
-    // test records.
+  it('does not publish a playground for a metaphorical "arcade playground" (Babylon Park)', () => {
+    // Babylon Park was originally flagged as a soft-play question. It is not -- the trigger is this
+    // marketing sentence about arcade games, which the replay established.
     expect(
       playgroundFact(
         'From retro classics to cutting-edge hits, test your skills and rack up high scores in an epic arcade playground!',
-      )?.value,
+      ),
+    ).toBeNull();
+  });
+
+  it('does not publish a playground for a branded "Ninja Playground" (Flip Out, three venues)', () => {
+    expect(
+      playgroundFact(
+        'Children under 1.2m can still enjoy a wide range of attractions including Drift Trikes, Inflatables, Sportz Zone, Ninja Playground, Soft Play, Solo Trampolines, Donut Ring, Slides and PS5 Stations.',
+      ),
+    ).toBeNull();
+  });
+
+  it('does not publish a playground for a gallery exhibit (London Museum Docklands)', () => {
+    expect(
+      playgroundFact(
+        'London Museum Docklands Mudlarks family gallery Get hands-on in our interactive play area for under-8s',
+      ),
+    ).toBeNull();
+  });
+
+  it('keeps a real playground named in the same breath as the indoor one', () => {
+    // The reason this is a phrase mask rather than a sentence rejection: a venue may have both.
+    expect(
+      playgroundFact('There is a Ninja Playground indoors and a childrens playground outside.')?.value,
     ).toBe('yes');
   });
+});
+
+describe('what this deliberately does NOT change', () => {
 
   it('leaves a play area named only to say it is NOT accessible (Woodside)', () => {
     // "with the exception of the upstairs play area" publishes a playground while actually describing
