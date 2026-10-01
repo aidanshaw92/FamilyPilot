@@ -46,11 +46,12 @@ function run(payload: Record<string, unknown>): { status: number; output: string
 }
 
 describe('the live opening-hours check cannot be satisfied by stored data', () => {
-  it('fails when the endpoint served a cached copy, even though the provider is google', () => {
+  it('fails on a cached copy when Google Places IS enabled, so the window is hiding the live call', () => {
     const result = run({
       provider: 'google',
       cached: true,
       storedAgeDays: 0.45,
+      placesEnabled: true,
       place: { name: 'Whitechapel Gallery', openingHours: liveHours() },
     });
     expect(result.status).toBe(1);
@@ -59,10 +60,44 @@ describe('the live opening-hours check cannot be satisfied by stored data', () =
     expect(result.output).toMatch(/PLACES_DETAIL_FRESH_DAYS=0/);
   });
 
+  it('stands down on a cached copy when Google Places is switched off for Preview', () => {
+    // Not a failure: the owner choosing not to let Preview spend is a configuration choice, and
+    // failing would block every future pull request touching the mapper. But it must never read as a
+    // pass either, so NOT PROVEN and the variables are in the output.
+    const result = run({
+      provider: 'google',
+      cached: true,
+      storedAgeDays: 0.46,
+      placesEnabled: false,
+      place: { name: 'Whitechapel Gallery', openingHours: liveHours() },
+    });
+    expect(result.status).toBe(0);
+    expect(result.output).toMatch(/NOT PROVEN/);
+    expect(result.output).toMatch(/GOOGLE_PLACES_ENABLED=true/);
+    expect(result.output).toMatch(/PLACES_DETAIL_FRESH_DAYS=0/);
+    // And it must NOT claim the schedule was checked, because it was not.
+    expect(result.output).not.toMatch(/PASS {2}display text still present/);
+  });
+
+  it('distinguishes the two cached cases by placesEnabled, not by status code', () => {
+    // The first attempt keyed the stand-down on a 503 from the cost gate. That branch is unreachable
+    // for a fresh stored copy: the endpoint serves it and returns 200 without ever consulting the
+    // gate, which is exactly how run #7 failed. These two differ only in `placesEnabled`.
+    const base = {
+      provider: 'google',
+      cached: true,
+      storedAgeDays: 1,
+      place: { name: 'Whitechapel Gallery', openingHours: liveHours() },
+    };
+    expect(run({ ...base, placesEnabled: false }).status).toBe(0);
+    expect(run({ ...base, placesEnabled: true }).status).toBe(1);
+  });
+
   it('passes on a genuinely live response', () => {
     const result = run({
       provider: 'google',
       cached: false,
+      placesEnabled: true,
       place: { name: 'Whitechapel Gallery', openingHours: liveHours() },
     });
     expect(result.status).toBe(0);
@@ -87,6 +122,7 @@ describe('the live opening-hours check cannot be satisfied by stored data', () =
     const result = run({
       provider: 'google',
       cached: false,
+      placesEnabled: true,
       place: { name: 'Whitechapel Gallery', openingHours: { source: 'google', periods: [] } },
     });
     expect(result.status).toBe(1);
