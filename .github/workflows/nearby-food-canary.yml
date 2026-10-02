@@ -16,20 +16,28 @@ name: Nearby food canary
 # sweep all 67 production venues -- bulk-testing public infrastructure to produce a statistic is the
 # thing the brief forbids, and five anchors chosen for geographic spread answer the question.
 #
-# WHEN IT RUNS
+# WHEN IT RUNS: ON DEMAND ONLY, AND THAT IS A CORRECTION
 #
-# On a pull request that changes the discovery code or the canary itself, because that is exactly when
-# the answer could have changed, and on demand. Not on every push to unrelated files: Overpass is a free
-# service other people depend on, and politeness is a design requirement here rather than an aspiration.
+# This began as a pull_request trigger on the discovery paths, which was wrong, and three real runs showed
+# why. Measured from GitHub's shared runner IPs, overpass-api.de is unreliable in a way that has nothing
+# to do with the change under review:
+#
+#   run 1  The National Gallery succeeded in 2088ms; the V&A timed out after 47s.
+#   run 2  The National Gallery -- the same anchor that had just succeeded -- hit the 20s deadline.
+#
+# Public Overpass rate-limits shared cloud address space heavily, which is its right: it is a free service
+# funded by donations. So a PR trigger here has two bad consequences. It makes pull requests red for a
+# reason unrelated to their diff, and it invites exactly the behaviour the brief forbids -- re-running a
+# canary against public infrastructure until it goes green.
+#
+# So this runs when someone asks for it. A canary is a deliberate measurement, not a gate.
+#
+# AND IT IS STILL NOT THE REAL VANTAGE POINT. The production environment has its own address and its own
+# standing with Overpass, so figures gathered from a runner describe the runner. The genuinely
+# representative canary runs from production; this is the closest available from CI, and the report says
+# which is which rather than presenting one as the other.
 
 on:
-  pull_request:
-    paths:
-      - 'server/places/lib/osm-food.js'
-      - 'server/places/lib/nearby-food.js'
-      - 'server/places/lib/nearby-food-endpoint.js'
-      - 'familypilot/scripts/canary-nearby-food.mjs'
-      - '.github/workflows/nearby-food-canary.yml'
   workflow_dispatch:
 
 permissions:
