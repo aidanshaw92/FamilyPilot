@@ -9,6 +9,7 @@ import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { FocusedRecommendation } from '@/src/types/day-request';
 import { formatArrivalTime } from '@/src/utils/clock-format';
+import { travelSourceOf, travelTimeLabel } from '@/src/utils/travel-time';
 
 interface Props { recommendation: FocusedRecommendation; variant?: 'hero' | 'carousel'; index?: number }
 export function FocusedRecommendationCard({ recommendation, variant = 'carousel', index = 0 }: Props) {
@@ -20,7 +21,7 @@ export function FocusedRecommendationCard({ recommendation, variant = 'carousel'
         <VenueImage uri={recommendation.imageUrl} category={recommendation.category} alt={recommendation.venueName} style={[styles.image, isHero && styles.heroImage]} borderRadius={radius.lg} />
         {isHero ? <>
           <LinearGradient colors={['transparent', 'rgba(18,24,27,0.82)']} style={styles.scrim} pointerEvents="none" />
-          <View style={styles.overlayCopy}><Text variant="caption" color={colors.text.inverse}>{recommendation.category}</Text><Text variant="heading2" color={colors.text.inverse} style={styles.venueName}>{recommendation.venueName}</Text><View style={styles.rating}><Ionicons name="star" size={14} color="#FFD166" /><Text variant="caption" color={colors.text.inverse}>{recommendation.fit}</Text><Text variant="caption" color="rgba(255,255,255,0.76)">{recommendation.driveMinutes} min away</Text></View></View>
+          <View style={styles.overlayCopy}><Text variant="caption" color={colors.text.inverse}>{recommendation.category}</Text><Text variant="heading2" color={colors.text.inverse} style={styles.venueName}>{recommendation.venueName}</Text><View style={styles.rating}><Ionicons name="star" size={14} color="#FFD166" /><Text variant="caption" color={colors.text.inverse}>{recommendation.fit}</Text><Text variant="caption" color="rgba(255,255,255,0.76)">{travelTimeLabel(recommendation.driveMinutes, travelSourceOf(recommendation.journeySource))}</Text></View></View>
           <View style={styles.arrow}><Ionicons name="arrow-forward" size={22} color={colors.text.primary} /></View>
         </> : null}
       </View>

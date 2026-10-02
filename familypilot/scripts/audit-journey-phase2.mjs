@@ -26,6 +26,8 @@ const EDGE = {
   noPhoto: 'fp-google-FIXTUREedgeNoPhoto',
   noHours: 'fp-google-FIXTUREedgeNoHours',
   closesEarly: 'fp-google-FIXTUREedgeClosesEarly',
+  osm: 'fp-osm-FIXTUREedgeOsm',
+  noCoords: 'fp-google-FIXTUREedgeNoCoords',
 };
 
 const PROFILE = {
@@ -72,8 +74,24 @@ const note = (viewport, screen, step, detail) => {
   console.log(`  [${detail.ok === false ? 'FAIL' : 'ok'}] ${screen} · ${step}${detail.message ? `: ${detail.message}` : ''}`);
 };
 
+/**
+ * The audit runs at a fixed instant, pinned in the browser rather than read off the wall clock.
+ *
+ * Twice now this audit has passed in the morning and failed in the afternoon, both times for the
+ * same reason: the Create a Plan sheet defaults its START to the next sensible slot after the current
+ * time, so a run after about 17:00 London proposed a visit finishing after the fixture venue's 20:00
+ * close, and the Plan correctly refused. Widening the fixture's hours only moves the hour at which
+ * the audit starts lying; it does not make the run deterministic. Pinning the clock does, and it also
+ * makes every other time-dependent assertion mean something fixed: whether a venue reads open now,
+ * what the closes-early venue refuses, and which day "tomorrow" is.
+ *
+ * A Friday mid-morning, chosen because it is inside every fixture venue's opening hours and leaves
+ * room for a three-hour visit before any of them close.
+ */
+const PINNED_NOW = new Date('2026-10-02T09:00:00.000Z');
+
 const PLAN_DATE = (() => {
-  const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const d = new Date(PINNED_NOW.getTime() + 24 * 60 * 60 * 1000);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 })();
 
@@ -109,12 +127,49 @@ async function newPage(browser, viewport) {
   const context = await browser.newContext({
     viewport: { width: viewport.width, height: viewport.height },
     deviceScaleFactor: 2,
+    timezoneId: 'Europe/London',
   });
+  // Pinned, then allowed to tick. `install` alone hands timer control to the test, so every
+  // setTimeout the journey depends on -- the generating sequence above all -- would wait for a
+  // runFor that never comes; `resume` starts time flowing again from the pinned instant. So the app
+  // sees a fixed starting wall clock and otherwise behaves exactly as it does for a parent.
+  await context.clock.install({ time: PINNED_NOW });
+  await context.clock.resume();
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
-  page.on('response', (r) => { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
+
+  /**
+   * One response is a deliberate failure, not a defect: the fixture answers the nearby-food request
+   * for the long-name venue with 503, so the audit can check that the section reports a lookup outage
+   * as OURS rather than as an empty neighbourhood.
+   *
+   * Narrowed two ways rather than ignoring 503s. The response hook matches that exact request, so a
+   * real 503 from anywhere else still fails. Chromium also logs a console error for the same
+   * response, and that message carries no URL, so it is BUDGETED instead: each deliberate 503 earns
+   * the right to one unexplained "Failed to load resource ... 503" line and no more. A second 503
+   * from a different source would exceed the budget and fail the run.
+   */
+  const deliberate = (url) =>
+    url.includes('intent=nearby-food') && url.includes('placeId=fp-google-FIXTUREedgeLongName');
+  let allowed503 = 0;
+  page.on('response', (r) => {
+    if (r.status() < 400) return;
+    if (deliberate(r.url())) {
+      allowed503 += 1;
+      return;
+    }
+    errors.push(`${r.status()} ${r.url()}`);
+  });
+  page.on('console', (m) => {
+    if (m.type() !== 'error') return;
+    const text = m.text();
+    if (/Failed to load resource.*503/.test(text) && allowed503 > 0) {
+      allowed503 -= 1;
+      return;
+    }
+    errors.push(text);
+  });
 
   await page.addInitScript(
     ({ key, value }) => window.localStorage.setItem(key, value),
@@ -165,9 +220,19 @@ async function auditJourney(browser, viewport) {
 
   const homeText = await text(page);
   note(V, 'Home', 'renders its deck rather than an empty shell', {
-    ok: /min away|Potential match|Strong fit|Good fit/i.test(homeText),
+    // The probe was the literal string "min away", which made it a copy test wearing a
+    // rendered-or-not test's name: changing the travel wording made Home look empty. A travel time
+    // in either wording, or a match classification, is what actually evidences a rendered card.
+    ok: /\d+\s*min|Potential match|Strong fit|Good fit/i.test(homeText),
     message: homeText.replace(/\s+/g, ' ').slice(0, 90),
   });
+  note(V, 'Home', 'hedges the deck card travel time rather than stating it as measured', await (async () => {
+    const t = await text(page);
+    return {
+      ok: /about \d+ min/.test(t) && !/\d+ min away/.test(t),
+      message: (t.match(/(about )?\d+ min( away)?/) ?? ['no travel time found'])[0],
+    };
+  })());
   note(V, 'Home', 'does not scroll sideways', await (async () => {
     const o = await overflow(page);
     return { ok: o === null, message: o ? `${o.scroll} in ${o.viewport}: ${o.offenders.join(' ; ')}` : undefined };
@@ -204,6 +269,13 @@ async function auditJourney(browser, viewport) {
   note(V, 'Venue Detail', 'offers Create a plan', {
     ok: await page.getByTestId('venue-create-plan').isVisible().catch(() => false),
   });
+  // Section 4: a straight-line estimate must not be worded as a routed journey. Every driveMinutes
+  // reaching this screen is Haversine distance over an assumed average speed, so a bare "14 min" or
+  // "14 min away" is a guess in the voice of a measurement.
+  note(V, 'Venue Detail', 'does not present its drive estimate as a measured journey', {
+    ok: /about \d+ min/.test(richText) && !/\d+ min away/.test(richText),
+    message: (richText.match(/(about )?\d+ min( away)?/) ?? ['no travel time found'])[0],
+  });
   note(V, 'Venue Detail', 'does not scroll sideways', await (async () => {
     const o = await overflow(page);
     return { ok: o === null, message: o ? `${o.scroll} in ${o.viewport}: ${o.offenders.join(' ; ')}` : undefined };
@@ -227,6 +299,17 @@ async function auditJourney(browser, viewport) {
       const t = await text(page);
       return { ok: t.includes('No Photograph Park'), message: t.replace(/\s+/g, ' ').slice(0, 70) };
     }],
+    [EDGE.osm, 'an OpenStreetMap venue, which must credit its contributors', async () => {
+      const t = await text(page);
+      // ODbL requires the credit wherever the data is shown, and Google's mark must not appear over
+      // a place that did not come from Google.
+      const osmCredited = /©\s*OpenStreetMap contributors/.test(t);
+      const googleMark = await page.getByTestId('place-attribution-google').isVisible().catch(() => false);
+      return {
+        ok: osmCredited && !googleMark,
+        message: `osm credit ${osmCredited ? 'present' : 'MISSING'}, google mark ${googleMark ? 'WRONGLY shown' : 'absent'}`,
+      };
+    }],
     [EDGE.noHours, 'a venue whose hours nobody published', async () => {
       const t = await text(page);
       return { ok: !/Open now|Closed now/i.test(t) || /not confirmed|Not confirmed/i.test(t), message: (t.match(/Opening hours[\s\S]{0,50}/) ?? [''])[0].replace(/\s+/g, ' ') };
@@ -237,6 +320,82 @@ async function auditJourney(browser, viewport) {
     await page.screenshot({ path: join(dir, `03-venue-${id.slice(-10)}.png`) });
     note(V, 'Venue Detail', `survives ${label}`, await assertion());
   }
+
+  // --- RESTAURANTS CLOSE BY ---------------------------------------------------------------------
+  // Sections 3 and 11: a nearby restaurant is not a venue with confirmed family facilities, and the
+  // three states the section can be in -- candidates, nothing mapped, and a provider outage -- are
+  // three different claims about the world.
+  await page.goto(`${BASE}/venue/${EDGE.rich}`, { waitUntil: 'domcontentloaded' });
+  await settle(page, 2400);
+  const foodSection = page.getByTestId('restaurants-close-by');
+  await foodSection.waitFor({ state: 'visible', timeout: 8000 }).catch(() => {});
+  const foodText = await foodSection.innerText().catch(() => '');
+
+  note(V, 'Restaurants close by', 'lists the places to eat it was given', {
+    ok: (await page.getByTestId('food-candidate').count().catch(() => 0)) === 3,
+    message: `${await page.getByTestId('food-candidate').count().catch(() => 0)} candidate(s)`,
+  });
+  note(V, 'Restaurants close by', 'says the travel times are estimated, not measured', {
+    ok: /estimated from distance/i.test(foodText) && /about \d+ min/.test(foodText),
+    message: (foodText.match(/about \d+ min[^\n]*/) ?? ['no hedged travel time'])[0].slice(0, 70),
+  });
+  note(V, 'Restaurants close by', 'does not invent a public transport time from a straight line', {
+    ok: !/by public transport|by bus/i.test(foodText) && /no public transport times/i.test(foodText),
+    message: /no public transport times/i.test(foodText) ? 'absence stated' : 'absence NOT stated',
+  });
+  note(V, 'Restaurants close by', 'says hours are unlisted rather than leaving a parent to guess', {
+    ok: /Hours not listed/i.test(foodText) && /Mo-Su 11:00-22:00/.test(foodText),
+    message: /Hours not listed/i.test(foodText) ? 'both states present' : 'unlisted state missing',
+  });
+  note(V, 'Restaurants close by', 'does not claim facilities nobody recorded', {
+    ok: /Nobody has recorded facilities/i.test(foodText) && /Highchairs/.test(foodText),
+    message: /Nobody has recorded facilities/i.test(foodText) ? 'unknown stated' : 'unknown NOT stated',
+  });
+  note(V, 'Restaurants close by', 'invents no rating, score or review count for an OSM place', {
+    ok: !/\b\d(\.\d)?\s*(stars?|\/\s*5)|\breviews?\b|Family match|Strong fit|Potential match/i.test(foodText),
+    message: (foodText.match(/\d(\.\d)?\s*(stars?|\/\s*5)|reviews?|Family match/i) ?? ['none'])[0],
+  });
+  note(V, 'Restaurants close by', 'credits OpenStreetMap for the candidates', {
+    ok: (await page.getByTestId('place-attribution-osm').count().catch(() => 0)) >= 1,
+    message: `${await page.getByTestId('place-attribution-osm').count().catch(() => 0)} osm credit(s)`,
+  });
+  note(V, 'Restaurants close by', 'does not scroll sideways', await (async () => {
+    const o = await overflow(page);
+    return { ok: o === null, message: o ? `${o.scroll} in ${o.viewport}: ${o.offenders.join(' ; ')}` : undefined };
+  })());
+
+  // Nothing mapped is not an outage, and an outage is not an empty neighbourhood.
+  await page.goto(`${BASE}/venue/${EDGE.noPhoto}`, { waitUntil: 'domcontentloaded' });
+  await settle(page, 2400);
+  const emptyText = await page.getByTestId('restaurants-close-by').innerText().catch(() => '');
+  note(V, 'Restaurants close by', 'says nothing is MAPPED rather than that nothing exists', {
+    ok: /not on the map we use/i.test(emptyText) && !/could not check/i.test(emptyText),
+    message: emptyText.replace(/\s+/g, ' ').slice(0, 80),
+  });
+
+  await page.goto(`${BASE}/venue/${EDGE.longName}`, { waitUntil: 'domcontentloaded' });
+  await settle(page, 2600);
+  const outageText = await page.getByTestId('restaurants-close-by').innerText().catch(() => '');
+  note(V, 'Restaurants close by', 'reports a lookup outage as ours, not as an empty area', {
+    ok: /could not check/i.test(outageText) && /not about the area/i.test(outageText),
+    message: outageText.replace(/\s+/g, ' ').slice(0, 80),
+  });
+
+  // A venue with no coordinates must still produce an answer rather than generating for ever. The
+  // nearby-food lookup is disabled without coordinates, and react-query reports a disabled query as
+  // pending, so a plan route that waited on `isPending` would hang here. Verified as a real hang before
+  // the gate was corrected.
+  await page.goto(
+    `${BASE}/plan?venue=${EDGE.noCoords}&date=${PLAN_DATE}&leaveAt=09:30&visit=90&parties=mine`,
+    { waitUntil: 'domcontentloaded' },
+  );
+  await settle(page, 9000);
+  const noCoordsText = await text(page);
+  note(V, 'Plan', 'answers for a venue with no coordinates instead of generating for ever', {
+    // Either a day or a stated failure is fine. Sitting on the generating steps is not.
+    ok: !(await page.getByTestId('generating-plan').isVisible().catch(() => false)),
+    message: noCoordsText.replace(/\s+/g, ' ').slice(0, 80),
+  });
 
   // --- CREATE A PLAN ----------------------------------------------------------------------------
   await page.goto(`${BASE}/venue/${EDGE.rich}`, { waitUntil: 'domcontentloaded' });
@@ -281,16 +440,35 @@ async function auditJourney(browser, viewport) {
     };
   })());
 
+  // GENERATING only exists while the plan is still being worked out, and against a local fixture
+  // that is a few milliseconds. Earlier runs recorded "passed too quickly to capture" as a PASS at
+  // every viewport, so the assertion about its wording -- the one thing the brief asks of this
+  // screen, that it names real work instead of sounding like a chatbot -- never actually ran.
+  //
+  // Holding the journey endpoint for a moment makes the screen observable deterministically. It is
+  // the call the plan genuinely waits on, so nothing about the app's behaviour is faked: the parent
+  // on a slow connection sees exactly this.
+  const holdJourney = async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+    await route.continue();
+  };
+  await page.route('**/api/context/journey**', holdJourney);
+
   // A double tap must produce one day, not two.
   const submit = page.getByTestId('create-plan-submit');
   await submit.click();
   await submit.click({ timeout: 1200 }).catch(() => {});
-  await page.waitForTimeout(240);
-  const generating = await page.getByTestId('generating-plan').isVisible().catch(() => false);
+  // Wait for the phase rather than for a fixed 240ms, and read its words BEFORE screenshotting.
+  // With the screenshot in between, two of the five viewports captured the finished Plan instead:
+  // the capture takes long enough for the phase to advance, so the assertion was reading the wrong
+  // screen and reporting it as the generating copy.
+  const generatingPane = page.getByTestId('generating-plan');
+  await generatingPane.waitFor({ state: 'visible', timeout: 6000 }).catch(() => {});
+  const generating = await generatingPane.isVisible().catch(() => false);
+  const generatingText = generating ? await text(page) : '';
   if (generating) await page.screenshot({ path: join(dir, '05-generating.png') });
 
   // --- GENERATING -------------------------------------------------------------------------------
-  const generatingText = generating ? await text(page) : '';
   if (generating) {
     note(V, 'Generating', 'names real work rather than claiming to think', {
       ok: /Checking|Working out|Fitting/i.test(generatingText)
@@ -298,12 +476,41 @@ async function auditJourney(browser, viewport) {
       message: generatingText.replace(/\s+/g, ' ').slice(0, 90),
     });
   } else {
-    note(V, 'Generating', 'was reached', { ok: true, message: 'passed too quickly to capture' });
+    // Not a pass. The screen is held open deliberately above, so missing it means the journey route
+    // was never hit or the phase was skipped -- either of which is a finding, not a fast machine.
+    note(V, 'Generating', 'was reached', {
+      ok: false,
+      message: 'the generating phase never appeared, even with the journey call held open',
+    });
   }
 
   await page.waitForTimeout(4600);
   await settle(page, 700);
+  await page.unroute('**/api/context/journey**', holdJourney);
   await page.screenshot({ path: join(dir, '06-plan.png') });
+
+  // --- THE LUNCH STOP ---------------------------------------------------------------------------
+  // Section 12: a real OpenStreetMap restaurant inside the generated day, and Section 13: the hop
+  // between stops shown in the mode the plan's timings were actually computed from.
+  const lunchText = await text(page);
+  note(V, 'Plan', 'puts a real discovered restaurant in the day', {
+    ok: /The Mapped Kitchen/.test(lunchText) && /LUNCH/i.test(lunchText),
+    message: (lunchText.match(/LUNCH[^\n]{0,60}/) ?? ['no lunch stop'])[0].replace(/\s+/g, ' '),
+  });
+  note(V, 'Plan', 'draws the hop between stops with a mode symbol and a duration', {
+    ok: /[\u{1F680}-\u{1F6FF}]\s*about \d+ min drive/u.test(lunchText),
+    message: (lunchText.match(/.{0,3}about \d+ min drive/u) ?? ['no hop line'])[0],
+  });
+  note(V, 'Plan', 'hedges that hop rather than stating it as a routed journey', {
+    ok: !/[\u{1F680}-\u{1F6FF}]\s*\d+ min drive/u.test(lunchText),
+    message: (lunchText.match(/.{0,3}\s\d+ min drive/u) ?? ['nothing stated as routed'])[0],
+  });
+  note(V, 'Plan', 'does not claim the OSM restaurant has confirmed facilities', {
+    // OSM cannot confirm toilets, baby changing or parking. A lunch stop asserting them would make the
+    // day look suitable on evidence nobody has.
+    ok: /opening hours not confirmed/i.test(lunchText) && !/Mapped Kitchen[^.]*confirmed (toilets|baby changing|parking)/i.test(lunchText),
+    message: (lunchText.match(/The Mapped Kitchen: [^.]{0,50}/) ?? ['no unknown stated'])[0],
+  });
 
   // --- PLAN -------------------------------------------------------------------------------------
   const planText = await text(page);

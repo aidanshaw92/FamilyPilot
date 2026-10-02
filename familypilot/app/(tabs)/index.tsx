@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { GoogleMapsAttribution } from '@/src/components/shared/GoogleAttribution';
+import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
 import { RecommendationDeck } from '@/src/components/home/RecommendationDeck';
 import { deckMetrics } from '@/src/utils/home-deck-geometry';
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
@@ -183,12 +183,14 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {/* The deck's places come from Google, and Google requires its mark wherever that content
-            appears without a Google map. It sits in the gap the frame already leaves between the
-            deck and the navigation, so nothing in the approved composition moves. */}
+        {/* The credits the deck's own places owe. Google requires its mark wherever its content
+            appears without a Google map, and OpenStreetMap's licence asks for its contributors'
+            credit -- so the line is derived from the shortlist in hand rather than assumed to be
+            Google's. It sits in the gap the frame already leaves between the deck and the
+            navigation, so nothing in the approved composition moves. */}
         {!isLoading && !isError && shortlist.length > 0 ? (
           <View style={styles.attribution}>
-            <GoogleMapsAttribution />
+            <PlaceCredits places={shortlist} />
           </View>
         ) : null}
       </ScrollView>

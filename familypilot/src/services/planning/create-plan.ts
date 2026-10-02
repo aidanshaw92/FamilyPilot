@@ -8,6 +8,7 @@ import { sequenceDay } from './sequencer';
 import { PlanningFamily } from './planner';
 import { PlanDraft } from './plan-draft';
 import { PlanViewModel, PlanViewModelInput, toPlanViewModel } from './plan-view-model';
+import { TravelLeg } from '@/src/types/travel';
 
 /**
  * One call behind the approved Create a Plan button.
@@ -34,8 +35,15 @@ export interface CreatePlanStep {
 
 export interface MealCandidate {
   place: PlanStopSource;
-  /** Straight-line walking estimate, when the caller knows it. Used only for the progress line. */
-  walkMinutes?: number;
+  /**
+   * How the parent would get from the anchor to lunch, with the provenance of each figure.
+   *
+   * Was `walkMinutes?: number`. A bare integer could not say whether it had been routed or guessed,
+   * which is how an estimate reaches a screen dressed as a measurement -- and it assumed walking, and
+   * one origin. A leg carries its own mode, source and confidence, so the Plan can word each one
+   * honestly and a routed value needs no new field when it arrives.
+   */
+  travel?: TravelLeg[];
 }
 
 export interface CreatePlanInput {
@@ -105,12 +113,14 @@ export function createPlanSteps(input: { venueName: string; meal?: MealCandidate
   // search is a billable call this button does not make -- so a line saying lunch is being checked
   // would be a progress bar for nothing.
   if (input.meal) {
+    const walk = input.meal.travel?.find((leg) => leg.mode === 'walk');
     steps.push({
       id: 'lunch',
-      label:
-        input.meal.walkMinutes != null
-          ? `Finding lunch within a ${input.meal.walkMinutes}-minute walk`
-          : `Adding lunch at ${input.meal.place.name}`,
+      label: walk
+        // Hedged even here, because the number is a straight-line estimate and a progress line that
+        // says "within a 6-minute walk" is making the same promise the Plan refuses to make.
+        ? `Finding lunch about a ${walk.durationMinutes}-minute walk away`
+        : `Adding lunch at ${input.meal.place.name}`,
     });
   }
   steps.push(

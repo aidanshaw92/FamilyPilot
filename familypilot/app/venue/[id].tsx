@@ -19,8 +19,10 @@ import { CommunitySection } from '@/src/components/venue/CommunitySection';
 import { EatNearbySection } from '@/src/components/venue/EatNearbySection';
 import { FacilityGrid } from '@/src/components/venue/FacilityGrid';
 import { PhotoGallery } from '@/src/components/venue/PhotoGallery';
+import { RestaurantsCloseBy } from '@/src/components/venue/RestaurantsCloseBy';
 import { WeatherAlternativeSection } from '@/src/components/venue/WeatherAlternativeSection';
 import { PhotoAttributionLine } from '@/src/components/shared/GoogleAttribution';
+import { PlaceAttribution } from '@/src/components/shared/PlaceAttribution';
 import { SaveButton } from '@/src/components/shared/SaveButton';
 import { ShareButton } from '@/src/components/shared/ShareButton';
 import {
@@ -41,11 +43,12 @@ import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { safeFooterPadding } from '@/src/utils/safe-area';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { isActivityVenue } from '@/src/data/mock-restaurants';
-import { useFamilyProfile, useVenue } from '@/src/hooks/use-queries';
+import { useFamilyProfile, useNearbyFood, useVenue } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { localDate, usePlanningStore } from '@/src/stores/planning-store';
 import { getEnrichmentDetailTrustCopy, formatTerrainLabel, getMatchClassification } from '@/src/utils/family-match-classification';
 import { generateVenueStaticParams } from '@/src/utils/venue-routes';
+import { travelTimeLabel } from '@/src/utils/travel-time';
 
 const HERO_HEIGHT = 250;
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
@@ -59,6 +62,13 @@ export default function VenueScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: venue, isLoading, isError, refetch } = useVenue(id ?? '');
+  // Keyed on the venue's coordinates, so it starts only once the venue has loaded and two venues at
+  // the same address share one lookup.
+  const nearbyFood = useNearbyFood({
+    latitude: venue?.latitude,
+    longitude: venue?.longitude,
+    placeId: venue?.id,
+  });
   const { isSaved, toggleSaved } = useSavedStore();
   const scrollY = useSharedValue(0);
   const [heroIndex, setHeroIndex] = useState(0);
@@ -224,7 +234,8 @@ export default function VenueScreen() {
               {venue.name}
             </Text>
             <View style={styles.heroMeta}>
-              <MetaItem icon="car-outline" text={`${venue.driveMinutes} min`} />
+              {/* Hedged: this is a straight-line estimate, not a routed drive. */}
+              <MetaItem icon="car-outline" text={travelTimeLabel(venue.driveMinutes, 'estimated')} />
               {venue.visitDurationMinutes ? (
                 <MetaItem icon="time-outline" text={`~${Math.round(venue.visitDurationMinutes / 60)}h visit`} />
               ) : null}
@@ -283,6 +294,12 @@ export default function VenueScreen() {
               </View>
             ) : null}
 
+            {/* Whose data this is. A licence condition for both providers, and until now the client
+                could not tell them apart, so Google's mark sat over OpenStreetMap places. */}
+            <View style={styles.photoAttribution}>
+              <PlaceAttribution provider={venue.provider} />
+            </View>
+
             <Text variant="heading3" style={styles.sectionTitle}>
               Facilities
             </Text>
@@ -326,6 +343,15 @@ export default function VenueScreen() {
             {venue.weatherAlternative ? (
               <WeatherAlternativeSection alternative={venue.weatherAlternative} />
             ) : null}
+
+            {/* Places to eat near THIS venue, from OpenStreetMap. Zero Google calls, one Overpass
+                request per anchor shared across every parent who opens it. The section renders its
+                own pending, outage and nothing-mapped states, which are three different things. */}
+            <RestaurantsCloseBy
+              result={nearbyFood.data}
+              isPending={nearbyFood.isPending}
+              isError={nearbyFood.isError}
+            />
 
             <Text variant="body" style={styles.description}>
               {venue.description}

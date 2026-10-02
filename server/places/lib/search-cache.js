@@ -15,7 +15,24 @@
  * docs/GOOGLE_PLACES_COST_CONTROL.md.
  */
 
-const { getSupabaseAdmin } = require('../../enrichment/_lib/supabase-admin');
+/**
+ * Supabase is reached lazily, the same way places-budget.js reaches it, and for the same reason: this
+ * module must stay LOADABLE in a process that has no Supabase client at all -- a script, a test, a
+ * local dev server, a CI job that installed only the app's dependencies.
+ *
+ * It was required eagerly, and the canary found it: `node scripts/canary-nearby-food.mjs --plan`, which
+ * makes no request and only prints what it intends to do, could not even start, because requiring
+ * nearby-food pulled in this file which pulled in a client from the root package. A cache being
+ * unavailable should degrade to "every read is a miss", not to "the module will not load".
+ */
+function supabase() {
+  try {
+    const { getSupabaseAdmin } = require('../../enrichment/_lib/supabase-admin');
+    return getSupabaseAdmin();
+  } catch {
+    return null;
+  }
+}
 
 /** Hours a discovery search may be reused. Short enough to stay well inside Google's cache window. */
 const DEFAULT_TTL_HOURS = 6;
@@ -55,10 +72,10 @@ function buildSearchCacheKey({ scope, intent, lat, lng, radiusKm, categories }) 
  * showing them an error -- but only up to MAX_STALE_HOURS.
  */
 async function readSearchCache(cacheKey) {
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return null;
+  const client = supabase();
+  if (!client) return null;
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('place_search_cache')
     .select('payload, provider, fetched_at, cached_until')
     .eq('cache_key', cacheKey)
@@ -79,13 +96,13 @@ async function readSearchCache(cacheKey) {
 
 /** Best-effort: a cache write that fails must not fail the request it was meant to make cheaper. */
 async function writeSearchCache(cacheKey, payload, { provider, billableCalls }) {
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return false;
+  const client = supabase();
+  if (!client) return false;
 
   const now = new Date();
   const cachedUntil = new Date(now.getTime() + ttlHours() * 3_600_000);
 
-  const { error } = await supabase
+  const { error } = await client
     .from('place_search_cache')
     .upsert(
       {

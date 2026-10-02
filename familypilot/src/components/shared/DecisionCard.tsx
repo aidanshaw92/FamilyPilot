@@ -13,6 +13,7 @@ import { Venue } from '@/src/types';
 import { getMatchClassification } from '@/src/utils/family-match-classification';
 
 import { RecommendationPattern } from './RecommendationPattern';
+import { travelTimeLabel } from '@/src/utils/travel-time';
 
 interface DecisionCardProps {
   venue: Venue;
@@ -82,7 +83,7 @@ function DecisionCardComponent({
             </Text>
           ) : null}
           <Text variant="caption" color={colors.text.tertiary}>
-            {venue.category.replace('_', ' ')} · {venue.driveMinutes} min away
+            {venue.category.replace('_', ' ')} · {travelTimeLabel(venue.driveMinutes, 'estimated')}
             {venue.estimatedSpend ? ` · ${venue.estimatedSpend}` : ''}
           </Text>
           <Text variant="caption" color={colors.primary[600]} style={styles.compactCta}>

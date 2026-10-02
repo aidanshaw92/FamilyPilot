@@ -6,6 +6,7 @@ import { Button } from '@/src/components/ui/Button';
 import { Text } from '@/src/components/ui/Text';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { EatNearbyRecommendation } from '@/src/types';
+import { travelTimeWithMode } from '@/src/utils/travel-time';
 
 interface EatNearbyCompactCardProps {
   recommendation: EatNearbyRecommendation;
@@ -35,7 +36,7 @@ export function EatNearbyCompactCard({ recommendation, activityVenueId }: EatNea
           {recommendation.classification}
         </Text>
         <Text variant="bodySmall" color={colors.text.secondary}>
-          {recommendation.driveMinutes} mins drive
+          {travelTimeWithMode(recommendation.driveMinutes, 'estimated', 'drive')}
           {recommendation.estimatedFamilySpend
             ? ` · ${recommendation.estimatedFamilySpend}`
             : ''}

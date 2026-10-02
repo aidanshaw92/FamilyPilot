@@ -239,6 +239,28 @@ const EDGE_PLACES = [
   }),
   // No photograph at all: the category gradient has to carry the hero.
   edgePlace('fp-google-FIXTUREedgeNoPhoto', { name: 'No Photograph Park', photos: [], openingHours: WIDE_HOURS }),
+  // An OpenStreetMap-sourced venue. ODbL requires crediting its contributors wherever its data is
+  // shown, and three such venues are served to parents in production today, so the audit renders one.
+  edgePlace('fp-osm-FIXTUREedgeOsm', {
+    name: 'Open Data Common',
+    provider: 'osm',
+    externalId: 'osm:FIXTUREedgeOsm',
+    photos: [],
+    openingHours: WIDE_HOURS,
+  }),
+  /**
+   * No coordinates at all.
+   *
+   * The nearby-food lookup is disabled without them, and react-query reports a disabled query as
+   * pending-and-idle. A plan route that waited on `isPending` would therefore never generate for this
+   * venue. That hang is what this venue exists to catch.
+   */
+  edgePlace('fp-google-FIXTUREedgeNoCoords', {
+    name: 'No Coordinates Park',
+    latitude: undefined,
+    longitude: undefined,
+    openingHours: WIDE_HOURS,
+  }),
   // Hours with no structured periods: nobody can say whether it is open on a given date.
   edgePlace('fp-google-FIXTUREedgeNoHours', {
     name: 'Unknown Hours Museum',
@@ -248,6 +270,99 @@ const EDGE_PLACES = [
 ];
 
 const EDGE_BY_ID = new Map(EDGE_PLACES.map((place) => [place.familypilotId, place]));
+
+/**
+ * Which nearby-food state a request returns, keyed on the venue that asked.
+ *
+ * Keyed on placeId, NOT on coordinates: every `edgePlace` sits at the same 51.52,-0.12, so a
+ * coordinate discriminator put every venue in the same branch. The client already sends placeId, and
+ * it is the only thing that distinguishes one edge venue from another.
+ */
+function FOOD_SCENARIO_FOR(placeId) {
+  if (placeId === 'fp-google-FIXTUREedgeLongName') return 'outage';
+  if (placeId === 'fp-google-FIXTUREedgeNoPhoto') return 'empty';
+  return 'candidates';
+}
+
+/**
+ * Three candidates covering what the section has to render honestly: one walkable with hours and
+ * child-relevant tags, one walkable with NOTHING mapped beyond its name, and one too far to walk so
+ * only a drive is offered. None carries a rating or a photograph, because OpenStreetMap has neither.
+ */
+function FOOD_CANDIDATES(lat, lng) {
+  return [
+    {
+      familypilotId: 'fp-osm-node-9001',
+      externalId: 'osm:node/9001',
+      provider: 'osm',
+      name: 'The Mapped Kitchen',
+      category: 'restaurant',
+      latitude: lat + 0.0022,
+      longitude: lng,
+      distanceKm: 0.24,
+      cuisine: 'italian',
+      openingHours: 'Mo-Su 11:00-22:00',
+      address: '4 Fixture Lane',
+      website: null,
+      phone: null,
+      tagged: { highchair: true, changingTable: true },
+      travel: [
+        { mode: 'walk', durationMinutes: 6, source: 'estimated-distance', confidence: 'low' },
+        { mode: 'drive', durationMinutes: 2, source: 'estimated-distance', confidence: 'medium' },
+      ],
+    },
+    {
+      familypilotId: 'fp-osm-node-9002',
+      externalId: 'osm:node/9002',
+      provider: 'osm',
+      name: 'Unlisted Cafe',
+      category: 'cafe',
+      latitude: lat + 0.0035,
+      longitude: lng,
+      distanceKm: 0.39,
+      cuisine: null,
+      openingHours: null,
+      address: null,
+      website: null,
+      phone: null,
+      tagged: {},
+      travel: [
+        { mode: 'walk', durationMinutes: 9, source: 'estimated-distance', confidence: 'low' },
+        { mode: 'drive', durationMinutes: 2, source: 'estimated-distance', confidence: 'medium' },
+      ],
+    },
+    {
+      familypilotId: 'fp-osm-way-9003',
+      externalId: 'osm:way/9003',
+      provider: 'osm',
+      name: 'Far Side Grill',
+      category: 'restaurant',
+      latitude: lat + 0.019,
+      longitude: lng,
+      distanceKm: 2.1,
+      cuisine: 'burger',
+      openingHours: null,
+      address: null,
+      website: null,
+      phone: null,
+      tagged: { outdoorSeating: true },
+      travel: [{ mode: 'drive', durationMinutes: 4, source: 'estimated-distance', confidence: 'medium' }],
+    },
+  ];
+}
+
+/**
+ * Whether the search payload carries the OpenStreetMap venue as well as the ten Google ones.
+ *
+ * Off by default, because Home's composition is locked against the Figma frame and an eleventh deck
+ * card would move it. On, the list surfaces have a genuinely mixed-provider result set, which is the
+ * only way to prove in a browser that each holder is credited once and neither is credited for the
+ * other's rows -- the defect being fixed was Home crediting Google for OpenStreetMap museums.
+ */
+const SEARCH_PLACES =
+  process.env.FIXTURE_SEARCH_INCLUDES_OSM === '1'
+    ? [...PLACES, EDGE_BY_ID.get('fp-osm-FIXTUREedgeOsm')]
+    : PLACES;
 
 
 /**
@@ -380,9 +495,43 @@ function sendJson(res, status, body) {
 const server = createServer((req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
 
+  // Places to eat near an anchor. Synthetic, so the audit exercises the real UI states -- candidates,
+  // nothing mapped, and a provider outage -- without a single Overpass request. The anchor decides
+  // which state is returned, so one fixture covers all three.
+  if (url.pathname === '/api/places/search' && url.searchParams.get('intent') === 'nearby-food') {
+    const lat = Number(url.searchParams.get('lat'));
+    const lng = Number(url.searchParams.get('lng'));
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return sendJson(res, 400, { error: 'Invalid anchor coordinates', code: 'INVALID_ANCHOR' });
+    }
+    // The long-name venue stands in for the outage case, and the no-photo venue for a neighbourhood
+    // with nothing mapped, so the audit can reach every branch by navigating.
+    const scenario = FOOD_SCENARIO_FOR(url.searchParams.get('placeId'));
+    if (scenario === 'outage') {
+      return sendJson(res, 503, {
+        error: 'Restaurant lookup is unavailable just now',
+        code: 'FOOD_PROVIDER_UNAVAILABLE',
+        provider: 'osm',
+        googleCalls: 0,
+      });
+    }
+    return sendJson(res, 200, {
+      anchor: { latitude: lat, longitude: lng, placeId: url.searchParams.get('placeId') },
+      candidates: scenario === 'empty' ? [] : FOOD_CANDIDATES(lat, lng),
+      totalFound: scenario === 'empty' ? 0 : FOOD_CANDIDATES(lat, lng).length,
+      provider: 'osm',
+      googleCalls: 0,
+      overpassRequests: 0,
+      cacheState: 'hit',
+      radiusM: 1200,
+      fetchedAt: new Date().toISOString(),
+      attribution: 'osm',
+    });
+  }
+
   if (url.pathname === '/api/places/search') {
     return sendJson(res, 200, {
-      places: PLACES,
+      places: SEARCH_PLACES,
       provider: 'google',
       configuredProvider: 'google',
       intent: url.searchParams.get('intent') || 'explore',

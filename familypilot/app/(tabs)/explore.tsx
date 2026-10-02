@@ -6,6 +6,7 @@ import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import { FilterSheet } from '@/src/components/explore/FilterSheet';
 import { RestaurantCard } from '@/src/components/restaurant/RestaurantCard';
 import { DecisionCard } from '@/src/components/shared/DecisionCard';
+import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Chip, EmptyState, ErrorState, SectionHeader, SkeletonCard, Text } from '@/src/components/ui';
 import { isPilotFeatureVisible, visibleExploreCategoryIds } from '@/src/config/pilot-features';
@@ -271,6 +272,9 @@ export default function ExploreScreen() {
               ))}
             </View>
           ))}
+          <View style={styles.credits}>
+            <PlaceCredits places={editorialSections.flatMap((section) => section.venues)} />
+          </View>
         </ScrollView>
       ) : (
         <>
@@ -307,6 +311,13 @@ export default function ExploreScreen() {
               ) : (
                 <DecisionCard venue={item as Venue} variant="list" index={index} />
               )
+            }
+            ListFooterComponent={
+              <View style={styles.credits}>
+                <PlaceCredits
+                  places={isRestaurantMode ? (restaurants ?? []) : filteredVenues}
+                />
+              </View>
             }
             contentContainerStyle={[styles.listContent, { paddingBottom: tabBarClearance }]}
             showsVerticalScrollIndicator={false}
@@ -406,6 +417,12 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: spacing.screenPadding,
     paddingBottom: spacing['3xl'],
+  },
+  // The credit line sits under the last row, inside the list's own padding, so it scrolls with the
+  // results it describes rather than floating over them.
+  credits: {
+    paddingTop: spacing.sm,
+    alignItems: 'center',
   },
   editorialContent: {
     paddingHorizontal: spacing.screenPadding,

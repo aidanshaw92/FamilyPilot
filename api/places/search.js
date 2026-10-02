@@ -1,5 +1,11 @@
 const { searchWithFallback } = require('../../server/places/lib/fallback');
 const { reorderByEnrichment } = require('../../server/places/lib/places-quality');
+/**
+ * Required as a module object rather than destructured, deliberately: the property is read at call
+ * time, so the delegation is observable to a contract test. Destructuring would capture the binding at
+ * require time and make the one line that carries the OSM-only guarantee untestable.
+ */
+const nearbyFoodEndpoint = require('../../server/places/lib/nearby-food-endpoint');
 const {
   buildSearchCacheKey,
   readSearchCache,
@@ -84,6 +90,7 @@ async function searchLondonGrid(configuredProvider, intent) {
   return mergeLondonBatches(batches);
 }
 
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -93,6 +100,23 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+
+  /**
+   * Places to eat near one anchor, handled here and returned BEFORE anything that can spend.
+   *
+   * This started as its own file, which is where it belongs: a separate function cannot reach Google
+   * by accident. It is folded in because the deployment budget is twelve serverless functions and a
+   * thirteenth would have failed the deploy, so the guarantee is carried differently and the honest
+   * statement of it is this: the branch returns before `primePlacesBudget`, before the provider is
+   * chosen and before the search chain exists, and `nearby-food.js` imports no API key, no budget
+   * gate and no Google client. Nothing below this line runs for a food request.
+   *
+   * It matters that this is NOT `intent=restaurant`. That intent goes through the configured
+   * provider, which in production is Google, and `searchGoogle` bills for it. This one cannot.
+   */
+  if (req.query.intent === 'nearby-food') {
+    return nearbyFoodEndpoint.handleNearbyFoodRequest(req, res);
+  }
 
   // Loads today's shared billable total before anything can spend, so the daily cap counts what
   // every other serverless instance has already bought rather than only this one.

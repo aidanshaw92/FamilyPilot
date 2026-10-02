@@ -10,6 +10,7 @@ import { planStopFromRecord } from '@/src/services/planning/day-plan';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { ExternalPlaceRecord } from '@/src/types/places';
 import { DayItinerary, SequenceFailure } from '@/src/types/day-sequence';
+import { estimatedLeg } from '@/src/types/travel';
 
 /**
  * What happens behind the approved Create a Plan button.
@@ -75,11 +76,16 @@ describe('the generating steps describe real work', () => {
   it('names the venue and the restaurant rather than saying it is thinking', () => {
     const steps = createPlanSteps({
       venueName: 'Kentish Town City Farm',
-      meal: { place: venue({ name: 'The Moat Cafe' }), walkMinutes: 5 },
+      meal: {
+        place: venue({ name: 'The Moat Cafe' }),
+        travel: [estimatedLeg('walk', 5)],
+      },
     });
     expect(steps.map((s) => s.label)).toEqual([
       'Checking Kentish Town City Farm fits your family',
-      'Finding lunch within a 5-minute walk',
+      // "about", not "within": the 5 is a straight-line estimate, and a progress line that promises
+      // "within a 5-minute walk" makes the claim the Plan itself refuses to make.
+      'Finding lunch about a 5-minute walk away',
       'Working out travel and parking',
       'Fitting the day around your family',
     ]);

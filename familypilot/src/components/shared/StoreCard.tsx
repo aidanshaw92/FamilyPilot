@@ -7,6 +7,7 @@ import { Card } from '@/src/components/ui/Card';
 import { Text } from '@/src/components/ui/Text';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { StoreLocation } from '@/src/types';
+import { travelTimeLabel } from '@/src/utils/travel-time';
 
 const BRAND_COLORS: Record<string, string> = {
   tesco: '#00539F',
@@ -49,7 +50,7 @@ export function StoreCard({ store }: StoreCardProps) {
         <View style={styles.info}>
           <Text variant="heading3">{store.name}</Text>
           <Text variant="bodySmall" color={colors.text.secondary} style={styles.metaLine}>
-            {store.driveMinutes} mins away · {statusLine}
+            {travelTimeLabel(store.driveMinutes, 'estimated')} · {statusLine}
           </Text>
         </View>
       </View>

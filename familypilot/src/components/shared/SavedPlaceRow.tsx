@@ -11,6 +11,7 @@ import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { Venue, VenueCategory } from '@/src/types';
 import { getMatchClassification } from '@/src/utils/family-match-classification';
+import { travelTimeLabel, travelTimeSpoken } from '@/src/utils/travel-time';
 
 const CATEGORY_LABELS: Record<VenueCategory, string> = {
   park: 'Park',
@@ -56,7 +57,7 @@ export function SavedPlaceRow({ venue, itemType, onRemoved, index = 0 }: SavedPl
         onPress={() => router.push(detailPath as never)}
         style={styles.row}
         accessibilityRole="button"
-        accessibilityLabel={`${venue.name}, ${classification}, ${venue.driveMinutes} minutes away`}
+        accessibilityLabel={`${venue.name}, ${classification}, ${travelTimeSpoken(venue.driveMinutes, 'estimated')}`}
       >
         <VenueImage
           uri={venue.imageUrl}
@@ -75,7 +76,7 @@ export function SavedPlaceRow({ venue, itemType, onRemoved, index = 0 }: SavedPl
           <View style={styles.meta}>
             <FamilyMatch score={venue.familyScore.score} variant="compact" style={styles.match} />
             <Text variant="caption" color={colors.text.secondary}>
-              {venue.driveMinutes} min away
+              {travelTimeLabel(venue.driveMinutes, 'estimated')}
               {venue.estimatedSpend ? ` · Estimated ${venue.estimatedSpend}` : ''}
             </Text>
           </View>

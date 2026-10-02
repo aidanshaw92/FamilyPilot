@@ -1,0 +1,90 @@
+name: Nearby food canary
+
+# A real canary for OpenStreetMap restaurant discovery, against five real production anchor venues.
+#
+# WHY THIS IS A WORKFLOW RATHER THAN SOMETHING RUN BY HAND
+#
+# The discovery path cannot be exercised from the development sandbox: its egress policy denies
+# overpass-api.de and overpass.kumi.systems outright (403 to CONNECT), so every metric that depends on a
+# real Overpass response is unmeasurable there. A runner has open egress, so this is where the canary can
+# actually tell the truth.
+#
+# WHAT IT COSTS
+#
+# Zero Google requests, asserted rather than assumed: the script reads the billable counters before and
+# after and fails if any moved. At most five Overpass requests, one per anchor. It deliberately does NOT
+# sweep all 67 production venues -- bulk-testing public infrastructure to produce a statistic is the
+# thing the brief forbids, and five anchors chosen for geographic spread answer the question.
+#
+# WHEN IT RUNS: ON DEMAND ONLY, AND THAT IS A CORRECTION
+#
+# This began as a pull_request trigger on the discovery paths, which was wrong, and three real runs showed
+# why. Measured from GitHub's shared runner IPs, overpass-api.de is unreliable in a way that has nothing
+# to do with the change under review:
+#
+#   run 1  The National Gallery succeeded in 2088ms; the V&A timed out after 47s.
+#   run 2  The National Gallery -- the same anchor that had just succeeded -- hit the 20s deadline.
+#
+# Public Overpass rate-limits shared cloud address space heavily, which is its right: it is a free service
+# funded by donations. So a PR trigger here has two bad consequences. It makes pull requests red for a
+# reason unrelated to their diff, and it invites exactly the behaviour the brief forbids -- re-running a
+# canary against public infrastructure until it goes green.
+#
+# So this runs when someone asks for it. A canary is a deliberate measurement, not a gate.
+#
+# AND IT IS STILL NOT THE REAL VANTAGE POINT. The production environment has its own address and its own
+# standing with Overpass, so figures gathered from a runner describe the runner. The genuinely
+# representative canary runs from production; this is the closest available from CI, and the report says
+# which is which rather than presenting one as the other.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: familypilot/package-lock.json
+
+      # The ROOT package too. The discovery path's cache reaches Supabase, whose client is a root
+      # dependency, and the first canary run died at --plan without it. The cache is now reached
+      # lazily so a missing client degrades to "every read is a miss" rather than to "the module
+      # will not load" -- but installing both is still what a job exercising server code needs.
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install app dependencies
+        working-directory: familypilot
+        run: npm ci
+
+      # Printed first, so the log records what the run intends to do before it does it. A run whose plan
+      # and whose behaviour disagree is then visible rather than having to be inferred.
+      - name: What the canary will do
+        working-directory: familypilot
+        run: node scripts/canary-nearby-food.mjs --plan
+
+      # No Supabase credentials are provided on purpose. The cache metrics then read as misses, which the
+      # report states plainly; handing a CI runner the production service-role key to improve a statistic
+      # would be a poor trade.
+      #
+      # No Google key either, so even a defect that tried to reach Google could not spend. Belt as well
+      # as braces: the gate refuses in a non-production VERCEL_ENV regardless.
+      - name: Run the canary against real Overpass
+        working-directory: familypilot
+        run: node scripts/canary-nearby-food.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nearby-food-canary
+          path: docs/canary/
+          if-no-files-found: warn
