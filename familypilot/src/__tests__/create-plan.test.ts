@@ -183,7 +183,28 @@ describe('a day that cannot be built still helps', () => {
       from: { kind: 'home', familyId: 'mine' }, to: { kind: 'stop', index: 0, placeId: 'a' },
       travelMinutes: 48, limitMinutes: 30 });
     if (outcome.ok) throw new Error('expected a failure');
+    // No provenance on the failure means we do not know, and not knowing is worded as an estimate.
     expect(outcome.message).toBe('That leg is about 48 minutes, and your limit is 30.');
+  });
+
+  it('hedges a journey the matrix only estimated', async () => {
+    const outcome = await run({ reason: 'travel-infeasible', message: 'x',
+      from: { kind: 'home', familyId: 'mine' }, to: { kind: 'stop', index: 0, placeId: 'a' },
+      travelMinutes: 48, limitMinutes: 30, travelSource: 'estimated' });
+    if (outcome.ok) throw new Error('expected a failure');
+    expect(outcome.message).toBe('That leg is about 48 minutes, and your limit is 30.');
+  });
+
+  it('states a routed journey plainly, because hedging a measurement is also a lie', async () => {
+    // The direction nobody checks for. This message is what stops a plan, and a parent deciding
+    // whether to raise their limit is owed the difference between "we measured 48" and "we guessed
+    // 48". Before the leg carried its provenance, every failure said "about" regardless.
+    const outcome = await run({ reason: 'travel-infeasible', message: 'x',
+      from: { kind: 'home', familyId: 'mine' }, to: { kind: 'stop', index: 0, placeId: 'a' },
+      travelMinutes: 48, limitMinutes: 30, travelSource: 'live' });
+    if (outcome.ok) throw new Error('expected a failure');
+    expect(outcome.message).toBe('That leg is 48 minutes, and your limit is 30.');
+    expect(outcome.message).not.toContain('about');
   });
 
   it('converts the return-by clash into clock times', async () => {

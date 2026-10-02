@@ -127,3 +127,87 @@ made. Both become urgent the moment routing is attached to discovery.
   what buys it. The two are different products to a parent, not two accuracies of the same one.
 - **Section 8**: no new billable routing behaviour is proposed in this audit, and none should be
   enabled before the cost model the brief asks for is put to the owner.
+
+## What has changed since this audit, and what has not
+
+Added 2026-10-02, after `1985f92`. The audit above is left as it was written at `4c1f141`, because an
+audit that quietly updates itself stops being evidence of what was found. **Two of its findings are now
+out of date and must not be read as current:**
+
+### "Is it live in production right now? **Yes, the gate is open**" — no longer true
+
+That was the finding, and it was the point: Distance Matrix was spendable in production purely because
+nobody had set its variable. It is now closed, and closed by name rather than by a default:
+
+- `journeys` carries `requiresExplicitEnable: true`, so `describeScope` refuses an absent flag instead of
+  inheriting the master switch.
+- The project's full production environment was listed and contains no `GOOGLE_JOURNEYS_ENABLED` at all.
+- Under `VERCEL_ENV=production` with nothing set, `discovery` is ALLOWED and `journeys` is
+  `REFUSED -> PLACES_DISABLED | GOOGLE_JOURNEYS_ENABLED is not set to true`.
+- `getDriveTimes` then returns `provider: 'fallback'`, `source: 'estimated'`,
+  `fallbackReason: 'PLACES_DISABLED'` — a labelled estimate, not a broken planner.
+
+`google_places_usage` still has no `journeys` rows, across all environments and all time.
+
+### Control defect 1, "the budget counts calls, not elements" — fixed
+
+`SCOPES` now declares a `billingUnit` per scope, `billableUnitsFor` throws rather than guessing for an
+element-billed scope given no request shape, and the daily and per-window caps apply to units. The
+`journeys` gate is told `origins: 1, destinations: n`. A request carrying 25 billable elements can no
+longer consume one unit of budget, and a test asserts exactly that rather than trusting the arithmetic.
+
+### Control defect 2, "no cache" — still open, deliberately
+
+There is still no journey cache. It stays open because nothing is spending: with the gate closed there is
+no routed value to cache. Building a cache for a capability that is switched off would be work done
+against a guess about how it will be used. Section 9's design — keyed on anchor, destination and mode,
+with a retention window inside what the provider's terms allow — is the right shape when routing is
+enabled, and not before.
+
+### The honesty defect, "the venue cards are not honest about it" — fixed, and it took two passes
+
+The audit named `DecisionCard`, `SavedPlaceRow` and `RestaurantCard`. All three now route through
+`travelTimeLabel`, as do `RecommendationPattern`, `StoreCard`, `PlaceShowcaseCard` (via
+`getTravelSignal`), `EatNearbyCompactCard`, `FocusedRecommendationCard` and
+`WeatherAlternativeSection`.
+
+**A fourth surface the audit did not name survived that pass.** The Restaurant detail hero printed a bare
+`{distanceMinutes} min` twenty lines above a banner that said `about N min from <activity>` — the same
+number, stated two different ways on one screen. Neither input is routed: `driveMinutesFromActivity` comes
+from a hard-coded proximity table in `mock-restaurants.ts` and `driveMinutes` is Haversine over an assumed
+speed.
+
+**What that fourth surface is not: a live defect.** Say this plainly, because the fix is easy to overstate.
+`app/restaurant/[id].tsx` is wrapped in `DeferredPilotGate feature="explore_restaurants"`, and both
+`explore_restaurants` and `eat_nearby` are in `DEFERRED_PILOT_FEATURES`, so what renders today is
+"Restaurants coming later" and no parent has seen the bare label. That was checked by loading
+`/restaurant/restaurant-1` in the built bundle, not assumed from reading the flag list. It also means the
+corrected label **could not be render-verified**: building with `EXPO_PUBLIC_SHOW_DEFERRED_FEATURES=true`
+did not open the gate, and chasing why is a build-config question outside this brief. The evidence for this
+one is the source guard below plus `travelTimeLabel`'s own tests — not a screenshot — and it is recorded
+that way rather than counted as a verified render.
+
+Two more sites were inconsistent rather than wrong-by-omission. `restaurant-score.ts` wrote its reasons as
+`"12 minutes from <venue>"` where `family-score.ts` and `trusted-family-score.ts` both say
+`"About 12 minutes from <venue>"` for the same kind of number; it now matches. It is behind the same flag,
+so the same caveat applies. The surfaces that **are** live, and were fixed before this pass, are the ones
+on Home, Explore and Saved: `DecisionCard`, `SavedPlaceRow`, `RecommendationPattern`, `PlaceShowcaseCard`
+and `WeatherAlternativeSection`, each traced to the screen that renders it (Explore, Saved, Home via
+`RecommendationDeck`, and Venue Detail) rather than assumed to be reachable. `StoreCard` is behind
+`need_now` and `EatNearbyCompactCard` behind `eat_nearby`, so both carry the caveat too.
+`FocusedRecommendationCard` has no importer at all — it is hedged, but a component nobody renders is not
+evidence of anything, and it is left alone rather than deleted here because tidying it is not this
+brief's work.
+
+And one was wrong **in the opposite direction**, which is the direction nobody checks for:
+`create-plan.ts` worded every travel-limit failure as `"That leg is about 48 minutes"` unconditionally,
+including when the matrix leg was genuinely routed. Hedging a measurement is the same class of error as
+stating an estimate exactly. The failure now carries `travelSource` from the matrix leg, and the message is
+worded from it. `sequencer.ts` does the same for its own sentence. Both directions are mutation-tested:
+forcing the hedge on fails the routed case, forcing it off fails the estimated case.
+
+Reviewing for this by eye has now failed twice, so `src/__tests__/travel-label-honesty.test.ts` scans every
+file under `app/` and `src/components/` and fails on any travel-ish identifier interpolated straight
+against a minutes unit. It distinguishes a journey claim from a ceiling the parent typed in themselves:
+`maxDriveMinutes` echoed back on the Profile screen is their own input and claims nothing. The guard was
+verified by reintroducing the Restaurant detail line and watching it fail.
