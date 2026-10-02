@@ -288,3 +288,38 @@ describe('nobody pays Google for a restaurant', () => {
     }
   });
 });
+
+describe('the whole lookup is bounded, not just each request', () => {
+  it('gives up inside the total deadline rather than summing four timeouts', async () => {
+    // The first real canary run measured 47 seconds at one anchor: each request aborts at 15s, and the
+    // sequence is two endpoints plus two for the narrowed retry, so nothing bounded the SUM. A parent
+    // would have waited the better part of a minute on a section of a screen.
+    vi.useFakeTimers();
+    try {
+      let attempts = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          attempts += 1;
+          // Each attempt consumes its full per-request allowance.
+          await vi.advanceTimersByTimeAsync(osmFood.TOTAL_DEADLINE_MS / 2 + 1000);
+          throw Object.assign(new Error('The operation was aborted due to timeout'), {
+            name: 'TimeoutError',
+          });
+        }),
+      );
+
+      const promise = osmFood.searchOsmFood(ANCHOR);
+      await expect(promise).rejects.toThrow(/aborted|deadline/i);
+      // Two attempts consume the budget; the rest are refused before they start, rather than each
+      // waiting its own fifteen seconds.
+      expect(attempts).toBeLessThanOrEqual(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('exposes the deadline, so a caller can reason about the worst case', () => {
+    expect(osmFood.TOTAL_DEADLINE_MS).toBeLessThanOrEqual(20000);
+  });
+});

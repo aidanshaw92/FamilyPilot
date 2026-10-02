@@ -85,6 +85,19 @@ const ANCHORS = [
   },
 ];
 
+/** Straight-line kilometres, for the duplicate-proximity check only. */
+function haversineKm(a, b) {
+  const R = 6371;
+  const dLat = ((b.latitude - a.latitude) * Math.PI) / 180;
+  const dLng = ((b.longitude - a.longitude) * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((a.latitude * Math.PI) / 180) *
+      Math.cos((b.latitude * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
 /** Today's billable units per scope, from the in-process counters after priming. */
 function googleUnits() {
   const day = new Date().toISOString().slice(0, 10);
@@ -211,9 +224,37 @@ async function main() {
       withAnyChildTag: displayed.filter((c) => Object.keys(c.tagged ?? {}).length > 0).length,
       walkable: displayed.filter((c) => c.travel.some((l) => l.mode === 'walk')).length,
       anyTransitLeg: displayed.some((c) => c.travel.some((l) => l.mode === 'transit' || l.mode === 'bus')),
+      /**
+       * A duplicate is the SAME PLACE shown twice, which means same name AND close together.
+       *
+       * The first version of this counted repeated names, and the first real run failed on it at the
+       * National Gallery. That was the check being wrong, not the product: within 1.2km of Trafalgar
+       * Square there are certainly several branches of the same chain, and osm-food's own unit test
+       * asserts that two branches 300m apart must NOT be merged, because they are two real options a
+       * parent can choose between. Counting them as duplicates would have had me "fix" correct
+       * behaviour to satisfy a bad assertion.
+       *
+       * So this applies the actual dedupe contract -- same name within the 40m threshold -- and
+       * reports same-name-further-apart separately as information rather than as a failure.
+       */
       duplicateNames: (() => {
-        const names = displayed.map((c) => c.name.toLowerCase());
-        return names.length - new Set(names).size;
+        let pairs = 0;
+        for (let i = 0; i < displayed.length; i += 1) {
+          for (let j = i + 1; j < displayed.length; j += 1) {
+            if (displayed[i].name.toLowerCase() !== displayed[j].name.toLowerCase()) continue;
+            const km = haversineKm(displayed[i], displayed[j]);
+            if (km <= 0.04) pairs += 1;
+          }
+        }
+        return pairs;
+      })(),
+      sameNameDifferentPlace: (() => {
+        const byName = new Map();
+        for (const c of displayed) {
+          const key = c.name.toLowerCase();
+          byName.set(key, (byName.get(key) ?? 0) + 1);
+        }
+        return [...byName.values()].filter((n) => n > 1).length;
       })(),
       attribution: result.attribution,
       names: displayed.slice(0, 5).map((c) => c.name),
@@ -300,7 +341,13 @@ async function main() {
     ],
     ['Google billable units unchanged', googleMoved.length === 0, JSON.stringify(report.google.delta)],
     ['no transit leg invented', !transitInvented, transitInvented ? 'a transit leg appeared' : 'none'],
-    ['no duplicate restaurant displayed', duplicates === 0, `${duplicates} duplicates`],
+    [
+      'no duplicate restaurant displayed',
+      duplicates === 0,
+      `${duplicates} same-place duplicates` +
+        `; ${report.anchors.reduce((n, a) => n + (a.sameNameDifferentPlace ?? 0), 0)} chains with ` +
+        'more than one branch shown, which is correct rather than duplication',
+    ],
     ['every candidate attributed to OSM', wrongProvider.length === 0, wrongProvider.map((a) => a.provider).join(',') || 'all osm'],
     ['paid route calls are zero', report.routing.paidRouteCalls === 0, `${report.routing.paidRouteCalls}`],
     [

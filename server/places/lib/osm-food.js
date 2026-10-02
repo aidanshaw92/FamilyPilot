@@ -45,6 +45,21 @@ const MAX_ELEMENTS = 60;
 const QUERY_TIMEOUT_S = 12;
 const ABORT_MS = 15000;
 
+/**
+ * A ceiling on the WHOLE lookup, not just on each request.
+ *
+ * The first real canary run measured this: the V&A anchor spent 47 seconds before giving up. Each
+ * request aborts at 15s, and the sequence is two endpoints for the full query plus two for the narrowed
+ * retry -- so the per-request timeout bounded each attempt and nothing bounded the sum. A parent would
+ * have sat on "Looking for places to eat nearby" for the better part of a minute and then been told it
+ * failed.
+ *
+ * 20 seconds is chosen as roughly the longest a section of a screen may take before the answer stops
+ * being worth waiting for. Exceeding it is reported as a failure, which the surface already renders as
+ * "we could not check" rather than as an empty neighbourhood.
+ */
+const TOTAL_DEADLINE_MS = 20000;
+
 /** The amenity values that are somewhere a family can actually eat. */
 const FOOD_AMENITIES = ['restaurant', 'cafe', 'fast_food'];
 
@@ -75,9 +90,16 @@ function buildFoodQuery(lat, lng, radiusM, { narrow = false } = {}) {
   return `[out:json][timeout:${timeout}];(${clauses});out center ${limit};`;
 }
 
-async function postOverpass(query) {
+async function postOverpass(query, deadlineAt = Number.POSITIVE_INFINITY) {
   let lastError = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
+    // Never start an attempt that cannot finish inside the overall deadline, and never wait longer than
+    // what is left of it. Without this the per-request timeout is the only bound and four attempts can
+    // sum to a minute.
+    const remaining = deadlineAt - Date.now();
+    if (remaining <= 250) {
+      throw lastError ?? new Error('Overpass deadline exceeded before a response arrived');
+    }
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -87,7 +109,7 @@ async function postOverpass(query) {
           Accept: 'application/json',
         },
         body: new URLSearchParams({ data: query }).toString(),
-        signal: AbortSignal.timeout(ABORT_MS),
+        signal: AbortSignal.timeout(Math.min(ABORT_MS, remaining)),
       });
 
       // 429 and 504 are Overpass asking us to back off. Trying the second endpoint immediately is
@@ -230,10 +252,14 @@ async function searchOsmFood(anchor, { radiusM = DEFAULT_RADIUS_M } = {}) {
   if (pending) return pending;
 
   const work = (async () => {
+    const deadlineAt = Date.now() + TOTAL_DEADLINE_MS;
     let elements;
     let attempts = 1;
     try {
-      elements = await postOverpass(buildFoodQuery(anchor.latitude, anchor.longitude, radius));
+      elements = await postOverpass(
+        buildFoodQuery(anchor.latitude, anchor.longitude, radius),
+        deadlineAt,
+      );
     } catch (firstError) {
       // Exactly one retry, and a NARROWER query rather than the same one: if Overpass timed out or
       // asked us to back off, repeating the identical request is the wrong response.
@@ -241,6 +267,7 @@ async function searchOsmFood(anchor, { radiusM = DEFAULT_RADIUS_M } = {}) {
       try {
         elements = await postOverpass(
           buildFoodQuery(anchor.latitude, anchor.longitude, radius, { narrow: true }),
+          deadlineAt,
         );
       } catch (_secondError) {
         throw firstError;
@@ -280,4 +307,5 @@ module.exports = {
   MAX_ELEMENTS,
   OVERPASS_USER_AGENT,
   OVERPASS_ENDPOINTS,
+  TOTAL_DEADLINE_MS,
 };
