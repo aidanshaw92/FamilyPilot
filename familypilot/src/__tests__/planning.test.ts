@@ -68,9 +68,13 @@ describe('age suitability policy',()=>{
   expect(planVenue(f,[family],journeys,options,now)).not.toBeNull();
  });
 
- it('still reports the missing age range as unconfirmed',()=>{
+ it('still reports the missing age range as unconfirmed, in words a parent can read',()=>{
+  // This used to assert 'ageRecommendedFit: not confirmed' -- the matcher's internal key with a
+  // colon after it, which the Plans tab renders straight onto the screen. The fact being reported
+  // is the same; what changed is that it is now a sentence. See services/planning/unknown-facts.
   const p=planVenue(realFacts(),[family],journeys,options,now)!;
-  expect(p.unknowns).toContain('ageRecommendedFit: not confirmed');
+  expect(p.unknowns).toContain('Recommended ages are not published for this place');
+  expect(p.unknowns.join(' ')).not.toContain('ageRecommendedFit');
  });
 
  it('keeps a documented range that excludes both children — a recommendation is not a gate',()=>{

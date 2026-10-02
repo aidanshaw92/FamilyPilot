@@ -46,6 +46,11 @@ export const colors = {
   border: '#ECE9F2',
   borderLight: '#F3F1F7',
   overlay: 'rgba(10, 10, 13, 0.45)',
+  /**
+   * Behind a bottom sheet. Lighter than `overlay` because the approved design keeps the venue
+   * readable behind the sheet rather than dimming it to a backdrop.
+   */
+  sheetScrim: 'rgba(10, 10, 13, 0.42)',
   gradient: {
     heroStart: 'rgba(10, 10, 13, 0)',
     /** Mid stop so a scrim over photography ramps rather than banding. */

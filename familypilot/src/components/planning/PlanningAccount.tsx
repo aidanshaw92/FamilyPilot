@@ -7,14 +7,14 @@ import { supabase } from '@/src/services/supabase/client';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { planningApiUrl } from '@/src/services/planning/recommendations';
 import { PlanningFamily } from '@/src/services/planning/planner';
-import { PlanningData, usePlanningStore } from '@/src/stores/planning-store';
+import { PlanningBackup, usePlanningStore } from '@/src/stores/planning-store';
 import { Field, formStyles as s } from '@/src/components/ui';
 
 type Connection={id:string;pending:boolean;expiresAt:string;family:PlanningFamily|null};
 export function PlanningAccount(){
  const state=usePlanningStore();const [email,setEmail]=useState('');const [password,setPassword]=useState('');const [user,setUser]=useState<string|null>(null);
  const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);const [code,setCode]=useState('');const [invite,setInvite]=useState('');const [connections,setConnections]=useState<Connection[]>([]);
- const [restore,setRestore]=useState<PlanningData|null>(null);const mine=state.families.find(f=>f.id==='mine');
+ const [restore,setRestore]=useState<PlanningBackup|null>(null);const mine=state.families.find(f=>f.id==='mine');
  const [shareAvailability,setShareAvailability]=useState(false);const [clearConfirm,setClearConfirm]=useState(false);const [recovering,setRecovering]=useState(false);
  const [authMode,setAuthMode]=useState<'signin'|'signup'>('signin');
  useEffect(()=>{if(!supabase)return;void supabase.auth.getSession().then(({data})=>setUser(data.session?.user.id??null));const {data}=supabase.auth.onAuthStateChange((event,session)=>{setUser(session?.user.id??null);setConnections([]);setRestore(null);setInvite('');if(event==='PASSWORD_RECOVERY')setRecovering(true);});return()=>data.subscription.unsubscribe();},[]);
@@ -46,8 +46,8 @@ export function PlanningAccount(){
     <Text variant="heading3">Your account</Text>
     <Text variant="bodySmall" color={colors.text.secondary}>Signed in. Backups are private to your account. This device’s data is separate until you choose to upload or restore it.</Text>
     {recovering?<><Field label="New password" value={password} onChange={setPassword} secure/><Button label="Save new password" disabled={busy} onPress={()=>void run(async()=>{if(password.length<10)throw new Error('Use at least 10 characters.');const {error}=await supabase!.auth.updateUser({password});if(error)throw error;setPassword('');setRecovering(false);setMessage('Password updated.');})}/></>:null}
-    <Button label="Back up this device’s plans and routines" variant="outline" disabled={busy} onPress={()=>void run(async()=>{const {error}=await supabase!.from('planning_workspaces').upsert({user_id:user,data:{families:state.families,options:state.options,saved:state.saved},updated_at:new Date().toISOString()});if(error)throw error;setMessage('Private backup saved. This replaces the previous cloud backup.');})}/>
-    <Button label="Check my cloud backup" variant="ghost" disabled={busy} onPress={()=>void run(async()=>{const {data,error}=await supabase!.from('planning_workspaces').select('data').eq('user_id',user).maybeSingle();if(error)throw error;if(!data)throw new Error('No cloud backup yet.');if(!Array.isArray(data.data?.families)||!Array.isArray(data.data?.saved)||!data.data?.options)throw new Error('This backup cannot be restored.');setRestore(data.data as PlanningData);})}/>
+    <Button label="Back up this device’s plans and routines" variant="outline" disabled={busy} onPress={()=>void run(async()=>{const {error}=await supabase!.from('planning_workspaces').upsert({user_id:user,data:{families:state.families,options:state.options,saved:state.saved,savedDays:state.savedDays},updated_at:new Date().toISOString()});if(error)throw error;setMessage('Private backup saved. This replaces the previous cloud backup.');})}/>
+    <Button label="Check my cloud backup" variant="ghost" disabled={busy} onPress={()=>void run(async()=>{const {data,error}=await supabase!.from('planning_workspaces').select('data').eq('user_id',user).maybeSingle();if(error)throw error;if(!data)throw new Error('No cloud backup yet.');if(!Array.isArray(data.data?.families)||!Array.isArray(data.data?.saved)||!data.data?.options)throw new Error('This backup cannot be restored.');setRestore(data.data as PlanningBackup);})}/>
     {restore?<View style={styles.noticeBox}><Text variant="bodySmall">Restore {restore.families.length} families and {restore.saved.length} plans? This replaces planning data on this device.</Text><Button label="Replace device data with this backup" disabled={busy} onPress={()=>{state.replace(restore);setRestore(null);setMessage('Backup restored.');}}/><Button label="Keep device data" variant="ghost" onPress={()=>setRestore(null)}/></View>:null}
    </Card>
 

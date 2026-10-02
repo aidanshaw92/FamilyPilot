@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedScrollHandler,
@@ -32,14 +32,17 @@ import {
   VenueImage,
 } from '@/src/components/ui';
 import { BackButton } from '@/src/components/ui/BackButton';
+import { CreatePlanSheet } from '@/src/components/planning/CreatePlanSheet';
+import { PlanDraft, planDraftDefaults } from '@/src/services/planning/plan-draft';
 import { photoAttribution } from '@/src/services/places/place-photo-url';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { isActivityVenue } from '@/src/data/mock-restaurants';
-import { useVenue } from '@/src/hooks/use-queries';
+import { useFamilyProfile, useVenue } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
+import { localDate, usePlanningStore } from '@/src/stores/planning-store';
 import { getEnrichmentDetailTrustCopy, formatTerrainLabel, getMatchClassification } from '@/src/utils/family-match-classification';
 import { generateVenueStaticParams } from '@/src/utils/venue-routes';
 
@@ -59,6 +62,27 @@ export default function VenueScreen() {
   const scrollY = useSharedValue(0);
   const [heroIndex, setHeroIndex] = useState(0);
   const reducedMotion = useReducedMotion();
+
+  // Create a plan is the hinge of this screen, so everything it needs is read here and nothing is
+  // fetched for it: the profile and the stored planning options are already in memory.
+  const { data: profile } = useFamilyProfile();
+  const planningFamilies = usePlanningStore((state) => state.families);
+  const planningOptions = usePlanningStore((state) => state.options);
+  const setPlanningOptions = usePlanningStore((state) => state.setOptions);
+  const [planSheetOpen, setPlanSheetOpen] = useState(false);
+  const [draftOverride, setDraftOverride] = useState<PlanDraft | null>(null);
+
+  const planDefaults = useMemo(
+    () =>
+      planDraftDefaults({
+        profile,
+        planningFamilies,
+        options: planningOptions,
+        today: localDate(),
+      }),
+    [profile, planningFamilies, planningOptions],
+  );
+  const draft = draftOverride ?? planDefaults.draft;
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (e) => {
@@ -93,6 +117,26 @@ export default function VenueScreen() {
       router.replace('/(tabs)/explore' as never);
     }
   }, [router]);
+
+  // The draft is remembered as planning options so a parent who leaves to add a family and comes
+  // back does not re-answer the rows they already answered.
+  const handleCreatePlan = useCallback(
+    (next: PlanDraft) => {
+      setPlanningOptions({ date: next.date, leaveAt: next.leaveAt, visitMinutes: next.visitMinutes });
+      setPlanSheetOpen(false);
+      router.push({
+        pathname: '/plan',
+        params: {
+          venue: id ?? '',
+          date: next.date,
+          leaveAt: next.leaveAt,
+          visit: String(next.visitMinutes),
+          parties: next.partyIds.join(','),
+        },
+      } as never);
+    },
+    [id, router, setPlanningOptions],
+  );
 
   const handleDirections = useCallback(() => {
     if (!venue) return;
@@ -224,6 +268,7 @@ export default function VenueScreen() {
             ) : null}
 
             {venue.address ? <Text variant="bodySmall" style={{marginBottom:12}}>{venue.address}</Text> : null}
+            <Button label="Get directions" variant="outline" onPress={handleDirections} style={styles.directionsButton} />
             {venue.website && /^https?:\/\//.test(venue.website) ? <Button label="Official website & visitor information" variant="outline" onPress={() => void Linking.openURL(venue.website!)}/> : null}
             {venue.phone ? <Text variant="bodySmall" style={{marginVertical:12}}>Contact: {venue.phone}</Text> : null}
             <PhotoGallery photos={venue.photos} onPhotoPress={setHeroIndex} />
@@ -291,15 +336,41 @@ export default function VenueScreen() {
         </View>
       </AnimatedScrollView>
 
+      {/* Save sits beside Create a plan, and Get directions has moved into the content above.
+          Create a plan is the one action this screen exists to offer, so it is the only primary
+          button here; directions are what a parent wants once the day is decided, not instead. */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
         <Button
           label={saved ? 'Saved' : 'Save'}
           variant="outline"
-          style={styles.footerButton}
+          style={styles.saveButton}
           onPress={() => toggleSaved(venue.id, venue)}
         />
-        <Button label="Get directions" style={styles.footerButton} onPress={handleDirections} />
+        <Button
+          label="Create a plan"
+          style={styles.planButton}
+          onPress={() => setPlanSheetOpen(true)}
+          testID="venue-create-plan"
+        />
       </View>
+
+      <CreatePlanSheet
+        visible={planSheetOpen}
+        onClose={() => setPlanSheetOpen(false)}
+        venueName={venue.name}
+        draft={draft}
+        parties={planDefaults.parties}
+        onDraftChange={setDraftOverride}
+        onCreate={handleCreatePlan}
+        onAddFamily={
+          isPilotFeatureVisible('trips_tab')
+            ? () => {
+                setPlanSheetOpen(false);
+                router.push('/(tabs)/trips' as never);
+              }
+            : undefined
+        }
+      />
     </View>
   );
 }
@@ -467,7 +538,15 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.borderLight,
   },
-  footerButton: {
+  // Create a plan is the wider of the two, so the hinge of the screen reads as the main action
+  // rather than as one of a matched pair.
+  saveButton: {
     flex: 1,
+  },
+  planButton: {
+    flex: 1.6,
+  },
+  directionsButton: {
+    marginBottom: spacing.md,
   },
 });

@@ -5,6 +5,7 @@ import type {
   SequenceFailure,
   StopRole,
 } from '@/src/types/day-sequence';
+import type { MatchableVenueFacts } from '@/src/types/day-request';
 import type { MissingJourneyLeg } from '@/src/types/journey-matrix-build';
 import type { OpeningHoursSchedule } from '@/src/types/opening-hours';
 import type { VenueFamilyMetadata } from '@/src/types/places';
@@ -39,6 +40,19 @@ export interface ResolvedStop {
   isOpen?: boolean;
   enrichmentStatus?: EnrichmentStatus;
   familyMetadata?: VenueFamilyMetadata;
+  /**
+   * Facts the caller has already extracted, where it holds those rather than the metadata.
+   *
+   * The venue detail screen is the case this exists for: it carries what `extractMatchableFacts`
+   * produced for the same venue and does not keep the projected metadata that went into it. Asking
+   * the planner to rebuild the facts from metadata it would find absent turns every confirmed
+   * facility into an unknown, and a required facility that reads unknown fails the day closed —
+   * so a venue with confirmed toilets would silently yield no plan at all.
+   *
+   * Set this or `familyMetadata`, never both halves of the same venue from different sources. Both
+   * paths end at the same extractor; only where it ran differs.
+   */
+  facts?: MatchableVenueFacts;
 }
 
 export interface DayPlanOptions {

@@ -1,7 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
 import { buildJourneyMatrix } from '@/src/services/planning/journey-matrix';
-import { GenerateDayPlanDeps, generateDayPlan, resolvedStopFromRecord } from '@/src/services/planning/day-plan';
+import {
+  GenerateDayPlanDeps,
+  PlanVenueSource,
+  generateDayPlan,
+  planStopFromVenueDetail,
+  resolvedStop,
+  resolvedStopFromRecord,
+} from '@/src/services/planning/day-plan';
 import { PlanningFamily, Routine } from '@/src/services/planning/planner';
 import { homeKey, sequenceDay, stopKey } from '@/src/services/planning/sequencer';
 import { DayPlanRequest, ResolvedStop } from '@/src/types/day-plan';
@@ -603,6 +611,189 @@ describe('the record to planning-stop boundary', () => {
     );
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.plan.itinerary.stops[0].placeId).toBe('fp-google-abc');
+  });
+});
+
+describe('a stop sourced from the venue the detail screen is showing', () => {
+  /**
+   * The detail screen holds a merged `VenueDetail`, which carries `trustedFacts` and no projected
+   * metadata. If planning insisted on the metadata, every confirmed facility would arrive unknown
+   * and a required one would fail the day closed -- so a venue with confirmed toilets would quietly
+   * produce no plan at all. These cover that path, and that nothing is invented when facts are
+   * genuinely absent.
+   */
+  const confirmed = extractMatchableFacts(
+    'fp-google-detail',
+    'Whitechapel Gallery',
+    'museum',
+    // Non-zero on purpose: this is the drive from the family's home, which is not the leg the
+    // sequencer will measure.
+    24,
+    'enriched',
+    {
+      familypilotPlaceId: 'fp-google-detail',
+      enrichmentStatus: 'enriched',
+      familyFacilities: { toilets: 'yes', babyChanging: 'yes', parking: 'yes' },
+      pushchairSuitability: 'good',
+      provenance: {},
+      updatedAt: '2026-09-01',
+    },
+    true,
+  );
+
+  const detail = (over: Partial<PlanVenueSource> = {}): PlanVenueSource => ({
+    id: 'fp-google-detail',
+    name: 'Whitechapel Gallery',
+    category: 'museum',
+    latitude: 51.5159,
+    longitude: -0.0698,
+    structuredOpeningHours: WHITECHAPEL,
+    isOpen: true,
+    enrichmentStatus: 'enriched',
+    trustedFacts: confirmed,
+    ...over,
+  });
+
+  /** A family that will not accept an unknown toilet: the fail-closed case made observable. */
+  const needsToilets = (): PlanningFamily[] => [
+    { ...family('a', 51.1), required: ['toilets'] },
+  ];
+
+  const matrixFor = (placeId: string) => {
+    const legs = fullMatrix().legs;
+    legs[homeKey('a')] = { [stopKey(placeId)]: { minutes: 20, source: 'live' as const } };
+    legs[stopKey(placeId)] = { [homeKey('a')]: { minutes: 20, source: 'live' as const } };
+    return vi.fn(async () => buildOf({ matrix: { legs } })) as unknown as typeof buildJourneyMatrix;
+  };
+
+  it('renames the fields and carries the already-extracted facts across', () => {
+    expect(planStopFromVenueDetail(detail())).toEqual({
+      placeId: 'fp-google-detail',
+      name: 'Whitechapel Gallery',
+      category: 'museum',
+      latitude: 51.5159,
+      longitude: -0.0698,
+      openingHours: WHITECHAPEL,
+      isOpen: true,
+      enrichmentStatus: 'enriched',
+      facts: confirmed,
+    });
+  });
+
+  it('plans a day for a family that requires a facility the venue has confirmed', async () => {
+    const result = await generateDayPlan(
+      request({
+        anchor: resolvedStop(planStopFromVenueDetail(detail()), 'activity', 90),
+        meal: undefined,
+        secondActivity: undefined,
+        families: needsToilets(),
+      }),
+      deps({ buildMatrix: matrixFor('fp-google-detail') }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.plan.itinerary.stops[0].placeId).toBe('fp-google-detail');
+  });
+
+  it('still fails closed when the facts are genuinely absent, rather than assuming a facility', async () => {
+    const result = await generateDayPlan(
+      request({
+        anchor: resolvedStop(
+          planStopFromVenueDetail(detail({ trustedFacts: undefined })),
+          'activity',
+          90,
+        ),
+        meal: undefined,
+        secondActivity: undefined,
+        families: needsToilets(),
+      }),
+      deps({ buildMatrix: matrixFor('fp-google-detail') }),
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok || result.failure.kind !== 'sequencing-failed') throw new Error('expected a sequencing failure');
+    const failure = result.failure.failure;
+    expect(failure.reason).toBe('requirement-unmet');
+    if (failure.reason !== 'requirement-unmet') return;
+    // The day scheduled perfectly; it is suitability that failed, and nobody has confirmed the
+    // toilets rather than the venue having none.
+    expect(failure.placeId).toBe('fp-google-detail');
+    expect(failure.familyId).toBe('a');
+    expect(failure.unmet).toContainEqual({ field: 'familyFacilities.toilets', outcome: 'unknown' });
+    expect(failure.unmet.every((u) => u.outcome !== 'unsuitable')).toBe(true);
+  });
+
+  it('reports a requirement the venue genuinely fails as a failure, not as an unknown', async () => {
+    const noToilets = extractMatchableFacts(
+      'fp-google-detail',
+      'Whitechapel Gallery',
+      'museum',
+      24,
+      'enriched',
+      {
+        familypilotPlaceId: 'fp-google-detail',
+        enrichmentStatus: 'enriched',
+        familyFacilities: { toilets: 'no' },
+        provenance: {},
+        updatedAt: '2026-09-01',
+      },
+      true,
+    );
+
+    const result = await generateDayPlan(
+      request({
+        anchor: resolvedStop(planStopFromVenueDetail(detail({ trustedFacts: noToilets })), 'activity', 90),
+        meal: undefined,
+        secondActivity: undefined,
+        families: needsToilets(),
+      }),
+      deps({ buildMatrix: matrixFor('fp-google-detail') }),
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok || result.failure.kind !== 'sequencing-failed') throw new Error('expected a sequencing failure');
+    const failure = result.failure.failure;
+    if (failure.reason !== 'requirement-unmet') throw new Error(`expected requirement-unmet, got ${failure.reason}`);
+    expect(failure.unmet).toContainEqual({ field: 'familyFacilities.toilets', outcome: 'unsuitable' });
+  });
+
+  it('measures the leg the family takes, not the drive the detail screen displayed', async () => {
+    const sequence = vi.fn(sequenceDay);
+    await generateDayPlan(
+      request({
+        anchor: resolvedStop(planStopFromVenueDetail(detail()), 'activity', 90),
+        meal: undefined,
+        secondActivity: undefined,
+        families: needsToilets(),
+      }),
+      deps({ buildMatrix: matrixFor('fp-google-detail'), sequence }),
+    );
+
+    expect(confirmed.driveMinutes).toBe(24);
+    expect(sequence.mock.calls[0][0][0].facts.driveMinutes).toBe(0);
+  });
+
+  it('takes the stop\'s own identity, so a mismatched facts blob cannot rename the day', async () => {
+    const sequence = vi.fn(sequenceDay);
+    await generateDayPlan(
+      request({
+        anchor: resolvedStop(
+          planStopFromVenueDetail(detail({ id: 'fp-google-moved', name: 'Moved Gallery' })),
+          'activity',
+          90,
+        ),
+        meal: undefined,
+        secondActivity: undefined,
+        families: needsToilets(),
+      }),
+      deps({ buildMatrix: matrixFor('fp-google-moved'), sequence }),
+    );
+
+    const facts = sequence.mock.calls[0][0][0].facts;
+    expect(facts.placeId).toBe('fp-google-moved');
+    expect(facts.name).toBe('Moved Gallery');
+    // Everything claim-backed is still the venue's own: only identity came from the stop.
+    expect(facts.toilets).toBe('yes');
   });
 });
 

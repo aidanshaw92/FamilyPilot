@@ -174,6 +174,7 @@ export interface DayItinerary {
 }
 
 export type SequenceFailureReason =
+  | 'requirement-unmet'
   | 'venue-closed'
   | 'venue-closes-during-visit'
   | 'routine-conflict'
@@ -189,7 +190,31 @@ export type SequenceFailureReason =
  * Here the reason survives, along with which stop and — for the most fixable case — the time the
  * venue shuts.
  */
+/** A required constraint that stood in the way, and whether the venue failed it or nobody knows. */
+export interface UnmetRequirement {
+  /** The matcher's own field name, e.g. `babyChanging`, `journey`, `ageAdmission`. */
+  field: string;
+  /** `unsuitable` is a fact that fails; `unknown` is a fact nobody has confirmed. */
+  outcome: 'unsuitable' | 'unknown';
+}
+
 export type SequenceFailure =
+  | {
+      /**
+       * The day schedules perfectly and the venue still does not suit the family.
+       *
+       * Its own reason rather than a `no-feasible-sequence`, because nothing about the ordering or
+       * the times would fix it and a parent needs to be told which requirement it was. An unmet
+       * requirement that nobody has confirmed is reported as unconfirmed, never as an absence.
+       */
+      reason: 'requirement-unmet';
+      message: string;
+      stopIndex: number;
+      placeId: string;
+      familyId: string;
+      familyLabel: string;
+      unmet: UnmetRequirement[];
+    }
   | {
       reason: 'venue-closed';
       message: string;

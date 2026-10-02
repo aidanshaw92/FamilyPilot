@@ -17,6 +17,8 @@ import {
   travelRoutineConflict,
 } from './routine-windows';
 
+import { describeUnknownFact } from './unknown-facts';
+
 export type { Routine } from './routine-windows';
 export interface PlanningFamily {
   id: string; label: string; area: string; latitude: number; longitude: number;
@@ -108,7 +110,7 @@ export function planVenue(facts: MatchableVenueFacts, families: PlanningFamily[]
     if (!fits) continue;
     const drives = families.map(f => journeys[f.id].outbound);
     const fairnessGap = Math.max(...drives) - Math.min(...drives);
-    const unknowns = [...new Set(evaluations.flatMap(e => e!.evaluations.filter(v => v.outcome === 'unknown').map(v => `${v.field}: not confirmed`)))];
+    const unknowns = [...new Set(evaluations.flatMap(e => e!.evaluations.filter(v => v.outcome === 'unknown').map(v => describeUnknownFact(v.field))))];
     // Required facilities are genuinely a gate, so "checked" is accurate for them. Recommended
     // ages are not — the plan no longer turns on them — so this reports whether the place
     // publishes a suggestion, and never implies it was enforced.

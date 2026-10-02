@@ -33,9 +33,19 @@
  * Usage: node scripts/serve-places-fixture.mjs [port] [distDir]
  */
 import { createServer } from 'node:http';
+import { createRequire } from 'node:module';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
 import { deflateSync } from 'node:zlib';
+
+/**
+ * The same distance estimator the deployed journey endpoint falls back to when Google is disabled.
+ * Reused rather than reimplemented so a day planned against this fixture is timed by the arithmetic
+ * production uses, and so nothing here needs a Distance Matrix call (each one bills per element).
+ */
+const { estimateDriveMinutes } = createRequire(import.meta.url)(
+  '../../server/context/lib/geo-utils.js',
+);
 
 const PORT = Number(process.argv[2] || 4173);
 const DIST = resolve(process.argv[3] || join(process.cwd(), 'dist'));
@@ -295,6 +305,70 @@ const server = createServer((req, res) => {
       'Content-Length': image.length,
     });
     return res.end(image);
+  }
+
+  // The journey endpoint, estimated from distance. A plan needs travel times for every leg, and
+  // without this the matrix reports every leg as unobtainable and no day can be built at all.
+  if (url.pathname === '/api/context/journey') {
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS' });
+      return res.end();
+    }
+    const chunks = [];
+    req.on('data', (chunk) => chunks.push(chunk));
+    req.on('end', () => {
+      let body = {};
+      try {
+        body = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
+      } catch {
+        return sendJson(res, 400, { error: 'Invalid JSON body' });
+      }
+      const origin = body.origin ?? {};
+      if (!Number.isFinite(origin.latitude) || !Number.isFinite(origin.longitude)) {
+        return sendJson(res, 400, { error: 'Invalid origin coordinates' });
+      }
+      const destinations = Array.isArray(body.destinations) ? body.destinations : [];
+      return sendJson(res, 200, {
+        journeys: destinations.map((destination) => ({
+          placeId: destination.placeId,
+          driveMinutes: estimateDriveMinutes(
+            origin.latitude,
+            origin.longitude,
+            destination.latitude,
+            destination.longitude,
+          ),
+          // Labelled for what it is. The Plan screen says "Estimated from distance" because of this.
+          source: 'estimated',
+        })),
+        provider: 'fallback',
+        source: 'estimated',
+        fetchedAt: new Date().toISOString(),
+      });
+    });
+    return undefined;
+  }
+
+  // Weather, so the console is not full of 404s that have nothing to do with what is being checked.
+  // `fetchLiveWeatherSafe` already swallows a failure, which is exactly why the noise was misleading.
+  if (url.pathname === '/api/context/weather') {
+    return sendJson(res, 200, {
+      condition: 'cloudy',
+      temperature: 14,
+      description: 'Synthetic fixture weather',
+      source: 'estimated',
+      provider: 'fixture',
+      fetchedAt: new Date().toISOString(),
+      coordinates: {
+        latitude: Number(url.searchParams.get('lat')),
+        longitude: Number(url.searchParams.get('lng')),
+      },
+    });
+  }
+
+  // The venue trust panel asks for visit feedback. Unserved, it logged a 404 that looked like a
+  // defect in whatever screen was being checked; an empty answer is the truth for a synthetic venue.
+  if (url.pathname === '/api/planning/feedback') {
+    return sendJson(res, 200, { fields: [], questions: [] });
   }
 
   if (url.pathname === '/api/places/status') {

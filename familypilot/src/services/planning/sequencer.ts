@@ -19,6 +19,7 @@ import { isOpenOn } from '@/src/utils/opening-hours';
 
 import { PlanningFamily, PlanningOptions, familyRequest } from './planner';
 import { compareItineraries, mostRelevantFailure } from './sequence-ranking';
+import { describeUnknownFact } from './unknown-facts';
 import {
   RoutineWindow,
   TimeSpan,
@@ -406,16 +407,32 @@ function tryOrder(
           familyRequest(family, options.environment),
         );
         if (!match.eligible) {
+          // Which required constraints failed, and whether each failed on a fact or on the absence
+          // of one. Collapsing the two would let "nobody has checked" be reported as "it has none".
+          const unmet = match.evaluations
+            .filter(
+              (evaluation) =>
+                evaluation.strength === 'required' &&
+                (evaluation.outcome === 'unsuitable' || evaluation.outcome === 'unknown'),
+            )
+            .map((evaluation) => ({
+              field: evaluation.field,
+              outcome: evaluation.outcome as 'unsuitable' | 'unknown',
+            }));
           ineligible = {
-            reason: 'no-feasible-sequence',
+            reason: 'requirement-unmet',
             message: `${request.name} does not meet what ${family.label} requires.`,
-            attempts: 1,
+            stopIndex: i,
+            placeId: request.placeId,
+            familyId: family.id,
+            familyLabel: family.label,
+            unmet,
           };
           break;
         }
         match.evaluations
           .filter((evaluation) => evaluation.outcome === 'unknown')
-          .forEach((evaluation) => factUnknowns.add(`${evaluation.field}: not confirmed`));
+          .forEach((evaluation) => factUnknowns.add(describeUnknownFact(evaluation.field)));
       }
     }
     if (ineligible) {
@@ -548,13 +565,25 @@ export function sequenceDay(
     return { ok: true, itinerary: best };
   }
 
+  const nearest = mostRelevantFailure(failures, anchor.placeId);
+
+  // Suitability is reported directly rather than wrapped. An unmet requirement is only ever reached
+  // once a complete schedule exists for that attempt, and what it names -- a facility, an age
+  // policy, the kind of place -- does not depend on the order of the stops or the time of day. So
+  // "no arrangement of these stops fits" would be untrue, and would leave the reason reachable only
+  // by a caller that remembers to unwrap `nearest`. Travel beyond a family's limit is caught earlier
+  // as `travel-infeasible`, so it never arrives here as an order-dependent requirement.
+  if (nearest?.reason === 'requirement-unmet') {
+    return { ok: false, failure: nearest };
+  }
+
   return {
     ok: false,
     failure: {
       reason: 'no-feasible-sequence',
       message: 'No arrangement of these stops fits the day you described.',
       attempts: orders.length,
-      nearest: mostRelevantFailure(failures, anchor.placeId),
+      nearest,
     },
   };
 }

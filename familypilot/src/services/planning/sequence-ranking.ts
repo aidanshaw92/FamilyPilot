@@ -36,6 +36,10 @@ export function compareItineraries(a: DayItinerary, b: DayItinerary): number {
  * ever scheduled.
  */
 const STAGE_ORDER: SequenceFailureReason[] = [
+  // Furthest of all: every stop was scheduled and every opening checked, and only suitability
+  // failed. It is also the one blocker no reordering can fix, so it outranks the rest even when
+  // another ordering failed later in wall-clock terms.
+  'requirement-unmet',
   'routine-conflict',
   'return-by-exceeded',
   'venue-closes-during-visit',
