@@ -248,7 +248,7 @@ describe('ceilings bound a runaway loop', () => {
     budget.assertPlacesAllowed({ scope: 'refresh', reason: 'cron' });
     budget.assertPlacesAllowed({ scope: 'refresh', reason: 'cron' });
     expect(() => budget.assertPlacesAllowed({ scope: 'refresh', reason: 'cron' })).toThrow(
-      /calls already made today/,
+      /billable units already used today/,
     );
   });
 
@@ -262,11 +262,15 @@ describe('ceilings bound a runaway loop', () => {
     expect(() => budget.assertPlacesAllowed({ scope: 'details', reason: 'parent' })).not.toThrow();
   });
 
-  it('reports the ceilings it is enforcing', async () => {
+  it('reports the ceilings it is enforcing, in the units it enforces them in', async () => {
     const budget = await loadBudget();
     const snapshot = budget.placesBudgetSnapshot();
-    expect(snapshot.maxCallsPerDay).toBeGreaterThan(0);
-    expect(snapshot.maxCallsPerWindow).toBeGreaterThan(0);
+    // Units, not calls: Distance Matrix bills per origin-destination element, so one request can
+    // consume many. Reporting these as calls was the confusion the budget fix removed.
+    expect(snapshot.maxUnitsPerDay).toBeGreaterThan(0);
+    expect(snapshot.maxUnitsPerWindow).toBeGreaterThan(0);
+    expect(snapshot.billingUnits.journeys).toBe('element');
+    expect(snapshot.billingUnits.discovery).toBe('call');
     expect(snapshot.testRuntime).toBe(true);
   });
 });
@@ -572,7 +576,7 @@ describe('the daily cap counts what other instances have spent', () => {
     expect(primed).toBe(true);
 
     expect(() => budget.assertPlacesAllowed({ scope: 'discovery', reason: 'london_grid' })).toThrow(
-      /calls already made today/,
+      /billable units already used today/,
     );
   });
 
@@ -591,7 +595,7 @@ describe('the daily cap counts what other instances have spent', () => {
     }
     await budget.primePlacesBudget({ client: usageClient([{ scope: 'discovery', calls: 0 }]) });
     expect(() => budget.assertPlacesAllowed({ scope: 'discovery', reason: 'london_grid' })).toThrow(
-      /calls already made today/,
+      /billable units already used today/,
     );
   });
 
@@ -624,7 +628,7 @@ describe('the daily cap counts what other instances have spent', () => {
     // The accrued count survived, so the cap still bites after one more call.
     budget.assertPlacesAllowed({ scope: 'discovery', reason: 'london_grid' });
     expect(() => budget.assertPlacesAllowed({ scope: 'discovery', reason: 'london_grid' })).toThrow(
-      /calls already made today/,
+      /billable units already used today/,
     );
 
     // The failure was not recorded as a successful prime, so the next call reads again rather than

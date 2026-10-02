@@ -7,8 +7,12 @@ const {
 
 /**
  * Distance Matrix bills per origin-destination ELEMENT, not per request, so one call here is up to
- * 25 billable units. The cap was already in place; what was missing is that nothing stopped the
- * call being made at all from a public unauthenticated endpoint.
+ * 25 billable units.
+ *
+ * Two things were missing and are now in place: nothing stopped the call being made at all from a
+ * public unauthenticated endpoint, and the budget counted REQUESTS, so this cap of 25 destinations
+ * consumed a single unit of a 2,000-unit daily ceiling. The gate is told origins and destinations
+ * below, and the ceiling now applies to elements.
  */
 const MAX_DESTINATIONS = 25;
 
@@ -108,6 +112,11 @@ async function getDriveTimes(origin, destinations) {
       scope: 'journeys',
       reason: 'drive_times',
       subject: `${validDestinations.length} destinations`,
+      // Distance Matrix bills per origin-destination element, so the budget is told the SHAPE of the
+      // request rather than the fact that one was made. One origin here, by construction.
+      origins: 1,
+      destinations: validDestinations.length,
+      routeMode: 'driving',
     });
     const journeys = await fetchGoogleDistanceMatrix(origin, validDestinations, apiKey);
     const source = journeys.some((journey) => journey.source === 'live') ? 'live' : 'estimated';

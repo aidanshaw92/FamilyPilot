@@ -113,8 +113,11 @@ made. Both become urgent the moment routing is attached to discovery.
   honestly and for free, provided it is labelled as an estimate. Public transport cannot be
   estimated from distance in any defensible way — a straight line says nothing about whether a bus
   runs — so it needs either a real provider or an explicit unknown state.
-- **Section 7's own question, "is Google Distance Matrix required?"**: for driving, no. The
-  straight-line estimator already produces a number the product presents honestly, and it costs
-  nothing. Distance Matrix buys traffic-aware accuracy on the Plan screen's legs.
+- **Section 7's own question, "is Google Distance Matrix required?"**: required for *routed* driving,
+  yes. There is no free routed-driving capability here and this audit should not be read as saying
+  there is. What exists without Distance Matrix is straight-line distance turned into estimated
+  minutes by an assumed average speed: a legitimate fallback, and the only honest presentation of it
+  is `🚗 ~8 min estimated`. A routed `🚗 8 min` requires a route provider, and Distance Matrix is
+  what buys it. The two are different products to a parent, not two accuracies of the same one.
 - **Section 8**: no new billable routing behaviour is proposed in this audit, and none should be
   enabled before the cost model the brief asks for is put to the owner.

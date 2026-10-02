@@ -29,25 +29,43 @@
  * venue has no photos", and it never silently retries against a different billable endpoint.
  */
 
-/** Scopes map one-to-one onto the Google SKU families this codebase can bill. */
+/**
+ * Scopes map one-to-one onto the Google SKU families this codebase can bill.
+ *
+ * `billingUnit` is load-bearing, not documentation. Every SKU here bills per REQUEST except Distance
+ * Matrix, which bills per origin-destination ELEMENT: one HTTP call with one origin and 25
+ * destinations is 25 billable units. The budget counted calls, so the journeys scope could have passed
+ * 50,000 billable elements while its counter read its 2,000 limit. The unit is therefore declared per
+ * scope and the caps apply to units.
+ *
+ * `requiresExplicitEnable` is the fail-closed marker. For most scopes an unset flag inherits the
+ * master switch, which is the right default for a capability already in daily use. Distance Matrix has
+ * never been called in production, and a paid routing capability that nobody has used should not be
+ * one unset variable away from spending: it must be asked for by name.
+ */
 const SCOPES = {
   /** places:searchNearby — the fan-out path. One London-wide search is nine of these. */
-  discovery: { env: 'GOOGLE_PLACES_DISCOVERY_ENABLED', sku: 'nearby_search' },
+  discovery: { env: 'GOOGLE_PLACES_DISCOVERY_ENABLED', sku: 'nearby_search', billingUnit: 'call' },
   /** GET /v1/places/{id} — Place Details. */
-  details: { env: 'GOOGLE_PLACES_DETAILS_ENABLED', sku: 'place_details' },
+  details: { env: 'GOOGLE_PLACES_DETAILS_ENABLED', sku: 'place_details', billingUnit: 'call' },
   /** GET /v1/{photo}/media — Place Photos. */
-  photos: { env: 'GOOGLE_PLACES_PHOTOS_ENABLED', sku: 'place_photos' },
+  photos: { env: 'GOOGLE_PLACES_PHOTOS_ENABLED', sku: 'place_photos', billingUnit: 'call' },
   /** Background refresh/enrichment, which buys Place Details on a schedule. */
-  refresh: { env: 'GOOGLE_PLACES_REFRESH_ENABLED', sku: 'place_details' },
+  refresh: { env: 'GOOGLE_PLACES_REFRESH_ENABLED', sku: 'place_details', billingUnit: 'call' },
   /** The /api/places/status reachability probe, which used to bill a Nearby Search per GET. */
-  probe: { env: 'GOOGLE_PLACES_PROBE_ENABLED', sku: 'nearby_search' },
+  probe: { env: 'GOOGLE_PLACES_PROBE_ENABLED', sku: 'nearby_search', billingUnit: 'call' },
   /**
    * Geocoding and Distance Matrix are different Google APIs, but the same billing account and the
    * same exposure: both are reached from public unauthenticated endpoints. One gate covers them so
    * a single switch really does stop all Google spend, rather than stopping most of it.
    */
-  geocoding: { env: 'GOOGLE_GEOCODING_ENABLED', sku: 'geocoding' },
-  journeys: { env: 'GOOGLE_JOURNEYS_ENABLED', sku: 'distance_matrix' },
+  geocoding: { env: 'GOOGLE_GEOCODING_ENABLED', sku: 'geocoding', billingUnit: 'call' },
+  journeys: {
+    env: 'GOOGLE_JOURNEYS_ENABLED',
+    sku: 'distance_matrix',
+    billingUnit: 'element',
+    requiresExplicitEnable: true,
+  },
 };
 
 const DEFAULT_MAX_CALLS_PER_DAY = 2000;
@@ -136,7 +154,51 @@ function describeScope(scope) {
   const scoped = envFlag(config.env);
   if (scoped === false) return { allowed: false, reason: `${config.env}=false` };
 
+  /**
+   * Fail closed where the scope says so.
+   *
+   * Every other scope treats an unset flag as "inherit the master switch", which is right for a
+   * capability already in daily use. Distance Matrix is different: it has never been called in
+   * production, and the audit found it was live purely because nobody had set its variable. A paid
+   * routing capability nobody has used must not be one unset variable away from spending, so an unset
+   * flag here is a refusal, not an inheritance. The estimated-journey fallback is unaffected -- it is
+   * not a Google call and never passes through this gate.
+   */
+  if (config.requiresExplicitEnable && scoped !== true) {
+    return {
+      allowed: false,
+      reason: `${config.env} is not set to true; this scope bills per element and must be enabled by name`,
+    };
+  }
+
   return { allowed: true, reason: scoped === true ? `${config.env}=true` : 'GOOGLE_PLACES_ENABLED' };
+}
+
+/**
+ * How many billable units one request of this shape consumes.
+ *
+ * Per-call SKUs are always 1. Distance Matrix is origins x destinations, which is the whole point of
+ * this function existing: the number the caps apply to is NOT the number of HTTP requests.
+ *
+ * Deliberately strict. An element-billed scope that is given no shape to measure throws rather than
+ * defaulting to 1, because defaulting to 1 is exactly the defect being fixed -- it would let 25
+ * billable elements pass as a single unit of budget, silently.
+ */
+function billableUnitsFor(scope, { units, origins, destinations } = {}) {
+  const config = SCOPES[scope];
+  if (!config) throw new Error(`Unknown places scope "${scope}"`);
+  if (config.billingUnit !== 'element') return 1;
+
+  if (Number.isFinite(units) && units > 0) return Math.ceil(units);
+
+  const o = Number(origins);
+  const d = Number(destinations);
+  if (Number.isFinite(o) && Number.isFinite(d) && o > 0 && d > 0) return Math.ceil(o * d);
+
+  throw new Error(
+    `Scope "${scope}" bills per element, so it needs units, or origins and destinations. ` +
+      'Defaulting to one unit is the defect this check exists to prevent.',
+  );
 }
 
 /**
@@ -174,7 +236,15 @@ function dayKey(scope) {
   return `${today()}:${scope}`;
 }
 
-function checkBudget(scope) {
+/**
+ * The caps apply to BILLABLE UNITS, and a request is refused if it would cross a cap, not merely if
+ * the cap is already crossed.
+ *
+ * That second part matters for an element-billed scope: `used >= maxDay` would have waved through a
+ * 25-element request sitting on 1,999 of 2,000, overshooting by 24. Checking `used + units > maxDay`
+ * is what makes the number a ceiling rather than a trigger.
+ */
+function checkBudget(scope, units = 1) {
   const now = Date.now();
   if (now - windowStartedAt >= WINDOW_MS) {
     windowStartedAt = now;
@@ -182,27 +252,29 @@ function checkBudget(scope) {
   }
 
   const maxWindow = numericEnv('GOOGLE_PLACES_MAX_CALLS_PER_WINDOW', DEFAULT_MAX_CALLS_PER_WINDOW);
-  if (windowCalls >= maxWindow) {
+  if (windowCalls + units > maxWindow) {
     throw new PlacesBudgetExceededError(
       scope,
-      `${windowCalls} calls already made in the last ${WINDOW_MS / 1000}s (limit ${maxWindow})`,
+      `${windowCalls} billable units already used in the last ${WINDOW_MS / 1000}s; ` +
+        `this request needs ${units} more (limit ${maxWindow})`,
     );
   }
 
   const maxDay = numericEnv('GOOGLE_PLACES_MAX_CALLS_PER_DAY', DEFAULT_MAX_CALLS_PER_DAY);
   const used = dayCounts.get(dayKey(scope)) || 0;
-  if (used >= maxDay) {
+  if (used + units > maxDay) {
     throw new PlacesBudgetExceededError(
       scope,
-      `${used} calls already made today for this scope in this process (limit ${maxDay})`,
+      `${used} billable units already used today for this scope in this process; ` +
+        `this request needs ${units} more (limit ${maxDay})`,
     );
   }
 }
 
-function countCall(scope) {
-  windowCalls += 1;
+function countCall(scope, units = 1) {
+  windowCalls += units;
   const key = dayKey(scope);
-  dayCounts.set(key, (dayCounts.get(key) || 0) + 1);
+  dayCounts.set(key, (dayCounts.get(key) || 0) + units);
 }
 
 // --- the daily cap across instances ---------------------------------------------------------------
@@ -287,7 +359,7 @@ async function primePlacesBudget(options = {}) {
 }
 
 /** Fire-and-forget. Never awaited on a request path, and never allowed to reject. */
-function persistCall(scope, sku) {
+function persistCall(scope, sku, units = 1) {
   const supabase = usageRecorder();
   if (!supabase) return;
   try {
@@ -295,7 +367,9 @@ function persistCall(scope, sku) {
       p_sku: sku,
       p_scope: scope,
       p_environment: environmentName(),
-      p_calls: 1,
+      // Billable UNITS, not requests. The stored figure is what a bill will be compared against, so
+      // recording 1 for a 25-element Distance Matrix call would make the reconciliation wrong by 24x.
+      p_calls: units,
     });
     if (result && typeof result.then === 'function') {
       result.then(
@@ -316,13 +390,24 @@ function persistCall(scope, sku) {
  * for some Google endpoints) or any header.
  */
 function logBillableCall(entry) {
+  const config = SCOPES[entry.scope] || {};
   const line = {
     tag: 'google_places_billable',
+    provider: 'google',
     sku: entry.sku,
     scope: entry.scope,
     reason: entry.reason,
     subject: entry.subject || null,
     cache: entry.cache || 'miss',
+    // What was actually charged, and the shape that produced it, so a bill can be reconciled against
+    // these lines without re-deriving anything.
+    billingUnit: config.billingUnit || 'call',
+    requestCount: 1,
+    originCount: Number.isFinite(entry.origins) ? entry.origins : null,
+    destinationCount: Number.isFinite(entry.destinations) ? entry.destinations : null,
+    billedElements: entry.units ?? 1,
+    routeMode: entry.routeMode || null,
+    timestamp: new Date().toISOString(),
     environment: environmentName(),
     executionId: process.env.VERCEL_REQUEST_ID || process.env.AWS_LAMBDA_LOG_STREAM_NAME || null,
     jobId: entry.jobId || null,
@@ -359,23 +444,67 @@ function logBlockedCall(scope, reason, detail) {
  *   attribution log; `subject` is the venue or search it is for. An unknown scope is refused.
  * @returns {void}
  */
-function assertPlacesAllowed({ scope, reason, subject, jobId }) {
+/**
+ * The one gate every billable Google call passes through.
+ *
+ * `origins` and `destinations` (or an explicit `units`) are REQUIRED for a scope that bills per
+ * element. Omitting them throws rather than assuming one unit, because assuming one unit is the defect
+ * this signature exists to prevent: a 25-element Distance Matrix request would otherwise consume a
+ * single unit of a 2,000-unit daily cap.
+ *
+ * @param {object} args
+ * @param {string} args.scope
+ * @param {string} args.reason
+ * @param {string} [args.subject]
+ * @param {string} [args.jobId]
+ * @param {number} [args.units] Explicit billable units, if the caller has already computed them.
+ * @param {number} [args.origins] Origin count, for a matrix-shaped request.
+ * @param {number} [args.destinations] Destination count, for a matrix-shaped request.
+ * @param {string} [args.routeMode] 'driving' | 'walking' | 'transit' | ... for a routing scope.
+ * @returns {{ units: number, sku: string, billingUnit: string }} what was actually charged.
+ */
+function assertPlacesAllowed({
+  scope,
+  reason,
+  subject,
+  jobId,
+  units,
+  origins,
+  destinations,
+  routeMode,
+}) {
   const verdict = describeScope(scope);
   if (!verdict.allowed) {
     logBlockedCall(scope, reason, verdict.reason);
     throw new PlacesDisabledError(scope, verdict.reason);
   }
 
+  // Computed BEFORE the budget check, so a malformed element-billed request is refused outright rather
+  // than slipping through on a default of one.
+  const billableUnits = billableUnitsFor(scope, { units, origins, destinations });
+
   try {
-    checkBudget(scope);
+    checkBudget(scope, billableUnits);
   } catch (error) {
     logBlockedCall(scope, reason, error.detail || error.message);
     throw error;
   }
 
-  countCall(scope);
-  logBillableCall({ scope, sku: SCOPES[scope].sku, reason, subject, jobId });
-  persistCall(scope, SCOPES[scope].sku);
+  countCall(scope, billableUnits);
+  logBillableCall({
+    scope,
+    sku: SCOPES[scope].sku,
+    reason,
+    subject,
+    jobId,
+    units: billableUnits,
+    origins,
+    destinations,
+    routeMode,
+  });
+  persistCall(scope, SCOPES[scope].sku, billableUnits);
+
+  return { units: billableUnits, sku: SCOPES[scope].sku, billingUnit: SCOPES[scope].billingUnit };
 }
 
 // --- in-flight coalescing -----------------------------------------------------------------------
@@ -421,9 +550,18 @@ function placesBudgetSnapshot() {
     scopes: Object.fromEntries(
       Object.keys(SCOPES).map((scope) => [scope, describeScope(scope)]),
     ),
-    windowCalls,
-    maxCallsPerWindow: numericEnv('GOOGLE_PLACES_MAX_CALLS_PER_WINDOW', DEFAULT_MAX_CALLS_PER_WINDOW),
-    maxCallsPerDay: numericEnv('GOOGLE_PLACES_MAX_CALLS_PER_DAY', DEFAULT_MAX_CALLS_PER_DAY),
+    /**
+     * Named units, because that is what these now count. The environment variables keep their
+     * CALLS names for compatibility with what is already set in production, but for an
+     * element-billed scope one request can consume many of them -- so reporting them as calls
+     * would be the same confusion the budget fix removed.
+     */
+    windowUnits: windowCalls,
+    maxUnitsPerWindow: numericEnv('GOOGLE_PLACES_MAX_CALLS_PER_WINDOW', DEFAULT_MAX_CALLS_PER_WINDOW),
+    maxUnitsPerDay: numericEnv('GOOGLE_PLACES_MAX_CALLS_PER_DAY', DEFAULT_MAX_CALLS_PER_DAY),
+    billingUnits: Object.fromEntries(
+      Object.entries(SCOPES).map(([scope, config]) => [scope, config.billingUnit]),
+    ),
     today: Object.fromEntries([...dayCounts.entries()].filter(([key]) => key.startsWith(today()))),
   };
 }
@@ -433,6 +571,7 @@ module.exports = {
   PlacesDisabledError,
   PlacesBudgetExceededError,
   assertPlacesAllowed,
+  billableUnitsFor,
   primePlacesBudget,
   isPlacesEnabled,
   describeScope,
