@@ -345,7 +345,7 @@ const SANDBOX_CHROMIUM = '/opt/pw-browsers/chromium';
  * unmet-requirement screen more often than the plan. What it says is the difference between a dead
  * end and something they can act on, so it is checked rather than assumed.
  */
-async function runFailurePaths(browser, viewport, profileOverrides, label, expectations) {
+async function runFailurePaths(browser, viewport, profileOverrides, label, expectations, options = {}) {
   const dir = join(OUT, 'failures');
   mkdirSync(dir, { recursive: true });
   const context = await browser.newContext({
@@ -369,9 +369,21 @@ async function runFailurePaths(browser, viewport, profileOverrides, label, expec
     },
   );
 
+  if (options.planningState) {
+    await page.addInitScript(
+      ({ key, value }) => window.localStorage.setItem(key, value),
+      { key: 'familypilot-planning-v1', value: JSON.stringify({ state: options.planningState, version: 0 }) },
+    );
+  }
+
   const venueId = await firstVenueId(page, label);
   await page.getByTestId('venue-create-plan').click();
   await page.waitForTimeout(800);
+  // A second household has to be chosen explicitly; the sheet selects only the first by default.
+  for (const chip of options.chooseParties ?? []) {
+    await page.getByRole('button', { name: chip, exact: true }).click().catch(() => {});
+  }
+  await page.waitForTimeout(300);
   await page.getByTestId('create-plan-submit').click().catch(() => {});
   await page.waitForTimeout(5200);
   await page.screenshot({ path: join(dir, `${label}.png`) });
@@ -412,6 +424,32 @@ try {
     ['does not claim the venue has none', (text) => !/does not have baby changing/.test(text)],
     ['offers something the parent can change', (text) => text.includes('WHAT WOULD HELP')],
   ]);
+
+  // A day that succeeds for one household while another was dropped must say so. A plan that
+  // quietly covers fewer people than were chosen is a wrong answer wearing the shape of a right one.
+  await runFailurePaths(
+    browser,
+    reference,
+    {},
+    'party-dropped',
+    [
+      ['the plan still renders for the household that could be planned for', (text) => text.includes('Save this plan')],
+      ['the dropped household is named on the finished plan, not only on a failure', (text) =>
+        /A family you chose .* so this day does not include them\./.test(text)],
+    ],
+    {
+      planningState: {
+        families: [
+          { id: 'theirs', label: 'The Hills', area: '', latitude: null, longitude: null, ages: [5],
+            maxDriveMinutes: 30, budgetTier: 'moderate', pushchair: false, required: [], routines: [] },
+        ],
+        options: { date: '', leaveAt: '09:00', returnBy: '', visitMinutes: 90, bufferMinutes: 15, environment: 'either' },
+        saved: [],
+        savedDays: [],
+      },
+      chooseParties: ['The Hills'],
+    },
+  );
 
   // A household with nowhere to leave from must not be planned for from a default address.
   await runFailurePaths(

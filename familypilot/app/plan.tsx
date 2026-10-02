@@ -16,6 +16,7 @@ import {
   createPlanSteps,
 } from '@/src/services/planning/create-plan';
 import { planStopFromVenueDetail } from '@/src/services/planning/day-plan';
+import { planDraftFromParams } from '@/src/services/planning/plan-draft';
 import { resolvePlanParties } from '@/src/services/planning/plan-parties';
 import { PlanViewModel, PlanViewModelInput } from '@/src/services/planning/plan-view-model';
 import { usePlanningStore } from '@/src/stores/planning-store';
@@ -43,30 +44,21 @@ const MISSING_PARTY_MESSAGE: Record<string, string> = {
 };
 
 export default function PlanScreen() {
-  const params = useLocalSearchParams<{
-    venue?: string;
-    date?: string;
-    leaveAt?: string;
-    visit?: string;
-    parties?: string;
-  }>();
+  const params = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const venueId = params.venue ?? '';
-  const { data: venue, isLoading: venueLoading, isError: venueError } = useVenue(venueId);
+  const venueId = Array.isArray(params.venue) ? params.venue[0] ?? '' : params.venue ?? '';
+  const { data: venue, isPending: venuePending, isError: venueError } = useVenue(venueId);
   const { data: profile } = useFamilyProfile();
   const planningFamilies = usePlanningStore((state) => state.families);
   const saveDay = usePlanningStore((state) => state.saveDay);
   const savedDays = usePlanningStore((state) => state.savedDays);
 
+  // Parsed in one tested place rather than here: a repeated query parameter arrives as an array and
+  // would throw on `.split`, and this route is linkable, so a hand-edited or shared URL reaches it.
   const draft = useMemo(
-    () => ({
-      date: params.date ?? '',
-      leaveAt: params.leaveAt ?? '09:30',
-      visitMinutes: Number(params.visit ?? 90),
-      partyIds: (params.parties ?? 'mine').split(',').filter(Boolean),
-    }),
+    () => planDraftFromParams(params),
     [params.date, params.leaveAt, params.visit, params.parties],
   );
 
@@ -79,6 +71,7 @@ export default function PlanScreen() {
   const requested = useRef<string | null>(null);
   // What the view was built from, so Save stores the planner's answer and not the rendered screen.
   const source = useRef<PlanViewModelInput | null>(null);
+  const saving = useRef(false);
 
   const steps = useMemo(
     () => createPlanSteps({ venueName: venue?.name ?? 'this place' }),
@@ -141,8 +134,28 @@ export default function PlanScreen() {
 
     return () => {
       cancelled = true;
+      // A cancelled run never reached `setPhase`, so it must not leave the key claimed. React can
+      // run an effect, clean it up, and run it again with the same deps (a remount, a fast refresh,
+      // StrictMode in development); without this the second run would return early and the screen
+      // would sit on the generating steps for ever, with nothing still working.
+      if (requested.current === key) requested.current = null;
     };
   }, [venue, venueId, draft, parties.families]);
+
+  /**
+   * Households that were chosen and could not be planned for.
+   *
+   * Shown on the finished plan as well as on a failure. A day that quietly covers one family when
+   * the parent picked two is a wrong answer wearing the shape of a right one, and it is the failure
+   * the party resolver exists to make visible.
+   */
+  const partyNotices = useMemo(
+    () =>
+      parties.unresolved.map(
+        (party) => `A family you chose ${MISSING_PARTY_MESSAGE[party.reason] ?? 'could not be used'}, so this day does not include them.`,
+      ),
+    [parties.unresolved],
+  );
 
   const handleBack = useCallback(() => {
     if (router.canGoBack()) router.back();
@@ -150,11 +163,14 @@ export default function PlanScreen() {
   }, [router, venueId]);
 
   const handleSave = useCallback(() => {
-    if (!source.current || savedId) return;
+    // The ref, not the state, is the guard: a second tap can land before React re-renders, and each
+    // press mints its own id, so state alone would store the same day twice.
+    if (!source.current || saving.current) return;
+    saving.current = true;
     const id = `day-${Date.now()}`;
     saveDay({ id, createdAt: new Date().toISOString(), source: source.current });
     setSavedId(id);
-  }, [saveDay, savedId]);
+  }, [saveDay]);
 
   if (!venueId) {
     return (
@@ -168,7 +184,7 @@ export default function PlanScreen() {
     );
   }
 
-  if (venueLoading || (!venue && !venueError)) {
+  if (venuePending) {
     return (
       <Shell onBack={handleBack} topInset={insets.top}>
         <GeneratingPlan venueName="this place" steps={steps} done={done} current={current} />
@@ -176,13 +192,28 @@ export default function PlanScreen() {
     );
   }
 
-  if (venueError || !venue) {
+  if (venueError) {
     return (
       <Shell onBack={handleBack} topInset={insets.top}>
         <EmptyState
           icon="cloud-offline-outline"
           title="We could not load that place"
           message="Check your connection and try opening it again."
+        />
+      </Shell>
+    );
+  }
+
+  // Loaded, and there is nothing there. Separate from the error above and from the loading state:
+  // the lookup succeeded and returned no venue, which an earlier version read as "still loading" and
+  // left generating for ever against a place that does not exist.
+  if (!venue) {
+    return (
+      <Shell onBack={handleBack} topInset={insets.top}>
+        <EmptyState
+          icon="help-circle-outline"
+          title="We could not find that place"
+          message="It may have been removed. Try searching for it again."
         />
       </Shell>
     );
@@ -205,11 +236,11 @@ export default function PlanScreen() {
             {phase.failure.message}
           </Text>
 
-          {parties.unresolved.length ? (
+          {partyNotices.length ? (
             <View style={styles.notice}>
-              {parties.unresolved.map((party) => (
-                <Text key={party.id} variant="bodySmall" color={colors.warning[600]}>
-                  {`One of the families you chose ${MISSING_PARTY_MESSAGE[party.reason] ?? 'could not be used'}.`}
+              {partyNotices.map((line) => (
+                <Text key={line} variant="bodySmall" color={colors.warning[600]}>
+                  {line}
                 </Text>
               ))}
             </View>
@@ -237,6 +268,7 @@ export default function PlanScreen() {
   return (
     <PlanScreenView
       view={phase.view}
+      notices={partyNotices}
       onBack={handleBack}
       onSave={handleSave}
       saved={savedDays.some((day) => day.id === savedId)}

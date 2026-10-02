@@ -23,6 +23,12 @@ import { PlanStopCard } from './PlanStopCard';
 
 export interface PlanScreenViewProps {
   view: PlanViewModel;
+  /**
+   * Things true of this day that the planner itself could not know -- today, households the parent
+   * chose that could not be planned for. Shown with the day rather than withheld, because a plan
+   * that silently covers fewer people than were chosen reads as a correct answer.
+   */
+  notices?: string[];
   onBack: () => void;
   onSave: () => void;
   saved?: boolean;
@@ -33,6 +39,7 @@ export interface PlanScreenViewProps {
 
 export function PlanScreenView({
   view,
+  notices = [],
   onBack,
   onSave,
   saved = false,
@@ -121,6 +128,15 @@ export function PlanScreenView({
 
         {section === 'day' ? (
           <View>
+            {notices.length ? (
+              <Block title="Before you go">
+                {notices.map((line) => (
+                  <Text key={line} variant="bodySmall" color={colors.warning[600]}>
+                    {line}
+                  </Text>
+                ))}
+              </Block>
+            ) : null}
             {view.stops.map((stop) => {
               const periodLabel = stop.period === lastPeriod ? undefined : stop.period;
               lastPeriod = stop.period;

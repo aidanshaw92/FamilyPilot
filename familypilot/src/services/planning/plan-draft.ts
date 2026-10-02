@@ -148,6 +148,37 @@ export function planDraftDefaults(sources: PlanDraftSources): PlanDraftDefaults 
   };
 }
 
+/**
+ * A draft read back out of route params.
+ *
+ * The Plan screen is linkable and survives a reload, so its answers arrive as URL text rather than
+ * as the object the sheet handed over. Two things go wrong there and are handled here: a repeated
+ * query parameter arrives as an array, which would throw on `.split`, and a number arrives as text.
+ *
+ * Nothing is invented. A missing or malformed date stays missing and a malformed length stays
+ * unusable, so the planner rejects it and names the answer that does not add up -- rather than this
+ * silently substituting a day the parent never chose.
+ */
+export type PlanRouteParams = Record<string, string | string[] | undefined>;
+
+const firstValue = (value: string | string[] | undefined): string | undefined =>
+  Array.isArray(value) ? value[0] : value;
+
+export function planDraftFromParams(params: PlanRouteParams): PlanDraft {
+  const parties = (firstValue(params.parties) ?? '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return {
+    date: firstValue(params.date) ?? '',
+    leaveAt: firstValue(params.leaveAt) ?? '',
+    // The signed-in household is the only sensible default for who is coming, and it is what the
+    // sheet offers first; everything else about the day stays exactly as the link said.
+    partyIds: parties.length ? parties : ['mine'],
+    visitMinutes: Number(firstValue(params.visit)),
+  };
+}
+
 /** Everything the sheet needs before it can generate: a party that is actually described. */
 export function planDraftBlocker(draft: PlanDraft, parties: PlanParty[]): string | null {
   if (!draft.partyIds.length) return 'Choose who is coming.';

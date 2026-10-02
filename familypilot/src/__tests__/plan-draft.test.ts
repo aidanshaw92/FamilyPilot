@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PlanDraftSources,
   planDraftBlocker,
+  planDraftFromParams,
   planDraftDefaults,
   summariseHousehold,
   VISIT_LENGTH_CHOICES,
@@ -185,5 +186,43 @@ describe('the sheet’s button cannot promise a day the planner could not build'
       sources({ planningFamilies: [planningFamily({ maxDriveMinutes: 0 })] }),
     );
     expect(parties[0].ready).toBe(false);
+  });
+});
+
+describe('a draft read back out of a link', () => {
+  /**
+   * The Plan screen is linkable and survives a reload, so its answers come back as URL text. A
+   * repeated query parameter arrives as an array, which threw on `.split` before this existed.
+   */
+  it('takes the first value when a parameter is repeated', () => {
+    expect(
+      planDraftFromParams({
+        date: ['2026-10-10', '2026-12-25'],
+        leaveAt: ['09:30'],
+        visit: ['90', '240'],
+        parties: ['mine,theirs', 'someone-else'],
+      }),
+    ).toEqual({ date: '2026-10-10', leaveAt: '09:30', visitMinutes: 90, partyIds: ['mine', 'theirs'] });
+  });
+
+  it('reads a plain link exactly as it was written', () => {
+    expect(planDraftFromParams({ date: '2026-10-10', leaveAt: '09:30', visit: '120', parties: 'mine' }))
+      .toEqual({ date: '2026-10-10', leaveAt: '09:30', visitMinutes: 120, partyIds: ['mine'] });
+  });
+
+  it('leaves a malformed answer unusable rather than substituting a day nobody chose', () => {
+    // The planner rejects these and names which answer does not add up. Quietly defaulting them
+    // would produce a plausible-looking day for a date and a length the parent never picked.
+    const draft = planDraftFromParams({ date: 'not-a-date', visit: 'soon' });
+    expect(draft.date).toBe('not-a-date');
+    expect(Number.isFinite(draft.visitMinutes)).toBe(false);
+    expect(planDraftFromParams({}).date).toBe('');
+    expect(planDraftFromParams({}).leaveAt).toBe('');
+  });
+
+  it('falls back to the signed-in household only for who is coming', () => {
+    expect(planDraftFromParams({}).partyIds).toEqual(['mine']);
+    expect(planDraftFromParams({ parties: '' }).partyIds).toEqual(['mine']);
+    expect(planDraftFromParams({ parties: ' mine , theirs , ' }).partyIds).toEqual(['mine', 'theirs']);
   });
 });
