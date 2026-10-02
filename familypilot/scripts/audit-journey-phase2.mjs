@@ -636,6 +636,81 @@ async function auditPlanLinks(browser, viewport) {
   await context.close();
 }
 
+/**
+ * The three food states, carried all the way into a finished plan.
+ *
+ * The journey audit only ever plans for the venue whose lookup SUCCEEDS, so two of the brief's
+ * product metrics were unmeasured: whether a plan correctly omits lunch, and whether a plan failing
+ * because of meal integration ever happens. Probing it found a real gap -- an outage and an empty
+ * neighbourhood produced identical plans, with no lunch and no explanation -- so the distinction is
+ * asserted here rather than left to a reviewer noticing.
+ */
+async function auditLunchStates(browser, viewport) {
+  const dir = join(OUT, 'lunch-states');
+  mkdirSync(dir, { recursive: true });
+  console.log(`\n=== the three food states, inside a finished plan ===`);
+  const V = 'lunch';
+
+  /**
+   * A lunch STOP in the timeline, not the word "lunch" anywhere on the screen.
+   *
+   * The first version of this matched /LUNCH/i, which the outage caveat's own wording ("so this day
+   * has no lunch stop") satisfies -- so the assertion failed while the product was correct. A role
+   * header followed by its time range is what "the day contains a lunch stop" actually means.
+   */
+  const hasLunchStop = (t) => /LUNCH\s+\d{1,2}:\d{2}/.test(t);
+
+  const cases = [
+    {
+      label: 'candidates found: the day contains the restaurant',
+      placeId: EDGE.rich,
+      expect: (t) => hasLunchStop(t) && /The Mapped Kitchen/.test(t),
+      forbid: (t) => /could not check what is nearby/i.test(t),
+    },
+    {
+      label: 'nothing mapped nearby: the day omits lunch and says nothing about our lookup',
+      placeId: EDGE.noPhoto,
+      expect: (t) => !hasLunchStop(t),
+      // An empty neighbourhood is not an error and must not borrow the error's wording.
+      forbid: (t) => /could not check what is nearby/i.test(t),
+    },
+    {
+      label: 'lookup failed: the day omits lunch and says the failure is ours',
+      placeId: EDGE.longName,
+      expect: (t) => !hasLunchStop(t) && /could not check what is nearby/i.test(t)
+        && /not about the area/i.test(t),
+      // The thing a parent must never be told: that the area has nowhere to eat.
+      forbid: (t) => /nothing to eat is mapped|nowhere to eat/i.test(t),
+    },
+  ];
+
+  for (const { label, placeId, expect: wanted, forbid } of cases) {
+    const { context, page, errors } = await newPage(browser, viewport);
+    await page.goto(
+      `${BASE}/plan?venue=${placeId}&date=${PLAN_DATE}&leaveAt=09:30&visit=90&parties=mine`,
+      { waitUntil: 'domcontentloaded' },
+    );
+    await settle(page, 6000);
+    const t = await text(page);
+    await page.screenshot({ path: join(dir, `${label.replace(/[^a-z]+/gi, '-').slice(0, 50)}.png`) });
+    // Every state must still produce a plan. A day that never finishes generating is the worst of the
+    // three outcomes and the one a silent omission would hide.
+    const built = t.includes('Save this plan');
+    note(V, 'Plan', `${label} — the day still builds`, {
+      ok: built, message: built ? undefined : t.replace(/\s+/g, ' ').slice(0, 200),
+    });
+    note(V, 'Plan', label, {
+      ok: built && wanted(t) && !forbid(t),
+      message: built ? t.replace(/\s+/g, ' ').slice(0, 200) : 'no plan',
+    });
+    const real = errors.filter((e) => !/\b(404|503)\b/.test(e));
+    note(V, 'Plan', `${label} — no runtime error`, {
+      ok: real.length === 0, message: real.slice(0, 2).join(' | ') || undefined,
+    });
+    await context.close();
+  }
+}
+
 const browser = await chromium.launch({
   headless: true,
   ...(existsSync(SANDBOX_CHROMIUM) ? { executablePath: SANDBOX_CHROMIUM } : {}),
@@ -646,6 +721,7 @@ try {
     await auditJourney(browser, viewport);
   }
   if (!only) await auditPlanLinks(browser, VIEWPORTS[2]);
+  if (!only) await auditLunchStates(browser, VIEWPORTS[2]);
 } finally {
   await browser.close();
 }

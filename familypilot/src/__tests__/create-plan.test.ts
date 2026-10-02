@@ -152,6 +152,39 @@ describe('lunch is never bought twice', () => {
   });
 });
 
+describe('a missing lunch stop says which kind of missing it is', () => {
+  const caveats = async (over: Record<string, unknown>) => {
+    const outcome = await createPlan(
+      { venue: venue(), draft, families: [family()], ...over },
+      workingDeps(),
+    );
+    if (!outcome.ok) throw new Error('expected a plan');
+    return outcome.view.caveats;
+  };
+
+  it('blames our lookup when the lookup failed and there is no meal', async () => {
+    // Before this, a failed lookup and an empty neighbourhood produced the same plan, and a parent
+    // could only read the silence as "there is nowhere to eat near here".
+    expect(await caveats({ mealLookupFailed: true })).toContain(
+      'We could not check what is nearby, so this day has no lunch stop. This is about our lookup, not about the area.',
+    );
+  });
+
+  it('says nothing when the neighbourhood simply has nothing mapped', async () => {
+    expect((await caveats({})).join(' ')).not.toContain('lunch stop');
+  });
+
+  it('says nothing when the lookup failed but a meal was found anyway', async () => {
+    // A retry that succeeds after one error still produced a lunch stop. Warning about a lookup whose
+    // result is sitting in the plan would contradict the plan.
+    const lines = await caveats({
+      mealLookupFailed: true,
+      meal: { place: venue({ familypilotId: 'fp-google-cafe', name: 'The Moat Cafe', category: 'cafe' }) },
+    });
+    expect(lines.join(' ')).not.toContain('lunch stop');
+  });
+});
+
 describe('a day that cannot be built still helps', () => {
   const run = (failure: SequenceFailure) =>
     createPlan({ venue: venue(), draft, families: [family()] }, failing(failure));

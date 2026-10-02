@@ -160,13 +160,28 @@ describe('what nobody confirmed stays visible', () => {
         { kind: 'opening-hours-unknown', placeId: 'fp-google-anchor', name: 'Kentish Town City Farm' },
         { kind: 'travel-estimated', legs: 2 },
         { kind: 'traffic-not-predictive', planDate: '2026-10-10' },
+        { kind: 'meal-lookup-failed' },
       ],
     });
     expect(view.caveats).toEqual([
       'Kentish Town City Farm has not published hours for this day.',
       '2 journeys are estimated from distance rather than measured.',
       'Planned for a future date, so today’s traffic was not used.',
+      'We could not check what is nearby, so this day has no lunch stop. This is about our lookup, not about the area.',
     ]);
+  });
+
+  it('blames our lookup for a missing lunch stop, never the neighbourhood', () => {
+    // The distinction this caveat exists for. A day with no lunch and no explanation reads as "there
+    // is nowhere to eat near here", which is a fact nobody established.
+    const line = build({ caveats: [{ kind: 'meal-lookup-failed' }] }).caveats[0];
+    expect(line).toContain('our lookup');
+    expect(line).not.toMatch(/nothing (is )?(mapped|nearby)|nowhere to eat/i);
+  });
+
+  it('says nothing about lunch when the day simply has none', () => {
+    // An empty neighbourhood is not an error, and must not borrow the error's wording.
+    expect(build({ caveats: [] }).caveats).toEqual([]);
   });
 });
 
