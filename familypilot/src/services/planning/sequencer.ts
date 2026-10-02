@@ -20,6 +20,7 @@ import { isOpenOn } from '@/src/utils/opening-hours';
 import { PlanningFamily, PlanningOptions, familyRequest } from './planner';
 import { compareItineraries, mostRelevantFailure } from './sequence-ranking';
 import { describeUnknownFact } from './unknown-facts';
+import { travelSourceOf, travelTimeLabel } from '@/src/utils/travel-time';
 import {
   RoutineWindow,
   TimeSpan,
@@ -196,12 +197,17 @@ function tryOrder(
       if (estimate.minutes > family.maxDriveMinutes) {
         failures.push({
           reason: 'travel-infeasible',
-          message: `That journey is ${estimate.minutes} minutes, beyond ${family.label}'s ${family.maxDriveMinutes} minute limit.`,
+          // Source-aware, NOT blanket-hedged. A matrix leg can genuinely be routed, and calling a
+          // measured 47 minutes "about 47" is the same class of error as calling an estimated 47
+          // exact -- just in the other direction. This message is what stops a plan, so the
+          // certainty it claims has to be the certainty we have.
+          message: `That journey is ${travelTimeLabel(estimate.minutes, travelSourceOf(estimate.source))}, beyond ${family.label}'s ${family.maxDriveMinutes} minute limit.`,
           from,
           to,
           familyId: family.id,
           travelMinutes: estimate.minutes,
           limitMinutes: family.maxDriveMinutes,
+          travelSource: estimate.source,
         });
         return { itinerary: null, failures };
       }

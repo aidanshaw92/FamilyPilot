@@ -98,13 +98,13 @@ function buildRestaurantExplanation(
 
   if (isConfirmed(f.kidsMenu)) reasons.push('Kids menu');
   if (driveFromActivity !== undefined && activityVenue) {
-    reasons.push(`${driveFromActivity} minutes from ${activityVenue.name}`);
+    reasons.push(`About ${driveFromActivity} minutes from ${activityVenue.name}`);
   }
   if (isConfirmed(f.highChairs)) reasons.push('High chairs available');
   if (isConfirmed(f.babyChanging)) reasons.push('Baby changing');
   if (isConfirmed(f.pushchairSpace)) reasons.push('Pushchair friendly');
   if (driveFromActivity === undefined && restaurant.driveMinutes <= profile.maxDriveMinutes) {
-    reasons.push(`${restaurant.driveMinutes} minutes from home`);
+    reasons.push(`About ${restaurant.driveMinutes} minutes from home`);
   }
 
   const spend = restaurant.estimatedFamilySpend ?? restaurant.estimatedSpend;

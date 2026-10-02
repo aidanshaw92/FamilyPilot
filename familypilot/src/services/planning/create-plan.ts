@@ -9,6 +9,7 @@ import { PlanningFamily } from './planner';
 import { PlanDraft } from './plan-draft';
 import { PlanViewModel, PlanViewModelInput, toPlanViewModel } from './plan-view-model';
 import { TravelLeg } from '@/src/types/travel';
+import { travelSourceOf } from '@/src/utils/travel-time';
 
 /**
  * One call behind the approved Create a Plan button.
@@ -241,16 +242,22 @@ function describeSequenceFailure(failure: SequenceFailure, venueName: string): C
         message: `This day would run into ${failure.routineLabel}.`,
         suggestions: ['Start earlier', 'Choose a shorter visit', 'Try another date'],
       };
-    case 'travel-infeasible':
+    case 'travel-infeasible': {
+      // Worded from the leg's own provenance. This used to say "about" unconditionally, which was
+      // wrong in the one direction nobody checks for: a routed 47 minutes was presented as a guess.
+      // Both units stay "minutes" rather than borrowing the card-sized "min", because this sentence
+      // is read next to the limit the parent typed in minutes.
+      const hedge = travelSourceOf(failure.travelSource) === 'measured' ? '' : 'about ';
       return {
         ok: false,
         title: 'The journey is too long',
         message:
           failure.travelMinutes != null && failure.limitMinutes != null
-            ? `That leg is about ${failure.travelMinutes} minutes, and your limit is ${failure.limitMinutes}.`
+            ? `That leg is ${hedge}${failure.travelMinutes} minutes, and your limit is ${failure.limitMinutes}.`
             : failure.message,
         suggestions: ['Raise your travel limit in your profile', 'Pick somewhere closer'],
       };
+    }
     case 'return-by-exceeded':
       return {
         ok: false,

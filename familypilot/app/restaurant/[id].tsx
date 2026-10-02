@@ -223,7 +223,14 @@ function RestaurantScreenContent() {
               </Text>
             ) : null}
             <View style={styles.heroMeta}>
-              <MetaItem icon="car-outline" text={`${distanceMinutes} min`} />
+              {/*
+                Hedged, like the banner twenty lines below that states the same number. Neither input
+                is routed: `driveMinutesFromActivity` comes from a hard-coded proximity table in
+                `mock-restaurants.ts`, and `driveMinutes` is Haversine distance over an assumed speed.
+                The hero used to print a bare `N min` while the banner said `about N min from ...`, so
+                one screen made two different claims about one number.
+              */}
+              <MetaItem icon="car-outline" text={travelTimeLabel(distanceMinutes, 'estimated')} />
               {restaurant.isOpen !== undefined ? (
                 <MetaItem
                   icon={restaurant.isOpen ? 'checkmark-circle-outline' : 'close-circle-outline'}

@@ -245,6 +245,16 @@ export type SequenceFailure =
       familyId?: string;
       travelMinutes?: number;
       limitMinutes?: number;
+      /**
+       * Where `travelMinutes` came from, carried so the presentation layer can word it honestly.
+       *
+       * Without this, `create-plan` had to guess, and it guessed one way for every failure: it said
+       * "about N minutes" even when the matrix leg was routed. Hedging a measurement is the same
+       * class of error as stating an estimate exactly, and this is the message that stops a plan, so
+       * it is the last place to be vague about which one we have. Absent means unknown, which is
+       * worded as an estimate.
+       */
+      travelSource?: 'live' | 'estimated';
     }
   | {
       reason: 'return-by-exceeded';
