@@ -322,7 +322,7 @@
     "viewport": "393x852",
     "step": "Get directions moved out of the footer",
     "ok": true,
-    "message": "found in content at y=1124"
+    "message": "found in content at y=1144"
   },
   {
     "viewport": "393x852",
@@ -634,6 +634,22 @@
     "step": "no internal field name reaches the screen",
     "ok": true,
     "message": ""
+  },
+  {
+    "viewport": "party-dropped",
+    "step": "a venue card opens Venue Detail",
+    "ok": true,
+    "message": "Kettleford Play House"
+  },
+  {
+    "viewport": "party-dropped",
+    "step": "the plan still renders for the household that could be planned for",
+    "ok": true
+  },
+  {
+    "viewport": "party-dropped",
+    "step": "the dropped household is named on the finished plan, not only on a failure",
+    "ok": true
   },
   {
     "viewport": "no-location",
