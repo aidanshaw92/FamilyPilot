@@ -1,5 +1,10 @@
 const { searchWithFallback } = require('../../server/places/lib/fallback');
 const { reorderByEnrichment } = require('../../server/places/lib/places-quality');
+const { getNearbyFood } = require('../../server/places/lib/nearby-food');
+const {
+  MAX_RADIUS_M: MAX_FOOD_RADIUS_M,
+  DEFAULT_RADIUS_M: DEFAULT_FOOD_RADIUS_M,
+} = require('../../server/places/lib/osm-food');
 const {
   buildSearchCacheKey,
   readSearchCache,
@@ -84,6 +89,61 @@ async function searchLondonGrid(configuredProvider, intent) {
   return mergeLondonBatches(batches);
 }
 
+
+/**
+ * The food branch. Bounded here as well as inside the provider, so a hand-edited URL cannot ask for a
+ * London-wide food sweep even if the module's own clamp were ever relaxed.
+ */
+async function handleNearbyFood(req, res) {
+  const latitude = Number(req.query.lat);
+  const longitude = Number(req.query.lng);
+
+  if (
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude) ||
+    Math.abs(latitude) > 90 ||
+    Math.abs(longitude) > 180
+  ) {
+    return res.status(400).json({ error: 'Invalid anchor coordinates', code: 'INVALID_ANCHOR' });
+  }
+
+  const requestedRadius = Number(req.query.radiusM);
+  const radiusM = Number.isFinite(requestedRadius)
+    ? Math.min(Math.max(Math.round(requestedRadius), 200), MAX_FOOD_RADIUS_M)
+    : DEFAULT_FOOD_RADIUS_M;
+
+  const requestedLimit = Number(req.query.limit);
+  const limit = Number.isFinite(requestedLimit)
+    ? Math.min(Math.max(Math.round(requestedLimit), 1), 20)
+    : 20;
+
+  const placeId = typeof req.query.placeId === 'string' ? req.query.placeId.slice(0, 120) : undefined;
+
+  try {
+    const result = await getNearbyFood({ latitude, longitude, placeId }, { radiusM, limit });
+    if (result.cacheState !== 'bypass') {
+      res.setHeader('Cache-Control', 'public, s-maxage=21600, stale-while-revalidate=86400');
+    }
+    return res.status(200).json(result);
+  } catch (error) {
+    // A provider outage is not an empty neighbourhood. Returning `candidates: []` would tell a parent
+    // there is nowhere to eat nearby, which is a false fact rather than a missing one, so the failure
+    // is surfaced and the client renders its own unknown state.
+    console.warn(
+      JSON.stringify({
+        tag: 'nearby_food_lookup_failed',
+        message: error instanceof Error ? error.message : 'lookup failed',
+      }),
+    );
+    return res.status(503).json({
+      error: 'Restaurant lookup is unavailable just now',
+      code: 'FOOD_PROVIDER_UNAVAILABLE',
+      provider: 'osm',
+      googleCalls: 0,
+    });
+  }
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -93,6 +153,23 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+
+  /**
+   * Places to eat near one anchor, handled here and returned BEFORE anything that can spend.
+   *
+   * This started as its own file, which is where it belongs: a separate function cannot reach Google
+   * by accident. It is folded in because the deployment budget is twelve serverless functions and a
+   * thirteenth would have failed the deploy, so the guarantee is carried differently and the honest
+   * statement of it is this: the branch returns before `primePlacesBudget`, before the provider is
+   * chosen and before the search chain exists, and `nearby-food.js` imports no API key, no budget
+   * gate and no Google client. Nothing below this line runs for a food request.
+   *
+   * It matters that this is NOT `intent=restaurant`. That intent goes through the configured
+   * provider, which in production is Google, and `searchGoogle` bills for it. This one cannot.
+   */
+  if (req.query.intent === 'nearby-food') {
+    return handleNearbyFood(req, res);
+  }
 
   // Loads today's shared billable total before anything can spend, so the daily cap counts what
   // every other serverless instance has already bought rather than only this one.

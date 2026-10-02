@@ -21,6 +21,7 @@ import { useFiltersStore } from '@/src/stores/filters-store';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { FamilyProfile } from '@/src/types';
+import { fetchNearbyFood } from '@/src/services/places/nearby-food-client';
 
 export function useProfileRevision() {
   return useFamilyStore((s) => s.profileRevision);
@@ -72,6 +73,30 @@ export function useVenue(id: string) {
     queryKey: ['venues', id, profileRevision],
     queryFn: () => venueService.getById(id),
     enabled: Boolean(id),
+  });
+}
+
+/**
+ * Places to eat near a venue.
+ *
+ * Keyed on the ANCHOR's coordinates rather than on the venue id, because the answer depends only on
+ * where the venue is: two venues in the same building share a cached row, and the server's stored
+ * cache is keyed the same way. `staleTime` is six hours to match that stored TTL, so a parent moving
+ * between screens never re-requests, and `enabled` keeps the lookup from firing before coordinates
+ * exist -- a request with undefined coordinates would be a wasted Overpass call.
+ */
+export function useNearbyFood(anchor: { latitude?: number; longitude?: number; placeId?: string }) {
+  const latitude = anchor.latitude;
+  const longitude = anchor.longitude;
+  return useQuery({
+    queryKey: ['nearby-food', latitude?.toFixed(4), longitude?.toFixed(4)],
+    queryFn: () =>
+      fetchNearbyFood({ latitude: latitude!, longitude: longitude!, placeId: anchor.placeId }),
+    enabled: Number.isFinite(latitude) && Number.isFinite(longitude),
+    staleTime: 6 * 60 * 60 * 1000,
+    // One retry only. Overpass is public infrastructure and the provider already retries once with a
+    // narrower query, so more attempts here would multiply the load rather than improve the odds.
+    retry: 1,
   });
 }
 

@@ -108,6 +108,75 @@
   },
   {
     "viewport": "360x800",
+    "screen": "Restaurants close by",
+    "step": "lists the places to eat it was given",
+    "ok": true,
+    "message": "3 candidate(s)"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Restaurants close by",
+    "step": "says the travel times are estimated, not measured",
+    "ok": true,
+    "message": "about 6 min walk · about 2 min drive"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Restaurants close by",
+    "step": "does not invent a public transport time from a straight line",
+    "ok": true,
+    "message": "absence stated"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Restaurants close by",
+    "step": "says hours are unlisted rather than leaving a parent to guess",
+    "ok": true,
+    "message": "both states present"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Restaurants close by",
+    "step": "does not claim facilities nobody recorded",
+    "ok": true,
+    "message": "unknown stated"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Restaurants close by",
+    "step": "invents no rating, score or review count for an OSM place",
+    "ok": true,
+    "message": "none"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Restaurants close by",
+    "step": "credits OpenStreetMap for the candidates",
+    "ok": true,
+    "message": "1 osm credit(s)"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Restaurants close by",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Restaurants close by",
+    "step": "says nothing is MAPPED rather than that nothing exists",
+    "ok": true,
+    "message": "Restaurants close by Nothing to eat is mapped within a short walk of here. There"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Restaurants close by",
+    "step": "reports a lookup outage as ours, not as an empty area",
+    "ok": true,
+    "message": "Restaurants close by We could not check what is nearby just now. This is about o"
+  },
+  {
+    "viewport": "360x800",
     "screen": "Create a Plan",
     "step": "is the approved share of the viewport",
     "ok": true,
@@ -355,6 +424,75 @@
     "step": "survives a venue whose hours nobody published",
     "ok": true,
     "message": "Opening hours from provider FamilyPilot family details added · "
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Restaurants close by",
+    "step": "lists the places to eat it was given",
+    "ok": true,
+    "message": "3 candidate(s)"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Restaurants close by",
+    "step": "says the travel times are estimated, not measured",
+    "ok": true,
+    "message": "about 6 min walk · about 2 min drive"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Restaurants close by",
+    "step": "does not invent a public transport time from a straight line",
+    "ok": true,
+    "message": "absence stated"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Restaurants close by",
+    "step": "says hours are unlisted rather than leaving a parent to guess",
+    "ok": true,
+    "message": "both states present"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Restaurants close by",
+    "step": "does not claim facilities nobody recorded",
+    "ok": true,
+    "message": "unknown stated"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Restaurants close by",
+    "step": "invents no rating, score or review count for an OSM place",
+    "ok": true,
+    "message": "none"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Restaurants close by",
+    "step": "credits OpenStreetMap for the candidates",
+    "ok": true,
+    "message": "1 osm credit(s)"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Restaurants close by",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Restaurants close by",
+    "step": "says nothing is MAPPED rather than that nothing exists",
+    "ok": true,
+    "message": "Restaurants close by Nothing to eat is mapped within a short walk of here. There"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Restaurants close by",
+    "step": "reports a lookup outage as ours, not as an empty area",
+    "ok": true,
+    "message": "Restaurants close by We could not check what is nearby just now. This is about o"
   },
   {
     "viewport": "390x844",
@@ -608,6 +746,75 @@
   },
   {
     "viewport": "393x852",
+    "screen": "Restaurants close by",
+    "step": "lists the places to eat it was given",
+    "ok": true,
+    "message": "3 candidate(s)"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Restaurants close by",
+    "step": "says the travel times are estimated, not measured",
+    "ok": true,
+    "message": "about 6 min walk · about 2 min drive"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Restaurants close by",
+    "step": "does not invent a public transport time from a straight line",
+    "ok": true,
+    "message": "absence stated"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Restaurants close by",
+    "step": "says hours are unlisted rather than leaving a parent to guess",
+    "ok": true,
+    "message": "both states present"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Restaurants close by",
+    "step": "does not claim facilities nobody recorded",
+    "ok": true,
+    "message": "unknown stated"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Restaurants close by",
+    "step": "invents no rating, score or review count for an OSM place",
+    "ok": true,
+    "message": "none"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Restaurants close by",
+    "step": "credits OpenStreetMap for the candidates",
+    "ok": true,
+    "message": "1 osm credit(s)"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Restaurants close by",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Restaurants close by",
+    "step": "says nothing is MAPPED rather than that nothing exists",
+    "ok": true,
+    "message": "Restaurants close by Nothing to eat is mapped within a short walk of here. There"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Restaurants close by",
+    "step": "reports a lookup outage as ours, not as an empty area",
+    "ok": true,
+    "message": "Restaurants close by We could not check what is nearby just now. This is about o"
+  },
+  {
+    "viewport": "393x852",
     "screen": "Create a Plan",
     "step": "is the approved share of the viewport",
     "ok": true,
@@ -858,6 +1065,75 @@
   },
   {
     "viewport": "430x932",
+    "screen": "Restaurants close by",
+    "step": "lists the places to eat it was given",
+    "ok": true,
+    "message": "3 candidate(s)"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Restaurants close by",
+    "step": "says the travel times are estimated, not measured",
+    "ok": true,
+    "message": "about 6 min walk · about 2 min drive"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Restaurants close by",
+    "step": "does not invent a public transport time from a straight line",
+    "ok": true,
+    "message": "absence stated"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Restaurants close by",
+    "step": "says hours are unlisted rather than leaving a parent to guess",
+    "ok": true,
+    "message": "both states present"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Restaurants close by",
+    "step": "does not claim facilities nobody recorded",
+    "ok": true,
+    "message": "unknown stated"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Restaurants close by",
+    "step": "invents no rating, score or review count for an OSM place",
+    "ok": true,
+    "message": "none"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Restaurants close by",
+    "step": "credits OpenStreetMap for the candidates",
+    "ok": true,
+    "message": "1 osm credit(s)"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Restaurants close by",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Restaurants close by",
+    "step": "says nothing is MAPPED rather than that nothing exists",
+    "ok": true,
+    "message": "Restaurants close by Nothing to eat is mapped within a short walk of here. There"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Restaurants close by",
+    "step": "reports a lookup outage as ours, not as an empty area",
+    "ok": true,
+    "message": "Restaurants close by We could not check what is nearby just now. This is about o"
+  },
+  {
+    "viewport": "430x932",
     "screen": "Create a Plan",
     "step": "is the approved share of the viewport",
     "ok": true,
@@ -1105,6 +1381,75 @@
     "step": "survives a venue whose hours nobody published",
     "ok": true,
     "message": "Opening hours from provider FamilyPilot family details added · "
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Restaurants close by",
+    "step": "lists the places to eat it was given",
+    "ok": true,
+    "message": "3 candidate(s)"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Restaurants close by",
+    "step": "says the travel times are estimated, not measured",
+    "ok": true,
+    "message": "about 6 min walk · about 2 min drive"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Restaurants close by",
+    "step": "does not invent a public transport time from a straight line",
+    "ok": true,
+    "message": "absence stated"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Restaurants close by",
+    "step": "says hours are unlisted rather than leaving a parent to guess",
+    "ok": true,
+    "message": "both states present"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Restaurants close by",
+    "step": "does not claim facilities nobody recorded",
+    "ok": true,
+    "message": "unknown stated"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Restaurants close by",
+    "step": "invents no rating, score or review count for an OSM place",
+    "ok": true,
+    "message": "none"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Restaurants close by",
+    "step": "credits OpenStreetMap for the candidates",
+    "ok": true,
+    "message": "1 osm credit(s)"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Restaurants close by",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Restaurants close by",
+    "step": "says nothing is MAPPED rather than that nothing exists",
+    "ok": true,
+    "message": "Restaurants close by Nothing to eat is mapped within a short walk of here. There"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Restaurants close by",
+    "step": "reports a lookup outage as ours, not as an empty area",
+    "ok": true,
+    "message": "Restaurants close by We could not check what is nearby just now. This is about o"
   },
   {
     "viewport": "393x852-insets",

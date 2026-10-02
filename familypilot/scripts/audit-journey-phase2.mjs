@@ -137,8 +137,38 @@ async function newPage(browser, viewport) {
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
-  page.on('response', (r) => { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
+
+  /**
+   * One response is a deliberate failure, not a defect: the fixture answers the nearby-food request
+   * for the long-name venue with 503, so the audit can check that the section reports a lookup outage
+   * as OURS rather than as an empty neighbourhood.
+   *
+   * Narrowed two ways rather than ignoring 503s. The response hook matches that exact request, so a
+   * real 503 from anywhere else still fails. Chromium also logs a console error for the same
+   * response, and that message carries no URL, so it is BUDGETED instead: each deliberate 503 earns
+   * the right to one unexplained "Failed to load resource ... 503" line and no more. A second 503
+   * from a different source would exceed the budget and fail the run.
+   */
+  const deliberate = (url) =>
+    url.includes('intent=nearby-food') && url.includes('placeId=fp-google-FIXTUREedgeLongName');
+  let allowed503 = 0;
+  page.on('response', (r) => {
+    if (r.status() < 400) return;
+    if (deliberate(r.url())) {
+      allowed503 += 1;
+      return;
+    }
+    errors.push(`${r.status()} ${r.url()}`);
+  });
+  page.on('console', (m) => {
+    if (m.type() !== 'error') return;
+    const text = m.text();
+    if (/Failed to load resource.*503/.test(text) && allowed503 > 0) {
+      allowed503 -= 1;
+      return;
+    }
+    errors.push(text);
+  });
 
   await page.addInitScript(
     ({ key, value }) => window.localStorage.setItem(key, value),
@@ -289,6 +319,66 @@ async function auditJourney(browser, viewport) {
     await page.screenshot({ path: join(dir, `03-venue-${id.slice(-10)}.png`) });
     note(V, 'Venue Detail', `survives ${label}`, await assertion());
   }
+
+  // --- RESTAURANTS CLOSE BY ---------------------------------------------------------------------
+  // Sections 3 and 11: a nearby restaurant is not a venue with confirmed family facilities, and the
+  // three states the section can be in -- candidates, nothing mapped, and a provider outage -- are
+  // three different claims about the world.
+  await page.goto(`${BASE}/venue/${EDGE.rich}`, { waitUntil: 'domcontentloaded' });
+  await settle(page, 2400);
+  const foodSection = page.getByTestId('restaurants-close-by');
+  await foodSection.waitFor({ state: 'visible', timeout: 8000 }).catch(() => {});
+  const foodText = await foodSection.innerText().catch(() => '');
+
+  note(V, 'Restaurants close by', 'lists the places to eat it was given', {
+    ok: (await page.getByTestId('food-candidate').count().catch(() => 0)) === 3,
+    message: `${await page.getByTestId('food-candidate').count().catch(() => 0)} candidate(s)`,
+  });
+  note(V, 'Restaurants close by', 'says the travel times are estimated, not measured', {
+    ok: /estimated from distance/i.test(foodText) && /about \d+ min/.test(foodText),
+    message: (foodText.match(/about \d+ min[^\n]*/) ?? ['no hedged travel time'])[0].slice(0, 70),
+  });
+  note(V, 'Restaurants close by', 'does not invent a public transport time from a straight line', {
+    ok: !/by public transport|by bus/i.test(foodText) && /no public transport times/i.test(foodText),
+    message: /no public transport times/i.test(foodText) ? 'absence stated' : 'absence NOT stated',
+  });
+  note(V, 'Restaurants close by', 'says hours are unlisted rather than leaving a parent to guess', {
+    ok: /Hours not listed/i.test(foodText) && /Mo-Su 11:00-22:00/.test(foodText),
+    message: /Hours not listed/i.test(foodText) ? 'both states present' : 'unlisted state missing',
+  });
+  note(V, 'Restaurants close by', 'does not claim facilities nobody recorded', {
+    ok: /Nobody has recorded facilities/i.test(foodText) && /Highchairs/.test(foodText),
+    message: /Nobody has recorded facilities/i.test(foodText) ? 'unknown stated' : 'unknown NOT stated',
+  });
+  note(V, 'Restaurants close by', 'invents no rating, score or review count for an OSM place', {
+    ok: !/\b\d(\.\d)?\s*(stars?|\/\s*5)|\breviews?\b|Family match|Strong fit|Potential match/i.test(foodText),
+    message: (foodText.match(/\d(\.\d)?\s*(stars?|\/\s*5)|reviews?|Family match/i) ?? ['none'])[0],
+  });
+  note(V, 'Restaurants close by', 'credits OpenStreetMap for the candidates', {
+    ok: (await page.getByTestId('place-attribution-osm').count().catch(() => 0)) >= 1,
+    message: `${await page.getByTestId('place-attribution-osm').count().catch(() => 0)} osm credit(s)`,
+  });
+  note(V, 'Restaurants close by', 'does not scroll sideways', await (async () => {
+    const o = await overflow(page);
+    return { ok: o === null, message: o ? `${o.scroll} in ${o.viewport}: ${o.offenders.join(' ; ')}` : undefined };
+  })());
+
+  // Nothing mapped is not an outage, and an outage is not an empty neighbourhood.
+  await page.goto(`${BASE}/venue/${EDGE.noPhoto}`, { waitUntil: 'domcontentloaded' });
+  await settle(page, 2400);
+  const emptyText = await page.getByTestId('restaurants-close-by').innerText().catch(() => '');
+  note(V, 'Restaurants close by', 'says nothing is MAPPED rather than that nothing exists', {
+    ok: /not on the map we use/i.test(emptyText) && !/could not check/i.test(emptyText),
+    message: emptyText.replace(/\s+/g, ' ').slice(0, 80),
+  });
+
+  await page.goto(`${BASE}/venue/${EDGE.longName}`, { waitUntil: 'domcontentloaded' });
+  await settle(page, 2600);
+  const outageText = await page.getByTestId('restaurants-close-by').innerText().catch(() => '');
+  note(V, 'Restaurants close by', 'reports a lookup outage as ours, not as an empty area', {
+    ok: /could not check/i.test(outageText) && /not about the area/i.test(outageText),
+    message: outageText.replace(/\s+/g, ' ').slice(0, 80),
+  });
 
   // --- CREATE A PLAN ----------------------------------------------------------------------------
   await page.goto(`${BASE}/venue/${EDGE.rich}`, { waitUntil: 'domcontentloaded' });

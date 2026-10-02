@@ -259,6 +259,86 @@ const EDGE_PLACES = [
 const EDGE_BY_ID = new Map(EDGE_PLACES.map((place) => [place.familypilotId, place]));
 
 /**
+ * Which nearby-food state a request returns, keyed on the venue that asked.
+ *
+ * Keyed on placeId, NOT on coordinates: every `edgePlace` sits at the same 51.52,-0.12, so a
+ * coordinate discriminator put every venue in the same branch. The client already sends placeId, and
+ * it is the only thing that distinguishes one edge venue from another.
+ */
+function FOOD_SCENARIO_FOR(placeId) {
+  if (placeId === 'fp-google-FIXTUREedgeLongName') return 'outage';
+  if (placeId === 'fp-google-FIXTUREedgeNoPhoto') return 'empty';
+  return 'candidates';
+}
+
+/**
+ * Three candidates covering what the section has to render honestly: one walkable with hours and
+ * child-relevant tags, one walkable with NOTHING mapped beyond its name, and one too far to walk so
+ * only a drive is offered. None carries a rating or a photograph, because OpenStreetMap has neither.
+ */
+function FOOD_CANDIDATES(lat, lng) {
+  return [
+    {
+      familypilotId: 'fp-osm-node-9001',
+      externalId: 'osm:node/9001',
+      provider: 'osm',
+      name: 'The Mapped Kitchen',
+      category: 'restaurant',
+      latitude: lat + 0.0022,
+      longitude: lng,
+      distanceKm: 0.24,
+      cuisine: 'italian',
+      openingHours: 'Mo-Su 11:00-22:00',
+      address: '4 Fixture Lane',
+      website: null,
+      phone: null,
+      tagged: { highchair: true, changingTable: true },
+      travel: [
+        { mode: 'walk', minutes: 6, source: 'estimated' },
+        { mode: 'drive', minutes: 2, source: 'estimated' },
+      ],
+    },
+    {
+      familypilotId: 'fp-osm-node-9002',
+      externalId: 'osm:node/9002',
+      provider: 'osm',
+      name: 'Unlisted Cafe',
+      category: 'cafe',
+      latitude: lat + 0.0035,
+      longitude: lng,
+      distanceKm: 0.39,
+      cuisine: null,
+      openingHours: null,
+      address: null,
+      website: null,
+      phone: null,
+      tagged: {},
+      travel: [
+        { mode: 'walk', minutes: 9, source: 'estimated' },
+        { mode: 'drive', minutes: 2, source: 'estimated' },
+      ],
+    },
+    {
+      familypilotId: 'fp-osm-way-9003',
+      externalId: 'osm:way/9003',
+      provider: 'osm',
+      name: 'Far Side Grill',
+      category: 'restaurant',
+      latitude: lat + 0.019,
+      longitude: lng,
+      distanceKm: 2.1,
+      cuisine: 'burger',
+      openingHours: null,
+      address: null,
+      website: null,
+      phone: null,
+      tagged: { outdoorSeating: true },
+      travel: [{ mode: 'drive', minutes: 4, source: 'estimated' }],
+    },
+  ];
+}
+
+/**
  * Whether the search payload carries the OpenStreetMap venue as well as the ten Google ones.
  *
  * Off by default, because Home's composition is locked against the Figma frame and an eleventh deck
@@ -401,6 +481,40 @@ function sendJson(res, status, body) {
 
 const server = createServer((req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
+
+  // Places to eat near an anchor. Synthetic, so the audit exercises the real UI states -- candidates,
+  // nothing mapped, and a provider outage -- without a single Overpass request. The anchor decides
+  // which state is returned, so one fixture covers all three.
+  if (url.pathname === '/api/places/search' && url.searchParams.get('intent') === 'nearby-food') {
+    const lat = Number(url.searchParams.get('lat'));
+    const lng = Number(url.searchParams.get('lng'));
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return sendJson(res, 400, { error: 'Invalid anchor coordinates', code: 'INVALID_ANCHOR' });
+    }
+    // The long-name venue stands in for the outage case, and the no-photo venue for a neighbourhood
+    // with nothing mapped, so the audit can reach every branch by navigating.
+    const scenario = FOOD_SCENARIO_FOR(url.searchParams.get('placeId'));
+    if (scenario === 'outage') {
+      return sendJson(res, 503, {
+        error: 'Restaurant lookup is unavailable just now',
+        code: 'FOOD_PROVIDER_UNAVAILABLE',
+        provider: 'osm',
+        googleCalls: 0,
+      });
+    }
+    return sendJson(res, 200, {
+      anchor: { latitude: lat, longitude: lng, placeId: url.searchParams.get('placeId') },
+      candidates: scenario === 'empty' ? [] : FOOD_CANDIDATES(lat, lng),
+      totalFound: scenario === 'empty' ? 0 : FOOD_CANDIDATES(lat, lng).length,
+      provider: 'osm',
+      googleCalls: 0,
+      overpassRequests: 0,
+      cacheState: 'hit',
+      radiusM: 1200,
+      fetchedAt: new Date().toISOString(),
+      attribution: 'osm',
+    });
+  }
 
   if (url.pathname === '/api/places/search') {
     return sendJson(res, 200, {
