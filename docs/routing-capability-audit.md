@@ -78,12 +78,18 @@ journey shipped; the capability is live and simply unexercised.
 
 For S stops and F families: `F + S × (S − 1 + F)` elements.
 
+These figures are no longer hand-derived. `src/__tests__/journey-element-cost.test.ts` runs the real
+`buildJourneyMatrix` with a probe that records request shapes and counts origins × destinations as
+Distance Matrix would bill them. The formula held; one of my hand-computed rows did not (this table
+first said 17 for three stops and two families, where the formula gives 14), which is why the numbers
+now come from running the builder rather than from arithmetic in a document.
+
 | Plan | Probes | Billable elements |
 | --- | --- | --- |
 | 1 stop, 1 family (what P0 ships today) | 2 | 2 |
 | 2 stops, 1 family (venue + lunch) | 3 | 5 |
 | 3 stops, 1 family | 4 | 10 |
-| 3 stops, 2 families (the halfway-family future) | 5 | 17 |
+| 3 stops, 2 families (the halfway-family future) | 5 | 14 |
 
 So **adding a lunch stop takes a plan from 2 elements to 5**. That is the honest cost of Section 12,
 and it is small — the expensive thing would be routing candidates during discovery, which Section 6
