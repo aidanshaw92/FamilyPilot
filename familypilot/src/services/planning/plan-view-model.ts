@@ -296,6 +296,10 @@ function caveatLine(caveat: PlanCaveat): string {
         : `${caveat.legs} journeys are estimated from distance rather than measured.`;
     case 'traffic-not-predictive':
       return 'Planned for a future date, so today’s traffic was not used.';
+    case 'meal-lookup-failed':
+      // Says the failure is ours, in the same terms RestaurantsCloseBy already uses on Venue Detail,
+      // so a parent is not left inferring that the area has nowhere to eat.
+      return 'We could not check what is nearby, so this day has no lunch stop. This is about our lookup, not about the area.';
     default:
       return '';
   }

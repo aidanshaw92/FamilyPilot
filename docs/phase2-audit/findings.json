@@ -1871,5 +1871,62 @@
     "step": "a reload rebuilds the day rather than stranding it",
     "ok": true,
     "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 09:30–13:51  Day plan Who’s coming Travel & parking A 4-hour Saturday MORNING 10:25–11:55 Confirmed Facts Garden"
+  },
+  {
+    "viewport": "lunch",
+    "screen": "Plan",
+    "step": "candidates found: the day contains the restaurant — the day still builds",
+    "ok": true
+  },
+  {
+    "viewport": "lunch",
+    "screen": "Plan",
+    "step": "candidates found: the day contains the restaurant",
+    "ok": true,
+    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 09:30–13:51  Day plan Who’s coming Travel & parking A 4-hour Saturday MORNING 10:25–11:55 Confirmed Facts Gardens  Arrive 10:25 Time there 1h 30m Openi"
+  },
+  {
+    "viewport": "lunch",
+    "screen": "Plan",
+    "step": "candidates found: the day contains the restaurant — no runtime error",
+    "ok": true
+  },
+  {
+    "viewport": "lunch",
+    "screen": "Plan",
+    "step": "nothing mapped nearby: the day omits lunch and says nothing about our lookup — the day still builds",
+    "ok": true
+  },
+  {
+    "viewport": "lunch",
+    "screen": "Plan",
+    "step": "nothing mapped nearby: the day omits lunch and says nothing about our lookup",
+    "ok": true,
+    "message": " A day at No Photograph Park Sat 3 Oct · 09:30–12:50  Day plan Who’s coming Travel & parking A 3-hour Saturday MORNING 10:25–11:55 No Photograph Park  Arrive 10:25 Time there 1h 30m Opening Open NO"
+  },
+  {
+    "viewport": "lunch",
+    "screen": "Plan",
+    "step": "nothing mapped nearby: the day omits lunch and says nothing about our lookup — no runtime error",
+    "ok": true
+  },
+  {
+    "viewport": "lunch",
+    "screen": "Plan",
+    "step": "lookup failed: the day omits lunch and says the failure is ours — the day still builds",
+    "ok": true
+  },
+  {
+    "viewport": "lunch",
+    "screen": "Plan",
+    "step": "lookup failed: the day omits lunch and says the failure is ours",
+    "ok": true,
+    "message": " A day at The Royal Borough Of Something Extremely Long Memorial Gardens And Family Activity Centre Sat 3 Oct · 09:30–12:50  Day plan Who’s coming Travel & parking A 3-hour Saturday MORNING 10:25–11"
+  },
+  {
+    "viewport": "lunch",
+    "screen": "Plan",
+    "step": "lookup failed: the day omits lunch and says the failure is ours — no runtime error",
+    "ok": true
   }
 ]

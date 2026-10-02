@@ -60,6 +60,13 @@ export interface CreatePlanInput {
   /** Omitted when nothing is cached: the day is then built without a meal. */
   meal?: MealCandidate;
   /**
+   * Whether the absent meal is an absent meal or a broken lookup.
+   *
+   * `meal` being undefined covers both, and they are not the same thing to a parent. Passing this
+   * lets the finished plan say which, rather than omitting lunch silently in both cases.
+   */
+  mealLookupFailed?: boolean;
+  /**
    * The venue's reviewed free-text parking detail, where it has one. Claim-backed facts come from
    * the venue itself, so only this prose needs passing in.
    */
@@ -357,7 +364,12 @@ export async function createPlan(
   const source: PlanViewModelInput = {
     itinerary: result.plan.itinerary,
     travel: result.plan.travel,
-    caveats: result.plan.caveats,
+    // Appended rather than produced by `generateDayPlan`: the sequencer never saw the food lookup, so
+    // only the caller knows whether a missing meal was an empty neighbourhood or a failed request.
+    caveats:
+      input.mealLookupFailed && !meal
+        ? [...result.plan.caveats, { kind: 'meal-lookup-failed' as const }]
+        : result.plan.caveats,
     anchorName: venue.name,
     parking: {
       parking: anchorFacts.parking,

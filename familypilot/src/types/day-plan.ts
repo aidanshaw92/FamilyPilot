@@ -94,7 +94,18 @@ export type PlanCaveat =
   /** Some journeys are distance estimates rather than measured road times. */
   | { kind: 'travel-estimated'; legs: number }
   /** The plan is for another day, so current traffic was not treated as predictive. */
-  | { kind: 'traffic-not-predictive'; planDate: string };
+  | { kind: 'traffic-not-predictive'; planDate: string }
+  /**
+   * The nearby-food lookup failed, so the day has no lunch stop for a reason that is ours.
+   *
+   * Without this, a broken lookup and a genuinely empty neighbourhood produce the same plan: a day
+   * with no lunch and no explanation, from which a parent can only conclude there is nowhere to eat
+   * near the venue. That is a false impression created by omission, which is the one thing this
+   * whole surface exists to avoid. Venue Detail already makes the distinction; the plan did not.
+   *
+   * Not derivable from the itinerary, so it is passed in by the screen that ran the lookup.
+   */
+  | { kind: 'meal-lookup-failed' };
 
 export interface TravelDiagnostics {
   provenance: { live: number; estimated: number };

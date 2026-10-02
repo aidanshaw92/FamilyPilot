@@ -136,6 +136,15 @@ export default function PlanScreen() {
   const foodExpected =
     Number.isFinite(venue?.latitude) && Number.isFinite(venue?.longitude);
   const foodPending = foodExpected && nearbyFood.isPending && nearbyFood.fetchStatus !== 'idle';
+  /**
+   * The lookup was asked and did not answer, which is not the same as "nowhere to eat near here".
+   *
+   * Both used to produce the same plan: no lunch stop, no explanation. A parent could only read that
+   * as the area having nothing, which is a fact we have not established. `foodExpected` is part of it
+   * on purpose -- a venue with no coordinates was never asked, so nothing failed, and claiming a
+   * lookup error there would be its own false statement.
+   */
+  const foodLookupFailed = foodExpected && nearbyFood.isError;
 
   const [phase, setPhase] = useState<Phase>({ status: 'generating' });
   const [done, setDone] = useState<CreatePlanStepId[]>([]);
@@ -191,7 +200,7 @@ export default function PlanScreen() {
     // venue are two separate queries: if the venue lands first, the day would be built for nobody,
     // and without this the arriving profile would never trigger a rebuild -- a cold load would
     // intermittently end on "Nobody is coming yet".
-    const key = [venueId, draft.date, draft.leaveAt, draft.visitMinutes, partiesParam, familyIds, lunchKey].join('|');
+    const key = [venueId, draft.date, draft.leaveAt, draft.visitMinutes, partiesParam, familyIds, lunchKey, foodLookupFailed ? 'food-failed' : 'food-ok'].join('|');
     if (requested.current === key) return;
     if (attempts.current.key !== key) attempts.current = { key, count: 0 };
     if (attempts.current.count >= MAX_GENERATION_ATTEMPTS) return;
@@ -216,6 +225,7 @@ export default function PlanScreen() {
           families: parties.families,
           parkingInfo: venue.parkingInfo,
           meal: lunch,
+          mealLookupFailed: foodLookupFailed,
         },
         {
           onStep: (id) => {
@@ -242,7 +252,7 @@ export default function PlanScreen() {
     // Deps are the venue object and primitives only. `parties.families` is deliberately absent: it is
     // a fresh array every time the resolver runs, and `familyIds` carries the same information
     // without the identity churn.
-  }, [venue, venueId, draft, familyIds, partiesParam, foodPending, lunchKey, lunch]);
+  }, [venue, venueId, draft, familyIds, partiesParam, foodPending, foodLookupFailed, lunchKey, lunch]);
 
   /**
    * Households that were chosen and could not be planned for.
