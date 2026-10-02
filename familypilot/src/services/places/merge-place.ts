@@ -119,6 +119,7 @@ export function mergePlaceToVenue(
     trust: buildTrust(place, metadata, enrichmentStatus),
     enrichmentStatus: consumerStatus,
     trustedFacts,
+    provider: place.provider,
   };
 }
 

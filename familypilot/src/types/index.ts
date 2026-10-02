@@ -125,6 +125,15 @@ export interface Venue {
   enrichmentStatus?: EnrichmentStatus;
   /** Claim-backed facts for Family Match — populated from projected consumer metadata. */
   trustedFacts?: import('@/src/types/day-request').MatchableVenueFacts;
+  /**
+   * Which provider this place came from.
+   *
+   * Carried to the client because attribution is a licence condition, not a detail: OpenStreetMap
+   * is ODbL and requires crediting its contributors wherever its data is shown, and Google requires
+   * its own mark on Google content. Without this field the client cannot tell them apart, so it
+   * showed Google's attribution over every place regardless of where the place actually came from.
+   */
+  provider?: import('@/src/types/places').PlacesProviderName;
 }
 
 export interface CommunityTip {

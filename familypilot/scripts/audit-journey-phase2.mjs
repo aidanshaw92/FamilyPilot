@@ -26,6 +26,7 @@ const EDGE = {
   noPhoto: 'fp-google-FIXTUREedgeNoPhoto',
   noHours: 'fp-google-FIXTUREedgeNoHours',
   closesEarly: 'fp-google-FIXTUREedgeClosesEarly',
+  osm: 'fp-osm-FIXTUREedgeOsm',
 };
 
 const PROFILE = {
@@ -226,6 +227,17 @@ async function auditJourney(browser, viewport) {
     [EDGE.noPhoto, 'a venue with no photograph', async () => {
       const t = await text(page);
       return { ok: t.includes('No Photograph Park'), message: t.replace(/\s+/g, ' ').slice(0, 70) };
+    }],
+    [EDGE.osm, 'an OpenStreetMap venue, which must credit its contributors', async () => {
+      const t = await text(page);
+      // ODbL requires the credit wherever the data is shown, and Google's mark must not appear over
+      // a place that did not come from Google.
+      const osmCredited = /©\s*OpenStreetMap contributors/.test(t);
+      const googleMark = await page.getByTestId('place-attribution-google').isVisible().catch(() => false);
+      return {
+        ok: osmCredited && !googleMark,
+        message: `osm credit ${osmCredited ? 'present' : 'MISSING'}, google mark ${googleMark ? 'WRONGLY shown' : 'absent'}`,
+      };
     }],
     [EDGE.noHours, 'a venue whose hours nobody published', async () => {
       const t = await text(page);

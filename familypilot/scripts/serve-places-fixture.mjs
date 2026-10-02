@@ -239,6 +239,15 @@ const EDGE_PLACES = [
   }),
   // No photograph at all: the category gradient has to carry the hero.
   edgePlace('fp-google-FIXTUREedgeNoPhoto', { name: 'No Photograph Park', photos: [], openingHours: WIDE_HOURS }),
+  // An OpenStreetMap-sourced venue. ODbL requires crediting its contributors wherever its data is
+  // shown, and three such venues are served to parents in production today, so the audit renders one.
+  edgePlace('fp-osm-FIXTUREedgeOsm', {
+    name: 'Open Data Common',
+    provider: 'osm',
+    externalId: 'osm:FIXTUREedgeOsm',
+    photos: [],
+    openingHours: WIDE_HOURS,
+  }),
   // Hours with no structured periods: nobody can say whether it is open on a given date.
   edgePlace('fp-google-FIXTUREedgeNoHours', {
     name: 'Unknown Hours Museum',

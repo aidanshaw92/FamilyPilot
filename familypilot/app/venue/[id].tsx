@@ -21,6 +21,7 @@ import { FacilityGrid } from '@/src/components/venue/FacilityGrid';
 import { PhotoGallery } from '@/src/components/venue/PhotoGallery';
 import { WeatherAlternativeSection } from '@/src/components/venue/WeatherAlternativeSection';
 import { PhotoAttributionLine } from '@/src/components/shared/GoogleAttribution';
+import { PlaceAttribution } from '@/src/components/shared/PlaceAttribution';
 import { SaveButton } from '@/src/components/shared/SaveButton';
 import { ShareButton } from '@/src/components/shared/ShareButton';
 import {
@@ -282,6 +283,12 @@ export default function VenueScreen() {
                 <PhotoAttributionLine attribution={heroAttribution} />
               </View>
             ) : null}
+
+            {/* Whose data this is. A licence condition for both providers, and until now the client
+                could not tell them apart, so Google's mark sat over OpenStreetMap places. */}
+            <View style={styles.photoAttribution}>
+              <PlaceAttribution provider={venue.provider} />
+            </View>
 
             <Text variant="heading3" style={styles.sectionTitle}>
               Facilities
