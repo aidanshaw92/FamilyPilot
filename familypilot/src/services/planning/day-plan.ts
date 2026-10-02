@@ -1,3 +1,6 @@
+import { EnrichmentStatus, VenueCategory } from '@/src/types';
+import { MatchableVenueFacts } from '@/src/types/day-request';
+import { OpeningHoursSchedule } from '@/src/types/opening-hours';
 import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
 import {
   DayPlanRequest,
@@ -64,17 +67,32 @@ const invalid = (message: string, field?: string): PlanGenerationResult => ({
  * the place id. Everything a plan has no business knowing — photos, website, provider ids, fetch
  * timestamps — is left behind here rather than carried through the planner.
  */
-export function resolvedStopFromRecord(
-  record: ExternalPlaceRecord,
-  role: StopRole,
-  dwellMinutes: number,
-): ResolvedStop {
+export type PlanStopSource = Omit<ResolvedStop, 'role' | 'dwellMinutes'>;
+
+/**
+ * A merged venue as the detail screen holds it, narrowed to the fields planning reads.
+ *
+ * Structural rather than an import of `VenueDetail`, which `VenueDetail` satisfies: the planner has
+ * no business depending on a view type that also carries photos, community tips and display copy.
+ */
+export interface PlanVenueSource {
+  id: string;
+  name: string;
+  category: VenueCategory;
+  latitude: number;
+  longitude: number;
+  structuredOpeningHours?: OpeningHoursSchedule;
+  isOpen?: boolean;
+  enrichmentStatus?: EnrichmentStatus;
+  trustedFacts?: MatchableVenueFacts;
+}
+
+/** Renames a provider record's fields. Nothing is derived, defaulted or dropped silently. */
+export function planStopFromRecord(record: ExternalPlaceRecord): PlanStopSource {
   return {
     placeId: record.familypilotId,
     name: record.name,
     category: record.category,
-    role,
-    dwellMinutes,
     latitude: record.latitude,
     longitude: record.longitude,
     openingHours: record.openingHours,
@@ -82,6 +100,44 @@ export function resolvedStopFromRecord(
     enrichmentStatus: record.enrichmentStatus,
     familyMetadata: record.familyMetadata,
   };
+}
+
+/**
+ * The same, from the venue the detail screen is already showing.
+ *
+ * Carries `trustedFacts` across as `facts` instead of metadata, because that is what this shape
+ * holds — see `ResolvedStop.facts`. An absent one stays absent: the day is then planned against
+ * unknowns, which is the honest reading, not a set of assumed facilities.
+ */
+export function planStopFromVenueDetail(venue: PlanVenueSource): PlanStopSource {
+  return {
+    placeId: venue.id,
+    name: venue.name,
+    category: venue.category,
+    latitude: venue.latitude,
+    longitude: venue.longitude,
+    openingHours: venue.structuredOpeningHours,
+    isOpen: venue.isOpen,
+    enrichmentStatus: venue.enrichmentStatus,
+    facts: venue.trustedFacts,
+  };
+}
+
+/** Gives a source its part in the day. `role` and `dwellMinutes` belong to the day, not the place. */
+export function resolvedStop(
+  source: PlanStopSource,
+  role: StopRole,
+  dwellMinutes: number,
+): ResolvedStop {
+  return { ...source, role, dwellMinutes };
+}
+
+export function resolvedStopFromRecord(
+  record: ExternalPlaceRecord,
+  role: StopRole,
+  dwellMinutes: number,
+): ResolvedStop {
+  return resolvedStop(planStopFromRecord(record), role, dwellMinutes);
 }
 
 const stopsOf = (request: DayPlanRequest): ResolvedStop[] =>
@@ -187,6 +243,30 @@ function resolvePlanningClock(
   return { clock: { today, nowMinutes, timezone } };
 }
 
+/**
+ * The facts the sequencer matches on, from whichever half of the stop carries them.
+ *
+ * Both branches end at `extractMatchableFacts`; a caller that already ran it hands the answer over
+ * rather than having it re-derived from metadata it does not keep. Identity and drive time are
+ * taken from the stop either way: `driveMinutes` is 0 because the sequencer substitutes the leg the
+ * family actually took before matching, and a stored estimate from a home this day may not start
+ * at is not that leg.
+ */
+export function stopFacts(stop: PlanStopSource): MatchableVenueFacts {
+  if (stop.facts) {
+    return { ...stop.facts, placeId: stop.placeId, name: stop.name, driveMinutes: 0 };
+  }
+  return extractMatchableFacts(
+    stop.placeId,
+    stop.name,
+    stop.category,
+    0,
+    stop.enrichmentStatus,
+    stop.familyMetadata ?? null,
+    stop.isOpen,
+  );
+}
+
 /** Narrow stop to what the sequencer matches on. Hours pass straight through, never fabricated. */
 function toStopRequest(stop: ResolvedStop, anchor: boolean): StopRequest {
   return {
@@ -195,17 +275,7 @@ function toStopRequest(stop: ResolvedStop, anchor: boolean): StopRequest {
     role: stop.role,
     anchor,
     dwellMinutes: stop.dwellMinutes,
-    // driveMinutes is 0 here because the sequencer substitutes the leg the family actually took
-    // to reach this stop before matching on it.
-    facts: extractMatchableFacts(
-      stop.placeId,
-      stop.name,
-      stop.category,
-      0,
-      stop.enrichmentStatus,
-      stop.familyMetadata ?? null,
-      stop.isOpen,
-    ),
+    facts: stopFacts(stop),
     openingHours: stop.openingHours,
   };
 }

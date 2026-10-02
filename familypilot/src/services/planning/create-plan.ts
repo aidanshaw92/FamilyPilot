@@ -1,10 +1,9 @@
-import { ExternalPlaceRecord } from '@/src/types/places';
 import { DayPlanRequest, PlanGenerationFailure, ResolvedStop } from '@/src/types/day-plan';
-import { SequenceFailure } from '@/src/types/day-sequence';
+import { SequenceFailure, UnmetRequirement } from '@/src/types/day-sequence';
 
 import { buildJourneyMatrix } from './journey-matrix';
 import { journeyProbe } from './journey-probe';
-import { generateDayPlan, resolvedStopFromRecord } from './day-plan';
+import { PlanStopSource, generateDayPlan, resolvedStop, stopFacts } from './day-plan';
 import { sequenceDay } from './sequencer';
 import { PlanningFamily } from './planner';
 import { PlanDraft } from './plan-draft';
@@ -34,18 +33,28 @@ export interface CreatePlanStep {
 }
 
 export interface MealCandidate {
-  record: ExternalPlaceRecord;
+  place: PlanStopSource;
   /** Straight-line walking estimate, when the caller knows it. Used only for the progress line. */
   walkMinutes?: number;
 }
 
 export interface CreatePlanInput {
-  venue: ExternalPlaceRecord;
+  /**
+   * The venue the day is built around, already narrowed by one of day-plan's adapters —
+   * `planStopFromVenueDetail` from the detail screen, `planStopFromRecord` from a provider record.
+   * Taking the narrowed shape rather than either source keeps the field renaming in one place.
+   */
+  venue: PlanStopSource;
   draft: PlanDraft;
   /** Already resolved from the draft's party ids, with coordinates. */
   families: PlanningFamily[];
   /** Omitted when nothing is cached: the day is then built without a meal. */
   meal?: MealCandidate;
+  /**
+   * The venue's reviewed free-text parking detail, where it has one. Claim-backed facts come from
+   * the venue itself, so only this prose needs passing in.
+   */
+  parkingInfo?: string;
   returnBy?: string;
   bufferMinutes?: number;
   environment?: 'either' | 'indoor' | 'outdoor';
@@ -85,7 +94,7 @@ export function createPlanSteps(input: { venueName: string; meal?: MealCandidate
   const lunchLabel = input.meal
     ? input.meal.walkMinutes != null
       ? `Finding lunch within a ${input.meal.walkMinutes}-minute walk`
-      : `Adding lunch at ${input.meal.record.name}`
+      : `Adding lunch at ${input.meal.place.name}`
     : 'Checking for lunch nearby';
   return [
     { id: 'venue', label: `Checking ${input.venueName} fits your family` },
@@ -93,6 +102,52 @@ export function createPlanSteps(input: { venueName: string; meal?: MealCandidate
     { id: 'travel', label: 'Working out travel and parking' },
     { id: 'timing', label: 'Fitting the day around your family' },
   ];
+}
+
+/**
+ * What each required constraint is called when a parent reads about it.
+ *
+ * Only the fields the matcher can actually fail at `required` strength appear. A field with no entry
+ * falls back to the sequencer's own sentence rather than being rendered as a raw key.
+ */
+const REQUIREMENT_LABELS: Record<string, string> = {
+  // Namespaced exactly as the matcher emits them. A bare `toilets` here would silently never match,
+  // and every unmet requirement would fall through to the generic sentence.
+  'familyFacilities.toilets': 'toilets',
+  'familyFacilities.babyChanging': 'baby changing',
+  'familyFacilities.parking': 'parking',
+  pushchairSuitability: 'pushchair access',
+};
+
+/**
+ * An unmet requirement in a parent's words, keeping "has none" and "nobody checked" apart.
+ *
+ * The difference is the whole point. Telling a parent a venue has no baby changing when the truth is
+ * that nobody has confirmed it is a claim FamilyPilot has no evidence for, and it is the kind of
+ * claim that stops a family going somewhere perfectly suitable.
+ */
+function requirementLine(requirement: UnmetRequirement, venueName: string): string | null {
+  if (requirement.field === 'pushchairSuitability') {
+    return requirement.outcome === 'unsuitable'
+      ? `${venueName} is recorded as difficult with a pushchair, and your family needs it to work.`
+      : `Nobody has confirmed whether ${venueName} works with a pushchair, and your family needs it to.`;
+  }
+  const label = REQUIREMENT_LABELS[requirement.field];
+  if (label) {
+    return requirement.outcome === 'unsuitable'
+      ? `${venueName} does not have ${label}, and your family needs it.`
+      : `Nobody has confirmed ${label} at ${venueName}, and your family needs it.`;
+  }
+  switch (requirement.field) {
+    case 'journey':
+      return `${venueName} is further away than your travel limit allows.`;
+    case 'ageAdmission':
+      return `${venueName} has an age policy that would turn one of your children away.`;
+    case 'environment':
+      return `${venueName} is not the kind of place you asked for today.`;
+    default:
+      return null;
+  }
 }
 
 function minutesToClock(minutes: number): string {
@@ -109,6 +164,23 @@ function minutesToClock(minutes: number): string {
  */
 function describeSequenceFailure(failure: SequenceFailure, venueName: string): CreatePlanFailure {
   switch (failure.reason) {
+    case 'requirement-unmet': {
+      const lines = failure.unmet
+        .map((requirement) => requirementLine(requirement, venueName))
+        .filter((line): line is string => line !== null);
+      // Only unconfirmed requirements can be settled by checking; a requirement the venue genuinely
+      // fails cannot, so that suggestion is offered only where it would help.
+      const anyUnknown = failure.unmet.some((requirement) => requirement.outcome === 'unknown');
+      return {
+        ok: false,
+        title: `${venueName} does not fit ${failure.familyLabel} yet`,
+        // The sequencer's own sentence is the fallback, never a bare field name.
+        message: lines.length ? lines.join(' ') : failure.message,
+        suggestions: anyUnknown
+          ? ['Check with the venue before you go', 'Pick a different place', 'Change your must-haves in your profile']
+          : ['Pick a different place', 'Change your must-haves in your profile'],
+      };
+    }
     case 'venue-closed':
       return {
         ok: false,
@@ -203,11 +275,11 @@ export async function createPlan(
     return { ok: false, title: 'Nobody is coming yet', message: 'Choose at least one family for this day.', suggestions: [] };
   }
 
-  const anchor: ResolvedStop = resolvedStopFromRecord(venue, 'activity', draft.visitMinutes);
+  const anchor: ResolvedStop = resolvedStop(venue, 'activity', draft.visitMinutes);
 
   step('lunch');
   const mealStop: ResolvedStop | undefined = meal
-    ? resolvedStopFromRecord(meal.record, 'meal', MEAL_DWELL_MINUTES)
+    ? resolvedStop(meal.place, 'meal', MEAL_DWELL_MINUTES)
     : undefined;
 
   const request: DayPlanRequest = {
@@ -241,6 +313,12 @@ export async function createPlan(
       travel: result.plan.travel,
       caveats: result.plan.caveats,
       anchorName: venue.name,
+      // From the anchor's own facts, through the same extractor the sequencer matched on, so the
+      // Travel & parking section cannot disagree with the day it describes.
+      parking: ((): { parking: 'yes' | 'no' | 'unknown'; freeParking?: 'yes' | 'no' | 'unknown'; info?: string } => {
+        const facts = stopFacts(venue);
+        return { parking: facts.parking, freeParking: facts.freeParking, info: input.parkingInfo };
+      })(),
     }),
   };
 }

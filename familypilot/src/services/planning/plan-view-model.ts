@@ -1,5 +1,6 @@
 import { DayItinerary, SequenceLeg, SequenceStop } from '@/src/types/day-sequence';
 import { PlanCaveat, TravelDiagnostics } from '@/src/types/day-plan';
+import { MatchableVenueFacts } from '@/src/types/day-request';
 
 /**
  * The boundary between the planner and the approved Plan screen.
@@ -76,6 +77,8 @@ export interface PlanViewModel {
     legs: PlanTravelLegView[];
     provenanceNote: string;
     missingNote?: string;
+    /** What is known about parking at the venue the day is built around. Never assumed. */
+    parking: PlanStopRow[];
   };
   /** Facts the day rests on that nobody has confirmed. Rendered, never hidden. */
   unknowns: string[];
@@ -166,12 +169,56 @@ function travelLegLabel(leg: SequenceLeg, stops: SequenceStop[]): string {
   return `${nameOf(leg.from)} to ${nameOf(leg.to)}`;
 }
 
+/**
+ * Parking as the caller already knows it, for the approved Travel & parking section.
+ *
+ * Not derived from the itinerary, because the sequencer has no opinion on parking: these are the
+ * anchor's own claim-backed facts, passed in by whoever holds them. Omitting the whole object means
+ * nobody checked, which reads as unconfirmed rather than as an absence of parking.
+ */
+export interface PlanParkingInput {
+  parking: MatchableVenueFacts['parking'];
+  freeParking?: MatchableVenueFacts['freeParking'];
+  /** The venue's own free-text detail, where it has been reviewed. Shown verbatim. */
+  info?: string;
+}
+
 export interface PlanViewModelInput {
   itinerary: DayItinerary;
   travel: TravelDiagnostics;
   caveats: PlanCaveat[];
   /** The venue the day was built around, used for the plan's name. */
   anchorName: string;
+  /** The anchor's parking facts. Absent means nobody confirmed them. */
+  parking?: PlanParkingInput;
+}
+
+/**
+ * Parking rows, which say only what the evidence says.
+ *
+ * A confirmed yes with no cost evidence stays silent about cost rather than implying free parking,
+ * and no evidence at all says so outright: a parent driving somewhere with nowhere to park is worse
+ * off for having read a reassuring blank.
+ */
+function parkingRows(parking: PlanParkingInput | undefined): PlanStopRow[] {
+  const unconfirmed: PlanStopRow[] = [
+    { label: 'Parking', value: 'Not confirmed — check before you go', unconfirmed: true },
+  ];
+  if (!parking) return unconfirmed;
+
+  const rows: PlanStopRow[] = [];
+  if (parking.parking === 'yes') {
+    const cost =
+      parking.freeParking === 'yes' ? ', free' : parking.freeParking === 'no' ? ', paid' : '';
+    rows.push({ label: 'Parking', value: `On site${cost}` });
+  } else if (parking.parking === 'no') {
+    rows.push({ label: 'Parking', value: 'None on site' });
+  } else {
+    rows.push(...unconfirmed);
+  }
+
+  if (parking.info) rows.push({ label: 'Details', value: parking.info });
+  return rows;
 }
 
 function caveatLine(caveat: PlanCaveat): string {
@@ -263,6 +310,7 @@ export function toPlanViewModel(input: PlanViewModelInput): PlanViewModel {
       missingNote: travel.missing.length
         ? `${travel.missing.length} journey${travel.missing.length === 1 ? '' : 's'} could not be looked up.`
         : undefined,
+      parking: parkingRows(input.parking),
     },
     unknowns: itinerary.unknowns,
     caveats: caveats.map(caveatLine).filter(Boolean),

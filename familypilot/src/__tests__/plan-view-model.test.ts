@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { toPlanViewModel, weekdayOf, planClock } from '@/src/services/planning/plan-view-model';
+import { PlanParkingInput, toPlanViewModel, weekdayOf, planClock } from '@/src/services/planning/plan-view-model';
 import { DayItinerary, SequenceStop, SequenceLeg } from '@/src/types/day-sequence';
 import { PlanCaveat, TravelDiagnostics } from '@/src/types/day-plan';
 
@@ -47,12 +47,18 @@ const travel = (over: Partial<TravelDiagnostics> = {}): TravelDiagnostics => ({
   ...over,
 });
 
-const build = (over: { itinerary?: Partial<DayItinerary>; travel?: Partial<TravelDiagnostics>; caveats?: PlanCaveat[] } = {}) =>
+const build = (over: {
+  itinerary?: Partial<DayItinerary>;
+  travel?: Partial<TravelDiagnostics>;
+  caveats?: PlanCaveat[];
+  parking?: PlanParkingInput;
+} = {}) =>
   toPlanViewModel({
     itinerary: itinerary(over.itinerary),
     travel: travel(over.travel),
     caveats: over.caveats ?? [],
     anchorName: 'Kentish Town City Farm',
+    parking: over.parking,
   });
 
 describe('the day reads as a day, not as a schedule dump', () => {
@@ -191,5 +197,46 @@ describe('a day that runs past midnight says so', () => {
     const view = build({ itinerary: { families: [{ familyId: 'mine', label: 'Our family',
       depart: 20 * 60, home: 25 * 60, latestDeparture: 21 * 60, notes: [] }] } });
     expect(view.dateSummary).toContain('01:00 next day');
+  });
+});
+
+describe('the Travel & parking section says only what is known about parking', () => {
+  it('reports confirmed parking, and its cost only where that was confirmed too', () => {
+    expect(build({ parking: { parking: 'yes', freeParking: 'yes' } }).travel.parking)
+      .toEqual([{ label: 'Parking', value: 'On site, free' }]);
+    expect(build({ parking: { parking: 'yes', freeParking: 'no' } }).travel.parking)
+      .toEqual([{ label: 'Parking', value: 'On site, paid' }]);
+    // Confirmed parking with nothing confirmed about cost stays silent about cost rather than
+    // implying it is free.
+    expect(build({ parking: { parking: 'yes', freeParking: 'unknown' } }).travel.parking)
+      .toEqual([{ label: 'Parking', value: 'On site' }]);
+    expect(build({ parking: { parking: 'yes' } }).travel.parking[0].value).toBe('On site');
+  });
+
+  it('says there is none where that is the evidence', () => {
+    expect(build({ parking: { parking: 'no' } }).travel.parking)
+      .toEqual([{ label: 'Parking', value: 'None on site' }]);
+  });
+
+  it('tells a parent it is unconfirmed rather than leaving a reassuring blank', () => {
+    for (const view of [build(), build({ parking: { parking: 'unknown' } })]) {
+      expect(view.travel.parking).toEqual([
+        { label: 'Parking', value: 'Not confirmed — check before you go', unconfirmed: true },
+      ]);
+    }
+  });
+
+  it('shows the venue’s own reviewed detail verbatim, alongside the fact', () => {
+    const view = build({ parking: { parking: 'yes', freeParking: 'no', info: 'Pay and display, 120 spaces' } });
+    expect(view.travel.parking).toEqual([
+      { label: 'Parking', value: 'On site, paid' },
+      { label: 'Details', value: 'Pay and display, 120 spaces' },
+    ]);
+  });
+
+  it('keeps the detail attached to an unconfirmed fact rather than dropping either', () => {
+    const view = build({ parking: { parking: 'unknown', info: 'Nearest car park is on the high street' } });
+    expect(view.travel.parking[0].unconfirmed).toBe(true);
+    expect(view.travel.parking[1]).toEqual({ label: 'Details', value: 'Nearest car park is on the high street' });
   });
 });

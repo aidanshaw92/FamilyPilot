@@ -6,6 +6,7 @@ import {
   createPlan,
   createPlanSteps,
 } from '@/src/services/planning/create-plan';
+import { planStopFromRecord } from '@/src/services/planning/day-plan';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { ExternalPlaceRecord } from '@/src/types/places';
 import { DayItinerary, SequenceFailure } from '@/src/types/day-sequence';
@@ -18,7 +19,7 @@ import { DayItinerary, SequenceFailure } from '@/src/types/day-sequence';
  * reason is checked for keeping its detail and offering something to change.
  */
 
-const venue = (over: Partial<ExternalPlaceRecord> = {}): ExternalPlaceRecord => ({
+const record = (over: Partial<ExternalPlaceRecord> = {}): ExternalPlaceRecord => ({
   familypilotId: 'fp-google-anchor',
   name: 'Kentish Town City Farm',
   category: 'farm',
@@ -27,6 +28,9 @@ const venue = (over: Partial<ExternalPlaceRecord> = {}): ExternalPlaceRecord => 
   provider: 'google',
   ...over,
 } as ExternalPlaceRecord);
+
+/** createPlan takes the narrowed source, so the test goes through the real adapter too. */
+const venue = (over: Partial<ExternalPlaceRecord> = {}) => planStopFromRecord(record(over));
 
 const family = (over: Partial<PlanningFamily> = {}): PlanningFamily => ({
   id: 'mine', label: 'Our family', area: 'Camden',
@@ -71,7 +75,7 @@ describe('the generating steps describe real work', () => {
   it('names the venue and the restaurant rather than saying it is thinking', () => {
     const steps = createPlanSteps({
       venueName: 'Kentish Town City Farm',
-      meal: { record: venue({ name: 'The Moat Cafe' }), walkMinutes: 5 },
+      meal: { place: venue({ name: 'The Moat Cafe' }), walkMinutes: 5 },
     });
     expect(steps.map((s) => s.label)).toEqual([
       'Checking Kentish Town City Farm fits your family',
@@ -87,7 +91,7 @@ describe('the generating steps describe real work', () => {
   });
 
   it('names the restaurant when the walk is not known', () => {
-    expect(createPlanSteps({ venueName: 'X', meal: { record: venue({ name: 'The Moat Cafe' }) } })[1].label)
+    expect(createPlanSteps({ venueName: 'X', meal: { place: venue({ name: 'The Moat Cafe' }) } })[1].label)
       .toBe('Adding lunch at The Moat Cafe');
   });
 
@@ -117,7 +121,7 @@ describe('lunch is never bought twice', () => {
   it('uses the meal the caller already holds, at the table length the planner uses', async () => {
     const sequence = vi.fn(() => ({ ok: true as const, itinerary: itinerary() }));
     await createPlan(
-      { venue: venue(), draft, families: [family()], meal: { record: venue({ familypilotId: 'fp-google-cafe', name: 'The Moat Cafe', category: 'cafe' }) } },
+      { venue: venue(), draft, families: [family()], meal: { place: venue({ familypilotId: 'fp-google-cafe', name: 'The Moat Cafe', category: 'cafe' }) } },
       workingDeps({ sequence: sequence as never }),
     );
     const stops = (sequence.mock.calls[0] as unknown[])[0] as Array<{ role: string; dwellMinutes: number }>;
@@ -203,5 +207,128 @@ describe('a day that works', () => {
     expect(outcome.view.summary).toBe('A 3-hour Saturday');
     expect(outcome.view.sections.map((s) => s.label)).toEqual(['Day plan', 'Who’s coming', 'Travel & parking']);
     expect(outcome.view.stops[0].period).toBe('Morning');
+  });
+});
+
+describe('the plan’s parking comes from the venue, not from the view', () => {
+  /**
+   * The approved section is "Travel & parking", and the sequencer has no opinion on parking. These
+   * check it is read from the same facts the day was matched on, so the section cannot reassure a
+   * parent about parking the day never checked.
+   */
+  const withParking = (over: Partial<ExternalPlaceRecord>) =>
+    venue({
+      enrichmentStatus: 'enriched',
+      familyMetadata: {
+        familypilotPlaceId: 'fp-google-anchor',
+        enrichmentStatus: 'enriched',
+        provenance: {},
+        updatedAt: '2026-09-01',
+        ...(over.familyMetadata ?? {}),
+      },
+      ...over,
+    } as Partial<ExternalPlaceRecord>);
+
+  it('reports confirmed free parking from the venue’s own claims', async () => {
+    const outcome = await createPlan(
+      {
+        venue: withParking({
+          familyMetadata: { familyFacilities: { parking: 'yes', freeParking: 'yes' } },
+        } as Partial<ExternalPlaceRecord>),
+        draft,
+        families: [family()],
+      },
+      workingDeps(),
+    );
+    expect(outcome.ok).toBe(true);
+    if (outcome.ok) expect(outcome.view.travel.parking[0].value).toBe('On site, free');
+  });
+
+  it('says unconfirmed for a venue nobody has reviewed', async () => {
+    const outcome = await createPlan({ venue: venue(), draft, families: [family()] }, workingDeps());
+    expect(outcome.ok).toBe(true);
+    if (outcome.ok) {
+      expect(outcome.view.travel.parking[0].unconfirmed).toBe(true);
+    }
+  });
+
+  it('passes the venue’s reviewed parking prose through untouched', async () => {
+    const outcome = await createPlan(
+      { venue: venue(), draft, families: [family()], parkingInfo: 'Free car park, 40 spaces' },
+      workingDeps(),
+    );
+    expect(outcome.ok).toBe(true);
+    if (outcome.ok) {
+      expect(outcome.view.travel.parking.at(-1)).toEqual({
+        label: 'Details',
+        value: 'Free car park, 40 spaces',
+      });
+    }
+  });
+});
+
+describe('an unmet requirement is explained, and absence is never read as a fact', () => {
+  /**
+   * The single most likely dead end in the real journey: a parent whose profile says they must have
+   * baby changing, at a venue nobody has reviewed. What they must not be told is that the venue has
+   * none -- FamilyPilot has no evidence for that, and it is the kind of claim that stops a family
+   * going somewhere perfectly suitable.
+   *
+   * The field names are the matcher's own, namespaced. A bare `toilets` would silently never match
+   * its label and every one of these would collapse into one generic sentence.
+   */
+  const unmet = (over: Array<{ field: string; outcome: 'unsuitable' | 'unknown' }>): SequenceFailure => ({
+    reason: 'requirement-unmet',
+    message: 'Kentish Town City Farm does not meet what Our family requires.',
+    stopIndex: 0,
+    placeId: 'fp-google-anchor',
+    familyId: 'mine',
+    familyLabel: 'Our family',
+    unmet: over,
+  });
+
+  const describe_ = async (failure: SequenceFailure) => {
+    const outcome = await createPlan({ venue: venue(), draft, families: [family()] }, failing(failure));
+    if (outcome.ok) throw new Error('expected a failure');
+    return outcome;
+  };
+
+  it('says nobody has confirmed the facility, not that the venue lacks it', async () => {
+    const outcome = await describe_(unmet([{ field: 'familyFacilities.babyChanging', outcome: 'unknown' }]));
+    expect(outcome.title).toBe('Kentish Town City Farm does not fit Our family yet');
+    expect(outcome.message).toBe(
+      'Nobody has confirmed baby changing at Kentish Town City Farm, and your family needs it.',
+    );
+    expect(outcome.message).not.toContain('does not have');
+    expect(outcome.suggestions).toContain('Check with the venue before you go');
+  });
+
+  it('says the venue does not have it where that is the evidence', async () => {
+    const outcome = await describe_(unmet([{ field: 'familyFacilities.toilets', outcome: 'unsuitable' }]));
+    expect(outcome.message).toBe('Kentish Town City Farm does not have toilets, and your family needs it.');
+    // Checking with the venue cannot change a recorded absence, so it is not offered.
+    expect(outcome.suggestions).not.toContain('Check with the venue before you go');
+  });
+
+  it('names every unmet requirement rather than only the first', async () => {
+    const outcome = await describe_(unmet([
+      { field: 'familyFacilities.toilets', outcome: 'unsuitable' },
+      { field: 'familyFacilities.parking', outcome: 'unknown' },
+    ]));
+    expect(outcome.message).toContain('does not have toilets');
+    expect(outcome.message).toContain('Nobody has confirmed parking');
+  });
+
+  it('keeps the pushchair wording about difficulty, not about a missing facility', async () => {
+    expect((await describe_(unmet([{ field: 'pushchairSuitability', outcome: 'unsuitable' }]))).message)
+      .toBe('Kentish Town City Farm is recorded as difficult with a pushchair, and your family needs it to work.');
+    expect((await describe_(unmet([{ field: 'pushchairSuitability', outcome: 'unknown' }]))).message)
+      .toBe('Nobody has confirmed whether Kentish Town City Farm works with a pushchair, and your family needs it to.');
+  });
+
+  it('falls back to the sequencer’s own sentence rather than printing a field name', async () => {
+    const outcome = await describe_(unmet([{ field: 'someFutureConstraint', outcome: 'unsuitable' }]));
+    expect(outcome.message).toBe('Kentish Town City Farm does not meet what Our family requires.');
+    expect(outcome.message).not.toContain('someFutureConstraint');
   });
 });
