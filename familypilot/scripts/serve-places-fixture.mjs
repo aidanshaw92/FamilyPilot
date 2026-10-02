@@ -248,6 +248,19 @@ const EDGE_PLACES = [
     photos: [],
     openingHours: WIDE_HOURS,
   }),
+  /**
+   * No coordinates at all.
+   *
+   * The nearby-food lookup is disabled without them, and react-query reports a disabled query as
+   * pending-and-idle. A plan route that waited on `isPending` would therefore never generate for this
+   * venue. That hang is what this venue exists to catch.
+   */
+  edgePlace('fp-google-FIXTUREedgeNoCoords', {
+    name: 'No Coordinates Park',
+    latitude: undefined,
+    longitude: undefined,
+    openingHours: WIDE_HOURS,
+  }),
   // Hours with no structured periods: nobody can say whether it is open on a given date.
   edgePlace('fp-google-FIXTUREedgeNoHours', {
     name: 'Unknown Hours Museum',

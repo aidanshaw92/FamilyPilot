@@ -27,6 +27,7 @@ const EDGE = {
   noHours: 'fp-google-FIXTUREedgeNoHours',
   closesEarly: 'fp-google-FIXTUREedgeClosesEarly',
   osm: 'fp-osm-FIXTUREedgeOsm',
+  noCoords: 'fp-google-FIXTUREedgeNoCoords',
 };
 
 const PROFILE = {
@@ -378,6 +379,22 @@ async function auditJourney(browser, viewport) {
   note(V, 'Restaurants close by', 'reports a lookup outage as ours, not as an empty area', {
     ok: /could not check/i.test(outageText) && /not about the area/i.test(outageText),
     message: outageText.replace(/\s+/g, ' ').slice(0, 80),
+  });
+
+  // A venue with no coordinates must still produce an answer rather than generating for ever. The
+  // nearby-food lookup is disabled without coordinates, and react-query reports a disabled query as
+  // pending, so a plan route that waited on `isPending` would hang here. Verified as a real hang before
+  // the gate was corrected.
+  await page.goto(
+    `${BASE}/plan?venue=${EDGE.noCoords}&date=${PLAN_DATE}&leaveAt=09:30&visit=90&parties=mine`,
+    { waitUntil: 'domcontentloaded' },
+  );
+  await settle(page, 9000);
+  const noCoordsText = await text(page);
+  note(V, 'Plan', 'answers for a venue with no coordinates instead of generating for ever', {
+    // Either a day or a stated failure is fine. Sitting on the generating steps is not.
+    ok: !(await page.getByTestId('generating-plan').isVisible().catch(() => false)),
+    message: noCoordsText.replace(/\s+/g, ' ').slice(0, 80),
   });
 
   // --- CREATE A PLAN ----------------------------------------------------------------------------

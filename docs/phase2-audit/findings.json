@@ -177,6 +177,13 @@
   },
   {
     "viewport": "360x800",
+    "screen": "Plan",
+    "step": "answers for a venue with no coordinates instead of generating for ever",
+    "ok": true,
+    "message": " Check the plan details No Coordinates Park has no usable location. Change the "
+  },
+  {
+    "viewport": "360x800",
     "screen": "Create a Plan",
     "step": "is the approved share of the viewport",
     "ok": true,
@@ -521,6 +528,13 @@
     "step": "reports a lookup outage as ours, not as an empty area",
     "ok": true,
     "message": "Restaurants close by We could not check what is nearby just now. This is about o"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "answers for a venue with no coordinates instead of generating for ever",
+    "ok": true,
+    "message": " Check the plan details No Coordinates Park has no usable location. Change the "
   },
   {
     "viewport": "390x844",
@@ -871,6 +885,13 @@
   },
   {
     "viewport": "393x852",
+    "screen": "Plan",
+    "step": "answers for a venue with no coordinates instead of generating for ever",
+    "ok": true,
+    "message": " Check the plan details No Coordinates Park has no usable location. Change the "
+  },
+  {
+    "viewport": "393x852",
     "screen": "Create a Plan",
     "step": "is the approved share of the viewport",
     "ok": true,
@@ -1218,6 +1239,13 @@
   },
   {
     "viewport": "430x932",
+    "screen": "Plan",
+    "step": "answers for a venue with no coordinates instead of generating for ever",
+    "ok": true,
+    "message": " Check the plan details No Coordinates Park has no usable location. Change the "
+  },
+  {
+    "viewport": "430x932",
     "screen": "Create a Plan",
     "step": "is the approved share of the viewport",
     "ok": true,
@@ -1562,6 +1590,13 @@
     "step": "reports a lookup outage as ours, not as an empty area",
     "ok": true,
     "message": "Restaurants close by We could not check what is nearby just now. This is about o"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "answers for a venue with no coordinates instead of generating for ever",
+    "ok": true,
+    "message": " Check the plan details No Coordinates Park has no usable location. Change the "
   },
   {
     "viewport": "393x852-insets",

@@ -122,7 +122,20 @@ export default function PlanScreen() {
   }, [nearbyFood.data]);
   /** Primitives for the generation effect's dependency list, never the objects. */
   const lunchKey = lunch?.place.placeId ?? 'no-lunch';
-  const foodPending = nearbyFood.isPending;
+  /**
+   * Whether a lunch answer is still coming. NOT simply `isPending`.
+   *
+   * react-query v5 reports a DISABLED query as `status: 'pending'` with `fetchStatus: 'idle'`, and the
+   * lookup is disabled whenever the venue has no coordinates. So a bare `isPending` gate would wait for
+   * an answer that is never coming and the plan would never generate at all -- a hang, for a venue
+   * missing a latitude. Verified against react-query itself rather than assumed.
+   *
+   * The condition that actually matters is "we expect an answer and have not got one": the venue has
+   * coordinates, so the query is enabled, and it has not resolved.
+   */
+  const foodExpected =
+    Number.isFinite(venue?.latitude) && Number.isFinite(venue?.longitude);
+  const foodPending = foodExpected && nearbyFood.isPending && nearbyFood.fetchStatus !== 'idle';
 
   const [phase, setPhase] = useState<Phase>({ status: 'generating' });
   const [done, setDone] = useState<CreatePlanStepId[]>([]);
