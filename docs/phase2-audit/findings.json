@@ -81,6 +81,13 @@
   {
     "viewport": "360x800",
     "screen": "Venue Detail",
+    "step": "survives an OpenStreetMap venue, which must credit its contributors",
+    "ok": true,
+    "message": "osm credit present, google mark absent"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Venue Detail",
     "step": "survives a venue whose hours nobody published",
     "ok": true,
     "message": "Opening hours from provider FamilyPilot family details added · "
@@ -306,6 +313,13 @@
     "step": "survives a venue with no photograph",
     "ok": true,
     "message": "    No Photograph Park  40 min FAMILY MATCH Will this work for yo"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Venue Detail",
+    "step": "survives an OpenStreetMap venue, which must credit its contributors",
+    "ok": true,
+    "message": "osm credit present, google mark absent"
   },
   {
     "viewport": "390x844",
@@ -539,6 +553,13 @@
   {
     "viewport": "393x852",
     "screen": "Venue Detail",
+    "step": "survives an OpenStreetMap venue, which must credit its contributors",
+    "ok": true,
+    "message": "osm credit present, google mark absent"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Venue Detail",
     "step": "survives a venue whose hours nobody published",
     "ok": true,
     "message": "Opening hours from provider FamilyPilot family details added · "
@@ -768,6 +789,13 @@
   {
     "viewport": "430x932",
     "screen": "Venue Detail",
+    "step": "survives an OpenStreetMap venue, which must credit its contributors",
+    "ok": true,
+    "message": "osm credit present, google mark absent"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Venue Detail",
     "step": "survives a venue whose hours nobody published",
     "ok": true,
     "message": "Opening hours from provider FamilyPilot family details added · "
@@ -993,6 +1021,13 @@
     "step": "survives a venue with no photograph",
     "ok": true,
     "message": "    No Photograph Park  40 min FAMILY MATCH Will this work for yo"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Venue Detail",
+    "step": "survives an OpenStreetMap venue, which must credit its contributors",
+    "ok": true,
+    "message": "osm credit present, google mark absent"
   },
   {
     "viewport": "393x852-insets",
