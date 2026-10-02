@@ -63,7 +63,11 @@ const VIEWPORTS = [
   { label: '390x844', width: 390, height: 844 },
   { label: '393x852', width: 393, height: 852 },
   { label: '430x932', width: 430, height: 932 },
-  { label: '393x852-insets', width: 393, height: 852, insets: { top: 59, bottom: 34 } },
+  // No inset viewport here on purpose. `env(safe-area-inset-*)` reads 0 in a desktop browser and
+  // cannot be injected -- a style tag setting a custom property does not feed `env()`. A run that
+  // pretended otherwise was asserting a limit the layout never saw, which is a check that can only
+  // produce a false failure or false confidence. The inset arithmetic is covered by a unit test
+  // over the same expression the footers use; see src/__tests__/safe-area-footer.test.ts.
 ];
 
 const findings = [];
@@ -127,13 +131,6 @@ async function newPage(browser, viewport) {
     },
   );
 
-  // Safe-area insets are injected as the real CSS variables the layout reads, so an inset run
-  // exercises the same code path a notched phone does.
-  if (viewport.insets) {
-    await page.addStyleTag({
-      content: `:root{--safe-area-inset-top:${viewport.insets.top}px;--safe-area-inset-bottom:${viewport.insets.bottom}px;}`,
-    }).catch(() => {});
-  }
   return { context, page, errors };
 }
 
@@ -302,12 +299,11 @@ async function auditJourney(browser, viewport) {
       const o = await overflow(page);
       return { ok: o === null, message: o ? `${o.scroll} in ${o.viewport}: ${o.offenders.join(' ; ')}` : undefined };
     })());
-    note(V, 'Plan', 'keeps the save action clear of the home indicator', await (async () => {
+    note(V, 'Plan', 'keeps the save action on screen', await (async () => {
       const box = await page.getByTestId('plan-save').boundingBox().catch(() => null);
-      const limit = viewport.height - (viewport.insets?.bottom ?? 0);
       return {
-        ok: box ? box.y + box.height <= limit + 1 : false,
-        message: box ? `bottom ${Math.round(box.y + box.height)}, safe limit ${limit}` : 'no button',
+        ok: box ? box.y + box.height <= viewport.height + 1 : false,
+        message: box ? `bottom ${Math.round(box.y + box.height)} of ${viewport.height}` : 'no button',
       };
     })());
     note(V, 'Plan', 'expands the first stop and collapses the rest', {
@@ -390,9 +386,11 @@ async function auditPlanLinks(browser, viewport) {
     const t = await text(page);
     await page.screenshot({ path: join(dir, `${label.replace(/[^a-z]+/gi, '-')}.png`) });
     note(V, '/plan link', label, { ok: matches(t), message: matches(t) ? undefined : t.replace(/\s+/g, ' ').slice(0, 200) });
+    // A 404 is the right answer for a venue that does not exist, and the browser logs it as a
+    // console error either way, so it is not counted as one.
+    const real = errors.filter((e) => !/\b404\b/.test(e));
     note(V, '/plan link', `${label} — no runtime error`, {
-      ok: errors.filter((e) => !e.startsWith('404')).length === 0,
-      message: errors.filter((e) => !e.startsWith('404')).slice(0, 2).join(' | ') || undefined,
+      ok: real.length === 0, message: real.slice(0, 2).join(' | ') || undefined,
     });
     await context.close();
   }

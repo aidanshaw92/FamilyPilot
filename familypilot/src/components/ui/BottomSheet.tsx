@@ -4,6 +4,7 @@ import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { safeFooterPadding } from '@/src/utils/safe-area';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 
 /**
@@ -95,7 +96,7 @@ export function BottomSheet({ visible, onClose, children, accessibilityLabel, te
       <Animated.View
         entering={reducedMotion ? undefined : SlideInDown.duration(260)}
         exiting={reducedMotion ? undefined : SlideOutDown.duration(200)}
-        style={[styles.sheet, { height: sheetHeight, paddingBottom: insets.bottom + spacing.md }]}
+        style={[styles.sheet, { height: sheetHeight, paddingBottom: safeFooterPadding(insets.bottom) }]}
         accessibilityViewIsModal
         accessibilityLabel={accessibilityLabel}
         testID={testID}

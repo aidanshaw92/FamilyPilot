@@ -38,6 +38,7 @@ import { photoAttribution } from '@/src/services/places/place-photo-url';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { safeFooterPadding } from '@/src/utils/safe-area';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { isActivityVenue } from '@/src/data/mock-restaurants';
 import { useFamilyProfile, useVenue } from '@/src/hooks/use-queries';
@@ -339,7 +340,7 @@ export default function VenueScreen() {
       {/* Save sits beside Create a plan, and Get directions has moved into the content above.
           Create a plan is the one action this screen exists to offer, so it is the only primary
           button here; directions are what a parent wants once the day is decided, not instead. */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
+      <View style={[styles.footer, { paddingBottom: safeFooterPadding(insets.bottom) }]}>
         <Button
           label={saved ? 'Saved' : 'Save'}
           variant="outline"

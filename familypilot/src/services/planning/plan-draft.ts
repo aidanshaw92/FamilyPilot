@@ -161,7 +161,14 @@ export function planDraftDefaults(sources: PlanDraftSources): PlanDraftDefaults 
  */
 export type PlanRouteParams = Record<string, string | string[] | undefined>;
 
-const firstValue = (value: string | string[] | undefined): string | undefined =>
+/**
+ * The first value of a route parameter, which may arrive repeated.
+ *
+ * Exported because callers must narrow params to primitives BEFORE memoising on them: an array
+ * value is a new identity on every render, and a `useMemo` or `useEffect` that depends on one never
+ * settles. See the note in app/plan.tsx.
+ */
+export const firstValue = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value;
 
 export function planDraftFromParams(params: PlanRouteParams): PlanDraft {
