@@ -1,0 +1,655 @@
+[
+  {
+    "viewport": "360x800",
+    "step": "a venue card opens Venue Detail",
+    "ok": true,
+    "message": "Kettleford Play House"
+  },
+  {
+    "viewport": "360x800",
+    "step": "Venue Detail offers Create a plan",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "the CTA is not clipped by the viewport",
+    "ok": true,
+    "message": "bottom at 788 of 800"
+  },
+  {
+    "viewport": "360x800",
+    "step": "Get directions moved out of the footer",
+    "ok": true,
+    "message": "found in content at y=1144"
+  },
+  {
+    "viewport": "360x800",
+    "step": "Venue Detail does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "the sheet rises over the venue at the approved proportion",
+    "ok": true,
+    "message": "601px of 800 (75%)"
+  },
+  {
+    "viewport": "360x800",
+    "step": "the sheet shows the When row",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "the sheet shows the Start row",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "the sheet shows the Who’s coming row",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "the sheet shows the How long row",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "the household is summarised by count, not by name",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "the venue is still readable behind the sheet",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "the generating state was reached",
+    "ok": true,
+    "message": "passed too quickly to capture"
+  },
+  {
+    "viewport": "360x800",
+    "step": "the Plan screen rendered",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "the section nav offers Day plan",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "the section nav offers Who’s coming",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "the section nav offers Travel & parking",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "the day is summarised in the parent’s terms",
+    "ok": true,
+    "message": "A 3-hour Friday"
+  },
+  {
+    "viewport": "360x800",
+    "step": "the first stop is expanded",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "a period heading is shown",
+    "ok": true,
+    "message": "AFTERNOON"
+  },
+  {
+    "viewport": "360x800",
+    "step": "the Plan screen does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "parking is reported as unconfirmed for an unreviewed venue",
+    "ok": true,
+    "message": "Parking Not confirmed — check before you go JOURNEYS Home to Kettle"
+  },
+  {
+    "viewport": "360x800",
+    "step": "estimated journeys are labelled as estimates",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "each household gets its own leaving and returning time",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "saving from the header also settles the persistent button",
+    "ok": true,
+    "message": "Saved"
+  },
+  {
+    "viewport": "360x800",
+    "step": "Save this plan persists the day",
+    "ok": true,
+    "message": "1 saved day(s), 1 stop(s)"
+  },
+  {
+    "viewport": "360x800",
+    "step": "back returns to the venue",
+    "ok": true,
+    "message": "/venue/fp-google-FIXTUREnotArealPlaceId0010"
+  },
+  {
+    "viewport": "360x800",
+    "step": "no runtime errors on the journey",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "a venue card opens Venue Detail",
+    "ok": true,
+    "message": "Kettleford Play House"
+  },
+  {
+    "viewport": "390x844",
+    "step": "Venue Detail offers Create a plan",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "the CTA is not clipped by the viewport",
+    "ok": true,
+    "message": "bottom at 832 of 844"
+  },
+  {
+    "viewport": "390x844",
+    "step": "Get directions moved out of the footer",
+    "ok": true,
+    "message": "found in content at y=1144"
+  },
+  {
+    "viewport": "390x844",
+    "step": "Venue Detail does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "the sheet rises over the venue at the approved proportion",
+    "ok": true,
+    "message": "634px of 844 (75%)"
+  },
+  {
+    "viewport": "390x844",
+    "step": "the sheet shows the When row",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "the sheet shows the Start row",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "the sheet shows the Who’s coming row",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "the sheet shows the How long row",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "the household is summarised by count, not by name",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "the venue is still readable behind the sheet",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "the generating state was reached",
+    "ok": true,
+    "message": "passed too quickly to capture"
+  },
+  {
+    "viewport": "390x844",
+    "step": "the Plan screen rendered",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "the section nav offers Day plan",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "the section nav offers Who’s coming",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "the section nav offers Travel & parking",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "the day is summarised in the parent’s terms",
+    "ok": true,
+    "message": "A 3-hour Friday"
+  },
+  {
+    "viewport": "390x844",
+    "step": "the first stop is expanded",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "a period heading is shown",
+    "ok": true,
+    "message": "AFTERNOON"
+  },
+  {
+    "viewport": "390x844",
+    "step": "the Plan screen does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "parking is reported as unconfirmed for an unreviewed venue",
+    "ok": true,
+    "message": "Parking Not confirmed — check before you go JOURNEYS Home to Kettle"
+  },
+  {
+    "viewport": "390x844",
+    "step": "estimated journeys are labelled as estimates",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "each household gets its own leaving and returning time",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "saving from the header also settles the persistent button",
+    "ok": true,
+    "message": "Saved"
+  },
+  {
+    "viewport": "390x844",
+    "step": "Save this plan persists the day",
+    "ok": true,
+    "message": "1 saved day(s), 1 stop(s)"
+  },
+  {
+    "viewport": "390x844",
+    "step": "back returns to the venue",
+    "ok": true,
+    "message": "/venue/fp-google-FIXTUREnotArealPlaceId0010"
+  },
+  {
+    "viewport": "390x844",
+    "step": "no runtime errors on the journey",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "a venue card opens Venue Detail",
+    "ok": true,
+    "message": "Kettleford Play House"
+  },
+  {
+    "viewport": "393x852",
+    "step": "Venue Detail offers Create a plan",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "the CTA is not clipped by the viewport",
+    "ok": true,
+    "message": "bottom at 840 of 852"
+  },
+  {
+    "viewport": "393x852",
+    "step": "Get directions moved out of the footer",
+    "ok": true,
+    "message": "found in content at y=1144"
+  },
+  {
+    "viewport": "393x852",
+    "step": "Venue Detail does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "the sheet rises over the venue at the approved proportion",
+    "ok": true,
+    "message": "640px of 852 (75%)"
+  },
+  {
+    "viewport": "393x852",
+    "step": "the sheet shows the When row",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "the sheet shows the Start row",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "the sheet shows the Who’s coming row",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "the sheet shows the How long row",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "the household is summarised by count, not by name",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "the venue is still readable behind the sheet",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "the generating state was reached",
+    "ok": true,
+    "message": "passed too quickly to capture"
+  },
+  {
+    "viewport": "393x852",
+    "step": "the Plan screen rendered",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "the section nav offers Day plan",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "the section nav offers Who’s coming",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "the section nav offers Travel & parking",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "the day is summarised in the parent’s terms",
+    "ok": true,
+    "message": "A 3-hour Friday"
+  },
+  {
+    "viewport": "393x852",
+    "step": "the first stop is expanded",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "a period heading is shown",
+    "ok": true,
+    "message": "AFTERNOON"
+  },
+  {
+    "viewport": "393x852",
+    "step": "the Plan screen does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "parking is reported as unconfirmed for an unreviewed venue",
+    "ok": true,
+    "message": "Parking Not confirmed — check before you go JOURNEYS Home to Kettle"
+  },
+  {
+    "viewport": "393x852",
+    "step": "estimated journeys are labelled as estimates",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "each household gets its own leaving and returning time",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "saving from the header also settles the persistent button",
+    "ok": true,
+    "message": "Saved"
+  },
+  {
+    "viewport": "393x852",
+    "step": "Save this plan persists the day",
+    "ok": true,
+    "message": "1 saved day(s), 1 stop(s)"
+  },
+  {
+    "viewport": "393x852",
+    "step": "back returns to the venue",
+    "ok": true,
+    "message": "/venue/fp-google-FIXTUREnotArealPlaceId0010"
+  },
+  {
+    "viewport": "393x852",
+    "step": "no runtime errors on the journey",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "a venue card opens Venue Detail",
+    "ok": true,
+    "message": "Kettleford Play House"
+  },
+  {
+    "viewport": "430x932",
+    "step": "Venue Detail offers Create a plan",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "the CTA is not clipped by the viewport",
+    "ok": true,
+    "message": "bottom at 920 of 932"
+  },
+  {
+    "viewport": "430x932",
+    "step": "Get directions moved out of the footer",
+    "ok": true,
+    "message": "found in content at y=1064"
+  },
+  {
+    "viewport": "430x932",
+    "step": "Venue Detail does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "the sheet rises over the venue at the approved proportion",
+    "ok": true,
+    "message": "700px of 932 (75%)"
+  },
+  {
+    "viewport": "430x932",
+    "step": "the sheet shows the When row",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "the sheet shows the Start row",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "the sheet shows the Who’s coming row",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "the sheet shows the How long row",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "the household is summarised by count, not by name",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "the venue is still readable behind the sheet",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "the generating state was reached",
+    "ok": true,
+    "message": "passed too quickly to capture"
+  },
+  {
+    "viewport": "430x932",
+    "step": "the Plan screen rendered",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "the section nav offers Day plan",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "the section nav offers Who’s coming",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "the section nav offers Travel & parking",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "the day is summarised in the parent’s terms",
+    "ok": true,
+    "message": "A 3-hour Friday"
+  },
+  {
+    "viewport": "430x932",
+    "step": "the first stop is expanded",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "a period heading is shown",
+    "ok": true,
+    "message": "AFTERNOON"
+  },
+  {
+    "viewport": "430x932",
+    "step": "the Plan screen does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "parking is reported as unconfirmed for an unreviewed venue",
+    "ok": true,
+    "message": "Parking Not confirmed — check before you go JOURNEYS Home to Kettle"
+  },
+  {
+    "viewport": "430x932",
+    "step": "estimated journeys are labelled as estimates",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "each household gets its own leaving and returning time",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "saving from the header also settles the persistent button",
+    "ok": true,
+    "message": "Saved"
+  },
+  {
+    "viewport": "430x932",
+    "step": "Save this plan persists the day",
+    "ok": true,
+    "message": "1 saved day(s), 1 stop(s)"
+  },
+  {
+    "viewport": "430x932",
+    "step": "back returns to the venue",
+    "ok": true,
+    "message": "/venue/fp-google-FIXTUREnotArealPlaceId0010"
+  },
+  {
+    "viewport": "430x932",
+    "step": "no runtime errors on the journey",
+    "ok": true
+  },
+  {
+    "viewport": "requirement-unmet",
+    "step": "a venue card opens Venue Detail",
+    "ok": true,
+    "message": "Kettleford Play House"
+  },
+  {
+    "viewport": "requirement-unmet",
+    "step": "says which requirement stood in the way",
+    "ok": true
+  },
+  {
+    "viewport": "requirement-unmet",
+    "step": "says nobody confirmed it rather than that the venue lacks it",
+    "ok": true
+  },
+  {
+    "viewport": "requirement-unmet",
+    "step": "does not claim the venue has none",
+    "ok": true
+  },
+  {
+    "viewport": "requirement-unmet",
+    "step": "offers something the parent can change",
+    "ok": true
+  },
+  {
+    "viewport": "requirement-unmet",
+    "step": "no internal field name reaches the screen",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "no-location",
+    "step": "a venue card opens Venue Detail",
+    "ok": true,
+    "message": "Hollybank Gardens"
+  },
+  {
+    "viewport": "no-location",
+    "step": "the sheet blocks rather than planning from an invented home",
+    "ok": true
+  },
+  {
+    "viewport": "no-location",
+    "step": "no internal field name reaches the screen",
+    "ok": true,
+    "message": ""
+  }
+]

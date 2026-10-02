@@ -1,4 +1,5 @@
 import { FamilyProfile } from '@/src/types';
+import { canPlanFor, planningFamilyFromProfile } from './plan-parties';
 import { PlanningFamily, PlanningOptions } from './planner';
 
 /**
@@ -88,7 +89,10 @@ function profileParty(profile: FamilyProfile): PlanParty {
     id: 'mine',
     label: 'Our family',
     summary: summariseHousehold({ adults, children }),
-    ready: adults + children > 0,
+    // Ready means the planner could actually build a day for them, which is more than having
+    // members: a household that has never said where they live has nowhere to leave from. Asked
+    // through the resolver so the sheet's button and the plan it starts cannot disagree.
+    ready: typeof planningFamilyFromProfile(profile) !== 'string',
   };
 }
 
@@ -119,7 +123,7 @@ export function planDraftDefaults(sources: PlanDraftSources): PlanDraftDefaults 
       // A planning family records children's ages and no adults, so the adult count is not known
       // here. Saying "2 adults" would be an invention; the children are what it actually holds.
       summary: childrenLabel(children) ?? 'Adults only',
-      ready: Number.isFinite(family.latitude) && Number.isFinite(family.longitude),
+      ready: canPlanFor(family),
     });
   }
 

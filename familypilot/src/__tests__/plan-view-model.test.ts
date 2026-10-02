@@ -131,8 +131,10 @@ describe('what nobody confirmed stays visible', () => {
   });
 
   it('carries the itinerary’s unknowns through untouched', () => {
-    const view = build({ itinerary: { unknowns: ['babyChanging: not confirmed'] } });
-    expect(view.unknowns).toEqual(['babyChanging: not confirmed']);
+    // Already sentences by the time they arrive -- the sequencer names them through
+    // services/planning/unknown-facts -- so there is nothing here to translate, and nothing to drop.
+    const view = build({ itinerary: { unknowns: ['Baby changing is not confirmed here'] } });
+    expect(view.unknowns).toEqual(['Baby changing is not confirmed here']);
   });
 
   it('never presents an estimated journey as a measured one', () => {
@@ -197,6 +199,12 @@ describe('a day that runs past midnight says so', () => {
     const view = build({ itinerary: { families: [{ familyId: 'mine', label: 'Our family',
       depart: 20 * 60, home: 25 * 60, latestDeparture: 21 * 60, notes: [] }] } });
     expect(view.dateSummary).toContain('01:00 next day');
+  });
+});
+
+describe('the plan has a name a parent would say out loud', () => {
+  it('names the day after the venue it is built around', () => {
+    expect(build().title).toBe('A day at Kentish Town City Farm');
   });
 });
 

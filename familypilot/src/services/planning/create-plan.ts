@@ -7,7 +7,7 @@ import { PlanStopSource, generateDayPlan, resolvedStop, stopFacts } from './day-
 import { sequenceDay } from './sequencer';
 import { PlanningFamily } from './planner';
 import { PlanDraft } from './plan-draft';
-import { PlanViewModel, toPlanViewModel } from './plan-view-model';
+import { PlanViewModel, PlanViewModelInput, toPlanViewModel } from './plan-view-model';
 
 /**
  * One call behind the approved Create a Plan button.
@@ -71,6 +71,13 @@ export interface CreatePlanDeps {
 export interface CreatePlanSuccess {
   ok: true;
   view: PlanViewModel;
+  /**
+   * What the view was derived from, so a saved day stores the planner's answer rather than its
+   * presentation. Re-rendering a saved day runs the same adapter over the same input and therefore
+   * produces the same screen, and a later change to how a day reads reaches saved days too instead
+   * of leaving them frozen in an old vocabulary.
+   */
+  source: PlanViewModelInput;
 }
 
 export interface CreatePlanFailure {
@@ -91,17 +98,26 @@ export type CreatePlanOutcome = CreatePlanSuccess | CreatePlanFailure;
  * names the restaurant when one is known. Nothing here claims to be thinking.
  */
 export function createPlanSteps(input: { venueName: string; meal?: MealCandidate }): CreatePlanStep[] {
-  const lunchLabel = input.meal
-    ? input.meal.walkMinutes != null
-      ? `Finding lunch within a ${input.meal.walkMinutes}-minute walk`
-      : `Adding lunch at ${input.meal.place.name}`
-    : 'Checking for lunch nearby';
-  return [
+  const steps: CreatePlanStep[] = [
     { id: 'venue', label: `Checking ${input.venueName} fits your family` },
-    { id: 'lunch', label: lunchLabel },
+  ];
+  // No step for work that will not happen. With nothing cached, no restaurant is looked at -- a
+  // search is a billable call this button does not make -- so a line saying lunch is being checked
+  // would be a progress bar for nothing.
+  if (input.meal) {
+    steps.push({
+      id: 'lunch',
+      label:
+        input.meal.walkMinutes != null
+          ? `Finding lunch within a ${input.meal.walkMinutes}-minute walk`
+          : `Adding lunch at ${input.meal.place.name}`,
+    });
+  }
+  steps.push(
     { id: 'travel', label: 'Working out travel and parking' },
     { id: 'timing', label: 'Fitting the day around your family' },
-  ];
+  );
+  return steps;
 }
 
 /**
@@ -150,6 +166,17 @@ function requirementLine(requirement: UnmetRequirement, venueName: string): stri
   }
 }
 
+/**
+ * The household, as it belongs in a sentence.
+ *
+ * "Our family" is the label the signed-in household carries in lists and chips, where it reads
+ * correctly. Dropped into prose it does not: "does not fit Our family yet". Any other household has
+ * a name the parent gave it, which does belong there as written.
+ */
+function readableFamily(label: string): string {
+  return label.trim().toLowerCase() === 'our family' ? 'your family' : label;
+}
+
 function minutesToClock(minutes: number): string {
   const m = ((Math.round(minutes) % 1440) + 1440) % 1440;
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -173,7 +200,7 @@ function describeSequenceFailure(failure: SequenceFailure, venueName: string): C
       const anyUnknown = failure.unmet.some((requirement) => requirement.outcome === 'unknown');
       return {
         ok: false,
-        title: `${venueName} does not fit ${failure.familyLabel} yet`,
+        title: `${venueName} does not fit ${readableFamily(failure.familyLabel)} yet`,
         // The sequencer's own sentence is the fallback, never a bare field name.
         message: lines.length ? lines.join(' ') : failure.message,
         suggestions: anyUnknown
@@ -277,7 +304,8 @@ export async function createPlan(
 
   const anchor: ResolvedStop = resolvedStop(venue, 'activity', draft.visitMinutes);
 
-  step('lunch');
+  // Reported only when there is a meal to add, matching the steps `createPlanSteps` offered.
+  if (meal) step('lunch');
   const mealStop: ResolvedStop | undefined = meal
     ? resolvedStop(meal.place, 'meal', MEAL_DWELL_MINUTES)
     : undefined;
@@ -306,19 +334,20 @@ export async function createPlan(
   step('timing');
   if (!result.ok) return describeGenerationFailure(result.failure, venue.name);
 
-  return {
-    ok: true,
-    view: toPlanViewModel({
-      itinerary: result.plan.itinerary,
-      travel: result.plan.travel,
-      caveats: result.plan.caveats,
-      anchorName: venue.name,
-      // From the anchor's own facts, through the same extractor the sequencer matched on, so the
-      // Travel & parking section cannot disagree with the day it describes.
-      parking: ((): { parking: 'yes' | 'no' | 'unknown'; freeParking?: 'yes' | 'no' | 'unknown'; info?: string } => {
-        const facts = stopFacts(venue);
-        return { parking: facts.parking, freeParking: facts.freeParking, info: input.parkingInfo };
-      })(),
-    }),
+  // From the anchor's own facts, through the same extractor the sequencer matched on, so the
+  // Travel & parking section cannot disagree with the day it describes.
+  const anchorFacts = stopFacts(venue);
+  const source: PlanViewModelInput = {
+    itinerary: result.plan.itinerary,
+    travel: result.plan.travel,
+    caveats: result.plan.caveats,
+    anchorName: venue.name,
+    parking: {
+      parking: anchorFacts.parking,
+      freeParking: anchorFacts.freeParking,
+      info: input.parkingInfo,
+    },
   };
+
+  return { ok: true, view: toPlanViewModel(source), source };
 }

@@ -288,7 +288,7 @@ export function toPlanViewModel(input: PlanViewModelInput): PlanViewModel {
       : `${live} journey time${live === 1 ? '' : 's'} measured, ${estimated} estimated from distance.`;
 
   return {
-    title: `${anchorName} day`,
+    title: `A day at ${anchorName}`,
     dateSummary: date
       ? `${date.short} ${date.day} ${date.month} · ${planClock(dayStart)}–${planClock(dayEnd)}`
       : `${planClock(dayStart)}–${planClock(dayEnd)}`,

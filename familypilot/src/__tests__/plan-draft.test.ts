@@ -164,3 +164,26 @@ describe('when and how long', () => {
     expect(VISIT_LENGTH_CHOICES).toContain(at(75));
   });
 });
+
+describe('the sheet’s button cannot promise a day the planner could not build', () => {
+  /**
+   * `ready` and the resolver have to agree. If the sheet enables Create for a household the planner
+   * cannot measure, the parent taps it and lands on a failure that is really a missing profile
+   * field -- so readiness asks the same question the resolver does.
+   */
+  it('is not ready when the household has never said where they live', () => {
+    const { parties } = planDraftDefaults(
+      sources({ profile: profile({ homeLocation: '', homeLatitude: null, homeLongitude: null }) }),
+    );
+    expect(parties[0]).toMatchObject({ id: 'mine', summary: '2 adults, 2 children', ready: false });
+    expect(planDraftBlocker({ date: TODAY, leaveAt: '09:30', partyIds: ['mine'], visitMinutes: 90 }, parties))
+      .toBe('Add your family details so we can plan around them.');
+  });
+
+  it('is not ready for a described household whose drive limit is unusable', () => {
+    const { parties } = planDraftDefaults(
+      sources({ planningFamilies: [planningFamily({ maxDriveMinutes: 0 })] }),
+    );
+    expect(parties[0].ready).toBe(false);
+  });
+});

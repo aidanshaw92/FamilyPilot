@@ -19,6 +19,7 @@ import { isOpenOn } from '@/src/utils/opening-hours';
 
 import { PlanningFamily, PlanningOptions, familyRequest } from './planner';
 import { compareItineraries, mostRelevantFailure } from './sequence-ranking';
+import { describeUnknownFact } from './unknown-facts';
 import {
   RoutineWindow,
   TimeSpan,
@@ -431,7 +432,7 @@ function tryOrder(
         }
         match.evaluations
           .filter((evaluation) => evaluation.outcome === 'unknown')
-          .forEach((evaluation) => factUnknowns.add(`${evaluation.field}: not confirmed`));
+          .forEach((evaluation) => factUnknowns.add(describeUnknownFact(evaluation.field)));
       }
     }
     if (ineligible) {

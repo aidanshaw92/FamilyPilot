@@ -95,15 +95,31 @@ describe('the generating steps describe real work', () => {
       .toBe('Adding lunch at The Moat Cafe');
   });
 
-  it('does not promise lunch when there is none cached', () => {
-    expect(createPlanSteps({ venueName: 'X' })[1].label).toBe('Checking for lunch nearby');
+  it('offers no lunch step at all when there is none cached', () => {
+    // An earlier version of this showed "Checking for lunch nearby", which this button never does:
+    // a restaurant search is a billable call, so with nothing cached no restaurant is looked at.
+    // A step for work that will not happen is a progress bar for nothing.
+    const steps = createPlanSteps({ venueName: 'X' });
+    expect(steps.map((s) => s.id)).toEqual(['venue', 'travel', 'timing']);
+    expect(steps.map((s) => s.label).join(' ')).not.toContain('lunch');
   });
 
   it('reports each step as it happens, in order', async () => {
     const seen: CreatePlanStepId[] = [];
+    await createPlan(
+      { venue: venue(), draft, families: [family()], meal: { place: venue({ familypilotId: 'fp-google-cafe', name: 'The Moat Cafe', category: 'cafe' }) } },
+      { ...workingDeps(), onStep: (id) => seen.push(id) },
+    );
+    expect(seen).toEqual(['venue', 'lunch', 'travel', 'timing']);
+  });
+
+  it('reports only the steps it offered when there is no lunch to add', async () => {
+    const seen: CreatePlanStepId[] = [];
     await createPlan({ venue: venue(), draft, families: [family()] },
       { ...workingDeps(), onStep: (id) => seen.push(id) });
-    expect(seen).toEqual(['venue', 'lunch', 'travel', 'timing']);
+    // Exactly the ids `createPlanSteps` returns for the same input, so no step is ever reported that
+    // the screen has no line for, and no line is left waiting for a step that never arrives.
+    expect(seen).toEqual(createPlanSteps({ venueName: 'Kentish Town City Farm' }).map((s) => s.id));
   });
 });
 
@@ -295,7 +311,9 @@ describe('an unmet requirement is explained, and absence is never read as a fact
 
   it('says nobody has confirmed the facility, not that the venue lacks it', async () => {
     const outcome = await describe_(unmet([{ field: 'familyFacilities.babyChanging', outcome: 'unknown' }]));
-    expect(outcome.title).toBe('Kentish Town City Farm does not fit Our family yet');
+    // "does not fit Our family yet" is the chip label dropped into prose. A household the parent
+    // named keeps its name; the signed-in one becomes "your family".
+    expect(outcome.title).toBe('Kentish Town City Farm does not fit your family yet');
     expect(outcome.message).toBe(
       'Nobody has confirmed baby changing at Kentish Town City Farm, and your family needs it.',
     );
@@ -324,6 +342,14 @@ describe('an unmet requirement is explained, and absence is never read as a fact
       .toBe('Kentish Town City Farm is recorded as difficult with a pushchair, and your family needs it to work.');
     expect((await describe_(unmet([{ field: 'pushchairSuitability', outcome: 'unknown' }]))).message)
       .toBe('Nobody has confirmed whether Kentish Town City Farm works with a pushchair, and your family needs it to.');
+  });
+
+  it('keeps a household the parent named, in their own words', async () => {
+    const outcome = await describe_({
+      ...unmet([{ field: 'familyFacilities.toilets', outcome: 'unsuitable' }]),
+      familyLabel: 'The Hills',
+    } as SequenceFailure);
+    expect(outcome.title).toBe('Kentish Town City Farm does not fit The Hills yet');
   });
 
   it('falls back to the sequencer’s own sentence rather than printing a field name', async () => {

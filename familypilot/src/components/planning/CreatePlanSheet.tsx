@@ -10,6 +10,7 @@ import {
   VISIT_LENGTH_CHOICES,
   planDraftBlocker,
 } from '@/src/services/planning/plan-draft';
+import { weekdayOf } from '@/src/services/planning/plan-view-model';
 
 /**
  * The approved Create a Plan sheet: when, start, who's coming, how long.
@@ -38,10 +39,29 @@ export interface CreatePlanSheetProps {
   busy?: boolean;
 }
 
+/** Compact on purpose: four choices read as one set of chips rather than wrapping to a stray row. */
 function lengthLabel(minutes: number): string {
   if (minutes < 60) return `${minutes} min`;
-  const hours = minutes / 60;
-  return hours % 1 === 0 ? `${hours} hour${hours === 1 ? '' : 's'}` : `${Math.floor(hours)}h ${minutes % 60}m`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+}
+
+/**
+ * "Friday 2 October", under the date field.
+ *
+ * A native date input renders in the browser's or device's own locale, so the same day reads
+ * 10/02/2026 in one place and 02/10/2026 in another. A parent choosing a Saturday out should not
+ * have to work out which of those they are looking at, so the day is also spelled out.
+ */
+function spelledDate(date: string): string | null {
+  const parts = weekdayOf(date);
+  if (!parts) return null;
+  const MONTHS: Record<string, string> = {
+    Jan: 'January', Feb: 'February', Mar: 'March', Apr: 'April', May: 'May', Jun: 'June',
+    Jul: 'July', Aug: 'August', Sep: 'September', Oct: 'October', Nov: 'November', Dec: 'December',
+  };
+  return `${parts.long} ${parts.day} ${MONTHS[parts.month] ?? parts.month}`;
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
@@ -114,6 +134,11 @@ export function CreatePlanSheet({
       >
         <Row label="When">
           <DateField label="" value={draft.date} onChange={(date) => onDraftChange({ ...draft, date })} />
+          {spelledDate(draft.date) ? (
+            <Text variant="caption" color={colors.text.secondary}>
+              {spelledDate(draft.date)}
+            </Text>
+          ) : null}
         </Row>
 
         <Row label="Start">
@@ -135,8 +160,12 @@ export function CreatePlanSheet({
               />
             ))}
           </View>
+          {/* Quiet and left-aligned: adding a second household is an occasional choice, and a
+              full-width button here competes with the one action this sheet exists for. */}
           {onAddFamily ? (
-            <Button label="Add another family" variant="ghost" onPress={onAddFamily} />
+            <View style={styles.addFamily}>
+              <Button label="Add another family" variant="ghost" size="sm" onPress={onAddFamily} />
+            </View>
           ) : null}
         </Row>
 
@@ -151,8 +180,10 @@ export function CreatePlanSheet({
               />
             ))}
           </View>
+          {/* Travel is always added; lunch only when one is already known, so this does not promise
+              a stop the day may not contain. */}
           <Text variant="caption" color={colors.text.secondary}>
-            Time at {venueName}. Travel and lunch are added around it.
+            Time at {venueName}. Travel is added around it.
           </Text>
         </Row>
       </ScrollView>
@@ -189,6 +220,7 @@ const styles = StyleSheet.create({
   row: { gap: spacing.xs },
   rowLabel: { letterSpacing: 0.6 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  addFamily: { alignItems: 'flex-start' },
   footer: {
     paddingHorizontal: spacing.screenPadding,
     paddingTop: spacing.sm,
