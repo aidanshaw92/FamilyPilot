@@ -16,7 +16,7 @@ import {
   createPlanSteps,
 } from '@/src/services/planning/create-plan';
 import { planStopFromVenueDetail } from '@/src/services/planning/day-plan';
-import { planDraftFromParams } from '@/src/services/planning/plan-draft';
+import { firstValue, planDraftFromParams } from '@/src/services/planning/plan-draft';
 import { resolvePlanParties } from '@/src/services/planning/plan-parties';
 import { PlanViewModel, PlanViewModelInput } from '@/src/services/planning/plan-view-model';
 import { usePlanningStore } from '@/src/stores/planning-store';
@@ -45,6 +45,12 @@ type Phase =
  * "needs" into "need" works until the day somebody adds a reason it does not fit, and then it
  * produces broken English on a screen nobody is testing that case on.
  */
+/**
+ * The ceiling on restarts for one set of answers. Three allows a genuine remount or a late-arriving
+ * profile to rebuild the day; it does not allow a loop.
+ */
+const MAX_GENERATION_ATTEMPTS = 3;
+
 const MISSING_PARTY_MESSAGE: Record<string, { one: string; many: string }> = {
   'not-described': {
     one: 'A family you chose needs its details before we can plan around it',
@@ -66,18 +72,32 @@ export default function PlanScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const venueId = Array.isArray(params.venue) ? params.venue[0] ?? '' : params.venue ?? '';
+  /**
+   * Every answer narrowed to a primitive before anything memoises on it.
+   *
+   * A repeated query parameter (`?date=a&date=b`) arrives as an array, and an array is a new
+   * identity on every render. Memoising the draft on the raw params therefore rebuilt it every
+   * render, which rebuilt the resolved households, which changed the generation effect's
+   * dependencies, which cancelled the run in flight and started another -- for ever. Measured at
+   * 3,094 journey requests in nine seconds, against an endpoint that can reach a billable Google
+   * service. Primitives cannot do that.
+   */
+  const venueId = firstValue(params.venue) ?? '';
+  const dateParam = firstValue(params.date) ?? '';
+  const leaveAtParam = firstValue(params.leaveAt) ?? '';
+  const visitParam = firstValue(params.visit) ?? '';
+  const partiesParam = firstValue(params.parties) ?? '';
   const { data: venue, isPending: venuePending, isError: venueError } = useVenue(venueId);
   const { data: profile } = useFamilyProfile();
   const planningFamilies = usePlanningStore((state) => state.families);
   const saveDay = usePlanningStore((state) => state.saveDay);
   const savedDays = usePlanningStore((state) => state.savedDays);
 
-  // Parsed in one tested place rather than here: a repeated query parameter arrives as an array and
-  // would throw on `.split`, and this route is linkable, so a hand-edited or shared URL reaches it.
+  // Parsed in one tested place rather than here, and from the narrowed primitives above so the
+  // result is referentially stable across renders.
   const draft = useMemo(
-    () => planDraftFromParams(params),
-    [params.date, params.leaveAt, params.visit, params.parties],
+    () => planDraftFromParams({ date: dateParam, leaveAt: leaveAtParam, visit: visitParam, parties: partiesParam }),
+    [dateParam, leaveAtParam, visitParam, partiesParam],
   );
 
   const [phase, setPhase] = useState<Phase>({ status: 'generating' });
@@ -87,6 +107,16 @@ export default function PlanScreen() {
   // One generation per set of answers. Without this, any re-render while the promise is in flight
   // would start a second day being built behind the first.
   const requested = useRef<string | null>(null);
+  /**
+   * How many times the current answers have been started, as a bound on any future regression.
+   *
+   * Releasing the key when a run is cancelled is what lets a remount rebuild the day, and it is also
+   * what let unstable dependencies restart generation without limit. The dependencies are primitives
+   * now, so that cannot happen -- but this path reaches a journey endpoint that can call a billable
+   * Google service, and a defect that merely wastes renders elsewhere spends money here. A ceiling
+   * costs nothing when the code is correct and caps the damage when it is not.
+   */
+  const attempts = useRef({ key: '', count: 0 });
   // What the view was built from, so Save stores the planner's answer and not the rendered screen.
   const source = useRef<PlanViewModelInput | null>(null);
   const saving = useRef(false);
@@ -100,6 +130,8 @@ export default function PlanScreen() {
     () => resolvePlanParties(draft.partyIds, { profile, planningFamilies }),
     [draft.partyIds, profile, planningFamilies],
   );
+  /** A primitive, so the generation effect cannot be restarted by array identity alone. */
+  const familyIds = parties.families.map((family) => family.id).join(',');
 
   useEffect(() => {
     if (!venue) return;
@@ -107,15 +139,11 @@ export default function PlanScreen() {
     // venue are two separate queries: if the venue lands first, the day would be built for nobody,
     // and without this the arriving profile would never trigger a rebuild -- a cold load would
     // intermittently end on "Nobody is coming yet".
-    const key = [
-      venueId,
-      draft.date,
-      draft.leaveAt,
-      draft.visitMinutes,
-      draft.partyIds.join(','),
-      parties.families.map((family) => family.id).join(','),
-    ].join('|');
+    const key = [venueId, draft.date, draft.leaveAt, draft.visitMinutes, partiesParam, familyIds].join('|');
     if (requested.current === key) return;
+    if (attempts.current.key !== key) attempts.current = { key, count: 0 };
+    if (attempts.current.count >= MAX_GENERATION_ATTEMPTS) return;
+    attempts.current.count += 1;
     requested.current = key;
 
     let cancelled = false;
@@ -158,7 +186,10 @@ export default function PlanScreen() {
       // would sit on the generating steps for ever, with nothing still working.
       if (requested.current === key) requested.current = null;
     };
-  }, [venue, venueId, draft, parties.families]);
+    // Deps are the venue object and primitives only. `parties.families` is deliberately absent: it is
+    // a fresh array every time the resolver runs, and `familyIds` carries the same information
+    // without the identity churn.
+  }, [venue, venueId, draft, familyIds, partiesParam]);
 
   /**
    * Households that were chosen and could not be planned for.

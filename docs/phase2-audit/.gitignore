@@ -1,0 +1,10 @@
+# Captures for every width, re-recorded on each run.
+#
+# CI uploads the whole directory as a build artifact, so the per-width screenshots are available
+# where they are useful without 7MB of near-identical PNGs entering the repository's history on
+# every audit. The reference width and the adversarial-link captures are committed, because those
+# are the ones worth reading in a diff.
+360x800/
+390x844/
+430x932/
+393x852-insets/

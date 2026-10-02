@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { BackButton } from '@/src/components/ui/BackButton';
 import { Button, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { safeFooterPadding } from '@/src/utils/safe-area';
 import { PlanSectionView, PlanViewModel } from '@/src/services/planning/plan-view-model';
 
 import { PlanStopCard } from './PlanStopCard';
@@ -231,7 +232,7 @@ export function PlanScreenView({
         ) : null}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: bottomInset + spacing.md }]}>
+      <View style={[styles.footer, { paddingBottom: safeFooterPadding(bottomInset) }]}>
         <Button
           label={saved ? 'Saved' : 'Save this plan'}
           onPress={onSave}

@@ -136,6 +136,121 @@ function fixturePlace(index) {
 const PLACES = NAMES.map((_, index) => fixturePlace(index));
 
 /**
+ * Venues that exist only on the detail endpoint, for the cases the uniform fifteen cannot show.
+ *
+ * Deliberately NOT added to the search payload. Home's visual regression measures the deck against a
+ * locked Figma frame, so changing what Explore and Home return would make a design check fail for a
+ * reason that has nothing to do with the design. These are reached by opening their URL directly,
+ * which is exactly how the audit drives them.
+ *
+ * The important one is `edge-rich`. Every base venue returns `metadata: null`, so until now no
+ * browser check had ever rendered a venue whose facts are CONFIRMED -- only the unknown path. A
+ * screen that says "not confirmed" correctly and then mangles a known fact would have passed
+ * everything.
+ */
+const EDGE_METADATA = {
+  'fp-google-FIXTUREedgeRich': {
+    familypilotPlaceId: 'fp-google-FIXTUREedgeRich',
+    enrichmentStatus: 'enriched',
+    bestAges: '2 to 10',
+    minRecommendedAge: 2,
+    maxRecommendedAge: 10,
+    terrain: 'flat',
+    facilities: ['toilets', 'baby_changing', 'parking', 'cafe', 'playground', 'pushchair_friendly'],
+    familyFacilities: { toilets: 'yes', babyChanging: 'yes', parking: 'yes', freeParking: 'yes' },
+    pushchairSuitability: 'good',
+    parkingInfo: 'Free on-site car park, about 120 spaces, busiest before 11am at weekends.',
+    visitDurationMinutes: 150,
+    environment: 'mixed',
+    energyLevel: 'moderate',
+    estimatedSpend: '£12 to £20 for a family of four',
+    goodToKnow: ['Buggies can go everywhere on the main loop', 'The cafe has highchairs'],
+    familyNotes: 'A synthetic venue whose family facts are all confirmed, so the known path renders.',
+    provenance: {},
+    lastChecked: '2026-09-28',
+    checkedBy: 'fixture',
+    updatedAt: '2026-09-28',
+  },
+  'fp-google-FIXTUREedgeLongName': {
+    familypilotPlaceId: 'fp-google-FIXTUREedgeLongName',
+    enrichmentStatus: 'enriched',
+    familyFacilities: { toilets: 'yes', babyChanging: 'no', parking: 'unknown' },
+    pushchairSuitability: 'difficult',
+    provenance: {},
+    updatedAt: '2026-09-28',
+  },
+};
+
+function edgePlace(id, over) {
+  const base = fixturePlace(0);
+  return {
+    ...base,
+    familypilotId: id,
+    externalId: `google:${id.slice('fp-google-'.length)}`,
+    name: 'Edge Case Venue',
+    category: 'park',
+    latitude: 51.52,
+    longitude: -0.12,
+    address: 'Edge Row, London',
+    description: 'A synthetic venue that exists only to exercise one rendering edge.',
+    enrichmentStatus: 'enriched',
+    ...over,
+  };
+}
+
+/**
+ * Hours wide enough that a day fits whatever time the audit runs at.
+ *
+ * The base fixture opens 09:00-17:00, which made the journey's happy path pass in the morning and
+ * fail in the afternoon: a check whose result depends on the wall clock tells you nothing. The
+ * venue that shuts early is a separate venue below, so that case is covered on purpose.
+ */
+const WIDE_HOURS = {
+  weekdayText: ['Monday to Sunday: 08:00 to 20:00'],
+  source: 'fixture',
+  periods: Array.from({ length: 7 }, (_, day) => ({
+    open: { day, hour: 8, minute: 0 },
+    close: { day, hour: 20, minute: 0 },
+  })),
+  timeZone: 'Europe/London',
+};
+
+const EDGE_PLACES = [
+  // Confirmed facts throughout: the path no browser check had ever rendered.
+  edgePlace('fp-google-FIXTUREedgeRich', { name: 'Confirmed Facts Gardens', openingHours: WIDE_HOURS }),
+  // Shuts at 09:30, so no visit of any useful length fits. The sequencer should say exactly that
+  // rather than returning a generic "no day fits".
+  edgePlace('fp-google-FIXTUREedgeClosesEarly', {
+    name: 'Closes Early Hall',
+    openingHours: {
+      weekdayText: ['Monday to Sunday: 09:00 to 09:30'],
+      source: 'fixture',
+      periods: Array.from({ length: 7 }, (_, day) => ({
+        open: { day, hour: 9, minute: 0 },
+        close: { day, hour: 9, minute: 30 },
+      })),
+      timeZone: 'Europe/London',
+    },
+  }),
+  // A name far longer than any header was designed for.
+  edgePlace('fp-google-FIXTUREedgeLongName', {
+    name: 'The Royal Borough Of Something Extremely Long Memorial Gardens And Family Activity Centre',
+    openingHours: WIDE_HOURS,
+  }),
+  // No photograph at all: the category gradient has to carry the hero.
+  edgePlace('fp-google-FIXTUREedgeNoPhoto', { name: 'No Photograph Park', photos: [], openingHours: WIDE_HOURS }),
+  // Hours with no structured periods: nobody can say whether it is open on a given date.
+  edgePlace('fp-google-FIXTUREedgeNoHours', {
+    name: 'Unknown Hours Museum',
+    category: 'museum',
+    openingHours: { weekdayText: [], source: 'fixture', periods: [], timeZone: 'Europe/London' },
+  }),
+];
+
+const EDGE_BY_ID = new Map(EDGE_PLACES.map((place) => [place.familypilotId, place]));
+
+
+/**
  * A valid 800x600 PNG, built here rather than committed, so the repository carries no image binary
  * and `naturalWidth > 1` in `report-photo-evidence.mjs` still has a real decoded photograph to
  * measure. One flat colour; the assertions are about dimensions, not content.
@@ -280,11 +395,11 @@ const server = createServer((req, res) => {
 
   if (url.pathname === '/api/places/detail') {
     const id = url.searchParams.get('id');
-    const place = PLACES.find((candidate) => candidate.familypilotId === id);
+    const place = EDGE_BY_ID.get(id) ?? PLACES.find((candidate) => candidate.familypilotId === id);
     if (!place) return sendJson(res, 404, { error: 'Place not found', code: 'NOT_FOUND' });
     return sendJson(res, 200, {
       place,
-      metadata: null,
+      metadata: EDGE_METADATA[id] ?? null,
       requestedPlaceId: id,
       canonicalIdentity: null,
       provider: 'google',

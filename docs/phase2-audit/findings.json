@@ -1,0 +1,1250 @@
+[
+  {
+    "viewport": "360x800",
+    "screen": "Home",
+    "step": "renders its deck rather than an empty shell",
+    "ok": true,
+    "message": "Good afternoon, Sarah What shall we do today? S   Select your plan For you Indoor Outdoo"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Home",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Home",
+    "step": "offers the category controls",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Venue Detail",
+    "step": "renders a venue whose facts are confirmed",
+    "ok": true,
+    "message": "A. Fixture · Google    Confirmed Facts Gardens  40 min  ~3h visit  Est. £1"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Venue Detail",
+    "step": "shows the reviewed parking prose exactly as written",
+    "ok": true,
+    "message": "Free parking confirmed"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Venue Detail",
+    "step": "does not title-case the opening hours or the age range",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Venue Detail",
+    "step": "does not print an internal field name",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Venue Detail",
+    "step": "offers Create a plan",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Venue Detail",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Venue Detail",
+    "step": "keeps the footer CTA clear of the home indicator",
+    "ok": true,
+    "message": "bottom 788, indicator starts at 800"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Venue Detail",
+    "step": "survives a very long venue name",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Venue Detail",
+    "step": "survives a venue with no photograph",
+    "ok": true,
+    "message": "    No Photograph Park  40 min FAMILY MATCH Will this work for yo"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Venue Detail",
+    "step": "survives a venue whose hours nobody published",
+    "ok": true,
+    "message": "Opening hours from provider FamilyPilot family details added · "
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Create a Plan",
+    "step": "is the approved share of the viewport",
+    "ok": true,
+    "message": "601 of 800 (75%)"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Create a Plan",
+    "step": "sits flush with the bottom of the viewport",
+    "ok": true,
+    "message": "bottom 800 of 800"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Create a Plan",
+    "step": "rounds its top corners as approved",
+    "ok": true,
+    "message": "34px"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Create a Plan",
+    "step": "leaves the venue readable behind it",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Create a Plan",
+    "step": "offers the WHEN row",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Create a Plan",
+    "step": "offers the START row",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Create a Plan",
+    "step": "offers the WHO’S COMING row",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Create a Plan",
+    "step": "offers the HOW LONG row",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Create a Plan",
+    "step": "summarises the household by count, never by name",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Create a Plan",
+    "step": "keeps the submit button clear of the home indicator",
+    "ok": true,
+    "message": "bottom 788, indicator starts at 800"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Generating",
+    "step": "was reached",
+    "ok": true,
+    "message": "passed too quickly to capture"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
+    "step": "renders",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
+    "step": "summarises the day in the parent’s terms",
+    "ok": true,
+    "message": "A 3-hour Friday"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
+    "step": "keeps the save action clear of the home indicator",
+    "ok": true,
+    "message": "bottom 788, indicator starts at 800"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
+    "step": "expands the first stop and collapses the rest",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
+    "step": "prints no internal field name",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
+    "step": "reports confirmed free parking as confirmed",
+    "ok": true,
+    "message": "Parking On site, free Details Free on-site car park, about 120 spac"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
+    "step": "labels estimated journeys as estimates",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
+    "step": "a double tap saves the day once, not twice",
+    "ok": true,
+    "message": "1 saved day(s)"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
+    "step": "back returns to the venue the day was built around",
+    "ok": true,
+    "message": "/venue/fp-google-FIXTUREedgeRich"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "journey",
+    "step": "no runtime errors",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Home",
+    "step": "renders its deck rather than an empty shell",
+    "ok": true,
+    "message": "Good afternoon, Sarah What shall we do today? S   Select your plan For you Indoor Outdoo"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Home",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Home",
+    "step": "offers the category controls",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Venue Detail",
+    "step": "renders a venue whose facts are confirmed",
+    "ok": true,
+    "message": "A. Fixture · Google    Confirmed Facts Gardens  40 min  ~3h visit  Est. £1"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Venue Detail",
+    "step": "shows the reviewed parking prose exactly as written",
+    "ok": true,
+    "message": "Free parking confirmed"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Venue Detail",
+    "step": "does not title-case the opening hours or the age range",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Venue Detail",
+    "step": "does not print an internal field name",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Venue Detail",
+    "step": "offers Create a plan",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Venue Detail",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Venue Detail",
+    "step": "keeps the footer CTA clear of the home indicator",
+    "ok": true,
+    "message": "bottom 832, indicator starts at 844"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Venue Detail",
+    "step": "survives a very long venue name",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Venue Detail",
+    "step": "survives a venue with no photograph",
+    "ok": true,
+    "message": "    No Photograph Park  40 min FAMILY MATCH Will this work for yo"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Venue Detail",
+    "step": "survives a venue whose hours nobody published",
+    "ok": true,
+    "message": "Opening hours from provider FamilyPilot family details added · "
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Create a Plan",
+    "step": "is the approved share of the viewport",
+    "ok": true,
+    "message": "634 of 844 (75%)"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Create a Plan",
+    "step": "sits flush with the bottom of the viewport",
+    "ok": true,
+    "message": "bottom 844 of 844"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Create a Plan",
+    "step": "rounds its top corners as approved",
+    "ok": true,
+    "message": "34px"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Create a Plan",
+    "step": "leaves the venue readable behind it",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Create a Plan",
+    "step": "offers the WHEN row",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Create a Plan",
+    "step": "offers the START row",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Create a Plan",
+    "step": "offers the WHO’S COMING row",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Create a Plan",
+    "step": "offers the HOW LONG row",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Create a Plan",
+    "step": "summarises the household by count, never by name",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Create a Plan",
+    "step": "keeps the submit button clear of the home indicator",
+    "ok": true,
+    "message": "bottom 832, indicator starts at 844"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Generating",
+    "step": "was reached",
+    "ok": true,
+    "message": "passed too quickly to capture"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "renders",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "summarises the day in the parent’s terms",
+    "ok": true,
+    "message": "A 3-hour Friday"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "keeps the save action clear of the home indicator",
+    "ok": true,
+    "message": "bottom 832, indicator starts at 844"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "expands the first stop and collapses the rest",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "prints no internal field name",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "reports confirmed free parking as confirmed",
+    "ok": true,
+    "message": "Parking On site, free Details Free on-site car park, about 120 spac"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "labels estimated journeys as estimates",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "a double tap saves the day once, not twice",
+    "ok": true,
+    "message": "1 saved day(s)"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "back returns to the venue the day was built around",
+    "ok": true,
+    "message": "/venue/fp-google-FIXTUREedgeRich"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "journey",
+    "step": "no runtime errors",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Home",
+    "step": "renders its deck rather than an empty shell",
+    "ok": true,
+    "message": "Good afternoon, Sarah What shall we do today? S   Select your plan For you Indoor Outdoo"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Home",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Home",
+    "step": "offers the category controls",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Venue Detail",
+    "step": "renders a venue whose facts are confirmed",
+    "ok": true,
+    "message": "A. Fixture · Google    Confirmed Facts Gardens  40 min  ~3h visit  Est. £1"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Venue Detail",
+    "step": "shows the reviewed parking prose exactly as written",
+    "ok": true,
+    "message": "Free parking confirmed"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Venue Detail",
+    "step": "does not title-case the opening hours or the age range",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Venue Detail",
+    "step": "does not print an internal field name",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Venue Detail",
+    "step": "offers Create a plan",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Venue Detail",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Venue Detail",
+    "step": "keeps the footer CTA clear of the home indicator",
+    "ok": true,
+    "message": "bottom 840, indicator starts at 852"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Venue Detail",
+    "step": "survives a very long venue name",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Venue Detail",
+    "step": "survives a venue with no photograph",
+    "ok": true,
+    "message": "    No Photograph Park  40 min FAMILY MATCH Will this work for yo"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Venue Detail",
+    "step": "survives a venue whose hours nobody published",
+    "ok": true,
+    "message": "Opening hours from provider FamilyPilot family details added · "
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Create a Plan",
+    "step": "is the approved share of the viewport",
+    "ok": true,
+    "message": "640 of 852 (75%)"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Create a Plan",
+    "step": "sits flush with the bottom of the viewport",
+    "ok": true,
+    "message": "bottom 852 of 852"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Create a Plan",
+    "step": "rounds its top corners as approved",
+    "ok": true,
+    "message": "34px"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Create a Plan",
+    "step": "leaves the venue readable behind it",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Create a Plan",
+    "step": "offers the WHEN row",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Create a Plan",
+    "step": "offers the START row",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Create a Plan",
+    "step": "offers the WHO’S COMING row",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Create a Plan",
+    "step": "offers the HOW LONG row",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Create a Plan",
+    "step": "summarises the household by count, never by name",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Create a Plan",
+    "step": "keeps the submit button clear of the home indicator",
+    "ok": true,
+    "message": "bottom 840, indicator starts at 852"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Generating",
+    "step": "was reached",
+    "ok": true,
+    "message": "passed too quickly to capture"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
+    "step": "renders",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
+    "step": "summarises the day in the parent’s terms",
+    "ok": true,
+    "message": "A 3-hour Friday"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
+    "step": "keeps the save action clear of the home indicator",
+    "ok": true,
+    "message": "bottom 840, indicator starts at 852"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
+    "step": "expands the first stop and collapses the rest",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
+    "step": "prints no internal field name",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
+    "step": "reports confirmed free parking as confirmed",
+    "ok": true,
+    "message": "Parking On site, free Details Free on-site car park, about 120 spac"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
+    "step": "labels estimated journeys as estimates",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
+    "step": "a double tap saves the day once, not twice",
+    "ok": true,
+    "message": "1 saved day(s)"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
+    "step": "back returns to the venue the day was built around",
+    "ok": true,
+    "message": "/venue/fp-google-FIXTUREedgeRich"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "journey",
+    "step": "no runtime errors",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Home",
+    "step": "renders its deck rather than an empty shell",
+    "ok": true,
+    "message": "Good afternoon, Sarah What shall we do today? S   Select your plan For you Indoor Outdoo"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Home",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Home",
+    "step": "offers the category controls",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Venue Detail",
+    "step": "renders a venue whose facts are confirmed",
+    "ok": true,
+    "message": "A. Fixture · Google    Confirmed Facts Gardens  40 min  ~3h visit  Est. £1"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Venue Detail",
+    "step": "shows the reviewed parking prose exactly as written",
+    "ok": true,
+    "message": "Free parking confirmed"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Venue Detail",
+    "step": "does not title-case the opening hours or the age range",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Venue Detail",
+    "step": "does not print an internal field name",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Venue Detail",
+    "step": "offers Create a plan",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Venue Detail",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Venue Detail",
+    "step": "keeps the footer CTA clear of the home indicator",
+    "ok": true,
+    "message": "bottom 920, indicator starts at 932"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Venue Detail",
+    "step": "survives a very long venue name",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Venue Detail",
+    "step": "survives a venue with no photograph",
+    "ok": true,
+    "message": "    No Photograph Park  40 min FAMILY MATCH Will this work for yo"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Venue Detail",
+    "step": "survives a venue whose hours nobody published",
+    "ok": true,
+    "message": "Opening hours from provider FamilyPilot family details added · "
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Create a Plan",
+    "step": "is the approved share of the viewport",
+    "ok": true,
+    "message": "700 of 932 (75%)"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Create a Plan",
+    "step": "sits flush with the bottom of the viewport",
+    "ok": true,
+    "message": "bottom 932 of 932"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Create a Plan",
+    "step": "rounds its top corners as approved",
+    "ok": true,
+    "message": "34px"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Create a Plan",
+    "step": "leaves the venue readable behind it",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Create a Plan",
+    "step": "offers the WHEN row",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Create a Plan",
+    "step": "offers the START row",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Create a Plan",
+    "step": "offers the WHO’S COMING row",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Create a Plan",
+    "step": "offers the HOW LONG row",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Create a Plan",
+    "step": "summarises the household by count, never by name",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Create a Plan",
+    "step": "keeps the submit button clear of the home indicator",
+    "ok": true,
+    "message": "bottom 920, indicator starts at 932"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Generating",
+    "step": "was reached",
+    "ok": true,
+    "message": "passed too quickly to capture"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
+    "step": "renders",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
+    "step": "summarises the day in the parent’s terms",
+    "ok": true,
+    "message": "A 3-hour Friday"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
+    "step": "keeps the save action clear of the home indicator",
+    "ok": true,
+    "message": "bottom 920, indicator starts at 932"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
+    "step": "expands the first stop and collapses the rest",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
+    "step": "prints no internal field name",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
+    "step": "reports confirmed free parking as confirmed",
+    "ok": true,
+    "message": "Parking On site, free Details Free on-site car park, about 120 spac"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
+    "step": "labels estimated journeys as estimates",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
+    "step": "a double tap saves the day once, not twice",
+    "ok": true,
+    "message": "1 saved day(s)"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
+    "step": "back returns to the venue the day was built around",
+    "ok": true,
+    "message": "/venue/fp-google-FIXTUREedgeRich"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "journey",
+    "step": "no runtime errors",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Home",
+    "step": "renders its deck rather than an empty shell",
+    "ok": true,
+    "message": "Good afternoon, Sarah What shall we do today? S   Select your plan For you Indoor Outdoo"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Home",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Home",
+    "step": "offers the category controls",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Venue Detail",
+    "step": "renders a venue whose facts are confirmed",
+    "ok": true,
+    "message": "A. Fixture · Google    Confirmed Facts Gardens  40 min  ~3h visit  Est. £1"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Venue Detail",
+    "step": "shows the reviewed parking prose exactly as written",
+    "ok": true,
+    "message": "Free parking confirmed"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Venue Detail",
+    "step": "does not title-case the opening hours or the age range",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Venue Detail",
+    "step": "does not print an internal field name",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Venue Detail",
+    "step": "offers Create a plan",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Venue Detail",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Venue Detail",
+    "step": "keeps the footer CTA clear of the home indicator",
+    "ok": true,
+    "message": "bottom 806, indicator starts at 818"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Venue Detail",
+    "step": "survives a very long venue name",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Venue Detail",
+    "step": "survives a venue with no photograph",
+    "ok": true,
+    "message": "    No Photograph Park  40 min FAMILY MATCH Will this work for yo"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Venue Detail",
+    "step": "survives a venue whose hours nobody published",
+    "ok": true,
+    "message": "Opening hours from provider FamilyPilot family details added · "
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Create a Plan",
+    "step": "is the approved share of the viewport",
+    "ok": true,
+    "message": "640 of 852 (75%)"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Create a Plan",
+    "step": "sits flush with the bottom of the viewport",
+    "ok": true,
+    "message": "bottom 852 of 852"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Create a Plan",
+    "step": "rounds its top corners as approved",
+    "ok": true,
+    "message": "34px"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Create a Plan",
+    "step": "leaves the venue readable behind it",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Create a Plan",
+    "step": "offers the WHEN row",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Create a Plan",
+    "step": "offers the START row",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Create a Plan",
+    "step": "offers the WHO’S COMING row",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Create a Plan",
+    "step": "offers the HOW LONG row",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Create a Plan",
+    "step": "summarises the household by count, never by name",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Create a Plan",
+    "step": "keeps the submit button clear of the home indicator",
+    "ok": true,
+    "message": "bottom 806, indicator starts at 818"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Generating",
+    "step": "was reached",
+    "ok": true,
+    "message": "passed too quickly to capture"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "renders",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "summarises the day in the parent’s terms",
+    "ok": true,
+    "message": "A 3-hour Friday"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "does not scroll sideways",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "keeps the save action clear of the home indicator",
+    "ok": true,
+    "message": "bottom 806, indicator starts at 818"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "expands the first stop and collapses the rest",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "prints no internal field name",
+    "ok": true,
+    "message": ""
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "reports confirmed free parking as confirmed",
+    "ok": true,
+    "message": "Parking On site, free Details Free on-site car park, about 120 spac"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "labels estimated journeys as estimates",
+    "ok": true
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "a double tap saves the day once, not twice",
+    "ok": true,
+    "message": "1 saved day(s)"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "back returns to the venue the day was built around",
+    "ok": true,
+    "message": "/venue/fp-google-FIXTUREedgeRich"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "journey",
+    "step": "no runtime errors",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "a venue that does not exist",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "a venue that does not exist — no runtime error",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "no venue at all",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "no venue at all — no runtime error",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "a repeated parameter",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "a repeated parameter — no runtime error",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "a malformed visit length",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "a malformed visit length — no runtime error",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "a date in the past",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "a date in the past — no runtime error",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "a venue that shuts before any visit fits",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "a venue that shuts before any visit fits — no runtime error",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "a stale household id",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "a stale household id — no runtime error",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "no household at all",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "no household at all — no runtime error",
+    "ok": true
+  },
+  {
+    "viewport": "links",
+    "screen": "/plan link",
+    "step": "a reload rebuilds the day rather than stranding it",
+    "ok": true,
+    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 09:30–12:50  Day plan Who’s coming Travel & parking A 3-hour Saturday MORNING 10:25–11:55 Confirmed Facts Garden"
+  }
+]

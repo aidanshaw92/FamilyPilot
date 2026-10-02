@@ -38,6 +38,7 @@ import { photoAttribution } from '@/src/services/places/place-photo-url';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { safeFooterPadding } from '@/src/utils/safe-area';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { isActivityVenue } from '@/src/data/mock-restaurants';
 import { useFamilyProfile, useVenue } from '@/src/hooks/use-queries';
@@ -339,7 +340,7 @@ export default function VenueScreen() {
       {/* Save sits beside Create a plan, and Get directions has moved into the content above.
           Create a plan is the one action this screen exists to offer, so it is the only primary
           button here; directions are what a parent wants once the day is decided, not instead. */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
+      <View style={[styles.footer, { paddingBottom: safeFooterPadding(insets.bottom) }]}>
         <Button
           label={saved ? 'Saved' : 'Save'}
           variant="outline"
@@ -517,7 +518,12 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontFamily: 'Inter_600SemiBold',
-    textTransform: 'capitalize',
+    // No `textTransform: 'capitalize'`. Every value in this column is already written for a person:
+    // `formatTerrainLabel` returns "Mostly flat", the hours are the provider's own display copy, and
+    // the parking line is reviewed prose. Title-casing them produced "Monday To Sunday: 09:00 To
+    // 17:00", "2 To 10", and a whole reviewed sentence rendered as "Free On-Site Car Park, About 120
+    // Spaces, Busiest Before 11am At Weekends." A venue whose facts are confirmed is the only place
+    // this shows, which is why no check had ever caught it.
     marginTop: 2,
   },
   description: {
