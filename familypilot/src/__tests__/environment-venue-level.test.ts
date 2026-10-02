@@ -82,6 +82,43 @@ describe('a feature is not a setting', () => {
     expect(classify('Open-air skating returns this winter.')).toBeNull();
   });
 
+  it('does not let an outdoor playground make an indoor museum outdoor (production)', () => {
+    // The Royal Air Force Museum London is an indoor aircraft museum and one of London's better
+    // rainy-day options. It published `environment = outdoor` from this sentence. `play` and
+    // `play area` were in the feature list from the start; `playground` was not, and `play\\b`
+    // cannot match inside "playground".
+    expect(
+      classify(
+        'Hours of fun in our outdoor playground Perfect for young aviators, our free playground '
+        + 'features mini model aircraft',
+      ),
+    ).toBeNull();
+  });
+
+  it('does not let a dog policy change an indoor venue (production)', () => {
+    // Babylon Park London is an INDOOR amusement park. A re-crawl moved it from `indoor` to `mixed`
+    // on the strength of "ensure their outdoor needs are met before entering" -- a dog instruction.
+    expect(
+      classify(
+        'Babylon Park in London: Indoor Amusement Park Location: Babylon Park, 8 Castlehaven Rd, '
+        + 'Camden, London NW1 8QU / e Babylon Park, but please ensure their outdoor needs are met '
+        + 'before entering',
+      ),
+    ).toBe('indoor');
+  });
+
+  it('does not read a marketing phrase or a hire listing as the venue (production)', () => {
+    // Hobbledown Heath, and Gunnersbury Park's venue-hire navigation.
+    expect(
+      classify('e at Hobbledown Heath, where soft play, outdoor exploration and imaginative play '
+        + 'bring unforgettable family days out in West London'),
+    ).toBeNull();
+    expect(
+      classify('ore Filming & Photography Find out more Outdoor Events Find out more Contact Us '
+        + 'For enquiries about venue hire'),
+    ).toBeNull();
+  });
+
   it('still reads an outdoor venue that is not a rink', () => {
     // The mask is a closed list for a reason: it must not swallow the venue itself.
     expect(classify('This is an outdoor museum set in 20 acres of parkland.')).toBe('outdoor');
