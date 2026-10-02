@@ -35,6 +35,7 @@ import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { generateRestaurantStaticParams } from '@/src/utils/restaurant-routes';
 import { getMatchClassification } from '@/src/utils/family-match-classification';
+import { travelTimeLabel } from '@/src/utils/travel-time';
 
 const HERO_HEIGHT = 320;
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
@@ -240,7 +241,8 @@ function RestaurantScreenContent() {
                 <Ionicons name="location-outline" size={18} color={colors.primary[500]} />
                 <View style={styles.contextText}>
                   <Text variant="bodySmall" style={styles.contextPrimary}>
-                    {restaurant.driveMinutesFromActivity} minutes from {activityVenue.name}
+                    {travelTimeLabel(restaurant.driveMinutesFromActivity, 'estimated')} from{' '}
+                    {activityVenue.name}
                   </Text>
                   <PressableLink label={`Return to ${activityVenue.name}`} onPress={handleReturnToActivity} />
                 </View>

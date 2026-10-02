@@ -9,6 +9,13 @@
   {
     "viewport": "360x800",
     "screen": "Home",
+    "step": "hedges the deck card travel time rather than stating it as measured",
+    "ok": true,
+    "message": "about 20 min"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Home",
     "step": "does not scroll sideways",
     "ok": true
   },
@@ -23,7 +30,7 @@
     "screen": "Venue Detail",
     "step": "renders a venue whose facts are confirmed",
     "ok": true,
-    "message": "A. Fixture · Google    Confirmed Facts Gardens  40 min  ~3h visit  Est. £1"
+    "message": "A. Fixture · Google    Confirmed Facts Gardens  about 40 min  ~3h visit  E"
   },
   {
     "viewport": "360x800",
@@ -55,6 +62,13 @@
   {
     "viewport": "360x800",
     "screen": "Venue Detail",
+    "step": "does not present its drive estimate as a measured journey",
+    "ok": true,
+    "message": "about 40 min"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Venue Detail",
     "step": "does not scroll sideways",
     "ok": true
   },
@@ -76,7 +90,7 @@
     "screen": "Venue Detail",
     "step": "survives a venue with no photograph",
     "ok": true,
-    "message": "    No Photograph Park  40 min FAMILY MATCH Will this work for yo"
+    "message": "    No Photograph Park  about 40 min FAMILY MATCH Will this work "
   },
   {
     "viewport": "360x800",
@@ -245,6 +259,13 @@
   {
     "viewport": "390x844",
     "screen": "Home",
+    "step": "hedges the deck card travel time rather than stating it as measured",
+    "ok": true,
+    "message": "about 20 min"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Home",
     "step": "does not scroll sideways",
     "ok": true
   },
@@ -259,7 +280,7 @@
     "screen": "Venue Detail",
     "step": "renders a venue whose facts are confirmed",
     "ok": true,
-    "message": "A. Fixture · Google    Confirmed Facts Gardens  40 min  ~3h visit  Est. £1"
+    "message": "A. Fixture · Google    Confirmed Facts Gardens  about 40 min  ~3h visit  E"
   },
   {
     "viewport": "390x844",
@@ -291,6 +312,13 @@
   {
     "viewport": "390x844",
     "screen": "Venue Detail",
+    "step": "does not present its drive estimate as a measured journey",
+    "ok": true,
+    "message": "about 40 min"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Venue Detail",
     "step": "does not scroll sideways",
     "ok": true
   },
@@ -312,7 +340,7 @@
     "screen": "Venue Detail",
     "step": "survives a venue with no photograph",
     "ok": true,
-    "message": "    No Photograph Park  40 min FAMILY MATCH Will this work for yo"
+    "message": "    No Photograph Park  about 40 min FAMILY MATCH Will this work "
   },
   {
     "viewport": "390x844",
@@ -481,6 +509,13 @@
   {
     "viewport": "393x852",
     "screen": "Home",
+    "step": "hedges the deck card travel time rather than stating it as measured",
+    "ok": true,
+    "message": "about 20 min"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Home",
     "step": "does not scroll sideways",
     "ok": true
   },
@@ -495,7 +530,7 @@
     "screen": "Venue Detail",
     "step": "renders a venue whose facts are confirmed",
     "ok": true,
-    "message": "A. Fixture · Google    Confirmed Facts Gardens  40 min  ~3h visit  Est. £1"
+    "message": "A. Fixture · Google    Confirmed Facts Gardens  about 40 min  ~3h visit  E"
   },
   {
     "viewport": "393x852",
@@ -527,6 +562,13 @@
   {
     "viewport": "393x852",
     "screen": "Venue Detail",
+    "step": "does not present its drive estimate as a measured journey",
+    "ok": true,
+    "message": "about 40 min"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Venue Detail",
     "step": "does not scroll sideways",
     "ok": true
   },
@@ -548,7 +590,7 @@
     "screen": "Venue Detail",
     "step": "survives a venue with no photograph",
     "ok": true,
-    "message": "    No Photograph Park  40 min FAMILY MATCH Will this work for yo"
+    "message": "    No Photograph Park  about 40 min FAMILY MATCH Will this work "
   },
   {
     "viewport": "393x852",
@@ -717,6 +759,13 @@
   {
     "viewport": "430x932",
     "screen": "Home",
+    "step": "hedges the deck card travel time rather than stating it as measured",
+    "ok": true,
+    "message": "about 20 min"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Home",
     "step": "does not scroll sideways",
     "ok": true
   },
@@ -731,7 +780,7 @@
     "screen": "Venue Detail",
     "step": "renders a venue whose facts are confirmed",
     "ok": true,
-    "message": "A. Fixture · Google    Confirmed Facts Gardens  40 min  ~3h visit  Est. £1"
+    "message": "A. Fixture · Google    Confirmed Facts Gardens  about 40 min  ~3h visit  E"
   },
   {
     "viewport": "430x932",
@@ -763,6 +812,13 @@
   {
     "viewport": "430x932",
     "screen": "Venue Detail",
+    "step": "does not present its drive estimate as a measured journey",
+    "ok": true,
+    "message": "about 40 min"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Venue Detail",
     "step": "does not scroll sideways",
     "ok": true
   },
@@ -784,7 +840,7 @@
     "screen": "Venue Detail",
     "step": "survives a venue with no photograph",
     "ok": true,
-    "message": "    No Photograph Park  40 min FAMILY MATCH Will this work for yo"
+    "message": "    No Photograph Park  about 40 min FAMILY MATCH Will this work "
   },
   {
     "viewport": "430x932",
@@ -953,6 +1009,13 @@
   {
     "viewport": "393x852-insets",
     "screen": "Home",
+    "step": "hedges the deck card travel time rather than stating it as measured",
+    "ok": true,
+    "message": "about 20 min"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Home",
     "step": "does not scroll sideways",
     "ok": true
   },
@@ -967,7 +1030,7 @@
     "screen": "Venue Detail",
     "step": "renders a venue whose facts are confirmed",
     "ok": true,
-    "message": "A. Fixture · Google    Confirmed Facts Gardens  40 min  ~3h visit  Est. £1"
+    "message": "A. Fixture · Google    Confirmed Facts Gardens  about 40 min  ~3h visit  E"
   },
   {
     "viewport": "393x852-insets",
@@ -999,6 +1062,13 @@
   {
     "viewport": "393x852-insets",
     "screen": "Venue Detail",
+    "step": "does not present its drive estimate as a measured journey",
+    "ok": true,
+    "message": "about 40 min"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Venue Detail",
     "step": "does not scroll sideways",
     "ok": true
   },
@@ -1020,7 +1090,7 @@
     "screen": "Venue Detail",
     "step": "survives a venue with no photograph",
     "ok": true,
-    "message": "    No Photograph Park  40 min FAMILY MATCH Will this work for yo"
+    "message": "    No Photograph Park  about 40 min FAMILY MATCH Will this work "
   },
   {
     "viewport": "393x852-insets",

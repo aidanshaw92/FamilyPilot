@@ -8,6 +8,7 @@ import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { RestaurantDetail } from '@/src/types';
 import { getMatchClassification } from '@/src/utils/family-match-classification';
 import { restaurantFeatureHighlights } from '@/src/services/scoring/restaurant-score';
+import { travelTimeLabel } from '@/src/utils/travel-time';
 
 interface RestaurantCardProps {
   restaurant: RestaurantDetail;
@@ -45,7 +46,7 @@ export function RestaurantCard({ restaurant, index = 0 }: RestaurantCardProps) {
           {classification}
         </Text>
         <Text variant="bodySmall" color={colors.text.secondary}>
-          {restaurant.driveMinutes} min away · Estimated{' '}
+          {travelTimeLabel(restaurant.driveMinutes, 'estimated')} · Estimated{' '}
           {restaurant.estimatedFamilySpend ?? restaurant.estimatedSpend ?? 'spend varies'}
         </Text>
         {highlights.length > 0 ? (

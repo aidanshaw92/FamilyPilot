@@ -47,6 +47,7 @@ import { useSavedStore } from '@/src/stores/saved-store';
 import { localDate, usePlanningStore } from '@/src/stores/planning-store';
 import { getEnrichmentDetailTrustCopy, formatTerrainLabel, getMatchClassification } from '@/src/utils/family-match-classification';
 import { generateVenueStaticParams } from '@/src/utils/venue-routes';
+import { travelTimeLabel } from '@/src/utils/travel-time';
 
 const HERO_HEIGHT = 250;
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
@@ -225,7 +226,8 @@ export default function VenueScreen() {
               {venue.name}
             </Text>
             <View style={styles.heroMeta}>
-              <MetaItem icon="car-outline" text={`${venue.driveMinutes} min`} />
+              {/* Hedged: this is a straight-line estimate, not a routed drive. */}
+              <MetaItem icon="car-outline" text={travelTimeLabel(venue.driveMinutes, 'estimated')} />
               {venue.visitDurationMinutes ? (
                 <MetaItem icon="time-outline" text={`~${Math.round(venue.visitDurationMinutes / 60)}h visit`} />
               ) : null}

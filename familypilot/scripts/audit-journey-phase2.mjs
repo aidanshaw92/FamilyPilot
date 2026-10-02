@@ -189,9 +189,19 @@ async function auditJourney(browser, viewport) {
 
   const homeText = await text(page);
   note(V, 'Home', 'renders its deck rather than an empty shell', {
-    ok: /min away|Potential match|Strong fit|Good fit/i.test(homeText),
+    // The probe was the literal string "min away", which made it a copy test wearing a
+    // rendered-or-not test's name: changing the travel wording made Home look empty. A travel time
+    // in either wording, or a match classification, is what actually evidences a rendered card.
+    ok: /\d+\s*min|Potential match|Strong fit|Good fit/i.test(homeText),
     message: homeText.replace(/\s+/g, ' ').slice(0, 90),
   });
+  note(V, 'Home', 'hedges the deck card travel time rather than stating it as measured', await (async () => {
+    const t = await text(page);
+    return {
+      ok: /about \d+ min/.test(t) && !/\d+ min away/.test(t),
+      message: (t.match(/(about )?\d+ min( away)?/) ?? ['no travel time found'])[0],
+    };
+  })());
   note(V, 'Home', 'does not scroll sideways', await (async () => {
     const o = await overflow(page);
     return { ok: o === null, message: o ? `${o.scroll} in ${o.viewport}: ${o.offenders.join(' ; ')}` : undefined };
@@ -227,6 +237,13 @@ async function auditJourney(browser, viewport) {
   });
   note(V, 'Venue Detail', 'offers Create a plan', {
     ok: await page.getByTestId('venue-create-plan').isVisible().catch(() => false),
+  });
+  // Section 4: a straight-line estimate must not be worded as a routed journey. Every driveMinutes
+  // reaching this screen is Haversine distance over an assumed average speed, so a bare "14 min" or
+  // "14 min away" is a guess in the voice of a measurement.
+  note(V, 'Venue Detail', 'does not present its drive estimate as a measured journey', {
+    ok: /about \d+ min/.test(richText) && !/\d+ min away/.test(richText),
+    message: (richText.match(/(about )?\d+ min( away)?/) ?? ['no travel time found'])[0],
   });
   note(V, 'Venue Detail', 'does not scroll sideways', await (async () => {
     const o = await overflow(page);

@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/ui/Text';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { WeatherAlternative } from '@/src/types';
+import { travelTimeLabel } from '@/src/utils/travel-time';
 
 interface WeatherAlternativeSectionProps {
   alternative: WeatherAlternative;
@@ -19,7 +20,7 @@ export function WeatherAlternativeSection({ alternative }: WeatherAlternativeSec
         <Ionicons name="rainy-outline" size={20} color={colors.accent[600]} />
         <View style={styles.textBlock}>
           <Text variant="body">
-            {alternative.name} · {alternative.driveMinutes} min away
+            {alternative.name} · {travelTimeLabel(alternative.driveMinutes, 'estimated')}
           </Text>
           <Text variant="bodySmall" color={colors.text.secondary}>
             {alternative.description}

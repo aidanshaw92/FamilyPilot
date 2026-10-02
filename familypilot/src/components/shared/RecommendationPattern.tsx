@@ -10,6 +10,7 @@ import { getMatchClassification, getEnrichmentTrustCopy } from '@/src/utils/fami
 import { formatArrivalTime } from '@/src/utils/clock-format';
 
 import { formatFamilyMatchSecondary } from '../ui/family-match-label';
+import { travelTimeWithMode } from '@/src/utils/travel-time';
 
 export type RecommendationVariant = 'hero' | 'carousel' | 'list' | 'detail';
 
@@ -143,7 +144,10 @@ export function RecommendationPattern({
       ) : null}
 
       <Text variant="bodySmall" color={colors.text.secondary} style={styles.metaLine}>
-        {venue.driveMinutes} min away · Arrive by {formatArrivalTime(venue.driveMinutes)} if you leave now
+        {/* "Arrive BY 14:32" is a promise, and the number behind it is a straight line divided by an
+            assumed average speed. "around" is what that evidence supports. */}
+        {travelTimeWithMode(venue.driveMinutes, 'estimated', 'drive')} · Arrive around{' '}
+        {formatArrivalTime(venue.driveMinutes)} if you leave now
         {venue.estimatedSpend ? ` · Estimated ${venue.estimatedSpend}` : ''}
       </Text>
 

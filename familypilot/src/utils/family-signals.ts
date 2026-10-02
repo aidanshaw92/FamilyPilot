@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { Venue } from '@/src/types';
+import { travelTimeLabel } from '@/src/utils/travel-time';
 
 export interface FamilySignal {
   key: string;
@@ -56,7 +57,13 @@ export function getFamilySignals(facts: Facts | undefined, limit = 4): FamilySig
 
 /** Travel time always earns its place on a card: it is known for every venue. */
 export function getTravelSignal(driveMinutes: number): FamilySignal {
-  return { key: 'drive', icon: 'time-outline', label: `${driveMinutes} min away` };
+  // Always hedged, because a Venue's driveMinutes is always a straight-line estimate: it is computed
+  // from coordinates in mergePlaceToVenue and nothing downstream replaces it with a routed value.
+  return {
+    key: 'drive',
+    icon: 'time-outline',
+    label: travelTimeLabel(driveMinutes, 'estimated'),
+  };
 }
 
 /** Card signals: travel time first, then confirmed facts, capped so cards stay calm. */
