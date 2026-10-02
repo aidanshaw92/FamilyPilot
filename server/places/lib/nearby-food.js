@@ -73,11 +73,30 @@ function travelOptionsFor(anchor, candidate) {
     candidate.longitude,
   );
 
+  /**
+   * Both legs carry `source: 'estimated-distance'` and a confidence, matching the TravelLeg shape the
+   * client uses. Neither is routed: no provider was asked, no network was consulted, nothing was paid.
+   *
+   * Walking's confidence is LOW, and lower than driving's, deliberately. A detour factor applied to a
+   * straight line is a much worse model of a walk than of a drive: pedestrian routes bend around
+   * blocks, crossings, rivers and railways, and a river between the two points can double the real
+   * journey while leaving the straight line untouched. Assuming a walking pace does not give a route.
+   */
   const options = [];
   if (walkMinutes <= MAX_WALK_MINUTES) {
-    options.push({ mode: 'walk', minutes: walkMinutes, source: 'estimated' });
+    options.push({
+      mode: 'walk',
+      durationMinutes: walkMinutes,
+      source: 'estimated-distance',
+      confidence: 'low',
+    });
   }
-  options.push({ mode: 'drive', minutes: driveMinutes, source: 'estimated' });
+  options.push({
+    mode: 'drive',
+    durationMinutes: driveMinutes,
+    source: 'estimated-distance',
+    confidence: 'medium',
+  });
   // No transit entry. Its absence is the honest answer, and a surface renders it as unknown rather
   // than as a number nobody can stand behind.
   return options;
@@ -95,7 +114,7 @@ function usefulness(candidate) {
   const walk = candidate.travel.find((option) => option.mode === 'walk');
   let score = 0;
   // Walkable at all is the single biggest factor; closer is better within that.
-  if (walk) score += 40 + Math.max(0, 25 - walk.minutes);
+  if (walk) score += 40 + Math.max(0, 25 - walk.durationMinutes);
   else score += Math.max(0, 20 - candidate.distanceKm * 4);
   // Knowing when it opens is worth something to a parent planning a time, so a mapped
   // `opening_hours` ranks above a silent one. It is NOT a claim that the place is open.

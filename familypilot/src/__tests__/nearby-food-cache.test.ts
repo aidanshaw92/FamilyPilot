@@ -161,15 +161,47 @@ describe('discovery first, routing second', () => {
     // is arithmetic, so it is zero.
     expect(result.googleCalls).toBe(0);
     expect(result.candidates.length).toBeGreaterThan(1);
-    expect(result.candidates.every((c: any) => c.travel.every((t: any) => t.source === 'estimated'))).toBe(true);
+    expect(
+      result.candidates.every((c: any) =>
+        c.travel.every((t: any) => t.source === 'estimated-distance'),
+      ),
+    ).toBe(true);
+    // The claim that matters: nothing here may be presented as a measured journey.
+    expect(
+      result.candidates.every((c: any) =>
+        c.travel.every((t: any) => t.source !== 'routed' && t.source !== 'cached-route'),
+      ),
+    ).toBe(true);
   });
 });
 
 describe('what the travel figures are allowed to claim', () => {
   it('labels every mode as an estimate, because not one of them was routed', async () => {
     const { candidates } = await getNearbyFood(anchor, undefined, deps());
-    expect(candidates[0].travel.every((option: any) => option.source === 'estimated')).toBe(true);
-    expect(candidates[0].travel.some((option: any) => option.source === 'measured')).toBe(false);
+    expect(candidates[0].travel.every((leg: any) => leg.source === 'estimated-distance')).toBe(true);
+    expect(candidates[0].travel.some((leg: any) => leg.source === 'routed')).toBe(false);
+    expect(candidates[0].travel.some((leg: any) => leg.source === 'cached-route')).toBe(false);
+  });
+
+  it('rates a walking estimate as less trustworthy than a driving one', async () => {
+    // Not decoration. A detour factor on a straight line models a drive tolerably and a walk badly:
+    // pedestrian routes bend around blocks, crossings and rivers, and a river in the way can double
+    // the real journey while leaving the straight line untouched.
+    const { candidates } = await getNearbyFood(anchor, undefined, deps());
+    const walk = candidates[0].travel.find((leg: any) => leg.mode === 'walk');
+    const drive = candidates[0].travel.find((leg: any) => leg.mode === 'drive');
+    expect(walk.confidence).toBe('low');
+    expect(drive.confidence).toBe('medium');
+  });
+
+  it('gives every leg a duration under the canonical field name', async () => {
+    // `minutes` was a local shape that drifted from the product's TravelLeg. One name, one meaning.
+    const { candidates } = await getNearbyFood(anchor, undefined, deps());
+    for (const leg of candidates[0].travel) {
+      expect(typeof leg.durationMinutes).toBe('number');
+      expect(leg.durationMinutes).toBeGreaterThan(0);
+      expect(leg).not.toHaveProperty('minutes');
+    }
   });
 
   it('offers walking and driving for somewhere genuinely close', async () => {

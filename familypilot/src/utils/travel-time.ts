@@ -1,3 +1,5 @@
+import { TravelLeg, TravelMode } from '@/src/types/travel';
+
 /**
  * How a travel time is worded, decided by how it was obtained.
  *
@@ -19,11 +21,18 @@
  * they know, and a caller that knows nothing gets the cautious wording rather than the confident one.
  */
 
-/** How a travel duration was obtained. */
+/**
+ * How a travel duration was obtained, in the two words the WORDING depends on.
+ *
+ * Narrower than the canonical `TravelSource` on purpose: a surface only needs to know whether it may
+ * speak plainly, and `routed` and `cached-route` both mean yes. `travelSourceOfLeg` collapses the
+ * canonical vocabulary into this one, so there is one place where that judgement is made rather than a
+ * comparison repeated in every component.
+ */
 export type TravelTimeSource = 'measured' | 'estimated';
 
-/** The mode a duration describes. Only driving exists today; the rest are for the lunch work. */
-export type TravelMode = 'drive' | 'walk' | 'transit' | 'bus';
+/** Re-exported rather than redefined: a second TravelMode is how the two drifted apart once already. */
+export type { TravelMode } from '@/src/types/travel';
 
 /**
  * Resolves the provider's vocabulary into ours.
@@ -34,6 +43,17 @@ export type TravelMode = 'drive' | 'walk' | 'transit' | 'bus';
  */
 export function travelSourceOf(source: 'live' | 'estimated' | undefined): TravelTimeSource {
   return source === 'live' ? 'measured' : 'estimated';
+}
+
+/**
+ * Collapses the canonical `TravelSource` into the only distinction the wording turns on.
+ *
+ * `routed` and `cached-route` are both measurements over a real network, so both may be stated
+ * plainly. `estimated-distance` may not. One place makes that call, rather than every component
+ * comparing strings and one of them eventually getting it backwards.
+ */
+export function travelSourceOfLeg(leg: Pick<TravelLeg, 'source'>): TravelTimeSource {
+  return leg.source === 'estimated-distance' ? 'estimated' : 'measured';
 }
 
 /**
@@ -57,9 +77,15 @@ export function travelTimeWithMode(
   return `${travelTimeLabel(minutes, source)} ${MODE_NOUN[mode]}`;
 }
 
+/**
+ * Exhaustive over TravelMode, so adding a mode to the canonical type fails the compile here rather
+ * than rendering `undefined` beside a duration. A bus says bus; anything else transit-shaped says
+ * public transport, because calling a tram or a train "bus" is a claim about the mode.
+ */
 const MODE_NOUN: Record<TravelMode, string> = {
   drive: 'drive',
   walk: 'walk',
+  cycle: 'cycle',
   transit: 'by public transport',
   bus: 'by bus',
 };

@@ -1,6 +1,8 @@
 import { DayItinerary, SequenceLeg, SequenceStop } from '@/src/types/day-sequence';
 import { PlanCaveat, TravelDiagnostics } from '@/src/types/day-plan';
 import { MatchableVenueFacts } from '@/src/types/day-request';
+import { TravelMode } from '@/src/types/travel';
+import { travelTimeWithMode } from '@/src/utils/travel-time';
 
 /**
  * The boundary between the planner and the approved Plan screen.
@@ -41,6 +43,8 @@ export interface PlanStopView {
   role: 'activity' | 'meal';
   /** Shown when the stop is expanded. */
   rows: PlanStopRow[];
+  /** The journey from the previous stop. Absent on the first stop, which is arrived at from home. */
+  arrivalTravel?: PlanArrivalTravelView;
 }
 
 export interface PlanPartyView {
@@ -50,6 +54,22 @@ export interface PlanPartyView {
   homeLabel: string;
   latestDepartureLabel: string;
   notes: string[];
+}
+
+/**
+ * The journey into one stop, for the line the Day plan draws between stops.
+ *
+ * The MODE is the one the plan's arithmetic actually used, not the one a parent might prefer. The
+ * sequencer times the day from driving estimates, so a stop 240m away reads as a short drive even
+ * though most families would walk it. Showing a walk here would misdescribe what the schedule was
+ * computed from, and the walking option is already offered on Venue Detail where it costs nothing to
+ * state. Section 13's "present the mode actually used", taken literally.
+ */
+export interface PlanArrivalTravelView {
+  /** 🚶 / 🚗 / 🚇 / 🚌, by the mode. */
+  symbol: string;
+  /** `about 6 min drive` or `6 min drive`, worded from the leg's provenance. */
+  label: string;
 }
 
 export interface PlanTravelLegView {
@@ -160,6 +180,51 @@ function openingRow(stop: SequenceStop): PlanStopRow {
   return { label: 'Opening', value: 'Hours not confirmed — check before you go', unconfirmed: true };
 }
 
+/**
+ * The stop-to-stop journey line, from the leg the sequencer actually timed.
+ *
+ * Returns nothing for the first stop: that hop comes from a household's home, and which home differs
+ * per family, so it belongs in the Travel & parking section where each household is named rather than
+ * on a single line in a shared timeline.
+ *
+ * Worded from the leg's own `source`, so a routed leg will read `6 min drive` and an estimated one
+ * `about 6 min drive` with no change here. 🚗 because the planner times the day from driving
+ * estimates; see PlanArrivalTravelView for why that is the honest symbol rather than 🚶.
+ */
+function arrivalTravelFor(
+  stop: SequenceStop,
+  legs: SequenceLeg[],
+): PlanArrivalTravelView | undefined {
+  const leg = legs.find(
+    (candidate) =>
+      candidate.to.kind === 'stop' &&
+      candidate.to.index === stop.index &&
+      candidate.from.kind === 'stop',
+  );
+  if (!leg) return undefined;
+
+  return {
+    symbol: MODE_SYMBOL.drive,
+    label: travelTimeWithMode(
+      leg.travelMinutes,
+      leg.source === 'live' ? 'measured' : 'estimated',
+      'drive',
+    ),
+  };
+}
+
+/**
+ * One symbol per mode. 🚌 is reserved for a genuinely bus-based route; anything else transit-shaped
+ * uses 🚇, because calling a tram or a train "bus" is a claim about the mode rather than a shorthand.
+ */
+const MODE_SYMBOL: Record<TravelMode, string> = {
+  walk: '🚶',
+  drive: '🚗',
+  cycle: '🚲',
+  transit: '🚇',
+  bus: '🚌',
+};
+
 function travelLegLabel(leg: SequenceLeg, stops: SequenceStop[]): string {
   const nameOf = (endpoint: SequenceLeg['from']): string => {
     if (endpoint.kind === 'home') return 'Home';
@@ -260,6 +325,7 @@ export function toPlanViewModel(input: PlanViewModelInput): PlanViewModel {
       anchor: stop.anchor,
       role: stop.role,
       rows,
+      arrivalTravel: arrivalTravelFor(stop, itinerary.legs),
     };
   });
 

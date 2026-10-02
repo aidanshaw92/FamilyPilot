@@ -1,3 +1,5 @@
+import { TravelLeg } from '@/src/types/travel';
+
 /**
  * Somewhere to eat near a venue, as OpenStreetMap describes it.
  *
@@ -7,24 +9,15 @@
  * confirmed" claim. A surface that wants to show more has to get it from somewhere real first.
  */
 
-/** How a travel duration was obtained. Nothing here is ever measured today. */
-export type FoodTravelSource = 'estimated' | 'measured';
-
 /**
- * The modes a candidate can carry.
+ * A candidate's travel options use the product's canonical `TravelLeg`, not a local shape.
  *
- * `transit` and `bus` exist in the type and are never populated by the OSM path, because a straight
- * line cannot tell you whether a bus runs. They are here so that a real public-transport provider can
- * be added later without the surfaces changing shape, and so that a bus is never labelled as generic
- * public transport or the reverse.
+ * `transit` and `bus` exist in `TravelMode` and are never populated by the OSM path, because a straight
+ * line cannot tell you whether a bus runs. They are in the shared type so a real public-transport
+ * provider can be added later without these surfaces changing, and so that a bus is never labelled as
+ * generic public transport or the reverse.
  */
-export type FoodTravelMode = 'walk' | 'drive' | 'transit' | 'bus';
-
-export interface FoodTravelOption {
-  mode: FoodTravelMode;
-  minutes: number;
-  source: FoodTravelSource;
-}
+export type FoodTravelOption = TravelLeg;
 
 /**
  * Tags OpenStreetMap carried, each present only when it explicitly said yes.
@@ -57,7 +50,7 @@ export interface FoodCandidate {
   website: string | null;
   phone: string | null;
   tagged: FoodCandidateTags;
-  travel: FoodTravelOption[];
+  travel: TravelLeg[];
 }
 
 export interface NearbyFoodResult {

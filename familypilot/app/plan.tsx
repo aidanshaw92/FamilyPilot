@@ -8,14 +8,14 @@ import { PlanScreenView } from '@/src/components/planning/PlanScreenView';
 import { Button, EmptyState, Text } from '@/src/components/ui';
 import { BackButton } from '@/src/components/ui/BackButton';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
-import { useFamilyProfile, useVenue } from '@/src/hooks/use-queries';
+import { useFamilyProfile, useNearbyFood, useVenue } from '@/src/hooks/use-queries';
 import {
   CreatePlanFailure,
   CreatePlanStepId,
   createPlan,
   createPlanSteps,
 } from '@/src/services/planning/create-plan';
-import { planStopFromVenueDetail } from '@/src/services/planning/day-plan';
+import { mealFromFoodCandidate, planStopFromVenueDetail } from '@/src/services/planning/day-plan';
 import { firstValue, planDraftFromParams } from '@/src/services/planning/plan-draft';
 import { resolvePlanParties } from '@/src/services/planning/plan-parties';
 import { PlanViewModel, PlanViewModelInput } from '@/src/services/planning/plan-view-model';
@@ -100,6 +100,30 @@ export default function PlanScreen() {
     [dateParam, leaveAtParam, visitParam, partiesParam],
   );
 
+  /**
+   * The lunch stop, from the OpenStreetMap discovery this venue's detail screen already ran.
+   *
+   * Read from the react-query cache under the same key the detail screen uses, so arriving here costs
+   * nothing: no Overpass request, and certainly no Google call. A parent who reached the Plan by any
+   * other route simply gets no meal, and `createPlanSteps` omits the lunch step rather than showing a
+   * progress line for work that will not happen.
+   *
+   * The highest-ranked candidate is taken rather than offering a choice: Section 13 says keep this
+   * deliberately simple, and a lunch picker is a product decision nobody has made.
+   */
+  const nearbyFood = useNearbyFood({
+    latitude: venue?.latitude,
+    longitude: venue?.longitude,
+    placeId: venue?.id,
+  });
+  const lunch = useMemo(() => {
+    const best = nearbyFood.data?.candidates?.[0];
+    return best ? mealFromFoodCandidate(best) : undefined;
+  }, [nearbyFood.data]);
+  /** Primitives for the generation effect's dependency list, never the objects. */
+  const lunchKey = lunch?.place.placeId ?? 'no-lunch';
+  const foodPending = nearbyFood.isPending;
+
   const [phase, setPhase] = useState<Phase>({ status: 'generating' });
   const [done, setDone] = useState<CreatePlanStepId[]>([]);
   const [current, setCurrent] = useState<CreatePlanStepId | undefined>(undefined);
@@ -122,8 +146,11 @@ export default function PlanScreen() {
   const saving = useRef(false);
 
   const steps = useMemo(
-    () => createPlanSteps({ venueName: venue?.name ?? 'this place' }),
-    [venue?.name],
+    () => createPlanSteps({ venueName: venue?.name ?? 'this place', meal: lunch }),
+    // `lunch?.place.placeId` rather than the object: a primitive, for the same reason the generation
+    // effect below takes primitives. An object identity in a dependency list is what restarted
+    // generation 3,094 times once already.
+    [venue?.name, lunch],
   );
 
   const parties = useMemo(
@@ -135,11 +162,23 @@ export default function PlanScreen() {
 
   useEffect(() => {
     if (!venue) return;
+    /**
+     * Wait for the lunch lookup to settle, rather than generating now and regenerating when it lands.
+     *
+     * Regenerating would work -- `lunchKey` is a primitive and MAX_GENERATION_ATTEMPTS bounds it -- but
+     * it would build the day twice, and the second build reaches a journey endpoint that can spend. One
+     * build with whatever the lookup found is cheaper and shows the parent one Generating sequence.
+     *
+     * Settling means resolved OR failed: a failed lookup gives no lunch and the day is built without
+     * one, which `createPlanSteps` reflects by omitting the step rather than promising work it will not
+     * do. The client has a 20-second timeout and one retry, so this cannot wait indefinitely.
+     */
+    if (foodPending) return;
     // The resolved households are part of the key, not just the chosen ids. The profile and the
     // venue are two separate queries: if the venue lands first, the day would be built for nobody,
     // and without this the arriving profile would never trigger a rebuild -- a cold load would
     // intermittently end on "Nobody is coming yet".
-    const key = [venueId, draft.date, draft.leaveAt, draft.visitMinutes, partiesParam, familyIds].join('|');
+    const key = [venueId, draft.date, draft.leaveAt, draft.visitMinutes, partiesParam, familyIds, lunchKey].join('|');
     if (requested.current === key) return;
     if (attempts.current.key !== key) attempts.current = { key, count: 0 };
     if (attempts.current.count >= MAX_GENERATION_ATTEMPTS) return;
@@ -163,6 +202,7 @@ export default function PlanScreen() {
           },
           families: parties.families,
           parkingInfo: venue.parkingInfo,
+          meal: lunch,
         },
         {
           onStep: (id) => {
@@ -189,7 +229,7 @@ export default function PlanScreen() {
     // Deps are the venue object and primitives only. `parties.families` is deliberately absent: it is
     // a fresh array every time the resolver runs, and `familyIds` carries the same information
     // without the identity churn.
-  }, [venue, venueId, draft, familyIds, partiesParam]);
+  }, [venue, venueId, draft, familyIds, partiesParam, foodPending, lunchKey, lunch]);
 
   /**
    * Households that were chosen and could not be planned for.

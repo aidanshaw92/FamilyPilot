@@ -472,6 +472,29 @@ async function auditJourney(browser, viewport) {
   await page.unroute('**/api/context/journey**', holdJourney);
   await page.screenshot({ path: join(dir, '06-plan.png') });
 
+  // --- THE LUNCH STOP ---------------------------------------------------------------------------
+  // Section 12: a real OpenStreetMap restaurant inside the generated day, and Section 13: the hop
+  // between stops shown in the mode the plan's timings were actually computed from.
+  const lunchText = await text(page);
+  note(V, 'Plan', 'puts a real discovered restaurant in the day', {
+    ok: /The Mapped Kitchen/.test(lunchText) && /LUNCH/i.test(lunchText),
+    message: (lunchText.match(/LUNCH[^\n]{0,60}/) ?? ['no lunch stop'])[0].replace(/\s+/g, ' '),
+  });
+  note(V, 'Plan', 'draws the hop between stops with a mode symbol and a duration', {
+    ok: /[\u{1F680}-\u{1F6FF}]\s*about \d+ min drive/u.test(lunchText),
+    message: (lunchText.match(/.{0,3}about \d+ min drive/u) ?? ['no hop line'])[0],
+  });
+  note(V, 'Plan', 'hedges that hop rather than stating it as a routed journey', {
+    ok: !/[\u{1F680}-\u{1F6FF}]\s*\d+ min drive/u.test(lunchText),
+    message: (lunchText.match(/.{0,3}\s\d+ min drive/u) ?? ['nothing stated as routed'])[0],
+  });
+  note(V, 'Plan', 'does not claim the OSM restaurant has confirmed facilities', {
+    // OSM cannot confirm toilets, baby changing or parking. A lunch stop asserting them would make the
+    // day look suitable on evidence nobody has.
+    ok: /opening hours not confirmed/i.test(lunchText) && !/Mapped Kitchen[^.]*confirmed (toilets|baby changing|parking)/i.test(lunchText),
+    message: (lunchText.match(/The Mapped Kitchen: [^.]{0,50}/) ?? ['no unknown stated'])[0],
+  });
+
   // --- PLAN -------------------------------------------------------------------------------------
   const planText = await text(page);
   const onPlan = await page.getByTestId('plan-save').isVisible().catch(() => false);

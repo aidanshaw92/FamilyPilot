@@ -249,6 +249,34 @@
   {
     "viewport": "360x800",
     "screen": "Plan",
+    "step": "puts a real discovered restaurant in the day",
+    "ok": true,
+    "message": "LUNCH"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
+    "step": "draws the hop between stops with a mode symbol and a duration",
+    "ok": true,
+    "message": "🚗 about 1 min drive"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
+    "step": "hedges that hop rather than stating it as a routed journey",
+    "ok": true,
+    "message": "out 1 min drive"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
+    "step": "does not claim the OSM restaurant has confirmed facilities",
+    "ok": true,
+    "message": "The Mapped Kitchen: opening hours not confirmed\nRecommended ages are n"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
     "step": "renders",
     "ok": true
   },
@@ -257,7 +285,7 @@
     "screen": "Plan",
     "step": "summarises the day in the parent’s terms",
     "ok": true,
-    "message": "A 3-hour Friday"
+    "message": "A 4-hour Friday"
   },
   {
     "viewport": "360x800",
@@ -568,6 +596,34 @@
   {
     "viewport": "390x844",
     "screen": "Plan",
+    "step": "puts a real discovered restaurant in the day",
+    "ok": true,
+    "message": "LUNCH"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "draws the hop between stops with a mode symbol and a duration",
+    "ok": true,
+    "message": "🚗 about 1 min drive"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "hedges that hop rather than stating it as a routed journey",
+    "ok": true,
+    "message": "out 1 min drive"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "does not claim the OSM restaurant has confirmed facilities",
+    "ok": true,
+    "message": "The Mapped Kitchen: opening hours not confirmed\nRecommended ages are n"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
     "step": "renders",
     "ok": true
   },
@@ -576,7 +632,7 @@
     "screen": "Plan",
     "step": "summarises the day in the parent’s terms",
     "ok": true,
-    "message": "A 3-hour Friday"
+    "message": "A 4-hour Friday"
   },
   {
     "viewport": "390x844",
@@ -887,6 +943,34 @@
   {
     "viewport": "393x852",
     "screen": "Plan",
+    "step": "puts a real discovered restaurant in the day",
+    "ok": true,
+    "message": "LUNCH"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
+    "step": "draws the hop between stops with a mode symbol and a duration",
+    "ok": true,
+    "message": "🚗 about 1 min drive"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
+    "step": "hedges that hop rather than stating it as a routed journey",
+    "ok": true,
+    "message": "out 1 min drive"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
+    "step": "does not claim the OSM restaurant has confirmed facilities",
+    "ok": true,
+    "message": "The Mapped Kitchen: opening hours not confirmed\nRecommended ages are n"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
     "step": "renders",
     "ok": true
   },
@@ -895,7 +979,7 @@
     "screen": "Plan",
     "step": "summarises the day in the parent’s terms",
     "ok": true,
-    "message": "A 3-hour Friday"
+    "message": "A 4-hour Friday"
   },
   {
     "viewport": "393x852",
@@ -1206,6 +1290,34 @@
   {
     "viewport": "430x932",
     "screen": "Plan",
+    "step": "puts a real discovered restaurant in the day",
+    "ok": true,
+    "message": "LUNCH"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
+    "step": "draws the hop between stops with a mode symbol and a duration",
+    "ok": true,
+    "message": "🚗 about 1 min drive"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
+    "step": "hedges that hop rather than stating it as a routed journey",
+    "ok": true,
+    "message": "out 1 min drive"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
+    "step": "does not claim the OSM restaurant has confirmed facilities",
+    "ok": true,
+    "message": "The Mapped Kitchen: opening hours not confirmed\nRecommended ages are n"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
     "step": "renders",
     "ok": true
   },
@@ -1214,7 +1326,7 @@
     "screen": "Plan",
     "step": "summarises the day in the parent’s terms",
     "ok": true,
-    "message": "A 3-hour Friday"
+    "message": "A 4-hour Friday"
   },
   {
     "viewport": "430x932",
@@ -1525,6 +1637,34 @@
   {
     "viewport": "393x852-insets",
     "screen": "Plan",
+    "step": "puts a real discovered restaurant in the day",
+    "ok": true,
+    "message": "LUNCH"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "draws the hop between stops with a mode symbol and a duration",
+    "ok": true,
+    "message": "🚗 about 1 min drive"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "hedges that hop rather than stating it as a routed journey",
+    "ok": true,
+    "message": "out 1 min drive"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "does not claim the OSM restaurant has confirmed facilities",
+    "ok": true,
+    "message": "The Mapped Kitchen: opening hours not confirmed\nRecommended ages are n"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
     "step": "renders",
     "ok": true
   },
@@ -1533,7 +1673,7 @@
     "screen": "Plan",
     "step": "summarises the day in the parent’s terms",
     "ok": true,
-    "message": "A 3-hour Friday"
+    "message": "A 4-hour Friday"
   },
   {
     "viewport": "393x852-insets",
@@ -1695,6 +1835,6 @@
     "screen": "/plan link",
     "step": "a reload rebuilds the day rather than stranding it",
     "ok": true,
-    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 09:30–12:50  Day plan Who’s coming Travel & parking A 3-hour Saturday MORNING 10:25–11:55 Confirmed Facts Garden"
+    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 09:30–13:51  Day plan Who’s coming Travel & parking A 4-hour Saturday MORNING 10:25–11:55 Confirmed Facts Garden"
   }
 ]

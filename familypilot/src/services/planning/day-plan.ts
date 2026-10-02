@@ -28,6 +28,8 @@ import { parseClockTime, venueLocalDate, venueLocalTime } from '@/src/utils/open
 
 import { buildJourneyMatrix } from './journey-matrix';
 import { homeKey, sequenceDay, stopKey } from './sequencer';
+import { FoodCandidate } from '@/src/types/nearby-food';
+import { TravelLeg } from '@/src/types/travel';
 
 /**
  * Composes the merged pieces into one day: resolved stops, a journey matrix, a sequence, a result.
@@ -121,6 +123,48 @@ export function planStopFromVenueDetail(venue: PlanVenueSource): PlanStopSource 
     enrichmentStatus: venue.enrichmentStatus,
     facts: venue.trustedFacts,
   };
+}
+
+/**
+ * A real OpenStreetMap restaurant, as the planner needs it.
+ *
+ * The adapter that makes Section 12 possible: a candidate discovered from Overpass becomes a stop the
+ * sequencer can place, without the planner learning anything about OpenStreetMap.
+ *
+ * WHAT IT DELIBERATELY DOES NOT CLAIM. No `facts`, so no family requirement is reported as met by this
+ * stop: OpenStreetMap cannot confirm toilets, baby changing or parking, and a stop that silently
+ * asserted them would make a day look suitable on evidence nobody has. Unknown stays unknown, and a
+ * household whose must-haves cannot be confirmed at lunch is told so rather than reassured.
+ *
+ * `isOpen` is likewise never asserted. OSM's `opening_hours` is a raw expression this layer does not
+ * parse, so the stop carries no opening claim at all -- which the sequencer already handles as unknown
+ * rather than as closed.
+ */
+export function planStopFromFoodCandidate(candidate: FoodCandidate): PlanStopSource {
+  return {
+    placeId: candidate.familypilotId,
+    name: candidate.name,
+    // 'restaurant' and 'cafe' are venue categories the planner already knows; fast_food is not, and a
+    // quick-service place is a restaurant for every purpose the planner has.
+    category: candidate.category === 'cafe' ? 'cafe' : 'restaurant',
+    latitude: candidate.latitude,
+    longitude: candidate.longitude,
+    // Deliberately absent: openingHours (unparsed), isOpen (unknown), facts (unconfirmable), and
+    // familyMetadata (nobody has reviewed this place).
+  };
+}
+
+/**
+ * The meal a plan is built around, from a discovered candidate.
+ *
+ * Carries the candidate's own travel legs, so the Plan can word the hop to lunch from the provenance
+ * the discovery layer recorded rather than from an assumption made here.
+ */
+export function mealFromFoodCandidate(candidate: FoodCandidate): {
+  place: PlanStopSource;
+  travel: TravelLeg[];
+} {
+  return { place: planStopFromFoodCandidate(candidate), travel: candidate.travel };
 }
 
 /** Gives a source its part in the day. `role` and `dwellMinutes` belong to the day, not the place. */

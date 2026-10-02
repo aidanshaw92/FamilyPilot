@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { buildJourneyMatrix } from '@/src/services/planning/journey-matrix';
 import type { PlanningFamily } from '@/src/services/planning/planner';
-import type { StopLocation, StopRequest } from '@/src/types/journey-matrix-build';
+import type { StopLocation } from '@/src/types/journey-matrix-build';
+import type { StopRequest } from '@/src/types/day-sequence';
 import type { MatchableVenueFacts } from '@/src/types/day-request';
 
 /**

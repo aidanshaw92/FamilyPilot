@@ -294,8 +294,8 @@ function FOOD_CANDIDATES(lat, lng) {
       phone: null,
       tagged: { highchair: true, changingTable: true },
       travel: [
-        { mode: 'walk', minutes: 6, source: 'estimated' },
-        { mode: 'drive', minutes: 2, source: 'estimated' },
+        { mode: 'walk', durationMinutes: 6, source: 'estimated-distance', confidence: 'low' },
+        { mode: 'drive', durationMinutes: 2, source: 'estimated-distance', confidence: 'medium' },
       ],
     },
     {
@@ -314,8 +314,8 @@ function FOOD_CANDIDATES(lat, lng) {
       phone: null,
       tagged: {},
       travel: [
-        { mode: 'walk', minutes: 9, source: 'estimated' },
-        { mode: 'drive', minutes: 2, source: 'estimated' },
+        { mode: 'walk', durationMinutes: 9, source: 'estimated-distance', confidence: 'low' },
+        { mode: 'drive', durationMinutes: 2, source: 'estimated-distance', confidence: 'medium' },
       ],
     },
     {
@@ -333,7 +333,7 @@ function FOOD_CANDIDATES(lat, lng) {
       website: null,
       phone: null,
       tagged: { outdoorSeating: true },
-      travel: [{ mode: 'drive', minutes: 4, source: 'estimated' }],
+      travel: [{ mode: 'drive', durationMinutes: 4, source: 'estimated-distance', confidence: 'medium' }],
     },
   ];
 }

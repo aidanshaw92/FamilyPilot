@@ -3,8 +3,9 @@ import { StyleSheet, View } from 'react-native';
 import { PlaceAttribution } from '@/src/components/shared/PlaceAttribution';
 import { Text } from '@/src/components/ui/Text';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
-import { FoodCandidate, FoodTravelOption, NearbyFoodResult } from '@/src/types/nearby-food';
-import { travelTimeWithMode } from '@/src/utils/travel-time';
+import { FoodCandidate, NearbyFoodResult } from '@/src/types/nearby-food';
+import { TravelLeg } from '@/src/types/travel';
+import { travelSourceOfLeg, travelTimeWithMode } from '@/src/utils/travel-time';
 
 /**
  * "Restaurants close by" on Venue Detail.
@@ -38,18 +39,14 @@ const CATEGORY_NOUN: Record<FoodCandidate['category'], string> = {
  * likely to take. Public transport is not listed: the OSM path never produces it, and its absence is
  * stated once below rather than implied by a blank.
  */
-function travelLine(travel: FoodTravelOption[]): string {
-  const order: FoodTravelOption['mode'][] = ['walk', 'drive', 'transit', 'bus'];
+function travelLine(travel: TravelLeg[]): string {
+  const order: TravelLeg['mode'][] = ['walk', 'drive', 'transit', 'bus', 'cycle'];
   return order
-    .map((mode) => travel.find((option) => option.mode === mode))
-    .filter((option): option is FoodTravelOption => Boolean(option))
-    .map((option) =>
-      travelTimeWithMode(
-        option.minutes,
-        option.source === 'measured' ? 'measured' : 'estimated',
-        option.mode,
-      ),
-    )
+    .map((mode) => travel.find((leg) => leg.mode === mode))
+    .filter((leg): leg is TravelLeg => Boolean(leg))
+    // Worded from the leg's own provenance, never from an assumption about this path: when a routed
+    // value does arrive here, the same component states it plainly without a change.
+    .map((leg) => travelTimeWithMode(leg.durationMinutes, travelSourceOfLeg(leg), leg.mode))
     .join(' · ');
 }
 
