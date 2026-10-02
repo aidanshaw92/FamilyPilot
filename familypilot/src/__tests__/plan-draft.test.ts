@@ -1,0 +1,166 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+  PlanDraftSources,
+  planDraftBlocker,
+  planDraftDefaults,
+  summariseHousehold,
+  VISIT_LENGTH_CHOICES,
+} from '@/src/services/planning/plan-draft';
+import { FamilyProfile } from '@/src/types';
+import { PlanningFamily } from '@/src/services/planning/planner';
+
+/**
+ * The seam between the Create a Plan sheet and whatever knows about the family.
+ *
+ * The approved sheet only works if its four rows are already right, so these tests are about the
+ * defaults rather than the controls. When accounts land, `planDraftDefaults` changes and the sheet
+ * does not -- which is only true if the sheet never reaches past this interface, and only testable
+ * because nothing here touches a store or the clock.
+ */
+
+const TODAY = '2026-10-10';
+
+const profile = (over: Partial<FamilyProfile> = {}): FamilyProfile => ({
+  id: 'family-1',
+  parentName: 'Aidan',
+  members: [
+    { id: 'p1', name: 'Aidan', role: 'parent', dateOfBirth: '1990-03-15', age: 36 },
+    { id: 'p2', name: 'Sam', role: 'parent', dateOfBirth: '1991-07-02', age: 35 },
+    { id: 'c1', name: 'Mia', role: 'child', dateOfBirth: '2021-06-10', age: 4 },
+    { id: 'c2', name: 'Leo', role: 'child', dateOfBirth: '2024-11-22', age: 1 },
+  ],
+  homeLocation: 'Bushey, Hertfordshire',
+  budgetTier: 'moderate',
+  maxDriveMinutes: 30,
+  completionPercent: 75,
+  ...over,
+} as FamilyProfile);
+
+const planningFamily = (over: Partial<PlanningFamily> = {}): PlanningFamily => ({
+  id: 'theirs',
+  label: 'The Hills',
+  area: 'Camden',
+  latitude: 51.54,
+  longitude: -0.14,
+  ages: [3],
+  maxDriveMinutes: 30,
+  budgetTier: 'moderate',
+  pushchair: true,
+  required: [],
+  routines: [],
+  ...over,
+});
+
+const sources = (over: Partial<PlanDraftSources> = {}): PlanDraftSources => ({ today: TODAY, ...over });
+
+describe('who’s coming, as the sheet shows it', () => {
+  it('counts the household rather than naming anyone', () => {
+    const { parties } = planDraftDefaults(sources({ profile: profile() }));
+    expect(parties[0]).toMatchObject({ id: 'mine', label: 'Our family', summary: '2 adults, 2 children', ready: true });
+    // A plan is read aloud and shown on a shared screen.
+    expect(JSON.stringify(parties)).not.toContain('Mia');
+    expect(JSON.stringify(parties)).not.toContain('2021');
+  });
+
+  it('pluralises one child correctly', () => {
+    expect(summariseHousehold({ adults: 1, children: 1 })).toBe('1 adult, 1 child');
+    expect(summariseHousehold({ adults: 2, children: 3 })).toBe('2 adults, 3 children');
+    expect(summariseHousehold({ adults: 0, children: 0 })).toBe('Nobody added yet');
+  });
+
+  it('does not invent adults for a planning family that only records children', () => {
+    // A PlanningFamily holds children's ages and no adult count. Rendering "2 adults" there would be
+    // a fabrication, so it reports what the record actually holds.
+    const { parties } = planDraftDefaults(sources({ planningFamilies: [planningFamily()] }));
+    expect(parties[0].summary).toBe('1 child');
+    expect(parties[0].summary).not.toContain('adult');
+  });
+
+  it('says "Adults only" when a family records no children', () => {
+    const { parties } = planDraftDefaults(sources({ planningFamilies: [planningFamily({ ages: [] })] }));
+    expect(parties[0].summary).toBe('Adults only');
+  });
+
+  it('selects only the first party, so a plan is never silently for everyone', () => {
+    const { draft, parties } = planDraftDefaults(sources({
+      profile: profile(),
+      planningFamilies: [planningFamily()],
+    }));
+    expect(parties).toHaveLength(2);
+    expect(draft.partyIds).toEqual(['mine']);
+  });
+
+  it('does not list the profile household twice when planning also knows it', () => {
+    const { parties } = planDraftDefaults(sources({
+      profile: profile(),
+      planningFamilies: [planningFamily({ id: 'mine', label: 'Mine' })],
+    }));
+    expect(parties.filter((p) => p.id === 'mine')).toHaveLength(1);
+  });
+});
+
+describe('a family we know nothing about', () => {
+  it('still offers a row, flagged as needing details rather than hidden', () => {
+    const result = planDraftDefaults(sources());
+    expect(result.needsProfile).toBe(true);
+    expect(result.parties).toEqual([{ id: 'mine', label: 'Our family', summary: 'Nobody added yet', ready: false }]);
+  });
+
+  it('blocks generating and says what is missing', () => {
+    const { draft, parties } = planDraftDefaults(sources());
+    expect(planDraftBlocker(draft, parties)).toBe('Add your family details so we can plan around them.');
+  });
+
+  it('does not block once the household is described', () => {
+    const { draft, parties } = planDraftDefaults(sources({ profile: profile() }));
+    expect(planDraftBlocker(draft, parties)).toBeNull();
+  });
+
+  it('names the plural case when one of several families is incomplete', () => {
+    const { parties } = planDraftDefaults(sources({
+      profile: profile(),
+      planningFamilies: [planningFamily({ latitude: Number.NaN })],
+    }));
+    expect(planDraftBlocker({ date: TODAY, leaveAt: '09:30', partyIds: ['mine', 'theirs'], visitMinutes: 90 }, parties))
+      .toBe('One of the families still needs its details before we can plan.');
+  });
+
+  it('blocks an empty party', () => {
+    expect(planDraftBlocker({ date: TODAY, leaveAt: '09:30', partyIds: [], visitMinutes: 90 }, []))
+      .toBe('Choose who is coming.');
+  });
+});
+
+describe('when and how long', () => {
+  it('defaults to today and a sensible morning start', () => {
+    const { draft } = planDraftDefaults(sources({ profile: profile() }));
+    expect(draft).toMatchObject({ date: TODAY, leaveAt: '09:30', visitMinutes: 90 });
+  });
+
+  it('remembers what the parent chose last time', () => {
+    const { draft } = planDraftDefaults(sources({
+      profile: profile(),
+      options: { date: '2026-10-17', leaveAt: '08:15', visitMinutes: 120 },
+    }));
+    expect(draft).toMatchObject({ date: '2026-10-17', leaveAt: '08:15', visitMinutes: 120 });
+  });
+
+  it('never opens on a date that has already passed', () => {
+    const { draft } = planDraftDefaults(sources({
+      profile: profile(),
+      options: { date: '2026-09-01', leaveAt: '09:00', visitMinutes: 90 },
+    }));
+    expect(draft.date).toBe(TODAY);
+  });
+
+  it('snaps a stored length onto a length the sheet can show as chosen', () => {
+    // Otherwise the sheet renders four options with none of them selected.
+    const at = (visitMinutes: number) =>
+      planDraftDefaults(sources({ profile: profile(), options: { date: TODAY, leaveAt: '09:30', visitMinutes } })).draft.visitMinutes;
+    expect(at(75)).toBe(90);
+    expect(at(60)).toBe(60);
+    expect(at(1000)).toBe(180);
+    expect(VISIT_LENGTH_CHOICES).toContain(at(75));
+  });
+});
