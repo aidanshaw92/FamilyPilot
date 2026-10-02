@@ -47,6 +47,13 @@ jobs:
           cache: npm
           cache-dependency-path: familypilot/package-lock.json
 
+      # The ROOT package too. The discovery path's cache reaches Supabase, whose client is a root
+      # dependency, and the first canary run died at --plan without it. The cache is now reached
+      # lazily so a missing client degrades to "every read is a miss" rather than to "the module
+      # will not load" -- but installing both is still what a job exercising server code needs.
+      - name: Install root dependencies
+        run: npm ci
+
       - name: Install app dependencies
         working-directory: familypilot
         run: npm ci
