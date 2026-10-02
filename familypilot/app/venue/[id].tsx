@@ -517,7 +517,12 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontFamily: 'Inter_600SemiBold',
-    textTransform: 'capitalize',
+    // No `textTransform: 'capitalize'`. Every value in this column is already written for a person:
+    // `formatTerrainLabel` returns "Mostly flat", the hours are the provider's own display copy, and
+    // the parking line is reviewed prose. Title-casing them produced "Monday To Sunday: 09:00 To
+    // 17:00", "2 To 10", and a whole reviewed sentence rendered as "Free On-Site Car Park, About 120
+    // Spaces, Busiest Before 11am At Weekends." A venue whose facts are confirmed is the only place
+    // this shows, which is why no check had ever caught it.
     marginTop: 2,
   },
   description: {
