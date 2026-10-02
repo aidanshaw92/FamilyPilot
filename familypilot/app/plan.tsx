@@ -38,9 +38,27 @@ type Phase =
   | { status: 'ready'; view: PlanViewModel }
   | { status: 'failed'; failure: CreatePlanFailure };
 
-const MISSING_PARTY_MESSAGE: Record<string, string> = {
-  'not-described': 'needs its details before we can plan around it',
-  'no-location': 'has not said where it is leaving from',
+/**
+ * Why a chosen household could not be planned for, in a parent's words.
+ *
+ * Both numbers are written out rather than derived by rewriting the verb. A regex that turns
+ * "needs" into "need" works until the day somebody adds a reason it does not fit, and then it
+ * produces broken English on a screen nobody is testing that case on.
+ */
+const MISSING_PARTY_MESSAGE: Record<string, { one: string; many: string }> = {
+  'not-described': {
+    one: 'A family you chose needs its details before we can plan around it',
+    many: 'families you chose need their details before we can plan around them',
+  },
+  'no-location': {
+    one: 'A family you chose has not said where it is leaving from',
+    many: 'families you chose have not said where they are leaving from',
+  },
+};
+
+const UNUSABLE_PARTY = {
+  one: 'A family you chose could not be used',
+  many: 'families you chose could not be used',
 };
 
 export default function PlanScreen() {
@@ -149,13 +167,20 @@ export default function PlanScreen() {
    * the parent picked two is a wrong answer wearing the shape of a right one, and it is the failure
    * the party resolver exists to make visible.
    */
-  const partyNotices = useMemo(
-    () =>
-      parties.unresolved.map(
-        (party) => `A family you chose ${MISSING_PARTY_MESSAGE[party.reason] ?? 'could not be used'}, so this day does not include them.`,
-      ),
-    [parties.unresolved],
-  );
+  const partyNotices = useMemo(() => {
+    // Grouped by reason rather than listed one per household. Two households dropped for the same
+    // reason produced the same sentence twice, which reads as a rendering fault and, as a React key,
+    // is one. The count is kept because losing it would understate how much of the day is missing.
+    const byReason = new Map<string, number>();
+    for (const party of parties.unresolved) {
+      byReason.set(party.reason, (byReason.get(party.reason) ?? 0) + 1);
+    }
+    return [...byReason.entries()].map(([reason, count]) => {
+      const phrasing = MISSING_PARTY_MESSAGE[reason] ?? UNUSABLE_PARTY;
+      const clause = count === 1 ? phrasing.one : `${count} ${phrasing.many}`;
+      return `${clause}, so this day does not include them.`;
+    });
+  }, [parties.unresolved]);
 
   const handleBack = useCallback(() => {
     if (router.canGoBack()) router.back();
