@@ -1,6 +1,7 @@
-name: Home visual regression
+name: Visual regression
 
-# Measures the rendered Home screen against the locked Figma frame "01 — Home".
+# Measures the rendered Home screen against the locked Figma frame "01 — Home", and the three
+# screens the approved Create a Plan journey added against the numbers that design fixed.
 #
 # It builds the branch under test, serves it locally and drives it with a browser, so the run
 # reviews the change rather than whatever is currently deployed. The 88 assertions are tied to the
@@ -171,6 +172,21 @@ jobs:
         working-directory: familypilot
         run: node scripts/verify-deck-gesture.mjs http://localhost:4173
 
+      # The three screens the approved journey added. Fixture only, and deliberately not offered the
+      # production path above: these measure geometry, which no real venue is needed for, and the
+      # sheet is reached by opening a venue, which on the production path would buy a Place Details
+      # call for nothing.
+      - name: Plan screens against the approved design
+        if: env.DATA_SOURCE != 'production'
+        working-directory: familypilot
+        run: node scripts/verify-plan-screens-against-design.mjs http://localhost:4173 ../docs/plan-screens-regression
+
+      # The whole journey end to end, including the adversarial /plan links.
+      - name: Phase 2 journey audit
+        if: env.DATA_SOURCE != 'production'
+        working-directory: familypilot
+        run: node scripts/audit-journey-phase2.mjs http://localhost:4173
+
       - name: Report what actually loaded
         working-directory: familypilot
         run: node scripts/report-photo-evidence.mjs http://localhost:4173
@@ -181,3 +197,12 @@ jobs:
           name: home-visual-regression
           path: docs/home-visual-regression/
           if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: always() && env.DATA_SOURCE != 'production'
+        with:
+          name: plan-screens-regression
+          path: |
+            docs/plan-screens-regression/
+            docs/phase2-audit/
+          if-no-files-found: warn

@@ -63,11 +63,7 @@ const VIEWPORTS = [
   { label: '390x844', width: 390, height: 844 },
   { label: '393x852', width: 393, height: 852 },
   { label: '430x932', width: 430, height: 932 },
-  // No inset viewport here on purpose. `env(safe-area-inset-*)` reads 0 in a desktop browser and
-  // cannot be injected -- a style tag setting a custom property does not feed `env()`. A run that
-  // pretended otherwise was asserting a limit the layout never saw, which is a check that can only
-  // produce a false failure or false confidence. The inset arithmetic is covered by a unit test
-  // over the same expression the footers use; see src/__tests__/safe-area-footer.test.ts.
+  { label: '393x852-insets', width: 393, height: 852, insets: { top: 59, bottom: 34 } },
 ];
 
 const findings = [];
@@ -131,6 +127,25 @@ async function newPage(browser, viewport) {
     },
   );
 
+  // Real iPhone insets, by the method verify-home-against-figma.mjs already proves works: the
+  // safe-area provider reads `env(safe-area-inset-*)` off a probe element's inline style, which a
+  // desktop browser computes as 0, and an `!important` rule is the one thing that outranks an inline
+  // style. It has to be installed before the app boots, which is why this is an init script and not
+  // a style tag -- an earlier version of this audit used the latter, proved nothing, and I wrongly
+  // concluded insets could not be emulated at all.
+  if (viewport.insets) {
+    await page.addInitScript((insets) => {
+      const style = document.createElement('style');
+      style.textContent = `div[style*="safe-area-inset"] {
+        padding-top: ${insets.top}px !important;
+        padding-bottom: ${insets.bottom}px !important;
+      }`;
+      const install = () => document.head?.appendChild(style);
+      if (document.head) install();
+      else document.addEventListener('DOMContentLoaded', install);
+    }, viewport.insets);
+  }
+
   return { context, page, errors };
 }
 
@@ -193,10 +208,13 @@ async function auditJourney(browser, viewport) {
     const o = await overflow(page);
     return { ok: o === null, message: o ? `${o.scroll} in ${o.viewport}: ${o.offenders.join(' ; ')}` : undefined };
   })());
-  note(V, 'Venue Detail', 'keeps the footer CTA on screen', await (async () => {
+  note(V, 'Venue Detail', 'keeps the footer CTA clear of the home indicator', await (async () => {
     const box = await page.getByTestId('venue-create-plan').boundingBox().catch(() => null);
-    const ok = box ? box.y + box.height <= viewport.height + 1 : false;
-    return { ok, message: box ? `bottom ${Math.round(box.y + box.height)} of ${viewport.height}` : 'no box' };
+    const limit = viewport.height - (viewport.insets?.bottom ?? 0);
+    return {
+      ok: box ? box.y + box.height <= limit + 1 : false,
+      message: box ? `bottom ${Math.round(box.y + box.height)}, indicator starts at ${limit}` : 'no box',
+    };
   })());
 
   // --- VENUE DETAIL edge cases ------------------------------------------------------------------
@@ -254,11 +272,12 @@ async function auditJourney(browser, viewport) {
   note(V, 'Create a Plan', 'summarises the household by count, never by name', {
     ok: sheetText.includes('2 ADULTS, 2 CHILDREN') && !sheetText.includes('MIA'),
   });
-  note(V, 'Create a Plan', 'keeps the submit button reachable', await (async () => {
+  note(V, 'Create a Plan', 'keeps the submit button clear of the home indicator', await (async () => {
     const box = await page.getByTestId('create-plan-submit').boundingBox().catch(() => null);
+    const limit = viewport.height - (viewport.insets?.bottom ?? 0);
     return {
-      ok: box ? box.y + box.height <= viewport.height + 1 : false,
-      message: box ? `bottom ${Math.round(box.y + box.height)} of ${viewport.height}` : 'no button',
+      ok: box ? box.y + box.height <= limit + 1 : false,
+      message: box ? `bottom ${Math.round(box.y + box.height)}, indicator starts at ${limit}` : 'no button',
     };
   })());
 
@@ -299,11 +318,12 @@ async function auditJourney(browser, viewport) {
       const o = await overflow(page);
       return { ok: o === null, message: o ? `${o.scroll} in ${o.viewport}: ${o.offenders.join(' ; ')}` : undefined };
     })());
-    note(V, 'Plan', 'keeps the save action on screen', await (async () => {
+    note(V, 'Plan', 'keeps the save action clear of the home indicator', await (async () => {
       const box = await page.getByTestId('plan-save').boundingBox().catch(() => null);
+      const limit = viewport.height - (viewport.insets?.bottom ?? 0);
       return {
-        ok: box ? box.y + box.height <= viewport.height + 1 : false,
-        message: box ? `bottom ${Math.round(box.y + box.height)} of ${viewport.height}` : 'no button',
+        ok: box ? box.y + box.height <= limit + 1 : false,
+        message: box ? `bottom ${Math.round(box.y + box.height)}, indicator starts at ${limit}` : 'no button',
       };
     })());
     note(V, 'Plan', 'expands the first stop and collapses the rest', {
