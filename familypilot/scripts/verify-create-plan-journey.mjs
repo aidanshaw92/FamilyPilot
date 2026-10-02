@@ -49,6 +49,17 @@ const VIEWPORTS = [
   { label: '430x932', width: 430, height: 932 },
 ];
 
+/**
+ * The date a linked plan is opened for: tomorrow, in the planning timezone.
+ *
+ * A fixed date would start failing the day it passed, and today would make the result depend on how
+ * much of today is left when the check runs.
+ */
+const PLAN_DATE = (() => {
+  const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+})();
+
 const findings = [];
 const note = (viewport, step, detail) => {
   findings.push({ viewport, step, ...detail });
@@ -345,7 +356,7 @@ const SANDBOX_CHROMIUM = '/opt/pw-browsers/chromium';
  * unmet-requirement screen more often than the plan. What it says is the difference between a dead
  * end and something they can act on, so it is checked rather than assumed.
  */
-async function runFailurePaths(browser, viewport, profileOverrides, label, expectations, options = {}) {
+async function runFailurePaths(browser, viewport, profileOverrides, label, expectations) {
   const dir = join(OUT, 'failures');
   mkdirSync(dir, { recursive: true });
   const context = await browser.newContext({
@@ -369,21 +380,9 @@ async function runFailurePaths(browser, viewport, profileOverrides, label, expec
     },
   );
 
-  if (options.planningState) {
-    await page.addInitScript(
-      ({ key, value }) => window.localStorage.setItem(key, value),
-      { key: 'familypilot-planning-v1', value: JSON.stringify({ state: options.planningState, version: 0 }) },
-    );
-  }
-
   const venueId = await firstVenueId(page, label);
   await page.getByTestId('venue-create-plan').click();
   await page.waitForTimeout(800);
-  // A second household has to be chosen explicitly; the sheet selects only the first by default.
-  for (const chip of options.chooseParties ?? []) {
-    await page.getByRole('button', { name: chip, exact: true }).click().catch(() => {});
-  }
-  await page.waitForTimeout(300);
   await page.getByTestId('create-plan-submit').click().catch(() => {});
   await page.waitForTimeout(5200);
   await page.screenshot({ path: join(dir, `${label}.png`) });
@@ -402,6 +401,53 @@ async function runFailurePaths(browser, viewport, profileOverrides, label, expec
 
   await context.close();
   return venueId;
+}
+
+/**
+ * A plan opened straight from a link, rather than through the sheet.
+ *
+ * /plan survives a reload and can be shared, so its answers arrive as URL text and a household id in
+ * one can be stale. The sheet cannot produce that state; a link can, which is the only way to reach
+ * the case where a day is built for fewer households than were asked for.
+ */
+async function runLinkedPlan(browser, viewport, label, parties, expectations) {
+  const dir = join(OUT, 'failures');
+  mkdirSync(dir, { recursive: true });
+  const context = await browser.newContext({
+    viewport: { width: viewport.width, height: viewport.height },
+    deviceScaleFactor: 2,
+  });
+  const page = await context.newPage();
+  await page.addInitScript(
+    ({ key, value }) => window.localStorage.setItem(key, value),
+    {
+      key: FAMILY_KEY,
+      value: JSON.stringify({
+        state: { profile: PROFILE, hasCompletedOnboarding: true, hasSeenSplash: true, profileRevision: 2 },
+        version: 0,
+      }),
+    },
+  );
+
+  const venueId = await firstVenueId(page, label);
+  const query = new URLSearchParams({
+    venue: venueId,
+    date: PLAN_DATE,
+    leaveAt: '09:30',
+    visit: '90',
+    parties,
+  });
+  await page.goto(`${BASE}/plan?${query.toString()}`, { waitUntil: 'domcontentloaded' });
+  await settle(page, 5200);
+  await page.screenshot({ path: join(dir, `${label}.png`) });
+
+  const text = await page.evaluate(() => document.body.innerText);
+  for (const [description, matches] of expectations) {
+    const ok = matches(text);
+    note(label, description, { ok, message: ok ? undefined : text.replace(/\s+/g, ' ').slice(0, 260) });
+  }
+
+  await context.close();
 }
 
 const browser = await chromium.launch({
@@ -425,31 +471,20 @@ try {
     ['offers something the parent can change', (text) => text.includes('WHAT WOULD HELP')],
   ]);
 
-  // A day that succeeds for one household while another was dropped must say so. A plan that
-  // quietly covers fewer people than were chosen is a wrong answer wearing the shape of a right one.
-  await runFailurePaths(
-    browser,
-    reference,
-    {},
-    'party-dropped',
+  // A day that succeeds for one household while another was dropped must say so.
+  //
+  // The sheet will not let this happen: it refuses to submit while a chosen household cannot be
+  // planned for, which is the better first line of defence. A link reaches it anyway -- /plan is
+  // reloadable and shareable, and a party id in it can be stale or simply wrong -- so the notice on
+  // the finished plan is what stops a day that covers fewer people than were asked for from reading
+  // as a correct answer.
+  await runLinkedPlan(browser, reference, 'party-dropped', 'mine,a-household-that-is-not-here', [
+    ['the plan still renders for the household that could be planned for', (text) => text.includes('Save this plan')],
     [
-      ['the plan still renders for the household that could be planned for', (text) => text.includes('Save this plan')],
-      ['the dropped household is named on the finished plan, not only on a failure', (text) =>
-        /A family you chose .* so this day does not include them\./.test(text)],
+      'the dropped household is named on the finished plan, not only on a failure',
+      (text) => /A family you chose .*so this day does not include them\./.test(text),
     ],
-    {
-      planningState: {
-        families: [
-          { id: 'theirs', label: 'The Hills', area: '', latitude: null, longitude: null, ages: [5],
-            maxDriveMinutes: 30, budgetTier: 'moderate', pushchair: false, required: [], routines: [] },
-        ],
-        options: { date: '', leaveAt: '09:00', returnBy: '', visitMinutes: 90, bufferMinutes: 15, environment: 'either' },
-        saved: [],
-        savedDays: [],
-      },
-      chooseParties: ['The Hills'],
-    },
-  );
+  ]);
 
   // A household with nowhere to leave from must not be planned for from a default address.
   await runFailurePaths(
