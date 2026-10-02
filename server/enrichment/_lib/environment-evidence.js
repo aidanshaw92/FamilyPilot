@@ -67,6 +67,21 @@ const FEATURE_NOUNS = [
   'caf[eé](?:s)?',
   'restaurant(?:s)?',
   'play(?:\\s+area(?:s)?)?',
+  // `play` and `play area` were here from the start; `playground` was not, and `play\\b` cannot match
+  // inside "playground". The Royal Air Force Museum London -- an indoor aircraft museum, and one of
+  // London's better rainy-day options -- published `environment = outdoor` from "Hours of fun in our
+  // outdoor playground". The whole point of this list is that a venue which merely HAS outdoor space
+  // is not an outdoor venue.
+  'playground(?:s)?',
+  // Babylon Park London, an INDOOR amusement park, went from `indoor` to `mixed` on a re-crawl
+  // because of a dog policy: "please ensure their outdoor needs are met before entering".
+  'need(?:s)?',
+  // Hobbledown Heath: "where soft play, outdoor exploration and imaginative play bring unforgettable
+  // family days out".
+  'exploration',
+  // Gunnersbury Park's venue-hire navigation: "Filming & Photography Find out more Outdoor Events
+  // Find out more Contact Us".
+  'event(?:s)?',
   'soft\\s+play(?:\\s+centre|\\s+center|\\s+area)?',
   'picnic(?:\\s+area(?:s)?)?',
   'therapy',
