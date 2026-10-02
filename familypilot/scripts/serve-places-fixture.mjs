@@ -258,6 +258,19 @@ const EDGE_PLACES = [
 
 const EDGE_BY_ID = new Map(EDGE_PLACES.map((place) => [place.familypilotId, place]));
 
+/**
+ * Whether the search payload carries the OpenStreetMap venue as well as the ten Google ones.
+ *
+ * Off by default, because Home's composition is locked against the Figma frame and an eleventh deck
+ * card would move it. On, the list surfaces have a genuinely mixed-provider result set, which is the
+ * only way to prove in a browser that each holder is credited once and neither is credited for the
+ * other's rows -- the defect being fixed was Home crediting Google for OpenStreetMap museums.
+ */
+const SEARCH_PLACES =
+  process.env.FIXTURE_SEARCH_INCLUDES_OSM === '1'
+    ? [...PLACES, EDGE_BY_ID.get('fp-osm-FIXTUREedgeOsm')]
+    : PLACES;
+
 
 /**
  * A valid 800x600 PNG, built here rather than committed, so the repository carries no image binary
@@ -391,7 +404,7 @@ const server = createServer((req, res) => {
 
   if (url.pathname === '/api/places/search') {
     return sendJson(res, 200, {
-      places: PLACES,
+      places: SEARCH_PLACES,
       provider: 'google',
       configuredProvider: 'google',
       intent: url.searchParams.get('intent') || 'explore',

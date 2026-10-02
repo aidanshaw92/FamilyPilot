@@ -187,6 +187,15 @@ jobs:
         working-directory: familypilot
         run: node scripts/audit-journey-phase2.mjs http://localhost:4173
 
+      # Attribution is a licence condition, so it is checked rather than assumed. This step starts
+      # its OWN fixture on its own port, twice: once with a mixed Google + OpenStreetMap payload and
+      # once with Google alone. The shared fixture above keeps the default payload, because an extra
+      # deck card would move Home's locked composition.
+      - name: Provider attribution on the list surfaces
+        if: env.DATA_SOURCE != 'production'
+        working-directory: familypilot
+        run: node scripts/verify-place-credits.mjs dist 4174
+
       - name: Report what actually loaded
         working-directory: familypilot
         run: node scripts/report-photo-evidence.mjs http://localhost:4173

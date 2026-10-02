@@ -3,6 +3,7 @@ import { Image, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/ui/Text';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { GOOGLE_MAPS_MARK } from '@/src/design-system/google-maps-mark';
+import { ATTRIBUTION_INK } from '@/src/services/places/attribution';
 import { PhotoAttribution } from '@/src/services/places/place-photo-url';
 
 /**
@@ -38,21 +39,6 @@ export function GoogleMapsMark({ compact = true }: { compact?: boolean }) {
     <Text variant="caption" color={ATTRIBUTION_INK} style={styles.wordmark}>
       Google Maps
     </Text>
-  );
-}
-
-/**
- * The grey Google permits for attribution on a light background. Darker and more neutral than the
- * app's own tertiary ink, which is a light purple-grey and would sit under the required contrast.
- */
-const ATTRIBUTION_INK = '#5E5E5E';
-
-/** The mark on its own, for a screen whose place content is a preview. */
-export function GoogleMapsAttribution({ compact = true }: { compact?: boolean }) {
-  return (
-    <View style={styles.markRow} accessible accessibilityLabel="Place information from Google Maps">
-      <GoogleMapsMark compact={compact} />
-    </View>
   );
 }
 
@@ -109,10 +95,6 @@ export function PhotoAttributionLine({ attribution }: PhotoAttributionLineProps)
 }
 
 const styles = StyleSheet.create({
-  markRow: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   wordmark: {
     // Google's attribution is set at a normal weight, not emphasised.
     fontFamily: 'Inter_400Regular',

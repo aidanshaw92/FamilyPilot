@@ -4,7 +4,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good afternoon, Sarah What shall we do today? S   Select your plan For you Indoor Outdoo"
+    "message": "Good morning, Sarah What shall we do today? S   Select your plan For you Indoor Outdoor "
   },
   {
     "viewport": "360x800",
@@ -159,9 +159,9 @@
   {
     "viewport": "360x800",
     "screen": "Generating",
-    "step": "was reached",
+    "step": "names real work rather than claiming to think",
     "ok": true,
-    "message": "passed too quickly to capture"
+    "message": " BUILDING YOUR DAY A day around Confirmed Facts Gardens  Checking Confirmed Facts Garden"
   },
   {
     "viewport": "360x800",
@@ -240,7 +240,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good afternoon, Sarah What shall we do today? S   Select your plan For you Indoor Outdoo"
+    "message": "Good morning, Sarah What shall we do today? S   Select your plan For you Indoor Outdoor "
   },
   {
     "viewport": "390x844",
@@ -395,9 +395,9 @@
   {
     "viewport": "390x844",
     "screen": "Generating",
-    "step": "was reached",
+    "step": "names real work rather than claiming to think",
     "ok": true,
-    "message": "passed too quickly to capture"
+    "message": " BUILDING YOUR DAY A day around Confirmed Facts Gardens  Checking Confirmed Facts Garden"
   },
   {
     "viewport": "390x844",
@@ -476,7 +476,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good afternoon, Sarah What shall we do today? S   Select your plan For you Indoor Outdoo"
+    "message": "Good morning, Sarah What shall we do today? S   Select your plan For you Indoor Outdoor "
   },
   {
     "viewport": "393x852",
@@ -631,9 +631,9 @@
   {
     "viewport": "393x852",
     "screen": "Generating",
-    "step": "was reached",
+    "step": "names real work rather than claiming to think",
     "ok": true,
-    "message": "passed too quickly to capture"
+    "message": " BUILDING YOUR DAY A day around Confirmed Facts Gardens  Checking Confirmed Facts Garden"
   },
   {
     "viewport": "393x852",
@@ -712,7 +712,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good afternoon, Sarah What shall we do today? S   Select your plan For you Indoor Outdoo"
+    "message": "Good morning, Sarah What shall we do today? S   Select your plan For you Indoor Outdoor "
   },
   {
     "viewport": "430x932",
@@ -867,9 +867,9 @@
   {
     "viewport": "430x932",
     "screen": "Generating",
-    "step": "was reached",
+    "step": "names real work rather than claiming to think",
     "ok": true,
-    "message": "passed too quickly to capture"
+    "message": " BUILDING YOUR DAY A day around Confirmed Facts Gardens  Checking Confirmed Facts Garden"
   },
   {
     "viewport": "430x932",
@@ -948,7 +948,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good afternoon, Sarah What shall we do today? S   Select your plan For you Indoor Outdoo"
+    "message": "Good morning, Sarah What shall we do today? S   Select your plan For you Indoor Outdoor "
   },
   {
     "viewport": "393x852-insets",
@@ -1103,9 +1103,9 @@
   {
     "viewport": "393x852-insets",
     "screen": "Generating",
-    "step": "was reached",
+    "step": "names real work rather than claiming to think",
     "ok": true,
-    "message": "passed too quickly to capture"
+    "message": " BUILDING YOUR DAY A day around Confirmed Facts Gardens  Checking Confirmed Facts Garden"
   },
   {
     "viewport": "393x852-insets",

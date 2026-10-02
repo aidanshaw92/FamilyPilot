@@ -73,8 +73,24 @@ const note = (viewport, screen, step, detail) => {
   console.log(`  [${detail.ok === false ? 'FAIL' : 'ok'}] ${screen} · ${step}${detail.message ? `: ${detail.message}` : ''}`);
 };
 
+/**
+ * The audit runs at a fixed instant, pinned in the browser rather than read off the wall clock.
+ *
+ * Twice now this audit has passed in the morning and failed in the afternoon, both times for the
+ * same reason: the Create a Plan sheet defaults its START to the next sensible slot after the current
+ * time, so a run after about 17:00 London proposed a visit finishing after the fixture venue's 20:00
+ * close, and the Plan correctly refused. Widening the fixture's hours only moves the hour at which
+ * the audit starts lying; it does not make the run deterministic. Pinning the clock does, and it also
+ * makes every other time-dependent assertion mean something fixed: whether a venue reads open now,
+ * what the closes-early venue refuses, and which day "tomorrow" is.
+ *
+ * A Friday mid-morning, chosen because it is inside every fixture venue's opening hours and leaves
+ * room for a three-hour visit before any of them close.
+ */
+const PINNED_NOW = new Date('2026-10-02T09:00:00.000Z');
+
 const PLAN_DATE = (() => {
-  const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const d = new Date(PINNED_NOW.getTime() + 24 * 60 * 60 * 1000);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 })();
 
@@ -110,7 +126,14 @@ async function newPage(browser, viewport) {
   const context = await browser.newContext({
     viewport: { width: viewport.width, height: viewport.height },
     deviceScaleFactor: 2,
+    timezoneId: 'Europe/London',
   });
+  // Pinned, then allowed to tick. `install` alone hands timer control to the test, so every
+  // setTimeout the journey depends on -- the generating sequence above all -- would wait for a
+  // runFor that never comes; `resume` starts time flowing again from the pinned instant. So the app
+  // sees a fixed starting wall clock and otherwise behaves exactly as it does for a parent.
+  await context.clock.install({ time: PINNED_NOW });
+  await context.clock.resume();
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
@@ -293,16 +316,35 @@ async function auditJourney(browser, viewport) {
     };
   })());
 
+  // GENERATING only exists while the plan is still being worked out, and against a local fixture
+  // that is a few milliseconds. Earlier runs recorded "passed too quickly to capture" as a PASS at
+  // every viewport, so the assertion about its wording -- the one thing the brief asks of this
+  // screen, that it names real work instead of sounding like a chatbot -- never actually ran.
+  //
+  // Holding the journey endpoint for a moment makes the screen observable deterministically. It is
+  // the call the plan genuinely waits on, so nothing about the app's behaviour is faked: the parent
+  // on a slow connection sees exactly this.
+  const holdJourney = async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+    await route.continue();
+  };
+  await page.route('**/api/context/journey**', holdJourney);
+
   // A double tap must produce one day, not two.
   const submit = page.getByTestId('create-plan-submit');
   await submit.click();
   await submit.click({ timeout: 1200 }).catch(() => {});
-  await page.waitForTimeout(240);
-  const generating = await page.getByTestId('generating-plan').isVisible().catch(() => false);
+  // Wait for the phase rather than for a fixed 240ms, and read its words BEFORE screenshotting.
+  // With the screenshot in between, two of the five viewports captured the finished Plan instead:
+  // the capture takes long enough for the phase to advance, so the assertion was reading the wrong
+  // screen and reporting it as the generating copy.
+  const generatingPane = page.getByTestId('generating-plan');
+  await generatingPane.waitFor({ state: 'visible', timeout: 6000 }).catch(() => {});
+  const generating = await generatingPane.isVisible().catch(() => false);
+  const generatingText = generating ? await text(page) : '';
   if (generating) await page.screenshot({ path: join(dir, '05-generating.png') });
 
   // --- GENERATING -------------------------------------------------------------------------------
-  const generatingText = generating ? await text(page) : '';
   if (generating) {
     note(V, 'Generating', 'names real work rather than claiming to think', {
       ok: /Checking|Working out|Fitting/i.test(generatingText)
@@ -310,11 +352,17 @@ async function auditJourney(browser, viewport) {
       message: generatingText.replace(/\s+/g, ' ').slice(0, 90),
     });
   } else {
-    note(V, 'Generating', 'was reached', { ok: true, message: 'passed too quickly to capture' });
+    // Not a pass. The screen is held open deliberately above, so missing it means the journey route
+    // was never hit or the phase was skipped -- either of which is a finding, not a fast machine.
+    note(V, 'Generating', 'was reached', {
+      ok: false,
+      message: 'the generating phase never appeared, even with the journey call held open',
+    });
   }
 
   await page.waitForTimeout(4600);
   await settle(page, 700);
+  await page.unroute('**/api/context/journey**', holdJourney);
   await page.screenshot({ path: join(dir, '06-plan.png') });
 
   // --- PLAN -------------------------------------------------------------------------------------

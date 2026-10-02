@@ -31,6 +31,17 @@ const IPHONE_INSETS = { top: 59, bottom: 34 };
 
 const VENUE = 'fp-google-FIXTUREedgeRich';
 
+/**
+ * The run's wall clock, pinned rather than inherited.
+ *
+ * The Create a Plan sheet defaults START to the next sensible slot after the current time, so a run
+ * after roughly 17:00 London proposed a visit finishing past the fixture venue's 20:00 close and the
+ * Plan correctly refused -- which read here as sixteen geometry failures ("no button", "no first
+ * stop") that had nothing to do with geometry. A Friday mid-morning sits inside every fixture
+ * venue's hours with room for a three-hour visit.
+ */
+const PINNED_NOW = new Date('2026-10-02T09:00:00.000Z');
+
 const RUNS = [
   { name: '360', width: 360, height: 800, insets: null },
   { name: '393', width: REF_WIDTH, height: REF_HEIGHT, insets: null },
@@ -90,7 +101,13 @@ for (const run of RUNS) {
   const context = await browser.newContext({
     viewport: { width: run.width, height: run.height },
     deviceScaleFactor: 2,
+    timezoneId: 'Europe/London',
   });
+  // Installed then resumed: `install` alone hands timer control to the test, which would strand
+  // every setTimeout the generating sequence depends on. This pins the starting instant and lets
+  // time flow normally from there.
+  await context.clock.install({ time: PINNED_NOW });
+  await context.clock.resume();
   const page = await context.newPage();
   await page.addInitScript((seed) => {
     window.localStorage.setItem('familypilot-family-v1', JSON.stringify(seed));
@@ -169,22 +186,37 @@ for (const run of RUNS) {
     submit ? `${Math.round(submit.y + submit.height)} against ${safeBottom}` : 'no button');
 
   // --- GENERATING -------------------------------------------------------------------------------
+  // Against a local fixture the phase lasts a few milliseconds, so this check used to record
+  // "passed too quickly to measure" as a PASS and never test the copy at all. Holding the journey
+  // call -- the one the plan genuinely waits on -- makes the screen observable without faking
+  // anything: it is what a parent on a slow connection sees.
+  const holdJourney = async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+    await route.continue();
+  };
+  await page.route('**/api/context/journey**', holdJourney);
+
   await page.getByTestId('create-plan-submit').click();
-  await page.waitForTimeout(220);
   const generating = page.getByTestId('generating-plan');
+  await generating.waitFor({ state: 'visible', timeout: 6000 }).catch(() => {});
   if (await generating.isVisible().catch(() => false)) {
-    await page.screenshot({ path: join(OUT, `${run.name}-generating.png`) });
+    // Read the words BEFORE screenshotting: the capture takes long enough for the phase to advance,
+    // and then the assertion measures the finished Plan while reporting it as the generating copy.
     const copy = await generating.innerText();
+    await page.screenshot({ path: join(OUT, `${run.name}-generating.png`) });
     check(run.name, 'generating names real work and never claims to think',
       /Checking|Working out|Fitting/i.test(copy) && !/thinking|magic|hold on|\bai\b|assistant/i.test(copy),
       copy.replace(/\s+/g, ' ').slice(0, 70));
   } else {
-    check(run.name, 'generating was reached', true, 'passed too quickly to measure');
+    // Not a pass. The phase is held open deliberately, so missing it is a finding.
+    check(run.name, 'generating was reached', false,
+      'the generating phase never appeared, even with the journey call held open');
   }
 
   // --- PLAN -------------------------------------------------------------------------------------
   await page.waitForTimeout(4800);
   await settle(page, 600);
+  await page.unroute('**/api/context/journey**', holdJourney);
   await page.screenshot({ path: join(OUT, `${run.name}-plan.png`) });
 
   const save = await page.getByTestId('plan-save').boundingBox().catch(() => null);
