@@ -20,3 +20,4 @@ export { PillSelector } from './PillSelector';
 export { SearchBar } from './SearchBar';
 export { Field, formStyles } from './Field';
 export { DateField, TimeField } from './DateTimeField';
+export { BottomSheet, bottomSheetHeight } from './BottomSheet';
