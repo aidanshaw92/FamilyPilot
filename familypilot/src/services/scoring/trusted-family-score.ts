@@ -2,6 +2,8 @@ import { FamilyProfile, FamilyScoreFactors, VenueDetail, WeatherInfo } from '@/s
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { RoutineFit } from '@/src/utils/routine-fit';
 import { evaluateAgeRecommendation } from '@/src/services/matching/age-suitability';
+import { childAgeVerdicts, outsideRangeCautions, suitsChildrenLine } from '@/src/utils/child-fit';
+import { familyUsesBuggy } from '@/src/utils/family-mobility';
 
 /** "2-hour" / "90-minute" — an adjective phrase for "a ___ visit", not a raw number. */
 function formatDurationAdjective(minutes: number): string {
@@ -66,7 +68,7 @@ export function scoreTrustedAccessibility(
 ): number | null {
   if (facts.pushchairSuitability === 'unknown') return null;
 
-  const needsPushchair = Boolean(profile.pushchair?.trim());
+  const needsPushchair = familyUsesBuggy(profile);
   switch (facts.pushchairSuitability) {
     case 'excellent':
       return 98;
@@ -209,7 +211,12 @@ export function buildTrustedExplanation(
   }
 
   if (facts.minRecommendedAge != null || facts.maxRecommendedAge != null) {
-    if (factors.ageSuitability >= 85 && children.length > 0) {
+    // Named, per child, when every child has a name and at least one is inside the published range;
+    // otherwise the generic wording, which only ever claims what the score also says (all inside).
+    const named = suitsChildrenLine(facts, childAgeVerdicts(facts, profile.members));
+    if (named) {
+      reasons.push(named);
+    } else if (factors.ageSuitability >= 85 && children.length > 0) {
       if (facts.minRecommendedAge != null && facts.maxRecommendedAge != null) {
         reasons.push(`Recommended for ages ${facts.minRecommendedAge}–${facts.maxRecommendedAge}`);
       } else if (facts.minRecommendedAge != null) {
@@ -272,14 +279,15 @@ export function buildTrustedCautions(
   const cautions: string[] = [];
   const children = profile.members.filter((m) => m.role === 'child');
 
-  if (
-    (facts.minRecommendedAge != null || facts.maxRecommendedAge != null) &&
-    factors.ageSuitability <= 50 &&
-    children.length > 0
-  ) {
-    cautions.push('Age range may not suit your children');
+  if ((facts.minRecommendedAge != null || facts.maxRecommendedAge != null) && children.length > 0) {
+    // Per child, so a venue that suits one sibling and not the other says so even though the blended
+    // score (58) is above the "may not suit" line. Falls back to the generic caution only when
+    // nobody is named and the family as a whole is outside the range.
+    const named = outsideRangeCautions(facts, childAgeVerdicts(facts, profile.members));
+    if (named.length > 0) cautions.push(...named);
+    else if (factors.ageSuitability <= 50) cautions.push('Age range may not suit your children');
   }
-  if (facts.pushchairSuitability === 'difficult' && profile.pushchair?.trim()) {
+  if (facts.pushchairSuitability === 'difficult' && familyUsesBuggy(profile)) {
     cautions.push('Pushchair access reviewed as difficult');
   }
   if (facts.parking === 'no') {

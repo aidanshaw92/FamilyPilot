@@ -40,11 +40,14 @@ import { getAllRestaurants, getRestaurantById, getRestaurantsNearVenue } from '@
 import { getPlacesRepository } from '@/src/services/places/places-repository';
 import { distanceKm } from '@/src/services/places/geo-utils';
 import { resolveUkLocation } from '@/src/services/location/location-client';
+import { withDerivedAges } from '@/src/utils/child-age';
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+// The one read path for hooks: ages are derived from dates of birth here, so every consumer behind
+// `useFamilyProfile` sees today's age whatever was last stored.
 function getProfile(): FamilyProfile {
-  return withCompletion(useFamilyStore.getState().profile);
+  return withDerivedAges(withCompletion(useFamilyStore.getState().profile));
 }
 
 export const familyService = {

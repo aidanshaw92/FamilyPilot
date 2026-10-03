@@ -1,4 +1,5 @@
 import { FamilyProfile, WeatherInfo } from '@/src/types';
+import { familyUsesBuggy } from '@/src/utils/family-mobility';
 import { DayRequest } from '@/src/types/day-request';
 import { AGE_RECOMMENDATION_STRENGTH, childAgesInMonths } from '@/src/services/matching/age-suitability';
 
@@ -55,7 +56,7 @@ export function buildProactiveDayRequest(
   const childAges = childAgesFromProfile(profile);
   const youngest = youngestChildAge(childAges);
   const hour = now.getHours();
-  const hasPushchair = Boolean(profile.pushchair?.trim());
+  const hasPushchair = familyUsesBuggy(profile);
 
   const constraints: DayRequest['constraints'] = {
     ageRecommendedFit: { strength: AGE_RECOMMENDATION_STRENGTH, value: 'in_range' },

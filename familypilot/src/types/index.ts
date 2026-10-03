@@ -209,15 +209,32 @@ export interface RecommendationSection {
   venues: Venue[];
 }
 
+/**
+ * How a child usually gets around on a day out. A set, not a single choice, because a baby is often in
+ * a carrier AND a buggy and a toddler walks AND tires: see `family-mobility.ts` for what each means.
+ */
+export type ChildMobility = 'walks' | 'buggy' | 'carrier' | 'mobility-aid';
+
 export interface FamilyMember {
   id: string;
   name: string;
   role: 'parent' | 'child';
   dateOfBirth: string;
-  /** Whole years, for age-suitability matching (rounds down for a baby under 1 - see ageMonths). */
+  /**
+   * True only when a parent actually entered `dateOfBirth`. A profile saved before dates of birth were
+   * collected has an invented one (1 January of a guessed year), which must never be used: for those
+   * members `age` below is the stored number and nothing is derived.
+   */
+  dobKnown?: boolean;
+  /**
+   * Whole years, for age-suitability matching (rounds down for a baby under 1 - see ageMonths).
+   * DERIVED from `dateOfBirth` on every profile read when `dobKnown`; see `child-age.ts`.
+   */
   age: number;
-  /** Precise age in months for a baby under 1 (age === 0). Null/undefined once age >= 1. */
+  /** Precise age in months for a baby under 1 (age === 0). Null/undefined once age >= 1. Derived like `age`. */
   ageMonths?: number | null;
+  /** Children only. Unset means nobody has said, which is not the same as "walks". */
+  mobility?: ChildMobility[];
 }
 
 /** Same shape as planner.ts's Routine — kept structurally compatible so a profile's usual
@@ -226,9 +243,12 @@ export interface FamilyRoutine {
   id: string;
   label: string;
   kind: 'nap' | 'feed';
+  /** HH:MM. For a nap this is when it usually STARTS; the window is `time` to `time + durationMinutes`. */
   time: string;
   durationMinutes: number;
   atHome: boolean;
+  /** The child this belongs to. Unset on a routine saved before routines had an owner. */
+  childId?: string;
 }
 
 export interface FamilyProfile {

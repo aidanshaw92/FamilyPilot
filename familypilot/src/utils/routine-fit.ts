@@ -1,5 +1,6 @@
 import { FamilyProfile } from '@/src/types';
 import { formatClock } from './clock-format';
+import { resolveRoutines } from './routine-schedule';
 
 function parseClock(value: string): number | null {
   const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(value);
@@ -29,7 +30,7 @@ export function evaluateRoutineFit(
 ): RoutineFit {
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-  const upcoming = (profile.routines ?? [])
+  const upcoming = resolveRoutines(profile)
     .map((routine) => ({ routine, minutes: parseClock(routine.time) }))
     .filter((entry): entry is { routine: typeof entry.routine; minutes: number } => entry.minutes != null)
     .filter((entry) => entry.minutes > nowMinutes)

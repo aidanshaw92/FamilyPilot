@@ -1,4 +1,6 @@
 import { FacilityType, FamilyProfile } from '@/src/types';
+import { familyUsesBuggy } from '@/src/utils/family-mobility';
+import { resolveRoutines } from '@/src/utils/routine-schedule';
 import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
 
 import { PlanningFamily } from './planner';
@@ -104,10 +106,10 @@ export function planningFamilyFromProfile(
     ages: (profile.members ?? []).filter((m) => m.role === 'child').map((m) => m.age),
     maxDriveMinutes: driveLimit,
     budgetTier: profile.budgetTier,
-    pushchair: Boolean(profile.pushchair),
+    pushchair: familyUsesBuggy(profile),
     required: plannerRequirements(profile.mustHaveFacilities),
     // Copied, so editing a plan can never reach back into the stored profile.
-    routines: (profile.routines ?? []).map((routine) => ({ ...routine })),
+    routines: resolveRoutines(profile),
   };
 }
 

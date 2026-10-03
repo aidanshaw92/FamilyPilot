@@ -3,7 +3,9 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { FamilyProfile } from '@/src/types';
+import { withDerivedAges } from '@/src/utils/child-age';
 import { createEmptyProfile, withCompletion } from '@/src/utils/profile-defaults';
+import { migrateLegacyProfile } from '@/src/utils/profile-migration';
 
 interface FamilyState {
   profile: FamilyProfile;
@@ -56,6 +58,23 @@ export const useFamilyStore = create<FamilyState>()(
     }),
     {
       name: 'familypilot-family-v1',
+      // Version 1 is the first with a date of birth a parent actually entered and a per-child shape.
+      // The storage KEY keeps its name on purpose: a new key would orphan every existing family.
+      version: 1,
+      migrate: (persisted) => {
+        const state = (persisted ?? {}) as Partial<FamilyState>;
+        return { ...state, profile: migrateLegacyProfile(state.profile).profile } as FamilyState;
+      },
+      // Every rehydrate, current version or not, brings each child's age up to today: a birthday that
+      // passed while the app was closed must not wait for the next edit to show.
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<FamilyState>;
+        return {
+          ...current,
+          ...saved,
+          profile: saved.profile ? withDerivedAges(saved.profile) : current.profile,
+        };
+      },
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         profile: state.profile,
