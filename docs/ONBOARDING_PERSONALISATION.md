@@ -115,3 +115,60 @@ change output, is it persistent, is it worth the friction):
 - Unknown stays unknown. No personalised sentence is produced without both a profile fact and a venue fact.
 - Home is not redesigned. Any change to Home output is a consequence of better profile data, and is checked
   against the locked captures.
+
+## 5. What stage 3 built (the onboarding screens)
+
+Four steps, three when no child is young enough to be asked about naps and feeds. Each is a thin editor
+over `onboarding-draft.ts`, where the rules live and are tested.
+
+| Step | What a parent sees | What it becomes |
+| --- | --- | --- |
+| Parent | First name, home town or postcode. Privacy is one quiet hint under the town. | `parentName`, resolved home centroid |
+| Children | Per child: name, then date of birth as three number boxes. The exact age appears the moment the date lands ("Theo is 2 years 3 months"). | `dateOfBirth` + `dobKnown: true`; `age`/`ageMonths` derived |
+| Mobility | "How does Mia usually get around on a day out?" Choose all that apply. | `mobility[]`, one set per child |
+| Naps and feeds | Only for children under 4 (naps) and under 3 (feeds). Several naps, each a time and a rough length; feeds at set times or every N hours from a first one. | `FamilyRoutine` entries owned by the child |
+
+Adaptive rules (`questionsFor`, in months): under 12 months are offered carrier, buggy and wheelchair or
+mobility aid, never "walks"; 12 to 47 months get walks, buggy, carrier and aid; 4 and over lose the
+carrier. Naps are asked under 48 months, feeds under 36. A feed under a year is a "feed", later a "meal".
+Answers the child's age no longer allows (the date was edited after choosing) are dropped when the profile
+is built.
+
+Drive time and budget are no longer asked. They keep the defaults (30 minutes, moderate) every consumer
+already expects. Home's "Maximum drive each way" and Explore's filter sheet are where drive time is changed
+for a day. **Open item for the owner:** budget has no contextual control anywhere yet, so the default
+`moderate` is applied silently until a parent edits it in Profile. A heuristic line, "Within your usual
+budget", and the drive caution "Further than your usual 30 min drive" both say "usual" about a default the
+parent never chose. Stage 4's adversarial pass deals with that wording.
+
+`verify-onboarding-flow.mjs` drives the real screens for six family shapes at two widths and asserts the
+stored profile and the Venue Detail sentences that follow, and it runs in CI beside the other verifiers.
+
+## 6. What stage 4 built, and what the adversarial pass found
+
+**Edit profile now shares the onboarding's child model** (`profile-edit-draft.ts`). The old editor rebuilt
+every child with a new id on every save, which would have detached each routine from its child and dropped
+their mobility and date of birth the first time a parent changed anything. Now a child keeps their id, an
+existing child with no real date of birth keeps the age they were saved with until a parent enters one
+(`dobKnown` stays false, nothing is invented), and routines saved before routines had an owner are kept
+exactly as they were under "Other naps and feeds" instead of being handed to a child on a guess. The
+Profile screen says "add birthday" against a legacy child and its suggestion box opens Edit.
+
+**Adversarial pass, in the order the brief lists it:**
+
+| Risk | Finding | Outcome |
+| --- | --- | --- |
+| Dead fields | Every answer traced to an output by `onboarding-field-consumers.test.ts` (name, date of birth, buggy, mobility aid, nap, feeds, parent, home). | None found. |
+| Fabricated personalisation | "Within your usual budget" and "Further than your usual 30 min drive" claimed a habit about defaults the parent never chose. | Reworded to what is true: "Fits a moderate spend", "Further than the 30 min drive we're using". |
+| Fabricated personalisation | A wheelchair caution said only "step-free isn't confirmed" beside the pushchair-based "Mostly step-free". | Now about wheelchair and mobility-aid access. |
+| Fabricated personalisation | "Add your nap and feed routine in Plans" shown to a parent who had just entered them. | Says they are saved and where to run the check. |
+| **Privacy: a regression of mine** | Child names written into planner routine labels would have travelled with the opt-in planning-workspace backup. | Planner routines carry no name and no child id (`routinesForPlanner`); pinned by test. |
+| **Privacy: pre-existing, dormant** | `parseDayRequest` posted the whole profile (names, dates of birth, mobility, routines) to `/api/recommendations/parse-request`, which can forward to a language model. Nothing in the UI calls it today. | Now posts a projection: each child's age, the limits and a buggy flag. Pinned by test. |
+| Privacy | No network-touching module may reference the new child fields. | A source scan in `family-profile-privacy.test.ts` fails if one does. |
+
+**For the owner, not changed here because it is a privacy-architecture question.** The opt-in "Back up this
+device's plans and routines" and the friend-connection feature send the planning family: each child's age,
+the home town and its coordinates, whether a buggy comes, and routine times. That predates this work, and the
+profile decision (device-only, no children's data, nothing home- or routine-derived) reads as broader than
+what that feature does. It carries no name and no date of birth, but it does carry ages, home coordinates and
+routine times. Whether that is acceptable, or the planner should work from less, is a product decision.

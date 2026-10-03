@@ -1,5 +1,6 @@
 import { EnrichmentStatus, FamilyProfile, FamilyScore, FamilyScoreFactors, VenueDetail, WeatherInfo } from '@/src/types';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
+import { budgetFitReason } from '@/src/utils/budget-copy';
 
 import { PROVIDER_ONLY_FAMILY_MATCH_CAP } from '@/src/constants/places-quality';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
@@ -149,7 +150,7 @@ function buildHeuristicExplanation(
     reasons.push(`Only ${venue.driveMinutes} minutes from home`);
   }
   // A drive beyond the family's limit used to be pushed into THIS list, so Venue Detail showed
-  // "Further than your usual 30 min drive" under "Why it suits your family" with a green tick. It is
+  // "Further than the 30 min drive we’re using" under "Why it suits your family" with a green tick. It is
   // a caution, and it is raised as one in personalise-venues alongside the other cautions.
 
   const hasParking = venue.facilities?.includes('parking');
@@ -173,7 +174,7 @@ function buildHeuristicExplanation(
   }
 
   if (factors.budgetFit >= 85) {
-    reasons.push('Within your usual budget');
+    reasons.push(budgetFitReason(profile.budgetTier));
   }
 
   if (factors.weatherFit >= 90) {

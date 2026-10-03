@@ -49,9 +49,10 @@ export function mobilityAnswered(profile: Pick<FamilyProfile, 'members'>): boole
   return children(profile.members).some((member) => (member.mobility?.length ?? 0) > 0);
 }
 
+/** The words a parent sees for each answer: onboarding's chips, Edit profile and the Profile summary alike. */
 export const MOBILITY_LABELS: Record<ChildMobility, string> = {
-  walks: 'Walks by themselves',
-  buggy: 'Goes in a buggy',
+  walks: 'Walks',
+  buggy: 'Buggy',
   carrier: 'Baby carrier',
   'mobility-aid': 'Wheelchair or mobility aid',
 };

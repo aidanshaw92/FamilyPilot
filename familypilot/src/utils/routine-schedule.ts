@@ -65,6 +65,24 @@ export function resolveRoutines(
   }));
 }
 
+/**
+ * The routines as the PLANNER receives them: times and lengths, with no child's name and no child id.
+ *
+ * The planning workspace is a separate model from the family profile, and a parent can back it up to
+ * their account ("Back up this device's plans and routines"). The profile itself never leaves the device,
+ * so a child's name written into a planner routine label ("Mia's nap") would carry it out with that
+ * backup. A routine that belongs to a child therefore reaches the planner under its plain kind; a
+ * routine saved before routines had an owner keeps whatever label the parent gave it. The named wording
+ * is for screens that read the local profile (Family Fit's leave-by line, Profile).
+ */
+export function routinesForPlanner(profile: Pick<FamilyProfile, 'routines'>): FamilyRoutine[] {
+  return (profile.routines ?? []).map((routine) => {
+    if (!routine.childId) return { ...routine };
+    const { childId: _childId, ...rest } = routine;
+    return { ...rest, label: routine.kind === 'nap' ? 'Nap' : 'Feed' };
+  });
+}
+
 export function routinesForChild(
   routines: readonly FamilyRoutine[] | undefined,
   childId: string,

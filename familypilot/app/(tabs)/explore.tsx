@@ -17,6 +17,7 @@ import { useFiltersStore } from '@/src/stores/filters-store';
 import { RestaurantDetail, Venue } from '@/src/types';
 import { buildExploreEditorialSections } from '@/src/utils/explore-editorial-sections';
 import { EXPLORE_CATEGORIES, filterVenues } from '@/src/utils/filter-venues';
+import { SAVED_EXAMPLES_NOTICE, showingSavedExamples } from '@/src/utils/saved-examples-notice';
 
 export default function ExploreScreen() {
   const tabBarClearance = useTabBarClearance();
@@ -175,7 +176,7 @@ export default function ExploreScreen() {
       <View style={styles.searchRow}>
         <TextInput
           accessibilityLabel="Search a London area or postcode"
-          placeholder="Search a London area or postcode"
+          placeholder="Area or postcode"
           value={search}
           onChangeText={(value) => {
             setSearch(value);
@@ -197,6 +198,11 @@ export default function ExploreScreen() {
           </Text>
         </Pressable>
       </View>
+      {!areaVenues && !isRestaurantMode && !isLoading && showingSavedExamples(venues) ? (
+        <Text variant="caption" color={colors.warning[600]} style={styles.searchMessage}>
+          {SAVED_EXAMPLES_NOTICE}
+        </Text>
+      ) : null}
       {searchMessage ? (
         <Text
           variant="caption"

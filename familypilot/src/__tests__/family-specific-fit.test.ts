@@ -7,6 +7,7 @@ import { planningFamilyFromProfile } from '@/src/services/planning/plan-parties'
 import { personaliseVenue } from '@/src/utils/personalise-venues';
 import { childAgeVerdicts, outsideRangeCautions, suitsChildrenLine } from '@/src/utils/child-fit';
 import { familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
+import { noFamiliesCopy } from '@/src/utils/check-today-copy';
 import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 import {
   createFeed,
@@ -318,9 +319,9 @@ describe('step-free: an honest unknown, only for families it matters to', () => 
 
   it('appears for a child who uses a mobility aid and is never a score or a yes', () => {
     const withAid = personaliseVenue(venue, FAMILIES.mixed);
-    expect(withAid.familyScore.cautions).toContain('Step-free access isn’t confirmed here');
+    expect(withAid.familyScore.cautions).toContain('Wheelchair and mobility-aid access isn’t confirmed here');
     const without = personaliseVenue(venue, FAMILIES.toddlerAndOlder);
-    expect(without.familyScore.cautions).not.toContain('Step-free access isn’t confirmed here');
+    expect(without.familyScore.cautions).not.toContain('Wheelchair and mobility-aid access isn’t confirmed here');
   });
 
   it('a mobility aid does not turn on buggy scoring', () => {
@@ -386,18 +387,22 @@ describe('routines belong to a child and read by name', () => {
     expect(fit.caution).toBe('A visit today may run into Theo’s nap time (around 10:00)');
   });
 
-  it('the planner receives resolved, owned routines as copies', () => {
+  it('the planner receives copies with no child’s name and no child id', () => {
     const nap = createNap(mia, '12:30');
     const profile = { ...family([mia], { routines: [nap] }), homeLatitude: 51.6, homeLongitude: -0.3 };
-    const planning = planningFamilyFromProfile(profile) as { routines: Array<{ label: string; childId?: string }> };
-    expect(planning.routines[0].label).toBe('Mia’s nap');
-    expect(planning.routines[0].childId).toBe(mia.id);
-    const renamed = planningFamilyFromProfile({ ...profile, members: [{ ...mia, name: 'Maya' }] }) as {
-      routines: Array<{ label: string }>;
-    };
-    expect(renamed.routines[0].label).toBe('Maya’s nap');
+    const planning = planningFamilyFromProfile(profile) as { routines: Array<{ label: string; childId?: string; time: string }> };
+    expect(planning.routines[0]).toMatchObject({ label: 'Nap', time: '12:30' });
+    expect(planning.routines[0].childId).toBeUndefined();
+    expect(JSON.stringify(planning)).not.toMatch(/Mia|child-/);
     planning.routines[0].label = 'changed';
     expect(profile.routines![0].label).toBe('Mia’s nap');
+  });
+
+  it('a routine saved before routines had an owner reaches the planner with the label the parent gave it', () => {
+    const legacy = { id: 'r', label: 'Afternoon nap', kind: 'nap' as const, time: '14:00', durationMinutes: 60, atHome: true };
+    const profile = { ...family([mia], { routines: [legacy] }), homeLatitude: 51.6, homeLongitude: -0.3 };
+    const planning = planningFamilyFromProfile(profile) as { routines: Array<{ label: string }> };
+    expect(planning.routines[0].label).toBe('Afternoon nap');
   });
 });
 
@@ -452,5 +457,20 @@ describe('profile receipt, suggestion and completion follow the new answers', ()
     const known = computeCompletionPercent(family([OLDER]));
     const legacy = computeCompletionPercent(family([{ ...OLDER, dobKnown: false }]));
     expect(known).toBeGreaterThan(legacy);
+  });
+});
+
+describe('"Will this work today?" before the planner has a family', () => {
+  it('does not ask a parent who has entered routines to add them', () => {
+    const withRoutines = family([TODDLER], { routines: [createNap(TODDLER, '13:00')] });
+    const copy = noFamiliesCopy(withRoutines);
+    expect(copy.message).toMatch(/saved/);
+    expect(copy.message).not.toMatch(/^Add /);
+    expect(copy.button).toBe('Check in Plans');
+  });
+
+  it('still asks a family with no routines to add them', () => {
+    expect(noFamiliesCopy(family([OLDER])).message).toMatch(/^Add /);
+    expect(noFamiliesCopy(null).button).toBe('Set up routines in Plans');
   });
 });

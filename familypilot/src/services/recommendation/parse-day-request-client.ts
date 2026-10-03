@@ -14,6 +14,28 @@ function getApiBaseUrl(): string {
   return '/api/recommendations';
 }
 
+/**
+ * The only part of the family profile that may leave the device for a day-request parse.
+ *
+ * The profile used to be posted whole, which for a family means every child's name, date of birth,
+ * how they get around and their nap and feed times, and the server hands part of it to a language model.
+ * The family profile is device-only, so the request carries what the parse actually reads and nothing
+ * else: each child's age (no name, no id, no date of birth), the drive limit and budget, and whether the
+ * family brings a buggy. The server echoes `homeLocation` into the request it returns, so it is sent
+ * empty and restored locally from the profile.
+ */
+export function parseRequestProfile(profile: FamilyProfile): Record<string, unknown> {
+  return {
+    members: profile.members
+      .filter((member) => member.role === 'child')
+      .map((member) => ({ role: 'child', age: member.age, ageMonths: member.ageMonths ?? null })),
+    homeLocation: '',
+    budgetTier: profile.budgetTier,
+    maxDriveMinutes: profile.maxDriveMinutes,
+    pushchair: familyUsesBuggy(profile) ? 'yes' : null,
+  };
+}
+
 export async function parseDayRequest(
   rawText: string,
   profile: FamilyProfile,
@@ -21,7 +43,7 @@ export async function parseDayRequest(
   const response = await fetch(`${getApiBaseUrl()}/parse-request`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ rawText, profile }),
+    body: JSON.stringify({ rawText, profile: parseRequestProfile(profile) }),
   });
 
   if (!response.ok) {
@@ -30,7 +52,7 @@ export async function parseDayRequest(
   }
 
   const data = (await response.json()) as { request: DayRequest };
-  return data.request;
+  return { ...data.request, homeLocation: profile.homeLocation };
 }
 
 /**

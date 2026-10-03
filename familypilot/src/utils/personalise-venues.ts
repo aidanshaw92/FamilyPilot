@@ -8,27 +8,31 @@ import { buildFacilityMissingCaution } from './facility-match';
 import { familyNeedsStepFree } from './family-mobility';
 
 /**
- * The drive is longer than this family said they would usually do.
+ * The drive is longer than the limit in use. That limit starts as a default (onboarding no longer asks
+ * for it), so the wording is "the drive we're using", never "your usual", which would claim a habit the
+ * parent never described.
  *
  * Lived in family-score's REASONS until a render showed it under "Why it suits your family" with a
  * tick beside it. It is the opposite of a reason. Guarded on a finite number because a place restored
- * from a cloud backup has no drive time yet, and "further than your usual drive" about an unknown
+ * from a cloud backup has no drive time yet, and "further than your drive" about an unknown
  * distance would be a second fabrication.
  */
 export function buildDriveCaution(profile: FamilyProfile, driveMinutes: number): string | null {
   if (!Number.isFinite(driveMinutes) || !Number.isFinite(profile.maxDriveMinutes)) return null;
   if (driveMinutes <= profile.maxDriveMinutes) return null;
-  return `Further than your usual ${profile.maxDriveMinutes} min drive`;
+  return `Further than the ${profile.maxDriveMinutes} min drive we’re using`;
 }
 
 /**
- * A child who uses a mobility aid makes step-free access matter, and the app holds no step-free evidence
- * to show a parent (it is collected internally and not part of the facts a venue is matched on). So the
- * honest statement is that it is unknown, shown only to families it matters to. It is never a score and
- * never a "yes": wheelchair or step-free evidence must not be read as buggy-suitable, or the reverse.
+ * A child who uses a mobility aid makes step-free and wheelchair access matter, and the app holds no such
+ * evidence to show a parent (it is collected internally and is not part of the facts a venue is matched
+ * on). So the honest statement is that it is unknown, shown only to families it matters to. It is worded
+ * about wheelchairs and mobility aids on purpose: Venue Detail's "Mostly step-free" row is a reading of
+ * pushchair access, and a caution that said only "step-free isn't confirmed" would contradict it. Never a
+ * score and never a "yes": wheelchair evidence must not be read as buggy-suitable, or the reverse.
  */
 export function buildStepFreeCaution(profile: FamilyProfile): string | null {
-  return familyNeedsStepFree(profile) ? 'Step-free access isn’t confirmed here' : null;
+  return familyNeedsStepFree(profile) ? 'Wheelchair and mobility-aid access isn’t confirmed here' : null;
 }
 
 function toVenueDetail(venue: Venue): VenueDetail {

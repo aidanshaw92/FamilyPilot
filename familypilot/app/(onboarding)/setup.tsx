@@ -1,58 +1,39 @@
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ChildAvatar } from '@/src/components/onboarding/ChildAvatar';
+import { ChildSection } from '@/src/components/onboarding/ChildSection';
+import { DobField } from '@/src/components/onboarding/DobField';
+import { MobilityPicker } from '@/src/components/onboarding/MobilityPicker';
 import { OnboardingShell } from '@/src/components/onboarding/OnboardingShell';
-import { AgeInput, AgeUnit } from '@/src/components/profile/AgeInput';
+import { FeedEditor, NapEditor } from '@/src/components/onboarding/RoutineEditors';
 import { TextField } from '@/src/components/profile/TextField';
-import { Button, Chip, Text, TimeField, CHIP_GAP } from '@/src/components/ui';
-import { FadeInView } from '@/src/components/ui/FadeInView';
-import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { Button, Text } from '@/src/components/ui';
+import { colors, spacing } from '@/src/design-system/tokens';
 import { resolveUkLocation, ResolvedLocation } from '@/src/services/location/location-client';
 import { useFamilyStore } from '@/src/stores/family-store';
-import { FamilyProfile, FamilyRoutine } from '@/src/types';
 import {
-  createChildMember,
-  createParentMember,
-  withCompletion,
-} from '@/src/utils/profile-defaults';
+  DraftChild,
+  MAX_CHILDREN,
+  anyRoutineQuestions,
+  blankChild,
+  buildOnboardingProfile,
+  describeAge,
+  draftAge,
+  draftDob,
+  draftDobMessage,
+  questionsFor,
+} from '@/src/utils/onboarding-draft';
+import { feedNoun } from '@/src/utils/routine-schedule';
 
-const TOTAL_STEPS = 4;
+type StepKey = 'parent' | 'children' | 'mobility' | 'routines';
 
-const BUDGET_OPTIONS: { id: FamilyProfile['budgetTier']; label: string }[] = [
-  { id: 'budget', label: 'Budget-friendly' },
-  { id: 'moderate', label: 'Moderate' },
-  { id: 'premium', label: 'Premium' },
-];
-
-const DRIVE_OPTIONS = [15, 20, 30, 45, 60, 90];
-/** The offered limits plus whatever is stored, so a limit set elsewhere is never shown as nothing chosen. */
-const driveOptions = (current: number) =>
-  [...new Set([...DRIVE_OPTIONS, current])].filter((m) => Number.isFinite(m) && m > 0).sort((a, b) => a - b);
-
-interface DraftChild {
-  id: string;
-  name: string;
-  age: string;
-  ageUnit: AgeUnit;
-}
-
-function maxForUnit(unit: AgeUnit): number {
-  return unit === 'months' ? 11 : 17;
-}
-
-function StepIcon({ name }: { name: keyof typeof Ionicons.glyphMap }) {
-  return (
-    <LinearGradient
-      colors={[colors.ink, colors.ink]}
-      style={styles.stepIcon}
-    >
-      <Ionicons name={name} size={30} color={colors.text.inverse} />
-    </LinearGradient>
-  );
+/** Names of the children who are named, in order, as a parent would say them: "Mia and Theo". */
+function sayNames(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? '';
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
 export default function SetupScreen() {
@@ -61,93 +42,123 @@ export default function SetupScreen() {
   const setProfile = useFamilyStore((s) => s.setProfile);
   const completeOnboarding = useFamilyStore((s) => s.completeOnboarding);
 
-  const [step, setStep] = useState(1);
+  const [stepIndex, setStepIndex] = useState(0);
   const [parentName, setParentName] = useState('');
   const [homeLocation, setHomeLocation] = useState('');
   const [resolvedHome, setResolvedHome] = useState<ResolvedLocation | null>(null);
   const [resolvingHome, setResolvingHome] = useState(false);
-  const [children, setChildren] = useState<DraftChild[]>([
-    { id: 'child-1', name: '', age: '', ageUnit: 'years' },
-  ]);
-  const [maxDriveMinutes, setMaxDriveMinutes] = useState(30);
-  const [budgetTier, setBudgetTier] = useState<FamilyProfile['budgetTier']>('moderate');
-  const [hasNap, setHasNap] = useState(false);
-  const [napTime, setNapTime] = useState('13:00');
-  const [hasFeed, setHasFeed] = useState(false);
-  const [feedTime, setFeedTime] = useState('12:00');
+  const [children, setChildren] = useState<DraftChild[]>(() => [blankChild()]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showDobErrors, setShowDobErrors] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const cardBox = useRef<Record<string, { y: number; h: number }>>({});
+  const viewH = useRef(0);
 
-  const stepMeta = useMemo(
-    () =>
-      [
-        {
-          title: 'Let’s get started',
-          subtitle:
-            'Your name and general area are enough to personalise recommendations. Your exact home address is never needed.',
-        },
-        {
-          title: 'Who are we planning for?',
-          subtitle:
-            'Age, in years or in months for a baby under 1, helps us recommend places that genuinely suit your family.',
-        },
-        {
-          title: 'Naps and feeds',
-          subtitle:
-            'Tell us the usual times so recommendations can say things like "leave by 12:00 to be home for lunch", not just distance.',
-        },
-        {
-          title: 'How do you usually plan days out?',
-          subtitle: 'These defaults help Family Fit. You can change them anytime in Profile.',
-        },
-      ][step - 1],
-    [step],
+  const now = useMemo(() => new Date(), []);
+  const needsRoutines = anyRoutineQuestions(children, now);
+  // The naps-and-feeds step only exists for families with a child young enough to be asked.
+  const steps: StepKey[] = useMemo(
+    () => ['parent', 'children', 'mobility', ...(needsRoutines ? (['routines'] as const) : [])],
+    [needsRoutines],
   );
+  const step = steps[Math.min(stepIndex, steps.length - 1)];
+  const totalSteps = stepIndex < 2 ? 4 : steps.length;
 
-  const validateStep = (): boolean => {
-    const nextErrors: Record<string, string> = {};
+  const ready = children.filter((c) => c.name.trim() && draftDob(c));
+  const one = ready.length === 1 ? ready[0].name.trim() : null;
+  // Only the children who are young enough to be asked appear in the naps-and-feeds step and its title.
+  const routineNames = ready
+    .filter((c) => {
+      const age = draftAge(c, now);
+      const q = age ? questionsFor(age.totalMonths) : null;
+      return q ? q.asksNaps || q.asksFeeds : false;
+    })
+    .map((c) => c.name.trim());
 
-    if (step === 1) {
-      if (!parentName.trim()) nextErrors.parentName = 'Please enter your first name';
-      if (!homeLocation.trim()) nextErrors.homeLocation = 'Please enter your town or postcode';
+  const header = (() => {
+    switch (step) {
+      case 'parent':
+        return { title: 'Let’s get started', subtitle: 'Just your name and the area you’re in.' };
+      case 'children':
+        return {
+          title: 'Who are we planning for?',
+          subtitle: 'Names and birthdays keep suggestions right as they grow. They stay on this device.',
+        };
+      case 'mobility':
+        return {
+          title: one ? `How does ${one} get around?` : 'How does everyone get around?',
+          subtitle: 'So we can look for buggy-friendly, step-free or easy-walking places.',
+        };
+      default:
+        return {
+          title: routineNames.length === 1 ? `${routineNames[0]}’s usual day` : `${sayNames(routineNames)}’s usual days`,
+          subtitle: 'So we can say when to leave to be home in time.',
+        };
     }
+  })();
 
-    if (step === 2) {
-      const validChildren = children.filter((c) => c.name.trim() && c.age.trim());
-      if (validChildren.length === 0) {
-        nextErrors.children = 'Add at least one child with a name and age';
-      } else {
-        for (const child of children) {
-          if (child.name.trim() && !child.age.trim()) {
-            nextErrors.children = 'Please enter an age for each child';
-            break;
-          }
-          if (child.age.trim()) {
-            const age = Number(child.age);
-            const max = maxForUnit(child.ageUnit);
-            if (Number.isNaN(age) || age < 0 || age > max) {
-              nextErrors.children =
-                child.ageUnit === 'months'
-                  ? 'Months should be between 0 and 11'
-                  : 'Age should be between 0 and 17';
-              break;
-            }
-          }
+  const updateChild = (id: string, patch: Partial<DraftChild>) =>
+    setChildren((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+
+  const validate = (): boolean => {
+    const next: Record<string, string> = {};
+    if (step === 'parent') {
+      if (!parentName.trim()) next.parentName = 'Please enter your first name';
+      if (!homeLocation.trim()) next.homeLocation = 'Please enter your town or postcode';
+    }
+    if (step === 'children') {
+      setShowDobErrors(true);
+      const named = children.filter((c) => c.name.trim() || c.day || c.month || c.year);
+      if (named.length === 0) next.children = 'Add at least one child';
+      let firstProblem: string | null = null;
+      for (const child of named) {
+        const problem = !child.name.trim()
+          ? 'Please add a name for each child'
+          : draftDobMessage(child, now, { final: true })
+            ? 'Please check the date of birth'
+            : null;
+        if (problem) {
+          next.children = next.children ?? problem;
+          firstProblem = firstProblem ?? child.id;
         }
       }
+      // The card with the problem may be below the fold on a small screen: bring it into view.
+      if (firstProblem) {
+        const box = cardBox.current[firstProblem] ?? { y: 0, h: 0 };
+        // Top-aligned when the card fits the viewport, bottom-aligned (so the message under the date is
+        // visible) when it does not.
+        const target = Math.max(box.y - 8, box.y + box.h - viewH.current + 24, 0);
+        requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: target, animated: true }));
+      }
     }
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
 
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+  const finish = () => {
+    if (!resolvedHome) {
+      setStepIndex(0);
+      setErrors({ homeLocation: 'Please confirm your town or postcode again.' });
+      return;
+    }
+    const profile = buildOnboardingProfile({
+      parentName,
+      homeLocation,
+      home: resolvedHome,
+      children,
+    });
+    setProfile(profile);
+    completeOnboarding();
+    router.replace('/(tabs)' as never);
   };
 
   const handleNext = async () => {
-    if (!validateStep()) return;
+    if (!validate()) return;
 
-    if (step === 1) {
+    if (step === 'parent') {
       setResolvingHome(true);
       try {
-        const location = await resolveUkLocation(homeLocation);
-        setResolvedHome(location);
+        setResolvedHome(await resolveUkLocation(homeLocation));
         setErrors({});
       } catch (error) {
         setErrors({
@@ -159,83 +170,22 @@ export default function SetupScreen() {
       }
     }
 
-    if (step < TOTAL_STEPS) {
-      setStep(step + 1);
+    if (stepIndex < steps.length - 1) {
+      setStepIndex(stepIndex + 1);
       return;
     }
-
-    if (!resolvedHome) {
-      setStep(1);
-      setErrors({ homeLocation: 'Please confirm your town or postcode again.' });
-      return;
-    }
-
-    const childMembers = children
-      .filter((c) => c.name.trim() && c.age.trim())
-      .map((c) =>
-        createChildMember(
-          c.name,
-          c.ageUnit === 'months' ? 0 : Number(c.age),
-          c.ageUnit === 'months' ? Number(c.age) : null,
-        ),
-      );
-
-    const routines: FamilyRoutine[] = [];
-    if (hasNap) {
-      routines.push({ id: `routine-${Date.now()}-nap`, label: 'Nap', kind: 'nap', time: napTime, durationMinutes: 60, atHome: true });
-    }
-    if (hasFeed) {
-      routines.push({ id: `routine-${Date.now()}-feed`, label: 'Feed', kind: 'feed', time: feedTime, durationMinutes: 30, atHome: true });
-    }
-
-    const profile = withCompletion({
-      id: `family-${Date.now()}`,
-      parentName: parentName.trim(),
-      members: [createParentMember(parentName), ...childMembers],
-      homeLocation: homeLocation.trim(),
-      homeLatitude: resolvedHome.latitude,
-      homeLongitude: resolvedHome.longitude,
-      budgetTier,
-      maxDriveMinutes,
-      completionPercent: 0,
-      vehicle: null,
-      pushchair: null,
-      travelCot: null,
-      memberships: [],
-      routines,
-    });
-
-    setProfile(profile);
-    completeOnboarding();
-    router.replace('/(tabs)' as never);
+    finish();
   };
 
   const handleBack = () => {
-    if (step === 1) {
+    if (stepIndex === 0) {
       router.back();
       return;
     }
-    setStep(step - 1);
+    setStepIndex(stepIndex - 1);
   };
 
-  const addChild = () => {
-    setChildren((prev) => [
-      ...prev,
-      { id: `child-${Date.now()}`, name: '', age: '', ageUnit: 'years' },
-    ]);
-  };
-
-  const updateChild = (id: string, field: 'name' | 'age', value: string) => {
-    setChildren((prev) => prev.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
-  };
-
-  const updateChildUnit = (id: string, ageUnit: AgeUnit) => {
-    setChildren((prev) => prev.map((c) => (c.id === id ? { ...c, ageUnit } : c)));
-  };
-
-  const removeChild = (id: string) => {
-    setChildren((prev) => (prev.length <= 1 ? prev : prev.filter((c) => c.id !== id)));
-  };
+  const isLast = stepIndex >= steps.length - 1 && step !== 'parent' && step !== 'children';
 
   return (
     <KeyboardAvoidingView
@@ -243,18 +193,25 @@ export default function SetupScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <OnboardingShell
-        title={stepMeta.title}
-        subtitle={stepMeta.subtitle}
-        step={step}
-        totalSteps={TOTAL_STEPS}
+        title={header.title}
+        subtitle={header.subtitle}
+        step={Math.min(stepIndex + 1, totalSteps)}
+        totalSteps={totalSteps}
         onBack={handleBack}
       >
         <ScrollView
+          // One scroll view per step: a position left over from the previous step would open this one
+          // part-way down.
+          key={step}
+          ref={scrollRef}
+          onLayout={(e) => {
+            viewH.current = e.nativeEvent.layout.height;
+          }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollContent}
         >
-          {step === 1 ? (
+          {step === 'parent' ? (
             <View>
               <TextField
                 label="Your first name"
@@ -274,143 +231,132 @@ export default function SetupScreen() {
                 }}
                 placeholder="e.g. Mill Hill or NW7 2AB"
                 autoCapitalize="words"
-                hint="We resolve this to a general area for travel and weather, never a full home address"
+                hint="Only a general area, for travel and weather. Never your address."
                 error={errors.homeLocation}
               />
             </View>
           ) : null}
 
-          {step === 2 ? (
+          {step === 'children' ? (
             <View>
-              <StepIcon name="people" />
-              {children.map((child, index) => (
-                <View key={child.id} style={styles.childBlock}>
-                  <View style={styles.childHeader}>
-                    <Text variant="label" color={colors.text.secondary}>
-                      Child {index + 1}
-                    </Text>
-                    {children.length > 1 ? (
-                      <Pressable onPress={() => removeChild(child.id)} accessibilityRole="button" hitSlop={14}>
-                        <Text variant="caption" color={colors.error[500]}>
-                          Remove
-                        </Text>
-                      </Pressable>
-                    ) : null}
+              {children.map((child, index) => {
+                const age = draftAge(child, now);
+                const message = showDobErrors
+                  ? draftDobMessage(child, now, { final: Boolean(child.name.trim()) })
+                  : draftDobMessage(child, now);
+                return (
+                  <View
+                    key={child.id}
+                    style={styles.childCard}
+                    onLayout={(e) => {
+                      cardBox.current[child.id] = { y: e.nativeEvent.layout.y, h: e.nativeEvent.layout.height };
+                    }}
+                  >
+                    <View style={styles.childHeader}>
+                      <ChildAvatar name={child.name} size={36} />
+                      <Text variant="label" color={colors.text.secondary} style={styles.childLabel}>
+                        {child.name.trim() || `Child ${index + 1}`}
+                      </Text>
+                      {children.length > 1 ? (
+                        <Pressable
+                          onPress={() => setChildren((prev) => prev.filter((c) => c.id !== child.id))}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove ${child.name.trim() || `child ${index + 1}`}`}
+                          hitSlop={14}
+                        >
+                          <Text variant="caption" color={colors.error[500]}>
+                            Remove
+                          </Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                    <TextField
+                      label="Name"
+                      value={child.name}
+                      onChangeText={(name) => updateChild(child.id, { name })}
+                      placeholder="e.g. Mia"
+                      autoCapitalize="words"
+                    />
+                    <DobField
+                      day={child.day}
+                      month={child.month}
+                      year={child.year}
+                      childName={child.name}
+                      onChange={(dob) => updateChild(child.id, dob)}
+                      message={message}
+                      ageLabel={age ? describeAge(age) : null}
+                    />
                   </View>
-                  <TextField
-                    label="Name"
-                    value={child.name}
-                    onChangeText={(value) => updateChild(child.id, 'name', value)}
-                    placeholder="e.g. Mia"
-                    autoCapitalize="words"
-                  />
-                  <AgeInput
-                    value={child.age}
-                    unit={child.ageUnit}
-                    onChangeValue={(value) => updateChild(child.id, 'age', value)}
-                    onChangeUnit={(unit) => updateChildUnit(child.id, unit)}
-                  />
-                </View>
-              ))}
+                );
+              })}
               {errors.children ? (
                 <Text variant="caption" color={colors.error[500]} style={styles.errorText}>
                   {errors.children}
                 </Text>
               ) : null}
-              <Pressable onPress={addChild} style={styles.addChild} accessibilityRole="button">
-                <Text variant="link" style={styles.addChildLabel}>
-                  + Add another child
-                </Text>
-              </Pressable>
-            </View>
-          ) : null}
-
-          {step === 3 ? (
-            <View>
-              <StepIcon name="moon" />
-              <View style={styles.routineCard}>
-                <View style={styles.routineToggle}>
-                  <Text variant="body" style={styles.routineLabel}>
-                    Does your child usually nap?
+              {children.length < MAX_CHILDREN ? (
+                <Pressable
+                  onPress={() => setChildren((prev) => [...prev, blankChild()])}
+                  style={styles.addChild}
+                  accessibilityRole="button"
+                >
+                  <Text variant="link" style={styles.addChildLabel}>
+                    + Add another child
                   </Text>
-                  <Switch accessibilityLabel="Does your child usually nap?" value={hasNap} onValueChange={setHasNap} />
-                </View>
-                {hasNap ? (
-                  <FadeInView style={styles.routineTimeField}>
-                    <TimeField label="Usual nap time" value={napTime} onChange={setNapTime} />
-                  </FadeInView>
-                ) : null}
-              </View>
-
-              <View style={styles.routineCard}>
-                <View style={styles.routineToggle}>
-                  <Text variant="body" style={styles.routineLabel}>
-                    Do they need a bottle or meal at a set time?
-                  </Text>
-                  <Switch
-                    accessibilityLabel="Do they need a bottle or meal at a set time?"
-                    value={hasFeed}
-                    onValueChange={setHasFeed}
-                  />
-                </View>
-                {hasFeed ? (
-                  <FadeInView style={styles.routineTimeField}>
-                    <TimeField label="Usual feed or lunch time" value={feedTime} onChange={setFeedTime} />
-                  </FadeInView>
-                ) : null}
-              </View>
-
-              <Text variant="caption" color={colors.text.secondary}>
-                Optional. Skip either if it doesn’t apply. You can change these anytime in Profile.
-              </Text>
+                </Pressable>
+              ) : null}
             </View>
           ) : null}
 
-          {step === 4 ? (
-            <View>
-              <StepIcon name="navigate" />
-              <Text variant="label" color={colors.text.secondary} style={styles.groupLabel}>
-                Maximum drive time
-              </Text>
-              <View style={styles.chipRow}>
-                {driveOptions(maxDriveMinutes).map((minutes) => (
-                  <Chip
-                    key={minutes}
-                    label={`${minutes} min`}
-                    active={maxDriveMinutes === minutes}
-                    onPress={() => setMaxDriveMinutes(minutes)}
-                  />
-                ))}
-              </View>
+          {step === 'mobility'
+            ? ready.map((child) => {
+                const age = draftAge(child, now);
+                if (!age) return null;
+                return (
+                  <ChildSection key={child.id} name={child.name} ageLabel={describeAge(age)}>
+                    <MobilityPicker
+                      name={child.name}
+                      options={questionsFor(age.totalMonths).mobilityOptions}
+                      value={child.mobility}
+                      onChange={(mobility) => updateChild(child.id, { mobility })}
+                    />
+                  </ChildSection>
+                );
+              })
+            : null}
 
-              <Text variant="label" color={colors.text.secondary} style={styles.groupLabel}>
-                Usual day-out budget
-              </Text>
-
-              {/* The same Chip as drive time above and frame 04's option rows: one selected treatment per app. */}
-              <View style={styles.chipRow}>
-                {BUDGET_OPTIONS.map((option) => (
-                  <Chip
-                    key={option.id}
-                    label={option.label}
-                    active={budgetTier === option.id}
-                    onPress={() => setBudgetTier(option.id)}
-                  />
-                ))}
-              </View>
-            </View>
-          ) : null}
+          {step === 'routines'
+            ? ready.map((child) => {
+                const age = draftAge(child, now);
+                if (!age) return null;
+                const q = questionsFor(age.totalMonths);
+                if (!q.asksNaps && !q.asksFeeds) return null;
+                return (
+                  <ChildSection key={child.id} name={child.name} ageLabel={describeAge(age)}>
+                    {q.asksNaps ? (
+                      <NapEditor
+                        name={child.name}
+                        naps={child.naps}
+                        onChange={(naps) => updateChild(child.id, { naps })}
+                      />
+                    ) : null}
+                    {q.asksFeeds ? (
+                      <FeedEditor
+                        name={child.name}
+                        noun={feedNoun({ age: age.years, ageMonths: age.years === 0 ? age.months : null })}
+                        draft={child}
+                        onChange={(patch) => updateChild(child.id, patch)}
+                      />
+                    ) : null}
+                  </ChildSection>
+                );
+              })
+            : null}
         </ScrollView>
 
         <View style={styles.footer}>
           <Button
-            label={
-              resolvingHome
-                ? 'Finding your area…'
-                : step === TOTAL_STEPS
-                  ? 'See my recommendations'
-                  : 'Continue'
-            }
+            label={resolvingHome ? 'Finding your area…' : isLast ? 'See my recommendations' : 'Continue'}
             size="lg"
             fullWidth
             disabled={resolvingHome}
@@ -423,83 +369,20 @@ export default function SetupScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingBottom: spacing.xl,
-  },
-  stepIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    marginBottom: spacing.xl,
-  },
-  childBlock: {
+  flex: { flex: 1, backgroundColor: colors.background },
+  scrollContent: { flexGrow: 1, paddingBottom: spacing.xl },
+  childCard: {
     marginBottom: spacing.lg,
     padding: spacing.lg,
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.borderLight,
   },
-  childHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  addChild: {
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-  },
-  errorText: {
-    marginBottom: spacing.md,
-  },
-  routineCard: {
-    marginBottom: spacing.lg,
-    padding: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-  },
-  routineToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  routineLabel: {
-    flex: 1,
-  },
-  routineTimeField: {
-    marginTop: spacing.md,
-  },
-  groupLabel: {
-    marginBottom: spacing.md,
-    marginTop: spacing.md,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: CHIP_GAP,
-    marginBottom: spacing.xl,
-  },
-  addChildLabel: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  footer: {
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-  },
+  childHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.lg },
+  childLabel: { flex: 1 },
+  addChild: { minHeight: 44, justifyContent: 'center', alignItems: 'center', paddingVertical: spacing.md },
+  addChildLabel: { fontSize: 16, lineHeight: 24 },
+  errorText: { marginBottom: spacing.md },
+  footer: { paddingTop: spacing.lg, paddingBottom: spacing.md },
 });
