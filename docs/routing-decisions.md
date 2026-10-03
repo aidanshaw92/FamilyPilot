@@ -179,6 +179,28 @@ The SKU on the `journeys` scope is now `route_matrix`. Renaming orphaned nothing
 zero rows across every environment and all time — and `reconcile.sql` keeps a separate line for the legacy
 SKU so a row appearing under it later cannot hide behind the rename.
 
+### Our element counter is an upper bound on spend, not an equality
+
+Worth predicting in writing now rather than discovering it as a mystery during the first reconciliation.
+
+`assertPlacesAllowed` calls `countCall` **before** the request is made. So when a Routes API request fails
+— a 500, a timeout, a network error — FamilyPilot has already charged itself the elements that Google did
+not bill. `google_places_usage` will therefore read **at or above** actual spend, never below it.
+
+That ordering is deliberate and should stay. Charging after a successful response would mean a crash
+between the request and the write leaves real spend unrecorded, and two concurrent requests could both
+clear the gate before either charged. Over-counting spends our own ceiling faster than reality, which
+makes the cap bite sooner; under-counting spends money nobody is watching. The first is the direction to
+be wrong in.
+
+The consequence for reconciliation, since the brief requires discrepancies to be investigated rather than
+silently corrected: **a Google invoice lower than our counter is expected, not a defect.** The gap is the
+failed requests. A Google invoice *higher* than our counter is the real alarm, and would mean a billable
+path exists that does not pass through this gate.
+
+A refund-on-failure path was considered and rejected: it adds a write that can itself fail, and when it
+does the state is exactly what we have now, for more moving parts.
+
 ### What remains unproven, and will stay so until the owner enables the API
 
 The request shape, the field mask and the duration parsing have never met the real service.

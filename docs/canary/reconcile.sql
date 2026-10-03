@@ -20,6 +20,10 @@ where usage_day = current_date
 
 union all
 -- Routed driving as it will be billed from now on. Must be 0 until the owner enables the scope.
+-- NOTE when it is non-zero: this is an UPPER BOUND on spend, not an equality. The budget is charged
+-- before the request, so a failed request is counted here and not on Google's invoice. An invoice
+-- BELOW this number is expected; an invoice ABOVE it means a billable path bypasses the gate.
+-- See docs/routing-decisions.md.
 select 'route_matrix rows ever (any day, any env)',
        count(*)::text
 from google_places_usage
