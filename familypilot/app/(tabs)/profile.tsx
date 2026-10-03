@@ -11,6 +11,8 @@ import { Button, Card, EmptyState, Skeleton, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
 import { formatBudgetTier, formatChildAge } from '@/src/utils/profile-defaults';
+import { MOBILITY_LABELS } from '@/src/utils/family-mobility';
+import { resolveRoutines } from '@/src/utils/routine-schedule';
 import { getProfileSuggestion } from '@/src/utils/profile-completion';
 import { formatClock } from '@/src/utils/clock-format';
 import { familyTitle } from '@/src/utils/family-title';
@@ -95,14 +97,18 @@ export default function ProfileScreen() {
               {familyTitle(profile.parentName)}
             </Text>
             {suggestion ? (
-              <View style={styles.suggestionBox}>
+              <Pressable
+                style={styles.suggestionBox}
+                accessibilityRole="button"
+                onPress={() => router.push('/profile/edit' as never)}
+              >
                 <Text variant="bodySmall" color={colors.text.secondary}>
                   Make recommendations even better
                 </Text>
                 <Text variant="body" style={styles.suggestionText}>
                   {suggestion.message}
                 </Text>
-              </View>
+              </Pressable>
             ) : (
               <Text variant="bodySmall" color={colors.text.secondary} style={styles.allSet}>
                 FamilyPilot has what it needs to personalise your recommendations.
@@ -130,7 +136,13 @@ export default function ProfileScreen() {
               <ProfileRow
                 icon="person-outline"
                 label={child.name}
-                value={formatChildAge(child)}
+                value={[
+                  formatChildAge(child),
+                  child.dobKnown ? null : 'add birthday',
+                  ...(child.mobility ?? []).map((m) => MOBILITY_LABELS[m].toLowerCase()),
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
               />
             </FadeInView>
           ))}
@@ -141,7 +153,7 @@ export default function ProfileScreen() {
         </Text>
         <Card style={styles.prefCard}>
           {(profile.routines ?? []).length > 0 ? (
-            (profile.routines ?? []).map((routine) => (
+            resolveRoutines(profile).map((routine) => (
               <ProfileRow
                 key={routine.id}
                 icon={routine.kind === 'nap' ? 'moon-outline' : 'restaurant-outline'}

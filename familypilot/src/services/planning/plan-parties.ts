@@ -1,6 +1,6 @@
 import { FacilityType, FamilyProfile } from '@/src/types';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
-import { resolveRoutines } from '@/src/utils/routine-schedule';
+import { routinesForPlanner } from '@/src/utils/routine-schedule';
 import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
 
 import { PlanningFamily } from './planner';
@@ -108,8 +108,9 @@ export function planningFamilyFromProfile(
     budgetTier: profile.budgetTier,
     pushchair: familyUsesBuggy(profile),
     required: plannerRequirements(profile.mustHaveFacilities),
-    // Copied, so editing a plan can never reach back into the stored profile.
-    routines: resolveRoutines(profile),
+    // Copied, so editing a plan can never reach back into the stored profile, and stripped of the
+    // child's name and id: this model can be backed up to an account, the profile cannot.
+    routines: routinesForPlanner(profile),
   };
 }
 

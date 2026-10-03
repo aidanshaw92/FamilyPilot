@@ -143,3 +143,32 @@ parent never chose. Stage 4's adversarial pass deals with that wording.
 
 `verify-onboarding-flow.mjs` drives the real screens for six family shapes at two widths and asserts the
 stored profile and the Venue Detail sentences that follow, and it runs in CI beside the other verifiers.
+
+## 6. What stage 4 built, and what the adversarial pass found
+
+**Edit profile now shares the onboarding's child model** (`profile-edit-draft.ts`). The old editor rebuilt
+every child with a new id on every save, which would have detached each routine from its child and dropped
+their mobility and date of birth the first time a parent changed anything. Now a child keeps their id, an
+existing child with no real date of birth keeps the age they were saved with until a parent enters one
+(`dobKnown` stays false, nothing is invented), and routines saved before routines had an owner are kept
+exactly as they were under "Other naps and feeds" instead of being handed to a child on a guess. The
+Profile screen says "add birthday" against a legacy child and its suggestion box opens Edit.
+
+**Adversarial pass, in the order the brief lists it:**
+
+| Risk | Finding | Outcome |
+| --- | --- | --- |
+| Dead fields | Every answer traced to an output by `onboarding-field-consumers.test.ts` (name, date of birth, buggy, mobility aid, nap, feeds, parent, home). | None found. |
+| Fabricated personalisation | "Within your usual budget" and "Further than your usual 30 min drive" claimed a habit about defaults the parent never chose. | Reworded to what is true: "Fits a moderate spend", "Further than the 30 min drive we're using". |
+| Fabricated personalisation | A wheelchair caution said only "step-free isn't confirmed" beside the pushchair-based "Mostly step-free". | Now about wheelchair and mobility-aid access. |
+| Fabricated personalisation | "Add your nap and feed routine in Plans" shown to a parent who had just entered them. | Says they are saved and where to run the check. |
+| **Privacy: a regression of mine** | Child names written into planner routine labels would have travelled with the opt-in planning-workspace backup. | Planner routines carry no name and no child id (`routinesForPlanner`); pinned by test. |
+| **Privacy: pre-existing, dormant** | `parseDayRequest` posted the whole profile (names, dates of birth, mobility, routines) to `/api/recommendations/parse-request`, which can forward to a language model. Nothing in the UI calls it today. | Now posts a projection: each child's age, the limits and a buggy flag. Pinned by test. |
+| Privacy | No network-touching module may reference the new child fields. | A source scan in `family-profile-privacy.test.ts` fails if one does. |
+
+**For the owner, not changed here because it is a privacy-architecture question.** The opt-in "Back up this
+device's plans and routines" and the friend-connection feature send the planning family: each child's age,
+the home town and its coordinates, whether a buggy comes, and routine times. That predates this work, and the
+profile decision (device-only, no children's data, nothing home- or routine-derived) reads as broader than
+what that feature does. It carries no name and no date of birth, but it does carry ages, home coordinates and
+routine times. Whether that is acceptable, or the planner should work from less, is a product decision.

@@ -387,18 +387,22 @@ describe('routines belong to a child and read by name', () => {
     expect(fit.caution).toBe('A visit today may run into Theo’s nap time (around 10:00)');
   });
 
-  it('the planner receives resolved, owned routines as copies', () => {
+  it('the planner receives copies with no child’s name and no child id', () => {
     const nap = createNap(mia, '12:30');
     const profile = { ...family([mia], { routines: [nap] }), homeLatitude: 51.6, homeLongitude: -0.3 };
-    const planning = planningFamilyFromProfile(profile) as { routines: Array<{ label: string; childId?: string }> };
-    expect(planning.routines[0].label).toBe('Mia’s nap');
-    expect(planning.routines[0].childId).toBe(mia.id);
-    const renamed = planningFamilyFromProfile({ ...profile, members: [{ ...mia, name: 'Maya' }] }) as {
-      routines: Array<{ label: string }>;
-    };
-    expect(renamed.routines[0].label).toBe('Maya’s nap');
+    const planning = planningFamilyFromProfile(profile) as { routines: Array<{ label: string; childId?: string; time: string }> };
+    expect(planning.routines[0]).toMatchObject({ label: 'Nap', time: '12:30' });
+    expect(planning.routines[0].childId).toBeUndefined();
+    expect(JSON.stringify(planning)).not.toMatch(/Mia|child-/);
     planning.routines[0].label = 'changed';
     expect(profile.routines![0].label).toBe('Mia’s nap');
+  });
+
+  it('a routine saved before routines had an owner reaches the planner with the label the parent gave it', () => {
+    const legacy = { id: 'r', label: 'Afternoon nap', kind: 'nap' as const, time: '14:00', durationMinutes: 60, atHome: true };
+    const profile = { ...family([mia], { routines: [legacy] }), homeLatitude: 51.6, homeLongitude: -0.3 };
+    const planning = planningFamilyFromProfile(profile) as { routines: Array<{ label: string }> };
+    expect(planning.routines[0].label).toBe('Afternoon nap');
   });
 });
 

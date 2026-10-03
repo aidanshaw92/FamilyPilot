@@ -158,7 +158,7 @@ function validTime(value: string): boolean {
   return toMinutes(value) != null;
 }
 
-function routinesFor(draft: DraftChild, member: FamilyMember, questions: ChildQuestions): FamilyRoutine[] {
+export function routinesFor(draft: DraftChild, member: FamilyMember, questions: ChildQuestions): FamilyRoutine[] {
   const routines: FamilyRoutine[] = [];
 
   if (questions.asksNaps) {

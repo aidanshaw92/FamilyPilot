@@ -192,12 +192,101 @@ for (const width of [360, 430]) {
       if (scenario.profile.routines.length > 0) {
         check(!/Add your family.s nap and feed routine in Plans/.test(venueText), `${label}: Venue Detail does not ask for routines the parent just entered`);
       }
+
+      // Edit profile must not lose what onboarding stored: open it, change nothing, save, compare.
+      if (scenario.name === 'mixed needs' && width === 360) {
+        await page.goto(`${BASE}/profile/edit`, { waitUntil: 'domcontentloaded' });
+        await settle(page, 2000);
+        const editText = await page.evaluate(() => document.body.innerText);
+        check((editText.match(/Date of birth/g) ?? []).length === kids.length, `${label}: Edit profile shows a date of birth for each child`);
+        check(/Poppy/.test(editText) && /Mia/.test(editText) && /Ada/.test(editText), `${label}: Edit profile lists the children by name`);
+        check(!/\+ Add a nap|\+ Add a feed/.test(editText), `${label}: Edit profile has no flat "add a nap" list`);
+        const before = JSON.parse(await page.evaluate(() => localStorage.getItem('familypilot-family-v1'))).state.profile;
+        await page.getByRole('button', { name: /^save changes/i }).click();
+        await settle(page, 2500);
+        const after = JSON.parse(await page.evaluate(() => localStorage.getItem('familypilot-family-v1'))).state.profile;
+        const view = (profile) => JSON.stringify({
+          kids: profile.members.filter((m) => m.role === 'child').map((m) => [m.id, m.name, m.dateOfBirth, m.dobKnown, m.age, m.ageMonths ?? null, [...(m.mobility ?? [])].sort()]),
+          routines: (profile.routines ?? []).map((r) => [r.childId, r.kind, r.time, r.durationMinutes]).sort(),
+        });
+        check(view(before) === view(after), `${label}: saving Edit profile unchanged keeps ids, dates, mobility and routines`);
+      }
     } catch (error) {
       failures.push(`${label}: threw ${error.message.slice(0, 160)}`);
       console.log(`  FAIL threw ${error.message.slice(0, 160)}`);
     }
     await ctx.close();
   }
+}
+
+// A profile saved before any of this: ages only. It must be asked for the real birthday, never given one.
+{
+  console.log('legacy profile');
+  const { ctx, page } = await newPage(390);
+  await page.addInitScript(() => {
+    localStorage.setItem('familypilot-family-v1', JSON.stringify({
+      state: {
+        profile: {
+          id: 'legacy', parentName: 'Aidan', homeLocation: 'Bushey, Hertfordshire', homeLatitude: 51.643, homeLongitude: -0.36,
+          budgetTier: 'moderate', maxDriveMinutes: 45, completionPercent: 60, pushchair: 'Bugaboo Fox',
+          members: [
+            { id: 'parent-1', name: 'Aidan', role: 'parent', dateOfBirth: '1990-01-01', age: 35 },
+            { id: 'k1', name: 'Rosie', role: 'child', dateOfBirth: '2020-01-01', age: 6 },
+            { id: 'k2', name: 'Baby', role: 'child', dateOfBirth: '2026-01-01', age: 0, ageMonths: 5 },
+          ],
+          routines: [{ id: 'r1', label: 'Nap', kind: 'nap', time: '13:00', durationMinutes: 60, atHome: true }],
+          mustHaveFacilities: [],
+        },
+        hasCompletedOnboarding: true, hasSeenSplash: true, profileRevision: 1,
+      },
+      version: 0,
+    }));
+  });
+  try {
+    await page.goto(`${BASE}/profile`, { waitUntil: 'domcontentloaded' });
+    await settle(page, 2200);
+    const profileText = await page.evaluate(() => document.body.innerText);
+    check(/Add Rosie’s birthday so Rosie’s age stays up to date/.test(profileText), 'legacy: Profile asks for the first child’s birthday, by name');
+    check(/6 years old · add birthday/.test(profileText), 'legacy: the child row says the birthday is missing');
+    check(/Aidan|Rosie/.test(profileText) && /Nap/.test(profileText), 'legacy: the unowned routine is still shown');
+
+    let stored = JSON.parse(await page.evaluate(() => localStorage.getItem('familypilot-family-v1'))).state.profile;
+    check(stored.members.filter((m) => m.role === 'child').every((m) => m.dobKnown !== true), 'legacy: opening the app never marks a date of birth as known');
+
+    await page.goto(`${BASE}/profile/edit`, { waitUntil: 'domcontentloaded' });
+    await settle(page, 2000);
+    const editText = await page.evaluate(() => document.body.innerText);
+    check(/Add Rosie’s birthday and their age keeps itself up to date/.test(editText), 'legacy: Edit profile explains why the date is asked');
+    check(/Other naps and feeds/.test(editText), 'legacy: the unowned routine is kept under "Other naps and feeds"');
+
+    // Saving with the dates left empty changes nothing about the children.
+    await page.getByRole('button', { name: /^save changes/i }).click();
+    await settle(page, 2500);
+    stored = JSON.parse(await page.evaluate(() => localStorage.getItem('familypilot-family-v1'))).state.profile;
+    const [rosie, baby] = stored.members.filter((m) => m.role === 'child');
+    check(rosie?.dobKnown !== true && rosie?.age === 6, 'legacy: saving with no date keeps Rosie’s age and invents no birthday');
+    check(baby?.dobKnown !== true && baby?.age === 0 && baby?.ageMonths === 5, 'legacy: the baby keeps their saved months');
+    check(stored.routines.length === 1 && !stored.routines[0].childId, 'legacy: the routine is not handed to a child on a guess');
+
+    // Entering the real date makes it known and derives the age.
+    await page.goto(`${BASE}/profile/edit`, { waitUntil: 'domcontentloaded' });
+    await settle(page, 2000);
+    await page.getByLabel(/day of birth/i).first().fill('10');
+    await page.getByLabel(/month of birth/i).first().fill('09');
+    await page.getByLabel(/year of birth/i).first().fill('2019');
+    await page.waitForTimeout(300);
+    check((await page.evaluate(() => document.body.innerText)).includes('Rosie is 7 years'), 'legacy: the typed date shows the exact age');
+    await page.getByRole('button', { name: /^save changes/i }).click();
+    await settle(page, 2500);
+    stored = JSON.parse(await page.evaluate(() => localStorage.getItem('familypilot-family-v1'))).state.profile;
+    const rosie2 = stored.members.find((m) => m.id === 'k1');
+    check(rosie2?.dobKnown === true && rosie2?.dateOfBirth === '2019-09-10' && rosie2?.age === 7, 'legacy: the entered date is stored as known and the age derived (7)');
+    check(stored.members.find((m) => m.id === 'k1')?.id === 'k1', 'legacy: the child keeps their id');
+  } catch (error) {
+    failures.push(`legacy: threw ${error.message.slice(0, 160)}`);
+    console.log(`  FAIL threw ${error.message.slice(0, 160)}`);
+  }
+  await ctx.close();
 }
 
 // The date of birth boxes, and the step that will not continue on a bad date.

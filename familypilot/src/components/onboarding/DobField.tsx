@@ -14,6 +14,8 @@ interface DobFieldProps {
   /** "8 months", shown once the date is a real one. */
   ageLabel?: string | null;
   childName?: string;
+  /** Quiet guidance shown when there is nothing else to say, e.g. why a legacy child is being asked. */
+  hint?: string;
 }
 
 const digits = (value: string, max: number) => value.replace(/\D/g, '').slice(0, max);
@@ -25,7 +27,7 @@ const digits = (value: string, max: number) => value.replace(/\D/g, '').slice(0,
  * each. The age it works out is shown straight away, so the parent sees "8 months" and knows the date
  * landed.
  */
-export function DobField({ day, month, year, onChange, message, ageLabel, childName }: DobFieldProps) {
+export function DobField({ day, month, year, onChange, message, ageLabel, childName, hint }: DobFieldProps) {
   const monthRef = useRef<TextInput>(null);
   const yearRef = useRef<TextInput>(null);
   const who = childName?.trim() ? `${childName.trim()}’s` : 'Child’s';
@@ -87,6 +89,10 @@ export function DobField({ day, month, year, onChange, message, ageLabel, childN
       ) : ageLabel ? (
         <Text variant="caption" color={colors.text.secondary} style={styles.note} accessibilityLiveRegion="polite">
           {childName?.trim() ? `${childName.trim()} is ${ageLabel}` : ageLabel}
+        </Text>
+      ) : hint ? (
+        <Text variant="caption" color={colors.text.secondary} style={styles.note}>
+          {hint}
         </Text>
       ) : null}
     </View>

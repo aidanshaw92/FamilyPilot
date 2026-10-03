@@ -3,13 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Chip, CHIP_GAP, Text } from '@/src/components/ui';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { ChildMobility } from '@/src/types';
-
-const LABELS: Record<ChildMobility, string> = {
-  walks: 'Walks',
-  buggy: 'Buggy',
-  carrier: 'Baby carrier',
-  'mobility-aid': 'Wheelchair or mobility aid',
-};
+import { MOBILITY_LABELS } from '@/src/utils/family-mobility';
 
 /**
  * How one child usually gets around. Several can be true at once (walks most of the way with a buggy
@@ -43,7 +37,7 @@ export function MobilityPicker({
         {options.map((option) => (
           <Chip
             key={option}
-            label={LABELS[option]}
+            label={MOBILITY_LABELS[option]}
             active={value.includes(option)}
             onPress={() => toggle(option)}
           />

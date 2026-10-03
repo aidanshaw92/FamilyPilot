@@ -12,19 +12,34 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AgeInput, AgeUnit } from '@/src/components/profile/AgeInput';
+import { ChildSection } from '@/src/components/onboarding/ChildSection';
+import { DobField } from '@/src/components/onboarding/DobField';
+import { MobilityPicker } from '@/src/components/onboarding/MobilityPicker';
+import { FeedEditor, NapEditor } from '@/src/components/onboarding/RoutineEditors';
 import { TextField } from '@/src/components/profile/TextField';
 import { BackButton } from '@/src/components/ui/BackButton';
 import { Button, Chip, EmptyState, Text, TimeField, CHIP_GAP } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useUpdateFamilyProfile } from '@/src/hooks/use-queries';
 import { resolveUkLocation } from '@/src/services/location/location-client';
-import { FacilityType, FamilyMember, FamilyProfile, FamilyRoutine } from '@/src/types';
+import { FacilityType, FamilyProfile, FamilyRoutine } from '@/src/types';
+import { AgeParts } from '@/src/utils/child-age';
 import {
-  createChildMember,
-  createParentMember,
-  formatBudgetTier,
-} from '@/src/utils/profile-defaults';
+  MAX_CHILDREN,
+  blankChild,
+  describeAge,
+  draftAge,
+  draftDobMessage,
+  questionsFor,
+} from '@/src/utils/onboarding-draft';
+import {
+  EditChild,
+  applyEditedChildren,
+  editChildFromMember,
+  editChildProblem,
+} from '@/src/utils/profile-edit-draft';
+import { createParentMember, formatBudgetTier } from '@/src/utils/profile-defaults';
+import { feedNoun } from '@/src/utils/routine-schedule';
 
 const BUDGET_OPTIONS: { id: FamilyProfile['budgetTier']; label: string }[] = [
   { id: 'budget', label: 'Budget-friendly' },
@@ -44,15 +59,28 @@ const MUST_HAVE_OPTIONS: { id: FacilityType; label: string }[] = [
   { id: 'pushchair_friendly', label: 'Pushchair access' },
 ];
 
-interface DraftChild {
-  id: string;
-  name: string;
-  age: string;
-  ageUnit: AgeUnit;
+/** Alert.alert does nothing on web, where the pilot actually runs, so removal asks with the browser's own dialog there. */
+function confirmRemove(name: string, onConfirm: () => void) {
+  const title = `Remove ${name || 'this child'}?`;
+  const message = 'This will update your recommendations.';
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && window.confirm(`${title}\n${message}`)) onConfirm();
+    return;
+  }
+  Alert.alert(title, message, [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Remove', style: 'destructive', onPress: onConfirm },
+  ]);
 }
 
-function maxForUnit(unit: AgeUnit): number {
-  return unit === 'months' ? 11 : 17;
+/** A child's age for choosing which questions to ask: from the typed date, else the age they were saved with. */
+function ageOf(child: EditChild, now: Date): AgeParts | null {
+  const typed = draftAge(child, now);
+  if (typed) return typed;
+  if (!child.legacy) return null;
+  const { age, ageMonths } = child.legacy;
+  const months = age === 0 ? (ageMonths ?? 0) : 0;
+  return { years: age, months, totalMonths: age === 0 ? months : age * 12 };
 }
 
 export default function EditProfileScreen() {
@@ -63,14 +91,14 @@ export default function EditProfileScreen() {
 
   const [parentName, setParentName] = useState('');
   const [homeLocation, setHomeLocation] = useState('');
-  const [children, setChildren] = useState<DraftChild[]>([]);
+  const [children, setChildren] = useState<EditChild[]>([]);
+  const [unowned, setUnowned] = useState<FamilyRoutine[]>([]);
   const [maxDriveMinutes, setMaxDriveMinutes] = useState(30);
   const [budgetTier, setBudgetTier] = useState<FamilyProfile['budgetTier']>('moderate');
   const [vehicle, setVehicle] = useState('');
   const [pushchair, setPushchair] = useState('');
   const [travelCot, setTravelCot] = useState('');
   const [memberships, setMemberships] = useState('');
-  const [routines, setRoutines] = useState<FamilyRoutine[]>([]);
   const [mustHaveFacilities, setMustHaveFacilities] = useState<FacilityType[]>([]);
   const [resolvingHome, setResolvingHome] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -86,16 +114,12 @@ export default function EditProfileScreen() {
     setPushchair(profile.pushchair ?? '');
     setTravelCot(profile.travelCot ?? '');
     setMemberships((profile.memberships ?? []).join(', '));
-    setRoutines(profile.routines ?? []);
+    setUnowned((profile.routines ?? []).filter((r) => !r.childId));
     setMustHaveFacilities(profile.mustHaveFacilities ?? []);
     setChildren(
       profile.members
         .filter((m) => m.role === 'child')
-        .map((m) =>
-          m.age === 0 && m.ageMonths != null
-            ? { id: m.id, name: m.name, age: String(m.ageMonths), ageUnit: 'months' as const }
-            : { id: m.id, name: m.name, age: String(m.age), ageUnit: 'years' as const },
-        ),
+        .map((m) => editChildFromMember(m, profile.routines)),
     );
   }, [profile]);
 
@@ -110,25 +134,14 @@ export default function EditProfileScreen() {
     if (!parentName.trim()) nextErrors.parentName = 'Please enter your first name';
     if (!homeLocation.trim()) nextErrors.homeLocation = 'Please enter your home area';
 
-    const validChildren = children.filter((c) => c.name.trim() && c.age.trim());
-    if (validChildren.length === 0) {
+    if (children.length === 0) {
       nextErrors.children = 'Add at least one child';
     } else {
       for (const child of children) {
-        if (child.name.trim() && !child.age.trim()) {
-          nextErrors.children = 'Please enter an age for each child';
+        const problem = editChildProblem(child, new Date());
+        if (problem) {
+          nextErrors.children = problem === 'Please add a name' ? problem : 'Please check the date of birth';
           break;
-        }
-        if (child.age.trim()) {
-          const age = Number(child.age);
-          const max = maxForUnit(child.ageUnit);
-          if (Number.isNaN(age) || age < 0 || age > max) {
-            nextErrors.children =
-              child.ageUnit === 'months'
-                ? 'Months should be between 0 and 11'
-                : 'Age should be between 0 and 17';
-            break;
-          }
         }
       }
     }
@@ -162,18 +175,9 @@ export default function EditProfileScreen() {
       }
     }
 
-    const childMembers: FamilyMember[] = children
-      .filter((c) => c.name.trim() && c.age.trim())
-      .map((c) =>
-        createChildMember(
-          c.name,
-          c.ageUnit === 'months' ? 0 : Number(c.age),
-          c.ageUnit === 'months' ? Number(c.age) : null,
-        ),
-      );
-
     const parentMember =
       profile.members.find((m) => m.role === 'parent') ?? createParentMember(parentName);
+    const applied = applyEditedChildren(profile, children, unowned);
 
     await updateProfile.mutateAsync({
       parentName: parentName.trim(),
@@ -189,57 +193,32 @@ export default function EditProfileScreen() {
         .split(',')
         .map((m) => m.trim())
         .filter(Boolean),
-      routines,
+      routines: applied.routines,
       mustHaveFacilities,
-      members: [{ ...parentMember, name: parentName.trim() }, ...childMembers],
+      members: [{ ...parentMember, name: parentName.trim() }, ...applied.members],
     });
 
     handleBack();
   };
 
   const addChild = () => {
-    setChildren((prev) => [...prev, { id: `child-${Date.now()}`, name: '', age: '', ageUnit: 'years' }]);
+    setChildren((prev) => [...prev, { ...blankChild(), legacy: null }]);
   };
 
-  const updateChild = (id: string, field: 'name' | 'age', value: string) => {
-    setChildren((prev) => prev.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
+  const updateChild = (id: string, patch: Partial<EditChild>) => {
+    setChildren((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
   };
 
-  const updateChildUnit = (id: string, ageUnit: AgeUnit) => {
-    setChildren((prev) => prev.map((c) => (c.id === id ? { ...c, ageUnit } : c)));
+  const removeChild = (id: string, name: string) => {
+    confirmRemove(name, () => setChildren((prev) => prev.filter((c) => c.id !== id)));
   };
 
-  const removeChild = (id: string) => {
-    Alert.alert('Remove child?', 'This will update your recommendations.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => setChildren((prev) => prev.filter((c) => c.id !== id)),
-      },
-    ]);
+  const updateUnowned = (id: string, patch: Partial<FamilyRoutine>) => {
+    setUnowned((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   };
 
-  const addRoutine = (kind: FamilyRoutine['kind']) => {
-    setRoutines((prev) => [
-      ...prev,
-      {
-        id: `routine-${Date.now()}`,
-        label: '',
-        kind,
-        time: kind === 'nap' ? '13:00' : '12:00',
-        durationMinutes: 60,
-        atHome: true,
-      },
-    ]);
-  };
-
-  const updateRoutine = (id: string, patch: Partial<FamilyRoutine>) => {
-    setRoutines((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-  };
-
-  const removeRoutine = (id: string) => {
-    setRoutines((prev) => prev.filter((r) => r.id !== id));
+  const removeUnowned = (id: string) => {
+    setUnowned((prev) => prev.filter((r) => r.id !== id));
   };
 
   const toggleMustHave = (facility: FacilityType) => {
@@ -315,45 +294,132 @@ export default function EditProfileScreen() {
         <Text variant="heading3" style={styles.sectionTitle}>
           Children
         </Text>
-        {children.map((child, index) => (
-          <View key={child.id} style={styles.childBlock}>
-            <View style={styles.childHeader}>
-              <Text variant="label" color={colors.text.secondary}>
-                Child {index + 1}
-              </Text>
-              <Pressable onPress={() => removeChild(child.id)} accessibilityRole="button" hitSlop={14}>
+        {children.map((child, index) => {
+          const now = new Date();
+          const age = ageOf(child, now);
+          const typed = draftAge(child, now);
+          const questions = age ? questionsFor(age.totalMonths) : null;
+          const name = child.name.trim();
+          const message = draftDobMessage(child, now);
+          const legacyLabel = child.legacy
+            ? child.legacy.age === 0 && child.legacy.ageMonths != null
+              ? `${child.legacy.ageMonths} month${child.legacy.ageMonths === 1 ? '' : 's'}`
+              : `${child.legacy.age} year${child.legacy.age === 1 ? '' : 's'}`
+            : null;
+          return (
+            <ChildSection
+              key={child.id}
+              name={child.name}
+              ageLabel={typed ? describeAge(typed) : legacyLabel}
+            >
+              <View>
+                <TextField
+                  label="Name"
+                  value={child.name}
+                  onChangeText={(value) => updateChild(child.id, { name: value })}
+                  autoCapitalize="words"
+                />
+                <DobField
+                  day={child.day}
+                  month={child.month}
+                  year={child.year}
+                  childName={child.name}
+                  onChange={(dob) => updateChild(child.id, dob)}
+                  message={message}
+                  ageLabel={typed ? describeAge(typed) : null}
+                  hint={
+                    child.legacy
+                      ? `${name ? `Add ${name}’s birthday` : 'Add their birthday'} and their age keeps itself up to date`
+                      : undefined
+                  }
+                />
+              </View>
+              {questions ? (
+                <MobilityPicker
+                  name={child.name}
+                  options={questions.mobilityOptions}
+                  value={child.mobility}
+                  onChange={(mobility) => updateChild(child.id, { mobility })}
+                />
+              ) : null}
+              {questions?.asksNaps ? (
+                <NapEditor
+                  name={child.name}
+                  naps={child.naps}
+                  onChange={(naps) => updateChild(child.id, { naps })}
+                />
+              ) : null}
+              {questions?.asksFeeds && age ? (
+                <FeedEditor
+                  name={child.name}
+                  noun={feedNoun({ age: age.years, ageMonths: age.years === 0 ? age.months : null })}
+                  draft={child}
+                  onChange={(patch) => updateChild(child.id, patch)}
+                />
+              ) : null}
+              <Pressable
+                onPress={() => removeChild(child.id, child.name)}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${name || `child ${index + 1}`}`}
+                hitSlop={14}
+                style={styles.removeChild}
+              >
                 <Text variant="caption" color={colors.error[500]}>
-                  Remove
+                  Remove {name || 'this child'}
                 </Text>
               </Pressable>
-            </View>
-            <TextField
-              label="Name"
-              value={child.name}
-              onChangeText={(value) => updateChild(child.id, 'name', value)}
-              autoCapitalize="words"
-            />
-            <AgeInput
-              value={child.age}
-              unit={child.ageUnit}
-              onChangeValue={(value) => updateChild(child.id, 'age', value)}
-              onChangeUnit={(unit) => updateChildUnit(child.id, unit)}
-            />
-          </View>
-        ))}
+            </ChildSection>
+          );
+        })}
         {errors.children ? (
           <Text variant="caption" color={colors.error[500]} style={styles.errorText}>
             {errors.children}
           </Text>
         ) : null}
-        <Pressable onPress={addChild} style={styles.addChild} accessibilityRole="button">
-          <Text variant="link" style={styles.addChildLabel}>
-            + Add another child
-          </Text>
-        </Pressable>
+        {children.length < MAX_CHILDREN ? (
+          <Pressable onPress={addChild} style={styles.addChild} accessibilityRole="button">
+            <Text variant="link" style={styles.addChildLabel}>
+              + Add another child
+            </Text>
+          </Pressable>
+        ) : null}
+
+        {unowned.length > 0 ? (
+          <View>
+            <Text variant="heading3" style={styles.sectionTitle}>
+              Other naps and feeds
+            </Text>
+            <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+              Saved before naps and feeds belonged to a child. They still count. Remove any that no
+              longer apply.
+            </Text>
+            {unowned.map((routine) => (
+              <View key={routine.id} style={styles.childBlock}>
+                <View style={styles.childHeader}>
+                  <Text variant="label" color={colors.text.secondary}>
+                    {routine.label?.trim() || (routine.kind === 'nap' ? 'Nap' : 'Feed')}
+                  </Text>
+                  <Pressable onPress={() => removeUnowned(routine.id)} accessibilityRole="button" hitSlop={14}>
+                    <Text variant="caption" color={colors.error[500]}>
+                      Remove
+                    </Text>
+                  </Pressable>
+                </View>
+                <TimeField
+                  label="Usual time"
+                  value={routine.time}
+                  onChange={(time) => updateUnowned(routine.id, { time })}
+                />
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         <Text variant="heading3" style={styles.sectionTitle}>
-          Preferences
+          Day-out defaults
+        </Text>
+        <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+          Starting points only. Change the drive time for a single day from Home or Explore.
         </Text>
         <Text variant="label" color={colors.text.secondary} style={styles.groupLabel}>
           Maximum drive time
@@ -386,58 +452,6 @@ export default function EditProfileScreen() {
         </View>
 
         <Text variant="heading3" style={styles.sectionTitle}>
-          Usual feeds and naps
-        </Text>
-        <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
-          Lets us flag a recommendation that would run into nap time. You can still adjust times for a
-          specific day when you plan one.
-        </Text>
-        {routines.map((routine) => (
-          <View key={routine.id} style={styles.childBlock}>
-            <View style={styles.childHeader}>
-              <View style={styles.chipRow}>
-                {(['nap', 'feed'] as const).map((kind) => (
-                  <Chip
-                    key={kind}
-                    label={kind === 'nap' ? 'Nap' : 'Feed'}
-                    active={routine.kind === kind}
-                    onPress={() => updateRoutine(routine.id, { kind })}
-                  />
-                ))}
-              </View>
-              <Pressable onPress={() => removeRoutine(routine.id)} accessibilityRole="button" hitSlop={14}>
-                <Text variant="caption" color={colors.error[500]}>
-                  Remove
-                </Text>
-              </Pressable>
-            </View>
-            <TextField
-              label="Label (optional)"
-              value={routine.label}
-              onChangeText={(value) => updateRoutine(routine.id, { label: value })}
-              placeholder={routine.kind === 'nap' ? 'e.g. Afternoon nap' : 'e.g. Lunch feed'}
-            />
-            <TimeField
-              label="Usual time"
-              value={routine.time}
-              onChange={(time) => updateRoutine(routine.id, { time })}
-            />
-          </View>
-        ))}
-        <View style={styles.chipRow}>
-          <Pressable onPress={() => addRoutine('nap')} style={styles.addChild} accessibilityRole="button">
-            <Text variant="link" style={styles.addChildLabel}>
-              + Add a nap
-            </Text>
-          </Pressable>
-          <Pressable onPress={() => addRoutine('feed')} style={styles.addChild} accessibilityRole="button">
-            <Text variant="link" style={styles.addChildLabel}>
-              + Add a feed
-            </Text>
-          </Pressable>
-        </View>
-
-        <Text variant="heading3" style={styles.sectionTitle}>
           Must-have facilities
         </Text>
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
@@ -466,10 +480,11 @@ export default function EditProfileScreen() {
           hint="Unlocks Car Fit recommendations"
         />
         <TextField
-          label="Pushchair"
+          label="Pushchair make and model"
           value={pushchair}
           onChangeText={setPushchair}
           placeholder="e.g. Bugaboo Butterfly"
+          hint="Optional. For packing and travel tips. How each child gets around is set under Children."
         />
         <TextField
           label="Travel cot"
@@ -546,6 +561,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.lg,
+  },
+  removeChild: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignSelf: 'flex-start',
   },
   errorText: {
     marginBottom: spacing.md,

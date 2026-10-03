@@ -8,7 +8,7 @@ import { createEmptyProfile } from '@/src/utils/profile-defaults';
 /**
  * A long drive is a caution, not a reason the place suits the family.
  *
- * Found by rendering Venue Detail: "Further than your usual 30 min drive" sat under "Why it suits
+ * Found by rendering Venue Detail: "Further than the 30 min drive we’re using" sat under "Why it suits
  * your family" with a green tick, because family-score pushed it into `explanation`. These pin where
  * it lives now -- in the cautions that render under "Good to know" -- and that it is gone from the
  * reasons.
@@ -29,18 +29,18 @@ describe('a drive beyond the family limit', () => {
   it('is no longer listed as a reason the place suits the family', () => {
     const personalised = personaliseVenue(venueAt(45), profile(30));
     for (const line of personalised.familyScore.explanation) {
-      expect(line, `"${line}" is a caution and must not be a reason`).not.toMatch(/further than your usual/i);
+      expect(line, `"${line}" is a caution and must not be a reason`).not.toMatch(/further than the \d+ min drive/i);
     }
   });
 
   it('is raised as a caution instead, where the other cautions go', () => {
     const personalised = personaliseVenue(venueAt(45), profile(30));
-    expect(personalised.familyScore.cautions ?? []).toContain('Further than your usual 30 min drive');
+    expect(personalised.familyScore.cautions ?? []).toContain('Further than the 30 min drive we’re using');
   });
 
   it('is not raised when the drive is within the limit', () => {
     const personalised = personaliseVenue(venueAt(20), profile(30));
-    expect((personalised.familyScore.cautions ?? []).join(' ')).not.toMatch(/further than your usual/i);
+    expect((personalised.familyScore.cautions ?? []).join(' ')).not.toMatch(/further than the \d+ min drive/i);
     expect(buildDriveCaution(profile(30), 20)).toBeNull();
     expect(buildDriveCaution(profile(30), 30)).toBeNull();
   });
@@ -50,12 +50,12 @@ describe('a drive beyond the family limit', () => {
     // about an unknown distance would be a second fabricated fact beside the first one it replaced.
     expect(buildDriveCaution(profile(30), Number.NaN)).toBeNull();
     const personalised = personaliseVenue(venueAt(Number.NaN), profile(30));
-    expect((personalised.familyScore.cautions ?? []).join(' ')).not.toMatch(/further than your usual/i);
+    expect((personalised.familyScore.cautions ?? []).join(' ')).not.toMatch(/further than the \d+ min drive/i);
   });
 
   it('comes first among the cautions, because it is the one a parent can act on before leaving', () => {
     const personalised = personaliseVenue(venueAt(45), profile(30));
     const cautions = personalised.familyScore.cautions ?? [];
-    expect(cautions[0]).toBe('Further than your usual 30 min drive');
+    expect(cautions[0]).toBe('Further than the 30 min drive we’re using');
   });
 });

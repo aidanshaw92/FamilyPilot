@@ -9,6 +9,7 @@ import {
 
 import { getDriveMinutesFromActivity } from '@/src/data/mock-restaurants';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
+import { budgetFitReason } from '@/src/utils/budget-copy';
 import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 
 const WEIGHTS = {
@@ -110,7 +111,7 @@ function buildRestaurantExplanation(
 
   const spend = restaurant.estimatedFamilySpend ?? restaurant.estimatedSpend;
   if (scoreBudget(spend, profile.budgetTier) >= 85) {
-    reasons.push('Within your usual budget');
+    reasons.push(budgetFitReason(profile.budgetTier));
   }
 
   if (isConfirmed(f.outdoorSeating)) reasons.push('Outdoor seating');

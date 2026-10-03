@@ -236,7 +236,7 @@ describe('negative reviewed facts are cautions, never reasons', () => {
     );
     const cautions = venue.familyScore.cautions ?? [];
     expect(cautions.filter((line) => line === 'Pushchair access reviewed as difficult')).toHaveLength(1);
-    expect(cautions.indexOf('Further than your usual 30 min drive')).toBeLessThan(cautions.indexOf('Pushchair access reviewed as difficult'));
+    expect(cautions.indexOf('Further than the 30 min drive we’re using')).toBeLessThan(cautions.indexOf('Pushchair access reviewed as difficult'));
     expect(venue.goodToKnow).toEqual(['Cafe closes at 3pm']);
     expect(cautions).not.toContain('Cafe closes at 3pm');
     expect(venue.familyScore.explanation.join('\n')).not.toMatch(/difficult/i);
