@@ -39,6 +39,11 @@ on:
         type: boolean
         required: false
         default: false
+      verify_cache_headers:
+        description: Verify the food cache fixes against the deployment (costs ONE Overpass query)
+        type: boolean
+        required: false
+        default: false
 
 # The target is an input now, so no deployments/statuses read is needed.
 permissions:
@@ -170,6 +175,45 @@ jobs:
           set -euo pipefail
           cd familypilot
           node scripts/canary-routes-live.mjs /tmp/routes-response.json /tmp/target-status.json
+
+      # ONE Overpass query, zero Google. Proves the deployed build -- not the unit tests -- stops the edge
+      # replaying a cache miss, and still lets it replay a hit.
+      #
+      # The cache key rounds the radius to whole kilometres, so asking a known anchor at an unused radius
+      # is a genuinely cold key without inventing a place. Gladstone Park is the SPARSEST of the five
+      # Section 16 anchors (8 candidates, 9.4s) so this is the cheapest cold lookup available, and the
+      # second request must be served from the store rather than from Overpass.
+      - name: Verify the food cache fixes against the deployment
+        if: ${{ inputs.verify_cache_headers }}
+        env:
+          TARGET: ${{ steps.target.outputs.url }}
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          set -euo pipefail
+          # radiusM=2000 rounds to 2km, which no Section 16 run has used: all five used the 1200m default.
+          endpoint="${TARGET}/api/places/search?intent=nearby-food&lat=51.5574&lng=-0.236&placeId=fp-google-ChIJ99IK4v8QdkgRZNGsdKK0pb8&radiusM=2000"
+
+          auth=()
+          if [ -n "${BYPASS:-}" ]; then
+            auth+=(-H "x-vercel-protection-bypass: ${BYPASS}" -H "x-vercel-set-bypass-cookie: true")
+          fi
+
+          echo "cold request: $endpoint"
+          curl -sS "${auth[@]}" -L --max-redirs 5 -c /tmp/fc-cookies -b /tmp/fc-cookies \
+            -D /tmp/food-miss.h -o /tmp/food-miss.json -w 'status %{http_code} in %{time_total}s\n' \
+            --max-time 60 "$endpoint"
+
+          # Long enough that the store write has certainly landed, short enough to stay inside the window.
+          sleep 5
+
+          echo "repeat request, same key"
+          curl -sS "${auth[@]}" -L --max-redirs 5 -c /tmp/fc-cookies -b /tmp/fc-cookies \
+            -D /tmp/food-hit.h -o /tmp/food-hit.json -w 'status %{http_code} in %{time_total}s\n' \
+            --max-time 60 "$endpoint"
+
+          cd familypilot
+          node scripts/verify-food-cache-headers.mjs \
+            /tmp/food-miss.h /tmp/food-miss.json /tmp/food-hit.h /tmp/food-hit.json
 
       - uses: actions/upload-artifact@v4
         if: always()
