@@ -41,10 +41,6 @@ function DecisionCardComponent({
 
   if (variant === 'list') {
     const classification = getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
-    // Same shortening rule as FamilyMatch's badge: "Great match" -> "Great", but leave
-    // "Potential match" alone for unreviewed venues (there's no score behind it to shorten to).
-    const pillLabel =
-      venue.enrichmentStatus === 'provider_only' ? classification : classification.replace(' match', '');
     // Two concrete facts read as bespoke; one alone can look like a generic template repeated
     // across every card, so combine the two most relevant reasons where there's a second one.
     // (A third was tried and tested worse: numberOfLines={2} below just truncates it with an
@@ -67,16 +63,12 @@ function DecisionCardComponent({
           borderRadius={0}
         />
         <View style={styles.compactContent}>
-          <View style={styles.compactTitleRow}>
-            <Text variant="heading3" numberOfLines={2} style={styles.compactTitle}>
-              {venue.name}
-            </Text>
-            <View style={styles.matchPill}>
-              <Text variant="caption" style={styles.matchPillText}>
-                {pillLabel}
-              </Text>
-            </View>
-          </View>
+          <Text variant="heading3" numberOfLines={2}>
+            {venue.name}
+          </Text>
+          {/* The same badge as Home and Venue Detail, under the title rather than beside it: beside,
+              it forced "Kettleford Play House" to truncate at 360 wide. */}
+          <FamilyMatch score={venue.familyScore.score} enrichmentStatus={venue.enrichmentStatus} />
           {reason ? (
             <Text variant="bodySmall" color={colors.text.primary} numberOfLines={2} style={styles.compactReason}>
               {reason}
@@ -86,7 +78,7 @@ function DecisionCardComponent({
             {venue.category.replace('_', ' ')} · {travelTimeLabel(venue.driveMinutes, 'estimated')}
             {venue.estimatedSpend ? ` · ${venue.estimatedSpend}` : ''}
           </Text>
-          <Text variant="caption" color={colors.primary[600]} style={styles.compactCta}>
+          <Text variant="link" style={styles.compactCta}>
             {venue.enrichmentStatus === 'provider_only' ? 'Family details to check' : 'View family details'} →
           </Text>
         </View>
@@ -124,8 +116,8 @@ function DecisionCardComponent({
           <View style={styles.badgeOverlay}>
             <FamilyMatch
               score={venue.familyScore.score}
-              variant="card"
               enrichmentStatus={venue.enrichmentStatus}
+              tone="onImage"
             />
           </View>
           {isHero ? (
@@ -179,26 +171,6 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
     padding: spacing.md,
-  },
-  compactTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-  },
-  compactTitle: {
-    flex: 1,
-  },
-  matchPill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-    backgroundColor: colors.secondary[50],
-    borderWidth: 1,
-    borderColor: colors.secondary[100],
-  },
-  matchPillText: {
-    color: colors.secondary[600],
-    fontFamily: 'Inter_600SemiBold',
   },
   compactReason: {
     lineHeight: 18,

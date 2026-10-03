@@ -44,7 +44,7 @@ export function StoreCard({ store }: StoreCardProps) {
         <View
           style={[
             styles.brandDot,
-            { backgroundColor: BRAND_COLORS[store.brand] ?? colors.primary[500] },
+            { backgroundColor: BRAND_COLORS[store.brand] ?? colors.ink },
           ]}
         />
         <View style={styles.info}>

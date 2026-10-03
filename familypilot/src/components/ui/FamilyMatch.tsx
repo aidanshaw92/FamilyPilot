@@ -1,121 +1,100 @@
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 
-import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
+import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { EnrichmentStatus } from '@/src/types';
-import { getMatchClassification } from '@/src/utils/family-match-classification';
+import { describeFamilyMatch } from '@/src/utils/family-match-scale';
 
-import { formatFamilyMatchSecondary } from './family-match-label';
 import { Text } from './Text';
 
 interface FamilyMatchProps {
   score: number;
-  variant?: 'compact' | 'card' | 'detail';
-  style?: ViewStyle;
   enrichmentStatus?: EnrichmentStatus;
+  /** onLight sits on a white card or sheet; onImage sits over photography. */
+  tone?: 'onLight' | 'onImage';
+  /** Opens an explanation. The badge grows an info glyph so the affordance is visible. */
+  onPress?: () => void;
+  style?: ViewStyle;
 }
 
 /**
- * Human-readable Family Match — classification leads, numeric score is secondary.
+ * The one Family Match badge, from the approved Home frame's "★ 4.0" chip (node 8:13), reframed as
+ * how well a place fits THIS family. Home, Explore, Saved, Venue Detail and the plan all render this
+ * same component so the number a parent sees on a card is the number they see one tap later.
+ *
+ * Kept honest: an unreviewed place shows a status and no number; an unknown score shows nothing.
+ * The scale and every string live in `family-match-scale.ts`.
  */
-export function FamilyMatch({ score, variant = 'compact', style, enrichmentStatus }: FamilyMatchProps) {
-  const classification = getMatchClassification(score, enrichmentStatus);
-  const secondary = formatFamilyMatchSecondary(score, enrichmentStatus);
+export function FamilyMatch({
+  score,
+  enrichmentStatus,
+  tone = 'onLight',
+  onPress,
+  style,
+}: FamilyMatchProps) {
+  const match = describeFamilyMatch(score, enrichmentStatus);
+  // Unknown is unknown: a badge with no number and no status would be a verdict in disguise.
+  if (!match.unreviewed && match.number === null) return null;
 
-  const displayLabel =
-    enrichmentStatus === 'provider_only'
-      ? classification
-      : classification.replace(' match', '');
+  const onImage = tone === 'onImage';
+  const ink = onImage ? colors.text.inverse : colors.ink;
+  const content = (
+    <View
+      style={[styles.badge, onImage ? styles.onImage : styles.onLight, style]}
+      accessibilityRole={onPress ? undefined : 'text'}
+      accessibilityLabel={match.spoken}
+    >
+      {match.number !== null ? <Ionicons name="star" size={14} color={ink} /> : null}
+      <Text variant="caption" color={ink} style={styles.label} numberOfLines={1}>
+        {match.badgeLabel}
+      </Text>
+      {onPress ? (
+        <Ionicons
+          name="information-circle-outline"
+          size={14}
+          color={onImage ? colors.text.inverse : colors.text.tertiary}
+        />
+      ) : null}
+    </View>
+  );
 
-  if (variant === 'compact') {
-    return (
-      <View
-        style={[styles.compact, style]}
-        accessibilityRole="text"
-        accessibilityLabel={`${classification}, ${secondary}`}
-      >
-        <Text variant="caption" color={colors.secondary[600]} style={styles.compactPrimary}>
-          {displayLabel}
-        </Text>
-      </View>
-    );
-  }
-
-  if (variant === 'card') {
-    return (
-      <View
-        style={[styles.card, style]}
-        accessibilityRole="text"
-        accessibilityLabel={classification}
-      >
-        <Text variant="caption" color={colors.secondary[600]} style={styles.cardPrimary}>
-          {displayLabel}
-        </Text>
-      </View>
-    );
-  }
+  if (!onPress) return content;
 
   return (
-    <View
-      style={[styles.detail, style]}
-      accessibilityRole="text"
-      accessibilityLabel={`${classification}, ${secondary}`}
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${match.spoken}. Explain this score`}
+      hitSlop={6}
     >
-      <Text variant="bodySmall" color={colors.secondary[600]} style={styles.detailPrimary}>
-        {classification}
-      </Text>
-      <Text variant="caption" color={colors.text.tertiary} style={styles.detailSecondary}>
-        {secondary}
-      </Text>
-    </View>
+      {content}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  compact: {
-    backgroundColor: colors.secondary[50],
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.secondary[100],
-    minHeight: 32,
-    justifyContent: 'center',
+  badge: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  compactPrimary: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
-  },
-  card: {
-    // rgba, not colors.surface + opacity: View opacity would fade the label text too.
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    // Frame node 8:13: 32 tall, 12 in on the left, 14 on the right, 6 between star and label.
+    gap: 6,
+    paddingLeft: spacing.md,
+    paddingRight: 14,
+    height: 32,
     borderRadius: radius.full,
-    maxWidth: 160,
+    alignSelf: 'flex-start',
   },
-  cardPrimary: {
-    fontFamily: 'Inter_600SemiBold',
-    lineHeight: 16,
-  },
-  detail: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.lg,
+  onLight: {
     backgroundColor: colors.surface,
-    alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.secondary[100],
-    ...shadows.card,
-    minWidth: 120,
+    borderColor: colors.border,
   },
-  detailPrimary: {
-    fontFamily: 'Inter_600SemiBold',
-    textAlign: 'center',
+  onImage: {
+    backgroundColor: 'rgba(13, 13, 15, 0.45)',
   },
-  detailSecondary: {
-    marginTop: 4,
-    textAlign: 'center',
-    fontSize: 11,
+  label: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    lineHeight: 17,
   },
 });

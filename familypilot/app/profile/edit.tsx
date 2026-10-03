@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AgeInput, AgeUnit } from '@/src/components/profile/AgeInput';
 import { TextField } from '@/src/components/profile/TextField';
 import { BackButton } from '@/src/components/ui/BackButton';
-import { Button, Chip, EmptyState, Text, TimeField } from '@/src/components/ui';
+import { Button, Chip, EmptyState, Text, TimeField, CHIP_GAP } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useUpdateFamilyProfile } from '@/src/hooks/use-queries';
 import { resolveUkLocation } from '@/src/services/location/location-client';
@@ -344,7 +344,7 @@ export default function EditProfileScreen() {
           </Text>
         ) : null}
         <Pressable onPress={addChild} style={styles.addChild} accessibilityRole="button">
-          <Text variant="body" color={colors.primary[500]}>
+          <Text variant="link" style={styles.addChildLabel}>
             + Add another child
           </Text>
         </Pressable>
@@ -380,7 +380,7 @@ export default function EditProfileScreen() {
             >
               <Text
                 variant="body"
-                color={budgetTier === option.id ? colors.primary[600] : colors.text.primary}
+                color={colors.ink}
               >
                 {option.label}
               </Text>
@@ -429,12 +429,12 @@ export default function EditProfileScreen() {
         ))}
         <View style={styles.chipRow}>
           <Pressable onPress={() => addRoutine('nap')} style={styles.addChild} accessibilityRole="button">
-            <Text variant="body" color={colors.primary[500]}>
+            <Text variant="link" style={styles.addChildLabel}>
               + Add a nap
             </Text>
           </Pressable>
           <Pressable onPress={() => addRoutine('feed')} style={styles.addChild} accessibilityRole="button">
-            <Text variant="body" color={colors.primary[500]}>
+            <Text variant="link" style={styles.addChildLabel}>
               + Add a feed
             </Text>
           </Pressable>
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: CHIP_GAP,
     marginBottom: spacing.xl,
   },
   chipColumn: {
@@ -574,8 +574,12 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   budgetOptionActive: {
-    borderColor: colors.primary[500],
-    backgroundColor: colors.primary[50],
+    borderColor: colors.ink,
+    backgroundColor: colors.fill,
+  },
+  addChildLabel: {
+    fontSize: 16,
+    lineHeight: 24,
   },
   footer: {
     position: 'absolute',

@@ -26,6 +26,7 @@ import {
   Skeleton,
   Text,
   VenueImage,
+  FamilyMatch,
 } from '@/src/components/ui';
 import { BackButton } from '@/src/components/ui/BackButton';
 import { FadeInView } from '@/src/components/ui/FadeInView';
@@ -245,7 +246,7 @@ function RestaurantScreenContent() {
           <FadeInView>
             {activityVenue && restaurant.driveMinutesFromActivity !== undefined ? (
               <View style={styles.contextBanner}>
-                <Ionicons name="location-outline" size={18} color={colors.primary[500]} />
+                <Ionicons name="location-outline" size={18} color={colors.text.secondary} />
                 <View style={styles.contextText}>
                   <Text variant="bodySmall" style={styles.contextPrimary}>
                     {travelTimeLabel(restaurant.driveMinutesFromActivity, 'estimated')} from{' '}
@@ -260,13 +261,11 @@ function RestaurantScreenContent() {
               Family suitability
             </Text>
             <View style={styles.scoreBand}>
-              <Text variant="scoreDisplay" color={colors.primary[700]}>
-                {restaurant.familyScore.score}
-              </Text>
               <View style={styles.scoreBandText}>
                 <Text variant="heading3">{getMatchClassification(restaurant.familyScore.score, restaurant.enrichmentStatus)}</Text>
-                <Text variant="bodySmall" color={colors.text.secondary}>Family Score for your household</Text>
+                <Text variant="bodySmall" color={colors.text.secondary}>How well it fits your household</Text>
               </View>
+              <FamilyMatch score={restaurant.familyScore.score} enrichmentStatus={restaurant.enrichmentStatus} />
             </View>
             <RecommendationPattern venue={restaurant} variant="detail" showTrust showClassification={false} />
 
@@ -384,7 +383,7 @@ function ConsiderationRow({
       <Ionicons
         name={icon}
         size={18}
-        color={caution ? colors.warning[600] : colors.primary[500]}
+        color={caution ? colors.warning[600] : colors.text.secondary}
       />
       <Text
         variant="bodySmall"
@@ -400,8 +399,7 @@ function ConsiderationRow({
 function PressableLink({ label, onPress }: { label: string; onPress: () => void }) {
   return (
     <Text
-      variant="bodySmall"
-      color={colors.primary[500]}
+      variant="link"
       onPress={onPress}
       accessibilityRole="link"
       style={styles.contextLink}
@@ -477,7 +475,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.fill,
     padding: spacing.lg,
     borderRadius: radius.lg,
     marginBottom: spacing.lg,
@@ -502,7 +500,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.lg,
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.fill,
     borderRadius: radius.xl,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,

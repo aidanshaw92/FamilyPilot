@@ -125,7 +125,7 @@ export function CheckTodaySection({ facts, latitude, longitude }: CheckTodaySect
 
       {state.status === 'no_families' ? (
         <View style={styles.card}>
-          <Ionicons name="calendar-outline" size={20} color={colors.primary[500]} />
+          <Ionicons name="calendar-outline" size={20} color={colors.text.secondary} />
           <Text variant="bodySmall" color={colors.text.secondary} style={styles.text}>
             Add your family's nap and feed routine in Plans to check whether a visit fits around
             it right now.
@@ -135,7 +135,7 @@ export function CheckTodaySection({ facts, latitude, longitude }: CheckTodaySect
 
       {state.status === 'loading' ? (
         <View style={styles.card}>
-          <Ionicons name="time-outline" size={20} color={colors.primary[500]} />
+          <Ionicons name="time-outline" size={20} color={colors.text.secondary} />
           <Text variant="bodySmall" color={colors.text.secondary} style={styles.text}>
             Checking against your family's routines…
           </Text>

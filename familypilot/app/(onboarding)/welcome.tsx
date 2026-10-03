@@ -25,7 +25,7 @@ export default function WelcomeScreen() {
 
   return (
     <LinearGradient
-      colors={[colors.background, colors.primary[50], colors.background]}
+      colors={[colors.background, colors.fill, colors.background]}
       style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
     >
       <View style={styles.brandRow}>
@@ -53,7 +53,7 @@ export default function WelcomeScreen() {
           {visibleBenefits.map((benefit) => (
             <View key={benefit.label} style={styles.benefitRow}>
               <View style={styles.benefitIconWrap}>
-                <Ionicons name={benefit.icon} size={18} color={colors.primary[600]} />
+                <Ionicons name={benefit.icon} size={18} color={colors.ink} />
               </View>
               <Text variant="body" style={styles.benefitLabel}>
                 {benefit.label}
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.md,
-    backgroundColor: colors.primary[500],
+    backgroundColor: colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: radius.md,
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.fill,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -9,7 +9,7 @@ import { Venue } from '@/src/types';
 import { getMatchClassification, getEnrichmentTrustCopy } from '@/src/utils/family-match-classification';
 import { formatArrivalTime } from '@/src/utils/clock-format';
 
-import { formatFamilyMatchSecondary } from '../ui/family-match-label';
+import { describeFamilyMatch } from '@/src/utils/family-match-scale';
 import { travelTimeWithMode } from '@/src/utils/travel-time';
 
 export type RecommendationVariant = 'hero' | 'carousel' | 'list' | 'detail';
@@ -153,7 +153,7 @@ export function RecommendationPattern({
 
       {!isFocused ? (
         <Text variant="caption" color={colors.text.tertiary} style={styles.scoreSecondary}>
-          {formatFamilyMatchSecondary(venue.familyScore.score, venue.enrichmentStatus)}
+          {describeFamilyMatch(venue.familyScore.score, venue.enrichmentStatus).secondary}
         </Text>
       ) : null}
 

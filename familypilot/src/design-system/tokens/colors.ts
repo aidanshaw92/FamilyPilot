@@ -1,4 +1,20 @@
+/**
+ * The near-black the approved Home frame ("01 — Home") uses for ink, the selected pill, the avatar,
+ * the primary call to action and the floating navigation. It is the app's one accent: a control that
+ * needs emphasis goes near-black, not purple.
+ */
+const INK = '#141416';
+
 export const colors = {
+  /** Ink: text, selected controls, primary buttons. The same value as `text.primary` on purpose. */
+  ink: INK,
+  /** Quiet neutral fill for icon wells and information boxes that sit on a white card. */
+  fill: '#F0F0F3',
+  /**
+   * Legacy brand purple. Retired from consumer chrome in the UI phase (buttons, chips, links, tints
+   * and spinners are ink now); still referenced by the internal enrichment tools and the onboarding
+   * illustration. Do not introduce new consumer uses — `design-system-guard.test.ts` fails on them.
+   */
   primary: {
     50: '#EEECFD',
     100: '#DCD8FB',
@@ -38,9 +54,11 @@ export const colors = {
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
   text: {
-    primary: '#0A0A0D',
-    secondary: '#5C586E',
-    tertiary: '#8B87A0',
+    primary: INK,
+    /** Frame node 7:17 (the greeting's second line) and every secondary line on Home. */
+    secondary: '#6E6E73',
+    /** Neutral, not purple-tinted: captions sit beside ink and the greys above. */
+    tertiary: '#8E8E93',
     inverse: '#FFFFFF',
   },
   border: '#ECE9F2',

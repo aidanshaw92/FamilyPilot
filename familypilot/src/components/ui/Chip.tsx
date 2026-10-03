@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, ViewStyle } from 'react-native';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
@@ -10,23 +10,43 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { spring, timing } from '@/src/design-system/animations/presets';
-import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { colors, radius } from '@/src/design-system/tokens';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 
 import { Text } from './Text';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+/**
+ * From the approved frame "01 — Home" (node "Category pills"): 44pt chips, 20 of padding either
+ * side, 10 between, and an 18pt line box. The selected chip goes near-black; the idle one is plain
+ * white. This is the one selection pill in the app — the Home rail, Explore's categories, Saved's
+ * filters, the plan sheet's choices and the onboarding options all render it.
+ */
+export const CHIP_HEIGHT = 44;
+export const CHIP_PADDING_X = 20;
+export const CHIP_GAP = 10;
+const CHIP_FONT_SIZE = 14.5;
+const CHIP_LINE_HEIGHT = 18;
+
 interface ChipProps {
   label: string;
   active?: boolean;
   onPress?: () => void;
+  /**
+   * `plain` is the frame's rail pill: white with no outline, for the app background where white
+   * already separates it. `outlined` keeps a hairline when idle, for chips that sit on a white
+   * sheet or card and would otherwise vanish.
+   */
+  appearance?: 'plain' | 'outlined';
+  style?: ViewStyle;
 }
 
-export function Chip({ label, active = false, onPress }: ChipProps) {
+export function Chip({ label, active = false, onPress, appearance = 'outlined', style }: ChipProps) {
   const reducedMotion = useReducedMotion();
   const activeProgress = useSharedValue(active ? 1 : 0);
   const pressed = useSharedValue(1);
+  const idleBorder = appearance === 'outlined' ? colors.border : colors.surface;
 
   useEffect(() => {
     activeProgress.value = reducedMotion
@@ -42,8 +62,8 @@ export function Chip({ label, active = false, onPress }: ChipProps) {
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(activeProgress.value, [0, 1], [colors.surface, colors.primary[500]]),
-    borderColor: interpolateColor(activeProgress.value, [0, 1], [colors.border, colors.primary[600]]),
+    backgroundColor: interpolateColor(activeProgress.value, [0, 1], [colors.surface, colors.ink]),
+    borderColor: interpolateColor(activeProgress.value, [0, 1], [idleBorder, colors.ink]),
     transform: [{ scale: pressed.value }],
   }));
 
@@ -59,12 +79,12 @@ export function Chip({ label, active = false, onPress }: ChipProps) {
       onPressOut={() => {
         pressed.value = withSpring(1, spring.gentle);
       }}
-      style={[styles.chip, animatedStyle]}
+      style={[styles.chip, appearance === 'plain' && styles.plain, animatedStyle, style]}
     >
       <Text
         variant="bodySmall"
-        color={active ? colors.text.inverse : colors.text.secondary}
-        style={[styles.label, active && styles.activeLabel]}
+        color={active ? colors.text.inverse : colors.ink}
+        style={styles.label}
         numberOfLines={1}
       >
         {label}
@@ -75,19 +95,23 @@ export function Chip({ label, active = false, onPress }: ChipProps) {
 
 const styles = StyleSheet.create({
   chip: {
-    paddingHorizontal: spacing.lg,
-    minHeight: 44,
+    height: CHIP_HEIGHT,
+    paddingHorizontal: CHIP_PADDING_X,
+    alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.full,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    marginRight: spacing.sm,
+  },
+  // No hairline at all, not a white one: a border is inside the 44pt box, so even an invisible one
+  // moves the label a pixel and widens the frame's pills by two.
+  plain: {
+    borderWidth: 0,
   },
   label: {
     fontFamily: 'Inter_500Medium',
-  },
-  activeLabel: {
-    fontFamily: 'Inter_600SemiBold',
+    fontSize: CHIP_FONT_SIZE,
+    lineHeight: CHIP_LINE_HEIGHT,
   },
 });

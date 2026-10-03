@@ -62,7 +62,7 @@ const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   beach: 'sunny-outline',
 };
 
-const FALLBACK_GRADIENT: readonly [string, string] = [colors.primary[600], colors.primary[200]];
+const FALLBACK_GRADIENT: readonly [string, string] = [colors.midnight.start, colors.midnight.end];
 
 function categoryGradient(category?: string): readonly [string, string] {
   if (category && category in colors.categoryGradients) {

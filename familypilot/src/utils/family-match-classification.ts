@@ -2,7 +2,7 @@ import { EnrichmentStatus } from '@/src/types';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 
 export type MatchClassification =
-  | 'Potential match'
+  | 'Not yet reviewed'
   | 'Excellent match'
   | 'Great match'
   | 'Good match'
@@ -13,8 +13,9 @@ export function getMatchClassification(
   score: number,
   enrichmentStatus?: EnrichmentStatus,
 ): MatchClassification {
+  // One vocabulary with the badge: an unreviewed place is a status, not a "potential" verdict.
   if (isUnreviewedEnrichmentStatus(enrichmentStatus)) {
-    return 'Potential match';
+    return 'Not yet reviewed';
   }
   if (score >= 90) return 'Excellent match';
   if (score >= 80) return 'Great match';

@@ -28,6 +28,7 @@ import { ShareButton } from '@/src/components/shared/ShareButton';
 import {
   Button,
   EmptyState,
+  FamilyMatch,
   FamilyMatchPanel,
   Skeleton,
   Text,
@@ -255,13 +256,11 @@ export default function VenueScreen() {
               <Text variant="heading2">Will this work for your family?</Text>
             </View>
             <View style={styles.scoreBand}>
-              <Text variant="scoreDisplay" color={colors.primary[700]}>
-                {venue.familyScore.score}
-              </Text>
               <View style={styles.scoreBandText}>
                 <Text variant="heading3">{getMatchClassification(venue.familyScore.score, venue.enrichmentStatus)}</Text>
-                <Text variant="bodySmall" color={colors.text.secondary}>Family Score for your household</Text>
+                <Text variant="bodySmall" color={colors.text.secondary}>How well it fits your household</Text>
               </View>
+              <FamilyMatch score={venue.familyScore.score} enrichmentStatus={venue.enrichmentStatus} />
             </View>
             <FamilyMatchPanel familyScore={venue.familyScore} venue={venue} showClassification={false} />
 
@@ -424,7 +423,7 @@ function DetailItem({
 }) {
   return (
     <View style={styles.detailItem}>
-      <Ionicons name={icon} size={18} color={colors.primary[500]} />
+      <Ionicons name={icon} size={18} color={colors.text.secondary} />
       <View style={styles.detailText}>
         <Text variant="caption">{label}</Text>
         <Text variant="bodySmall" style={styles.detailValue}>
@@ -456,7 +455,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.lg,
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.fill,
     borderRadius: radius.xl,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,

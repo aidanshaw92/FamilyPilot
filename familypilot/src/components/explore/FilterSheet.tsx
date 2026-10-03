@@ -3,7 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Chip, Text } from '@/src/components/ui';
+import { Button, Chip, Text, CHIP_GAP } from '@/src/components/ui';
 import { timing } from '@/src/design-system/animations/presets';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
@@ -93,7 +93,7 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
             accessibilityRole="button"
             accessibilityLabel="Reset filters"
           >
-            <Text variant="bodySmall" color={colors.primary[500]}>
+            <Text variant="link">
               Reset
             </Text>
           </Pressable>
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   chipWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: CHIP_GAP,
     marginBottom: spacing.md,
   },
   applyButton: {

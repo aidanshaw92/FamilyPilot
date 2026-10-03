@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 
 import { CircleButton } from '@/src/components/ui/CircleButton';
-import { FamilyFitBadge } from '@/src/components/ui/FamilyFitBadge';
+import { FamilyMatch } from '@/src/components/ui/FamilyMatch';
 import { PressableScale } from '@/src/components/ui/PressableScale';
 import { Text } from '@/src/components/ui/Text';
 import { VenueImage } from '@/src/components/ui/VenueImage';
@@ -96,9 +96,9 @@ export function PlaceShowcaseCard({
           {venue.name}
         </Text>
 
-        {/* Frame: one meta row — the Family Fit badge with travel time beside it, not below. */}
+        {/* Frame: one meta row — the Family Match badge with travel time beside it, not below. */}
         <View style={[styles.footerText, styles.metaRow]}>
-          <FamilyFitBadge
+          <FamilyMatch
             score={venue.familyScore.score}
             enrichmentStatus={venue.enrichmentStatus}
             tone="onImage"

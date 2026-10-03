@@ -45,7 +45,7 @@ export function OfferCard({ offer }: OfferCardProps) {
             </Text>
             <Text variant="heading3">{offer.hotelName}</Text>
           </View>
-          <FamilyMatch score={offer.familyScore.score} variant="compact" />
+          <FamilyMatch score={offer.familyScore.score} />
         </View>
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.classification}>
           {classification}
@@ -75,14 +75,14 @@ const styles = StyleSheet.create({
   },
   recommendedCard: {
     borderWidth: 2,
-    borderColor: colors.primary[200],
+    borderColor: colors.ink,
   },
   recommendedBadge: {
     position: 'absolute',
     top: spacing.md,
     left: spacing.md,
     zIndex: 1,
-    backgroundColor: colors.primary[500],
+    backgroundColor: colors.ink,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.sm,

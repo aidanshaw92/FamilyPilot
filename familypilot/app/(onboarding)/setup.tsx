@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingShell } from '@/src/components/onboarding/OnboardingShell';
 import { AgeInput, AgeUnit } from '@/src/components/profile/AgeInput';
 import { TextField } from '@/src/components/profile/TextField';
-import { Button, Chip, Text, TimeField } from '@/src/components/ui';
+import { Button, Chip, Text, TimeField, CHIP_GAP } from '@/src/components/ui';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { resolveUkLocation, ResolvedLocation } from '@/src/services/location/location-client';
@@ -44,7 +44,7 @@ function maxForUnit(unit: AgeUnit): number {
 function StepIcon({ name }: { name: keyof typeof Ionicons.glyphMap }) {
   return (
     <LinearGradient
-      colors={[colors.primary[600], colors.primary[500]]}
+      colors={[colors.ink, colors.ink]}
       style={styles.stepIcon}
     >
       <Ionicons name={name} size={30} color={colors.text.inverse} />
@@ -315,7 +315,7 @@ export default function SetupScreen() {
                 </Text>
               ) : null}
               <Pressable onPress={addChild} style={styles.addChild} accessibilityRole="button">
-                <Text variant="body" color={colors.primary[500]}>
+                <Text variant="link" style={styles.addChildLabel}>
                   + Add another child
                 </Text>
               </Pressable>
@@ -394,7 +394,7 @@ export default function SetupScreen() {
                   >
                     <Text
                       variant="body"
-                      color={budgetTier === option.id ? colors.primary[600] : colors.text.primary}
+                      color={colors.ink}
                     >
                       {option.label}
                     </Text>
@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: CHIP_GAP,
     marginBottom: spacing.xl,
   },
   chipColumn: {
@@ -510,8 +510,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   budgetOptionActive: {
-    borderColor: colors.primary[500],
-    backgroundColor: colors.primary[50],
+    borderColor: colors.ink,
+    backgroundColor: colors.fill,
+  },
+  addChildLabel: {
+    fontSize: 16,
+    lineHeight: 24,
   },
   footer: {
     paddingTop: spacing.lg,
