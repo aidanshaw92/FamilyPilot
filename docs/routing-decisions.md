@@ -161,7 +161,7 @@ Decisions 1, 2, 4 and 5 now have code. Decision 3 does not yet.
 | --- | --- |
 | 1. Routes API `computeRouteMatrix` | **Implemented.** `server/context/lib/route-matrix.js`. The legacy Distance Matrix client is gone rather than kept alongside — an unused billable path is the exact thing the original audit found live by accident. |
 | 2. Traffic-unaware | **Implemented.** `routingPreference: 'TRAFFIC_UNAWARE'` is set explicitly, not left to the API's default, and a test asserts the request carries no `TRAFFIC_AWARE`, no `departure_time` and no `duration_in_traffic`. |
-| 3. TfL for transit | **Not started.** Transit remains absent from the UI. |
+| 3. TfL for transit | **Written and gated, NOT proven.** `server/context/lib/tfl-transit.js`, behind `TFL_TRANSIT_ENABLED`. Transit remains absent from the UI. See the limits below. |
 | 4. Overpass cap unchanged, telemetry recorded | **Implemented.** See §4 above. |
 | 5. Fail-closed | **Holds, and is asserted.** The gate runs before any request is built; a test proves the Routes API is not reached with the flag absent, and swapping the two lines fails it. |
 
@@ -201,6 +201,43 @@ path exists that does not pass through this gate.
 A refund-on-failure path was considered and rejected: it adds a write that can itself fail, and when it
 does the state is exactly what we have now, for more moving parts.
 
+### The TfL client: what is proven and what is not
+
+Written against TfL's documented contract and exercised by 31 fixture tests. **`api.tfl.gov.uk` is denied
+by this environment's egress policy, so it has never met the real service.** The parser, the URL shape and
+the rate-limit handling could all be wrong in some detail that only a live response would reveal. That is
+why it is behind a flag despite costing nothing: **the flag is about an unproven parser, not about money.**
+
+What the fixtures DO prove, because each is a rule the brief attached to transit, and each was
+mutation-tested:
+
+| Rule | Mutant that breaks it | Tests that fail |
+| --- | --- | --- |
+| Outside London is **unknown**, never "no public transport" | report it as `unavailable` | 2 |
+| 🚌 only when every transit leg is a bus; otherwise 🚇 | `some` instead of `every` | 2 |
+| Off unless explicitly enabled | flag defaults to on | 2 |
+| A TfL journey is `routed`, not an estimate | label it `estimated-distance` | 1 |
+| A journey outside coverage spends no TfL request | take the slot before the coverage check | 1 |
+
+Four more things are structural rather than conventional:
+
+- **Nothing is cached.** A journey result embeds departure times, so a cached one serves a parent
+  yesterday's bus. The endpoint sets `Cache-Control: no-store` and the result carries `cacheable: false`.
+- **The rate limit sits well under the ceiling.** Default 20 requests/minute. The two figures available
+  disagree — an earlier note recorded roughly 500/day unauthenticated, the owner reports 50/minute
+  anonymous and 500/minute registered — and this environment cannot settle it, so the implementation sits
+  under **both** and `TFL_MAX_REQUESTS_PER_MINUTE` raises it once the real ceiling is known. A refused
+  request spends no slot; a 429 is never retried, because a retry is another request against the limit we
+  were just told we exceeded.
+- **TfL's credit is carried on every answer**, including the unknown ones, and their branding is not used.
+- **The module's import graph contains no Google client, key or billing gate**, asserted by walking
+  `require.cache` rather than by reading the imports.
+
+It lives inside `api/context/journey.js` rather than its own function because **Vercel's deployment budget
+is twelve functions and this project is at twelve** — a thirteenth fails the deploy, the same constraint
+that put nearby-food inside the places search handler. The transit branch returns before `getDriveTimes`
+is reached.
+
 ### What remains unproven, and will stay so until the owner enables the API
 
 The request shape, the field mask and the duration parsing have never met the real service.
@@ -216,5 +253,19 @@ discovered:
 
 1. **Enable the Routes API** on the Cloud project, if it is not already enabled.
 2. **Register for a TfL application key**, if the anonymous rate limit proves too low for real usage.
+   Set it as `TFL_APP_KEY`; the client works without one and simply stays slower.
 
 Neither is needed before the code is written, and neither switches anything on by itself.
+
+### The one step that now genuinely needs a person
+
+Transit cannot be proven from here. To finish decision 3, someone with ordinary network access needs to:
+
+1. Set `TFL_TRANSIT_ENABLED=true` in a **preview** environment, not production.
+2. `POST /api/context/journey` with `{"mode":"transit","origin":{...},"destinations":[{...}]}` for two
+   London points — the Southbank to Greenwich is a good pair, since it has both tube and bus options.
+3. Check three things in the response: `state` is `available`, `leg.source` is `routed`, and `leg.mode` is
+   `transit` rather than `bus` for a mixed journey.
+
+If all three hold, the parser matches the real service and transit can go to the UI. If any does not, the
+fixtures encode the wrong contract and this doc should be corrected rather than the test loosened.
