@@ -195,9 +195,17 @@ function describeScope(scope) {
    * not a Google call and never passes through this gate.
    */
   if (config.requiresExplicitEnable && scoped !== true) {
+    /**
+     * The reason names the scope's OWN billing unit, not a constant.
+     *
+     * It said "bills per element" unconditionally, which was true of journeys -- the only fail-closed
+     * scope when the sentence was written -- and false of probe, which bills per call. An operator
+     * reading a production diagnostic was being told something untrue about what the refusal protects
+     * them from, and the first live run of the posture check printed exactly that.
+     */
     return {
       allowed: false,
-      reason: `${config.env} is not set to true; this scope bills per element and must be enabled by name`,
+      reason: `${config.env} is not set to true; this scope bills per ${config.billingUnit} and must be enabled by name`,
     };
   }
 

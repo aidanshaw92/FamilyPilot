@@ -32,6 +32,7 @@ against a deployed build. The workflows are the permanent record and can be re-r
 | Routes API | Actions run 37112057021 | `provider: google`, leg `source: live`, 19 min Trafalgar Square → Tower. **Predicted 1 element → actual 1. Predicted 1 request → actual 1.** `TRAFFIC_UNAWARE`, `computeRouteMatrix` |
 | Independent reconciliation | Supabase, after the canary | `google units today: journeys=1`. `route_matrix` rows ever: 1. `distance_matrix` rows ever: **0** — the legacy API has never been called. |
 | Preview is fail-closed again | Actions run 37113715301 | All 7 Google scopes refuse in `preview`, read from the deployment's own `/api/places/status` |
+| The probe is closed in production | Actions run 37116226154 | `probeEnabled: false`; probe and journeys both refuse by name while the product's own five scopes stay allowed, as designed |
 | Food cache behaviour | Actions run 37114554155 | Cold: `miss`, `no-store`, `overpassHttpRequests: 1`, 0 Google. Repeat: `hit` from the store. Third: `x-vercel-cache: HIT` |
 | Section 16 coverage | Actions runs 37111630552, 37112591540 | 4/5 anchors measured, 0 Google calls throughout, 3 of 4 at the 60-element cap |
 | The probe was never exercised | Supabase, same reconciliation | `nearby_search` rows today: **0**. The exposure was latent, not used — no Google Nearby Search was billed through it. |
@@ -83,6 +84,10 @@ A check that cannot fail is worse than no check, so these are recorded as defect
 - The cold-cache key was pinned to one radius, so the check worked exactly once per six hours.
 - An audit assertion matched `/LUNCH/i`, which my own caveat wording satisfied. The check was wrong, not
   the product.
+- The refusal reason said "bills per element" for every fail-closed scope. True of journeys and **false of
+  probe**, which bills per call — so the production diagnostic an operator reads was telling them
+  something untrue about what the refusal protects them from. Spotted in the output of the very run that
+  confirmed the fix.
 - A test passed unchanged through a rewrite that was supposed to change its behaviour. Green proved
   nothing; an absent field defaulted to the old value.
 
