@@ -187,6 +187,18 @@ describe('the gate is closed by default', () => {
     expect(budget.isPlacesEnabled('probe')).toBe(false);
   });
 
+  it('tells the operator the scope\u2019s own billing unit, not a borrowed one', async () => {
+    // The refusal reason said "bills per element" for every fail-closed scope. True of journeys, which
+    // bills per element, and false of probe, which bills per call -- so a production diagnostic was
+    // telling an operator something untrue about what the refusal was protecting them from.
+    process.env.GOOGLE_PLACES_ALLOW_LIVE_TEST = 'true';
+    process.env.VERCEL_ENV = 'production';
+    const budget = await loadBudget();
+    expect(budget.describeScope('journeys').reason).toContain('bills per element');
+    expect(budget.describeScope('probe').reason).toContain('bills per call');
+    expect(budget.describeScope('probe').reason).not.toContain('per element');
+  });
+
   it('names every scope that fails closed, so a new one is a deliberate choice', async () => {
     // A roster, not a loop over the implementation: adding `requiresExplicitEnable` to a scope the
     // product depends on would silently switch a feature off in production, and dropping it from one of
