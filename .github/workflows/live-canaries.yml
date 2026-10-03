@@ -227,14 +227,31 @@ jobs:
           # Long enough that the store write has certainly landed, short enough to stay inside the window.
           sleep 5
 
-          echo "repeat request, same key"
+          echo "repeat request, same key -- must reach the function and read the store"
           curl -sS "${auth[@]}" -L --max-redirs 5 -c /tmp/fc-cookies -b /tmp/fc-cookies \
             -D /tmp/food-hit.h -o /tmp/food-hit.json -w 'status %{http_code} in %{time_total}s\n' \
             --max-time 60 "$endpoint"
 
+          # A THIRD request, because `s-maxage` is addressed to the CDN and Vercel consumes it rather than
+          # passing it on: the client-facing Cache-Control reads just `public`, so the header cannot show
+          # whether we still send the directive. `x-vercel-cache: HIT` on this request can only happen if
+          # the edge accepted an s-maxage that came from our hit response, which is the proof. Costs
+          # nothing either way -- edge or store, never Overpass.
+          echo "third request -- the edge should now be serving it"
+          curl -sS "${auth[@]}" -L --max-redirs 5 -c /tmp/fc-cookies -b /tmp/fc-cookies \
+            -D /tmp/food-edge.h -o /tmp/food-edge.json -w 'status %{http_code} in %{time_total}s\n' \
+            --max-time 60 "$endpoint"
+
+          echo "--- x-vercel-cache per request ---"
+          for f in miss hit edge; do
+            printf '%s: %s\n' "$f" "$(grep -i '^x-vercel-cache:' /tmp/food-$f.h | tail -1 | tr -d '\r' || echo '(none)')"
+          done
+
           cd familypilot
           node scripts/verify-food-cache-headers.mjs \
-            /tmp/food-miss.h /tmp/food-miss.json /tmp/food-hit.h /tmp/food-hit.json
+            /tmp/food-miss.h /tmp/food-miss.json \
+            /tmp/food-hit.h /tmp/food-hit.json \
+            /tmp/food-edge.h /tmp/food-edge.json
 
       - uses: actions/upload-artifact@v4
         if: always()

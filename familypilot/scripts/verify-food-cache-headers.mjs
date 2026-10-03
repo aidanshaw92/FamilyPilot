@@ -1,7 +1,7 @@
 /**
  * Proves, against a deployed build, that the two cache fixes from PR #141 are live.
  *
- * Usage: node scripts/verify-food-cache-headers.mjs <miss-headers> <miss-body> <hit-headers> <hit-body>
+ * Usage: node scripts/verify-food-cache-headers.mjs <miss-h> <miss-b> <hit-h> <hit-b> <edge-h> <edge-b>
  *
  * WHY THIS IS NOT COVERED BY THE UNIT TESTS. The unit tests prove the handler sets the right header for
  * each cacheState, and four killed mutants prove they discriminate. What they cannot prove is that the
@@ -17,12 +17,28 @@
  * WHAT A FAILURE HERE MEANS. If the miss is edge-cacheable, the deployed build still replays a body
  * claiming an Overpass request was made when none was. If the hit is NOT edge-cacheable, the fix went
  * too far and threw away the repeat-load protection it was meant to preserve. Both directions fail.
+ *
+ * WHY THERE IS A THIRD REQUEST, AND WHY `Cache-Control` IS NOT THE EVIDENCE ON THE HIT PATH.
+ *
+ * The first version of this asserted `s-maxage=21600` on the hit response and failed against production
+ * reporting `Cache-Control: public`. The handler definitely sets the full directive -- the unit tests
+ * assert it on the response object and mutants kill them -- so something between rewrote it, and the only
+ * thing between is Vercel's CDN: `s-maxage` is a directive addressed TO the CDN, which consumes it and
+ * does not pass it on. So that assertion was testing a header that cannot be observed from outside, which
+ * is a defect in the check rather than in the product.
+ *
+ * The replacement is stricter, not looser, because it tests the behaviour instead of the instruction: a
+ * third identical request must come back `x-vercel-cache: HIT`. The edge can only serve that if it
+ * accepted an `s-maxage` it could only have got from our response. And the second request is itself the
+ * proof for the miss path: it came back `cacheState: hit` after 366ms, meaning it reached the function
+ * and read the store. Under the old code it was a 12ms edge replay still claiming `cacheState: miss`.
  */
 import { readFileSync } from 'node:fs';
 
-const [missHeaderPath, missBodyPath, hitHeaderPath, hitBodyPath] = process.argv.slice(2);
-if (!missHeaderPath || !missBodyPath || !hitHeaderPath || !hitBodyPath) {
-  console.error('usage: verify-food-cache-headers.mjs <miss-headers> <miss-body> <hit-headers> <hit-body>');
+const [missHeaderPath, missBodyPath, hitHeaderPath, hitBodyPath, edgeHeaderPath, edgeBodyPath] =
+  process.argv.slice(2);
+if (!missHeaderPath || !missBodyPath || !hitHeaderPath || !hitBodyPath || !edgeHeaderPath || !edgeBodyPath) {
+  console.error('usage: verify-food-cache-headers.mjs <miss-h> <miss-b> <hit-h> <hit-b> <edge-h> <edge-b>');
   process.exit(2);
 }
 
@@ -50,6 +66,13 @@ function cacheControl(raw) {
   return matches.length ? matches[matches.length - 1] : null;
 }
 
+/** Vercel's own report of whether IT served the response, which is the only visible proof of s-maxage. */
+function vercelCache(raw) {
+  if (!raw) return null;
+  const matches = [...raw.matchAll(/^x-vercel-cache:\s*(.+)$/gim)].map((m) => m[1].trim().toUpperCase());
+  return matches.length ? matches[matches.length - 1] : null;
+}
+
 function body(path) {
   const raw = read(path);
   if (!raw) return { __unreadable: `could not read ${path}` };
@@ -62,8 +85,12 @@ function body(path) {
 
 const missBody = body(missBodyPath);
 const hitBody = body(hitBodyPath);
+const edgeBody = body(edgeBodyPath);
 const missCc = cacheControl(read(missHeaderPath));
 const hitCc = cacheControl(read(hitHeaderPath));
+const missEdge = vercelCache(read(missHeaderPath));
+const hitEdge = vercelCache(read(hitHeaderPath));
+const edgeEdge = vercelCache(read(edgeHeaderPath));
 
 console.log('=== first request: must be a cold miss, or this verifies nothing ===');
 if (missBody.__unreadable) {
@@ -86,7 +113,7 @@ if (missBody.__unreadable) {
   );
 }
 
-console.log(`\n  Cache-Control on the miss: ${missCc ?? '(none)'}`);
+console.log(`\n  Cache-Control on the miss: ${missCc ?? '(none)'}  x-vercel-cache: ${missEdge ?? '(none)'}`);
 check(missCc !== null, 'the miss response carried a Cache-Control header at all', missCc ?? '(none)');
 check(
   !/s-maxage/i.test(missCc ?? ''),
@@ -108,11 +135,38 @@ if (hitBody.__unreadable) {
   check(hitBody.googleCalls === 0, 'the repeat made no Google call', String(hitBody.googleCalls));
 }
 
-console.log(`\n  Cache-Control on the hit: ${hitCc ?? '(none)'}`);
+console.log(`  Cache-Control as the client sees it: ${hitCc ?? '(none)'}  x-vercel-cache: ${hitEdge ?? '(none)'}`);
+// The decisive one for the MISS fix. Under the old code this second request was an edge replay of the
+// miss: ~12ms, and still claiming cacheState "miss" and one Overpass request. Reaching the function and
+// reading the store is the behaviour the fix exists to produce.
 check(
-  /s-maxage=21600/.test(hitCc ?? ''),
-  'the hit IS edge-cacheable, so the repeat-load protection was preserved rather than thrown away',
-  hitCc ?? '(none)',
+  hitEdge !== 'HIT',
+  'the second request was NOT served by the edge, so no replay of the miss happened',
+  `x-vercel-cache=${hitEdge ?? '(none)'}`,
+);
+
+console.log('\n=== third request: the edge must now serve the HIT, or the protection was thrown away ===');
+if (edgeBody.__unreadable) {
+  check(false, 'the third response was readable', edgeBody.__unreadable);
+} else {
+  console.log(`  cacheState=${edgeBody.cacheState}  overpassRequests=${edgeBody.overpassRequests}  x-vercel-cache=${edgeEdge ?? '(none)'}`);
+  // Whatever served it, it must not claim a provider request.
+  check(
+    edgeBody.cacheState === 'hit' || edgeBody.cacheState === 'stale',
+    'whatever served the third request, the body still reports a cache read rather than a miss',
+    `cacheState=${edgeBody.cacheState}`,
+  );
+  check(edgeBody.overpassRequests === 0, 'the third request issued no Overpass request', String(edgeBody.overpassRequests));
+}
+/**
+ * The only observable proof that we still send `s-maxage` on a hit. Vercel strips the directive from the
+ * client-facing `Cache-Control`, so the header cannot show it -- but the edge can only serve a HIT if it
+ * accepted an `s-maxage` that came from our response. STALE counts: it means the edge holds the entry.
+ */
+check(
+  edgeEdge === 'HIT' || edgeEdge === 'STALE',
+  'the edge now serves the hit, which it could only do from an s-maxage we sent',
+  `x-vercel-cache=${edgeEdge ?? '(none)'}`,
 );
 
 console.log('');
@@ -120,4 +174,4 @@ if (failures.length) {
   console.log(`::error::${failures.length} cache check(s) failed: ${failures.join('; ')}`);
   process.exit(1);
 }
-console.log('Both cache fixes are live: a miss is never replayed, a hit still is.');
+console.log('Both cache fixes are live: the miss reached the function, and the edge serves only the hit.');
