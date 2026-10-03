@@ -1,12 +1,14 @@
 import { Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { colors } from '@/src/design-system/tokens';
+
 interface BackButtonProps {
   onPress: () => void;
   color?: string;
 }
 
-export function BackButton({ onPress, color = '#1A1A2E' }: BackButtonProps) {
+export function BackButton({ onPress, color = colors.ink }: BackButtonProps) {
   return (
     <Pressable
       onPress={onPress}

@@ -63,7 +63,7 @@ export function PlanScreenView({
       <View style={[styles.header, { paddingTop: topInset + spacing.sm }]}>
         <BackButton onPress={onBack} />
         <View style={styles.headerText}>
-          <Text variant="heading3" numberOfLines={1}>
+          <Text variant="heading3" numberOfLines={2}>
             {view.title}
           </Text>
           <Text variant="caption" color={colors.text.secondary}>
@@ -258,7 +258,7 @@ export function PlanScreenView({
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View style={styles.block}>
-      <Text variant="label" color={colors.text.secondary} style={styles.blockTitle}>
+      <Text variant="eyebrow" style={styles.blockTitle}>
         {title.toUpperCase()}
       </Text>
       <View style={styles.blockBody}>{children}</View>
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginTop: spacing.md,
   },
-  blockTitle: { letterSpacing: 0.8, marginBottom: spacing.sm },
+  blockTitle: { marginBottom: spacing.sm },
   blockBody: { gap: spacing.sm },
   line: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
   lineLabel: { width: 128 },

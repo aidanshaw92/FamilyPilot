@@ -367,7 +367,7 @@ export default function PlanScreen() {
 
           {phase.failure.suggestions.length ? (
             <View style={styles.suggestions}>
-              <Text variant="label" color={colors.text.secondary} style={styles.suggestionsTitle}>
+              <Text variant="eyebrow" style={styles.suggestionsTitle}>
                 WHAT WOULD HELP
               </Text>
               {phase.failure.suggestions.map((suggestion) => (
@@ -419,7 +419,8 @@ function Shell({
 
 const styles = StyleSheet.create({
   shell: { flex: 1, backgroundColor: colors.background },
-  shellHeader: { paddingHorizontal: spacing.screenPadding, paddingBottom: spacing.sm },
+  // flex-start, or the 44pt back control stretches across the row and its chevron lands centred.
+  shellHeader: { paddingHorizontal: spacing.screenPadding, paddingBottom: spacing.sm, alignItems: 'flex-start' },
   failure: {
     paddingHorizontal: spacing.screenPadding,
     paddingTop: spacing['3xl'],
@@ -441,6 +442,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     marginTop: spacing.sm,
   },
-  suggestionsTitle: { letterSpacing: 0.8, marginBottom: spacing.xs },
+  suggestionsTitle: { marginBottom: spacing.xs },
   failureAction: { marginTop: spacing.md },
 });

@@ -27,7 +27,7 @@ describe('evaluateRoutineFit', () => {
     ]);
     const now = new Date(2026, 0, 1, 9, 0); // 9am, plenty of runway
     const fit = evaluateRoutineFit(profile, 30, now);
-    expect(fit).toEqual({ reason: 'Leave by 12:30pm to be home in time for Afternoon nap', caution: null });
+    expect(fit).toEqual({ reason: 'Leave by 12:30 to be home in time for Afternoon nap', caution: null });
   });
 
   it('gives a positive "leave by" reason for a feed routine, matching the "home for lunch" example', () => {
@@ -36,7 +36,7 @@ describe('evaluateRoutineFit', () => {
     ]);
     const now = new Date(2026, 0, 1, 9, 0); // 9am
     const fit = evaluateRoutineFit(profile, 30, now); // 30 min drive, leave by 12:00 for lunch
-    expect(fit).toEqual({ reason: 'Leave by 12:00pm to be home in time for Lunch', caution: null });
+    expect(fit).toEqual({ reason: 'Leave by 12:00 to be home in time for Lunch', caution: null });
   });
 
   it('warns instead when leaving right now would already miss the routine', () => {
@@ -45,7 +45,7 @@ describe('evaluateRoutineFit', () => {
     ]);
     const now = new Date(2026, 0, 1, 12, 45); // 12:45pm — a 30 min drive means leaving by 12:30 was needed
     const fit = evaluateRoutineFit(profile, 30, now);
-    expect(fit).toEqual({ reason: null, caution: 'A visit today may run into Afternoon nap time (around 1:00pm)' });
+    expect(fit).toEqual({ reason: null, caution: 'A visit today may run into Afternoon nap time (around 13:00)' });
   });
 
   it('picks whichever of nap or feed comes soonest', () => {

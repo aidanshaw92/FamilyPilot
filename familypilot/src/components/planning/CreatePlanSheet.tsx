@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { BottomSheet, Button, Chip, Text, CHIP_GAP } from '@/src/components/ui';
 import { DateField, TimeField } from '@/src/components/ui/DateTimeField';
@@ -10,7 +10,6 @@ import {
   VISIT_LENGTH_CHOICES,
   planDraftBlocker,
 } from '@/src/services/planning/plan-draft';
-import { weekdayOf } from '@/src/services/planning/plan-view-model';
 
 /**
  * The approved Create a Plan sheet: when, start, who's coming, how long.
@@ -47,29 +46,10 @@ function lengthLabel(minutes: number): string {
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
 }
 
-/**
- * "Friday 2 October", under the date field.
- *
- * A native date input renders in the browser's or device's own locale, so the same day reads
- * 10/02/2026 in one place and 02/10/2026 in another. A parent choosing a Saturday out should not
- * have to work out which of those they are looking at, so the day is also spelled out.
- */
-function spelledDate(date: string): string | null {
-  const parts = weekdayOf(date);
-  if (!parts) return null;
-  const MONTHS: Record<string, string> = {
-    Jan: 'January', Feb: 'February', Mar: 'March', Apr: 'April', May: 'May', Jun: 'June',
-    Jul: 'July', Aug: 'August', Sep: 'September', Oct: 'October', Nov: 'November', Dec: 'December',
-  };
-  return `${parts.long} ${parts.day} ${MONTHS[parts.month] ?? parts.month}`;
-}
-
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <View style={styles.row}>
-      <Text variant="caption" color={colors.text.secondary} style={styles.rowLabel}>
-        {label.toUpperCase()}
-      </Text>
+      <Text variant="eyebrow">{label.toUpperCase()}</Text>
       {children}
     </View>
   );
@@ -134,11 +114,6 @@ export function CreatePlanSheet({
       >
         <Row label="When">
           <DateField label="" value={draft.date} onChange={(date) => onDraftChange({ ...draft, date })} />
-          {spelledDate(draft.date) ? (
-            <Text variant="caption" color={colors.text.secondary}>
-              {spelledDate(draft.date)}
-            </Text>
-          ) : null}
         </Row>
 
         <Row label="Start">
@@ -163,9 +138,15 @@ export function CreatePlanSheet({
           {/* Quiet and left-aligned: adding a second household is an occasional choice, and a
               full-width button here competes with the one action this sheet exists for. */}
           {onAddFamily ? (
-            <View style={styles.addFamily}>
-              <Button label="Add another family" variant="ghost" size="sm" onPress={onAddFamily} />
-            </View>
+            <Pressable
+              onPress={onAddFamily}
+              accessibilityRole="button"
+              accessibilityLabel="Add another family"
+              style={styles.addFamily}
+              hitSlop={8}
+            >
+              <Text variant="link">Add another family</Text>
+            </Pressable>
           ) : null}
         </Row>
 
@@ -218,9 +199,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   row: { gap: spacing.xs },
-  rowLabel: { letterSpacing: 0.6 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: CHIP_GAP },
-  addFamily: { alignItems: 'flex-start' },
+  addFamily: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
   footer: {
     paddingHorizontal: spacing.screenPadding,
     paddingTop: spacing.sm,
