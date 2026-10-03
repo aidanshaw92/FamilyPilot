@@ -150,17 +150,6 @@ export function PlanScreenView({
             ) : null}
             {view.stops.map((stop) => (
               <View key={`${stop.placeId}-${stop.index}`}>
-                {/* The journey from home to the first stop, in the mode the plan's timings were
-                    computed from and worded from that leg's own provenance, so an estimate reads
-                    "about 6 min drive" and never as a measured one. Later legs sit inside the
-                    previous card as "Travel to next stop" (node 73:17). */}
-                {stop.arrivalTravel && stop.index === view.stops[0]?.index ? (
-                  <View style={styles.hop} testID="plan-stop-hop">
-                    <Text variant="caption" color={colors.text.tertiary}>
-                      {stop.arrivalTravel.symbol} {stop.arrivalTravel.label} from home
-                    </Text>
-                  </View>
-                ) : null}
                 <PlanStopCard stop={stop} expanded={expanded.includes(stop.index)} onToggle={() => toggle(stop.index)} />
               </View>
             ))}
@@ -293,8 +282,6 @@ function Line({ label, value, warn }: { label: string; value: string; warn?: boo
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  /** Sits between two stop cards, indented so it reads as a connector rather than a card of its own. */
-  hop: { paddingVertical: spacing.xs, paddingHorizontal: spacing.md },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

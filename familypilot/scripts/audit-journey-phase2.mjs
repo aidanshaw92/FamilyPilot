@@ -524,8 +524,11 @@ async function auditJourney(browser, viewport) {
   note(V, 'Plan', 'renders', { ok: onPlan, message: onPlan ? undefined : planText.replace(/\s+/g, ' ').slice(0, 200) });
 
   if (onPlan) {
+    // Frame 03 (slice 11) heads the day "Your Saturday plan" with the span in the header's dates
+    // line; the earlier "A 4-hour Saturday" summary is still accepted for a saved-plan list.
     note(V, 'Plan', 'summarises the day in the parent’s terms', {
-      ok: /A \d+-hour /.test(planText), message: (planText.match(/A \d+-hour [A-Za-z]+/) ?? [''])[0],
+      ok: /A \d+-hour /.test(planText) || (/Your [A-Z][a-z]+day plan/.test(planText) && /\d{2}:\d{2}–\d{2}:\d{2}/.test(planText)),
+      message: (planText.match(/A \d+-hour [A-Za-z]+|Your [A-Z][a-z]+day plan/) ?? [''])[0],
     });
     note(V, 'Plan', 'does not scroll sideways', await (async () => {
       const o = await overflow(page);
@@ -539,8 +542,9 @@ async function auditJourney(browser, viewport) {
         message: box ? `bottom ${Math.round(box.y + box.height)}, indicator starts at ${limit}` : 'no button',
       };
     })());
+    // The row labels are uppercased by style (frame 03), and innerText reflects that.
     note(V, 'Plan', 'expands the first stop and collapses the rest', {
-      ok: planText.includes('Arrive') && planText.includes('Time there'),
+      ok: /arrive/i.test(planText) && /time there/i.test(planText),
     });
     note(V, 'Plan', 'prints no internal field name', {
       ok: !/[a-z]+[A-Z][a-z]+:|familyFacilities\./.test(planText),

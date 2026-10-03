@@ -294,7 +294,7 @@ describe('frame 03: the heading, the insight and the stop rows', () => {
     expect(labels(0)).toEqual(['Arrive', 'Time there', 'Leave', 'Opening', 'Travel to next stop']);
     expect(view.stops[0].rows.find((r) => r.label === 'Leave')?.value).toBe('11:30');
     // Legs are timed as drives and this one is estimated, so the row says so rather than "6 min".
-    expect(view.stops[0].rows.find((r) => r.label === 'Travel to next stop')?.value).toBe('about 6 min drive');
+    expect(view.stops[0].rows.find((r) => r.label === 'Travel to next stop')?.value).toBe('🚗 about 6 min drive');
     expect(labels(1)).toEqual(['Arrive', 'Time there', 'Leave', 'Opening']);
   });
 

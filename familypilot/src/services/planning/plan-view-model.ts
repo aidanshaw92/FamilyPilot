@@ -337,7 +337,8 @@ export function toPlanViewModel(input: PlanViewModelInput): PlanViewModel {
       { label: 'Time there', value: durationLabel(stop.dwellMinutes) },
       { label: 'Leave', value: planClock(stop.depart) },
       openingRow(stop),
-      ...(onward ? [{ label: 'Travel to next stop', value: onward.label }] : []),
+      // The mode symbol stays with the duration (Section 13): a parent reads what the timing assumed.
+      ...(onward ? [{ label: 'Travel to next stop', value: `${onward.symbol} ${onward.label}` }] : []),
     ];
     const media = input.media?.[stop.placeId];
     return {
