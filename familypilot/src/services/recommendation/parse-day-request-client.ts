@@ -1,4 +1,5 @@
 import { FamilyProfile } from '@/src/types';
+import { familyUsesBuggy } from '@/src/utils/family-mobility';
 import { DayRequest } from '@/src/types/day-request';
 import { AGE_RECOMMENDATION_STRENGTH, childAgesInMonths } from '@/src/services/matching/age-suitability';
 import { parseExplicitTextConstraints } from './explicit-constraint-parser';
@@ -63,7 +64,7 @@ export function parseDayRequestMock(rawText: string, profile: FamilyProfile): Da
     homeLocation: profile.homeLocation,
     budgetTier: profile.budgetTier,
     maxDriveMinutes: profile.maxDriveMinutes,
-    hasPushchair: Boolean(profile.pushchair?.trim()) || explicit.pushchair != null,
+    hasPushchair: familyUsesBuggy(profile) || explicit.pushchair != null,
     constraints,
     context: { freeformNotes: rawText.slice(0, 200) },
   };

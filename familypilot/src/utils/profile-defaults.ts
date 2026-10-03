@@ -1,4 +1,6 @@
-import { FamilyMember, FamilyProfile } from '@/src/types';
+import { ChildMobility, FamilyMember, FamilyProfile } from '@/src/types';
+
+import { ageFromDob, childDobProblem } from './child-age';
 
 import { computeCompletionPercent } from './profile-completion';
 
@@ -38,8 +40,34 @@ export function createChildMember(name: string, age: number, ageMonths?: number 
     name: name.trim(),
     role: 'child',
     dateOfBirth,
+    // The date above is an approximation made up from a typed age. It must never be read as a fact.
+    dobKnown: false,
     age,
     ageMonths: preciseMonths,
+  };
+}
+
+/**
+ * A child whose date of birth a parent actually gave. `age` and `ageMonths` are derived from it right
+ * away and refreshed on every read (see `child-age.ts`), so nothing here can go stale.
+ */
+export function createChildFromDob(
+  name: string,
+  dateOfBirth: string,
+  mobility: ChildMobility[] = [],
+  now: Date = new Date(),
+): FamilyMember | null {
+  const parts = ageFromDob(dateOfBirth, now);
+  if (!parts || childDobProblem(dateOfBirth, now)) return null;
+  return {
+    id: `child-${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
+    name: name.trim(),
+    role: 'child',
+    dateOfBirth,
+    dobKnown: true,
+    age: parts.years,
+    ageMonths: parts.years === 0 ? parts.months : null,
+    mobility,
   };
 }
 

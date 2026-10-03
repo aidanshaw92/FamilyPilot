@@ -1,4 +1,5 @@
 import { EnrichmentStatus, FamilyProfile, FamilyScore, FamilyScoreFactors, VenueDetail, WeatherInfo } from '@/src/types';
+import { familyUsesBuggy } from '@/src/utils/family-mobility';
 
 import { PROVIDER_ONLY_FAMILY_MATCH_CAP } from '@/src/constants/places-quality';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
@@ -130,7 +131,7 @@ function buildHeuristicExplanation(
   }
 
   const reasons: string[] = [];
-  const hasPushchair = Boolean(profile.pushchair?.trim());
+  const hasPushchair = familyUsesBuggy(profile);
 
   // Lead with whatever is most specific to this exact venue, visit, and family — a time-bound
   // routine fit, a concrete duration, distance, or facility fact — before the heuristic age

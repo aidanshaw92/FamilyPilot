@@ -1,4 +1,6 @@
 import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
+import { familyUsesBuggy } from '@/src/utils/family-mobility';
+import { resolveRoutines } from '@/src/utils/routine-schedule';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Linking, Pressable, ScrollView, Share, View } from 'react-native';
@@ -49,14 +51,14 @@ export default function TripsScreen() {
    if(!mine)return;
    const home=resolveHomeCoordinates(profile);
    const ages=profile.members.filter(m=>m.role==='child').map(m=>m.age);
-   const pushchair=Boolean(profile.pushchair);
+   const pushchair=familyUsesBuggy(profile);
    const agesChanged=JSON.stringify(ages)!==JSON.stringify(mine.ages);
    if(mine.area!==profile.homeLocation||mine.latitude!==home.latitude||mine.longitude!==home.longitude||mine.pushchair!==pushchair||agesChanged){
      usePlanningStore.getState().setFamily({...mine,area:profile.homeLocation,latitude:home.latitude,longitude:home.longitude,pushchair,ages});
    }
    // eslint-disable-next-line react-hooks/exhaustive-deps
  },[state.hydrated,profile.homeLocation,profile.homeLatitude,profile.homeLongitude,profile.pushchair,profile.members]);
- const blank=(mine:boolean):PlanningFamily=>{const home=mine?resolveHomeCoordinates(profile):null;return {id:mine?'mine':`guest-${Date.now()}`,label:mine?'Our family':'',area:mine?profile.homeLocation:'',latitude:home?.latitude??NaN,longitude:home?.longitude??NaN,ages:mine?profile.members.filter(m=>m.role==='child').map(m=>m.age):[],maxDriveMinutes:mine?profile.maxDriveMinutes:30,budgetTier:mine?profile.budgetTier:'moderate',pushchair:mine?Boolean(profile.pushchair):false,required:[],routines:mine?(profile.routines??[]).map(r=>({...r})):[]};};
+ const blank=(mine:boolean):PlanningFamily=>{const home=mine?resolveHomeCoordinates(profile):null;return {id:mine?'mine':`guest-${Date.now()}`,label:mine?'Our family':'',area:mine?profile.homeLocation:'',latitude:home?.latitude??NaN,longitude:home?.longitude??NaN,ages:mine?profile.members.filter(m=>m.role==='child').map(m=>m.age):[],maxDriveMinutes:mine?profile.maxDriveMinutes:30,budgetTier:mine?profile.budgetTier:'moderate',pushchair:mine?familyUsesBuggy(profile):false,required:[],routines:mine?resolveRoutines(profile):[]};};
  async function find(){setBusy(true);setMessage('');setResults([]);setSearched(false);try{
    clockMinutes(state.options.leaveAt);if(state.options.returnBy)clockMinutes(state.options.returnBy);
    if(!active.length)throw new Error('Add your family and select who is coming.');

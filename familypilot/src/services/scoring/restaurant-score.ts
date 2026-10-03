@@ -8,6 +8,7 @@ import {
 } from '@/src/types';
 
 import { getDriveMinutesFromActivity } from '@/src/data/mock-restaurants';
+import { familyUsesBuggy } from '@/src/utils/family-mobility';
 import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 
 const WEIGHTS = {
@@ -62,7 +63,7 @@ function scoreFacilities(features: RestaurantFeatures, profile: FamilyProfile): 
   if (isConfirmed(features.pushchairSpace)) score += 10;
   if (isConfirmed(features.playArea)) score += 6;
   if (isConfirmed(features.parking)) score += 4;
-  if (profile.pushchair?.trim() && isConfirmed(features.pushchairSpace)) score += 8;
+  if (familyUsesBuggy(profile) && isConfirmed(features.pushchairSpace)) score += 8;
   return clamp(score);
 }
 

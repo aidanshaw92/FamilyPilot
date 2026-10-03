@@ -5,6 +5,7 @@ import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDet
 import { getChildNames } from './profile-defaults';
 import { evaluateRoutineFit } from './routine-fit';
 import { buildFacilityMissingCaution } from './facility-match';
+import { familyNeedsStepFree } from './family-mobility';
 
 /**
  * The drive is longer than this family said they would usually do.
@@ -18,6 +19,16 @@ export function buildDriveCaution(profile: FamilyProfile, driveMinutes: number):
   if (!Number.isFinite(driveMinutes) || !Number.isFinite(profile.maxDriveMinutes)) return null;
   if (driveMinutes <= profile.maxDriveMinutes) return null;
   return `Further than your usual ${profile.maxDriveMinutes} min drive`;
+}
+
+/**
+ * A child who uses a mobility aid makes step-free access matter, and the app holds no step-free evidence
+ * to show a parent (it is collected internally and not part of the facts a venue is matched on). So the
+ * honest statement is that it is unknown, shown only to families it matters to. It is never a score and
+ * never a "yes": wheelchair or step-free evidence must not be read as buggy-suitable, or the reverse.
+ */
+export function buildStepFreeCaution(profile: FamilyProfile): string | null {
+  return familyNeedsStepFree(profile) ? 'Step-free access isn’t confirmed here' : null;
 }
 
 function toVenueDetail(venue: Venue): VenueDetail {
@@ -60,6 +71,7 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
       [
         buildDriveCaution(profile, venue.driveMinutes),
         buildFacilityMissingCaution(profile, detail.facilities),
+        buildStepFreeCaution(profile),
         routineFit.caution,
         ...(familyScore.cautions ?? []),
       ].filter((caution): caution is string => Boolean(caution)),

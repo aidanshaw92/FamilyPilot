@@ -120,7 +120,7 @@ describe('calculateFamilyScore with trusted facts', () => {
     const mismatchScore = calculateFamilyScore(mismatchedAge, PROFILE);
     const heuristicScore = calculateFamilyScore(heuristicOnly, PROFILE);
 
-    expect(trustedScore.explanation.some((line) => line.includes('Recommended for ages 2–10'))).toBe(true);
+    expect(trustedScore.explanation.some((line) => line.includes('Suits Mia and Leo (recommended for ages 2–10)'))).toBe(true);
     expect(mismatchScore.score).toBeLessThan(trustedScore.score);
     expect(trustedScore.score).not.toBe(heuristicScore.score);
   });
@@ -214,7 +214,8 @@ describe('negative reviewed facts are cautions, never reasons', () => {
   it('files an age mismatch as a caution', () => {
     const score = calculateFamilyScore(venueWithFacts({ ...BASE_FACTS, minRecommendedAge: 11, maxRecommendedAge: 16 }), PROFILE);
     expect(score.explanation.join('\n')).not.toMatch(/may not suit/i);
-    expect(score.cautions).toContain('Age range may not suit your children');
+    // Both children (5 and 3) are under the published 11–16, so the caution names them.
+    expect(score.cautions).toContain('Recommended from age 11, so Mia and Leo are younger than that');
   });
 
   it('does not raise the pushchair caution for a family without one', () => {

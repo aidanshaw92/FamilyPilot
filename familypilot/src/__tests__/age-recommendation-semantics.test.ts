@@ -388,7 +388,8 @@ describe('Family Match makes no age claim without age evidence', () => {
       trustedFacts: realFacts({ minRecommendedAge: 2, maxRecommendedAge: 10 }),
     } as unknown as VenueDetail;
     const explanation = calculateFamilyScore(withAge, profile).explanation.join(' | ');
-    expect(explanation).toContain('Recommended for ages 2–10');
+    // Named per child now: Ada is 6, inside the published 2–10, so the line says so about her.
+    expect(explanation).toContain('Good for Ada’s age (recommended for ages 2–10)');
   });
 
   it('describes a recommendation as recommended, never as permitted or prohibited', () => {
