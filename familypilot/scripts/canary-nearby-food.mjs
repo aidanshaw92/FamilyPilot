@@ -176,6 +176,9 @@ async function main() {
     }
 
     report.overpass.requests += result.overpassRequests ?? 0;
+    // HTTP requests, which endpoint failover can make exceed the query count. Reported separately
+    // because this is the number that describes our load on a donated service.
+    report.overpass.httpRequests = (report.overpass.httpRequests ?? 0) + (result.overpassHttpRequests ?? 0);
     if ((result.overpassRequests ?? 0) > 1) report.overpass.retries += (result.overpassRequests ?? 0) - 1;
 
     const displayed = result.candidates;
@@ -211,13 +214,20 @@ async function main() {
       provider: result.provider,
       cacheState: result.cacheState,
       overpassRequests: result.overpassRequests,
+      overpassHttpRequests: result.overpassHttpRequests,
       googleCalls: result.googleCalls,
       radiusM: result.radiusM,
       latencyMs: elapsed,
-      // The funnel the brief asks for. `totalFound` is after validation, dedupe and the radius filter,
-      // because the provider applies all three before returning; `displayed` is after ranking and the
-      // display cap. Raw element count is not separable without a second request, and the brief
-      // forbids making one to produce a statistic -- stated rather than guessed at.
+      /**
+       * The funnel the brief asks for, now complete.
+       *
+       * This said the raw element count was "not separable without a second request". That was wrong:
+       * every stage is countable from the response already in hand, and only the final array was being
+       * returned. `discovery` now carries the stages, and no extra Overpass request is made for any of
+       * them. It is null only for a cache row written before the field existed, which is an absent
+       * record rather than a zero.
+       */
+      discovery: result.discovery,
       candidatesAfterValidationDedupeAndFilter: result.totalFound,
       candidatesDisplayed: displayed.length,
       withOpeningHours: displayed.filter((c) => c.openingHours).length,
@@ -263,7 +273,9 @@ async function main() {
     console.log(
       `${anchor.name.padEnd(28)} ${String(result.totalFound).padStart(3)} found, ` +
         `${String(displayed.length).padStart(2)} shown, cache=${result.cacheState}, ` +
-        `overpass=${result.overpassRequests}, google=${result.googleCalls}, ${elapsed}ms`,
+        `overpass=${result.overpassRequests}q/${result.overpassHttpRequests ?? '?'}http, ` +
+        `raw=${result.discovery?.rawElements ?? '?'}${result.discovery?.saturatedCap ? ' SATURATED' : ''}, ` +
+        `google=${result.googleCalls}, ${elapsed}ms`,
     );
   }
 

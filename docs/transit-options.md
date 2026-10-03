@@ -1,5 +1,11 @@
 # Public transport: what exists, and what choosing it would mean
 
+> **Decided: Option 1, the TfL Unified API, for the London phase** — see `routing-decisions.md`
+> (3 October). Paid Google TRANSIT is not enabled. Transit stays absent from the UI until a TfL
+> implementation is proven, and `api.tfl.gov.uk` is blocked by this environment's egress policy, so it
+> can be built against fixtures here but not verified against the live service. Revisit the provider when
+> FamilyPilot goes beyond London.
+
 Section H. **An audit and a set of options, not a selection.** Nothing here is implemented and no
 provider is signed up to. Dated 2 October 2026.
 

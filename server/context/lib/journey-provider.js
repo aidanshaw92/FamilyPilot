@@ -1,4 +1,5 @@
 const { estimateDriveMinutes } = require('./geo-utils');
+const { computeRouteMatrix } = require('./route-matrix');
 const {
   assertPlacesAllowed,
   PlacesDisabledError,
@@ -6,13 +7,15 @@ const {
 } = require('../../places/lib/places-budget');
 
 /**
- * Distance Matrix bills per origin-destination ELEMENT, not per request, so one call here is up to
+ * `computeRouteMatrix` bills per origin-destination ELEMENT, not per request, so one call here is up to
  * 25 billable units.
  *
  * Two things were missing and are now in place: nothing stopped the call being made at all from a
  * public unauthenticated endpoint, and the budget counted REQUESTS, so this cap of 25 destinations
  * consumed a single unit of a 2,000-unit daily ceiling. The gate is told origins and destinations
  * below, and the ceiling now applies to elements.
+ *
+ * Well under the provider's own 625-element ceiling, so our cap is the binding one.
  */
 const MAX_DESTINATIONS = 25;
 
@@ -29,36 +32,24 @@ function estimateJourneys(origin, destinations) {
   }));
 }
 
-async function fetchGoogleDistanceMatrix(origin, destinations, apiKey) {
-  const originParam = `${origin.latitude},${origin.longitude}`;
-  const destinationParam = destinations
-    .map((destination) => `${destination.latitude},${destination.longitude}`)
-    .join('|');
+/**
+ * Routed drive times from the Routes API, falling back per destination rather than wholesale.
+ *
+ * One origin by construction, so every element is `0:index`. A destination the provider could not route
+ * to keeps its distance estimate and stays labelled `estimated`, which is the honest answer for that one
+ * leg and leaves the rest of the matrix usable. Collapsing the whole response to estimates because one
+ * element failed would throw away paid results.
+ */
+async function fetchRoutedDriveTimes(origin, destinations, apiKey, deps = {}) {
+  const seconds = await computeRouteMatrix([origin], destinations, apiKey, deps);
 
-  const url = new URL('https://maps.googleapis.com/maps/api/distancematrix/json');
-  url.searchParams.set('origins', originParam);
-  url.searchParams.set('destinations', destinationParam);
-  url.searchParams.set('mode', 'driving');
-  url.searchParams.set('departure_time', 'now');
-  url.searchParams.set('key', apiKey);
-
-  const response = await fetch(url.toString());
-  if (!response.ok) {
-    throw new Error(`Distance Matrix request failed (${response.status})`);
-  }
-
-  const payload = await response.json();
-  if (payload.status !== 'OK') {
-    throw new Error(`Distance Matrix status ${payload.status}`);
-  }
-
-  const elements = payload.rows?.[0]?.elements ?? [];
   return destinations.map((destination, index) => {
-    const element = elements[index];
-    if (element?.status === 'OK' && element.duration?.value != null) {
+    const value = seconds.get(`0:${index}`);
+    if (value != null) {
       return {
         placeId: destination.placeId,
-        driveMinutes: Math.max(1, Math.round((element.duration_in_traffic?.value ?? element.duration.value) / 60)),
+        // At least a minute: a sub-60-second drive rounding to 0 would schedule an instant journey.
+        driveMinutes: Math.max(1, Math.round(value / 60)),
         source: 'live',
       };
     }
@@ -76,7 +67,12 @@ async function fetchGoogleDistanceMatrix(origin, destinations, apiKey) {
   });
 }
 
-async function getDriveTimes(origin, destinations) {
+/**
+ * @param {{latitude:number,longitude:number}} origin
+ * @param {Array<{placeId:string,latitude:number,longitude:number}>} destinations
+ * @param {{ fetchImpl?: Function }} [deps] Injected for tests, so no suite can reach the real API.
+ */
+async function getDriveTimes(origin, destinations, deps = {}) {
   if (!origin || !Array.isArray(destinations) || destinations.length === 0) {
     throw new Error('Origin and destinations are required');
   }
@@ -105,20 +101,23 @@ async function getDriveTimes(origin, destinations) {
   }
 
   try {
-    // Distance Matrix is billable, so it answers to the same gate as Places. The estimated-journey
+    // Routed driving is billable, so it answers to the same gate as Places. The estimated-journey
     // fallback below is already a first-class result the API labels as `source: 'estimated'`, so a
     // closed gate degrades the accuracy of a drive time rather than breaking the planner.
+    //
+    // THIS IS THE LINE THAT KEEPS ROUTING OFF. It runs before any request is built, and the `journeys`
+    // scope carries `requiresExplicitEnable`, so an absent flag is a refusal rather than an inheritance.
     assertPlacesAllowed({
       scope: 'journeys',
       reason: 'drive_times',
       subject: `${validDestinations.length} destinations`,
-      // Distance Matrix bills per origin-destination element, so the budget is told the SHAPE of the
-      // request rather than the fact that one was made. One origin here, by construction.
+      // The SKU bills per origin-destination element, so the budget is told the SHAPE of the request
+      // rather than the fact that one was made. One origin here, by construction.
       origins: 1,
       destinations: validDestinations.length,
       routeMode: 'driving',
     });
-    const journeys = await fetchGoogleDistanceMatrix(origin, validDestinations, apiKey);
+    const journeys = await fetchRoutedDriveTimes(origin, validDestinations, apiKey, deps);
     const source = journeys.some((journey) => journey.source === 'live') ? 'live' : 'estimated';
     return {
       journeys,

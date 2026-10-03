@@ -34,7 +34,7 @@ measured.**
 | --- | --- |
 | Four of five anchors (V&A, Hampstead Heath, Gladstone Park, Chiswick House) | **NOT MEASURED** |
 | Cache hits / misses / hit ratio | **NOT MEASURED** as a ratio — CI has no Supabase credentials, so every read is a miss by construction |
-| Raw OSM element count before validation | **NOT SEPARABLE** without a second request per anchor, which the brief forbids making to produce a statistic |
+| Raw OSM element count before validation | ~~NOT SEPARABLE~~ — **this was wrong, and is fixed.** Every stage of the funnel is countable from the one response already made; only the final array was being returned. `discovery.rawElements`, `afterValidation` and `afterDedupe` now report it, with no extra Overpass request. See `routing-decisions.md` §4 |
 | Cached vs uncached latency | **NOT MEASURED** — see cache above |
 | Venue Detail and plan-generation impact in production | **NOT MEASURED** — the production URL is unreachable from the development environment |
 | Lunch-plan generation attempts, plans containing lunch, plans correctly omitting it | **NOT MEASURED in production**; measured against fixtures by the Phase 2 audit (277/277), which is a different claim |
@@ -148,12 +148,12 @@ by **Create a plan**. That is the surface the brief's product and performance me
 to Supabase, so it can be run from here once the requests above have been made. **Run it before the
 requests as well as after**: it reports absolute counts, not deltas, so the comparison only exists if
 both ends of it were measured. It gives the `nearby-food` cache rows with each anchor's coordinates and
-candidate count, today's Google billable units by scope, `distance_matrix` rows ever, two
+candidate count, today's Google billable units by scope, `route_matrix` and legacy `distance_matrix` rows ever, two
 must-be-zero invariants (`billable_calls > 0` and `provider <> 'osm'` on any food row), and the
 served-claims baseline that shows the canary disturbed nothing a parent reads.
 
 It was executed against production on 2026-10-02 to confirm it runs and to take the before-baseline:
-`google units today = none`, `distance_matrix rows ever = 0`, `nearby-food cache rows = 0`, both
+`google units today = none`, `distance_matrix rows ever = 0` (and `route_matrix`, the SKU that replaced it, likewise 0), `nearby-food cache rows = 0`, both
 invariants 0, `served claims = 176`, `distinct venues served = 67`, `failed enrichment jobs = 0`. The
 query set is valid against the live schema; what is missing is the production traffic to measure, not
 the means to measure it.
@@ -165,8 +165,9 @@ listed on 2026-10-02 (`hiddenProductionEnvCount: 0`, so the list is complete) an
 `GOOGLE_JOURNEYS_ENABLED` at all — nor any other `GOOGLE_PLACES_*_ENABLED` flag, including the master
 switch. With the flag absent, `journeys` carrying `requiresExplicitEnable: true` means `describeScope`
 refuses the scope by name rather than inheriting a default, and `journey-provider.js` returns its
-estimated journeys with `fallbackReason: 'PLACES_DISABLED'`. `distance_matrix` rows in the usage
-table: **0, ever.**
+estimated journeys with `fallbackReason: 'PLACES_DISABLED'`. Rows in the usage table for routed driving:
+**0, ever** — under the legacy `distance_matrix` SKU and under `route_matrix`, which replaced it per
+`routing-decisions.md` §1.
 
 Proven rather than read, under `VERCEL_ENV=production` with no flags set:
 

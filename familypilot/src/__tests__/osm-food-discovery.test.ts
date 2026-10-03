@@ -323,3 +323,90 @@ describe('the whole lookup is bounded, not just each request', () => {
     expect(osmFood.TOTAL_DEADLINE_MS).toBeLessThanOrEqual(20000);
   });
 });
+
+/**
+ * The owner's decision was to keep the 60-element cap and gather evidence rather than raise it, so the
+ * evidence has to actually be gathered. Every count here comes from the one response already made.
+ */
+describe('the discovery funnel is reported without a second request', () => {
+  it('counts every stage, so the drop at each one is visible', async () => {
+    serve(() => [
+      node(1),
+      node(2, { tags: { amenity: 'cafe', name: 'A Cafe' } }),
+      // Dropped at validation: no name, so nothing a parent could be shown. The name has to be blanked
+      // explicitly -- the `node` helper always supplies one, and an earlier version of this test passed
+      // `{ amenity: 'restaurant' }` expecting that to remove it, which it does not.
+      node(3, { tags: { name: '' } }),
+      // Dropped at dedupe: same name within 40m of node 1.
+      node(4, { lat: 51.5085, lon: -0.12851, tags: { name: 'Place 1' } }),
+    ]);
+    const result = await osmFood.searchOsmFood(ANCHOR);
+    expect(result.discovery).toMatchObject({
+      rawElements: 4,
+      afterValidation: 3,
+      afterDedupe: 2,
+      elementCap: osmFood.MAX_ELEMENTS,
+      saturatedCap: false,
+    });
+    expect(requests).toHaveLength(1);
+  });
+
+  it('calls a full response saturated, because the cap is where it stopped', async () => {
+    serve(() => Array.from({ length: osmFood.MAX_ELEMENTS }, (_, i) => node(1000 + i, {
+      // Spread them out so dedupe does not collapse them and confuse the count under test.
+      lat: 51.5085 + i * 0.0004, tags: { name: `Distinct ${i}` },
+    })));
+    const result = await osmFood.searchOsmFood(ANCHOR);
+    expect(result.discovery.rawElements).toBe(osmFood.MAX_ELEMENTS);
+    expect(result.discovery.saturatedCap).toBe(true);
+    expect(requests).toHaveLength(1);
+  });
+
+  it('judges saturation against the cap that actually applied, not against 60', async () => {
+    // The case a single hardcoded cap gets wrong. The narrower retry asks for 25, so 25 elements back
+    // from IT is saturated -- while 25 from the first query would be nowhere near the limit.
+    // BOTH endpoints must fail the first query to reach the narrow retry. Failing only fetch attempt 1
+    // falls over to the second endpoint with the SAME query, which is a different thing -- a mistake
+    // this test made first time round and which is now asserted on its own below.
+    serve((_body, attempt) => {
+      if (attempt <= 2) return new Error('Overpass said no');
+      return Array.from({ length: 25 }, (_, i) => node(2000 + i, {
+        lat: 51.5085 + i * 0.0004, tags: { name: `Narrow ${i}` },
+      }));
+    });
+    const result = await osmFood.searchOsmFood(ANCHOR);
+    expect(result.overpassRequests).toBe(2);
+    expect(result.discovery.elementCap).toBe(25);
+    expect(result.discovery.saturatedCap).toBe(true);
+  });
+
+  it('counts endpoint failover as the extra request it is', async () => {
+    /**
+     * The undercount this found. `overpassRequests` counts QUERIES, so a first endpoint that 429s and a
+     * second that answers reported "1 Overpass request" for two requests actually sent. For a free
+     * service funded by donations, understating our load exactly when we are retrying is the wrong
+     * direction to be wrong in.
+     */
+    serve((_body, attempt) => (attempt === 1 ? { status: 429 } : [node(1)]));
+    const result = await osmFood.searchOsmFood(ANCHOR);
+    expect(result.overpassRequests).toBe(1);
+    expect(result.overpassHttpRequests).toBe(2);
+    expect(requests).toHaveLength(2);
+  });
+
+  it('never reports fewer requests than queries', async () => {
+    serve(() => [node(1)]);
+    const result = await osmFood.searchOsmFood(ANCHOR);
+    expect(result.overpassHttpRequests).toBeGreaterThanOrEqual(result.overpassRequests);
+    expect(result.overpassHttpRequests).toBe(1);
+  });
+
+  it('does not call 25 from the first query saturated', async () => {
+    serve(() => Array.from({ length: 25 }, (_, i) => node(3000 + i, {
+      lat: 51.5085 + i * 0.0004, tags: { name: `Roomy ${i}` },
+    })));
+    const result = await osmFood.searchOsmFood(ANCHOR);
+    expect(result.discovery.elementCap).toBe(osmFood.MAX_ELEMENTS);
+    expect(result.discovery.saturatedCap).toBe(false);
+  });
+});

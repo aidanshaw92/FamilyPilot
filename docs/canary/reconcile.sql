@@ -6,7 +6,8 @@
 -- PREDICTED, for five venue opens on a cold cache:
 --   Overpass requests      5   (one per anchor; the provider retries at most once, narrower)
 --   Google billable units  0   in every scope -- the food path holds no Google client at all
---   distance_matrix rows   0   the journeys scope is refused unless enabled by name
+--   route_matrix rows      0   the journeys scope is refused unless enabled by name
+--   distance_matrix rows   0   and must stay 0: the legacy API is no longer called at all
 --   nearby-food cache rows 5   one per anchor, keyed on coordinates rounded to ~11m
 --
 -- A second pass over the same five anchors predicts 0 further Overpass requests and the same 5 rows,
@@ -18,7 +19,20 @@ from google_places_usage
 where usage_day = current_date
 
 union all
-select 'distance_matrix rows ever (any day, any env)',
+-- Routed driving as it will be billed from now on. Must be 0 until the owner enables the scope.
+-- NOTE when it is non-zero: this is an UPPER BOUND on spend, not an equality. The budget is charged
+-- before the request, so a failed request is counted here and not on Google's invoice. An invoice
+-- BELOW this number is expected; an invoice ABOVE it means a billable path bypasses the gate.
+-- See docs/routing-decisions.md.
+select 'route_matrix rows ever (any day, any env)',
+       count(*)::text
+from google_places_usage
+where sku = 'route_matrix'
+
+union all
+-- The legacy API, kept as its own line rather than replaced. It was never called, and the renamed SKU
+-- must not be allowed to hide a legacy row appearing later from some path nobody audited.
+select 'distance_matrix rows ever (legacy, must stay 0)',
        count(*)::text
 from google_places_usage
 where sku = 'distance_matrix'

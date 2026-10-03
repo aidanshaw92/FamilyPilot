@@ -186,7 +186,16 @@ async function getNearbyFood(anchor, options = {}, deps = {}) {
     // it only means the next reader pays for Overpass again.
     await writeCache(
       cacheKey,
-      { candidates: discovery.candidates, radiusM: discovery.radiusM, fetchedAt: discovery.fetchedAt },
+      {
+        candidates: discovery.candidates,
+        radiusM: discovery.radiusM,
+        fetchedAt: discovery.fetchedAt,
+        // Stored so the cap question can be answered by SQL over rows that already exist, with no
+        // migration and no second Overpass request. `payload` is jsonb, so this needs no schema change:
+        //   select count(*) from place_search_cache
+        //   where cache_key like 'nearby-food%' and (payload -> 'discovery' ->> 'saturatedCap') = 'true';
+        discovery: discovery.discovery ?? null,
+      },
       { provider: 'osm', billableCalls: 0 },
     );
   }
@@ -212,6 +221,13 @@ async function getNearbyFood(anchor, options = {}, deps = {}) {
     cacheState,
     radiusM,
     fetchedAt: discovery.fetchedAt,
+    /**
+     * The discovery funnel, surfaced so the canary can report it without a second request.
+     *
+     * Null on a cache hit written before this field existed, which is a real state rather than a zero:
+     * a count of 0 would say Overpass returned nothing, and that is not what an absent record means.
+     */
+    discovery: discovery.discovery ?? null,
     // The ODbL credit the surface owes for every candidate here.
     attribution: 'osm',
   };
