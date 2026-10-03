@@ -223,7 +223,7 @@ File `LNpbdnuAWcfWf9spvB7jBz`, one page, five approved frames, each read through
 | # | Slice | Frame |
 | --- | --- | --- |
 | 7 | Onboarding, About, Feedback copy; closed-day date voice; touch targets; state captures (in flight) | none |
-| 8 | **Family Fit**: terminology and the two badge sizes, app-wide, with the probes updated | 01, 02 |
+| 8 | **Family Fit** (done): one label constant drives the badge, the classification words are "Excellent fit · Great fit · Good fit · Worth considering · Limited fit", the Venue eyebrow, About, Edit profile, onboarding, the Saved sort chip and the Explore editorial subtitle all say Family Fit, both verifier probes updated, the design-system guard fails on any parent-facing "Family Match"; `size="compact"` added to the badge from node 49:5; budget options in onboarding and Edit profile are Chips like the drive-time row | 01, 02 |
 | 9 | **Venue Detail** to frame 02 with the product's panel and provenance kept | 02 |
 | 10 | **Create a plan + Generating** to frames 04/04b: chips with "Other" opening the drawn pickers, one party chip, the profile receipt, "Build my plan" | 04, 04b |
 | 11 | **Plan** to frame 03: centred header, timing insight, "Stop N" cards with thumbnails and uppercase row labels, "Head home" | 03 |

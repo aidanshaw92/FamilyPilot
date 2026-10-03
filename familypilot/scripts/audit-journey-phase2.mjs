@@ -280,12 +280,18 @@ async function auditJourney(browser, viewport) {
     const o = await overflow(page);
     return { ok: o === null, message: o ? `${o.scroll} in ${o.viewport}: ${o.offenders.join(' ; ')}` : undefined };
   })());
-  note(V, 'Venue Detail', 'keeps the footer CTA clear of the home indicator', await (async () => {
-    const box = await page.getByTestId('venue-create-plan').boundingBox().catch(() => null);
+  // Frame 02 draws Create a plan inline (node 72:2) rather than in a fixed footer, so the question is
+  // no longer "does the footer clear the indicator" but "once scrolled to, is the whole CTA on screen
+  // and clear of it". Scrolling it into view is what a parent does; the assertion is on the result.
+  note(V, 'Venue Detail', 'Create a plan sits whole on screen and clear of the home indicator once reached', await (async () => {
+    const cta = page.getByTestId('venue-create-plan');
+    await cta.scrollIntoViewIfNeeded().catch(() => {});
+    await page.waitForTimeout(400);
+    const box = await cta.boundingBox().catch(() => null);
     const limit = viewport.height - (viewport.insets?.bottom ?? 0);
     return {
-      ok: box ? box.y + box.height <= limit + 1 : false,
-      message: box ? `bottom ${Math.round(box.y + box.height)}, indicator starts at ${limit}` : 'no box',
+      ok: box ? box.y >= 0 && box.y + box.height <= limit + 1 : false,
+      message: box ? `top ${Math.round(box.y)}, bottom ${Math.round(box.y + box.height)}, indicator starts at ${limit}` : 'no box',
     };
   })());
 

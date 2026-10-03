@@ -161,19 +161,23 @@ async function run(browser, viewport) {
   await settle(page, 1200);
   await page.screenshot({ path: join(dir, '01-venue-detail.png') });
 
+  // Frame 02 draws Create a plan inline (node 72:2), below Restaurants close by, so it is reached
+  // by scrolling rather than pinned in a footer.
   const cta = page.getByTestId('venue-create-plan');
   const ctaVisible = await cta.isVisible().catch(() => false);
   note(viewport.label, 'Venue Detail offers Create a plan', {
     ok: ctaVisible,
-    message: ctaVisible ? undefined : 'the footer CTA was not visible',
+    message: ctaVisible ? undefined : 'the Create a plan CTA was not in the page',
   });
 
   if (ctaVisible) {
+    await cta.scrollIntoViewIfNeeded().catch(() => {});
+    await page.waitForTimeout(300);
     const box = await cta.boundingBox();
-    const inside = box ? box.y + box.height <= viewport.height + 1 : false;
-    note(viewport.label, 'the CTA is not clipped by the viewport', {
+    const inside = box ? box.y >= 0 && box.y + box.height <= viewport.height + 1 : false;
+    note(viewport.label, 'the CTA sits whole on screen once reached', {
       ok: inside,
-      message: box ? `bottom at ${Math.round(box.y + box.height)} of ${viewport.height}` : 'no box',
+      message: box ? `top ${Math.round(box.y)}, bottom ${Math.round(box.y + box.height)} of ${viewport.height}` : 'no box',
     });
   }
 
