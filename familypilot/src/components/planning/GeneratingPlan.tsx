@@ -26,7 +26,7 @@ export interface GeneratingPlanProps {
 export function GeneratingPlan({ venueName, steps, done, current }: GeneratingPlanProps) {
   return (
     <View style={styles.container} testID="generating-plan">
-      <Text variant="caption" color={colors.text.secondary} style={styles.eyebrow}>
+      <Text variant="eyebrow">
         BUILDING YOUR DAY
       </Text>
       <Text variant="heading1" style={styles.title}>
@@ -76,7 +76,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
   },
-  eyebrow: { letterSpacing: 0.8 },
   title: { marginBottom: spacing.xl },
   steps: { gap: spacing.lg },
   step: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

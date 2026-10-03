@@ -48,6 +48,7 @@ and Black are loaded but no consumer text is set in them.
 | `caption` | 12 / 16 | 500 | Metadata, eyebrows (colour `text.tertiary`). |
 | `label` | 13 / 18 | 600, +0.5 | Form group labels. |
 | `link` | 14 / 20 | 600, ink | Inline text actions: "Undo", "View details", "Reset", "+ Add another child". |
+| `eyebrow` | 13 / 16 | 500, +1.04 | The small upper-case line above a title (Home card's "SOFT PLAY", "FAMILY MATCH", "WHEN", "MORNING"). Callers pass capitals; the variant does not transform. |
 
 ## Spacing, radius, shadow
 
@@ -73,7 +74,8 @@ Touch targets: 44pt minimum.
 | `FamilyMatch` | The one Family Match badge (frame node 8:13): `★ 4.0 Family Match`, 32 tall. | `tone="onImage"` over photography, `"onLight"` on white. Unreviewed → "Not yet reviewed", no number. Unknown score → renders nothing. Scale and strings live in `src/utils/family-match-scale.ts`. |
 | `FamilyMatchPanel` / `RecommendationPattern` | The explanation: classification word, "Why it suits your family", "Good to know", the secondary number line. | Word leads, number is secondary, cautions never render as positives. |
 | `CircleButton` | Round control: `light` (white on photography), `dark` (ink), `glass`. | Back, save, filter, "go". |
-| `SearchBar`, `Field`, `DateField`/`TimeField`, `BottomSheet`, `Card`, `SectionHeader`, `EmptyState`, `ErrorState`, `Skeleton*`, `VenueImage`, `DataTrustBadge` | Shared surfaces and states. | `DateField`/`TimeField` still render native browser inputs on web (slice 4). |
+| `DateField` / `TimeField` | A drawn field (white, hairline, 48 tall) showing the value in the app's words — "Friday 2 October 2026", "09:00" — with the platform's native picker kept underneath, transparent, for the interaction. | ISO values in, ISO values out. Labels from `date-time-labels.ts`. Native apps keep the plain text field. |
+| `SearchBar`, `Field`, `BottomSheet`, `Card`, `SectionHeader`, `EmptyState`, `ErrorState`, `Skeleton*`, `VenueImage`, `DataTrustBadge` | Shared surfaces and states. | |
 
 ## Family Match: one scale, one vocabulary
 
@@ -97,3 +99,9 @@ Touch targets: 44pt minimum.
 Haptics: selection on chips, light impact on buttons. Every icon-only control has an
 `accessibilityLabel`; selected chips expose `accessibilityState.selected`; the Family Match badge
 speaks "4.0 out of 5 Family Match, Good match".
+
+## Clock and date
+
+One clock: **24-hour**, zero-padded (`09:05`, `14:21`), from `formatClock` and the plan's own
+`clockLabel`. Dates a parent chooses are spelled out with the weekday (`Friday 2 October 2026`) so no
+browser locale can swap day and month. ISO strings underneath, everywhere.

@@ -74,6 +74,18 @@ export const typography = {
     letterSpacing: 0.5,
     color: colors.text.secondary,
   },
+  /**
+   * The small upper-case line above a title (the Home card's "SOFT PLAY", frame: Medium 13/16 with
+   * a +1.04 track). Callers pass the text already in capitals; the variant does not transform it,
+   * so what a screen reader and a DOM probe see is what is drawn.
+   */
+  eyebrow: {
+    fontFamily: fontFamily.medium,
+    fontSize: 13,
+    lineHeight: 16,
+    letterSpacing: 1.04,
+    color: colors.text.secondary,
+  },
   /** An inline text action ("Undo", "View details", "Reset"): ink and a touch heavier than the body
    * copy around it, so it reads as pressable without borrowing a colour from nowhere. */
   link: {

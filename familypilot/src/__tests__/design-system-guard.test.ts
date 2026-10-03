@@ -66,7 +66,7 @@ describe('consumer screens stay on the tokens', () => {
 
   it("do not hard-code the frame's ink or greys when the token exists", () => {
     const offenders = consumerFiles.filter((file) =>
-      /#(141416|6E6E73|0A0A0D|5C586E)\b/i.test(readFileSync(join(ROOT, file), 'utf8')),
+      /#(141416|6E6E73|0A0A0D|5C586E|1A1A2E)\b/i.test(readFileSync(join(ROOT, file), 'utf8')),
     );
     expect(offenders).toEqual([]);
   });

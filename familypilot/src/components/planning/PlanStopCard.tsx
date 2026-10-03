@@ -29,7 +29,7 @@ export function PlanStopCard({ stop, expanded, onToggle, periodLabel }: PlanStop
   return (
     <View>
       {periodLabel ? (
-        <Text variant="caption" color={colors.text.secondary} style={styles.period}>
+        <Text variant="eyebrow" style={styles.period}>
           {periodLabel.toUpperCase()}
         </Text>
       ) : null}
@@ -81,7 +81,6 @@ export function PlanStopCard({ stop, expanded, onToggle, periodLabel }: PlanStop
 
 const styles = StyleSheet.create({
   period: {
-    letterSpacing: 0.8,
     marginTop: spacing.lg,
     marginBottom: spacing.xs,
   },

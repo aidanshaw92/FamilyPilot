@@ -239,7 +239,7 @@ export default function VenueScreen() {
           <View style={styles.heroTitle}>
             {/* The Home card's rhythm, continued: eyebrow, title, then the badge with the journey
                 beside it. The badge here is the same component as the one the parent just tapped. */}
-            <Text variant="caption" color={colors.text.inverse} style={styles.heroEyebrow}>
+            <Text variant="eyebrow" color={colors.text.inverse} style={styles.heroEyebrow}>
               {formatCategory(venue.category)}
             </Text>
             <Text variant="heading1" color={colors.text.inverse}>
@@ -257,9 +257,7 @@ export default function VenueScreen() {
           <FadeInView>
             <View style={styles.matchIntro}>
               {/* The same eyebrow treatment as the Home card and the hero above. */}
-              <Text variant="caption" color={colors.text.secondary} style={styles.sectionEyebrow}>
-                FAMILY MATCH
-              </Text>
+              <Text variant="eyebrow">FAMILY MATCH</Text>
               <Text variant="heading2">Will this work for your family?</Text>
             </View>
             {/* The word leads inside the panel ("Good match"), the number sits on the hero badge
@@ -505,19 +503,9 @@ const styles = StyleSheet.create({
     right: spacing.screenPadding,
     zIndex: 2,
   },
-  sectionEyebrow: {
-    letterSpacing: 1.04,
-    fontFamily: 'Inter_500Medium',
-    fontSize: 13,
-    lineHeight: 16,
-  },
   heroEyebrow: {
-    // The Home card's eyebrow (frame: 13/16, +1.04 track, upper case), at 82% so the title leads.
-    letterSpacing: 1.04,
+    // The Home card's eyebrow, at 82% so the title leads.
     textTransform: 'uppercase',
-    fontFamily: 'Inter_500Medium',
-    fontSize: 13,
-    lineHeight: 16,
     marginBottom: 4,
     opacity: 0.82,
   },
