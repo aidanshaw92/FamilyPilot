@@ -43,6 +43,10 @@ export interface PlanStopView {
   role: 'activity' | 'meal';
   /** Shown when the stop is expanded. */
   rows: PlanStopRow[];
+  /** Frame 03's 62pt thumbnail (node 73:3). Absent, the card draws the category placeholder. */
+  imageUrl?: string;
+  /** For the placeholder when there is no photograph: the stop's category if known. */
+  category?: string;
   /** The journey from the previous stop. Absent on the first stop, which is arrived at from home. */
   arrivalTravel?: PlanArrivalTravelView;
 }
@@ -86,6 +90,14 @@ export interface PlanSectionView {
 
 export interface PlanViewModel {
   title: string;
+  /** "Saturday", for frame 03's "Your Saturday plan" heading (node 70:31); null without a date. */
+  dayName: string | null;
+  /**
+   * Frame 03's timing insight (node 74:3): one quiet line relating the day to the family's own
+   * routine, "Home around 14:45, before the usual nap". Only when the planner itself recorded a
+   * routine the day is home before; never invented from the time alone.
+   */
+  insight: string | null;
   /** "Sat 11 Oct · 09:45–14:30" */
   dateSummary: string;
   /** "A 5-hour Saturday" */
@@ -256,6 +268,8 @@ export interface PlanViewModelInput {
   anchorName: string;
   /** The anchor's parking facts. Absent means nobody confirmed them. */
   parking?: PlanParkingInput;
+  /** Photographs and categories by place id, for the stop cards. Absent stops draw a placeholder. */
+  media?: Record<string, { imageUrl?: string; category?: string }>;
 }
 
 /**
@@ -313,12 +327,19 @@ export function toPlanViewModel(input: PlanViewModelInput): PlanViewModel {
   const dayStart = primary ? primary.depart : itinerary.stops[0]?.arrive ?? 0;
   const dayEnd = primary ? primary.home : itinerary.stops[itinerary.stops.length - 1]?.depart ?? 0;
 
-  const stops: PlanStopView[] = itinerary.stops.map((stop) => {
+  const stops: PlanStopView[] = itinerary.stops.map((stop, position) => {
+    // Frame 03's expanded rows (nodes 73:9 to 73:18): arrive, how long, leave, then the journey on
+    // to the next stop. Opening stays, because an unconfirmed opening is something nobody checked.
+    const next = itinerary.stops[position + 1];
+    const onward = next ? arrivalTravelFor(next, itinerary.legs) : undefined;
     const rows: PlanStopRow[] = [
       { label: 'Arrive', value: planClock(stop.arrive) },
       { label: 'Time there', value: durationLabel(stop.dwellMinutes) },
+      { label: 'Leave', value: planClock(stop.depart) },
       openingRow(stop),
+      ...(onward ? [{ label: 'Travel to next stop', value: onward.label }] : []),
     ];
+    const media = input.media?.[stop.placeId];
     return {
       index: stop.index,
       placeId: stop.placeId,
@@ -330,6 +351,8 @@ export function toPlanViewModel(input: PlanViewModelInput): PlanViewModel {
       role: stop.role,
       rows,
       arrivalTravel: arrivalTravelFor(stop, itinerary.legs),
+      imageUrl: media?.imageUrl,
+      category: media?.category ?? (stop.role === 'meal' ? 'restaurant' : undefined),
     };
   });
 
@@ -357,8 +380,17 @@ export function toPlanViewModel(input: PlanViewModelInput): PlanViewModel {
       ? 'All journey times are estimated from distance.'
       : `${live} journey time${live === 1 ? '' : 's'} measured, ${estimated} estimated from distance.`;
 
+  // The planner records "Home before <routine> at <time>." on the family it planned for; that is the
+  // only source the insight line may have. No note, no line.
+  const homeBefore = primary?.notes
+    .map((note) => /^Home before (.+) at (\d{2}:\d{2})\.$/.exec(note))
+    .find((match): match is RegExpExecArray => Boolean(match));
+  const insight = primary && homeBefore ? `Home around ${planClock(primary.home)}, before ${homeBefore[1]}` : null;
+
   return {
     title: `A day at ${anchorName}`,
+    dayName: date ? date.long : null,
+    insight,
     dateSummary: date
       ? `${date.short} ${date.day} ${date.month} · ${planClock(dayStart)}–${planClock(dayEnd)}`
       : `${planClock(dayStart)}–${planClock(dayEnd)}`,

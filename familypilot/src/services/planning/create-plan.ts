@@ -66,6 +66,8 @@ export interface CreatePlanInput {
    * lets the finished plan say which, rather than omitting lunch silently in both cases.
    */
   mealLookupFailed?: boolean;
+  /** The anchor's photograph for frame 03's stop thumbnail. Absent, the card draws a placeholder. */
+  anchorImageUrl?: string;
   /**
    * The venue's reviewed free-text parking detail, where it has one. Claim-backed facts come from
    * the venue itself, so only this prose needs passing in.
@@ -385,6 +387,12 @@ export async function createPlan(
       parking: anchorFacts.parking,
       freeParking: anchorFacts.freeParking,
       info: input.parkingInfo,
+    },
+    // Frame 03's stop thumbnails: the anchor's own photograph; a lunch stop from OpenStreetMap has
+    // none, so it draws the restaurant placeholder rather than borrowing a picture.
+    media: {
+      [anchor.placeId]: { imageUrl: input.anchorImageUrl, category: venue.category },
+      ...(mealStop ? { [mealStop.placeId]: { category: 'restaurant' } } : {}),
     },
   };
 

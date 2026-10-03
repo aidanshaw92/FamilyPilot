@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { BackButton } from '@/src/components/ui/BackButton';
-import { Button, Text } from '@/src/components/ui';
+import { Text } from '@/src/components/ui';
+import { ArrowCta } from '@/src/components/ui/ArrowCta';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { safeFooterPadding } from '@/src/utils/safe-area';
 import { PlanSectionView, PlanViewModel } from '@/src/services/planning/plan-view-model';
@@ -56,17 +57,19 @@ export function PlanScreenView({
       current.includes(index) ? current.filter((i) => i !== index) : [...current, index],
     );
 
-  let lastPeriod: string | null = null;
-
   return (
     <View style={styles.container}>
+      {/* Frame 03's header (nodes 70:16 to 70:23): the title and its dates centred between the back
+          circle and the save control. */}
       <View style={[styles.header, { paddingTop: topInset + spacing.sm }]}>
-        <BackButton onPress={onBack} />
+        <View style={styles.headerCircle}>
+          <BackButton onPress={onBack} />
+        </View>
         <View style={styles.headerText}>
-          <Text variant="heading3" numberOfLines={2}>
+          <Text style={styles.headerTitle} numberOfLines={2}>
             {view.title}
           </Text>
-          <Text variant="caption" color={colors.text.secondary}>
+          <Text style={styles.headerDates} numberOfLines={1}>
             {view.dateSummary}
           </Text>
         </View>
@@ -79,13 +82,13 @@ export function PlanScreenView({
           accessibilityRole="button"
           accessibilityLabel={saved ? 'Plan saved' : 'Save this plan'}
           accessibilityState={{ disabled: saved }}
-          style={styles.headerSave}
+          style={styles.headerCircle}
           testID="plan-save-header"
         >
           <Ionicons
             name={saved ? 'bookmark' : 'bookmark-outline'}
             size={20}
-            color={saved ? colors.ink : colors.text.secondary}
+            color={colors.ink}
           />
         </Pressable>
       </View>
@@ -108,12 +111,7 @@ export function PlanScreenView({
             style={[styles.navItem, section === entry.id && styles.navItemActive]}
             testID={`plan-section-${entry.id}`}
           >
-            <Text
-              variant="bodySmall"
-              color={section === entry.id ? colors.text.inverse : colors.text.secondary}
-            >
-              {entry.label}
-            </Text>
+            <Text style={[styles.navLabel, section === entry.id && styles.navLabelActive]}>{entry.label}</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -123,12 +121,24 @@ export function PlanScreenView({
         contentContainerStyle={[styles.scrollContent, { paddingBottom: spacing['5xl'] }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text variant="heading1" style={styles.summary}>
-          {view.summary}
+        {/* Node 70:31: "Your Saturday plan"; the summary ("A 4-hour Saturday") is kept by the model
+            for saved-plan lists, but this screen's dates row already says the span. */}
+        <Text variant="heading2" style={styles.summary}>
+          {view.dayName ? `Your ${view.dayName} plan` : 'Your plan'}
         </Text>
 
         {section === 'day' ? (
           <View>
+            {/* Node 74:3: one quiet line, only when the planner recorded a routine the day is home
+                before. Never an alert, never invented from the clock alone. */}
+            {view.insight ? (
+              <View style={styles.insight} testID="plan-insight">
+                <Ionicons name="checkmark" size={14} color={colors.ink} />
+                <Text style={styles.insightText} numberOfLines={1}>
+                  {view.insight}
+                </Text>
+              </View>
+            ) : null}
             {notices.length ? (
               <Block title="Before you go">
                 {notices.map((line) => (
@@ -138,30 +148,31 @@ export function PlanScreenView({
                 ))}
               </Block>
             ) : null}
-            {view.stops.map((stop) => {
-              const periodLabel = stop.period === lastPeriod ? undefined : stop.period;
-              lastPeriod = stop.period;
-              return (
-                <View key={`${stop.placeId}-${stop.index}`}>
-                  {/* The journey between stops, in the mode the plan's timings were computed from and
-                      worded from that leg's own provenance -- so an estimate reads "about 6 min drive"
-                      and never as a measured one. */}
-                  {stop.arrivalTravel ? (
-                    <View style={styles.hop} testID="plan-stop-hop">
-                      <Text variant="caption" color={colors.text.tertiary}>
-                        {stop.arrivalTravel.symbol} {stop.arrivalTravel.label}
-                      </Text>
-                    </View>
-                  ) : null}
-                  <PlanStopCard
-                    stop={stop}
-                    periodLabel={periodLabel}
-                    expanded={expanded.includes(stop.index)}
-                    onToggle={() => toggle(stop.index)}
-                  />
-                </View>
-              );
-            })}
+            {view.stops.map((stop) => (
+              <View key={`${stop.placeId}-${stop.index}`}>
+                {/* The journey from home to the first stop, in the mode the plan's timings were
+                    computed from and worded from that leg's own provenance, so an estimate reads
+                    "about 6 min drive" and never as a measured one. Later legs sit inside the
+                    previous card as "Travel to next stop" (node 73:17). */}
+                {stop.arrivalTravel && stop.index === view.stops[0]?.index ? (
+                  <View style={styles.hop} testID="plan-stop-hop">
+                    <Text variant="caption" color={colors.text.tertiary}>
+                      {stop.arrivalTravel.symbol} {stop.arrivalTravel.label} from home
+                    </Text>
+                  </View>
+                ) : null}
+                <PlanStopCard stop={stop} expanded={expanded.includes(stop.index)} onToggle={() => toggle(stop.index)} />
+              </View>
+            ))}
+
+            {/* Node 73:33: the terminus, with the time the planner says the family is home. */}
+            {view.party[0] ? (
+              <View style={styles.headHome} testID="plan-head-home">
+                <View style={styles.terminus} />
+                <Text style={styles.headHomeTime}>{view.party[0].homeLabel}</Text>
+                <Text style={styles.headHomeLabel}>Head home</Text>
+              </View>
+            ) : null}
 
             {view.unknowns.length ? (
               <Block title="Nobody has confirmed these">
@@ -243,13 +254,10 @@ export function PlanScreenView({
         ) : null}
       </ScrollView>
 
+      {/* Node 71:30: the CTA bar. Save this plan is this product's action here; the frame's invite
+          CTA belongs to the pilot-gated Plans tab. */}
       <View style={[styles.footer, { paddingBottom: safeFooterPadding(bottomInset) }]}>
-        <Button
-          label={saved ? 'Saved' : 'Save this plan'}
-          onPress={onSave}
-          disabled={saved}
-          testID="plan-save"
-        />
+        <ArrowCta label={saved ? 'Saved' : 'Save this plan'} onPress={onSave} disabled={saved} testID="plan-save" />
       </View>
     </View>
   );
@@ -291,31 +299,60 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingHorizontal: spacing.screenPadding,
-    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.lg,
   },
-  headerText: { flex: 1, gap: 2 },
-  headerSave: { padding: spacing.xs },
+  headerText: { flex: 1, gap: 2, alignItems: 'center' },
+  // Node 70:22: SemiBold 17, -0.255; node 70:23: 13 secondary.
+  headerTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 17, lineHeight: 21, letterSpacing: -0.255, color: colors.ink, textAlign: 'center' },
+  headerDates: { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 16, color: colors.text.secondary, textAlign: 'center' },
+  headerCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   // `flexGrow: 0` keeps the horizontal scroller to its content's height instead of taking the
   // column's spare vertical space, which would push the day's content off the screen.
   nav: { flexGrow: 0, marginBottom: spacing.md },
   navContent: {
     flexDirection: 'row',
-    gap: spacing.xs,
+    gap: spacing.sm,
     paddingHorizontal: spacing.screenPadding,
   },
+  // Node 70:25: 40 tall, 18 either side, radius 20; ink when active, white when not.
   navItem: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
+    height: 40,
+    paddingHorizontal: 18,
+    justifyContent: 'center',
+    borderRadius: 20,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
   },
-  navItemActive: { backgroundColor: colors.text.primary, borderColor: colors.text.primary },
+  navItemActive: { backgroundColor: colors.ink },
+  navLabel: { fontFamily: 'Inter_500Medium', fontSize: 14, lineHeight: 17, color: colors.ink },
+  navLabelActive: { fontFamily: 'Inter_600SemiBold', color: colors.text.inverse },
+  insight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.fill,
+    paddingHorizontal: 15,
+    marginBottom: spacing.lg,
+  },
+  insightText: { flex: 1, fontFamily: 'Inter_500Medium', fontSize: 13, lineHeight: 16, color: colors.text.secondary },
+  headHome: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, height: 44, paddingLeft: 42 - spacing.screenPadding },
+  terminus: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.ink },
+  headHomeTime: { fontFamily: 'Inter_600SemiBold', fontSize: 13, lineHeight: 16, color: colors.ink },
+  headHomeLabel: { fontFamily: 'Inter_500Medium', fontSize: 15, lineHeight: 18, color: colors.text.secondary },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: spacing.screenPadding },
-  summary: { marginBottom: spacing.sm },
+  summary: { marginBottom: spacing.md },
   blocks: { gap: spacing.md },
   block: {
     backgroundColor: colors.surface,

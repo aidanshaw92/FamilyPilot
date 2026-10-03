@@ -226,6 +226,7 @@ export default function PlanScreen() {
           },
           families: parties.families,
           parkingInfo: venue.parkingInfo,
+          anchorImageUrl: venue.photos?.[0],
           meal: lunch,
           mealLookupFailed: foodLookupFailed,
         },
