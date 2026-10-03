@@ -64,8 +64,26 @@ export function travelSourceOfLeg(leg: Pick<TravelLeg, 'source'>): TravelTimeSou
  * locked Home frame is re-measured against rather than assumed to tolerate.
  */
 export function travelTimeLabel(minutes: number, source: TravelTimeSource): string {
+  if (!isTravelTimeKnown(minutes)) return UNKNOWN_TRAVEL_LABEL;
   const rounded = Math.max(1, Math.round(minutes));
   return source === 'measured' ? `${rounded} min` : `about ${rounded} min`;
+}
+
+/**
+ * What to show when nobody has worked the journey out yet.
+ *
+ * NOT "0 min", AND NOT "about NaN min". A saved place restored from a cloud backup has no travel time by
+ * design: the backup deliberately does not carry one, because a distance from the family's home is
+ * personal, and because a cached distance is wrong rather than stale once a family moves. The first
+ * version of that restore handed `Number.NaN` to this function, which computed
+ * `Math.max(1, Math.round(NaN))` and produced the literal string "about NaN min" -- worse than the zero
+ * it was avoiding. An unknown has to read as unknown.
+ */
+export const UNKNOWN_TRAVEL_LABEL = 'Travel time not worked out yet';
+
+/** Whether a travel figure is a number anyone can act on. Guards every label in this module. */
+export function isTravelTimeKnown(minutes: number | null | undefined): boolean {
+  return typeof minutes === 'number' && Number.isFinite(minutes);
 }
 
 /** The same, naming the mode, for somewhere with room: `about 14 min drive`. */
@@ -74,6 +92,8 @@ export function travelTimeWithMode(
   source: TravelTimeSource,
   mode: TravelMode,
 ): string {
+  // Without this the unknown label would gain a mode noun: "Travel time not worked out yet drive".
+  if (!isTravelTimeKnown(minutes)) return UNKNOWN_TRAVEL_LABEL;
   return `${travelTimeLabel(minutes, source)} ${MODE_NOUN[mode]}`;
 }
 
@@ -99,6 +119,9 @@ export function travelTimeSpoken(
   source: TravelTimeSource,
   mode: TravelMode = 'drive',
 ): string {
+  // Guarded for the same reason as the visible label, and separately, because a screen-reader string
+  // saying "NaN minutes drive" is the version nobody would ever see in review.
+  if (!isTravelTimeKnown(minutes)) return UNKNOWN_TRAVEL_LABEL;
   const rounded = Math.max(1, Math.round(minutes));
   const unit = rounded === 1 ? 'minute' : 'minutes';
   const noun = mode === 'drive' ? 'drive' : MODE_NOUN[mode];

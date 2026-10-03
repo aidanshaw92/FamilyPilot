@@ -11,7 +11,7 @@ import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { Venue, VenueCategory } from '@/src/types';
 import { getMatchClassification } from '@/src/utils/family-match-classification';
-import { travelTimeLabel, travelTimeSpoken } from '@/src/utils/travel-time';
+import { isTravelTimeKnown, travelTimeLabel, travelTimeSpoken } from '@/src/utils/travel-time';
 
 const CATEGORY_LABELS: Record<VenueCategory, string> = {
   park: 'Park',
@@ -48,7 +48,22 @@ export function SavedPlaceRow({ venue, itemType, onRemoved, index = 0 }: SavedPl
     onRemoved?.(venue.id);
   };
 
-  const classification = getMatchClassification(venue.familyScore.score);
+  /**
+   * A SAVED PLACE MAY NOT HAVE BEEN SCORED YET, AND THEN IT MUST NOT CLAIM A SCORE.
+   *
+   * A place restored from a cloud backup arrives with no match and no travel time on purpose: the backup
+   * does not carry either, because both are derived from the family (where they live, how old the
+   * children are) and because a cached one is wrong rather than merely stale once any of that changes.
+   *
+   * So this row has to render an absence. Passing a non-finite score to `getMatchClassification` would
+   * fall through every threshold and label the place "Limited match", which is not an absence -- it is a
+   * judgement about a place nobody has judged.
+   */
+  const isScored = Number.isFinite(venue.familyScore?.score);
+  const classification = isScored
+    ? getMatchClassification(venue.familyScore.score)
+    : 'Match not worked out on this device yet';
+  const hasTravelTime = isTravelTimeKnown(venue.driveMinutes);
   const categoryLabel = isRestaurant ? 'Restaurant' : CATEGORY_LABELS[venue.category];
 
   return (
@@ -57,7 +72,11 @@ export function SavedPlaceRow({ venue, itemType, onRemoved, index = 0 }: SavedPl
         onPress={() => router.push(detailPath as never)}
         style={styles.row}
         accessibilityRole="button"
-        accessibilityLabel={`${venue.name}, ${classification}, ${travelTimeSpoken(venue.driveMinutes, 'estimated')}`}
+        accessibilityLabel={
+          hasTravelTime
+            ? `${venue.name}, ${classification}, ${travelTimeSpoken(venue.driveMinutes, 'estimated')}`
+            : `${venue.name}, ${classification}. Open it to work out the journey.`
+        }
       >
         <VenueImage
           uri={venue.imageUrl}
@@ -74,9 +93,13 @@ export function SavedPlaceRow({ venue, itemType, onRemoved, index = 0 }: SavedPl
             {categoryLabel}
           </Text>
           <View style={styles.meta}>
-            <FamilyMatch score={venue.familyScore.score} variant="compact" style={styles.match} />
+            {/* Omitted rather than shown at zero. A 0% badge on a place nobody has scored reads as a
+                verdict, and this product does not render a fact it does not have. */}
+            {isScored ? (
+              <FamilyMatch score={venue.familyScore.score} variant="compact" style={styles.match} />
+            ) : null}
             <Text variant="caption" color={colors.text.secondary}>
-              {travelTimeLabel(venue.driveMinutes, 'estimated')}
+              {hasTravelTime ? travelTimeLabel(venue.driveMinutes, 'estimated') : 'Open to see the journey'}
               {venue.estimatedSpend ? ` · Estimated ${venue.estimatedSpend}` : ''}
             </Text>
           </View>
