@@ -418,3 +418,55 @@ describe('an unmet requirement is explained, and absence is never read as a fact
     expect(outcome.message).not.toContain('someFutureConstraint');
   });
 });
+
+describe('a journey nobody could time is never called too long', () => {
+  // Same harness as the describe above: the planner is given a sequencer that fails this one way.
+  const run = (failure: SequenceFailure) =>
+    createPlan({ venue: venue(), draft, families: [family()] }, failing(failure));
+
+  /**
+   * Found by rendering, not by reading. With no travel time available the Plan screen said "The
+   * journey is too long", then "No travel time is known", then advised raising the travel limit --
+   * three statements, two of them false. The sequencer had filed an unknown leg under
+   * `travel-infeasible` because that was the only travel reason there was.
+   */
+  const unknown = {
+    reason: 'travel-unknown' as const,
+    message: 'No travel time is known between Our family and Kew Gardens.',
+    from: { kind: 'home' as const, familyId: 'mine' },
+    to: { kind: 'stop' as const, index: 0, placeId: 'a' },
+  };
+
+  it('says the journey could not be worked out, not that it is too long', async () => {
+    const outcome = await run(unknown);
+    if (outcome.ok) throw new Error('expected a failure');
+    expect(outcome.title).toBe('We could not work out the journey');
+    expect(outcome.title.toLowerCase()).not.toContain('too long');
+  });
+
+  it('does not advise raising a limit that was never the problem', async () => {
+    const outcome = await run(unknown);
+    if (outcome.ok) throw new Error('expected a failure');
+    expect(outcome.suggestions.join(' ')).not.toMatch(/raise/i);
+    expect(outcome.suggestions.join(' ')).not.toMatch(/closer/i);
+    // What would actually help: a retry, or a home location that geocodes.
+    expect(outcome.suggestions.some((s) => /try again/i.test(s))).toBe(true);
+    expect(outcome.suggestions.some((s) => /home location/i.test(s))).toBe(true);
+  });
+
+  it('turns the household label into prose, as every other sentence does', async () => {
+    const outcome = await run(unknown);
+    if (outcome.ok) throw new Error('expected a failure');
+    expect(outcome.message).toBe('No travel time is known between your family and Kew Gardens.');
+  });
+
+  it('leaves a genuinely over-limit journey worded exactly as before', async () => {
+    // The fix must not blur the two cases back together from the other side.
+    const outcome = await run({ reason: 'travel-infeasible', message: 'x',
+      from: { kind: 'home', familyId: 'mine' }, to: { kind: 'stop', index: 0, placeId: 'a' },
+      travelMinutes: 48, limitMinutes: 30, travelSource: 'live' });
+    if (outcome.ok) throw new Error('expected a failure');
+    expect(outcome.title).toBe('The journey is too long');
+    expect(outcome.message).toBe('That leg is 48 minutes, and your limit is 30.');
+  });
+});

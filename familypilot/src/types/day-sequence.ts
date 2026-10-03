@@ -178,6 +178,7 @@ export type SequenceFailureReason =
   | 'venue-closed'
   | 'venue-closes-during-visit'
   | 'routine-conflict'
+  | 'travel-unknown'
   | 'travel-infeasible'
   | 'return-by-exceeded'
   | 'no-feasible-sequence'
@@ -236,6 +237,23 @@ export type SequenceFailure =
       familyId: string;
       routineLabel: string;
       stopIndex?: number;
+    }
+  | {
+      /**
+       * A leg nobody could measure OR estimate. Its own reason, deliberately apart from
+       * `travel-infeasible`.
+       *
+       * It used to be reported as infeasible, and the screen then said "The journey is too long" and
+       * advised raising the travel limit -- about a journey that had never been timed. That mislabels
+       * unknown as a fact, which is the one thing this product's provenance rules exist to prevent. An
+       * unknown journey is a lookup problem to retry or a home location to check; it is not a parent's
+       * limit being too small, and the suggestions have to follow the real cause.
+       */
+      reason: 'travel-unknown';
+      message: string;
+      from: LegEndpoint;
+      to: LegEndpoint;
+      familyId?: string;
     }
   | {
       reason: 'travel-infeasible';

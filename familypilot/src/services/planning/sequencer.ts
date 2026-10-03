@@ -186,7 +186,7 @@ function tryOrder(
     ] as const) {
       if (!estimate || !Number.isFinite(estimate.minutes) || estimate.minutes < 0) {
         failures.push({
-          reason: 'travel-infeasible',
+          reason: 'travel-unknown',
           message: `No travel time is known between ${family.label} and ${to.kind === 'stop' ? first.name : 'home'}.`,
           from,
           to,
@@ -222,7 +222,7 @@ function tryOrder(
     const estimate = leg(matrix, stopKey(order[i].placeId), stopKey(order[i + 1].placeId));
     if (!estimate || !Number.isFinite(estimate.minutes) || estimate.minutes < 0) {
       failures.push({
-        reason: 'travel-infeasible',
+        reason: 'travel-unknown',
         message: `No travel time is known between ${order[i].name} and ${order[i + 1].name}.`,
         from: { kind: 'stop', index: i, placeId: order[i].placeId },
         to: { kind: 'stop', index: i + 1, placeId: order[i + 1].placeId },

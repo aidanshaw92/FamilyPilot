@@ -148,9 +148,10 @@ function buildHeuristicExplanation(
 
   if (factors.distance >= 85) {
     reasons.push(`Only ${venue.driveMinutes} minutes from home`);
-  } else if (venue.driveMinutes > profile.maxDriveMinutes) {
-    reasons.push(`Further than your usual ${profile.maxDriveMinutes} min drive`);
   }
+  // A drive beyond the family's limit used to be pushed into THIS list, so Venue Detail showed
+  // "Further than your usual 30 min drive" under "Why it suits your family" with a green tick. It is
+  // a caution, and it is raised as one in personalise-venues alongside the other cautions.
 
   const hasParking = venue.facilities?.includes('parking');
   const hasBabyChanging = venue.facilities?.includes('baby_changing');

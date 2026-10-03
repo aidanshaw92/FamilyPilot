@@ -347,7 +347,7 @@ function blameLeg(
   if (failure.reason === 'no-feasible-sequence' && failure.nearest) candidates.push(failure.nearest);
 
   for (const candidate of candidates) {
-    if (candidate.reason !== 'travel-infeasible') continue;
+    if (candidate.reason !== 'travel-unknown' && candidate.reason !== 'travel-infeasible') continue;
     const from = endpointKey(candidate.from);
     const to = endpointKey(candidate.to);
     const match = missing.find((leg) => leg.from === from && leg.to === to);
