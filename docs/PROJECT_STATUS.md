@@ -52,7 +52,9 @@ ground-up construction.
 | Profile edit, re-geocoding on location change | `app/profile/edit.tsx` | same |
 | Live London venue discovery (Home + Explore grid, area search e.g. "Richmond", "NW7") | `api/places/search.js`, `src/services/places/places-repository.ts` | Google Places (searchNearby), OSM Overpass fallback, mock last resort |
 | Venue detail (address, photos, hours, open status) | `api/places/detail.js`, `api/places/photo.js` | Google Places detail/photos |
-| Drive time / distance | `api/context/journey.js` | Google Distance Matrix; Haversine estimate fallback (labelled `estimated`) |
+| Drive time / distance | `api/context/journey.js`, `server/context/lib/route-matrix.js` | Google **Routes API `computeRouteMatrix`**, traffic-unaware, **fail-closed** (refuses unless `GOOGLE_JOURNEYS_ENABLED=true`); Haversine estimate fallback (labelled `estimated`). Legacy Distance Matrix is **never called** — see `docs/routing-decisions.md` §1 |
+| Public transport journeys (London) | `api/context/journey.js`, `server/context/lib/tfl-transit.js` | **TfL Unified API**, free, verified live; off unless `TFL_TRANSIT_ENABLED=true`, and not yet surfaced in the UI. Outside London returns `unknown`, never "no public transport" |
+| Places to eat near a venue (`RestaurantsCloseBy` on venue detail, and the lunch stop in a day plan) | `api/places/search.js?intent=nearby-food` → `server/places/lib/nearby-food-endpoint.js`, `osm-food.js` | **OpenStreetMap Overpass**, free, **zero Google calls by construction** — the module's whole import graph holds no API key, budget gate or Google client. Cached in Postgres for 6h. An outage surfaces as a `meal-lookup-failed` caveat, never as an empty neighbourhood. Walking and driving figures are labelled estimates; transit is deliberately **absent** rather than guessed |
 | Weather-aware recommendations | `api/context/weather.js` | OpenWeather; deterministic seasonal estimate fallback (labelled `estimated`) |
 | Family Match scoring, explainable reasons | `src/services/scoring/*`, personalisation in `services/api/index.ts` | client-side, driven by real profile + real venue data |
 | Venue facility trust model (confirmed / not yet confirmed — never "No" for unknown) | `server/enrichment/_lib/consumer-projection.js`, `FacilityGrid.tsx`, venue detail screen | Supabase-backed evidence/claims pipeline (see below) |
@@ -73,7 +75,13 @@ These are hidden by default in the pilot build via `src/config/pilot-features.ts
 - Holiday planner (`app/holiday.tsx`) — mock provider comparison
 - Packing list (`app/packing.tsx`) — static checklist, not trip/weather-driven
 - Car fit checker (`app/car-fit.tsx`) — fixed mock vehicle/equipment data
-- Restaurant browsing / Eat Nearby, Concierge modal — behind the same flag
+- Restaurant browsing (`app/restaurant/[id].tsx`, Explore's Restaurants category, Saved's Restaurants
+  filter), the **mock** `EatNearbySection`, and the Concierge modal — behind the same flag
+  - **THERE ARE TWO "EAT NEARBY" THINGS AND THEY ARE NOT THE SAME.** `EatNearbySection` is the mock one,
+    gated behind `eat_nearby`. `RestaurantsCloseBy` is the **real** one — OpenStreetMap-backed, live, and
+    **not gated** — and it renders on every venue detail today. Reading "Eat Nearby is behind a flag" and
+    concluding no real restaurant data ships would be wrong. Same hazard as `CommunitySection` versus
+    `VenueTrustPanel` below.
 - `CommunitySection` on venue detail — renders mock `communityTips` if present (harmless: renders nothing for real venues, which have none); **the real feedback signal is `VenueTrustPanel`**, not this component — don't confuse the two when reading venue detail code.
 
 ### Known gap: the old Supabase schema is unused
@@ -149,24 +157,36 @@ visibility bug, and documentation debt.
    use matters.
 2. **Old `001_initial_schema.sql` schema is dead code.** Either delete it or explicitly mark it
    superseded so a future agent doesn't build on it by mistake.
-3. **This session could not perform live manual QA against real providers.** All server-side keys
-   (`GOOGLE_PLACES_API_KEY`, `OPENWEATHER_API_KEY`, `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
-   `SUPABASE_URL`, `PLACES_PROVIDER`, `ENRICHMENT_ADMIN_TOKEN`) **are confirmed configured** in the
-   Vercel project's Production + Preview environments (verified via the Vercel dashboard, 11 Sept 2026).
-   However this sandboxed session has no general internet egress — only a small allowlist (npm, PyPI,
-   the Anthropic API) — so it could reach neither the production URL, the PR's own preview deployment,
-   nor the Vercel API itself (the Vercel MCP connector here is also 403-scoped to a different account
-   than the one that owns this project). Everything above was verified by reading code paths and passing
-   tests, not by clicking through the running app with real data. **Someone with browser access should
-   manually walk the test plan in `docs/PARENT_TESTING_GUIDE.md`** against the PR preview URL (posted by
-   the Vercel bot on the PR) or production (NW7, Richmond, Greenwich, Bromley, an invalid postcode;
-   save/unsave persistence; provider-failure behaviour).
-   - **One concrete gap found while checking the Vercel dashboard:** the two **client-side** Supabase
-     vars (`EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`/`_ANON_KEY`) are not among
-     the 7 configured vars. Server-side Supabase features (connections API, post-visit feedback API,
-     enrichment pipeline) will work; client-side Supabase auth (the Plans tab's "connect a family" /
-     cloud-backup-your-plans account flow) will not — the UI should show "Account connections need to be
-     enabled by the app owner" rather than failing silently, but this needs a live check.
+3. **Live verification of real providers is now possible, and has been done — from CI, not from here.**
+   This item is **substantially revised (3 Oct 2026)**; what it said before was accurate in September and
+   is no longer.
+
+   The sandbox's egress limits still hold: it cannot reach the production URL, a preview deployment,
+   `api.tfl.gov.uk`, `overpass-api.de` or Google's documentation. **The way around that is GitHub
+   Actions**, which has ordinary egress and can call a deployed build. Two workflows now do exactly that
+   and are the pattern to reuse: `.github/workflows/live-canaries.yml` and
+   `.github/workflows/transit-live-smoke.yml`. Running the check from CI is also *better* than from a
+   laptop: it makes the request through the deployment's own egress, User-Agent and cache, so what is
+   measured is the request the product actually makes.
+
+   What has been verified live this way: TfL transit (cross-checked against the runner's own independent
+   call to TfL), one real Routes API element, the food cache's behaviour, and the Google cost posture of
+   both Preview and production. See `docs/RESTAURANT_ROUTING_SIGNOFF.md` for the run ids.
+
+   **The Vercel MCP connector is not 403-scoped to another account** — it works for this project. One
+   quirk worth knowing, because it looks exactly like a permissions problem: passing the project **id**
+   together with `teamId` returns `403 forbidden`, while passing the project **name** (`family-pilot`)
+   with no team parameter succeeds. If a Vercel call 403s, try the name before concluding you lack access.
+
+   **The client-side Supabase vars now exist in Production** (`EXPO_PUBLIC_SUPABASE_URL`,
+   `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`), so the Plans tab's account flow is configured there. They are
+   **absent from Preview**, so that flow will not work on a preview deployment — which is a real trap when
+   testing a PR rather than production.
+
+   Still outstanding, and genuinely needing a person: **manually walking `docs/PARENT_TESTING_GUIDE.md`**
+   against production (NW7, Richmond, Greenwich, Bromley, an invalid postcode; save/unsave persistence;
+   provider-failure behaviour). Automated checks cover request paths and cost posture; they do not tell
+   you whether the app feels right to a parent.
 4. **Mock/legacy Phase-1 screens** (Need Now, Holiday, Packing, Car Fit) remain behind the pilot flag —
    correctly deferred per the master build priority (P2), not a bug.
 5. **`docs/` still contains many stale files** dated 6–8 August 2026 (`PHASE_2_REMEDIATION.md`,
@@ -245,6 +265,14 @@ or more as noted above.
 | [FAMILY_GRAPH.md](./FAMILY_GRAPH.md) | Family-to-family connection model |
 | [FAMILY_PLANNING_BUILD.md](./FAMILY_PLANNING_BUILD.md) | **Up to date (10 Sept 2026)** — the actual spec for the Plans tab, routine-aware scheduling, fair meeting suggestions, connections, and cloud backup implemented in this pass. Read this instead of the Phase-1 Trips description elsewhere. |
 | [VENUE_DATA_AUTOMATION.md](./VENUE_DATA_AUTOMATION.md) | Data pipeline / applied schema / release steps behind the above |
+
+### Cost, routing and live verification (current as of 3 Oct 2026)
+
+| Document | Purpose |
+|---|---|
+| [RESTAURANT_ROUTING_SIGNOFF.md](./RESTAURANT_ROUTING_SIGNOFF.md) | **Read this first** for anything touching restaurants, routing or transit. What was verified against the real services with run ids, what it cost, every defect and how it surfaced, and what was deliberately left undone with the measurement attached |
+| [routing-decisions.md](./routing-decisions.md) | The five owner decisions on routing and transit, and the live verification of each |
+| [GOOGLE_PLACES_COST_CONTROL.md](./GOOGLE_PLACES_COST_CONTROL.md) | Every path that can bill Google, the switches and their defaults (§2), what may be stored (§3), and the Google Cloud settings to apply by hand (§5). **§2.1 covers the two switches that refuse unless enabled by name, and why the publicly reachable probe is one of them** |
 
 ### Engineering & QA (dated — see notes above)
 
