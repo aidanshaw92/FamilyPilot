@@ -162,6 +162,13 @@ capture to prove it did not move.
 - **Pre-existing, not fixed here (slice 7):** Edit profile's budget options are full-width rows with a
   grey selected fill and a 1px ink border, a third selected treatment beside the Chip and the Button.
   Onboarding step 4 shares the control, so it moves with the onboarding pass.
-- **Saved production check:** pending the production run of `verify_client_config` after this slice
-  deploys; the result is recorded here when it exists, not before.
+- **Saved production check, run against production on 2026-10-03 16:03 UTC** (live-canaries run
+  37135427455, dispatched from this branch with only `verify_client_config` on). Predicted calls: zero
+  Google, zero Overpass, three GETs (status endpoint, page, one bundle). Actual: the same three GETs,
+  nothing else. All nine checks passed: the page references one bundle and it was fetched whole; exactly
+  one Supabase project URL is inlined and it is `uuolfuebwimrsjfgffsm`; one publishable key sits in the
+  same bundle, so `isSupabaseConfigured` is true in the client production ships; no `sb_secret_` key, no
+  `service_role` JWT, no Google API key. So a signed-in parent on production is offered Back up / Restore.
+  What this does not prove: that a sign-in succeeds end to end, which needs an account and was not
+  attempted (no profile was created or uploaded, per the owner's instruction).
 
