@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * Distance Matrix bills per origin-destination ELEMENT, and the budget used to count HTTP CALLS.
+ * Routed driving bills per origin-destination ELEMENT, and the budget used to count HTTP CALLS.
  *
  * One call carries up to 25 destinations, so the journeys scope could have passed 50,000 billable
  * elements while its daily counter read its 2,000 limit. These lock the two fixes: the ceiling applies
@@ -271,7 +271,8 @@ describe('what a billable routing call records', () => {
 
     const entry = JSON.parse(lines.find((l) => l.includes('google_places_billable')) ?? '{}');
     expect(entry.provider).toBe('google');
-    expect(entry.sku).toBe('distance_matrix');
+    // The SKU the owner decided to build on. See docs/routing-decisions.md §1.
+    expect(entry.sku).toBe('route_matrix');
     expect(entry.scope).toBe('journeys');
     expect(entry.billingUnit).toBe('element');
     expect(entry.requestCount).toBe(1);

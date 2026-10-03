@@ -153,6 +153,40 @@ The project's full production environment contains no `GOOGLE_JOURNEYS_ENABLED` 
 is a deliberate act by the owner, after the four prerequisites above exist and a canary has measured
 predicted against actual billable elements.
 
+## What is implemented against these decisions
+
+Decisions 1, 2, 4 and 5 now have code. Decision 3 does not yet.
+
+| Decision | State |
+| --- | --- |
+| 1. Routes API `computeRouteMatrix` | **Implemented.** `server/context/lib/route-matrix.js`. The legacy Distance Matrix client is gone rather than kept alongside — an unused billable path is the exact thing the original audit found live by accident. |
+| 2. Traffic-unaware | **Implemented.** `routingPreference: 'TRAFFIC_UNAWARE'` is set explicitly, not left to the API's default, and a test asserts the request carries no `TRAFFIC_AWARE`, no `departure_time` and no `duration_in_traffic`. |
+| 3. TfL for transit | **Not started.** Transit remains absent from the UI. |
+| 4. Overpass cap unchanged, telemetry recorded | **Implemented.** See §4 above. |
+| 5. Fail-closed | **Holds, and is asserted.** The gate runs before any request is built; a test proves the Routes API is not reached with the flag absent, and swapping the two lines fails it. |
+
+Mutation-tested, because each of these is invisible until a bill arrives:
+
+| Mutant | Result |
+| --- | --- |
+| `TRAFFIC_UNAWARE` → `TRAFFIC_AWARE` | 2 tests fail |
+| `routingPreference` removed, default trusted | 1 test fails |
+| Endpoint reverted to legacy Distance Matrix | 1 test fails |
+| Gate moved below the request | 2 tests fail, in both suites |
+| A zero-second duration allowed through as 0 minutes | 1 test fails |
+
+The SKU on the `journeys` scope is now `route_matrix`. Renaming orphaned nothing — `distance_matrix` has
+zero rows across every environment and all time — and `reconcile.sql` keeps a separate line for the legacy
+SKU so a row appearing under it later cannot hide behind the rename.
+
+### What remains unproven, and will stay so until the owner enables the API
+
+The request shape, the field mask and the duration parsing have never met the real service.
+`routes.googleapis.com` is denied by this environment's egress policy, and calling it costs money. The
+fixtures encode the documented response shape; if the live API disagrees in some detail, the first real
+canary will find it. **Nothing here should be read as "the Routes API integration works" — only as "the
+Routes API integration is written, gated, and consistent with its documented contract."**
+
 ## What the owner will need to do by hand
 
 Two things, and the implementation will say when it reaches each rather than leaving them to be

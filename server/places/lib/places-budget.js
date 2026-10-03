@@ -60,9 +60,17 @@ const SCOPES = {
    * a single switch really does stop all Google spend, rather than stopping most of it.
    */
   geocoding: { env: 'GOOGLE_GEOCODING_ENABLED', sku: 'geocoding', billingUnit: 'call' },
+  /**
+   * Routed driving, via the Routes API `computeRouteMatrix`.
+   *
+   * The SKU is `route_matrix`, not `distance_matrix`. The owner decided against building on legacy
+   * Distance Matrix (`docs/routing-decisions.md` §1), and renaming orphans nothing: `distance_matrix`
+   * has zero rows across every environment and all time, because it was never once called. A usage row
+   * naming an API we do not call would make the cost ledger lie about where money went.
+   */
   journeys: {
     env: 'GOOGLE_JOURNEYS_ENABLED',
-    sku: 'distance_matrix',
+    sku: 'route_matrix',
     billingUnit: 'element',
     requiresExplicitEnable: true,
   },
