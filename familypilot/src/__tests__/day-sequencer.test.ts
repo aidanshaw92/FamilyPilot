@@ -373,7 +373,7 @@ describe('the failures a person could act on', () => {
     if (result.ok) return;
     expect(result.failure.reason).toBe('no-feasible-sequence');
     if (result.failure.reason !== 'no-feasible-sequence') return;
-    expect(result.failure.nearest?.reason).toBe('travel-infeasible');
+    expect(result.failure.nearest?.reason).toBe('travel-unknown');
   });
 
   it('counts the orderings it tried', () => {

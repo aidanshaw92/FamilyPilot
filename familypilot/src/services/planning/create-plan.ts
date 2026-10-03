@@ -249,6 +249,16 @@ function describeSequenceFailure(failure: SequenceFailure, venueName: string): C
         message: `This day would run into ${failure.routineLabel}.`,
         suggestions: ['Start earlier', 'Choose a shorter visit', 'Try another date'],
       };
+    case 'travel-unknown':
+      // NOT "too long", and NOT "raise your limit". Nobody timed this journey, so no claim about its
+      // length is available and the parent's limit is not the obstacle. The sequencer's sentence names
+      // the two ends; the household label is turned into prose the same way as everywhere else.
+      return {
+        ok: false,
+        title: 'We could not work out the journey',
+        message: failure.message.replace(/\bOur family\b/, 'your family'),
+        suggestions: ['Try again in a moment', 'Check your home location in your profile'],
+      };
     case 'travel-infeasible': {
       // Worded from the leg's own provenance. This used to say "about" unconditionally, which was
       // wrong in the one direction nobody checks for: a routed 47 minutes was presented as a guess.

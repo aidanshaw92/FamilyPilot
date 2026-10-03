@@ -6,6 +6,20 @@ import { getChildNames } from './profile-defaults';
 import { evaluateRoutineFit } from './routine-fit';
 import { buildFacilityMissingCaution } from './facility-match';
 
+/**
+ * The drive is longer than this family said they would usually do.
+ *
+ * Lived in family-score's REASONS until a render showed it under "Why it suits your family" with a
+ * tick beside it. It is the opposite of a reason. Guarded on a finite number because a place restored
+ * from a cloud backup has no drive time yet, and "further than your usual drive" about an unknown
+ * distance would be a second fabrication.
+ */
+export function buildDriveCaution(profile: FamilyProfile, driveMinutes: number): string | null {
+  if (!Number.isFinite(driveMinutes) || !Number.isFinite(profile.maxDriveMinutes)) return null;
+  if (driveMinutes <= profile.maxDriveMinutes) return null;
+  return `Further than your usual ${profile.maxDriveMinutes} min drive`;
+}
+
 function toVenueDetail(venue: Venue): VenueDetail {
   const existing = mockVenueDetails[venue.id];
   // The legacy fixture's own driveMinutes/explanation are stale for whichever home
@@ -38,6 +52,7 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
   const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus, weather });
   const routineFit = evaluateRoutineFit(profile, venue.driveMinutes);
   const cautions = [
+    buildDriveCaution(profile, venue.driveMinutes),
     buildFacilityMissingCaution(profile, detail.facilities),
     routineFit.caution,
   ].filter((caution): caution is string => Boolean(caution));

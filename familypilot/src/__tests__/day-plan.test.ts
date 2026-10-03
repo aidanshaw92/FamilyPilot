@@ -243,7 +243,7 @@ describe('degraded matrices', () => {
       result.failure.failure.reason === 'no-feasible-sequence'
         ? result.failure.failure.nearest
         : result.failure.failure;
-    expect(nearest?.reason).toBe('travel-infeasible');
+    expect(nearest?.reason).toBe('travel-unknown');
     expect(result.failure.blamedLeg).toEqual(required);
   });
 
