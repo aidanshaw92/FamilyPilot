@@ -18,15 +18,34 @@
  * A caveat worth stating plainly: this proves the gate refuses, which is the control that stands
  * between an unset variable and a bill. It cannot prove no key exists, and it is not a substitute for
  * the Google-side quota -- the code-level controls remain defence in depth.
+ *
+ * TWO PROFILES, BECAUSE PRODUCTION AND PREVIEW HAVE DIFFERENT CORRECT ANSWERS.
+ *
+ * The first version of this took only one posture: every scope must refuse. That is right for Preview,
+ * and WRONG for production, where Google Places discovery IS the product -- `masterEnabled()` defaults to
+ * true when VERCEL_ENV is production precisely so the product works without a variable being set. Run
+ * against production, the one-posture version reported six failures for six scopes behaving as designed.
+ *
+ * Being wrong about the expectation is not the same as being wrong to look, and that run is why this file
+ * now has two profiles: it also found `probeEnabled: true` in production, which was a real defect. So the
+ * `production` profile is NOT a relaxation. It still demands that the scopes an unset variable must never
+ * open are closed, and it still fails on an empty scope map. It just stops calling the product a defect.
  */
 import { readFileSync } from 'node:fs';
+
+/**
+ * The scopes that must refuse in production however the variables are set, because each is reachable
+ * from a public unauthenticated endpoint and neither is something the product needs to function.
+ */
+const MUST_FAIL_CLOSED = ['journeys', 'probe'];
 
 const args = process.argv.slice(2);
 const statusPath = args.find((a) => !a.startsWith('--'));
 const expectMasterOff = args.includes('--expect-master-off');
+const profile = args.includes('--profile=production') ? 'production' : 'closed';
 
 if (!statusPath) {
-  console.error('usage: assert-places-fail-closed.mjs <places-status.json> [--expect-master-off]');
+  console.error('usage: assert-places-fail-closed.mjs <places-status.json> [--profile=production] [--expect-master-off]');
   process.exit(2);
 }
 
@@ -65,10 +84,31 @@ const names = Object.keys(scopes);
 // assertion is reading something other than what it thinks.
 check(names.length >= 7, 'the snapshot lists every scope, so the sweep below is not vacuous', `${names.length} scope(s): ${names.join(', ')}`);
 
-console.log('\n=== every paid scope must refuse ===');
-for (const name of names) {
-  const scope = scopes[name];
-  check(scope?.allowed === false, `${name} is refused`, `allowed=${scope?.allowed} reason=${scope?.reason ?? '(none)'}`);
+if (profile === 'production') {
+  console.log('\n=== production: the product\u2019s own scopes may be open; these must not be ===');
+  for (const name of names) {
+    const scope = scopes[name];
+    if (MUST_FAIL_CLOSED.includes(name)) {
+      check(
+        scope?.allowed === false,
+        `${name} is refused, because it is publicly reachable and nothing in the product needs it`,
+        `allowed=${scope?.allowed} reason=${scope?.reason ?? '(none)'}`,
+      );
+    } else {
+      // Reported, not asserted. These are the product.
+      console.log(`  [note] ${name}: allowed=${scope?.allowed}${scope?.reason ? ` (${scope.reason})` : ''}`);
+    }
+  }
+  // The roster has to be present for the loop above to have asserted anything about it.
+  for (const name of MUST_FAIL_CLOSED) {
+    check(names.includes(name), `the ${name} scope is present, so it was actually checked`, names.includes(name) ? 'yes' : 'ABSENT');
+  }
+} else {
+  console.log('\n=== every paid scope must refuse ===');
+  for (const name of names) {
+    const scope = scopes[name];
+    check(scope?.allowed === false, `${name} is refused`, `allowed=${scope?.allowed} reason=${scope?.reason ?? '(none)'}`);
+  }
 }
 
 // Named on its own because it is the one the canary turned on, and the one whose absence used to mean
@@ -83,13 +123,25 @@ if (expectMasterOff) {
 }
 
 // A live probe must not have happened: this is meant to be a free read.
-console.log('\n=== this check spent nothing ===');
+console.log('\n=== this check spent nothing, and the public probe cannot spend either ===');
 check(body.probe === null || body.probe === undefined, 'no live provider probe was made', JSON.stringify(body.probe ?? null));
-check(body.probeEnabled === false, 'the probe scope is also closed', `probeEnabled=${body.probeEnabled}`);
+/**
+ * Asserted in BOTH profiles, and the reason is the sharpest in this file.
+ *
+ * `/api/places/status` is public and unauthenticated, it takes `lat` and `lng` from the query string, and
+ * `probeGoogle` reaches Nearby Search with no cache in between. So a `true` here means a stranger with one
+ * URL and a loop can spend the product's whole daily discovery budget and bill us for it. A live check of
+ * production found exactly that, which is how the probe scope came to require its variable by name.
+ */
+check(body.probeEnabled === false, 'the publicly reachable live probe is closed', `probeEnabled=${body.probeEnabled}`);
 
 console.log('');
 if (failures.length) {
   console.log(`::error::${failures.length} fail-closed check(s) failed: ${failures.join('; ')}`);
   process.exit(1);
 }
-console.log(`Fail-closed confirmed: all ${names.length} Google scopes refuse in "${budget.environment}".`);
+if (profile === 'production') {
+  console.log(`Confirmed in "${budget.environment}": ${MUST_FAIL_CLOSED.join(' and ')} refuse, and the public live probe is closed.`);
+} else {
+  console.log(`Fail-closed confirmed: all ${names.length} Google scopes refuse in "${budget.environment}".`);
+}

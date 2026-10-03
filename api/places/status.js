@@ -9,9 +9,17 @@ const { placesBudgetSnapshot, isPlacesEnabled } = require('../../server/places/l
  * GET while `configuredProvider` was 'google'. Anyone who found the URL could bill the project by
  * refreshing it, and any uptime monitor pointed at it would have done so continuously.
  *
- * The probe is now opt-in per request (`?probe=live`) and still subject to the `probe` scope switch,
- * which is off by default like every other scope. Without it the endpoint reports configuration
- * only, which is what a reader almost always actually wants: whether the key and provider are set.
+ * The probe is now opt-in per request (`?probe=live`) and subject to the `probe` scope switch. Without
+ * it the endpoint reports configuration only, which is what a reader almost always actually wants:
+ * whether the key and provider are set.
+ *
+ * THIS COMMENT USED TO SAY the probe switch was "off by default like every other scope". That was true
+ * in development and FALSE IN PRODUCTION -- the one environment where it bills. `masterEnabled()`
+ * defaults to true when VERCEL_ENV is production, so every scope without `requiresExplicitEnable`
+ * inherited "on" from an unset variable, and a live production check found `probeEnabled: true`. The
+ * endpoint was therefore still exactly what the paragraph above says it stopped being: a URL a stranger
+ * could loop to bill the project, with attacker-supplied coordinates so no cache could absorb it.
+ * The `probe` scope now requires its variable by name, so the sentence is true again.
  */
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
