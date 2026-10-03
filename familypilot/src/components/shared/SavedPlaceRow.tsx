@@ -96,7 +96,7 @@ export function SavedPlaceRow({ venue, itemType, onRemoved, index = 0 }: SavedPl
             {/* Omitted rather than shown at zero. A 0% badge on a place nobody has scored reads as a
                 verdict, and this product does not render a fact it does not have. */}
             {isScored ? (
-              <FamilyMatch score={venue.familyScore.score} variant="compact" style={styles.match} />
+              <FamilyMatch score={venue.familyScore.score} enrichmentStatus={venue.enrichmentStatus} />
             ) : null}
             <Text variant="caption" color={colors.text.secondary}>
               {hasTravelTime ? travelTimeLabel(venue.driveMinutes, 'estimated') : 'Open to see the journey'}
@@ -111,7 +111,7 @@ export function SavedPlaceRow({ venue, itemType, onRemoved, index = 0 }: SavedPl
             accessibilityRole="button"
             accessibilityLabel={`View ${venue.name}`}
           >
-            <Text variant="caption" color={colors.primary[500]}>
+            <Text variant="link">
               View details
             </Text>
           </Pressable>
@@ -148,16 +148,12 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
+  // Stacked, not side by side: next to the badge the travel line wrapped to three words deep at
+  // 390 wide once the badge carried its number.
   meta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.sm,
     marginTop: spacing.xs,
-  },
-  match: {
-    minWidth: 52,
-    minHeight: 32,
-    paddingVertical: 2,
   },
   actions: {
     alignItems: 'center',

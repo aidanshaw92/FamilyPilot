@@ -24,7 +24,7 @@ export function EmptyState({
   return (
     <View style={styles.container} accessibilityRole="text">
       <View style={styles.iconWrap}>
-        <Ionicons name={icon} size={32} color={colors.primary[200]} />
+        <Ionicons name={icon} size={32} color={colors.text.tertiary} />
       </View>
       <Text variant="heading3" style={styles.title}>
         {title}
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.fill,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,

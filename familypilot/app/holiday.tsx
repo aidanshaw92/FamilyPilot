@@ -65,7 +65,7 @@ function HolidayScreenContent() {
         <>
           {recommended ? (
             <Card style={styles.comparisonSummary}>
-              <Text variant="label" color={colors.primary[500]}>
+              <Text variant="label">
                 Comparison summary
               </Text>
               <View style={styles.summaryGrid}>
@@ -75,7 +75,7 @@ function HolidayScreenContent() {
                 <SummaryItem label="Child facilities" value="Kids club (4+)" />
               </View>
               <View style={styles.recommendRow}>
-                <FamilyMatch score={recommended.familyScore.score} variant="compact" />
+                <FamilyMatch score={recommended.familyScore.score} />
                 <Text variant="bodySmall" color={colors.text.secondary} style={styles.recommendText}>
                   Best value: {recommended.familyScore.explanation[0]}
                 </Text>
@@ -128,8 +128,8 @@ const styles = StyleSheet.create({
   comparisonSummary: {
     marginHorizontal: spacing.screenPadding,
     marginBottom: spacing.lg,
-    backgroundColor: colors.primary[50],
-    borderColor: colors.primary[100],
+    backgroundColor: colors.fill,
+    borderColor: colors.border,
     borderWidth: 1,
   },
   summaryGrid: {

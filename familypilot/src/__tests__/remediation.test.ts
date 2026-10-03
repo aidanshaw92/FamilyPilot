@@ -2,10 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  FAMILY_MATCH_LABEL,
-  formatFamilyMatchLabel,
-} from '@/src/components/ui/family-match-label';
+import { FAMILY_MATCH_LABEL, describeFamilyMatch } from '@/src/utils/family-match-scale';
 import {
   getExpectedRestaurantPaths,
   getExpectedStackPaths,
@@ -43,8 +40,8 @@ describe('saved store behaviour', () => {
 describe('Family Match consistency', () => {
   it('uses consistent label wording across variants', () => {
     expect(FAMILY_MATCH_LABEL).toBe('Family Match');
-    expect(formatFamilyMatchLabel(98)).toBe('98% Family Match');
-    expect(formatFamilyMatchLabel(91)).toContain('Family Match');
+    expect(describeFamilyMatch(98).badgeLabel).toBe('4.9 Family Match');
+    expect(describeFamilyMatch(91).secondary).toContain('Family Match');
   });
 
   it('classifies scores for human-readable presentation', async () => {

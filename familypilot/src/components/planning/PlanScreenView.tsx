@@ -85,7 +85,7 @@ export function PlanScreenView({
           <Ionicons
             name={saved ? 'bookmark' : 'bookmark-outline'}
             size={20}
-            color={saved ? colors.primary[500] : colors.text.secondary}
+            color={saved ? colors.ink : colors.text.secondary}
           />
         </Pressable>
       </View>

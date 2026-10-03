@@ -6,7 +6,7 @@ import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import { SavedBackupPanel } from '@/src/components/saved/SavedBackupPanel';
 import { SavedPlaceRow } from '@/src/components/shared/SavedPlaceRow';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
-import { Chip, EmptyState, SkeletonCard, Text } from '@/src/components/ui';
+import { Chip, EmptyState, SkeletonCard, Text, CHIP_GAP } from '@/src/components/ui';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
@@ -168,7 +168,7 @@ export default function SavedScreen() {
             {removedItem.venue.name} removed
           </Text>
           <Pressable onPress={handleUndo} accessibilityRole="button" accessibilityLabel="Undo remove">
-            <Text variant="bodySmall" color={colors.primary[500]}>
+            <Text variant="link">
               Undo
             </Text>
           </Pressable>
@@ -182,8 +182,8 @@ export default function SavedScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => void handleRefresh()}
-            tintColor={colors.primary[500]}
-            colors={[colors.primary[500]]}
+            tintColor={colors.ink}
+            colors={[colors.ink]}
           />
         }
       >
@@ -246,6 +246,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenPadding,
     paddingVertical: spacing.lg,
     alignItems: 'center',
+    gap: CHIP_GAP,
   },
   undoBar: {
     flexDirection: 'row',
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.screenPadding,
     marginBottom: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.fill,
     borderRadius: radius.md,
   },
   content: {

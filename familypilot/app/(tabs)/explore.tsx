@@ -8,7 +8,7 @@ import { RestaurantCard } from '@/src/components/restaurant/RestaurantCard';
 import { DecisionCard } from '@/src/components/shared/DecisionCard';
 import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
-import { Chip, EmptyState, ErrorState, SectionHeader, SkeletonCard, Text } from '@/src/components/ui';
+import { Chip, EmptyState, ErrorState, SectionHeader, SkeletonCard, Text, CHIP_GAP, CHIP_HEIGHT } from '@/src/components/ui';
 import { isPilotFeatureVisible, visibleExploreCategoryIds } from '@/src/config/pilot-features';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useNearbyVenues, useRestaurants } from '@/src/hooks/use-queries';
@@ -227,7 +227,7 @@ export default function ExploreScreen() {
           accessibilityRole="button"
           accessibilityLabel="Open filters"
         >
-          <Text variant="bodySmall" color={colors.primary[500]}>
+          <Text variant="link">
             Filter
           </Text>
           {activeFilterCount > 0 ? (
@@ -328,8 +328,8 @@ export default function ExploreScreen() {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={() => void handleRefresh()}
-                tintColor={colors.primary[500]}
-                colors={[colors.primary[500]]}
+                tintColor={colors.ink}
+                colors={[colors.ink]}
               />
             }
           />
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     minHeight: 48,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.lg,
-    backgroundColor: colors.primary[500],
+    backgroundColor: colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -380,13 +380,18 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.screenPadding,
     marginBottom: spacing.sm,
   },
+  // A fixed, non-shrinking band: as a flex child with only a maxHeight the rail was squeezed to
+  // 26px (17px once the list scrolled) and clipped the 44pt chips top and bottom.
   categoryScroll: {
-    maxHeight: 52,
+    height: CHIP_HEIGHT + spacing.sm,
+    flexGrow: 0,
+    flexShrink: 0,
     marginTop: spacing.sm,
   },
   categoryContent: {
     paddingHorizontal: spacing.screenPadding,
     alignItems: 'center',
+    gap: CHIP_GAP,
   },
   filterButton: {
     flexDirection: 'row',
@@ -396,13 +401,12 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: 'center',
     borderRadius: radius.full,
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.primary[100],
-    marginLeft: spacing.sm,
+    borderColor: colors.border,
   },
   filterBadge: {
-    backgroundColor: colors.primary[500],
+    backgroundColor: colors.ink,
     width: 18,
     height: 18,
     borderRadius: 9,

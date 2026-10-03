@@ -25,7 +25,7 @@ export default function Index() {
   if (!ready) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
+        <ActivityIndicator size="large" color={colors.ink} />
       </View>
     );
   }

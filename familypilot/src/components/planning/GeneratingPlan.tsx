@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  markerActive: { borderColor: colors.primary[500] },
-  markerDone: { borderColor: colors.primary[500], backgroundColor: colors.primary[500] },
+  markerActive: { borderColor: colors.ink },
+  markerDone: { borderColor: colors.ink, backgroundColor: colors.ink },
   stepLabel: { flex: 1 },
 });

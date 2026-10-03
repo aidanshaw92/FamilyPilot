@@ -235,7 +235,7 @@ export default function ProfileScreen() {
           accessibilityRole="button"
           accessibilityLabel="Send feedback"
         >
-          <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.primary[500]} />
+          <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.ink} />
           <Text variant="body" style={styles.feedbackText}>
             Send feedback
           </Text>
@@ -269,7 +269,7 @@ function ProfileRow({
 }
 
 const AVATAR_GRADIENTS: readonly [string, string][] = [
-  [colors.primary[500], colors.primary[600]],
+  [colors.midnight.end, colors.midnight.start],
   [colors.secondary[500], colors.secondary[600]],
   [colors.accent[500], colors.accent[600]],
   [colors.coral, '#C0472F'],
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   },
   suggestionBox: {
     width: '100%',
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.fill,
     borderRadius: radius.md,
     padding: spacing.lg,
     marginBottom: spacing.lg,

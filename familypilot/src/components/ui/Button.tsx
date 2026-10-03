@@ -15,11 +15,16 @@ interface ButtonProps extends Omit<PressableProps, 'style'> {
   style?: ViewStyle;
 }
 
+/**
+ * The approved frames draw the one emphasised action as a near-black pill (Home's "See more", the
+ * sheet's "Create plan"), so primary is ink. Everything quieter is ink text on white: `secondary`
+ * with a hairline, `outline` with an ink rule, `ghost` with nothing. No variant is purple.
+ */
 const variantStyles: Record<ButtonVariant, { bg: string; text: string; border?: string }> = {
-  primary: { bg: colors.primary[500], text: colors.text.inverse },
-  secondary: { bg: colors.secondary[500], text: colors.text.inverse },
-  ghost: { bg: 'transparent', text: colors.primary[500] },
-  outline: { bg: colors.surface, text: colors.primary[500], border: colors.primary[500] },
+  primary: { bg: colors.ink, text: colors.text.inverse },
+  secondary: { bg: colors.surface, text: colors.ink, border: colors.border },
+  ghost: { bg: 'transparent', text: colors.ink },
+  outline: { bg: colors.surface, text: colors.ink, border: colors.ink },
 };
 
 export function Button({

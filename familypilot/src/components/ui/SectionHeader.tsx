@@ -29,7 +29,7 @@ export function SectionHeader({ title, subtitle, actionLabel, onAction }: Sectio
           onPress={onAction}
           hitSlop={8}
         >
-          <Text variant="bodySmall" color={colors.primary[500]}>
+          <Text variant="link">
             {actionLabel}
           </Text>
         </Pressable>

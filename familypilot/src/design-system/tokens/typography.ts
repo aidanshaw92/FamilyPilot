@@ -11,35 +11,35 @@ export const fontFamily = {
   black: 'Inter_900Black',
 } as const;
 
+/**
+ * The approved Home frame sets every heading in Inter Semi Bold with a -0.025em track (the greeting,
+ * node 7:16, is 25.5 with -0.6375; the section heading, node 7:30, is 22 with -0.44). The token
+ * scale used to be Extra Bold, which is why every screen after Home read heavier than the design.
+ * Headings now share the frame's weight and track so Home's local overrides and the rest of the
+ * app resolve to the same voice.
+ */
+const HEADING_TRACK = -0.025;
+
 export const typography = {
-  /** Reserved for a single number that is the whole point of the moment — a Family Score. Use
-   * sparingly; this is the app's loudest weight. */
-  scoreDisplay: {
-    fontFamily: fontFamily.black,
-    fontSize: 40,
-    lineHeight: 44,
-    letterSpacing: -1,
-    color: colors.text.primary,
-  },
   display: {
-    fontFamily: fontFamily.extraBold,
+    fontFamily: fontFamily.semiBold,
     fontSize: 32,
-    lineHeight: 40,
-    letterSpacing: -0.6,
+    lineHeight: 38,
+    letterSpacing: 32 * HEADING_TRACK,
     color: colors.text.primary,
   },
   heading1: {
-    fontFamily: fontFamily.extraBold,
+    fontFamily: fontFamily.semiBold,
     fontSize: 26,
     lineHeight: 32,
-    letterSpacing: -0.4,
+    letterSpacing: 26 * HEADING_TRACK,
     color: colors.text.primary,
   },
   heading2: {
     fontFamily: fontFamily.semiBold,
-    fontSize: 20,
+    fontSize: 22,
     lineHeight: 28,
-    letterSpacing: -0.2,
+    letterSpacing: 22 * HEADING_TRACK,
     color: colors.text.primary,
   },
   heading3: {
@@ -73,6 +73,14 @@ export const typography = {
     lineHeight: 18,
     letterSpacing: 0.5,
     color: colors.text.secondary,
+  },
+  /** An inline text action ("Undo", "View details", "Reset"): ink and a touch heavier than the body
+   * copy around it, so it reads as pressable without borrowing a colour from nowhere. */
+  link: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.ink,
   },
 } as const satisfies Record<string, TextStyle>;
 

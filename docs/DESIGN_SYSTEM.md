@@ -1,162 +1,93 @@
 # FamilyPilot Design System
 
-## Design Tokens
+**Source of truth:** `familypilot/src/design-system/tokens/*.ts` and the primitives in
+`familypilot/src/components/ui/`. This page describes them; if the two disagree, the code is right
+and this page is stale. `src/__tests__/design-system-guard.test.ts` keeps consumer screens on the
+tokens.
 
-### Colour Palette
+**Benchmark:** the approved Home screen (`app/(tabs)/index.tsx`) and its Figma frame "01 — Home".
+Every value below that cites a frame node was read off that frame. Home is not redesigned; the rest
+of the app is brought to Home's language.
 
-| Token | Hex | Usage |
-|-------|-----|-------|
-| `primary.500` | `#8B6FC0` | Primary buttons, active tab, links |
-| `primary.100` | `#EBE0FF` | Primary backgrounds, selected chips |
-| `primary.50` | `#F5F0FF` | Subtle primary tint |
-| `secondary.500` | `#5CB88A` | Family Score badge, success, "Fits" |
-| `secondary.100` | `#D4F0E0` | Success backgrounds |
-| `accent.500` | `#6BB8E8` | Info, water/swimming categories |
-| `warning.500` | `#E8A54B` | Warnings, "low stock" |
-| `error.500` | `#D4756A` | Errors, closed venues |
-| `background` | `#F8F7F5` | Screen background (off-white) |
-| `surface` | `#FFFFFF` | Cards, sheets |
-| `text.primary` | `#1A1A2E` | Headings, body |
-| `text.secondary` | `#6B6B80` | Subtitles, metadata |
-| `text.tertiary` | `#9B9BA8` | Placeholders, disabled |
-| `border` | `#E8E6E3` | Dividers, card borders |
+## Colour
 
-No harsh pure black or saturated primaries.
+| Token | Value | Use |
+| --- | --- | --- |
+| `ink` | `#141416` | The one accent. Text, selected chips, primary buttons, the avatar, the floating nav (frame ink). `text.primary` is the same value. |
+| `text.secondary` | `#6E6E73` | Second lines, metadata (frame node 7:17). |
+| `text.tertiary` | `#8E8E93` | Captions, placeholders. Neutral, not purple-tinted. |
+| `text.inverse` | `#FFFFFF` | Text on ink and on photography. |
+| `background` | `#F6F5F9` | Screen background. |
+| `surface` | `#FFFFFF` | Cards, sheets, idle chips. |
+| `fill` | `#F0F0F3` | Quiet wells and information boxes that sit on a white card. |
+| `border` / `borderLight` | `#ECE9F2` / `#F3F1F7` | Hairlines. |
+| `secondary.*` (green) | `#1C8A57` … | Confirmed facts, success. |
+| `warning.*` (amber) | `#A8660C` … | Cautions, "good to know". |
+| `error.*` (red) | `#C4453B` … | Errors, closed. |
+| `accent.*` (blue) | `#2F8FD6` … | Informational marks only. |
+| `coral` | `#E0654A` | The filled save heart. |
+| `glass.*`, `overlay`, `sheetScrim`, `gradient.*` | rgba on near-black | Chrome over photography; the sheet's scrim (0.42, approved). |
+| `midnight.*` | `#14101F` → `#241C3D` | The one dark band on a screen; the fallback image gradient. |
+| `categoryGradients` | per category | A venue with no photo still reads as designed. |
+| `primary.*` (purple) | `#5B4FE8` … | **Legacy.** Retired from consumer chrome; still used by the internal enrichment tools and the onboarding illustration. The guard test fails on new consumer uses. |
 
-### Typography
+## Typography
 
-Font: **Inter** (Google Fonts via Expo). Falls back to system UI.
+Inter, loaded in `app/_layout.tsx`. Headings are **Semi Bold** with a −0.025em track — the frame's
+own weight (greeting node 7:16: Semi Bold 25.5; section heading node 7:30: Semi Bold 22). Extra Bold
+and Black are loaded but no consumer text is set in them.
 
-| Style | Size | Weight | Line Height | Letter Spacing |
-|-------|------|--------|-------------|----------------|
-| `display` | 32 | 700 | 40 | -0.5 |
-| `heading1` | 26 | 700 | 32 | -0.3 |
-| `heading2` | 20 | 600 | 28 | -0.2 |
-| `heading3` | 17 | 600 | 24 | 0 |
-| `body` | 16 | 400 | 24 | 0 |
-| `bodySmall` | 14 | 400 | 20 | 0 |
-| `caption` | 12 | 500 | 16 | 0.2 |
-| `label` | 13 | 600 | 18 | 0.5 |
+| Variant | Size / line | Weight | Use |
+| --- | --- | --- | --- |
+| `display` | 32 / 38 | 600 | Onboarding headline, splash. |
+| `heading1` | 26 / 32 | 600 | Screen titles. Home's greeting overrides to 25.5 and measures itself (`home-header-layout.ts`). |
+| `heading2` | 22 / 28 | 600 | Section headings (Home's "Recommended for you"). |
+| `heading3` | 17 / 24 | 600 | Card titles, button labels. |
+| `body` | 16 / 24 | 400 | Body copy. |
+| `bodySmall` | 14 / 20 | 400 | Secondary lines (colour `text.secondary`). |
+| `caption` | 12 / 16 | 500 | Metadata, eyebrows (colour `text.tertiary`). |
+| `label` | 13 / 18 | 600, +0.5 | Form group labels. |
+| `link` | 14 / 20 | 600, ink | Inline text actions: "Undo", "View details", "Reset", "+ Add another child". |
 
-### Spacing Scale (4px base)
+## Spacing, radius, shadow
 
-`xs: 4` · `sm: 8` · `md: 12` · `lg: 16` · `xl: 20` · `2xl: 24` · `3xl: 32` · `4xl: 40` · `5xl: 48`
+Spacing: `xs 4 · sm 8 · md 12 · lg 16 · xl 20 · 2xl 24 · 3xl 32 · 4xl 40 · 5xl 48`,
+`screenPadding 20`. Home's gutter is 24 at the 393 reference width and 20 below it
+(`homeGutter()`); other screens use `screenPadding` until their slice brings them to the frame.
 
-Screen horizontal padding: **20px** (`xl`).
+Radius: `sm 8 · md 12 · lg 16 · xl 20 · 2xl 24 · 3xl 28 (photo cards, the deck) · sheet 34 (the
+Create a Plan sheet) · full`.
 
-### Border Radius
+Shadows: `card`, `cardHover`, `bottomSheet` — all cast in ink at 6–10% opacity.
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `sm` | 8 | Chips, small badges |
-| `md` | 12 | Buttons, inputs |
-| `lg` | 16 | Cards |
-| `xl` | 20 | Large cards, bottom sheet top |
-| `2xl` | 24 | Hero cards |
-| `full` | 9999 | Pills, score badges |
+Touch targets: 44pt minimum.
 
-### Shadows
+## Primitives
 
-```typescript
-// card — subtle elevation
-{ shadowColor: '#1A1A2E', shadowOffset: {0, 2}, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }
+| Component | What it is | Notes |
+| --- | --- | --- |
+| `Text` | Typography variants above. | `color` overrides; `style` for frame-specific sizes. |
+| `Button` | `primary` ink pill · `secondary` white with hairline · `outline` white with ink rule · `ghost` text only. | Sizes `sm 36 / md 48 / lg 56`. No variant is purple. |
+| `Chip` | The one selection pill (frame "Category pills"): 44 tall, 20 side padding, Medium 14.5/18; selected = ink, idle = white. | `appearance="plain"` (no hairline; the Home rail on the app background) or `"outlined"` (hairline; chips on a white sheet). Lay rows out with `gap: CHIP_GAP` (10); the chip has no outer margin. |
+| `PillSelector` | A single-choice rail or segmented row of `Chip`s. | Arranges; does not style. |
+| `FamilyMatch` | The one Family Match badge (frame node 8:13): `★ 4.0 Family Match`, 32 tall. | `tone="onImage"` over photography, `"onLight"` on white. Unreviewed → "Not yet reviewed", no number. Unknown score → renders nothing. Scale and strings live in `src/utils/family-match-scale.ts`. |
+| `FamilyMatchPanel` / `RecommendationPattern` | The explanation: classification word, "Why it suits your family", "Good to know", the secondary number line. | Word leads, number is secondary, cautions never render as positives. |
+| `CircleButton` | Round control: `light` (white on photography), `dark` (ink), `glass`. | Back, save, filter, "go". |
+| `SearchBar`, `Field`, `DateField`/`TimeField`, `BottomSheet`, `Card`, `SectionHeader`, `EmptyState`, `ErrorState`, `Skeleton*`, `VenueImage`, `DataTrustBadge` | Shared surfaces and states. | `DateField`/`TimeField` still render native browser inputs on web (slice 4). |
 
-// cardHover — pressed/lifted
-{ shadowColor: '#1A1A2E', shadowOffset: {0, 4}, shadowOpacity: 0.10, shadowRadius: 16, elevation: 4 }
+## Family Match: one scale, one vocabulary
 
-// bottomSheet
-{ shadowColor: '#1A1A2E', shadowOffset: {0, -4}, shadowOpacity: 0.08, shadowRadius: 24, elevation: 8 }
-```
+- The score is computed 0–100 and **shown out of five to one decimal**, with a star, everywhere
+  (`FAMILY_MATCH_SCALE = 'five-star'`). A percentage is never printed.
+- The classification word (`Excellent match · Great match · Good match · Worth considering ·
+  Limited match`) leads wherever there is room; the badge carries the number.
+- `provider_only` / `ai_draft` places are **Not yet reviewed**: a status, no number, in the badge,
+  the classification and the secondary line alike.
+- A non-finite score (a restored Saved place not yet recomputed) is unknown: no badge, no "0.0".
 
-### Touch Targets
+## Motion and accessibility
 
-Minimum **44×44pt** for all interactive elements (Apple HIG).
-
-Quick action buttons: **80×80pt** minimum visual area.
-
----
-
-## Component Library
-
-### Atoms
-- `Text` — typed typography variants
-- `Button` — primary / secondary / ghost / destructive
-- `IconButton` — circular, 44pt
-- `Badge` — status, category
-- `FamilyScoreBadge` — green circle with score
-- `Chip` — filter, selectable
-- `Avatar` — single + `AvatarGroup` for family
-- `Divider`
-- `Skeleton` — loading placeholder
-
-### Molecules
-- `Card` — white surface with shadow + padding variants
-- `VenueCard` — image + title + score + drive time
-- `QuickActionButton` — icon + label, coloured background
-- `FacilityIcon` — icon + label for toilets/café/etc.
-- `DriveTimeLabel` — car icon + "12 min"
-- `SectionHeader` — title + "See all" action
-- `SearchBar`
-- `FilterBar` — horizontal scroll chips
-- `WhyRecommend` — bullet list with profile context
-- `ProgressRing` — profile completion
-
-### Organisms
-- `QuickActionGrid` — 2×2 primary actions
-- `RecommendationCarousel` — horizontal venue cards
-- `VenueHero` — full-bleed image + gradient + score
-- `FacilityGrid` — 2×4 icon grid
-- `TripTimeline` — vertical day plan
-- `PackingChecklist` — grouped checkable items
-- `CarFitSummary` — capacity bar + status
-- `BottomSheet` — map overlay list
-- `TabBar` — custom styled bottom nav
-
----
-
-## Animation Guidelines
-
-| Interaction | Animation | Duration | Easing |
-|-------------|-----------|----------|--------|
-| Screen enter | Fade + slide up 12px | 300ms | ease-out |
-| Card press | Scale to 0.97 | 150ms | spring |
-| Bottom sheet | Spring from bottom | 350ms | damping 20 |
-| Tab switch | Crossfade content | 200ms | ease |
-| Score badge appear | Scale 0→1 + fade | 400ms | spring |
-| List item stagger | Fade in, 50ms delay each | 300ms | ease-out |
-| Save heart | Scale pulse + haptic | 250ms | spring |
-
-Use `react-native-reanimated` for all animations. Avoid `Animated` from RN core.
-
-Haptics: `Light` on button press, `Success` on save, `Warning` on error.
-
----
-
-## Accessibility Guidelines
-
-1. **Colour contrast**: All text meets WCAG AA (4.5:1 body, 3:1 large text).
-2. **Dynamic Type**: All `Text` components use token sizes that scale with system font size settings.
-3. **VoiceOver labels**: Every icon-only button has `accessibilityLabel` and `accessibilityRole`.
-4. **Reduce Motion**: Respect `useReducedMotion()` — replace springs with fades.
-5. **Focus order**: Logical top-to-bottom, left-to-right tab order.
-6. **Touch targets**: 44pt minimum, 8pt spacing between adjacent targets.
-7. **Error states**: Never colour-only — always icon + text.
-8. **Family Score**: Announced as "Family score 98 out of 100" not just "98".
-
----
-
-## Iconography
-
-Use SF Symbols (via `expo-symbols`) on iOS, Material icons fallback on Android.
-
-Style: **outline/light weight**, 24px default, 20px inline.
-
-Category colours (quick actions):
-- Go Outside → `secondary.500` (green)
-- Indoor → `accent.500` (blue)
-- Holiday → `primary.500` (purple)
-- Need Now → `warning.500` (orange)
-- Restaurants → `#E8927C` (coral)
-- Packing → `#8B9FD4` (slate blue)
-- Trips → `primary.500`
-- Car Fit → `#7BAFD4` (steel blue)
+`react-native-reanimated` for all animation; `useReducedMotion()` replaces springs with cuts.
+Haptics: selection on chips, light impact on buttons. Every icon-only control has an
+`accessibilityLabel`; selected chips expose `accessibilityState.selected`; the Family Match badge
+speaks "4.0 out of 5 Family Match, Good match".

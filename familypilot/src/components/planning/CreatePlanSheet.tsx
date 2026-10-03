@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { BottomSheet, Button, Chip, Text } from '@/src/components/ui';
+import { BottomSheet, Button, Chip, Text, CHIP_GAP } from '@/src/components/ui';
 import { DateField, TimeField } from '@/src/components/ui/DateTimeField';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import {
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   },
   row: { gap: spacing.xs },
   rowLabel: { letterSpacing: 0.6 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: CHIP_GAP },
   addFamily: { alignItems: 'flex-start' },
   footer: {
     paddingHorizontal: spacing.screenPadding,

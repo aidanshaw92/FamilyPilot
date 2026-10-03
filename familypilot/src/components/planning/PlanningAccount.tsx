@@ -27,7 +27,7 @@ export function PlanningAccount(){
  if(!supabase)return <Card style={styles.card}><Text variant="heading3">Connect with friends</Text><Text color={colors.text.secondary}>Account connections need to be enabled by the app owner. You can already plan together on one phone.</Text></Card>;
  return <View style={styles.stack}>
   <Card style={[styles.card,styles.introCard]}>
-   <View style={styles.introIcon}><Ionicons name="people-circle-outline" size={28} color={colors.primary[500]}/></View>
+   <View style={styles.introIcon}><Ionicons name="people-circle-outline" size={28} color={colors.ink}/></View>
    <Text variant="heading2">Plan days out with friends</Text>
    <Text color={colors.text.secondary}>Connect with another family to share routines, plan a day that works for both of you, and see who’s coming.</Text>
   </Card>
@@ -111,9 +111,9 @@ const styles=StyleSheet.create({
  stack:{gap:spacing.lg},
  card:{gap:spacing.md},
  introCard:{alignItems:'flex-start',gap:spacing.sm},
- introIcon:{width:48,height:48,borderRadius:radius.full,backgroundColor:colors.primary[50],alignItems:'center',justifyContent:'center'},
- noticeBox:{gap:spacing.sm,padding:spacing.md,backgroundColor:colors.primary[50],borderRadius:radius.md},
- inviteBox:{gap:spacing.sm,padding:spacing.lg,backgroundColor:colors.primary[50],borderRadius:radius.md,alignItems:'center'},
+ introIcon:{width:48,height:48,borderRadius:radius.full,backgroundColor:colors.fill,alignItems:'center',justifyContent:'center'},
+ noticeBox:{gap:spacing.sm,padding:spacing.md,backgroundColor:colors.fill,borderRadius:radius.md},
+ inviteBox:{gap:spacing.sm,padding:spacing.lg,backgroundColor:colors.fill,borderRadius:radius.md,alignItems:'center'},
  inviteCode:{letterSpacing:2},
  connectionRow:{gap:spacing.sm,paddingTop:spacing.md},
  connectionRowBorder:{borderTopWidth:1,borderColor:colors.border,marginTop:spacing.sm},

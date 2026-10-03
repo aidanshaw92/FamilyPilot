@@ -47,7 +47,7 @@ export function FacilityGrid({ facilities }: FacilityGridProps) {
         return (
           <View key={facility} style={styles.item}>
             <View style={styles.iconContainer}>
-              <Ionicons name={config.icon} size={22} color={colors.primary[500]} />
+              <Ionicons name={config.icon} size={22} color={colors.ink} />
             </View>
             <Text variant="caption" style={styles.label}>
               {config.label}
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: radius.md,
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.fill,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xs,

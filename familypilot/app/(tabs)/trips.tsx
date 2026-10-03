@@ -157,7 +157,7 @@ export default function TripsScreen() {
    {searched&&inputKey===resultKey&&!results.length?<Card style={s.panel}><Text variant="heading3">No confident match yet</Text><Text>No place in the available data meets every family’s requirements and timing. Try another date, a longer travel limit, or update a must-have. We won’t silently relax your requirements.</Text><Button label="Explore places and their details" variant="outline" onPress={()=>router.push('/(tabs)/explore' as never)}/></Card>:null}
    {inputKey===resultKey?results.map((result,i)=>{const {plan,place,food,foodStatus,meal}=result;return (<Card key={plan.venueId} style={s.panel}>
     <VenueImage uri={place.photos[0]} category={place.category} alt={place.name} style={{height:180,width:'100%'}}/>
-    <Text variant="bodySmall" color={colors.primary[600]}>{i===0?'Our first suggestion':'Another option'}</Text><Text variant="heading2">{plan.name}</Text>
+    <Text variant="label">{i===0?'Our first suggestion':'Another option'}</Text><Text variant="heading2">{plan.name}</Text>
     <Text>{clockLabel(plan.start)}–{clockLabel(plan.end)} · {active.length} {active.length===1?'family':'families'}</Text>
     {plan.reasons.map(reason=><Text key={reason} variant="bodySmall">✓ {reason}</Text>)}
     {plan.timings.map(t=><View key={t.familyId} style={{gap:6,paddingVertical:10}}><Text variant="heading3">{t.label}</Text><Text>Leave {clockLabel(t.depart)} · Home about {clockLabel(t.home)}</Text><Text variant="bodySmall">{t.journey.outbound} min out / {t.journey.inbound} min back, estimated. Latest departure for a full visit before the next home commitment: {clockLabel(t.latestDeparture)}.</Text>{t.notes.map(n=><Text key={n} variant="bodySmall">{n}</Text>)}</View>)}

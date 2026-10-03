@@ -68,7 +68,7 @@ describe('AI draft schema mapping', () => {
 describe('ai_draft consumer behaviour', () => {
   it('treats ai_draft as provider_only for Family Match', () => {
     expect(toConsumerEnrichmentStatus('ai_draft')).toBe('provider_only');
-    expect(getMatchClassification(90, 'ai_draft')).toBe('Potential match');
+    expect(getMatchClassification(90, 'ai_draft')).toBe('Not yet reviewed');
   });
 
   it('caps Family Match for ai_draft venues', () => {

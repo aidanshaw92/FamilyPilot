@@ -38,7 +38,7 @@ export function EatNearbySection({
         <Text variant="heading3" style={styles.title}>
           Good places to eat nearby
         </Text>
-        <ActivityIndicator color={colors.primary[500]} />
+        <ActivityIndicator color={colors.ink} />
       </View>
     );
   }
@@ -97,7 +97,7 @@ export function EatNearbySection({
         accessibilityLabel="See all nearby restaurants"
         style={styles.seeAll}
       >
-        <Text variant="bodySmall" color={colors.primary[500]}>
+        <Text variant="link">
           See all nearby restaurants
         </Text>
       </Pressable>

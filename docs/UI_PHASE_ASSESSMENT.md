@@ -44,20 +44,26 @@ heavier, purple system; Home was hand-tuned to the frame with local literals. Th
 | Date & time input | `DateTimeField` renders **native browser `<input type=date/time>`**: US-format `10/03/2026`, system font | A styled field consistent with the system; UK/locale-aware display **[Figma]** |
 | Horizontal venue card | Explore's `DecisionCard`, `FocusedRecommendationCard` (carousel), `SavedPlaceRow`, `RecommendationPattern` | One `VenueRow` family derived from the showcase card's eyebrow/title/meta rhythm |
 
-## 3. Family Match must be coherent — the decision
+## 3. Family Match must be coherent — the decision (taken in slice 2)
 
-Three scales are live: ★ out of 5 (Home), 0–100 with word (Venue), word only (Explore, Saved).
-`FamilyFitBadge` divides the 0–100 score by 20, so the same 76 is "3.8 Family Fit" on Home and
-"76 Good match" one tap later. A parent cannot tell they are the same thing.
+Three scales were live: ★ out of 5 (Home), 0–100 with word (Venue), word only (Explore, Saved).
+`FamilyFitBadge` divided the 0–100 score by 20, so the same 76 was "3.8 Family Fit" on Home and
+"76 Good match" one tap later. A parent could not tell they were the same thing.
 
-**Canonical:** the word leads everywhere ("Great match" / "Good match" / "Worth considering" /
-"Limited match" / "Not yet reviewed"); the number is secondary and **one** scale. The approved Home
-frame shows a star pill **[Figma]** — if the frame is the star, the whole app moves to the star scale
-and the word; if the star was a placeholder from the reference, the whole app moves to the word plus
-0–100. Either way it is one scale. Until the frame is read, the implementation work is structural
-(one component, one label helper) and the scale is a single constant to flip.
+**Decided and implemented:** the approved Home badge is the one badge. Every surface renders the same
+`FamilyMatch` component — `★ 3.8 Family Match`, 32pt, frame node 8:13 — and the classification word
+("Good match", "Worth considering" …) leads wherever there is room (Venue Detail's band, Explore's
+reason line, the explanation panel). The number is never printed as a percentage or a bare integer.
+The scale is one constant (`FAMILY_MATCH_SCALE` in `src/utils/family-match-scale.ts`) in case the
+frame, once read, says otherwise.
 
-Provenance is preserved: `provider_only` renders "Not yet reviewed" with no number, as now.
+Provenance is preserved and made uniform: `provider_only` and `ai_draft` places read **"Not yet
+reviewed"** with no number — in the badge, in the classification (previously "Potential match") and in
+the secondary line. A non-finite score renders no badge at all.
+
+**One Home copy change, flagged for the owner:** Home's badge said "Family Fit"; every brief, every
+other screen and the product's own documentation say "Family Match". The badge now reads "★ 4.0
+Family Match". Geometry, weight, colour and position are unchanged (88/88 frame checks pass).
 
 ## 4. Genuine defects found by rendering (fixed with tests, not polish)
 
@@ -90,7 +96,7 @@ Each slice: inspect Figma (when available) → render before → implement → t
 | # | Slice | Why this order |
 | --- | --- | --- |
 | 1 | **Two provenance defects** (§4.1, §4.2) with tests | Genuine defects a parent can hit today; independent of any visual decision |
-| 2 | **Design-system foundation**: tokens aligned to Home (ink, secondary, heading weights), `Button` primary → near-black, `Chip` ← `PillSelector` state, one `FamilyMatch` component + label helper, retire `FamilyScoreBadge`/`FamilyFitBadge` as separate concepts | Fixes the two-products feeling everywhere at once; every later slice builds on it |
+| 2 | **Design-system foundation** (done): tokens aligned to Home (`ink` #141416, secondary #6E6E73, Semi Bold headings, `link` variant), `Button` primary → ink, one `Chip` (Home's rail pill) behind `PillSelector`, one `FamilyMatch` badge, `FamilyScoreBadge`/`FamilyFitBadge`/`family-match-label` retired, purple retired from consumer chrome, guard test | Fixes the two-products feeling everywhere at once; every later slice builds on it |
 | 3 | **Venue Detail** (hero → Family Match → facts → restaurants → CTA bar) | First screen after Home in the main journey; largest visible divergence |
 | 4 | **Create a Plan sheet + Plan screen + Generating state**, styled date/time fields | The hinge; the sheet becomes the single plan form |
 | 5 | **Trips tab** adopts the sheet's form component; fix the profile gate (§4.4) | Removes the duplicate builder |
@@ -101,3 +107,16 @@ Each slice: inspect Figma (when available) → render before → implement → t
 Slice 2 is the one that must not be rushed: it changes the look of every screen simultaneously, so it
 ships with before/after captures of all routes at three widths, and Home is diffed against its own
 capture to prove it did not move.
+
+## 7. Found while rendering slice 2 (not fixed there; owned by the slice named)
+
+- Explore at 360: the "Search" button overflows the right edge of the row (slice 6). Pre-existing.
+- Onboarding step 1 shows "Please enter your first name" in red on an untouched form (slice 7).
+  Pre-existing.
+- `/restaurant/[id]` is behind the pilot flag and renders "Restaurants coming later" in this build, so
+  its Family Match band could only be verified by type-check, not by render (slice 3/6 when the flag
+  decision is made).
+- The Saved row's travel line wrapped three deep beside the wider badge; fixed in slice 2 by stacking
+  badge and travel line.
+- Explore's row pill forced long names to truncate at 360; fixed in slice 2 by moving the badge under
+  the title.
