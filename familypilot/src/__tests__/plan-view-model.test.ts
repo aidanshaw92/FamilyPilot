@@ -126,7 +126,7 @@ describe('what nobody confirmed stays visible', () => {
       itinerary: { stops: [stop({ opening: { status: 'unknown', reason: 'no-structured-hours' } })] },
     });
     const opening = view.stops[0].rows.find((r) => r.label === 'Opening');
-    expect(opening?.value).toBe('Hours not confirmed — check before you go');
+    expect(opening?.value).toBe('Hours not confirmed. Check before you go');
     expect(opening?.unconfirmed).toBe(true);
   });
 
@@ -244,7 +244,7 @@ describe('the Travel & parking section says only what is known about parking', (
   it('tells a parent it is unconfirmed rather than leaving a reassuring blank', () => {
     for (const view of [build(), build({ parking: { parking: 'unknown' } })]) {
       expect(view.travel.parking).toEqual([
-        { label: 'Parking', value: 'Not confirmed — check before you go', unconfirmed: true },
+        { label: 'Parking', value: 'Not confirmed. Check before you go', unconfirmed: true },
       ]);
     }
   });

@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GeneratingPlan } from '@/src/components/planning/GeneratingPlan';
 import { PlanScreenView } from '@/src/components/planning/PlanScreenView';
 import { Button, EmptyState, Text } from '@/src/components/ui';
+import { VenueImage } from '@/src/components/ui/VenueImage';
+import { profileReceipt } from '@/src/utils/profile-receipt';
 import { BackButton } from '@/src/components/ui/BackButton';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useNearbyFood, useVenue } from '@/src/hooks/use-queries';
@@ -305,9 +307,9 @@ export default function PlanScreen() {
 
   if (venuePending) {
     return (
-      <Shell onBack={handleBack} topInset={insets.top}>
-        <GeneratingPlan venueName="this place" steps={steps} done={done} current={current} />
-      </Shell>
+      <GeneratingShell onBack={handleBack} topInset={insets.top}>
+        <GeneratingPlan venueName="this place" steps={steps} done={done} current={current} inSheet />
+      </GeneratingShell>
     );
   }
 
@@ -340,9 +342,16 @@ export default function PlanScreen() {
 
   if (phase.status === 'generating') {
     return (
-      <Shell onBack={handleBack} topInset={insets.top}>
-        <GeneratingPlan venueName={venue.name} steps={steps} done={done} current={current} />
-      </Shell>
+      <GeneratingShell onBack={handleBack} topInset={insets.top} photo={venue.photos?.[0]} category={venue.category} alt={venue.name}>
+        <GeneratingPlan
+          venueName={venue.name}
+          steps={steps}
+          done={done}
+          current={current}
+          receipt={profileReceipt(profile)}
+          inSheet
+        />
+      </GeneratingShell>
     );
   }
 
@@ -398,6 +407,43 @@ export default function PlanScreen() {
 }
 
 /** The chrome the pre-plan states share: a way back, and nothing else to distract from waiting. */
+/**
+ * Frame 04b (node 76:71): the generating list sits in the same sheet Create a plan used, over the
+ * venue's photograph, so the moment after "Build my plan" looks like the moment before it. The sheet
+ * starts at the frame's 212 over a 300 hero.
+ */
+function GeneratingShell({
+  children,
+  onBack,
+  topInset,
+  photo,
+  category,
+  alt,
+}: {
+  children: React.ReactNode;
+  onBack: () => void;
+  topInset: number;
+  photo?: string;
+  category?: string;
+  alt?: string;
+}) {
+  return (
+    <View style={styles.shell}>
+      <View style={styles.generatingHero}>
+        <VenueImage uri={photo} category={category} alt={alt ?? 'Place'} style={styles.generatingHeroImage} borderRadius={0} />
+        <View style={styles.generatingScrim} />
+        <View style={[styles.generatingBack, { top: topInset + spacing.sm }]}>
+          <BackButton onPress={onBack} />
+        </View>
+      </View>
+      <View style={styles.generatingSheet}>
+        <View style={styles.grabber} />
+        {children}
+      </View>
+    </View>
+  );
+}
+
 function Shell({
   children,
   onBack,
@@ -419,6 +465,31 @@ function Shell({
 
 const styles = StyleSheet.create({
   shell: { flex: 1, backgroundColor: colors.background },
+  generatingHero: { height: 300, overflow: 'hidden' },
+  generatingHeroImage: { width: '100%', height: '100%' },
+  // Node 76:93: the frame darkens the photograph behind the sheet.
+  generatingScrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.45)' },
+  generatingBack: {
+    position: 'absolute',
+    left: spacing.xl,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Node 76:94: the sheet starts at 212 over the 300 hero, 28 radius, grabber 10 below its top.
+  generatingSheet: {
+    flex: 1,
+    marginTop: -88,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: spacing.screenPadding,
+    paddingTop: 10,
+  },
+  grabber: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: colors.border, marginBottom: spacing.lg },
   // flex-start, or the 44pt back control stretches across the row and its chevron lands centred.
   shellHeader: { paddingHorizontal: spacing.screenPadding, paddingBottom: spacing.sm, alignItems: 'flex-start' },
   failure: {

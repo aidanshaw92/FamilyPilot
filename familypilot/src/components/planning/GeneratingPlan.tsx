@@ -5,6 +5,8 @@ import { Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { CreatePlanStep, CreatePlanStepId } from '@/src/services/planning/create-plan';
 
+import { ProfileReceipt } from './ProfileReceipt';
+
 /**
  * What a parent sees while the day is being worked out.
  *
@@ -21,17 +23,34 @@ export interface GeneratingPlanProps {
   done: CreatePlanStepId[];
   /** The step being worked on now, if any. */
   current?: CreatePlanStepId;
+  /** Frame 04b keeps the profile receipt under the progress list. Null hides it. */
+  receipt?: string | null;
+  /** True when drawn inside the sheet frame 04b shows; the title then matches the sheet's. */
+  inSheet?: boolean;
 }
 
-export function GeneratingPlan({ venueName, steps, done, current }: GeneratingPlanProps) {
+/**
+ * Frame 04b (node 76:71): the same sheet as Create a plan, its title unchanged, and a four-line list
+ * where a finished step is a tick, the current one a filled dot and the rest an empty ring.
+ */
+export function GeneratingPlan({ venueName, steps, done, current, receipt = null, inSheet = false }: GeneratingPlanProps) {
   return (
-    <View style={styles.container} testID="generating-plan">
-      <Text variant="eyebrow">
-        BUILDING YOUR DAY
-      </Text>
-      <Text variant="heading1" style={styles.title}>
-        A day around {venueName}
-      </Text>
+    <View style={[styles.container, inSheet && styles.inSheet]} testID="generating-plan">
+      {inSheet ? (
+        <View style={styles.header}>
+          <Text variant="heading2">Plan your day</Text>
+          <Text variant="bodySmall" color={colors.text.secondary}>
+            Around {venueName}
+          </Text>
+        </View>
+      ) : (
+        <>
+          <Text variant="eyebrow">BUILDING YOUR DAY</Text>
+          <Text variant="heading1" style={styles.title}>
+            A day around {venueName}
+          </Text>
+        </>
+      )}
 
       <View
         style={styles.steps}
@@ -43,16 +62,15 @@ export function GeneratingPlan({ venueName, steps, done, current }: GeneratingPl
           const active = !complete && step.id === current;
           return (
             <View key={step.id} style={styles.step}>
-              <View
-                style={[
-                  styles.marker,
-                  complete && styles.markerDone,
-                  active && styles.markerActive,
-                ]}
-              >
+              {/* Nodes 76:140, 76:146, 76:148: tick, filled dot, empty ring. */}
+              <View style={styles.markerBox}>
                 {complete ? (
-                  <Ionicons name="checkmark" size={14} color={colors.text.inverse} />
-                ) : null}
+                  <Ionicons name="checkmark" size={16} color={colors.ink} />
+                ) : active ? (
+                  <View style={styles.dot} />
+                ) : (
+                  <View style={styles.ring} />
+                )}
               </View>
               <Text
                 variant="body"
@@ -65,6 +83,7 @@ export function GeneratingPlan({ venueName, steps, done, current }: GeneratingPl
           );
         })}
       </View>
+      {receipt ? <ProfileReceipt text={receipt} style={styles.receipt} /> : null}
     </View>
   );
 }
@@ -76,19 +95,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
   },
+  inSheet: { flex: 0, justifyContent: 'flex-start', paddingHorizontal: 0 },
+  header: { gap: 2, marginBottom: spacing['3xl'] },
   title: { marginBottom: spacing.xl },
-  steps: { gap: spacing.lg },
+  steps: { gap: spacing.xl },
   step: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  marker: {
-    width: 22,
-    height: 22,
-    borderRadius: radius.full,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  markerActive: { borderColor: colors.ink },
-  markerDone: { borderColor: colors.ink, backgroundColor: colors.ink },
+  markerBox: { width: 16, height: 16, alignItems: 'center', justifyContent: 'center' },
+  dot: { width: 9, height: 9, borderRadius: radius.full, backgroundColor: colors.ink },
+  ring: { width: 11, height: 11, borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border },
   stepLabel: { flex: 1 },
+  receipt: { marginTop: spacing['3xl'] },
 });

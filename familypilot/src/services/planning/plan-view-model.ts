@@ -177,7 +177,7 @@ function openingRow(stop: SequenceStop): PlanStopRow {
     };
   }
   // The planner scheduled it without confirmation, and the parent is told exactly that.
-  return { label: 'Opening', value: 'Hours not confirmed — check before you go', unconfirmed: true };
+  return { label: 'Opening', value: 'Hours not confirmed. Check before you go', unconfirmed: true };
 }
 
 /**
@@ -267,7 +267,7 @@ export interface PlanViewModelInput {
  */
 function parkingRows(parking: PlanParkingInput | undefined): PlanStopRow[] {
   const unconfirmed: PlanStopRow[] = [
-    { label: 'Parking', value: 'Not confirmed — check before you go', unconfirmed: true },
+    { label: 'Parking', value: 'Not confirmed. Check before you go', unconfirmed: true },
   ];
   if (!parking) return unconfirmed;
 

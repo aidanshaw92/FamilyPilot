@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { BottomSheet, Button, Text } from '@/src/components/ui';
+import { BottomSheet, Text } from '@/src/components/ui';
+import { ArrowCta } from '@/src/components/ui/ArrowCta';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { PlanDraft, PlanParty, planDraftBlocker } from '@/src/services/planning/plan-draft';
 
 import { PlanDraftForm } from './PlanDraftForm';
+import { ProfileReceipt } from './ProfileReceipt';
 
 /**
  * The approved Create a Plan sheet: when, start, who's coming, how long.
@@ -32,6 +34,10 @@ export interface CreatePlanSheetProps {
   onAddFamily?: () => void;
   /** True while a plan is being generated, so the button cannot be pressed twice. */
   busy?: boolean;
+  /** Frame 04's profile receipt: which of the parent's details the plan will use. Null hides it. */
+  receipt?: string | null;
+  /** Where the receipt's "Edit" goes. */
+  onEditProfile?: () => void;
 }
 
 export function CreatePlanSheet({
@@ -44,6 +50,8 @@ export function CreatePlanSheet({
   onCreate,
   onAddFamily,
   busy = false,
+  receipt = null,
+  onEditProfile,
 }: CreatePlanSheetProps) {
   // Guards against a second submit while the first is still generating, independently of the
   // button's own disabled state -- a double tap can land before React re-renders.
@@ -67,10 +75,12 @@ export function CreatePlanSheet({
       accessibilityLabel={`Create a plan for ${venueName}`}
       testID="create-plan-sheet"
     >
+      {/* Frame 04 (nodes 76:27, 76:28): "Plan your day" over "Around <venue>". The venue's own
+          button still says Create a plan; this is the sheet it opens. */}
       <View style={styles.header}>
-        <Text variant="heading2">Create a plan</Text>
+        <Text variant="heading2">Plan your day</Text>
         <Text variant="bodySmall" color={colors.text.secondary}>
-          A day around {venueName}
+          Around {venueName}
         </Text>
       </View>
 
@@ -87,6 +97,7 @@ export function CreatePlanSheet({
           venueName={venueName}
           onAddFamily={onAddFamily}
         />
+        {receipt ? <ProfileReceipt text={receipt} onEdit={onEditProfile} style={styles.receipt} /> : null}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -95,8 +106,9 @@ export function CreatePlanSheet({
             {blocker}
           </Text>
         ) : null}
-        <Button
-          label={busy || submitted ? 'Building your day…' : 'Create plan'}
+        {/* Node 76:65: the frame's arrow CTA, "Build my plan". */}
+        <ArrowCta
+          label={busy || submitted ? 'Building your day…' : 'Build my plan'}
           disabled={busy || submitted || Boolean(blocker)}
           onPress={create}
           testID="create-plan-submit"
@@ -118,6 +130,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     gap: spacing.md,
   },
+  receipt: { marginTop: spacing.sm },
   footer: {
     paddingHorizontal: spacing.screenPadding,
     paddingTop: spacing.sm,
