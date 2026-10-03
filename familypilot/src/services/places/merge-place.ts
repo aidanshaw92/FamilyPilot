@@ -53,7 +53,9 @@ function buildTrust(
   const consumerStatus = toConsumerEnrichmentStatus(enrichmentStatus);
   return {
     source: consumerStatus === 'provider_only' ? 'estimated' : 'provider',
-    lastChecked: metadata?.lastChecked ?? place.fetchedAt.slice(0, 10),
+    // Only a review date is a "last checked" date. The day the provider record was fetched used to
+    // stand in for it, so a place nobody had reviewed could say "Family details checked today".
+    lastChecked: metadata?.lastChecked,
   };
 }
 

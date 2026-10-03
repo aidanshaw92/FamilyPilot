@@ -119,7 +119,7 @@ export function CheckTodaySection({ facts, latitude, longitude }: CheckTodaySect
 
   return (
     <View style={styles.section}>
-      <Text variant="heading3" style={styles.title}>
+      <Text variant="heading2" style={styles.title}>
         Will this work today?
       </Text>
 
@@ -199,11 +199,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
-    backgroundColor: colors.secondary[50],
+    // A white card like every other card on the page; the icon carries the state. A green fill
+    // read as "this fits" even on the "add your routines first" message.
+    backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.secondary[100],
+    borderColor: colors.border,
   },
   cardMuted: {
     backgroundColor: colors.warning[50],

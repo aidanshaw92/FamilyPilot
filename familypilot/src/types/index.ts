@@ -101,7 +101,14 @@ export interface FamilyScoreFactors {
 export interface FamilyScore {
   score: number;
   factors: FamilyScoreFactors;
+  /** Reasons the place suits this family. Only positives belong here: the UI ticks each line. */
   explanation: string[];
+  /**
+   * Reviewed facts that count AGAINST the match for this family ("Pushchair access reviewed as
+   * difficult"). Kept apart from `explanation` because the two render differently — a tick and a
+   * warning — and a caution shown with a tick is a false claim.
+   */
+  cautions?: string[];
 }
 
 export type EnrichmentStatus = 'provider_only' | 'ai_draft' | 'enriched' | 'verified';

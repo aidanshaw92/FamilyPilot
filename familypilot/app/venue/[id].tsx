@@ -40,18 +40,24 @@ import { PlanDraft, planDraftDefaults } from '@/src/services/planning/plan-draft
 import { photoAttribution } from '@/src/services/places/place-photo-url';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
-import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { colors, spacing } from '@/src/design-system/tokens';
 import { safeFooterPadding } from '@/src/utils/safe-area';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { isActivityVenue } from '@/src/data/mock-restaurants';
 import { useFamilyProfile, useNearbyFood, useVenue } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { localDate, usePlanningStore } from '@/src/stores/planning-store';
-import { getEnrichmentDetailTrustCopy, formatTerrainLabel, getMatchClassification } from '@/src/utils/family-match-classification';
+import { formatTerrainLabel } from '@/src/utils/family-match-classification';
+import { formatCategory } from '@/src/utils/format-category';
 import { generateVenueStaticParams } from '@/src/utils/venue-routes';
 import { travelTimeLabel } from '@/src/utils/travel-time';
 
-const HERO_HEIGHT = 250;
+/**
+ * Taller than the 250 it was: the hero now carries the category eyebrow, the title and the Family
+ * Match badge the Home card showed, so a parent lands on the same facts they tapped. 300 holds a
+ * four-line name at 360 wide with the controls clear above it.
+ */
+const HERO_HEIGHT = 300;
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 export function generateStaticParams() {
@@ -231,18 +237,18 @@ export default function VenueScreen() {
             </View>
           </View>
           <View style={styles.heroTitle}>
+            {/* The Home card's rhythm, continued: eyebrow, title, then the badge with the journey
+                beside it. The badge here is the same component as the one the parent just tapped. */}
+            <Text variant="caption" color={colors.text.inverse} style={styles.heroEyebrow}>
+              {formatCategory(venue.category)}
+            </Text>
             <Text variant="heading1" color={colors.text.inverse}>
               {venue.name}
             </Text>
             <View style={styles.heroMeta}>
+              <FamilyMatch score={venue.familyScore.score} enrichmentStatus={venue.enrichmentStatus} tone="onImage" />
               {/* Hedged: this is a straight-line estimate, not a routed drive. */}
               <MetaItem icon="car-outline" text={travelTimeLabel(venue.driveMinutes, 'estimated')} />
-              {venue.visitDurationMinutes ? (
-                <MetaItem icon="time-outline" text={`~${Math.round(venue.visitDurationMinutes / 60)}h visit`} />
-              ) : null}
-              {venue.estimatedSpend ? (
-                <MetaItem icon="wallet-outline" text={`Est. ${venue.estimatedSpend}`} />
-              ) : null}
             </View>
           </View>
         </View>
@@ -250,25 +256,16 @@ export default function VenueScreen() {
         <View style={styles.body}>
           <FadeInView>
             <View style={styles.matchIntro}>
-              <Text variant="caption" style={styles.matchEyebrow}>
+              {/* The same eyebrow treatment as the Home card and the hero above. */}
+              <Text variant="caption" color={colors.text.secondary} style={styles.sectionEyebrow}>
                 FAMILY MATCH
               </Text>
               <Text variant="heading2">Will this work for your family?</Text>
             </View>
-            <View style={styles.scoreBand}>
-              <View style={styles.scoreBandText}>
-                <Text variant="heading3">{getMatchClassification(venue.familyScore.score, venue.enrichmentStatus)}</Text>
-                <Text variant="bodySmall" color={colors.text.secondary}>How well it fits your household</Text>
-              </View>
-              <FamilyMatch score={venue.familyScore.score} enrichmentStatus={venue.enrichmentStatus} />
-            </View>
-            <FamilyMatchPanel familyScore={venue.familyScore} venue={venue} showClassification={false} />
-
-            {venue.enrichmentStatus ? (
-              <Text variant="caption" color={colors.text.secondary} style={styles.providerOnlyBanner}>
-                {getEnrichmentDetailTrustCopy(venue.enrichmentStatus)}
-              </Text>
-            ) : null}
+            {/* The word leads inside the panel ("Good match"), the number sits on the hero badge
+                above, and the panel's own secondary line repeats the number with its scale. The
+                separate score band that used to sit here said the same thing a third time. */}
+            <FamilyMatchPanel familyScore={venue.familyScore} venue={venue} />
 
             {venue.trustedFacts ? (
               <CheckTodaySection
@@ -278,10 +275,31 @@ export default function VenueScreen() {
               />
             ) : null}
 
-            {venue.address ? <Text variant="bodySmall" style={{marginBottom:12}}>{venue.address}</Text> : null}
-            <Button label="Get directions" variant="outline" onPress={handleDirections} style={styles.directionsButton} />
-            {venue.website && /^https?:\/\//.test(venue.website) ? <Button label="Official website & visitor information" variant="outline" onPress={() => void Linking.openURL(venue.website!)}/> : null}
-            {venue.phone ? <Text variant="bodySmall" style={{marginVertical:12}}>Contact: {venue.phone}</Text> : null}
+            <Text variant="heading2" style={styles.sectionTitle}>
+              Getting there
+            </Text>
+            {venue.address ? (
+              <Text variant="body" color={colors.text.secondary} style={styles.address}>
+                {venue.address}
+              </Text>
+            ) : null}
+            <View style={styles.actionRow}>
+              <Button label="Directions" variant="secondary" onPress={handleDirections} style={styles.actionButton} />
+              {venue.website && /^https?:\/\//.test(venue.website) ? (
+                <Button
+                  label="Website"
+                  variant="secondary"
+                  onPress={() => void Linking.openURL(venue.website!)}
+                  style={styles.actionButton}
+                />
+              ) : null}
+            </View>
+            {venue.phone ? (
+              <Text variant="bodySmall" color={colors.text.secondary} style={styles.phone}>
+                Phone {venue.phone}
+              </Text>
+            ) : null}
+
             <PhotoGallery photos={venue.photos} onPhotoPress={setHeroIndex} />
 
             {/* This is the larger version of the photograph Home previews, so it carries the full
@@ -299,11 +317,14 @@ export default function VenueScreen() {
               <PlaceAttribution provider={venue.provider} />
             </View>
 
-            <Text variant="heading3" style={styles.sectionTitle}>
+            <Text variant="heading2" style={styles.sectionTitle}>
               Facilities
             </Text>
             <FacilityGrid facilities={venue.facilities ?? []} />
 
+            <Text variant="heading2" style={styles.sectionTitle}>
+              Practical details
+            </Text>
             <View style={styles.detailsGrid}>
               <DetailItem
                 icon="people-outline"
@@ -352,6 +373,9 @@ export default function VenueScreen() {
               isError={nearbyFood.isError}
             />
 
+            <Text variant="heading2" style={styles.sectionTitle}>
+              About
+            </Text>
             <Text variant="body" style={styles.description}>
               {venue.description}
             </Text>
@@ -444,26 +468,7 @@ const styles = StyleSheet.create({
   },
   matchIntro: {
     gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  matchEyebrow: {
-    color: colors.secondary[600],
-    letterSpacing: 1.1,
-    fontFamily: 'Inter_700Bold',
-  },
-  scoreBand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
-    backgroundColor: colors.fill,
-    borderRadius: radius.xl,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
     marginBottom: spacing.lg,
-  },
-  scoreBandText: {
-    flex: 1,
-    gap: 2,
   },
   loadingGap: {
     marginBottom: spacing.lg,
@@ -500,11 +505,28 @@ const styles = StyleSheet.create({
     right: spacing.screenPadding,
     zIndex: 2,
   },
+  sectionEyebrow: {
+    letterSpacing: 1.04,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    lineHeight: 16,
+  },
+  heroEyebrow: {
+    // The Home card's eyebrow (frame: 13/16, +1.04 track, upper case), at 82% so the title leads.
+    letterSpacing: 1.04,
+    textTransform: 'uppercase',
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    lineHeight: 16,
+    marginBottom: 4,
+    opacity: 0.82,
+  },
   heroMeta: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignItems: 'center',
     gap: spacing.md,
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
   },
   metaItem: {
     flexDirection: 'row',
@@ -515,19 +537,27 @@ const styles = StyleSheet.create({
     padding: spacing.screenPadding,
     paddingBottom: 120,
   },
-  providerOnlyBanner: {
-    marginBottom: spacing.md,
-    fontStyle: 'italic',
-  },
   sectionTitle: {
-    marginTop: spacing['2xl'],
+    marginTop: spacing['3xl'],
     marginBottom: spacing.lg,
+  },
+  address: {
+    marginBottom: spacing.md,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  actionButton: {
+    flex: 1,
+  },
+  phone: {
+    marginTop: spacing.md,
   },
   photoAttribution: {
     marginTop: spacing.md,
   },
   detailsGrid: {
-    marginTop: spacing['2xl'],
     gap: spacing.lg,
   },
   detailItem: {
@@ -552,9 +582,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   description: {
-    marginTop: spacing['2xl'],
     color: colors.text.secondary,
     lineHeight: 24,
+    marginBottom: spacing['2xl'],
   },
   footer: {
     position: 'absolute',
@@ -576,8 +606,5 @@ const styles = StyleSheet.create({
   },
   planButton: {
     flex: 1.6,
-  },
-  directionsButton: {
-    marginBottom: spacing.md,
   },
 });

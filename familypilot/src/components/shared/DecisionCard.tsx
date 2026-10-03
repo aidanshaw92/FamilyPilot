@@ -45,7 +45,10 @@ function DecisionCardComponent({
     // across every card, so combine the two most relevant reasons where there's a second one.
     // (A third was tried and tested worse: numberOfLines={2} below just truncates it with an
     // ellipsis rather than showing it, which reads as a cut-off fragment instead of a fact.)
-    const reason = venue.familyScore.explanation.slice(0, 2).join(' · ');
+    // An unreviewed place has no reasons to join, so it says what it is instead of going blank.
+    const reason =
+      venue.familyScore.explanation.slice(0, 2).join(' · ') ||
+      (venue.enrichmentStatus === 'provider_only' ? 'Family suitability not yet reviewed' : '');
 
     return (
       <PressableScale

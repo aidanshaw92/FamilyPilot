@@ -64,7 +64,7 @@ export function RestaurantsCloseBy({ result, isPending, isError }: Props) {
   if (isPending) {
     return (
       <View style={styles.section} testID="restaurants-close-by">
-        <Text variant="heading3">Restaurants close by</Text>
+        <Text variant="heading2">Restaurants close by</Text>
         <Text variant="bodySmall" color={colors.text.secondary}>
           Looking for places to eat nearby.
         </Text>
@@ -78,7 +78,7 @@ export function RestaurantsCloseBy({ result, isPending, isError }: Props) {
   if (isError) {
     return (
       <View style={styles.section} testID="restaurants-close-by">
-        <Text variant="heading3">Restaurants close by</Text>
+        <Text variant="heading2">Restaurants close by</Text>
         <Text variant="bodySmall" color={colors.text.secondary}>
           We could not check what is nearby just now. This is about our lookup, not about the area.
         </Text>
@@ -91,7 +91,7 @@ export function RestaurantsCloseBy({ result, isPending, isError }: Props) {
   if (candidates.length === 0) {
     return (
       <View style={styles.section} testID="restaurants-close-by">
-        <Text variant="heading3">Restaurants close by</Text>
+        <Text variant="heading2">Restaurants close by</Text>
         <Text variant="bodySmall" color={colors.text.secondary}>
           Nothing to eat is mapped within a short walk of here. There may still be somewhere; it just
           is not on the map we use.
@@ -102,7 +102,7 @@ export function RestaurantsCloseBy({ result, isPending, isError }: Props) {
 
   return (
     <View style={styles.section} testID="restaurants-close-by">
-      <Text variant="heading3">Restaurants close by</Text>
+      <Text variant="heading2">Restaurants close by</Text>
       <Text variant="bodySmall" color={colors.text.secondary} style={styles.caveat}>
         Nearby places to eat. Travel times are estimated from distance, not measured, and we have no
         public transport times for these.

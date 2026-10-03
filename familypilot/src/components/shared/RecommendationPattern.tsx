@@ -6,10 +6,11 @@ import { DataTrustBadge } from '@/src/components/ui/DataTrustBadge';
 import { Text } from '@/src/components/ui/Text';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
-import { getMatchClassification, getEnrichmentTrustCopy } from '@/src/utils/family-match-classification';
+import { getEnrichmentDetailTrustCopy, getEnrichmentTrustCopy, getMatchClassification } from '@/src/utils/family-match-classification';
 import { formatArrivalTime } from '@/src/utils/clock-format';
 
 import { describeFamilyMatch } from '@/src/utils/family-match-scale';
+import { TrustBadgeInput, trustBadgesFor } from '@/src/utils/trust-badges';
 import { travelTimeWithMode } from '@/src/utils/travel-time';
 
 export type RecommendationVariant = 'hero' | 'carousel' | 'list' | 'detail';
@@ -68,14 +69,20 @@ export function RecommendationPattern({
     ? (focusedReasons ?? []).slice(0, REASON_LIMIT[variant])
     : venue.familyScore.explanation.slice(0, REASON_LIMIT[variant]);
   const unknownLines = isFocused ? (focusedUnknowns ?? []).slice(0, CAUTION_LIMIT[variant]) : [];
+  // Two different things, drawn differently: what counts against this family (amber, "Worth
+  // checking") and what the venue wants you to know (neutral, "Good to know").
   const cautions = isFocused
     ? unknownLines
-    : (venue.goodToKnow ?? []).slice(0, CAUTION_LIMIT[variant]);
+    : (venue.familyScore.cautions ?? []).slice(0, CAUTION_LIMIT[variant]);
+  const notes = isFocused ? [] : (venue.goodToKnow ?? []).slice(0, CAUTION_LIMIT[variant]);
+  // Only badges with data behind them; see trust-badges.ts for what used to be printed here.
+  const trustBadges = showTrust ? trustBadgesFor(venue as TrustBadgeInput) : [];
   const isDetail = variant === 'detail';
   const isHero = variant === 'hero';
   const showSectionLabels = isHero || isDetail;
 
-  const classificationVariant = isHero || isDetail ? 'heading2' : 'heading3';
+  // heading3 everywhere: inside a card the word is a card title, never a page heading.
+  const classificationVariant = 'heading3';
 
   return (
     <View style={style}>
@@ -121,7 +128,7 @@ export function RecommendationPattern({
         <View style={styles.cautionBlock}>
           {showSectionLabels ? (
             <Text variant="bodySmall" style={styles.sectionLabel}>
-              {isFocused ? 'Not yet confirmed' : 'Good to know'}
+              {isFocused ? 'Not yet confirmed' : 'Worth checking'}
             </Text>
           ) : null}
           {cautions.map((item) => (
@@ -134,6 +141,33 @@ export function RecommendationPattern({
               <Text
                 variant={isDetail ? 'bodySmall' : 'caption'}
                 style={styles.cautionText}
+                numberOfLines={isDetail ? undefined : 2}
+              >
+                {item}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {notes.length > 0 ? (
+        <View style={styles.cautionBlock}>
+          {showSectionLabels ? (
+            <Text variant="bodySmall" style={styles.sectionLabel}>
+              Good to know
+            </Text>
+          ) : null}
+          {notes.map((item) => (
+            <View key={item} style={styles.cautionRow}>
+              <Ionicons
+                name="information-circle-outline"
+                size={isDetail ? 16 : 14}
+                color={colors.text.secondary}
+              />
+              <Text
+                variant={isDetail ? 'bodySmall' : 'caption'}
+                color={colors.text.secondary}
+                style={styles.noteText}
                 numberOfLines={isDetail ? undefined : 2}
               >
                 {item}
@@ -159,22 +193,19 @@ export function RecommendationPattern({
 
       {venue.enrichmentStatus ? (
         <Text variant="caption" color={colors.text.secondary} style={styles.providerOnlyNote}>
-          {getEnrichmentTrustCopy(venue.enrichmentStatus)}
+          {isDetail ? getEnrichmentDetailTrustCopy(venue.enrichmentStatus) : getEnrichmentTrustCopy(venue.enrichmentStatus)}
         </Text>
       ) : null}
 
-      {showTrust ? (
+      {showTrust && trustBadges.length > 0 ? (
         <View style={styles.trustRow}>
           <Text variant="caption" color={colors.text.secondary} style={styles.trustHeading}>
             Information confidence
           </Text>
           <View style={styles.trustBadges}>
-            <DataTrustBadge variant="venue_info" />
-            <DataTrustBadge variant="updated_recently" label="Last checked 2 days ago" />
-            <DataTrustBadge variant="opening_hours" />
-            {venue.estimatedSpend ? (
-              <DataTrustBadge variant="estimated" label="Estimated family cost" />
-            ) : null}
+            {trustBadges.map((label) => (
+              <DataTrustBadge key={label} variant="venue_info" label={label} />
+            ))}
           </View>
         </View>
       ) : null}
@@ -196,7 +227,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   classification: {
-    color: colors.secondary[600],
     marginBottom: spacing.md,
   },
   reasonsBlock: {
@@ -230,6 +260,10 @@ const styles = StyleSheet.create({
   cautionText: {
     flex: 1,
     color: colors.warning[600],
+    lineHeight: 20,
+  },
+  noteText: {
+    flex: 1,
     lineHeight: 20,
   },
   metaLine: {

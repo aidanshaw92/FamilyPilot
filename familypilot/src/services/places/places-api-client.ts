@@ -34,7 +34,7 @@ export class PlacesApiClient {
     const response = await fetch(`${this.baseUrl}/search?${query.toString()}`, { signal: AbortSignal.timeout(25000) });
     if (!response.ok) {
       const body = (await response.json().catch(() => ({}))) as { error?: string };
-      throw new Error(body.error ?? `Places API error ${response.status}`);
+      throw new PlacesApiError(body.error ?? `Places API error ${response.status}`, response.status);
     }
     return response.json() as Promise<PlacesSearchResult>;
   }
@@ -46,9 +46,24 @@ export class PlacesApiClient {
     );
     if (!response.ok) {
       const body = (await response.json().catch(() => ({}))) as { error?: string };
-      throw new Error(body.error ?? `Places API error ${response.status}`);
+      throw new PlacesApiError(body.error ?? `Places API error ${response.status}`, response.status);
     }
     return response.json() as Promise<PlaceDetailResult>;
+  }
+}
+
+/**
+ * Carries the HTTP status so callers can tell "this place does not exist" (404) from "we could not
+ * reach the API" (anything else, including a network failure, which is a plain Error). The two used
+ * to collapse into one catch, and an outage read as "Place not found".
+ */
+export class PlacesApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'PlacesApiError';
+    this.status = status;
   }
 }
 

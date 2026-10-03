@@ -15,7 +15,7 @@ export function CommunitySection({ tips }: CommunitySectionProps) {
 
   return (
     <View style={styles.section}>
-      <Text variant="heading3" style={styles.title}>
+      <Text variant="heading2" style={styles.title}>
         From other families
       </Text>
       {tips.map((tip) => (
