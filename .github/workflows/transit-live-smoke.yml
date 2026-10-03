@@ -1,0 +1,202 @@
+name: TfL transit live smoke test
+
+# Proves that a REAL TfL Journey Planner response, parsed by THIS branch, yields the routed transit leg
+# the product needs. The unit tests pin the parser against TfL's documented shape; this pins the
+# documented shape against what TfL really sends.
+#
+# WHY THIS WORKFLOW EXISTS. The TfL client was written in a development environment whose egress policy
+# denies api.tfl.gov.uk, so it had never met the live service. "Written and gated" is not "working", and
+# transit must not reach the UI on the strength of fixtures alone.
+#
+# COST: none. TfL's Unified API is free open data. This makes at most TWO requests per run — one through
+# the Preview deployment, one direct from the runner — which is well inside any published rate limit.
+#
+# TWO OBSERVATIONS, ON PURPOSE. The Preview call proves the endpoint, the flag and the parser together.
+# The direct call proves the Preview answer tracks what TfL says right now, which a fixture cannot fake.
+# `tfl-transit.js` has no fixture path and no fallback journey, so `state: "available"` is already only
+# reachable from a real 200 — but that is exactly what someone who had added a fallback would say, so the
+# cross-check does not rely on it.
+#
+# It needs TFL_TRANSIT_ENABLED=true in the Vercel PREVIEW environment. Transit is off by default
+# everywhere, and the step below names the variable in its error rather than failing with a bare 503.
+
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: Origin lat,lng (default Southbank)
+        required: false
+        default: '51.5074,-0.1278'
+      to:
+        description: Destination lat,lng (default Greenwich)
+        required: false
+        default: '51.4826,-0.0077'
+
+permissions:
+  contents: read
+  deployments: read
+  statuses: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for the Vercel preview of this commit
+        id: preview
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          echo "looking for a preview deployment of $SHA"
+          url=""
+          for attempt in $(seq 1 40); do
+            ids=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/deployments?sha=${SHA}&per_page=20" \
+              | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+                  const rows = JSON.parse(s||"[]");
+                  process.stdout.write(Array.isArray(rows)?rows.map(r=>r.id).join(" "):"");
+                })')
+            for id in $ids; do
+              found=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${GITHUB_REPOSITORY}/deployments/${id}/statuses?per_page=20" \
+                | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+                    const rows = JSON.parse(s||"[]");
+                    const ok = (Array.isArray(rows)?rows:[]).find(
+                      (r) => r.state === "success" && (r.environment_url || "").includes("vercel.app"),
+                    );
+                    process.stdout.write(ok ? ok.environment_url : "");
+                  })')
+              if [ -n "$found" ]; then url="$found"; break; fi
+            done
+            if [ -n "$url" ]; then break; fi
+            echo "  attempt $attempt: no successful preview yet, waiting"
+            sleep 15
+          done
+          if [ -z "$url" ]; then
+            echo "::error::no successful Vercel preview deployment found for $SHA"
+            exit 1
+          fi
+          echo "preview: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # First, independently: does TfL answer this runner at all, and in the shape the parser expects?
+      # Done before the endpoint call so a Preview failure can be read against a known-good TfL.
+      - name: Ask TfL directly, so the Preview answer has something to be checked against
+        env:
+          FROM: ${{ inputs.from || '51.5074,-0.1278' }}
+          TO: ${{ inputs.to || '51.4826,-0.0077' }}
+        run: |
+          set -uo pipefail
+          modes='tube,dlr,overground,elizabeth-line,bus,tram,national-rail'
+          url="https://api.tfl.gov.uk/Journey/JourneyResults/${FROM}/to/${TO}?mode=${modes}"
+          echo "GET ${url}"
+          code=$(curl -sS -o /tmp/tfl-direct.json -w '%{http_code}' --max-time 45 "$url" || echo 000)
+          echo "status: $code"
+          if [ "$code" != "200" ]; then
+            echo "::warning::TfL answered $code to the runner's own request, so the cross-check will be skipped. The Preview assertions below still run."
+            rm -f /tmp/tfl-direct.json
+          else
+            node -e '
+              const d = JSON.parse(require("node:fs").readFileSync("/tmp/tfl-direct.json","utf8"));
+              const j = Array.isArray(d.journeys) ? d.journeys : [];
+              console.log(`TfL offered ${j.length} journey(s); durations: ${j.map((x)=>x.duration).join(", ")}`);
+              console.log(`first journey leg modes: ${(j[0]?.legs??[]).map((l)=>l?.mode?.id).join(", ")}`);
+            '
+          fi
+
+      - name: Ask the Preview build for a transit journey
+        id: probe
+        env:
+          PREVIEW: ${{ steps.preview.outputs.url }}
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          FROM: ${{ inputs.from || '51.5074,-0.1278' }}
+          TO: ${{ inputs.to || '51.4826,-0.0077' }}
+        run: |
+          set -euo pipefail
+          endpoint="${PREVIEW}/api/context/journey"
+          from_lat="${FROM%%,*}"; from_lng="${FROM##*,}"
+          to_lat="${TO%%,*}";   to_lng="${TO##*,}"
+          body=$(node -e '
+            const [a,b,c,d] = process.argv.slice(1).map(Number);
+            process.stdout.write(JSON.stringify({
+              mode: "transit",
+              origin: { latitude: a, longitude: b },
+              destinations: [{ placeId: "canary-destination", latitude: c, longitude: d }],
+            }));
+          ' "$from_lat" "$from_lng" "$to_lat" "$to_lng")
+          echo "POST ${endpoint}"
+          echo "body: ${body}"
+
+          auth=()
+          if [ -n "${BYPASS:-}" ]; then
+            auth+=(-H "x-vercel-protection-bypass: ${BYPASS}" -H "x-vercel-set-bypass-cookie: true")
+            echo "using the automation bypass secret"
+          else
+            echo "no bypass secret configured"
+          fi
+
+          code=$(curl -sS "${auth[@]}" \
+            -X POST -H 'Content-Type: application/json' -d "$body" \
+            -L --max-redirs 5 -c /tmp/vercel-cookies -b /tmp/vercel-cookies \
+            -D /tmp/headers -o /tmp/transit.json \
+            -w '%{http_code}' --max-time 90 "$endpoint")
+          echo "status: $code"
+          echo "cache-control: $(grep -i '^cache-control:' /tmp/headers | tr -d '\r' || echo '(none)')"
+
+          # A 503 TRANSIT_DISABLED is a configuration choice, not a defect, and it must not pass quietly
+          # either. It stands down loudly, naming exactly the variable that would let this run mean
+          # something -- the same posture the Places live smoke test takes.
+          if [ "$code" = "503" ] && grep -q 'TRANSIT_DISABLED' /tmp/transit.json 2>/dev/null; then
+            echo "gate response:"; head -c 300 /tmp/transit.json
+            echo "::error::NOT PROVEN: transit is switched off for this Preview deployment, so this run did not check a live TfL response against this branch's parser. Set TFL_TRANSIT_ENABLED=true in the Vercel project's PREVIEW environment and re-run. TfL is free, so this costs nothing."
+            exit 1
+          fi
+
+          case "$code" in
+            200) ;;
+            301|302|303|307|308|401|403)
+              if [ -z "${BYPASS:-}" ]; then
+                echo "::error::The preview is behind Vercel Deployment Protection and no VERCEL_AUTOMATION_BYPASS_SECRET repository secret is set, so this check cannot reach the build under test."
+              else
+                echo "::error::the bypass secret was sent and redirects were followed, but the preview still returned $code."
+              fi
+              grep -i '^location:' /tmp/headers | sed 's/?.*//' || true
+              exit 1
+              ;;
+            *)
+              echo "::error::journey endpoint returned $code"
+              head -c 400 /tmp/transit.json || true
+              exit 1
+              ;;
+          esac
+
+          # Cache-Control must be no-store: a journey result embeds departure times, and a cached one
+          # serves a parent yesterday's bus.
+          if ! grep -qi '^cache-control:.*no-store' /tmp/headers; then
+            echo "::error::the transit response is cacheable, which would serve a stale departure time"
+            exit 1
+          fi
+
+      - name: Assert it is a real, routed, correctly-labelled TfL journey
+        run: |
+          set -euo pipefail
+          cd familypilot
+          if [ -f /tmp/tfl-direct.json ]; then
+            node scripts/assert-live-transit.mjs /tmp/transit.json /tmp/tfl-direct.json
+          else
+            node scripts/assert-live-transit.mjs /tmp/transit.json
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: transit-live-evidence
+          path: |
+            /tmp/transit.json
+            /tmp/tfl-direct.json
+          if-no-files-found: warn
