@@ -204,6 +204,11 @@ capture to prove it did not move.
   rather than the frame's 10.5pt, and HOW LONG keeps its lengths ("1h 30m") rather than "Half a
   day", because the length is the planner's real input and the Plans tab shows the same number. The
   venue's own button still says Create a plan; the sheet it opens says Plan your day.
+- **Generating measured zero tall inside the sheet.** The first slice 10 build passed every screenshot
+  and failed both verifiers' "generating was reached", because `flex: 0` on web becomes a zero flex
+  basis: the box measured 353×0 with its children overflowing, which Playwright (and a screen reader's
+  bounds) read as not visible. A probe polling the element's rectangle every 400 ms found it. Fixed
+  with an explicit auto basis; the verifiers are the regression test.
 - **"See all" is not drawn** on Restaurants close by because there is nothing for it to open yet.
 - **A very long venue name** wraps to eight lines beside the compact badge at 360. Not truncated, by
   choice: a name is a fact. Noted for the end-to-end review if a real venue does this.

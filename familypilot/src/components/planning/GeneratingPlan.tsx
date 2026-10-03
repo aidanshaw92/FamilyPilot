@@ -95,7 +95,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
   },
-  inSheet: { flex: 0, justifyContent: 'flex-start', paddingHorizontal: 0 },
+  // Not `flex: 0`: on web that becomes a zero flex-basis and the box measures 0 tall with its
+  // children overflowing, which Playwright (and a screen reader's bounds) reads as "not visible".
+  inSheet: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto', justifyContent: 'flex-start', paddingHorizontal: 0 },
   header: { gap: 2, marginBottom: spacing['3xl'] },
   title: { marginBottom: spacing.xl },
   steps: { gap: spacing.xl },
