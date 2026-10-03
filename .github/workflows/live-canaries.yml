@@ -112,15 +112,46 @@ jobs:
           cd familypilot
           node scripts/canary-nearby-food-live.mjs "$PREVIEW" "${BYPASS:-}"
 
-      - name: Google Routes canary, one billable element
+      # curl, not node fetch. Vercel hands the protection-bypass cookie over on a redirect, and `fetch`
+      # follows redirects without persisting cookies, so the first attempt died with a bare
+      # `fetch failed` having proved nothing. The TfL smoke test already showed curl with -L and a
+      # cookie jar works for a POST through the bypass.
+      - name: Ask for ONE routed element
         if: ${{ inputs.run_routes }}
         env:
           PREVIEW: ${{ steps.target.outputs.url }}
           BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           set -euo pipefail
+          endpoint="${PREVIEW}/api/context/journey"
+          # Trafalgar Square -> Tower of London. One origin, one destination: 1 billable element.
+          body='{"origin":{"latitude":51.508,"longitude":-0.1281},"destinations":[{"placeId":"routes-canary-tower-of-london","latitude":51.5081,"longitude":-0.0759}]}'
+          echo "POST ${endpoint}"
+          echo "body: ${body}"
+
+          auth=()
+          if [ -n "${BYPASS:-}" ]; then
+            auth+=(-H "x-vercel-protection-bypass: ${BYPASS}" -H "x-vercel-set-bypass-cookie: true")
+          fi
+
+          code=$(curl -sS "${auth[@]}" \
+            -X POST -H 'Content-Type: application/json' -d "$body" \
+            -L --max-redirs 5 -c /tmp/cookies -b /tmp/cookies \
+            -D /tmp/routes-headers -o /tmp/routes-response.json \
+            -w '%{http_code}' --max-time 90 "$endpoint")
+          echo "status: $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::journey endpoint returned $code"
+            head -c 400 /tmp/routes-response.json || true
+            exit 1
+          fi
+
+      - name: Assert exactly one real routed element, and report predicted against actual
+        if: ${{ inputs.run_routes }}
+        run: |
+          set -euo pipefail
           cd familypilot
-          node scripts/canary-routes-live.mjs "$PREVIEW" "${BYPASS:-}"
+          node scripts/canary-routes-live.mjs /tmp/routes-response.json /tmp/target-status.json
 
       - uses: actions/upload-artifact@v4
         if: always()
