@@ -23,6 +23,12 @@ export function restaurantFactsLine(candidate: FoodCandidate): { text: string; r
   if (candidate.tagged.changingTable) notes.push('Baby changing');
   if (candidate.tagged.outdoorSeating) notes.push('Outdoor seating');
   if (candidate.tagged.wheelchair) notes.push('Step-free entrance');
-  return notes.length ? { text: notes.join(' · '), recorded: true } : { text: 'Facilities for children not recorded', recorded: false };
+  return notes.length ? { text: notes.join(' · '), recorded: true } : { text: 'Nobody has recorded facilities for children here', recorded: false };
 }
 
+/** The opening hours OpenStreetMap carries, or the plain statement that it carries none. */
+export function restaurantHoursLine(candidate: FoodCandidate): { text: string; recorded: boolean } {
+  return candidate.openingHours
+    ? { text: `Hours: ${candidate.openingHours}`, recorded: true }
+    : { text: 'Hours not listed', recorded: false };
+}

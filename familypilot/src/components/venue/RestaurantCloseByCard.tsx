@@ -6,7 +6,7 @@ import { Text } from '@/src/components/ui/Text';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { FoodCandidate } from '@/src/types/nearby-food';
-import { CATEGORY_NOUN, restaurantFactsLine, restaurantTravelLine } from '@/src/utils/restaurant-card-lines';
+import { CATEGORY_NOUN, restaurantFactsLine, restaurantHoursLine, restaurantTravelLine } from '@/src/utils/restaurant-card-lines';
 
 /** Frame 02's restaurant card (node 51:2): 262 wide, 200 photo, name, meta line, facts line, arrow. */
 export const RESTAURANT_CARD_WIDTH = 262;
@@ -16,6 +16,7 @@ export function RestaurantCloseByCard({ candidate }: { candidate: FoodCandidate 
   const noun = candidate.cuisine ? candidate.cuisine.replace(/[_;]/g, ' ') : CATEGORY_NOUN[candidate.category];
   const meta = [travel, noun].filter(Boolean).join(' · ');
   const facts = restaurantFactsLine(candidate);
+  const hours = restaurantHoursLine(candidate);
   const openInMaps = () => {
     const query = encodeURIComponent(`${candidate.name} ${candidate.address ?? ''}`.trim());
     void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
@@ -35,6 +36,10 @@ export function RestaurantCloseByCard({ candidate }: { candidate: FoodCandidate 
           </Text>
           <Text style={[styles.facts, !facts.recorded && styles.factsUnknown]} numberOfLines={1}>
             {facts.text}
+          </Text>
+          {/* Said either way: a missing hours line reads as "open whenever", which nobody checked. */}
+          <Text style={styles.hours} numberOfLines={1}>
+            {hours.text}
           </Text>
         </View>
         <Pressable
@@ -60,5 +65,6 @@ const styles = StyleSheet.create({
   meta: { fontFamily: 'Inter_400Regular', fontSize: 13.5, lineHeight: 16, color: colors.text.secondary },
   facts: { fontFamily: 'Inter_500Medium', fontSize: 13.5, lineHeight: 16, color: colors.ink },
   factsUnknown: { fontFamily: 'Inter_400Regular', color: colors.text.tertiary },
+  hours: { fontFamily: 'Inter_400Regular', fontSize: 12.5, lineHeight: 15, color: colors.text.tertiary },
   open: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
 });

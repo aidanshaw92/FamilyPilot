@@ -62,7 +62,8 @@ export function FamilyMatch({
       >
         {compact ? match.number : match.badgeLabel}
       </Text>
-      {onPress ? (
+      {/* Compact sits beside a "Why this score" link (node 49:13), which is the affordance there. */}
+      {onPress && !compact ? (
         <Ionicons
           name="information-circle-outline"
           size={14}

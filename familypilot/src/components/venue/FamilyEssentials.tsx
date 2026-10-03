@@ -17,7 +17,7 @@ export function FamilyEssentials({ venue }: { venue: VenueDetail }) {
       {rows.map((item, index) => (
         <View key={item.key} style={[styles.row, index === rows.length - 1 && styles.last]}>
           <Text style={styles.label}>{item.label}</Text>
-          <Text style={[styles.value, item.confirmed ? styles.confirmed : styles.unknown]} numberOfLines={2}>
+          <Text style={[styles.value, item.confirmed ? styles.confirmed : styles.unknown]} numberOfLines={3}>
             {item.value}
           </Text>
         </View>

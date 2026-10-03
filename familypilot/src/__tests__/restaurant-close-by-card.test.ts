@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { restaurantFactsLine, restaurantTravelLine } from '@/src/utils/restaurant-card-lines';
+import { restaurantFactsLine, restaurantHoursLine, restaurantTravelLine } from '@/src/utils/restaurant-card-lines';
 import { FoodCandidate } from '@/src/types/nearby-food';
 import { TravelLeg } from '@/src/types/travel';
 
@@ -11,7 +11,12 @@ const candidate = (over: Partial<FoodCandidate>): FoodCandidate =>
 describe('restaurant card lines', () => {
   it('says what OpenStreetMap tagged, and says plainly when it tagged nothing', () => {
     expect(restaurantFactsLine(candidate({ tagged: { highchair: true, changingTable: true } }))).toEqual({ text: 'Highchairs · Baby changing', recorded: true });
-    expect(restaurantFactsLine(candidate({}))).toEqual({ text: 'Facilities for children not recorded', recorded: false });
+    expect(restaurantFactsLine(candidate({}))).toEqual({ text: 'Nobody has recorded facilities for children here', recorded: false });
+  });
+
+  it('states hours, or states that none are listed', () => {
+    expect(restaurantHoursLine(candidate({ openingHours: 'Mo-Su 11:00-22:00' }))).toEqual({ text: 'Hours: Mo-Su 11:00-22:00', recorded: true });
+    expect(restaurantHoursLine(candidate({}))).toEqual({ text: 'Hours not listed', recorded: false });
   });
 
   it('leads with the walk and never calls an estimate a routed journey', () => {

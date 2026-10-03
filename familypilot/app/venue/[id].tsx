@@ -38,6 +38,7 @@ import { BackButton } from '@/src/components/ui/BackButton';
 import { ArrowCta } from '@/src/components/ui/ArrowCta';
 import { CreatePlanSheet } from '@/src/components/planning/CreatePlanSheet';
 import { PlanDraft, planDraftDefaults } from '@/src/services/planning/plan-draft';
+import { profileReceipt } from '@/src/utils/profile-receipt';
 import { photoAttribution } from '@/src/services/places/place-photo-url';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
@@ -416,6 +417,11 @@ export default function VenueScreen() {
         parties={planDefaults.parties}
         onDraftChange={setDraftOverride}
         onCreate={handleCreatePlan}
+        receipt={profileReceipt(profile)}
+        onEditProfile={() => {
+          setPlanSheetOpen(false);
+          router.push('/profile/edit' as never);
+        }}
         onAddFamily={
           isPilotFeatureVisible('trips_tab')
             ? () => {

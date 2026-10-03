@@ -190,6 +190,24 @@ capture to prove it did not move.
 - Eighteen em dashes remained in parent-facing copy after #40; all rewritten. Feedback's placeholder
   named a pilot-gated feature; its header now top-aligns like About and Edit profile.
 
+## 12. Found while rendering slices 9 and 10
+
+- **Frame 02's compact badge carried an info glyph** in the first render because the badge grows one
+  whenever it is pressable; beside a "Why this score" link that is a second affordance for the same
+  thing. The compact size now shows star and number only, as the frame draws it.
+- **The restaurant card had dropped the hours line** the list rows used to carry. The phase-2 audit
+  caught the sibling omission ("Nobody has recorded facilities for children here" must be said, not
+  left blank); both lines are back on the card, said either way.
+- **A reviewed parking detail ran past two lines** ("Free on-site car park, about 120 spaces, busiest
+  before 11am at…"); the essentials value may take three.
+- **Deliberate departures from frames 04/04b:** the row labels keep the app's one `eyebrow` variant
+  rather than the frame's 10.5pt, and HOW LONG keeps its lengths ("1h 30m") rather than "Half a
+  day", because the length is the planner's real input and the Plans tab shows the same number. The
+  venue's own button still says Create a plan; the sheet it opens says Plan your day.
+- **"See all" is not drawn** on Restaurants close by because there is nothing for it to open yet.
+- **A very long venue name** wraps to eight lines beside the compact badge at 360. Not truncated, by
+  choice: a name is a fact. Noted for the end-to-end review if a real venue does this.
+
 ## 10. The Figma file, inspected (2026-10-03)
 
 File `LNpbdnuAWcfWf9spvB7jBz`, one page, five approved frames, each read through the Figma connection
@@ -224,8 +242,8 @@ File `LNpbdnuAWcfWf9spvB7jBz`, one page, five approved frames, each read through
 | --- | --- | --- |
 | 7 | Onboarding, About, Feedback copy; closed-day date voice; touch targets; state captures (in flight) | none |
 | 8 | **Family Fit** (done): one label constant drives the badge, the classification words are "Excellent fit · Great fit · Good fit · Worth considering · Limited fit", the Venue eyebrow, About, Edit profile, onboarding, the Saved sort chip and the Explore editorial subtitle all say Family Fit, both verifier probes updated, the design-system guard fails on any parent-facing "Family Match"; `size="compact"` added to the badge from node 49:5; budget options in onboarding and Edit profile are Chips like the drive-time row | 01, 02 |
-| 9 | **Venue Detail** to frame 02 with the product's panel and provenance kept | 02 |
-| 10 | **Create a plan + Generating** to frames 04/04b: chips with "Other" opening the drawn pickers, one party chip, the profile receipt, "Build my plan" | 04, 04b |
+| 9 | **Venue Detail** (done): frame 02's structure, a 300 hero with white circle back, share and heart, the sheet riding 44 over it with the grabber, the name beside the compact badge, category · "about N min" with a pin and a "Why this score" link that scrolls to the Family Fit panel, two lines of description with Read more, Restaurants close by as the frame's card rail (hours and tagged facilities said either way, no invented score), Create a plan as the frame's arrow CTA (one `ArrowCta` for every approved arrow pill), Family essentials rows built only from reviewed facts; the panel, Check today, Getting there, gallery, attributions, feedback and tips kept after the frame's content; the fixed footer gone as in the frame | 02 |
+| 10 | **Create a plan + Generating** (done): WHEN and START as the frame's quick chips with slice 4's pickers behind "Other" and any custom answer shown as its own chip; one chip per household with its counts and "Add another family" on the label row; the profile receipt ("Using ages 2 and 4, pushchair, 15:30 nap and max 30 min drive · Edit", only what the profile holds, never a name); "Plan your day / Around <venue>" and the arrow CTA "Build my plan"; Generating as the same sheet over the venue photograph with tick, dot and ring markers; `Chip size="small"` for the frame's 40pt option chip; eight parent-facing em dashes left in service strings rewritten | 04, 04b |
 | 11 | **Plan** to frame 03: centred header, timing insight, "Stop N" cards with thumbnails and uppercase row labels, "Head home" | 03 |
 | 12 | End-to-end review of both journeys plus Saved, Trips, Profile and the loading/error/empty/unknown states | all |
 
