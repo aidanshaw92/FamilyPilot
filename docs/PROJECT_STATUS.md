@@ -155,8 +155,16 @@ visibility bug, and documentation debt.
 1. **No cross-device sync for Saved or family profile.** Both are AsyncStorage-only. Low risk pre-launch,
    but plan a migration to Supabase (reusing the `planning_workspaces` RLS pattern) before multi-device
    use matters.
-2. **Old `001_initial_schema.sql` schema is dead code.** Either delete it or explicitly mark it
-   superseded so a future agent doesn't build on it by mistake.
+2. ~~**Old `001_initial_schema.sql` schema is dead code.**~~ **Closed 3 Oct 2026.** The file now carries a
+   SUPERSEDED / DO NOT APPLY header naming where the family profile and saved places actually live, and
+   pointing anyone adding cloud sync at the `planning_workspaces` RLS pattern instead.
+
+   It was kept rather than deleted because the design intent is useful history — but the hazard was real
+   and worth checking rather than assuming: `profiles`, `family_members` and `saved_items` look exactly
+   like the tables you would reach for when building cross-device sync. **Verified against production:
+   none of the seventeen tables it declares exist**, so it was never applied and is dead code rather than
+   an unguarded store of children's dates of birth. The live schema is fourteen tables, all with RLS
+   enabled.
 3. **Live verification of real providers is now possible, and has been done — from CI, not from here.**
    This item is **substantially revised (3 Oct 2026)**; what it said before was accurate in September and
    is no longer.

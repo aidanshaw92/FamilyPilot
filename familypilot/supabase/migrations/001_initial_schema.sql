@@ -1,5 +1,38 @@
--- FamilyPilot Initial Schema
--- Run via Supabase CLI: supabase db push
+-- ============================================================================
+-- SUPERSEDED. DO NOT APPLY. DO NOT BUILD ON THIS FILE.
+-- ============================================================================
+--
+-- This is the Phase 1 schema. It was never applied to the FamilyPilot project and
+-- nothing in the app reads or writes any table below. Verified against production on
+-- 2026-10-03: none of the seventeen tables declared here exist. The live schema is
+-- fourteen tables, all with row-level security enabled, created by migrations 002
+-- onwards.
+--
+-- IT IS KEPT, NOT DELETED, because the design intent is still useful history. But it is
+-- a trap for anyone adding a migration: `profiles`, `family_members` and `saved_items`
+-- look exactly like the tables you would want for cross-device sync of the family
+-- profile and saved places, and they are not the tables this product uses.
+--
+-- WHERE THAT DATA ACTUALLY LIVES TODAY:
+--   family profile  familypilot/src/stores/family-store.ts   (Zustand + AsyncStorage, device-only)
+--   saved places    familypilot/src/stores/saved-store.ts    (Zustand + AsyncStorage, device-only)
+--
+-- IF YOU ARE HERE TO ADD CLOUD SYNC, copy the pattern in
+-- 20260909182317_family_planning_workspaces.sql instead: a `user_id uuid primary key
+-- references auth.users(id) on delete cascade`, RLS enabled, four own-row policies
+-- using `(select auth.uid()) = user_id`, grants to `authenticated` only, and
+-- `revoke all from anon`. That is the shape already proven in production.
+--
+-- Two product constraints that this file predates and does not encode, from
+-- docs/PRIVACY_MODEL.md:
+--   - Saves are Behavioural-class data and are **opt-in**, not synced by default.
+--   - Children's dates of birth are Family-profile class: RLS, family-scoped, and
+--     subject to COPPA/GDPR-K review before launch in relevant markets.
+--
+-- ============================================================================
+
+-- FamilyPilot Initial Schema (Phase 1, historical)
+-- Originally: run via Supabase CLI: supabase db push
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
