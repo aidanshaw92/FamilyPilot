@@ -97,6 +97,30 @@ before ranking saw it.
 Raising the cap costs Overpass more work per request, which is a trade to make deliberately rather than
 quietly. Left as it is, and recorded here.
 
+## How to run it now: the workflow, not five clicks
+
+Superseded the manual instructions below. `.github/workflows/live-canaries.yml` (`workflow_dispatch`)
+runs the five anchors against a **deployed build**, which is a better vantage point than either a
+development sandbox or a GitHub runner:
+
+```
+Actions -> "Live canaries against a Preview build" -> Run workflow
+  ref = main                 runs against PRODUCTION (public, no bypass needed)
+  ref = a PR branch          runs against that PR's Preview
+  run_nearby_food = true     the Section 16 restaurant canary. Free, zero Google.
+  run_routes      = false    the Google Routes canary. Leave false unless you mean to spend.
+```
+
+**Why this replaced the runner-based canary.** `canary-nearby-food.mjs` calls the provider in-process,
+so the Overpass request leaves from wherever the script runs. From a GitHub runner that is shared cloud
+address space, which Overpass rate-limits heavily and entirely within its rights — three attempts
+established that the figures described the runner's standing with Overpass, not the product's. Driving it
+through the deployment uses Vercel's egress, the real User-Agent, and the real Supabase cache. It is a
+better measurement and a politer one, because it is the request the product makes anyway.
+
+It makes five lookups plus one deliberate repeat that must be a cache hit, and therefore costs Overpass
+nothing. **No anchor is retried.** A failure is the measurement.
+
 ## The access limitation, stated exactly
 
 Recorded 2026-10-02, after `1985f92` was merged and deployment `dpl_6qX8KLtW7c1FSPXK6wPTXxGM6Yr8`
