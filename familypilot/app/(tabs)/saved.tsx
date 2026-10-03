@@ -135,6 +135,7 @@ export default function SavedScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.chipScroll}
         contentContainerStyle={styles.sortRow}
       >
         {TYPE_FILTERS.map((option) => (
@@ -150,6 +151,7 @@ export default function SavedScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.chipScroll}
         contentContainerStyle={styles.sortRow}
       >
         {SORT_OPTIONS.map((option) => (
@@ -241,6 +243,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 16,
     color: colors.text.primary,
+  },
+  // A horizontal ScrollView grows to fill a column on web, so with nothing below it (the empty state) the
+  // two chip rows drifted a hundred points apart. They size to their chips.
+  chipScroll: {
+    flexGrow: 0,
+    flexShrink: 0,
   },
   sortRow: {
     paddingHorizontal: spacing.screenPadding,
