@@ -211,8 +211,23 @@ jobs:
           BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           set -euo pipefail
-          # radiusM=2000 rounds to 2km, which no Section 16 run has used: all five used the 1200m default.
-          endpoint="${TARGET}/api/places/search?intent=nearby-food&lat=51.5574&lng=-0.236&placeId=fp-google-ChIJ99IK4v8QdkgRZNGsdKK0pb8&radiusM=2000"
+          # A COLD KEY, AND A DIFFERENT ONE EVERY RUN.
+          #
+          # The first version pinned radiusM=2000 because no Section 16 run had used it. That worked once:
+          # the next run found the key warm, so its first request was a HIT and the miss path could not be
+          # measured at all -- the check failed rather than passing vacuously, which is right, but it also
+          # meant the check only worked once per six hours. Radius is a poor lever for this because the key
+          # rounds it to whole kilometres and the provider clamps at 2500m, so it yields about four keys.
+          #
+          # Latitude is the right lever: the key rounds coordinates to four decimals, about 11 metres, so
+          # stepping the run number gives a fresh key every run. Against a 2km radius an 11m shift is
+          # immaterial -- it is the same streets, inside the same park -- and 50 steps spans about 550m, so
+          # it never leaves Gladstone Park, which is the sparsest of the five anchors and therefore the
+          # cheapest cold lookup available. Total cost stays ONE Overpass query per run.
+          offset=$(( ${GITHUB_RUN_NUMBER:-0} % 50 ))
+          lat=$(node -e 'process.stdout.write((51.5574 + Number(process.argv[1]) * 0.0001).toFixed(4))' "$offset")
+          echo "cold-key latitude for this run: $lat (offset $offset x 0.0001 deg from 51.5574)"
+          endpoint="${TARGET}/api/places/search?intent=nearby-food&lat=${lat}&lng=-0.236&placeId=fp-google-ChIJ99IK4v8QdkgRZNGsdKK0pb8&radiusM=2000"
 
           auth=()
           if [ -n "${BYPASS:-}" ]; then
