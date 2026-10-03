@@ -180,6 +180,15 @@ for (const [index, anchor] of ANCHORS.entries()) {
  * -- a second failure reported for the first failure's reason. Only an anchor with a cache row can
  * answer the cache question.
  */
+/**
+ * Below this, no serverless function ran and the answer came from Vercel's edge.
+ *
+ * A cold nearby-food lookup is an Overpass query plus a Postgres write -- seconds. Even a store hit is a
+ * Postgres round trip from the function, which measured 262ms and 484ms on the run that set this. 150ms
+ * is comfortably below both and far above an edge response, which measured 12ms.
+ */
+const CDN_REPLAY_MS = 150;
+
 const cacheable = report.anchors.find((row) => !row.error && row.cacheState === 'miss');
 console.log('');
 if (!cacheable) {
@@ -203,11 +212,30 @@ if (!cacheable) {
   };
   if (body.cacheState === 'hit' || body.cacheState === 'stale') {
     ok('the repeat was served from cache', `${body.cacheState}, ${repeat.latencyMs}ms vs ${cacheable.latencyMs}ms uncached`);
+  } else if (repeat.latencyMs < CDN_REPLAY_MS) {
+    /**
+     * A MISS THIS FAST IS THE EDGE REPLAYING THE FIRST MISS, NOT A COLD LOOKUP.
+     *
+     * The previous version called any non-hit "caching is not in play in this environment" and moved on.
+     * That conclusion was exactly inverted on the run that produced it: the repeat came back `miss` in
+     * TWELVE MILLISECONDS, in a run where two other anchors had been served from the store. A round trip
+     * to Postgres and Overpass is hundreds of milliseconds at the very least, so twelve means no function
+     * ran -- the CDN answered, repeating a body that claimed an Overpass request had just been made.
+     *
+     * So the two cases are now separated by latency, which is the one measurement that distinguishes
+     * them, and the CDN case is a FAILURE rather than a note: the product fix is to stop sending
+     * `s-maxage` on a miss, and if this fires again that fix has regressed.
+     */
+    fail(
+      'the repeat was a CDN replay of the miss, so the body misreports Overpass load',
+      `${body.cacheState} in ${repeat.latencyMs}ms (under ${CDN_REPLAY_MS}ms means no function ran), overpassRequests=${body.overpassRequests}`,
+    );
+    report.cache.repeatNote = `repeat returned ${body.cacheState} in ${repeat.latencyMs}ms: an edge replay, not a cold lookup`;
   } else {
-    // Not a product defect on its own: a cache write needs Supabase credentials in the environment.
-    // Reported rather than failed, and named so the reason is checkable.
-    console.log(`  [note] the repeat was a ${body.cacheState}, so caching is not in play in this environment`);
-    report.cache.repeatNote = 'repeat was not a cache hit; check Supabase credentials in the deployment environment';
+    // Slow AND a miss: the row genuinely was not found. That needs Supabase credentials in the
+    // deployment environment, so it is reported rather than failed, and named so it is checkable.
+    console.log(`  [note] the repeat was a ${body.cacheState} after ${repeat.latencyMs}ms, so the store did not answer`);
+    report.cache.repeatNote = 'repeat was a slow miss; check Supabase credentials in the deployment environment';
   }
   if ((body.overpassRequests ?? 0) > 0 && body.cacheState === 'hit') {
     fail('a cache hit still issued an Overpass request', String(body.overpassRequests));

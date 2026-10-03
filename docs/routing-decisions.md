@@ -127,6 +127,71 @@ where cache_key like 'nearby-food%';
 `measured` matters: a row written before this field existed has no record, and that is not the same as a
 row that recorded no saturation.
 
+### The evidence this decision asked for, as gathered so far
+
+Two live production runs, 2026-10-03, over five anchors chosen to span density. **Three of the four
+anchors that answered were at the cap**, which is a higher rate than the single central-London case the
+decision was taken on:
+
+| Anchor | Covers | raw | Shown / found | At the cap? |
+| --- | --- | --- | --- | --- |
+| The National Gallery | central, dense | — | — | **never answered** (see below) |
+| Victoria and Albert Museum | inner urban museum | 60 | 20 / 60 | **yes** |
+| Hampstead Heath | large park | 60 | 20 / 57 | **yes** |
+| Chiswick House | suburban, sparse | 60 | 20 / 58 | **yes** |
+| Gladstone Park | suburban park, sparse | 8 | 8 / 8 | no |
+
+This is **evidence, not a verdict**, and it is deliberately not being acted on: the decision was to
+revisit the cap only if real parent usage shows a coverage problem, and five canary anchors are not parent
+usage. What it does establish is that saturation is not confined to the densest anchors — Chiswick House
+was chosen as a *sparse* suburban comparator and still returned 60. The honest reading is that a 1.2km
+radius around most London anchors contains more than 60 eating places, and the 20 shown are the 20 that
+ranked highest among an Overpass-ordered 60 rather than among all of them.
+
+### The National Gallery does not answer at all, and that is a real coverage gap
+
+It failed both runs with `503 FOOD_PROVIDER_UNAVAILABLE` after hitting the provider's 20-second deadline.
+The second run had already ruled out the obvious explanation: the first run fired five lookups in fifteen
+seconds and three timed out, so a 12-second gap was added between anchors — and under that spacing the two
+other previous failures (Chiswick House, Gladstone Park) both succeeded. **The National Gallery was the
+first request of the second run, with no preceding load at all, and still timed out.** So this is not
+rate-limiting and not a canary artefact: the Overpass query for the densest square kilometre in London
+genuinely exceeds 20 seconds.
+
+The product behaviour is correct — a parent sees an honest "we could not look this up" rather than a
+fabricated empty neighbourhood, and the `meal-lookup-failed` caveat says so — but a parent at Trafalgar
+Square gets no lunch suggestions, which is the single place they would most expect them. **Not fixed
+here**: it needs either a smaller radius for dense anchors or a longer deadline, and both are changes to
+provider load that belong with the cap decision rather than slipped in beside it. Recorded so the next
+person has the measurement rather than the suspicion.
+
+### Two more things these runs found
+
+**Every free OpenStreetMap cache row was recorded as one billable call.** `writeSearchCache` stored
+`Math.max(1, Number(billableCalls) || 1)`, so zero was unreachable and a row that cost nothing was written
+down as costing one. This was found by querying production, not by reading code: all four `nearby-food`
+rows carried `billable_calls = 1`. It matters because `docs/canary/reconcile.sql` asserts *"nearby-food
+rows recording a billable call (must be 0)"* — a check that could never have passed on a single row. **A
+cost-reconciliation query that cannot pass is worse than no query**, because the first reader dismisses it
+as noise and the second stops running it. Fixed so an explicit 0 is stored as 0, while a missing or
+unparseable count still defaults to 1: *unknown must not read as free*, since that is the direction that
+understates a bill.
+
+The four existing rows still read 1 and are **not** being edited: they are cache rows with a six-hour TTL,
+and the next write for each anchor upserts the corrected value. Until then that reconciliation line reads 4
+rather than 0, for this reason and no other.
+
+**A CDN replay of a cache miss repeated the miss's claims.** The food endpoint set
+`s-maxage=21600` on every non-bypass response, including a `miss`. A `miss` body says
+`cacheState: "miss"` and `overpassRequests: 1`, and both are true only at the instant it is produced — so
+for six hours the edge told every reader an Overpass request had just been made when none had. Found
+because the canary re-asked an anchor sixteen seconds after a miss, got `miss` back in **twelve
+milliseconds**, and concluded "caching is not in play in this environment" in a run where two other anchors
+had been served from the store. That conclusion was exactly inverted; twelve milliseconds is the edge, not
+a round trip. Now only `hit` and `stale` responses carry the header, because those stay true however often
+they are replayed, and the canary separates the two cases by latency and fails on the replay rather than
+noting it.
+
 ### One thing this found on the way
 
 `overpassRequests` counted **queries**, not HTTP requests. On a 429, a 504 or a network error the provider
