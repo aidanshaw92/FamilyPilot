@@ -94,8 +94,22 @@ async function readSearchCache(cacheKey) {
   return { payload: data.payload, provider: data.provider, ageHours, fresh };
 }
 
-/** Best-effort: a cache write that fails must not fail the request it was meant to make cheaper. */
+/**
+ * Best-effort: a cache write that fails must not fail the request it was meant to make cheaper.
+ *
+ * `billableCalls` RECORDS WHAT THE ROW COST, AND ZERO IS A REAL ANSWER. This used to store
+ * `Math.max(1, Number(billableCalls) || 1)`, which made zero unreachable: an OpenStreetMap row that
+ * cost nothing was written down as one billable call. The defect was not theoretical --
+ * `docs/canary/reconcile.sql` asserts "nearby-food rows recording a billable call (must be 0)", and
+ * with this floor in place that check could never pass on a single row. A cost-reconciliation query
+ * that cannot pass is worse than no query, because the first reader dismisses it as noise and the
+ * second stops running it.
+ *
+ * So an explicit 0 is stored as 0. A missing or unparseable value still defaults to 1, because
+ * "nobody said" must not read as "free".
+ */
 async function writeSearchCache(cacheKey, payload, { provider, billableCalls }) {
+  const billed = Number.isFinite(Number(billableCalls)) ? Math.max(0, Math.round(Number(billableCalls))) : 1;
   const client = supabase();
   if (!client) return false;
 
@@ -109,7 +123,7 @@ async function writeSearchCache(cacheKey, payload, { provider, billableCalls }) 
         cache_key: cacheKey,
         payload,
         provider,
-        billable_calls: Math.max(1, Number(billableCalls) || 1),
+        billable_calls: billed,
         fetched_at: now.toISOString(),
         cached_until: cachedUntil.toISOString(),
       },

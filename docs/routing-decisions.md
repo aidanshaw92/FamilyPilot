@@ -127,6 +127,71 @@ where cache_key like 'nearby-food%';
 `measured` matters: a row written before this field existed has no record, and that is not the same as a
 row that recorded no saturation.
 
+### The evidence this decision asked for, as gathered so far
+
+Two live production runs, 2026-10-03, over five anchors chosen to span density. **Three of the four
+anchors that answered were at the cap**, which is a higher rate than the single central-London case the
+decision was taken on:
+
+| Anchor | Covers | raw | Shown / found | At the cap? |
+| --- | --- | --- | --- | --- |
+| The National Gallery | central, dense | — | — | **never answered** (see below) |
+| Victoria and Albert Museum | inner urban museum | 60 | 20 / 60 | **yes** |
+| Hampstead Heath | large park | 60 | 20 / 57 | **yes** |
+| Chiswick House | suburban, sparse | 60 | 20 / 58 | **yes** |
+| Gladstone Park | suburban park, sparse | 8 | 8 / 8 | no |
+
+This is **evidence, not a verdict**, and it is deliberately not being acted on: the decision was to
+revisit the cap only if real parent usage shows a coverage problem, and five canary anchors are not parent
+usage. What it does establish is that saturation is not confined to the densest anchors — Chiswick House
+was chosen as a *sparse* suburban comparator and still returned 60. The honest reading is that a 1.2km
+radius around most London anchors contains more than 60 eating places, and the 20 shown are the 20 that
+ranked highest among an Overpass-ordered 60 rather than among all of them.
+
+### The National Gallery does not answer at all, and that is a real coverage gap
+
+It failed both runs with `503 FOOD_PROVIDER_UNAVAILABLE` after hitting the provider's 20-second deadline.
+The second run had already ruled out the obvious explanation: the first run fired five lookups in fifteen
+seconds and three timed out, so a 12-second gap was added between anchors — and under that spacing the two
+other previous failures (Chiswick House, Gladstone Park) both succeeded. **The National Gallery was the
+first request of the second run, with no preceding load at all, and still timed out.** So this is not
+rate-limiting and not a canary artefact: the Overpass query for the densest square kilometre in London
+genuinely exceeds 20 seconds.
+
+The product behaviour is correct — a parent sees an honest "we could not look this up" rather than a
+fabricated empty neighbourhood, and the `meal-lookup-failed` caveat says so — but a parent at Trafalgar
+Square gets no lunch suggestions, which is the single place they would most expect them. **Not fixed
+here**: it needs either a smaller radius for dense anchors or a longer deadline, and both are changes to
+provider load that belong with the cap decision rather than slipped in beside it. Recorded so the next
+person has the measurement rather than the suspicion.
+
+### Two more things these runs found
+
+**Every free OpenStreetMap cache row was recorded as one billable call.** `writeSearchCache` stored
+`Math.max(1, Number(billableCalls) || 1)`, so zero was unreachable and a row that cost nothing was written
+down as costing one. This was found by querying production, not by reading code: all four `nearby-food`
+rows carried `billable_calls = 1`. It matters because `docs/canary/reconcile.sql` asserts *"nearby-food
+rows recording a billable call (must be 0)"* — a check that could never have passed on a single row. **A
+cost-reconciliation query that cannot pass is worse than no query**, because the first reader dismisses it
+as noise and the second stops running it. Fixed so an explicit 0 is stored as 0, while a missing or
+unparseable count still defaults to 1: *unknown must not read as free*, since that is the direction that
+understates a bill.
+
+The four existing rows still read 1 and are **not** being edited: they are cache rows with a six-hour TTL,
+and the next write for each anchor upserts the corrected value. Until then that reconciliation line reads 4
+rather than 0, for this reason and no other.
+
+**A CDN replay of a cache miss repeated the miss's claims.** The food endpoint set
+`s-maxage=21600` on every non-bypass response, including a `miss`. A `miss` body says
+`cacheState: "miss"` and `overpassRequests: 1`, and both are true only at the instant it is produced — so
+for six hours the edge told every reader an Overpass request had just been made when none had. Found
+because the canary re-asked an anchor sixteen seconds after a miss, got `miss` back in **twelve
+milliseconds**, and concluded "caching is not in play in this environment" in a run where two other anchors
+had been served from the store. That conclusion was exactly inverted; twelve milliseconds is the edge, not
+a round trip. Now only `hit` and `stale` responses carry the header, because those stay true however often
+they are replayed, and the canary separates the two cases by latency and fails on the replay rather than
+noting it.
+
 ### One thing this found on the way
 
 `overpassRequests` counted **queries**, not HTTP requests. On a 429, a 504 or a network error the provider
@@ -203,10 +268,14 @@ does the state is exactly what we have now, for more moving parts.
 
 ### The TfL client: what is proven and what is not
 
-Written against TfL's documented contract and exercised by 31 fixture tests. **`api.tfl.gov.uk` is denied
-by this environment's egress policy, so it has never met the real service.** The parser, the URL shape and
-the rate-limit handling could all be wrong in some detail that only a live response would reveal. That is
-why it is behind a flag despite costing nothing: **the flag is about an unproven parser, not about money.**
+Written against TfL's documented contract and exercised by 31 fixture tests. `api.tfl.gov.uk` is denied by
+this development environment's egress policy, so **for as long as that was the only evidence, the parser had
+never met the real service** and the flag was about an unproven parser rather than about money.
+
+**That is no longer the only evidence. The parser was verified against the live service on 2026-10-03** —
+see *Live verification* below. The flag stays, because transit coverage is still London-only and the UI
+work to present a transit leg has not been done; it is now a scope flag rather than a doubt about the
+parser.
 
 What the fixtures DO prove, because each is a rule the brief attached to transit, and each was
 mutation-tested:
@@ -238,34 +307,128 @@ is twelve functions and this project is at twelve** — a thirteenth fails the d
 that put nearby-food inside the places search handler. The transit branch returns before `getDriveTimes`
 is reached.
 
-### What remains unproven, and will stay so until the owner enables the API
+### The Routes API: verified for exactly one element
 
-The request shape, the field mask and the duration parsing have never met the real service.
-`routes.googleapis.com` is denied by this environment's egress policy, and calling it costs money. The
-fixtures encode the documented response shape; if the live API disagrees in some detail, the first real
-canary will find it. **Nothing here should be read as "the Routes API integration works" — only as "the
-Routes API integration is written, gated, and consistent with its documented contract."**
+Up to 2026-10-03 the request shape, the field mask and the duration parsing had never met the real service,
+and this section said so: *"nothing here should be read as 'the Routes API integration works' — only as
+'the Routes API integration is written, gated, and consistent with its documented contract.'"*
 
-## What the owner will need to do by hand
+**One real element has now been bought and it came back routed.** See *Live verification* below for the
+figures. What that does and does not establish:
 
-Two things, and the implementation will say when it reaches each rather than leaving them to be
-discovered:
+- It **does** establish that the endpoint, the `POST` body, the `X-Goog-FieldMask`, `TRAFFIC_UNAWARE`, and
+  the `"842s"`-style duration parse are all accepted by the live API and produce a usable journey.
+- It **does not** establish anything about matrices larger than 1×1, about `condition` values other than
+  `ROUTE_EXISTS`, or about behaviour at the 625-element provider ceiling. Those remain fixture-only.
+- It is **not** authorisation to route in production. `GOOGLE_JOURNEYS_ENABLED` is unset in production and
+  the scope `requiresExplicitEnable`, so production refuses routing by construction, not by convention.
 
-1. **Enable the Routes API** on the Cloud project, if it is not already enabled.
-2. **Register for a TfL application key**, if the anonymous rate limit proves too low for real usage.
-   Set it as `TFL_APP_KEY`; the client works without one and simply stays slower.
+## What the owner needed to do by hand
 
-Neither is needed before the code is written, and neither switches anything on by itself.
+Two things, both now settled:
 
-### The one step that now genuinely needs a person
+1. **Enable the Routes API** on the Cloud project. **Done** — the owner enabled it on 2026-10-03, which is
+   what made the canary below possible.
+2. **Register for a TfL application key**, if the anonymous rate limit proves too low for real usage. Set
+   it as `TFL_APP_KEY`. **Not needed so far**: the live verification ran anonymously and TfL answered both
+   the deployment and the CI runner without complaint. The client works without a key and simply stays
+   under the lower anonymous ceiling.
 
-Transit cannot be proven from here. To finish decision 3, someone with ordinary network access needs to:
+Neither switched anything on by itself: enabling an API in Google Cloud makes a call *possible*, and the
+application-side gate still has to be opened separately, per decision 5.
 
-1. Set `TFL_TRANSIT_ENABLED=true` in a **preview** environment, not production.
-2. `POST /api/context/journey` with `{"mode":"transit","origin":{...},"destinations":[{...}]}` for two
-   London points — the Southbank to Greenwich is a good pair, since it has both tube and bus options.
-3. Check three things in the response: `state` is `available`, `leg.source` is `routed`, and `leg.mode` is
-   `transit` rather than `bus` for a mixed journey.
+### The step that needed a person, and how it was closed
 
-If all three hold, the parser matches the real service and transit can go to the UI. If any does not, the
-fixtures encode the wrong contract and this doc should be corrected rather than the test loosened.
+Neither provider could be reached from the development sandbox, so both were verified from GitHub Actions
+against a **Preview** deployment. The two workflows are the permanent record and can be re-run:
+`.github/workflows/transit-live-smoke.yml` and `.github/workflows/live-canaries.yml`.
+
+Running the check from CI rather than from a laptop matters for a reason beyond convenience: it makes the
+request through **the deployment's own egress, User-Agent and cache**, so what is measured is the request
+the product actually makes, not the request a developer's machine makes.
+
+## Live verification, 2026-10-03
+
+Both providers were verified against the real services on 2026-10-03, against the branch Preview
+deployment. **Production was not touched for either.**
+
+### TfL: verified live (Actions run 37110186939)
+
+| What | Result |
+| --- | --- |
+| `state` | `available` |
+| `leg.source` | `routed` |
+| `leg.mode` | `transit` (not `bus`) |
+| Duration | 40 min, Southbank → Greenwich |
+| Attribution | present |
+| `cacheable` | `false`, and the response carried `Cache-Control: no-store` |
+| Google calls | 0 |
+| Cost | £0. TfL's Unified API is free open data. |
+
+**Why this is a live answer and not a fixture.** The structural argument — `tfl-transit.js` contains no
+fixture path and no fallback journey, so `state: "available"` is reachable only from a real 200 — is exactly
+what someone who *had* added a fallback would say, so the check does not rest on it. The CI runner made its
+own independent call to `api.tfl.gov.uk` and the two observations were compared: TfL offered 3 journeys,
+quickest 40 minutes; the endpoint said 40 minutes; **difference 0**. A constant cannot track what TfL says
+today. The assertion additionally fails on any of the five durations hard-coded in the unit fixtures.
+
+**One real finding.** TfL's chosen journey had leg modes `walking, national-rail, walking, bus, walking` — a
+genuinely mixed journey containing a bus. The `every`-not-`some` rule labelled it `transit` rather than
+`bus`, which is the behaviour the brief asked for and which a bus-free fixture could not have exercised.
+
+### Routes: one real element, and it came back routed (Actions run 37112057021)
+
+Predicted before the request, confirmed after:
+
+| Measure | Predicted | Actual |
+| --- | --- | --- |
+| Billable route-matrix elements | 1 | **1** |
+| HTTP requests to Google | 1 | **1** |
+| Method | `computeRouteMatrix` | `computeRouteMatrix` |
+| Routing preference | `TRAFFIC_UNAWARE` | `TRAFFIC_UNAWARE` |
+| Matrix shape | 1 origin × 1 destination | 1 × 1 |
+
+Result: `provider: google`, `source: live`, leg `source: live`, **19 minutes** for Trafalgar Square → Tower
+of London (about 4 km across central London — plausible, and inside the 4–60 minute band the assertion
+requires). **This is the first routed journey FamilyPilot has ever produced.** Every previous journey was a
+straight-line estimate.
+
+Cost: 1 element against the Essentials free tier, so **$0.00 billed**, and at the paid rate it would have
+been $0.005.
+
+**Six confirmations were gated before the request, not after.** `scripts/preflight-routes-canary.mjs` runs
+first and makes zero requests; the run spends nothing unless all six pass. It asserts on the **serialized
+request** — `JSON.stringify(body)` plus the headers — rather than on source text, because an earlier version
+asserted on the module and failed three checks on the prose in its own header comment, which names
+`departure_time` and the legacy URL while describing why they are not used. The legacy-path scan strips
+comments first; naively stripping `//` would truncate every `https://` literal and make the scan pass
+vacuously, so it discriminates both directions in its own tests.
+
+### The Preview configuration used, and its removal
+
+The canary needed Preview to permit exactly one element. The configuration applied was deliberately the
+narrowest that could work: master switch on, journeys scope on, **all five other Google scopes explicitly
+`false`**, and `GOOGLE_PLACES_MAX_CALLS_PER_DAY=5` so that even a looping bug could spend at most five
+elements in a day. Production was not modified.
+
+Immediately after the canary, both spend-enabling variables were set back to `false`. Setting them to
+`false` is **stricter than deleting them**: `describeScope` refuses on `scoped === false` outright, whereas
+an absent variable is refused by `requiresExplicitEnable`, which is one code change away from inheriting the
+master switch. The Vercel MCP surface available to this session has no delete-env operation, so the nine
+variables still exist with value `false` and carry comments saying they are safe to delete; removing them in
+the dashboard is tidying, not a control.
+
+Because **Vercel bakes environment values at build time**, editing the variables does not change the running
+Preview. "I set it back to false" is a claim about the dashboard, not about the deployment. So the revert is
+verified against the deployment's own `/api/places/status` by `scripts/assert-places-fail-closed.mjs`, run
+from CI with `assert_fail_closed=true`. It sweeps every scope, fails if the scope map is empty rather than
+passing vacuously, and makes no provider request.
+
+### What this verification does not claim
+
+- It does not claim production routing works. Production has **no** `GOOGLE_JOURNEYS_ENABLED` variable at
+  all, and the scope `requiresExplicitEnable`, so production refuses routing.
+- It does not replace the Google-side quota. The code-level controls remain defence in depth, per the
+  owner's standing instruction.
+- It does not establish matrix behaviour above 1×1, and the element budget's arithmetic for larger matrices
+  is still fixture-only.

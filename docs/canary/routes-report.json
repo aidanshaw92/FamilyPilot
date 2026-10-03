@@ -1,0 +1,31 @@
+{
+  "takenAt": "2026-10-03T09:04:38.117Z",
+  "responseFile": "/tmp/claude-0/rt/routed.json",
+  "origin": {
+    "latitude": 51.508,
+    "longitude": -0.1281
+  },
+  "destination": {
+    "placeId": "routes-canary-tower-of-london",
+    "latitude": 51.5081,
+    "longitude": -0.0759
+  },
+  "predicted": {
+    "billableElements": 1,
+    "googleRequests": 1,
+    "routeMode": "driving",
+    "trafficPreference": "TRAFFIC_UNAWARE"
+  },
+  "actual": {
+    "provider": "google",
+    "batchSource": "live",
+    "legSource": "live",
+    "driveMinutes": 12,
+    "fallbackReason": null,
+    "googleRequests": 1,
+    "billableElements": 1
+  },
+  "postureBefore": null,
+  "usageTodayBefore": null,
+  "note": "The FamilyPilot usage counter is an upper bound on spend: the budget is charged before the request, so a failed request is counted here and not on Google's invoice."
+}

@@ -57,7 +57,27 @@ async function handleNearbyFoodRequest(req, res, deps = {}) {
 
   try {
     const result = await getNearbyFood({ latitude, longitude, placeId }, { radiusM, limit });
-    if (result.cacheState !== 'bypass') {
+    /**
+     * The CDN may cache a response that is ITSELF a cache read, and only that.
+     *
+     * A `miss` body says `cacheState: "miss"` and `overpassRequests: 1`, and both are true only at the
+     * instant it was produced. Letting the CDN serve it for six hours makes every replay repeat those
+     * two statements to a reader for whom they are false: no Overpass request was made, and the answer
+     * did come from a cache. The telemetry that exists to be honest about our load on a donated service
+     * would then overstate that load by one request per replay.
+     *
+     * This was found, not reasoned about. The Section 16 canary asked for the same anchor sixteen
+     * seconds after a miss, got `cacheState: "miss"` back in twelve milliseconds, and concluded
+     * "caching is not in play in this environment" -- in a run where two other anchors were served
+     * from the store. Twelve milliseconds is not a round trip to Postgres and Overpass; it is the
+     * edge replaying the miss. The canary's conclusion was exactly inverted.
+     *
+     * A `hit` or `stale` body stays true however often it is replayed, so those are still cached, and
+     * the repeat-load protection the header exists for is unaffected: the second request now reaches
+     * the function, reads the stored row, and is cached from then on. One extra invocation per anchor
+     * per cache window buys telemetry that does not lie.
+     */
+    if (result.cacheState === 'hit' || result.cacheState === 'stale') {
       res.setHeader('Cache-Control', 'public, s-maxage=21600, stale-while-revalidate=86400');
     }
     return res.status(200).json(result);

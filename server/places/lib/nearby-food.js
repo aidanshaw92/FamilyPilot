@@ -218,6 +218,18 @@ async function getNearbyFood(anchor, options = {}, deps = {}) {
     // So a caller can prove no Google request was involved rather than trusting that it was not.
     googleCalls: 0,
     overpassRequests: cacheState === 'miss' ? (discovery.overpassRequests ?? 1) : 0,
+    /**
+     * HTTP requests actually sent, which endpoint failover can make exceed the query count.
+     *
+     * This was missing. `osm-food.js` has reported it since the undercount was fixed, but this layer
+     * rebuilt the response object and dropped it, so the metric that exists to be honest about our load
+     * on a donated service never reached the API. The live canary printed "Overpass HTTP requests: 0"
+     * next to "Overpass queries: 2" and that contradiction is what exposed it.
+     *
+     * Null rather than 0 for a cache hit and for a row written before the field existed: zero requests
+     * is a true statement about a cache hit, but an absent record is not the same as a measured zero.
+     */
+    overpassHttpRequests: cacheState === 'miss' ? (discovery.overpassHttpRequests ?? null) : 0,
     cacheState,
     radiusM,
     fetchedAt: discovery.fetchedAt,

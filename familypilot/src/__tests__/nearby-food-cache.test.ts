@@ -74,6 +74,17 @@ beforeEach(async () => {
     provider: 'osm',
     radiusM: 1200,
     overpassRequests: 1,
+    // What osm-food.js really returns. Endpoint failover makes HTTP requests exceed queries, so the
+    // fixture uses 2 against 1 query -- a fixture where they matched could not catch the field being
+    // dropped and replaced by the query count.
+    overpassHttpRequests: 2,
+    discovery: {
+      rawElements: 7,
+      elementCap: 60,
+      saturatedCap: false,
+      afterValidation: 7,
+      afterDedupe: 7,
+    },
     fetchedAt: '2026-10-02T09:00:00.000Z',
   });
   writeSucceeds = true;
@@ -91,6 +102,33 @@ describe('one anchor costs one Overpass request, not one per render', () => {
     expect(cacheWrites).toHaveLength(1);
     expect(result.cacheState).toBe('miss');
     expect(result.overpassRequests).toBe(1);
+  });
+
+  it('reports the HTTP requests actually sent, not just the query count', async () => {
+    /**
+     * The defect this locks. `osm-food.js` has reported `overpassHttpRequests` since the undercount was
+     * fixed, but this layer rebuilds the response object and silently dropped it, so the metric that
+     * exists to be honest about our load on a donated service never reached the API. The live canary
+     * printed "Overpass HTTP requests: 0" beside "Overpass queries: 2" and that contradiction is what
+     * exposed it -- no unit test did, because none asserted the field existed.
+     */
+    const result = await getNearbyFood(anchor, undefined, deps());
+    expect(result.overpassHttpRequests).toBe(2);
+    expect(result.overpassHttpRequests).toBeGreaterThanOrEqual(result.overpassRequests);
+  });
+
+  it('carries the discovery funnel through to the response', async () => {
+    // Same class of defect: a field the provider reports is useless if this layer drops it.
+    const result = await getNearbyFood(anchor, undefined, deps());
+    expect(result.discovery).toMatchObject({ rawElements: 7, elementCap: 60, saturatedCap: false });
+  });
+
+  it('reports zero requests for a cache hit, because none were sent', async () => {
+    await getNearbyFood(anchor, undefined, deps());
+    const second = await getNearbyFood(anchor, undefined, deps());
+    expect(second.cacheState).toBe('hit');
+    // Zero is a true statement here, unlike the null used for an absent record.
+    expect(second.overpassHttpRequests).toBe(0);
   });
 
   it('serves a repeated render from the cache without touching Overpass at all', async () => {

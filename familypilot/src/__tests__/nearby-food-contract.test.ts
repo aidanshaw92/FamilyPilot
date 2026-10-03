@@ -280,6 +280,62 @@ describe('the branch cannot be bypassed by a bad request', () => {
     await searchHandler()(foodRequest({ lat: '51.5', lng: '-0.12' }), res);
     expect(res.headers['Cache-Control']).not.toMatch(/s-maxage=2\d{4}/);
   });
+
+  /**
+   * THE CDN MAY ONLY REPLAY A BODY THAT STAYS TRUE WHEN REPLAYED.
+   *
+   * Found by the live Section 16 canary, not by reasoning: it re-asked an anchor sixteen seconds after
+   * a miss, got `cacheState: "miss"` back in twelve milliseconds, and concluded that caching was not in
+   * play -- in a run where two other anchors had been served from the store. Twelve milliseconds is not
+   * a round trip to Postgres and Overpass. The edge was replaying the miss, and with it the claim that
+   * an Overpass request had just been made.
+   *
+   * The consequence is a lie about our load on a donated service, repeated once per replay for six
+   * hours, which is exactly the metric `overpassHttpRequests` was added to tell the truth about.
+   */
+  const cacheStateResponse = (cacheState: string) => async () => ({
+    anchor: { latitude: 51.5, longitude: -0.12, placeId: null },
+    candidates: [],
+    totalFound: 0,
+    provider: 'osm',
+    googleCalls: 0,
+    cacheState,
+    overpassRequests: cacheState === 'miss' ? 1 : 0,
+    overpassHttpRequests: cacheState === 'miss' ? 1 : 0,
+  });
+
+  it('does not let the edge replay a miss, whose body is only true when it is produced', async () => {
+    stubFoodLookup(cacheStateResponse('miss'));
+    const res = makeRes();
+    await searchHandler()(foodRequest({ lat: '51.5', lng: '-0.12' }), res);
+
+    expect(res.code).toBe(200);
+    expect(res.body.cacheState).toBe('miss');
+    // The body says one Overpass request happened. A replay would repeat that to a reader for whom it
+    // is false, so this one response must reach the function every time.
+    expect(res.body.overpassRequests).toBe(1);
+    expect(res.headers['Cache-Control']).not.toMatch(/s-maxage=2\d{4}/);
+  });
+
+  it('does cache a hit at the edge, because a hit stays a hit however often it is replayed', async () => {
+    stubFoodLookup(cacheStateResponse('hit'));
+    const res = makeRes();
+    await searchHandler()(foodRequest({ lat: '51.5', lng: '-0.12' }), res);
+
+    expect(res.body.cacheState).toBe('hit');
+    expect(res.body.overpassRequests).toBe(0);
+    // The repeat-load protection the header exists for is intact for the response that carries it.
+    expect(res.headers['Cache-Control']).toMatch(/s-maxage=21600/);
+  });
+
+  it('does cache a stale read at the edge, for the same reason', async () => {
+    stubFoodLookup(cacheStateResponse('stale'));
+    const res = makeRes();
+    await searchHandler()(foodRequest({ lat: '51.5', lng: '-0.12' }), res);
+
+    expect(res.body.cacheState).toBe('stale');
+    expect(res.headers['Cache-Control']).toMatch(/s-maxage=21600/);
+  });
 });
 
 describe('the OSM-only module really is OSM-only', () => {
