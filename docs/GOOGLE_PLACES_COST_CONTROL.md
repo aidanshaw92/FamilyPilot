@@ -119,9 +119,9 @@ All of these are environment variables. Unset means "inherit the layer above".
 | `GOOGLE_PLACES_DETAILS_ENABLED` | follows master | Place Details for a parent opening a venue |
 | `GOOGLE_PLACES_REFRESH_ENABLED` | follows master | Place Details from background enrichment and backfill |
 | `GOOGLE_PLACES_PHOTOS_ENABLED` | follows master | the photo proxy |
-| `GOOGLE_PLACES_PROBE_ENABLED` | follows master | `/api/places/status?probe=live` |
+| `GOOGLE_PLACES_PROBE_ENABLED` | **off until set to `true` by name** | `/api/places/status?probe=live` — see §2.1 |
 | `GOOGLE_GEOCODING_ENABLED` | follows master | town-name lookup |
-| `GOOGLE_JOURNEYS_ENABLED` | follows master | Distance Matrix drive times |
+| `GOOGLE_JOURNEYS_ENABLED` | **off until set to `true` by name** | routed drive times, Routes API `computeRouteMatrix` |
 | `GOOGLE_PLACES_ALLOW_LIVE_TEST` | unset | the **only** way a test runtime may spend |
 | `GOOGLE_PLACES_MAX_CALLS_PER_DAY` | `2000` | per scope, counted across instances in Postgres |
 | `GOOGLE_PLACES_MAX_CALLS_PER_WINDOW` | `60` | per process per rolling 60s |
@@ -135,6 +135,35 @@ not refresh. Nothing silently falls back to a live call, and nothing silently fa
 venues either.
 
 An unrecognised value (`GOOGLE_PLACES_ENABLED=flase`) reads as **off**. A typo must not cost money.
+
+### 2.1 Two switches do not follow the master, and one of them is why
+
+`GOOGLE_JOURNEYS_ENABLED` and `GOOGLE_PLACES_PROBE_ENABLED` must each be set to `true` **by name**.
+Setting the master switch on is not enough, and in production, where the master switch defaults on,
+leaving them unset is a refusal rather than an inheritance.
+
+For journeys the reason is in `docs/routing-decisions.md` §5: paid routing had never run in production and
+must not be one unset variable away from spending.
+
+**For the probe the reason is sharper, and it was found live rather than reasoned about.** A production
+check on 2026-10-03 reported `probeEnabled: true`, and that mattered because:
+
+- `/api/places/status` is **public and unauthenticated**. There is no token and no allowlist.
+- With `?probe=live` it calls `probeGoogle`, which reaches **Nearby Search with no cache in between**.
+- The coordinates come from the **query string**, so each distinct `lat`/`lng` is a fresh billable
+  request and no cache can absorb a loop.
+
+So a stranger with that one URL could spend the daily cap's worth of Nearby Search and bill the project,
+while also denying the product the discovery budget it needs for the rest of the day. The endpoint's own
+header comment claimed the probe was "off by default like every other scope" — true in development, and
+false in production, the one environment where it bills, because `masterEnabled()` defaults to true there.
+
+Nothing in the product calls `probeGoogle`; it is a diagnostic reached only from that endpoint. So
+requiring the variable costs no feature. To use it: set `GOOGLE_PLACES_PROBE_ENABLED=true`, redeploy,
+look, then unset it and redeploy again.
+
+**This is still only the application-side control.** The Google-side quotas in §5.3 remain the real cap,
+per the standing rule that code-level controls are defence in depth rather than a substitute.
 
 ### Recommended Vercel environment settings
 
