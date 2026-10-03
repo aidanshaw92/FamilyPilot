@@ -1,0 +1,122 @@
+name: Live canaries against a Preview build
+
+# The two canaries that have to run against a DEPLOYED build rather than from a runner, kept in one
+# workflow because they share the preview-discovery step and are dispatched together or not at all.
+#
+#   nearby-food  Section 16's restaurant canary. ZERO Google cost by construction. Moved off the runner
+#               because Overpass rate-limits shared cloud address space, so figures gathered from a
+#               GitHub IP described the runner's standing with Overpass rather than the product's.
+#               Running it through the deployment uses Vercel's egress, the real User-Agent and the real
+#               cache -- a better measurement and a politer one, since it is the request the product
+#               makes anyway.
+#
+#   routes      ONE Google Routes element, which is the smallest matrix that can exist. Off by default.
+#               It reports a closed gate as a failure rather than passing, because the journey endpoint
+#               returns usable estimated minutes when the gate refuses, so a closed gate otherwise looks
+#               exactly like success.
+#
+# Neither canary retries. A failure is a measurement.
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_nearby_food:
+        description: Run the Section 16 restaurant canary (free, zero Google)
+        type: boolean
+        required: false
+        default: true
+      run_routes:
+        description: Run the Google Routes canary (spends 1 billable element)
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+  deployments: read
+  statuses: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for the Vercel preview of this commit
+        id: preview
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          echo "looking for a preview deployment of $SHA"
+          url=""
+          for attempt in $(seq 1 40); do
+            ids=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/deployments?sha=${SHA}&per_page=20" \
+              | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+                  const rows = JSON.parse(s||"[]");
+                  process.stdout.write(Array.isArray(rows)?rows.map(r=>r.id).join(" "):"");
+                })')
+            for id in $ids; do
+              found=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${GITHUB_REPOSITORY}/deployments/${id}/statuses?per_page=20" \
+                | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+                    const rows = JSON.parse(s||"[]");
+                    const ok = (Array.isArray(rows)?rows:[]).find(
+                      (r) => r.state === "success" && (r.environment_url || "").includes("vercel.app"),
+                    );
+                    process.stdout.write(ok ? ok.environment_url : "");
+                  })')
+              if [ -n "$found" ]; then url="$found"; break; fi
+            done
+            if [ -n "$url" ]; then break; fi
+            echo "  attempt $attempt: no successful preview yet, waiting"
+            sleep 15
+          done
+          if [ -z "$url" ]; then
+            echo "::error::no successful Vercel preview deployment found for $SHA"
+            exit 1
+          fi
+          echo "preview: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # Runs first and costs nothing. A canary that spends before confirming its own preconditions is
+      # how a bill arrives unexplained.
+      - name: Pre-flight the Routes canary's six confirmations
+        if: ${{ inputs.run_routes }}
+        run: |
+          set -euo pipefail
+          cd familypilot
+          node scripts/preflight-routes-canary.mjs
+
+      - name: Section 16 restaurant canary
+        if: ${{ inputs.run_nearby_food }}
+        env:
+          PREVIEW: ${{ steps.preview.outputs.url }}
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          set -euo pipefail
+          cd familypilot
+          node scripts/canary-nearby-food-live.mjs "$PREVIEW" "${BYPASS:-}"
+
+      - name: Google Routes canary, one billable element
+        if: ${{ inputs.run_routes }}
+        env:
+          PREVIEW: ${{ steps.preview.outputs.url }}
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          set -euo pipefail
+          cd familypilot
+          node scripts/canary-routes-live.mjs "$PREVIEW" "${BYPASS:-}"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-canary-evidence
+          path: |
+            docs/canary/live-report.json
+            docs/canary/routes-report.json
+          if-no-files-found: warn
