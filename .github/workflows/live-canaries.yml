@@ -20,6 +20,10 @@ name: Live canaries against a Preview build
 on:
   workflow_dispatch:
     inputs:
+      base_url:
+        description: Deployment to test. Defaults to production.
+        required: false
+        default: 'https://family-pilot-seven.vercel.app'
       run_nearby_food:
         description: Run the Section 16 restaurant canary (free, zero Google)
         type: boolean
@@ -31,10 +35,9 @@ on:
         required: false
         default: false
 
+# The target is an input now, so no deployments/statuses read is needed.
 permissions:
   contents: read
-  deployments: read
-  statuses: read
 
 jobs:
   canary:
@@ -42,46 +45,53 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Wait for the Vercel preview of this commit
-        id: preview
+      # Vercel publishes a STABLE alias per target, so the URL is known without asking anything.
+      #
+      # This replaced a step that polled GitHub's Deployments API for a successful vercel.app status.
+      # That is the mechanism the Places live smoke test uses and it works for pull-request previews,
+      # but a PRODUCTION push registers no such Deployment: the first real run of this workflow sat in
+      # that loop for ten minutes waiting for a record that was never going to appear. An input with a
+      # sensible default is simpler and does not depend on a Vercel-to-GitHub integration detail that
+      # varies by target.
+      - name: Resolve the target and prove it is reachable
+        id: target
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SHA: ${{ github.sha }}
+          BASE: ${{ inputs.base_url }}
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           set -euo pipefail
-          echo "looking for a preview deployment of $SHA"
-          url=""
-          for attempt in $(seq 1 40); do
-            ids=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/${GITHUB_REPOSITORY}/deployments?sha=${SHA}&per_page=20" \
-              | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
-                  const rows = JSON.parse(s||"[]");
-                  process.stdout.write(Array.isArray(rows)?rows.map(r=>r.id).join(" "):"");
-                })')
-            for id in $ids; do
-              found=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
-                -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/repos/${GITHUB_REPOSITORY}/deployments/${id}/statuses?per_page=20" \
-                | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
-                    const rows = JSON.parse(s||"[]");
-                    const ok = (Array.isArray(rows)?rows:[]).find(
-                      (r) => r.state === "success" && (r.environment_url || "").includes("vercel.app"),
-                    );
-                    process.stdout.write(ok ? ok.environment_url : "");
-                  })')
-              if [ -n "$found" ]; then url="$found"; break; fi
-            done
-            if [ -n "$url" ]; then break; fi
-            echo "  attempt $attempt: no successful preview yet, waiting"
-            sleep 15
-          done
-          if [ -z "$url" ]; then
-            echo "::error::no successful Vercel preview deployment found for $SHA"
+          url="${BASE:-https://family-pilot-seven.vercel.app}"
+          url="${url%/}"
+          echo "target: $url"
+          case "$url" in
+            https://*) ;;
+            *) echo "::error::base_url must be an https URL"; exit 1 ;;
+          esac
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+          auth=()
+          if [ -n "${BYPASS:-}" ]; then
+            auth+=(-H "x-vercel-protection-bypass: ${BYPASS}" -H "x-vercel-set-bypass-cookie: true")
+          fi
+
+          # Reachability first, so an unreachable target is never reported as a product failure.
+          # /api/places/status is free and makes no provider request.
+          code=$(curl -sS "${auth[@]}" -o /tmp/target-status.json -w '%{http_code}' --max-time 45 \
+            -L --max-redirs 5 -c /tmp/cookies -b /tmp/cookies \
+            "$url/api/places/status" || echo 000)
+          echo "status endpoint: $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::$url/api/places/status returned $code, so this run cannot reach the build under test. For a Preview target the VERCEL_AUTOMATION_BYPASS_SECRET repository secret is required."
             exit 1
           fi
-          echo "preview: $url"
-          echo "url=$url" >> "$GITHUB_OUTPUT"
+          node -e '
+            const fs = require("node:fs");
+            try {
+              const b = JSON.parse(fs.readFileSync("/tmp/target-status.json","utf8"));
+              console.log("journeys scope:", JSON.stringify(b.placesBudget?.scopes?.journeys ?? "(absent)"));
+              console.log("usage today:", JSON.stringify(b.placesBudget?.today ?? {}));
+            } catch { console.log("status body unreadable; continuing"); }
+          '
 
       # Runs first and costs nothing. A canary that spends before confirming its own preconditions is
       # how a bill arrives unexplained.
@@ -95,7 +105,7 @@ jobs:
       - name: Section 16 restaurant canary
         if: ${{ inputs.run_nearby_food }}
         env:
-          PREVIEW: ${{ steps.preview.outputs.url }}
+          PREVIEW: ${{ steps.target.outputs.url }}
           BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           set -euo pipefail
@@ -105,7 +115,7 @@ jobs:
       - name: Google Routes canary, one billable element
         if: ${{ inputs.run_routes }}
         env:
-          PREVIEW: ${{ steps.preview.outputs.url }}
+          PREVIEW: ${{ steps.target.outputs.url }}
           BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           set -euo pipefail
