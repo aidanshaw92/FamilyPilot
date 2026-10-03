@@ -16,6 +16,7 @@ import {
   StopRequest,
 } from '@/src/types/day-sequence';
 import { isOpenOn } from '@/src/utils/opening-hours';
+import { formatDateLabel } from '@/src/utils/date-time-labels';
 
 import { PlanningFamily, PlanningOptions, familyRequest } from './planner';
 import { compareItineraries, mostRelevantFailure } from './sequence-ranking';
@@ -138,7 +139,7 @@ function evaluateOpening(
       ok: false,
       failure: {
         reason: 'venue-closed',
-        message: `${request.name} is not open at that time on ${options.date}.`,
+        message: `${request.name} is not open at that time on ${formatDateLabel(options.date) ?? options.date}.`,
         stopIndex: index,
         placeId: request.placeId,
         date: options.date,

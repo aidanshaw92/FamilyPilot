@@ -308,7 +308,7 @@ export default function EditProfileScreen() {
           value={homeLocation}
           onChangeText={setHomeLocation}
           autoCapitalize="words"
-          hint="Used to calculate real travel and weather from your general area — not your full address"
+          hint="Used to calculate real travel and weather from your general area, not your full address"
           error={errors.homeLocation}
         />
 
@@ -321,7 +321,7 @@ export default function EditProfileScreen() {
               <Text variant="label" color={colors.text.secondary}>
                 Child {index + 1}
               </Text>
-              <Pressable onPress={() => removeChild(child.id)} accessibilityRole="button">
+              <Pressable onPress={() => removeChild(child.id)} accessibilityRole="button" hitSlop={14}>
                 <Text variant="caption" color={colors.error[500]}>
                   Remove
                 </Text>
@@ -411,7 +411,7 @@ export default function EditProfileScreen() {
                   />
                 ))}
               </View>
-              <Pressable onPress={() => removeRoutine(routine.id)} accessibilityRole="button">
+              <Pressable onPress={() => removeRoutine(routine.id)} accessibilityRole="button" hitSlop={14}>
                 <Text variant="caption" color={colors.error[500]}>
                   Remove
                 </Text>

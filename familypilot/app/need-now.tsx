@@ -14,7 +14,7 @@ const QUICK_FILTERS = ['Formula', 'Wipes', 'Nappies', 'Calpol', 'Medicine'];
 
 export default function NeedNowScreen() {
   return (
-    <DeferredPilotGate feature="need_now" title="Need something now — coming later">
+    <DeferredPilotGate feature="need_now" title="Need something now: coming later">
       <NeedNowScreenContent />
     </DeferredPilotGate>
   );

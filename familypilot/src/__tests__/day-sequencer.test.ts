@@ -188,6 +188,9 @@ describe('the anchor venue is never substituted', () => {
     // have returned a one-stop day instead of failing.
     if (result.failure.reason !== 'no-feasible-sequence') return;
     expect(result.failure.nearest?.reason).toBe('venue-closed');
+    // The message is what the Plan screen prints, so the date is spelled out, never ISO.
+    expect(result.failure.nearest?.message).toMatch(/is not open at that time on Monday \d{1,2} [A-Z][a-z]+ \d{4}\.$/);
+    expect(result.failure.nearest?.message).not.toMatch(/\d{4}-\d{2}-\d{2}/);
   });
 
   it('refuses a request set without exactly one anchor', () => {
