@@ -2,6 +2,13 @@
 
 Section 8. Produced before enabling anything, and **nothing here is enabled**. Dated 2 October 2026.
 
+> **The decisions this fed into are now made** — see `routing-decisions.md` (3 October). In short:
+> Routes API `computeRouteMatrix`, **traffic-unaware Essentials** at $5.00/1,000 after 10,000 free
+> elements per month, and still fail-closed. The recommendation below was for traffic-unaware and the
+> owner took it, so the Pro column here is the tier deliberately **not** chosen, kept for the comparison
+> rather than as a live option. The prices were independently confirmed by the owner and still have not
+> been read off Google's own page from this environment.
+
 ## Read this first: two things that change the answer
 
 **1. There is no free routed driving.** What FamilyPilot has without a route provider is straight-line

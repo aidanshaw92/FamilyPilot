@@ -42,6 +42,15 @@ const MIN_RADIUS_M = 200;
 /** Enough to rank from, few enough that one anchor is never an expensive query. */
 const MAX_ELEMENTS = 60;
 
+/**
+ * The narrower retry's cap, named rather than inline so telemetry can say which cap applied.
+ *
+ * It matters which: a result of 25 elements is saturated if the retry produced it and nowhere near the
+ * cap if the first query did. Reporting a single cap would make the truncation signal wrong half the
+ * time it fires.
+ */
+const NARROW_MAX_ELEMENTS = 25;
+
 const QUERY_TIMEOUT_S = 12;
 const ABORT_MS = 15000;
 
@@ -77,7 +86,7 @@ function clampRadius(radiusM) {
 function buildFoodQuery(lat, lng, radiusM, { narrow = false } = {}) {
   const amenities = narrow ? ['restaurant', 'cafe'] : FOOD_AMENITIES;
   const radius = narrow ? Math.min(radiusM, 1000) : radiusM;
-  const limit = narrow ? 25 : MAX_ELEMENTS;
+  const limit = narrow ? NARROW_MAX_ELEMENTS : MAX_ELEMENTS;
   const timeout = narrow ? 8 : QUERY_TIMEOUT_S;
 
   const clauses = amenities
@@ -90,7 +99,18 @@ function buildFoodQuery(lat, lng, radiusM, { narrow = false } = {}) {
   return `[out:json][timeout:${timeout}];(${clauses});out center ${limit};`;
 }
 
-async function postOverpass(query, deadlineAt = Number.POSITIVE_INFINITY) {
+/**
+ * @param {string} query
+ * @param {number} deadlineAt
+ * @param {{ httpRequests: number }} [load] Mutated with the number of HTTP requests actually made.
+ *
+ * `load` exists because a QUERY and an HTTP REQUEST are not the same thing here: on a 429, a 504 or a
+ * network error this falls over to the second endpoint with the same query, so one query can be two
+ * requests. The metric that matters for being a good citizen of donated infrastructure is the request
+ * count, and reporting only queries understates it exactly when we are failing and retrying -- the
+ * moment it matters most.
+ */
+async function postOverpass(query, deadlineAt = Number.POSITIVE_INFINITY, load = { httpRequests: 0 }) {
   let lastError = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     // Never start an attempt that cannot finish inside the overall deadline, and never wait longer than
@@ -101,6 +121,7 @@ async function postOverpass(query, deadlineAt = Number.POSITIVE_INFINITY) {
       throw lastError ?? new Error('Overpass deadline exceeded before a response arrived');
     }
     try {
+      load.httpRequests += 1;
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -255,34 +276,83 @@ async function searchOsmFood(anchor, { radiusM = DEFAULT_RADIUS_M } = {}) {
     const deadlineAt = Date.now() + TOTAL_DEADLINE_MS;
     let elements;
     let attempts = 1;
+    // Which cap the response was subject to, so a saturated count can be recognised as saturated.
+    let elementCap = MAX_ELEMENTS;
+    // Shared across both queries, so endpoint failover is counted rather than hidden.
+    const load = { httpRequests: 0 };
     try {
       elements = await postOverpass(
         buildFoodQuery(anchor.latitude, anchor.longitude, radius),
         deadlineAt,
+        load,
       );
     } catch (firstError) {
       // Exactly one retry, and a NARROWER query rather than the same one: if Overpass timed out or
       // asked us to back off, repeating the identical request is the wrong response.
       attempts = 2;
+      elementCap = NARROW_MAX_ELEMENTS;
       try {
         elements = await postOverpass(
           buildFoodQuery(anchor.latitude, anchor.longitude, radius, { narrow: true }),
           deadlineAt,
+          load,
         );
       } catch (_secondError) {
         throw firstError;
       }
     }
 
-    const candidates = dedupeCandidates(
-      elements.map((element) => elementToCandidate(element, anchor)).filter(Boolean),
-    ).sort((a, b) => a.distanceKm - b.distanceKm);
+    const validated = elements.map((element) => elementToCandidate(element, anchor)).filter(Boolean);
+    const candidates = dedupeCandidates(validated).sort((a, b) => a.distanceKm - b.distanceKm);
+
+    /**
+     * The funnel, counted off the ONE response already made.
+     *
+     * Section 16 asked for the raw element count before validation and I recorded it as "not separable
+     * without a second request per anchor". That was wrong: every stage of the funnel is countable from
+     * the response in hand, and only the final array was being returned. No extra Overpass request is
+     * made to produce any of this.
+     *
+     * `saturatedCap` is EVIDENCE of truncation, not proof. Overpass could return exactly the cap when
+     * exactly that many places exist. Named for what is actually observed so nobody reads a coincidence
+     * as a confirmed loss.
+     */
+    const discovery = {
+      rawElements: elements.length,
+      elementCap,
+      saturatedCap: elements.length >= elementCap,
+      afterValidation: validated.length,
+      afterDedupe: candidates.length,
+    };
+
+    if (discovery.saturatedCap) {
+      // Logged as well as returned. The owner's decision was to keep the cap and gather evidence, and
+      // evidence that only exists in a cache row is lost whenever the cache write fails.
+      console.warn(
+        JSON.stringify({
+          tag: 'osm_food_cap_saturated',
+          anchorLat: Number(anchor.latitude.toFixed(4)),
+          anchorLng: Number(anchor.longitude.toFixed(4)),
+          radiusM: radius,
+          ...discovery,
+        }),
+      );
+    }
 
     return {
       candidates,
       provider: 'osm',
       radiusM: radius,
+      /**
+       * Queries, which is what this has always meant and what the canary reported.
+       *
+       * Kept under its existing name so no reader's understanding of past measurements changes, with
+       * the request count beside it rather than folded into it.
+       */
       overpassRequests: attempts,
+      /** HTTP requests actually sent, including endpoint failover. Never less than `overpassRequests`. */
+      overpassHttpRequests: load.httpRequests,
+      discovery,
       fetchedAt: new Date().toISOString(),
     };
   })();

@@ -34,7 +34,7 @@ measured.**
 | --- | --- |
 | Four of five anchors (V&A, Hampstead Heath, Gladstone Park, Chiswick House) | **NOT MEASURED** |
 | Cache hits / misses / hit ratio | **NOT MEASURED** as a ratio — CI has no Supabase credentials, so every read is a miss by construction |
-| Raw OSM element count before validation | **NOT SEPARABLE** without a second request per anchor, which the brief forbids making to produce a statistic |
+| Raw OSM element count before validation | ~~NOT SEPARABLE~~ — **this was wrong, and is fixed.** Every stage of the funnel is countable from the one response already made; only the final array was being returned. `discovery.rawElements`, `afterValidation` and `afterDedupe` now report it, with no extra Overpass request. See `routing-decisions.md` §4 |
 | Cached vs uncached latency | **NOT MEASURED** — see cache above |
 | Venue Detail and plan-generation impact in production | **NOT MEASURED** — the production URL is unreachable from the development environment |
 | Lunch-plan generation attempts, plans containing lunch, plans correctly omitting it | **NOT MEASURED in production**; measured against fixtures by the Phase 2 audit (277/277), which is a different claim |
