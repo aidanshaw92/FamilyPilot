@@ -8,6 +8,7 @@ import {
   summariseHousehold,
   VISIT_LENGTH_CHOICES,
 } from '@/src/services/planning/plan-draft';
+import { resolvePlanParties } from '@/src/services/planning/plan-parties';
 import { FamilyProfile } from '@/src/types';
 import { PlanningFamily } from '@/src/services/planning/planner';
 
@@ -224,5 +225,37 @@ describe('a draft read back out of a link', () => {
     expect(planDraftFromParams({}).partyIds).toEqual(['mine']);
     expect(planDraftFromParams({ parties: '' }).partyIds).toEqual(['mine']);
     expect(planDraftFromParams({ parties: ' mine , theirs , ' }).partyIds).toEqual(['mine', 'theirs']);
+  });
+});
+
+/**
+ * The Plans tab used to decide who could be planned for from the planning store alone, so a parent
+ * who had finished onboarding was told to "Set up your family & routines" and sent into a second
+ * editor. Both forms now ask these two functions, so this is the contract the tab's gate rests on.
+ */
+describe('a finished profile is enough to plan from, without a planning family', () => {
+  const finished = profile({ homeLatitude: 51.643, homeLongitude: -0.36, routines: [
+    { id: 'r1', label: 'Afternoon nap', kind: 'nap', time: '13:00', durationMinutes: 60, atHome: true },
+  ] } as Partial<FamilyProfile>);
+
+  it('offers the household ready, with no setup gate', () => {
+    const result = planDraftDefaults(sources({ profile: finished, planningFamilies: [] }));
+    expect(result.needsProfile).toBe(false);
+    expect(result.parties).toEqual([expect.objectContaining({ id: 'mine', label: 'Our family', ready: true })]);
+    expect(planDraftBlocker(result.draft, result.parties)).toBeNull();
+  });
+
+  it('resolves to a planning family that carries the profile routines', () => {
+    const { families, unresolved } = resolvePlanParties(['mine'], { profile: finished, planningFamilies: [] });
+    expect(unresolved).toEqual([]);
+    expect(families).toHaveLength(1);
+    expect(families[0]).toMatchObject({ id: 'mine', ages: [4, 1], maxDriveMinutes: 30 });
+    expect(families[0].routines.map((r) => r.label)).toEqual(['Afternoon nap']);
+  });
+
+  it('still asks for a profile when nothing describes the family anywhere', () => {
+    const result = planDraftDefaults(sources({ profile: profile({ members: [] }), planningFamilies: [] }));
+    expect(result.needsProfile).toBe(true);
+    expect(planDraftBlocker(result.draft, result.parties)).toBe('Add your family details so we can plan around them.');
   });
 });

@@ -1,14 +1,17 @@
 import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Linking, ScrollView, Share, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Share, View } from 'react-native';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Button, Card, Text } from '@/src/components/ui';
 import { Chip } from '@/src/components/ui/Chip';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { FamilyEditor } from '@/src/components/planning/FamilyEditor';
-import { DateField, TimeField, formStyles as s } from '@/src/components/ui';
+import { TimeField, formStyles as s } from '@/src/components/ui';
+import { PlanDraftForm, PlanFormRow } from '@/src/components/planning/PlanDraftForm';
+import { PlanDraft, planDraftBlocker, planDraftDefaults } from '@/src/services/planning/plan-draft';
+import { resolvePlanParties } from '@/src/services/planning/plan-parties';
 import { PlanningAccount } from '@/src/components/planning/PlanningAccount';
 import { useFamilyStore } from '@/src/stores/family-store';
 import { localDate, usePlanningStore } from '@/src/stores/planning-store';
@@ -20,12 +23,20 @@ import { PlanInvite, listPlanInvites, createPlanInvite, respondToPlanInvite, can
 import { SavedPlan } from '@/src/stores/planning-store';
 import { supabase } from '@/src/services/supabase/client';
 
+const linkStyle={alignSelf:'flex-start' as const,minHeight:44,justifyContent:'center' as const};
+
 export default function TripsScreen() {
  const router=useRouter();const state=usePlanningStore();const profile=useFamilyStore(x=>x.profile);
  const [editor,setEditor]=useState<PlanningFamily|null>(null);const [selected,setSelected]=useState<string[]>(['mine']);
  const [results,setResults]=useState<PlanningResult[]>([]);const [busy,setBusy]=useState(false);const [message,setMessage]=useState('');const [searched,setSearched]=useState(false);
  const [tab,setTab]=useState<'plan'|'saved'|'families'>('plan');const [resultKey,setResultKey]=useState('');
- const active=state.families.filter(f=>selected.includes(f.id));const inputKey=JSON.stringify({active,options:state.options});
+ // Who the planner builds for: the profile household and any described on this device, resolved
+ // the same way the Create a Plan sheet resolves them, so the two forms cannot disagree.
+ const planDefaults=useMemo(()=>planDraftDefaults({profile,planningFamilies:state.families,options:state.options,today:localDate()}),[profile,state.families,state.options]);
+ const draft:PlanDraft={date:state.options.date,leaveAt:state.options.leaveAt,visitMinutes:state.options.visitMinutes,partyIds:selected};
+ const applyDraft=(next:PlanDraft)=>{state.setOptions({date:next.date,leaveAt:next.leaveAt,visitMinutes:next.visitMinutes});setSelected(next.partyIds);};
+ const blocker=planDraftBlocker(draft,planDefaults.parties);
+ const active=resolvePlanParties(selected,{profile,planningFamilies:state.families}).families;const inputKey=JSON.stringify({active,options:state.options});
  useEffect(()=>{if(state.hydrated&&state.options.date<localDate())state.setOptions({date:localDate()});},[state.hydrated]);
  // "mine" is seeded from the profile once when first created, but a parent's home, pushchair or
  // children's ages are facts, not a planning-session choice — keep them in sync so they can't
@@ -138,19 +149,27 @@ export default function TripsScreen() {
     <PlanningAccount/>
   </>:null}
   {tab==='plan'?<>
-   <Card style={s.panel}><Text variant="heading2">Who’s coming?</Text>
-    <View style={s.row}>{state.families.map(f=><Chip key={f.id} label={f.label} active={selected.includes(f.id)} onPress={()=>setSelected(ids=>ids.includes(f.id)?ids.filter(x=>x!==f.id):[...ids,f.id])}/>)}</View>
-    {!state.families.length?<Button label="Set up your family & routines" onPress={()=>setEditor(blank(true))}/>:null}
-    <Button label="Manage families and routines" variant="ghost" onPress={()=>setTab('families')}/>
-    <DateField label="Date" value={state.options.date} onChange={date=>state.setOptions({date})}/>
-    <TimeField label="Earliest departure" value={state.options.leaveAt} onChange={leaveAt=>state.setOptions({leaveAt})}/>
-    <Button label="Leave from now" variant="ghost" onPress={()=>{const d=new Date();state.setOptions({date:localDate(),leaveAt:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`});}}/>
-    <TimeField label="Everyone home by (optional)" value={state.options.returnBy} onChange={returnBy=>state.setOptions({returnBy})} optional/>
-    <Text variant="bodySmall">Time at the activity</Text><View style={s.row}>{[60,90,120,180].map(n=><Chip key={n} label={`${n} min`} active={state.options.visitMinutes===n} onPress={()=>state.setOptions({visitMinutes:n})}/>)}</View>
-    <Text variant="bodySmall">Extra time each way for traffic, parking and getting ready</Text><View style={s.row}>{[10,15,30].map(n=><Chip key={n} label={`${n} min`} active={state.options.bufferMinutes===n} onPress={()=>state.setOptions({bufferMinutes:n})}/>)}</View>
-    <View style={s.row}>{(['either','indoor','outdoor'] as const).map(v=><Chip key={v} label={{either:'Any setting',indoor:'Indoors',outdoor:'Outdoors'}[v]} active={state.options.environment===v} onPress={()=>state.setOptions({environment:v})}/>)}</View>
-    <Button label={busy?'Finding a plan for everyone…':'Find our best plans'} disabled={busy||!active.length} onPress={()=>void find()}/>
-    {!busy&&!active.length?<Text variant="bodySmall" color={colors.warning[600]}>{state.families.length?'Select at least one family above to find a plan.':'Add your family above first — we need to know who’s coming.'}</Text>:null}
+   <Card style={s.panel}><Text variant="heading2">Plan a day</Text>
+    {/* The same four questions, the same form, as the Create a Plan sheet on a place. Parties come
+        from the profile first, so a parent who finished onboarding is never told to set up a family
+        they already described; a second household is added through the editor as before. */}
+    <PlanDraftForm draft={draft} parties={planDefaults.parties} onDraftChange={applyDraft} onAddFamily={()=>setEditor(blank(false))}/>
+    {planDefaults.needsProfile?<Button label="Set up your family" onPress={()=>router.push('/profile/edit' as never)}/>:null}
+    <Pressable onPress={()=>setTab('families')} accessibilityRole="button" accessibilityLabel="Manage families and routines" style={linkStyle} hitSlop={8}><Text variant="link">Manage families and routines</Text></Pressable>
+    <PlanFormRow label="Everyone home by">
+     <TimeField label="" value={state.options.returnBy} onChange={returnBy=>state.setOptions({returnBy})} optional/>
+     <Text variant="caption" color={colors.text.secondary}>Optional. The day is planned to end before this.</Text>
+    </PlanFormRow>
+    <PlanFormRow label="Extra time each way">
+     <View style={s.row}>{[10,15,30].map(n=><Chip key={n} label={`${n} min`} active={state.options.bufferMinutes===n} onPress={()=>state.setOptions({bufferMinutes:n})}/>)}</View>
+     <Text variant="caption" color={colors.text.secondary}>For traffic, parking and getting everyone ready.</Text>
+    </PlanFormRow>
+    <PlanFormRow label="Setting">
+     <View style={s.row}>{(['either','indoor','outdoor'] as const).map(v=><Chip key={v} label={{either:'Any setting',indoor:'Indoors',outdoor:'Outdoors'}[v]} active={state.options.environment===v} onPress={()=>state.setOptions({environment:v})}/>)}</View>
+    </PlanFormRow>
+    <Pressable onPress={()=>{const d=new Date();state.setOptions({date:localDate(),leaveAt:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`});}} accessibilityRole="button" accessibilityLabel="Leave from now" style={linkStyle} hitSlop={8}><Text variant="link">Leave from now</Text></Pressable>
+    {blocker&&!busy?<Text variant="bodySmall" color={colors.warning[600]} accessibilityRole="alert">{blocker}</Text>:null}
+    <Button label={busy?'Finding a plan for everyone…':'Find our best plans'} disabled={busy||Boolean(blocker)} onPress={()=>void find()}/>
    </Card>
    {message?<Text accessibilityRole="alert" color={colors.warning[600]}>{message}</Text>:null}
    {searched&&inputKey!==resultKey?<Text>Preferences have changed. Find plans again to update the timings.</Text>:null}
