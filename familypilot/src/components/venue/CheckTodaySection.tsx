@@ -9,7 +9,9 @@ import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { contextApiClient } from '@/src/services/context/context-api-client';
 import { estimateDriveMinutes } from '@/src/services/places/geo-utils';
 import { Journey, PlanMatch, PlanningFamily, clockLabel, planVenue } from '@/src/services/planning/planner';
+import { useFamilyStore } from '@/src/stores/family-store';
 import { localDate, usePlanningStore } from '@/src/stores/planning-store';
+import { noFamiliesCopy } from '@/src/utils/check-today-copy';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 
 interface CheckTodaySectionProps {
@@ -56,6 +58,8 @@ export function CheckTodaySection({ facts, latitude, longitude }: CheckTodaySect
   const router = useRouter();
   const families = usePlanningStore((s) => s.families);
   const hydrated = usePlanningStore((s) => s.hydrated);
+  const profile = useFamilyStore((s) => s.profile);
+  const noFamilies = noFamiliesCopy(profile);
   const [state, setState] = useState<CheckState>({ status: 'idle' });
 
   const visible = isPilotFeatureVisible('trips_tab');
@@ -127,8 +131,7 @@ export function CheckTodaySection({ facts, latitude, longitude }: CheckTodaySect
         <View style={styles.card}>
           <Ionicons name="calendar-outline" size={20} color={colors.text.secondary} />
           <Text variant="bodySmall" color={colors.text.secondary} style={styles.text}>
-            Add your family's nap and feed routine in Plans to check whether a visit fits around
-            it right now.
+            {noFamilies.message}
           </Text>
         </View>
       ) : null}
@@ -179,7 +182,7 @@ export function CheckTodaySection({ facts, latitude, longitude }: CheckTodaySect
       ) : null}
 
       <Button
-        label={state.status === 'no_families' ? 'Set up routines in Plans' : 'Check a different time in Plans'}
+        label={state.status === 'no_families' ? noFamilies.button : 'Check a different time in Plans'}
         variant="outline"
         style={styles.button}
         onPress={() => router.push('/(tabs)/trips' as never)}

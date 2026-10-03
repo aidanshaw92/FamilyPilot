@@ -22,13 +22,15 @@ export function buildDriveCaution(profile: FamilyProfile, driveMinutes: number):
 }
 
 /**
- * A child who uses a mobility aid makes step-free access matter, and the app holds no step-free evidence
- * to show a parent (it is collected internally and not part of the facts a venue is matched on). So the
- * honest statement is that it is unknown, shown only to families it matters to. It is never a score and
- * never a "yes": wheelchair or step-free evidence must not be read as buggy-suitable, or the reverse.
+ * A child who uses a mobility aid makes step-free and wheelchair access matter, and the app holds no such
+ * evidence to show a parent (it is collected internally and is not part of the facts a venue is matched
+ * on). So the honest statement is that it is unknown, shown only to families it matters to. It is worded
+ * about wheelchairs and mobility aids on purpose: Venue Detail's "Mostly step-free" row is a reading of
+ * pushchair access, and a caution that said only "step-free isn't confirmed" would contradict it. Never a
+ * score and never a "yes": wheelchair evidence must not be read as buggy-suitable, or the reverse.
  */
 export function buildStepFreeCaution(profile: FamilyProfile): string | null {
-  return familyNeedsStepFree(profile) ? 'Step-free access isn’t confirmed here' : null;
+  return familyNeedsStepFree(profile) ? 'Wheelchair and mobility-aid access isn’t confirmed here' : null;
 }
 
 function toVenueDetail(venue: Venue): VenueDetail {

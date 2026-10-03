@@ -115,3 +115,31 @@ change output, is it persistent, is it worth the friction):
 - Unknown stays unknown. No personalised sentence is produced without both a profile fact and a venue fact.
 - Home is not redesigned. Any change to Home output is a consequence of better profile data, and is checked
   against the locked captures.
+
+## 5. What stage 3 built (the onboarding screens)
+
+Four steps, three when no child is young enough to be asked about naps and feeds. Each is a thin editor
+over `onboarding-draft.ts`, where the rules live and are tested.
+
+| Step | What a parent sees | What it becomes |
+| --- | --- | --- |
+| Parent | First name, home town or postcode. Privacy is one quiet hint under the town. | `parentName`, resolved home centroid |
+| Children | Per child: name, then date of birth as three number boxes. The exact age appears the moment the date lands ("Theo is 2 years 3 months"). | `dateOfBirth` + `dobKnown: true`; `age`/`ageMonths` derived |
+| Mobility | "How does Mia usually get around on a day out?" Choose all that apply. | `mobility[]`, one set per child |
+| Naps and feeds | Only for children under 4 (naps) and under 3 (feeds). Several naps, each a time and a rough length; feeds at set times or every N hours from a first one. | `FamilyRoutine` entries owned by the child |
+
+Adaptive rules (`questionsFor`, in months): under 12 months are offered carrier, buggy and wheelchair or
+mobility aid, never "walks"; 12 to 47 months get walks, buggy, carrier and aid; 4 and over lose the
+carrier. Naps are asked under 48 months, feeds under 36. A feed under a year is a "feed", later a "meal".
+Answers the child's age no longer allows (the date was edited after choosing) are dropped when the profile
+is built.
+
+Drive time and budget are no longer asked. They keep the defaults (30 minutes, moderate) every consumer
+already expects. Home's "Maximum drive each way" and Explore's filter sheet are where drive time is changed
+for a day. **Open item for the owner:** budget has no contextual control anywhere yet, so the default
+`moderate` is applied silently until a parent edits it in Profile. A heuristic line, "Within your usual
+budget", and the drive caution "Further than your usual 30 min drive" both say "usual" about a default the
+parent never chose. Stage 4's adversarial pass deals with that wording.
+
+`verify-onboarding-flow.mjs` drives the real screens for six family shapes at two widths and asserts the
+stored profile and the Venue Detail sentences that follow, and it runs in CI beside the other verifiers.
