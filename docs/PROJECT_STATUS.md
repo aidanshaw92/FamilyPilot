@@ -152,11 +152,30 @@ visibility bug, and documentation debt.
 
 ## Known gaps & next priorities
 
-1. **No cross-device sync for Saved or family profile.** Both are AsyncStorage-only. Low risk pre-launch,
-   but plan a migration to Supabase (reusing the `planning_workspaces` RLS pattern) before multi-device
-   use matters.
-2. **Old `001_initial_schema.sql` schema is dead code.** Either delete it or explicitly mark it
-   superseded so a future agent doesn't build on it by mistake.
+1. **Cross-device sync: Saved places have opt-in cloud backup (3 Oct 2026); the family profile is
+   deliberately still device-only.** Saved places can be backed up to the account and restored on another
+   device from the Saved screen — explicit buttons, nothing uploads on sign-in, and restore adds but never
+   removes (so un-saving on one device does not carry to another; that needs tombstones and real sync).
+   Table `saved_places_backups`, same own-row RLS shape as `planning_workspaces`, applied to production
+   and probed: `anon` is denied outright, a cross-user write is rejected by RLS before the FK is even
+   reached, and an own-row write passes RLS.
+
+   **What is NOT uploaded, by construction**: the upload is an allowlist projection that drops
+   `driveMinutes` (home-derived), `familyScore` and its `explanation`/`factors` (child- and
+   routine-derived), and every other personalised field. Tests assert on the serialized payload.
+
+   **The family profile (children's names, DOBs, home area) stays on the device** by the owner's
+   decision, pending a GDPR-K/COPPA view. Do not add it to this table or any other without that review.
+2. ~~**Old `001_initial_schema.sql` schema is dead code.**~~ **Closed 3 Oct 2026.** The file now carries a
+   SUPERSEDED / DO NOT APPLY header naming where the family profile and saved places actually live, and
+   pointing anyone adding cloud sync at the `planning_workspaces` RLS pattern instead.
+
+   It was kept rather than deleted because the design intent is useful history — but the hazard was real
+   and worth checking rather than assuming: `profiles`, `family_members` and `saved_items` look exactly
+   like the tables you would reach for when building cross-device sync. **Verified against production:
+   none of the seventeen tables it declares exist**, so it was never applied and is dead code rather than
+   an unguarded store of children's dates of birth. The live schema is fourteen tables, all with RLS
+   enabled.
 3. **Live verification of real providers is now possible, and has been done — from CI, not from here.**
    This item is **substantially revised (3 Oct 2026)**; what it said before was accurate in September and
    is no longer.
