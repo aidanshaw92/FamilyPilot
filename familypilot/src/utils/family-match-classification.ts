@@ -3,11 +3,11 @@ import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 
 export type MatchClassification =
   | 'Not yet reviewed'
-  | 'Excellent match'
-  | 'Great match'
-  | 'Good match'
+  | 'Excellent fit'
+  | 'Great fit'
+  | 'Good fit'
   | 'Worth considering'
-  | 'Limited match';
+  | 'Limited fit';
 
 export function getMatchClassification(
   score: number,
@@ -17,11 +17,11 @@ export function getMatchClassification(
   if (isUnreviewedEnrichmentStatus(enrichmentStatus)) {
     return 'Not yet reviewed';
   }
-  if (score >= 90) return 'Excellent match';
-  if (score >= 80) return 'Great match';
-  if (score >= 70) return 'Good match';
+  if (score >= 90) return 'Excellent fit';
+  if (score >= 80) return 'Great fit';
+  if (score >= 70) return 'Good fit';
   if (score >= 60) return 'Worth considering';
-  return 'Limited match';
+  return 'Limited fit';
 }
 
 export function getQualitativeRating(value: number): 'Excellent' | 'Good' | 'Fair' | 'Limited' {

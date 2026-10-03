@@ -8,11 +8,11 @@ import {
 
 describe('Family Match classification', () => {
   it('maps scores to human-readable classifications', () => {
-    expect(getMatchClassification(95)).toBe('Excellent match');
-    expect(getMatchClassification(85)).toBe('Great match');
-    expect(getMatchClassification(75)).toBe('Good match');
+    expect(getMatchClassification(95)).toBe('Excellent fit');
+    expect(getMatchClassification(85)).toBe('Great fit');
+    expect(getMatchClassification(75)).toBe('Good fit');
     expect(getMatchClassification(65)).toBe('Worth considering');
-    expect(getMatchClassification(50)).toBe('Limited match');
+    expect(getMatchClassification(50)).toBe('Limited fit');
     expect(getMatchClassification(90, 'provider_only')).toBe('Not yet reviewed');
   });
 

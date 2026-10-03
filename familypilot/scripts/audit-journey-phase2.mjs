@@ -421,7 +421,7 @@ async function auditJourney(browser, viewport) {
   })());
   note(V, 'Create a Plan', 'leaves the venue readable behind it', {
     ok: await page.evaluate(() => Array.from(document.querySelectorAll('*')).some(
-      (n) => n.children.length === 0 && n.textContent?.trim() === 'FAMILY MATCH')),
+      (n) => n.children.length === 0 && n.textContent?.trim() === 'FAMILY FIT')),
   });
 
   const sheetText = ((await sheet.innerText().catch(() => '')) || '').toUpperCase();

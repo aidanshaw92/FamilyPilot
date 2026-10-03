@@ -283,7 +283,7 @@ export default function EditProfileScreen() {
         <View style={styles.headerText}>
           <Text variant="heading1">Edit profile</Text>
           <Text variant="bodySmall" color={colors.text.secondary}>
-            Changes update your Family Match scores
+            Changes update your Family Fit scores
           </Text>
         </View>
       </View>
@@ -372,22 +372,16 @@ export default function EditProfileScreen() {
         <Text variant="label" color={colors.text.secondary} style={styles.groupLabel}>
           Budget (currently {formatBudgetTier(budgetTier)})
         </Text>
-        <View style={styles.chipColumn}>
+
+        {/* The same Chip as drive time above and frame 04's option rows: one selected treatment per app. */}
+        <View style={styles.chipRow}>
           {BUDGET_OPTIONS.map((option) => (
-            <Pressable
+            <Chip
               key={option.id}
-              style={[styles.budgetOption, budgetTier === option.id && styles.budgetOptionActive]}
+              label={option.label}
+              active={budgetTier === option.id}
               onPress={() => setBudgetTier(option.id)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: budgetTier === option.id }}
-            >
-              <Text
-                variant="body"
-                color={colors.ink}
-              >
-                {option.label}
-              </Text>
-            </Pressable>
+            />
           ))}
         </View>
 
@@ -568,17 +562,6 @@ const styles = StyleSheet.create({
   chipColumn: {
     gap: spacing.sm,
     marginBottom: spacing.lg,
-  },
-  budgetOption: {
-    padding: spacing.lg,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  budgetOptionActive: {
-    borderColor: colors.ink,
-    backgroundColor: colors.fill,
   },
   addChildLabel: {
     fontSize: 16,

@@ -97,7 +97,7 @@ export default function SetupScreen() {
         },
         {
           title: 'How do you usually plan days out?',
-          subtitle: 'These defaults help Family Match. You can change them anytime in Profile.',
+          subtitle: 'These defaults help Family Fit. You can change them anytime in Profile.',
         },
       ][step - 1],
     [step],
@@ -386,22 +386,16 @@ export default function SetupScreen() {
               <Text variant="label" color={colors.text.secondary} style={styles.groupLabel}>
                 Usual day-out budget
               </Text>
-              <View style={styles.chipColumn}>
+
+              {/* The same Chip as drive time above and frame 04's option rows: one selected treatment per app. */}
+              <View style={styles.chipRow}>
                 {BUDGET_OPTIONS.map((option) => (
-                  <Pressable
+                  <Chip
                     key={option.id}
-                    style={[styles.budgetOption, budgetTier === option.id && styles.budgetOptionActive]}
+                    label={option.label}
+                    active={budgetTier === option.id}
                     onPress={() => setBudgetTier(option.id)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: budgetTier === option.id }}
-                  >
-                    <Text
-                      variant="body"
-                      color={colors.ink}
-                    >
-                      {option.label}
-                    </Text>
-                  </Pressable>
+                  />
                 ))}
               </View>
             </View>
@@ -499,22 +493,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: CHIP_GAP,
     marginBottom: spacing.xl,
-  },
-  chipColumn: {
-    gap: spacing.sm,
-  },
-  budgetOption: {
-    padding: spacing.lg,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    minHeight: 48,
-    justifyContent: 'center',
-  },
-  budgetOptionActive: {
-    borderColor: colors.ink,
-    backgroundColor: colors.fill,
   },
   addChildLabel: {
     fontSize: 16,

@@ -81,9 +81,9 @@ describe('consumer screens stay on the tokens', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('render exactly one Family Match badge component', () => {
+  it('render exactly one Family Fit badge component, and never say "Family Match" to a parent', () => {
     const offenders = consumerFiles.filter((file) =>
-      /FamilyFitBadge|FamilyScoreBadge|formatFamilyMatchLabel|% Family Match/.test(
+      /FamilyFitBadge|FamilyScoreBadge|formatFamilyMatchLabel|% Family Match|% Family Fit|['"`>][^'"`<\n]*Family Match|FAMILY MATCH/.test(
         readFileSync(join(ROOT, file), 'utf8'),
       ),
     );

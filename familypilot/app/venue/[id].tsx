@@ -257,7 +257,7 @@ export default function VenueScreen() {
           <FadeInView>
             <View style={styles.matchIntro}>
               {/* The same eyebrow treatment as the Home card and the hero above. */}
-              <Text variant="eyebrow">FAMILY MATCH</Text>
+              <Text variant="eyebrow">FAMILY FIT</Text>
               <Text variant="heading2">Will this work for your family?</Text>
             </View>
             {/* The word leads inside the panel ("Good match"), the number sits on the hero badge

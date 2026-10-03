@@ -226,7 +226,7 @@ async function run(browser, viewport) {
 
   const venueStillBehind = await page.evaluate(() =>
     Array.from(document.querySelectorAll('*')).some(
-      (node) => node.children.length === 0 && node.textContent?.trim() === 'FAMILY MATCH',
+      (node) => node.children.length === 0 && node.textContent?.trim() === 'FAMILY FIT',
     ),
   );
   note(viewport.label, 'the venue is still readable behind the sheet', { ok: venueStillBehind });

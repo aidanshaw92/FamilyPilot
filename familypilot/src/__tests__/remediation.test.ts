@@ -39,15 +39,15 @@ describe('saved store behaviour', () => {
 
 describe('Family Match consistency', () => {
   it('uses consistent label wording across variants', () => {
-    expect(FAMILY_MATCH_LABEL).toBe('Family Match');
-    expect(describeFamilyMatch(98).badgeLabel).toBe('4.9 Family Match');
-    expect(describeFamilyMatch(91).secondary).toContain('Family Match');
+    expect(FAMILY_MATCH_LABEL).toBe('Family Fit');
+    expect(describeFamilyMatch(98).badgeLabel).toBe('4.9 Family Fit');
+    expect(describeFamilyMatch(91).secondary).toContain('Family Fit');
   });
 
   it('classifies scores for human-readable presentation', async () => {
     const { getMatchClassification } = await import('@/src/utils/family-match-classification');
-    expect(getMatchClassification(91)).toBe('Excellent match');
-    expect(getMatchClassification(72)).toBe('Good match');
+    expect(getMatchClassification(91)).toBe('Excellent fit');
+    expect(getMatchClassification(72)).toBe('Good fit');
   });
 });
 

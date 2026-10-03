@@ -28,7 +28,7 @@ const TYPE_FILTERS = ([
 const SORT_OPTIONS: { id: SortOption; label: string }[] = [
   { id: 'recent', label: 'Recent' },
   { id: 'closest', label: 'Closest' },
-  { id: 'match', label: 'Best match' },
+  { id: 'match', label: 'Best fit' },
 ];
 
 const SAVED_GROUPS: { id: SavedGroup; label: string }[] = [
