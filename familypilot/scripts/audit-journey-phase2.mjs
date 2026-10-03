@@ -500,8 +500,9 @@ async function auditJourney(browser, viewport) {
   // between stops shown in the mode the plan's timings were actually computed from.
   const lunchText = await text(page);
   note(V, 'Plan', 'puts a real discovered restaurant in the day', {
-    ok: /The Mapped Kitchen/.test(lunchText) && /LUNCH/i.test(lunchText),
-    message: (lunchText.match(/LUNCH[^\n]{0,60}/) ?? ['no lunch stop'])[0].replace(/\s+/g, ' '),
+    // Frame 03 names stops "Stop 1", "Stop 2"; a discovered restaurant is the second card.
+    ok: /The Mapped Kitchen/.test(lunchText) && /Stop 2\s+\d{1,2}:\d{2}/.test(lunchText),
+    message: (lunchText.match(/Stop 2[^\n]{0,60}/) ?? ['no lunch stop'])[0].replace(/\s+/g, ' '),
   });
   note(V, 'Plan', 'draws the hop between stops with a mode symbol and a duration', {
     ok: /[\u{1F680}-\u{1F6FF}]\s*about \d+ min drive/u.test(lunchText),
