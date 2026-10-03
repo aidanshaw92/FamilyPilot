@@ -5,6 +5,13 @@
 > implementation is proven, and `api.tfl.gov.uk` is blocked by this environment's egress policy, so it
 > can be built against fixtures here but not verified against the live service. Revisit the provider when
 > FamilyPilot goes beyond London.
+>
+> **Update, same day:** the client is now written and gated (`server/context/lib/tfl-transit.js`,
+> `TFL_TRANSIT_ENABLED`). It has never met the live API, because `api.tfl.gov.uk` is blocked from the
+> development environment. The rate-limit figure in the table below (roughly 500/day unauthenticated)
+> **disagrees** with the owner's (50/minute anonymous, 500/minute registered) and neither could be
+> verified from here, so the implementation sits under both at 20/minute by default. See
+> `routing-decisions.md` §3.
 
 Section H. **An audit and a set of options, not a selection.** Nothing here is implemented and no
 provider is signed up to. Dated 2 October 2026.
