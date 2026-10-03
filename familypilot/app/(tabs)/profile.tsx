@@ -13,6 +13,7 @@ import { useFamilyProfile } from '@/src/hooks/use-queries';
 import { formatBudgetTier, formatChildAge } from '@/src/utils/profile-defaults';
 import { getProfileSuggestion } from '@/src/utils/profile-completion';
 import { formatClock } from '@/src/utils/clock-format';
+import { familyTitle } from '@/src/utils/family-title';
 import { FacilityType } from '@/src/types';
 
 const MUST_HAVE_LABELS: Partial<Record<FacilityType, string>> = {
@@ -88,8 +89,10 @@ export default function ProfileScreen() {
                 </LinearGradient>
               ))}
             </View>
+            {/* "The  Family" with no name, and "The Aidan Shaw Family" with a full one: the field is a
+                first name, so possessive reads right in both cases and degrades to "Your family". */}
             <Text variant="heading2" style={styles.familyName}>
-              The {profile.parentName} Family
+              {familyTitle(profile.parentName)}
             </Text>
             {suggestion ? (
               <View style={styles.suggestionBox}>
@@ -115,10 +118,13 @@ export default function ProfileScreen() {
           </Card>
         </FadeInView>
 
-        <Text variant="heading3" style={styles.sectionTitle}>
+        <Text variant="heading2" style={styles.sectionTitle}>
           Your children
         </Text>
         <Card style={styles.prefCard}>
+          {children.length === 0 ? (
+            <ProfileRow icon="person-add-outline" label="None yet" value="Add in Edit" />
+          ) : null}
           {children.map((child, index) => (
             <FadeInView key={child.id} delay={index * 50}>
               <ProfileRow
@@ -130,7 +136,7 @@ export default function ProfileScreen() {
           ))}
         </Card>
 
-        <Text variant="heading3" style={styles.sectionTitle}>
+        <Text variant="heading2" style={styles.sectionTitle}>
           Naps, feeds & must-haves
         </Text>
         <Card style={styles.prefCard}>
@@ -157,7 +163,7 @@ export default function ProfileScreen() {
           />
         </Card>
 
-        <Text variant="heading3" style={styles.sectionTitle}>
+        <Text variant="heading2" style={styles.sectionTitle}>
           Preferences
         </Text>
         <Card style={styles.prefCard}>
@@ -174,7 +180,7 @@ export default function ProfileScreen() {
           />
         </Card>
 
-        <Text variant="heading3" style={styles.sectionTitle}>
+        <Text variant="heading2" style={styles.sectionTitle}>
           Vehicle
         </Text>
         <Card style={styles.prefCard}>
@@ -185,7 +191,7 @@ export default function ProfileScreen() {
           />
         </Card>
 
-        <Text variant="heading3" style={styles.sectionTitle}>
+        <Text variant="heading2" style={styles.sectionTitle}>
           Equipment
         </Text>
         <Card style={styles.prefCard}>
@@ -201,7 +207,7 @@ export default function ProfileScreen() {
           />
         </Card>
 
-        <Text variant="heading3" style={styles.sectionTitle}>
+        <Text variant="heading2" style={styles.sectionTitle}>
           Memberships & discounts
         </Text>
         <Card style={styles.prefCard}>

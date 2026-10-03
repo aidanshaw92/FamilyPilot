@@ -52,6 +52,11 @@ on:
         type: boolean
         required: false
         default: false
+      verify_client_config:
+        description: Verify the shipped web bundle is configured for Saved backup and ships no server secret (free, GET only)
+        type: boolean
+        required: false
+        default: false
 
 # The target is an input now, so no deployments/statuses read is needed.
 permissions:
@@ -267,6 +272,55 @@ jobs:
             /tmp/food-miss.h /tmp/food-miss.json \
             /tmp/food-hit.h /tmp/food-hit.json \
             /tmp/food-edge.h /tmp/food-edge.json
+
+      # Free: two or three GETs of the same files a browser loads, and no account anywhere in it.
+      #
+      # The Saved tab shows Back up / Restore only when the build inlined EXPO_PUBLIC_SUPABASE_URL and the
+      # publishable key. Those are read at BUILD time, so the dashboard listing them is not evidence the
+      # running build has them; the bundle the page references is. The owner's instruction for this check
+      # was explicit: do not create or upload a family profile to perform it. Reading the bundle needs
+      # neither a sign-in nor a profile, and the same bytes answer the adversarial question too: nothing
+      # that must stay server-side (sb_secret_, service_role, a Google API key) may be in them.
+      - name: Verify the deployed client bundle is configured for Saved backup and ships no secret
+        if: ${{ inputs.verify_client_config }}
+        env:
+          TARGET: ${{ steps.target.outputs.url }}
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          # The one Supabase project every environment points at (docs/PROJECT_STATUS.md).
+          EXPECT_REF: uuolfuebwimrsjfgffsm
+        run: |
+          set -euo pipefail
+          auth=()
+          if [ -n "${BYPASS:-}" ]; then
+            auth+=(-H "x-vercel-protection-bypass: ${BYPASS}" -H "x-vercel-set-bypass-cookie: true")
+          fi
+          mkdir -p /tmp/client
+          code=$(curl -sS "${auth[@]}" -L --max-redirs 5 -c /tmp/cc-cookies -b /tmp/cc-cookies \
+            -o /tmp/client/index.html -w '%{http_code}' --max-time 45 "$TARGET/")
+          echo "GET $TARGET/ -> $code"
+          [ "$code" = "200" ] || { echo "::error::the page itself returned $code"; exit 1; }
+
+          # Every exported bundle the page references, fetched by the same path a browser would use.
+          # The verifier fails if any referenced bundle is missing here, so a partial fetch cannot pass.
+          bundles=()
+          while IFS= read -r src; do
+            [ -n "$src" ] || continue
+            name=$(basename "$src")
+            case "$src" in
+              http*) full="$src" ;;
+              /*) full="$TARGET$src" ;;
+              *) full="$TARGET/$src" ;;
+            esac
+            bcode=$(curl -sS "${auth[@]}" -L --max-redirs 5 -c /tmp/cc-cookies -b /tmp/cc-cookies \
+              -o "/tmp/client/$name" -w '%{http_code}' --max-time 90 "$full")
+            echo "GET $full -> $bcode ($(wc -c < "/tmp/client/$name") bytes)"
+            [ "$bcode" = "200" ] || { echo "::error::bundle $name returned $bcode"; exit 1; }
+            bundles+=("/tmp/client/$name")
+          done < <(grep -o '<script[^>]*src="[^"]*/_expo/static/js/web/[^"]*\.js"' /tmp/client/index.html \
+                   | sed -E 's/.*src="([^"]*)".*/\1/' | sort -u)
+
+          cd familypilot
+          node scripts/verify-client-config.mjs /tmp/client/index.html "${bundles[@]}" --expect-ref="$EXPECT_REF"
 
       - uses: actions/upload-artifact@v4
         if: always()

@@ -164,7 +164,7 @@ export default function ExploreScreen() {
   return (
     <ScreenContainer>
       <View style={styles.header}>
-        <Text variant="heading2">Explore London</Text>
+        <Text variant="heading1">Explore London</Text>
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
           {isRestaurantMode
             ? 'Family-friendly places to eat'
@@ -358,6 +358,8 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
+    // A web text input has an intrinsic width; without this the row overflowed the screen at 360.
+    minWidth: 0,
     paddingHorizontal: spacing.lg,
     minHeight: 48,
     borderRadius: radius.lg,

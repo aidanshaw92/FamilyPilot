@@ -100,9 +100,9 @@ Each slice: inspect Figma (when available) → render before → implement → t
 | 3 | **Venue Detail** (done): hero carries the Home card's eyebrow, title and Family Match badge; one Family Match panel (word leads, cautions amber, venue notes neutral, fact-backed trust badges); "Getting there", "Practical details", "About" as heading2 sections; four provenance defects fixed with tests (see §8) | First screen after Home in the main journey; largest visible divergence |
 | 4 | **Create a Plan sheet + Plan screen + Generating state** (done): drawn date/time fields over the native pickers ("Friday 2 October 2026", "09:00"), one `eyebrow` variant replacing six ad-hoc letter-spacings, 24-hour clock app-wide, the plan header may take two lines, the framed states' back chevron sits left, "Add another family" is a link | The hinge; the sheet becomes the single plan form (the Trips tab adopts it in slice 5) |
 | 5 | **Plans tab** (done): renders the same `PlanDraftForm` as the Create a Plan sheet (when, start, who, how long) with its own extra rows underneath in the same row language; parties come from `planDraftDefaults` and resolve through `resolvePlanParties`, so a parent with a finished profile is never told to "Set up your family & routines" (§4.4) | Removes the duplicate builder |
-| 6 | **Explore** (header, search, chips, rows), **Saved** (chips, rows, panel), **Profile** (§4.3) | Secondary surfaces, mostly inherit slice 2 |
+| 6 | **Explore, Saved, Profile** (done): Explore's title is heading1 like Home's and the search row no longer overflows at 360 (`minWidth: 0` on the web input); Saved's sort row keeps one spacing rhythm; Profile's sections are heading2 like Venue Detail's, the family title is "Aidan’s family" / "Your family" (§4.3, never "The  Family"), an empty children card says so; drive-time chips offer 90 min and always include the stored value; a provider-only row no longer repeats "Not yet reviewed" under its own badge | Secondary surfaces, mostly inherit slice 2 |
 | 7 | **Onboarding + settings + empty/error/loading states sweep**, accessibility and touch-target audit | Consistency pass across every state in §5 |
-| 8 | **Saved production check** (#145 observation) during slice 6 | Needs production, no profile upload |
+| 8 | **Saved production check** (#145 observation, done in slice 6 as a workflow step): `verify_client_config` in `live-canaries.yml` fetches the deployed page and every bundle it references and runs `scripts/verify-client-config.mjs`, which asserts the Supabase project URL and a client key are inlined in the same bundle (the exact precondition for Back up / Restore) and that no `sb_secret_`, `service_role` JWT or Google API key is. GET only, no account, no profile; see §9 for the production result | Needs production, no profile upload |
 
 Slice 2 is the one that must not be rushed: it changes the look of every screen simultaneously, so it
 ships with before/after captures of all routes at three widths, and Home is diffed against its own
@@ -110,7 +110,8 @@ capture to prove it did not move.
 
 ## 7. Found while rendering slice 2 (not fixed there; owned by the slice named)
 
-- Explore at 360: the "Search" button overflows the right edge of the row (slice 6). Pre-existing.
+- Explore at 360: the "Search" button overflows the right edge of the row. Fixed in slice 6: the web
+  text input had an intrinsic width, so the flex row could not shrink it; `minWidth: 0` is the fix.
 - Onboarding step 1 shows "Please enter your first name" in red on an untouched form (slice 7).
   Pre-existing.
 - `/restaurant/[id]` is behind the pilot flag and renders "Restaurants coming later" in this build, so
@@ -144,3 +145,30 @@ capture to prove it did not move.
    with the mock fallback, which for a real id is null, so a timeout, a 500 or no connection rendered
    "This venue may have been removed". `PlacesApiError` now carries the status: a 404 is not found,
    anything else is rethrown and the screen says "Could not load this place" with a retry.
+
+## 9. Found while rendering slice 6
+
+- **Profile empty state (§4.3) rendered, not read:** with an empty parent name and no children the title
+  is "Your family" and the children card reads "None yet / Add in Edit" (probe
+  `profile-empty-probe.mjs`, 360 wide). `familyTitle` has three unit tests, including "James’ family".
+- **A stored drive limit the chips did not offer.** The seeded profile's 90-minute limit rendered as no
+  chip selected in Edit profile and onboarding step 4, because both lists stopped at 60. The lists now
+  offer 90 and always include the stored value, so a limit set elsewhere is never shown as nothing chosen.
+- **Explore rows said "Not yet reviewed" twice** once the badge moved under the title (slice 2) and the
+  provider-only reason line said the same thing in words. The reason line is now empty for provider-only
+  rows; the badge carries the status and the meta line carries the distance.
+- **Saved's sort row** had `paddingVertical: lg` on top of the search field's own bottom margin; it now
+  has `md` above and `lg` below, which is the rhythm the "Want to go" heading needs.
+- **Pre-existing, not fixed here (slice 7):** Edit profile's budget options are full-width rows with a
+  grey selected fill and a 1px ink border, a third selected treatment beside the Chip and the Button.
+  Onboarding step 4 shares the control, so it moves with the onboarding pass.
+- **Saved production check, run against production on 2026-10-03 16:03 UTC** (live-canaries run
+  37135427455, dispatched from this branch with only `verify_client_config` on). Predicted calls: zero
+  Google, zero Overpass, three GETs (status endpoint, page, one bundle). Actual: the same three GETs,
+  nothing else. All nine checks passed: the page references one bundle and it was fetched whole; exactly
+  one Supabase project URL is inlined and it is `uuolfuebwimrsjfgffsm`; one publishable key sits in the
+  same bundle, so `isSupabaseConfigured` is true in the client production ships; no `sb_secret_` key, no
+  `service_role` JWT, no Google API key. So a signed-in parent on production is offered Back up / Restore.
+  What this does not prove: that a sign-in succeeds end to end, which needs an account and was not
+  attempted (no profile was created or uploaded, per the owner's instruction).
+
