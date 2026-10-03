@@ -161,11 +161,11 @@ export default function TripsScreen() {
      <Text variant="caption" color={colors.text.secondary}>Optional. The day is planned to end before this.</Text>
     </PlanFormRow>
     <PlanFormRow label="Extra time each way">
-     <View style={s.row}>{[10,15,30].map(n=><Chip key={n} label={`${n} min`} active={state.options.bufferMinutes===n} onPress={()=>state.setOptions({bufferMinutes:n})}/>)}</View>
+     <View style={s.row}>{[10,15,30].map(n=><Chip size="small" key={n} label={`${n} min`} active={state.options.bufferMinutes===n} onPress={()=>state.setOptions({bufferMinutes:n})}/>)}</View>
      <Text variant="caption" color={colors.text.secondary}>For traffic, parking and getting everyone ready.</Text>
     </PlanFormRow>
     <PlanFormRow label="Setting">
-     <View style={s.row}>{(['either','indoor','outdoor'] as const).map(v=><Chip key={v} label={{either:'Any setting',indoor:'Indoors',outdoor:'Outdoors'}[v]} active={state.options.environment===v} onPress={()=>state.setOptions({environment:v})}/>)}</View>
+     <View style={s.row}>{(['either','indoor','outdoor'] as const).map(v=><Chip size="small" key={v} label={{either:'Any setting',indoor:'Indoors',outdoor:'Outdoors'}[v]} active={state.options.environment===v} onPress={()=>state.setOptions({environment:v})}/>)}</View>
     </PlanFormRow>
     <Pressable onPress={()=>{const d=new Date();state.setOptions({date:localDate(),leaveAt:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`});}} accessibilityRole="button" accessibilityLabel="Leave from now" style={linkStyle} hitSlop={8}><Text variant="link">Leave from now</Text></Pressable>
     {blocker&&!busy?<Text variant="bodySmall" color={colors.warning[600]} accessibilityRole="alert">{blocker}</Text>:null}

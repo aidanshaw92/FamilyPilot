@@ -52,6 +52,7 @@ const build = (over: {
   travel?: Partial<TravelDiagnostics>;
   caveats?: PlanCaveat[];
   parking?: PlanParkingInput;
+  media?: Record<string, { imageUrl?: string; category?: string }>;
 } = {}) =>
   toPlanViewModel({
     itinerary: itinerary(over.itinerary),
@@ -59,6 +60,7 @@ const build = (over: {
     caveats: over.caveats ?? [],
     anchorName: 'Kentish Town City Farm',
     parking: over.parking,
+    media: over.media,
   });
 
 describe('the day reads as a day, not as a schedule dump', () => {
@@ -126,7 +128,7 @@ describe('what nobody confirmed stays visible', () => {
       itinerary: { stops: [stop({ opening: { status: 'unknown', reason: 'no-structured-hours' } })] },
     });
     const opening = view.stops[0].rows.find((r) => r.label === 'Opening');
-    expect(opening?.value).toBe('Hours not confirmed — check before you go');
+    expect(opening?.value).toBe('Hours not confirmed. Check before you go');
     expect(opening?.unconfirmed).toBe(true);
   });
 
@@ -244,7 +246,7 @@ describe('the Travel & parking section says only what is known about parking', (
   it('tells a parent it is unconfirmed rather than leaving a reassuring blank', () => {
     for (const view of [build(), build({ parking: { parking: 'unknown' } })]) {
       expect(view.travel.parking).toEqual([
-        { label: 'Parking', value: 'Not confirmed — check before you go', unconfirmed: true },
+        { label: 'Parking', value: 'Not confirmed. Check before you go', unconfirmed: true },
       ]);
     }
   });
@@ -261,5 +263,47 @@ describe('the Travel & parking section says only what is known about parking', (
     const view = build({ parking: { parking: 'unknown', info: 'Nearest car park is on the high street' } });
     expect(view.travel.parking[0].unconfirmed).toBe(true);
     expect(view.travel.parking[1]).toEqual({ label: 'Details', value: 'Nearest car park is on the high street' });
+  });
+});
+
+describe('frame 03: the heading, the insight and the stop rows', () => {
+  it('names the day for the "Your Saturday plan" heading, and not when the date is unreadable', () => {
+    expect(build().dayName).toBe('Saturday');
+    expect(build({ itinerary: { date: 'not-a-date' } }).dayName).toBeNull();
+  });
+
+  it('shows the timing insight only when the planner recorded a routine the day is home before', () => {
+    expect(build().insight).toBeNull();
+    const withNap = build({ itinerary: { families: [{
+      familyId: 'mine', label: 'Our family', depart: 9 * 60 + 30, home: 14 * 60 + 45, latestDeparture: 10 * 60,
+      notes: ['Home before the usual nap at 15:30.'],
+    }] } });
+    expect(withNap.insight).toBe('Home around 14:45, before the usual nap');
+  });
+
+  it('adds Leave to every stop and Travel to next stop only where a next stop exists', () => {
+    const legs: SequenceLeg[] = [{
+      from: { kind: 'stop', index: 0 }, to: { kind: 'stop', index: 1 }, depart: 11 * 60 + 30, arrive: 11 * 60 + 36,
+      travelMinutes: 6, bufferMinutes: 0, source: 'estimated',
+    } as unknown as SequenceLeg];
+    const view = build({ itinerary: {
+      stops: [stop(), stop({ index: 1, placeId: 'fp-osm-lunch', name: 'The Mapped Kitchen', role: 'meal', anchor: false, arrive: 11 * 60 + 36, depart: 12 * 60 + 21, dwellMinutes: 45 })],
+      legs,
+    } });
+    const labels = (i: number) => view.stops[i].rows.map((r) => r.label);
+    expect(labels(0)).toEqual(['Arrive', 'Time there', 'Leave', 'Opening', 'Travel to next stop']);
+    expect(view.stops[0].rows.find((r) => r.label === 'Leave')?.value).toBe('11:30');
+    // Legs are timed as drives and this one is estimated, so the row says so rather than "6 min".
+    expect(view.stops[0].rows.find((r) => r.label === 'Travel to next stop')?.value).toBe('🚗 about 6 min drive');
+    expect(labels(1)).toEqual(['Arrive', 'Time there', 'Leave', 'Opening']);
+  });
+
+  it('carries a photograph where one exists and falls back to the restaurant placeholder for a meal', () => {
+    const view = build({
+      itinerary: { stops: [stop(), stop({ index: 1, placeId: 'fp-osm-lunch', name: 'Lunch', role: 'meal', anchor: false })] },
+      media: { 'fp-google-anchor': { imageUrl: 'https://img/anchor.jpg', category: 'farm' } },
+    });
+    expect(view.stops[0]).toMatchObject({ imageUrl: 'https://img/anchor.jpg', category: 'farm' });
+    expect(view.stops[1]).toMatchObject({ imageUrl: undefined, category: 'restaurant' });
   });
 });

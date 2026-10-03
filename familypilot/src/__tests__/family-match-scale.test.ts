@@ -34,10 +34,10 @@ describe('Family Match scale', () => {
     const match = describeFamilyMatch(76, 'enriched');
     expect(match.unreviewed).toBe(false);
     expect(match.number).toBe('3.8');
-    expect(match.classification).toBe('Good match');
-    expect(match.badgeLabel).toBe('3.8 Family Match');
-    expect(match.spoken).toBe('3.8 out of 5 Family Match, Good match');
-    expect(match.secondary).toBe('3.8 out of 5 Family Match');
+    expect(match.classification).toBe('Good fit');
+    expect(match.badgeLabel).toBe('3.8 Family Fit');
+    expect(match.spoken).toBe('3.8 out of 5 Family Fit, Good fit');
+    expect(match.secondary).toBe('3.8 out of 5 Family Fit');
   });
 
   it('never prints a percentage anywhere', () => {

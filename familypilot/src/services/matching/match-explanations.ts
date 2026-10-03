@@ -56,7 +56,7 @@ function formatTriStateReason(field: string, value: string): string {
 function formatEnvironment(value: string): string {
   switch (value) {
     case 'indoor':
-      return 'Mostly indoor — suitable for rainy days';
+      return 'Mostly indoor, suitable for rainy days';
     case 'outdoor':
       return 'Mostly outdoor';
     case 'mixed':

@@ -34,7 +34,7 @@ export default function AboutScreen() {
         />
         <Section
           title="Recommendations"
-          body="Family Match scores reflect suitability for your family based on the details you share. They are guidance to help you decide, not guarantees."
+          body="Family Fit scores reflect suitability for your family based on the details you share. They are guidance to help you decide, not guarantees."
         />
         <Section
           title="Prices & availability"

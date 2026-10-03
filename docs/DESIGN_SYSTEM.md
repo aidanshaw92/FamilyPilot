@@ -48,7 +48,7 @@ and Black are loaded but no consumer text is set in them.
 | `caption` | 12 / 16 | 500 | Metadata, eyebrows (colour `text.tertiary`). |
 | `label` | 13 / 18 | 600, +0.5 | Form group labels. |
 | `link` | 14 / 20 | 600, ink | Inline text actions: "Undo", "View details", "Reset", "+ Add another child". |
-| `eyebrow` | 13 / 16 | 500, +1.04 | The small upper-case line above a title (Home card's "SOFT PLAY", "FAMILY MATCH", "WHEN", "MORNING"). Callers pass capitals; the variant does not transform. |
+| `eyebrow` | 13 / 16 | 500, +1.04 | The small upper-case line above a title (Home card's "SOFT PLAY", "FAMILY FIT", "WHEN", "MORNING"). Callers pass capitals; the variant does not transform. |
 
 ## Spacing, radius, shadow
 
@@ -71,18 +71,18 @@ Touch targets: 44pt minimum.
 | `Button` | `primary` ink pill · `secondary` white with hairline · `outline` white with ink rule · `ghost` text only. | Sizes `sm 36 / md 48 / lg 56`. No variant is purple. |
 | `Chip` | The one selection pill (frame "Category pills"): 44 tall, 20 side padding, Medium 14.5/18; selected = ink, idle = white. | `appearance="plain"` (no hairline; the Home rail on the app background) or `"outlined"` (hairline; chips on a white sheet). Lay rows out with `gap: CHIP_GAP` (10); the chip has no outer margin. |
 | `PillSelector` | A single-choice rail or segmented row of `Chip`s. | Arranges; does not style. |
-| `FamilyMatch` | The one Family Match badge (frame node 8:13): `★ 4.0 Family Match`, 32 tall. | `tone="onImage"` over photography, `"onLight"` on white. Unreviewed → "Not yet reviewed", no number. Unknown score → renders nothing. Scale and strings live in `src/utils/family-match-scale.ts`. |
+| `FamilyMatch` | The one Family Fit badge (frame node 8:13): `★ 4.0 Family Fit`, 32 tall; `size="compact"` is frame node 49:5's `★ 4.3` beside a venue name, 30 tall, where a "Why this score" link carries the word. | `tone="onImage"` over photography, `"onLight"` on white. Unreviewed → "Not yet reviewed", no number. Unknown score → renders nothing. Scale and strings live in `src/utils/family-match-scale.ts`. |
 | `FamilyMatchPanel` / `RecommendationPattern` | The explanation: classification word, "Why it suits your family", "Good to know", the secondary number line. | Word leads, number is secondary, cautions never render as positives. |
 | `CircleButton` | Round control: `light` (white on photography), `dark` (ink), `glass`. | Back, save, filter, "go". |
 | `DateField` / `TimeField` | A drawn field (white, hairline, 48 tall) showing the value in the app's words — "Friday 2 October 2026", "09:00" — with the platform's native picker kept underneath, transparent, for the interaction. | ISO values in, ISO values out. Labels from `date-time-labels.ts`. Native apps keep the plain text field. |
 | `SearchBar`, `Field`, `BottomSheet`, `Card`, `SectionHeader`, `EmptyState`, `ErrorState`, `Skeleton*`, `VenueImage`, `DataTrustBadge` | Shared surfaces and states. | |
 
-## Family Match: one scale, one vocabulary
+## Family Fit: one scale, one vocabulary
 
 - The score is computed 0–100 and **shown out of five to one decimal**, with a star, everywhere
   (`FAMILY_MATCH_SCALE = 'five-star'`). A percentage is never printed.
-- The classification word (`Excellent match · Great match · Good match · Worth considering ·
-  Limited match`) leads wherever there is room; the badge carries the number.
+- The classification word (`Excellent fit · Great fit · Good fit · Worth considering ·
+  Limited fit`) leads wherever there is room; the badge carries the number.
 - `provider_only` / `ai_draft` places are **Not yet reviewed**: a status, no number, in the badge,
   the classification and the secondary line alike.
 - A non-finite score (a restored Saved place not yet recomputed) is unknown: no badge, no "0.0".
@@ -97,8 +97,8 @@ Touch targets: 44pt minimum.
 
 `react-native-reanimated` for all animation; `useReducedMotion()` replaces springs with cuts.
 Haptics: selection on chips, light impact on buttons. Every icon-only control has an
-`accessibilityLabel`; selected chips expose `accessibilityState.selected`; the Family Match badge
-speaks "4.0 out of 5 Family Match, Good match".
+`accessibilityLabel`; selected chips expose `accessibilityState.selected`; the Family Fit badge
+speaks "4.0 out of 5 Family Fit, Good fit".
 
 ## Clock and date
 

@@ -96,7 +96,7 @@ export function PlaceShowcaseCard({
           {venue.name}
         </Text>
 
-        {/* Frame: one meta row — the Family Match badge with travel time beside it, not below. */}
+        {/* Frame: one meta row — the Family Fit badge with travel time beside it, not below. */}
         <View style={[styles.footerText, styles.metaRow]}>
           <FamilyMatch
             score={venue.familyScore.score}

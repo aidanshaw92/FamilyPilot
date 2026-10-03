@@ -39,14 +39,26 @@ interface ChipProps {
    * sheet or card and would otherwise vanish.
    */
   appearance?: 'plain' | 'outlined';
+  /**
+   * `default` is Home's 44pt rail pill. `small` is the approved Create a plan sheet's option chip
+   * (frame 04, node 76:31): 40 tall, 16 either side, 13.5 text, a quiet grey fill when idle and the
+   * same near-black when chosen. Both are the same component so a chosen chip reads the same way
+   * everywhere; only the size differs.
+   */
+  size?: 'default' | 'small';
   style?: ViewStyle;
 }
 
-export function Chip({ label, active = false, onPress, appearance = 'outlined', style }: ChipProps) {
+export const SMALL_CHIP_HEIGHT = 40;
+export const SMALL_CHIP_GAP = 8;
+
+export function Chip({ label, active = false, onPress, appearance = 'outlined', size = 'default', style }: ChipProps) {
   const reducedMotion = useReducedMotion();
   const activeProgress = useSharedValue(active ? 1 : 0);
   const pressed = useSharedValue(1);
-  const idleBorder = appearance === 'outlined' ? colors.border : colors.surface;
+  const small = size === 'small';
+  const idleFill = small ? colors.fill : colors.surface;
+  const idleBorder = appearance === 'outlined' && !small ? colors.border : idleFill;
 
   useEffect(() => {
     activeProgress.value = reducedMotion
@@ -62,7 +74,7 @@ export function Chip({ label, active = false, onPress, appearance = 'outlined', 
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(activeProgress.value, [0, 1], [colors.surface, colors.ink]),
+    backgroundColor: interpolateColor(activeProgress.value, [0, 1], [idleFill, colors.ink]),
     borderColor: interpolateColor(activeProgress.value, [0, 1], [idleBorder, colors.ink]),
     transform: [{ scale: pressed.value }],
   }));
@@ -79,12 +91,12 @@ export function Chip({ label, active = false, onPress, appearance = 'outlined', 
       onPressOut={() => {
         pressed.value = withSpring(1, spring.gentle);
       }}
-      style={[styles.chip, appearance === 'plain' && styles.plain, animatedStyle, style]}
+      style={[styles.chip, (appearance === 'plain' || small) && styles.plain, small && styles.small, animatedStyle, style]}
     >
       <Text
         variant="bodySmall"
         color={active ? colors.text.inverse : colors.ink}
-        style={styles.label}
+        style={[styles.label, small && styles.smallLabel, small && active && styles.smallLabelActive]}
         numberOfLines={1}
       >
         {label}
@@ -109,9 +121,22 @@ const styles = StyleSheet.create({
   plain: {
     borderWidth: 0,
   },
+  // Node 76:31: 40 tall, 16 either side, no hairline (the grey fill separates it from the sheet).
+  small: {
+    height: SMALL_CHIP_HEIGHT,
+    paddingHorizontal: 16,
+  },
   label: {
     fontFamily: 'Inter_500Medium',
     fontSize: CHIP_FONT_SIZE,
     lineHeight: CHIP_LINE_HEIGHT,
+  },
+  smallLabel: {
+    fontSize: 13.5,
+    lineHeight: 16,
+  },
+  // The frame sets the chosen small chip in SemiBold (node 76:34).
+  smallLabelActive: {
+    fontFamily: 'Inter_600SemiBold',
   },
 });

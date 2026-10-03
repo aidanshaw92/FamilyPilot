@@ -1,6 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { PlaceAttribution } from '@/src/components/shared/PlaceAttribution';
+import { RestaurantCloseByCard } from '@/src/components/venue/RestaurantCloseByCard';
 import { Text } from '@/src/components/ui/Text';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { FoodCandidate, NearbyFoodResult } from '@/src/types/nearby-food';
@@ -108,41 +109,18 @@ export function RestaurantsCloseBy({ result, isPending, isError }: Props) {
         public transport times for these.
       </Text>
 
-      {candidates.map((candidate) => {
-        const notes = taggedNotes(candidate);
-        return (
-          <View key={candidate.familypilotId} style={styles.row} testID="food-candidate">
-            <Text variant="body" style={styles.name} numberOfLines={2}>
-              {candidate.name}
-            </Text>
-            <Text variant="caption" color={colors.text.secondary}>
-              {CATEGORY_NOUN[candidate.category]}
-              {candidate.cuisine ? ` · ${candidate.cuisine.replace(/[_;]/g, ' ')}` : ''}
-              {` · ${travelLine(candidate.travel)}`}
-            </Text>
-            {candidate.openingHours ? (
-              <Text variant="caption" color={colors.text.tertiary}>
-                Hours: {candidate.openingHours}
-              </Text>
-            ) : (
-              <Text variant="caption" color={colors.text.tertiary}>
-                Hours not listed
-              </Text>
-            )}
-            {notes.length > 0 ? (
-              <Text variant="caption" color={colors.text.tertiary}>
-                {notes.join(' · ')}
-              </Text>
-            ) : (
-              // Said out loud rather than left blank: a parent should not read an empty line as
-              // "there are no highchairs".
-              <Text variant="caption" color={colors.text.tertiary}>
-                Nobody has recorded facilities for children here
-              </Text>
-            )}
-          </View>
-        );
-      })}
+      {/* Frame 02's horizontal rail (nodes 51:2, 51:17): 262-wide cards, the second one peeking.
+          It bleeds to the screen edge like the Home pills, so the rail starts at the text margin. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.rail}
+        style={styles.railBleed}
+      >
+        {candidates.map((candidate) => (
+          <RestaurantCloseByCard key={candidate.familypilotId} candidate={candidate} />
+        ))}
+      </ScrollView>
 
       {/* The ODbL credit these candidates owe. Every one came from OpenStreetMap. */}
       <PlaceAttribution provider={result?.provider} />
@@ -153,12 +131,6 @@ export function RestaurantsCloseBy({ result, isPending, isError }: Props) {
 const styles = StyleSheet.create({
   section: { gap: spacing.sm, paddingVertical: spacing.md },
   caveat: { marginBottom: spacing.xs },
-  row: {
-    gap: 2,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-  },
-  name: { fontFamily: 'Inter_600SemiBold' },
+  railBleed: { marginHorizontal: -spacing.screenPadding },
+  rail: { paddingHorizontal: spacing.screenPadding, gap: spacing.lg, paddingBottom: spacing.xs },
 });

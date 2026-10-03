@@ -2,7 +2,7 @@ import { EnrichmentStatus, Venue } from '@/src/types';
 import { PlacesProviderName } from '@/src/types/places';
 
 /**
- * The "Information confidence" badges under a Family Match explanation, built only from facts the
+ * The "Information confidence" badges under a Family Fit explanation, built only from facts the
  * venue actually carries.
  *
  * Until now the row printed a literal "Last checked 2 days ago" and "Opening hours from provider"

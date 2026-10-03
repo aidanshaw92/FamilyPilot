@@ -14,11 +14,17 @@ interface FamilyMatchProps {
   tone?: 'onLight' | 'onImage';
   /** Opens an explanation. The badge grows an info glyph so the affordance is visible. */
   onPress?: () => void;
+  /**
+   * `default` is the Home card pill with the word (node 8:13). `compact` is frame 02's "★ 4.3"
+   * beside a venue name (node 49:5): star and number only, 30 tall, white with a hairline, because
+   * the "Why this score" link on that row carries the word.
+   */
+  size?: 'default' | 'compact';
   style?: ViewStyle;
 }
 
 /**
- * The one Family Match badge, from the approved Home frame's "★ 4.0" chip (node 8:13), reframed as
+ * The one Family Fit badge, from the approved Home frame's "★ 4.3 Family Fit" chip (node 8:13), read as
  * how well a place fits THIS family. Home, Explore, Saved, Venue Detail and the plan all render this
  * same component so the number a parent sees on a card is the number they see one tap later.
  *
@@ -30,6 +36,7 @@ export function FamilyMatch({
   enrichmentStatus,
   tone = 'onLight',
   onPress,
+  size = 'default',
   style,
 }: FamilyMatchProps) {
   const match = describeFamilyMatch(score, enrichmentStatus);
@@ -37,18 +44,26 @@ export function FamilyMatch({
   if (!match.unreviewed && match.number === null) return null;
 
   const onImage = tone === 'onImage';
+  // Compact only ever drops the word next to a number; an unreviewed status keeps its words.
+  const compact = size === 'compact' && match.number !== null;
   const ink = onImage ? colors.text.inverse : colors.ink;
   const content = (
     <View
-      style={[styles.badge, onImage ? styles.onImage : styles.onLight, style]}
+      style={[styles.badge, onImage ? styles.onImage : styles.onLight, compact && styles.compact, style]}
       accessibilityRole={onPress ? undefined : 'text'}
       accessibilityLabel={match.spoken}
     >
       {match.number !== null ? <Ionicons name="star" size={14} color={ink} /> : null}
-      <Text variant="caption" color={ink} style={styles.label} numberOfLines={1}>
-        {match.badgeLabel}
+      <Text
+        variant="caption"
+        color={ink}
+        style={[styles.label, compact && styles.compactLabel]}
+        numberOfLines={1}
+      >
+        {compact ? match.number : match.badgeLabel}
       </Text>
-      {onPress ? (
+      {/* Compact sits beside a "Why this score" link (node 49:13), which is the affordance there. */}
+      {onPress && !compact ? (
         <Ionicons
           name="information-circle-outline"
           size={14}
@@ -92,9 +107,18 @@ const styles = StyleSheet.create({
   onImage: {
     backgroundColor: 'rgba(13, 13, 15, 0.45)',
   },
+  // Frame node 49:5: 30 tall, 14 in on the left, 16 on the right, SemiBold number.
+  compact: {
+    height: 30,
+    paddingLeft: 14,
+    paddingRight: spacing.lg,
+  },
   label: {
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 17,
+  },
+  compactLabel: {
+    fontFamily: 'Inter_600SemiBold',
   },
 });

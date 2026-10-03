@@ -3,7 +3,7 @@ export { Button } from './Button';
 export { Card } from './Card';
 export { FamilyMatch } from './FamilyMatch';
 export { FamilyMatchPanel } from './FamilyMatchPanel';
-export { Chip, CHIP_GAP, CHIP_HEIGHT } from './Chip';
+export { Chip, CHIP_GAP, CHIP_HEIGHT, SMALL_CHIP_GAP, SMALL_CHIP_HEIGHT } from './Chip';
 export { SectionHeader } from './SectionHeader';
 export { Skeleton, SkeletonCard, SkeletonDecisionCard } from './Skeleton';
 export { EmptyState } from './EmptyState';

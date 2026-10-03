@@ -280,12 +280,18 @@ async function auditJourney(browser, viewport) {
     const o = await overflow(page);
     return { ok: o === null, message: o ? `${o.scroll} in ${o.viewport}: ${o.offenders.join(' ; ')}` : undefined };
   })());
-  note(V, 'Venue Detail', 'keeps the footer CTA clear of the home indicator', await (async () => {
-    const box = await page.getByTestId('venue-create-plan').boundingBox().catch(() => null);
+  // Frame 02 draws Create a plan inline (node 72:2) rather than in a fixed footer, so the question is
+  // no longer "does the footer clear the indicator" but "once scrolled to, is the whole CTA on screen
+  // and clear of it". Scrolling it into view is what a parent does; the assertion is on the result.
+  note(V, 'Venue Detail', 'Create a plan sits whole on screen and clear of the home indicator once reached', await (async () => {
+    const cta = page.getByTestId('venue-create-plan');
+    await cta.scrollIntoViewIfNeeded().catch(() => {});
+    await page.waitForTimeout(400);
+    const box = await cta.boundingBox().catch(() => null);
     const limit = viewport.height - (viewport.insets?.bottom ?? 0);
     return {
-      ok: box ? box.y + box.height <= limit + 1 : false,
-      message: box ? `bottom ${Math.round(box.y + box.height)}, indicator starts at ${limit}` : 'no box',
+      ok: box ? box.y >= 0 && box.y + box.height <= limit + 1 : false,
+      message: box ? `top ${Math.round(box.y)}, bottom ${Math.round(box.y + box.height)}, indicator starts at ${limit}` : 'no box',
     };
   })());
 
@@ -421,7 +427,7 @@ async function auditJourney(browser, viewport) {
   })());
   note(V, 'Create a Plan', 'leaves the venue readable behind it', {
     ok: await page.evaluate(() => Array.from(document.querySelectorAll('*')).some(
-      (n) => n.children.length === 0 && n.textContent?.trim() === 'FAMILY MATCH')),
+      (n) => n.children.length === 0 && n.textContent?.trim() === 'FAMILY FIT')),
   });
 
   const sheetText = ((await sheet.innerText().catch(() => '')) || '').toUpperCase();
@@ -494,8 +500,9 @@ async function auditJourney(browser, viewport) {
   // between stops shown in the mode the plan's timings were actually computed from.
   const lunchText = await text(page);
   note(V, 'Plan', 'puts a real discovered restaurant in the day', {
-    ok: /The Mapped Kitchen/.test(lunchText) && /LUNCH/i.test(lunchText),
-    message: (lunchText.match(/LUNCH[^\n]{0,60}/) ?? ['no lunch stop'])[0].replace(/\s+/g, ' '),
+    // Frame 03 names stops "Stop 1", "Stop 2"; a discovered restaurant is the second card.
+    ok: /The Mapped Kitchen/.test(lunchText) && /Stop 2\s+\d{1,2}:\d{2}/.test(lunchText),
+    message: (lunchText.match(/Stop 2[^\n]{0,60}/) ?? ['no lunch stop'])[0].replace(/\s+/g, ' '),
   });
   note(V, 'Plan', 'draws the hop between stops with a mode symbol and a duration', {
     ok: /[\u{1F680}-\u{1F6FF}]\s*about \d+ min drive/u.test(lunchText),
@@ -518,8 +525,11 @@ async function auditJourney(browser, viewport) {
   note(V, 'Plan', 'renders', { ok: onPlan, message: onPlan ? undefined : planText.replace(/\s+/g, ' ').slice(0, 200) });
 
   if (onPlan) {
+    // Frame 03 (slice 11) heads the day "Your Saturday plan" with the span in the header's dates
+    // line; the earlier "A 4-hour Saturday" summary is still accepted for a saved-plan list.
     note(V, 'Plan', 'summarises the day in the parent’s terms', {
-      ok: /A \d+-hour /.test(planText), message: (planText.match(/A \d+-hour [A-Za-z]+/) ?? [''])[0],
+      ok: /A \d+-hour /.test(planText) || (/Your [A-Z][a-z]+day plan/.test(planText) && /\d{2}:\d{2}–\d{2}:\d{2}/.test(planText)),
+      message: (planText.match(/A \d+-hour [A-Za-z]+|Your [A-Z][a-z]+day plan/) ?? [''])[0],
     });
     note(V, 'Plan', 'does not scroll sideways', await (async () => {
       const o = await overflow(page);
@@ -533,8 +543,9 @@ async function auditJourney(browser, viewport) {
         message: box ? `bottom ${Math.round(box.y + box.height)}, indicator starts at ${limit}` : 'no button',
       };
     })());
+    // The row labels are uppercased by style (frame 03), and innerText reflects that.
     note(V, 'Plan', 'expands the first stop and collapses the rest', {
-      ok: planText.includes('Arrive') && planText.includes('Time there'),
+      ok: /arrive/i.test(planText) && /time there/i.test(planText),
     });
     note(V, 'Plan', 'prints no internal field name', {
       ok: !/[a-z]+[A-Z][a-z]+:|familyFacilities\./.test(planText),
@@ -658,7 +669,9 @@ async function auditLunchStates(browser, viewport) {
    * has no lunch stop") satisfies -- so the assertion failed while the product was correct. A role
    * header followed by its time range is what "the day contains a lunch stop" actually means.
    */
-  const hasLunchStop = (t) => /LUNCH\s+\d{1,2}:\d{2}/.test(t);
+  // Frame 03 (slice 11) names stops "Stop 1", "Stop 2" rather than by period, so a lunch stop is a
+  // second stop card with its arrival time; the restaurant's own name is asserted separately.
+  const hasLunchStop = (t) => /Stop 2\s+\d{1,2}:\d{2}/.test(t);
 
   const cases = [
     {

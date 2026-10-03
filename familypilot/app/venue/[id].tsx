@@ -3,8 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CheckTodaySection } from '@/src/components/venue/CheckTodaySection';
 import { CommunitySection } from '@/src/components/venue/CommunitySection';
 import { EatNearbySection } from '@/src/components/venue/EatNearbySection';
-import { FacilityGrid } from '@/src/components/venue/FacilityGrid';
+import { FamilyEssentials } from '@/src/components/venue/FamilyEssentials';
 import { PhotoGallery } from '@/src/components/venue/PhotoGallery';
 import { RestaurantsCloseBy } from '@/src/components/venue/RestaurantsCloseBy';
 import { WeatherAlternativeSection } from '@/src/components/venue/WeatherAlternativeSection';
@@ -35,8 +35,10 @@ import {
   VenueImage,
 } from '@/src/components/ui';
 import { BackButton } from '@/src/components/ui/BackButton';
+import { ArrowCta } from '@/src/components/ui/ArrowCta';
 import { CreatePlanSheet } from '@/src/components/planning/CreatePlanSheet';
 import { PlanDraft, planDraftDefaults } from '@/src/services/planning/plan-draft';
+import { profileReceipt } from '@/src/utils/profile-receipt';
 import { photoAttribution } from '@/src/services/places/place-photo-url';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
@@ -47,7 +49,6 @@ import { isActivityVenue } from '@/src/data/mock-restaurants';
 import { useFamilyProfile, useNearbyFood, useVenue } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { localDate, usePlanningStore } from '@/src/stores/planning-store';
-import { formatTerrainLabel } from '@/src/utils/family-match-classification';
 import { formatCategory } from '@/src/utils/format-category';
 import { generateVenueStaticParams } from '@/src/utils/venue-routes';
 import { travelTimeLabel } from '@/src/utils/travel-time';
@@ -58,6 +59,10 @@ import { travelTimeLabel } from '@/src/utils/travel-time';
  * four-line name at 360 wide with the controls clear above it.
  */
 const HERO_HEIGHT = 300;
+/** Frame 02: the sheet (node 49:2) starts at y 256 over a 300 hero, so it overlaps by 44. */
+const SHEET_OVERLAP = 44;
+/** Two lines of 15/23 description before "Read more", as the frame shows (node 49:14). */
+const DESCRIPTION_LINES = 2;
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 export function generateStaticParams() {
@@ -79,6 +84,9 @@ export default function VenueScreen() {
   const { isSaved, toggleSaved } = useSavedStore();
   const scrollY = useSharedValue(0);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const fitPanelY = useRef(0);
   const reducedMotion = useReducedMotion();
 
   // Create a plan is the hinge of this screen, so everything it needs is read here and nothing is
@@ -206,14 +214,20 @@ export default function VenueScreen() {
 
   const heroPhoto = venue.photos[heroIndex] ?? venue.photos[0];
   const heroAttribution = photoAttribution(heroPhoto);
-  const saved = isSaved(venue.id);
+  const description = venue.description?.trim() ?? '';
+  const descriptionIsLong = description.length > 140;
+  const scrollToFit = () => {
+    scrollRef.current?.scrollTo({ y: Math.max(0, fitPanelY.current - spacing.lg), animated: true });
+  };
 
   return (
     <View style={styles.container}>
       <AnimatedScrollView
+        ref={scrollRef}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: safeFooterPadding(insets.bottom) + spacing['2xl'] }}
       >
         <View style={styles.heroContainer}>
           <Animated.View style={[styles.heroImageWrap, heroStyle]}>
@@ -225,45 +239,108 @@ export default function VenueScreen() {
               borderRadius={0}
             />
           </Animated.View>
-          <LinearGradient
-            colors={[colors.gradient.heroStart, colors.gradient.heroEnd]}
-            style={styles.heroGradient}
-          />
+          {/* Frame 02 (node 69:2): a scrim over the top half only, enough for the controls to read. */}
+          <LinearGradient colors={['rgba(0,0,0,0.28)', 'rgba(0,0,0,0)']} style={styles.heroScrim} />
           <View style={[styles.heroContent, { paddingTop: insets.top + spacing.sm }]}>
-            <BackButton onPress={handleBack} color={colors.text.inverse} />
-            <View style={styles.heroActions}>
-              <ShareButton title={venue.name} path={`/venue/${venue.id}`} color={colors.text.inverse} />
-              <SaveButton venueId={venue.id} venue={venue} color={colors.text.inverse} />
+            {/* The frame's white 44 circles (nodes 48:17, 48:20). */}
+            <View style={styles.heroCircle}>
+              <BackButton onPress={handleBack} />
             </View>
-          </View>
-          <View style={styles.heroTitle}>
-            {/* The Home card's rhythm, continued: eyebrow, title, then the badge with the journey
-                beside it. The badge here is the same component as the one the parent just tapped. */}
-            <Text variant="eyebrow" color={colors.text.inverse} style={styles.heroEyebrow}>
-              {formatCategory(venue.category)}
-            </Text>
-            <Text variant="heading1" color={colors.text.inverse}>
-              {venue.name}
-            </Text>
-            <View style={styles.heroMeta}>
-              <FamilyMatch score={venue.familyScore.score} enrichmentStatus={venue.enrichmentStatus} tone="onImage" />
-              {/* Hedged: this is a straight-line estimate, not a routed drive. */}
-              <MetaItem icon="car-outline" text={travelTimeLabel(venue.driveMinutes, 'estimated')} />
+            <View style={styles.heroActions}>
+              <View style={styles.heroCircle}>
+                <ShareButton title={venue.name} path={`/venue/${venue.id}`} color={colors.ink} />
+              </View>
+              <View style={styles.heroCircle}>
+                <SaveButton venueId={venue.id} venue={venue} color={colors.ink} />
+              </View>
             </View>
           </View>
         </View>
 
-        <View style={styles.body}>
+        {/* The sheet (node 49:2) rides up over the photograph with the grabber the frame draws. */}
+        <View style={styles.sheet}>
+          <View style={styles.grabber} />
           <FadeInView>
-            <View style={styles.matchIntro}>
-              {/* The same eyebrow treatment as the Home card and the hero above. */}
-              <Text variant="eyebrow">FAMILY MATCH</Text>
-              <Text variant="heading2">Will this work for your family?</Text>
+            <View style={styles.nameRow}>
+              <Text variant="heading1" style={styles.name}>
+                {venue.name}
+              </Text>
+              {/* The compact badge beside the name (node 49:5); "Why this score" carries the word. */}
+              <FamilyMatch
+                score={venue.familyScore.score}
+                enrichmentStatus={venue.enrichmentStatus}
+                size="compact"
+                onPress={scrollToFit}
+              />
             </View>
-            {/* The word leads inside the panel ("Good match"), the number sits on the hero badge
-                above, and the panel's own secondary line repeats the number with its scale. The
-                separate score band that used to sit here said the same thing a third time. */}
-            <FamilyMatchPanel familyScore={venue.familyScore} venue={venue} />
+            <View style={styles.locationRow}>
+              <View style={styles.location}>
+                <Ionicons name="location-outline" size={16} color={colors.text.secondary} />
+                {/* Hedged: this is a straight-line estimate, not a routed drive. */}
+                <Text style={styles.locationText} numberOfLines={1}>
+                  {formatCategory(venue.category)} · {travelTimeLabel(venue.driveMinutes, 'estimated')}
+                </Text>
+              </View>
+              <Pressable onPress={scrollToFit} accessibilityRole="button" hitSlop={10}>
+                <Text style={styles.whyLink}>Why this score</Text>
+              </Pressable>
+            </View>
+
+            {description ? (
+              <View style={styles.descriptionBlock}>
+                <Text style={styles.description} numberOfLines={descriptionOpen ? undefined : DESCRIPTION_LINES}>
+                  {description}
+                </Text>
+                {descriptionIsLong ? (
+                  <Pressable
+                    onPress={() => setDescriptionOpen((open) => !open)}
+                    accessibilityRole="button"
+                    hitSlop={10}
+                    style={styles.readMore}
+                  >
+                    <Text style={styles.readMoreText}>{descriptionOpen ? 'Read less' : 'Read more'}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
+
+            {/* Places to eat near THIS venue, from OpenStreetMap. Zero Google calls, one Overpass
+                request per anchor shared across every parent who opens it. The section renders its
+                own pending, outage and nothing-mapped states, which are three different things. */}
+            <RestaurantsCloseBy
+              result={nearbyFood.data}
+              isPending={nearbyFood.isPending}
+              isError={nearbyFood.isError}
+            />
+
+            {/* Create a plan is the one action this screen exists to offer, drawn as the frame's
+                CTA (node 72:2), the same pill as Home's "See more". Tapping a venue never creates a
+                plan; this does, through the sheet. */}
+            <ArrowCta
+              label="Create a plan"
+              onPress={() => setPlanSheetOpen(true)}
+              testID="venue-create-plan"
+              style={styles.cta}
+            />
+
+            <Text variant="heading2" style={styles.sectionTitle}>
+              Family essentials
+            </Text>
+            <FamilyEssentials venue={venue} />
+
+            <View
+              style={styles.fitSection}
+              onLayout={(event) => {
+                fitPanelY.current = HERO_HEIGHT - SHEET_OVERLAP + event.nativeEvent.layout.y;
+              }}
+            >
+              <View style={styles.matchIntro}>
+                <Text variant="eyebrow">FAMILY FIT</Text>
+                <Text variant="heading2">Will this work for your family?</Text>
+              </View>
+              {/* The word leads inside the panel ("Good fit"); the number sits on the badge above. */}
+              <FamilyMatchPanel familyScore={venue.familyScore} venue={venue} />
+            </View>
 
             {venue.trustedFacts ? (
               <CheckTodaySection
@@ -315,42 +392,6 @@ export default function VenueScreen() {
               <PlaceAttribution provider={venue.provider} />
             </View>
 
-            <Text variant="heading2" style={styles.sectionTitle}>
-              Facilities
-            </Text>
-            <FacilityGrid facilities={venue.facilities ?? []} />
-
-            <Text variant="heading2" style={styles.sectionTitle}>
-              Practical details
-            </Text>
-            <View style={styles.detailsGrid}>
-              <DetailItem
-                icon="people-outline"
-                label="Best for ages"
-                value={venue.bestAges ?? 'Not confirmed yet'}
-              />
-              <DetailItem
-                icon="trail-sign-outline"
-                label="Terrain"
-                value={venue.terrain ? formatTerrainLabel(venue.terrain) : 'Not confirmed yet'}
-              />
-              <DetailItem icon="time-outline" label="Opening hours" value={venue.openingHours} />
-              <DetailItem
-                icon="car-outline"
-                label="Parking"
-                value={
-                  venue.parkingInfo ??
-                  // The Facilities grid above already renders a "Parking" icon whenever
-                  // 'parking' is a confirmed facility — never contradict that here by calling
-                  // the same fact "Not confirmed yet" just because the richer free-text detail
-                  // (spaces, cost) hasn't been reviewed yet.
-                  (venue.facilities?.includes('parking')
-                    ? 'Available on site. More detail not confirmed'
-                    : 'Not confirmed yet')
-                }
-              />
-            </View>
-
             {isActivityVenue(venue) && isPilotFeatureVisible('eat_nearby') ? (
               <EatNearbySection
                 activityVenueId={venue.id}
@@ -362,45 +403,11 @@ export default function VenueScreen() {
               <WeatherAlternativeSection alternative={venue.weatherAlternative} />
             ) : null}
 
-            {/* Places to eat near THIS venue, from OpenStreetMap. Zero Google calls, one Overpass
-                request per anchor shared across every parent who opens it. The section renders its
-                own pending, outage and nothing-mapped states, which are three different things. */}
-            <RestaurantsCloseBy
-              result={nearbyFood.data}
-              isPending={nearbyFood.isPending}
-              isError={nearbyFood.isError}
-            />
-
-            <Text variant="heading2" style={styles.sectionTitle}>
-              About
-            </Text>
-            <Text variant="body" style={styles.description}>
-              {venue.description}
-            </Text>
-
             <VenueTrustPanel venueId={venue.id}/>
             <CommunitySection tips={venue.communityTips} />
           </FadeInView>
         </View>
       </AnimatedScrollView>
-
-      {/* Save sits beside Create a plan, and Get directions has moved into the content above.
-          Create a plan is the one action this screen exists to offer, so it is the only primary
-          button here; directions are what a parent wants once the day is decided, not instead. */}
-      <View style={[styles.footer, { paddingBottom: safeFooterPadding(insets.bottom) }]}>
-        <Button
-          label={saved ? 'Saved' : 'Save'}
-          variant="outline"
-          style={styles.saveButton}
-          onPress={() => toggleSaved(venue.id, venue)}
-        />
-        <Button
-          label="Create a plan"
-          style={styles.planButton}
-          onPress={() => setPlanSheetOpen(true)}
-          testID="venue-create-plan"
-        />
-      </View>
 
       <CreatePlanSheet
         visible={planSheetOpen}
@@ -410,6 +417,11 @@ export default function VenueScreen() {
         parties={planDefaults.parties}
         onDraftChange={setDraftOverride}
         onCreate={handleCreatePlan}
+        receipt={profileReceipt(profile)}
+        onEditProfile={() => {
+          setPlanSheetOpen(false);
+          router.push('/profile/edit' as never);
+        }}
         onAddFamily={
           isPilotFeatureVisible('trips_tab')
             ? () => {
@@ -423,39 +435,6 @@ export default function VenueScreen() {
   );
 }
 
-function MetaItem({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: string }) {
-  return (
-    <View style={styles.metaItem}>
-      <Ionicons name={icon} size={14} color={colors.text.inverse} />
-      <Text variant="caption" color={colors.text.inverse}>
-        {text}
-      </Text>
-    </View>
-  );
-}
-
-function DetailItem({
-  icon,
-  label,
-  value,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-}) {
-  return (
-    <View style={styles.detailItem}>
-      <Ionicons name={icon} size={18} color={colors.text.secondary} />
-      <View style={styles.detailText}>
-        <Text variant="caption">{label}</Text>
-        <Text variant="bodySmall" style={styles.detailValue}>
-          {value}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -463,10 +442,6 @@ const styles = StyleSheet.create({
   },
   loadingBody: {
     padding: spacing.screenPadding,
-  },
-  matchIntro: {
-    gap: spacing.xs,
-    marginBottom: spacing.lg,
   },
   loadingGap: {
     marginBottom: spacing.lg,
@@ -482,51 +457,123 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  heroGradient: {
-    ...StyleSheet.absoluteFill,
+  heroScrim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: HERO_HEIGHT / 2,
   },
   heroContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.screenPadding,
+    paddingHorizontal: spacing.xl,
     zIndex: 2,
   },
   heroActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
+  },
+  heroCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Node 49:2: the sheet overlaps the hero by 44 with a 28 radius, the grabber 12 below its top.
+  sheet: {
+    marginTop: -SHEET_OVERLAP,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: spacing.screenPadding,
+    paddingTop: spacing.md,
+  },
+  grabber: {
+    alignSelf: 'center',
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.border,
+    marginBottom: spacing.lg,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     gap: spacing.md,
   },
-  heroTitle: {
-    position: 'absolute',
-    bottom: spacing['2xl'],
-    left: spacing.screenPadding,
-    right: spacing.screenPadding,
-    zIndex: 2,
+  name: {
+    flex: 1,
   },
-  heroEyebrow: {
-    // The Home card's eyebrow, at 82% so the title leads.
-    textTransform: 'uppercase',
-    marginBottom: 4,
-    opacity: 0.82,
-  },
-  heroMeta: {
+  locationRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.md,
     marginTop: spacing.md,
   },
-  metaItem: {
+  location: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
+    flexShrink: 1,
   },
-  body: {
-    padding: spacing.screenPadding,
-    paddingBottom: 120,
+  // Node 49:12: Medium 15 in secondary ink.
+  locationText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 15,
+    lineHeight: 18,
+    color: colors.text.secondary,
+    flexShrink: 1,
+  },
+  // Node 49:13: Medium 13, underlined, in tertiary ink.
+  whyLink: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    lineHeight: 16,
+    color: colors.text.tertiary,
+    textDecorationLine: 'underline',
+  },
+  descriptionBlock: {
+    marginTop: spacing.xl,
+  },
+  // Node 49:14: Regular 15 on a 23 line, secondary ink.
+  description: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    lineHeight: 23,
+    color: colors.text.secondary,
+  },
+  readMore: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.sm,
+    minHeight: 32,
+    justifyContent: 'center',
+  },
+  // Node 49:15: SemiBold 14, underlined, ink.
+  readMoreText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    lineHeight: 17,
+    color: colors.ink,
+    textDecorationLine: 'underline',
+  },
+  cta: {
+    marginTop: spacing['2xl'],
   },
   sectionTitle: {
     marginTop: spacing['3xl'],
+    marginBottom: spacing.lg,
+  },
+  fitSection: {
+    marginTop: spacing['3xl'],
+  },
+  matchIntro: {
+    gap: spacing.xs,
     marginBottom: spacing.lg,
   },
   address: {
@@ -544,55 +591,5 @@ const styles = StyleSheet.create({
   },
   photoAttribution: {
     marginTop: spacing.md,
-  },
-  detailsGrid: {
-    gap: spacing.lg,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
-  },
-  detailText: {
-    flex: 1,
-  },
-  detailValue: {
-    fontFamily: 'Inter_600SemiBold',
-    // No `textTransform: 'capitalize'`. Every value in this column is already written for a person:
-    // `formatTerrainLabel` returns "Mostly flat", the hours are the provider's own display copy, and
-    // the parking line is reviewed prose. Title-casing them produced "Monday To Sunday: 09:00 To
-    // 17:00", "2 To 10", and a whole reviewed sentence rendered as "Free On-Site Car Park, About 120
-    // Spaces, Busiest Before 11am At Weekends." A venue whose facts are confirmed is the only place
-    // this shows, which is why no check had ever caught it.
-    marginTop: 2,
-  },
-  description: {
-    color: colors.text.secondary,
-    lineHeight: 24,
-    marginBottom: spacing['2xl'],
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    gap: spacing.md,
-    paddingHorizontal: spacing.screenPadding,
-    paddingTop: spacing.lg,
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
-  },
-  // Create a plan is the wider of the two, so the hinge of the screen reads as the main action
-  // rather than as one of a matched pair.
-  saveButton: {
-    flex: 1,
-  },
-  planButton: {
-    flex: 1.6,
   },
 });

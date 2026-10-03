@@ -263,6 +263,6 @@ describe('an unscored saved place renders as unknown, never as zero', () => {
     // Left deliberately unguarded in the util: NaN falls through every threshold to "Limited match".
     // That is why SavedPlaceRow checks Number.isFinite BEFORE calling it, rather than relying on the
     // util to be defensive. This test records the sharp edge so nobody removes that check.
-    expect(getMatchClassification(Number.NaN)).toBe('Limited match');
+    expect(getMatchClassification(Number.NaN)).toBe('Limited fit');
   });
 });
