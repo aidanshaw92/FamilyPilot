@@ -1,15 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { BottomSheet, Button, Chip, Text, CHIP_GAP } from '@/src/components/ui';
-import { DateField, TimeField } from '@/src/components/ui/DateTimeField';
+import { BottomSheet, Button, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
-import {
-  PlanDraft,
-  PlanParty,
-  VISIT_LENGTH_CHOICES,
-  planDraftBlocker,
-} from '@/src/services/planning/plan-draft';
+import { PlanDraft, PlanParty, planDraftBlocker } from '@/src/services/planning/plan-draft';
+
+import { PlanDraftForm } from './PlanDraftForm';
 
 /**
  * The approved Create a Plan sheet: when, start, who's coming, how long.
@@ -38,23 +34,6 @@ export interface CreatePlanSheetProps {
   busy?: boolean;
 }
 
-/** Compact on purpose: four choices read as one set of chips rather than wrapping to a stray row. */
-function lengthLabel(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.row}>
-      <Text variant="eyebrow">{label.toUpperCase()}</Text>
-      {children}
-    </View>
-  );
-}
-
 export function CreatePlanSheet({
   visible,
   onClose,
@@ -71,17 +50,6 @@ export function CreatePlanSheet({
   const [submitted, setSubmitted] = useState(false);
 
   const blocker = useMemo(() => planDraftBlocker(draft, parties), [draft, parties]);
-  const chosen = parties.filter((p) => draft.partyIds.includes(p.id));
-  const partyLine = chosen.length
-    ? chosen.map((p) => `${p.label} · ${p.summary}`).join('  +  ')
-    : 'Nobody chosen yet';
-
-  const toggleParty = (id: string) => {
-    const next = draft.partyIds.includes(id)
-      ? draft.partyIds.filter((x) => x !== id)
-      : [...draft.partyIds, id];
-    onDraftChange({ ...draft, partyIds: next });
-  };
 
   const create = () => {
     if (busy || submitted || blocker) return;
@@ -112,61 +80,13 @@ export function CreatePlanSheet({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Row label="When">
-          <DateField label="" value={draft.date} onChange={(date) => onDraftChange({ ...draft, date })} />
-        </Row>
-
-        <Row label="Start">
-          <TimeField label="" value={draft.leaveAt} onChange={(leaveAt) => onDraftChange({ ...draft, leaveAt })} />
-          <Text variant="caption" color={colors.text.secondary}>
-            The earliest you can leave home.
-          </Text>
-        </Row>
-
-        <Row label="Who’s coming">
-          <Text variant="body">{partyLine}</Text>
-          <View style={styles.chips}>
-            {parties.map((party) => (
-              <Chip
-                key={party.id}
-                label={party.label}
-                active={draft.partyIds.includes(party.id)}
-                onPress={() => toggleParty(party.id)}
-              />
-            ))}
-          </View>
-          {/* Quiet and left-aligned: adding a second household is an occasional choice, and a
-              full-width button here competes with the one action this sheet exists for. */}
-          {onAddFamily ? (
-            <Pressable
-              onPress={onAddFamily}
-              accessibilityRole="button"
-              accessibilityLabel="Add another family"
-              style={styles.addFamily}
-              hitSlop={8}
-            >
-              <Text variant="link">Add another family</Text>
-            </Pressable>
-          ) : null}
-        </Row>
-
-        <Row label="How long">
-          <View style={styles.chips}>
-            {VISIT_LENGTH_CHOICES.map((minutes) => (
-              <Chip
-                key={minutes}
-                label={lengthLabel(minutes)}
-                active={draft.visitMinutes === minutes}
-                onPress={() => onDraftChange({ ...draft, visitMinutes: minutes })}
-              />
-            ))}
-          </View>
-          {/* Travel is always added; lunch only when one is already known, so this does not promise
-              a stop the day may not contain. */}
-          <Text variant="caption" color={colors.text.secondary}>
-            Time at {venueName}. Travel is added around it.
-          </Text>
-        </Row>
+        <PlanDraftForm
+          draft={draft}
+          parties={parties}
+          onDraftChange={onDraftChange}
+          venueName={venueName}
+          onAddFamily={onAddFamily}
+        />
       </ScrollView>
 
       <View style={styles.footer}>
@@ -198,9 +118,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     gap: spacing.md,
   },
-  row: { gap: spacing.xs },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: CHIP_GAP },
-  addFamily: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
   footer: {
     paddingHorizontal: spacing.screenPadding,
     paddingTop: spacing.sm,
