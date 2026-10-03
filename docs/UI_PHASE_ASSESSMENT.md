@@ -172,6 +172,24 @@ capture to prove it did not move.
   What this does not prove: that a sign-in succeeds end to end, which needs an account and was not
   attempted (no profile was created or uploaded, per the owner's instruction).
 
+## 11. Found while rendering slice 7
+
+- **"Error on an untouched onboarding form" was a misreading.** The slice 2 capture clicked Continue
+  on the empty form; the red copy appears only after that, which is correct. The harness now records
+  that state deliberately (`setup-step1-errors`, `setup-step2-errors`) and walks steps 2 to 4 with the
+  form filled, through the fixture's stubbed location endpoint.
+- **Closed-day plan failure printed ISO.** "not open at that time on 2026-10-03" is now "on Saturday
+  3 October 2026", pinned by a sequencer test; every other date in the app was already spelled out.
+- **Explore on a places outage shows the bundled curated list with no notice** (captured as
+  `explore-error`: four places, no banner). The repository's fallback is deliberate, but a parent cannot
+  tell that live search failed and the list narrowed. Owned by slice 12 (states): say so in one line
+  above the list when the fallback is in use.
+- **Onboarding step 4 and Edit profile budget options** are full-width rows with a grey selected fill,
+  a third selected treatment beside the Chip and the Button. Owned by slice 10 together with the
+  Create a plan chips, since the approved frame 04 settles how a row of exclusive options looks.
+- Eighteen em dashes remained in parent-facing copy after #40; all rewritten. Feedback's placeholder
+  named a pilot-gated feature; its header now top-aligns like About and Edit profile.
+
 ## 10. The Figma file, inspected (2026-10-03)
 
 File `LNpbdnuAWcfWf9spvB7jBz`, one page, five approved frames, each read through the Figma connection
