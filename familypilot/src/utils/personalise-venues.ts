@@ -51,15 +51,24 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
   const enrichmentStatus: EnrichmentStatus = venue.enrichmentStatus ?? 'provider_only';
   const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus, weather });
   const routineFit = evaluateRoutineFit(profile, venue.driveMinutes);
+  // Everything that counts AGAINST this family lives on the score, in one list: profile-derived
+  // cautions first (the ones a parent can act on before leaving), then the reviewed facts that
+  // count against them. The venue's own notes stay in `goodToKnow` and render as notes, not
+  // warnings: "The cafe has highchairs" is not a caution, and it was being drawn as one.
   const cautions = [
-    buildDriveCaution(profile, venue.driveMinutes),
-    buildFacilityMissingCaution(profile, detail.facilities),
-    routineFit.caution,
-  ].filter((caution): caution is string => Boolean(caution));
+    ...new Set(
+      [
+        buildDriveCaution(profile, venue.driveMinutes),
+        buildFacilityMissingCaution(profile, detail.facilities),
+        routineFit.caution,
+        ...(familyScore.cautions ?? []),
+      ].filter((caution): caution is string => Boolean(caution)),
+    ),
+  ];
   return {
     ...venue,
-    familyScore,
-    goodToKnow: cautions.length ? [...cautions, ...(detail.goodToKnow ?? [])] : detail.goodToKnow,
+    familyScore: { ...familyScore, cautions },
+    goodToKnow: detail.goodToKnow,
     facilities: detail.facilities,
   };
 }

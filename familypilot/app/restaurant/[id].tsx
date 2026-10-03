@@ -35,7 +35,6 @@ import { useRestaurant, useVenue } from '@/src/hooks/use-queries';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { generateRestaurantStaticParams } from '@/src/utils/restaurant-routes';
-import { getMatchClassification } from '@/src/utils/family-match-classification';
 import { travelTimeLabel } from '@/src/utils/travel-time';
 
 const HERO_HEIGHT = 320;
@@ -260,14 +259,8 @@ function RestaurantScreenContent() {
             <Text variant="heading3" style={styles.sectionTitle}>
               Family suitability
             </Text>
-            <View style={styles.scoreBand}>
-              <View style={styles.scoreBandText}>
-                <Text variant="heading3">{getMatchClassification(restaurant.familyScore.score, restaurant.enrichmentStatus)}</Text>
-                <Text variant="bodySmall" color={colors.text.secondary}>How well it fits your household</Text>
-              </View>
-              <FamilyMatch score={restaurant.familyScore.score} enrichmentStatus={restaurant.enrichmentStatus} />
-            </View>
-            <RecommendationPattern venue={restaurant} variant="detail" showTrust showClassification={false} />
+            <FamilyMatch score={restaurant.familyScore.score} enrichmentStatus={restaurant.enrichmentStatus} style={styles.badge} />
+            <RecommendationPattern venue={restaurant} variant="detail" showTrust />
 
             <Text variant="heading3" style={styles.sectionTitle}>
               Family facilities
@@ -496,19 +489,8 @@ const styles = StyleSheet.create({
     marginTop: spacing['2xl'],
     marginBottom: spacing.lg,
   },
-  scoreBand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
-    backgroundColor: colors.fill,
-    borderRadius: radius.xl,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  scoreBandText: {
-    flex: 1,
-    gap: 2,
+  badge: {
+    marginBottom: spacing.md,
   },
   infoBlock: {
     backgroundColor: colors.surface,

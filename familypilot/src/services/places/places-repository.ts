@@ -2,7 +2,7 @@ import { getFamilyPlaceMetadata } from '@/src/data/family-place-metadata';
 import { mockVenueDetails, mockVenues } from '@/src/data/mock-data';
 import { MockPlacesProvider } from '@/src/services/providers/mock-places-provider';
 import { mergePlaceToVenue, mergePlaceToVenueDetail } from '@/src/services/places/merge-place';
-import { placesApiClient } from '@/src/services/places/places-api-client';
+import { PlacesApiError, placesApiClient } from '@/src/services/places/places-api-client';
 import {
   getCachedDetail,
   getCachedSearch,
@@ -140,10 +140,17 @@ export class PlacesRepository {
         home.longitude,
       );
     } catch (error) {
-      if (__DEV__) {
-        console.warn('[PlacesRepository] Detail API unavailable, using mock fallback:', error);
+      // Mock and legacy ids are served locally whatever the API says. For a real id the two
+      // failures mean different things to a parent: a 404 is "this place is not in our data" (null,
+      // and the screen says not found); anything else is OUR lookup failing, so it is rethrown and
+      // the screen says so with a retry, rather than telling them the place may have been removed.
+      const fallback = await fallbackDetail(id, profile);
+      if (fallback) return fallback;
+      if (error instanceof PlacesApiError && error.status === 404) return null;
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlacesRepository] Detail API unavailable:', error);
       }
-      return fallbackDetail(id, profile);
+      throw error;
     }
   }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { calculateFamilyScore } from '@/src/services/scoring/family-score';
+import { personaliseVenue } from '@/src/utils/personalise-venues';
 import {
   hasTrustedMatchSignals,
   scoreTrustedAgeSuitability,
@@ -137,7 +138,8 @@ describe('calculateFamilyScore with trusted facts', () => {
       { enrichmentStatus: 'provider_only' },
     );
     expect(score.score).toBeLessThanOrEqual(65);
-    expect(score.explanation[0]).toContain('not yet been reviewed');
+    // A status is not a reason: nothing in this list may be ticked green.
+    expect(score.explanation.join('\n')).not.toMatch(/not yet been reviewed|location and category/i);
   });
 });
 
@@ -190,5 +192,52 @@ describe('weather-aware weatherFit factor', () => {
     const outdoorVenue = venueWithFacts(BASE_FACTS);
     const noWeather = calculateFamilyScore(outdoorVenue, PROFILE);
     expect(noWeather.score).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * A reviewed fact that counts against the match is a caution, not a reason. Venue Detail ticks every
+ * line of `explanation` green, so "Pushchair access reviewed as difficult" there was a false claim —
+ * seen on the fixture's long-name venue at 360 wide.
+ */
+describe('negative reviewed facts are cautions, never reasons', () => {
+  const difficult: MatchableVenueFacts = { ...BASE_FACTS, pushchairSuitability: 'difficult', parking: 'no', freeParking: 'no' };
+
+  it('keeps pushchair-difficult and no-parking out of the ticked reasons', () => {
+    const score = calculateFamilyScore(venueWithFacts(difficult), PROFILE);
+    expect(score.explanation.join('\n')).not.toMatch(/difficult|not available/i);
+    expect(score.cautions).toEqual(
+      expect.arrayContaining(['Pushchair access reviewed as difficult', 'Parking reviewed as not available on site']),
+    );
+  });
+
+  it('files an age mismatch as a caution', () => {
+    const score = calculateFamilyScore(venueWithFacts({ ...BASE_FACTS, minRecommendedAge: 11, maxRecommendedAge: 16 }), PROFILE);
+    expect(score.explanation.join('\n')).not.toMatch(/may not suit/i);
+    expect(score.cautions).toContain('Age range may not suit your children');
+  });
+
+  it('does not raise the pushchair caution for a family without one', () => {
+    const score = calculateFamilyScore(venueWithFacts(difficult), { ...PROFILE, pushchair: undefined });
+    expect(score.cautions).not.toContain('Pushchair access reviewed as difficult');
+  });
+
+  it('never explains an over-limit drive as a reason on the trusted path either', () => {
+    const far = venueWithFacts({ ...BASE_FACTS, driveMinutes: 55 }, { driveMinutes: 55 });
+    const score = calculateFamilyScore(far, PROFILE);
+    expect(score.explanation.join('\n')).not.toMatch(/further than/i);
+  });
+
+  it('carries the cautions on the score once, after the profile-derived ones, and leaves the venue notes alone', () => {
+    const venue = personaliseVenue(
+      { ...venueWithFacts({ ...difficult, driveMinutes: 55 }, { driveMinutes: 55 }), goodToKnow: ['Cafe closes at 3pm'] },
+      PROFILE,
+    );
+    const cautions = venue.familyScore.cautions ?? [];
+    expect(cautions.filter((line) => line === 'Pushchair access reviewed as difficult')).toHaveLength(1);
+    expect(cautions.indexOf('Further than your usual 30 min drive')).toBeLessThan(cautions.indexOf('Pushchair access reviewed as difficult'));
+    expect(venue.goodToKnow).toEqual(['Cafe closes at 3pm']);
+    expect(cautions).not.toContain('Cafe closes at 3pm');
+    expect(venue.familyScore.explanation.join('\n')).not.toMatch(/difficult/i);
   });
 });

@@ -14,6 +14,7 @@ import {
   scoreTrustedBudget,
   scoreTrustedFacilitiesMatch,
   scoreTrustedWeatherFit,
+  buildTrustedCautions,
 } from './trusted-family-score';
 
 const WEIGHTS = {
@@ -122,13 +123,10 @@ function buildHeuristicExplanation(
   routineFit: RoutineFit,
 ): string[] {
   if (isProviderOnly) {
-    const reasons: string[] = [
-      'Based on location and category only. Family suitability has not yet been reviewed.',
-    ];
-    if (factors.distance >= 85) {
-      reasons.push(`About ${venue.driveMinutes} minutes from home`);
-    }
-    return reasons.slice(0, 2);
+    // The "not yet reviewed" disclaimer used to lead this list, and the UI ticks every line of it
+    // green. A status is not a reason. The panel states the status from `enrichmentStatus`; the
+    // one thing we do know about an unreviewed place is how far away it is.
+    return factors.distance >= 85 ? [`About ${venue.driveMinutes} minutes from home`] : [];
   }
 
   const reasons: string[] = [];
@@ -242,6 +240,7 @@ export function calculateFamilyScore(
     useTrusted && facts
       ? buildTrustedExplanation(venue, profile, facts, factors, weather, routineFit)
       : buildHeuristicExplanation(venue, profile, factors, isProviderOnly, routineFit);
+  const cautions = useTrusted && facts ? buildTrustedCautions(profile, facts, factors) : [];
 
-  return { score, factors, explanation };
+  return { score, factors, explanation, cautions };
 }

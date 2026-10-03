@@ -13,7 +13,7 @@ interface WeatherAlternativeSectionProps {
 export function WeatherAlternativeSection({ alternative }: WeatherAlternativeSectionProps) {
   return (
     <View style={styles.section}>
-      <Text variant="heading3" style={styles.title}>
+      <Text variant="heading2" style={styles.title}>
         If the weather changes
       </Text>
       <View style={styles.card}>

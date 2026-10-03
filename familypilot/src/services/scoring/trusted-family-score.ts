@@ -217,8 +217,6 @@ export function buildTrustedExplanation(
       } else if (facts.maxRecommendedAge != null) {
         reasons.push(`Recommended up to age ${facts.maxRecommendedAge}`);
       }
-    } else if (factors.ageSuitability <= 50 && children.length > 0) {
-      reasons.push('Age range may not suit your children');
     }
   }
 
@@ -228,14 +226,10 @@ export function buildTrustedExplanation(
         ? 'Reviewed as excellent for pushchairs'
         : 'Reviewed as pushchair friendly',
     );
-  } else if (facts.pushchairSuitability === 'difficult' && profile.pushchair?.trim()) {
-    reasons.push('Pushchair access reviewed as difficult');
   }
 
   if (facts.parking === 'yes') {
     reasons.push(facts.freeParking === 'yes' ? 'Free parking confirmed' : 'Parking confirmed on site');
-  } else if (facts.parking === 'no') {
-    reasons.push('Parking reviewed as not available on site');
   }
 
   if (facts.toilets === 'yes' && facts.babyChanging === 'yes') {
@@ -250,8 +244,6 @@ export function buildTrustedExplanation(
 
   if (factors.distance >= 85) {
     reasons.push(`About ${venue.driveMinutes} minutes from home`);
-  } else if (venue.driveMinutes > profile.maxDriveMinutes) {
-    reasons.push(`Further than your usual ${profile.maxDriveMinutes} min drive`);
   }
 
   if (factors.budgetFit >= 85 && facts.estimatedSpend) {
@@ -263,4 +255,35 @@ export function buildTrustedExplanation(
   }
 
   return reasons.slice(0, 6);
+}
+
+/**
+ * Reviewed facts that count AGAINST the match for this family. These used to be pushed into the
+ * reasons list, where Venue Detail rendered them under "Why it suits your family" with a green
+ * tick — "Pushchair access reviewed as difficult" as a plus. They are cautions, and they render
+ * beside the other cautions (a long drive, a missing must-have) under "Good to know". The over-limit
+ * drive is deliberately absent: `buildDriveCaution` already raises it from the profile.
+ */
+export function buildTrustedCautions(
+  profile: FamilyProfile,
+  facts: MatchableVenueFacts,
+  factors: FamilyScoreFactors,
+): string[] {
+  const cautions: string[] = [];
+  const children = profile.members.filter((m) => m.role === 'child');
+
+  if (
+    (facts.minRecommendedAge != null || facts.maxRecommendedAge != null) &&
+    factors.ageSuitability <= 50 &&
+    children.length > 0
+  ) {
+    cautions.push('Age range may not suit your children');
+  }
+  if (facts.pushchairSuitability === 'difficult' && profile.pushchair?.trim()) {
+    cautions.push('Pushchair access reviewed as difficult');
+  }
+  if (facts.parking === 'no') {
+    cautions.push('Parking reviewed as not available on site');
+  }
+  return cautions;
 }

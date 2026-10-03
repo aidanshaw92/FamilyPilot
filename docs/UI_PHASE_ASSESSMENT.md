@@ -97,7 +97,7 @@ Each slice: inspect Figma (when available) → render before → implement → t
 | --- | --- | --- |
 | 1 | **Two provenance defects** (§4.1, §4.2) with tests | Genuine defects a parent can hit today; independent of any visual decision |
 | 2 | **Design-system foundation** (done): tokens aligned to Home (`ink` #141416, secondary #6E6E73, Semi Bold headings, `link` variant), `Button` primary → ink, one `Chip` (Home's rail pill) behind `PillSelector`, one `FamilyMatch` badge, `FamilyScoreBadge`/`FamilyFitBadge`/`family-match-label` retired, purple retired from consumer chrome, guard test | Fixes the two-products feeling everywhere at once; every later slice builds on it |
-| 3 | **Venue Detail** (hero → Family Match → facts → restaurants → CTA bar) | First screen after Home in the main journey; largest visible divergence |
+| 3 | **Venue Detail** (done): hero carries the Home card's eyebrow, title and Family Match badge; one Family Match panel (word leads, cautions amber, venue notes neutral, fact-backed trust badges); "Getting there", "Practical details", "About" as heading2 sections; four provenance defects fixed with tests (see §8) | First screen after Home in the main journey; largest visible divergence |
 | 4 | **Create a Plan sheet + Plan screen + Generating state**, styled date/time fields | The hinge; the sheet becomes the single plan form |
 | 5 | **Trips tab** adopts the sheet's form component; fix the profile gate (§4.4) | Removes the duplicate builder |
 | 6 | **Explore** (header, search, chips, rows), **Saved** (chips, rows, panel), **Profile** (§4.3) | Secondary surfaces, mostly inherit slice 2 |
@@ -120,3 +120,27 @@ capture to prove it did not move.
   badge and travel line.
 - Explore's row pill forced long names to truncate at 360; fixed in slice 2 by moving the badge under
   the title.
+
+## 8. Found while rendering slice 3 (fixed there, with tests)
+
+1. **Negative reviewed facts ticked green.** `trusted-family-score.ts` filed "Pushchair access reviewed
+   as difficult", "Parking reviewed as not available on site" and "Age range may not suit your
+   children" as reasons, and still carried the "Further than your usual drive" line slice 1 removed
+   from the heuristic path. They are now `familyScore.cautions`, rendered amber under "Worth
+   checking". Seven mutants killed.
+2. **Venue notes drawn as warnings.** The venue's own `goodToKnow` ("The cafe has highchairs") was
+   merged into the caution list and drawn amber with an alert icon. Notes and cautions are now two
+   lists, two treatments.
+3. **A disclaimer ticked as a reason.** Provider-only places led their reasons with "Based on
+   location and category only. Family suitability has not yet been reviewed." under a green tick.
+   Unreviewed places now have no ticked reasons; the status line says what they are.
+4. **Invented confidence.** The explanation panel printed "Last checked 2 days ago" and "Opening
+   hours from provider" for every venue. Badges are now built from data (`trust-badges.ts`): a
+   review date only for a reviewed place and only from the metadata's own date (the provider fetch
+   date no longer stands in for it), an hours badge only when hours exist, named after the provider.
+5. Two numbers for one fact: the hero said "~3h visit" while the reasons said "Typically a 2.5-hour
+   visit" (150 minutes, rounded two ways). The hero chip is gone; the panel keeps the precise line.
+6. **An outage reported as "Place not found".** The places repository answered every detail failure
+   with the mock fallback, which for a real id is null, so a timeout, a 500 or no connection rendered
+   "This venue may have been removed". `PlacesApiError` now carries the status: a 404 is not found,
+   anything else is rethrown and the screen says "Could not load this place" with a retry.

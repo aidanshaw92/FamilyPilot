@@ -84,6 +84,12 @@ Touch targets: 44pt minimum.
 - `provider_only` / `ai_draft` places are **Not yet reviewed**: a status, no number, in the badge,
   the classification and the secondary line alike.
 - A non-finite score (a restored Saved place not yet recomputed) is unknown: no badge, no "0.0".
+- The explanation panel (`RecommendationPattern`) draws three kinds of line and never mixes them:
+  **reasons** (`familyScore.explanation`, green tick — only positives), **cautions**
+  (`familyScore.cautions`, amber, "Worth checking" — what counts against *this* family: a long
+  drive, a missing must-have, a routine clash, a reviewed negative) and **notes** (`venue.goodToKnow`,
+  neutral, "Good to know" — the venue's own remarks). "Information confidence" badges come from
+  `trust-badges.ts` and exist only when the fact behind them does.
 
 ## Motion and accessibility
 

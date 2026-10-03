@@ -89,3 +89,15 @@ describe('mergePlaceToVenue trustedFacts', () => {
     expect(hasTrustedMatchSignals(venue.trustedFacts!)).toBe(false);
   });
 });
+
+describe('trust.lastChecked is a review date, not a fetch date', () => {
+  it('is absent when nobody has reviewed the place, even though the record was fetched', () => {
+    const venue = mergePlaceToVenue(PLACE, null, 51.6, -0.3);
+    expect(venue.trust?.lastChecked).toBeUndefined();
+  });
+
+  it('is the metadata review date when there is one', () => {
+    const venue = mergePlaceToVenue(PLACE, { ...METADATA, lastChecked: '2026-09-28' }, 51.6, -0.3);
+    expect(venue.trust?.lastChecked).toBe('2026-09-28');
+  });
+});
