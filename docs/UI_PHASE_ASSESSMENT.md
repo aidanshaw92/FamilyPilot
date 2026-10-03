@@ -213,6 +213,17 @@ capture to prove it did not move.
 - **A very long venue name** wraps to eight lines beside the compact badge at 360. Not truncated, by
   choice: a name is a fact. Noted for the end-to-end review if a real venue does this.
 
+## 13. Found while rendering slice 11
+
+- **The phase-2 audit's lunch contract named a period.** "The day contains a lunch stop" was
+  `LUNCH` followed by a time, which frame 03's "Stop 1 / Stop 2" cards no longer print. The contract is
+  now a second stop card with its time, with the restaurant's name asserted beside it as before.
+- **The third tab clips at 360** ("Travel & par…") exactly as it did before this slice; the tab row
+  is a horizontal scroller by design. Owned by slice 12, which looks at every width again.
+- **The Generating sheet reads as the frame** once the zero-height basis was fixed: title, four lines
+  with tick, dot and ring, the receipt beneath ("Using ages 6 and 3, pushchair and max 90 min
+  drive"). The hero behind it is the venue's own photograph or its category placeholder.
+
 ## 10. The Figma file, inspected (2026-10-03)
 
 File `LNpbdnuAWcfWf9spvB7jBz`, one page, five approved frames, each read through the Figma connection

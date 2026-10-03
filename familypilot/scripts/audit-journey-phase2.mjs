@@ -664,7 +664,9 @@ async function auditLunchStates(browser, viewport) {
    * has no lunch stop") satisfies -- so the assertion failed while the product was correct. A role
    * header followed by its time range is what "the day contains a lunch stop" actually means.
    */
-  const hasLunchStop = (t) => /LUNCH\s+\d{1,2}:\d{2}/.test(t);
+  // Frame 03 (slice 11) names stops "Stop 1", "Stop 2" rather than by period, so a lunch stop is a
+  // second stop card with its arrival time; the restaurant's own name is asserted separately.
+  const hasLunchStop = (t) => /Stop 2\s+\d{1,2}:\d{2}/.test(t);
 
   const cases = [
     {
