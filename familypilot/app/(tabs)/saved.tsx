@@ -3,6 +3,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } fr
 
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 
+import { SavedBackupPanel } from '@/src/components/saved/SavedBackupPanel';
 import { SavedPlaceRow } from '@/src/components/shared/SavedPlaceRow';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Chip, EmptyState, SkeletonCard, Text } from '@/src/components/ui';
@@ -195,7 +196,7 @@ export default function SavedScreen() {
           <EmptyState
             icon="heart-outline"
             title="Nothing saved yet"
-            message="Tap the heart on any place to save it here. Your saved places stay on this device."
+            message="Tap the heart on any place to save it here. Saved places stay on this device unless you back them up to your account."
           />
         ) : groupedSections ? (
           groupedSections.map((section) => (
@@ -209,6 +210,10 @@ export default function SavedScreen() {
         ) : (
           filteredItems.map(renderItem)
         )}
+
+        {/* After the list, not before it. A parent opens Saved to look at their places; a backup control
+            above them would push what they came for down the screen for a job done once in a while. */}
+        {isLoading ? null : <SavedBackupPanel />}
       </ScrollView>
     </ScreenContainer>
   );
