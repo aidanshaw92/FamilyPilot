@@ -34,6 +34,11 @@ on:
         type: boolean
         required: false
         default: false
+      assert_fail_closed:
+        description: Assert every paid Google scope refuses on the target (free, no provider request)
+        type: boolean
+        required: false
+        default: false
 
 # The target is an input now, so no deployments/statuses read is needed.
 permissions:
@@ -92,6 +97,19 @@ jobs:
               console.log("usage today:", JSON.stringify(b.placesBudget?.today ?? {}));
             } catch { console.log("status body unreadable; continuing"); }
           '
+
+      # Reads the posture the reachability step already fetched, so it adds no request at all.
+      #
+      # This is the other half of the Routes canary: the owner asked for the temporary Preview
+      # spend-enabling variables to be restored and then for Preview to be VERIFIED fail-closed again.
+      # Editing the variables is a change to the dashboard; a Vercel build bakes environment values, so
+      # only a deployment's own /api/places/status can show the posture the running code actually has.
+      - name: Assert the target is fail-closed for every paid Google scope
+        if: ${{ inputs.assert_fail_closed }}
+        run: |
+          set -euo pipefail
+          cd familypilot
+          node scripts/assert-places-fail-closed.mjs /tmp/target-status.json
 
       # Runs first and costs nothing. A canary that spends before confirming its own preconditions is
       # how a bill arrives unexplained.
