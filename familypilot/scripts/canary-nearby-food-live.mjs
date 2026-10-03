@@ -36,6 +36,23 @@ const ANCHORS = [
   { placeId: 'fp-osm-679119297', name: 'Chiswick House', lat: 51.4837, lng: -0.2586, covers: 'suburban, sparse, OSM-sourced anchor' },
 ];
 
+/**
+ * Seconds between anchors.
+ *
+ * DEFECT THIS FIXES. The first live run fired five lookups in about fifteen seconds and three of them
+ * came back 503 after hitting the provider's twenty-second deadline, while two answered in under four.
+ * That is the shape of Overpass rate-limiting a caller, and the caller was this canary: a real parent
+ * opens one venue at a time, so five requests in fifteen seconds is a load profile the product never
+ * generates. Measuring the product under a load it does not produce told us about the canary, and it
+ * was impolite to a service funded by donations.
+ *
+ * Spacing is NOT retrying. The failed anchors are not re-requested; the next run simply asks at a rate
+ * Overpass is willing to answer.
+ */
+const GAP_SECONDS = 12;
+
+const sleep = (seconds) => new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+
 const headers = { Accept: 'application/json' };
 if (bypass) {
   headers['x-vercel-protection-bypass'] = bypass;
@@ -89,7 +106,11 @@ console.log(`Section 16 restaurant canary, against ${baseUrl}`);
 console.log(`Anchors: ${ANCHORS.length}. Predicted Overpass lookups: ${ANCHORS.length} + 1 repeat that must be cached.`);
 console.log('Predicted Google calls: 0.\n');
 
-for (const anchor of ANCHORS) {
+for (const [index, anchor] of ANCHORS.entries()) {
+  if (index > 0) {
+    console.log(`  (waiting ${GAP_SECONDS}s before the next anchor, so Overpass is asked politely)`);
+    await sleep(GAP_SECONDS);
+  }
   const result = await lookup(anchor);
   const row = { ...anchor, latencyMs: result.latencyMs };
 
@@ -151,21 +172,37 @@ for (const anchor of ANCHORS) {
   report.anchors.push(row);
 }
 
-// The cache measurement: the SAME anchor again. One repeat, which must cost Overpass nothing.
-console.log('\nCache check: the first anchor again, which must be served from cache.');
-const repeat = await lookup(ANCHORS[0]);
-if (repeat.error) {
+/**
+ * The cache measurement: an anchor that SUCCEEDED, asked again.
+ *
+ * DEFECT THIS FIXES. This used to repeat `ANCHORS[0]` unconditionally. On the first live run that anchor
+ * had failed, so nothing was cached, the repeat failed too, and the cache metric was lost along with it
+ * -- a second failure reported for the first failure's reason. Only an anchor with a cache row can
+ * answer the cache question.
+ */
+const cacheable = report.anchors.find((row) => !row.error && row.cacheState === 'miss');
+console.log('');
+if (!cacheable) {
+  console.log('[note] no anchor produced a cache row, so the cache measurement could not be taken.');
+  report.cache.repeatNote = 'no anchor succeeded, so there was nothing cached to re-read';
+}
+const repeat = cacheable ? await lookup(cacheable) : { error: 'skipped: nothing was cached' };
+if (!cacheable) {
+  // Already reported above. Not a failure in its own right: it is the consequence of an earlier one.
+} else if (repeat.error) {
   fail('cache repeat — lookup failed', repeat.error);
 } else {
+  console.log(`Cache check: ${cacheable.name} again, which must be served from cache.`);
   const body = repeat.body;
   report.cache.repeat = {
     cacheState: body.cacheState,
     overpassRequests: body.overpassRequests,
     latencyMs: repeat.latencyMs,
-    firstLatencyMs: report.anchors[0]?.latencyMs,
+    firstLatencyMs: cacheable?.latencyMs,
+    anchorName: cacheable?.name,
   };
   if (body.cacheState === 'hit' || body.cacheState === 'stale') {
-    ok('the repeat was served from cache', `${body.cacheState}, ${repeat.latencyMs}ms vs ${report.anchors[0]?.latencyMs}ms uncached`);
+    ok('the repeat was served from cache', `${body.cacheState}, ${repeat.latencyMs}ms vs ${cacheable.latencyMs}ms uncached`);
   } else {
     // Not a product defect on its own: a cache write needs Supabase credentials in the environment.
     // Reported rather than failed, and named so the reason is checkable.
@@ -180,7 +217,8 @@ if (repeat.error) {
 console.log('\n=== Section 16 summary ===');
 console.log(`Overpass lookups:        ${report.overpass.lookups}/${ANCHORS.length}`);
 console.log(`Overpass queries:        ${report.overpass.queries}`);
-console.log(`Overpass HTTP requests:  ${report.overpass.httpRequests}  (endpoint failover makes this >= queries)`);
+const httpShown = report.overpass.httpRequests > 0 ? String(report.overpass.httpRequests) : 'not reported';
+console.log(`Overpass HTTP requests:  ${httpShown}  (endpoint failover makes this >= queries)`);
 console.log(`Overpass retries:        ${report.overpass.retries}`);
 console.log(`Overpass errors:         ${report.overpass.errors}`);
 console.log(`Anchors at the element cap: ${report.overpass.saturated}`);
