@@ -136,6 +136,68 @@ describe('the gate is closed by default', () => {
     expect(budget.isPlacesEnabled('discovery')).toBe(false);
     expect(budget.isPlacesEnabled('details')).toBe(true);
   });
+
+  /**
+   * THE TWO SCOPES AN UNSET VARIABLE MUST NEVER OPEN, EVEN IN PRODUCTION.
+   *
+   * Production is the one environment where `masterEnabled()` defaults to TRUE, so every scope without
+   * `requiresExplicitEnable` inherits "on" from a variable nobody set. For discovery, details, photos and
+   * refresh that is correct: they are the product. For these two it is not, and a live check of production
+   * found `probeEnabled: true` -- the exact state `api/places/status.js` claimed it had stopped being in.
+   *
+   * `probe` is the sharper of the two because it is reachable BY ANYONE: `/api/places/status` is public
+   * and unauthenticated, takes `lat` and `lng` from the query string, and `probeGoogle` goes straight to
+   * Nearby Search with no cache. So a stranger with one URL and a loop could spend the product's whole
+   * daily discovery budget and bill us for it.
+   */
+  it('leaves the probe scope closed in production when nobody set its variable', async () => {
+    process.env.GOOGLE_PLACES_ALLOW_LIVE_TEST = 'true';
+    process.env.VERCEL_ENV = 'production';
+    const budget = await loadBudget();
+    // The product's own scopes are on, which is the whole point of the production default...
+    expect(budget.isPlacesEnabled('discovery')).toBe(true);
+    // ...and the publicly reachable diagnostic is not.
+    expect(budget.isPlacesEnabled('probe')).toBe(false);
+    expect(budget.describeScope('probe').reason).toMatch(/GOOGLE_PLACES_PROBE_ENABLED/);
+  });
+
+  it('leaves the journeys scope closed in production when nobody set its variable', async () => {
+    process.env.GOOGLE_PLACES_ALLOW_LIVE_TEST = 'true';
+    process.env.VERCEL_ENV = 'production';
+    const budget = await loadBudget();
+    expect(budget.isPlacesEnabled('journeys')).toBe(false);
+    expect(budget.describeScope('journeys').reason).toMatch(/GOOGLE_JOURNEYS_ENABLED/);
+  });
+
+  it('still lets an operator open the probe deliberately, by name', async () => {
+    // Requiring the variable must not make the diagnostic unusable, only deliberate.
+    process.env.GOOGLE_PLACES_ALLOW_LIVE_TEST = 'true';
+    process.env.VERCEL_ENV = 'production';
+    process.env.GOOGLE_PLACES_PROBE_ENABLED = 'true';
+    const budget = await loadBudget();
+    expect(budget.isPlacesEnabled('probe')).toBe(true);
+  });
+
+  it('refuses the probe even when the master switch is set on explicitly', async () => {
+    // `requiresExplicitEnable` must not be satisfiable by the master switch, or it is not a second lock.
+    process.env.GOOGLE_PLACES_ALLOW_LIVE_TEST = 'true';
+    process.env.VERCEL_ENV = 'production';
+    process.env.GOOGLE_PLACES_ENABLED = 'true';
+    const budget = await loadBudget();
+    expect(budget.isPlacesEnabled('probe')).toBe(false);
+  });
+
+  it('names every scope that fails closed, so a new one is a deliberate choice', async () => {
+    // A roster, not a loop over the implementation: adding `requiresExplicitEnable` to a scope the
+    // product depends on would silently switch a feature off in production, and dropping it from one of
+    // these two would silently open a billable path. Either way this line has to change on purpose.
+    const budget = await loadBudget();
+    const failClosed = Object.entries(budget.SCOPES)
+      .filter(([, config]: [string, any]) => config.requiresExplicitEnable)
+      .map(([name]) => name)
+      .sort();
+    expect(failClosed).toEqual(['journeys', 'probe']);
+  });
 });
 
 describe('no outbound request is made when the gate is closed', () => {

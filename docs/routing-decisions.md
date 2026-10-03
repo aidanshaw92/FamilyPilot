@@ -424,6 +424,23 @@ verified against the deployment's own `/api/places/status` by `scripts/assert-pl
 from CI with `assert_fail_closed=true`. It sweeps every scope, fails if the scope map is empty rather than
 passing vacuously, and makes no provider request.
 
+### What verifying the posture found, which was not about routing at all
+
+The owner asked for Preview to be verified fail-closed after the Routes canary. Writing that check and
+then running it against production found something the routing work had not been looking for:
+**`probeEnabled: true` in production.**
+
+`/api/places/status` is public and unauthenticated, `?probe=live` reaches Nearby Search with no cache, and
+the coordinates come from the query string — so a stranger with one URL and a loop could spend the daily
+cap and bill the project. It was open because `masterEnabled()` defaults to true in production and the
+probe scope had no `requiresExplicitEnable`, so an unset variable inherited "on". It now requires its
+variable by name, like journeys. Details in `docs/GOOGLE_PLACES_COST_CONTROL.md` §2.1.
+
+Worth recording for its own sake: **the first version of that check was wrong**, and that is how the probe
+was found. It asserted that every scope must refuse, which is right for Preview and wrong for production,
+where Google Places discovery *is* the product. Run against production it reported six failures for six
+scopes behaving as designed. Being wrong about the expectation is not the same as being wrong to look.
+
 ### What this verification does not claim
 
 - It does not claim production routing works. Production has **no** `GOOGLE_JOURNEYS_ENABLED` variable at

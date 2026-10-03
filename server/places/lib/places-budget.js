@@ -52,8 +52,30 @@ const SCOPES = {
   photos: { env: 'GOOGLE_PLACES_PHOTOS_ENABLED', sku: 'place_photos', billingUnit: 'call' },
   /** Background refresh/enrichment, which buys Place Details on a schedule. */
   refresh: { env: 'GOOGLE_PLACES_REFRESH_ENABLED', sku: 'place_details', billingUnit: 'call' },
-  /** The /api/places/status reachability probe, which used to bill a Nearby Search per GET. */
-  probe: { env: 'GOOGLE_PLACES_PROBE_ENABLED', sku: 'nearby_search', billingUnit: 'call' },
+  /**
+   * The /api/places/status reachability probe, which used to bill a Nearby Search per GET.
+   *
+   * FAIL-CLOSED, like journeys, and for a sharper reason: THIS SCOPE IS REACHABLE BY ANYONE.
+   * `/api/places/status` is public and unauthenticated, it takes `lat` and `lng` from the query string,
+   * and `probeGoogle` goes straight to Nearby Search with no cache in between. So every distinct
+   * coordinate an anonymous caller supplies is a fresh billable request, and the only thing standing in
+   * the way was the daily cap -- which means a stranger could spend the product's entire discovery budget
+   * for the day and bill us for it, with one URL and a loop.
+   *
+   * It was live because `masterEnabled()` defaults to true in production, so an unset variable inherited
+   * "on". The endpoint's own comment claimed the probe was "off by default like every other scope"; that
+   * was true in development and false in production, which is the one environment where it bills.
+   *
+   * Nothing in the product calls `probeGoogle` -- it is a diagnostic, used only by that endpoint -- so
+   * requiring the variable by name costs no feature. An operator who wants a live probe sets
+   * GOOGLE_PLACES_PROBE_ENABLED=true deliberately, looks, and unsets it.
+   */
+  probe: {
+    env: 'GOOGLE_PLACES_PROBE_ENABLED',
+    sku: 'nearby_search',
+    billingUnit: 'call',
+    requiresExplicitEnable: true,
+  },
   /**
    * Geocoding and Distance Matrix are different Google APIs, but the same billing account and the
    * same exposure: both are reached from public unauthenticated endpoints. One gate covers them so
