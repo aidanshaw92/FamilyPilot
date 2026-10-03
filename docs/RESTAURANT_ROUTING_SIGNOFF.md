@@ -34,6 +34,8 @@ against a deployed build. The workflows are the permanent record and can be re-r
 | Preview is fail-closed again | Actions run 37113715301 | All 7 Google scopes refuse in `preview`, read from the deployment's own `/api/places/status` |
 | Food cache behaviour | Actions run 37114554155 | Cold: `miss`, `no-store`, `overpassHttpRequests: 1`, 0 Google. Repeat: `hit` from the store. Third: `x-vercel-cache: HIT` |
 | Section 16 coverage | Actions runs 37111630552, 37112591540 | 4/5 anchors measured, 0 Google calls throughout, 3 of 4 at the 60-element cap |
+| The probe was never exercised | Supabase, same reconciliation | `nearby_search` rows today: **0**. The exposure was latent, not used — no Google Nearby Search was billed through it. |
+| Nothing a parent reads was disturbed | Supabase, before and after | 176 served claims, 67 venues, 155 place records, 0 failed enrichment jobs — unchanged across every canary |
 
 **The first routed journey FamilyPilot has ever produced** was that 19-minute leg. Every journey before it
 was a straight-line estimate.
@@ -105,6 +107,10 @@ not parent usage. Recorded, not acted on.
 **Four production cache rows still read `billable_calls = 1`.** They are cache rows with a six-hour TTL and
 the next write per anchor upserts the corrected value, so they self-correct without touching production
 data. Until then `reconcile.sql`'s billable-call line reads 4 rather than 0, for this reason and no other.
+
+That prediction has since been **measured rather than assumed**: the two rows written after the fix
+deployed carry `billable_calls = 0`, while the four written before it still read 1. The mechanism works, and
+the remaining 4 will clear themselves as each anchor is next asked for.
 
 **Transit is not in the UI.** The parser is verified against the real service, but presenting a transit leg
 is UI work that has not been done, and coverage is London-only. `TFL_TRANSIT_ENABLED` is now a scope flag
