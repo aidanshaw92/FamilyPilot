@@ -45,10 +45,10 @@ function DecisionCardComponent({
     // across every card, so combine the two most relevant reasons where there's a second one.
     // (A third was tried and tested worse: numberOfLines={2} below just truncates it with an
     // ellipsis rather than showing it, which reads as a cut-off fragment instead of a fact.)
-    // An unreviewed place has no reasons to join, so it says what it is instead of going blank.
+    // An unreviewed place has no reason line: the badge under the title already says "Not yet
+    // reviewed", its only heuristic reason is the distance, and the meta line carries that.
     const reason =
-      venue.familyScore.explanation.slice(0, 2).join(' · ') ||
-      (venue.enrichmentStatus === 'provider_only' ? 'Family suitability not yet reviewed' : '');
+      venue.enrichmentStatus === 'provider_only' ? '' : venue.familyScore.explanation.slice(0, 2).join(' · ');
 
     return (
       <PressableScale

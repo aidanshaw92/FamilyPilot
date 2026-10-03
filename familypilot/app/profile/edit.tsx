@@ -32,7 +32,10 @@ const BUDGET_OPTIONS: { id: FamilyProfile['budgetTier']; label: string }[] = [
   { id: 'premium', label: 'Premium' },
 ];
 
-const DRIVE_OPTIONS = [15, 20, 30, 45, 60];
+const DRIVE_OPTIONS = [15, 20, 30, 45, 60, 90];
+/** The offered limits plus whatever is stored, so a limit set elsewhere is never shown as nothing chosen. */
+const driveOptions = (current: number) =>
+  [...new Set([...DRIVE_OPTIONS, current])].filter((m) => Number.isFinite(m) && m > 0).sort((a, b) => a - b);
 
 const MUST_HAVE_OPTIONS: { id: FacilityType; label: string }[] = [
   { id: 'toilets', label: 'Toilets' },
@@ -356,7 +359,7 @@ export default function EditProfileScreen() {
           Maximum drive time
         </Text>
         <View style={styles.chipRow}>
-          {DRIVE_OPTIONS.map((minutes) => (
+          {driveOptions(maxDriveMinutes).map((minutes) => (
             <Chip
               key={minutes}
               label={`${minutes} min`}
@@ -367,7 +370,7 @@ export default function EditProfileScreen() {
         </View>
 
         <Text variant="label" color={colors.text.secondary} style={styles.groupLabel}>
-          Budget — currently {formatBudgetTier(budgetTier)}
+          Budget (currently {formatBudgetTier(budgetTier)})
         </Text>
         <View style={styles.chipColumn}>
           {BUDGET_OPTIONS.map((option) => (

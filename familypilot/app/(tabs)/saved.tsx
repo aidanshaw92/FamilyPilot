@@ -244,7 +244,8 @@ const styles = StyleSheet.create({
   },
   sortRow: {
     paddingHorizontal: spacing.screenPadding,
-    paddingVertical: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
     alignItems: 'center',
     gap: CHIP_GAP,
   },
