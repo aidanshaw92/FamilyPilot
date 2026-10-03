@@ -104,7 +104,7 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
             Travel time from home
           </Text>
           <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint}>
-            Your profile default is {profileDrive} minutes — change here for this search only
+            Your profile default is {profileDrive} minutes. Change here for this search only
           </Text>
           <View style={styles.chipWrap}>
             {DRIVE_FILTER_OPTIONS.map((option) => (

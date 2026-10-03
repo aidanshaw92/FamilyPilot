@@ -34,7 +34,7 @@ export default function AboutScreen() {
         />
         <Section
           title="Recommendations"
-          body="Family Match scores reflect suitability for your family based on the details you share. They are guidance to help you decide — not guarantees."
+          body="Family Match scores reflect suitability for your family based on the details you share. They are guidance to help you decide, not guarantees."
         />
         <Section
           title="Prices & availability"
@@ -42,7 +42,7 @@ export default function AboutScreen() {
         />
         <Section
           title="Your privacy"
-          body="We use your general home area — not your full address — to suggest nearby places. Your family details stay private and are not shared with other users."
+          body="We use your general home area, not your full address, to suggest nearby places. Your family details stay private and are not shared with other users."
         />
         <Section
           title="Feedback"

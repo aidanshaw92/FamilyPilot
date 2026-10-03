@@ -172,3 +172,60 @@ capture to prove it did not move.
   What this does not prove: that a sign-in succeeds end to end, which needs an account and was not
   attempted (no profile was created or uploaded, per the owner's instruction).
 
+## 11. Found while rendering slice 7
+
+- **"Error on an untouched onboarding form" was a misreading.** The slice 2 capture clicked Continue
+  on the empty form; the red copy appears only after that, which is correct. The harness now records
+  that state deliberately (`setup-step1-errors`, `setup-step2-errors`) and walks steps 2 to 4 with the
+  form filled, through the fixture's stubbed location endpoint.
+- **Closed-day plan failure printed ISO.** "not open at that time on 2026-10-03" is now "on Saturday
+  3 October 2026", pinned by a sequencer test; every other date in the app was already spelled out.
+- **Explore on a places outage shows the bundled curated list with no notice** (captured as
+  `explore-error`: four places, no banner). The repository's fallback is deliberate, but a parent cannot
+  tell that live search failed and the list narrowed. Owned by slice 12 (states): say so in one line
+  above the list when the fallback is in use.
+- **Onboarding step 4 and Edit profile budget options** are full-width rows with a grey selected fill,
+  a third selected treatment beside the Chip and the Button. Owned by slice 10 together with the
+  Create a plan chips, since the approved frame 04 settles how a row of exclusive options looks.
+- Eighteen em dashes remained in parent-facing copy after #40; all rewritten. Feedback's placeholder
+  named a pilot-gated feature; its header now top-aligns like About and Edit profile.
+
+## 10. The Figma file, inspected (2026-10-03)
+
+File `LNpbdnuAWcfWf9spvB7jBz`, one page, five approved frames, each read through the Figma connection
+(metadata, design context for the badge and restaurant card, and a render of every frame):
+
+| Frame | Node | What it fixes |
+| --- | --- | --- |
+| 01 — Home ✓ APPROVED | 7:2 (deck symbol 38:43, active card 8:4) | The benchmark. Badge 8:13 reads **"★ 4.3 Family Fit"** (Inter Medium 14 on a 45% ink pill, 32 tall). |
+| 02 — Venue Detail ✓ APPROVED | 48:2 | Hero 300 with white circle back/heart; a sheet overlaps the hero from y 256 with a grabber; venue name (26) with a compact **"★ 4.3"** badge beside it (white, hairline, 30 tall); "Museum · 9 min away" with pin and a **"Why this score"** link; two-line description + "Read more"; **Restaurants close by** + "See all", 262-wide cards (200 photo, name 17 SemiBold, meta "5 min walk · Highchairs" 13.5, **"★ 4.6 · Family friendly"**, 40 arrow circle); **Create a plan** as the Home CTA pill (58 tall, arrow circle); **Family essentials** label/value rows with hairlines, unknowns as "Not confirmed" in tertiary. |
+| 03 — Plan ✓ APPROVED | 70:2 | Centred header (title + "Sat 20 Sep · 10:00 – 14:45") between circle back and heart; three 40-tall tabs; "Your Saturday plan" + "Edit timings" link; a timing-insight pill ("✓ Home around 14:45, before the usual nap"); stop cards with 62 thumbnail, "Stop 1" eyebrow, underlined editable time, title; expanded rows with small uppercase labels (ARRIVAL, ACTIVITY, RECOMMENDED TIME, LEAVE, TRAVEL TO NEXT STOP); collapsed stops; "Head home" terminus; CTA bar "Invite family & friends". |
+| 04 — Create a plan ✓ APPROVED | 76:2 | Sheet over the hero: "Plan your day" / "Around Science Museum"; WHEN as chips (Today, Sat 20 Sep, Other date); START as chips (09:30, 10:00, 10:30, Other) + "Suggested after the morning nap"; WHO'S COMING with "Add another family" link on the row and one chip "Our family · 2 adults, 2 children"; HOW LONG chips (A couple of hours, Half a day, Full day); a profile receipt pill ("✓ Using ages 2 and 4, pushchair, 15:30 nap and max 30 min drive · Edit"); CTA "Build my plan" with arrow. |
+| 04b — Generating ✓ APPROVED | 76:71 | The same sheet, with a four-line progress list (✓ done, ● current, ○ pending) and the receipt pill. |
+
+### What this settles
+
+- **Terminology: Family Fit.** Both the approved Home frame and the locked implementation's source frame
+  say "Family Fit" (8:16 "4.3 Family Fit", 49:5 "Family Fit badge", 51:9 "Family Fit"). "Family Match"
+  entered the app in slice 2 as my rename and was flagged, never approved. The owner's instruction is to
+  resolve the inconsistency with Home/Figma as the authority, so the app says **Family Fit** everywhere:
+  the badge label, the Venue Detail eyebrow, the classification words ("Excellent fit", "Great fit",
+  "Good fit", "Worth considering", "Limited fit"), About, Edit profile and onboarding copy, and the two
+  verifier probes that look for the eyebrow text. One constant drives the label.
+- **Badge presentation.** One component, two sizes: the Home pill with the word (cards, rows, hero) and
+  Figma's compact "★ 4.3" beside a venue name where the "Why this score" link carries the word.
+- **Figma is not blindly reproduced** where the product has gained real function: the Family Fit
+  explanation panel (reasons, cautions, notes, trust badges), travel sources, facilities with provenance
+  and restaurant discovery all stay, placed inside the approved structure.
+
+### Sequence from here
+
+| # | Slice | Frame |
+| --- | --- | --- |
+| 7 | Onboarding, About, Feedback copy; closed-day date voice; touch targets; state captures (in flight) | none |
+| 8 | **Family Fit**: terminology and the two badge sizes, app-wide, with the probes updated | 01, 02 |
+| 9 | **Venue Detail** to frame 02 with the product's panel and provenance kept | 02 |
+| 10 | **Create a plan + Generating** to frames 04/04b: chips with "Other" opening the drawn pickers, one party chip, the profile receipt, "Build my plan" | 04, 04b |
+| 11 | **Plan** to frame 03: centred header, timing insight, "Stop N" cards with thumbnails and uppercase row labels, "Head home" | 03 |
+| 12 | End-to-end review of both journeys plus Saved, Trips, Profile and the loading/error/empty/unknown states | all |
+

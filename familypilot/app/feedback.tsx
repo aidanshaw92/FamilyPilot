@@ -76,7 +76,7 @@ export default function FeedbackScreen() {
           label="Most useful feature"
           value={usefulFeature}
           onChangeText={setUsefulFeature}
-          placeholder="e.g. Today's Pick, Need Now"
+          placeholder="e.g. Today's pick, Create a plan"
         />
         <Field
           label="Biggest problem"
@@ -151,7 +151,8 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    // Top-aligned like About and Edit profile: a two-line subtitle must not pull the chevron down.
+    alignItems: 'flex-start',
     paddingHorizontal: spacing.screenPadding,
     paddingVertical: spacing.lg,
     gap: spacing.md,

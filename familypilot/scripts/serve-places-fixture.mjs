@@ -635,6 +635,14 @@ const server = createServer((req, res) => {
     return sendJson(res, 200, { fields: [], questions: [] });
   }
 
+  // Onboarding step 1 resolves the home town through this endpoint before it will advance, and the
+  // real one asks postcodes.io (and, gated, Google Geocoding). A fixed answer keeps the onboarding
+  // captures offline and deterministic; nothing about the input is looked up.
+  if (url.pathname === '/api/planning/location') {
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' });
+    return sendJson(res, 200, { area: 'Bushey, Hertfordshire', latitude: 51.643, longitude: -0.36 });
+  }
+
   if (url.pathname === '/api/places/status') {
     return sendJson(res, 200, { runtime: { configuredProvider: 'fixture' }, probe: null });
   }
