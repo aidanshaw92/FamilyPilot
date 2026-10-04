@@ -1870,7 +1870,7 @@
     "screen": "/plan link",
     "step": "a reload rebuilds the day rather than stranding it",
     "ok": true,
-    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 09:30–13:51  Day plan Who’s coming Travel & parking Your Saturday plan A. Fixture · Google Stop 1 10:25 Confirme"
+    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 09:30–13:51  Day plan Who’s coming Travel Your Saturday plan A. Fixture · Google Stop 1 10:25 Confirmed Facts Ga"
   },
   {
     "viewport": "lunch",
@@ -1883,7 +1883,7 @@
     "screen": "Plan",
     "step": "candidates found: the day contains the restaurant",
     "ok": true,
-    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 09:30–13:51  Day plan Who’s coming Travel & parking Your Saturday plan A. Fixture · Google Stop 1 10:25 Confirmed Facts Gardens  ARRIVE 10:25 TIME THER"
+    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 09:30–13:51  Day plan Who’s coming Travel Your Saturday plan A. Fixture · Google Stop 1 10:25 Confirmed Facts Gardens  ARRIVE 10:25 TIME THERE 1h 30m L"
   },
   {
     "viewport": "lunch",
@@ -1902,7 +1902,7 @@
     "screen": "Plan",
     "step": "nothing mapped nearby: the day omits lunch and says nothing about our lookup",
     "ok": true,
-    "message": " A day at No Photograph Park Sat 3 Oct · 09:30–12:50  Day plan Who’s coming Travel & parking Your Saturday plan  Stop 1 10:25 No Photograph Park  ARRIVE 10:25 TIME THERE 1h 30m LEAVE 11:55 OPENING"
+    "message": " A day at No Photograph Park Sat 3 Oct · 09:30–12:50  Day plan Who’s coming Travel Your Saturday plan  Stop 1 10:25 No Photograph Park  ARRIVE 10:25 TIME THERE 1h 30m LEAVE 11:55 OPENING Open 12:5"
   },
   {
     "viewport": "lunch",
@@ -1921,7 +1921,7 @@
     "screen": "Plan",
     "step": "lookup failed: the day omits lunch and says the failure is ours",
     "ok": true,
-    "message": " A day at The Royal Borough Of Something Extremely Long Memorial Gardens And Family Activity Centre Sat 3 Oct · 09:30–12:50  Day plan Who’s coming Travel & parking Your Saturday plan A. Fixture · Go"
+    "message": " A day at The Royal Borough Of Something Extremely Long Memorial Gardens And Family Activity Centre Sat 3 Oct · 09:30–12:50  Day plan Who’s coming Travel Your Saturday plan A. Fixture · Google Stop "
   },
   {
     "viewport": "lunch",
