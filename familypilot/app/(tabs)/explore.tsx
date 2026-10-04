@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 
@@ -8,7 +8,8 @@ import { RestaurantCard } from '@/src/components/restaurant/RestaurantCard';
 import { DecisionCard } from '@/src/components/shared/DecisionCard';
 import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
-import { Chip, Doodle, EmptyState, ErrorState, SearchBar, SectionHeader, SkeletonCard, Text, CHIP_GAP, CHIP_HEIGHT, railTint } from '@/src/components/ui';
+import { Chip, EmptyState, ErrorState, EXPLORE_CHIP, ScreenArt, SearchBar, SectionHeader, SkeletonCard, Text, railTint } from '@/src/components/ui';
+import { EXPLORE_ART_BEHIND, EXPLORE_ART_FRONT } from '@/src/assets/art/figma-art';
 import { isPilotFeatureVisible, visibleExploreCategoryIds } from '@/src/config/pilot-features';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useNearbyVenues, useRestaurants } from '@/src/hooks/use-queries';
@@ -20,6 +21,7 @@ import { EXPLORE_CATEGORIES, filterVenues } from '@/src/utils/filter-venues';
 import { SAVED_EXAMPLES_NOTICE, showingSavedExamples } from '@/src/utils/saved-examples-notice';
 
 export default function ExploreScreen() {
+  const { width } = useWindowDimensions();
   const tabBarClearance = useTabBarClearance();
   const [search, setSearch] = useState('');
   const [areaVenues, setAreaVenues] = useState<Venue[] | null>(null);
@@ -164,37 +166,51 @@ export default function ExploreScreen() {
 
   return (
     <ScreenContainer>
-      {/* The identity's decoration lives on the canvas only (Figma "06 — Explore v2"): a leaf in the
-          top corner, the strokes beside the heading, a blush blob by the section title. None sits
-          on a card or a control, and all of them ignore the pointer and assistive technology. */}
+      {/* The decoration is the approved Explore frame's own artwork (294:133), drawn from its vectors.
+          It sits on the canvas only: the header's marks and the section title's blob and sprigs are
+          anchored to the top edge, the foot's blob and wave to the bottom, and the leaves and yellow
+          strokes at the foot are drawn again above the list, because the approved frame shows them
+          over the cards' photographs. All of it ignores the pointer and assistive technology. */}
+      {/* Marks beside the heading, the search and the section title follow the fixed-size type, so they
+          are drawn at the reference scale from the left; the leaves and blobs off the right edge follow
+          the screen's edge, so they scale with the width and stay on it. */}
+      <ScreenArt
+        art={EXPLORE_ART_BEHIND}
+        from={0}
+        to={760}
+        anchor="top"
+        clipX={[0, EDGE_ART_X]}
+        width={Math.min(width, 393)}
+      />
+      <ScreenArt art={EXPLORE_ART_BEHIND} from={0} to={760} anchor="top" clipX={[EDGE_ART_X, EXPLORE_ART_BEHIND.width]} align="right" />
+      <ScreenArt art={EXPLORE_ART_BEHIND} from={1500} to={1844} anchor="bottom" />
       <View style={styles.header}>
-        <Doodle kind="leaf" tint="green" size={40} rotate={24} style={styles.cornerLeaf} />
-        <View style={styles.headingRow}>
-          <Text variant="heading1">Explore London</Text>
-          <Doodle kind="strokes" tint="yellow" size={30} style={styles.headingStrokes} />
-        </View>
-        <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
+        <Text variant="heading1" style={styles.heading}>Explore London</Text>
+        <Text variant="body" color={colors.text.secondary} style={styles.subtitle}>
           {isRestaurantMode
             ? 'Family-friendly places to eat'
             : 'Parks, museums and family days out across London'}
         </Text>
       </View>
 
-      <SearchBar
-        value={search}
-        onChangeText={(value) => {
-          setSearch(value);
-          setAreaVenues(null);
-          setSearchMessage('');
-        }}
-        onSubmit={() => void handleAreaSearch()}
-        placeholder="Area or postcode"
-        accessibilityLabel="Search a London area or postcode"
-        actionLabel="Search"
-        actionAccessibilityLabel="Search this London area"
-        onAction={() => void handleAreaSearch()}
-        style={styles.search}
-      />
+      <View style={styles.searchRow}>
+        <SearchBar
+          variant="explore"
+          value={search}
+          onChangeText={(value) => {
+            setSearch(value);
+            setAreaVenues(null);
+            setSearchMessage('');
+          }}
+          onSubmit={() => void handleAreaSearch()}
+          placeholder="Area or postcode"
+          accessibilityLabel="Search a London area or postcode"
+          actionLabel="Search"
+          actionAccessibilityLabel="Search this London area"
+          onAction={() => void handleAreaSearch()}
+          style={styles.search}
+        />
+      </View>
       {!areaVenues && !isRestaurantMode && !isLoading && showingSavedExamples(venues) ? (
         <Text variant="caption" color={colors.warning[600]} style={styles.searchMessage}>
           {SAVED_EXAMPLES_NOTICE}
@@ -222,6 +238,7 @@ export default function ExploreScreen() {
             label={category.label}
             active={categoryFilter === category.id}
             appearance="plain"
+            size="explore"
             tint={railTint(index - 1)}
             onPress={() => setCategoryFilter(category.id)}
           />
@@ -284,10 +301,11 @@ export default function ExploreScreen() {
       ) : (
         <>
           <View style={styles.listHeader}>
-            <Doodle kind="blob" tint="blush" size={56} style={styles.sectionBlob} />
             <SectionHeader
               title={areaVenues ? `Around ${search.trim()}` : activeCategoryLabel}
               subtitle={`${resultCount} ${isRestaurantMode ? 'restaurant' : 'place'}${resultCount === 1 ? '' : 's'} ${areaVenues ? 'near this area' : 'across London'}`}
+              titleStyle={styles.sectionTitle}
+              subtitleStyle={styles.sectionCount}
             />
           </View>
           {/*
@@ -342,40 +360,46 @@ export default function ExploreScreen() {
         </>
       )}
 
+      <ScreenArt art={EXPLORE_ART_FRONT} from={1500} to={1844} anchor="bottom" />
       <FilterSheet visible={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
     </ScreenContainer>
   );
 }
 
+/** Frame x (of 853) where the right-edge marks begin: the leaves and blobs off the right side. */
+const EDGE_ART_X = 690;
+
 const styles = StyleSheet.create({
+  // Frame 294:133 at pt = px / 2.17: the title Bold 28.4 on a 34.6 line, the subtitle 13.6 on 16.6,
+  // the search field 51.6 tall 15 below the subtitle, the chips 15 below the field.
   header: {
     paddingHorizontal: spacing.screenPadding,
-    paddingTop: spacing.lg,
+    paddingTop: 2,
   },
-  headingRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-  },
-  headingStrokes: {
-    position: 'relative',
-    marginTop: -2,
-  },
-  cornerLeaf: {
-    right: spacing.xs,
-    top: 0,
+  heading: {
+    fontSize: 28.4,
+    lineHeight: 34.5,
   },
   subtitle: {
-    marginTop: spacing.xs,
+    marginTop: 7,
+    fontSize: 13.6,
+    lineHeight: 17,
+  },
+  searchRow: {
+    marginTop: 19,
+    marginBottom: spacing.sm,
   },
   search: {
     marginHorizontal: spacing.screenPadding,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
   },
-  sectionBlob: {
-    right: spacing.screenPadding,
-    top: spacing.md,
+  // Section title Bold 26.3 on 31.8; count 13.2.
+  sectionTitle: {
+    fontSize: 26.3,
+    lineHeight: 32,
+  },
+  sectionCount: {
+    fontSize: 13.2,
+    lineHeight: 16,
   },
   searchMessage: {
     marginHorizontal: spacing.screenPadding,
@@ -384,15 +408,15 @@ const styles = StyleSheet.create({
   // A fixed, non-shrinking band: as a flex child with only a maxHeight the rail was squeezed to
   // 26px (17px once the list scrolled) and clipped the 44pt chips top and bottom.
   categoryScroll: {
-    height: CHIP_HEIGHT + spacing.sm,
+    height: EXPLORE_CHIP.height + spacing.sm,
     flexGrow: 0,
     flexShrink: 0,
-    marginTop: spacing.sm,
+    marginTop: 2,
   },
   categoryContent: {
     paddingHorizontal: spacing.screenPadding,
     alignItems: 'center',
-    gap: CHIP_GAP,
+    gap: EXPLORE_CHIP.gap,
   },
   filterButton: {
     flexDirection: 'row',
@@ -417,7 +441,7 @@ const styles = StyleSheet.create({
   },
   listHeader: {
     paddingHorizontal: spacing.screenPadding,
-    paddingTop: spacing.lg,
+    paddingTop: 14,
   },
   listContent: {
     paddingHorizontal: spacing.screenPadding,

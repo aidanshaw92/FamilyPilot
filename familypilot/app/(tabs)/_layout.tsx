@@ -12,20 +12,18 @@ const TAB_CONFIG: {
   name: string;
   title: string;
   icon: TabIcon;
-  iconFocused: TabIcon;
   pilotFeature?: import('@/src/config/pilot-features').PilotFeature;
 }[] = [
-  { name: 'index', title: 'Home', icon: 'home-outline', iconFocused: 'home' },
-  { name: 'explore', title: 'Explore', icon: 'compass-outline', iconFocused: 'compass' },
+  { name: 'index', title: 'Home', icon: 'home-outline' },
+  { name: 'explore', title: 'Explore', icon: 'compass-outline' },
   {
     name: 'trips',
     title: 'Plans',
     icon: 'calendar-outline',
-    iconFocused: 'calendar',
     pilotFeature: 'trips_tab',
   },
-  { name: 'saved', title: 'Saved', icon: 'heart-outline', iconFocused: 'heart' },
-  { name: 'profile', title: 'Profile', icon: 'person-outline', iconFocused: 'person' },
+  { name: 'saved', title: 'Saved', icon: 'heart-outline' },
+  { name: 'profile', title: 'Profile', icon: 'person-outline' },
 ];
 
 export default function TabLayout() {
@@ -46,13 +44,9 @@ export default function TabLayout() {
             options={{
               title: tab.title,
               href: hidden ? null : undefined,
-              tabBarIcon: ({ color, focused }) => (
-                <Ionicons
-                  name={focused ? tab.iconFocused : tab.icon}
-                  size={ICON_SIZE}
-                  color={color}
-                />
-              ),
+              // The approved frames draw every tab's icon as an outline, the active one too (it sits
+              // on the mint disc in the action green instead of changing glyph).
+              tabBarIcon: ({ color }) => <Ionicons name={tab.icon} size={ICON_SIZE} color={color} />,
             }}
           />
         );

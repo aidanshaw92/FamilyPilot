@@ -23,14 +23,15 @@ const DEVICES = [
 ];
 
 describe('floating tab bar layout', () => {
-  it('reproduces the approved frame: 270 x 58, 30 above the screen edge', () => {
-    // "01 — Home" draws the pill at x=62 on a 393pt artboard, 270 wide and 58 tall, with its
-    // bottom edge at y=822 of 852. An iPhone reports a 34pt bottom inset there.
+  it('reproduces the approved frames: 300 x 60, 35 above the screen edge', () => {
+    // Home (229:133) draws the pill 290 wide and Explore (294:133) 310 wide, both 60 tall and
+    // centred, with the bottom edge about 35pt above the screen edge (a 34pt iPhone inset plus 1).
+    // One width, the mean, is used on every tab.
     const layout = floatingTabBarLayout(5, 34);
-    expect(layout.width).toBe(270);
-    expect(layout.height).toBe(58);
-    expect(layout.bottom).toBe(30);
-    expect((393 - layout.width) / 2).toBeCloseTo(61.5, 1);
+    expect(layout.width).toBe(300);
+    expect(layout.height).toBe(60);
+    expect(layout.bottom).toBe(35);
+    expect((393 - layout.width) / 2).toBeCloseTo(46.5, 1);
   });
 
   it('holds the icon and its active indicator inside the pill', () => {
@@ -67,7 +68,7 @@ describe('floating tab bar layout', () => {
     // Trips is gated off in the pilot build, so the pill has to hold four tabs, not five.
     const five = floatingTabBarLayout(5, 34);
     const four = floatingTabBarLayout(4, 34);
-    expect(four.width).toBe(218);
+    expect(four.width).toBe(242);
     expect(five.width - four.width).toBe(TAB_SIZE + 2);
     expect(four.height).toBe(five.height);
   });

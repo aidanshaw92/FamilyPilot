@@ -4,26 +4,32 @@ import { exploreCardCtaLabel, exploreCardCtaWidth } from '@/src/utils/explore-ca
 
 describe('Explore card CTA label', () => {
   it('has the room it claims at the three reference widths', () => {
-    // 360: 360 - 40 - 100 - 28 = 192. 390: 222. 430: 262.
-    expect(exploreCardCtaWidth(360)).toBe(192);
-    expect(exploreCardCtaWidth(390)).toBe(222);
-    expect(exploreCardCtaWidth(430)).toBe(262);
+    // width - 40 (screen padding) - 111 (photo) - 14 (left) - 10 (right): 360 -> 185, 390 -> 215, 430 -> 255.
+    expect(exploreCardCtaWidth(360)).toBe(185);
+    expect(exploreCardCtaWidth(390)).toBe(215);
+    expect(exploreCardCtaWidth(430)).toBe(255);
   });
 
-  it('shortens the scored label at 360 and keeps the long one from 375 up', () => {
-    // 192 - 58 = 134 of space for a 128-wide label plus 8 margin: 134 < 136, so 360 shortens.
+  it('keeps the long scored label from 384 up and shortens it on a narrower phone', () => {
+    // The label needs 133 + 6 plus the CTA's 70 of inset: a 209pt CTA, so a 384pt phone.
+    expect(exploreCardCtaLabel(340, false)).toBe('View details');
     expect(exploreCardCtaLabel(360, false)).toBe('View details');
-    expect(exploreCardCtaLabel(375, false)).toBe('View family details');
+    expect(exploreCardCtaLabel(375, false)).toBe('View details');
     expect(exploreCardCtaLabel(390, false)).toBe('View family details');
     expect(exploreCardCtaLabel(430, false)).toBe('View family details');
   });
 
-  it('shortens the unreviewed label below 390, where 155pt of Semi Bold 14 would ellipsise', () => {
-    expect(exploreCardCtaLabel(360, true)).toBe('Details to check');
+  it('shortens the unreviewed label below 405, where 154pt of Semi Bold 13 would ellipsise', () => {
+    // 154 + 6 plus 70 of inset: a 230pt CTA, so a 405pt phone.
     expect(exploreCardCtaLabel(375, true)).toBe('Details to check');
-    // 222 - 58 = 164 >= 163.
-    expect(exploreCardCtaLabel(390, true)).toBe('Family details to check');
+    expect(exploreCardCtaLabel(390, true)).toBe('Details to check');
     expect(exploreCardCtaLabel(430, true)).toBe('Family details to check');
+  });
+
+  it('uses the shortest unreviewed label where even "Details to check" would ellipsise (360)', () => {
+    // 360: a 185pt CTA leaves 115 for the label; "Details to check →" needs 124.
+    expect(exploreCardCtaLabel(360, true)).toBe('Check details');
+    expect(exploreCardCtaLabel(340, true)).toBe('Check details');
   });
 
   it('never says "family details" are viewable for an unreviewed place', () => {

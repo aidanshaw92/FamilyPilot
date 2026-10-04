@@ -1,0 +1,26 @@
+<svg width="853" height="1844" viewBox="0 0 853 1844" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="853" height="1844" fill="#F5F5F5"/>
+<g id="APPROVED &#226;&#128;&#148; Explore &#194;&#183; native 853&#195;&#151;1844 &#194;&#183; reference locked underneath" clip-path="url(#clip0_117_2)">
+<rect width="853" height="1844" fill="url(#paint0_linear_117_2)"/>
+<g id="Decorative artwork &#226;&#128;&#148; in front of photos">
+<path id="Stem BL" d="M2 1838C15 1826 25 1815 33 1803C42 1790 52 1778 62 1768" stroke="#47A08D" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse id="Leaf BL 1" cx="31.9999" cy="1760" rx="10.5" ry="29" transform="rotate(-3 31.9999 1760)" fill="#5DB3A2"/>
+<ellipse id="Leaf BL 2" cx="62.0001" cy="1754" rx="10.5" ry="25" transform="rotate(33 62.0001 1754)" fill="#5DB3A2"/>
+<ellipse id="Leaf BL 3" cx="62.0001" cy="1790" rx="13" ry="25" transform="rotate(70 62.0001 1790)" fill="#5DB3A2"/>
+<path id="Leaf vein BL 1" d="M32 1757L33 1787" stroke="#3C9484" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Leaf vein BL 2" d="M50 1768L63 1750" stroke="#3C9484" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Leaf vein BL 3" d="M37 1802L67 1790" stroke="#3C9484" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Yellow dash BR a" d="M792 1675L777 1708" stroke="#FCC236" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Yellow dash BR b" d="M818 1709L787 1731" stroke="#FDBE15" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_117_2" x1="426.5" y1="0" x2="426.5" y2="1844" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FEFDFB"/>
+<stop offset="1" stop-color="#FBFBF8"/>
+</linearGradient>
+<clipPath id="clip0_117_2">
+<rect width="853" height="1844" fill="white"/>
+</clipPath>
+</defs>
+</svg>

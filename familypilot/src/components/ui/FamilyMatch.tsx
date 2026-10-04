@@ -7,6 +7,13 @@ import { describeFamilyMatch } from '@/src/utils/family-match-scale';
 
 import { Text } from './Text';
 
+/**
+ * `default` is the Venue Detail / Saved badge; `compact` drops the word beside a venue name; `explore` is
+ * the Explore result card's pill (approved frame 294:133: 29.5 tall, 13.2 Medium, 13 star); `deck` is the
+ * Home recommendation card's pill (approved frame 229:133: 31 tall, 13.6 SemiBold, 10 star).
+ */
+export type FamilyMatchSize = 'default' | 'compact' | 'explore' | 'deck';
+
 interface FamilyMatchProps {
   score: number;
   enrichmentStatus?: EnrichmentStatus;
@@ -19,7 +26,7 @@ interface FamilyMatchProps {
    * beside a venue name (node 49:5): star and number only, 30 tall, white with a hairline, because
    * the "Why this score" link on that row carries the word.
    */
-  size?: 'default' | 'compact';
+  size?: FamilyMatchSize;
   style?: ViewStyle;
 }
 
@@ -46,6 +53,7 @@ export function FamilyMatch({
   const onImage = tone === 'onImage';
   // Compact only ever drops the word next to a number; an unreviewed status keeps its words.
   const compact = size === 'compact' && match.number !== null;
+  const frameSize = size === 'explore' || size === 'deck' ? size : null;
   // On a light surface the pill is mint with green star and text; on photography it is the
   // deep green with white. An unreviewed pill is the quiet neutral fill with secondary text.
   const ink = onImage ? colors.text.inverse : match.unreviewed ? colors.text.secondary : colors.action;
@@ -55,16 +63,25 @@ export function FamilyMatch({
         styles.badge,
         onImage ? styles.onImage : match.unreviewed ? styles.onLightUnreviewed : styles.onLight,
         compact && styles.compact,
+        frameSize === 'explore' && styles.explore,
+        frameSize === 'deck' && styles.deck,
         style,
       ]}
       accessibilityRole={onPress ? undefined : 'text'}
       accessibilityLabel={match.spoken}
     >
-      {match.number !== null ? <Ionicons name="star" size={14} color={ink} /> : null}
+      {match.number !== null ? (
+        <Ionicons name="star" size={frameSize === 'explore' ? 13 : frameSize === 'deck' ? 10.5 : 14} color={ink} />
+      ) : null}
       <Text
         variant="caption"
         color={ink}
-        style={[styles.label, compact && styles.compactLabel]}
+        style={[
+          styles.label,
+          compact && styles.compactLabel,
+          frameSize === 'explore' && styles.exploreLabel,
+          frameSize === 'deck' && styles.deckLabel,
+        ]}
         numberOfLines={1}
       >
         {compact ? match.number : match.badgeLabel}
@@ -98,11 +115,12 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    // Frame node 8:13: 32 tall, 12 in on the left, 14 on the right, 6 between star and label.
+    // The approved Home and Explore references draw the pill 27 tall (frame node 8:13 had 32):
+    // 28 here, 11 in on the left, 13 on the right, 6 between star and label.
     gap: 6,
-    paddingLeft: spacing.md,
-    paddingRight: 14,
-    height: 32,
+    paddingLeft: 11,
+    paddingRight: 13,
+    height: 28,
     borderRadius: radius.full,
     alignSelf: 'flex-start',
   },
@@ -120,6 +138,29 @@ const styles = StyleSheet.create({
     height: 30,
     paddingLeft: 14,
     paddingRight: spacing.lg,
+  },
+  // Explore result card, frame 294:133: 64px / 2.17 = 29.5 tall, label 28.7px = 13.2.
+  explore: {
+    height: 29.5,
+    gap: 6,
+    paddingLeft: 14,
+    paddingRight: 15.5,
+  },
+  exploreLabel: {
+    fontSize: 13.2,
+    lineHeight: 16,
+  },
+  // Home deck card, frame 229:133: 67px / 2.168 = 31 tall, label 29.4px = 13.6 SemiBold.
+  deck: {
+    height: 31,
+    gap: 9,
+    paddingLeft: 14,
+    paddingRight: 14,
+  },
+  deckLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13.6,
+    lineHeight: 17,
   },
   label: {
     fontFamily: 'Inter_500Medium',

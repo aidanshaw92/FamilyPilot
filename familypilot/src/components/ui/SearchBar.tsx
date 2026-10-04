@@ -24,6 +24,11 @@ interface SearchBarProps {
   actionLabel?: string;
   onAction?: () => void;
   actionAccessibilityLabel?: string;
+  /**
+   * `explore` is the approved Explore frame's field (294:133): 51.6 tall, placeholder 14.8, the green
+   * Search pill 88.5 x 41.9 inset 5. `default` is Home's 56 field.
+   */
+  variant?: 'default' | 'explore';
   style?: ViewStyle;
   autoFocus?: boolean;
 }
@@ -42,19 +47,21 @@ export function SearchBar({
   actionLabel,
   onAction,
   actionAccessibilityLabel,
+  variant = 'default',
   style,
   autoFocus,
 }: SearchBarProps) {
   const readOnly = Boolean(onPress);
+  const explore = variant === 'explore';
 
   return (
-    <View style={[styles.wrap, style]}>
+    <View style={[styles.wrap, explore && styles.wrapExplore, style]}>
       <Pressable
         accessibilityRole={readOnly ? 'button' : undefined}
         accessibilityLabel={readOnly ? placeholder : undefined}
         onPress={onPress}
         disabled={!readOnly}
-        style={[styles.field, onFilterPress ? styles.fieldWithFilter : null]}
+        style={[styles.field, explore && styles.fieldExplore, onFilterPress ? styles.fieldWithFilter : null]}
       >
         <Ionicons name="search" size={SEARCH_ICON} color={PLACEHOLDER_INK} />
         {readOnly ? (
@@ -71,7 +78,7 @@ export function SearchBar({
             onSubmitEditing={onSubmit}
             returnKeyType="search"
             autoFocus={autoFocus}
-            style={styles.input}
+            style={[styles.input, explore && styles.inputExplore]}
           />
         )}
         {actionLabel && onAction ? (
@@ -79,9 +86,13 @@ export function SearchBar({
             accessibilityRole="button"
             accessibilityLabel={actionAccessibilityLabel ?? actionLabel}
             onPress={onAction}
-            style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
+            style={({ pressed }) => [
+              styles.action,
+              explore && styles.actionExplore,
+              pressed && styles.actionPressed,
+            ]}
           >
-            <Text style={styles.actionLabel}>{actionLabel}</Text>
+            <Text style={[styles.actionLabel, explore && styles.actionLabelExplore]}>{actionLabel}</Text>
           </Pressable>
         ) : null}
       </Pressable>
@@ -129,10 +140,35 @@ const FILTER_INSET = 5;
 const ACTION_HEIGHT = 44;
 const ACTION_INSET = 6;
 
+/** Explore frame 294:133: 112px / 2.17 = 51.6 tall; the pill 192 x 91 px = 88.5 x 41.9, inset 5. */
+const EXPLORE_FIELD_HEIGHT = 51.6;
+const EXPLORE_ACTION_HEIGHT = 42;
+const EXPLORE_ACTION_INSET = 5;
+
 const styles = StyleSheet.create({
   wrap: {
     height: FIELD_HEIGHT,
     justifyContent: 'center',
+  },
+  wrapExplore: {
+    height: EXPLORE_FIELD_HEIGHT,
+  },
+  fieldExplore: {
+    height: EXPLORE_FIELD_HEIGHT,
+  },
+  inputExplore: {
+    fontSize: 14.8,
+  },
+  actionExplore: {
+    height: EXPLORE_ACTION_HEIGHT,
+    borderRadius: EXPLORE_ACTION_HEIGHT / 2,
+    minWidth: 88.5,
+    paddingHorizontal: 18,
+    marginRight: -(FIELD_PADDING - EXPLORE_ACTION_INSET),
+  },
+  actionLabelExplore: {
+    fontSize: 13.4,
+    lineHeight: 17,
   },
   field: {
     flexDirection: 'row',

@@ -13,6 +13,8 @@ import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
 import {
   EXPLORE_CARD_CONTENT_PADDING,
+  EXPLORE_CARD_PADDING_LEFT,
+  EXPLORE_CARD_PADDING_RIGHT,
   EXPLORE_CARD_PHOTO_WIDTH,
   exploreCardCtaLabel,
 } from '@/src/utils/explore-card-layout';
@@ -78,18 +80,23 @@ function DecisionCardComponent({
           borderRadius={0}
         />
         <View style={styles.compactContent}>
-          <Text variant="heading3" numberOfLines={2}>
+          <Text variant="heading3" numberOfLines={2} style={styles.compactTitle}>
             {venue.name}
           </Text>
           {/* The same badge as Home and Venue Detail, under the title rather than beside it: beside,
               it forced "Kettleford Play House" to truncate at 360 wide. */}
-          <FamilyMatch score={venue.familyScore.score} enrichmentStatus={venue.enrichmentStatus} />
+          <FamilyMatch
+            score={venue.familyScore.score}
+            enrichmentStatus={venue.enrichmentStatus}
+            size="explore"
+            style={styles.compactFit}
+          />
           {reason ? (
-            <Text variant="bodySmall" color={colors.text.primary} numberOfLines={2}>
+            <Text variant="bodySmall" color={colors.text.primary} numberOfLines={2} style={styles.compactReason}>
               {reason}
             </Text>
           ) : null}
-          <Text variant="caption" color={colors.text.tertiary}>
+          <Text variant="caption" color={colors.text.secondary} style={styles.compactMeta}>
             {venue.category.replace('_', ' ')} · {travelTimeLabel(venue.driveMinutes, 'estimated')}
             {venue.estimatedSpend ? ` · ${venue.estimatedSpend}` : ''}
           </Text>
@@ -170,25 +177,47 @@ function DecisionCardComponent({
 export const DecisionCard = memo(DecisionCardComponent);
 
 const styles = StyleSheet.create({
+  // The approved Explore frame 294:133 (pt = px / 2.17): a 13.8 radius, a 111 photograph, the title
+  // Bold 17.1, the reason lines 12.5 on 16.6, the meta 12.2, 9 between cards.
   compact: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    marginBottom: spacing.md,
+    marginBottom: 9,
     backgroundColor: colors.surface,
-    borderRadius: radius.xl,
+    borderRadius: 14,
     overflow: 'hidden',
     ...shadows.card,
   },
   compactImage: {
     width: EXPLORE_CARD_PHOTO_WIDTH,
   },
+  compactTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 17.1,
+    lineHeight: 21,
+  },
+  compactFit: {
+    marginTop: 6,
+  },
+  compactReason: {
+    fontSize: 12.5,
+    lineHeight: 16.6,
+    marginTop: 7,
+  },
+  compactMeta: {
+    fontSize: 12.2,
+    lineHeight: 15,
+    marginTop: 3,
+  },
   compactContent: {
     flex: 1,
-    gap: spacing.sm,
-    padding: EXPLORE_CARD_CONTENT_PADDING,
+    paddingTop: EXPLORE_CARD_CONTENT_PADDING,
+    paddingBottom: 11,
+    paddingLeft: EXPLORE_CARD_PADDING_LEFT,
+    paddingRight: EXPLORE_CARD_PADDING_RIGHT,
   },
   compactCta: {
-    marginTop: spacing.xs,
+    marginTop: 10,
   },
   carouselWrap: {
     marginRight: spacing.lg,

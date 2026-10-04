@@ -12,30 +12,40 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
 import { RecommendationDeck } from '@/src/components/home/RecommendationDeck';
-import { deckMetrics } from '@/src/utils/home-deck-geometry';
+import { deckMetrics, REFERENCE_WIDTH } from '@/src/utils/home-deck-geometry';
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import {
-  GREETING_DOODLE_SIZE,
   GREETING_FONT_FAMILY,
-  greetingDoodleLeft,
   homeGutter,
   homeHeaderLayout,
   searchPlaceholder,
 } from '@/src/utils/home-header-layout';
 import {
-  Doodle,
   EmptyState,
   ErrorState,
   PillSelector,
+  ScreenArt,
   SearchBar,
   Skeleton,
   Text,
 } from '@/src/components/ui';
+import { HOME_ART } from '@/src/assets/art/figma-art';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { Venue } from '@/src/types';
 import { filterByPlanCategory, PLAN_CATEGORIES } from '@/src/utils/plan-categories';
+
+/**
+ * Everything above the deck (greeting, search, plan heading, chips) is laid out in fixed points, so
+ * its marks are placed with fixed points too; the deck and the marks around it grow with the phone's
+ * width together. The seam is the frame's y just above the deck's first mark.
+ */
+const HEADER_ART_END = 605;
+/** Above this the marks are beside the greeting and the search (they follow the screen's edges, so they
+ * scale with the width); below it they are beside the plan heading and chips (they follow the fixed-size
+ * type, so they are drawn at the reference scale, left-aligned, and never grow). */
+const SEARCH_ART_END = 345;
 
 function getTimeGreeting(): string {
   const hour = new Date().getHours();
@@ -70,7 +80,6 @@ export default function HomeScreen() {
   // fits the greeting and the placeholder whole, rather than a clipped heading.
   const greetingText = `${getTimeGreeting()}, ${firstName}`;
   const header = homeHeaderLayout(width, greetingText);
-  const greetingStrokesLeft = greetingDoodleLeft(width, greetingText, header);
   const gutter = { paddingHorizontal: homeGutter(width) };
 
   const handleRefresh = async () => {
@@ -86,6 +95,10 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.screen}>
+      {/* The approved frame's foot marks (a sprig and a mint blob beside the navigation), drawn from
+          the frame's own vectors, anchored to the bottom edge so they stay beside the navigation on
+          a taller phone. Behind the scroll view, so content and navigation sit above them. */}
+      <ScreenArt art={HOME_ART} from={1700} to={1846} anchor="bottom" />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
@@ -104,6 +117,26 @@ export default function HomeScreen() {
           />
         }
       >
+        {/* The frame's marks from the top edge to the navigation (strokes by the avatar, the sprig
+            and dashes beside the search, the plan heading's strokes, and the blobs and leaves around
+            the deck), drawn from its own vectors, anchored to the top edge like the deck they frame,
+            and behind everything that is content. */}
+        <ScreenArt art={HOME_ART} from={0} to={SEARCH_ART_END} anchor="top" />
+        <ScreenArt
+          art={HOME_ART}
+          width={Math.min(width, REFERENCE_WIDTH)}
+          from={SEARCH_ART_END}
+          to={HEADER_ART_END}
+          anchor="top"
+          style={{ top: SEARCH_ART_END * (REFERENCE_WIDTH / HOME_ART.width) }}
+        />
+        <ScreenArt
+          art={HOME_ART}
+          from={HEADER_ART_END}
+          to={1700}
+          anchor="top"
+          style={{ top: HEADER_ART_END * (REFERENCE_WIDTH / HOME_ART.width) }}
+        />
         <View style={gutter}>
           <View style={[styles.header, { gap: header.gap }]}>
             <View style={styles.greeting}>
@@ -117,17 +150,6 @@ export default function HomeScreen() {
               >
                 {greetingText}
               </Text>
-              {/* The yellow strokes after the greeting (Figma "Home v2"), drawn only when the same
-                  estimate the header trusts says the line leaves room for them. Absolute, so the
-                  approved header geometry is untouched either way. */}
-              {greetingStrokesLeft !== null ? (
-                <Doodle
-                  kind="strokes"
-                  tint="yellow"
-                  size={GREETING_DOODLE_SIZE}
-                  style={{ left: greetingStrokesLeft, top: 0 }}
-                />
-              ) : null}
               <Text variant="bodySmall" color={colors.text.secondary} style={styles.greetingSub}>
                 What shall we do today?
               </Text>
@@ -144,18 +166,18 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          <SearchBar
-            placeholder={searchPlaceholder(width)}
-            onPress={() => router.push('/(tabs)/explore' as never)}
-            onFilterPress={() => setFilterSheetOpen(true)}
-            style={styles.search}
-          />
+          <View style={styles.searchRow}>
+            <SearchBar
+              placeholder={searchPlaceholder(width)}
+              onPress={() => router.push('/(tabs)/explore' as never)}
+              onFilterPress={() => setFilterSheetOpen(true)}
+            />
+          </View>
 
           <View style={styles.sectionTitleRow}>
             <Text variant="heading2" style={styles.sectionTitle}>
               Select your plan
             </Text>
-            <Doodle kind="strokes" tint="yellow" size={26} style={styles.sectionStrokes} />
           </View>
         </View>
 
@@ -164,6 +186,7 @@ export default function HomeScreen() {
           value={category}
           onChange={setCategory}
           accessibilityLabel="Plan categories"
+          size="home"
           contentStyle={{ paddingLeft: homeGutter(width) }}
         />
 
@@ -231,7 +254,6 @@ const styles = StyleSheet.create({
   },
   greetingLine: {
     fontFamily: GREETING_FONT_FAMILY,
-    letterSpacing: -0.6375,
     color: colors.ink,
   },
   greetingSub: {
@@ -249,8 +271,12 @@ const styles = StyleSheet.create({
   },
   // The gaps below are the approved frame's own: subtitle 111 -> search 126, search 182 ->
   // heading 198, heading 225 -> pills 234, pills 278 -> deck 307.
-  search: {
+  searchRow: {
     marginTop: 15,
+  },
+  searchSprig: {
+    left: -17,
+    top: -12,
   },
   sectionTitleRow: {
     flexDirection: 'row',
@@ -260,18 +286,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginTop: 16,
     marginBottom: 9,
-    // Frame node 7:30: Semi Bold 22 with a 27 line box, which is what puts the pills at y=234.
-    fontSize: 22,
-    lineHeight: 27,
-    letterSpacing: -0.44,
+    // Frame 229:133: Bold 45.4px = 20.9pt.
+    fontSize: 21,
+    lineHeight: 26,
     color: colors.ink,
   },
-  sectionStrokes: {
-    position: 'relative',
-    marginTop: 12,
-  },
   deckSlot: {
-    marginTop: 29,
+    marginTop: 27,
   },
   attribution: {
     marginTop: spacing.xs,

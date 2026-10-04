@@ -46,7 +46,7 @@ interface ChipProps {
    * same near-black when chosen. Both are the same component so a chosen chip reads the same way
    * everywhere; only the size differs.
    */
-  size?: 'default' | 'small';
+  size?: 'default' | 'small' | 'home' | 'explore';
   /**
    * An idle chip in a rail may carry one of the identity's three tints (the references give the
    * Home and Explore rails mint, blush and lilac after the selected chip). The tint is assigned by
@@ -76,11 +76,21 @@ const TINT_FILL: Record<ChipTint, string | null> = {
 export const SMALL_CHIP_HEIGHT = 40;
 export const SMALL_CHIP_GAP = 8;
 
+/**
+ * The two approved rails. Home (frame 229:133): 94px / 2.168 = 43.4 tall (44 keeps the touch target),
+ * label Medium 30.4px = 14, 16 of padding so all four fit a 393 phone as the frame shows them.
+ * Explore (frame 294:133): 90px / 2.17 = 41.5 tall, label 29px = 13.4, 22 of padding, 6 between.
+ * Both are the same chip; only the rail's size differs.
+ */
+export const HOME_CHIP = { height: 44, paddingX: 16, fontSize: 14, lineHeight: 17, gap: 10 } as const;
+export const EXPLORE_CHIP = { height: 42, paddingX: 22, fontSize: 13.4, lineHeight: 16, gap: 6 } as const;
+
 export function Chip({ label, active = false, onPress, appearance = 'outlined', size = 'default', tint = 'none', style }: ChipProps) {
   const reducedMotion = useReducedMotion();
   const activeProgress = useSharedValue(active ? 1 : 0);
   const pressed = useSharedValue(1);
   const small = size === 'small';
+  const rail = size === 'home' ? HOME_CHIP : size === 'explore' ? EXPLORE_CHIP : null;
   const tintFill = TINT_FILL[tint];
   const idleFill = tintFill ?? (small ? colors.fill : colors.surface);
   const idleBorder = appearance === 'outlined' && !small && !tintFill ? colors.border : idleFill;
@@ -110,18 +120,33 @@ export function Chip({ label, active = false, onPress, appearance = 'outlined', 
       accessibilityState={{ selected: active }}
       accessibilityLabel={label}
       onPress={handlePress}
+      // A rail chip drawn under 44pt (Explore's 42) still has a 44pt target.
+      hitSlop={rail && rail.height < CHIP_HEIGHT ? { top: (CHIP_HEIGHT - rail.height) / 2, bottom: (CHIP_HEIGHT - rail.height) / 2 } : undefined}
       onPressIn={() => {
         pressed.value = withSpring(0.95, spring.snappy);
       }}
       onPressOut={() => {
         pressed.value = withSpring(1, spring.gentle);
       }}
-      style={[styles.chip, (appearance === 'plain' || small || tintFill) && styles.plain, small && styles.small, animatedStyle, style]}
+      style={[
+        styles.chip,
+        (appearance === 'plain' || small || tintFill) && styles.plain,
+        small && styles.small,
+        rail && { height: rail.height, paddingHorizontal: rail.paddingX },
+        animatedStyle,
+        style,
+      ]}
     >
       <Text
         variant="bodySmall"
         color={active ? colors.text.inverse : colors.ink}
-        style={[styles.label, small && styles.smallLabel, small && active && styles.smallLabelActive]}
+        style={[
+          styles.label,
+          small && styles.smallLabel,
+          small && active && styles.smallLabelActive,
+          rail && { fontSize: rail.fontSize, lineHeight: rail.lineHeight },
+          rail && active && styles.smallLabelActive,
+        ]}
         numberOfLines={1}
       >
         {label}

@@ -31,11 +31,12 @@ export function homeGutter(viewportWidth: number): number {
 }
 
 /**
- * The greeting at the frame's 25.5, in the identity's Bold heading weight.
+ * The greeting at the approved frame's 24.4 (Bold 52.9px at 2.168x), on a 29.5 line, with Inter's
+ * own tracking: the approved frames carry no negative letter-spacing.
  */
-export const GREETING_FONT_SIZE = 25.5;
-const GREETING_LINE_RATIO = 31 / 25.5;
-export const GREETING_LETTER_SPACING = -0.6375;
+export const GREETING_FONT_SIZE = 24.4;
+const GREETING_LINE_RATIO = 29.5 / 24.4;
+export const GREETING_LETTER_SPACING = 0;
 export const GREETING_FONT_FAMILY = 'Inter_700Bold';
 
 /** Below this the heading stops reading as the page's primary voice, so we wrap instead. */
@@ -157,7 +158,7 @@ export function homeHeaderLayout(viewportWidth: number, greeting: string): HomeH
   // Closing the gap costs the composition almost nothing, so spend that first at each size and
   // only step the type down once the tightest gap still will not do.
   for (let fontSize = GREETING_FONT_SIZE; fontSize >= GREETING_MIN_FONT_SIZE; fontSize -= 1) {
-    const width = estimateTextWidth(greeting, fontSize, 'semiBold', GREETING_LETTER_SPACING);
+    const width = estimateTextWidth(greeting, fontSize, 'extraBold', GREETING_LETTER_SPACING);
     for (const gap of [HEADER_GAP, HEADER_MIN_GAP]) {
       if (width + FIT_MARGIN <= row - gap) {
         return {
@@ -177,32 +178,6 @@ export function homeHeaderLayout(viewportWidth: number, greeting: string): HomeH
     lineHeight: Math.round(GREETING_MIN_FONT_SIZE * GREETING_LINE_RATIO),
     maxLines: 2,
   };
-}
-
-/**
- * The decorative strokes after the greeting: their width, and the gap before them. Figma "Home v2"
- * draws them 32 wide, 15 after the text and 7 short of the avatar at 393; 26 with an 8 gap keeps
- * them clear of both on the same artboard with the estimate's own margin.
- */
-export const GREETING_DOODLE_SIZE = 26;
-const GREETING_DOODLE_GAP = 8;
-
-/**
- * Where the strokes doodle starts, measured from the greeting's left edge, or null when the line
- * has no room for it. The estimate is the one the header already trusts for fitting the text; the
- * doodle is only drawn when that estimate leaves the whole mark clear of the text with the same
- * margin, so on a narrow phone with a long name it simply does not appear.
- */
-export function greetingDoodleLeft(
-  viewportWidth: number,
-  greeting: string,
-  layout: HomeHeaderLayout,
-): number | null {
-  if (layout.maxLines > 1) return null;
-  const row = viewportWidth - homeGutter(viewportWidth) * 2 - AVATAR_SIZE - layout.gap;
-  const text = estimateTextWidth(greeting, layout.fontSize, 'semiBold', GREETING_LETTER_SPACING);
-  const left = Math.ceil(text) + GREETING_DOODLE_GAP;
-  return left + GREETING_DOODLE_SIZE + FIT_MARGIN <= row ? left : null;
 }
 
 /** Width left for placeholder text inside the search field, after icon, padding and filter disc. */

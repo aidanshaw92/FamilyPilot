@@ -216,11 +216,12 @@ for (const run of RUNS) {
     `"${m.search.text}" ${m.search.natural} in ${m.search.width}`);
 
   // --- Bottom navigation (frame node 9:2) ------------------------------------------------------
-  // 270 x 58 centred at x=62 on a 393 artboard, five 50x44 tabs at stride 52, 22px icons.
+  // Approved frames 229:133 / 294:133: 300 x 60 centred on a 393 artboard (Home draws 290, Explore 310;
+  // one width is used), five 56x46 tabs at stride 58, 22px icons, a 46pt active disc.
   const tabCount = m.tabs.length;
-  const expectedPillWidth = 6 * 2 + tabCount * 50 + (tabCount - 1) * 2;
-  check(run.name, 'pill matches the frame size', near(m.pill.width, expectedPillWidth) && near(m.pill.height, 58),
-    `${m.pill.width}x${m.pill.height}, expected ${expectedPillWidth}x58 for ${tabCount} tabs`);
+  const expectedPillWidth = 6 * 2 + tabCount * 56 + (tabCount - 1) * 2;
+  check(run.name, 'pill matches the frame size', near(m.pill.width, expectedPillWidth) && near(m.pill.height, 60),
+    `${m.pill.width}x${m.pill.height}, expected ${expectedPillWidth}x60 for ${tabCount} tabs`);
   check(run.name, 'pill is centred', near((m.pill.left + m.pill.right) / 2, run.width / 2),
     `centre ${((m.pill.left + m.pill.right) / 2).toFixed(1)} of ${run.width}`);
   check(run.name, 'whole pill is on screen', m.pill.bottom <= m.viewport.height && m.pill.top >= 0 && m.pill.left >= 0 && m.pill.right <= run.width,

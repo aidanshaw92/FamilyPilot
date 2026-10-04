@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
 
 import { spacing } from '@/src/design-system/tokens';
 
-import { Chip, CHIP_GAP, railTint } from './Chip';
+import { Chip, CHIP_GAP, HOME_CHIP, railTint } from './Chip';
 
 export interface PillOption {
   id: string;
@@ -15,6 +15,8 @@ interface PillSelectorProps {
   onChange: (id: string) => void;
   /** Horizontal scroll (a category rail) or a fixed row that fits the width (segmented tabs). */
   scroll?: boolean;
+  /** `home` is the approved Home rail's chip (frame 229:133); `default` is the shared 44pt pill. */
+  size?: 'default' | 'home';
   accessibilityLabel?: string;
   style?: ViewStyle;
   contentStyle?: ViewStyle;
@@ -31,6 +33,7 @@ export function PillSelector({
   value,
   onChange,
   scroll = true,
+  size = 'default',
   accessibilityLabel,
   style,
   contentStyle,
@@ -43,6 +46,7 @@ export function PillSelector({
       label={option.label}
       active={option.id === value}
       appearance="plain"
+      size={size}
       tint={scroll ? railTint(index - 1) : 'none'}
       onPress={() => onChange(option.id)}
       style={scroll ? undefined : styles.pillFlex}
@@ -63,7 +67,7 @@ export function PillSelector({
       showsHorizontalScrollIndicator={false}
       accessibilityLabel={accessibilityLabel}
       style={style}
-      contentContainerStyle={[styles.scrollContent, contentStyle]}
+      contentContainerStyle={[styles.scrollContent, size === 'home' && { gap: HOME_CHIP.gap }, contentStyle]}
     >
       {pills}
     </ScrollView>

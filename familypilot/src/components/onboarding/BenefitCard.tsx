@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
+
+import { BenefitIcon, BenefitIconKind } from './BenefitIcon';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { IconWell, IconWellTint, Text } from '@/src/components/ui';
+import { Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 
 interface BenefitCardProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  tint: IconWellTint;
+  icon: BenefitIconKind;
   title: string;
   subtitle: string;
   /** The card carries a chevron, so it goes somewhere: the same place as "Get started". */
@@ -14,11 +15,12 @@ interface BenefitCardProps {
 }
 
 /**
- * One of Welcome's three benefit rows (Figma "Benefit card"): a tinted icon well, a title, a one-line
- * promise and a chevron, on a white card with a hairline. Each one states something the product does
- * today; nothing behind a pilot flag is promised here.
+ * One of Welcome's three benefit rows, from the approved frame 166:128 (852px = 393pt): a 51-tall,
+ * 349-wide white card with a 47 icon well 8 in from the left, the title Semi Bold 12.9 and the one-line
+ * promise 11 starting 18.5 past the well, and a chevron at the right. Each one states
+ * something the product does today; nothing behind a pilot flag is promised here.
  */
-export function BenefitCard({ icon, tint, title, subtitle, onPress }: BenefitCardProps) {
+export function BenefitCard({ icon, title, subtitle, onPress }: BenefitCardProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -26,14 +28,17 @@ export function BenefitCard({ icon, tint, title, subtitle, onPress }: BenefitCar
       accessibilityLabel={`${title}. ${subtitle}`}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      <IconWell icon={icon} tint={tint} />
+      <BenefitIcon kind={icon} size={47} />
       <View style={styles.text}>
-        <Text variant="heading3">{title}</Text>
-        <Text variant="bodySmall" color={colors.text.secondary}>
+        {/* One line each at the reference's 390; a narrower phone wraps rather than ellipsises. */}
+        <Text variant="heading3" style={styles.title} numberOfLines={2}>
+          {title}
+        </Text>
+        <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle} numberOfLines={2}>
           {subtitle}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+      <Ionicons name="chevron-forward" size={16} color={colors.text.tertiary} style={styles.chevron} />
     </Pressable>
   );
 }
@@ -42,11 +47,12 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingVertical: 14,
-    paddingHorizontal: spacing.lg,
+    paddingVertical: 2,
+    paddingLeft: 8,
+    paddingRight: spacing.md,
+    minHeight: 51.2,
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: 13.8,
     borderWidth: 1,
     borderColor: colors.borderLight,
   },
@@ -55,6 +61,18 @@ const styles = StyleSheet.create({
   },
   text: {
     flex: 1,
-    gap: 2,
+    gap: 1,
+    marginLeft: 18.5,
+  },
+  chevron: {
+    marginLeft: spacing.sm,
+  },
+  title: {
+    fontSize: 12.9,
+    lineHeight: 16,
+  },
+  subtitle: {
+    fontSize: 11,
+    lineHeight: 14,
   },
 });

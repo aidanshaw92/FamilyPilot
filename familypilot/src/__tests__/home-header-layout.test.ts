@@ -22,7 +22,7 @@ import {
 const GREETING = 'Good afternoon, Aidan';
 
 function greetingWidth(text: string, fontSize: number) {
-  return estimateTextWidth(text, fontSize, 'semiBold', GREETING_LETTER_SPACING);
+  return estimateTextWidth(text, fontSize, 'extraBold', GREETING_LETTER_SPACING);
 }
 
 /** Header space left for the greeting once the gutters, avatar and gap are taken out. */
@@ -36,7 +36,7 @@ describe('home header layout', () => {
     expect(layout).toEqual({
       gap: HEADER_GAP,
       fontSize: GREETING_FONT_SIZE,
-      lineHeight: 31,
+      lineHeight: 30,
       maxLines: 1,
     });
     expect(searchPlaceholder(393)).toBe(SEARCH_PLACEHOLDERS[0]);

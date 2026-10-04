@@ -87,15 +87,28 @@ There is one mark at every size and no alternates.
 
 ## Decoration
 
-The identity's ornament is the `Doodle` component (leaf, strokes, blob; the five tints) and nothing
-else. It appears on Welcome, Home and Explore; Venue Detail, the plan screens, Profile and every
-form stay plain so the facts on them are the focus. A doodle sits on the canvas, never on a card, a
-photograph, a button or under text; it ignores the pointer and is hidden from assistive technology.
-Home's greeting strokes are drawn only when `greetingDoodleLeft()` says the line has room for them.
+The identity's ornament is the **decorative artwork of the approved frames**, drawn from their own
+vectors: `ScreenArt` (`src/components/ui/ScreenArt.tsx`) paints a horizontal slice of an exported layer
+(`src/assets/art/*.svg`, turned into `src/assets/art/figma-art.ts` by `scripts/build-art.mjs`; re-export
+from the frame and rebuild to change it). It appears on Welcome (the stickers between and over the
+photographs), Home (strokes by the avatar, the sprig and dashes by the search, the plan heading's
+strokes, the leaves and blobs around the deck, the foot marks) and Explore (the leaves, blobs and strokes
+in the gutters). Venue Detail, the plan screens, Profile and every form stay plain so the facts on them
+are the focus. Artwork sits on the canvas behind content, never on a control or under text it could
+obscure; it ignores the pointer and is hidden from assistive technology.
 
-Photography is editorial and candid when the product owns it. Until then a `PhotoSlot` holds the
-place in the composition with the category-gradient treatment: no stock image, no generated image,
-and never a photo that impersonates a venue.
+Where a mark follows the fixed-size type (beside a heading) it is placed in fixed points; where it follows
+the screen's edge (a leaf off the right side, the foot marks) or the deck (which scales with the phone) it
+scales with the width. `ScreenArt`'s `from`/`to` slice, `anchor`, `width` and `clipX`/`align` express that;
+Home and Explore split their artwork accordingly. A phone narrower than the frame draws the marks smaller.
+
+Photography is editorial and candid when the product owns it. A `PhotoSlot` clips its photograph to one of
+the seven cut-outs the approved Welcome frame's own mask vectors draw (`WELCOME_CUTOUTS`, generated from
+`src/assets/art/masks/`), inside a white sticker edge; Welcome's slots are placed by their frame
+coordinates (`welcome-layout.ts`). Until a licensed photograph is supplied for a slot it shows the
+category-gradient treatment inside the same cut-out: no stock image, no generated image, and never a
+photo that impersonates a venue. The photographs in the Figma frame are review-only crops and are not
+assets.
 
 ## Primitives
 
@@ -105,13 +118,13 @@ and never a photo that impersonates a venue.
 | `Button` | `primary` action-green pill · `secondary` white with hairline, green text · `outline` white with green rule · `ghost` text only. | Sizes `sm 36 / md 48 / lg 56`; `trailingIcon` for "Get started →". No variant is purple or ink. |
 | `Chip` | The one selection pill (frame "Category pills"): 44 tall, 20 side padding, Medium 14.5/18; selected = action green, idle = white or a tint. | `tint="mint" \| "blush" \| "lilac"` for a rail, assigned by `railTint(index)`; `appearance="plain"` (no hairline) or `"outlined"` (hairline; chips on a white sheet). Lay rows out with `gap: CHIP_GAP` (10); the chip has no outer margin. |
 | `PillSelector` | A single-choice rail or segmented row of `Chip`s. | Arranges and tints a scrolling rail by position; does not style. |
-| `FamilyMatch` | The one Family Fit badge (frame node 8:13): `★ 4.0 Family Fit`, 32 tall; `size="compact"` is frame node 49:5's `★ 4.3` beside a venue name, 30 tall, where a "Why this score" link carries the word. | `tone="onLight"` is a mint pill with green star and text; `"onImage"` is the green pill with white. Unreviewed → "Not yet reviewed" on the neutral fill, no number. Unknown score → renders nothing. Scale and strings live in `src/utils/family-match-scale.ts`. |
+| `FamilyMatch` | The one Family Fit badge (frame node 8:13, resized to the approved Home and Explore references): `★ 4.0 Family Fit`, 28 tall; `size="compact"` is frame node 49:5's `★ 4.3` beside a venue name, 30 tall, where a "Why this score" link carries the word. | `tone="onLight"` is a mint pill with green star and text; `"onImage"` is the green pill with white. Unreviewed → "Not yet reviewed" on the neutral fill, no number. Unknown score → renders nothing. Scale and strings live in `src/utils/family-match-scale.ts`. |
 | `FamilyMatchPanel` / `RecommendationPattern` | The explanation: classification word, "Why it suits your family", "Good to know", the secondary number line. | Word leads, number is secondary, cautions never render as positives. |
-| `ArrowCta` | The emphasised action with an arrow disc: 58 tall, white disc; `size="compact"` is the Explore card's 48 with a 36 disc; `disc="mint"` on Explore. | Home's "See more", Venue Detail's "Create a plan", the plan's "Save this plan", every Explore result. |
+| `ArrowCta` | The emphasised action with an arrow disc: 58 tall, white disc; `size="compact"` is the Explore card's 44 with a 32 disc (the reference draws 42; 44 keeps the touch target); `disc="mint"` on Explore. | Home's "See more", Venue Detail's "Create a plan", the plan's "Save this plan", every Explore result. |
 | `SearchBar` | The 56 search pill with the filter disc inside its right edge (Home), or `actionLabel="Search"` for a green action pill there instead (Explore). | |
 | `CircleButton` | Round control: `light` (white on photography), `dark` (action green), `glass`. | Back, save, filter, "go". |
 | `IconWell` | A 48 tinted square behind an icon, the icon in the tint's saturated partner. | Welcome's benefit cards, empty states. |
-| `Doodle` / `PhotoSlot` | See Decoration above. | |
+| `ScreenArt` / `PhotoSlot` | See Decoration above. | |
 | `DateField` / `TimeField` | A drawn field (white, hairline, 48 tall) showing the value in the app's words — "Friday 2 October 2026", "09:00" — with the platform's native picker kept underneath, transparent, for the interaction. | ISO values in, ISO values out. Labels from `date-time-labels.ts`. Native apps keep the plain text field. |
 | `SearchBar`, `Field`, `BottomSheet`, `Card`, `SectionHeader`, `EmptyState`, `ErrorState`, `Skeleton*`, `VenueImage`, `DataTrustBadge` | Shared surfaces and states. | |
 
