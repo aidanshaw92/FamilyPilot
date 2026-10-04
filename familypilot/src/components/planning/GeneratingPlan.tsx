@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   steps: { gap: spacing.xl },
   step: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   markerBox: { width: 16, height: 16, alignItems: 'center', justifyContent: 'center' },
-  dot: { width: 9, height: 9, borderRadius: radius.full, backgroundColor: colors.ink },
+  dot: { width: 9, height: 9, borderRadius: radius.full, backgroundColor: colors.action },
   ring: { width: 11, height: 11, borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border },
   stepLabel: { flex: 1 },
   receipt: { marginTop: spacing['3xl'] },

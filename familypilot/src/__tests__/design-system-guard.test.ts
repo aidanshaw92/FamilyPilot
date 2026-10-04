@@ -6,11 +6,10 @@ import { describe, expect, it } from 'vitest';
 import { colors, typography } from '@/src/design-system/tokens';
 
 /**
- * The approved Home frame establishes one ink, one secondary grey and Semi Bold headings. The rest
- * of the app used to be built on an older purple, Extra Bold token set, which is why it read as a
- * different product one tap after Home. These checks keep the two from drifting apart again: the
- * tokens must stay what the frame says, and consumer screens must not reach past them for the
- * retired purple or for raw hex copies of the frame's values.
+ * The identity references (docs/VISUAL_IDENTITY.md) establish a navy ink for text, a deep green for
+ * every control, Bold page headings and Semi Bold titles. These checks keep consumer screens on those
+ * tokens: the values must stay what the references say, and no screen may reach past them for the
+ * retired purple, for raw hex copies of the token values, or for ink as a control colour.
  */
 const ROOT = join(process.cwd());
 const CONSUMER_DIRS = ['app', 'src/components'];
@@ -34,21 +33,28 @@ const consumerFiles = CONSUMER_DIRS.flatMap((dir) => walk(join(ROOT, dir)))
   .map((file) => relative(ROOT, file))
   .filter((file) => !EXEMPT.some((prefix) => file.startsWith(prefix)));
 
-describe('design-system tokens match the approved Home frame', () => {
-  it('ink is the frame near-black and text.primary is the same colour', () => {
-    expect(colors.ink).toBe('#141416');
+describe('design-system tokens match the identity references', () => {
+  it('ink is the navy the references set text in, and text.primary is the same colour', () => {
+    expect(colors.ink).toBe('#0D1733');
     expect(colors.text.primary).toBe(colors.ink);
-    expect(colors.text.secondary).toBe('#6E6E73');
+    expect(colors.text.secondary).toBe('#626A80');
   });
 
-  it('headings are Semi Bold, not Extra Bold', () => {
-    for (const variant of ['display', 'heading1', 'heading2', 'heading3'] as const) {
-      expect(typography[variant].fontFamily, variant).toBe('Inter_600SemiBold');
+  it('action is the deep green, distinct from ink', () => {
+    expect(colors.action).toBe('#0F4A3E');
+    expect(colors.action).not.toBe(colors.ink);
+    expect(colors.nav.pill).toBe(colors.action);
+  });
+
+  it('page headings are Bold and titles Semi Bold', () => {
+    for (const variant of ['display', 'heading1', 'heading2'] as const) {
+      expect(typography[variant].fontFamily, variant).toBe('Inter_700Bold');
     }
+    expect(typography.heading3.fontFamily).toBe('Inter_600SemiBold');
   });
 
-  it('a text link is ink, so no screen needs a colour of its own for one', () => {
-    expect(typography.link.color).toBe(colors.ink);
+  it('a text link is the action green, so no screen needs a colour of its own for one', () => {
+    expect(typography.link.color).toBe(colors.action);
   });
 });
 
@@ -66,7 +72,18 @@ describe('consumer screens stay on the tokens', () => {
 
   it("do not hard-code the frame's ink or greys when the token exists", () => {
     const offenders = consumerFiles.filter((file) =>
-      /#(141416|6E6E73|0A0A0D|5C586E|1A1A2E)\b/i.test(readFileSync(join(ROOT, file), 'utf8')),
+      /#(141416|6E6E73|0A0A0D|5C586E|1A1A2E|0D1733|0F4A3E|626A80|FBFAF7|171617)\b/i.test(readFileSync(join(ROOT, file), 'utf8')),
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  it('do not draw a control in ink: backgrounds and rules take the action green', () => {
+    // Text is ink; a filled or outlined control is green. A background or border in `colors.ink`
+    // is the old single-accent scheme leaking back.
+    const offenders = consumerFiles.filter((file) =>
+      /(backgroundColor|borderColor|trackColor[^\n]*true):\s*colors\.(ink|text\.primary)\b/.test(
+        readFileSync(join(ROOT, file), 'utf8'),
+      ),
     );
     expect(offenders).toEqual([]);
   });

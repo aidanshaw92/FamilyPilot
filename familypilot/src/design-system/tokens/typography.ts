@@ -12,31 +12,30 @@ export const fontFamily = {
 } as const;
 
 /**
- * The approved Home frame sets every heading in Inter Semi Bold with a -0.025em track (the greeting,
- * node 7:16, is 25.5 with -0.6375; the section heading, node 7:30, is 22 with -0.44). The token
- * scale used to be Extra Bold, which is why every screen after Home read heavier than the design.
- * Headings now share the frame's weight and track so Home's local overrides and the rest of the
- * app resolve to the same voice.
+ * The identity references set the page voice (the greeting, "Explore London", the Welcome headline)
+ * in Inter Bold with a -0.025em track, and card titles and button labels in Semi Bold. Display,
+ * heading1 and heading2 are therefore Bold; heading3 stays Semi Bold. Extra Bold and Black are loaded
+ * for the internal tools and never used for a parent-facing word.
  */
 const HEADING_TRACK = -0.025;
 
 export const typography = {
   display: {
-    fontFamily: fontFamily.semiBold,
+    fontFamily: fontFamily.bold,
     fontSize: 32,
     lineHeight: 38,
     letterSpacing: 32 * HEADING_TRACK,
     color: colors.text.primary,
   },
   heading1: {
-    fontFamily: fontFamily.semiBold,
+    fontFamily: fontFamily.bold,
     fontSize: 26,
     lineHeight: 32,
     letterSpacing: 26 * HEADING_TRACK,
     color: colors.text.primary,
   },
   heading2: {
-    fontFamily: fontFamily.semiBold,
+    fontFamily: fontFamily.bold,
     fontSize: 22,
     lineHeight: 28,
     letterSpacing: 22 * HEADING_TRACK,
@@ -86,13 +85,13 @@ export const typography = {
     letterSpacing: 1.04,
     color: colors.text.secondary,
   },
-  /** An inline text action ("Undo", "View details", "Reset"): ink and a touch heavier than the body
-   * copy around it, so it reads as pressable without borrowing a colour from nowhere. */
+  /** An inline text action ("Undo", "View details", "Reset"): the action green and a touch heavier
+   * than the body copy around it, so it reads as pressable. */
   link: {
     fontFamily: fontFamily.semiBold,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.ink,
+    color: colors.action,
   },
 } as const satisfies Record<string, TextStyle>;
 

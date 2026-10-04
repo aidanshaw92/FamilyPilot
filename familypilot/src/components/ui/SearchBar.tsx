@@ -4,16 +4,26 @@ import { Pressable, StyleSheet, TextInput, View, ViewStyle } from 'react-native'
 import { colors, fontFamily, radius, spacing } from '@/src/design-system/tokens';
 
 import { CircleButton } from './CircleButton';
+import { Text } from './Text';
 
 interface SearchBarProps {
   value?: string;
   onChangeText?: (value: string) => void;
   onSubmit?: () => void;
   placeholder?: string;
+  /** What assistive technology calls the input. Defaults to the placeholder. */
+  accessibilityLabel?: string;
   /** When set, the whole bar is a button (a Home shortcut into Explore) rather than an input. */
   onPress?: () => void;
   onFilterPress?: () => void;
   filterActive?: boolean;
+  /**
+   * Explore's variant (Figma "Search bar / Action"): a green "Search" pill tucked inside the right
+   * edge in place of the filter disc, for a search that runs on demand rather than as you type.
+   */
+  actionLabel?: string;
+  onAction?: () => void;
+  actionAccessibilityLabel?: string;
   style?: ViewStyle;
   autoFocus?: boolean;
 }
@@ -25,9 +35,13 @@ export function SearchBar({
   onChangeText,
   onSubmit,
   placeholder = 'Search',
+  accessibilityLabel,
   onPress,
   onFilterPress,
   filterActive = false,
+  actionLabel,
+  onAction,
+  actionAccessibilityLabel,
   style,
   autoFocus,
 }: SearchBarProps) {
@@ -49,7 +63,7 @@ export function SearchBar({
           </View>
         ) : (
           <TextInput
-            accessibilityLabel={placeholder}
+            accessibilityLabel={accessibilityLabel ?? placeholder}
             placeholder={placeholder}
             placeholderTextColor={PLACEHOLDER_INK}
             value={value}
@@ -60,6 +74,16 @@ export function SearchBar({
             style={styles.input}
           />
         )}
+        {actionLabel && onAction ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={actionAccessibilityLabel ?? actionLabel}
+            onPress={onAction}
+            style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
+          >
+            <Text style={styles.actionLabel}>{actionLabel}</Text>
+          </Pressable>
+        ) : null}
       </Pressable>
 
       {/* The approved frame tucks the filter disc inside the field's right edge, not beside it.
@@ -95,11 +119,15 @@ function PlaceholderText({ children }: { children: string }) {
  * 22px in, the placeholder starting at 56, and a 46px filter disc inset 5 from the right edge.
  */
 const FIELD_HEIGHT = 56;
+const FIELD_PADDING = 21;
 const PLACEHOLDER_FONT_SIZE = 15.5;
-const PLACEHOLDER_INK = '#8C8C91';
+const PLACEHOLDER_INK = colors.text.tertiary;
 const SEARCH_ICON = 22;
 const FILTER_SIZE = 46;
 const FILTER_INSET = 5;
+/** The action pill: 44 tall, inset 6, so it sits inside the field like the filter disc does. */
+const ACTION_HEIGHT = 44;
+const ACTION_INSET = 6;
 
 const styles = StyleSheet.create({
   wrap: {
@@ -111,11 +139,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     height: FIELD_HEIGHT,
-    paddingHorizontal: 21,
+    paddingHorizontal: FIELD_PADDING,
     borderRadius: radius.full,
     backgroundColor: colors.surface,
     // The frame carries a soft drop shadow here rather than an outline.
-    shadowColor: 'rgba(15, 15, 20, 1)',
+    shadowColor: colors.ink,
     shadowOpacity: 0.06,
     shadowOffset: { width: 0, height: 6 },
     shadowRadius: 9,
@@ -127,6 +155,10 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    // A web text input has an intrinsic width; without these it pushed the action pill out of the
+    // field at 360 and 390 and the pill was clipped to "Searc".
+    minWidth: 0,
+    flexShrink: 1,
     fontFamily: fontFamily.regular,
     fontSize: PLACEHOLDER_FONT_SIZE,
     color: colors.text.primary,
@@ -143,5 +175,23 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: FILTER_INSET,
     top: (FIELD_HEIGHT - FILTER_SIZE) / 2,
+  },
+  action: {
+    height: ACTION_HEIGHT,
+    borderRadius: ACTION_HEIGHT / 2,
+    paddingHorizontal: 18,
+    marginRight: -(FIELD_PADDING - ACTION_INSET),
+    backgroundColor: colors.action,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionPressed: {
+    backgroundColor: colors.actionPressed,
+  },
+  actionLabel: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: 15,
+    lineHeight: 20,
+    color: colors.text.inverse,
   },
 });

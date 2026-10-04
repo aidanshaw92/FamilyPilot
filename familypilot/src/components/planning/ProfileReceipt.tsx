@@ -45,6 +45,6 @@ const styles = StyleSheet.create({
   icon: { marginTop: 3 },
   // Node 76:64: Medium 13 on a 19 line, secondary ink; "Edit" SemiBold ink underlined.
   text: { flex: 1, fontFamily: 'Inter_500Medium', fontSize: 13, lineHeight: 19, color: colors.text.secondary },
-  edit: { fontFamily: 'Inter_600SemiBold', fontSize: 13, lineHeight: 19, color: colors.ink, textDecorationLine: 'underline' },
+  edit: { fontFamily: 'Inter_600SemiBold', fontSize: 13, lineHeight: 19, color: colors.action, textDecorationLine: 'underline' },
   editHit: { position: 'absolute', right: 0, top: 0, bottom: 0, width: 56 },
 });

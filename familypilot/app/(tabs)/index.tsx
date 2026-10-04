@@ -15,12 +15,15 @@ import { RecommendationDeck } from '@/src/components/home/RecommendationDeck';
 import { deckMetrics } from '@/src/utils/home-deck-geometry';
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import {
+  GREETING_DOODLE_SIZE,
   GREETING_FONT_FAMILY,
+  greetingDoodleLeft,
   homeGutter,
   homeHeaderLayout,
   searchPlaceholder,
 } from '@/src/utils/home-header-layout';
 import {
+  Doodle,
   EmptyState,
   ErrorState,
   PillSelector,
@@ -67,6 +70,7 @@ export default function HomeScreen() {
   // fits the greeting and the placeholder whole, rather than a clipped heading.
   const greetingText = `${getTimeGreeting()}, ${firstName}`;
   const header = homeHeaderLayout(width, greetingText);
+  const greetingStrokesLeft = greetingDoodleLeft(width, greetingText, header);
   const gutter = { paddingHorizontal: homeGutter(width) };
 
   const handleRefresh = async () => {
@@ -113,6 +117,17 @@ export default function HomeScreen() {
               >
                 {greetingText}
               </Text>
+              {/* The yellow strokes after the greeting (Figma "Home v2"), drawn only when the same
+                  estimate the header trusts says the line leaves room for them. Absolute, so the
+                  approved header geometry is untouched either way. */}
+              {greetingStrokesLeft !== null ? (
+                <Doodle
+                  kind="strokes"
+                  tint="yellow"
+                  size={GREETING_DOODLE_SIZE}
+                  style={{ left: greetingStrokesLeft, top: 0 }}
+                />
+              ) : null}
               <Text variant="bodySmall" color={colors.text.secondary} style={styles.greetingSub}>
                 What shall we do today?
               </Text>
@@ -136,9 +151,12 @@ export default function HomeScreen() {
             style={styles.search}
           />
 
-          <Text variant="heading2" style={styles.sectionTitle}>
-            Select your plan
-          </Text>
+          <View style={styles.sectionTitleRow}>
+            <Text variant="heading2" style={styles.sectionTitle}>
+              Select your plan
+            </Text>
+            <Doodle kind="strokes" tint="yellow" size={26} style={styles.sectionStrokes} />
+          </View>
         </View>
 
         <PillSelector
@@ -225,7 +243,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: radius.full,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.action,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -233,6 +251,11 @@ const styles = StyleSheet.create({
   // heading 198, heading 225 -> pills 234, pills 278 -> deck 307.
   search: {
     marginTop: 15,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
   },
   sectionTitle: {
     marginTop: 16,
@@ -242,6 +265,10 @@ const styles = StyleSheet.create({
     lineHeight: 27,
     letterSpacing: -0.44,
     color: colors.ink,
+  },
+  sectionStrokes: {
+    position: 'relative',
+    marginTop: 12,
   },
   deckSlot: {
     marginTop: 29,

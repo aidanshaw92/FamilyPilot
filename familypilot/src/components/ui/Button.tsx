@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Pressable, PressableProps, StyleSheet, ViewStyle } from 'react-native';
 
@@ -12,19 +13,21 @@ interface ButtonProps extends Omit<PressableProps, 'style'> {
   variant?: ButtonVariant;
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
+  /** A glyph after the label (Welcome's "Get started →"). Decorative: the label is the name. */
+  trailingIcon?: keyof typeof Ionicons.glyphMap;
   style?: ViewStyle;
 }
 
 /**
- * The approved frames draw the one emphasised action as a near-black pill (Home's "See more", the
- * sheet's "Create plan"), so primary is ink. Everything quieter is ink text on white: `secondary`
- * with a hairline, `outline` with an ink rule, `ghost` with nothing. No variant is purple.
+ * The identity's one emphasised action is a deep-green pill (Home's "See more", Welcome's "Get
+ * started"), so primary is the action green. Everything quieter is green text on white: `secondary`
+ * with a hairline, `outline` with a green rule, `ghost` with nothing. No variant is purple or ink.
  */
 const variantStyles: Record<ButtonVariant, { bg: string; text: string; border?: string }> = {
-  primary: { bg: colors.ink, text: colors.text.inverse },
-  secondary: { bg: colors.surface, text: colors.ink, border: colors.border },
-  ghost: { bg: 'transparent', text: colors.ink },
-  outline: { bg: colors.surface, text: colors.ink, border: colors.ink },
+  primary: { bg: colors.action, text: colors.text.inverse },
+  secondary: { bg: colors.surface, text: colors.action, border: colors.border },
+  ghost: { bg: 'transparent', text: colors.action },
+  outline: { bg: colors.surface, text: colors.action, border: colors.action },
 };
 
 export function Button({
@@ -32,6 +35,7 @@ export function Button({
   variant = 'primary',
   size = 'md',
   fullWidth = false,
+  trailingIcon,
   style,
   onPress,
   ...props
@@ -63,12 +67,15 @@ export function Button({
       <Text variant="heading3" color={v.text} style={styles.label}>
         {label}
       </Text>
+      {trailingIcon ? <Ionicons name={trailingIcon} size={20} color={v.text} /> : null}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
+    flexDirection: 'row',
+    gap: spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.full,

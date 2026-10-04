@@ -66,5 +66,5 @@ const styles = StyleSheet.create({
   facts: { fontFamily: 'Inter_500Medium', fontSize: 13.5, lineHeight: 16, color: colors.ink },
   factsUnknown: { fontFamily: 'Inter_400Regular', color: colors.text.tertiary },
   hours: { fontFamily: 'Inter_400Regular', fontSize: 12.5, lineHeight: 15, color: colors.text.tertiary },
-  open: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  open: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.action, alignItems: 'center', justifyContent: 'center' },
 });

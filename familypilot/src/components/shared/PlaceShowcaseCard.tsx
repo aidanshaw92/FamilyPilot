@@ -183,11 +183,12 @@ const CTA_DISC = 46;
  * its first stop sits where the frame's box begins.
  */
 const SCRIM_TOP = 128 / 428;
+// Green-black, not neutral black: the identity's photo cards fade into the brand green.
 const SCRIM_COLORS = [
-  'rgba(8, 8, 10, 0)',
-  'rgba(8, 8, 10, 0.26)',
-  'rgba(8, 8, 10, 0.66)',
-  'rgba(8, 8, 10, 0.88)',
+  'rgba(10, 46, 39, 0)',
+  'rgba(10, 46, 39, 0.3)',
+  'rgba(10, 46, 39, 0.7)',
+  'rgba(10, 46, 39, 0.9)',
 ] as const;
 const SCRIM_STOPS: readonly [number, number, ...number[]] = [
   SCRIM_TOP,
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: radius.full,
-    backgroundColor: 'rgba(20, 20, 23, 0.32)',
+    backgroundColor: 'rgba(10, 46, 39, 0.32)',
     borderWidth: 1.2,
     borderColor: 'rgba(255, 255, 255, 0.65)',
     alignItems: 'center',
@@ -289,7 +290,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: 58,
     borderRadius: radius.full,
-    backgroundColor: 'rgba(18, 18, 20, 0.72)',
+    // The identity's one emphasised action is green, on the photograph too (Figma "Home v2").
+    backgroundColor: colors.glass.action,
   },
   ctaLabel: {
     fontFamily: 'Inter_500Medium',

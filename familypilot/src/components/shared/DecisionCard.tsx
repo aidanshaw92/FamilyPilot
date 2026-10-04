@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
 import { memo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { ArrowCta } from '@/src/components/ui/ArrowCta';
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { FamilyMatch } from '@/src/components/ui/FamilyMatch';
 import { PressableScale } from '@/src/components/ui/PressableScale';
@@ -10,6 +11,11 @@ import { Text } from '@/src/components/ui/Text';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
+import {
+  EXPLORE_CARD_CONTENT_PADDING,
+  EXPLORE_CARD_PHOTO_WIDTH,
+  exploreCardCtaLabel,
+} from '@/src/utils/explore-card-layout';
 import { getMatchClassification } from '@/src/utils/family-match-classification';
 
 import { RecommendationPattern } from './RecommendationPattern';
@@ -29,6 +35,7 @@ function DecisionCardComponent({
   onViewDetails,
 }: DecisionCardProps) {
   const router = useRouter();
+  const { width: windowWidth } = useWindowDimensions();
   const isHero = variant === 'hero';
 
   const handleViewDetails = () => {
@@ -41,15 +48,21 @@ function DecisionCardComponent({
 
   if (variant === 'list') {
     const classification = getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
+    const unreviewed = venue.enrichmentStatus === 'provider_only';
     // Two concrete facts read as bespoke; one alone can look like a generic template repeated
     // across every card, so combine the two most relevant reasons where there's a second one.
     // (A third was tried and tested worse: numberOfLines={2} below just truncates it with an
     // ellipsis rather than showing it, which reads as a cut-off fragment instead of a fact.)
     // An unreviewed place has no reason line: the badge under the title already says "Not yet
     // reviewed", its only heuristic reason is the distance, and the meta line carries that.
-    const reason =
-      venue.enrichmentStatus === 'provider_only' ? '' : venue.familyScore.explanation.slice(0, 2).join(' · ');
+    const reason = unreviewed ? '' : venue.familyScore.explanation.slice(0, 2).join(' · ');
+    const ctaLabel = exploreCardCtaLabel(windowWidth, unreviewed);
 
+    // The Explore result card (Figma "Explore card", node 90:106): the photograph down the left,
+    // then title, Family Fit, the reason line, the metadata and a compact green arrow CTA. The
+    // reason says only what the evidence says: `familyScore.explanation` is built from confirmed
+    // facts and the travel label from a computed time, so "Baby changing confirmed on site" and
+    // "About 12 minutes from home" appear only when they are true.
     return (
       <PressableScale
         onPress={handleViewDetails}
@@ -57,7 +70,6 @@ function DecisionCardComponent({
         accessibilityLabel={`${venue.name}, ${classification}, view details`}
         style={styles.compact}
       >
-        <View style={styles.compactAccent} />
         <VenueImage
           uri={venue.imageUrl}
           category={venue.category}
@@ -73,7 +85,7 @@ function DecisionCardComponent({
               it forced "Kettleford Play House" to truncate at 360 wide. */}
           <FamilyMatch score={venue.familyScore.score} enrichmentStatus={venue.enrichmentStatus} />
           {reason ? (
-            <Text variant="bodySmall" color={colors.text.primary} numberOfLines={2} style={styles.compactReason}>
+            <Text variant="bodySmall" color={colors.text.primary} numberOfLines={2}>
               {reason}
             </Text>
           ) : null}
@@ -81,9 +93,14 @@ function DecisionCardComponent({
             {venue.category.replace('_', ' ')} · {travelTimeLabel(venue.driveMinutes, 'estimated')}
             {venue.estimatedSpend ? ` · ${venue.estimatedSpend}` : ''}
           </Text>
-          <Text variant="link" style={styles.compactCta}>
-            {venue.enrichmentStatus === 'provider_only' ? 'Family details to check' : 'View family details'} →
-          </Text>
+          <ArrowCta
+            size="compact"
+            disc="mint"
+            label={ctaLabel}
+            accessibilityLabel={`${ctaLabel}: ${venue.name}`}
+            onPress={handleViewDetails}
+            style={styles.compactCta}
+          />
         </View>
       </PressableScale>
     );
@@ -156,30 +173,22 @@ const styles = StyleSheet.create({
   compact: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     overflow: 'hidden',
     ...shadows.card,
   },
-  // Left edge accent signals match quality at a glance without covering the photo.
-  compactAccent: {
-    width: 4,
-    backgroundColor: colors.secondary[500],
-  },
   compactImage: {
-    width: 92,
+    width: EXPLORE_CARD_PHOTO_WIDTH,
   },
   compactContent: {
     flex: 1,
-    gap: spacing.xs,
-    padding: spacing.md,
-  },
-  compactReason: {
-    lineHeight: 18,
+    gap: spacing.sm,
+    padding: EXPLORE_CARD_CONTENT_PADDING,
   },
   compactCta: {
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
   carouselWrap: {
     marginRight: spacing.lg,
