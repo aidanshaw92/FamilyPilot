@@ -77,6 +77,14 @@ Shadows: `card`, `cardHover`, `bottomSheet` — all cast in ink at 6–10% opaci
 
 Touch targets: 44pt minimum.
 
+## Brand mark
+
+The FamilyPilot mark is direction E3, approved 2026-10-04: a leader on its point and two followers
+tucked behind it. `BrandMark` (`src/components/ui/BrandMark.tsx`) draws it in the app; the app icon,
+adaptive icon, splash and favicon are rendered from the same geometry by
+`scripts/brand/render-brand-assets.mjs`. Construction, colours and rules are in `docs/BRAND.md`.
+There is one mark at every size and no alternates.
+
 ## Decoration
 
 The identity's ornament is the `Doodle` component (leaf, strokes, blob; the five tints) and nothing

@@ -28,3 +28,5 @@ export { IconWell } from './IconWell';
 export type { IconWellTint } from './IconWell';
 export { PhotoSlot } from './PhotoSlot';
 export type { PhotoSlotCategory } from './PhotoSlot';
+export { BrandMark } from './BrandMark';
+export type { BrandMarkTone } from './BrandMark';
