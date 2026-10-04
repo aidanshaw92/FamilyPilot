@@ -58,7 +58,10 @@ export default function WelcomeScreen() {
             shape="circle"
             icon="paw-outline"
             testID="welcome-slot-zoo"
-            style={{ width: 100 * k, height: 100 * k, right: -22 * k, top: -10 }}
+            // Fixed size, not scaled: the headline's first line reaches the slot's column at every
+            // width (x=298 at 360, x=347 at 430), so the slot has to end above the headline's top
+            // (y=79, brand row plus its margin) rather than beside it: 88 - 12 = 76.
+            style={{ width: 88, height: 88, right: -20, top: -12 }}
           />
         </View>
 
