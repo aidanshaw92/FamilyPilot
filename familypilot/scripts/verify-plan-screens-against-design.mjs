@@ -237,6 +237,10 @@ for (const run of RUNS) {
   });
   check(run.name, 'the three section controls sit on one row', nav ? nav.every((b) => b.top === nav[0].top) : false,
     nav ? nav.map((b) => `${b.id.replace('plan-section-', '')}@${b.left}`).join(' ') : 'missing controls');
+  // Primary navigation: all three controls whole and inside the gutters, not scrolled off the edge.
+  const viewportWidth = await page.evaluate(() => window.innerWidth);
+  check(run.name, 'every section control is fully visible inside the gutters', nav ? nav.every((b) => b.left >= 19 && b.right <= viewportWidth - 19) : false,
+    nav ? nav.map((b) => `${b.id.replace('plan-section-', '')}:${b.left}-${b.right}`).join(' ') + ` of ${viewportWidth}` : 'missing controls');
 
   const sideScroll = await page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth);
