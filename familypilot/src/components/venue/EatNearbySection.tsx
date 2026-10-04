@@ -38,7 +38,7 @@ export function EatNearbySection({
         <Text variant="heading3" style={styles.title}>
           Good places to eat nearby
         </Text>
-        <ActivityIndicator color={colors.ink} />
+        <ActivityIndicator color={colors.action} />
       </View>
     );
   }

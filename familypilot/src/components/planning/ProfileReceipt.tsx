@@ -12,7 +12,7 @@ import { colors, spacing } from '@/src/design-system/tokens';
 export function ProfileReceipt({ text, onEdit, style }: { text: string; onEdit?: () => void; style?: object }) {
   return (
     <View style={[styles.pill, style]} testID="profile-receipt">
-      <Ionicons name="checkmark" size={14} color={colors.ink} style={styles.icon} />
+      <Ionicons name="checkmark" size={14} color={colors.secondary[500]} style={styles.icon} />
       <Text style={styles.text}>
         {text}
         {onEdit ? (

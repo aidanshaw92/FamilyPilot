@@ -100,7 +100,7 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => void handleRefresh()}
-            tintColor={colors.ink}
+            tintColor={colors.action}
           />
         }
       >

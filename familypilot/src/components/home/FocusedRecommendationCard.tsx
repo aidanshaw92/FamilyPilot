@@ -22,7 +22,7 @@ export function FocusedRecommendationCard({ recommendation, variant = 'carousel'
         {isHero ? <>
           <LinearGradient colors={['transparent', 'rgba(18,24,27,0.82)']} style={styles.scrim} pointerEvents="none" />
           <View style={styles.overlayCopy}><Text variant="caption" color={colors.text.inverse}>{recommendation.category}</Text><Text variant="heading2" color={colors.text.inverse} style={styles.venueName}>{recommendation.venueName}</Text><View style={styles.rating}><Ionicons name="star" size={14} color="#FFD166" /><Text variant="caption" color={colors.text.inverse}>{recommendation.fit}</Text><Text variant="caption" color="rgba(255,255,255,0.76)">{travelTimeLabel(recommendation.driveMinutes, travelSourceOf(recommendation.journeySource))}</Text></View></View>
-          <View style={styles.arrow}><Ionicons name="arrow-forward" size={22} color={colors.text.primary} /></View>
+          <View style={styles.arrow}><Ionicons name="arrow-forward" size={22} color={colors.action} /></View>
         </> : null}
       </View>
       {!isHero ? <View style={styles.content}><Text variant="heading3" numberOfLines={1}>{recommendation.venueName}</Text><Text variant="bodySmall" style={styles.fit}>{recommendation.fit}</Text></View> : null}

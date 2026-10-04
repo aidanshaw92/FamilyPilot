@@ -65,7 +65,7 @@ export function GeneratingPlan({ venueName, steps, done, current, receipt = null
               {/* Nodes 76:140, 76:146, 76:148: tick, filled dot, empty ring. */}
               <View style={styles.markerBox}>
                 {complete ? (
-                  <Ionicons name="checkmark" size={16} color={colors.ink} />
+                  <Ionicons name="checkmark" size={16} color={colors.secondary[500]} />
                 ) : active ? (
                   <View style={styles.dot} />
                 ) : (

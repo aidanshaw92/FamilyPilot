@@ -27,7 +27,7 @@ export function PlanningAccount(){
  if(!supabase)return <Card style={styles.card}><Text variant="heading3">Connect with friends</Text><Text color={colors.text.secondary}>Account connections need to be enabled by the app owner. You can already plan together on one phone.</Text></Card>;
  return <View style={styles.stack}>
   <Card style={[styles.card,styles.introCard]}>
-   <View style={styles.introIcon}><Ionicons name="people-circle-outline" size={28} color={colors.ink}/></View>
+   <View style={styles.introIcon}><Ionicons name="people-circle-outline" size={28} color={colors.action}/></View>
    <Text variant="heading2">Plan days out with friends</Text>
    <Text color={colors.text.secondary}>Connect with another family to share routines, plan a day that works for both of you, and see who’s coming.</Text>
   </Card>

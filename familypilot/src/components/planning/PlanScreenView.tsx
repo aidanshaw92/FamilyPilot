@@ -88,7 +88,7 @@ export function PlanScreenView({
           <Ionicons
             name={saved ? 'bookmark' : 'bookmark-outline'}
             size={20}
-            color={colors.ink}
+            color={colors.action}
           />
         </Pressable>
       </View>
@@ -133,7 +133,7 @@ export function PlanScreenView({
                 before. Never an alert, never invented from the clock alone. */}
             {view.insight ? (
               <View style={styles.insight} testID="plan-insight">
-                <Ionicons name="checkmark" size={14} color={colors.ink} />
+                <Ionicons name="checkmark" size={14} color={colors.secondary[500]} />
                 <Text style={styles.insightText} numberOfLines={1}>
                   {view.insight}
                 </Text>
