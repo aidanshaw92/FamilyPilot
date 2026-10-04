@@ -1,143 +1,166 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { FamilyHeroIllustration } from '@/src/components/onboarding/FamilyHeroIllustration';
-import { Button, Text } from '@/src/components/ui';
+import { BenefitCard } from '@/src/components/onboarding/BenefitCard';
+import { Button, Doodle, PhotoSlot, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
-import { isPilotFeatureVisible, PilotFeature } from '@/src/config/pilot-features';
+import { WELCOME_BENEFITS, WELCOME_COLLAGE, WELCOME_DESIGN_WIDTH, WELCOME_DOODLES } from '@/src/utils/welcome-layout';
 
-const BENEFITS: { icon: keyof typeof Ionicons.glyphMap; label: string; feature?: PilotFeature }[] = [
-  { icon: 'leaf-outline', label: 'Days out & activities' },
-  { icon: 'airplane-outline', label: 'Holidays', feature: 'holiday' },
-  { icon: 'car-outline', label: 'Car fit checker', feature: 'car_fit' },
-  { icon: 'bag-handle-outline', label: 'Packing lists', feature: 'packing' },
-  { icon: 'basket-outline', label: 'Where to buy baby essentials', feature: 'need_now' },
-  { icon: 'sparkles-outline', label: 'And so much more…' },
-];
-
+/**
+ * Welcome, to the identity reference and Figma frame "05 — Welcome v2": the wordmark, the headline,
+ * a collage of editorial photograph slots with the decorative marks between them, three benefit
+ * cards, and "Get started". The photographs are slots (see `PhotoSlot`) until the product owns
+ * licensed ones; the logo mark is a placeholder until the owner picks a direction.
+ */
 export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const visibleBenefits = BENEFITS.filter((benefit) => !benefit.feature || isPilotFeatureVisible(benefit.feature));
+  const { width } = useWindowDimensions();
+  // The frame is drawn at 393 wide. The collage scales with the phone; the type does not. Past a
+  // large phone it stops growing, so a tablet gets the same composition rather than a giant one.
+  const k = Math.min(width, 480) / WELCOME_DESIGN_WIDTH;
+  const start = () => router.push('/(onboarding)/setup' as never);
 
   return (
-    <LinearGradient
-      colors={[colors.background, colors.fill, colors.background]}
-      style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
-    >
-      <View style={styles.brandRow}>
-        <View style={styles.logoMark}>
-          <Ionicons name="heart" size={22} color={colors.text.inverse} />
-        </View>
-        <Text variant="heading3" style={styles.brandName}>
-          FamilyPilot
-        </Text>
-      </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <Text variant="display" style={styles.headline}>
-          The everyday app for family life.
-        </Text>
-
-        <View style={styles.illustrationWrap}>
-          <FamilyHeroIllustration />
-        </View>
-
-        <View style={styles.benefitsList}>
-          {visibleBenefits.map((benefit) => (
-            <View key={benefit.label} style={styles.benefitRow}>
-              <View style={styles.benefitIconWrap}>
-                <Ionicons name={benefit.icon} size={18} color={colors.ink} />
-              </View>
-              <Text variant="body" style={styles.benefitLabel}>
-                {benefit.label}
-              </Text>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <View style={styles.brandRow}>
+            <View style={styles.logoMark}>
+              <Ionicons name="heart" size={22} color={colors.text.inverse} />
             </View>
+            <Text variant="heading2" style={styles.brandName}>
+              Family
+              <Text variant="heading2" color={colors.action} style={styles.brandName}>
+                Pilot
+              </Text>
+            </Text>
+            <Doodle kind="strokes" tint="yellow" size={30} style={styles.brandStrokes} />
+          </View>
+
+          <Text variant="display" style={[styles.headline, { maxWidth: Math.round(300 * k) }]}>
+            The everyday app for family life
+            <Text variant="display" color={colors.action}>
+              .
+            </Text>
+          </Text>
+          <Text variant="body" color={colors.text.secondary} style={styles.subtitle}>
+            Personalised days out, activities and recommendations for your family.
+          </Text>
+
+          {/* The one slot in the header, bleeding off the top-right corner as the reference's does.
+              It sits beside the brand row, above the headline's first line, so the headline never
+              runs under it at 360; the header clips it so the page never scrolls sideways. */}
+          <PhotoSlot
+            category="zoo"
+            shape="circle"
+            icon="paw-outline"
+            testID="welcome-slot-zoo"
+            // Fixed size, not scaled: the headline's first line reaches the slot's column at every
+            // width (x=298 at 360, x=347 at 430), so the slot has to end above the headline's top
+            // (y=79, brand row plus its margin) rather than beside it: 88 - 12 = 76.
+            style={{ width: 88, height: 88, right: -20, top: -12 }}
+          />
+        </View>
+
+        <View style={[styles.collage, { height: Math.round(WELCOME_COLLAGE.height * k) }]}>
+          {WELCOME_COLLAGE.slots.map((slot) => (
+            <PhotoSlot
+              key={slot.id}
+              category={slot.category}
+              shape={slot.shape}
+              icon={slot.icon}
+              testID={`welcome-slot-${slot.id}`}
+              style={{ left: slot.x * k, top: slot.y * k, width: slot.w * k, height: slot.h * k }}
+            />
+          ))}
+          {WELCOME_DOODLES.map((mark) => (
+            <Doodle
+              key={mark.id}
+              kind={mark.kind}
+              tint={mark.tint}
+              size={mark.size * k}
+              rotate={mark.rotate}
+              style={{ left: mark.x * k, top: mark.y * k }}
+            />
+          ))}
+        </View>
+
+        <View style={styles.benefits}>
+          {WELCOME_BENEFITS.map((benefit) => (
+            <BenefitCard key={benefit.title} {...benefit} onPress={start} />
           ))}
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button
-          label="Get started"
-          size="lg"
-          fullWidth
-          onPress={() => router.push('/(onboarding)/setup' as never)}
-        />
+        <Button label="Get started" size="lg" fullWidth trailingIcon="arrow-forward" onPress={start} />
         <Text variant="caption" color={colors.text.tertiary} style={styles.footerNote}>
           Takes about a minute · You can add more details later
         </Text>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: spacing.screenPadding,
+    backgroundColor: colors.background,
   },
   scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingVertical: spacing.xl,
+    paddingBottom: spacing.lg,
+  },
+  header: {
+    paddingHorizontal: spacing['2xl'],
+    overflow: 'hidden',
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingTop: spacing.md,
+    paddingTop: spacing.lg,
   },
   logoMark: {
     width: 40,
     height: 40,
     borderRadius: radius.md,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.action,
     alignItems: 'center',
     justifyContent: 'center',
   },
   brandName: {
     letterSpacing: -0.3,
   },
-  headline: {
-    marginBottom: spacing.xl,
-    maxWidth: 300,
+  brandStrokes: {
+    position: 'relative',
+    marginLeft: spacing.xs,
+    marginBottom: spacing.md,
   },
-  illustrationWrap: {
-    aspectRatio: 320 / 220,
+  headline: {
+    marginTop: spacing['2xl'],
+  },
+  subtitle: {
+    marginTop: spacing.md,
+    maxWidth: 320,
+  },
+  collage: {
+    marginTop: spacing.lg,
     width: '100%',
-    marginBottom: spacing['2xl'],
-    borderRadius: radius.xl,
     overflow: 'hidden',
   },
-  benefitsList: {
-    gap: spacing.lg,
-  },
-  benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  benefitIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.md,
-    backgroundColor: colors.fill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  benefitLabel: {
-    flex: 1,
+  benefits: {
+    paddingHorizontal: spacing['2xl'],
+    paddingTop: spacing.sm,
+    gap: 10,
   },
   footer: {
     gap: spacing.md,
+    paddingHorizontal: spacing['2xl'],
     paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   footerNote: {
     textAlign: 'center',

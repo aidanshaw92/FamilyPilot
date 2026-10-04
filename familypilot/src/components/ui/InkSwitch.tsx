@@ -3,7 +3,7 @@ import { Switch, SwitchProps } from 'react-native';
 import { colors } from '@/src/design-system/tokens';
 
 /**
- * The app's one on/off control: an ink track and a white thumb, like every other selected state.
+ * The app's one on/off control: a deep-green track and a white thumb, like every other selected state.
  * The platform default draws a teal thumb on web, which is no colour this app uses.
  */
 export function InkSwitch(props: SwitchProps) {
@@ -12,7 +12,7 @@ export function InkSwitch(props: SwitchProps) {
   const web = { activeThumbColor: colors.surface } as Record<string, unknown>;
   return (
     <Switch
-      trackColor={{ true: colors.ink, false: colors.border }}
+      trackColor={{ true: colors.action, false: colors.border }}
       thumbColor={colors.surface}
       {...web}
       {...props}

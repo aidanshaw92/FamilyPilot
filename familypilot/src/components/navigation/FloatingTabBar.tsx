@@ -19,8 +19,8 @@ import {
 } from '@/src/utils/floating-tab-bar-layout';
 
 /**
- * The approved bottom navigation: a dark pill floating clear of the screen edge, holding one
- * icon per tab with a white disc behind the active one.
+ * The approved bottom navigation: a deep-green pill floating clear of the screen edge, holding one
+ * icon per tab with a mint disc behind the active one (the icon on the disc is green).
  *
  * This replaces React Navigation's own bar rather than restyling it. The default bar derives its
  * height from the label, the icon and the safe-area inset together, and overriding only some of
@@ -73,7 +73,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
               {focused ? <View style={styles.indicator} /> : null}
               {options.tabBarIcon?.({
                 focused,
-                color: focused ? colors.text.primary : INACTIVE_ICON,
+                color: focused ? colors.action : INACTIVE_ICON,
                 size: ICON_SIZE,
               })}
             </Pressable>
@@ -84,8 +84,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
   );
 }
 
-/** Legible on the near-black pill without competing with the active tab. */
-const INACTIVE_ICON = 'rgba(255, 255, 255, 0.72)';
+/** Legible on the deep-green pill without competing with the active tab. */
+const INACTIVE_ICON = 'rgba(255, 255, 255, 0.82)';
 
 const styles = StyleSheet.create({
   dock: {
@@ -102,10 +102,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: PILL_PADDING_X,
     paddingVertical: PILL_PADDING_Y,
     borderRadius: radius.full,
-    // Frame node 9:2 — a hair off pure black, with its own lift.
-    backgroundColor: '#171617',
-    shadowColor: 'rgba(15, 15, 20, 1)',
-    shadowOpacity: 0.22,
+    // The identity's deep-green pill (references: Home, Explore), with its own lift.
+    backgroundColor: colors.nav.pill,
+    shadowColor: colors.action,
+    shadowOpacity: 0.28,
     shadowOffset: { width: 0, height: 10 },
     shadowRadius: 24,
     elevation: 12,
@@ -121,6 +121,6 @@ const styles = StyleSheet.create({
     width: ACTIVE_INDICATOR,
     height: ACTIVE_INDICATOR,
     borderRadius: radius.full,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.nav.active,
   },
 });

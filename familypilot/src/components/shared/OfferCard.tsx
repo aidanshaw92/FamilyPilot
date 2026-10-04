@@ -75,14 +75,14 @@ const styles = StyleSheet.create({
   },
   recommendedCard: {
     borderWidth: 2,
-    borderColor: colors.ink,
+    borderColor: colors.action,
   },
   recommendedBadge: {
     position: 'absolute',
     top: spacing.md,
     left: spacing.md,
     zIndex: 1,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.action,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.sm,

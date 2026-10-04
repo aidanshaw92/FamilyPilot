@@ -5,49 +5,63 @@
 and this page is stale. `src/__tests__/design-system-guard.test.ts` keeps consumer screens on the
 tokens.
 
-**Benchmark:** the approved Home screen (`app/(tabs)/index.tsx`) and its Figma frame "01 — Home".
-Every value below that cites a frame node was read off that frame. Home is not redesigned; the rest
-of the app is brought to Home's language.
+**Benchmark:** the three approved identity references (Home, Explore, Welcome) and their Figma
+frames on the "Screens" page of `LNpbdnuAWcfWf9spvB7jBz` ("Home v2", "Explore v2", "Welcome v2"),
+built from the variables, styles and components on that file's Foundations and Components pages.
+The geometry of the earlier approved Home frame ("01 — Home") is kept; the identity recolours it.
+Every value below that cites a frame node was read off a frame. `docs/VISUAL_IDENTITY.md` records
+the assessment and the palette as sampled from the references.
 
 ## Colour
 
+Two roles that used to share one near-black are distinct: **ink** (navy) is what text is set in;
+**action** (deep green) is what controls are drawn in. A control that needs emphasis goes green; a
+word never does, except a link. The three tints and the yellow are accents: idle chips in a rail,
+icon wells, decorative marks. They carry no meaning; a chip's tint is assigned by position
+(`railTint(index)`), never by what it filters.
+
 | Token | Value | Use |
 | --- | --- | --- |
-| `ink` | `#141416` | The one accent. Text, selected chips, primary buttons, the avatar, the floating nav (frame ink). `text.primary` is the same value. |
-| `text.secondary` | `#6E6E73` | Second lines, metadata (frame node 7:17). |
-| `text.tertiary` | `#8E8E93` | Captions, placeholders. Neutral, not purple-tinted. |
-| `text.inverse` | `#FFFFFF` | Text on ink and on photography. |
-| `background` | `#F6F5F9` | Screen background. |
-| `surface` | `#FFFFFF` | Cards, sheets, idle chips. |
-| `fill` | `#F0F0F3` | Quiet wells and information boxes that sit on a white card. |
-| `border` / `borderLight` | `#ECE9F2` / `#F3F1F7` | Hairlines. |
-| `secondary.*` (green) | `#1C8A57` … | Confirmed facts, success. |
+| `ink` | `#0D1733` | Text. `text.primary` is the same value. Never a control background. |
+| `action` / `actionPressed` / `actionStrong` | `#0F4A3E` / `#0B3B32` / `#15534A` | Primary buttons, selected chips, the nav pill, the arrow CTA, the filter disc, focus rings, links. |
+| `actionSoft` | `#E7F3EF` | Mint behind a green mark: Family Fit on a light surface, the compact CTA's disc. |
+| `nav.pill` / `nav.active` | action / `#DDF1E8` | The floating navigation and its active disc. |
+| `tint.mint` / `.blush` / `.lilac` / `.yellow` | `#E7F3EF` / `#FBECEA` / `#F3ECFB` / `#FDF1CC` | Idle chip and icon-well fills, by position. |
+| `tintStrong.*` | `#DDF1E8` / `#FADBD8` / `#EADFF8` | The deeper tone of each tint: blobs, a stronger well. |
+| `brand.mint` / `.coral` / `.violet` / `.yellow` / `.green` | `#5FB3A3` / `#E26B4A` / `#6B21E8` / `#F7C12E` / `#3F9A82` | Icons on the tints; the decorative strokes and leaves. |
+| `text.secondary` / `text.tertiary` | `#626A80` / `#8A91A0` | Second lines, metadata; captions, placeholders. |
+| `text.inverse` | `#FFFFFF` | Text on action green and on photography. |
+| `background` / `surface` | `#FBFAF7` / `#FFFFFF` | Warm canvas; cards and sheets are pure white on it. |
+| `fill` | `#F3F1EC` | Quiet wells and information boxes on a white card; the unreviewed Family Fit pill. |
+| `border` / `borderLight` | `#E9E7E1` / `#F1EFEA` | Hairlines. |
+| `secondary.*` (green) | `#3F9A82` … | Confirmed facts, success: the identity's mid green. |
 | `warning.*` (amber) | `#A8660C` … | Cautions, "good to know". |
 | `error.*` (red) | `#C4453B` … | Errors, closed. |
 | `accent.*` (blue) | `#2F8FD6` … | Informational marks only. |
-| `coral` | `#E0654A` | The filled save heart. |
-| `glass.*`, `overlay`, `sheetScrim`, `gradient.*` | rgba on near-black | Chrome over photography; the sheet's scrim (0.42, approved). |
-| `midnight.*` | `#14101F` → `#241C3D` | The one dark band on a screen; the fallback image gradient. |
-| `categoryGradients` | per category | A venue with no photo still reads as designed. |
-| `primary.*` (purple) | `#5B4FE8` … | **Legacy.** Retired from consumer chrome; still used by the internal enrichment tools and the onboarding illustration. The guard test fails on new consumer uses. |
+| `coral` | `#E26B4A` | The filled save heart. |
+| `glass.*`, `overlay`, `sheetScrim`, `gradient.*` | rgba on green-black / navy | Chrome over photography fades to green-black (`#0A2E27`), not neutral black; `glass.action` is the deck CTA and Family Fit on an image; the sheet's scrim (0.42, approved) is navy. |
+| `midnight.*` | `#0B3B32` → `#15534A` | The one dark band on a screen; the fallback image gradient; the profile avatars. |
+| `categoryGradients` | per category | A venue with no photo still reads as designed; a Welcome photo slot until its photograph exists. |
+| `primary.*` (purple) | `#5B4FE8` … | **Legacy.** Retired from consumer chrome; still used by the internal enrichment tools. The guard test fails on new consumer uses. |
 
 ## Typography
 
-Inter, loaded in `app/_layout.tsx`. Headings are **Semi Bold** with a −0.025em track — the frame's
-own weight (greeting node 7:16: Semi Bold 25.5; section heading node 7:30: Semi Bold 22). Extra Bold
-and Black are loaded but no consumer text is set in them.
+Inter, loaded in `app/_layout.tsx`. The page voice (the greeting, "Explore London", the Welcome
+headline, section headings) is **Bold** with a −0.025em track, as the references set it; card
+titles and button labels stay **Semi Bold**. Extra Bold and Black are loaded but no consumer text is
+set in them.
 
 | Variant | Size / line | Weight | Use |
 | --- | --- | --- | --- |
-| `display` | 32 / 38 | 600 | Onboarding headline, splash. |
-| `heading1` | 26 / 32 | 600 | Screen titles. Home's greeting overrides to 25.5 and measures itself (`home-header-layout.ts`). |
-| `heading2` | 22 / 28 | 600 | Section headings (Home's "Recommended for you"). |
+| `display` | 32 / 38 | 700 | The Welcome headline, splash. |
+| `heading1` | 26 / 32 | 700 | Screen titles. Home's greeting overrides to 25.5 and measures itself (`home-header-layout.ts`). |
+| `heading2` | 22 / 28 | 700 | Section headings ("Select your plan"). |
 | `heading3` | 17 / 24 | 600 | Card titles, button labels. |
 | `body` | 16 / 24 | 400 | Body copy. |
 | `bodySmall` | 14 / 20 | 400 | Secondary lines (colour `text.secondary`). |
 | `caption` | 12 / 16 | 500 | Metadata, eyebrows (colour `text.tertiary`). |
 | `label` | 13 / 18 | 600, +0.5 | Form group labels. |
-| `link` | 14 / 20 | 600, ink | Inline text actions: "Undo", "View details", "Reset", "+ Add another child". |
+| `link` | 14 / 20 | 600, action | Inline text actions: "Undo", "View details", "Reset", "+ Add another child". |
 | `eyebrow` | 13 / 16 | 500, +1.04 | The small upper-case line above a title (Home card's "SOFT PLAY", "FAMILY FIT", "WHEN", "MORNING"). Callers pass capitals; the variant does not transform. |
 
 ## Spacing, radius, shadow
@@ -63,17 +77,33 @@ Shadows: `card`, `cardHover`, `bottomSheet` — all cast in ink at 6–10% opaci
 
 Touch targets: 44pt minimum.
 
+## Decoration
+
+The identity's ornament is the `Doodle` component (leaf, strokes, blob; the five tints) and nothing
+else. It appears on Welcome, Home and Explore; Venue Detail, the plan screens, Profile and every
+form stay plain so the facts on them are the focus. A doodle sits on the canvas, never on a card, a
+photograph, a button or under text; it ignores the pointer and is hidden from assistive technology.
+Home's greeting strokes are drawn only when `greetingDoodleLeft()` says the line has room for them.
+
+Photography is editorial and candid when the product owns it. Until then a `PhotoSlot` holds the
+place in the composition with the category-gradient treatment: no stock image, no generated image,
+and never a photo that impersonates a venue.
+
 ## Primitives
 
 | Component | What it is | Notes |
 | --- | --- | --- |
 | `Text` | Typography variants above. | `color` overrides; `style` for frame-specific sizes. |
-| `Button` | `primary` ink pill · `secondary` white with hairline · `outline` white with ink rule · `ghost` text only. | Sizes `sm 36 / md 48 / lg 56`. No variant is purple. |
-| `Chip` | The one selection pill (frame "Category pills"): 44 tall, 20 side padding, Medium 14.5/18; selected = ink, idle = white. | `appearance="plain"` (no hairline; the Home rail on the app background) or `"outlined"` (hairline; chips on a white sheet). Lay rows out with `gap: CHIP_GAP` (10); the chip has no outer margin. |
-| `PillSelector` | A single-choice rail or segmented row of `Chip`s. | Arranges; does not style. |
-| `FamilyMatch` | The one Family Fit badge (frame node 8:13): `★ 4.0 Family Fit`, 32 tall; `size="compact"` is frame node 49:5's `★ 4.3` beside a venue name, 30 tall, where a "Why this score" link carries the word. | `tone="onImage"` over photography, `"onLight"` on white. Unreviewed → "Not yet reviewed", no number. Unknown score → renders nothing. Scale and strings live in `src/utils/family-match-scale.ts`. |
+| `Button` | `primary` action-green pill · `secondary` white with hairline, green text · `outline` white with green rule · `ghost` text only. | Sizes `sm 36 / md 48 / lg 56`; `trailingIcon` for "Get started →". No variant is purple or ink. |
+| `Chip` | The one selection pill (frame "Category pills"): 44 tall, 20 side padding, Medium 14.5/18; selected = action green, idle = white or a tint. | `tint="mint" \| "blush" \| "lilac"` for a rail, assigned by `railTint(index)`; `appearance="plain"` (no hairline) or `"outlined"` (hairline; chips on a white sheet). Lay rows out with `gap: CHIP_GAP` (10); the chip has no outer margin. |
+| `PillSelector` | A single-choice rail or segmented row of `Chip`s. | Arranges and tints a scrolling rail by position; does not style. |
+| `FamilyMatch` | The one Family Fit badge (frame node 8:13): `★ 4.0 Family Fit`, 32 tall; `size="compact"` is frame node 49:5's `★ 4.3` beside a venue name, 30 tall, where a "Why this score" link carries the word. | `tone="onLight"` is a mint pill with green star and text; `"onImage"` is the green pill with white. Unreviewed → "Not yet reviewed" on the neutral fill, no number. Unknown score → renders nothing. Scale and strings live in `src/utils/family-match-scale.ts`. |
 | `FamilyMatchPanel` / `RecommendationPattern` | The explanation: classification word, "Why it suits your family", "Good to know", the secondary number line. | Word leads, number is secondary, cautions never render as positives. |
-| `CircleButton` | Round control: `light` (white on photography), `dark` (ink), `glass`. | Back, save, filter, "go". |
+| `ArrowCta` | The emphasised action with an arrow disc: 58 tall, white disc; `size="compact"` is the Explore card's 48 with a 36 disc; `disc="mint"` on Explore. | Home's "See more", Venue Detail's "Create a plan", the plan's "Save this plan", every Explore result. |
+| `SearchBar` | The 56 search pill with the filter disc inside its right edge (Home), or `actionLabel="Search"` for a green action pill there instead (Explore). | |
+| `CircleButton` | Round control: `light` (white on photography), `dark` (action green), `glass`. | Back, save, filter, "go". |
+| `IconWell` | A 48 tinted square behind an icon, the icon in the tint's saturated partner. | Welcome's benefit cards, empty states. |
+| `Doodle` / `PhotoSlot` | See Decoration above. | |
 | `DateField` / `TimeField` | A drawn field (white, hairline, 48 tall) showing the value in the app's words — "Friday 2 October 2026", "09:00" — with the platform's native picker kept underneath, transparent, for the interaction. | ISO values in, ISO values out. Labels from `date-time-labels.ts`. Native apps keep the plain text field. |
 | `SearchBar`, `Field`, `BottomSheet`, `Card`, `SectionHeader`, `EmptyState`, `ErrorState`, `Skeleton*`, `VenueImage`, `DataTrustBadge` | Shared surfaces and states. | |
 

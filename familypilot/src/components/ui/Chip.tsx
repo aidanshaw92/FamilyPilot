@@ -20,8 +20,9 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 /**
  * From the approved frame "01 — Home" (node "Category pills"): 44pt chips, 20 of padding either
  * side, 10 between, and an 18pt line box. The selected chip goes near-black; the idle one is plain
- * white. This is the one selection pill in the app — the Home rail, Explore's categories, Saved's
- * filters, the plan sheet's choices and the onboarding options all render it.
+ * white or one of the identity's tints. This is the one selection pill in the app — the Home rail,
+ * Explore's categories, Saved's filters, the plan sheet's choices and the onboarding options all
+ * render it. The selected chip is the action green.
  */
 export const CHIP_HEIGHT = 44;
 export const CHIP_PADDING_X = 20;
@@ -46,19 +47,43 @@ interface ChipProps {
    * everywhere; only the size differs.
    */
   size?: 'default' | 'small';
+  /**
+   * An idle chip in a rail may carry one of the identity's three tints (the references give the
+   * Home and Explore rails mint, blush and lilac after the selected chip). The tint is assigned by
+   * POSITION (see `railTint`), never by what the chip means, so it carries no information. A
+   * tinted chip has no hairline; the fill separates it. Selected is always the action green.
+   */
+  tint?: ChipTint;
   style?: ViewStyle;
 }
+
+export type ChipTint = 'none' | 'mint' | 'blush' | 'lilac';
+
+const RAIL_TINTS: ChipTint[] = ['mint', 'blush', 'lilac'];
+
+/** The tint for the n-th idle chip in a rail (0-based, counting every chip), rotating mint, blush, lilac. */
+export function railTint(index: number): ChipTint {
+  return RAIL_TINTS[((index % RAIL_TINTS.length) + RAIL_TINTS.length) % RAIL_TINTS.length];
+}
+
+const TINT_FILL: Record<ChipTint, string | null> = {
+  none: null,
+  mint: colors.tint.mint,
+  blush: colors.tint.blush,
+  lilac: colors.tint.lilac,
+};
 
 export const SMALL_CHIP_HEIGHT = 40;
 export const SMALL_CHIP_GAP = 8;
 
-export function Chip({ label, active = false, onPress, appearance = 'outlined', size = 'default', style }: ChipProps) {
+export function Chip({ label, active = false, onPress, appearance = 'outlined', size = 'default', tint = 'none', style }: ChipProps) {
   const reducedMotion = useReducedMotion();
   const activeProgress = useSharedValue(active ? 1 : 0);
   const pressed = useSharedValue(1);
   const small = size === 'small';
-  const idleFill = small ? colors.fill : colors.surface;
-  const idleBorder = appearance === 'outlined' && !small ? colors.border : idleFill;
+  const tintFill = TINT_FILL[tint];
+  const idleFill = tintFill ?? (small ? colors.fill : colors.surface);
+  const idleBorder = appearance === 'outlined' && !small && !tintFill ? colors.border : idleFill;
 
   useEffect(() => {
     activeProgress.value = reducedMotion
@@ -74,8 +99,8 @@ export function Chip({ label, active = false, onPress, appearance = 'outlined', 
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(activeProgress.value, [0, 1], [idleFill, colors.ink]),
-    borderColor: interpolateColor(activeProgress.value, [0, 1], [idleBorder, colors.ink]),
+    backgroundColor: interpolateColor(activeProgress.value, [0, 1], [idleFill, colors.action]),
+    borderColor: interpolateColor(activeProgress.value, [0, 1], [idleBorder, colors.action]),
     transform: [{ scale: pressed.value }],
   }));
 
@@ -91,7 +116,7 @@ export function Chip({ label, active = false, onPress, appearance = 'outlined', 
       onPressOut={() => {
         pressed.value = withSpring(1, spring.gentle);
       }}
-      style={[styles.chip, (appearance === 'plain' || small) && styles.plain, small && styles.small, animatedStyle, style]}
+      style={[styles.chip, (appearance === 'plain' || small || tintFill) && styles.plain, small && styles.small, animatedStyle, style]}
     >
       <Text
         variant="bodySmall"

@@ -46,10 +46,17 @@ export function FamilyMatch({
   const onImage = tone === 'onImage';
   // Compact only ever drops the word next to a number; an unreviewed status keeps its words.
   const compact = size === 'compact' && match.number !== null;
-  const ink = onImage ? colors.text.inverse : colors.ink;
+  // On a light surface the pill is mint with green star and text; on photography it is the
+  // deep green with white. An unreviewed pill is the quiet neutral fill with secondary text.
+  const ink = onImage ? colors.text.inverse : match.unreviewed ? colors.text.secondary : colors.action;
   const content = (
     <View
-      style={[styles.badge, onImage ? styles.onImage : styles.onLight, compact && styles.compact, style]}
+      style={[
+        styles.badge,
+        onImage ? styles.onImage : match.unreviewed ? styles.onLightUnreviewed : styles.onLight,
+        compact && styles.compact,
+        style,
+      ]}
       accessibilityRole={onPress ? undefined : 'text'}
       accessibilityLabel={match.spoken}
     >
@@ -100,12 +107,13 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   onLight: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.actionSoft,
+  },
+  onLightUnreviewed: {
+    backgroundColor: colors.fill,
   },
   onImage: {
-    backgroundColor: 'rgba(13, 13, 15, 0.45)',
+    backgroundColor: colors.glass.action,
   },
   // Frame node 49:5: 30 tall, 14 in on the left, 16 on the right, SemiBold number.
   compact: {

@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 
@@ -8,7 +8,7 @@ import { RestaurantCard } from '@/src/components/restaurant/RestaurantCard';
 import { DecisionCard } from '@/src/components/shared/DecisionCard';
 import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
-import { Chip, EmptyState, ErrorState, SectionHeader, SkeletonCard, Text, CHIP_GAP, CHIP_HEIGHT } from '@/src/components/ui';
+import { Chip, Doodle, EmptyState, ErrorState, SearchBar, SectionHeader, SkeletonCard, Text, CHIP_GAP, CHIP_HEIGHT, railTint } from '@/src/components/ui';
 import { isPilotFeatureVisible, visibleExploreCategoryIds } from '@/src/config/pilot-features';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useNearbyVenues, useRestaurants } from '@/src/hooks/use-queries';
@@ -164,8 +164,15 @@ export default function ExploreScreen() {
 
   return (
     <ScreenContainer>
+      {/* The identity's decoration lives on the canvas only (Figma "06 — Explore v2"): a leaf in the
+          top corner, the strokes beside the heading, a blush blob by the section title. None sits
+          on a card or a control, and all of them ignore the pointer and assistive technology. */}
       <View style={styles.header}>
-        <Text variant="heading1">Explore London</Text>
+        <Doodle kind="leaf" tint="green" size={40} rotate={24} style={styles.cornerLeaf} />
+        <View style={styles.headingRow}>
+          <Text variant="heading1">Explore London</Text>
+          <Doodle kind="strokes" tint="yellow" size={30} style={styles.headingStrokes} />
+        </View>
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
           {isRestaurantMode
             ? 'Family-friendly places to eat'
@@ -173,31 +180,21 @@ export default function ExploreScreen() {
         </Text>
       </View>
 
-      <View style={styles.searchRow}>
-        <TextInput
-          accessibilityLabel="Search a London area or postcode"
-          placeholder="Area or postcode"
-          value={search}
-          onChangeText={(value) => {
-            setSearch(value);
-            setAreaVenues(null);
-            setSearchMessage('');
-          }}
-          onSubmitEditing={() => void handleAreaSearch()}
-          returnKeyType="search"
-          style={styles.searchInput}
-        />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Search this London area"
-          onPress={() => void handleAreaSearch()}
-          style={styles.searchButton}
-        >
-          <Text variant="bodySmall" color={colors.text.inverse}>
-            Search
-          </Text>
-        </Pressable>
-      </View>
+      <SearchBar
+        value={search}
+        onChangeText={(value) => {
+          setSearch(value);
+          setAreaVenues(null);
+          setSearchMessage('');
+        }}
+        onSubmit={() => void handleAreaSearch()}
+        placeholder="Area or postcode"
+        accessibilityLabel="Search a London area or postcode"
+        actionLabel="Search"
+        actionAccessibilityLabel="Search this London area"
+        onAction={() => void handleAreaSearch()}
+        style={styles.search}
+      />
       {!areaVenues && !isRestaurantMode && !isLoading && showingSavedExamples(venues) ? (
         <Text variant="caption" color={colors.warning[600]} style={styles.searchMessage}>
           {SAVED_EXAMPLES_NOTICE}
@@ -219,11 +216,13 @@ export default function ExploreScreen() {
         style={styles.categoryScroll}
         contentContainerStyle={styles.categoryContent}
       >
-        {exploreCategories.map((category) => (
+        {exploreCategories.map((category, index) => (
           <Chip
             key={category.id}
             label={category.label}
             active={categoryFilter === category.id}
+            appearance="plain"
+            tint={railTint(index - 1)}
             onPress={() => setCategoryFilter(category.id)}
           />
         ))}
@@ -285,6 +284,7 @@ export default function ExploreScreen() {
       ) : (
         <>
           <View style={styles.listHeader}>
+            <Doodle kind="blob" tint="blush" size={56} style={styles.sectionBlob} />
             <SectionHeader
               title={areaVenues ? `Around ${search.trim()}` : activeCategoryLabel}
               subtitle={`${resultCount} ${isRestaurantMode ? 'restaurant' : 'place'}${resultCount === 1 ? '' : 's'} ${areaVenues ? 'near this area' : 'across London'}`}
@@ -352,37 +352,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenPadding,
     paddingTop: spacing.lg,
   },
+  headingRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  headingStrokes: {
+    position: 'relative',
+    marginTop: -2,
+  },
+  cornerLeaf: {
+    right: spacing.xs,
+    top: 0,
+  },
   subtitle: {
     marginTop: spacing.xs,
   },
-  searchRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  search: {
     marginHorizontal: spacing.screenPadding,
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
-  searchInput: {
-    flex: 1,
-    // A web text input has an intrinsic width; without this the row overflowed the screen at 360.
-    minWidth: 0,
-    paddingHorizontal: spacing.lg,
-    minHeight: 48,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
-    color: colors.text.primary,
-  },
-  searchButton: {
-    minHeight: 48,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.lg,
-    backgroundColor: colors.ink,
-    alignItems: 'center',
-    justifyContent: 'center',
+  sectionBlob: {
+    right: spacing.screenPadding,
+    top: spacing.md,
   },
   searchMessage: {
     marginHorizontal: spacing.screenPadding,
@@ -414,7 +407,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   filterBadge: {
-    backgroundColor: colors.ink,
+    backgroundColor: colors.action,
     width: 18,
     height: 18,
     borderRadius: 9,

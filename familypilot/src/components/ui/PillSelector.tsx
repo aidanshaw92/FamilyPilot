@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
 
 import { spacing } from '@/src/design-system/tokens';
 
-import { Chip, CHIP_GAP } from './Chip';
+import { Chip, CHIP_GAP, railTint } from './Chip';
 
 export interface PillOption {
   id: string;
@@ -35,12 +35,15 @@ export function PillSelector({
   style,
   contentStyle,
 }: PillSelectorProps) {
-  const pills = options.map((option) => (
+  // A scrolling rail tints its idle chips by position (the identity's mint, blush, lilac after the
+  // leading chip); a fixed segmented row stays plain. The tint says nothing about the option.
+  const pills = options.map((option, index) => (
     <Chip
       key={option.id}
       label={option.label}
       active={option.id === value}
       appearance="plain"
+      tint={scroll ? railTint(index - 1) : 'none'}
       onPress={() => onChange(option.id)}
       style={scroll ? undefined : styles.pillFlex}
     />

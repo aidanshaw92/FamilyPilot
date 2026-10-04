@@ -192,5 +192,5 @@ const styles = StyleSheet.create({
   labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SMALL_CHIP_GAP },
   // Node 76:49: SemiBold 13, underlined, ink.
-  rowLink: { fontFamily: 'Inter_600SemiBold', fontSize: 13, lineHeight: 16, color: colors.ink, textDecorationLine: 'underline' },
+  rowLink: { fontFamily: 'Inter_600SemiBold', fontSize: 13, lineHeight: 16, color: colors.action, textDecorationLine: 'underline' },
 });

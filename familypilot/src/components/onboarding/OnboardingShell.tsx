@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   dotActive: {
-    backgroundColor: colors.ink,
+    backgroundColor: colors.action,
     width: 24,
   },
   dotInactive: {

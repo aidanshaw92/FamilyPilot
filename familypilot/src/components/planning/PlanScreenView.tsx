@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: colors.surface,
   },
-  navItemActive: { backgroundColor: colors.ink },
+  navItemActive: { backgroundColor: colors.action },
   navLabel: { fontFamily: 'Inter_500Medium', fontSize: 14, lineHeight: 17, color: colors.ink },
   navLabelActive: { fontFamily: 'Inter_600SemiBold', color: colors.text.inverse },
   insight: {
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   },
   insightText: { flex: 1, fontFamily: 'Inter_500Medium', fontSize: 13, lineHeight: 16, color: colors.text.secondary },
   headHome: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, height: 44, paddingLeft: 42 - spacing.screenPadding },
-  terminus: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.ink },
+  terminus: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.action },
   headHomeTime: { fontFamily: 'Inter_600SemiBold', fontSize: 13, lineHeight: 16, color: colors.ink },
   headHomeLabel: { fontFamily: 'Inter_500Medium', fontSize: 15, lineHeight: 18, color: colors.text.secondary },
   scroll: { flex: 1 },

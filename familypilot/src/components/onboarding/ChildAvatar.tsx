@@ -28,5 +28,5 @@ export function ChildAvatar({ name, size = 40 }: { name: string; size?: number }
 }
 
 const styles = StyleSheet.create({
-  disc: { backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  disc: { backgroundColor: colors.action, alignItems: 'center', justifyContent: 'center' },
 });

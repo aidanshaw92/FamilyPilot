@@ -1,19 +1,63 @@
 /**
- * The near-black the approved Home frame ("01 — Home") uses for ink, the selected pill, the avatar,
- * the primary call to action and the floating navigation. It is the app's one accent: a control that
- * needs emphasis goes near-black, not purple.
+ * FamilyPilot's palette, from the three approved identity references (Home, Explore, Welcome;
+ * `docs/VISUAL_IDENTITY.md` records the sampled values).
+ *
+ * Two roles that used to share one near-black are now distinct:
+ *   - `ink` is the dark navy that TEXT is set in.
+ *   - `action` is the deep green that CONTROLS are drawn in: primary buttons, selected chips, the
+ *     floating navigation, the arrow CTA, the filter disc, focus rings.
+ * A control that needs emphasis goes green; a word never does, except a link.
+ *
+ * The three tinted fills (mint, blush, lilac) and the yellow are accents. They appear on idle chips in
+ * a rail, on icon wells, on decorative shapes and nowhere large. They carry no meaning: a chip's tint is
+ * assigned by its position, not by what it filters.
  */
-const INK = '#141416';
+const INK = '#0D1733';
+const ACTION = '#0F4A3E';
 
 export const colors = {
-  /** Ink: text, selected controls, primary buttons. The same value as `text.primary` on purpose. */
+  /** Navy ink: text. `text.primary` is the same value on purpose. */
   ink: INK,
-  /** Quiet neutral fill for icon wells and information boxes that sit on a white card. */
-  fill: '#F0F0F3',
+  /** Deep green: the one colour a control is drawn in. */
+  action: ACTION,
+  actionPressed: '#0B3B32',
+  /** The slightly lighter green Home's filter disc and a hovered control use. */
+  actionStrong: '#15534A',
+  /** Mint behind a green mark: Family Fit on a light surface, the empty-state well. */
+  actionSoft: '#E7F3EF',
+  /** Quiet neutral fill for wells and information boxes that sit on a white card. */
+  fill: '#F3F1EC',
+  /** The floating navigation pill and its active disc. */
+  nav: {
+    pill: ACTION,
+    active: '#DDF1E8',
+  },
+  /** Idle chip and icon-well fills. Decorative; rotated by position. */
+  tint: {
+    mint: '#E7F3EF',
+    blush: '#FBECEA',
+    lilac: '#F3ECFB',
+    yellow: '#FDF1CC',
+  },
+  /** The deeper tone of each tint, for a blob or a stronger well. */
+  tintStrong: {
+    mint: '#DDF1E8',
+    blush: '#FADBD8',
+    lilac: '#EADFF8',
+  },
+  /** Saturated accents for icons on the tints and for the decorative marks. */
+  brand: {
+    mint: '#5FB3A3',
+    coral: '#E26B4A',
+    violet: '#6B21E8',
+    yellow: '#F7C12E',
+    green: '#3F9A82',
+    /** The pale leaf green of the decorative marks only. */
+    leaf: '#8FCDB9',
+  },
   /**
-   * Legacy brand purple. Retired from consumer chrome in the UI phase (buttons, chips, links, tints
-   * and spinners are ink now); still referenced by the internal enrichment tools and the onboarding
-   * illustration. Do not introduce new consumer uses — `design-system-guard.test.ts` fails on them.
+   * Legacy brand purple. Retired from consumer chrome; still referenced by the internal enrichment
+   * tools. Do not introduce new consumer uses — `design-system-guard.test.ts` fails on them.
    */
   primary: {
     50: '#EEECFD',
@@ -23,11 +67,12 @@ export const colors = {
     600: '#4A3FD1',
     700: '#332A9E',
   },
+  /** Confirmed facts and success: the identity's mid green. */
   secondary: {
-    50: '#E3F5EC',
-    100: '#C7EBD9',
-    500: '#1C8A57',
-    600: '#167048',
+    50: '#E7F3EF',
+    100: '#DDF1E8',
+    500: '#3F9A82',
+    600: '#2E7D69',
   },
   accent: {
     50: '#E8F3FB',
@@ -47,46 +92,46 @@ export const colors = {
     500: '#C4453B',
     600: '#A23730',
   },
-  coral: '#E0654A',
+  /** The filled save heart. */
+  coral: '#E26B4A',
   slateBlue: '#8B9FD4',
   steelBlue: '#7BAFD4',
-  background: '#F6F5F9',
+  /** Warm near-white canvas. Cards are pure white on it. */
+  background: '#FBFAF7',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
   text: {
     primary: INK,
-    /** Frame node 7:17 (the greeting's second line) and every secondary line on Home. */
-    secondary: '#6E6E73',
-    /** Neutral, not purple-tinted: captions sit beside ink and the greys above. */
-    tertiary: '#8E8E93',
+    secondary: '#626A80',
+    tertiary: '#8A91A0',
     inverse: '#FFFFFF',
   },
-  border: '#ECE9F2',
-  borderLight: '#F3F1F7',
-  overlay: 'rgba(10, 10, 13, 0.45)',
+  border: '#E9E7E1',
+  borderLight: '#F1EFEA',
+  overlay: 'rgba(13, 23, 51, 0.45)',
   /**
    * Behind a bottom sheet. Lighter than `overlay` because the approved design keeps the venue
    * readable behind the sheet rather than dimming it to a backdrop.
    */
-  sheetScrim: 'rgba(10, 10, 13, 0.42)',
+  sheetScrim: 'rgba(13, 23, 51, 0.42)',
+  /** A scrim over photography fades to green-black, not neutral black (the Home reference). */
   gradient: {
-    heroStart: 'rgba(10, 10, 13, 0)',
-    /** Mid stop so a scrim over photography ramps rather than banding. */
-    heroMid: 'rgba(10, 10, 13, 0.28)',
-    heroEnd: 'rgba(10, 10, 13, 0.68)',
+    heroStart: 'rgba(10, 46, 39, 0)',
+    heroMid: 'rgba(10, 46, 39, 0.3)',
+    heroEnd: 'rgba(10, 46, 39, 0.72)',
   },
-  /** Translucent chrome that sits directly on photography — a save button, a rating chip,
-   * a call to action inside a photo card. */
+  /** Translucent chrome that sits directly on photography. */
   glass: {
-    dark: 'rgba(10, 10, 13, 0.55)',
-    darker: 'rgba(10, 10, 13, 0.78)',
+    dark: 'rgba(10, 46, 39, 0.55)',
+    darker: 'rgba(10, 46, 39, 0.78)',
     light: 'rgba(255, 255, 255, 0.92)',
+    /** The action green with a hint of the photo through it: the deck's CTA, Family Fit on an image. */
+    action: 'rgba(15, 74, 62, 0.92)',
   },
-  /** A dark, immersive band reserved for the single most important moment on a screen (Home's
-   * top pick, a venue detail hero) — used sparingly, never as a whole-app background. */
+  /** The one dark band on a screen, now green: the fallback image gradient, the profile avatars. */
   midnight: {
-    start: '#14101F',
-    end: '#241C3D',
+    start: '#0B3B32',
+    end: '#15534A',
   },
   /** Every venue category owns a gradient so a card without a real photo still reads as
    * designed rather than broken — upgrades automatically the moment a real photo exists. */

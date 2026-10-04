@@ -10,7 +10,7 @@ interface CircleButtonProps {
   icon: keyof typeof Ionicons.glyphMap;
   onPress?: () => void;
   accessibilityLabel: string;
-  /** light = white on photography, dark = the primary near-black control, glass = translucent. */
+  /** light = white on photography, dark = the deep-green primary control, glass = translucent. */
   tone?: CircleButtonTone;
   size?: number;
   iconSize?: number;
@@ -21,15 +21,16 @@ interface CircleButtonProps {
 
 const TONE_BACKGROUND: Record<CircleButtonTone, string> = {
   light: colors.surface,
-  // The approved frames use a near-black control, not the purple brand primary.
-  dark: colors.text.primary,
+  // The emphasised round control is the action green (the identity's filter disc, the "go" disc).
+  dark: colors.action,
   glass: colors.glass.light,
 };
 
+// A control's glyph is green, like every control; only text is ink.
 const TONE_ICON: Record<CircleButtonTone, string> = {
-  light: colors.text.primary,
+  light: colors.action,
   dark: colors.text.inverse,
-  glass: colors.text.primary,
+  glass: colors.action,
 };
 
 /** The floating round control the reference uses for back, favourite, filter and "go". */
