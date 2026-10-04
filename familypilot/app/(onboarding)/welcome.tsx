@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { WELCOME_PHOTOS } from '@/src/assets/welcome-photos';
 import { BenefitCard } from '@/src/components/onboarding/BenefitCard';
 import { Button, Doodle, PhotoSlot, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
@@ -57,6 +58,7 @@ export default function WelcomeScreen() {
             category="zoo"
             shape="circle"
             icon="paw-outline"
+            source={WELCOME_PHOTOS.zoo}
             testID="welcome-slot-zoo"
             // Fixed size, not scaled: the headline's first line reaches the slot's column at every
             // width (x=298 at 360, x=347 at 430), so the slot has to end above the headline's top
@@ -72,6 +74,7 @@ export default function WelcomeScreen() {
               category={slot.category}
               shape={slot.shape}
               icon={slot.icon}
+              source={WELCOME_PHOTOS[slot.id]}
               testID={`welcome-slot-${slot.id}`}
               style={{ left: slot.x * k, top: slot.y * k, width: slot.w * k, height: slot.h * k }}
             />

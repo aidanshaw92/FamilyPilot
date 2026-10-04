@@ -34,7 +34,7 @@
  */
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
 import { deflateSync } from 'node:zlib';
 
@@ -359,6 +359,14 @@ function FOOD_CANDIDATES(lat, lng) {
  * only way to prove in a browser that each holder is credited once and neither is credited for the
  * other's rows -- the defect being fixed was Home crediting Google for OpenStreetMap museums.
  */
+/** Local photographs for the visual-review capture set (see .ui-cap/review-captures.mjs). */
+const REVIEW_PHOTOS = process.env.FIXTURE_PHOTO_DIR
+  ? readdirSync(process.env.FIXTURE_PHOTO_DIR)
+      .filter((f) => /\.(jpe?g|png)$/i.test(f))
+      .sort()
+      .map((f) => join(process.env.FIXTURE_PHOTO_DIR, f))
+  : [];
+
 const SEARCH_PLACES =
   process.env.FIXTURE_SEARCH_INCLUDES_OSM === '1'
     ? [...PLACES, EDGE_BY_ID.get('fp-osm-FIXTUREedgeOsm')]
@@ -561,6 +569,21 @@ const server = createServer((req, res) => {
 
   if (url.pathname === '/api/places/photo') {
     const index = Number(url.searchParams.get('index') || 0);
+    // Visual-review mode: FIXTURE_PHOTO_DIR names a local folder of photographs, served in place of
+    // the flat fixture colours so a composition can be judged. Still no provider call is made; the
+    // deterministic verifiers run without the variable and keep the flat colours.
+    if (REVIEW_PHOTOS.length) {
+      const seed = [...(url.searchParams.get('id') || '')].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+      const file = REVIEW_PHOTOS[(seed + (Number.isInteger(index) ? index : 0)) % REVIEW_PHOTOS.length];
+      const body = readFileSync(file);
+      res.writeHead(200, {
+        'Content-Type': file.endsWith('.png') ? 'image/png' : 'image/jpeg',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'public, max-age=3600',
+        'Content-Length': body.length,
+      });
+      return res.end(body);
+    }
     const image = IMAGES[Number.isInteger(index) && index >= 0 && index < IMAGES.length ? index : 0];
     res.writeHead(200, {
       'Content-Type': 'image/png',

@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { BackButton } from '@/src/components/ui/BackButton';
 import { Text } from '@/src/components/ui';
 import { ArrowCta } from '@/src/components/ui/ArrowCta';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { PLAN_SECTION_CONTROL_PADDING, planSectionLabels } from '@/src/utils/plan-section-labels';
 import { safeFooterPadding } from '@/src/utils/safe-area';
 import { PlanSectionView, PlanViewModel } from '@/src/services/planning/plan-view-model';
 
@@ -49,6 +50,8 @@ export function PlanScreenView({
   topInset = 0,
 }: PlanScreenViewProps) {
   const [section, setSection] = useState<PlanSectionView['id']>('day');
+  const { width } = useWindowDimensions();
+  const sectionLabels = planSectionLabels(width, view.sections);
   // The approved design opens the first stop and leaves the rest closed.
   const [expanded, setExpanded] = useState<number[]>(view.stops.length ? [view.stops[0].index] : []);
 
@@ -88,14 +91,14 @@ export function PlanScreenView({
           <Ionicons
             name={saved ? 'bookmark' : 'bookmark-outline'}
             size={20}
-            color={colors.ink}
+            color={colors.action}
           />
         </Pressable>
       </View>
 
-      {/* Scrolls in its own container rather than pushing the page sideways. At 360 wide the three
-          approved labels come to 364px, so a fixed row made the whole Plan screen scroll
-          horizontally; the nav is horizontal by design, so this is where that scroll belongs. */}
+      {/* Primary navigation, so all three controls are visible at once: where the full labels would
+          clip (360 and 390), the travel control takes its short label (`planSectionLabels`). The
+          horizontal scroller stays only as a safety net for widths below the phone floor. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -111,7 +114,7 @@ export function PlanScreenView({
             style={[styles.navItem, section === entry.id && styles.navItemActive]}
             testID={`plan-section-${entry.id}`}
           >
-            <Text style={[styles.navLabel, section === entry.id && styles.navLabelActive]}>{entry.label}</Text>
+            <Text style={[styles.navLabel, section === entry.id && styles.navLabelActive]}>{sectionLabels[entry.id] ?? entry.label}</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -133,7 +136,7 @@ export function PlanScreenView({
                 before. Never an alert, never invented from the clock alone. */}
             {view.insight ? (
               <View style={styles.insight} testID="plan-insight">
-                <Ionicons name="checkmark" size={14} color={colors.ink} />
+                <Ionicons name="checkmark" size={14} color={colors.secondary[500]} />
                 <Text style={styles.insightText} numberOfLines={1}>
                   {view.insight}
                 </Text>
@@ -311,10 +314,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.screenPadding,
   },
-  // Node 70:25: 40 tall, 18 either side, radius 20; ink when active, white when not.
+  // Node 70:25: 40 tall, radius 20; green when active, white when not. 16 either side rather than
+  // the frame's 18 so the three full labels fit a 430 screen on one visible row.
   navItem: {
     height: 40,
-    paddingHorizontal: 18,
+    paddingHorizontal: PLAN_SECTION_CONTROL_PADDING,
     justifyContent: 'center',
     borderRadius: 20,
     backgroundColor: colors.surface,

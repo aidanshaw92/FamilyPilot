@@ -248,10 +248,10 @@ export default function VenueScreen() {
             </View>
             <View style={styles.heroActions}>
               <View style={styles.heroCircle}>
-                <ShareButton title={venue.name} path={`/venue/${venue.id}`} color={colors.ink} />
+                <ShareButton title={venue.name} path={`/venue/${venue.id}`} color={colors.action} />
               </View>
               <View style={styles.heroCircle}>
-                <SaveButton venueId={venue.id} venue={venue} color={colors.ink} />
+                <SaveButton venueId={venue.id} venue={venue} color={colors.action} />
               </View>
             </View>
           </View>

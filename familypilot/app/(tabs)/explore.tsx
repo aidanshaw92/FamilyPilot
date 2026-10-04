@@ -334,8 +334,8 @@ export default function ExploreScreen() {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={() => void handleRefresh()}
-                tintColor={colors.ink}
-                colors={[colors.ink]}
+                tintColor={colors.action}
+                colors={[colors.action]}
               />
             }
           />

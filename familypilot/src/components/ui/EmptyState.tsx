@@ -23,8 +23,10 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <View style={styles.container} accessibilityRole="text">
+      {/* Figma "State / Empty": a mint well with the glyph in the action green, so an empty screen
+          still reads as the identity rather than a grey placeholder. */}
       <View style={styles.iconWrap}>
-        <Ionicons name={icon} size={32} color={colors.text.tertiary} />
+        <Ionicons name={icon} size={32} color={colors.action} />
       </View>
       <Text variant="heading3" style={styles.title}>
         {title}
@@ -49,7 +51,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: colors.fill,
+    backgroundColor: colors.actionSoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
