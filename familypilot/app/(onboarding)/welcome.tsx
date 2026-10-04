@@ -1,11 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { WELCOME_PHOTOS } from '@/src/assets/welcome-photos';
 import { BenefitCard } from '@/src/components/onboarding/BenefitCard';
-import { Button, Doodle, PhotoSlot, Text } from '@/src/components/ui';
+import { BrandMark, Button, Doodle, PhotoSlot, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { WELCOME_BENEFITS, WELCOME_COLLAGE, WELCOME_DESIGN_WIDTH, WELCOME_DOODLES } from '@/src/utils/welcome-layout';
 
@@ -29,9 +28,7 @@ export default function WelcomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <View style={styles.brandRow}>
-            <View style={styles.logoMark}>
-              <Ionicons name="heart" size={22} color={colors.text.inverse} />
-            </View>
+            <BrandMark size={40} tone="light" testID="welcome-brand-mark" />
             <Text variant="heading2" style={styles.brandName}>
               Family
               <Text variant="heading2" color={colors.action} style={styles.brandName}>
@@ -125,14 +122,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     paddingTop: spacing.lg,
-  },
-  logoMark: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
-    backgroundColor: colors.action,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   brandName: {
     letterSpacing: -0.3,
