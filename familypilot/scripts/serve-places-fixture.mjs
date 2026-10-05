@@ -63,7 +63,7 @@ const CATEGORIES = [
 ];
 
 const NAMES = [
-  'Alderbrook Meadows', 'Brambleside Commons', 'Cedarmill Play Barn', 'Dovecote Farm Park',
+  'Alderbrook Meadows', 'Brambleside Science Hall', 'Cedarmill Play Barn', 'Dovecote Farm Park',
   'Eastgate Adventure Yard', 'Fernhollow Wildlife Park', 'Granary Wharf Lookout',
   'Hollybank Gardens', 'Ironbridge Story Rooms', 'Juniper Climb Centre',
   'Kettleford Play House', 'Larchmere Water Gardens', 'Marlow End Farm',
@@ -185,14 +185,14 @@ const REALISTIC_PLAN = [
   { kind: 'partial' }, // 4  some confirmed facts, the rest unknown
   { kind: 'noPhoto' }, // 5  useful data, no photograph (category placeholder)
   { kind: 'sparse' }, // 6  nothing reviewed: "Not yet reviewed", no number
-  { kind: 'long' }, // 7  an over-long name and fact
+  { kind: 'full' }, // 7
   { kind: 'caution' }, // 8  a reviewed negative that counts against the match
   { kind: 'partial' }, // 9
   { kind: 'full' }, // 10
   { kind: 'sparse' }, // 11
   { kind: 'full' }, // 12
   { kind: 'noPhoto' }, // 13
-  { kind: 'full' }, // 14
+  { kind: 'long' }, // 14 an over-long name and fact (kept off the top of the ranking so Home leads with a normal name)
 ];
 
 /** A long, real two-part photographer's name: the credit must wrap whole at the narrowest thumbnail. */

@@ -1,5 +1,27 @@
 {
   "synthetic": true,
   "notice": "Synthetic test/demo images. Not photographs of any real place. No provider provenance.",
-  "images": []
+  "images": [
+    {
+      "file": "farm.jpg",
+      "category": "farm",
+      "synthetic": true,
+      "generator": "ChatGPT image generation (synthetic; not a photograph of a real place)",
+      "prompt": "docs/PHOTOGRAPHY_ASSETS.md, section B"
+    },
+    {
+      "file": "museum.jpg",
+      "category": "museum",
+      "synthetic": true,
+      "generator": "ChatGPT image generation (synthetic; not a photograph of a real place)",
+      "prompt": "docs/PHOTOGRAPHY_ASSETS.md, section B"
+    },
+    {
+      "file": "park.jpg",
+      "category": "park",
+      "synthetic": true,
+      "generator": "ChatGPT image generation (synthetic; not a photograph of a real place)",
+      "prompt": "docs/PHOTOGRAPHY_ASSETS.md, section B"
+    }
+  ]
 }

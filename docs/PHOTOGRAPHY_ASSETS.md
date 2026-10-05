@@ -23,6 +23,15 @@ import; the credit appears only when a real photograph loaded) and in tests by
 `src/__tests__/fixture-photography.test.ts`. Generated imagery is allowed only for Welcome brand imagery,
 deterministic fixture/demo/testing imagery, and clearly illustrative non-evidential artwork.
 
+## Status
+
+* **Welcome: all seven images installed** (generated, credited `Origin: generated`; processed by
+  `scripts/prepare-welcome-photos.mjs`). `welcome-photos.test.ts` fails if any slot has no file.
+* **Fixtures: `park`, `museum`, `farm` installed** (synthetic, in `manifest.json`; processed by
+  `scripts/prepare-fixture-photos.mjs`). Still to supply: `soft_play`, `attraction`, and preferably `zoo` and
+  `activity`. Until a category has a file, its fixture venues keep the old flat-colour scene; the deliberate
+  "no photo" venues are not served an image at all.
+
 ## What I need from you (the environment cannot generate images)
 
 Place the files exactly here. Nothing else is needed; I write the credit and manifest lines from the generator and
