@@ -1,5 +1,11 @@
 import type { ImageSource } from 'expo-image';
 
+import aquarium from '../../assets/images/welcome/aquarium.jpg';
+import cafe from '../../assets/images/welcome/cafe.jpg';
+import crafts from '../../assets/images/welcome/crafts.jpg';
+import farm from '../../assets/images/welcome/farm.jpg';
+import zoo from '../../assets/images/welcome/zoo.jpg';
+
 /**
  * The photographs behind the Welcome collage, keyed by the slot ids in `welcome-layout.ts`.
  *
@@ -19,12 +25,19 @@ import type { ImageSource } from 'expo-image';
  *     recorded in `assets/images/welcome/CREDITS.md` with its Origin (photograph or generated), creator or tool,
  *     and terms. `welcome-photos.test.ts` fails the build when a slot points at a file that is missing from
  *     either place, or whose Origin is not stated.
- *   - React Native needs a static `require`, so each line is written out by hand when the file lands.
+ *   - Metro needs a static import, so each file is imported by hand when it lands.
  *
  * The seven briefs (subject, size, placement) are in docs/WELCOME_PHOTOGRAPHY.md. The pipeline was proven on the
  * web with a throwaway image in the exact cut-out; nothing is committed until the real file and its credit exist.
  *
  * Add a slot like so once its file and credit exist:
- *   farm: require('../../assets/images/welcome/farm.jpg'),
+ *   import farm from '../../assets/images/welcome/farm.jpg';  ...  farm,
  */
-export const WELCOME_PHOTOS: Partial<Record<string, ImageSource>> = {};
+export const WELCOME_PHOTOS: Partial<Record<string, ImageSource>> = {
+  zoo,
+  farm,
+  cafe,
+  crafts,
+  aquarium,
+  // soft-play and puddles: not supplied yet; each keeps its category gradient until its file lands.
+};
