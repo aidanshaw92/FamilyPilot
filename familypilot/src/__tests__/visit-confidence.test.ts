@@ -178,6 +178,6 @@ describe('post-visit question selection is unchanged by the confidence contract'
     expect(f.parking.priority).toBe(3); // one report
     expect(f.pushchair.priority).toBe(4); // corroborated
     expect(f.cafe.priority).toBe(9); // confirmed and fresh: not asked
-    expect(rules.selectQuestions(f)).toEqual(['toilets', 'babyChanging', 'pushchair']);
+    expect(rules.selectQuestions(f)).toEqual(['toilets', 'babyChanging', 'parking']); // the single report is asked before the corroborated one
   });
 });
