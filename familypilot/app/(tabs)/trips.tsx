@@ -15,6 +15,7 @@ import { PlanDraftForm, PlanFormRow } from '@/src/components/planning/PlanDraftF
 import { PlanDraft, planDraftBlocker, planDraftDefaults } from '@/src/services/planning/plan-draft';
 import { resolvePlanParties } from '@/src/services/planning/plan-parties';
 import { PlanningAccount } from '@/src/components/planning/PlanningAccount';
+import { accountRequired } from '@/src/stores/auth-store';
 import { useFamilyStore } from '@/src/stores/family-store';
 import { localDate, localTime, usePlanningStore } from '@/src/stores/planning-store';
 import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
@@ -155,7 +156,7 @@ export default function TripsScreen() {
     {/* The same four questions, the same form, as the Create a Plan sheet on a place. Parties come
         from the profile first, so a parent who finished onboarding is never told to set up a family
         they already described; a second household is added through the editor as before. */}
-    <PlanDraftForm draft={draft} parties={planDefaults.parties} onDraftChange={applyDraft} onAddFamily={()=>setEditor(blank(false))}/>
+    <PlanDraftForm draft={draft} parties={planDefaults.parties} onDraftChange={applyDraft} onAddFamily={()=>setEditor(blank(false))} connections={accountRequired()}/>
     {planDefaults.needsProfile?<Button label="Set up your family" onPress={()=>router.push('/profile/edit' as never)}/>:null}
     <Pressable onPress={()=>setTab('families')} accessibilityRole="button" accessibilityLabel="Manage families and routines" style={linkStyle} hitSlop={8}><Text variant="link">Manage families and routines</Text></Pressable>
     <PlanFormRow label="Everyone home by">

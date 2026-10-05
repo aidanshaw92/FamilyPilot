@@ -681,8 +681,15 @@ function sendJson(res, status, body) {
   res.end(payload);
 }
 
-const server = createServer((req, res) => {
+const { handleAccountRoutes } = createRequire(import.meta.url)('./fixtures/fixture-accounts.cjs');
+
+const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
+
+  // Accounts: a local stand-in for Supabase Auth plus the real connections handler on an in-memory table, so the
+  // first-run journey and invitations can be driven end to end offline. Reached only when the bundle under test was
+  // built with EXPO_PUBLIC_SUPABASE_URL pointing here; otherwise nothing calls these paths.
+  if (await handleAccountRoutes(req, res, url)) return;
 
   // Places to eat near an anchor. Synthetic, so the audit exercises the real UI states -- candidates,
   // nothing mapped, and a provider outage -- without a single Overpass request. The anchor decides

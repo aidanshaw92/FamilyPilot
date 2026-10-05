@@ -7,12 +7,28 @@ function safeSnapshot(input) {
   return { label:input.label.slice(0,60),area:input.area.slice(0,80),latitude:Math.round(input.latitude*100)/100,longitude:Math.round(input.longitude*100)/100,ages:input.ages,
     maxDriveMinutes:input.maxDriveMinutes,budgetTier:['budget','moderate','premium'].includes(input.budgetTier)?input.budgetTier:'moderate',pushchair:input.pushchair===true,
     required:Array.isArray(input.required)?input.required.filter(x=>['toilets','babyChanging','parking','pushchair'].includes(x)):[],
+    // Only a short, fixed set of words about who the invite is for. Never free text: this reaches another person.
+    relationship:['partner','family','friend'].includes(input.relationship)?input.relationship:undefined,
     routines:input.shareAvailability===true&&Array.isArray(input.routines)?input.routines.filter(r=>r.atHome===true&&/^([01]\d|2[0-3]):[0-5]\d$/.test(r.time)&&Number.isFinite(r.durationMinutes)&&r.durationMinutes>0&&r.durationMinutes<=240).slice(0,20).map((r,i)=>({id:`busy-${i}`,label:'Home time',kind:'nap',time:r.time,durationMinutes:r.durationMinutes,atHome:true})):[] };
+}
+async function previewInvitation(admin,code,res) {
+  if(!/^[a-f0-9]{64}$/.test(code))return res.json({valid:false});
+  try {
+    const {data,error}=await admin.from('planning_connections').select('owner_snapshot,expires_at,accepted_at').eq('token_hash',createHash('sha256').update(code).digest('hex')).maybeSingle();
+    if(error)throw error;
+    if(!data||data.accepted_at||Date.parse(data.expires_at)<=Date.now())return res.json({valid:false});
+    const snapshot=data.owner_snapshot||{};
+    return res.json({valid:true,inviter:{label:typeof snapshot.label==='string'?snapshot.label.slice(0,60):'A FamilyPilot family',relationship:snapshot.relationship||null}});
+  } catch {return res.status(503).json({error:'Invitations are temporarily unavailable. Please try again.'});}
 }
 module.exports = async function handler(req,res) {
   res.setHeader('Cache-Control','no-store');
   if(!['GET','POST','DELETE'].includes(req.method))return res.status(405).json({error:'Method not allowed'});
   const admin=getSupabaseAdmin();if(!admin)return res.status(503).json({error:'Family connections are not configured yet.'});
+  // What an invitation link may show BEFORE anyone is signed in: whether it can still be used, and the label the inviter
+  // chose for their family. Nothing else from the snapshot (no area, ages or preferences) leaves the database until the
+  // invitation is accepted. The code is 256 random bits and is stored only as a hash, so holding a valid one is the proof.
+  if(req.method==='GET'&&typeof req.query?.preview==='string')return previewInvitation(admin,req.query.preview,res);
   const token=(req.headers.authorization||'').replace(/^Bearer /,'');
   if(!token)return res.status(401).json({error:'Sign in to connect families.'});
   const {data:auth,error:authError}=await admin.auth.getUser(token);
@@ -22,7 +38,7 @@ module.exports = async function handler(req,res) {
     if(req.method==='GET') {
       const {data,error}=await admin.from('planning_connections').select('id,owner_id,guest_id,owner_snapshot,guest_snapshot,accepted_at,expires_at').or(`owner_id.eq.${userId},guest_id.eq.${userId}`);
       if(error)throw error;
-      return res.json({connections:(data||[]).map(row=>({id:row.id,pending:!row.accepted_at,expiresAt:row.expires_at,family:row.accepted_at?(row.owner_id===userId?row.guest_snapshot:row.owner_snapshot):null}))});
+      return res.json({connections:(data||[]).map(row=>({id:row.id,pending:!row.accepted_at,expiresAt:row.expires_at,relationship:row.accepted_at?null:(row.owner_snapshot?.relationship||null),family:row.accepted_at?(row.owner_id===userId?row.guest_snapshot:row.owner_snapshot):null}))});
     }
     if(req.method==='DELETE') {
       if(!/^[0-9a-f-]{36}$/i.test(req.body?.id||''))return res.status(400).json({error:'Invalid connection'});
@@ -40,9 +56,9 @@ module.exports = async function handler(req,res) {
     if(req.body?.action==='accept') {
       const code=req.body.code;if(typeof code!=='string'||!/^[a-f0-9]{64}$/.test(code))return res.status(400).json({error:'Check the invitation code.'});
       const {data,error}=await admin.from('planning_connections').update({guest_id:userId,guest_snapshot:snapshot,accepted_at:new Date().toISOString()})
-        .eq('token_hash',createHash('sha256').update(code).digest('hex')).is('guest_id',null).neq('owner_id',userId).gt('expires_at',new Date().toISOString()).select('id').maybeSingle();
+        .eq('token_hash',createHash('sha256').update(code).digest('hex')).is('guest_id',null).neq('owner_id',userId).gt('expires_at',new Date().toISOString()).select('id,owner_snapshot').maybeSingle();
       if(error)throw error;if(!data)return res.status(400).json({error:'Invitation expired, already used, or belongs to you.'});
-      return res.json({ok:true});
+      return res.json({ok:true,id:data.id,inviter:{label:data.owner_snapshot?.label||'A FamilyPilot family'}});
     }
     return res.status(400).json({error:'Unknown action'});
   } catch(error) {return res.status(error.message==='Invalid family details'?400:503).json({error:error.message==='Invalid family details'?error.message:'Connections are temporarily unavailable. Please try again.'});}

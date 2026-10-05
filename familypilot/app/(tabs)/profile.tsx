@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
@@ -17,6 +18,8 @@ import { getProfileSuggestion } from '@/src/utils/profile-completion';
 import { formatClock } from '@/src/utils/clock-format';
 import { familyTitle } from '@/src/utils/family-title';
 import { FacilityType } from '@/src/types';
+import { signOut } from '@/src/services/account/auth-service';
+import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
 
 const MUST_HAVE_LABELS: Partial<Record<FacilityType, string>> = {
   toilets: 'Toilets',
@@ -35,6 +38,9 @@ export default function ProfileScreen() {
   const tabBarClearance = useTabBarClearance();
   const router = useRouter();
   const { data: profile, isLoading } = useFamilyProfile();
+  const authStatus = useAuthStore((s) => s.status);
+  const accountEmail = useAuthStore((s) => s.email);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
 
   if (isLoading) {
     return (
@@ -234,6 +240,28 @@ export default function ProfileScreen() {
           />
         </Card>
 
+        {accountRequired() && authStatus === 'signed_in' ? (
+          <>
+            <Text variant="heading2" style={styles.sectionTitle}>
+              Account
+            </Text>
+            <Card style={styles.prefCard} testID="profile-account">
+              <ProfileRow icon="mail-outline" label="Signed in as" value={accountEmail ?? 'Your account'} />
+              <Text variant="caption" color={colors.text.tertiary}>
+                Your family’s details stay on this device. Signing out does not delete them.
+              </Text>
+              {confirmSignOut ? (
+                <View style={styles.signOutRow}>
+                  <Button label="Sign out now" onPress={() => void signOut()} testID="profile-signout-confirm" />
+                  <Button label="Cancel" variant="ghost" onPress={() => setConfirmSignOut(false)} />
+                </View>
+              ) : (
+                <Button label="Sign out" variant="outline" onPress={() => setConfirmSignOut(true)} testID="profile-signout" />
+              )}
+            </Card>
+          </>
+        ) : null}
+
         <Pressable
           style={styles.aboutRow}
           onPress={() => router.push('/about' as never)}
@@ -294,6 +322,7 @@ const AVATAR_GRADIENTS: readonly [string, string][] = [
 ];
 
 const styles = StyleSheet.create({
+  signOutRow: { gap: spacing.sm },
   loading: {
     padding: spacing.screenPadding,
   },

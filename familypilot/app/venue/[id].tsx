@@ -46,6 +46,7 @@ import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { safeFooterPadding } from '@/src/utils/safe-area';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
+import { accountRequired } from '@/src/stores/auth-store';
 import { isActivityVenue } from '@/src/data/mock-restaurants';
 import { useFamilyProfile, useNearbyFood, useVenue } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
@@ -446,6 +447,7 @@ export default function VenueScreen() {
           setPlanSheetOpen(false);
           router.push('/profile/edit' as never);
         }}
+        connections={accountRequired() && isPilotFeatureVisible('trips_tab')}
         onAddFamily={
           isPilotFeatureVisible('trips_tab')
             ? () => {

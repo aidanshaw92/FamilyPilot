@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ConnectedFamiliesPicker } from './ConnectedFamiliesPicker';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Chip, Text, SMALL_CHIP_GAP } from '@/src/components/ui';
@@ -31,6 +32,11 @@ export interface PlanDraftFormProps {
   venueName?: string;
   /** Shown on the WHO'S COMING row, right-aligned as the frame draws it (node 76:49). */
   onAddFamily?: () => void;
+  /**
+   * With accounts, "Add another family" opens the connected families and an invitation link instead of leaving the
+   * form: this is the people the parent has connected, and a way to connect someone new.
+   */
+  connections?: boolean;
   /** The day the quick chips count from. Defaults to today; passed in by tests and captures. */
   today?: string;
 }
@@ -64,7 +70,8 @@ export function PlanFormRow({
   );
 }
 
-export function PlanDraftForm({ draft, parties, onDraftChange, venueName, onAddFamily, today }: PlanDraftFormProps) {
+export function PlanDraftForm({ draft, parties, onDraftChange, venueName, onAddFamily, connections = false, today }: PlanDraftFormProps) {
+  const [addOpen, setAddOpen] = useState(false);
   const day = today ?? localDate();
   const dateChoices = dateQuickChoices(day);
   const dateIsQuick = dateChoices.some((c) => c.value === draft.date);
@@ -139,9 +146,15 @@ export function PlanDraftForm({ draft, parties, onDraftChange, venueName, onAddF
           // Quiet and on the label's row, as the frame draws it: adding a second household is an
           // occasional choice, and a full-width button here competes with the one action the form
           // exists for.
-          onAddFamily ? (
-            <Pressable onPress={onAddFamily} accessibilityRole="button" accessibilityLabel="Add another family" hitSlop={10}>
-              <Text style={styles.rowLink}>Add another family</Text>
+          connections || onAddFamily ? (
+            <Pressable
+              onPress={connections ? () => setAddOpen((open) => !open) : onAddFamily}
+              accessibilityRole="button"
+              accessibilityLabel="Add another family"
+              accessibilityState={connections ? { expanded: addOpen } : undefined}
+              hitSlop={10}
+            >
+              <Text style={styles.rowLink}>{connections && addOpen ? 'Close' : 'Add another family'}</Text>
             </Pressable>
           ) : undefined
         }
@@ -162,6 +175,15 @@ export function PlanDraftForm({ draft, parties, onDraftChange, venueName, onAddF
           <Text variant="caption" color={colors.text.secondary}>
             Nobody chosen yet
           </Text>
+        ) : null}
+        {connections && addOpen ? (
+          <ConnectedFamiliesPicker
+            selectedIds={draft.partyIds}
+            onSelect={(id) => {
+              if (!draft.partyIds.includes(id)) onDraftChange({ ...draft, partyIds: [...draft.partyIds, id] });
+            }}
+            onAddManually={onAddFamily}
+          />
         ) : null}
       </PlanFormRow>
 

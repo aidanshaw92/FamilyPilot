@@ -1,4 +1,4 @@
-import { TextInput, View, StyleSheet } from 'react-native';
+import { TextInput, TextInputProps, View, StyleSheet } from 'react-native';
 
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { CHIP_GAP } from './Chip';
@@ -19,12 +19,22 @@ export function Field({
   onChange,
   placeholder,
   secure = false,
+  keyboardType,
+  autoComplete,
+  textContentType,
+  onSubmit,
+  testID,
 }: {
   label: string;
   value: string;
   onChange: (s: string) => void;
   placeholder?: string;
   secure?: boolean;
+  keyboardType?: TextInputProps['keyboardType'];
+  autoComplete?: TextInputProps['autoComplete'];
+  textContentType?: TextInputProps['textContentType'];
+  onSubmit?: () => void;
+  testID?: string;
 }) {
   return (
     <View style={{ gap: 6 }}>
@@ -36,6 +46,13 @@ export function Field({
         placeholder={placeholder}
         secureTextEntry={secure}
         autoCapitalize="none"
+        autoCorrect={false}
+        keyboardType={keyboardType}
+        autoComplete={autoComplete}
+        textContentType={textContentType}
+        onSubmitEditing={onSubmit}
+        returnKeyType={onSubmit ? 'go' : undefined}
+        testID={testID}
         style={formStyles.input}
       />
     </View>

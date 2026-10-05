@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { accountRequired } from '@/src/stores/auth-store';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -76,7 +77,9 @@ export default function WelcomeScreen() {
   const shift = welcomeLineShift(headlineLines, subtitleLines, k);
   const inset = WELCOME_FRAME_INSET * k;
   const stageHeight = WELCOME_STAGE_END_PX * scale - inset + shift.collage;
-  const start = () => router.push('/(onboarding)/setup' as never);
+  // Everyone has an account: Get started goes to creating one (or, in a build with no account backend, straight to
+  // the family). The family's details are collected after it, and stay on the device.
+  const start = () => router.push((accountRequired() ? '/(onboarding)/account' : '/(onboarding)/setup') as never);
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
