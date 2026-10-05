@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   RefreshControl,
@@ -13,6 +13,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
 import { RecommendationDeck } from '@/src/components/home/RecommendationDeck';
 import { deckMetrics, REFERENCE_WIDTH } from '@/src/utils/home-deck-geometry';
+import {
+  deckRoom,
+  deckTopGap,
+  headerShift,
+  HEADER_SAVINGS,
+  HomeHeaderMode,
+  nextHeaderMode,
+} from '@/src/utils/home-vertical-layout';
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import {
   GREETING_FONT_FAMILY,
@@ -59,7 +67,7 @@ function getTimeGreeting(): string {
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height: windowHeight } = useWindowDimensions();
   const tabBarClearance = useTabBarClearance();
   const [category, setCategory] = useState('for_you');
   const [refreshing, setRefreshing] = useState(false);
@@ -76,7 +84,28 @@ export default function HomeScreen() {
   );
   const shortlist = useMemo(() => filterByPlanCategory(ranked, category), [ranked, category]);
 
-  const { deckHeight } = deckMetrics(width);
+  // The header gives up its optional lines when the screen is too short for the whole card (see
+  // home-vertical-layout), so the card and its button always clear the floating navigation. The mode only ever
+  // moves towards compact for a given screen size, and a measurement is trusted only once it was taken in the mode
+  // now showing, so the escalation cannot overshoot on a stale reading.
+  const [mode, setMode] = useState<HomeHeaderMode>('full');
+  const [headerFit, setHeaderFit] = useState<{ mode: HomeHeaderMode; bottom: number } | null>(null);
+  useEffect(() => {
+    setMode('full');
+    setHeaderFit(null);
+  }, [width, windowHeight]);
+
+  const room = headerFit
+    ? deckRoom({ windowHeight, headerBottom: headerFit.bottom, mode: headerFit.mode, navClearance: tabBarClearance })
+    : undefined;
+  useEffect(() => {
+    if (!headerFit || headerFit.mode !== mode || room === undefined) return;
+    const next = nextHeaderMode(mode, room, width);
+    if (next !== mode) setMode(next);
+  }, [headerFit, mode, room, width]);
+
+  const { deckHeight } = deckMetrics(width, room);
+  const savings = HEADER_SAVINGS[mode];
 
   // The approved header is drawn at 393pt. Narrower phones get the largest treatment that still
   // fits the greeting and the placeholder whole, rather than a clipped heading.
@@ -137,7 +166,7 @@ export default function HomeScreen() {
           from={AVATAR_ART_END}
           to={SEARCH_ART_END}
           anchor="top"
-          style={{ top: AVATAR_ART_END * artScale + extraHeight }}
+          style={{ top: AVATAR_ART_END * artScale + extraHeight - headerShift(mode, 'beforeTitle') }}
         />
         <ScreenArt
           art={HOME_ART}
@@ -145,15 +174,20 @@ export default function HomeScreen() {
           from={SEARCH_ART_END}
           to={HEADER_ART_END}
           anchor="top"
-          style={{ top: SEARCH_ART_END * (REFERENCE_WIDTH / HOME_ART.width) + extraHeight }}
+          style={{ top: SEARCH_ART_END * (REFERENCE_WIDTH / HOME_ART.width) + extraHeight - headerShift(mode, 'afterTitle') }}
         />
         <ScreenArt
           art={HOME_ART}
           from={HEADER_ART_END}
           to={1700}
           anchor="top"
-          style={{ top: HEADER_ART_END * (REFERENCE_WIDTH / HOME_ART.width) + extraHeight }}
+          style={{ top: HEADER_ART_END * (REFERENCE_WIDTH / HOME_ART.width) + extraHeight - headerShift(mode, 'all') }}
         />
+        <View
+          onLayout={(e) =>
+            setHeaderFit({ mode, bottom: e.nativeEvent.layout.y + e.nativeEvent.layout.height })
+          }
+        >
         <View style={gutter}>
           <View style={[styles.header, { gap: header.gap }]}>
             <View style={styles.greeting}>
@@ -170,9 +204,11 @@ export default function HomeScreen() {
               >
                 {greetingText}
               </Text>
-              <Text variant="bodySmall" color={colors.text.secondary} style={styles.greetingSub}>
-                What shall we do today?
-              </Text>
+              {savings.subtitle === 0 ? (
+                <Text variant="bodySmall" color={colors.text.secondary} style={styles.greetingSub}>
+                  What shall we do today?
+                </Text>
+              ) : null}
             </View>
             <Pressable
               accessibilityRole="button"
@@ -186,7 +222,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          <View style={styles.searchRow}>
+          <View style={[styles.searchRow, { marginTop: styles.searchRow.marginTop - savings.searchGap }]}>
             <SearchBar
               placeholder={searchPlaceholder(width)}
               onPress={() => router.push('/(tabs)/explore' as never)}
@@ -194,11 +230,15 @@ export default function HomeScreen() {
             />
           </View>
 
-          <View style={styles.sectionTitleRow}>
-            <Text variant="heading2" style={styles.sectionTitle}>
-              Select your plan
-            </Text>
-          </View>
+          {savings.title === 0 ? (
+            <View style={styles.sectionTitleRow}>
+              <Text variant="heading2" style={styles.sectionTitle}>
+                Select your plan
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.compactChipsGap} />
+          )}
         </View>
 
         <PillSelector
@@ -209,21 +249,22 @@ export default function HomeScreen() {
           size="home"
           contentStyle={{ paddingLeft: homeGutter(width) }}
         />
+        </View>
 
         {isError ? (
-          <View style={[gutter, styles.deckSlot]}>
+          <View style={[gutter, styles.deckSlot, { marginTop: deckTopGap(mode) }]}>
             <ErrorState onRetry={() => void refetch()} />
           </View>
         ) : null}
 
         {isLoading ? (
-          <View style={[gutter, styles.deckSlot]}>
+          <View style={[gutter, styles.deckSlot, { marginTop: deckTopGap(mode) }]}>
             <Skeleton height={deckHeight} borderRadius={radius['3xl']} />
           </View>
         ) : null}
 
         {!isLoading && !isError && shortlist.length === 0 ? (
-          <View style={[gutter, styles.deckSlot]}>
+          <View style={[gutter, styles.deckSlot, { marginTop: deckTopGap(mode) }]}>
             <EmptyState
               icon="search-outline"
               title="Nothing confirmed here yet"
@@ -235,10 +276,11 @@ export default function HomeScreen() {
         ) : null}
 
         {!isLoading && !isError && shortlist.length > 0 ? (
-          <View style={styles.deckSlot}>
+          <View style={[styles.deckSlot, { marginTop: deckTopGap(mode) }]}>
             <RecommendationDeck
               venues={shortlist}
               viewportWidth={width}
+              maxHeight={room}
               onPressVenue={openVenue}
             />
           </View>
@@ -315,6 +357,10 @@ const styles = StyleSheet.create({
   },
   deckSlot: {
     marginTop: 27,
+  },
+  // Stands in for the plan heading's own margins in the compact header, so the chips keep clear of the search field.
+  compactChipsGap: {
+    height: 14,
   },
   attribution: {
     marginTop: spacing.xs,

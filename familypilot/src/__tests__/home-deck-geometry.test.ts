@@ -7,6 +7,8 @@ import {
   BACK_REVEAL,
   BACK_SCALE,
   deckMetrics,
+  deckSlot,
+  MIN_DECK_SCALE,
   NEXT_OFFSET_Y,
   NEXT_REVEAL,
   NEXT_SCALE,
@@ -100,5 +102,70 @@ describe('home recommendation deck geometry', () => {
     const rearLeftEdge = -offset - nextWidth / 2;
     const activeLeftEdge = -activeWidth / 2;
     expect(activeLeftEdge - rearLeftEdge).toBeCloseTo(25 * (430 / 393), 5);
+  });
+});
+
+describe('the deck scales to the height the screen really has', () => {
+  it('is unchanged when there is room', () => {
+    expect(deckMetrics(393, 500).scale).toBe(1);
+    expect(deckMetrics(393, undefined).scale).toBe(1);
+    expect(deckMetrics(393, Number.NaN).scale).toBe(1);
+  });
+
+  it('shrinks the whole composition together, so the card is never taller than the room', () => {
+    const { activeHeight, activeWidth, scale } = deckMetrics(393, 360);
+    expect(activeHeight).toBeCloseTo(360, 5);
+    expect(activeWidth / activeHeight).toBeCloseTo(312 / 428, 5);
+    expect(scale).toBeCloseTo(360 / 428, 5);
+  });
+
+  it('never shrinks below the readable minimum; the page scrolls instead', () => {
+    expect(deckMetrics(393, 100).scale).toBeCloseTo(MIN_DECK_SCALE, 5);
+    expect(deckMetrics(360, 100).scale).toBeCloseTo(MIN_DECK_SCALE * (360 / 393), 5);
+  });
+});
+
+describe('deckSlot: one continuous placement for every card', () => {
+  const m = deckMetrics(393);
+  const active = { width: m.activeWidth, height: m.activeHeight, scale: m.scale, stride: 300 };
+
+  it('puts the foreground card at the centre, full size, with its text', () => {
+    expect(deckSlot(0, active)).toMatchObject({ x: 0, y: 0, scale: 1, opacity: 1, emphasis: 1 });
+  });
+
+  it('puts the next card as the left strip and the one after as the right strip, text hidden', () => {
+    const next = deckSlot(1, active);
+    const back = deckSlot(2, active);
+    expect(next.x).toBeLessThan(0);
+    expect(back.x).toBeGreaterThan(0);
+    expect(next.scale).toBeCloseTo(NEXT_SCALE, 6);
+    expect(back.scale).toBeCloseTo(BACK_SCALE, 6);
+    expect(next.emphasis).toBe(0);
+    expect(back.emphasis).toBe(0);
+    // The rear strips keep the top edge the frame draws: scaling is about the centre, so the translate compensates.
+    const nextTop = (m.activeHeight - m.activeHeight * next.scale) / 2 + next.y;
+    expect(nextTop).toBeCloseTo(NEXT_OFFSET_Y, 5);
+    const backTop = (m.activeHeight - m.activeHeight * back.scale) / 2 + back.y;
+    expect(backTop).toBeCloseTo(BACK_OFFSET_Y, 5);
+  });
+
+  it('keeps the third card out of sight until it arrives, and swiped cards off the left edge', () => {
+    expect(deckSlot(3, active).opacity).toBe(0);
+    expect(deckSlot(-1, active).x).toBe(-300);
+    expect(deckSlot(-1, active).zIndex).toBeGreaterThan(deckSlot(0, active).zIndex);
+    expect(deckSlot(-2, active).opacity).toBe(0);
+  });
+
+  it('is continuous: a half swipe is halfway between two resting places', () => {
+    const a = deckSlot(0, active);
+    const b = deckSlot(1, active);
+    const mid = deckSlot(0.5, active);
+    expect(mid.scale).toBeCloseTo((a.scale + b.scale) / 2, 6);
+    expect(mid.opacity).toBeCloseTo((a.opacity + b.opacity) / 2, 6);
+  });
+
+  it('stacks nearer cards above farther ones', () => {
+    expect(deckSlot(0, active).zIndex).toBeGreaterThan(deckSlot(1, active).zIndex);
+    expect(deckSlot(1, active).zIndex).toBeGreaterThan(deckSlot(2, active).zIndex);
   });
 });

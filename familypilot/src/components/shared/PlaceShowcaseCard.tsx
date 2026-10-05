@@ -3,6 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import type { StyleProp } from 'react-native';
+import type { AnimatedStyle } from 'react-native-reanimated';
 
 import { FamilyMatch } from '@/src/components/ui/FamilyMatch';
 import { Text } from '@/src/components/ui/Text';
@@ -25,6 +27,18 @@ interface PlaceShowcaseCardProps {
    * the press, so a swipe that ends inside the card is not mistaken for a tap.
    */
   isSwiping?: () => boolean;
+  /**
+   * Set by the Home deck, which places every card with one continuous function. A card that is a rear strip
+   * is the same component as the foreground card with its text, save control and CTA faded out, so the
+   * photograph, the scrim and the text always move as one piece and a card changing role is never swapped.
+   * `footerStyle` and `scrimStyle` are animated styles from the deck; unset, the card is fully emphasised.
+   */
+  footerStyle?: StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>;
+  scrimStyle?: StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>;
+  /** False for a card that is only a strip behind the foreground: no tap target, hidden from assistive tech. */
+  interactive?: boolean;
+  /** How the photograph loads. The deck loads every card it renders eagerly so a swipe never reveals a blank. */
+  imageLoading?: 'lazy' | 'eager';
 }
 
 /**
@@ -44,6 +58,10 @@ export function PlaceShowcaseCard({
   height,
   style,
   isSwiping,
+  footerStyle,
+  scrimStyle,
+  interactive = true,
+  imageLoading,
 }: PlaceShowcaseCardProps) {
   const pressed = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressed.value }] }));
@@ -53,53 +71,65 @@ export function PlaceShowcaseCard({
   // overlay under the artwork; the artwork ignores the pointer, so a tap anywhere lands on it, and the
   // heart (the only thing above it that takes a tap) sits beside it in the tree.
   return (
-    <Animated.View style={[styles.card, { width, height: height ?? Math.round(width * 1.28) }, style, pressStyle]}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${venue.name}, see more`}
-        style={styles.fill}
-        onPressIn={() => {
-          pressed.value = withSpring(0.97, spring.snappy);
-        }}
-        onPressOut={() => {
-          pressed.value = withSpring(1, spring.gentle);
-        }}
-        onPress={() => {
-          if (isSwiping?.()) return;
-          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          onPress();
-        }}
-      />
+    <Animated.View
+      style={[styles.card, { width, height: height ?? Math.round(width * 1.28) }, style, pressStyle]}
+      pointerEvents={interactive ? 'auto' : 'none'}
+      accessibilityElementsHidden={!interactive}
+      importantForAccessibility={interactive ? 'auto' : 'no-hide-descendants'}
+    >
+      {interactive ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${venue.name}, see more`}
+          style={styles.fill}
+          onPressIn={() => {
+            pressed.value = withSpring(0.97, spring.snappy);
+          }}
+          onPressOut={() => {
+            pressed.value = withSpring(1, spring.gentle);
+          }}
+          onPress={() => {
+            if (isSwiping?.()) return;
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onPress();
+          }}
+        />
+      ) : null}
       <VenueImage
         uri={venue.imageUrl}
         category={venue.category}
-        alt={venue.name}
+        alt={interactive ? venue.name : ''}
         style={styles.fill}
         borderRadius={0}
         showCredit={false}
         pointerEvents="none"
+        loading={imageLoading}
       />
-      <LinearGradient
-        colors={SCRIM_COLORS}
-        locations={SCRIM_STOPS}
-        style={styles.fill}
-        pointerEvents="none"
-      />
+      <Animated.View style={[styles.fill, scrimStyle]} pointerEvents="none">
+        <LinearGradient
+          colors={SCRIM_COLORS}
+          locations={SCRIM_STOPS}
+          style={styles.fill}
+          pointerEvents="none"
+        />
+      </Animated.View>
 
-      <View style={styles.saveSlot}>
-        <View style={styles.saveGlass}>
-          <SaveButton
-            venueId={venue.id}
-            venue={venue}
-            size={22}
-            color={colors.text.inverse}
-            filledColor={colors.coral}
-            isSwiping={isSwiping}
-          />
-        </View>
-      </View>
+      {interactive ? (
+        <Animated.View style={[styles.saveSlot, footerStyle]} pointerEvents="box-none">
+          <View style={styles.saveGlass}>
+            <SaveButton
+              venueId={venue.id}
+              venue={venue}
+              size={22}
+              color={colors.text.inverse}
+              filledColor={colors.coral}
+              isSwiping={isSwiping}
+            />
+          </View>
+        </Animated.View>
+      ) : null}
 
-      <View style={styles.footer} pointerEvents="none">
+      <Animated.View style={[styles.footer, footerStyle]} pointerEvents="none">
         <Text variant="caption" color="rgba(255,255,255,0.92)" style={[styles.footerText, styles.eyebrow]}>
           {formatCategory(venue.category)}
         </Text>
@@ -132,55 +162,8 @@ export function PlaceShowcaseCard({
             <Ionicons name="arrow-forward" size={20} color={colors.action} />
           </View>
         </View>
-      </View>
+      </Animated.View>
     </Animated.View>
-  );
-}
-
-/**
- * The layers stacked behind the active card in the Home deck. Only a strip of each one is
- * ever visible, and the locked design shows photography there — so this deliberately does
- * not run the active card's pipeline. No footer, no save, no badge, no CTA: a photograph,
- * the same corner radius, and a light scrim matching the reference's 0.35 rear treatment.
- */
-export function PlaceShowcaseCardRear({
-  venue,
-  width,
-  height,
-  style,
-}: Pick<PlaceShowcaseCardProps, 'venue' | 'width' | 'height' | 'style'>) {
-  // The frame scales a rear card whole, corner radius included: the next card's 21.327 is the
-  // active card's 28 at its own 0.7617.
-  const borderRadius = radius['3xl'] * (width / ACTIVE_CARD_WIDTH);
-
-  return (
-    <View
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-      pointerEvents="none"
-      style={[
-        styles.card,
-        styles.rearCard,
-        { width, height: height ?? Math.round(width * 1.28), borderRadius },
-        style,
-      ]}
-    >
-      <VenueImage
-        uri={venue.imageUrl}
-        category={venue.category}
-        alt=""
-        style={styles.fill}
-        borderRadius={0}
-        showCredit={false}
-        pointerEvents="none"
-      />
-      <LinearGradient
-        colors={SCRIM_COLORS}
-        locations={SCRIM_STOPS}
-        style={[styles.fill, styles.rearScrim]}
-        pointerEvents="none"
-      />
-    </View>
   );
 }
 
@@ -222,9 +205,6 @@ const SCRIM_STOPS: readonly [number, number, ...number[]] = [
 /** The neutral the frame shows behind a photograph while it loads. */
 const CARD_BACKDROP = '#B8BBBE';
 
-/** The active card's width on the frame's artboard, used to scale a rear card's radius. */
-const ACTIVE_CARD_WIDTH = 312;
-
 const styles = StyleSheet.create({
   card: {
     borderRadius: radius['3xl'],
@@ -235,16 +215,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowRadius: 20,
     elevation: 10,
-  },
-  // The frame runs the same ramp behind a rear card, at a third of the strength.
-  rearScrim: {
-    opacity: 0.35,
-  },
-  rearCard: {
-    shadowOpacity: 0.07,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 4,
   },
   fill: {
     position: 'absolute',
