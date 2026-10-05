@@ -50,7 +50,7 @@ export default function WelcomeScreen() {
   // subtitle reflows instead (below).
   const ts = Math.min(1, k);
   // The subtitle wraps before the ice-cream sticker, which sits 628px into the frame and moves with the width.
-  const subtitleWidth = Math.min(260, 628 * scale - 55 * scale - 6);
+  const subtitleWidth = Math.min(260, 628 * scale - 55 * WELCOME_PX - 6);
   // A third line would run into the collage, so the collage and its stickers move down by that line
   // rather than the text being shrunk. (The frame's subtitle is two lines at 20.7.)
   const subtitleLines = estimateLineCount(SUBTITLE, 14.8, subtitleWidth);
@@ -149,7 +149,7 @@ export default function WelcomeScreen() {
       <View style={styles.footer}>
         <Button label="Get started" fullWidth trailingIcon="arrow-forward" onPress={start} />
         <Text variant="caption" color={colors.text.tertiary} style={styles.footerNote}>
-          Takes about a minute · You can add more details later
+          Takes about a minute • You can add more details later.
         </Text>
       </View>
     </View>

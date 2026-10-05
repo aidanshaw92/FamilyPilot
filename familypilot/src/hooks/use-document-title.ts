@@ -2,25 +2,7 @@ import { usePathname } from 'expo-router';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
-/** What the browser tab and a screen reader's page announcement call each top-level screen. */
-const TITLES: Array<[RegExp, string]> = [
-  [/^\/welcome/, 'Welcome'],
-  [/^\/(setup|onboarding)/, 'Set up your family'],
-  [/^\/explore/, 'Explore London'],
-  [/^\/trips/, 'Plans'],
-  [/^\/saved/, 'Saved places'],
-  [/^\/profile/, 'Your family'],
-  [/^\/venue\//, 'Place details'],
-  [/^\/restaurant\//, 'Restaurant details'],
-  [/^\/plan/, 'Your plan'],
-  [/^\/about/, 'About FamilyPilot'],
-  [/^\/$/, 'Home'],
-];
-
-export function documentTitleFor(pathname: string): string {
-  const match = TITLES.find(([pattern]) => pattern.test(pathname));
-  return match ? `${match[1]} · FamilyPilot` : 'FamilyPilot';
-}
+import { documentTitleFor } from '@/src/utils/document-title';
 
 /**
  * Keeps the web page's `<title>` in step with the screen. Every page used to have an empty one, which
@@ -33,4 +15,12 @@ export function useDocumentTitle(): void {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
     document.title = documentTitleFor(pathname);
   }, [pathname]);
+}
+
+/** A screen with a better name than its route's (a venue's own) sets it here, after the route's. */
+export function useNamedDocumentTitle(name: string | undefined): void {
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined' || !name) return;
+    document.title = `${name} · FamilyPilot`;
+  }, [name]);
 }

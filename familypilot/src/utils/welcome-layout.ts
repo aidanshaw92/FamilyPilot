@@ -49,6 +49,6 @@ export const WELCOME_BENEFITS: readonly {
   subtitle: string;
 }[] = [
   { icon: 'sprout', title: 'Days out & activities', subtitle: 'Find places that actually suit your family.' },
-  { icon: 'people', title: 'Personalised recommendations', subtitle: "Based on your children's ages and needs." },
+  { icon: 'people', title: 'Personalised recommendations', subtitle: 'Based on your children’s ages and needs.' },
   { icon: 'sparkles', title: 'Less planning, more family time', subtitle: 'Get ideas, itineraries and helpful tips.' },
 ];

@@ -87,6 +87,12 @@ export interface PlanDraftSources {
   nowTime?: string;
 }
 
+/** Minutes since midnight for `H:MM` or `HH:MM`; an unreadable time never counts as passed. */
+function minutesOf(time: string): number {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
+  return m ? Number(m[1]) * 60 + Number(m[2]) : Number.POSITIVE_INFINITY;
+}
+
 /** The calendar day after a `YYYY-MM-DD` date, with no timezone arithmetic in it. */
 export function nextDay(date: string): string {
   const [y, m, d] = date.split('-').map(Number);
@@ -150,7 +156,7 @@ export function planDraftDefaults(sources: PlanDraftSources): PlanDraftDefaults 
   const leaveAt = sources.options?.leaveAt || '09:30';
   let date = storedDate && storedDate >= sources.today ? storedDate : sources.today;
   // ...and so would today itself once its start time has gone.
-  if (date === sources.today && sources.nowTime && leaveAt < sources.nowTime) date = nextDay(sources.today);
+  if (date === sources.today && sources.nowTime && minutesOf(leaveAt) < minutesOf(sources.nowTime)) date = nextDay(sources.today);
 
   return {
     draft: {

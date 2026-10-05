@@ -9,7 +9,9 @@ export const MIN_TARGET = 44;
  * React Native's `hitSlop` is honoured on iOS and Android and ignored by react-native-web, so a
  * control that leans on it is 44pt on the phone and 20pt in a browser. This makes the target real
  * instead: the control grows to `MIN_TARGET` and a negative margin takes the extra height back out of
- * the layout, so the design (which draws it smaller) is untouched.
+ * the layout, so the design (which draws it smaller) is untouched vertically. Horizontally the control is at
+ * least 44 wide with its text centred, so a link narrower than 44 ("Reset" is 38) grows by a few points, which
+ * is invisible; every other control this is used on is already wider.
  */
 export function minTarget(drawnHeight: number): ViewStyle {
   const extra = Math.max(0, MIN_TARGET - drawnHeight);

@@ -53,7 +53,7 @@ export default function ExploreScreen() {
   // The subtitle wraps on a narrow phone; everything under it, and the art beside that, moves down by the
   // extra line instead of the text being shrunk.
   const subtitleText = isRestaurantMode ? RESTAURANT_SUBTITLE : SUBTITLE;
-  const subtitleShift = Math.max(0, estimateLineCount(subtitleText, 13.6, width - spacing.screenPadding * 2) - 1) * 17;
+  const subtitleShift = Math.max(0, estimateLineCount(subtitleText, 13.6, width - spacing.screenPadding * 2) - 1) * SUBTITLE_LINE_HEIGHT;
 
   useEffect(() => {
     if (categoryFilter === 'restaurants' && !isPilotFeatureVisible('explore_restaurants')) {
@@ -265,6 +265,20 @@ export default function ExploreScreen() {
           <SkeletonCard />
         </View>
       ) : resultCount === 0 ? (
+        <>
+        {/* The header, with its Filters link, stays when nothing matches: the empty state suggests loosening
+            the filters, so the sheet that holds them must still be reachable. */}
+        <View style={styles.listHeader}>
+          <SectionHeader
+            title={areaVenues ? `Around ${search.trim()}` : activeCategoryLabel}
+            subtitle={`0 ${isRestaurantMode ? 'restaurants' : 'places'} ${areaVenues ? 'near this area' : 'across London'}`}
+            titleStyle={styles.sectionTitle}
+            subtitleStyle={styles.sectionCount}
+            actionLabel={activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
+            onAction={() => setFilterSheetOpen(true)}
+            actionAlign="end"
+          />
+        </View>
         <EmptyState
           icon="search-outline"
           title={isRestaurantMode ? 'No restaurants found' : 'No places found'}
@@ -278,6 +292,7 @@ export default function ExploreScreen() {
           actionLabel="Clear filters"
           onAction={handleClearFilters}
         />
+        </>
       ) : useEditorialLayout && editorialSections.length > 0 ? (
         <ScrollView
           contentContainerStyle={[styles.editorialContent, { paddingBottom: tabBarClearance }]}
@@ -372,6 +387,8 @@ export default function ExploreScreen() {
 const EDGE_ART_X = 690;
 /** Frame y (of 1844) under the heading block: the strokes by the title are above it. */
 const HEADER_SEAM_PX = 250;
+/** The subtitle's line height: the styles and the art shift below both use it. */
+const SUBTITLE_LINE_HEIGHT = 17;
 const SUBTITLE = 'Parks, museums and family days out across London';
 const RESTAURANT_SUBTITLE = 'Family-friendly places to eat';
 
@@ -389,7 +406,7 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop: 7,
     fontSize: 13.6,
-    lineHeight: 17,
+    lineHeight: SUBTITLE_LINE_HEIGHT,
   },
   searchRow: {
     marginTop: 19,

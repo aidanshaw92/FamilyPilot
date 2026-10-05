@@ -61,7 +61,10 @@ await page.waitForSelector('[role="button"][aria-label$=", see more"]', { timeou
 await page.waitForTimeout(4000);
 
 const report = await page.evaluate(() => {
-  const card = document.querySelector('[role="button"][aria-label$=", see more"]');
+  // The button is an empty overlay inside the card (beside the save heart), so the card is its parent and the
+  // deck is two levels above that.
+  const button = document.querySelector('[role="button"][aria-label$=", see more"]');
+  const card = button?.parentElement ?? null;
   const deck = card?.parentElement?.parentElement ?? null;
   const layers = deck ? [...deck.children] : [];
   const describe = (layer, role) => {
@@ -93,7 +96,7 @@ const report = await page.evaluate(() => {
     (el) => el.children.length === 0 && (el.textContent ?? '').trim() === 'Google Maps',
   );
   return {
-    activeVenue: card?.getAttribute('aria-label')?.replace(/, see more$/, '') ?? null,
+    activeVenue: button?.getAttribute('aria-label')?.replace(/, see more$/, '') ?? null,
     layers: [describe(layers[0], 'back'), describe(layers[1], 'next'), describe(layers[2], 'active')],
     creditOnCard: creditOnCard?.textContent ?? null,
     googleMark: markIsAsset

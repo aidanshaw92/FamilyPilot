@@ -96,7 +96,7 @@ function DecisionCardComponent({
               {reason}
             </Text>
           ) : null}
-          <Text variant="caption" color={colors.text.secondary} style={styles.compactMeta}>
+          <Text variant="caption" color={colors.text.secondary} numberOfLines={1} style={styles.compactMeta}>
             {venue.category.replace('_', ' ')} · {travelTimeLabel(venue.driveMinutes, 'estimated')}
             {venue.estimatedSpend ? ` · ${venue.estimatedSpend}` : ''}
           </Text>

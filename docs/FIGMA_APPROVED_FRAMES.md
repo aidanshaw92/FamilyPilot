@@ -57,16 +57,38 @@ cut-outs are the frame's mask vectors (`PhotoSlot` + `WELCOME_CUTOUTS`); the ben
 people and sparkle vectors (`BenefitIcon`); the nav, chips, search, cards, Family Fit badge and type sizes take
 their geometry from the frame measurements (pt = px / 2.168).
 
-Differences, classified:
+Boards (approved Figma | running app | 50% overlay | difference) for each screen, against both fixture scenarios,
+are in `docs/figma-compare/` (`<screen>-<scenario>-board.jpg`), with the 360 and 430 renders beside them.
+Regenerate with `scripts/compare-canonical-screens.mjs <baseUrl> <outDir> 360,393,430 <label>`; it also fails the
+run if the page tried to reach Google, Overpass or any other live provider (it aborts those requests).
 
-* **Dynamic content** — names, scores, Family Fit states, travel times, photographs, the avatar (initial, no
-  photo), counts and the number of Explore cards; the fixture venues have no photograph or review, so their
-  cards are shorter than the frame's; Welcome's slots show the category gradient until licensed photographs exist.
-* **Intentional** — one nav width on every tab (300; the frames draw 290 on Home and 310 on Explore); the
-  active nav icon stays an outline, as drawn; Explore chips are 42 tall with a 44 touch target; Explore's
-  scrollable rail keeps its "Filter" control; narrower phones shorten Explore's CTA label rather than ellipsise
-  ("View details", "Details to check", "Check details") and scale Welcome's lockup and subtitle with the stickers.
-* **Implementation limitation** — Inter renders about 3-4% narrower than the frames' text at the same size
-  (no tracking is applied, per the Welcome and Home decision); the accepted decorative-vector, third-card fade and
-  seam differences; greeting strokes are part of the artwork, so a very long greeting can run behind them.
-* **Actual fidelity defects** — none open at 393.
+Two fixture scenarios exist, both synthetic and zero-spend (`scripts/serve-places-fixture.mjs`):
+
+* `sparse` (default): fifteen unreviewed venues with flat-colour photographs. The locked Home composition and one
+  honest robustness state. Every Family Fit reads "Not yet reviewed".
+* `realistic` (`FIXTURE_SCENARIO=realistic`): the same ids with reviewed venues (confirmed facts, photographs,
+  Family Fit), partial facts, a missing photograph, an unreviewed venue, an over-long name and a reviewed
+  negative. Photographs are generated scene images, not photographs of anything.
+
+Differences between the real app and the frames, classified:
+
+1. **Dynamic content** — names, scores, Family Fit states, journey times, photographs, facts, the avatar (an
+   initial; the frame shows a photograph), counts, and the number and height of Explore cards. Every one of these is
+   exercised by `scripts/verify-dynamic-content.mjs`.
+2. **Legal / provider requirement** — the "Photo: <photographer>" chip on Explore thumbnails (Google requires the
+   photographer to be named; the Google Maps mark is shown once under the list and under Home's deck) and the
+   OpenStreetMap credit. They are small chips, not strips, and are not in the frames.
+3. **Platform rendering limitation** — Inter renders about 3-4% narrower than the frames' text at the same size
+   (no tracking is applied); the frames' icons are custom outlines where the app uses Ionicons; accepted
+   decorative-vector, third-card fade and seam differences; a greeting longer than the frame's can run behind its
+   strokes (they are part of the artwork).
+4. **Accessibility-driven, small** — the placeholder, footnote and link grey (`text.tertiary`) is `#6B7384`, not the
+   frame's lighter grey, to reach 4.5:1; a keyboard focus ring on the search field; the Explore category rail and the
+   Plan tabs expose their selected state to assistive technology.
+5. **Outstanding asset** — Welcome's seven photographs (see `docs/WELCOME_PHOTOGRAPHY.md`). Slots draw the category
+   gradient inside the exact cut-outs until licensed photographs ship.
+6. **Genuine fidelity defects** — none open at 393.
+
+Decisions that used to be deviations and are now the frames' own: the nav is two variants (290 on Home, 310 on
+Explore), not one averaged width; Explore's rail is the category chips alone, and filtering is reached through the
+quiet "Filters" link on the count line (it carries the active count, and stays when nothing matches).

@@ -49,6 +49,7 @@ import { isActivityVenue } from '@/src/data/mock-restaurants';
 import { useFamilyProfile, useNearbyFood, useVenue } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { minTarget } from '@/src/components/ui/touch';
+import { useNamedDocumentTitle } from '@/src/hooks/use-document-title';
 import { localDate, localTime, usePlanningStore } from '@/src/stores/planning-store';
 import { formatCategory } from '@/src/utils/format-category';
 import { generateVenueStaticParams } from '@/src/utils/venue-routes';
@@ -75,6 +76,7 @@ export default function VenueScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: venue, isLoading, isError, refetch } = useVenue(id ?? '');
+  useNamedDocumentTitle(venue?.name);
   // Keyed on the venue's coordinates, so it starts only once the venue has loaded and two venues at
   // the same address share one lookup.
   const nearbyFood = useNearbyFood({
@@ -108,7 +110,9 @@ export default function VenueScreen() {
         today: localDate(),
         nowTime: localTime(),
       }),
-    [profile, planningFamilies, planningOptions],
+    // `planSheetOpen` is a dependency so the date and time are read again each time the sheet opens: a
+    // screen left open past the day's start must not offer a day that has already begun.
+    [profile, planningFamilies, planningOptions, planSheetOpen],
   );
   const draft = draftOverride ?? planDefaults.draft;
 

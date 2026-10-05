@@ -1,3 +1,4 @@
+import { useNamedDocumentTitle } from '@/src/hooks/use-document-title';
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -82,6 +83,7 @@ function RestaurantScreenContent() {
   const insets = useSafeAreaInsets();
   const activityVenueId = typeof from === 'string' ? from : undefined;
   const { data: restaurant, isLoading, isError, refetch } = useRestaurant(id ?? '', activityVenueId);
+  useNamedDocumentTitle(restaurant?.name);
   const { data: activityVenue } = useVenue(activityVenueId ?? '');
   const { isSaved, toggleSaved } = useSavedStore();
   const scrollY = useSharedValue(0);

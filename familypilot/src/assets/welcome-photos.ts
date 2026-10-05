@@ -17,6 +17,9 @@ import type { ImageSource } from 'expo-image';
  *     missing from either place.
  *   - React Native needs a static `require`, so each line is written out by hand when the file lands.
  *
+ * The seven briefs (subject, size, placement) are in docs/WELCOME_PHOTOGRAPHY.md. The pipeline was proven on the
+ * web with a throwaway image in the exact cut-out; no photograph is committed until a licensed one exists.
+ *
  * Add a slot like so once its file and credit exist:
  *   farm: require('../../assets/images/welcome/farm.jpg'),
  */

@@ -290,6 +290,17 @@ describe('the date the sheet opens on', () => {
     expect(planDraftDefaults(sources()).draft.date).toBe(TODAY);
   });
 
+  it('reads a one-digit hour as a time, not as text', () => {
+    // '9:30' < '10:05' is false as strings; it is true as times.
+    const options = { date: TODAY, leaveAt: '9:30', visitMinutes: 90 };
+    expect(planDraftDefaults(sources({ options, nowTime: '10:05' })).draft.date).toBe('2026-10-11');
+  });
+
+  it('never rolls forward for a time it cannot read', () => {
+    const options = { date: TODAY, leaveAt: 'soon', visitMinutes: 90 };
+    expect(planDraftDefaults(sources({ options, nowTime: '23:00' })).draft.date).toBe(TODAY);
+  });
+
   it('rolls over month and year ends without a timezone', () => {
     expect(nextDay('2026-10-31')).toBe('2026-11-01');
     expect(nextDay('2026-12-31')).toBe('2027-01-01');

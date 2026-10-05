@@ -191,6 +191,16 @@ console.log('\nExplore is data-driven');
   await page.getByRole('button', { name: 'Show results' }).click();
   await page.waitForTimeout(700);
   check('Reset restores the full list', Number(await count()) === Number(before));
+
+  // When filters leave nothing, the screen suggests loosening them, so the sheet must stay reachable.
+  await page.getByRole('button', { name: /^Filters/ }).click();
+  await page.waitForTimeout(500);
+  await page.getByRole('button', { name: 'Free', exact: true }).first().click();
+  await page.getByRole('button', { name: '10 min', exact: true }).click();
+  await page.getByRole('button', { name: 'Show results' }).click();
+  await page.waitForTimeout(800);
+  const emptyNow = /No places found/.test(await body(page));
+  check('an empty result still offers Filters (and says how many)', emptyNow ? (await page.getByRole('button', { name: /^Filters/ }).count()) > 0 && /0 places across London/.test(await body(page)) : true, emptyNow ? 'empty state shown' : 'filters left some results; empty branch not reached');
   await context.close();
 }
 

@@ -25,11 +25,11 @@ icon wells, decorative marks. They carry no meaning; a chip's tint is assigned b
 | `ink` | `#0D1733` | Text. `text.primary` is the same value. Never a control background. |
 | `action` / `actionPressed` / `actionStrong` | `#0F4A3E` / `#0B3B32` / `#15534A` | Primary buttons, selected chips, the nav pill, the arrow CTA, the filter disc, focus rings, links. |
 | `actionSoft` | `#E7F3EF` | Mint behind a green mark: Family Fit on a light surface, the compact CTA's disc. |
-| `nav.pill` / `nav.active` | action / `#DDF1E8` | The floating navigation and its active disc. |
+| `nav.pill` / `nav.active` | action / `#DDF1E8` | The floating navigation and its active disc. Two sizes, one per approved frame: see "Navigation" below. |
 | `tint.mint` / `.blush` / `.lilac` / `.yellow` | `#E7F3EF` / `#FBECEA` / `#F3ECFB` / `#FDF1CC` | Idle chip and icon-well fills, by position. |
 | `tintStrong.*` | `#DDF1E8` / `#FADBD8` / `#EADFF8` | The deeper tone of each tint: blobs, a stronger well. |
 | `brand.mint` / `.coral` / `.violet` / `.yellow` / `.green` | `#5FB3A3` / `#E26B4A` / `#6B21E8` / `#F7C12E` / `#3F9A82` | Icons on the tints; the decorative strokes and leaves. |
-| `text.secondary` / `text.tertiary` | `#626A80` / `#8A91A0` | Second lines, metadata; captions, placeholders. |
+| `text.secondary` / `text.tertiary` | `#626A80` / `#6B7384` | Second lines, metadata; captions, placeholders. Tertiary is 4.5:1 on white and on the canvas (the earlier `#8A91A0` was 3.0:1, below the AA floor for text). |
 | `text.inverse` | `#FFFFFF` | Text on action green and on photography. |
 | `background` / `surface` | `#FBFAF7` / `#FFFFFF` | Warm canvas; cards and sheets are pure white on it. |
 | `fill` | `#F3F1EC` | Quiet wells and information boxes on a white card; the unreviewed Family Fit pill. |
@@ -75,7 +75,24 @@ Create a Plan sheet) · full`.
 
 Shadows: `card`, `cardHover`, `bottomSheet` — all cast in ink at 6–10% opacity.
 
-Touch targets: 44pt minimum.
+Touch targets: 44pt minimum, and **real** on the web. `hitSlop` is honoured on iOS and Android and ignored by
+react-native-web, so a control drawn smaller than 44 makes its pressable 44 and draws the pill inside it
+(`Chip`, the Explore search action), or uses `minTarget()` (`src/components/ui/touch.ts`) for a line of text,
+which grows the target and takes the extra height back out of the layout. `scripts/audit-accessibility.mjs`
+measures the area that actually answers a pointer.
+
+## Navigation
+
+The floating nav is one component with two approved variants, because the two frames draw it differently
+(`src/utils/floating-tab-bar-layout.ts`, measured in Figma, tested against the measurements):
+
+| variant | pill | tab pitch | disc | icons | bottom edge |
+| --- | --- | --- | --- | --- | --- |
+| `home` (Home 229:133; also Plans, Saved, Profile) | 289.7 x 60 | 55 | 46 | ~18 | inset + 1 |
+| `explore` (Explore 294:133) | 310.1 x 59.4 | 60.5 | 47 | ~25 | inset + 4.7 |
+
+The pill takes the focused tab's variant and eases between them (instantly under reduced motion). A screen
+clears either with `useTabBarClearance()`. Tabs are `role=tab` with `aria-selected` and `aria-current`.
 
 ## Brand mark
 
