@@ -27,10 +27,10 @@ deterministic fixture/demo/testing imagery, and clearly illustrative non-evident
 
 * **Welcome: all seven images installed** (generated, credited `Origin: generated`; processed by
   `scripts/prepare-welcome-photos.mjs`). `welcome-photos.test.ts` fails if any slot has no file.
-* **Fixtures: `park`, `museum`, `farm` installed** (synthetic, in `manifest.json`; processed by
-  `scripts/prepare-fixture-photos.mjs`). Still to supply: `soft_play`, `attraction`, and preferably `zoo` and
-  `activity`. Until a category has a file, its fixture venues keep the old flat-colour scene; the deliberate
-  "no photo" venues are not served an image at all.
+* **Fixtures: `park`, `museum`, `farm`, `soft_play`, `attraction`, `activity` installed** (synthetic, in
+  `manifest.json`; processed by `scripts/prepare-fixture-photos.mjs`). Still to supply: `zoo` (preferred; until it
+  exists the one zoo fixture venue keeps the flat-colour scene). The deliberate "no photo" venues are not served an
+  image at all.
 
 ## What I need from you (the environment cannot generate images)
 
