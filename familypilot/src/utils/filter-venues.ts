@@ -2,6 +2,7 @@ import { Venue, VenueCategory } from '@/src/types';
 import { ExploreBudgetFilter } from '@/src/stores/filters-store';
 import { categoriesWithInventory, environmentOf, matchesTaxonomy, TAXONOMY } from '@/src/utils/venue-taxonomy';
 import { isFreeSpend } from '@/src/utils/spend';
+import { FOOD_FILTER_IDS, FOOD_FILTER_OPTIONS, FoodFilterId, foodRankBonus, matchesFoodFilter } from '@/src/utils/food-nearby';
 
 export interface ExploreCategory {
   id: string;
@@ -37,6 +38,9 @@ export const FILTER_SHEET_OPTIONS = [
   { id: 'toilets', label: 'Toilets' },
   { id: 'baby_changing', label: 'Baby changing' },
 ] as const;
+
+/** The "Food nearby" group in the filter sheet: a cafe on site, or food within a short walk. */
+export const FOOD_SHEET_OPTIONS = FOOD_FILTER_OPTIONS;
 
 export const DRIVE_FILTER_OPTIONS: { id: number | 'any'; label: string }[] = [
   { id: 10, label: '10 min' },
@@ -139,12 +143,21 @@ export function filterVenues(
       case 'baby_changing':
         result = result.filter((v) => venueHasFacility(v, 'baby_changing'));
         break;
+      case 'food_onsite':
+      case 'food_5':
+      case 'food_10':
+        result = result.filter((v) => matchesFoodFilter(v, filterId as FoodFilterId));
+        break;
       default:
         break;
     }
   }
 
-  return result.sort((a, b) => b.familyScore.score - a.familyScore.score);
+  // While a food filter is on, the easiest lunch breaks ties and small gaps: a few points, never a leap over a much
+  // better fit. Without one, ranking is the family score alone.
+  const foodOn = advancedIds.some((id) => FOOD_FILTER_IDS.includes(id));
+  const rank = (v: Venue) => v.familyScore.score + (foodOn ? foodRankBonus(v) : 0);
+  return result.sort((a, b) => rank(b) - rank(a));
 }
 
 /** @deprecated use EXPLORE_CATEGORIES */
@@ -154,7 +167,7 @@ export const PRIMARY_FILTERS = EXPLORE_CATEGORIES.map((c) => ({
   type: 'primary' as const,
 }));
 
-export const ADVANCED_FILTERS = FILTER_SHEET_OPTIONS.map((f) => ({
+export const ADVANCED_FILTERS = [...FILTER_SHEET_OPTIONS, ...FOOD_FILTER_OPTIONS].map((f) => ({
   id: f.id,
   label: f.label,
   type: 'advanced' as const,

@@ -265,6 +265,16 @@ module.exports = async function handler(req, res) {
     // Best-effort metadata overlay
   }
 
+  // Which places already have a stored food lookup (OpenStreetMap, from Venue Detail's "Restaurants close by"): one
+  // database read, no provider. Places never looked up have no `foodNearby`, and stay unknown on the screen.
+  try {
+    const { attachFoodProximity } = require('../../server/places/lib/food-proximity');
+    const { getSupabaseAdmin } = require('../../server/enrichment/_lib/supabase-admin');
+    places = await attachFoodProximity(places, getSupabaseAdmin());
+  } catch (error) {
+    console.warn(JSON.stringify({ tag: 'places_food_proximity_failed', message: error?.message || 'failed' }));
+  }
+
   // The CDN is the second line of defence after the Postgres cache: it answers repeat loads without
   // invoking this function at all. Bounded by the same window the store uses, so the two cannot
   // disagree about how old the data may be.

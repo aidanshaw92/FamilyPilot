@@ -135,6 +135,8 @@ export interface Venue {
    * The weekly schedule as data, when the provider supplied it. What "today" means for a place is worked out from
    * this at the time of use (`describeOpeningToday`), never from a stored flag.
    */
+  /** Food close by, from a stored OpenStreetMap lookup; absent means it has not been looked up (unknown). */
+  foodNearby?: import('./places').FoodNearby;
   structuredOpeningHours?: OpeningHoursSchedule;
   address?: string;
   goodToKnow?: string[];

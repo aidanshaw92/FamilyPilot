@@ -210,6 +210,15 @@ function realisticPlace(place, index) {
   const { kind } = REALISTIC_PLAN[index];
   const id = place.familypilotId;
   const out = { ...place };
+  // Food close by, as a stored OpenStreetMap lookup would say it. Most venues have no lookup (unknown); one was looked up
+  // and nothing is mapped within a walk.
+  const FOOD = {
+    0: { nearestWalkMinutes: 4, within5: 2, within10: 5 },
+    1: { nearestWalkMinutes: 8, within5: 0, within10: 1 },
+    2: { nearestWalkMinutes: null, within5: 0, within10: 0 },
+    3: { nearestWalkMinutes: 5, within5: 1, within10: 3 },
+  };
+  if (FOOD[index]) out.foodNearby = { checkedAt: '2026-10-01T09:00:00.000Z', source: 'osm', ...FOOD[index] };
   if (kind === 'sparse') return out; // provider_only, no metadata: the honest unreviewed state
   out.enrichmentStatus = 'enriched';
   if (kind === 'partial') {

@@ -75,7 +75,7 @@ export function VenueImage({uri,category,alt,style,borderRadius=radius.md,showCr
  const credit=showCredit&&!failed?photoCredit(uri):null;
  return <View pointerEvents={pointerEvents} style={[styles.wrap,{borderRadius},style]}>
   {!uri||failed?
-   <View style={styles.empty} accessible accessibilityRole="image" accessibilityLabel={alt ? `${alt}, photo not available. Illustration of a ${categoryNoun(category)}` : ''}>
+   <View style={styles.empty} accessible accessibilityRole="image" accessibilityLabel={`${alt ? `${alt}, ` : 'Place '}photo not available. Illustration of a ${categoryNoun(category)}`}>
     <CategoryArt category={category} />
    </View>
   :<>

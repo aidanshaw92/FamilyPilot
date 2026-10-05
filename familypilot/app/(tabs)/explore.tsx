@@ -19,6 +19,7 @@ import { useFiltersStore } from '@/src/stores/filters-store';
 import { RestaurantDetail, Venue } from '@/src/types';
 import { buildExploreEditorialSections } from '@/src/utils/explore-editorial-sections';
 import { EXPLORE_CATEGORIES, exploreCategoriesFor, filterVenues } from '@/src/utils/filter-venues';
+import { FOOD_FILTER_IDS, countFoodUnknown } from '@/src/utils/food-nearby';
 import { SAVED_EXAMPLES_NOTICE, showingSavedExamples } from '@/src/utils/saved-examples-notice';
 
 export default function ExploreScreen() {
@@ -92,6 +93,17 @@ export default function ExploreScreen() {
         : [],
     [sourceVenues, areaVenues, categoryFilter, advancedFilters, exploreMaxDrive, exploreBudget, profile?.maxDriveMinutes, search],
   );
+
+  // With a food filter on, say how many places could not be checked, so a place with no lookup is never mistaken for a
+  // place with no food. Counted among the venues that pass every OTHER filter.
+  const foodUncheckedCount = useMemo(() => {
+    if (isRestaurantMode || !sourceVenues || !advancedFilters.some((id) => FOOD_FILTER_IDS.includes(id))) return 0;
+    const others = advancedFilters.filter((id) => !FOOD_FILTER_IDS.includes(id));
+    return countFoodUnknown(
+      filterVenues(sourceVenues, categoryFilter, others, exploreMaxDrive, profile?.maxDriveMinutes ?? 30, exploreBudget),
+    );
+  }, [isRestaurantMode, sourceVenues, advancedFilters, categoryFilter, exploreMaxDrive, exploreBudget, profile?.maxDriveMinutes]);
+  const foodNote = foodUncheckedCount > 0 ? ` · ${foodUncheckedCount} not checked for food nearby` : '';
 
   const useEditorialLayout = false &&
     !isRestaurantMode &&
@@ -278,7 +290,7 @@ export default function ExploreScreen() {
         <View style={styles.listHeader}>
           <SectionHeader
             title={areaVenues ? `Around ${search.trim()}` : activeCategoryLabel}
-            subtitle={`0 ${isRestaurantMode ? 'restaurants' : 'places'} ${areaVenues ? 'near this area' : 'across London'}`}
+            subtitle={`0 ${isRestaurantMode ? 'restaurants' : 'places'} ${areaVenues ? 'near this area' : 'across London'}${foodNote}`}
             titleStyle={styles.sectionTitle}
             subtitleStyle={styles.sectionCount}
             actionLabel={activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
@@ -292,7 +304,9 @@ export default function ExploreScreen() {
           message={
             isRestaurantMode
               ? 'Try adjusting your filters or explore a wider area.'
-              : areaVenues
+              : foodUncheckedCount > 0
+                ? `No place is known to have food nearby yet. ${foodUncheckedCount} could not be checked, so removing the food filter will show them.`
+                : areaVenues
                 ? 'Try a nearby London area or postcode, or clear the search to browse all London.'
                 : 'Try another category, clear your filters, or search a different London area.'
           }
@@ -322,7 +336,7 @@ export default function ExploreScreen() {
           <View style={styles.listHeader}>
             <SectionHeader
               title={areaVenues ? `Around ${search.trim()}` : activeCategoryLabel}
-              subtitle={`${resultCount} ${isRestaurantMode ? 'restaurant' : 'place'}${resultCount === 1 ? '' : 's'} ${areaVenues ? 'near this area' : 'across London'}`}
+              subtitle={`${resultCount} ${isRestaurantMode ? 'restaurant' : 'place'}${resultCount === 1 ? '' : 's'} ${areaVenues ? 'near this area' : 'across London'}${foodNote}`}
               titleStyle={styles.sectionTitle}
               subtitleStyle={styles.sectionCount}
               // The approved frame's rail is the category chips alone, so filtering is reached through

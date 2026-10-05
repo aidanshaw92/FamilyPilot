@@ -14,6 +14,7 @@ import {
   BUDGET_FILTER_OPTIONS,
   DRIVE_FILTER_OPTIONS,
   FILTER_SHEET_OPTIONS,
+  FOOD_SHEET_OPTIONS,
 } from '@/src/utils/filter-venues';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
 
@@ -94,7 +95,10 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
           options: RESTAURANT_FILTER_OPTIONS.slice(9),
         },
       ]
-    : [{ id: 'general', label: 'More filters', options: FILTER_SHEET_OPTIONS }];
+    : [
+        { id: 'general', label: 'More filters', options: FILTER_SHEET_OPTIONS },
+        { id: 'food', label: 'Food nearby', options: FOOD_SHEET_OPTIONS },
+      ];
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>

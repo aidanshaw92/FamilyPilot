@@ -11,6 +11,8 @@ import { colors, radius } from '@/src/design-system/tokens';
 import { NavGlyph, type NavTab } from '@/src/components/ui/icons';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { floatingTabBarLayout, navVariantForRoute } from '@/src/utils/floating-tab-bar-layout';
+import { feedbackDue } from '@/src/services/planning/feedback';
+import { usePlanningStore } from '@/src/stores/planning-store';
 
 /**
  * The approved bottom navigation: a deep-green pill floating clear of the screen edge, holding one
@@ -65,13 +67,20 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
     borderRadius: indicator.value / 2,
   }));
 
+  // A quiet dot on Plans when a visit is waiting to be checked ("Did you go to...?"). Nothing is added to Home itself.
+  const visitCheckWaiting = usePlanningStore(
+    (s) => s.hydrated && s.saved.some((plan) => feedbackDue(plan)),
+  );
+
   return (
     <Animated.View pointerEvents="box-none" style={[styles.dock, dockStyle]}>
       <Animated.View accessibilityRole="tablist" style={[styles.pill, pillStyle]}>
         {routes.map((route) => {
           const { options } = descriptors[route.key];
           const focused = state.routes[state.index]?.key === route.key;
-          const label = typeof options.title === 'string' ? options.title : route.name;
+          const baseLabel = typeof options.title === 'string' ? options.title : route.name;
+          const waiting = route.name === 'trips' && visitCheckWaiting;
+          const label = waiting ? `${baseLabel}, a visit check is waiting` : baseLabel;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -104,6 +113,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
                   focused={focused}
                   fill={colors.surface}
                 />
+                {waiting ? <View style={styles.waitingDot} testID="visit-check-dot" /> : null}
               </Animated.View>
             </Pressable>
           );
@@ -117,6 +127,17 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
 const INACTIVE_ICON = 'rgba(255, 255, 255, 0.82)';
 
 const styles = StyleSheet.create({
+  waitingDot: {
+    position: 'absolute',
+    top: 8,
+    right: 12,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: colors.warning[100],
+    borderWidth: 1.5,
+    borderColor: colors.nav.pill,
+  },
   dock: {
     position: 'absolute',
     left: 0,

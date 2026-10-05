@@ -7,7 +7,7 @@
  *   greeting and avatar   the time of day (a fixed clock at 07:00, 14:00, 19:30) and the parent's name,
  *                         including a name far longer than the frame's
  *   ordering              Home's first card is Explore's first card, and Family Fit never rises down the list
- *   Family Fit states     a scored venue shows "★ n.n Family Fit", an unreviewed one the neutral status, and
+ *   Family Fit states     a reviewed venue states a verdict in words (Excellent, Good, Possible, Poor), an unreviewed one the neutral status, and
  *                         no card ever shows both a number and "Not yet reviewed"
  *   photographs           a venue with a photograph draws it, one without draws the category placeholder
  *   category chips        Explore's and Home's chips change the list; the count line follows
@@ -140,10 +140,11 @@ console.log('\nExplore is data-driven');
   await page.mouse.wheel(0, -20000);
   await page.waitForTimeout(400);
   check('cards are rendered from the venue data', cards.length >= 12, `${cards.length} cards`);
-  const fits = cards.map((c) => (/★\s*(\d\.\d)\s*Family Fit/.exec(c.text) ?? [])[1]).filter(Boolean).map(Number);
-  check('Family Fit never rises down the list', fits.every((v, i) => i === 0 || v <= fits[i - 1]), fits.join(' ≥ '));
+  // A reviewed card says what it means for THIS family in words (Excellent / Good / Possible / Poor), never a number.
+  const VERDICT = /(Excellent|Good|Possible|Poor)( fit)?( for [A-Z][^\n]*)?/;
   const unreviewed = cards.filter((c) => /Not yet reviewed/.test(c.text));
-  const scored = cards.filter((c) => /Family Fit/.test(c.text));
+  const scored = cards.filter((c) => VERDICT.test(c.text) && !/Not yet reviewed/.test(c.text));
+  check('no card shows a Family Fit number', !cards.some((c) => /★\s*\d\.\d/.test(c.text)));
   check('scored and unreviewed venues both appear', scored.length > 0 && unreviewed.length > 0, `${scored.length} scored, ${unreviewed.length} unreviewed`);
   check('no card shows a number AND "Not yet reviewed"', !cards.some((c) => /★\s*\d\.\d/.test(c.text) && /Not yet reviewed/.test(c.text)));
   check('an unreviewed card never claims a classification word that implies a score', unreviewed.every((c) => !/(Excellent|Great|Good) fit/.test(c.label ?? '')) && unreviewed.every((c) => /Not yet reviewed/.test(c.label ?? '')), unreviewed[0]?.label ?? '');
@@ -217,10 +218,21 @@ console.log('\nHome is data-driven');
   const { page, context } = await open('/');
   const first = () => page.locator('[role="button"][aria-label$="see more"]').first().getAttribute('aria-label');
   const forYou = await first();
-  await page.getByRole('button', { name: 'Outdoor', exact: true }).click();
-  await page.waitForTimeout(800);
-  const outdoor = await first().catch(() => null);
-  const emptyShown = /Nothing confirmed here yet/.test(await body(page));
+  // A chip is only offered when enough venues can fill it (venue-taxonomy.ts). Try the offered type chips in turn: at
+  // least one must change the deck (the top venue is a park, so "Park" alone may legitimately lead with the same card).
+  let outdoor = forYou;
+  let emptyShown = false;
+  const tried = [];
+  for (const name of ['Outdoor', 'Park', 'Museum', 'Animals', 'Activity', 'Farm', 'Soft play', 'Indoor']) {
+    if ((await page.getByRole('button', { name, exact: true }).count()) === 0) continue;
+    tried.push(name);
+    await page.getByRole('button', { name, exact: true }).click();
+    await page.waitForTimeout(800);
+    outdoor = await first().catch(() => null);
+    emptyShown = /Nothing confirmed here yet/.test(await body(page));
+    if (outdoor !== forYou || emptyShown) break;
+  }
+  check('Home offers plan chips beyond "For you"', tried.length > 0, tried.join(', '));
   check('a plan chip changes what the deck shows', outdoor !== forYou || emptyShown, `${forYou?.slice(0, 22)} → ${outdoor?.slice(0, 22) ?? '(empty state)'}`);
   await page.getByRole('button', { name: 'For you', exact: true }).click();
   await page.waitForTimeout(700);

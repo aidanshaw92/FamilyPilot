@@ -121,6 +121,7 @@ export function mergePlaceToVenue(
     estimatedSpend: trustedMeta?.estimatedSpend,
     isOpen: isOpenNow,
     structuredOpeningHours,
+    foodNearby: place.foodNearby,
     address: place.address,
     goodToKnow: trustedMeta?.goodToKnow,
     facilities: trustedMeta?.facilities,
