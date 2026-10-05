@@ -85,6 +85,5 @@ const styles = StyleSheet.create({
   },
   pillFlex: {
     flex: 1,
-    paddingHorizontal: spacing.sm,
   },
 });

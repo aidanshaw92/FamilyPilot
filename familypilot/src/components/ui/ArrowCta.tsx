@@ -35,6 +35,13 @@ interface ArrowCtaProps {
   size?: keyof typeof SIZES;
   testID?: string;
   accessibilityLabel?: string;
+  /**
+   * Draws the pill without being a control. For a CTA that sits inside a card which is itself the one
+   * button: two buttons nested in each other cannot both be reached by assistive technology, so the
+   * card carries the action and the CTA is its visible cue. It ignores the pointer, so a tap lands on
+   * the card.
+   */
+  decorative?: boolean;
   style?: ViewStyle;
 }
 
@@ -46,18 +53,11 @@ export function ArrowCta({
   size = 'default',
   testID,
   accessibilityLabel,
+  decorative = false,
   style,
 }: ArrowCtaProps) {
   const s = SIZES[size];
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ disabled }}
-      testID={testID}
-      style={({ pressed }) => [
+  const pillStyle = (pressed: boolean) => [
         styles.pill,
         {
           height: s.height,
@@ -68,8 +68,9 @@ export function ArrowCta({
         disabled && styles.disabled,
         pressed && !disabled && styles.pressed,
         style,
-      ]}
-    >
+      ];
+  const content = (
+    <>
       <Text
         style={[
           styles.label,
@@ -89,6 +90,35 @@ export function ArrowCta({
       >
         <Ionicons name="arrow-forward" size={s.arrow} color={colors.action} />
       </View>
+    </>
+  );
+
+  if (decorative) {
+    return (
+      <View
+        testID={testID}
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        aria-hidden
+        style={pillStyle(false)}
+      >
+        {content}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ disabled }}
+      testID={testID}
+      style={({ pressed }) => pillStyle(pressed)}
+    >
+      {content}
     </Pressable>
   );
 }

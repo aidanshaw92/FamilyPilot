@@ -133,7 +133,106 @@ function fixturePlace(index) {
   };
 }
 
-const PLACES = NAMES.map((_, index) => fixturePlace(index));
+/**
+ * Which set of venues the search payload carries.
+ *
+ *  - `sparse` (default): the fifteen uniform, unreviewed, flat-colour-photo venues. This is the locked
+ *    composition the Home verifiers measure, and one honest robustness state (nothing reviewed, so no
+ *    Family Fit number anywhere).
+ *  - `realistic` (FIXTURE_SCENARIO=realistic): the same fifteen ids and coordinates, but carrying the
+ *    spread of data a live city actually returns -- reviewed venues with confirmed facts and photographs,
+ *    partial facts, a reviewed negative, a missing photograph, an unreviewed one and an over-long name --
+ *    so the screens can be judged, and regression-tested, in the states a parent really meets.
+ *
+ * Both are synthetic and zero-spend: no Google, Overpass or paid provider is ever contacted.
+ */
+const SCENARIO = process.env.FIXTURE_SCENARIO === 'realistic' ? 'realistic' : 'sparse';
+
+const FULL_FACILITIES = { toilets: 'yes', babyChanging: 'yes', parking: 'yes', freeParking: 'yes' };
+
+function scenarioMetadata(id, over = {}) {
+  return {
+    familypilotPlaceId: id,
+    enrichmentStatus: 'enriched',
+    bestAges: '1 to 8',
+    minRecommendedAge: 1,
+    maxRecommendedAge: 8,
+    terrain: 'flat',
+    facilities: ['toilets', 'baby_changing', 'parking', 'cafe', 'playground', 'pushchair_friendly'],
+    familyFacilities: FULL_FACILITIES,
+    pushchairSuitability: 'good',
+    parkingInfo: 'Free on-site car park, busiest before 11am at weekends.',
+    visitDurationMinutes: 120,
+    environment: 'mixed',
+    energyLevel: 'moderate',
+    estimatedSpend: '£8 to £15 for a family of four',
+    goodToKnow: ['Buggies can go everywhere on the main loop'],
+    provenance: {},
+    lastChecked: '2026-09-28',
+    checkedBy: 'fixture',
+    updatedAt: '2026-09-28',
+    ...over,
+  };
+}
+
+/** What each of the fifteen venues stands for in the realistic scenario. */
+const REALISTIC_PLAN = [
+  { kind: 'full' }, // 0  complete data and photographs
+  { kind: 'full' }, // 1
+  { kind: 'full' }, // 2
+  { kind: 'full' }, // 3
+  { kind: 'partial' }, // 4  some confirmed facts, the rest unknown
+  { kind: 'noPhoto' }, // 5  useful data, no photograph (category placeholder)
+  { kind: 'sparse' }, // 6  nothing reviewed: "Not yet reviewed", no number
+  { kind: 'long' }, // 7  an over-long name and fact
+  { kind: 'caution' }, // 8  a reviewed negative that counts against the match
+  { kind: 'partial' }, // 9
+  { kind: 'full' }, // 10
+  { kind: 'sparse' }, // 11
+  { kind: 'full' }, // 12
+  { kind: 'noPhoto' }, // 13
+  { kind: 'full' }, // 14
+];
+
+const LONG_NAME = 'The Royal Borough Of Something Extremely Long Memorial Gardens And Family Activity Centre';
+
+function realisticPlace(place, index) {
+  const { kind } = REALISTIC_PLAN[index];
+  const id = place.familypilotId;
+  const out = { ...place };
+  if (kind === 'sparse') return out; // provider_only, no metadata: the honest unreviewed state
+  out.enrichmentStatus = 'enriched';
+  if (kind === 'partial') {
+    out.familyMetadata = scenarioMetadata(id, {
+      familyFacilities: { toilets: 'yes', babyChanging: 'unknown', parking: 'unknown' },
+      pushchairSuitability: undefined,
+      parkingInfo: undefined,
+      goodToKnow: [],
+      facilities: ['toilets'],
+    });
+  } else if (kind === 'caution') {
+    out.familyMetadata = scenarioMetadata(id, {
+      familyFacilities: { toilets: 'yes', babyChanging: 'no', parking: 'yes' },
+      pushchairSuitability: 'difficult',
+      terrain: 'hilly',
+      goodToKnow: ['Steep paths; a carrier suits small children better than a pushchair'],
+    });
+  } else if (kind === 'long') {
+    out.name = LONG_NAME;
+    out.familyMetadata = scenarioMetadata(id, {
+      goodToKnow: [
+        'Baby changing is in the east wing, a ten minute walk from the main entrance along the canal path, and the cafe closes an hour before the gardens do',
+      ],
+    });
+  } else {
+    out.familyMetadata = scenarioMetadata(id);
+  }
+  if (kind === 'noPhoto' || kind === 'partial') out.photos = kind === 'noPhoto' ? [] : out.photos;
+  return out;
+}
+
+const BASE_PLACES = NAMES.map((_, index) => fixturePlace(index));
+const PLACES = SCENARIO === 'realistic' ? BASE_PLACES.map(realisticPlace) : BASE_PLACES;
 
 /**
  * Venues that exist only on the detail endpoint, for the cases the uniform fifteen cannot show.
@@ -378,13 +477,15 @@ const SEARCH_PLACES =
  * and `naturalWidth > 1` in `report-photo-evidence.mjs` still has a real decoded photograph to
  * measure. One flat colour; the assertions are about dimensions, not content.
  */
-function buildPng(width, height, rgb) {
+function buildPng(width, height, rgbOrFn) {
+  const rgbAt = typeof rgbOrFn === 'function' ? rgbOrFn : () => rgbOrFn;
   const raw = Buffer.alloc((width * 3 + 1) * height);
   for (let y = 0; y < height; y += 1) {
     const rowStart = y * (width * 3 + 1);
     raw[rowStart] = 0; // filter type: none
     for (let x = 0; x < width; x += 1) {
       const pixel = rowStart + 1 + x * 3;
+      const rgb = rgbAt(x, y);
       raw[pixel] = rgb[0];
       raw[pixel + 1] = rgb[1];
       raw[pixel + 2] = rgb[2];
@@ -431,12 +532,46 @@ function crc32(buffer) {
   return crc ^ -1;
 }
 
+/**
+ * A landscape-like image generated from nothing -- sky, sun, two ranges of hills, a meadow and a few
+ * trees -- so the realistic scenario has photographs with tone and edges to judge a composition by,
+ * while the repository still carries no image binary and no licensed or reference photograph.
+ */
+function buildScenePng(width, height, { skyTop, skyBottom, hillFar, hillNear, ground, sun }) {
+  const mix = (a, b, t) => [0, 1, 2].map((i) => Math.round(a[i] + (b[i] - a[i]) * t));
+  const horizon = height * 0.5;
+  const trees = [0.18, 0.34, 0.62, 0.8].map((x, i) => ({ x: x * width, y: height * (0.62 + (i % 2) * 0.06), r: height * 0.07 }));
+  const pixel = (x, y) => {
+    const dx = x - width * 0.76;
+    const dy = y - height * 0.2;
+    // A soft glow, not a disc: a hard-edged circle reads as a UI shape when a card crops it.
+    const glow = Math.max(0, 1 - Math.hypot(dx, dy) / (height * 0.16));
+    for (const t of trees) {
+      if ((x - t.x) ** 2 + (y - t.y) ** 2 < t.r ** 2) return mix(hillNear, [30, 70, 40], 0.5);
+      if (Math.abs(x - t.x) < t.r * 0.12 && y > t.y && y < t.y + t.r * 1.5) return [84, 62, 44];
+    }
+    const far = horizon - 28 * Math.sin(x / width * 5.1 + 0.6) - 18;
+    const near = horizon + 26 + 24 * Math.sin(x / width * 3.3 + 2.2);
+    if (y > near) return mix(ground, hillNear, Math.min(1, (y - near) / (height - near)) * 0.4);
+    if (y > horizon + 4) return hillNear;
+    if (y > far) return hillFar;
+    return mix(mix(skyTop, skyBottom, y / horizon), sun, glow * glow * 0.85);
+  };
+  return buildPng(width, height, pixel);
+}
+
 /** Three tones, so the three visible deck layers are distinguishable in a screenshot. */
-const IMAGES = [
+const SPARSE_IMAGES = [
   buildPng(800, 600, [120, 144, 112]),
   buildPng(800, 800, [148, 126, 104]),
   buildPng(800, 591, [104, 118, 140]),
 ];
+const SCENE_IMAGES = [
+  buildScenePng(800, 600, { skyTop: [120, 170, 226], skyBottom: [220, 232, 240], hillFar: [128, 162, 120], hillNear: [88, 132, 80], ground: [110, 156, 84], sun: [255, 238, 170] }),
+  buildScenePng(800, 800, { skyTop: [226, 176, 120], skyBottom: [250, 226, 190], hillFar: [150, 130, 118], hillNear: [112, 112, 90], ground: [140, 128, 92], sun: [255, 250, 230] }),
+  buildScenePng(800, 591, { skyTop: [96, 140, 196], skyBottom: [190, 214, 232], hillFar: [96, 132, 150], hillNear: [60, 110, 120], ground: [80, 128, 130], sun: [250, 244, 214] }),
+];
+const IMAGES = SCENARIO === 'realistic' ? SCENE_IMAGES : SPARSE_IMAGES;
 
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',

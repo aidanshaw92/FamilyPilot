@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
-import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { FlatList, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
+import { estimateLineCount } from '@/src/utils/home-header-layout';
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 
 import { FilterSheet } from '@/src/components/explore/FilterSheet';
@@ -49,6 +50,10 @@ export default function ExploreScreen() {
 
   const isRestaurantMode =
     categoryFilter === 'restaurants' && isPilotFeatureVisible('explore_restaurants');
+  // The subtitle wraps on a narrow phone; everything under it, and the art beside that, moves down by the
+  // extra line instead of the text being shrunk.
+  const subtitleText = isRestaurantMode ? RESTAURANT_SUBTITLE : SUBTITLE;
+  const subtitleShift = Math.max(0, estimateLineCount(subtitleText, 13.6, width - spacing.screenPadding * 2) - 1) * 17;
 
   useEffect(() => {
     if (categoryFilter === 'restaurants' && !isPilotFeatureVisible('explore_restaurants')) {
@@ -177,19 +182,28 @@ export default function ExploreScreen() {
       <ScreenArt
         art={EXPLORE_ART_BEHIND}
         from={0}
+        to={HEADER_SEAM_PX}
+        anchor="top"
+        clipX={[0, EDGE_ART_X]}
+        width={Math.min(width, 393)}
+      />
+      {/* Below the heading the marks sit beside the search, the chips and the section title, which all move
+          down when the subtitle wraps to a second line; the marks move with them. */}
+      <ScreenArt
+        art={EXPLORE_ART_BEHIND}
+        from={HEADER_SEAM_PX}
         to={760}
         anchor="top"
         clipX={[0, EDGE_ART_X]}
         width={Math.min(width, 393)}
+        style={{ top: HEADER_SEAM_PX * (Math.min(width, 393) / EXPLORE_ART_BEHIND.width) + subtitleShift }}
       />
       <ScreenArt art={EXPLORE_ART_BEHIND} from={0} to={760} anchor="top" clipX={[EDGE_ART_X, EXPLORE_ART_BEHIND.width]} align="right" />
       <ScreenArt art={EXPLORE_ART_BEHIND} from={1500} to={1844} anchor="bottom" />
       <View style={styles.header}>
         <Text variant="heading1" style={styles.heading}>Explore London</Text>
         <Text variant="body" color={colors.text.secondary} style={styles.subtitle}>
-          {isRestaurantMode
-            ? 'Family-friendly places to eat'
-            : 'Parks, museums and family days out across London'}
+          {subtitleText}
         </Text>
       </View>
 
@@ -243,23 +257,6 @@ export default function ExploreScreen() {
             onPress={() => setCategoryFilter(category.id)}
           />
         ))}
-        <Pressable
-          style={styles.filterButton}
-          onPress={() => setFilterSheetOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel="Open filters"
-        >
-          <Text variant="link">
-            Filter
-          </Text>
-          {activeFilterCount > 0 ? (
-            <View style={styles.filterBadge}>
-              <Text variant="caption" color={colors.text.inverse}>
-                {activeFilterCount}
-              </Text>
-            </View>
-          ) : null}
-        </Pressable>
       </ScrollView>
 
       {isLoading ? (
@@ -306,6 +303,11 @@ export default function ExploreScreen() {
               subtitle={`${resultCount} ${isRestaurantMode ? 'restaurant' : 'place'}${resultCount === 1 ? '' : 's'} ${areaVenues ? 'near this area' : 'across London'}`}
               titleStyle={styles.sectionTitle}
               subtitleStyle={styles.sectionCount}
+              // The approved frame's rail is the category chips alone, so filtering is reached through
+              // this quiet link on the count line (the count says how many places the filters leave).
+              actionLabel={activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
+              onAction={() => setFilterSheetOpen(true)}
+              actionAlign="end"
             />
           </View>
           {/*
@@ -368,6 +370,10 @@ export default function ExploreScreen() {
 
 /** Frame x (of 853) where the right-edge marks begin: the leaves and blobs off the right side. */
 const EDGE_ART_X = 690;
+/** Frame y (of 1844) under the heading block: the strokes by the title are above it. */
+const HEADER_SEAM_PX = 250;
+const SUBTITLE = 'Parks, museums and family days out across London';
+const RESTAURANT_SUBTITLE = 'Family-friendly places to eat';
 
 const styles = StyleSheet.create({
   // Frame 294:133 at pt = px / 2.17: the title Bold 28.4 on a 34.6 line, the subtitle 13.6 on 16.6,
@@ -417,27 +423,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenPadding,
     alignItems: 'center',
     gap: EXPLORE_CHIP.gap,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.lg,
-    minHeight: 44,
-    justifyContent: 'center',
-    borderRadius: radius.full,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  filterBadge: {
-    backgroundColor: colors.action,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 4,
   },
   listHeader: {
     paddingHorizontal: spacing.screenPadding,

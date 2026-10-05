@@ -6,6 +6,7 @@ import { EnrichmentStatus } from '@/src/types';
 import { describeFamilyMatch } from '@/src/utils/family-match-scale';
 
 import { Text } from './Text';
+import { minTarget } from './touch';
 
 /**
  * `default` is the Venue Detail / Saved badge; `compact` drops the word beside a venue name; `explore` is
@@ -105,6 +106,7 @@ export function FamilyMatch({
       accessibilityRole="button"
       accessibilityLabel={`${match.spoken}. Explain this score`}
       hitSlop={6}
+      style={minTarget(compact ? 30 : frameSize === 'explore' ? 29.5 : frameSize === 'deck' ? 31 : 28)}
     >
       {content}
     </Pressable>

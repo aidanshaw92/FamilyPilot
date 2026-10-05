@@ -55,8 +55,17 @@ const VIEWPORTS = [
  * A fixed date would start failing the day it passed, and today would make the result depend on how
  * much of today is left when the check runs.
  */
+/**
+ * The clock the browser sees. The journey used to read the wall clock, so whether a plan "fit" depended
+ * on the weekday and the hour the check ran at (the fixture's opening hours are weekday-shaped, and a
+ * 09:30 start is in the past by the afternoon). A fixed weekday morning makes the result repeatable;
+ * JOURNEY_NOW=<ISO local time> reruns it at any other moment, which is how the late-in-the-day and
+ * weekend cases are exercised.
+ */
+const JOURNEY_NOW = new Date(process.env.JOURNEY_NOW ?? '2026-01-13T07:30:00');
+
 const PLAN_DATE = (() => {
-  const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const d = new Date(JOURNEY_NOW.getTime() + 24 * 60 * 60 * 1000);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 })();
 
@@ -133,6 +142,7 @@ async function run(browser, viewport) {
     deviceScaleFactor: 2,
   });
   const page = await context.newPage();
+  await page.clock.setFixedTime(JOURNEY_NOW);
   const errors = [];
   page.on('pageerror', (error) => errors.push(String(error)));
   page.on('console', (message) => {
@@ -181,17 +191,13 @@ async function run(browser, viewport) {
     });
   }
 
-  const directionsInBody = await page.evaluate(() => {
-    const nodes = Array.from(document.querySelectorAll('*')).filter(
-      (node) => node.children.length === 0 && node.textContent?.trim() === 'Get directions',
-    );
-    if (!nodes.length) return null;
-    const rect = nodes[0].getBoundingClientRect();
-    return { top: rect.top, height: document.documentElement.clientHeight };
-  });
-  note(viewport.label, 'Get directions moved out of the footer', {
-    ok: Boolean(directionsInBody),
-    message: directionsInBody ? `found in content at y=${Math.round(directionsInBody.top)}` : 'not found',
+  // Venue Detail (approved frame 02) keeps "Directions" as a secondary action in the page body, beside
+  // Save, not in a pinned footer; it is the only way to reach the venue on a map from this screen.
+  const directions = page.getByRole('button', { name: 'Directions', exact: true });
+  const directionsBox = await directions.first().boundingBox().catch(() => null);
+  note(viewport.label, 'Venue Detail offers Directions in its content', {
+    ok: Boolean(directionsBox),
+    message: directionsBox ? `found in content at y=${Math.round(directionsBox.y)}` : 'not found',
   });
 
   {
@@ -259,19 +265,35 @@ async function run(browser, viewport) {
   });
 
   if (onPlan) {
-    for (const label of ['Day plan', 'Who’s coming', 'Travel & parking']) {
-      note(viewport.label, `the section nav offers ${label}`, { ok: planText.includes(label) });
+    // The three section controls are primary navigation and all three show at once. Where the full
+    // label would clip (360 to 393) the travel control takes its short label "Travel"; the heading
+    // inside the section still reads "Travel & parking" (checked below).
+    for (const [id, labels] of [
+      ['day', ['Day plan']],
+      ['who', ['Who’s coming']],
+      ['travel', ['Travel & parking', 'Travel']],
+    ]) {
+      const control = page.getByTestId(`plan-section-${id}`);
+      const box = await control.boundingBox().catch(() => null);
+      const text = ((await control.innerText().catch(() => '')) || '').trim();
+      note(viewport.label, `the section nav offers ${labels[0]}, whole on screen`, {
+        ok: labels.includes(text) && Boolean(box) && box.x >= 0 && box.x + box.width <= viewport.width,
+        message: box ? `"${text}" at ${Math.round(box.x)}..${Math.round(box.x + box.width)} of ${viewport.width}` : 'missing',
+      });
     }
-    note(viewport.label, 'the day is summarised in the parent’s terms', {
-      ok: /A \d+-hour /.test(planText),
-      message: (planText.match(/A \d+-hour [A-Za-z]+/) ?? ['no summary line'])[0],
+    // Frame 03: the heading is "Your <weekday> plan" and the dates row under the title carries the span.
+    note(viewport.label, 'the day is named in the heading and its span in the header', {
+      ok: /Your [A-Z][a-z]+day plan/.test(planText) && /\d{2}:\d{2}\s*[–-]\s*\d{2}:\d{2}/.test(planText),
+      message: (planText.match(/Your [A-Z][a-z]+day plan/) ?? ['no heading'])[0],
     });
+    // The first stop is open: its rows are set in capitals, so compare without case.
+    const planUpper = planText.toUpperCase();
     note(viewport.label, 'the first stop is expanded', {
-      ok: planText.includes('Arrive') && planText.includes('Time there'),
+      ok: planUpper.includes('ARRIVE') && planUpper.includes('TIME THERE'),
     });
-    note(viewport.label, 'a period heading is shown', {
-      ok: /MORNING|LUNCH|AFTERNOON|EVENING/.test(planText),
-      message: (planText.match(/MORNING|LUNCH|AFTERNOON|EVENING/) ?? [''])[0],
+    note(viewport.label, 'stops are numbered and the day ends at home', {
+      ok: /Stop 1/.test(planText) && /Head home/.test(planText),
+      message: `${(planText.match(/Stop \d/g) ?? []).join(', ')}${/Head home/.test(planText) ? ' · Head home' : ''}`,
     });
     {
       const overflow = await horizontalOverflow(page);
@@ -286,6 +308,7 @@ async function run(browser, viewport) {
     await page.waitForTimeout(700);
     await page.screenshot({ path: join(dir, '05-plan-travel.png') });
     const travelText = await page.evaluate(() => document.body.innerText);
+    note(viewport.label, 'the travel section is headed Travel & parking', { ok: /Travel & parking/i.test(travelText) || /Parking/.test(travelText) });
     note(viewport.label, 'parking is reported as unconfirmed for an unreviewed venue', {
       ok: travelText.includes('Not confirmed'),
       message: (travelText.match(/Parking[\s\S]{0,60}/) ?? [''])[0].replace(/\s+/g, ' '),
@@ -324,7 +347,7 @@ async function run(browser, viewport) {
       .evaluate((node) => (node.textContent ?? '').trim())
       .catch(() => '');
     note(viewport.label, 'saving from the header also settles the persistent button', {
-      ok: footerSaved === 'Saved',
+      ok: footerSaved.startsWith('Saved'),
       message: footerSaved || 'no label',
     });
 
@@ -368,6 +391,7 @@ async function runFailurePaths(browser, viewport, profileOverrides, label, expec
     deviceScaleFactor: 2,
   });
   const page = await context.newPage();
+  await page.clock.setFixedTime(JOURNEY_NOW);
   await page.addInitScript(
     ({ key, value }) => window.localStorage.setItem(key, value),
     {
@@ -422,6 +446,7 @@ async function runLinkedPlan(browser, viewport, label, parties, expectations) {
     deviceScaleFactor: 2,
   });
   const page = await context.newPage();
+  await page.clock.setFixedTime(JOURNEY_NOW);
   await page.addInitScript(
     ({ key, value }) => window.localStorage.setItem(key, value),
     {

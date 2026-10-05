@@ -17,6 +17,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { colors } from '@/src/design-system/tokens';
+import { useDocumentTitle } from '@/src/hooks/use-document-title';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -32,6 +33,7 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
+  useDocumentTitle();
   const [loaded, error] = useFonts({
     Inter_400Regular,
     Inter_500Medium,

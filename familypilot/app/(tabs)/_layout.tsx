@@ -46,7 +46,7 @@ export default function TabLayout() {
               href: hidden ? null : undefined,
               // The approved frames draw every tab's icon as an outline, the active one too (it sits
               // on the mint disc in the action green instead of changing glyph).
-              tabBarIcon: ({ color }) => <Ionicons name={tab.icon} size={ICON_SIZE} color={color} />,
+              tabBarIcon: ({ color, size }) => <Ionicons name={tab.icon} size={size ?? ICON_SIZE} color={color} />,
             }}
           />
         );

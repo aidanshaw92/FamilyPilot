@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   AVATAR_SIZE,
+  estimateLineCount,
   estimateTextWidth,
   FIT_MARGIN,
   GREETING_FONT_SIZE,
@@ -137,5 +138,29 @@ describe('home header layout', () => {
     expect(estimateTextWidth('aaa', 16, 'extraBold')).toBeGreaterThan(
       estimateTextWidth('aaa', 16, 'regular'),
     );
+  });
+});
+
+describe('estimateLineCount', () => {
+  const SUBTITLE = 'Personalised days out, activities and recommendations for your family.';
+
+  it('keeps a short line on one line and a long one on several', () => {
+    expect(estimateLineCount('Explore', 14.8, 300)).toBe(1);
+    expect(estimateLineCount(SUBTITLE, 14.8, 600)).toBe(1);
+    expect(estimateLineCount(SUBTITLE, 14.8, 200)).toBeGreaterThanOrEqual(3);
+  });
+
+  it('wraps Welcome\'s subtitle to the frame\'s two lines at the frame width and three on a narrow phone', () => {
+    // 393pt: the subtitle has 259pt (the ice-cream sticker is the limit); 360pt has 233.
+    expect(estimateLineCount(SUBTITLE, 14.8, 259)).toBe(2);
+    expect(estimateLineCount(SUBTITLE, 14.8, 233)).toBe(3);
+  });
+
+  it('counts a single word wider than the box as one line, not zero', () => {
+    expect(estimateLineCount('Supercalifragilisticexpialidocious', 14.8, 40)).toBe(1);
+  });
+
+  it('is never less than one line, even for empty text', () => {
+    expect(estimateLineCount('', 14.8, 100)).toBe(1);
   });
 });

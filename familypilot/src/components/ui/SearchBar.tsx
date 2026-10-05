@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View, ViewStyle } from 'react-native';
 
 import { colors, fontFamily, radius, spacing } from '@/src/design-system/tokens';
@@ -53,6 +54,7 @@ export function SearchBar({
 }: SearchBarProps) {
   const readOnly = Boolean(onPress);
   const explore = variant === 'explore';
+  const [focused, setFocused] = useState(false);
 
   return (
     <View style={[styles.wrap, explore && styles.wrapExplore, style]}>
@@ -61,12 +63,23 @@ export function SearchBar({
         accessibilityLabel={readOnly ? placeholder : undefined}
         onPress={onPress}
         disabled={!readOnly}
-        style={[styles.field, explore && styles.fieldExplore, onFilterPress ? styles.fieldWithFilter : null]}
+        style={[
+          styles.field,
+          explore && styles.fieldExplore,
+          onFilterPress ? styles.fieldWithFilter : null,
+          // Keyboard focus must be visible. The input's own outline is removed (it would draw a box inside
+          // the pill), so the pill carries the ring instead.
+          focused && styles.fieldFocused,
+        ]}
       >
         <Ionicons name="search" size={SEARCH_ICON} color={PLACEHOLDER_INK} />
         {readOnly ? (
+          // A button that LOOKS like a field shows its hint as text. It used to draw a read-only text
+          // input inside the button, which is a focusable control nested in another and had no name.
           <View style={styles.readOnlyLabel} pointerEvents="none">
-            <PlaceholderText>{value || placeholder}</PlaceholderText>
+            <Text numberOfLines={1} style={styles.readOnlyText}>
+              {value || placeholder}
+            </Text>
           </View>
         ) : (
           <TextInput
@@ -78,21 +91,25 @@ export function SearchBar({
             onSubmitEditing={onSubmit}
             returnKeyType="search"
             autoFocus={autoFocus}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
             style={[styles.input, explore && styles.inputExplore]}
           />
         )}
         {actionLabel && onAction ? (
+          // The pill is drawn 42 tall on Explore; its button is 44, so the target is real on the web
+          // too (hitSlop is not).
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={actionAccessibilityLabel ?? actionLabel}
             onPress={onAction}
-            style={({ pressed }) => [
-              styles.action,
-              explore && styles.actionExplore,
-              pressed && styles.actionPressed,
-            ]}
+            style={[styles.actionHit, explore && styles.actionHitExplore]}
           >
-            <Text style={[styles.actionLabel, explore && styles.actionLabelExplore]}>{actionLabel}</Text>
+            {({ pressed }) => (
+              <View style={[styles.action, explore && styles.actionExplore, pressed && styles.actionPressed]}>
+                <Text style={[styles.actionLabel, explore && styles.actionLabelExplore]}>{actionLabel}</Text>
+              </View>
+            )}
           </Pressable>
         ) : null}
       </Pressable>
@@ -111,17 +128,6 @@ export function SearchBar({
         />
       ) : null}
     </View>
-  );
-}
-
-function PlaceholderText({ children }: { children: string }) {
-  return (
-    <TextInput
-      editable={false}
-      pointerEvents="none"
-      value={children}
-      style={[styles.input, styles.readOnlyInput]}
-    />
   );
 }
 
@@ -164,6 +170,8 @@ const styles = StyleSheet.create({
     borderRadius: EXPLORE_ACTION_HEIGHT / 2,
     minWidth: 88.5,
     paddingHorizontal: 18,
+  },
+  actionHitExplore: {
     marginRight: -(FIELD_PADDING - EXPLORE_ACTION_INSET),
   },
   actionLabelExplore: {
@@ -195,6 +203,8 @@ const styles = StyleSheet.create({
     // field at 360 and 390 and the pill was clipped to "Searc".
     minWidth: 0,
     flexShrink: 1,
+    // The whole height of the pill answers a tap, not just the line of text.
+    alignSelf: 'stretch',
     fontFamily: fontFamily.regular,
     fontSize: PLACEHOLDER_FONT_SIZE,
     color: colors.text.primary,
@@ -204,8 +214,21 @@ const styles = StyleSheet.create({
   readOnlyLabel: {
     flex: 1,
   },
-  readOnlyInput: {
+  readOnlyText: {
+    fontFamily: fontFamily.regular,
+    fontSize: PLACEHOLDER_FONT_SIZE,
     color: PLACEHOLDER_INK,
+  },
+  fieldFocused: {
+    outlineStyle: 'solid',
+    outlineWidth: 2,
+    outlineColor: colors.action,
+    outlineOffset: 2,
+  } as never,
+  actionHit: {
+    minHeight: 44,
+    justifyContent: 'center',
+    marginRight: -(FIELD_PADDING - ACTION_INSET),
   },
   filter: {
     position: 'absolute',
@@ -216,7 +239,6 @@ const styles = StyleSheet.create({
     height: ACTION_HEIGHT,
     borderRadius: ACTION_HEIGHT / 2,
     paddingHorizontal: 18,
-    marginRight: -(FIELD_PADDING - ACTION_INSET),
     backgroundColor: colors.action,
     alignItems: 'center',
     justifyContent: 'center',

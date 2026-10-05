@@ -202,3 +202,30 @@ export function searchPlaceholder(viewportWidth: number): string {
   }
   return SEARCH_PLACEHOLDERS[SEARCH_PLACEHOLDERS.length - 1];
 }
+
+/**
+ * How many lines `text` wraps to in `maxWidth` at `fontSize`, by greedy word wrap over the same width
+ * estimate the header trusts. A layout that waits on onLayout flashes the wrong composition first, so
+ * screens that must move a decoration clear of wrapped text use this instead. It errs wide (a word is
+ * judged to need its full estimated width), so it can over-count by a line but not under-count.
+ */
+export function estimateLineCount(
+  text: string,
+  fontSize: number,
+  maxWidth: number,
+  weight: TextWeight = 'regular',
+): number {
+  const space = estimateTextWidth(' ', fontSize, weight);
+  let lines = 1;
+  let used = 0;
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    const w = estimateTextWidth(word, fontSize, weight);
+    if (used > 0 && used + space + w > maxWidth) {
+      lines += 1;
+      used = w;
+    } else {
+      used += (used > 0 ? space : 0) + w;
+    }
+  }
+  return lines;
+}

@@ -103,7 +103,9 @@ export const colors = {
   text: {
     primary: INK,
     secondary: '#626A80',
-    tertiary: '#8A91A0',
+    // 4.5:1 on white and on the canvas, the AA floor for text. The earlier #8A91A0 was 3.0:1 and was
+    // used for the search placeholder, the footnotes and links, which are all text.
+    tertiary: '#6B7384',
     inverse: '#FFFFFF',
   },
   border: '#E9E7E1',

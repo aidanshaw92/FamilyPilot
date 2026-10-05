@@ -7,6 +7,7 @@ import { WELCOME_PHOTOS } from '@/src/assets/welcome-photos';
 import { BenefitCard } from '@/src/components/onboarding/BenefitCard';
 import { BrandMark, Button, PhotoSlot, ScreenArt, Text } from '@/src/components/ui';
 import { colors } from '@/src/design-system/tokens';
+import { estimateLineCount } from '@/src/utils/home-header-layout';
 import {
   WELCOME_BENEFITS,
   WELCOME_COLLAGE,
@@ -22,6 +23,9 @@ const BRAND_TOP = 160 * WELCOME_PX - WELCOME_FRAME_INSET;
 const HEADLINE_TOP = 276 * WELCOME_PX - WELCOME_FRAME_INSET;
 const SUBTITLE_TOP = 443 * WELCOME_PX - WELCOME_FRAME_INSET;
 const HEADLINE_WIDTH = 272;
+/** Frame y below which the stickers are the collage's, not the header's. */
+const STICKER_SEAM_PX = 330;
+const SUBTITLE = 'Personalised days out, activities and recommendations for your family.';
 /** Where the headline's first line ends (Bold 30.3, "The everyday app"), plus a gap: the giraffe starts no earlier. */
 const GIRAFFE_MIN_LEFT = 24 + 264 + 4;
 
@@ -41,11 +45,18 @@ export default function WelcomeScreen() {
   const stageWidth = Math.min(width, 480);
   const scale = stageWidth / WELCOME_FRAME_WIDTH;
   const k = stageWidth / 393;
-  // The stickers shrink with a narrow phone, so the lockup and the subtitle beside them do too, or the
-  // wordmark runs into the strokes and the subtitle into the ice cream. They never grow past the frame.
+  // The brand lockup scales with the stickers beside it (it is a logo, not running text), or the wordmark
+  // runs into the strokes on a narrow phone. It never grows past the frame. Running text is NOT scaled: the
+  // subtitle reflows instead (below).
   const ts = Math.min(1, k);
+  // The subtitle wraps before the ice-cream sticker, which sits 628px into the frame and moves with the width.
+  const subtitleWidth = Math.min(260, 628 * scale - 55 * scale - 6);
+  // A third line would run into the collage, so the collage and its stickers move down by that line
+  // rather than the text being shrunk. (The frame's subtitle is two lines at 20.7.)
+  const subtitleLines = estimateLineCount(SUBTITLE, 14.8, subtitleWidth);
+  const shift = Math.max(0, subtitleLines - 2) * 20.7;
   const inset = WELCOME_FRAME_INSET * k;
-  const stageHeight = WELCOME_STAGE_END_PX * scale - inset;
+  const stageHeight = WELCOME_STAGE_END_PX * scale - inset + shift;
   const start = () => router.push('/(onboarding)/setup' as never);
 
   return (
@@ -64,7 +75,7 @@ export default function WelcomeScreen() {
             let w = cutout.width * scale;
             let h = cutout.height * scale;
             let left = cutout.x * scale;
-            const top = cutout.y * scale - inset;
+            const top = cutout.y * scale - inset + (slot.id === 'zoo' ? 0 : shift);
             if (slot.id === 'zoo') {
               // The giraffe bleeds off the right edge. On a phone narrower than the frame, shrink it
               // about that edge rather than slide it under the headline.
@@ -88,18 +99,27 @@ export default function WelcomeScreen() {
               />
             );
           })}
-          {/* The frame's stickers, drawn over the photographs and under the type. */}
+          {/* The frame's stickers, drawn over the photographs and under the type. The strokes by the wordmark
+              (above the seam) belong to the header and stay put; everything below moves with the collage. */}
           <ScreenArt
             art={WELCOME_ART}
             width={stageWidth}
             from={100}
-            to={WELCOME_STAGE_END_PX}
+            to={STICKER_SEAM_PX}
             anchor="top"
             style={{ top: 100 * scale - inset }}
           />
+          <ScreenArt
+            art={WELCOME_ART}
+            width={stageWidth}
+            from={STICKER_SEAM_PX}
+            to={WELCOME_STAGE_END_PX}
+            anchor="top"
+            style={{ top: STICKER_SEAM_PX * scale - inset + shift }}
+          />
 
           <View style={[styles.brandRow, { top: BRAND_TOP }]}>
-            <BrandMark size={79.5 * WELCOME_PX * ts} tone="light" testID="welcome-brand-mark" />
+            <BrandMark size={79.5 * WELCOME_PX * ts} tone="light" testID="welcome-brand-mark" decorative />
             <Text variant="heading2" style={[styles.brandName, { fontSize: 29.3 * ts, lineHeight: 36 * ts }]}>
               Family
               <Text variant="heading2" color={colors.action} style={[styles.brandName, { fontSize: 29.3 * ts, lineHeight: 36 * ts }]}>
@@ -114,8 +134,8 @@ export default function WelcomeScreen() {
               .
             </Text>
           </Text>
-          <Text variant="body" color={colors.text.secondary} style={[styles.subtitle, { top: SUBTITLE_TOP, fontSize: 14.8 * ts, lineHeight: 20.7 * ts }]}>
-            Personalised days out, activities and recommendations for your family.
+          <Text variant="body" color={colors.text.secondary} style={[styles.subtitle, { top: SUBTITLE_TOP, maxWidth: subtitleWidth }]}>
+            {SUBTITLE}
           </Text>
         </View>
 

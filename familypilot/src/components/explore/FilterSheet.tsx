@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Chip, Text, CHIP_GAP } from '@/src/components/ui';
+import { minTarget } from '@/src/components/ui/touch';
 import { timing } from '@/src/design-system/animations/presets';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
@@ -32,6 +33,7 @@ function Backdrop({ onClose }: { onClose: () => void }) {
     <AnimatedPressable
       style={[styles.backdrop, animatedStyle]}
       onPress={onClose}
+      accessibilityRole="button"
       accessibilityLabel="Close filters"
     />
   );
@@ -55,6 +57,20 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
     toggleAdvancedFilter,
     resetExploreFilters,
   } = useFiltersStore();
+
+  // The sheet is a Modal, which on the web mounts beside the app rather than over it, so the page behind
+  // stays in the tab order and the reading order unless it is made inert while the sheet is open.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !visible || typeof document === 'undefined') return;
+    const root = document.getElementById('root');
+    if (!root) return;
+    root.setAttribute('inert', '');
+    root.setAttribute('aria-hidden', 'true');
+    return () => {
+      root.removeAttribute('inert');
+      root.removeAttribute('aria-hidden');
+    };
+  }, [visible]);
 
   const isRestaurantMode = categoryFilter === 'restaurants';
   const profileDrive = profile?.maxDriveMinutes ?? 30;
@@ -90,6 +106,7 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
           <Pressable
             onPress={handleReset}
             hitSlop={8}
+            style={minTarget(20)}
             accessibilityRole="button"
             accessibilityLabel="Reset filters"
           >

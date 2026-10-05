@@ -61,7 +61,7 @@ export function SavedPlaceRow({ venue, itemType, onRemoved, index = 0 }: SavedPl
    */
   const isScored = Number.isFinite(venue.familyScore?.score);
   const classification = isScored
-    ? getMatchClassification(venue.familyScore.score)
+    ? getMatchClassification(venue.familyScore.score, venue.enrichmentStatus)
     : 'Match not worked out on this device yet';
   const hasTravelTime = isTravelTimeKnown(venue.driveMinutes);
   const categoryLabel = isRestaurant ? 'Restaurant' : CATEGORY_LABELS[venue.category];

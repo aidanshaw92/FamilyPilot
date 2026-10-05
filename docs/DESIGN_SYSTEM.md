@@ -144,6 +144,31 @@ assets.
   neutral, "Good to know" — the venue's own remarks). "Information confidence" badges come from
   `trust-badges.ts` and exist only when the fact behind them does.
 
+### The canonical parent-facing Family Fit (traced end to end)
+
+**What the value is.** `FamilyScore.score` (`src/types`) is a 0–100 number computed *per family* by
+`src/services/scoring/family-score.ts` from seven factors (`ageSuitability`, `accessibility`, `distance`,
+`weatherFit`, `budgetFit`, `facilitiesMatch`, `routineFit`) against that family's profile. It is not stored
+on the venue, so a restored Saved place has no score until it is recomputed. The UI sorts and filters on the
+0–100 value and *prints* it only through `src/utils/family-match-scale.ts`.
+
+**How it appears.** `★ 4.3 Family Fit` is `score / 20`, rounded to one decimal, on every surface that shows
+a badge (Home deck, Explore cards, Venue Detail, Restaurant detail, Saved rows, the explanation panel's
+secondary line, offers). The classification word (`Excellent fit` ≥ 90, `Great fit` ≥ 80, `Good fit` ≥ 70,
+`Worth considering` ≥ 60, else `Limited fit`) accompanies it where there is room and in spoken labels.
+
+| State | Condition | What a parent sees |
+| --- | --- | --- |
+| Scored | finite score, place reviewed (`enriched` / `verified`) | `★ 4.3 Family Fit`, the word beside it |
+| Not yet reviewed | `provider_only` / `ai_draft` | the neutral status "Not yet reviewed", **no number**, and the same word in every label and announcement |
+| Unknown | non-finite score | no badge, no `0.0`; the spoken line says the fit "has not been worked out yet" |
+
+There is no provisional, starred, dashed, percentage, `76 Good match` or partial-score state, and none may
+be introduced without a change to the scoring contract. The word and the badge must be derived from the
+same inputs (score **and** review status): `SavedPlaceRow` and `RestaurantCard` previously computed the
+word from the score alone, so an unreviewed place could be announced "Good fit" beside a "Not yet reviewed"
+badge; both now pass the status.
+
 ## Motion and accessibility
 
 `react-native-reanimated` for all animation; `useReducedMotion()` replaces springs with cuts.

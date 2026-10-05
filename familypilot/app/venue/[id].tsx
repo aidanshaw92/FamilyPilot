@@ -48,7 +48,8 @@ import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { isActivityVenue } from '@/src/data/mock-restaurants';
 import { useFamilyProfile, useNearbyFood, useVenue } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
-import { localDate, usePlanningStore } from '@/src/stores/planning-store';
+import { minTarget } from '@/src/components/ui/touch';
+import { localDate, localTime, usePlanningStore } from '@/src/stores/planning-store';
 import { formatCategory } from '@/src/utils/format-category';
 import { generateVenueStaticParams } from '@/src/utils/venue-routes';
 import { travelTimeLabel } from '@/src/utils/travel-time';
@@ -105,6 +106,7 @@ export default function VenueScreen() {
         planningFamilies,
         options: planningOptions,
         today: localDate(),
+        nowTime: localTime(),
       }),
     [profile, planningFamilies, planningOptions],
   );
@@ -281,7 +283,7 @@ export default function VenueScreen() {
                   {formatCategory(venue.category)} · {travelTimeLabel(venue.driveMinutes, 'estimated')}
                 </Text>
               </View>
-              <Pressable onPress={scrollToFit} accessibilityRole="button" hitSlop={10}>
+              <Pressable onPress={scrollToFit} accessibilityRole="button" hitSlop={10} style={minTarget(16)}>
                 <Text style={styles.whyLink}>Why this score</Text>
               </Pressable>
             </View>

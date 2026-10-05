@@ -1,12 +1,14 @@
+import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
-import { CircleButton } from '@/src/components/ui/CircleButton';
 import { FamilyMatch } from '@/src/components/ui/FamilyMatch';
-import { PressableScale } from '@/src/components/ui/PressableScale';
 import { Text } from '@/src/components/ui/Text';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { SaveButton } from '@/src/components/shared/SaveButton';
+import { spring } from '@/src/design-system/animations/presets';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
 import { getTravelSignal } from '@/src/utils/family-signals';
@@ -43,17 +45,31 @@ export function PlaceShowcaseCard({
   style,
   isSwiping,
 }: PlaceShowcaseCardProps) {
+  const pressed = useSharedValue(1);
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressed.value }] }));
 
+  // The card is ONE button and the save heart is a sibling control, never a child of it: a button
+  // nested in a button cannot be reached by a screen reader or the keyboard. The button is an empty
+  // overlay under the artwork; the artwork ignores the pointer, so a tap anywhere lands on it, and the
+  // heart (the only thing above it that takes a tap) sits beside it in the tree.
   return (
-    <PressableScale
-      onPress={() => {
-        if (isSwiping?.()) return;
-        onPress();
-      }}
-      accessibilityRole="button"
-      accessibilityLabel={`${venue.name}, see more`}
-      style={[styles.card, { width, height: height ?? Math.round(width * 1.28) }, style]}
-    >
+    <Animated.View style={[styles.card, { width, height: height ?? Math.round(width * 1.28) }, style, pressStyle]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${venue.name}, see more`}
+        style={styles.fill}
+        onPressIn={() => {
+          pressed.value = withSpring(0.97, spring.snappy);
+        }}
+        onPressOut={() => {
+          pressed.value = withSpring(1, spring.gentle);
+        }}
+        onPress={() => {
+          if (isSwiping?.()) return;
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress();
+        }}
+      />
       <VenueImage
         uri={venue.imageUrl}
         category={venue.category}
@@ -83,7 +99,7 @@ export function PlaceShowcaseCard({
         </View>
       </View>
 
-      <View style={styles.footer}>
+      <View style={styles.footer} pointerEvents="none">
         <Text variant="caption" color="rgba(255,255,255,0.82)" style={[styles.footerText, styles.eyebrow]}>
           {formatCategory(venue.category)}
         </Text>
@@ -112,17 +128,12 @@ export function PlaceShowcaseCard({
           <Text variant="heading3" color={colors.text.inverse} style={styles.ctaLabel}>
             See more
           </Text>
-          <CircleButton
-            icon="arrow-forward"
-            accessibilityLabel={`See more about ${venue.name}`}
-            tone="light"
-            size={CTA_DISC}
-            iconSize={20}
-            style={styles.ctaDisc}
-          />
+          <View style={[styles.ctaDisc, styles.ctaDiscFace]} aria-hidden>
+            <Ionicons name="arrow-forward" size={20} color={colors.action} />
+          </View>
         </View>
       </View>
-    </PressableScale>
+    </Animated.View>
   );
 }
 
@@ -299,6 +310,14 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     letterSpacing: 0,
     textAlign: 'center',
+  },
+  ctaDiscFace: {
+    width: CTA_DISC,
+    height: CTA_DISC,
+    borderRadius: CTA_DISC / 2,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   ctaDisc: {
     position: 'absolute',

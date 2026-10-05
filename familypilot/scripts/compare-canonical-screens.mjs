@@ -13,9 +13,19 @@
  *    excluded from the numbers.
  *  - Nothing here spends money: the app is served by scripts/serve-places-fixture.mjs.
  *
- * Usage: node scripts/serve-places-fixture.mjs 4173 &
- *        node scripts/compare-canonical-screens.mjs [baseUrl] [outDir] [widths]
+ * Each board has four panels: A the approved Figma frame, B the running app, C a 50% overlay of the two,
+ * D the difference. Mean pixel error is printed because it is cheap, not because it is the verdict: the
+ * boards are for looking at.
+ *
+ * ZERO SPEND. Every request the page makes is recorded and anything addressed to a paid or live provider
+ * (Google, Overpass, OpenStreetMap tiles) is aborted; the run fails if one was attempted. The app is served
+ * by scripts/serve-places-fixture.mjs, which answers everything itself.
+ *
+ * Usage: node scripts/serve-places-fixture.mjs 4173 &                      # sparse, locked composition
+ *        FIXTURE_SCENARIO=realistic node scripts/serve-places-fixture.mjs 4175 &
+ *        node scripts/compare-canonical-screens.mjs [baseUrl] [outDir] [widths] [label]
  *   widths = comma list of CSS widths to also capture app-only (default 360,393,430)
+ *   label  = suffix for the files, to keep the sparse and realistic scenarios apart
  */
 import { chromium } from 'playwright';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -30,6 +40,10 @@ const launchOptions = {
 const BASE = process.argv[2] ?? 'http://127.0.0.1:4173';
 const OUT = resolve(process.argv[3] ?? join(process.cwd(), '..', 'docs', 'figma-compare'));
 const WIDTHS = (process.argv[4] ?? '360,393,430').split(',').map(Number);
+const LABEL = process.argv[5] ? `-${process.argv[5]}` : '';
+// Hosts that bill or that the project does not call from a test: reaching one is a failure.
+const LIVE_PROVIDER = /(^|\.)(googleapis|googleusercontent|google|gstatic|ggpht|overpass-api|overpass\.kumi|openstreetmap|tile\.osm|tfl\.gov)\.[a-z.]+$|overpass/i;
+const blocked = [];
 const FIGMA_DIR = resolve(process.cwd(), '..', 'docs', 'figma-approved');
 const SCALE = 852 / 393;
 const IPHONE_INSETS = { top: 59, bottom: 34 };
@@ -79,6 +93,14 @@ async function shoot(screen, width, dsf) {
     deviceScaleFactor: dsf,
   });
   const page = await context.newPage();
+  await context.route('**/*', (route) => {
+    const url = new URL(route.request().url());
+    if (LIVE_PROVIDER.test(url.hostname)) {
+      blocked.push(`${route.request().method()} ${url.hostname}${url.pathname}`);
+      return route.abort();
+    }
+    return route.continue();
+  });
   await page.clock.setFixedTime(new Date('2026-01-15T19:30:00'));
   await page.addInitScript(
     ([seed]) => window.localStorage.setItem('familypilot-family-v1', JSON.stringify(seed)),
@@ -102,13 +124,13 @@ async function shoot(screen, width, dsf) {
 const report = [];
 for (const screen of SCREENS) {
   const appPng = await shoot(screen, 393, SCALE);
-  const appPath = join(OUT, `${screen.key}-app-393.png`);
+  const appPath = join(OUT, `${screen.key}${LABEL}-app-393.png`);
   writeFileSync(appPath, appPng);
   const figmaB64 = readFileSync(join(FIGMA_DIR, screen.figma)).toString('base64');
   const appB64 = appPng.toString('base64');
 
   // Composite + numbers computed in a throwaway page so the script needs no image library.
-  const ctx = await browser.newContext({ viewport: { width: 2600, height: 1900 } });
+  const ctx = await browser.newContext({ viewport: { width: 3500, height: 1900 } });
   const page = await ctx.newPage();
   await page.setContent('<body style="margin:0;background:#888"></body>');
   const stats = await page.evaluate(
@@ -161,14 +183,18 @@ for (const screen of SCREENS) {
       }
       dx.putImageData(di, 0, 0);
       const out = document.createElement('canvas');
-      out.width = w * 3 + 40;
+      out.width = w * 4 + 50;
       out.height = h + 20;
       const ox = out.getContext('2d');
       ox.fillStyle = '#888';
       ox.fillRect(0, 0, out.width, out.height);
-      ox.drawImage(f, 10, 10);
-      ox.drawImage(a, w + 20, 10, w, h);
-      ox.drawImage(diff, w * 2 + 30, 10);
+      ox.drawImage(f, 10, 10); // A: approved Figma
+      ox.drawImage(a, w + 20, 10, w, h); // B: the running app
+      ox.drawImage(f, w * 2 + 30, 10); // C: 50% overlay
+      ox.globalAlpha = 0.5;
+      ox.drawImage(a, w * 2 + 30, 10, w, h);
+      ox.globalAlpha = 1;
+      ox.drawImage(diff, w * 3 + 40, 10); // D: difference
       document.body.appendChild(out);
       return {
         mean: +(sum / n).toFixed(2),
@@ -179,9 +205,9 @@ for (const screen of SCREENS) {
     },
     { figmaB64, appB64, statusBar: STATUS_BAR_PX },
   );
-  await page.setViewportSize({ width: stats.w * 3 + 40, height: stats.h + 20 });
+  await page.setViewportSize({ width: stats.w * 4 + 50, height: stats.h + 20 });
   const comp = await page.screenshot({ type: 'png' });
-  writeFileSync(join(OUT, `${screen.key}-figma-app-diff.png`), comp);
+  writeFileSync(join(OUT, `${screen.key}${LABEL}-board.png`), comp);
   await ctx.close();
   report.push({ screen: screen.key, ...stats });
   console.log(`${screen.key.padEnd(8)} mean ${stats.mean}  >24: ${stats.pctOver24}%`);
@@ -191,8 +217,14 @@ for (const screen of SCREENS) {
 for (const screen of SCREENS) {
   for (const w of WIDTHS) {
     const png = await shoot(screen, w, 2);
-    writeFileSync(join(OUT, `${screen.key}-app-${w}.png`), png);
+    writeFileSync(join(OUT, `${screen.key}${LABEL}-app-${w}.png`), png);
   }
 }
-writeFileSync(join(OUT, 'report.json'), JSON.stringify(report, null, 2));
+writeFileSync(join(OUT, `report${LABEL}.json`), JSON.stringify(report, null, 2));
 await browser.close();
+if (blocked.length) {
+  console.error(`ZERO-SPEND VIOLATION: ${blocked.length} request(s) addressed to a live provider were attempted and aborted:`);
+  for (const b of [...new Set(blocked)].slice(0, 10)) console.error(`  ${b}`);
+  process.exit(1);
+}
+console.log('zero-spend: no request to Google, Overpass or any other live provider was attempted');

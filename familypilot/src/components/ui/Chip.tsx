@@ -14,8 +14,8 @@ import { colors, radius } from '@/src/design-system/tokens';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 
 import { Text } from './Text';
+import { MIN_TARGET } from './touch';
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /**
  * From the approved frame "01 — Home" (node "Category pills"): 44pt chips, 20 of padding either
@@ -114,48 +114,62 @@ export function Chip({ label, active = false, onPress, appearance = 'outlined', 
     transform: [{ scale: pressed.value }],
   }));
 
+  // A rail chip can be drawn under 44pt (Explore's frame draws it at 42). The pressable is the 44pt
+  // target and the pill is drawn inside it, so the frame's size and a real target both hold on the web,
+  // where hitSlop is ignored.
+  const drawnHeight = rail ? rail.height : small ? SMALL_CHIP_HEIGHT : CHIP_HEIGHT;
+  const targetHeight = Math.max(MIN_TARGET, drawnHeight);
+
   return (
-    <AnimatedPressable
+    <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
+      // react-native-web does not turn accessibilityState into ARIA, so without this the selected chip is
+      // told by colour alone on the web. Native reads accessibilityState above.
+      {...({ 'aria-pressed': active } as object)}
       accessibilityLabel={label}
       onPress={handlePress}
-      // A rail chip drawn under 44pt (Explore's 42) still has a 44pt target.
-      hitSlop={rail && rail.height < CHIP_HEIGHT ? { top: (CHIP_HEIGHT - rail.height) / 2, bottom: (CHIP_HEIGHT - rail.height) / 2 } : undefined}
       onPressIn={() => {
         pressed.value = withSpring(0.95, spring.snappy);
       }}
       onPressOut={() => {
         pressed.value = withSpring(1, spring.gentle);
       }}
-      style={[
-        styles.chip,
-        (appearance === 'plain' || small || tintFill) && styles.plain,
-        small && styles.small,
-        rail && { height: rail.height, paddingHorizontal: rail.paddingX },
-        animatedStyle,
-        style,
-      ]}
+      // The extra height is taken back out of the layout, so a 40 or 42pt chip occupies 40 or 42pt.
+      style={[styles.target, { height: targetHeight, marginVertical: -(targetHeight - drawnHeight) / 2 }, style]}
     >
-      <Text
-        variant="bodySmall"
-        color={active ? colors.text.inverse : colors.ink}
+      <Animated.View
         style={[
-          styles.label,
-          small && styles.smallLabel,
-          small && active && styles.smallLabelActive,
-          rail && { fontSize: rail.fontSize, lineHeight: rail.lineHeight },
-          rail && active && styles.smallLabelActive,
+          styles.chip,
+          (appearance === 'plain' || small || tintFill) && styles.plain,
+          small && styles.small,
+          rail && { height: rail.height, paddingHorizontal: rail.paddingX },
+          animatedStyle,
         ]}
-        numberOfLines={1}
       >
-        {label}
-      </Text>
-    </AnimatedPressable>
+        <Text
+          variant="bodySmall"
+          color={active ? colors.text.inverse : colors.ink}
+          style={[
+            styles.label,
+            small && styles.smallLabel,
+            small && active && styles.smallLabelActive,
+            rail && { fontSize: rail.fontSize, lineHeight: rail.lineHeight },
+            rail && active && styles.smallLabelActive,
+          ]}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+      </Animated.View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  target: {
+    justifyContent: 'center',
+  },
   chip: {
     height: CHIP_HEIGHT,
     paddingHorizontal: CHIP_PADDING_X,

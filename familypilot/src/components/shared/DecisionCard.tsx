@@ -104,8 +104,9 @@ function DecisionCardComponent({
             size="compact"
             disc="mint"
             label={ctaLabel}
-            accessibilityLabel={`${ctaLabel}: ${venue.name}`}
             onPress={handleViewDetails}
+            // The card is the button; its CTA is the visible cue for it, not a second button inside it.
+            decorative
             style={styles.compactCta}
           />
         </View>

@@ -82,7 +82,7 @@ const report = await page.evaluate(() => {
   // The card is a preview, so it must NOT carry a photographer's name; Home carries the Google
   // mark instead. Both halves of that are checked, because either one alone is non-compliant.
   const creditOnCard = [...(card?.querySelectorAll('div') ?? [])].find(
-    (el) => el.children.length === 0 && (el.textContent ?? '').includes('· Google'),
+    (el) => el.children.length === 0 && /Photo: /.test(el.textContent ?? ''),
   );
   // React Native's Image renders on web as a div with a background image, not an <img>, so the
   // asset form is detected by that rather than by tag name.

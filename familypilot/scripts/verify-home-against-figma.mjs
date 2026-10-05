@@ -152,11 +152,15 @@ for (const run of RUNS) {
     };
 
     const activeCard = document.querySelector('[role="button"][aria-label$=", see more"]');
-    const deck = activeCard?.parentElement?.parentElement ?? null;
+    // The card is the button's parent (the button is an empty overlay beside the save heart); its layer wrapper
+    // and then the deck sit above it.
+    const deck = activeCard?.parentElement?.parentElement?.parentElement ?? null;
     const greeting = startsWith('Good ');
-    const search = [...document.querySelectorAll('input')].find((el) =>
-      (el.value || el.placeholder || '').startsWith('Search'),
-    );
+    // Home's search is a button that shows its hint as text (it used to hold a read-only input), so the
+    // hint is found as an input or as a text leaf.
+    const search =
+      [...document.querySelectorAll('input')].find((el) => (el.value || el.placeholder || '').startsWith('Search')) ??
+      [...document.querySelectorAll('div')].find((el) => el.children.length === 0 && /^Search places/.test(el.textContent ?? ''));
     const filter = document.querySelector('[role="button"][aria-label="Filters"]');
     const tabs = [...document.querySelectorAll('[role="tab"]')];
     const pill = tabs[0]?.parentElement ?? null;
@@ -178,7 +182,7 @@ for (const run of RUNS) {
       search: search
         ? {
             ...box(search),
-            text: search.value || search.placeholder,
+            text: search.value || search.placeholder || search.textContent,
             natural: +naturalWidth(search).toFixed(2),
             field: box(search.closest('[role="button"]') ?? search.parentElement?.parentElement),
           }
@@ -216,11 +220,11 @@ for (const run of RUNS) {
     `"${m.search.text}" ${m.search.natural} in ${m.search.width}`);
 
   // --- Bottom navigation (frame node 9:2) ------------------------------------------------------
-  // Approved frames 229:133 / 294:133: 300 x 60 centred on a 393 artboard (Home draws 290, Explore 310;
-  // one width is used), five 56x46 tabs at stride 58, 22px icons, a 46pt active disc.
+  // Approved Home frame 229:133 (node 267:165): 289.7 x 60 centred on a 393 artboard, five 55pt tab cells, a 46pt
+  // active disc. (Explore draws its own, larger pill; see floating-tab-bar-layout.)
   const tabCount = m.tabs.length;
-  const expectedPillWidth = 6 * 2 + tabCount * 56 + (tabCount - 1) * 2;
-  check(run.name, 'pill matches the frame size', near(m.pill.width, expectedPillWidth) && near(m.pill.height, 60),
+  const expectedPillWidth = 7.35 * 2 + tabCount * 55;
+  check(run.name, 'pill matches the frame size', near(m.pill.width, expectedPillWidth, 1) && near(m.pill.height, 60, 1),
     `${m.pill.width}x${m.pill.height}, expected ${expectedPillWidth}x60 for ${tabCount} tabs`);
   check(run.name, 'pill is centred', near((m.pill.left + m.pill.right) / 2, run.width / 2),
     `centre ${((m.pill.left + m.pill.right) / 2).toFixed(1)} of ${run.width}`);
