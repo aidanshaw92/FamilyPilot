@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 // React Navigation is not a direct dependency here; expo-router vendors the tabs navigator and
 // re-exports its types, so this is the supported path to the tab-bar prop shape.
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
@@ -9,6 +8,7 @@ import { useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius } from '@/src/design-system/tokens';
+import { NavGlyph, type NavTab } from '@/src/components/ui/icons';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { floatingTabBarLayout, navVariantForRoute } from '@/src/utils/floating-tab-bar-layout';
 
@@ -97,11 +97,13 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
             >
               <Animated.View style={[styles.tab, tabStyle]}>
                 {focused ? <Animated.View style={[styles.indicator, indicatorStyle]} /> : null}
-                {options.tabBarIcon?.({
-                  focused,
-                  color: focused ? colors.action : INACTIVE_ICON,
-                  size: layout.icon,
-                })}
+                <NavGlyph
+                  tab={route.name as NavTab}
+                  variant={variant}
+                  color={focused ? colors.action : INACTIVE_ICON}
+                  focused={focused}
+                  fill={colors.surface}
+                />
               </Animated.View>
             </Pressable>
           );

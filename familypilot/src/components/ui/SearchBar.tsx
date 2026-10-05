@@ -1,10 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View, ViewStyle } from 'react-native';
 
 import { colors, fontFamily, radius, spacing } from '@/src/design-system/tokens';
 
 import { CircleButton } from './CircleButton';
+import { SearchGlyph } from './icons';
 import { Text } from './Text';
 
 interface SearchBarProps {
@@ -72,7 +72,7 @@ export function SearchBar({
           focused && styles.fieldFocused,
         ]}
       >
-        <Ionicons name="search" size={SEARCH_ICON} color={PLACEHOLDER_INK} />
+        <SearchGlyph size={SEARCH_ICON} color={PLACEHOLDER_INK} />
         {readOnly ? (
           // A button that LOOKS like a field shows its hint as text. It used to draw a read-only text
           // input inside the button, which is a focusable control nested in another and had no name.
@@ -118,11 +118,10 @@ export function SearchBar({
           It sits over the field rather than within it so its press area stays its own. */}
       {onFilterPress ? (
         <CircleButton
-          icon="options-outline"
+          icon="sliders"
           accessibilityLabel="Filters"
           tone="dark"
           size={FILTER_SIZE}
-          iconSize={20}
           onPress={onFilterPress}
           style={styles.filter}
         />

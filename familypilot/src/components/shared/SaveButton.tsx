@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
@@ -9,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { colors } from '@/src/design-system/tokens';
+import { HeartGlyph } from '@/src/components/ui/icons';
 import { spring } from '@/src/design-system/animations/presets';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { useSavedStore } from '@/src/stores/saved-store';
@@ -23,6 +23,9 @@ interface SaveButtonProps {
   /** Set when the button sits on something draggable, so a swipe does not land as a tap. */
   isSwiping?: () => boolean;
 }
+
+/** `size` is the touch glyph's nominal box; the frame's heart (node 267:157) fills this much of it. */
+const HEART_WIDTH_RATIO = 0.78;
 
 export function SaveButton({
   venueId,
@@ -71,11 +74,7 @@ export function SaveButton({
       style={styles.hitArea}
     >
       <Animated.View style={animatedStyle}>
-        <Ionicons
-          name={saved ? 'heart' : 'heart-outline'}
-          size={size}
-          color={saved ? filledColor : color}
-        />
+        <HeartGlyph size={Math.round(size * HEART_WIDTH_RATIO)} color={saved ? filledColor : color} filled={saved} />
       </Animated.View>
     </Pressable>
   );

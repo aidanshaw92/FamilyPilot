@@ -1,9 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
 
 import { BenefitIcon, BenefitIconKind } from './BenefitIcon';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/src/components/ui';
+import { ChevronGlyph } from '@/src/components/ui/icons';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 
 interface BenefitCardProps {
@@ -20,6 +20,9 @@ interface BenefitCardProps {
  * promise 11 starting 18.5 past the well, and a chevron at the right. Each one states
  * something the product does today; nothing behind a pilot flag is promised here.
  */
+/** The frame's chevron (node 172:238): 12.6px wide at 2.168 = 5.8pt, a thin open chevron. */
+const CHEVRON_WIDTH = 5.8;
+
 export function BenefitCard({ icon, title, subtitle, onPress }: BenefitCardProps) {
   return (
     <Pressable
@@ -38,7 +41,9 @@ export function BenefitCard({ icon, title, subtitle, onPress }: BenefitCardProps
           {subtitle}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={16} color={colors.text.tertiary} style={styles.chevron} />
+      <View style={styles.chevron}>
+        <ChevronGlyph size={CHEVRON_WIDTH} color={colors.text.tertiary} />
+      </View>
     </Pressable>
   );
 }

@@ -96,7 +96,9 @@ function DecisionCardComponent({
               {reason}
             </Text>
           ) : null}
-          <Text variant="caption" color={colors.text.secondary} numberOfLines={1} style={styles.compactMeta}>
+          {/* Two lines, not one: the spend ("£8 to £15 for a family of four") is dynamic and long, and one line
+              cut it to "£8 to £1…", which reads as a different price. The frame's own meta is the first line. */}
+          <Text variant="caption" color={colors.text.secondary} numberOfLines={2} style={styles.compactMeta}>
             {venue.category.replace('_', ' ')} · {travelTimeLabel(venue.driveMinutes, 'estimated')}
             {venue.estimatedSpend ? ` · ${venue.estimatedSpend}` : ''}
           </Text>

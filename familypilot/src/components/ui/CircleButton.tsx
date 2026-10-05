@@ -4,10 +4,13 @@ import { Pressable, StyleSheet, ViewStyle } from 'react-native';
 
 import { colors, radius, shadows } from '@/src/design-system/tokens';
 
+import { SlidersGlyph } from './icons';
+
 export type CircleButtonTone = 'light' | 'dark' | 'glass';
 
 interface CircleButtonProps {
-  icon: keyof typeof Ionicons.glyphMap;
+  /** An icon-font glyph, or `sliders`: the approved Home frame's own filter glyph (node 231:136). */
+  icon: keyof typeof Ionicons.glyphMap | 'sliders';
   onPress?: () => void;
   accessibilityLabel: string;
   /** light = white on photography, dark = the deep-green primary control, glass = translucent. */
@@ -71,11 +74,15 @@ export function CircleButton({
         style,
       ]}
     >
-      <Ionicons
-        name={icon}
-        size={iconSize ?? Math.round(size * 0.45)}
-        color={iconColor ?? TONE_ICON[tone]}
-      />
+      {icon === 'sliders' ? (
+        <SlidersGlyph size={size} color={iconColor ?? TONE_ICON[tone]} disc={TONE_BACKGROUND[tone]} />
+      ) : (
+        <Ionicons
+          name={icon}
+          size={iconSize ?? Math.round(size * 0.45)}
+          color={iconColor ?? TONE_ICON[tone]}
+        />
+      )}
     </Pressable>
   );
 }

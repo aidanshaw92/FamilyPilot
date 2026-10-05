@@ -22,6 +22,58 @@ export const WELCOME_PX = 393 / WELCOME_FRAME_WIDTH;
 /** The collage, brand mark, headline and subtitle end here; the first benefit card starts below (frame y 1238). */
 export const WELCOME_STAGE_END_PX = 1236;
 
+/**
+ * The running type, as the frame sets it (frame 166:128): the headline is Bold 30.3 on a 35.3 line, two
+ * lines in a 272pt measure; the subtitle 14.8 on a 20.7 line, two lines in at most 260pt. The type does
+ * not scale with the phone, so what moves is the collage beneath it, by whole lines (below).
+ */
+export const WELCOME_HEADLINE = {
+  fontSize: 30.3,
+  lineHeight: 35.3,
+  maxWidth: 272,
+  frameLines: 2,
+  /** Frame px from the left / top of the frame. */
+  leftPx: 52,
+  topPx: 276,
+} as const;
+export const WELCOME_SUBTITLE = {
+  fontSize: 14.8,
+  lineHeight: 20.7,
+  maxWidth: 260,
+  frameLines: 2,
+  leftPx: 55,
+  topPx: 443,
+} as const;
+/** The lockup: mark 79.5px, wordmark Bold 63.6px = 29.3pt on a 36pt line, 60px in and 160px down. */
+export const WELCOME_BRAND = { markPx: 79.5, fontSize: 29.3, lineHeight: 36, leftPx: 60, topPx: 160 } as const;
+
+/** Left edge (frame px) of the ice-cream sticker, which the subtitle must wrap before, and the air kept. */
+export const WELCOME_ICE_CREAM_LEFT_PX = 628;
+export const WELCOME_SUBTITLE_STICKER_GAP = 6;
+/** Width the first headline line ("The everyday app", Bold 30.3) takes, measured in Chromium, and the air kept. */
+const HEADLINE_FIRST_LINE_WIDTH = 264;
+const GIRAFFE_GAP = 4;
+/** The giraffe starts no earlier than the end of the headline's first line (it bleeds off the right edge). */
+export const WELCOME_GIRAFFE_MIN_LEFT = WELCOME_HEADLINE.leftPx * WELCOME_PX + HEADLINE_FIRST_LINE_WIDTH + GIRAFFE_GAP;
+
+/** Width the subtitle wraps in at a given stage scale: before the ice-cream sticker, never past its own cap. */
+export function welcomeSubtitleWidth(scale: number): number {
+  return Math.min(
+    WELCOME_SUBTITLE.maxWidth,
+    WELCOME_ICE_CREAM_LEFT_PX * scale - WELCOME_SUBTITLE.leftPx * WELCOME_PX - WELCOME_SUBTITLE_STICKER_GAP,
+  );
+}
+
+/**
+ * How far the subtitle and the collage move down when the type takes more lines than the frame's two,
+ * in points. A longer line is room the text needs, so the collage gives it rather than the text shrinking.
+ */
+export function welcomeLineShift(headlineLines: number, subtitleLines: number) {
+  const headline = Math.max(0, headlineLines - WELCOME_HEADLINE.frameLines) * WELCOME_HEADLINE.lineHeight;
+  const subtitle = Math.max(0, subtitleLines - WELCOME_SUBTITLE.frameLines) * WELCOME_SUBTITLE.lineHeight;
+  return { headline, subtitle, collage: headline + subtitle };
+}
+
 export interface WelcomeSlot {
   id: string;
   /** The editorial subject the slot is reserved for, so a photograph is sourced for it later. */

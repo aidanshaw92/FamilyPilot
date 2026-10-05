@@ -4,6 +4,7 @@ import { Pressable, PressableProps, StyleSheet, ViewStyle } from 'react-native';
 
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 
+import { ArrowGlyph } from './icons';
 import { Text } from './Text';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline';
@@ -67,7 +68,12 @@ export function Button({
       <Text variant="heading3" color={v.text} style={styles.label}>
         {label}
       </Text>
-      {trailingIcon ? <Ionicons name={trailingIcon} size={20} color={v.text} /> : null}
+      {trailingIcon === 'arrow-forward' ? (
+        // Welcome's CTA arrow is the frame's own vector (node 172:241), not the icon font's.
+        <ArrowGlyph size={14} color={v.text} />
+      ) : trailingIcon ? (
+        <Ionicons name={trailingIcon} size={20} color={v.text} />
+      ) : null}
     </Pressable>
   );
 }

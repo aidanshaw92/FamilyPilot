@@ -92,7 +92,7 @@ export function VenueImage({uri,category,alt,style,borderRadius=radius.md,showCr
    {pending?<Skeleton height={120} borderRadius={borderRadius} style={StyleSheet.absoluteFill}/>:null}
    <Image source={{uri}} style={styles.image} contentFit="cover" transition={200} loading={loading} accessibilityLabel={alt} onLoad={()=>setPending(false)} onError={()=>{setFailed(true);setPending(false);}}/>
   </>}
-  {credit ? <View style={styles.credit} pointerEvents="none"><Text variant="caption" color="#FFFFFF" numberOfLines={1} style={styles.creditText}>Photo: {credit}</Text></View> : null}
+  {credit ? <View style={styles.credit} pointerEvents="none"><Text variant="caption" color="#FFFFFF" numberOfLines={3} style={styles.creditText}>Photo: {credit}</Text></View> : null}
  </View>;
 }
 const styles=StyleSheet.create({
@@ -100,7 +100,10 @@ const styles=StyleSheet.create({
   // The photographer Google requires us to name, set as a small chip inset from the corner rather than
   // a full-width strip. The provider's own mark is shown once under the list (PlaceCredits), so the
   // chip carries only what belongs to the photograph.
-  credit:{position:'absolute',left:6,bottom:6,maxWidth:'88%',paddingHorizontal:7,paddingVertical:2,borderRadius:radius.full,backgroundColor:'rgba(13,23,51,0.58)'},
+  credit:{position:'absolute',left:6,bottom:6,maxWidth:'88%',paddingHorizontal:7,paddingVertical:2,borderRadius:11,backgroundColor:'rgba(13,23,51,0.58)'},
+  // Up to three lines, so a long two-part name ("Photo:" / "Christopher" / "Montgomery") is shown whole at the
+  // narrowest thumbnail rather than cut. A single word wider than the chip would still be ellipsised; the venue
+  // screen names the photographer in full, which is where the provider's terms are met.
   creditText:{fontSize:10,lineHeight:13,fontFamily:'Inter_500Medium'},
   image:{width:'100%',height:'100%'},
   empty:{flex:1,alignItems:'center',justifyContent:'center',minHeight:100},

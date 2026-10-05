@@ -94,6 +94,27 @@ The floating nav is one component with two approved variants, because the two fr
 The pill takes the focused tab's variant and eases between them (instantly under reduced motion). A screen
 clears either with `useTabBarClearance()`. Tabs are `role=tab` with `aria-selected` and `aria-current`.
 
+## Icons
+
+The frames draw their icons as their own thin, round-capped vector outlines, which a stock icon font does not
+match (a pointed star, a flat-topped house, a compass with a needle, a two-bar filter). They are recreated as
+local SVG in `src/components/ui/icons.tsx` from the frames' own path data (no icon library added, about 4 KB):
+
+| Glyph | Frame node(s) | Used by |
+| --- | --- | --- |
+| Nav icons, both variants (home, compass, plans, saved, profile) | Home 267:166-174; Explore 298:136-159 | `FloatingTabBar` via `NavGlyph` |
+| Search ring and handle | Home 231:134/135, Explore 297:136/137 | `SearchBar` |
+| Filter sliders | Home 231:136 | `CircleButton icon="sliders"` (Home filter disc) |
+| Save heart (outline / filled) | Home 267:157 | `SaveButton` |
+| CTA arrow | Home 267:155, Explore 297:162/163, Welcome 172:241 | `ArrowCta`, Welcome `Button` |
+| Family Fit star | Home 267:149, Explore 297:154 | `FamilyMatch` |
+| Benefit chevron | Welcome 172:238 | `BenefitCard` |
+
+Every glyph is decoration (`aria-hidden`, ignores the pointer); the control that holds it carries the accessible
+name. Icon-font glyphs stay where they read the same as the frame or where the frame draws none: back, share,
+info, and the category placeholder glyphs inside a photo-less thumbnail. The Welcome and Home benefit/illustration
+art was already the frames' own vectors.
+
 ## Brand mark
 
 The FamilyPilot mark is direction E3, approved 2026-10-04: a leader on its point and two followers

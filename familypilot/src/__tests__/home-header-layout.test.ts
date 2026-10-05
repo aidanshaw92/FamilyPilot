@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  ART_FRAME_WIDTH,
   AVATAR_SIZE,
+  avatarStrokesLeft,
   estimateLineCount,
   estimateTextWidth,
   FIT_MARGIN,
   GREETING_FONT_SIZE,
   GREETING_LETTER_SPACING,
   GREETING_MIN_FONT_SIZE,
+  greetingTextLimit,
   HEADER_GAP,
-  HEADER_MIN_GAP,
   homeGutter,
   homeHeaderLayout,
   NARROW_SCREEN_PADDING,
@@ -18,28 +20,35 @@ import {
   SEARCH_PLACEHOLDERS,
   searchPlaceholder,
   searchTextWidth,
+  STROKE_CLEARANCE,
 } from '@/src/utils/home-header-layout';
 
 const GREETING = 'Good afternoon, Aidan';
+/** The greetings the closeout names, plus a deliberately long (but real) first name. */
+const GREETINGS = [
+  'Good morning, Jo',
+  'Good afternoon, Aidan',
+  'Good evening, Alexandra',
+  'Good afternoon, Christopher',
+  'Good afternoon, Maximilian-James',
+];
+const WIDTHS = [360, 393, 430];
 
 function greetingWidth(text: string, fontSize: number) {
-  return estimateTextWidth(text, fontSize, 'extraBold', GREETING_LETTER_SPACING);
-}
-
-/** Header space left for the greeting once the gutters, avatar and gap are taken out. */
-function greetingSpace(viewportWidth: number, gap: number) {
-  return viewportWidth - homeGutter(viewportWidth) * 2 - AVATAR_SIZE - gap;
+  return estimateTextWidth(text, fontSize, 'bold', GREETING_LETTER_SPACING);
 }
 
 describe('home header layout', () => {
-  it('leaves the approved 393pt composition untouched', () => {
-    const layout = homeHeaderLayout(393, GREETING);
-    expect(layout).toEqual({
-      gap: HEADER_GAP,
-      fontSize: GREETING_FONT_SIZE,
-      lineHeight: 30,
-      maxLines: 1,
-    });
+  it('leaves the approved 393pt composition untouched for a normal name', () => {
+    for (const greeting of ['Good morning, Jo', GREETING]) {
+      const layout = homeHeaderLayout(393, greeting);
+      expect(layout.fontSize).toBe(GREETING_FONT_SIZE);
+      expect(layout.lineHeight).toBe(30);
+      expect(layout.gap).toBe(HEADER_GAP);
+      expect(layout.lines).toBe(1);
+      // The avatar sits where it did when it was centred on the greeting and its subtitle.
+      expect(layout.avatarOffset).toBe(2.5);
+    }
     expect(searchPlaceholder(393)).toBe(SEARCH_PLACEHOLDERS[0]);
   });
 
@@ -58,48 +67,76 @@ describe('home header layout', () => {
     }
   });
 
-  it('fits the whole greeting, name included, at 360pt', () => {
-    const layout = homeHeaderLayout(360, GREETING);
-    expect(layout.maxLines).toBe(1);
-    expect(greetingWidth(GREETING, layout.fontSize) + FIT_MARGIN).toBeLessThanOrEqual(
-      greetingSpace(360, layout.gap),
-    );
+  describe('against the avatar strokes baked into the frame art', () => {
+    it('puts the strokes where the frame does, scaled with the window', () => {
+      // Frame 229:133: the first stroke starts at x=647 of 852 (a 4.5px round cap beyond it).
+      expect(avatarStrokesLeft(852)).toBeCloseTo(642.5, 5);
+      expect(avatarStrokesLeft(393)).toBeCloseTo((642.5 * 393) / ART_FRAME_WIDTH, 5);
+      expect(avatarStrokesLeft(393)).toBeGreaterThan(296);
+      expect(avatarStrokesLeft(393)).toBeLessThan(297);
+    });
+
+    it('limits the greeting to the room before the strokes, not before the avatar', () => {
+      for (const width of WIDTHS) {
+        const gutter = homeGutter(width);
+        const beforeAvatar = width - gutter * 2 - AVATAR_SIZE - HEADER_GAP;
+        expect(greetingTextLimit(width)).toBeLessThan(beforeAvatar);
+        expect(gutter + greetingTextLimit(width) + STROKE_CLEARANCE).toBeCloseTo(avatarStrokesLeft(width), 5);
+      }
+    });
+
+    it('never lets a one-line greeting reach the strokes, at any width, for any of the named greetings', () => {
+      for (const width of WIDTHS) {
+        for (const greeting of GREETINGS) {
+          const layout = homeHeaderLayout(width, greeting);
+          if (layout.lines === 1) {
+            expect(greetingWidth(greeting, layout.fontSize)).toBeLessThanOrEqual(layout.textLimit);
+            expect(homeGutter(width) + greetingWidth(greeting, layout.fontSize) + STROKE_CLEARANCE).toBeLessThanOrEqual(
+              avatarStrokesLeft(width) + 1e-9,
+            );
+          }
+        }
+      }
+    });
+
+    it('wraps a long name at the approved size instead of shrinking it or running it behind the strokes', () => {
+      for (const width of WIDTHS) {
+        const layout = homeHeaderLayout(width, 'Good afternoon, Maximilian-James');
+        expect(layout.lines).toBe(2);
+        expect(layout.fontSize).toBe(GREETING_FONT_SIZE);
+      }
+    });
+
+    it('keeps the approved single line for Jo and Aidan at 393 and 430', () => {
+      for (const width of [393, 430]) {
+        expect(homeHeaderLayout(width, 'Good morning, Jo').lines).toBe(1);
+        expect(homeHeaderLayout(width, GREETING).lines).toBe(1);
+        expect(homeHeaderLayout(width, GREETING).fontSize).toBe(GREETING_FONT_SIZE);
+      }
+    });
   });
 
   it('steps the heading down at most slightly, and only when it has to', () => {
     const layout = homeHeaderLayout(360, GREETING);
     expect(layout.fontSize).toBeGreaterThanOrEqual(GREETING_FONT_SIZE - 2);
-    // A smaller size is only justified if even the tightest gap could not hold the larger one.
     if (layout.fontSize < GREETING_FONT_SIZE) {
-      expect(greetingWidth(GREETING, layout.fontSize + 1) + FIT_MARGIN).toBeGreaterThan(
-        greetingSpace(360, HEADER_MIN_GAP),
-      );
+      // The next size up would not have fitted before the strokes.
+      expect(greetingWidth(GREETING, layout.fontSize + 1)).toBeGreaterThan(layout.textLimit);
     }
   });
 
-  it('tightens the avatar gap only where that buys a larger heading', () => {
-    // 26pt needs every pixel, so the gap closes; at a size the approved gap can hold, it stays.
-    const tight = homeHeaderLayout(360, 'Good morning, Madeleine');
-    const roomy = homeHeaderLayout(360, 'Good morning, Al');
-    expect(roomy.gap).toBe(HEADER_GAP);
-    expect(tight.gap === HEADER_GAP || tight.gap === HEADER_MIN_GAP).toBe(true);
-    if (tight.gap === HEADER_MIN_GAP) {
-      expect(greetingWidth('Good morning, Madeleine', tight.fontSize) + FIT_MARGIN).toBeGreaterThan(
-        greetingSpace(360, HEADER_GAP),
-      );
+  it('never shrinks the heading past the floor', () => {
+    for (const greeting of GREETINGS) {
+      for (const width of [320, ...WIDTHS]) {
+        expect(homeHeaderLayout(width, greeting).fontSize).toBeGreaterThanOrEqual(GREETING_MIN_FONT_SIZE);
+      }
     }
-  });
-
-  it('never shrinks the heading past the floor, wrapping a very long name instead', () => {
-    const layout = homeHeaderLayout(320, 'Good afternoon, Bartholomew');
-    expect(layout.fontSize).toBe(GREETING_MIN_FONT_SIZE);
-    expect(layout.maxLines).toBe(2);
   });
 
   it('keeps a short name at the approved size on a narrow phone', () => {
     const layout = homeHeaderLayout(360, 'Good morning, Al');
     expect(layout.fontSize).toBe(GREETING_FONT_SIZE);
-    expect(layout.maxLines).toBe(1);
+    expect(layout.lines).toBe(1);
   });
 
   it('shortens the placeholder rather than cutting it mid-word at 360pt', () => {
@@ -120,13 +157,19 @@ describe('home header layout', () => {
   });
 
   it('estimates a shade wide of what the browser actually renders', () => {
-    // Measured in Chromium against the real Inter faces on the web export, at the frame's own
-    // type: the greeting at 25.5pt Semi Bold with -0.6375 tracking comes out at 264.67px, and the
-    // placeholder at 15.5pt Regular at 204.78px. The estimate must sit just above each, never
-    // below, or text will overflow.
-    const greeting = greetingWidth(GREETING, GREETING_FONT_SIZE);
-    expect(greeting).toBeGreaterThanOrEqual(264.67);
-    expect(greeting).toBeLessThan(264.67 * 1.04);
+    // Measured in Chromium against the real Inter Bold on the web export (scripts/verify-home-greeting.mjs):
+    // "Good afternoon, Aidan" at the frame's 24.4pt is 255.0px, "Good evening, Alexandra" 284.2, "Good
+    // morning, Jo" 201.1; the placeholder at 15.5pt Regular is 204.78px. The estimate must sit just
+    // above each, never below, or text will overflow.
+    for (const [text, measured] of [
+      [GREETING, 255.0],
+      ['Good evening, Alexandra', 284.2],
+      ['Good morning, Jo', 201.1],
+    ] as const) {
+      const estimate = greetingWidth(text, GREETING_FONT_SIZE);
+      expect(estimate).toBeGreaterThanOrEqual(measured);
+      expect(estimate).toBeLessThan(measured * 1.04);
+    }
 
     const search = estimateTextWidth(SEARCH_PLACEHOLDERS[0], SEARCH_FONT_SIZE);
     expect(search).toBeGreaterThanOrEqual(204.78);

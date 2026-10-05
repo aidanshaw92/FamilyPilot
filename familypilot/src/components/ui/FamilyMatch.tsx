@@ -6,6 +6,7 @@ import { EnrichmentStatus } from '@/src/types';
 import { describeFamilyMatch } from '@/src/utils/family-match-scale';
 
 import { Text } from './Text';
+import { StarGlyph } from './icons';
 import { minTarget } from './touch';
 
 /**
@@ -72,7 +73,7 @@ export function FamilyMatch({
       accessibilityLabel={match.spoken}
     >
       {match.number !== null ? (
-        <Ionicons name="star" size={frameSize === 'explore' ? 13 : frameSize === 'deck' ? 10.5 : 14} color={ink} />
+        <StarGlyph size={frameSize === 'explore' ? 13 : frameSize === 'deck' ? 10 : 13} color={ink} />
       ) : null}
       <Text
         variant="caption"

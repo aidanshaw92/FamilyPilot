@@ -2,14 +2,15 @@
  * Responsive layout for the Home header and search bar.
  *
  * The approved Figma frame "01 — Home" is drawn on a 393pt artboard, where the greeting and the
- * search placeholder both fit comfortably. Narrower phones (360pt is the common floor) are not in
- * the frame, and at that width the greeting clipped to "Good afternoon, Ai…" and the placeholder
- * cut mid-word.
+ * search placeholder both fit comfortably. Two things limit the greeting on any phone: the avatar, and
+ * the three yellow strokes the frame draws up and to the left of the avatar (they are part of the frame's
+ * artwork, so text that runs past them runs behind them). The greeting is therefore measured against
+ * the room before the strokes, not the room before the avatar.
  *
- * Rather than shrink the heading everywhere — which would change the approved composition on every
- * device — this measures the text against the space actually available and gives back the largest
- * treatment that fits. At or above the reference width the answer is the approved one by
- * construction, so 393pt and wider are untouched.
+ * Within that room it keeps the approved type, steps down by at most two points on a narrow phone, and
+ * if the name is still too long it wraps onto a second line at the approved size rather than being
+ * clipped or shrunk further. A normal greeting at 393 and wider is the approved composition by
+ * construction.
  *
  * Pure maths with no React Native import, so the behaviour can be asserted in tests.
  */
@@ -42,9 +43,8 @@ export const GREETING_FONT_FAMILY = 'Inter_700Bold';
 /** Below this the heading stops reading as the page's primary voice, so we wrap instead. */
 export const GREETING_MIN_FONT_SIZE = 22;
 
-/** spacing.md, and the tightest the avatar may crowd the greeting (spacing.sm). */
+/** spacing.md: the approved gap between the greeting block and the avatar. */
 export const HEADER_GAP = 12;
-export const HEADER_MIN_GAP = 8;
 
 export const AVATAR_SIZE = 46;
 
@@ -110,7 +110,7 @@ const DEFAULT_ADVANCE = 0.55;
  * against the browser's own measurement of the strings this screen actually renders, and rounded
  * up, so the estimate errs towards judging text too wide rather than too narrow.
  */
-const WEIGHT_FACTOR = { regular: 1.025, semiBold: 1.09, extraBold: 1.115 } as const;
+const WEIGHT_FACTOR = { regular: 1.025, semiBold: 1.09, bold: 1.05, extraBold: 1.115 } as const;
 export type TextWeight = keyof typeof WEIGHT_FACTOR;
 
 /**
@@ -135,49 +135,74 @@ export interface HomeHeaderLayout {
   gap: number;
   fontSize: number;
   lineHeight: number;
-  /** Two lines only as a last resort, so an unusually long name is never clipped. */
-  maxLines: 1 | 2;
+  /** The widest the greeting may be: the room before the avatar's strokes. */
+  textLimit: number;
+  /**
+   * Lines the greeting is expected to take, from the estimate (the screen corrects it by measuring). The
+   * greeting is allowed two; a name too long even for two is ellipsised rather than run behind the strokes.
+   */
+  lines: 1 | 2;
+  /** Top of the avatar below the header's top edge, so it keeps the frame's place beside a one-line greeting. */
+  avatarOffset: number;
+}
+
+/** The art's frame width: the Home artwork is drawn from a 852px-wide frame. */
+export const ART_FRAME_WIDTH = 852;
+/**
+ * Left edge of the avatar strokes in that frame (the first stroke, node 268:135, starts at x=647; its
+ * round cap adds half the 9px stroke). The header art is drawn at the window's width, so the strokes sit
+ * at this fraction of it.
+ */
+const AVATAR_STROKES_LEFT_PX = 647 - 4.5;
+/** Air kept between the greeting and the first stroke. */
+export const STROKE_CLEARANCE = 8;
+
+export function avatarStrokesLeft(viewportWidth: number): number {
+  return (AVATAR_STROKES_LEFT_PX * viewportWidth) / ART_FRAME_WIDTH;
+}
+
+/** The room the greeting has: before the avatar and its strokes, whichever comes first. */
+export function greetingTextLimit(viewportWidth: number): number {
+  const gutter = homeGutter(viewportWidth);
+  const beforeAvatar = viewportWidth - gutter * 2 - AVATAR_SIZE - HEADER_GAP;
+  const beforeStrokes = avatarStrokesLeft(viewportWidth) - gutter - STROKE_CLEARANCE;
+  return Math.min(beforeAvatar, beforeStrokes);
+}
+
+/** Height of the subtitle block under the greeting in the frame (4 gap + 17 line). */
+const GREETING_SUB_BLOCK = 4 + 17;
+
+function lineHeightFor(fontSize: number): number {
+  return Math.round(fontSize * GREETING_LINE_RATIO);
 }
 
 /**
- * The greeting treatment for a given viewport. At the reference width and above this always
- * returns the approved values without measuring, so wider phones cannot drift.
+ * The greeting treatment for a given viewport and text. The avatar keeps the place the frame gives it
+ * beside a one-line greeting (centred on the greeting and subtitle) however many lines the greeting takes.
  */
 export function homeHeaderLayout(viewportWidth: number, greeting: string): HomeHeaderLayout {
-  const approved: HomeHeaderLayout = {
-    gap: HEADER_GAP,
-    fontSize: GREETING_FONT_SIZE,
-    lineHeight: Math.round(GREETING_FONT_SIZE * GREETING_LINE_RATIO),
-    maxLines: 1,
-  };
+  const textLimit = greetingTextLimit(viewportWidth);
+  const base = { gap: HEADER_GAP, textLimit };
+  const result = (fontSize: number, lines: 1 | 2): HomeHeaderLayout => ({
+    ...base,
+    fontSize,
+    lineHeight: lineHeightFor(fontSize),
+    lines,
+    avatarOffset: (lineHeightFor(fontSize) + GREETING_SUB_BLOCK - AVATAR_SIZE) / 2,
+  });
 
-  if (viewportWidth >= HEADER_REFERENCE_WIDTH) return approved;
-
-  const row = viewportWidth - homeGutter(viewportWidth) * 2 - AVATAR_SIZE;
-
-  // Closing the gap costs the composition almost nothing, so spend that first at each size and
-  // only step the type down once the tightest gap still will not do.
-  for (let fontSize = GREETING_FONT_SIZE; fontSize >= GREETING_MIN_FONT_SIZE; fontSize -= 1) {
-    const width = estimateTextWidth(greeting, fontSize, 'extraBold', GREETING_LETTER_SPACING);
-    for (const gap of [HEADER_GAP, HEADER_MIN_GAP]) {
-      if (width + FIT_MARGIN <= row - gap) {
-        return {
-          gap,
-          fontSize,
-          lineHeight: Math.round(fontSize * GREETING_LINE_RATIO),
-          maxLines: 1,
-        };
-      }
-    }
+  for (let step = 0; ; step += 1) {
+    const fontSize = Math.max(GREETING_FONT_SIZE - step, GREETING_MIN_FONT_SIZE);
+    const width = estimateTextWidth(greeting, fontSize, 'bold', GREETING_LETTER_SPACING);
+    if (width <= textLimit) return result(fontSize, 1);
+    if (fontSize === GREETING_MIN_FONT_SIZE) break;
   }
 
-  // Nothing fits on one line even at the floor size: wrap rather than truncate the family's name.
-  return {
-    gap: HEADER_MIN_GAP,
-    fontSize: GREETING_MIN_FONT_SIZE,
-    lineHeight: Math.round(GREETING_MIN_FONT_SIZE * GREETING_LINE_RATIO),
-    maxLines: 2,
-  };
+  // One line is not possible even at the floor size: wrap at the approved size rather than clip the
+  // family's name or shrink the heading further. The estimate decides only the first guess; the screen
+  // measures the real height.
+  const lines = estimateLineCount(greeting, GREETING_FONT_SIZE, textLimit, 'bold') > 1 ? 2 : 1;
+  return result(GREETING_FONT_SIZE, lines);
 }
 
 /** Width left for placeholder text inside the search field, after icon, padding and filter disc. */

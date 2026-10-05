@@ -29,7 +29,7 @@ export interface NavVariantMetrics {
   height: number;
   /** The circle behind the active tab. */
   indicator: number;
-  /** Ionicons size that draws the frame's ~18 / ~25pt glyph. */
+  /** Nominal size of the frame's ~18 / ~25pt glyph (NavGlyph draws it in a larger box around the tab centre). */
   icon: number;
   /** Lift of the pill's bottom edge above the bottom safe-area inset. */
   lift: number;

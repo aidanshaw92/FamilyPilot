@@ -46,6 +46,8 @@ const HEADER_ART_END = 605;
  * scale with the width); below it they are beside the plan heading and chips (they follow the fixed-size
  * type, so they are drawn at the reference scale, left-aligned, and never grow). */
 const SEARCH_ART_END = 345;
+/** The avatar's strokes end well above this and the search marks start well below it (frame y 172 / 274). */
+const AVATAR_ART_END = 225;
 
 function getTimeGreeting(): string {
   const hour = new Date().getHours();
@@ -80,6 +82,14 @@ export default function HomeScreen() {
   // fits the greeting and the placeholder whole, rather than a clipped heading.
   const greetingText = `${getTimeGreeting()}, ${firstName}`;
   const header = homeHeaderLayout(width, greetingText);
+  // A long name wraps onto a second line (see homeHeaderLayout). The estimate is the first guess; the
+  // measured height corrects it, so a difference between the estimate and the real text never leaves the
+  // art misplaced for longer than a frame. Everything below the greeting moves down by the extra line, and
+  // so does its art; the avatar and its strokes stay where the frame draws them.
+  const [measuredLines, setMeasuredLines] = useState<number | null>(null);
+  const greetingLines = measuredLines ?? header.lines;
+  const extraHeight = (greetingLines - 1) * header.lineHeight;
+  const artScale = width / HOME_ART.width;
   const gutter = { paddingHorizontal: homeGutter(width) };
 
   const handleRefresh = async () => {
@@ -121,31 +131,41 @@ export default function HomeScreen() {
             and dashes beside the search, the plan heading's strokes, and the blobs and leaves around
             the deck), drawn from its own vectors, anchored to the top edge like the deck they frame,
             and behind everything that is content. */}
-        <ScreenArt art={HOME_ART} from={0} to={SEARCH_ART_END} anchor="top" />
+        <ScreenArt art={HOME_ART} from={0} to={AVATAR_ART_END} anchor="top" />
+        <ScreenArt
+          art={HOME_ART}
+          from={AVATAR_ART_END}
+          to={SEARCH_ART_END}
+          anchor="top"
+          style={{ top: AVATAR_ART_END * artScale + extraHeight }}
+        />
         <ScreenArt
           art={HOME_ART}
           width={Math.min(width, REFERENCE_WIDTH)}
           from={SEARCH_ART_END}
           to={HEADER_ART_END}
           anchor="top"
-          style={{ top: SEARCH_ART_END * (REFERENCE_WIDTH / HOME_ART.width) }}
+          style={{ top: SEARCH_ART_END * (REFERENCE_WIDTH / HOME_ART.width) + extraHeight }}
         />
         <ScreenArt
           art={HOME_ART}
           from={HEADER_ART_END}
           to={1700}
           anchor="top"
-          style={{ top: HEADER_ART_END * (REFERENCE_WIDTH / HOME_ART.width) }}
+          style={{ top: HEADER_ART_END * (REFERENCE_WIDTH / HOME_ART.width) + extraHeight }}
         />
         <View style={gutter}>
           <View style={[styles.header, { gap: header.gap }]}>
             <View style={styles.greeting}>
               <Text
                 variant="heading1"
-                numberOfLines={header.maxLines}
+                numberOfLines={2}
+                onLayout={(e) =>
+                  setMeasuredLines(Math.max(1, Math.round(e.nativeEvent.layout.height / header.lineHeight)))
+                }
                 style={[
                   styles.greetingLine,
-                  { fontSize: header.fontSize, lineHeight: header.lineHeight },
+                  { fontSize: header.fontSize, lineHeight: header.lineHeight, maxWidth: header.textLimit },
                 ]}
               >
                 {greetingText}
@@ -158,7 +178,7 @@ export default function HomeScreen() {
               accessibilityRole="button"
               accessibilityLabel="Your family profile"
               onPress={() => router.push('/(tabs)/profile' as never)}
-              style={styles.avatar}
+              style={[styles.avatar, { marginTop: header.avatarOffset }]}
             >
               <Text variant="heading3" color={colors.text.inverse}>
                 {firstName.charAt(0).toUpperCase()}
@@ -247,7 +267,9 @@ const styles = StyleSheet.create({
   content: {},
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    // The avatar keeps its place beside the first line (and its strokes in the art stay beside it) when
+    // a long name wraps onto a second.
+    alignItems: 'flex-start',
   },
   greeting: {
     flex: 1,

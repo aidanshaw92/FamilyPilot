@@ -194,6 +194,8 @@ const REALISTIC_PLAN = [
   { kind: 'full' }, // 14
 ];
 
+/** A long, real two-part photographer's name: the credit must wrap whole at the narrowest thumbnail. */
+const LONG_CREDIT = 'Christopher Montgomery';
 const LONG_NAME = 'The Royal Borough Of Something Extremely Long Memorial Gardens And Family Activity Centre';
 
 function realisticPlace(place, index) {
@@ -219,6 +221,7 @@ function realisticPlace(place, index) {
     });
   } else if (kind === 'long') {
     out.name = LONG_NAME;
+    out.photos = out.photos.map((u) => u.replace(/credit=[^&]*/, `credit=${encodeURIComponent(LONG_CREDIT)}`));
     out.familyMetadata = scenarioMetadata(id, {
       goodToKnow: [
         'Baby changing is in the east wing, a ten minute walk from the main entrance along the canal path, and the cafe closes an hour before the gardens do',

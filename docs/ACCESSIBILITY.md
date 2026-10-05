@@ -31,6 +31,17 @@ the brand mark was announced next to its own wordmark; the search field had no f
 Design decisions that follow from it: a card is one button and its CTA is a visible cue, not a second button; a
 control with a small drawn size gets a real 44pt pressable around it; selection is never colour alone.
 
-Not covered, because a browser cannot reach them: VoiceOver and TalkBack, and the operating system's larger-text
-setting. Both depend on the semantics checked here (roles, names, states, order) and on reflow, but still deserve
-a manual pass on a device before launch.
+## MANUAL DEVICE QA REQUIRED (not done, not claimed)
+
+The audit above is a browser audit. These three cannot be reached from a browser, have **not** been run, and are
+pre-release items. Nothing in this repository claims they passed.
+
+| Item | What to check | Status |
+| --- | --- | --- |
+| **iOS VoiceOver** | Every control is announced with a name, role and state (tabs "selected", filter chips "pressed", the save heart "Save place" / "Remove from saved"); each venue card is one button, not two; the decorative art, brand mark and Welcome collage are skipped; focus order follows the visual order on Welcome, Home and Explore; the filter sheet traps focus | **MANUAL DEVICE QA REQUIRED** |
+| **Android TalkBack** | The same checks; the floating tab bar reads as a tab list with the current tab selected; 44 dp touch targets are reachable by explore-by-touch | **MANUAL DEVICE QA REQUIRED** |
+| **OS larger text / Dynamic Type** | At the largest accessibility size on iOS and Android font scale 200%: no clipped or overlapping text on Welcome, Home (greeting against the avatar strokes, search placeholder) and Explore (card title, Family Fit pill, CTA); the Home greeting and Welcome headline reflow rather than truncating; nothing becomes unreachable | **MANUAL DEVICE QA REQUIRED** |
+
+They depend on the semantics checked here (roles, names, states, order) and on the reflow logic, which the
+responsive checks cover at 360, 393 and 430 CSS pixels, but a screen reader and the system text scale are
+different environments and still need a person with a device before launch.
