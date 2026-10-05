@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { estimateLineCount } from '@/src/utils/home-header-layout';
 import {
+  WELCOME_COLLAGE_TOP_STAGE_PT,
   WELCOME_FRAME_WIDTH,
   WELCOME_GIRAFFE_MIN_LEFT,
   WELCOME_HEADLINE,
@@ -27,6 +28,17 @@ describe('welcome type layout', () => {
     expect(shift.headline).toBeCloseTo(WELCOME_HEADLINE.lineHeight, 5);
     expect(shift.subtitle).toBeCloseTo(WELCOME_SUBTITLE.lineHeight, 5);
     expect(shift.collage).toBeCloseTo(WELCOME_HEADLINE.lineHeight + WELCOME_SUBTITLE.lineHeight, 5);
+  });
+
+  it('gives back the clearance a narrower phone loses when extra text lines push the type down to the collage', () => {
+    // The collage scales with the phone and the type does not: at k the collage's top has risen by (1 - k) of its
+    // distance from the top, so a third line needs that much more room, and only then.
+    const k = 360 / 393;
+    const withLine = welcomeLineShift(2, 3, k);
+    expect(withLine.collage).toBeCloseTo(WELCOME_SUBTITLE.lineHeight + (1 - k) * WELCOME_COLLAGE_TOP_STAGE_PT, 5);
+    expect(welcomeLineShift(2, 2, k).collage).toBe(0);
+    expect(welcomeLineShift(2, 3, 1).collage).toBeCloseTo(WELCOME_SUBTITLE.lineHeight, 5);
+    expect(welcomeLineShift(2, 3, 1.3).collage).toBeCloseTo(WELCOME_SUBTITLE.lineHeight, 5); // never negative on a wide stage
   });
 
   it('wraps the subtitle before the ice-cream sticker and never past its own cap', () => {

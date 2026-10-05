@@ -56,6 +56,9 @@ const GIRAFFE_GAP = 4;
 /** The giraffe starts no earlier than the end of the headline's first line (it bleeds off the right edge). */
 export const WELCOME_GIRAFFE_MIN_LEFT = WELCOME_HEADLINE.leftPx * WELCOME_PX + HEADLINE_FIRST_LINE_WIDTH + GIRAFFE_GAP;
 
+/** Where the highest photograph that is not the giraffe starts (the farm, frame y 470), in points below the status band. */
+export const WELCOME_COLLAGE_TOP_STAGE_PT = 470 * WELCOME_PX - WELCOME_FRAME_INSET;
+
 /** Width the subtitle wraps in at a given stage scale: before the ice-cream sticker, never past its own cap. */
 export function welcomeSubtitleWidth(scale: number): number {
   return Math.min(
@@ -68,10 +71,15 @@ export function welcomeSubtitleWidth(scale: number): number {
  * How far the subtitle and the collage move down when the type takes more lines than the frame's two,
  * in points. A longer line is room the text needs, so the collage gives it rather than the text shrinking.
  */
-export function welcomeLineShift(headlineLines: number, subtitleLines: number) {
+export function welcomeLineShift(headlineLines: number, subtitleLines: number, k = 1) {
   const headline = Math.max(0, headlineLines - WELCOME_HEADLINE.frameLines) * WELCOME_HEADLINE.lineHeight;
   const subtitle = Math.max(0, subtitleLines - WELCOME_SUBTITLE.frameLines) * WELCOME_SUBTITLE.lineHeight;
-  return { headline, subtitle, collage: headline + subtitle };
+  const extra = headline + subtitle;
+  // The type keeps its size but the collage scales with the phone, so on a narrower phone the collage has already
+  // risen towards the text by (1 - k) of its distance from the top. An extra line of text moves the text down to
+  // meet it, so the same clearance the frame has is given back as well. (With no extra line there is room to spare.)
+  const rise = extra > 0 ? (1 - Math.min(1, k)) * WELCOME_COLLAGE_TOP_STAGE_PT : 0;
+  return { headline, subtitle, collage: extra + rise };
 }
 
 export interface WelcomeSlot {

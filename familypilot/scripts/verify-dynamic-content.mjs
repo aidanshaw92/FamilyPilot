@@ -127,6 +127,7 @@ console.log('\nExplore is data-driven');
         label: el.getAttribute('aria-label'),
         text: el.innerText,
         hasPhoto: Boolean(el.querySelector('img')),
+        imgSrcs: [...el.querySelectorAll('img')].map((i) => i.getAttribute('src') ?? ''),
         placeholder: /photo not available/.test(el.innerHTML),
       })),
     );
@@ -148,6 +149,12 @@ console.log('\nExplore is data-driven');
   check('an unreviewed card never claims a classification word that implies a score', unreviewed.every((c) => !/(Excellent|Great|Good) fit/.test(c.label ?? '')) && unreviewed.every((c) => /Not yet reviewed/.test(c.label ?? '')), unreviewed[0]?.label ?? '');
   check('a venue with a photograph draws it', cards.some((c) => c.hasPhoto));
   check('a venue without one draws the category placeholder', cards.some((c) => c.placeholder));
+  // The production-image boundary, in the browser: a venue's picture is only ever the provider photo through
+  // our proxy; a venue without one has NO image element at all (the designed fallback) and no photographer credit.
+  const sources = cards.flatMap((c) => c.imgSrcs);
+  check('every venue image is a provider photo served through the photo proxy', sources.length > 0 && sources.every((u) => /\/api\/places\/photo\?/.test(u)), sources.find((u) => !/\/api\/places\/photo\?/.test(u)) ?? `${sources.length} images`);
+  check('no venue image is a bundled asset or a fixture path', sources.every((u) => !/fixtures|\/assets\/|\.(jpe?g|png|webp)(\?|$)/i.test(u)));
+  check('a venue without a photo has no image element and no photographer credit', cards.filter((c) => c.placeholder).every((c) => c.imgSrcs.length === 0 && !/Photo:/.test(c.text)));
   const times = new Set(cards.map((c) => (/about (\d+) min/.exec(c.text) ?? [])[1]).filter(Boolean));
   check('journey times differ between venues', times.size >= 3, [...times].join(', '));
   check('journey times are worded as estimates', cards.every((c) => !/\d+ min/.test(c.text) || /about \d+ min/.test(c.text)));

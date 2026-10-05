@@ -48,6 +48,13 @@ const { estimateDriveMinutes } = createRequire(import.meta.url)(
   '../../server/context/lib/geo-utils.js',
 );
 
+// RELEASE-BLOCKING GUARD: this server serves synthetic fixture photographs. It must never run where real
+// venues are served, so it refuses to start in a production environment at all.
+if (process.env.NODE_ENV === 'production' || process.env.VERCEL || process.env.VERCEL_ENV) {
+  console.error('serve-places-fixture.mjs is a test/demo server and refuses to run in a production environment.');
+  process.exit(1);
+}
+
 const PORT = Number(process.argv[2] || 4173);
 const DIST = resolve(process.argv[3] || join(process.cwd(), 'dist'));
 

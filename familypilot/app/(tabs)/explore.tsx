@@ -407,6 +407,9 @@ const styles = StyleSheet.create({
     marginTop: 7,
     fontSize: 13.6,
     lineHeight: SUBTITLE_LINE_HEIGHT,
+    // When it has to wrap on a narrow phone, split it evenly rather than leave "London" alone on a second line.
+    // Web-only (native ignores it); the line count is unchanged, so the art shift below still holds.
+    ...({ textWrap: 'balance' } as object),
   },
   searchRow: {
     marginTop: 19,

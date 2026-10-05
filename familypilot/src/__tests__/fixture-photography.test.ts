@@ -115,3 +115,104 @@ describe('the venue photograph fallback contract', () => {
     expect(venueImage).toMatch(/showCredit&&!failed/);
   });
 });
+
+/**
+ * RELEASE BLOCKER if any of these fail: a generated fixture photograph must never be what a parent sees for a
+ * real venue. The boundary is held at five independent points: the source tree, the production API, the fixture
+ * server's own refusal to run in production, the built bundle, and the way a production venue's image is resolved.
+ */
+import { createHash } from 'node:crypto';
+
+import { mergePlaceToVenue } from '@/src/services/places/merge-place';
+import { resolvePlacePhotoUrl } from '@/src/services/places/place-photo-url';
+import type { ExternalPlaceRecord } from '@/src/types/places';
+
+const REPO_ROOT = join(ROOT, '..');
+
+describe('release blocker: fixture photography cannot reach a real venue', () => {
+  it('is not referenced by the production API or the server libraries', () => {
+    const dirs = [join(REPO_ROOT, 'api'), join(ROOT, 'server')].filter(existsSync);
+    expect(dirs.length).toBeGreaterThan(0);
+    const offenders = dirs
+      .flatMap((d) => walk(d))
+      .filter((file) => /images\/fixtures|fixtures\/venues|X-FamilyPilot-Fixture|serve-places-fixture/.test(readFileSync(file, 'utf8')));
+    expect(offenders.map((f) => relative(REPO_ROOT, f))).toEqual([]);
+  });
+
+  it('is never read from disk by the production photo proxy, which only redirects to the provider', () => {
+    const proxy = readFileSync(join(REPO_ROOT, 'api', 'places', 'photo.js'), 'utf8');
+    expect(proxy).not.toMatch(/require\(['"](node:)?fs['"]\)|readFile|createReadStream/);
+    expect(proxy).toMatch(/googleapis\.com/);
+  });
+
+  it('is served only by a server that refuses to start in a production environment', () => {
+    const server = readFileSync(join(ROOT, 'scripts', 'serve-places-fixture.mjs'), 'utf8');
+    expect(server).toMatch(/NODE_ENV === 'production'/);
+    expect(server).toMatch(/process\.exit\(1\)/);
+    // The guard comes before anything is read or served.
+    expect(server.indexOf("NODE_ENV === 'production'")).toBeLessThan(server.indexOf('createServer('));
+  });
+
+  it('is absent from the built web bundle: no fixture path, and no file with a fixture image\'s bytes', () => {
+    const dist = join(ROOT, 'dist');
+    if (!existsSync(dist)) return; // built by `npm run build:web`; the release gate builds first
+    const hashes = new Set(
+      imageFiles.map((f) => createHash('sha1').update(readFileSync(join(FIXTURE_DIR, f))).digest('hex')),
+    );
+    const files: string[] = [];
+    const all = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) all(full);
+        else files.push(full);
+      }
+    };
+    all(dist);
+    expect(files.filter((f) => /images[\\/]fixtures|fixtures[\\/]venues/.test(f))).toEqual([]);
+    const leaked = files
+      .filter((f) => /\.(jpe?g|png|webp)$/i.test(f))
+      .filter((f) => hashes.has(createHash('sha1').update(readFileSync(f)).digest('hex')));
+    expect(leaked).toEqual([]);
+  });
+
+  describe('a production venue\'s image', () => {
+    const record = (photos: string[]): ExternalPlaceRecord => ({
+      familypilotId: 'fp-google-real1',
+      externalId: 'google:real1',
+      provider: 'google',
+      name: 'A Real Park',
+      category: 'park',
+      latitude: 51.52,
+      longitude: -0.1,
+      photos,
+      provenance: {},
+      fetchedAt: '2026-10-01T00:00:00.000Z',
+    });
+
+    it('is nothing at all when the provider has no photograph, so the category fallback is drawn', () => {
+      const venue = mergePlaceToVenue(record([]), null, 51.5, -0.1);
+      expect(venue.imageUrl ?? '').toBe('');
+    });
+
+    it('is only ever the provider photo through our proxy, never a local asset or fixture path', () => {
+      const previous = process.env.EXPO_PUBLIC_PLACES_API_URL;
+      process.env.EXPO_PUBLIC_PLACES_API_URL = 'https://api.example.test/api/places';
+      const venue = mergePlaceToVenue(
+        record(['/api/places/photo?id=real1&index=0&credit=A.+Photographer']),
+        null,
+        51.5,
+        -0.1,
+      );
+      if (previous === undefined) delete process.env.EXPO_PUBLIC_PLACES_API_URL;
+      else process.env.EXPO_PUBLIC_PLACES_API_URL = previous;
+      expect(venue.imageUrl ?? '').toMatch(/^https:\/\/api\.example\.test\/api\/places\/photo\?id=real1/);
+      expect(venue.imageUrl ?? '').not.toMatch(/fixture|assets\/images|\.jpe?g|\.webp|\.png/i);
+    });
+
+    it('never resolves a bare local file name or an asset path into a displayable image', () => {
+      for (const local of ['park.jpg', 'assets/images/fixtures/venues/park.jpg', '../assets/images/welcome/zoo.jpg']) {
+        expect(resolvePlacePhotoUrl(local), local).toBe('');
+      }
+    });
+  });
+});

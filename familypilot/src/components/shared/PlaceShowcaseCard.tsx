@@ -100,7 +100,7 @@ export function PlaceShowcaseCard({
       </View>
 
       <View style={styles.footer} pointerEvents="none">
-        <Text variant="caption" color="rgba(255,255,255,0.82)" style={[styles.footerText, styles.eyebrow]}>
+        <Text variant="caption" color="rgba(255,255,255,0.92)" style={[styles.footerText, styles.eyebrow]}>
           {formatCategory(venue.category)}
         </Text>
         <Text
@@ -195,6 +195,17 @@ const CTA_DISC = 46;
  */
 const SCRIM_TOP = 128 / 428;
 // Green-black, not neutral black: the identity's photo cards fade into the brand green.
+/**
+ * Text drawn directly on a photograph needs to hold on a bright one too (a pale museum hall, a pale sky), and the
+ * approved scrim only darkens the lower part of the card. A soft, tight shadow is invisible on the dark scrim and
+ * is what keeps the category, name and journey time legible where the photograph is light.
+ */
+const ON_PHOTO_SHADOW = {
+  textShadowColor: 'rgba(6, 28, 24, 0.5)',
+  textShadowOffset: { width: 0, height: 1 },
+  textShadowRadius: 4,
+} as const;
+
 const SCRIM_COLORS = [
   'rgba(10, 46, 39, 0)',
   'rgba(10, 46, 39, 0.3)',
@@ -271,6 +282,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.xl - CTA_INSET,
   },
   eyebrow: {
+    ...ON_PHOTO_SHADOW,
     letterSpacing: 1.04,
     textTransform: 'uppercase',
     fontFamily: 'Inter_500Medium',
@@ -279,6 +291,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: {
+    ...ON_PHOTO_SHADOW,
     fontFamily: 'Inter_600SemiBold',
     fontSize: 26,
     lineHeight: 31,
@@ -293,6 +306,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   distance: {
+    ...ON_PHOTO_SHADOW,
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 17,

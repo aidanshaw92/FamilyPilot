@@ -73,7 +73,7 @@ export default function WelcomeScreen() {
   const headlineLines =
     measured.headline ?? estimateLineCount(HEADLINE, WELCOME_HEADLINE.fontSize, WELCOME_HEADLINE.maxWidth, 'bold');
   const subtitleLines = measured.subtitle ?? estimateLineCount(SUBTITLE, WELCOME_SUBTITLE.fontSize, subtitleWidth);
-  const shift = welcomeLineShift(headlineLines, subtitleLines);
+  const shift = welcomeLineShift(headlineLines, subtitleLines, k);
   const inset = WELCOME_FRAME_INSET * k;
   const stageHeight = WELCOME_STAGE_END_PX * scale - inset + shift.collage;
   const start = () => router.push('/(onboarding)/setup' as never);
