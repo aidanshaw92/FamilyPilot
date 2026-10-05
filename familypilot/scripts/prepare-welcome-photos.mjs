@@ -42,6 +42,10 @@ const CROPS = {
   cafe: [25, 0, 1204, 1254],
   // 1024x1536 pottery: the piece and brush inside the left 65% (the right 21% is off-screen).
   crafts: [117, 0, 865, 1536],
+  // 1536x1024 toddler climbing: the child inside the central ~35-65% (the left 6% is off-screen).
+  'soft-play': [112, 0, 1137, 1024],
+  // 1254x1254 wellies in a puddle: the boots and splash centred; the top of the trousers is trimmed.
+  puddles: [0, 70, 1254, 1184],
   // 1672x941 penguin: the head well inside the left 80% (the right 17% is off-screen); the tail is cropped.
   aquarium: [420, 0, 1073, 941],
 };

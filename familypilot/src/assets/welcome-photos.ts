@@ -4,6 +4,8 @@ import aquarium from '../../assets/images/welcome/aquarium.jpg';
 import cafe from '../../assets/images/welcome/cafe.jpg';
 import crafts from '../../assets/images/welcome/crafts.jpg';
 import farm from '../../assets/images/welcome/farm.jpg';
+import puddles from '../../assets/images/welcome/puddles.jpg';
+import softPlay from '../../assets/images/welcome/soft-play.jpg';
 import zoo from '../../assets/images/welcome/zoo.jpg';
 
 /**
@@ -38,6 +40,7 @@ export const WELCOME_PHOTOS: Partial<Record<string, ImageSource>> = {
   farm,
   cafe,
   crafts,
+  'soft-play': softPlay,
+  puddles,
   aquarium,
-  // soft-play and puddles: not supplied yet; each keeps its category gradient until its file lands.
 };

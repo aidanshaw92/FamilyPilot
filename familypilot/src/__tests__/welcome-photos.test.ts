@@ -53,7 +53,9 @@ describe('Welcome collage photographs', () => {
     expect(wiring).not.toMatch(/figma-approved|figma-compare|reference/i);
   });
 
-  // The ONE outstanding Welcome asset dependency. See docs/WELCOME_PHOTOGRAPHY.md and docs/PHOTOGRAPHY_ASSETS.md.
-  const missing = SLOT_IDS.filter((id, i, all) => all.indexOf(id) === i && !(id in WELCOME_PHOTOS));
-  it.todo(`ships a photograph or generated image for every Welcome slot (missing: ${missing.join(', ') || 'none'})`);
+  it('ships an image for every Welcome slot, so no slot falls back to its gradient in production', () => {
+    // The gradient is a fallback for a slot without a file; all seven are supplied, so none should be missing.
+    const missing = SLOT_IDS.filter((id, i, all) => all.indexOf(id) === i && !(id in WELCOME_PHOTOS));
+    expect(missing).toEqual([]);
+  });
 });
