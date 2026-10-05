@@ -43,6 +43,13 @@
       "synthetic": true,
       "generator": "ChatGPT image generation (synthetic; not a photograph of a real place)",
       "prompt": "docs/PHOTOGRAPHY_ASSETS.md, section B"
+    },
+    {
+      "file": "zoo.jpg",
+      "category": "zoo",
+      "synthetic": true,
+      "generator": "ChatGPT image generation (synthetic; not a photograph of a real place)",
+      "prompt": "docs/PHOTOGRAPHY_ASSETS.md, section B"
     }
   ]
 }
