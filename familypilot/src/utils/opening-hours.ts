@@ -11,8 +11,8 @@ import { OpeningHoursPoint, OpeningHoursSchedule } from '@/src/types/opening-hou
  * error as telling them it is open when it is not.
  */
 
-const MINUTES_PER_DAY = 1440;
-const MINUTES_PER_WEEK = MINUTES_PER_DAY * 7;
+export const MINUTES_PER_DAY = 1440;
+export const MINUTES_PER_WEEK = MINUTES_PER_DAY * 7;
 
 export type OpeningStatus = 'open' | 'closed' | 'unknown';
 
@@ -46,7 +46,7 @@ export interface OpeningHoursVerdict {
   closesAt?: string;
 }
 
-interface Interval {
+export interface Interval {
   start: number;
   end: number;
 }
@@ -60,7 +60,7 @@ const CLOCK_TIME = /^(\d{1,2}):(\d{2})$/;
  * `Date.UTC` is used rather than the `Date` constructor precisely so the host timezone cannot
  * shift the result across a day boundary.
  */
-function weekdayOf(year: number, month: number, day: number): number | null {
+export function weekdayOf(year: number, month: number, day: number): number | null {
   const utc = Date.UTC(year, month - 1, day);
   const parsed = new Date(utc);
   // Rejects the likes of 2026-02-30, which Date.UTC silently rolls forward.
@@ -74,7 +74,7 @@ function weekdayOf(year: number, month: number, day: number): number | null {
   return parsed.getUTCDay();
 }
 
-function parseCalendarDate(value: string): { year: number; month: number; day: number } | null {
+export function parseCalendarDate(value: string): { year: number; month: number; day: number } | null {
   const match = CALENDAR_DATE.exec(value.trim());
   if (!match) return null;
   return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
@@ -150,7 +150,7 @@ function pointToMinutes(point: OpeningHoursPoint): number | null {
  * spans are dropped rather than treated as a wrap, which would claim a full week of openness from
  * what is almost certainly bad data.
  */
-function toIntervals(periods: OpeningHoursSchedule['periods']): Interval[] {
+export function toIntervals(periods: OpeningHoursSchedule['periods']): Interval[] {
   const intervals: Interval[] = [];
   for (const period of periods ?? []) {
     if (!period?.open || !period.close) continue;

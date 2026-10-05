@@ -169,6 +169,7 @@ export function buildFocusedReasons(
         }
         break;
       case 'journey':
+        if (!Number.isFinite(facts.driveMinutes)) break;
         reasons.push({
           field: 'journey',
           text: `About ${facts.driveMinutes} minutes from home`,

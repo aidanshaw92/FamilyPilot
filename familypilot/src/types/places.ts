@@ -78,6 +78,21 @@ export interface ExternalPlaceRecord {
   googleTypes?: string[];
   /** FamilyPilot metadata when joined server-side (not from provider sync). */
   familyMetadata?: VenueFamilyMetadata;
+  /** Food close by, from a stored OpenStreetMap lookup. Absent when no lookup has been stored: unknown. */
+  foodNearby?: FoodNearby;
+}
+
+/**
+ * What a stored OpenStreetMap lookup says about eating near a place. Walk times are straight-line estimates, the same
+ * ones Venue Detail shows. `nearestWalkMinutes: null` with a `checkedAt` means "looked, and nothing is mapped within a
+ * walk": still not a claim that there is nowhere to eat, only that OpenStreetMap lists nothing.
+ */
+export interface FoodNearby {
+  checkedAt: string | null;
+  nearestWalkMinutes: number | null;
+  within5: number;
+  within10: number;
+  source: 'osm';
 }
 
 export type ExternalPlaceField =

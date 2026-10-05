@@ -1,5 +1,6 @@
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
+import { minTarget } from '@/src/components/ui/touch';
 import { Text } from '@/src/components/ui/Text';
 import { spacing } from '@/src/design-system/tokens';
 import {
@@ -55,6 +56,7 @@ export function PlaceCredits({
             accessibilityLabel="Map data from OpenStreetMap contributors, opens the licence"
             testID="place-credits-osm"
             hitSlop={8}
+            style={minTarget(16)}
           >
             <Text variant="caption" color={ATTRIBUTION_INK}>
               {OSM_CREDIT}

@@ -4,6 +4,7 @@ import {
   PlanDraftSources,
   planDraftBlocker,
   planDraftFromParams,
+  nextDay,
   planDraftDefaults,
   summariseHousehold,
   VISIT_LENGTH_CHOICES,
@@ -257,5 +258,52 @@ describe('a finished profile is enough to plan from, without a planning family',
     const result = planDraftDefaults(sources({ profile: profile({ members: [] }), planningFamilies: [] }));
     expect(result.needsProfile).toBe(true);
     expect(planDraftBlocker(result.draft, result.parties)).toBe('Add your family details so we can plan around them.');
+  });
+});
+
+describe('the date the sheet opens on', () => {
+  it('stays on today while today\'s start is still ahead', () => {
+    expect(planDraftDefaults(sources({ nowTime: '08:00' })).draft).toMatchObject({ date: TODAY, leaveAt: '09:30' });
+  });
+
+  it('opens on tomorrow once today\'s start has gone, rather than planning a day that began in the past', () => {
+    // The planner would start from "now" and report the venue closed: true, and no use as a default.
+    expect(planDraftDefaults(sources({ nowTime: '20:00' })).draft).toMatchObject({ date: '2026-10-11', leaveAt: '09:30' });
+  });
+
+  it('keeps an explicit "leave from now" on today in the minute it was chosen', () => {
+    const options = { date: TODAY, leaveAt: '20:00', visitMinutes: 90 };
+    expect(planDraftDefaults(sources({ options, nowTime: '20:00' })).draft.date).toBe(TODAY);
+  });
+
+  it('moves a stored date that is today but whose start has gone', () => {
+    const options = { date: TODAY, leaveAt: '09:00', visitMinutes: 90 };
+    expect(planDraftDefaults(sources({ options, nowTime: '12:00' })).draft.date).toBe('2026-10-11');
+  });
+
+  it('leaves a stored future date alone', () => {
+    const options = { date: '2026-10-20', leaveAt: '09:00', visitMinutes: 90 };
+    expect(planDraftDefaults(sources({ options, nowTime: '23:00' })).draft.date).toBe('2026-10-20');
+  });
+
+  it('with no clock given, today stays today', () => {
+    expect(planDraftDefaults(sources()).draft.date).toBe(TODAY);
+  });
+
+  it('reads a one-digit hour as a time, not as text', () => {
+    // '9:30' < '10:05' is false as strings; it is true as times.
+    const options = { date: TODAY, leaveAt: '9:30', visitMinutes: 90 };
+    expect(planDraftDefaults(sources({ options, nowTime: '10:05' })).draft.date).toBe('2026-10-11');
+  });
+
+  it('never rolls forward for a time it cannot read', () => {
+    const options = { date: TODAY, leaveAt: 'soon', visitMinutes: 90 };
+    expect(planDraftDefaults(sources({ options, nowTime: '23:00' })).draft.date).toBe(TODAY);
+  });
+
+  it('rolls over month and year ends without a timezone', () => {
+    expect(nextDay('2026-10-31')).toBe('2026-11-01');
+    expect(nextDay('2026-12-31')).toBe('2027-01-01');
+    expect(nextDay('2028-02-28')).toBe('2028-02-29');
   });
 });

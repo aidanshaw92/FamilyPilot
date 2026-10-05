@@ -23,10 +23,18 @@ export function PhotoGallery({ photos, onPhotoPress }: PhotoGalleryProps) {
         <PressableScale
           key={uri}
           onPress={() => onPhotoPress?.(index)}
+          accessibilityRole="button"
           accessibilityLabel={`Photo ${index + 1} of ${photos.length}`}
           style={styles.thumbWrap}
         >
-          <Image source={{ uri }} style={styles.thumb} contentFit="cover" transition={200} />
+          <Image
+            source={{ uri }}
+            style={styles.thumb}
+            contentFit="cover"
+            transition={200}
+            // The button carries the name; the picture inside is described by it.
+            accessibilityLabel={`Photo ${index + 1} of ${photos.length}`}
+          />
         </PressableScale>
       ))}
     </ScrollView>

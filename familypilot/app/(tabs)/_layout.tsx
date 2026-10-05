@@ -1,31 +1,23 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
 import { FloatingTabBar } from '@/src/components/navigation/FloatingTabBar';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { colors } from '@/src/design-system/tokens';
-import { ICON_SIZE } from '@/src/utils/floating-tab-bar-layout';
-
-type TabIcon = keyof typeof Ionicons.glyphMap;
 
 const TAB_CONFIG: {
   name: string;
   title: string;
-  icon: TabIcon;
-  iconFocused: TabIcon;
   pilotFeature?: import('@/src/config/pilot-features').PilotFeature;
 }[] = [
-  { name: 'index', title: 'Home', icon: 'home-outline', iconFocused: 'home' },
-  { name: 'explore', title: 'Explore', icon: 'compass-outline', iconFocused: 'compass' },
+  { name: 'index', title: 'Home' },
+  { name: 'explore', title: 'Explore' },
   {
     name: 'trips',
     title: 'Plans',
-    icon: 'calendar-outline',
-    iconFocused: 'calendar',
     pilotFeature: 'trips_tab',
   },
-  { name: 'saved', title: 'Saved', icon: 'heart-outline', iconFocused: 'heart' },
-  { name: 'profile', title: 'Profile', icon: 'person-outline', iconFocused: 'person' },
+  { name: 'saved', title: 'Saved' },
+  { name: 'profile', title: 'Profile' },
 ];
 
 export default function TabLayout() {
@@ -46,13 +38,7 @@ export default function TabLayout() {
             options={{
               title: tab.title,
               href: hidden ? null : undefined,
-              tabBarIcon: ({ color, focused }) => (
-                <Ionicons
-                  name={focused ? tab.iconFocused : tab.icon}
-                  size={ICON_SIZE}
-                  color={color}
-                />
-              ),
+              // The icons are the approved frames' own vectors, drawn by the floating tab bar itself.
             }}
           />
         );

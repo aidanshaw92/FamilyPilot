@@ -1,5 +1,7 @@
 const { searchWithFallback } = require('../../server/places/lib/fallback');
 const { reorderByEnrichment } = require('../../server/places/lib/places-quality');
+const { readCatalogue, mergeCatalogue } = require('../../server/places/lib/catalogue');
+const { filterPlacesToCanonicalPrimaries } = require('../../server/places/lib/canonical-venues');
 /**
  * Required as a module object rather than destructured, deliberately: the property is read at call
  * time, so the delegation is observable to a contract test. Destructuring would capture the binding at
@@ -174,6 +176,10 @@ module.exports = async function handler(req, res) {
         // London; the response says plainly that it was not refreshed.
         result = cached.payload;
         cacheState = 'stale';
+      } else if (blocked && isLondonGrid && (await readCatalogue()).length > 0) {
+        // No cached search and we may not buy one, but the stored catalogue is a database read: serve that.
+        result = { places: [], provider: 'google', fallbackUsed: false };
+        cacheState = 'catalogue';
       } else if (blocked) {
         // Nothing to serve and we may not buy it. Fail visibly rather than falling through to the
         // demo venues, which would make a cost control look like a data outage.
@@ -204,6 +210,20 @@ module.exports = async function handler(req, res) {
   }
 
   let places = result.places;
+  // London is also served from the stored catalogue (`place_records`): a database read, never a Google request. The
+  // live search is one page ranked by popularity across all categories, so on its own it showed 2 of the 8 farms the
+  // database holds. Merged BEFORE the discovery upsert below, which only ever writes provider rows from the live page.
+  const liveOnly = places;
+  if (isLondonGrid && result.provider !== 'mock') {
+    try {
+      const stored = await readCatalogue();
+      if (stored.length > 0) {
+        places = await filterPlacesToCanonicalPrimaries(mergeCatalogue(places, stored));
+      }
+    } catch (error) {
+      console.warn(JSON.stringify({ tag: 'places_catalogue_merge_failed', message: error?.message || 'merge failed' }));
+    }
+  }
   // Production Explore discovery feeds the insert-triggered enrichment queue. This also covers
   // explicit London area/postcode searches so useful outer-London places become richer over time.
   // Preview reads never enqueue work against the production worker.
@@ -211,8 +231,8 @@ module.exports = async function handler(req, res) {
     try {
       const { getSupabaseAdmin } = require('../../server/enrichment/_lib/supabase-admin');
       const db = getSupabaseAdmin();
-      if (db && places.length) {
-        const rows = places.filter(p => p.provider !== 'mock').map(p => ({
+      if (db && liveOnly.length) {
+        const rows = liveOnly.filter(p => p.provider !== 'mock').map(p => ({
           familypilot_place_id:p.familypilotId,external_id:p.externalId,provider:p.provider,
           name:p.name,category:p.category,lat:p.latitude,lng:p.longitude,address:p.address,
           website:p.website,photos:p.photos ?? [],fetched_at:p.fetchedAt,
@@ -243,6 +263,16 @@ module.exports = async function handler(req, res) {
     places = reorderByEnrichment(places);
   } catch {
     // Best-effort metadata overlay
+  }
+
+  // Which places already have a stored food lookup (OpenStreetMap, from Venue Detail's "Restaurants close by"): one
+  // database read, no provider. Places never looked up have no `foodNearby`, and stay unknown on the screen.
+  try {
+    const { attachFoodProximity } = require('../../server/places/lib/food-proximity');
+    const { getSupabaseAdmin } = require('../../server/enrichment/_lib/supabase-admin');
+    places = await attachFoodProximity(places, getSupabaseAdmin());
+  } catch (error) {
+    console.warn(JSON.stringify({ tag: 'places_food_proximity_failed', message: error?.message || 'failed' }));
   }
 
   // The CDN is the second line of defence after the Postgres cache: it answers repeat loads without

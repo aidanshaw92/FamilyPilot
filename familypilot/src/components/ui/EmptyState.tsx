@@ -22,7 +22,7 @@ export function EmptyState({
   onAction,
 }: EmptyStateProps) {
   return (
-    <View style={styles.container} accessibilityRole="text">
+    <View style={styles.container} accessibilityRole="text" accessibilityLiveRegion="polite">
       {/* Figma "State / Empty": a mint well with the glyph in the action green, so an empty screen
           still reads as the identity rather than a grey placeholder. */}
       <View style={styles.iconWrap}>

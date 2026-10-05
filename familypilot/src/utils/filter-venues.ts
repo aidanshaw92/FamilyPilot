@@ -1,19 +1,32 @@
 import { Venue, VenueCategory } from '@/src/types';
 import { ExploreBudgetFilter } from '@/src/stores/filters-store';
+import { categoriesWithInventory, environmentOf, matchesTaxonomy, TAXONOMY } from '@/src/utils/venue-taxonomy';
+import { isFreeSpend } from '@/src/utils/spend';
+import { FOOD_FILTER_IDS, FOOD_FILTER_OPTIONS, FoodFilterId, foodRankBonus, matchesFoodFilter } from '@/src/utils/food-nearby';
 
 export interface ExploreCategory {
   id: string;
   label: string;
 }
 
+/**
+ * Explore's rail, from the shared taxonomy (`venue-taxonomy.ts`), in its own ids and wording. Restaurants are a
+ * separate mode behind a pilot flag and are not part of the venue taxonomy.
+ */
 export const EXPLORE_CATEGORIES: ExploreCategory[] = [
-  { id: 'all', label: 'All' },
-  { id: 'parks', label: 'Parks' },
+  ...TAXONOMY.filter((entry) => entry.explore).map((entry) => ({
+    id: entry.exploreId ?? entry.id,
+    label: entry.exploreLabel ?? entry.label,
+  })),
   { id: 'restaurants', label: 'Restaurants' },
-  { id: 'farms', label: 'Farms' },
-  { id: 'museums', label: 'Museums' },
-  { id: 'activities', label: 'Activities' },
 ];
+
+/** The chips Explore offers for these venues; a category with too little in it is not offered. */
+export function exploreCategoriesFor(venues: readonly Venue[]): ExploreCategory[] {
+  const offered = categoriesWithInventory(venues, 'explore').map(({ id, label }) => ({ id, label }));
+  const restaurants = EXPLORE_CATEGORIES.find((c) => c.id === 'restaurants');
+  return restaurants ? [...offered, restaurants] : offered;
+}
 
 export const FILTER_SHEET_OPTIONS = [
   { id: 'indoor', label: 'Indoor' },
@@ -25,6 +38,9 @@ export const FILTER_SHEET_OPTIONS = [
   { id: 'toilets', label: 'Toilets' },
   { id: 'baby_changing', label: 'Baby changing' },
 ] as const;
+
+/** The "Food nearby" group in the filter sheet: a cafe on site, or food within a short walk. */
+export const FOOD_SHEET_OPTIONS = FOOD_FILTER_OPTIONS;
 
 export const DRIVE_FILTER_OPTIONS: { id: number | 'any'; label: string }[] = [
   { id: 10, label: '10 min' },
@@ -40,23 +56,6 @@ export const BUDGET_FILTER_OPTIONS: { id: ExploreBudgetFilter; label: string }[]
   { id: 'under_25', label: 'Under £25' },
   { id: 'under_50', label: 'Under £50' },
   { id: 'under_100', label: 'Under £100' },
-];
-
-const INDOOR_CATEGORIES: VenueCategory[] = [
-  'museum',
-  'soft_play',
-  'activity',
-  'restaurant',
-  'cafe',
-];
-const OUTDOOR_CATEGORIES: VenueCategory[] = ['park', 'farm', 'beach', 'zoo'];
-const ACTIVITY_CATEGORIES: VenueCategory[] = [
-  'farm',
-  'museum',
-  'soft_play',
-  'activity',
-  'zoo',
-  'attraction',
 ];
 
 function parseMaxSpend(estimatedSpend?: string): number | null {
@@ -87,22 +86,8 @@ function matchesBudget(venue: Venue, budget: ExploreBudgetFilter): boolean {
 }
 
 function matchesCategory(venue: Venue, categoryId: string): boolean {
-  switch (categoryId) {
-    case 'all':
-      return true;
-    case 'parks':
-      return venue.category === 'park';
-    case 'restaurants':
-      return venue.category === 'restaurant' || venue.category === 'cafe';
-    case 'farms':
-      return venue.category === 'farm';
-    case 'museums':
-      return venue.category === 'museum';
-    case 'activities':
-      return ACTIVITY_CATEGORIES.includes(venue.category);
-    default:
-      return true;
-  }
+  if (categoryId === 'restaurants') return venue.category === 'restaurant' || venue.category === 'cafe';
+  return matchesTaxonomy(venue, categoryId);
 }
 
 function venueHasFacility(venue: Venue, facility: string): boolean {
@@ -110,37 +95,18 @@ function venueHasFacility(venue: Venue, facility: string): boolean {
   return detail.facilities?.includes(facility as never) ?? false;
 }
 
-export function filterVenues(
-  venues: Venue[],
-  categoryId: string,
-  advancedIds: string[],
-  maxDriveMinutes: number | 'any',
-  profileMaxDrive: number,
-  budgetFilter: ExploreBudgetFilter,
-): Venue[] {
-  const effectiveMaxDrive =
-    maxDriveMinutes === 'any' ? Infinity : maxDriveMinutes;
-
-  let result = venues.filter((venue) => {
-    if (venue.driveMinutes > effectiveMaxDrive) return false;
-    if (!matchesCategory(venue, categoryId)) return false;
-    if (!matchesBudget(venue, budgetFilter)) return false;
-    return true;
-  });
-
+export function applyAdvancedFilters(venues: Venue[], advancedIds: string[]): Venue[] {
+  let result = venues;
   for (const filterId of advancedIds) {
     switch (filterId) {
       case 'indoor':
-        result = result.filter((v) => INDOOR_CATEGORIES.includes(v.category));
+        result = result.filter((v) => environmentOf(v).environment === 'indoor');
         break;
       case 'outdoor':
-        result = result.filter((v) => OUTDOOR_CATEGORIES.includes(v.category));
+        result = result.filter((v) => environmentOf(v).environment === 'outdoor');
         break;
       case 'free':
-        result = result.filter(
-          (v) =>
-            v.estimatedSpend?.toLowerCase() === 'free' || v.estimatedSpend?.startsWith('£0'),
-        );
+        result = result.filter((v) => isFreeSpend(v.estimatedSpend));
         break;
       case 'open_now':
         // isOpen is undefined when opening status isn't confirmed - only keep venues we know
@@ -159,12 +125,45 @@ export function filterVenues(
       case 'baby_changing':
         result = result.filter((v) => venueHasFacility(v, 'baby_changing'));
         break;
+      case 'food_onsite':
+      case 'food_5':
+      case 'food_10':
+        result = result.filter((v) => matchesFoodFilter(v, filterId as FoodFilterId));
+        break;
       default:
         break;
     }
   }
+  return result;
+}
 
-  return result.sort((a, b) => b.familyScore.score - a.familyScore.score);
+export function filterVenues(
+  venues: Venue[],
+  categoryId: string,
+  advancedIds: string[],
+  maxDriveMinutes: number | 'any',
+  profileMaxDrive: number,
+  budgetFilter: ExploreBudgetFilter,
+): Venue[] {
+  const effectiveMaxDrive =
+    maxDriveMinutes === 'any' ? Infinity : maxDriveMinutes;
+
+  let result = venues.filter((venue) => {
+    // `!(<=)`, not `>`: a journey that could not be worked out (NaN) is not known to be within a limit. With
+    // no limit ("any") there is nothing to be outside of, so the venue stays.
+    if (effectiveMaxDrive !== Infinity && !(venue.driveMinutes <= effectiveMaxDrive)) return false;
+    if (!matchesCategory(venue, categoryId)) return false;
+    if (!matchesBudget(venue, budgetFilter)) return false;
+    return true;
+  });
+
+  result = applyAdvancedFilters(result, advancedIds);
+
+  // While a food filter is on, the easiest lunch breaks ties and small gaps: a few points, never a leap over a much
+  // better fit. Without one, ranking is the family score alone.
+  const foodOn = advancedIds.some((id) => FOOD_FILTER_IDS.includes(id));
+  const rank = (v: Venue) => v.familyScore.score + (foodOn ? foodRankBonus(v) : 0);
+  return result.sort((a, b) => rank(b) - rank(a));
 }
 
 /** @deprecated use EXPLORE_CATEGORIES */
@@ -174,7 +173,7 @@ export const PRIMARY_FILTERS = EXPLORE_CATEGORIES.map((c) => ({
   type: 'primary' as const,
 }));
 
-export const ADVANCED_FILTERS = FILTER_SHEET_OPTIONS.map((f) => ({
+export const ADVANCED_FILTERS = [...FILTER_SHEET_OPTIONS, ...FOOD_FILTER_OPTIONS].map((f) => ({
   id: f.id,
   label: f.label,
   type: 'advanced' as const,

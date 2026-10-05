@@ -5,7 +5,8 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { PlanningFamily, PlanningOptions, PlanMatch } from '@/src/services/planning/planner';
 import { PlanViewModelInput } from '@/src/services/planning/plan-view-model';
 
-export interface VisitFeedbackState { status:'submitted'|'skipped'|'later'; reportId?:string; until?:string }
+/** `skipped` with `reason: 'did_not_go'` is "No, we didn't go": nothing is asked and nothing is sent. */
+export interface VisitFeedbackState { status:'submitted'|'skipped'|'later'; reportId?:string; until?:string; reason?:'did_not_go'|'nothing_to_check' }
 export interface SavedPlan { feedback?:VisitFeedbackState; id: string; date: string; plan: PlanMatch; checked: string[]; createdAt: string }
 
 /**
@@ -24,6 +25,7 @@ export interface PlanningData { families: PlanningFamily[]; options: PlanningOpt
 /** What a restored backup may look like: one taken before multi-stop days carries no `savedDays`. */
 export type PlanningBackup = Omit<PlanningData, 'savedDays'> & { savedDays?: SavedDay[] };
 const defaults = (): PlanningData => ({ families: [], options: { date: localDate(), leaveAt:'09:00',returnBy:'',visitMinutes:90,bufferMinutes:15,environment:'either' }, saved:[], savedDays:[] });
+export function localTime() { const d=new Date(); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
 export function localDate() { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 interface PlanningState extends PlanningData {
   setFeedback:(id:string,feedback:VisitFeedbackState)=>void;

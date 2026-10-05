@@ -9,14 +9,17 @@ import {
   Inter_900Black,
   useFonts,
 } from '@expo-google-fonts/inter';
-import { Stack } from 'expo-router';
+import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { colors } from '@/src/design-system/tokens';
+import { useDocumentTitle } from '@/src/hooks/use-document-title';
+import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
+import { useFamilyStore } from '@/src/stores/family-store';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -31,7 +34,51 @@ const queryClient = new QueryClient({
   },
 });
 
+/** The routes a signed-out person may be on: Welcome, creating an account, an invitation link, and the About page. */
+const SIGNED_OUT_ALLOWED = new Set(['index', '(onboarding)', 'invite', 'about', '+not-found']);
+
+/**
+ * Keeps signed-out people out of the app. Every user has an account, so any deep link to a place, a plan or a tab
+ * that arrives without a session goes back to the start; the start sends them to Welcome or to signing in.
+ */
+function useAccountGuard() {
+  const router = useRouter();
+  const segments = useSegments();
+  // `replace` is only safe once the navigator has mounted; before that it is queued against a state that does not exist.
+  const navigatorReady = Boolean(useRootNavigationState()?.key);
+  const status = useAuthStore((s) => s.status);
+  const init = useAuthStore((s) => s.init);
+  useEffect(() => {
+    init();
+  }, [init]);
+  const first = (segments[0] as string | undefined) ?? 'index';
+  // The router object changes identity as navigation settles, so it is read through a ref: depending on it re-ran this
+  // effect on every transition and the redirect never let the navigation state rest.
+  const routerRef = useRef(router);
+  routerRef.current = router;
+  const sentBack = useRef<string | null>(null);
+  useEffect(() => {
+    if (!navigatorReady || !accountRequired() || status !== 'signed_out') {
+      if (status !== 'signed_out') sentBack.current = null;
+      return;
+    }
+    if (SIGNED_OUT_ALLOWED.has(first)) {
+      sentBack.current = null;
+      return;
+    }
+    if (sentBack.current === first) return;
+    sentBack.current = first;
+    // Straight to where signed-out people belong. Replacing with '/' resolves to the tabs' own index from inside the
+    // tabs, which keeps the same segment and never leaves.
+    routerRef.current.replace(
+      (useFamilyStore.getState().hasCompletedOnboarding ? '/(onboarding)/account?mode=signin' : '/(onboarding)/welcome') as never,
+    );
+  }, [status, first, navigatorReady]);
+}
+
 export default function RootLayout() {
+  useDocumentTitle();
+  useAccountGuard();
   const [loaded, error] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -70,6 +117,7 @@ export default function RootLayout() {
             <Stack.Screen name="index" options={{ animation: 'fade' }} />
             <Stack.Screen name="(onboarding)" options={{ animation: 'fade', gestureEnabled: false }} />
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="invite/[code]" options={{ animation: 'fade' }} />
             <Stack.Screen name="profile/edit" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="about" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen

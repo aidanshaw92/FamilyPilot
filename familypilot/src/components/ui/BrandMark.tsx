@@ -23,6 +23,8 @@ interface BrandMarkProps {
   tone?: BrandMarkTone;
   style?: ViewStyle;
   testID?: string;
+  /** Next to the wordmark (a lockup) the mark is decoration: the text already says "FamilyPilot". */
+  decorative?: boolean;
 }
 
 const TONES: Record<BrandMarkTone, { leader: string; follower: string }> = {
@@ -52,7 +54,7 @@ function leaderTransform(grow: number): string {
   return `translate(${LEADER.cx} ${LEADER.cy}) rotate(45) translate(${-s / 2} ${-s / 2})`;
 }
 
-export function BrandMark({ size = 32, tone = 'light', style, testID }: BrandMarkProps) {
+export function BrandMark({ size = 32, tone = 'light', style, testID, decorative = false }: BrandMarkProps) {
   const { leader, follower } = TONES[tone];
   // The kerf is 3 on the grid but never thinner than 1.3 points on screen, so a 16pt mark keeps
   // its two seams instead of melting into one shape.
@@ -61,8 +63,11 @@ export function BrandMark({ size = 32, tone = 'light', style, testID }: BrandMar
   return (
     <View
       style={[styles.wrap, { width: size, height: size }, style]}
-      accessibilityRole="image"
-      accessibilityLabel="FamilyPilot"
+      accessibilityRole={decorative ? undefined : 'image'}
+      accessibilityLabel={decorative ? undefined : 'FamilyPilot'}
+      accessibilityElementsHidden={decorative}
+      importantForAccessibility={decorative ? 'no-hide-descendants' : 'auto'}
+      aria-hidden={decorative ? true : undefined}
       testID={testID}
     >
       <Svg width={size} height={size} viewBox={`0 0 ${GRID} ${GRID}`}>

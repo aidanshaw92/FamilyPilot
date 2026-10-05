@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -25,7 +25,37 @@ describe('Welcome collage photographs', () => {
     }
   });
 
+  it('states for every photograph whether it is a photograph or generated', () => {
+    // Welcome is brand imagery, so generated images are allowed, but the record must be honest about which.
+    const rows = credits.split('\n').filter((l) => /^\| [\w-]+ \| /.test(l) && !/^\| (Slot|-)/.test(l));
+    for (const row of rows) {
+      const origin = row.split('|')[4]?.trim();
+      expect(['photograph', 'generated'], row).toContain(origin);
+    }
+  });
+
   it('ships no photograph that is credited but not wired, or wired but not credited', () => {
     expect(new Set(creditedSlots)).toEqual(new Set(Object.keys(WELCOME_PHOTOS)));
+  });
+
+  it('keeps each shipped photograph inside its size budget', () => {
+    // Brand artwork is bundled with the app, so it is paid for by every install: 150 KB each.
+    for (const key of Object.keys(WELCOME_PHOTOS)) {
+      const bytes = statSync(join(ASSET_DIR, `${key}.jpg`)).size;
+      expect(bytes, `${key}.jpg is ${Math.round(bytes / 1024)} KB`).toBeLessThanOrEqual(150 * 1024);
+    }
+  });
+
+  it('never ships the review-only reference crops', () => {
+    // docs/figma-approved/ holds renders of the approved frames with REFERENCE PHOTO crops in them. They
+    // are for review and comparison only; no asset or source file may reference them.
+    const wiring = readFileSync(join(__dirname, '..', 'assets', 'welcome-photos.ts'), 'utf8');
+    expect(wiring).not.toMatch(/figma-approved|figma-compare|reference/i);
+  });
+
+  it('ships an image for every Welcome slot, so no slot falls back to its gradient in production', () => {
+    // The gradient is a fallback for a slot without a file; all seven are supplied, so none should be missing.
+    const missing = SLOT_IDS.filter((id, i, all) => all.indexOf(id) === i && !(id in WELCOME_PHOTOS));
+    expect(missing).toEqual([]);
   });
 });

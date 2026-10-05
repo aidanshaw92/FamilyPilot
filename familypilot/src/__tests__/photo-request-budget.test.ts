@@ -50,13 +50,20 @@ describe('the photo request budget', () => {
     expect(src).not.toMatch(/filteredVenues\.map\(/);
   });
 
-  it('still shows the deck’s rear cards, which are not hidden layers', () => {
-    // Measured: Home's three photographs are all 100% within the viewport at 86-100% effective
-    // opacity. They are part of the approved deck, so none of them is a free saving, and the deck
-    // is deliberately NOT lazy-gated.
+  it('bounds the Home deck to a fixed window of mounted cards, all loaded eagerly', () => {
+    // The deck used to mount the foreground card and two lite rear layers (3 photographs). It now mounts one
+    // card behind and three ahead so the photograph of a card arriving as a strip has already loaded: a swipe
+    // never reveals a blank. That is one more photograph on open and none more per swipe, and this pins the
+    // window so it cannot quietly grow into "render the whole list".
     const deck = read('src/components/home/RecommendationDeck.tsx');
-    expect(deck).toMatch(/PlaceShowcaseCardRear/);
-    const rearCount = (deck.match(/<PlaceShowcaseCardRear/g) ?? []).length;
-    expect(rearCount).toBe(2);
+    const behind = /export const DECK_BEHIND = (\d+)/.exec(deck);
+    const ahead = /export const DECK_AHEAD = (\d+)/.exec(deck);
+    expect(behind && ahead, 'the deck must declare its window').toBeTruthy();
+    expect(Number(behind![1]) + 1 + Number(ahead![1])).toBeLessThanOrEqual(5);
+    // The window is what is rendered; the deck never maps the whole list.
+    expect(deck).not.toMatch(/venues\.map\(/);
+    expect(deck).toMatch(/imageLoading="eager"/);
+    // Cards are keyed by venue so a loaded photograph is never loaded a second time.
+    expect(deck).toMatch(/key=\{venues\[i\]\.id\}/);
   });
 });

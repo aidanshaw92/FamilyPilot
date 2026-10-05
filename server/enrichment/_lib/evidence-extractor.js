@@ -336,6 +336,60 @@ function isIndoorAttractionOnlyPlayground(sentence) {
   return !PLAYGROUND_PATTERNS.some((re) => re.test(withoutAttraction));
 }
 
+/**
+ * "baby-changing facilities" written with a hyphen, as the National Maritime Museum's page writes it: "Toilets,
+ * baby-changing facilities and an accessible toilet are located near the Romney Road entrance". The plain
+ * `baby\s+chang` patterns cannot see it.
+ *
+ * Deliberately narrower than the spaced form. A hyphenated token is also what a CSS class looks like
+ * (".baby-changing { display: none }"), and flattened page markup has produced false facility claims that way
+ * before, so the hyphenated form only counts when it (a) does not follow a class or id marker or another word
+ * character and (b) is followed by a noun that makes it a facility in prose.
+ */
+const HYPHENATED_CHANGING =
+  /(?<![.#\w-])(?:baby|nappy)-chang(?:e|ing)\s+(?:facilit|room|area|table|unit|station|provision)/i;
+
+/**
+ * The venue's OWN café, stated in the first person or by name, on the venue's own pages.
+ *
+ * The cohort audit of 5 Oct 2026 found 51 of 138 browsable venues whose own pages mention a café and only 5 with a
+ * café claim. The misses were not vague mentions; they were plain statements the original patterns could not read:
+ *
+ *   Discover Children's Story Centre  "Take a break in our cafe and bookshop"
+ *   De Havilland Aircraft Museum      "The museum cafe serves hot and cold drinks as well as a selection of sandwiches"
+ *   Horniman Museum and Gardens       "Our Cafes and kiosks serve specialty coffee daily"
+ *                                     "The Gardens Cafe is located next to the Kusuma Nature Play Area"
+ *   Harry Potter Studio               "Visit the Dragon Roasted Café for coffee, pastries or sandwiches"
+ *   William Morris Gallery            "Relax at Deeney's Cafe, located on the ground floor"
+ *   Woodside Animal Farm              "the heated indoor soft play centre and cafe serving fresh sandwiches"
+ *
+ * What these have in common, and what the patterns therefore require, is that the café is the venue's own: "our",
+ * "the museum/farm/park ... cafe", a proper-named café with a verb that places or opens it, or a "visit the <Name>
+ * Café for" invitation. They stay conservative on purpose. A café that merely appears in the text still does not
+ * count (Golders Hill's "Forget Me Not Memory Cafe", Winter Wonderland's "Serpentine Bar & Kitchen cafe"), and
+ * `isOffSiteCafe` removes the sentences about somebody else's café even when they say "our" or "the cafe serves".
+ *
+ * The proper-name forms are case-SENSITIVE (no `i` flag): a capitalised name is what separates "The Gardens Cafe is
+ * located next to the play area" from "the cafe is located near the station".
+ */
+const OWN_CAFE_PATTERNS = [
+  // No trailing \b: "é" is not a word character, so a boundary after "Café" never matches.
+  /\bour\s+(?:[\w'\u2019&-]+\s+){0,3}caf[e\u00e9]s?(?![A-Za-z])/i,
+  /\bthe\s+(?:museum|gallery|farm|park|zoo|garden|gardens|centre|center|house|studio|site|venue)\s+caf[e\u00e9]s?\s+(?:serves?|offers?|sells?|is\s+open|has)\b/i,
+  /\bThe\s+(?:[A-Z][\w'\u2019&-]+\s+){0,3}Caf[e\u00e9]\s+(?:is\s+open|opens\s+(?:at|from|daily)|is\s+(?:located|situated)\s+(?:on|in|at|within|next\s+to|beside|by)|serves|offers)\b/,
+  /\b(?:[Vv]isit|[Tt]ry|[Ee]njoy|[Cc]heck\s+out|[Hh]ead\s+to)\s+the\s+(?:[A-Z][\w'\u2019&-]+\s+){1,3}Caf[e\u00e9]\s+for\b/,
+  /\bcaf[e\u00e9]s?\s+(?:serving|serves|offering)\s+(?:fresh|hot|a\s+range|a\s+selection|sandwiches|coffee|cakes|lunch|snacks|drinks)/i,
+  /\bCaf[e\u00e9],?\s+(?:which\s+is\s+)?(?:located|situated)\s+(?:on|in|at|within|next\s+to|beside)\b/,
+];
+
+/**
+ * Sentences about a café that is not the venue's own, or not here: "our sister site", "the cafe nearby", "a
+ * recommended café across the road". Applied to every café pattern, old and new.
+ */
+function isOffSiteCafe(sentence) {
+  return /\b(?:nearby|near\s+the\s+(?:station|gates?|entrance\s+road)|across\s+the\s+(?:road|street)|down\s+the\s+(?:road|street)|round\s+the\s+corner|minutes?\s+(?:walk|away|from)|neighbouring|sister\s+(?:site|venue|museum|farm)|other\s+(?:sites?|venues?|locations?)|elsewhere|local\s+caf|find\s+(?:a\s+)?caf|recommend(?:ed)?\s+caf|in\s+the\s+(?:town|village|high\s+street))\b/i.test(sentence);
+}
+
 const FIELD_PATTERNS = [
   {
     field: 'toilets',
@@ -350,6 +404,11 @@ const FIELD_PATTERNS = [
       /toilets?\s+(are\s+)?located/i,
       /toilets?\s+(are\s+)?situated/i,
       /toilets?\s+(are\s+)?provided/i,
+      // "Toilets, including disabled and baby changing facilities, are available on site" (Colne Valley).
+      /\btoilets?\b[^.!?]{0,60}\bare\s+available\s+(?:on[\s-]?site|at\s+the\s+(?:venue|site|park|museum|farm))\b/i,
+      // "There are three accessible toilets in the park" (Golders Hill), "There is an accessible toilet in the
+      // museum" (Gunnersbury): the venue's own toilets, placed.
+      /\b(?:there\s+(?:is|are)|we\s+have|you(?:'ll|\s+will)\s+find)\s+(?:an?\s+|\d+\s+|two\s+|three\s+|four\s+|several\s+)?(?:(?:accessible|disabled|public|baby|family|unisex)\s+)*toilets?\s+(?:in|at|near|by|beside|within|inside|next\s+to)\b/i,
     ],
     no: [
       /no\s+toilet/i,
@@ -368,6 +427,7 @@ const FIELD_PATTERNS = [
       /nappy\s+chang(e|ing)/i,
       /baby\s+chang(e|ing)\s+facilit/i,
       /changing\s+table\s+for\s+babies/i,
+      HYPHENATED_CHANGING,
     ],
     no: [/no\s+baby\s+chang/i],
   },
@@ -437,6 +497,7 @@ const FIELD_PATTERNS = [
       // visitor page, all describing somebody else's café. Exactly the false positive this workstream
       // exists to avoid, and it was mine. Generalising waits for corpus evidence that earns it.
       /\bthe\s+caf[eé]\s+is\s+dog[\s-]friendly/i,
+      ...OWN_CAFE_PATTERNS,
     ],
     no: [/no\s+caf[eé]/i],
   },
@@ -548,6 +609,7 @@ function hasToiletNegation(sentence) {
 /** Generic cloakroom/changing-room wording is not baby changing. */
 function isExplicitBabyChangingStatement(sentence) {
   return (
+    HYPHENATED_CHANGING.test(sentence) ||
     /baby\s+chang(e|ing)/i.test(sentence) ||
     /nappy\s+chang(e|ing)/i.test(sentence) ||
     /baby\s+chang(e|ing)\s+facilit/i.test(sentence) ||
@@ -745,7 +807,9 @@ function matchField(sentence, patterns, fieldId) {
   for (const re of patterns.yes) {
     if (!re.test(sentence)) continue;
     // Availability cannot be inferred from a mention in a closure, future plan, or question.
-    if (/\b(?:not|without|unavailable|closed|broken|planned|proposed|soon|will|temporarily)\b|\bno\s+(?!charge|fee)/i.test(sentence)) continue;
+    // "You will find baby changing facilities at ground level" describes what is there; only a plan
+    // ("will be installed", "will open") is excluded.
+    if (/\b(?:not|without|unavailable|closed|broken|planned|proposed|soon|temporarily)\b|\bwill\b(?!\s+(?:find|see|notice|discover)\b)|\bno\s+(?!charge|fee)/i.test(sentence)) continue;
     if (fieldId === 'parking' && hasParkingNegation(sentence)) continue;
     if (fieldId === 'parking' && !isExplicitParkingStatement(sentence)) continue;
     // A conditional entitlement is not a general "Free parking" promise to a family arriving by car.
@@ -761,6 +825,9 @@ function matchField(sentence, patterns, fieldId) {
     }
     if (fieldId === 'toilets' && (hasToiletNegation(sentence) || isScopedToiletClosure(sentence))) continue;
     if (fieldId === 'babyChanging' && !isExplicitBabyChangingStatement(sentence)) continue;
+    if (fieldId === 'cafe' && isOffSiteCafe(sentence)) continue;
+    // Toilets elsewhere ("the nearest public toilets are at the village hall") are not this venue's.
+    if (fieldId === 'toilets' && /\b(?:nearest|nearby|across\s+the\s+(?:road|street)|down\s+the\s+(?:road|street)|round\s+the\s+corner|minutes?\s+(?:walk|away)|neighbouring|village\s+hall|railway\s+station)\b/i.test(sentence)) continue;
     // A café's or a bus route's accessibility is not the venue's.
     if (fieldId === 'wheelchairAccessible' && isNonVenueWheelchairSubject(sentence)) continue;
     // Soft play is a different facility, and a parent who asked for a playground is not served by it.

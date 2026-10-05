@@ -152,11 +152,15 @@ for (const run of RUNS) {
     };
 
     const activeCard = document.querySelector('[role="button"][aria-label$=", see more"]');
-    const deck = activeCard?.parentElement?.parentElement ?? null;
+    // The card is the button's parent (the button is an empty overlay beside the save heart); its layer wrapper
+    // and then the deck sit above it.
+    const deck = activeCard?.parentElement?.parentElement?.parentElement ?? null;
     const greeting = startsWith('Good ');
-    const search = [...document.querySelectorAll('input')].find((el) =>
-      (el.value || el.placeholder || '').startsWith('Search'),
-    );
+    // Home's search is a button that shows its hint as text (it used to hold a read-only input), so the
+    // hint is found as an input or as a text leaf.
+    const search =
+      [...document.querySelectorAll('input')].find((el) => (el.value || el.placeholder || '').startsWith('Search')) ??
+      [...document.querySelectorAll('div')].find((el) => el.children.length === 0 && /^Search places/.test(el.textContent ?? ''));
     const filter = document.querySelector('[role="button"][aria-label="Filters"]');
     const tabs = [...document.querySelectorAll('[role="tab"]')];
     const pill = tabs[0]?.parentElement ?? null;
@@ -178,7 +182,7 @@ for (const run of RUNS) {
       search: search
         ? {
             ...box(search),
-            text: search.value || search.placeholder,
+            text: search.value || search.placeholder || search.textContent,
             natural: +naturalWidth(search).toFixed(2),
             field: box(search.closest('[role="button"]') ?? search.parentElement?.parentElement),
           }
@@ -186,7 +190,14 @@ for (const run of RUNS) {
       filter: box(filter),
       deck: box(deck),
       activeCard: box(activeCard),
-      layers: deck ? [...deck.children].map(box) : [],
+      // The deck is one continuous placement of cards (RecommendationDeck): the active card's layer and the rear cards
+      // beside it. A rear card is any other layer that is drawn (opacity > 0.5); the one that reveals itself on the
+      // left is the frame's "next", the one on the right its "back".
+      layers: deck
+        ? [...deck.children]
+            .filter((c) => !c.contains(activeCard) && Number(getComputedStyle(c).opacity) > 0.5)
+            .map((c) => ({ ...box(c), opacity: Number(getComputedStyle(c).opacity) }))
+        : [],
       cta: box(leaf('See more')),
       pill: box(pill),
       tabs: tabs.map((t) => ({ label: t.getAttribute('aria-label'), ...box(t) })),
@@ -204,7 +215,15 @@ for (const run of RUNS) {
     };
   });
 
-  const scale = run.width / REF;
+  // A viewport whose chrome leaves less than the frame's room (the iPhone insets run) scales the whole deck
+  // composition down by one factor to fit (home-vertical-layout / deckMetrics); every proportion is then checked at
+  // that factor. The factor itself is bounded below, so a card can never shrink out of usefulness.
+  const widthScale = run.width / REF;
+  const scale = run.insets ? m.activeCard.width / 312 : widthScale;
+  if (run.insets) {
+    check(run.name, 'the deck is scaled to fit by a bounded factor (0.74 to 1)', scale >= 0.74 && scale <= widthScale + 0.001,
+      `factor ${scale.toFixed(3)} of ${widthScale.toFixed(3)}`);
+  }
   const isRef = run.width === REF;
 
   // --- No overflow, nothing clipped ------------------------------------------------------------
@@ -216,11 +235,12 @@ for (const run of RUNS) {
     `"${m.search.text}" ${m.search.natural} in ${m.search.width}`);
 
   // --- Bottom navigation (frame node 9:2) ------------------------------------------------------
-  // 270 x 58 centred at x=62 on a 393 artboard, five 50x44 tabs at stride 52, 22px icons.
+  // Approved Home frame 229:133 (node 267:165): 289.7 x 60 centred on a 393 artboard, five 55pt tab cells, a 46pt
+  // active disc. (Explore draws its own, larger pill; see floating-tab-bar-layout.)
   const tabCount = m.tabs.length;
-  const expectedPillWidth = 6 * 2 + tabCount * 50 + (tabCount - 1) * 2;
-  check(run.name, 'pill matches the frame size', near(m.pill.width, expectedPillWidth) && near(m.pill.height, 58),
-    `${m.pill.width}x${m.pill.height}, expected ${expectedPillWidth}x58 for ${tabCount} tabs`);
+  const expectedPillWidth = 7.35 * 2 + tabCount * 55;
+  check(run.name, 'pill matches the frame size', near(m.pill.width, expectedPillWidth, 1) && near(m.pill.height, 60, 1),
+    `${m.pill.width}x${m.pill.height}, expected ${expectedPillWidth}x60 for ${tabCount} tabs`);
   check(run.name, 'pill is centred', near((m.pill.left + m.pill.right) / 2, run.width / 2),
     `centre ${((m.pill.left + m.pill.right) / 2).toFixed(1)} of ${run.width}`);
   check(run.name, 'whole pill is on screen', m.pill.bottom <= m.viewport.height && m.pill.top >= 0 && m.pill.left >= 0 && m.pill.right <= run.width,
@@ -250,8 +270,10 @@ for (const run of RUNS) {
   check(run.name, 'active card matches the frame', near(m.activeCard.width, 312 * scale, 0.75) && near(m.activeCard.height, 428 * scale, 0.75),
     `${m.activeCard.width}x${m.activeCard.height}, expected ${(312 * scale).toFixed(1)}x${(428 * scale).toFixed(1)}`);
 
-  const next = m.layers[1];
-  const back = m.layers[0];
+  const left = m.activeCard.left;
+  const next = m.layers.filter((l) => l.left < left - 1).sort((a, b) => a.left - b.left)[0] ?? m.layers[0];
+  const back = m.layers.filter((l) => l.right > m.activeCard.right + 1).sort((a, b) => b.right - a.right)[0] ?? m.layers[1];
+  console.log('  rear layers:', JSON.stringify(m.layers.map((l) => ({ l: +l.left.toFixed(1), r: +l.right.toFixed(1), t: +l.top.toFixed(1), w: +l.width.toFixed(1) }))));
   check(run.name, 'left reveal is the frame’s 25', near(m.activeCard.left - next.left, 25 * scale, 0.75),
     `${(m.activeCard.left - next.left).toFixed(2)}, expected ${(25 * scale).toFixed(2)}`);
   check(run.name, 'right reveal is the frame’s 27', near(back.right - m.activeCard.right, 27 * scale, 0.75),

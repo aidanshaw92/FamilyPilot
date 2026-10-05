@@ -25,11 +25,11 @@ icon wells, decorative marks. They carry no meaning; a chip's tint is assigned b
 | `ink` | `#0D1733` | Text. `text.primary` is the same value. Never a control background. |
 | `action` / `actionPressed` / `actionStrong` | `#0F4A3E` / `#0B3B32` / `#15534A` | Primary buttons, selected chips, the nav pill, the arrow CTA, the filter disc, focus rings, links. |
 | `actionSoft` | `#E7F3EF` | Mint behind a green mark: Family Fit on a light surface, the compact CTA's disc. |
-| `nav.pill` / `nav.active` | action / `#DDF1E8` | The floating navigation and its active disc. |
+| `nav.pill` / `nav.active` | action / `#DDF1E8` | The floating navigation and its active disc. Two sizes, one per approved frame: see "Navigation" below. |
 | `tint.mint` / `.blush` / `.lilac` / `.yellow` | `#E7F3EF` / `#FBECEA` / `#F3ECFB` / `#FDF1CC` | Idle chip and icon-well fills, by position. |
 | `tintStrong.*` | `#DDF1E8` / `#FADBD8` / `#EADFF8` | The deeper tone of each tint: blobs, a stronger well. |
 | `brand.mint` / `.coral` / `.violet` / `.yellow` / `.green` | `#5FB3A3` / `#E26B4A` / `#6B21E8` / `#F7C12E` / `#3F9A82` | Icons on the tints; the decorative strokes and leaves. |
-| `text.secondary` / `text.tertiary` | `#626A80` / `#8A91A0` | Second lines, metadata; captions, placeholders. |
+| `text.secondary` / `text.tertiary` | `#626A80` / `#6B7384` | Second lines, metadata; captions, placeholders. Tertiary is 4.5:1 on white and on the canvas (the earlier `#8A91A0` was 3.0:1, below the AA floor for text). |
 | `text.inverse` | `#FFFFFF` | Text on action green and on photography. |
 | `background` / `surface` | `#FBFAF7` / `#FFFFFF` | Warm canvas; cards and sheets are pure white on it. |
 | `fill` | `#F3F1EC` | Quiet wells and information boxes on a white card; the unreviewed Family Fit pill. |
@@ -75,7 +75,45 @@ Create a Plan sheet) · full`.
 
 Shadows: `card`, `cardHover`, `bottomSheet` — all cast in ink at 6–10% opacity.
 
-Touch targets: 44pt minimum.
+Touch targets: 44pt minimum, and **real** on the web. `hitSlop` is honoured on iOS and Android and ignored by
+react-native-web, so a control drawn smaller than 44 makes its pressable 44 and draws the pill inside it
+(`Chip`, the Explore search action), or uses `minTarget()` (`src/components/ui/touch.ts`) for a line of text,
+which grows the target and takes the extra height back out of the layout. `scripts/audit-accessibility.mjs`
+measures the area that actually answers a pointer.
+
+## Navigation
+
+The floating nav is one component with two approved variants, because the two frames draw it differently
+(`src/utils/floating-tab-bar-layout.ts`, measured in Figma, tested against the measurements):
+
+| variant | pill | tab pitch | disc | icons | bottom edge |
+| --- | --- | --- | --- | --- | --- |
+| `home` (Home 229:133; also Plans, Saved, Profile) | 289.7 x 60 | 55 | 46 | ~18 | inset + 1 |
+| `explore` (Explore 294:133) | 310.1 x 59.4 | 60.5 | 47 | ~25 | inset + 4.7 |
+
+The pill takes the focused tab's variant and eases between them (instantly under reduced motion). A screen
+clears either with `useTabBarClearance()`. Tabs are `role=tab` with `aria-selected` and `aria-current`.
+
+## Icons
+
+The frames draw their icons as their own thin, round-capped vector outlines, which a stock icon font does not
+match (a pointed star, a flat-topped house, a compass with a needle, a two-bar filter). They are recreated as
+local SVG in `src/components/ui/icons.tsx` from the frames' own path data (no icon library added, about 4 KB):
+
+| Glyph | Frame node(s) | Used by |
+| --- | --- | --- |
+| Nav icons, both variants (home, compass, plans, saved, profile) | Home 267:166-174; Explore 298:136-159 | `FloatingTabBar` via `NavGlyph` |
+| Search ring and handle | Home 231:134/135, Explore 297:136/137 | `SearchBar` |
+| Filter sliders | Home 231:136 | `CircleButton icon="sliders"` (Home filter disc) |
+| Save heart (outline / filled) | Home 267:157 | `SaveButton` |
+| CTA arrow | Home 267:155, Explore 297:162/163, Welcome 172:241 | `ArrowCta`, Welcome `Button` |
+| Family Fit star | Home 267:149, Explore 297:154 | `FamilyMatch` |
+| Benefit chevron | Welcome 172:238 | `BenefitCard` |
+
+Every glyph is decoration (`aria-hidden`, ignores the pointer); the control that holds it carries the accessible
+name. Icon-font glyphs stay where they read the same as the frame or where the frame draws none: back, share,
+info, and the category placeholder glyphs inside a photo-less thumbnail. The Welcome and Home benefit/illustration
+art was already the frames' own vectors.
 
 ## Brand mark
 
@@ -87,15 +125,28 @@ There is one mark at every size and no alternates.
 
 ## Decoration
 
-The identity's ornament is the `Doodle` component (leaf, strokes, blob; the five tints) and nothing
-else. It appears on Welcome, Home and Explore; Venue Detail, the plan screens, Profile and every
-form stay plain so the facts on them are the focus. A doodle sits on the canvas, never on a card, a
-photograph, a button or under text; it ignores the pointer and is hidden from assistive technology.
-Home's greeting strokes are drawn only when `greetingDoodleLeft()` says the line has room for them.
+The identity's ornament is the **decorative artwork of the approved frames**, drawn from their own
+vectors: `ScreenArt` (`src/components/ui/ScreenArt.tsx`) paints a horizontal slice of an exported layer
+(`src/assets/art/*.svg`, turned into `src/assets/art/figma-art.ts` by `scripts/build-art.mjs`; re-export
+from the frame and rebuild to change it). It appears on Welcome (the stickers between and over the
+photographs), Home (strokes by the avatar, the sprig and dashes by the search, the plan heading's
+strokes, the leaves and blobs around the deck, the foot marks) and Explore (the leaves, blobs and strokes
+in the gutters). Venue Detail, the plan screens, Profile and every form stay plain so the facts on them
+are the focus. Artwork sits on the canvas behind content, never on a control or under text it could
+obscure; it ignores the pointer and is hidden from assistive technology.
 
-Photography is editorial and candid when the product owns it. Until then a `PhotoSlot` holds the
-place in the composition with the category-gradient treatment: no stock image, no generated image,
-and never a photo that impersonates a venue.
+Where a mark follows the fixed-size type (beside a heading) it is placed in fixed points; where it follows
+the screen's edge (a leaf off the right side, the foot marks) or the deck (which scales with the phone) it
+scales with the width. `ScreenArt`'s `from`/`to` slice, `anchor`, `width` and `clipX`/`align` express that;
+Home and Explore split their artwork accordingly. A phone narrower than the frame draws the marks smaller.
+
+Photography is editorial and candid when the product owns it. A `PhotoSlot` clips its photograph to one of
+the seven cut-outs the approved Welcome frame's own mask vectors draw (`WELCOME_CUTOUTS`, generated from
+`src/assets/art/masks/`), inside a white sticker edge; Welcome's slots are placed by their frame
+coordinates (`welcome-layout.ts`). Until a licensed photograph is supplied for a slot it shows the
+category-gradient treatment inside the same cut-out: no stock image, no generated image, and never a
+photo that impersonates a venue. The photographs in the Figma frame are review-only crops and are not
+assets.
 
 ## Primitives
 
@@ -105,13 +156,13 @@ and never a photo that impersonates a venue.
 | `Button` | `primary` action-green pill · `secondary` white with hairline, green text · `outline` white with green rule · `ghost` text only. | Sizes `sm 36 / md 48 / lg 56`; `trailingIcon` for "Get started →". No variant is purple or ink. |
 | `Chip` | The one selection pill (frame "Category pills"): 44 tall, 20 side padding, Medium 14.5/18; selected = action green, idle = white or a tint. | `tint="mint" \| "blush" \| "lilac"` for a rail, assigned by `railTint(index)`; `appearance="plain"` (no hairline) or `"outlined"` (hairline; chips on a white sheet). Lay rows out with `gap: CHIP_GAP` (10); the chip has no outer margin. |
 | `PillSelector` | A single-choice rail or segmented row of `Chip`s. | Arranges and tints a scrolling rail by position; does not style. |
-| `FamilyMatch` | The one Family Fit badge (frame node 8:13): `★ 4.0 Family Fit`, 32 tall; `size="compact"` is frame node 49:5's `★ 4.3` beside a venue name, 30 tall, where a "Why this score" link carries the word. | `tone="onLight"` is a mint pill with green star and text; `"onImage"` is the green pill with white. Unreviewed → "Not yet reviewed" on the neutral fill, no number. Unknown score → renders nothing. Scale and strings live in `src/utils/family-match-scale.ts`. |
+| `FamilyMatch` | The one Family Fit badge (frame node 8:13, resized to the approved Home and Explore references): `★ 4.0 Family Fit`, 28 tall; `size="compact"` is frame node 49:5's `★ 4.3` beside a venue name, 30 tall, where a "Why this score" link carries the word. | `tone="onLight"` is a mint pill with green star and text; `"onImage"` is the green pill with white. Unreviewed → "Not yet reviewed" on the neutral fill, no number. Unknown score → renders nothing. Scale and strings live in `src/utils/family-match-scale.ts`. |
 | `FamilyMatchPanel` / `RecommendationPattern` | The explanation: classification word, "Why it suits your family", "Good to know", the secondary number line. | Word leads, number is secondary, cautions never render as positives. |
-| `ArrowCta` | The emphasised action with an arrow disc: 58 tall, white disc; `size="compact"` is the Explore card's 48 with a 36 disc; `disc="mint"` on Explore. | Home's "See more", Venue Detail's "Create a plan", the plan's "Save this plan", every Explore result. |
+| `ArrowCta` | The emphasised action with an arrow disc: 58 tall, white disc; `size="compact"` is the Explore card's 44 with a 32 disc (the reference draws 42; 44 keeps the touch target); `disc="mint"` on Explore. | Home's "See more", Venue Detail's "Create a plan", the plan's "Save this plan", every Explore result. |
 | `SearchBar` | The 56 search pill with the filter disc inside its right edge (Home), or `actionLabel="Search"` for a green action pill there instead (Explore). | |
 | `CircleButton` | Round control: `light` (white on photography), `dark` (action green), `glass`. | Back, save, filter, "go". |
 | `IconWell` | A 48 tinted square behind an icon, the icon in the tint's saturated partner. | Welcome's benefit cards, empty states. |
-| `Doodle` / `PhotoSlot` | See Decoration above. | |
+| `ScreenArt` / `PhotoSlot` | See Decoration above. | |
 | `DateField` / `TimeField` | A drawn field (white, hairline, 48 tall) showing the value in the app's words — "Friday 2 October 2026", "09:00" — with the platform's native picker kept underneath, transparent, for the interaction. | ISO values in, ISO values out. Labels from `date-time-labels.ts`. Native apps keep the plain text field. |
 | `SearchBar`, `Field`, `BottomSheet`, `Card`, `SectionHeader`, `EmptyState`, `ErrorState`, `Skeleton*`, `VenueImage`, `DataTrustBadge` | Shared surfaces and states. | |
 
@@ -130,6 +181,31 @@ and never a photo that impersonates a venue.
   drive, a missing must-have, a routine clash, a reviewed negative) and **notes** (`venue.goodToKnow`,
   neutral, "Good to know" — the venue's own remarks). "Information confidence" badges come from
   `trust-badges.ts` and exist only when the fact behind them does.
+
+### The canonical parent-facing Family Fit (traced end to end)
+
+**What the value is.** `FamilyScore.score` (`src/types`) is a 0–100 number computed *per family* by
+`src/services/scoring/family-score.ts` from seven factors (`ageSuitability`, `accessibility`, `distance`,
+`weatherFit`, `budgetFit`, `facilitiesMatch`, `routineFit`) against that family's profile. It is not stored
+on the venue, so a restored Saved place has no score until it is recomputed. The UI sorts and filters on the
+0–100 value and *prints* it only through `src/utils/family-match-scale.ts`.
+
+**How it appears.** `★ 4.3 Family Fit` is `score / 20`, rounded to one decimal, on every surface that shows
+a badge (Home deck, Explore cards, Venue Detail, Restaurant detail, Saved rows, the explanation panel's
+secondary line, offers). The classification word (`Excellent fit` ≥ 90, `Great fit` ≥ 80, `Good fit` ≥ 70,
+`Worth considering` ≥ 60, else `Limited fit`) accompanies it where there is room and in spoken labels.
+
+| State | Condition | What a parent sees |
+| --- | --- | --- |
+| Scored | finite score, place reviewed (`enriched` / `verified`) | `★ 4.3 Family Fit`, the word beside it |
+| Not yet reviewed | `provider_only` / `ai_draft` | the neutral status "Not yet reviewed", **no number**, and the same word in every label and announcement |
+| Unknown | non-finite score | no badge, no `0.0`; the spoken line says the fit "has not been worked out yet" |
+
+There is no provisional, starred, dashed, percentage, `76 Good match` or partial-score state, and none may
+be introduced without a change to the scoring contract. The word and the badge must be derived from the
+same inputs (score **and** review status): `SavedPlaceRow` and `RestaurantCard` previously computed the
+word from the score alone, so an unreviewed place could be announced "Good fit" beside a "Not yet reviewed"
+badge; both now pass the status.
 
 ## Motion and accessibility
 

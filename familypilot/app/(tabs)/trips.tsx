@@ -15,8 +15,9 @@ import { PlanDraftForm, PlanFormRow } from '@/src/components/planning/PlanDraftF
 import { PlanDraft, planDraftBlocker, planDraftDefaults } from '@/src/services/planning/plan-draft';
 import { resolvePlanParties } from '@/src/services/planning/plan-parties';
 import { PlanningAccount } from '@/src/components/planning/PlanningAccount';
+import { accountRequired } from '@/src/stores/auth-store';
 import { useFamilyStore } from '@/src/stores/family-store';
-import { localDate, usePlanningStore } from '@/src/stores/planning-store';
+import { localDate, localTime, usePlanningStore } from '@/src/stores/planning-store';
 import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
 import { PlanningFamily, clockLabel, clockMinutes, sharePlanText } from '@/src/services/planning/planner';
 import { PlanningResult, recommendPlans, addMeal } from '@/src/services/planning/recommendations';
@@ -34,7 +35,7 @@ export default function TripsScreen() {
  const [tab,setTab]=useState<'plan'|'saved'|'families'>('plan');const [resultKey,setResultKey]=useState('');
  // Who the planner builds for: the profile household and any described on this device, resolved
  // the same way the Create a Plan sheet resolves them, so the two forms cannot disagree.
- const planDefaults=useMemo(()=>planDraftDefaults({profile,planningFamilies:state.families,options:state.options,today:localDate()}),[profile,state.families,state.options]);
+ const planDefaults=useMemo(()=>planDraftDefaults({profile,planningFamilies:state.families,options:state.options,today:localDate(),nowTime:localTime()}),[profile,state.families,state.options]);
  const draft:PlanDraft={date:state.options.date,leaveAt:state.options.leaveAt,visitMinutes:state.options.visitMinutes,partyIds:selected};
  const applyDraft=(next:PlanDraft)=>{state.setOptions({date:next.date,leaveAt:next.leaveAt,visitMinutes:next.visitMinutes});setSelected(next.partyIds);};
  const blocker=planDraftBlocker(draft,planDefaults.parties);
@@ -155,7 +156,7 @@ export default function TripsScreen() {
     {/* The same four questions, the same form, as the Create a Plan sheet on a place. Parties come
         from the profile first, so a parent who finished onboarding is never told to set up a family
         they already described; a second household is added through the editor as before. */}
-    <PlanDraftForm draft={draft} parties={planDefaults.parties} onDraftChange={applyDraft} onAddFamily={()=>setEditor(blank(false))}/>
+    <PlanDraftForm draft={draft} parties={planDefaults.parties} onDraftChange={applyDraft} onAddFamily={()=>setEditor(blank(false))} connections={accountRequired()}/>
     {planDefaults.needsProfile?<Button label="Set up your family" onPress={()=>router.push('/profile/edit' as never)}/>:null}
     <Pressable onPress={()=>setTab('families')} accessibilityRole="button" accessibilityLabel="Manage families and routines" style={linkStyle} hitSlop={8}><Text variant="link">Manage families and routines</Text></Pressable>
     <PlanFormRow label="Everyone home by">

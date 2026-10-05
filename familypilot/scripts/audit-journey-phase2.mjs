@@ -350,12 +350,13 @@ async function auditJourney(browser, viewport) {
     message: /no public transport times/i.test(foodText) ? 'absence stated' : 'absence NOT stated',
   });
   note(V, 'Restaurants close by', 'says hours are unlisted rather than leaving a parent to guess', {
-    ok: /Hours not listed/i.test(foodText) && /Mo-Su 11:00-22:00/.test(foodText),
+    // Readable OSM hours become today's state ("Opens at 11am today", "Open until 10pm"); none at all is "Hours not listed".
+    ok: /Hours not listed/i.test(foodText) && /(Open until|Opens at|Closing soon|Closed|Open 24)/i.test(foodText),
     message: /Hours not listed/i.test(foodText) ? 'both states present' : 'unlisted state missing',
   });
   note(V, 'Restaurants close by', 'does not claim facilities nobody recorded', {
-    ok: /Nobody has recorded facilities/i.test(foodText) && /Highchairs/.test(foodText),
-    message: /Nobody has recorded facilities/i.test(foodText) ? 'unknown stated' : 'unknown NOT stated',
+    ok: /Family facilities not recorded/i.test(foodText) && /Highchairs/.test(foodText),
+    message: /Family facilities not recorded/i.test(foodText) ? 'unknown stated' : 'unknown NOT stated',
   });
   note(V, 'Restaurants close by', 'invents no rating, score or review count for an OSM place', {
     ok: !/\b\d(\.\d)?\s*(stars?|\/\s*5)|\breviews?\b|Family match|Strong fit|Potential match/i.test(foodText),

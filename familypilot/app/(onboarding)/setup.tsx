@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,7 +13,9 @@ import { TextField } from '@/src/components/profile/TextField';
 import { Button, Text } from '@/src/components/ui';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { resolveUkLocation, ResolvedLocation } from '@/src/services/location/location-client';
+import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
 import { useFamilyStore } from '@/src/stores/family-store';
+import { usePendingInviteStore } from '@/src/stores/pending-invite-store';
 import {
   DraftChild,
   MAX_CHILDREN,
@@ -41,6 +43,12 @@ export default function SetupScreen() {
   const insets = useSafeAreaInsets();
   const setProfile = useFamilyStore((s) => s.setProfile);
   const completeOnboarding = useFamilyStore((s) => s.completeOnboarding);
+  const pendingInvite = usePendingInviteStore((s) => s.code);
+  const authStatus = useAuthStore((s) => s.status);
+  // Setting up a family comes after the account: a signed-out person is sent back to create one.
+  useEffect(() => {
+    if (accountRequired() && authStatus === 'signed_out') router.replace('/(onboarding)/account' as never);
+  }, [authStatus, router]);
 
   const [stepIndex, setStepIndex] = useState(0);
   const [parentName, setParentName] = useState('');
@@ -149,7 +157,10 @@ export default function SetupScreen() {
     });
     setProfile(profile);
     completeOnboarding();
-    router.replace('/(tabs)' as never);
+    // Someone who came through an invitation link goes back to it to accept. Everyone else with an account gets the
+    // optional "Who do you plan days out with?" step; a build with no account backend has nothing to invite through.
+    if (pendingInvite) router.replace(`/invite/${pendingInvite}` as never);
+    else router.replace((accountRequired() ? '/(onboarding)/invite' : '/(tabs)') as never);
   };
 
   const handleNext = async () => {

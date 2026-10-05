@@ -1,0 +1,43 @@
+<svg width="853" height="1844" viewBox="0 0 853 1844" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="853" height="1844" fill="#F5F5F5"/>
+<g id="APPROVED &#226;&#128;&#148; Explore &#194;&#183; native 853&#195;&#151;1844 &#194;&#183; reference locked underneath" clip-path="url(#clip0_117_2)">
+<rect width="853" height="1844" fill="url(#paint0_linear_117_2)"/>
+<g id="Decorative artwork &#226;&#128;&#148; behind cards (grouped)">
+<ellipse id="Mint blob (top right)" cx="848" cy="288" rx="30" ry="26" transform="rotate(20 848 288)" fill="#C1E6DC"/>
+<ellipse id="Teal blob (right)" cx="854" cy="1660" rx="25" ry="24" fill="#7CC5B5"/>
+<path id="Dash left a" d="M14 314L33 326" stroke="#89CEBE" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Dash left b" d="M41 309L53 289" stroke="#89CEBE" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Sparkle title a" d="M551 118L566 152" stroke="#FEBE0F" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Sparkle title b" d="M567 163L600 148" stroke="#FEBE0F" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Sparkle title c" d="M574 190L601 189" stroke="#FEBE0F" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Dash All a" d="M156 563L165 588" stroke="#FDBD0F" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Dash All b" d="M171 602L193 585" stroke="#FDBD0F" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Stem TR" d="M817 163C830 183 842 205 853 228" stroke="#47A08D" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse id="Leaf TR 1" cx="792" cy="130" rx="17.5" ry="37" transform="rotate(-27.5 792 130)" fill="#5DB3A2"/>
+<ellipse id="Leaf TR 2" cx="842" cy="168" rx="11" ry="38.5" transform="rotate(-2 842 168)" fill="#5DB3A2"/>
+<ellipse id="Leaf TR 3" cx="813" cy="200" rx="14" ry="35.5" transform="rotate(-63 813 200)" fill="#5DB3A2"/>
+<path id="Leaf vein TR 1" d="M796 129L812 158" stroke="#3C9484" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Leaf vein TR 2" d="M842 160L843 197" stroke="#3C9484" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Leaf vein TR 3" d="M814 199L841 212" stroke="#3C9484" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Stem R" d="M833 607C838 625 846 645 853 662" stroke="#47A08D" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse id="Leaf R 1" cx="827" cy="580" rx="15" ry="29.5" transform="rotate(-10 827 580)" fill="#5DB3A2"/>
+<ellipse id="Leaf R 2" cx="827" cy="640" rx="14" ry="29" transform="rotate(-59 827 640)" fill="#5DB3A2"/>
+<path id="Leaf vein R 1" d="M828 577L833 602" stroke="#3C9484" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Leaf vein R 2" d="M827 638L850 657" stroke="#3C9484" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Mint leaf stroke (right)" d="M790 675C812 683 836 703 856 736" stroke="#C1E6DC" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Blush blob" d="M690.22 640C687.22 614 715.22 594 751.22 594C787.22 594 805.22 612 797.22 636C791.22 656 763.22 664 741.22 668C727.22 671 719.22 676 707.22 675C694.22 674 692.22 655 690.22 640Z" fill="#FEDDDC"/>
+<path id="Yellow blob (left)" d="M-2 1553C22 1556 45 1578 54 1600C57 1612 51 1632 40 1641C25 1635 10 1619 -2 1604V1553Z" fill="#FED886"/>
+<path id="Dash teal (right)" d="M824 1570L833 1594" stroke="#9AD7C8" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Mint wave (bottom right)" d="M676 1850C690 1815 720 1803 752 1802C790 1800 800 1775 820 1752C832 1740 845 1735 860 1732V1850H676Z" fill="#C1E7DC"/>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_117_2" x1="426.5" y1="0" x2="426.5" y2="1844" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FEFDFB"/>
+<stop offset="1" stop-color="#FBFBF8"/>
+</linearGradient>
+<clipPath id="clip0_117_2">
+<rect width="853" height="1844" fill="white"/>
+</clipPath>
+</defs>
+</svg>

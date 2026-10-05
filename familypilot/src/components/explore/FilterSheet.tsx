@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Chip, Text, CHIP_GAP } from '@/src/components/ui';
+import { minTarget } from '@/src/components/ui/touch';
 import { timing } from '@/src/design-system/animations/presets';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
@@ -13,6 +14,7 @@ import {
   BUDGET_FILTER_OPTIONS,
   DRIVE_FILTER_OPTIONS,
   FILTER_SHEET_OPTIONS,
+  FOOD_SHEET_OPTIONS,
 } from '@/src/utils/filter-venues';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
 
@@ -32,6 +34,7 @@ function Backdrop({ onClose }: { onClose: () => void }) {
     <AnimatedPressable
       style={[styles.backdrop, animatedStyle]}
       onPress={onClose}
+      accessibilityRole="button"
       accessibilityLabel="Close filters"
     />
   );
@@ -40,9 +43,14 @@ function Backdrop({ onClose }: { onClose: () => void }) {
 interface FilterSheetProps {
   visible: boolean;
   onClose: () => void;
+  /**
+   * `home` offers only the filters that make sense on Home's one deck: the practical needs and the food groups.
+   * Travel time and budget are Explore's "for this search only" controls and would be confusing there.
+   */
+  scope?: 'explore' | 'home';
 }
 
-export function FilterSheet({ visible, onClose }: FilterSheetProps) {
+export function FilterSheet({ visible, onClose, scope = 'explore' }: FilterSheetProps) {
   const insets = useSafeAreaInsets();
   const { data: profile } = useFamilyProfile();
   const {
@@ -56,11 +64,27 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
     resetExploreFilters,
   } = useFiltersStore();
 
-  const isRestaurantMode = categoryFilter === 'restaurants';
+  // The sheet is a Modal, which on the web mounts beside the app rather than over it, so the page behind
+  // stays in the tab order and the reading order unless it is made inert while the sheet is open.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !visible || typeof document === 'undefined') return;
+    const root = document.getElementById('root');
+    if (!root) return;
+    root.setAttribute('inert', '');
+    root.setAttribute('aria-hidden', 'true');
+    return () => {
+      root.removeAttribute('inert');
+      root.removeAttribute('aria-hidden');
+    };
+  }, [visible]);
+
+  const isRestaurantMode = scope === 'explore' && categoryFilter === 'restaurants';
   const profileDrive = profile?.maxDriveMinutes ?? 30;
 
   const handleReset = () => {
-    if (isRestaurantMode) {
+    if (scope === 'home') {
+      useFiltersStore.getState().clearAdvancedFilters();
+    } else if (isRestaurantMode) {
       setExploreMaxDrive('any');
       setExploreBudget('any');
       useFiltersStore.getState().clearAdvancedFilters();
@@ -78,7 +102,10 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
           options: RESTAURANT_FILTER_OPTIONS.slice(9),
         },
       ]
-    : [{ id: 'general', label: 'More filters', options: FILTER_SHEET_OPTIONS }];
+    : [
+        { id: 'general', label: 'More filters', options: FILTER_SHEET_OPTIONS },
+        { id: 'food', label: 'Food nearby', options: FOOD_SHEET_OPTIONS },
+      ];
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -90,6 +117,7 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
           <Pressable
             onPress={handleReset}
             hitSlop={8}
+            style={minTarget(20)}
             accessibilityRole="button"
             accessibilityLabel="Reset filters"
           >
@@ -100,38 +128,42 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
         </View>
 
         <ScrollView contentContainerStyle={styles.content}>
-          <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
-            Travel time from home
-          </Text>
-          <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint}>
-            Your profile default is {profileDrive} minutes. Change here for this search only
-          </Text>
-          <View style={styles.chipWrap}>
-            {DRIVE_FILTER_OPTIONS.map((option) => (
-              <Chip
-                key={String(option.id)}
-                label={option.label}
-                active={exploreMaxDrive === option.id}
-                onPress={() => setExploreMaxDrive(option.id)}
-              />
-            ))}
-          </View>
+          {scope === 'explore' ? (
+            <>
+              <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+                Travel time from home
+              </Text>
+              <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint}>
+                Your profile default is {profileDrive} minutes. Change here for this search only
+              </Text>
+              <View style={styles.chipWrap}>
+                {DRIVE_FILTER_OPTIONS.map((option) => (
+                  <Chip
+                    key={String(option.id)}
+                    label={option.label}
+                    active={exploreMaxDrive === option.id}
+                    onPress={() => setExploreMaxDrive(option.id)}
+                  />
+                ))}
+              </View>
 
-          <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
-            Budget
-          </Text>
-          <View style={styles.chipWrap}>
-            {BUDGET_FILTER_OPTIONS.filter((option) =>
-              isRestaurantMode ? option.id !== 'free' : true,
-            ).map((option) => (
-              <Chip
-                key={option.id}
-                label={option.label}
-                active={exploreBudget === option.id}
-                onPress={() => setExploreBudget(option.id)}
-              />
-            ))}
-          </View>
+              <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+                Budget
+              </Text>
+              <View style={styles.chipWrap}>
+                {BUDGET_FILTER_OPTIONS.filter((option) =>
+                  isRestaurantMode ? option.id !== 'free' : true,
+                ).map((option) => (
+                  <Chip
+                    key={option.id}
+                    label={option.label}
+                    active={exploreBudget === option.id}
+                    onPress={() => setExploreBudget(option.id)}
+                  />
+                ))}
+              </View>
+            </>
+          ) : null}
 
           {facilityOptions.map((group) => (
             <View key={group.id}>

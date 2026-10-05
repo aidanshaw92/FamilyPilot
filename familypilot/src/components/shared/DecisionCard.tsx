@@ -13,10 +13,13 @@ import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
 import {
   EXPLORE_CARD_CONTENT_PADDING,
+  EXPLORE_CARD_PADDING_LEFT,
+  EXPLORE_CARD_PADDING_RIGHT,
   EXPLORE_CARD_PHOTO_WIDTH,
   exploreCardCtaLabel,
 } from '@/src/utils/explore-card-layout';
 import { getMatchClassification } from '@/src/utils/family-match-classification';
+import { matchCardReason, VERDICT_BADGE } from '@/src/services/matching/family-match';
 
 import { RecommendationPattern } from './RecommendationPattern';
 import { travelTimeLabel } from '@/src/utils/travel-time';
@@ -47,7 +50,8 @@ function DecisionCardComponent({
   };
 
   if (variant === 'list') {
-    const classification = getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
+    const match = venue.familyMatch;
+    const classification = match ? VERDICT_BADGE[match.verdict] : getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
     const unreviewed = venue.enrichmentStatus === 'provider_only';
     // Two concrete facts read as bespoke; one alone can look like a generic template repeated
     // across every card, so combine the two most relevant reasons where there's a second one.
@@ -55,7 +59,7 @@ function DecisionCardComponent({
     // ellipsis rather than showing it, which reads as a cut-off fragment instead of a fact.)
     // An unreviewed place has no reason line: the badge under the title already says "Not yet
     // reviewed", its only heuristic reason is the distance, and the meta line carries that.
-    const reason = unreviewed ? '' : venue.familyScore.explanation.slice(0, 2).join(' · ');
+    const reason = match ? matchCardReason(match) : unreviewed ? '' : venue.familyScore.explanation.slice(0, 2).join(' · ');
     const ctaLabel = exploreCardCtaLabel(windowWidth, unreviewed);
 
     // The Explore result card (Figma "Explore card", node 90:106): the photograph down the left,
@@ -78,18 +82,26 @@ function DecisionCardComponent({
           borderRadius={0}
         />
         <View style={styles.compactContent}>
-          <Text variant="heading3" numberOfLines={2}>
+          <Text variant="heading3" numberOfLines={2} style={styles.compactTitle}>
             {venue.name}
           </Text>
           {/* The same badge as Home and Venue Detail, under the title rather than beside it: beside,
               it forced "Kettleford Play House" to truncate at 360 wide. */}
-          <FamilyMatch score={venue.familyScore.score} enrichmentStatus={venue.enrichmentStatus} />
+          <FamilyMatch
+            score={venue.familyScore.score}
+            enrichmentStatus={venue.enrichmentStatus}
+            match={match}
+            size="explore"
+            style={styles.compactFit}
+          />
           {reason ? (
-            <Text variant="bodySmall" color={colors.text.primary} numberOfLines={2}>
+            <Text variant="bodySmall" color={colors.text.primary} numberOfLines={2} style={styles.compactReason}>
               {reason}
             </Text>
           ) : null}
-          <Text variant="caption" color={colors.text.tertiary}>
+          {/* Two lines, not one: the spend ("£8 to £15 for a family of four") is dynamic and long, and one line
+              cut it to "£8 to £1…", which reads as a different price. The frame's own meta is the first line. */}
+          <Text variant="caption" color={colors.text.secondary} numberOfLines={2} style={styles.compactMeta}>
             {venue.category.replace('_', ' ')} · {travelTimeLabel(venue.driveMinutes, 'estimated')}
             {venue.estimatedSpend ? ` · ${venue.estimatedSpend}` : ''}
           </Text>
@@ -97,8 +109,9 @@ function DecisionCardComponent({
             size="compact"
             disc="mint"
             label={ctaLabel}
-            accessibilityLabel={`${ctaLabel}: ${venue.name}`}
             onPress={handleViewDetails}
+            // The card is the button; its CTA is the visible cue for it, not a second button inside it.
+            decorative
             style={styles.compactCta}
           />
         </View>
@@ -170,25 +183,47 @@ function DecisionCardComponent({
 export const DecisionCard = memo(DecisionCardComponent);
 
 const styles = StyleSheet.create({
+  // The approved Explore frame 294:133 (pt = px / 2.17): a 13.8 radius, a 111 photograph, the title
+  // Bold 17.1, the reason lines 12.5 on 16.6, the meta 12.2, 9 between cards.
   compact: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    marginBottom: spacing.md,
+    marginBottom: 9,
     backgroundColor: colors.surface,
-    borderRadius: radius.xl,
+    borderRadius: 14,
     overflow: 'hidden',
     ...shadows.card,
   },
   compactImage: {
     width: EXPLORE_CARD_PHOTO_WIDTH,
   },
+  compactTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 17.1,
+    lineHeight: 21,
+  },
+  compactFit: {
+    marginTop: 6,
+  },
+  compactReason: {
+    fontSize: 12.5,
+    lineHeight: 16.6,
+    marginTop: 7,
+  },
+  compactMeta: {
+    fontSize: 12.2,
+    lineHeight: 15,
+    marginTop: 3,
+  },
   compactContent: {
     flex: 1,
-    gap: spacing.sm,
-    padding: EXPLORE_CARD_CONTENT_PADDING,
+    paddingTop: EXPLORE_CARD_CONTENT_PADDING,
+    paddingBottom: 11,
+    paddingLeft: EXPLORE_CARD_PADDING_LEFT,
+    paddingRight: EXPLORE_CARD_PADDING_RIGHT,
   },
   compactCta: {
-    marginTop: spacing.xs,
+    marginTop: 10,
   },
   carouselWrap: {
     marginRight: spacing.lg,

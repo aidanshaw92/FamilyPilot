@@ -1,5 +1,6 @@
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
+import { minTarget } from '@/src/components/ui/touch';
 import { Text } from '@/src/components/ui/Text';
 import { spacing } from '@/src/design-system/tokens';
 import {
@@ -25,7 +26,7 @@ export function PlaceAttribution({ provider }: { provider: PlacesProviderName | 
         onPress={() => void Linking.openURL(OSM_COPYRIGHT_URL)}
         accessibilityRole="link"
         accessibilityLabel="Map data from OpenStreetMap contributors, opens the licence"
-        style={styles.row}
+        style={[styles.row, minTarget(20)]}
         testID="place-attribution-osm"
       >
         <Text variant="caption" color={ATTRIBUTION_INK}>

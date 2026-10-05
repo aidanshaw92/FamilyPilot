@@ -124,7 +124,7 @@ export class PlacesRepository {
     if (cached) {
       return mergePlaceToVenueDetail(
         cached.place,
-        cached.metadata ?? getFamilyPlaceMetadata(id),
+        cached.metadata ?? cached.place.familyMetadata ?? getFamilyPlaceMetadata(id),
         home.latitude,
         home.longitude,
       );
@@ -135,7 +135,7 @@ export class PlacesRepository {
       await setCachedDetail(id, result);
       return mergePlaceToVenueDetail(
         result.place,
-        result.metadata ?? getFamilyPlaceMetadata(id),
+        result.metadata ?? result.place.familyMetadata ?? getFamilyPlaceMetadata(id),
         home.latitude,
         home.longitude,
       );

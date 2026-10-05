@@ -1,6 +1,8 @@
 import { FoodCandidate } from '@/src/types/nearby-food';
 import { TravelLeg } from '@/src/types/travel';
 import { travelSourceOfLeg, travelTimeWithMode } from '@/src/utils/travel-time';
+import { describeOpeningToday, OpeningTodayState } from '@/src/utils/opening-today';
+import { parseOsmOpeningHours } from '@/src/utils/osm-opening-hours';
 
 /** The text lines of frame 02's restaurant card, kept pure so they can be tested without native modules. */
 export const CATEGORY_NOUN: Record<FoodCandidate['category'], string> = {
@@ -31,4 +33,33 @@ export function restaurantHoursLine(candidate: FoodCandidate): { text: string; r
   return candidate.openingHours
     ? { text: `Hours: ${candidate.openingHours}`, recorded: true }
     : { text: 'Hours not listed', recorded: false };
+}
+
+/** The tags OpenStreetMap said yes to, one short label each, for chips. Empty when nothing was recorded. */
+export function restaurantFacilityChips(candidate: FoodCandidate): string[] {
+  const chips: string[] = [];
+  if (candidate.tagged.highchair) chips.push('Highchairs');
+  if (candidate.tagged.changingTable) chips.push('Baby changing');
+  if (candidate.tagged.outdoorSeating) chips.push('Outdoor seating');
+  if (candidate.tagged.wheelchair) chips.push('Step-free entrance');
+  return chips;
+}
+
+export interface RestaurantOpenLine {
+  text: string;
+  state: OpeningTodayState | 'listed' | 'not_listed';
+}
+
+/**
+ * Whether the place is open, worked out from OpenStreetMap's own hours when they are in a form this can read
+ * (`parseOsmOpeningHours`), and shown as the raw text when they are not. Never "open" or "closed" from a guess: a
+ * place with no hours says "Hours not listed", which is different from shut.
+ */
+export function restaurantOpenLine(candidate: FoodCandidate, now: Date = new Date()): RestaurantOpenLine {
+  const raw = candidate.openingHours?.trim();
+  if (!raw) return { text: 'Hours not listed', state: 'not_listed' };
+  const schedule = parseOsmOpeningHours(raw);
+  if (!schedule) return { text: `Hours: ${raw}`, state: 'listed' };
+  const today = describeOpeningToday(schedule, now);
+  return { text: today.label, state: today.state };
 }

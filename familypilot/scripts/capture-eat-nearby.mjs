@@ -117,7 +117,7 @@ try {
   await waitForReady(page);
   await page.getByText('Restaurants', { exact: true }).click();
   await page.waitForTimeout(600);
-  await page.getByLabel('Open filters').click();
+  await page.getByRole('button', { name: /^Filters/ }).click();
   await page.waitForTimeout(800);
   await page.screenshot({ path: join(OUT_DIR, '04-restaurant-filter-sheet.png') });
   console.log('✓ 04-restaurant-filter-sheet.png');

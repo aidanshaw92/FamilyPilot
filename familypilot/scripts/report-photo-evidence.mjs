@@ -61,7 +61,10 @@ await page.waitForSelector('[role="button"][aria-label$=", see more"]', { timeou
 await page.waitForTimeout(4000);
 
 const report = await page.evaluate(() => {
-  const card = document.querySelector('[role="button"][aria-label$=", see more"]');
+  // The button is an empty overlay inside the card (beside the save heart), so the card is its parent and the
+  // deck is two levels above that.
+  const button = document.querySelector('[role="button"][aria-label$=", see more"]');
+  const card = button?.parentElement ?? null;
   const deck = card?.parentElement?.parentElement ?? null;
   const layers = deck ? [...deck.children] : [];
   const describe = (layer, role) => {
@@ -82,7 +85,7 @@ const report = await page.evaluate(() => {
   // The card is a preview, so it must NOT carry a photographer's name; Home carries the Google
   // mark instead. Both halves of that are checked, because either one alone is non-compliant.
   const creditOnCard = [...(card?.querySelectorAll('div') ?? [])].find(
-    (el) => el.children.length === 0 && (el.textContent ?? '').includes('· Google'),
+    (el) => el.children.length === 0 && /Photo: /.test(el.textContent ?? ''),
   );
   // React Native's Image renders on web as a div with a background image, not an <img>, so the
   // asset form is detected by that rather than by tag name.
@@ -93,7 +96,7 @@ const report = await page.evaluate(() => {
     (el) => el.children.length === 0 && (el.textContent ?? '').trim() === 'Google Maps',
   );
   return {
-    activeVenue: card?.getAttribute('aria-label')?.replace(/, see more$/, '') ?? null,
+    activeVenue: button?.getAttribute('aria-label')?.replace(/, see more$/, '') ?? null,
     layers: [describe(layers[0], 'back'), describe(layers[1], 'next'), describe(layers[2], 'active')],
     creditOnCard: creditOnCard?.textContent ?? null,
     googleMark: markIsAsset

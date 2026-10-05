@@ -17,6 +17,7 @@ import {
   evaluateAgeRecommendation,
   yearsToMonths,
 } from './age-suitability';
+import { compareTravelMinutes } from '@/src/utils/travel-time';
 import { evaluateAgeAdmission } from './age-admission';
 import {
   hasTrustedMatchSignals,
@@ -145,6 +146,8 @@ function evaluateBudget(
 }
 
 function evaluateJourney(driveMinutes: number, maxMinutes: number): FactMatchOutcome {
+  // No journey could be worked out: neither suitable nor unsuitable.
+  if (!Number.isFinite(driveMinutes)) return 'unknown';
   if (driveMinutes <= maxMinutes) return 'suitable';
   return 'unsuitable';
 }
@@ -413,7 +416,7 @@ export function rankVenueMatches(
     if (a.match.preferredUnknowns !== b.match.preferredUnknowns) {
       return a.match.preferredUnknowns - b.match.preferredUnknowns;
     }
-    return a.facts.driveMinutes - b.facts.driveMinutes;
+    return compareTravelMinutes(a.facts.driveMinutes, b.facts.driveMinutes);
   });
 
   return results.slice(0, 3);

@@ -1,9 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View, ViewStyle } from 'react-native';
 
 import { colors, fontFamily, radius, spacing } from '@/src/design-system/tokens';
 
 import { CircleButton } from './CircleButton';
+import { SearchGlyph } from './icons';
 import { Text } from './Text';
 
 interface SearchBarProps {
@@ -16,6 +17,7 @@ interface SearchBarProps {
   /** When set, the whole bar is a button (a Home shortcut into Explore) rather than an input. */
   onPress?: () => void;
   onFilterPress?: () => void;
+  /** A small dot on the filter disc when filters are narrowing the list. */
   filterActive?: boolean;
   /**
    * Explore's variant (Figma "Search bar / Action"): a green "Search" pill tucked inside the right
@@ -24,6 +26,11 @@ interface SearchBarProps {
   actionLabel?: string;
   onAction?: () => void;
   actionAccessibilityLabel?: string;
+  /**
+   * `explore` is the approved Explore frame's field (294:133): 51.6 tall, placeholder 14.8, the green
+   * Search pill 88.5 x 41.9 inset 5. `default` is Home's 56 field.
+   */
+  variant?: 'default' | 'explore';
   style?: ViewStyle;
   autoFocus?: boolean;
 }
@@ -42,24 +49,38 @@ export function SearchBar({
   actionLabel,
   onAction,
   actionAccessibilityLabel,
+  variant = 'default',
   style,
   autoFocus,
 }: SearchBarProps) {
   const readOnly = Boolean(onPress);
+  const explore = variant === 'explore';
+  const [focused, setFocused] = useState(false);
 
   return (
-    <View style={[styles.wrap, style]}>
+    <View style={[styles.wrap, explore && styles.wrapExplore, style]}>
       <Pressable
         accessibilityRole={readOnly ? 'button' : undefined}
         accessibilityLabel={readOnly ? placeholder : undefined}
         onPress={onPress}
         disabled={!readOnly}
-        style={[styles.field, onFilterPress ? styles.fieldWithFilter : null]}
+        style={[
+          styles.field,
+          explore && styles.fieldExplore,
+          onFilterPress ? styles.fieldWithFilter : null,
+          // Keyboard focus must be visible. The input's own outline is removed (it would draw a box inside
+          // the pill), so the pill carries the ring instead.
+          focused && styles.fieldFocused,
+        ]}
       >
-        <Ionicons name="search" size={SEARCH_ICON} color={PLACEHOLDER_INK} />
+        <SearchGlyph size={SEARCH_ICON} color={PLACEHOLDER_INK} />
         {readOnly ? (
+          // A button that LOOKS like a field shows its hint as text. It used to draw a read-only text
+          // input inside the button, which is a focusable control nested in another and had no name.
           <View style={styles.readOnlyLabel} pointerEvents="none">
-            <PlaceholderText>{value || placeholder}</PlaceholderText>
+            <Text numberOfLines={1} style={styles.readOnlyText}>
+              {value || placeholder}
+            </Text>
           </View>
         ) : (
           <TextInput
@@ -71,17 +92,25 @@ export function SearchBar({
             onSubmitEditing={onSubmit}
             returnKeyType="search"
             autoFocus={autoFocus}
-            style={styles.input}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            style={[styles.input, explore && styles.inputExplore]}
           />
         )}
         {actionLabel && onAction ? (
+          // The pill is drawn 42 tall on Explore; its button is 44, so the target is real on the web
+          // too (hitSlop is not).
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={actionAccessibilityLabel ?? actionLabel}
             onPress={onAction}
-            style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
+            style={[styles.actionHit, explore && styles.actionHitExplore]}
           >
-            <Text style={styles.actionLabel}>{actionLabel}</Text>
+            {({ pressed }) => (
+              <View style={[styles.action, explore && styles.actionExplore, pressed && styles.actionPressed]}>
+                <Text style={[styles.actionLabel, explore && styles.actionLabelExplore]}>{actionLabel}</Text>
+              </View>
+            )}
           </Pressable>
         ) : null}
       </Pressable>
@@ -90,27 +119,16 @@ export function SearchBar({
           It sits over the field rather than within it so its press area stays its own. */}
       {onFilterPress ? (
         <CircleButton
-          icon="options-outline"
+          icon="sliders"
           accessibilityLabel="Filters"
           tone="dark"
           size={FILTER_SIZE}
-          iconSize={20}
           onPress={onFilterPress}
           style={styles.filter}
         />
       ) : null}
+      {onFilterPress && filterActive ? <View pointerEvents="none" style={styles.filterDot} testID="filter-active-dot" /> : null}
     </View>
-  );
-}
-
-function PlaceholderText({ children }: { children: string }) {
-  return (
-    <TextInput
-      editable={false}
-      pointerEvents="none"
-      value={children}
-      style={[styles.input, styles.readOnlyInput]}
-    />
   );
 }
 
@@ -119,6 +137,7 @@ function PlaceholderText({ children }: { children: string }) {
  * 22px in, the placeholder starting at 56, and a 46px filter disc inset 5 from the right edge.
  */
 const FIELD_HEIGHT = 56;
+const FILTER_DOT = 11;
 const FIELD_PADDING = 21;
 const PLACEHOLDER_FONT_SIZE = 15.5;
 const PLACEHOLDER_INK = colors.text.tertiary;
@@ -129,10 +148,37 @@ const FILTER_INSET = 5;
 const ACTION_HEIGHT = 44;
 const ACTION_INSET = 6;
 
+/** Explore frame 294:133: 112px / 2.17 = 51.6 tall; the pill 192 x 91 px = 88.5 x 41.9, inset 5. */
+const EXPLORE_FIELD_HEIGHT = 51.6;
+const EXPLORE_ACTION_HEIGHT = 42;
+const EXPLORE_ACTION_INSET = 5;
+
 const styles = StyleSheet.create({
   wrap: {
     height: FIELD_HEIGHT,
     justifyContent: 'center',
+  },
+  wrapExplore: {
+    height: EXPLORE_FIELD_HEIGHT,
+  },
+  fieldExplore: {
+    height: EXPLORE_FIELD_HEIGHT,
+  },
+  inputExplore: {
+    fontSize: 14.8,
+  },
+  actionExplore: {
+    height: EXPLORE_ACTION_HEIGHT,
+    borderRadius: EXPLORE_ACTION_HEIGHT / 2,
+    minWidth: 88.5,
+    paddingHorizontal: 18,
+  },
+  actionHitExplore: {
+    marginRight: -(FIELD_PADDING - EXPLORE_ACTION_INSET),
+  },
+  actionLabelExplore: {
+    fontSize: 13.4,
+    lineHeight: 17,
   },
   field: {
     flexDirection: 'row',
@@ -159,6 +205,8 @@ const styles = StyleSheet.create({
     // field at 360 and 390 and the pill was clipped to "Searc".
     minWidth: 0,
     flexShrink: 1,
+    // The whole height of the pill answers a tap, not just the line of text.
+    alignSelf: 'stretch',
     fontFamily: fontFamily.regular,
     fontSize: PLACEHOLDER_FONT_SIZE,
     color: colors.text.primary,
@@ -168,19 +216,42 @@ const styles = StyleSheet.create({
   readOnlyLabel: {
     flex: 1,
   },
-  readOnlyInput: {
+  readOnlyText: {
+    fontFamily: fontFamily.regular,
+    fontSize: PLACEHOLDER_FONT_SIZE,
     color: PLACEHOLDER_INK,
+  },
+  fieldFocused: {
+    outlineStyle: 'solid',
+    outlineWidth: 2,
+    outlineColor: colors.action,
+    outlineOffset: 2,
+  } as never,
+  actionHit: {
+    minHeight: 44,
+    justifyContent: 'center',
+    marginRight: -(FIELD_PADDING - ACTION_INSET),
   },
   filter: {
     position: 'absolute',
     right: FILTER_INSET,
     top: (FIELD_HEIGHT - FILTER_SIZE) / 2,
   },
+  filterDot: {
+    position: 'absolute',
+    right: FILTER_INSET - 1,
+    top: (FIELD_HEIGHT - FILTER_SIZE) / 2 - 1,
+    width: FILTER_DOT,
+    height: FILTER_DOT,
+    borderRadius: FILTER_DOT / 2,
+    backgroundColor: colors.warning[100],
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
   action: {
     height: ACTION_HEIGHT,
     borderRadius: ACTION_HEIGHT / 2,
     paddingHorizontal: 18,
-    marginRight: -(FIELD_PADDING - ACTION_INSET),
     backgroundColor: colors.action,
     alignItems: 'center',
     justifyContent: 'center',

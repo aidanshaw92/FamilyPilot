@@ -1,7 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { MyVisitReports } from './VisitFeedback';
 import { useEffect, useState } from 'react';
-import { Share, StyleSheet, Switch, View } from 'react-native';
+import { StyleSheet, Switch, View } from 'react-native';
+import { InviteLinkCard } from './InviteLinkCard';
+import { buildInviteUrl, parseInviteCode } from '@/src/services/planning/invite-links';
+import { inviteOrigin } from '@/src/services/planning/connection-invites';
 import { Button, Card, Chip, SectionHeader, Text } from '@/src/components/ui';
 import { supabase } from '@/src/services/supabase/client';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
@@ -55,23 +58,19 @@ export function PlanningAccount(){
 
    <Card style={styles.card}>
     <Text variant="heading3">Connect a friend’s family</Text>
-    <Text variant="bodySmall" color={colors.text.secondary}>Creating or accepting a code shares your family label, approximate area (rounded to about 1km), children’s ages and venue preferences with that family. It does not share children’s names or addresses. Codes expire after seven days and can be used once.</Text>
+    <Text variant="bodySmall" color={colors.text.secondary}>Creating or accepting an invitation shares your family label, approximate area (rounded to about 1km), children’s ages and venue preferences with that family. It does not share children’s names or addresses. Invitation links expire after seven days and can be used once.</Text>
     <View style={s.row}><Switch accessibilityLabel="Also share home busy times" value={shareAvailability} onValueChange={setShareAvailability}/><Text>Also share home busy times</Text></View>
     <Text variant="bodySmall" color={colors.text.secondary}>Optional: shares the start and length of home routines as “Home time”, without the child’s name or whether it is a nap or feed. This lets the planner respect both families’ availability.</Text>
     {!mine?<View style={styles.noticeBox}><Text variant="bodySmall">Add your own family under Families &amp; routines first.</Text></View>:null}
-    <Button label="Create a connection code" disabled={busy||!mine} onPress={()=>void run(async()=>{const result=await api('POST',{action:'create',family:{...mine,shareAvailability}});setInvite(result.code);await refresh();})}/>
-    {invite?<View style={styles.inviteBox}>
-     <Text variant="label">Your code</Text>
-     <Text variant="heading2" style={styles.inviteCode} selectable>{invite}</Text>
-     <Button label="Share this code" variant="outline" size="sm" onPress={()=>void run(async()=>{await Share.share({message:`Connect our families in FamilyPilot. In Plans → Families & routines, enter this one-use code: ${invite}`});})}/>
-    </View>:null}
-    <Field label="Code from a friend" value={code} onChange={setCode}/>
-    <Button label="Accept and share my planning details" variant="outline" disabled={busy||!mine||!code.trim()} onPress={()=>void run(async()=>{await api('POST',{action:'accept',code:code.trim(),family:{...mine,shareAvailability}});setCode('');await refresh();setMessage('Connected. Load the family below to plan together.');})}/>
+    <Button label="Create an invitation link" disabled={busy||!mine} onPress={()=>void run(async()=>{const result=await api('POST',{action:'create',family:{...mine,shareAvailability}});setInvite(result.code);await refresh();})}/>
+    {invite?<InviteLinkCard url={buildInviteUrl(invite,inviteOrigin())} relationship="friend"/>:null}
+    <Field label="Invitation link or code from a friend" value={code} onChange={setCode}/>
+    <Button label="Accept and share my planning details" variant="outline" disabled={busy||!mine||!parseInviteCode(code)} onPress={()=>void run(async()=>{const parsed=parseInviteCode(code);if(!parsed)throw new Error('Check the invitation link or code.');await api('POST',{action:'accept',code:parsed,family:{...mine,shareAvailability}});setCode('');await refresh();setMessage('Connected. Load the family below to plan together.');})}/>
    </Card>
 
    <Card style={styles.card}>
     <SectionHeader title="Connections" actionLabel="Refresh" onAction={()=>void run(refresh)}/>
-    {!connections.length?<Text variant="bodySmall" color={colors.text.secondary}>No connections yet. Create or accept a code above to connect with a friend’s family.</Text>:connections.map((c,i)=>
+    {!connections.length?<Text variant="bodySmall" color={colors.text.secondary}>No connections yet. Create an invitation link above, or paste one you have been sent.</Text>:connections.map((c,i)=>
      <View key={c.id} style={[styles.connectionRow,i>0&&styles.connectionRowBorder]}>
       <View style={styles.connectionHeader}>
        <Text variant="heading3" style={styles.connectionLabel} numberOfLines={1}>{c.pending?'Invitation waiting':c.family?.label}</Text>

@@ -102,6 +102,7 @@ export function PlanScreenView({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        accessibilityRole="tablist"
         style={styles.nav}
         contentContainerStyle={styles.navContent}
       >
@@ -111,6 +112,7 @@ export function PlanScreenView({
             onPress={() => setSection(entry.id)}
             accessibilityRole="tab"
             accessibilityState={{ selected: section === entry.id }}
+            aria-selected={section === entry.id}
             style={[styles.navItem, section === entry.id && styles.navItemActive]}
             testID={`plan-section-${entry.id}`}
           >

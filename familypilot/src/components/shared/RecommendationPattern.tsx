@@ -11,7 +11,7 @@ import { formatArrivalTime } from '@/src/utils/clock-format';
 
 import { describeFamilyMatch } from '@/src/utils/family-match-scale';
 import { TrustBadgeInput, trustBadgesFor } from '@/src/utils/trust-badges';
-import { travelTimeWithMode } from '@/src/utils/travel-time';
+import { isTravelTimeKnown, travelTimeWithMode } from '@/src/utils/travel-time';
 
 export type RecommendationVariant = 'hero' | 'carousel' | 'list' | 'detail';
 
@@ -180,8 +180,8 @@ export function RecommendationPattern({
       <Text variant="bodySmall" color={colors.text.secondary} style={styles.metaLine}>
         {/* "Arrive BY 14:32" is a promise, and the number behind it is a straight line divided by an
             assumed average speed. "around" is what that evidence supports. */}
-        {travelTimeWithMode(venue.driveMinutes, 'estimated', 'drive')} · Arrive around{' '}
-        {formatArrivalTime(venue.driveMinutes)} if you leave now
+        {travelTimeWithMode(venue.driveMinutes, 'estimated', 'drive')}
+        {isTravelTimeKnown(venue.driveMinutes) ? ` · Arrive around ${formatArrivalTime(venue.driveMinutes)} if you leave now` : ''}
         {venue.estimatedSpend ? ` · Estimated ${venue.estimatedSpend}` : ''}
       </Text>
 

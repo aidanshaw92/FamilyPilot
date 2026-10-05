@@ -1,6 +1,8 @@
 import { useMemo, useState, useEffect } from 'react';
-import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useIsFocused } from 'expo-router';
+import { FlatList, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
+import { estimateLineCount } from '@/src/utils/home-header-layout';
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 
 import { FilterSheet } from '@/src/components/explore/FilterSheet';
@@ -8,7 +10,8 @@ import { RestaurantCard } from '@/src/components/restaurant/RestaurantCard';
 import { DecisionCard } from '@/src/components/shared/DecisionCard';
 import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
-import { Chip, Doodle, EmptyState, ErrorState, SearchBar, SectionHeader, SkeletonCard, Text, CHIP_GAP, CHIP_HEIGHT, railTint } from '@/src/components/ui';
+import { Chip, EmptyState, ErrorState, EXPLORE_CHIP, ScreenArt, SearchBar, SectionHeader, SkeletonCard, Text, railTint } from '@/src/components/ui';
+import { EXPLORE_ART_BEHIND, EXPLORE_ART_FRONT } from '@/src/assets/art/figma-art';
 import { isPilotFeatureVisible, visibleExploreCategoryIds } from '@/src/config/pilot-features';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useNearbyVenues, useRestaurants } from '@/src/hooks/use-queries';
@@ -16,10 +19,14 @@ import { venueService } from '@/src/services/api';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { RestaurantDetail, Venue } from '@/src/types';
 import { buildExploreEditorialSections } from '@/src/utils/explore-editorial-sections';
-import { EXPLORE_CATEGORIES, filterVenues } from '@/src/utils/filter-venues';
+import { EXPLORE_CATEGORIES, exploreCategoriesFor, filterVenues } from '@/src/utils/filter-venues';
+import { FOOD_FILTER_IDS, foodIsUnknown } from '@/src/utils/food-nearby';
+import { UncheckedFoodGroup } from '@/src/components/explore/UncheckedFoodGroup';
 import { SAVED_EXAMPLES_NOTICE, showingSavedExamples } from '@/src/utils/saved-examples-notice';
 
 export default function ExploreScreen() {
+  const isFocused = useIsFocused();
+  const { width } = useWindowDimensions();
   const tabBarClearance = useTabBarClearance();
   const [search, setSearch] = useState('');
   const [areaVenues, setAreaVenues] = useState<Venue[] | null>(null);
@@ -47,6 +54,10 @@ export default function ExploreScreen() {
 
   const isRestaurantMode =
     categoryFilter === 'restaurants' && isPilotFeatureVisible('explore_restaurants');
+  // The subtitle wraps on a narrow phone; everything under it, and the art beside that, moves down by the
+  // extra line instead of the text being shrunk.
+  const subtitleText = isRestaurantMode ? RESTAURANT_SUBTITLE : SUBTITLE;
+  const subtitleShift = Math.max(0, estimateLineCount(subtitleText, 13.6, width - spacing.screenPadding * 2) - 1) * SUBTITLE_LINE_HEIGHT;
 
   useEffect(() => {
     if (categoryFilter === 'restaurants' && !isPilotFeatureVisible('explore_restaurants')) {
@@ -54,12 +65,19 @@ export default function ExploreScreen() {
     }
   }, [categoryFilter, setCategoryFilter]);
 
-  const exploreCategories = useMemo(
-    () => EXPLORE_CATEGORIES.filter((category) => visibleExploreCategoryIds().includes(category.id)),
-    [],
-  );
-
   const sourceVenues = areaVenues ?? venues;
+  // The same taxonomy as Home, and a category is offered only if the venues in hand can fill it.
+  const exploreCategories = useMemo(
+    () =>
+      exploreCategoriesFor(sourceVenues ?? []).filter((category) =>
+        visibleExploreCategoryIds().includes(category.id),
+      ),
+    [sourceVenues],
+  );
+  useEffect(() => {
+    if (sourceVenues && !exploreCategories.some((c) => c.id === categoryFilter)) setCategoryFilter('all');
+  }, [sourceVenues, exploreCategories, categoryFilter, setCategoryFilter]);
+
   const filteredVenues = useMemo(
     () =>
       sourceVenues
@@ -78,6 +96,16 @@ export default function ExploreScreen() {
         : [],
     [sourceVenues, areaVenues, categoryFilter, advancedFilters, exploreMaxDrive, exploreBudget, profile?.maxDriveMinutes, search],
   );
+
+  // With a food filter on, say how many places could not be checked, so a place with no lookup is never mistaken for a
+  // place with no food. Counted among the venues that pass every OTHER filter.
+  const foodUncheckedVenues = useMemo(() => {
+    if (isRestaurantMode || !sourceVenues || !advancedFilters.some((id) => FOOD_FILTER_IDS.includes(id))) return [];
+    const others = advancedFilters.filter((id) => !FOOD_FILTER_IDS.includes(id));
+    return filterVenues(sourceVenues, categoryFilter, others, exploreMaxDrive, profile?.maxDriveMinutes ?? 30, exploreBudget).filter(foodIsUnknown);
+  }, [isRestaurantMode, sourceVenues, advancedFilters, categoryFilter, exploreMaxDrive, exploreBudget, profile?.maxDriveMinutes]);
+  const foodUncheckedCount = foodUncheckedVenues.length;
+  const foodNote = foodUncheckedCount > 0 ? `${foodUncheckedCount} not checked for food nearby, so not shown` : '';
 
   const useEditorialLayout = false &&
     !isRestaurantMode &&
@@ -164,37 +192,60 @@ export default function ExploreScreen() {
 
   return (
     <ScreenContainer>
-      {/* The identity's decoration lives on the canvas only (Figma "06 — Explore v2"): a leaf in the
-          top corner, the strokes beside the heading, a blush blob by the section title. None sits
-          on a card or a control, and all of them ignore the pointer and assistive technology. */}
+      {/* The decoration is the approved Explore frame's own artwork (294:133), drawn from its vectors.
+          It sits on the canvas only: the header's marks and the section title's blob and sprigs are
+          anchored to the top edge, the foot's blob and wave to the bottom, and the leaves and yellow
+          strokes at the foot are drawn again above the list, because the approved frame shows them
+          over the cards' photographs. All of it ignores the pointer and assistive technology. */}
+      {/* Marks beside the heading, the search and the section title follow the fixed-size type, so they
+          are drawn at the reference scale from the left; the leaves and blobs off the right edge follow
+          the screen's edge, so they scale with the width and stay on it. */}
+      <ScreenArt
+        art={EXPLORE_ART_BEHIND}
+        from={0}
+        to={HEADER_SEAM_PX}
+        anchor="top"
+        clipX={[0, EDGE_ART_X]}
+        width={Math.min(width, 393)}
+      />
+      {/* Below the heading the marks sit beside the search, the chips and the section title, which all move
+          down when the subtitle wraps to a second line; the marks move with them. */}
+      <ScreenArt
+        art={EXPLORE_ART_BEHIND}
+        from={HEADER_SEAM_PX}
+        to={760}
+        anchor="top"
+        clipX={[0, EDGE_ART_X]}
+        width={Math.min(width, 393)}
+        style={{ top: HEADER_SEAM_PX * (Math.min(width, 393) / EXPLORE_ART_BEHIND.width) + subtitleShift }}
+      />
+      <ScreenArt art={EXPLORE_ART_BEHIND} from={0} to={760} anchor="top" clipX={[EDGE_ART_X, EXPLORE_ART_BEHIND.width]} align="right" />
+      <ScreenArt art={EXPLORE_ART_BEHIND} from={1500} to={1844} anchor="bottom" />
       <View style={styles.header}>
-        <Doodle kind="leaf" tint="green" size={40} rotate={24} style={styles.cornerLeaf} />
-        <View style={styles.headingRow}>
-          <Text variant="heading1">Explore London</Text>
-          <Doodle kind="strokes" tint="yellow" size={30} style={styles.headingStrokes} />
-        </View>
-        <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
-          {isRestaurantMode
-            ? 'Family-friendly places to eat'
-            : 'Parks, museums and family days out across London'}
+        <Text variant="heading1" style={styles.heading}>Explore London</Text>
+        <Text variant="body" color={colors.text.secondary} style={styles.subtitle}>
+          {subtitleText}
         </Text>
       </View>
 
-      <SearchBar
-        value={search}
-        onChangeText={(value) => {
-          setSearch(value);
-          setAreaVenues(null);
-          setSearchMessage('');
-        }}
-        onSubmit={() => void handleAreaSearch()}
-        placeholder="Area or postcode"
-        accessibilityLabel="Search a London area or postcode"
-        actionLabel="Search"
-        actionAccessibilityLabel="Search this London area"
-        onAction={() => void handleAreaSearch()}
-        style={styles.search}
-      />
+      <View style={styles.searchRow}>
+        <SearchBar
+          variant="explore"
+          value={search}
+          onChangeText={(value) => {
+            setSearch(value);
+            setAreaVenues(null);
+            setSearchMessage('');
+          }}
+          onSubmit={() => void handleAreaSearch()}
+          placeholder="Area or postcode"
+          accessibilityLabel="Search a London area or postcode"
+          actionLabel="Search"
+          actionAccessibilityLabel="Search this London area"
+          onAction={() => void handleAreaSearch()}
+          style={styles.search}
+        />
+      </View>
       {!areaVenues && !isRestaurantMode && !isLoading && showingSavedExamples(venues) ? (
         <Text variant="caption" color={colors.warning[600]} style={styles.searchMessage}>
           {SAVED_EXAMPLES_NOTICE}
@@ -222,27 +273,11 @@ export default function ExploreScreen() {
             label={category.label}
             active={categoryFilter === category.id}
             appearance="plain"
+            size="explore"
             tint={railTint(index - 1)}
             onPress={() => setCategoryFilter(category.id)}
           />
         ))}
-        <Pressable
-          style={styles.filterButton}
-          onPress={() => setFilterSheetOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel="Open filters"
-        >
-          <Text variant="link">
-            Filter
-          </Text>
-          {activeFilterCount > 0 ? (
-            <View style={styles.filterBadge}>
-              <Text variant="caption" color={colors.text.inverse}>
-                {activeFilterCount}
-              </Text>
-            </View>
-          ) : null}
-        </Pressable>
       </ScrollView>
 
       {isLoading ? (
@@ -251,19 +286,44 @@ export default function ExploreScreen() {
           <SkeletonCard />
         </View>
       ) : resultCount === 0 ? (
+        <>
+        {/* The header, with its Filters link, stays when nothing matches: the empty state suggests loosening
+            the filters, so the sheet that holds them must still be reachable. */}
+        <View style={styles.listHeader}>
+          <SectionHeader
+            title={areaVenues ? `Around ${search.trim()}` : activeCategoryLabel}
+            subtitle={`0 ${isRestaurantMode ? 'restaurants' : 'places'} ${areaVenues ? 'near this area' : 'across London'}`}
+            titleStyle={styles.sectionTitle}
+            subtitleStyle={styles.sectionCount}
+            actionLabel={activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
+            onAction={() => setFilterSheetOpen(true)}
+            actionAlign="end"
+          />
+{foodNote ? (
+<Text variant="caption" color={colors.text.secondary} style={styles.foodNote} testID="food-unchecked-note">
+{foodNote}
+</Text>
+) : null}
+        </View>
         <EmptyState
           icon="search-outline"
           title={isRestaurantMode ? 'No restaurants found' : 'No places found'}
           message={
             isRestaurantMode
               ? 'Try adjusting your filters or explore a wider area.'
-              : areaVenues
+              : foodUncheckedCount > 0
+                ? `No place is known to have food nearby yet. ${foodUncheckedCount} could not be checked, so removing the food filter will show them.`
+                : areaVenues
                 ? 'Try a nearby London area or postcode, or clear the search to browse all London.'
                 : 'Try another category, clear your filters, or search a different London area.'
           }
           actionLabel="Clear filters"
           onAction={handleClearFilters}
         />
+        <View style={styles.listHeader}>
+          <UncheckedFoodGroup venues={foodUncheckedVenues} matched={0} />
+        </View>
+        </>
       ) : useEditorialLayout && editorialSections.length > 0 ? (
         <ScrollView
           contentContainerStyle={[styles.editorialContent, { paddingBottom: tabBarClearance }]}
@@ -284,11 +344,22 @@ export default function ExploreScreen() {
       ) : (
         <>
           <View style={styles.listHeader}>
-            <Doodle kind="blob" tint="blush" size={56} style={styles.sectionBlob} />
             <SectionHeader
               title={areaVenues ? `Around ${search.trim()}` : activeCategoryLabel}
               subtitle={`${resultCount} ${isRestaurantMode ? 'restaurant' : 'place'}${resultCount === 1 ? '' : 's'} ${areaVenues ? 'near this area' : 'across London'}`}
+              titleStyle={styles.sectionTitle}
+              subtitleStyle={styles.sectionCount}
+              // The approved frame's rail is the category chips alone, so filtering is reached through
+              // this quiet link on the count line (the count says how many places the filters leave).
+              actionLabel={activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
+              onAction={() => setFilterSheetOpen(true)}
+              actionAlign="end"
             />
+{foodNote ? (
+<Text variant="caption" color={colors.text.secondary} style={styles.foodNote} testID="food-unchecked-note">
+{foodNote}
+</Text>
+) : null}
           </View>
           {/*
             A FlatList, not a ScrollView with `.map`, because every row carries a venue photograph
@@ -319,10 +390,13 @@ export default function ExploreScreen() {
               )
             }
             ListFooterComponent={
-              <View style={styles.credits}>
-                <PlaceCredits
-                  places={isRestaurantMode ? (restaurants ?? []) : filteredVenues}
-                />
+              <View>
+                <UncheckedFoodGroup venues={foodUncheckedVenues} matched={filteredVenues.length} />
+                <View style={styles.credits}>
+                  <PlaceCredits
+                    places={isRestaurantMode ? (restaurants ?? []) : filteredVenues}
+                  />
+                </View>
               </View>
             }
             contentContainerStyle={[styles.listContent, { paddingBottom: tabBarClearance }]}
@@ -342,40 +416,55 @@ export default function ExploreScreen() {
         </>
       )}
 
-      <FilterSheet visible={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
+      <ScreenArt art={EXPLORE_ART_FRONT} from={1500} to={1844} anchor="bottom" />
+      <FilterSheet visible={filterSheetOpen && isFocused} onClose={() => setFilterSheetOpen(false)} />
     </ScreenContainer>
   );
 }
 
+/** Frame x (of 853) where the right-edge marks begin: the leaves and blobs off the right side. */
+const EDGE_ART_X = 690;
+/** Frame y (of 1844) under the heading block: the strokes by the title are above it. */
+const HEADER_SEAM_PX = 250;
+/** The subtitle's line height: the styles and the art shift below both use it. */
+const SUBTITLE_LINE_HEIGHT = 17;
+const SUBTITLE = 'Parks, museums and family days out across London';
+const RESTAURANT_SUBTITLE = 'Family-friendly places to eat';
+
 const styles = StyleSheet.create({
+  // Frame 294:133 at pt = px / 2.17: the title Bold 28.4 on a 34.6 line, the subtitle 13.6 on 16.6,
+  // the search field 51.6 tall 15 below the subtitle, the chips 15 below the field.
   header: {
     paddingHorizontal: spacing.screenPadding,
-    paddingTop: spacing.lg,
+    paddingTop: 2,
   },
-  headingRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-  },
-  headingStrokes: {
-    position: 'relative',
-    marginTop: -2,
-  },
-  cornerLeaf: {
-    right: spacing.xs,
-    top: 0,
+  heading: {
+    fontSize: 28.4,
+    lineHeight: 34.5,
   },
   subtitle: {
-    marginTop: spacing.xs,
+    marginTop: 7,
+    fontSize: 13.6,
+    lineHeight: SUBTITLE_LINE_HEIGHT,
+    // When it has to wrap on a narrow phone, split it evenly rather than leave "London" alone on a second line.
+    // Web-only (native ignores it); the line count is unchanged, so the art shift below still holds.
+    ...({ textWrap: 'balance' } as object),
+  },
+  searchRow: {
+    marginTop: 19,
+    marginBottom: spacing.sm,
   },
   search: {
     marginHorizontal: spacing.screenPadding,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
   },
-  sectionBlob: {
-    right: spacing.screenPadding,
-    top: spacing.md,
+  // Section title Bold 26.3 on 31.8; count 13.2.
+  sectionTitle: {
+    fontSize: 26.3,
+    lineHeight: 32,
+  },
+  sectionCount: {
+    fontSize: 13.2,
+    lineHeight: 16,
   },
   searchMessage: {
     marginHorizontal: spacing.screenPadding,
@@ -384,40 +473,20 @@ const styles = StyleSheet.create({
   // A fixed, non-shrinking band: as a flex child with only a maxHeight the rail was squeezed to
   // 26px (17px once the list scrolled) and clipped the 44pt chips top and bottom.
   categoryScroll: {
-    height: CHIP_HEIGHT + spacing.sm,
+    height: EXPLORE_CHIP.height + spacing.sm,
     flexGrow: 0,
     flexShrink: 0,
-    marginTop: spacing.sm,
+    marginTop: 2,
   },
   categoryContent: {
     paddingHorizontal: spacing.screenPadding,
     alignItems: 'center',
-    gap: CHIP_GAP,
+    gap: EXPLORE_CHIP.gap,
   },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.lg,
-    minHeight: 44,
-    justifyContent: 'center',
-    borderRadius: radius.full,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  filterBadge: {
-    backgroundColor: colors.action,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 4,
-  },
+  foodNote: { marginTop: 2 },
   listHeader: {
     paddingHorizontal: spacing.screenPadding,
-    paddingTop: spacing.lg,
+    paddingTop: 14,
   },
   listContent: {
     paddingHorizontal: spacing.screenPadding,

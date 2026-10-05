@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useIsFocused, useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   RefreshControl,
@@ -12,30 +12,53 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
 import { RecommendationDeck } from '@/src/components/home/RecommendationDeck';
-import { deckMetrics } from '@/src/utils/home-deck-geometry';
+import { deckMetrics, REFERENCE_WIDTH } from '@/src/utils/home-deck-geometry';
+import {
+  deckRoom,
+  deckTopGap,
+  headerShift,
+  HEADER_SAVINGS,
+  HomeHeaderMode,
+  nextHeaderMode,
+} from '@/src/utils/home-vertical-layout';
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import {
-  GREETING_DOODLE_SIZE,
   GREETING_FONT_FAMILY,
-  greetingDoodleLeft,
   homeGutter,
   homeHeaderLayout,
   searchPlaceholder,
 } from '@/src/utils/home-header-layout';
 import {
-  Doodle,
   EmptyState,
   ErrorState,
   PillSelector,
+  ScreenArt,
   SearchBar,
   Skeleton,
   Text,
 } from '@/src/components/ui';
+import { HOME_ART } from '@/src/assets/art/figma-art';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
 import { useFiltersStore } from '@/src/stores/filters-store';
+import { FilterSheet } from '@/src/components/explore/FilterSheet';
+import { applyAdvancedFilters } from '@/src/utils/filter-venues';
+import { FOOD_FILTER_IDS, foodIsUnknown } from '@/src/utils/food-nearby';
 import { Venue } from '@/src/types';
-import { filterByPlanCategory, PLAN_CATEGORIES } from '@/src/utils/plan-categories';
+import { filterByPlanCategory, planCategoriesFor } from '@/src/utils/plan-categories';
+
+/**
+ * Everything above the deck (greeting, search, plan heading, chips) is laid out in fixed points, so
+ * its marks are placed with fixed points too; the deck and the marks around it grow with the phone's
+ * width together. The seam is the frame's y just above the deck's first mark.
+ */
+const HEADER_ART_END = 605;
+/** Above this the marks are beside the greeting and the search (they follow the screen's edges, so they
+ * scale with the width); below it they are beside the plan heading and chips (they follow the fixed-size
+ * type, so they are drawn at the reference scale, left-aligned, and never grow). */
+const SEARCH_ART_END = 345;
+/** The avatar's strokes end well above this and the search marks start well below it (frame y 172 / 274). */
+const AVATAR_ART_END = 225;
 
 function getTimeGreeting(): string {
   const hour = new Date().getHours();
@@ -47,11 +70,16 @@ function getTimeGreeting(): string {
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height: windowHeight } = useWindowDimensions();
   const tabBarClearance = useTabBarClearance();
   const [category, setCategory] = useState('for_you');
   const [refreshing, setRefreshing] = useState(false);
   const setFilterSheetOpen = useFiltersStore((s) => s.setFilterSheetOpen);
+  const filterSheetOpen = useFiltersStore((s) => s.filterSheetOpen);
+  const advancedFilters = useFiltersStore((s) => s.advancedFilters);
+  const clearAdvancedFilters = useFiltersStore((s) => s.clearAdvancedFilters);
+  // Both tabs can be mounted; only the one on screen may show the shared sheet.
+  const isFocused = useIsFocused();
 
   const { data: profile } = useFamilyProfile();
   const { data: venues, isLoading, isError, refetch } = useNearbyVenues();
@@ -62,15 +90,55 @@ export default function HomeScreen() {
     () => [...(venues ?? [])].sort((a, b) => b.familyScore.score - a.familyScore.score),
     [venues],
   );
-  const shortlist = useMemo(() => filterByPlanCategory(ranked, category), [ranked, category]);
+  // One taxonomy for Home and Explore, and a category is offered only if the venues in hand can fill it: a chip
+  // that answers "nothing here" is worse than no chip (see venue-taxonomy.ts).
+  const categories = useMemo(() => planCategoriesFor(ranked), [ranked]);
+  const activeCategory = categories.some((c) => c.id === category) ? category : 'for_you';
+  const inCategory = useMemo(() => filterByPlanCategory(ranked, activeCategory), [ranked, activeCategory]);
+  // The practical filters (parking, toilets, food nearby...) narrow Home's deck the same way they narrow Explore.
+  const shortlist = useMemo(() => applyAdvancedFilters(inCategory, advancedFilters), [inCategory, advancedFilters]);
+  // With a food filter on, the places that could not be judged are counted, so an empty deck can say "not checked"
+  // instead of "no match".
+  const foodUnchecked = useMemo(
+    () => (advancedFilters.some((id) => FOOD_FILTER_IDS.includes(id)) ? applyAdvancedFilters(inCategory, advancedFilters.filter((id) => !FOOD_FILTER_IDS.includes(id))).filter(foodIsUnknown).length : 0),
+    [inCategory, advancedFilters],
+  );
 
-  const { deckHeight } = deckMetrics(width);
+  // The header gives up its optional lines when the screen is too short for the whole card (see
+  // home-vertical-layout), so the card and its button always clear the floating navigation. The mode only ever
+  // moves towards compact for a given screen size, and a measurement is trusted only once it was taken in the mode
+  // now showing, so the escalation cannot overshoot on a stale reading.
+  const [mode, setMode] = useState<HomeHeaderMode>('full');
+  const [headerFit, setHeaderFit] = useState<{ mode: HomeHeaderMode; bottom: number } | null>(null);
+  useEffect(() => {
+    setMode('full');
+    setHeaderFit(null);
+  }, [width, windowHeight]);
+
+  const room = headerFit
+    ? deckRoom({ windowHeight, headerBottom: headerFit.bottom, mode: headerFit.mode, navClearance: tabBarClearance })
+    : undefined;
+  useEffect(() => {
+    if (!headerFit || headerFit.mode !== mode || room === undefined) return;
+    const next = nextHeaderMode(mode, room, width);
+    if (next !== mode) setMode(next);
+  }, [headerFit, mode, room, width]);
+
+  const { deckHeight } = deckMetrics(width, room);
+  const savings = HEADER_SAVINGS[mode];
 
   // The approved header is drawn at 393pt. Narrower phones get the largest treatment that still
   // fits the greeting and the placeholder whole, rather than a clipped heading.
   const greetingText = `${getTimeGreeting()}, ${firstName}`;
   const header = homeHeaderLayout(width, greetingText);
-  const greetingStrokesLeft = greetingDoodleLeft(width, greetingText, header);
+  // A long name wraps onto a second line (see homeHeaderLayout). The estimate is the first guess; the
+  // measured height corrects it, so a difference between the estimate and the real text never leaves the
+  // art misplaced for longer than a frame. Everything below the greeting moves down by the extra line, and
+  // so does its art; the avatar and its strokes stay where the frame draws them.
+  const [measuredLines, setMeasuredLines] = useState<number | null>(null);
+  const greetingLines = measuredLines ?? header.lines;
+  const extraHeight = (greetingLines - 1) * header.lineHeight;
+  const artScale = width / HOME_ART.width;
   const gutter = { paddingHorizontal: homeGutter(width) };
 
   const handleRefresh = async () => {
@@ -86,6 +154,10 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.screen}>
+      {/* The approved frame's foot marks (a sprig and a mint blob beside the navigation), drawn from
+          the frame's own vectors, anchored to the bottom edge so they stay beside the navigation on
+          a taller phone. Behind the scroll view, so content and navigation sit above them. */}
+      <ScreenArt art={HOME_ART} from={1700} to={1846} anchor="bottom" />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
@@ -104,39 +176,65 @@ export default function HomeScreen() {
           />
         }
       >
+        {/* The frame's marks from the top edge to the navigation (strokes by the avatar, the sprig
+            and dashes beside the search, the plan heading's strokes, and the blobs and leaves around
+            the deck), drawn from its own vectors, anchored to the top edge like the deck they frame,
+            and behind everything that is content. */}
+        <ScreenArt art={HOME_ART} from={0} to={AVATAR_ART_END} anchor="top" />
+        <ScreenArt
+          art={HOME_ART}
+          from={AVATAR_ART_END}
+          to={SEARCH_ART_END}
+          anchor="top"
+          style={{ top: AVATAR_ART_END * artScale + extraHeight - headerShift(mode, 'beforeTitle') }}
+        />
+        <ScreenArt
+          art={HOME_ART}
+          width={Math.min(width, REFERENCE_WIDTH)}
+          from={SEARCH_ART_END}
+          to={HEADER_ART_END}
+          anchor="top"
+          style={{ top: SEARCH_ART_END * (REFERENCE_WIDTH / HOME_ART.width) + extraHeight - headerShift(mode, 'afterTitle') }}
+        />
+        <ScreenArt
+          art={HOME_ART}
+          from={HEADER_ART_END}
+          to={1700}
+          anchor="top"
+          style={{ top: HEADER_ART_END * (REFERENCE_WIDTH / HOME_ART.width) + extraHeight - headerShift(mode, 'all') }}
+        />
+        <View
+          onLayout={(e) =>
+            setHeaderFit({ mode, bottom: e.nativeEvent.layout.y + e.nativeEvent.layout.height })
+          }
+        >
         <View style={gutter}>
           <View style={[styles.header, { gap: header.gap }]}>
             <View style={styles.greeting}>
               <Text
                 variant="heading1"
-                numberOfLines={header.maxLines}
+                numberOfLines={2}
+                onLayout={(e) =>
+                  setMeasuredLines(Math.max(1, Math.round(e.nativeEvent.layout.height / header.lineHeight)))
+                }
                 style={[
                   styles.greetingLine,
-                  { fontSize: header.fontSize, lineHeight: header.lineHeight },
+                  { fontSize: header.fontSize, lineHeight: header.lineHeight, maxWidth: header.textLimit },
                 ]}
               >
                 {greetingText}
               </Text>
-              {/* The yellow strokes after the greeting (Figma "Home v2"), drawn only when the same
-                  estimate the header trusts says the line leaves room for them. Absolute, so the
-                  approved header geometry is untouched either way. */}
-              {greetingStrokesLeft !== null ? (
-                <Doodle
-                  kind="strokes"
-                  tint="yellow"
-                  size={GREETING_DOODLE_SIZE}
-                  style={{ left: greetingStrokesLeft, top: 0 }}
-                />
+              {savings.subtitle === 0 ? (
+                <Text variant="bodySmall" color={colors.text.secondary} style={styles.greetingSub}>
+                  What shall we do today?
+                </Text>
               ) : null}
-              <Text variant="bodySmall" color={colors.text.secondary} style={styles.greetingSub}>
-                What shall we do today?
-              </Text>
             </View>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Your family profile"
               onPress={() => router.push('/(tabs)/profile' as never)}
-              style={styles.avatar}
+              style={[styles.avatar, { marginTop: header.avatarOffset }]}
             >
               <Text variant="heading3" color={colors.text.inverse}>
                 {firstName.charAt(0).toUpperCase()}
@@ -144,58 +242,80 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          <SearchBar
-            placeholder={searchPlaceholder(width)}
-            onPress={() => router.push('/(tabs)/explore' as never)}
-            onFilterPress={() => setFilterSheetOpen(true)}
-            style={styles.search}
-          />
-
-          <View style={styles.sectionTitleRow}>
-            <Text variant="heading2" style={styles.sectionTitle}>
-              Select your plan
-            </Text>
-            <Doodle kind="strokes" tint="yellow" size={26} style={styles.sectionStrokes} />
+          <View style={[styles.searchRow, { marginTop: styles.searchRow.marginTop - savings.searchGap }]}>
+            <SearchBar
+              placeholder={searchPlaceholder(width)}
+              onPress={() => router.push('/(tabs)/explore' as never)}
+              onFilterPress={() => setFilterSheetOpen(true)}
+              filterActive={advancedFilters.length > 0}
+            />
           </View>
+
+          {savings.title === 0 ? (
+            <View style={styles.sectionTitleRow}>
+              <Text variant="heading2" style={styles.sectionTitle}>
+                Select your plan
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.compactChipsGap} />
+          )}
         </View>
 
         <PillSelector
-          options={PLAN_CATEGORIES}
-          value={category}
+          options={categories}
+          value={activeCategory}
           onChange={setCategory}
           accessibilityLabel="Plan categories"
+          size="home"
           contentStyle={{ paddingLeft: homeGutter(width) }}
         />
+        </View>
 
         {isError ? (
-          <View style={[gutter, styles.deckSlot]}>
+          <View style={[gutter, styles.deckSlot, { marginTop: deckTopGap(mode) }]}>
             <ErrorState onRetry={() => void refetch()} />
           </View>
         ) : null}
 
         {isLoading ? (
-          <View style={[gutter, styles.deckSlot]}>
+          <View style={[gutter, styles.deckSlot, { marginTop: deckTopGap(mode) }]}>
             <Skeleton height={deckHeight} borderRadius={radius['3xl']} />
           </View>
         ) : null}
 
         {!isLoading && !isError && shortlist.length === 0 ? (
-          <View style={[gutter, styles.deckSlot]}>
-            <EmptyState
-              icon="search-outline"
-              title="Nothing confirmed here yet"
-              message="We only show places once the family details we need have been reviewed. Try another category."
-              actionLabel="See everything nearby"
-              onAction={() => setCategory('for_you')}
-            />
+          <View style={[gutter, styles.deckSlot, { marginTop: deckTopGap(mode) }]}>
+            {advancedFilters.length > 0 ? (
+              <EmptyState
+                icon="funnel-outline"
+                title={foodUnchecked > 0 ? 'No place is known to match yet' : 'Nothing matches these filters'}
+                message={
+                  foodUnchecked > 0
+                    ? `${foodUnchecked} ${foodUnchecked === 1 ? 'place hasn’t' : 'places haven’t'} been checked for food nearby, so we can’t say either way. They aren’t a “no”: clearing the food filter shows them.`
+                    : 'Try removing a filter, or another category.'
+                }
+                actionLabel="Clear filters"
+                onAction={clearAdvancedFilters}
+              />
+            ) : (
+              <EmptyState
+                icon="search-outline"
+                title="Nothing confirmed here yet"
+                message="We only show places once the family details we need have been reviewed. Try another category."
+                actionLabel="See everything nearby"
+                onAction={() => setCategory('for_you')}
+              />
+            )}
           </View>
         ) : null}
 
         {!isLoading && !isError && shortlist.length > 0 ? (
-          <View style={styles.deckSlot}>
+          <View style={[styles.deckSlot, { marginTop: deckTopGap(mode) }]}>
             <RecommendationDeck
               venues={shortlist}
               viewportWidth={width}
+              maxHeight={room}
               onPressVenue={openVenue}
             />
           </View>
@@ -212,6 +332,7 @@ export default function HomeScreen() {
           </View>
         ) : null}
       </ScrollView>
+      <FilterSheet visible={filterSheetOpen && isFocused} onClose={() => setFilterSheetOpen(false)} scope="home" />
     </View>
   );
 }
@@ -224,14 +345,15 @@ const styles = StyleSheet.create({
   content: {},
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    // The avatar keeps its place beside the first line (and its strokes in the art stay beside it) when
+    // a long name wraps onto a second.
+    alignItems: 'flex-start',
   },
   greeting: {
     flex: 1,
   },
   greetingLine: {
     fontFamily: GREETING_FONT_FAMILY,
-    letterSpacing: -0.6375,
     color: colors.ink,
   },
   greetingSub: {
@@ -249,8 +371,12 @@ const styles = StyleSheet.create({
   },
   // The gaps below are the approved frame's own: subtitle 111 -> search 126, search 182 ->
   // heading 198, heading 225 -> pills 234, pills 278 -> deck 307.
-  search: {
+  searchRow: {
     marginTop: 15,
+  },
+  searchSprig: {
+    left: -17,
+    top: -12,
   },
   sectionTitleRow: {
     flexDirection: 'row',
@@ -260,18 +386,17 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginTop: 16,
     marginBottom: 9,
-    // Frame node 7:30: Semi Bold 22 with a 27 line box, which is what puts the pills at y=234.
-    fontSize: 22,
-    lineHeight: 27,
-    letterSpacing: -0.44,
+    // Frame 229:133: Bold 45.4px = 20.9pt.
+    fontSize: 21,
+    lineHeight: 26,
     color: colors.ink,
   },
-  sectionStrokes: {
-    position: 'relative',
-    marginTop: 12,
-  },
   deckSlot: {
-    marginTop: 29,
+    marginTop: 27,
+  },
+  // Stands in for the plan heading's own margins in the compact header, so the chips keep clear of the search field.
+  compactChipsGap: {
+    height: 14,
   },
   attribution: {
     marginTop: spacing.xs,

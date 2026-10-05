@@ -79,6 +79,25 @@ export interface PlanDraftSources {
   options?: Pick<PlanningOptions, 'date' | 'leaveAt' | 'visitMinutes'> | null;
   /** `YYYY-MM-DD` for today, passed in rather than read, so the result is deterministic. */
   today: string;
+  /**
+   * `HH:MM` now, in the same local time as `today`. When today's chosen start has already gone, the
+   * sheet opens on tomorrow: planning a day that began in the past can only end in "No day fits yet",
+   * which would be true and useless. Omitted, today stays today.
+   */
+  nowTime?: string;
+}
+
+/** Minutes since midnight for `H:MM` or `HH:MM`; an unreadable time never counts as passed. */
+function minutesOf(time: string): number {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
+  return m ? Number(m[1]) * 60 + Number(m[2]) : Number.POSITIVE_INFINITY;
+}
+
+/** The calendar day after a `YYYY-MM-DD` date, with no timezone arithmetic in it. */
+export function nextDay(date: string): string {
+  const [y, m, d] = date.split('-').map(Number);
+  const next = new Date(Date.UTC(y, m - 1, d + 1));
+  return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, '0')}-${String(next.getUTCDate()).padStart(2, '0')}`;
 }
 
 function profileParty(profile: FamilyProfile): PlanParty {
@@ -134,12 +153,15 @@ export function planDraftDefaults(sources: PlanDraftSources): PlanDraftDefaults 
 
   // A stored date in the past would plan a day that cannot happen, so today wins.
   const storedDate = sources.options?.date;
-  const date = storedDate && storedDate >= sources.today ? storedDate : sources.today;
+  const leaveAt = sources.options?.leaveAt || '09:30';
+  let date = storedDate && storedDate >= sources.today ? storedDate : sources.today;
+  // ...and so would today itself once its start time has gone.
+  if (date === sources.today && sources.nowTime && minutesOf(leaveAt) < minutesOf(sources.nowTime)) date = nextDay(sources.today);
 
   return {
     draft: {
       date,
-      leaveAt: sources.options?.leaveAt || '09:30',
+      leaveAt,
       partyIds: [parties[0].id],
       visitMinutes: normaliseVisitMinutes(sources.options?.visitMinutes),
     },

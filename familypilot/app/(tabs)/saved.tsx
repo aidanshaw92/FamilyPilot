@@ -13,6 +13,7 @@ import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useSavedItems } from '@/src/hooks/use-queries';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { SavedGroup, SavedItem } from '@/src/types';
+import { compareTravelMinutes } from '@/src/utils/travel-time';
 
 type SortOption = 'recent' | 'closest' | 'match';
 type TypeFilter = 'all' | 'places' | 'restaurants';
@@ -68,7 +69,7 @@ export default function SavedScreen() {
       items = items.filter((item) => item.venue.name.toLowerCase().includes(query));
     }
     return [...items].sort((a, b) => {
-      if (sort === 'closest') return a.venue.driveMinutes - b.venue.driveMinutes;
+      if (sort === 'closest') return compareTravelMinutes(a.venue.driveMinutes, b.venue.driveMinutes);
       if (sort === 'match') return b.venue.familyScore.score - a.venue.familyScore.score;
       return (b.savedAt ?? '').localeCompare(a.savedAt ?? '');
     });

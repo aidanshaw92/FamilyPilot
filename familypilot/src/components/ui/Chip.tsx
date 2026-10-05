@@ -14,8 +14,8 @@ import { colors, radius } from '@/src/design-system/tokens';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 
 import { Text } from './Text';
+import { MIN_TARGET } from './touch';
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /**
  * From the approved frame "01 — Home" (node "Category pills"): 44pt chips, 20 of padding either
@@ -46,7 +46,7 @@ interface ChipProps {
    * same near-black when chosen. Both are the same component so a chosen chip reads the same way
    * everywhere; only the size differs.
    */
-  size?: 'default' | 'small';
+  size?: 'default' | 'small' | 'home' | 'explore';
   /**
    * An idle chip in a rail may carry one of the identity's three tints (the references give the
    * Home and Explore rails mint, blush and lilac after the selected chip). The tint is assigned by
@@ -76,11 +76,21 @@ const TINT_FILL: Record<ChipTint, string | null> = {
 export const SMALL_CHIP_HEIGHT = 40;
 export const SMALL_CHIP_GAP = 8;
 
+/**
+ * The two approved rails. Home (frame 229:133): 94px / 2.168 = 43.4 tall (44 keeps the touch target),
+ * label Medium 30.4px = 14, 16 of padding so all four fit a 393 phone as the frame shows them.
+ * Explore (frame 294:133): 90px / 2.17 = 41.5 tall, label 29px = 13.4, 22 of padding, 6 between.
+ * Both are the same chip; only the rail's size differs.
+ */
+export const HOME_CHIP = { height: 44, paddingX: 16, fontSize: 14, lineHeight: 17, gap: 10 } as const;
+export const EXPLORE_CHIP = { height: 42, paddingX: 22, fontSize: 13.4, lineHeight: 16, gap: 6 } as const;
+
 export function Chip({ label, active = false, onPress, appearance = 'outlined', size = 'default', tint = 'none', style }: ChipProps) {
   const reducedMotion = useReducedMotion();
   const activeProgress = useSharedValue(active ? 1 : 0);
   const pressed = useSharedValue(1);
   const small = size === 'small';
+  const rail = size === 'home' ? HOME_CHIP : size === 'explore' ? EXPLORE_CHIP : null;
   const tintFill = TINT_FILL[tint];
   const idleFill = tintFill ?? (small ? colors.fill : colors.surface);
   const idleBorder = appearance === 'outlined' && !small && !tintFill ? colors.border : idleFill;
@@ -104,10 +114,19 @@ export function Chip({ label, active = false, onPress, appearance = 'outlined', 
     transform: [{ scale: pressed.value }],
   }));
 
+  // A rail chip can be drawn under 44pt (Explore's frame draws it at 42). The pressable is the 44pt
+  // target and the pill is drawn inside it, so the frame's size and a real target both hold on the web,
+  // where hitSlop is ignored.
+  const drawnHeight = rail ? rail.height : small ? SMALL_CHIP_HEIGHT : CHIP_HEIGHT;
+  const targetHeight = Math.max(MIN_TARGET, drawnHeight);
+
   return (
-    <AnimatedPressable
+    <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
+      // react-native-web does not turn accessibilityState into ARIA, so without this the selected chip is
+      // told by colour alone on the web. Native reads accessibilityState above.
+      {...({ 'aria-pressed': active } as object)}
       accessibilityLabel={label}
       onPress={handlePress}
       onPressIn={() => {
@@ -116,21 +135,41 @@ export function Chip({ label, active = false, onPress, appearance = 'outlined', 
       onPressOut={() => {
         pressed.value = withSpring(1, spring.gentle);
       }}
-      style={[styles.chip, (appearance === 'plain' || small || tintFill) && styles.plain, small && styles.small, animatedStyle, style]}
+      // The extra height is taken back out of the layout, so a 40 or 42pt chip occupies 40 or 42pt.
+      style={[styles.target, { height: targetHeight, marginVertical: -(targetHeight - drawnHeight) / 2 }, style]}
     >
-      <Text
-        variant="bodySmall"
-        color={active ? colors.text.inverse : colors.ink}
-        style={[styles.label, small && styles.smallLabel, small && active && styles.smallLabelActive]}
-        numberOfLines={1}
+      <Animated.View
+        style={[
+          styles.chip,
+          (appearance === 'plain' || small || tintFill) && styles.plain,
+          small && styles.small,
+          rail && { height: rail.height, paddingHorizontal: rail.paddingX },
+          animatedStyle,
+        ]}
       >
-        {label}
-      </Text>
-    </AnimatedPressable>
+        <Text
+          variant="bodySmall"
+          color={active ? colors.text.inverse : colors.ink}
+          style={[
+            styles.label,
+            small && styles.smallLabel,
+            small && active && styles.smallLabelActive,
+            rail && { fontSize: rail.fontSize, lineHeight: rail.lineHeight },
+            rail && active && styles.smallLabelActive,
+          ]}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+      </Animated.View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  target: {
+    justifyContent: 'center',
+  },
   chip: {
     height: CHIP_HEIGHT,
     paddingHorizontal: CHIP_PADDING_X,

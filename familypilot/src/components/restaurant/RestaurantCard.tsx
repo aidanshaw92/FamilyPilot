@@ -17,7 +17,7 @@ interface RestaurantCardProps {
 
 export function RestaurantCard({ restaurant, index = 0 }: RestaurantCardProps) {
   const router = useRouter();
-  const classification = getMatchClassification(restaurant.familyScore.score);
+  const classification = getMatchClassification(restaurant.familyScore.score, restaurant.enrichmentStatus);
   const highlights = restaurantFeatureHighlights(restaurant.restaurantFeatures, 3);
   const caution = restaurant.goodToKnow?.[0];
 
