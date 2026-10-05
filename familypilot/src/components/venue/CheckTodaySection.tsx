@@ -124,7 +124,7 @@ export function CheckTodaySection({ facts, latitude, longitude }: CheckTodaySect
   return (
     <View style={styles.section}>
       <Text variant="heading2" style={styles.title}>
-        Will this work today?
+        If you leave now
       </Text>
 
       {state.status === 'no_families' ? (

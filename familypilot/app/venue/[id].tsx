@@ -1,4 +1,3 @@
-import { VenueTrustPanel } from '@/src/components/planning/VisitFeedback';
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +16,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CheckTodaySection } from '@/src/components/venue/CheckTodaySection';
 import { CommunitySection } from '@/src/components/venue/CommunitySection';
 import { EatNearbySection } from '@/src/components/venue/EatNearbySection';
+import { EvidenceSection } from '@/src/components/venue/EvidenceSection';
+import { FamilyMatchCard } from '@/src/components/venue/FamilyMatchCard';
+import { TodayCard } from '@/src/components/venue/TodayCard';
 import { FamilyEssentials } from '@/src/components/venue/FamilyEssentials';
 import { PhotoGallery } from '@/src/components/venue/PhotoGallery';
 import { RestaurantsCloseBy } from '@/src/components/venue/RestaurantsCloseBy';
@@ -29,7 +31,6 @@ import {
   Button,
   EmptyState,
   FamilyMatch,
-  FamilyMatchPanel,
   Skeleton,
   Text,
   VenueImage,
@@ -88,6 +89,8 @@ export default function VenueScreen() {
   const scrollY = useSharedValue(0);
   const [heroIndex, setHeroIndex] = useState(0);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [startReport, setStartReport] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const fitPanelY = useRef(0);
   const reducedMotion = useReducedMotion();
@@ -275,6 +278,7 @@ export default function VenueScreen() {
               <FamilyMatch
                 score={venue.familyScore.score}
                 enrichmentStatus={venue.enrichmentStatus}
+                match={venue.familyMatch}
                 size="compact"
                 onPress={scrollToFit}
               />
@@ -288,7 +292,7 @@ export default function VenueScreen() {
                 </Text>
               </View>
               <Pressable onPress={scrollToFit} accessibilityRole="button" hitSlop={10} style={minTarget(16)}>
-                <Text style={styles.whyLink}>Why this score</Text>
+                <Text style={styles.whyLink}>Why this fit</Text>
               </Pressable>
             </View>
 
@@ -310,51 +314,49 @@ export default function VenueScreen() {
               </View>
             ) : null}
 
-            {/* Places to eat near THIS venue, from OpenStreetMap. Zero Google calls, one Overpass
-                request per anchor shared across every parent who opens it. The section renders its
-                own pending, outage and nothing-mapped states, which are three different things. */}
+            {/* 1. Family Match: what FamilyPilot tells THIS family, and why. The first thing under the name. */}
+            <View
+              style={styles.block}
+              onLayout={(event) => {
+                fitPanelY.current = HERO_HEIGHT - SHEET_OVERLAP + event.nativeEvent.layout.y;
+              }}
+            >
+              {venue.familyMatch ? (
+                <FamilyMatchCard match={venue.familyMatch} />
+              ) : null}
+            </View>
+
+            {/* 2. Will it work TODAY: the opening state from the schedule and the clock, then the routine check. */}
+            <View style={styles.block}>
+              <TodayCard hours={venue.structuredOpeningHours} />
+              {venue.trustedFacts ? (
+                <CheckTodaySection
+                  facts={venue.trustedFacts}
+                  latitude={venue.latitude}
+                  longitude={venue.longitude}
+                />
+              ) : null}
+            </View>
+
+            {/* 3. The key family essentials: what is confirmed, and one line for what is not. */}
+            <Text variant="heading2" style={styles.sectionTitle}>
+              Family essentials
+            </Text>
+            <FamilyEssentials
+              venue={venue}
+              onHelpCheck={() => {
+                setStartReport(true);
+                setEvidenceOpen(true);
+              }}
+            />
+
+            {/* 4. Food nearby, from OpenStreetMap: zero Google calls, one Overpass request per anchor shared across
+                every parent who opens it. The section renders its own pending, outage and nothing-mapped states. */}
             <RestaurantsCloseBy
               result={nearbyFood.data}
               isPending={nearbyFood.isPending}
               isError={nearbyFood.isError}
             />
-
-            {/* Create a plan is the one action this screen exists to offer, drawn as the frame's
-                CTA (node 72:2), the same pill as Home's "See more". Tapping a venue never creates a
-                plan; this does, through the sheet. */}
-            <ArrowCta
-              label="Create a plan"
-              onPress={() => setPlanSheetOpen(true)}
-              testID="venue-create-plan"
-              style={styles.cta}
-            />
-
-            <Text variant="heading2" style={styles.sectionTitle}>
-              Family essentials
-            </Text>
-            <FamilyEssentials venue={venue} />
-
-            <View
-              style={styles.fitSection}
-              onLayout={(event) => {
-                fitPanelY.current = HERO_HEIGHT - SHEET_OVERLAP + event.nativeEvent.layout.y;
-              }}
-            >
-              <View style={styles.matchIntro}>
-                <Text variant="eyebrow">FAMILY FIT</Text>
-                <Text variant="heading2">Will this work for your family?</Text>
-              </View>
-              {/* The word leads inside the panel ("Good fit"); the number sits on the badge above. */}
-              <FamilyMatchPanel familyScore={venue.familyScore} venue={venue} />
-            </View>
-
-            {venue.trustedFacts ? (
-              <CheckTodaySection
-                facts={venue.trustedFacts}
-                latitude={venue.latitude}
-                longitude={venue.longitude}
-              />
-            ) : null}
 
             <Text variant="heading2" style={styles.sectionTitle}>
               Getting there
@@ -392,8 +394,7 @@ export default function VenueScreen() {
               </View>
             ) : null}
 
-            {/* Whose data this is. A licence condition for both providers, and until now the client
-                could not tell them apart, so Google's mark sat over OpenStreetMap places. */}
+            {/* Whose data this is. A licence condition for both providers. */}
             <View style={styles.photoAttribution}>
               <PlaceAttribution provider={venue.provider} />
             </View>
@@ -409,8 +410,25 @@ export default function VenueScreen() {
               <WeatherAlternativeSection alternative={venue.weatherAlternative} />
             ) : null}
 
-            <VenueTrustPanel venueId={venue.id}/>
+            {/* 5. The deeper evidence: sources, dates and parent observations, one tap away and never hidden. */}
+            <View style={styles.block}>
+              <EvidenceSection
+                venueId={venue.id}
+                expanded={evidenceOpen}
+                onToggle={() => setEvidenceOpen((open) => !open)}
+                startReport={startReport}
+              />
+            </View>
             <CommunitySection tips={venue.communityTips} />
+
+            {/* 6. Create a plan: the one action this screen exists to offer, drawn as the frame's CTA (node 72:2), the
+                same pill as Home's "See more". Tapping a venue never creates a plan; this does, through the sheet. */}
+            <ArrowCta
+              label="Create a plan"
+              onPress={() => setPlanSheetOpen(true)}
+              testID="venue-create-plan"
+              style={styles.cta}
+            />
           </FadeInView>
         </View>
       </AnimatedScrollView>
@@ -575,12 +593,10 @@ const styles = StyleSheet.create({
     marginTop: spacing['3xl'],
     marginBottom: spacing.lg,
   },
-  fitSection: {
-    marginTop: spacing['3xl'],
-  },
-  matchIntro: {
-    gap: spacing.xs,
-    marginBottom: spacing.lg,
+  // The decision blocks (Family Match, Today, evidence) sit apart from the list-like sections around them.
+  block: {
+    marginTop: spacing['2xl'],
+    gap: spacing.md,
   },
   address: {
     marginBottom: spacing.md,

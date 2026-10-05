@@ -34,8 +34,8 @@ export function PostVisitInbox(){
  <Button label="Yes, we went" onPress={()=>setAttending(due.id)}/><View style={s.row}><Button label="Plans changed / skip" variant="ghost" onPress={()=>state.setFeedback(due.id,{status:'skipped'})}/><Button label="Ask me tomorrow" variant="ghost" onPress={()=>state.setFeedback(due.id,{status:'later',until:new Date(Date.now()+86400000).toISOString()})}/></View>
  </Card>;
 }
-export function VenueTrustPanel({venueId}:{venueId:string}){
- const [data,setData]=useState<VenueTrust|null>(null);const [message,setMessage]=useState('');const [open,setOpen]=useState(false);const [date,setDate]=useState(localDate());const [revision,setRevision]=useState(0);
+export function VenueTrustPanel({venueId,startOpen=false}:{venueId:string;startOpen?:boolean}){
+ const [data,setData]=useState<VenueTrust|null>(null);const [message,setMessage]=useState('');const [open,setOpen]=useState(startOpen);useEffect(()=>{if(startOpen)setOpen(true);},[startOpen]);const [date,setDate]=useState(localDate());const [revision,setRevision]=useState(0);
  useEffect(()=>{let live=true;setData(null);setMessage('');void feedbackApi(`?venueId=${encodeURIComponent(venueId)}`).then(result=>{if(live)setData(result);}).catch(()=>{if(live)setMessage('Recent visit reports are unavailable. Check with the venue for essential facilities.');});return()=>{live=false;};},[venueId,revision]);
  return <Card style={s.panel}><Text variant="heading3">Sources & parent observations</Text>
  {data?Object.entries(data.fields).map(([key,f])=><View key={key} style={{gap:4}}><Text>{f.label}: {f.status==='needs_recheck'?'Recent reports need a recheck':f.status==='source_checked'?`Source checked · ${labels[f.value]||f.value}`:f.status==='editor_checked'?`FamilyPilot review · ${labels[f.value]||f.value}`:f.status==='parent_reported'?'Parents have reported; source not confirmed':'Not yet confirmed'}</Text>

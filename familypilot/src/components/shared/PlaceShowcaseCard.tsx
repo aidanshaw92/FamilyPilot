@@ -14,6 +14,7 @@ import { spring } from '@/src/design-system/animations/presets';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
 import { getTravelSignal } from '@/src/utils/family-signals';
+import { matchCardReason } from '@/src/services/matching/family-match';
 import { formatCategory } from '@/src/utils/format-category';
 
 interface PlaceShowcaseCardProps {
@@ -64,6 +65,15 @@ export function PlaceShowcaseCard({
   imageLoading,
 }: PlaceShowcaseCardProps) {
   const pressed = useSharedValue(1);
+  // The one line that changes a decision (what stands in the way, or what is confirmed), only where the card has the
+  // room for it: on a short phone the card shrinks (see home-vertical-layout) and the photograph keeps the space.
+  const cardHeight = height ?? Math.round(width * 1.28);
+  const travel = getTravelSignal(venue.driveMinutes).label;
+  const reason = venue.familyMatch && cardHeight >= 380 ? matchCardReason(venue.familyMatch) : '';
+  // With the note showing, the journey leads the note and the badge row holds the badge alone, so a long badge
+  // ("Good for Sloane and Theo") is never squeezed against the distance.
+  const note = reason ? `${travel} · ${reason}` : '';
+  const noteLines = cardHeight >= 410 ? 2 : 1;
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressed.value }] }));
 
   // The card is ONE button and the save heart is a sibling control, never a child of it: a button
@@ -147,12 +157,26 @@ export function PlaceShowcaseCard({
           <FamilyMatch
             score={venue.familyScore.score}
             enrichmentStatus={venue.enrichmentStatus}
+            match={venue.familyMatch}
             tone="onImage"
           />
-          <Text variant="body" color="rgba(255,255,255,0.9)" numberOfLines={1} style={styles.distance}>
-            {getTravelSignal(venue.driveMinutes).label}
-          </Text>
+          {note ? null : (
+            <Text variant="body" color="rgba(255,255,255,0.9)" numberOfLines={1} style={styles.distance}>
+              {travel}
+            </Text>
+          )}
         </View>
+
+        {note ? (
+          <Text
+            variant="caption"
+            color="rgba(255,255,255,0.88)"
+            numberOfLines={noteLines}
+            style={[styles.footerText, styles.note]}
+          >
+            {note}
+          </Text>
+        ) : null}
 
         <View style={styles.cta} pointerEvents="none">
           <Text variant="heading3" color={colors.text.inverse} style={styles.ctaLabel}>
@@ -280,6 +304,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     lineHeight: 17,
+  },
+  // One or two quiet lines between the badge row and the button, led by the journey.
+  note: {
+    ...ON_PHOTO_SHADOW,
+    marginTop: -10,
+    marginBottom: 12,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12.5,
+    lineHeight: 16,
   },
   cta: {
     justifyContent: 'center',

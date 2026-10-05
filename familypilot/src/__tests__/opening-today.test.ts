@@ -125,3 +125,21 @@ describe('the stored open-now flag is a snapshot, not a fact about now', () => {
     expect(isVisitableVenue({ isOpen: false }, now)).toBe(false);
   });
 });
+
+describe('the week as readable lines', () => {
+  it('lists Monday first and says Closed for a shut day', async () => {
+    const { weeklyHoursLines } = await import('@/src/utils/opening-today');
+    const lines = weeklyHoursLines(FARM);
+    expect(lines).toHaveLength(7);
+    expect(lines[0]).toBe('Monday: Closed');
+    expect(lines[1]).toBe('Tuesday: 10am to 4:30pm');
+    expect(lines[6]).toBe('Sunday: 10am to 4:30pm');
+  });
+
+  it('says open 24 hours for an always-open place, and falls back to the provider text without a schedule', async () => {
+    const { weeklyHoursLines } = await import('@/src/utils/opening-today');
+    expect(weeklyHoursLines({ periods: [{ open: { day: 0, hour: 0, minute: 0 } }] })).toEqual(['Open 24 hours, every day']);
+    expect(weeklyHoursLines({ weekdayText: ['Monday: 9am-5pm', ' '] })).toEqual(['Monday: 9am-5pm']);
+    expect(weeklyHoursLines(undefined)).toEqual([]);
+  });
+});

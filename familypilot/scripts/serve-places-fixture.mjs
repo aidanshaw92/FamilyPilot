@@ -737,7 +737,8 @@ const server = createServer((req, res) => {
     if (!place) return sendJson(res, 404, { error: 'Place not found', code: 'NOT_FOUND' });
     return sendJson(res, 200, {
       place,
-      metadata: EDGE_METADATA[id] ?? null,
+      // Like the deployed endpoint, which sends the consumer projection both as `metadata` and on the place.
+      metadata: EDGE_METADATA[id] ?? place.familyMetadata ?? null,
       requestedPlaceId: id,
       canonicalIdentity: null,
       provider: 'google',

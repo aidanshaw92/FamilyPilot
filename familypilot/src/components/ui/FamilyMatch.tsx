@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { EnrichmentStatus } from '@/src/types';
 import { describeFamilyMatch } from '@/src/utils/family-match-scale';
+import { FamilyMatchResult, matchBadgeText, matchEarnsStar, VERDICT_BADGE } from '@/src/services/matching/family-match';
 
 import { Text } from './Text';
 import { StarGlyph } from './icons';
@@ -29,6 +30,11 @@ interface FamilyMatchProps {
    * the "Why this score" link on that row carries the word.
    */
   size?: FamilyMatchSize;
+  /**
+   * What FamilyPilot works out for THIS family (family-match.ts). When given it decides the words, the star and
+   * the colour, and the number is not shown: a good match says who it is good for, a possible one says possible.
+   */
+  match?: Pick<FamilyMatchResult, 'verdict' | 'forNames'>;
   style?: ViewStyle;
 }
 
@@ -46,24 +52,56 @@ export function FamilyMatch({
   tone = 'onLight',
   onPress,
   size = 'default',
+  match: verdictMatch,
   style,
 }: FamilyMatchProps) {
-  const match = describeFamilyMatch(score, enrichmentStatus);
+  const legacy = describeFamilyMatch(score, enrichmentStatus);
+  // The verdict, when there is one, replaces the number: `unreviewed` keeps its own status wording and look.
+  const match = verdictMatch
+    ? {
+        ...legacy,
+        unreviewed: !matchEarnsStar(verdictMatch.verdict),
+        number: matchEarnsStar(verdictMatch.verdict) ? '★' : null,
+        badgeLabel: matchBadgeText(verdictMatch, size === 'compact' ? 12 : 18),
+        spoken: `${matchBadgeText(verdictMatch, 40)}. ${VERDICT_BADGE[verdictMatch.verdict]}`,
+      }
+    : legacy;
   // Unknown is unknown: a badge with no number and no status would be a verdict in disguise.
   if (!match.unreviewed && match.number === null) return null;
 
   const onImage = tone === 'onImage';
   // Compact only ever drops the word next to a number; an unreviewed status keeps its words.
-  const compact = size === 'compact' && match.number !== null;
+  const compact = size === 'compact' && match.number !== null && !verdictMatch;
+  const verdict = verdictMatch?.verdict;
   const frameSize = size === 'explore' || size === 'deck' ? size : null;
   // On a light surface the pill is mint with green star and text; on photography it is the
   // deep green with white. An unreviewed pill is the quiet neutral fill with secondary text.
-  const ink = onImage ? colors.text.inverse : match.unreviewed ? colors.text.secondary : colors.action;
+  const ink = onImage
+    ? colors.text.inverse
+    : verdict === 'possible'
+      ? colors.warning[600]
+      : verdict === 'poor'
+        ? colors.error[600]
+        : match.unreviewed
+          ? colors.text.secondary
+          : colors.action;
   const content = (
     <View
       style={[
         styles.badge,
-        onImage ? styles.onImage : match.unreviewed ? styles.onLightUnreviewed : styles.onLight,
+        onImage
+          ? verdict === 'possible'
+            ? styles.onImagePossible
+            : verdict === 'poor'
+              ? styles.onImagePoor
+              : styles.onImage
+          : verdict === 'possible'
+            ? styles.onLightPossible
+            : verdict === 'poor'
+              ? styles.onLightPoor
+              : match.unreviewed
+                ? styles.onLightUnreviewed
+                : styles.onLight,
         compact && styles.compact,
         frameSize === 'explore' && styles.explore,
         frameSize === 'deck' && styles.deck,
@@ -135,6 +173,19 @@ const styles = StyleSheet.create({
   },
   onImage: {
     backgroundColor: colors.glass.action,
+  },
+  // A possible match is quieter than a good one, and a poor one is plainly different, but neither is alarming.
+  onImagePossible: {
+    backgroundColor: 'rgba(255, 255, 255, 0.24)',
+  },
+  onImagePoor: {
+    backgroundColor: 'rgba(166, 52, 40, 0.78)',
+  },
+  onLightPossible: {
+    backgroundColor: colors.warning[50],
+  },
+  onLightPoor: {
+    backgroundColor: colors.error[50],
   },
   // Frame node 49:5: 30 tall, 14 in on the left, 16 on the right, SemiBold number.
   compact: {

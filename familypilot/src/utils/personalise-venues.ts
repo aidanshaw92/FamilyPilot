@@ -1,5 +1,6 @@
 import { mockVenueDetails, mockVenues } from '@/src/data/mock-data';
 import { calculateFamilyScore } from '@/src/services/scoring/family-score';
+import { evaluateFamilyMatch } from '@/src/services/matching/family-match';
 import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDetail, WeatherInfo } from '@/src/types';
 
 import { getChildNames } from './profile-defaults';
@@ -81,9 +82,16 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
       ].filter((caution): caution is string => Boolean(caution)),
     ),
   ];
+  const familyMatch = evaluateFamilyMatch({
+    venue: { ...venue, facilities: detail.facilities },
+    profile,
+    score: familyScore.score,
+    weather,
+  });
   return {
     ...venue,
     familyScore: { ...familyScore, cautions },
+    familyMatch,
     goodToKnow: detail.goodToKnow,
     facilities: detail.facilities,
   };

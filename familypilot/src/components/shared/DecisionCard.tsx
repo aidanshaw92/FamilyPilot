@@ -19,6 +19,7 @@ import {
   exploreCardCtaLabel,
 } from '@/src/utils/explore-card-layout';
 import { getMatchClassification } from '@/src/utils/family-match-classification';
+import { matchCardReason, VERDICT_BADGE } from '@/src/services/matching/family-match';
 
 import { RecommendationPattern } from './RecommendationPattern';
 import { travelTimeLabel } from '@/src/utils/travel-time';
@@ -49,7 +50,8 @@ function DecisionCardComponent({
   };
 
   if (variant === 'list') {
-    const classification = getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
+    const match = venue.familyMatch;
+    const classification = match ? VERDICT_BADGE[match.verdict] : getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
     const unreviewed = venue.enrichmentStatus === 'provider_only';
     // Two concrete facts read as bespoke; one alone can look like a generic template repeated
     // across every card, so combine the two most relevant reasons where there's a second one.
@@ -57,7 +59,7 @@ function DecisionCardComponent({
     // ellipsis rather than showing it, which reads as a cut-off fragment instead of a fact.)
     // An unreviewed place has no reason line: the badge under the title already says "Not yet
     // reviewed", its only heuristic reason is the distance, and the meta line carries that.
-    const reason = unreviewed ? '' : venue.familyScore.explanation.slice(0, 2).join(' · ');
+    const reason = match ? matchCardReason(match) : unreviewed ? '' : venue.familyScore.explanation.slice(0, 2).join(' · ');
     const ctaLabel = exploreCardCtaLabel(windowWidth, unreviewed);
 
     // The Explore result card (Figma "Explore card", node 90:106): the photograph down the left,
@@ -88,6 +90,7 @@ function DecisionCardComponent({
           <FamilyMatch
             score={venue.familyScore.score}
             enrichmentStatus={venue.enrichmentStatus}
+            match={match}
             size="explore"
             style={styles.compactFit}
           />

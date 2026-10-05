@@ -196,3 +196,27 @@ export function isVisitableVenue(
   if (today.state === 'unknown') return venue.isOpen !== false;
   return isVisitableToday(today.state);
 }
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // a UK week starts on Monday
+
+/**
+ * The week as lines a parent can read ("Monday: 10am to 5pm"), Monday first. Built from the structured schedule so it
+ * agrees with what `describeOpeningToday` says; the provider's own display text is the fallback when there is no schedule.
+ */
+export function weeklyHoursLines(hours: OpeningHoursSchedule | null | undefined): string[] {
+  if (!hours) return [];
+  if (hours.periods && hours.periods.length > 0) {
+    if (hours.periods.some((p) => p?.open && !p.close)) return ['Open 24 hours, every day'];
+    const intervals = toIntervals(hours.periods);
+    if (intervals.length > 0) {
+      return DAY_ORDER.map((weekday) => {
+        const spans = spansOnDay(intervals, weekday);
+        if (spans.length === 0) return `${DAY_NAMES[weekday]}: Closed`;
+        if (spans.some((s) => s.start <= 0 && s.end >= MINUTES_PER_DAY)) return `${DAY_NAMES[weekday]}: Open 24 hours`;
+        return `${DAY_NAMES[weekday]}: ${spans.map((s) => `${clock12(s.start)} to ${clock12(s.realEnd)}`).join(', ')}`;
+      });
+    }
+  }
+  return (hours.weekdayText ?? []).filter((line) => typeof line === 'string' && line.trim().length > 0);
+}

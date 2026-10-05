@@ -122,6 +122,12 @@ export interface Venue {
   driveMinutes: number;
   imageUrl: string;
   familyScore: FamilyScore;
+  /**
+   * What FamilyPilot tells THIS family about the place, derived from the household, the venue's confirmed facts and
+   * today's context (see services/matching/family-match.ts). Present once a venue has been personalised. The
+   * `familyScore` number ranks; this decides the words.
+   */
+  familyMatch?: import('@/src/services/matching/family-match').FamilyMatchResult;
   estimatedSpend?: string;
   /** Open right now, from the weekly schedule and the clock; undefined when that cannot be said. */
   isOpen?: boolean;
