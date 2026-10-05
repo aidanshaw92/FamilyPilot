@@ -100,6 +100,22 @@ function buildFoodQuery(lat, lng, radiusM, { narrow = false } = {}) {
 }
 
 /**
+ * ONE query for many anchors, for the one-off backfill (food-backfill.js). The per-anchor query above is right for a
+ * parent opening a venue page; asking it 150 times in a row is the pattern a public instance least wants. This asks
+ * once for every food place within `radiusM` of ANY anchor in the batch, and the caller assigns each element back to
+ * its anchors by distance. Same amenities, same tags, same radius semantics, so a stored row is indistinguishable from
+ * one the venue page would have made.
+ */
+function buildBatchFoodQuery(anchors, radiusM, { timeoutS = 90, maxsizeBytes = 64 * 1024 * 1024 } = {}) {
+  const radius = clampRadius(radiusM);
+  const around = anchors.map((a) => `(around:${radius},${Number(a.latitude).toFixed(5)},${Number(a.longitude).toFixed(5)})`);
+  // One selector per anchor keeps each `around` independent (a single `around` with many points would measure distance
+  // to the LINE between them, which would pull in food from the whole stretch between two anchors).
+  const clauses = around.map((a) => `nwr["amenity"~"^(${FOOD_AMENITIES.join('|')})$"]${a};`).join('');
+  return `[out:json][timeout:${timeoutS}][maxsize:${maxsizeBytes}];(${clauses});out center tags;`;
+}
+
+/**
  * @param {string} query
  * @param {number} deadlineAt
  * @param {{ httpRequests: number }} [load] Mutated with the number of HTTP requests actually made.
@@ -368,6 +384,7 @@ async function searchOsmFood(anchor, { radiusM = DEFAULT_RADIUS_M } = {}) {
 module.exports = {
   searchOsmFood,
   buildFoodQuery,
+  buildBatchFoodQuery,
   elementToCandidate,
   dedupeCandidates,
   clampRadius,

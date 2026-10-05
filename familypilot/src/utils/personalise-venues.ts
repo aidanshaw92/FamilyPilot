@@ -1,6 +1,7 @@
 import { mockVenueDetails, mockVenues } from '@/src/data/mock-data';
 import { calculateFamilyScore } from '@/src/services/scoring/family-score';
 import { evaluateFamilyMatch } from '@/src/services/matching/family-match';
+import type { ParentObservations } from '@/src/services/matching/parent-observations';
 import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDetail, WeatherInfo } from '@/src/types';
 
 import { getChildNames } from './profile-defaults';
@@ -62,7 +63,7 @@ function toVenueDetail(venue: Venue): VenueDetail {
   };
 }
 
-export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?: WeatherInfo | null): Venue {
+export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?: WeatherInfo | null, parentObservations?: ParentObservations): Venue {
   const detail = toVenueDetail(venue);
   const enrichmentStatus: EnrichmentStatus = venue.enrichmentStatus ?? 'provider_only';
   const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus, weather });
@@ -87,6 +88,7 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
     profile,
     score: familyScore.score,
     weather,
+    parentObservations,
   });
   return {
     ...venue,

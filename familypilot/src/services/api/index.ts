@@ -26,6 +26,7 @@ import {
 import { withCompletion } from '@/src/utils/profile-defaults';
 import { compareTravelMinutes } from '@/src/utils/travel-time';
 import { buildHomeRecommendations, personaliseVenue, personaliseVenues } from '@/src/utils/personalise-venues';
+import { fetchParentObservations } from '@/src/services/planning/parent-observation-fetch';
 import { fetchLiveWeather, fetchLiveWeatherSafe } from '@/src/services/context/live-context';
 import { isVisitableVenue } from '@/src/utils/opening-today';
 import { getFocusedRecommendations } from '@/src/services/recommendation/focused-recommendations';
@@ -109,13 +110,14 @@ export const venueService = {
 
   async getById(id: string): Promise<VenueDetail | null> {
     const profile = getProfile();
-    const [, detail, weather] = await Promise.all([
+    const [, detail, weather, parentObservations] = await Promise.all([
       delay(200),
       getPlacesRepository().getVenueDetail(id, profile),
       fetchLiveWeatherSafe(profile),
+      fetchParentObservations(id),
     ]);
     if (!detail) return null;
-    return { ...detail, ...personaliseVenue(detail, profile, weather) };
+    return { ...detail, ...personaliseVenue(detail, profile, weather, parentObservations) };
   },
 };
 

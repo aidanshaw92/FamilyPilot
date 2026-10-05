@@ -19,6 +19,22 @@
  *       - accounts who disagree  -> `needs_recheck`, agreement `contested`
  *   R5  Absence of any observation is never "no": unknown stays unknown.
  *
+ * THE CONFIDENCE CONTRACT (`confidenceOf`; pinned by visit-confidence.test.ts). Every field carries `confidence`:
+ *
+ *   basis             authoritative  influencesFit  meaning
+ *   official          yes            (venue fact)   a sourced claim stands and nothing newer contradicts it
+ *   needs_recheck     no             yes            a recent observation contradicts the official claim, or parents
+ *                                                   disagree with each other: shown as "needs rechecking", value unknown
+ *   parent_corroborated no           yes (explain)  two or more INDEPENDENT accounts, within 90 days, agree; nothing official
+ *   parent_single     no             no             exactly one account: a lead for the next visitor, nothing more
+ *   none              no             no             nobody has said anything
+ *
+ *   Only `official` is ever authoritative: parent evidence cannot reach it however many accounts agree. Independence:
+ *   distinct accounts, and accounts linked as partners count once (one household is one witness). "Influences Family
+ *   Fit" means the explanation may mention it, labelled as parent-reported; it never raises a verdict, and it never
+ *   turns an unknown into a fact. Fields are only the five listed in FIELDS: there is no age field, so a parent
+ *   observation cannot create a recommended age range or an age policy.
+ *
  * WHAT IS ASKED NEXT (`priority`, lower is asked first; `selectQuestions` takes the first three below 9):
  *
  *   0  disputed or contradicted (`needs_recheck`)
@@ -66,13 +82,27 @@ function priorityOf(field) {
   return 9;
 }
 
-function summarizeReports(claims,reports,now=Date.now()) {
+/**
+ * The explicit confidence of a field (see the header). `label` is the wording a screen may use; none of it says "confirmed"
+ * unless the basis is `official`.
+ */
+function confidenceOf(field) {
+  const n=field.reportCount;
+  if(field.status==='needs_recheck')return {basis:'needs_recheck',authoritative:false,influencesFit:true,label:'Needs rechecking',families:n};
+  if(field.status==='source_checked'||field.status==='editor_checked')return {basis:'official',authoritative:true,influencesFit:false,label:field.status==='source_checked'?'Confirmed by the venue’s own source':'Confirmed by an editor',families:n};
+  if(field.status==='parent_reported'&&field.agreement==='corroborated')return {basis:'parent_corroborated',authoritative:false,influencesFit:true,label:`Reported by ${n} families, not confirmed by the venue`,families:n};
+  if(field.status==='parent_reported')return {basis:'parent_single',authoritative:false,influencesFit:false,label:'Reported by one family, not confirmed by the venue',families:n};
+  return {basis:'none',authoritative:false,influencesFit:false,label:'Not confirmed',families:0};
+}
+
+function summarizeReports(claims,reports,now=Date.now(),households=new Map()) {
   const fields={};
   for(const [key,definition] of Object.entries(FIELDS)) {
     const claim=claims.find(c=>c.fieldKey===definition.claim);
     const observations=reports.filter(r=>r.status==='active'&&r.answers[key]&&r.answers[key]!=='did_not_check'&&now-Date.parse(r.visit_date+'T00:00:00Z')<=OBSERVATION_WINDOW_DAYS*DAY_MS);
+    // One witness per household: accounts linked as partners share a key, and the latest report for that key stands.
     const latestByUser=new Map();
-    for(const r of observations.sort((a,b)=>b.visit_date.localeCompare(a.visit_date)||b.created_at.localeCompare(a.created_at)))if(!latestByUser.has(r.user_id))latestByUser.set(r.user_id,r);
+    for(const r of observations.sort((a,b)=>b.visit_date.localeCompare(a.visit_date)||b.created_at.localeCompare(a.created_at))){const witness=households.get(r.user_id)||r.user_id;if(!latestByUser.has(witness))latestByUser.set(witness,r);}
     const recent=[...latestByUser.values()];
     // A later source check can resolve a discrepancy; an older source cannot dismiss a new report.
     const afterSource=recent.filter(r=>!claim||r.visit_date>=String(claim.checkedAt).slice(0,10));
@@ -90,7 +120,7 @@ function summarizeReports(claims,reports,now=Date.now()) {
       reportCount:recent.length,lastReportedAt:recent[0]?.visit_date??null,
       observations:[...new Set(recent.map(r=>r.answers[key]))],
       agreement,stale};
-    fields[key]={...field,priority:priorityOf(field)};
+    fields[key]={...field,priority:priorityOf(field),confidence:confidenceOf(field)};
   }
   return fields;
 }
@@ -106,4 +136,4 @@ function selectQuestions(fields) {
     .slice(0,3);
 }
 
-module.exports={FIELDS,VALUE_ORDER,OBSERVATION_WINDOW_DAYS,STALE_AFTER_DAYS,validateReport,summarizeReports,selectQuestions,priorityOf};
+module.exports={FIELDS,VALUE_ORDER,OBSERVATION_WINDOW_DAYS,STALE_AFTER_DAYS,validateReport,summarizeReports,selectQuestions,priorityOf,confidenceOf};

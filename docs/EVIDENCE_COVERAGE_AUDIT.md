@@ -147,11 +147,38 @@ birth, postcode or parent name appears in it or in the stored row. Parents can d
   `source_checked` or `editor_checked`, however many agree.
 * **R5** absence of reports is not "no".
 
-Parent reports appear only on the venue page ("One family has reported this; the venue's own source is not confirmed",
-"2 families have reported this…"). They do **not** raise a Family Fit verdict yet: that would make unreviewed
-observations a ranking input, which is a product decision, listed under owner decisions.
+### The confidence contract (release-candidate refinement; `confidenceOf`, pinned by `visit-confidence.test.ts`, 17 tests)
 
-## 6. Age suitability: audited, not guessed
+Every field the server returns now carries an explicit `confidence`. Parent evidence climbs a short ladder and **stops
+below "authoritative"**:
+
+| Basis | Authoritative | Influences Family Fit | What it is |
+| --- | :---: | :---: | --- |
+| `official` | yes | (the venue's own fact) | a sourced claim stands and nothing newer contradicts it |
+| `needs_recheck` | no | yes: the official fact is withdrawn and the line says "needs rechecking" | a recent report contradicts the official claim, or parents disagree with each other |
+| `parent_corroborated` | no | yes: wording only | two or more **independent** accounts, within 90 days, agree; nothing official |
+| `parent_single` | no | **no** | exactly one account: a lead for the next visitor, nothing more |
+| `none` | no | no | nobody has said anything |
+
+* **One report never masquerades as confirmation.** `parent_single` is not authoritative, never reaches Family Fit, and
+  is labelled "Reported by one family, not confirmed by the venue".
+* **Independent means independent.** Distinct accounts, and two accounts linked as **partners** count as one witness
+  (one household). Friends and wider family count separately. 25 families agreeing is still `parent_corroborated`,
+  never `source_checked`.
+* **What Family Fit does with it** (venue page only; cards stay on official facts): a corroborated report replaces the
+  plain "still to be checked" line with *"Baby changing: 2 families report it is available (parent-reported, not
+  confirmed by the venue)"*. It stays an unknown: it is not a tick, not a reason, never raises a verdict and never counts
+  as a positive. A contradicted official fact is treated as unknown for that family and reads *"Baby changing needs
+  rechecking: recent parent reports differ from the venue's own information"*; the claim row itself is untouched, and a
+  later source check resolves it. A family that does not need the fact (no buggy, no baby) is told nothing.
+* **Parents cannot generate age evidence.** A report has five fields (baby changing, buggy, toilets, parking, café);
+  there is no age field, `validateReport` rejects any other key, and the age contract (`AGE_EVIDENCE_CONTRACT.md`)
+  refuses `parent_report` as a source.
+* **Question selection is unchanged and tested alongside**: the server still ranks disputed (0), unknown (1), stale (2),
+  single report (3), corroborated (4), confirmed and fresh (9, never asked); the device still drops what the family
+  cannot answer and asks at most three.
+
+## 6. Age suitability: audited, not guessed (superseded in detail by `docs/AGE_EVIDENCE_CONTRACT.md`)
 
 * **Where it is meant to originate.** Two different facts. (1) A **door policy** ("under 4s are not admitted"): a
   claim `agePolicy.<source>` with a quoted rule and a human approver, which alone may hide a venue (`AGE_POLICY.md`).
@@ -221,7 +248,7 @@ cost I would read from Cloud Billing rather than state from memory. It needs you
 
 ## 10. Not done, and not claimed
 
-* The food backfill was **not run**: see `docs/FOOD_BACKFILL.md`.
+* The food backfill was **not run**, and was reworked from ~150 queries to two batched ones: see `docs/FOOD_BACKFILL.md`.
 * VoiceOver, TalkBack and OS larger-text were **not tested**.
 * The extractor improvements are **not live** (they need merge, deploy and a worker run).
-* Parent reports do not yet influence Family Fit.
+* Parent reports influence Family Fit only as the labelled, explanation-only lines above, and only when corroborated or contradicting.

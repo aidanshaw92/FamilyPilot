@@ -35,7 +35,7 @@ Where: Supabase dashboard → the FamilyPilot project → **Authentication**.
 | 6 | Sign In / Providers | **Allow anonymous sign-ins** | **Off** (the connections API rejects anonymous users; leaving it off removes a way to mint throw-away accounts) |
 | 7 | **URL Configuration** | **Site URL** | `https://family-pilot-seven.vercel.app` |
 | 8 | URL Configuration | **Redirect URLs** (allow-list) | `https://family-pilot-seven.vercel.app/**` |
-| 9 | URL Configuration | Redirect URLs, **only if** you want to test real sign-up on a Vercel Preview | `https://family-pilot-*-aidanshaw92s-projects.vercel.app/**` (matches the per-deployment and per-branch preview hosts; the current PR #159 preview is `family-pilot-git-claude-familypilo-a833f0-aidanshaw92s-projects.vercel.app`). See the note below before adding it. |
+| 9 | URL Configuration | Redirect URLs for Vercel Previews | **Add nothing.** Preview account creation is disabled in code (below), so no preview origin may be allow-listed: an allow-listed preview would be a way to make real accounts in the production project. |
 | 10 | **SMTP Settings** | **Custom SMTP** | Configure before launch (Resend, Postmark, SES or similar; sender such as `accounts@<your domain>`). Supabase's built-in sender is for trying things out: it only delivers to project members and is limited to a handful of emails an hour, so real parents would not receive verification links. |
 | 11 | **Rate Limits** | Defaults | Leave. The app also enforces a 30 s resend cooldown. |
 | 12 | **Email Templates** → Confirm signup | Optional | FamilyPilot voice. Keep the `{{ .ConfirmationURL }}` link. |
@@ -44,7 +44,18 @@ What the app sends: `emailRedirectTo = <window.location.origin>/`, so the redire
 
 Notes:
 
-* **Previews and accounts (row 9).** There is one Supabase project. A sign-up on a Preview creates a real account in it, so add row 9 only if you deliberately want that. Without it, a Preview build with the Supabase variables set will send verification links to the production site, and with the variables unset (below) the Preview simply has no accounts, which is also zero-spend and zero-risk. Previews must keep Places disabled either way; accounts do not call Google.
+* **Previews never have accounts (owner decision).** There is one Supabase project and it is production. A Vercel Preview
+  build therefore ships with no account UI and behaves like a build with no auth backend: `scripts/build-web.mjs` stamps
+  Vercel's `VERCEL_ENV` into the bundle as `EXPO_PUBLIC_DEPLOY_ENV`, and `src/services/supabase/client.ts` treats a `preview`
+  build as not configured, whatever Supabase variables the preview has. The same rule is enforced where it cannot be
+  bypassed: `server/accounts/preview-guard.js` makes `api/planning/connections`, `plan-invites` and the account side of
+  `feedback` answer 503 `accounts_disabled_on_preview` when `VERCEL_ENV === 'preview'`. Tests: `preview-accounts-disabled.test.ts`.
+  Production is where verified-email accounts are tested. The CI and browser verifiers use the in-memory GoTrue fixture,
+  never the real project. Optional extra (a Vercel dashboard setting, not required): untick **Preview** on the two
+  `EXPO_PUBLIC_SUPABASE_*` variables so a preview bundle carries no Supabase keys at all. Leave `SUPABASE_SERVICE_ROLE_KEY`
+  alone: the places catalogue and cost-control tables (budget, cache) read it, and a preview must keep behaving fail-closed.
+  The code does not depend on either setting. Note this switches off the Saved-tab cloud backup on previews, which
+  previously worked there.
 * **Vercel environment variables.** The client reads `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable/anon key, never the service-role key). Production needs both or `accountRequired()` is false and accounts silently disappear from the deployed app. The server needs `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` for the connections API. The Vercel integration available to this session could not list project environment variables (403), so this has **not** been verified from here: check Vercel → Project → Settings → Environment Variables, or run `node familypilot/scripts/verify-client-config.mjs` against the production URL.
 * **CAPTCHA (Authentication → Attack Protection).** Do not enable it yet: the client has no CAPTCHA widget, so turning it on would block every sign-up. It is a candidate for a later slice if account abuse appears.
 * **Leaked-password protection** (Attack Protection) is plan-dependent; turn it on if the plan offers it.

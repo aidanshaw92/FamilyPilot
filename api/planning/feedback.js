@@ -1,3 +1,4 @@
+const {refuseOnPreview}=require('../../server/accounts/preview-guard');
 const {getSupabaseAdmin}=require('../../server/enrichment/_lib/supabase-admin');
 const {getActiveClaims}=require('../../server/enrichment/_lib/claims-store');
 const {resolvePrimaryPlaceId}=require('../../server/places/lib/canonical-venues');
@@ -14,6 +15,8 @@ module.exports=async function handler(req,res) {
    const fields=await venueFeedback(id,await getActiveClaims(id));
    return res.json({fields,questions:selectQuestions(fields)});
   }
+  // The public per-venue summary above is read-only and needs no account. Everything below is an account's own data.
+  if(refuseOnPreview(res))return;
   const token=(req.headers.authorization||'').replace(/^Bearer /,'');
   if(!token)return res.status(401).json({error:'Sign in under Families & routines to share visit feedback.'});
   const {data:auth,error:authError}=await admin.auth.getUser(token);

@@ -157,6 +157,7 @@ console.log('the report is shown separately, and strengthens with a second famil
   await settle(page, 1000);
   let t = await text(page);
   check(/One family has reported this; the venue.s own source is not confirmed/.test(t), 'the venue page shows one family’s report, labelled as not the venue’s own source');
+  check(!/families report it is available/.test(t), 'and ONE report does not reach Family Fit at all (no parent-reported line)');
   await shot(page, 'pv-06-evidence-one-report');
 
   // A second family reports the same: corroborated, still not official.
@@ -173,6 +174,29 @@ console.log('the report is shown separately, and strengthens with a second famil
   check(/2 families have reported this; the venue.s own source is not confirmed/.test(t), 'two families agreeing reads as corroborated, still labelled as not the venue’s own source');
   check(!/Source checked · Yes|FamilyPilot review · Yes/.test(t.split(/Baby changing/)[1]?.slice(0, 160) ?? ''), 'and baby changing is NOT promoted to an official confirmation');
   await shot(page, 'pv-07-evidence-corroborated');
+}
+
+console.log('Family Fit: one report is silent, two independent reports are explained as parent-reported, never as a fact');
+{
+  // A venue whose own facts leave baby changing unknown (a "partial" fixture venue).
+  const PARTIAL = 'fp-google-FIXTUREnotArealPlaceId0004';
+  const { page } = sam;
+  const post = (user) => fetch(`${BASE}/api/planning/feedback`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer x.${Buffer.from(JSON.stringify({ sub: user })).toString('base64url')}.y` },
+    body: JSON.stringify({ venueId: PARTIAL, visitDate: new Date().toISOString().slice(0, 10), attended: true, answers: { babyChanging: 'yes' } }),
+  });
+  const read = async () => { await page.goto(`${BASE}/venue/${PARTIAL}`, { waitUntil: 'domcontentloaded' }); await settle(page, 3000); return (await text(page)); };
+  let t = await read();
+  check(/Baby changing still to be checked for Theo/.test(t), 'before any report: "Baby changing still to be checked for Theo"');
+  await post('family-one');
+  t = await read();
+  check(/Baby changing still to be checked for Theo/.test(t) && !/families report it is available/.test(t), 'one report: Family Fit says nothing different');
+  await post('family-two');
+  t = await read();
+  check(/Baby changing: 2 families report it is available \(parent-reported, not confirmed by the venue\)/.test(t), 'two independent reports: Family Fit says so, labelled parent-reported and not confirmed by the venue');
+  check(!/Baby changing confirmed/.test(t), 'and never as a confirmed fact or a tick');
+  await shot(page, 'pv-08-family-fit-parent-reported');
 }
 
 await browser.close();

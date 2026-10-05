@@ -8,6 +8,7 @@ import { childUsesBuggy, familyNeedsStepFree, familyUsesBuggy } from '@/src/util
 import { describeOpeningToday, OpeningTodayState } from '@/src/utils/opening-today';
 import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
+import { observationLine, ParentObservations } from '@/src/services/matching/parent-observations';
 
 /**
  * Family Match: whether a place will work for THIS family today, and why, derived from the household, the venue's
@@ -58,7 +59,7 @@ export interface FamilyMatchResult {
   today: { state: OpeningTodayState; label: string };
   /** The one line worth showing on a card. */
   cardNote: string | null;
-  evidence: { positives: number; venueFacts: number; breaches: number; hardUnknowns: number };
+  evidence: { positives: number; venueFacts: number; breaches: number; hardUnknowns: number; /** Lines that rest on parent reports (never counted as positives). */ parentReported: number };
 }
 
 export interface FamilyMatchInput {
@@ -68,6 +69,11 @@ export interface FamilyMatchInput {
   score: number;
   weather?: WeatherInfo | null;
   now?: Date;
+  /**
+   * What parents have reported, ALREADY filtered by the confidence contract (`parentObservationsFromTrust`): only
+   * corroborated and needs-recheck fields. Explanations only: they never raise a verdict and never become a reason.
+   */
+  parentObservations?: ParentObservations;
 }
 
 const VERDICT_WORD: Record<Exclude<MatchVerdict, 'not_reviewed'>, string> = {
@@ -114,9 +120,28 @@ function cap(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-export function evaluateFamilyMatch({ venue, profile, score, weather, now = new Date() }: FamilyMatchInput): FamilyMatchResult {
+export function evaluateFamilyMatch({ venue, profile, score, weather, now = new Date(), parentObservations = {} }: FamilyMatchInput): FamilyMatchResult {
   const children = profile.members.filter((m) => m.role === 'child');
-  const facts = venue.trustedFacts;
+  // A contradicted fact is withdrawn: Family Fit treats it as unknown and says it needs rechecking. The claim itself is
+  // not touched anywhere; this is only what is told to this family until a source is re-checked.
+  const recheck = (field: 'babyChanging' | 'toilets' | 'parking' | 'pushchair' | 'cafe') => parentObservations[field]?.basis === 'needs_recheck';
+  const facts = venue.trustedFacts
+    ? {
+        ...venue.trustedFacts,
+        ...(recheck('babyChanging') ? { babyChanging: undefined } : {}),
+        ...(recheck('toilets') ? { toilets: undefined } : {}),
+        ...(recheck('parking') ? { parking: undefined, freeParking: undefined } : {}),
+        ...(recheck('pushchair') ? { pushchairSuitability: undefined } : {}),
+      }
+    : venue.trustedFacts;
+  let parentReported = 0;
+  /** The "still to be checked" wording, replaced by the labelled parent-reported wording when the contract allows. */
+  const unknownText = (field: 'babyChanging' | 'toilets' | 'parking' | 'pushchair' | null, fallback: string, lead?: string): string => {
+    const obs = field ? parentObservations[field] : undefined;
+    if (!field || !obs) return fallback;
+    parentReported += 1;
+    return observationLine(field, obs, lead);
+  };
   const unreviewed = isUnreviewedEnrichmentStatus(venue.enrichmentStatus) || !facts;
 
   const reasons: MatchLine[] = [];
@@ -199,7 +224,7 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
           breaches.push({ key: 'buggy-difficult', text: `Buggy access is difficult here, and ${who} is how you get around` });
           break;
         default:
-          hardUnknowns.push({ key: 'buggy-unknown', text: `Buggy access still to be checked for ${who}` });
+          hardUnknowns.push({ key: 'buggy-unknown', text: unknownText('pushchair', `Buggy access still to be checked for ${who}`) });
       }
     }
 
@@ -216,13 +241,14 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
       // pushchair access is already handled above for a family with a buggy.
       if (facility === 'pushchair_friendly' && usesBuggy) continue;
       stated.add(entry.label);
+      const observedKey = ({ toilets: 'toilets', 'baby changing': 'babyChanging', parking: 'parking', 'pushchair access': 'pushchair' } as const)[entry.label as 'toilets'] ?? null;
       if (entry.status === 'yes') {
         reasons.push({ key: `must-${entry.label}`, text: `${cap(entry.label)} confirmed, which you said you need` });
         venueFacts += 1;
       } else if (entry.status === 'no') {
         breaches.push({ key: `must-${entry.label}`, text: `No ${entry.label} here, and you said you need it` });
       } else {
-        hardUnknowns.push({ key: `must-${entry.label}`, text: `${cap(entry.label)}, which you said you need, still to be checked` });
+        hardUnknowns.push({ key: `must-${entry.label}`, text: unknownText(observedKey, `${cap(entry.label)}, which you said you need, still to be checked`, cap(entry.label)) });
       }
     }
 
@@ -236,7 +262,7 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
       } else if (facts.babyChanging === 'no') {
         softCautions.push({ key: 'baby-changing-no', text: `No baby changing here, which ${who} would need` });
       } else {
-        softUnknowns.push({ key: 'baby-changing-unknown', text: `Baby changing still to be checked for ${who}` });
+        softUnknowns.push({ key: 'baby-changing-unknown', text: unknownText('babyChanging', `Baby changing still to be checked for ${who}`) });
       }
     }
 
@@ -245,7 +271,7 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
       reasons.push({ key: 'toilets', text: 'Toilets confirmed on site' });
       venueFacts += 1;
     } else if (facts.toilets !== 'yes' && facts.toilets !== 'no' && !stated.has('toilets') && children.length > 0) {
-      softUnknowns.push({ key: 'toilets-unknown', text: 'Toilets still to be checked' });
+      softUnknowns.push({ key: 'toilets-unknown', text: unknownText('toilets', 'Toilets still to be checked') });
     }
     if (facts.parking === 'yes' && !stated.has('parking')) {
       reasons.push({ key: 'parking', text: facts.freeParking === 'yes' ? 'Free parking confirmed' : 'Parking confirmed on site' });
@@ -253,9 +279,17 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
     } else if (facts.parking === 'no' && !stated.has('parking')) {
       softCautions.push({ key: 'parking-no', text: 'No parking on site' });
     }
-    if (venue.facilities?.includes('cafe')) {
+    if (venue.facilities?.includes('cafe') && !recheck('cafe')) {
       reasons.push({ key: 'cafe', text: 'Café on site' });
       venueFacts += 1;
+    }
+    // A fact that parents have contradicted is withdrawn above; say so for the two that have no unknown line of their own.
+    for (const field of ['parking', 'cafe'] as const) {
+      const obs = parentObservations[field];
+      if (obs?.basis === 'needs_recheck' && !stated.has(field) && (field === 'cafe' ? venue.facilities?.includes('cafe') : venue.trustedFacts?.parking === 'yes')) {
+        softUnknowns.push({ key: `${field}-recheck`, text: observationLine(field, obs) });
+        parentReported += 1;
+      }
     }
 
     // Weather against the confirmed environment.
@@ -333,7 +367,7 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
     toCheck,
     today: { state: today.state, label: today.label },
     cardNote,
-    evidence: { positives, venueFacts, breaches: breaches.length, hardUnknowns: hardUnknowns.length },
+    evidence: { positives, venueFacts, breaches: breaches.length, hardUnknowns: hardUnknowns.length, parentReported },
   };
 }
 

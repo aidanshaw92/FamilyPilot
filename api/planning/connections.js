@@ -1,3 +1,4 @@
+const {refuseOnPreview}=require('../../server/accounts/preview-guard');
 const { randomBytes, createHash } = require('node:crypto');
 const { getSupabaseAdmin } = require('../../server/enrichment/_lib/supabase-admin');
 
@@ -23,6 +24,7 @@ async function previewInvitation(admin,code,res) {
 }
 module.exports = async function handler(req,res) {
   res.setHeader('Cache-Control','no-store');
+  if(refuseOnPreview(res))return;
   if(!['GET','POST','DELETE'].includes(req.method))return res.status(405).json({error:'Method not allowed'});
   const admin=getSupabaseAdmin();if(!admin)return res.status(503).json({error:'Family connections are not configured yet.'});
   // What an invitation link may show BEFORE anyone is signed in: whether it can still be used, and the label the inviter

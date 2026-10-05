@@ -51,7 +51,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "build:web": "expo export --platform web",
+    "build:web": "node scripts/build-web.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:routes": "npm run build:web && vitest run src/__tests__/remediation.test.ts",
