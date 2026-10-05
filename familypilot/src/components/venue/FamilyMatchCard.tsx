@@ -22,6 +22,25 @@ export function FamilyMatchCard({ match }: { match: FamilyMatchResult }) {
   const cautions = match.cautions.slice(0, MAX_CAUTIONS);
   const toCheck = match.toCheck.slice(0, MAX_TO_CHECK);
 
+  // When the place is not a fit, what is wrong leads: nobody should read four ticks before the one line that matters.
+  const problemsFirst = match.verdict === 'poor' || match.verdict === 'possible';
+  const reasonsBlock =
+    reasons.length > 0 ? (
+      <View style={styles.group}>
+        {reasons.map((line) => (
+          <Row key={line.key} icon="checkmark-circle" tint={colors.secondary[500]} line={line} />
+        ))}
+      </View>
+    ) : null;
+  const cautionsBlock =
+    cautions.length > 0 ? (
+      <View style={styles.group}>
+        {cautions.map((line) => (
+          <Row key={line.key} icon="alert-circle" tint={colors.warning[600]} line={line} />
+        ))}
+      </View>
+    ) : null;
+
   return (
     <View style={styles.card} testID="family-match-card">
       <Text variant="eyebrow">FAMILY FIT</Text>
@@ -29,21 +48,8 @@ export function FamilyMatchCard({ match }: { match: FamilyMatchResult }) {
         {match.headline}
       </Text>
 
-      {reasons.length > 0 ? (
-        <View style={styles.group}>
-          {reasons.map((line) => (
-            <Row key={line.key} icon="checkmark-circle" tint={colors.secondary[500]} line={line} />
-          ))}
-        </View>
-      ) : null}
-
-      {cautions.length > 0 ? (
-        <View style={styles.group}>
-          {cautions.map((line) => (
-            <Row key={line.key} icon="alert-circle" tint={colors.warning[600]} line={line} />
-          ))}
-        </View>
-      ) : null}
+      {problemsFirst ? cautionsBlock : reasonsBlock}
+      {problemsFirst ? reasonsBlock : cautionsBlock}
 
       {toCheck.length > 0 ? (
         <View style={styles.group}>

@@ -14,13 +14,13 @@
     "viewport": "360x800",
     "step": "the CTA sits whole on screen once reached",
     "ok": true,
-    "message": "top 371, bottom 429 of 800"
+    "message": "top 706, bottom 764 of 800"
   },
   {
     "viewport": "360x800",
     "step": "Venue Detail offers Directions in its content",
     "ok": true,
-    "message": "found in content at y=1650"
+    "message": "found in content at y=304"
   },
   {
     "viewport": "360x800",
@@ -139,7 +139,7 @@
     "viewport": "360x800",
     "step": "saving from the header also settles the persistent button",
     "ok": true,
-    "message": "Saved"
+    "message": "Saved"
   },
   {
     "viewport": "360x800",
@@ -173,13 +173,13 @@
     "viewport": "390x844",
     "step": "the CTA sits whole on screen once reached",
     "ok": true,
-    "message": "top 393, bottom 451 of 844"
+    "message": "top 750, bottom 808 of 844"
   },
   {
     "viewport": "390x844",
     "step": "Venue Detail offers Directions in its content",
     "ok": true,
-    "message": "found in content at y=1656"
+    "message": "found in content at y=392"
   },
   {
     "viewport": "390x844",
@@ -298,7 +298,7 @@
     "viewport": "390x844",
     "step": "saving from the header also settles the persistent button",
     "ok": true,
-    "message": "Saved"
+    "message": "Saved"
   },
   {
     "viewport": "390x844",
@@ -332,13 +332,13 @@
     "viewport": "393x852",
     "step": "the CTA sits whole on screen once reached",
     "ok": true,
-    "message": "top 397, bottom 455 of 852"
+    "message": "top 758, bottom 816 of 852"
   },
   {
     "viewport": "393x852",
     "step": "Venue Detail offers Directions in its content",
     "ok": true,
-    "message": "found in content at y=1660"
+    "message": "found in content at y=400"
   },
   {
     "viewport": "393x852",
@@ -457,7 +457,7 @@
     "viewport": "393x852",
     "step": "saving from the header also settles the persistent button",
     "ok": true,
-    "message": "Saved"
+    "message": "Saved"
   },
   {
     "viewport": "393x852",
@@ -491,13 +491,13 @@
     "viewport": "430x932",
     "step": "the CTA sits whole on screen once reached",
     "ok": true,
-    "message": "top 437, bottom 495 of 932"
+    "message": "top 838, bottom 896 of 932"
   },
   {
     "viewport": "430x932",
     "step": "Venue Detail offers Directions in its content",
     "ok": true,
-    "message": "found in content at y=1680"
+    "message": "found in content at y=480"
   },
   {
     "viewport": "430x932",
@@ -616,7 +616,7 @@
     "viewport": "430x932",
     "step": "saving from the header also settles the persistent button",
     "ok": true,
-    "message": "Saved"
+    "message": "Saved"
   },
   {
     "viewport": "430x932",

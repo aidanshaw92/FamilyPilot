@@ -320,7 +320,9 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
   // "still to be checked" lines are for the venue's own page, where they have room and context.
   const firstIssue = breaches[0] ?? hardUnknowns[0] ?? softCautions[0];
   const todayBit = ['open_now', 'closing_soon', 'opens_later', 'open_all_day'].includes(today.state) ? today.label : null;
-  const cardNote = [todayBit, firstIssue?.text ?? (todayBit ? null : reasons[0]?.text)].filter(Boolean).join(' · ') || null;
+  // The same fact can be both today's opening state and a caution ("Closing soon · 5pm"): say it once.
+  const noteParts = [todayBit, firstIssue?.text ?? (todayBit ? null : reasons[0]?.text)].filter((part): part is string => Boolean(part));
+  const cardNote = noteParts.filter((part, i) => noteParts.findIndex((other) => other.trim().toLowerCase() === part.trim().toLowerCase()) === i).join(' · ') || null;
 
   return {
     verdict,

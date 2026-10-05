@@ -169,4 +169,12 @@ describe('Family Match: the honest verdict', () => {
     const r = run(venue({}, { toilets: 'yes', babyChanging: 'yes', minRecommendedAge: 1, maxRecommendedAge: 10 }));
     expect(r.cardNote).toBe('Open until 5pm · Buggy access still to be checked for Theo’s buggy');
   });
+
+  it('says "Closing soon" once on the card, though it is both today\'s state and a caution', () => {
+    const late = new Date(Date.UTC(2026, 9, 6, 15, 40, 0)) // 16:40 in London (BST);
+    const r = evaluateFamilyMatch({ venue: venue({}, { toilets: 'yes', babyChanging: 'yes', pushchairSuitability: 'good', minRecommendedAge: 1, maxRecommendedAge: 10 }), profile: profile(), score: 85, now: late });
+    expect(r.cardNote).toBeTruthy();
+    const closing = (r.cardNote ?? '').match(/closing soon/gi) ?? [];
+    expect(closing.length).toBeLessThanOrEqual(1);
+  });
 });

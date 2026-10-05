@@ -51,7 +51,10 @@ const seed = {
 const browser = await chromium.launch(launchOptions);
 for (const w of WIDTHS.split(',').map(Number)) {
   const h = w === 360 ? 780 : w === 430 ? 932 : 852;
-  const context = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, hasTouch: true });
+  // A fixed mid-morning clock in London, so "open today" and "closing soon" read the same in every capture.
+  const context = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, hasTouch: true, timezoneId: 'Europe/London' });
+  await context.clock.install({ time: new Date('2026-10-06T09:30:00.000Z') });
+  await context.clock.resume();
   const page = await context.newPage();
   await page.addInitScript((s) => localStorage.setItem('familypilot-family-v1', JSON.stringify(s)), seed);
   await page.goto(`${BASE}/`, { waitUntil: 'networkidle', timeout: 60000 });

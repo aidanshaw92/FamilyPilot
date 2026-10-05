@@ -103,7 +103,7 @@ export default function ExploreScreen() {
       filterVenues(sourceVenues, categoryFilter, others, exploreMaxDrive, profile?.maxDriveMinutes ?? 30, exploreBudget),
     );
   }, [isRestaurantMode, sourceVenues, advancedFilters, categoryFilter, exploreMaxDrive, exploreBudget, profile?.maxDriveMinutes]);
-  const foodNote = foodUncheckedCount > 0 ? ` · ${foodUncheckedCount} not checked for food nearby` : '';
+  const foodNote = foodUncheckedCount > 0 ? `${foodUncheckedCount} not checked for food nearby, so not shown` : '';
 
   const useEditorialLayout = false &&
     !isRestaurantMode &&
@@ -290,13 +290,18 @@ export default function ExploreScreen() {
         <View style={styles.listHeader}>
           <SectionHeader
             title={areaVenues ? `Around ${search.trim()}` : activeCategoryLabel}
-            subtitle={`0 ${isRestaurantMode ? 'restaurants' : 'places'} ${areaVenues ? 'near this area' : 'across London'}${foodNote}`}
+            subtitle={`0 ${isRestaurantMode ? 'restaurants' : 'places'} ${areaVenues ? 'near this area' : 'across London'}`}
             titleStyle={styles.sectionTitle}
             subtitleStyle={styles.sectionCount}
             actionLabel={activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
             onAction={() => setFilterSheetOpen(true)}
             actionAlign="end"
           />
+{foodNote ? (
+<Text variant="caption" color={colors.text.secondary} style={styles.foodNote} testID="food-unchecked-note">
+{foodNote}
+</Text>
+) : null}
         </View>
         <EmptyState
           icon="search-outline"
@@ -336,7 +341,7 @@ export default function ExploreScreen() {
           <View style={styles.listHeader}>
             <SectionHeader
               title={areaVenues ? `Around ${search.trim()}` : activeCategoryLabel}
-              subtitle={`${resultCount} ${isRestaurantMode ? 'restaurant' : 'place'}${resultCount === 1 ? '' : 's'} ${areaVenues ? 'near this area' : 'across London'}${foodNote}`}
+              subtitle={`${resultCount} ${isRestaurantMode ? 'restaurant' : 'place'}${resultCount === 1 ? '' : 's'} ${areaVenues ? 'near this area' : 'across London'}`}
               titleStyle={styles.sectionTitle}
               subtitleStyle={styles.sectionCount}
               // The approved frame's rail is the category chips alone, so filtering is reached through
@@ -345,6 +350,11 @@ export default function ExploreScreen() {
               onAction={() => setFilterSheetOpen(true)}
               actionAlign="end"
             />
+{foodNote ? (
+<Text variant="caption" color={colors.text.secondary} style={styles.foodNote} testID="food-unchecked-note">
+{foodNote}
+</Text>
+) : null}
           </View>
           {/*
             A FlatList, not a ScrollView with `.map`, because every row carries a venue photograph
@@ -465,6 +475,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: EXPLORE_CHIP.gap,
   },
+  foodNote: { marginTop: 2 },
   listHeader: {
     paddingHorizontal: spacing.screenPadding,
     paddingTop: 14,

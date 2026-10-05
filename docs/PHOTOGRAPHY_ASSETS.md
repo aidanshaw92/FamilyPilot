@@ -156,3 +156,49 @@ Prepend this instead of the lifestyle block:
 
 None of this calls Google Photos, Places, Overpass or any live image provider: the images are bundled (Welcome) or
 read from disk by the local fixture server (fixtures).
+
+## C. When a real venue has no photograph: the category illustration (product QA round 2)
+
+**What a parent sees today.** A venue with no provider photograph draws `CategoryArt` (`src/components/ui/CategoryArt.tsx`):
+a FamilyPilot vector illustration per category (park, farm, zoo, museum, attraction, activity, soft play, beach, cafe,
+restaurant), on a 300×400 board with `preserveAspectRatio="slice"` so it fills a Home card, an Explore thumbnail and a
+60-pixel restaurant thumb alike. It replaced the flat-colour gradient, which read as "broken".
+
+**Why it cannot mislead.** It is obviously artwork (flat shapes, no people, no text, no landmarks), it depicts a *kind*
+of place and never *this* place, it carries no photographer credit, and its accessibility label says so
+(`"<name>, photo not available. Illustration of a <noun>"`, or `"Place photo not available. Illustration of a <noun>"`
+when the image is decorative inside a card). `VenueImage` still has exactly one photograph source, the provider URI;
+`category-art.test.ts` and `fixture-photography.test.ts` fail if a bundled, Welcome or fixture image can reach a real
+venue, or if the fallback stops saying it is an illustration. It upgrades to the real photograph the moment one exists,
+with no layout change. Evidence: `docs/product-qa/category-art.jpg`.
+
+**Real photography audit (production, read-only query, 5 Oct 2026).** 155 stored places. Of the 138 parks, museums,
+attractions, farms, activities, soft-play centres and zoos, **132 (96%) carry a provider photograph**; the 6 without
+(5 museums, 1 park) show the illustration. The 17 restaurant and cafe rows are OpenStreetMap-sourced and have no
+photograph by design, so "Restaurants close by" uses the illustration thumbnail (honest, not a fake picture of the
+restaurant). Home and Explore therefore show real photographs wherever a licensed one exists. Whether *Preview* shows
+them depends only on the photo-scope switch on Vercel Preview (an owner spend decision, unchanged).
+
+**Optional upgrade: a raster illustration pack (not required, nothing is blocked on it).** If the vector set is judged
+too plain, supply ten files and they replace the SVGs one for one.
+
+| Spec | Value |
+| --- | --- |
+| Destination | `familypilot/assets/images/category-art/<category>.webp` |
+| Filenames | `park`, `farm`, `zoo`, `museum`, `attraction`, `activity`, `soft_play`, `beach`, `cafe`, `restaurant` |
+| Size and ratio | 1200 × 1600 px (3:4), WebP, ≤ 180 KB each, sRGB |
+| Safe area | Keep the subject inside the central 70%; the card crops with `slice` and the foot of the image sits under a dark gradient and white text, so keep the bottom third quiet |
+| Palette | FamilyPilot deep green `#0F4A3E`, mint `#E4F2EC`, warm canvas `#FBFAF7`, sun yellow and coral accents; no photographic textures |
+| Wiring (after the files exist) | add a `require` map keyed by category in `CategoryArt.tsx` and render `expo-image` when present, else the SVG; extend `category-art.test.ts` to require one file per category |
+
+Shared prompt prefix: *"Flat editorial illustration for a family days-out app, soft paper-cut shapes, warm natural
+light, deep green and mint palette with sun-yellow and coral accents, no people, no faces, no text, no logos, no real
+landmarks, calm and uncluttered, quiet lower third for overlaid text, portrait 3:4."* Then one subject line each:
+park (rolling lawn, a pond, round trees, a winding path), farm (red barn, hay bales, a fence, a small tractor), zoo
+(savannah acacia, giraffe silhouettes, a signpost), museum (a columned building, steps, banners), attraction (a
+big wheel and a pier), activity (a climbing frame, balls, a rope bridge), soft play (soft blocks, a slide, padded
+shapes), beach (dunes, a bucket and spade, gentle waves), cafe (a cup and a cake on a window table), restaurant (a table
+set for four, a high chair, pendant lamps).
+
+Anything generated must keep the `Origin: generated` credit line in this folder's `CREDITS.md`, and is subject to the
+same rule as everything above: it may illustrate a category, never a venue.
