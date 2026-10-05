@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { useIsFocused } from 'expo-router';
 import { FlatList, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { estimateLineCount } from '@/src/utils/home-header-layout';
@@ -19,10 +20,12 @@ import { useFiltersStore } from '@/src/stores/filters-store';
 import { RestaurantDetail, Venue } from '@/src/types';
 import { buildExploreEditorialSections } from '@/src/utils/explore-editorial-sections';
 import { EXPLORE_CATEGORIES, exploreCategoriesFor, filterVenues } from '@/src/utils/filter-venues';
-import { FOOD_FILTER_IDS, countFoodUnknown } from '@/src/utils/food-nearby';
+import { FOOD_FILTER_IDS, foodIsUnknown } from '@/src/utils/food-nearby';
+import { UncheckedFoodGroup } from '@/src/components/explore/UncheckedFoodGroup';
 import { SAVED_EXAMPLES_NOTICE, showingSavedExamples } from '@/src/utils/saved-examples-notice';
 
 export default function ExploreScreen() {
+  const isFocused = useIsFocused();
   const { width } = useWindowDimensions();
   const tabBarClearance = useTabBarClearance();
   const [search, setSearch] = useState('');
@@ -96,13 +99,12 @@ export default function ExploreScreen() {
 
   // With a food filter on, say how many places could not be checked, so a place with no lookup is never mistaken for a
   // place with no food. Counted among the venues that pass every OTHER filter.
-  const foodUncheckedCount = useMemo(() => {
-    if (isRestaurantMode || !sourceVenues || !advancedFilters.some((id) => FOOD_FILTER_IDS.includes(id))) return 0;
+  const foodUncheckedVenues = useMemo(() => {
+    if (isRestaurantMode || !sourceVenues || !advancedFilters.some((id) => FOOD_FILTER_IDS.includes(id))) return [];
     const others = advancedFilters.filter((id) => !FOOD_FILTER_IDS.includes(id));
-    return countFoodUnknown(
-      filterVenues(sourceVenues, categoryFilter, others, exploreMaxDrive, profile?.maxDriveMinutes ?? 30, exploreBudget),
-    );
+    return filterVenues(sourceVenues, categoryFilter, others, exploreMaxDrive, profile?.maxDriveMinutes ?? 30, exploreBudget).filter(foodIsUnknown);
   }, [isRestaurantMode, sourceVenues, advancedFilters, categoryFilter, exploreMaxDrive, exploreBudget, profile?.maxDriveMinutes]);
+  const foodUncheckedCount = foodUncheckedVenues.length;
   const foodNote = foodUncheckedCount > 0 ? `${foodUncheckedCount} not checked for food nearby, so not shown` : '';
 
   const useEditorialLayout = false &&
@@ -318,6 +320,9 @@ export default function ExploreScreen() {
           actionLabel="Clear filters"
           onAction={handleClearFilters}
         />
+        <View style={styles.listHeader}>
+          <UncheckedFoodGroup venues={foodUncheckedVenues} matched={0} />
+        </View>
         </>
       ) : useEditorialLayout && editorialSections.length > 0 ? (
         <ScrollView
@@ -385,10 +390,13 @@ export default function ExploreScreen() {
               )
             }
             ListFooterComponent={
-              <View style={styles.credits}>
-                <PlaceCredits
-                  places={isRestaurantMode ? (restaurants ?? []) : filteredVenues}
-                />
+              <View>
+                <UncheckedFoodGroup venues={foodUncheckedVenues} matched={filteredVenues.length} />
+                <View style={styles.credits}>
+                  <PlaceCredits
+                    places={isRestaurantMode ? (restaurants ?? []) : filteredVenues}
+                  />
+                </View>
               </View>
             }
             contentContainerStyle={[styles.listContent, { paddingBottom: tabBarClearance }]}
@@ -409,7 +417,7 @@ export default function ExploreScreen() {
       )}
 
       <ScreenArt art={EXPLORE_ART_FRONT} from={1500} to={1844} anchor="bottom" />
-      <FilterSheet visible={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
+      <FilterSheet visible={filterSheetOpen && isFocused} onClose={() => setFilterSheetOpen(false)} />
     </ScreenContainer>
   );
 }

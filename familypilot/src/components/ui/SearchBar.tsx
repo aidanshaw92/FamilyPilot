@@ -17,6 +17,7 @@ interface SearchBarProps {
   /** When set, the whole bar is a button (a Home shortcut into Explore) rather than an input. */
   onPress?: () => void;
   onFilterPress?: () => void;
+  /** A small dot on the filter disc when filters are narrowing the list. */
   filterActive?: boolean;
   /**
    * Explore's variant (Figma "Search bar / Action"): a green "Search" pill tucked inside the right
@@ -126,6 +127,7 @@ export function SearchBar({
           style={styles.filter}
         />
       ) : null}
+      {onFilterPress && filterActive ? <View pointerEvents="none" style={styles.filterDot} testID="filter-active-dot" /> : null}
     </View>
   );
 }
@@ -135,6 +137,7 @@ export function SearchBar({
  * 22px in, the placeholder starting at 56, and a 46px filter disc inset 5 from the right edge.
  */
 const FIELD_HEIGHT = 56;
+const FILTER_DOT = 11;
 const FIELD_PADDING = 21;
 const PLACEHOLDER_FONT_SIZE = 15.5;
 const PLACEHOLDER_INK = colors.text.tertiary;
@@ -233,6 +236,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: FILTER_INSET,
     top: (FIELD_HEIGHT - FILTER_SIZE) / 2,
+  },
+  filterDot: {
+    position: 'absolute',
+    right: FILTER_INSET - 1,
+    top: (FIELD_HEIGHT - FILTER_SIZE) / 2 - 1,
+    width: FILTER_DOT,
+    height: FILTER_DOT,
+    borderRadius: FILTER_DOT / 2,
+    backgroundColor: colors.warning[100],
+    borderWidth: 2,
+    borderColor: colors.surface,
   },
   action: {
     height: ACTION_HEIGHT,

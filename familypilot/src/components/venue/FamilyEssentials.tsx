@@ -2,7 +2,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/src/components/ui/Text';
 import { colors, spacing } from '@/src/design-system/tokens';
-import { VenueDetail } from '@/src/types';
+import { FamilyProfile, VenueDetail } from '@/src/types';
+import { relevanceFor } from '@/src/services/planning/visit-questions';
 import { familyEssentialRows } from '@/src/utils/family-essentials';
 
 /**
@@ -11,12 +12,18 @@ import { familyEssentialRows } from '@/src/utils/family-essentials';
  * than as a column of repeated "Not confirmed" rows that bury the facts that are known (a venue with two confirmed
  * facts and six unknown ones read as a page of "Not confirmed"). Unknown stays unknown: it is never turned into "no".
  *
+ * An unknown is mentioned only if it could matter to THIS family (buggy access for a family with a buggy, baby
+ * changing for a family with a child under four); the rest stay unknown and unmentioned on this line.
+ *
  * Opening hours are not here: they are answered under "Today", where the useful current state leads.
  */
-export function FamilyEssentials({ venue, onHelpCheck }: { venue: VenueDetail; onHelpCheck?: () => void }) {
+export function FamilyEssentials({ venue, profile = null, onHelpCheck }: { venue: VenueDetail; profile?: FamilyProfile | null; onHelpCheck?: () => void }) {
   const rows = familyEssentialRows(venue).filter((row) => row.key !== 'hours');
   const confirmed = rows.filter((row) => row.confirmed);
-  const unknown = rows.filter((row) => !row.confirmed);
+  // An unknown that this family cannot be affected by is not worth a line here: no buggy, no buggy-access worry; no
+  // child under four, no baby-changing worry. It is still on the page, under "How we know this".
+  const irrelevant = (key: string) => (key === 'buggy' ? relevanceFor('pushchair', profile) === 0 : key === 'baby-changing' ? relevanceFor('babyChanging', profile) === 0 : false);
+  const unknown = rows.filter((row) => !row.confirmed && !irrelevant(row.key));
 
   return (
     <View testID="family-essentials">

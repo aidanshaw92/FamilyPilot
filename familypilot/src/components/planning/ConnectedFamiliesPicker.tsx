@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { Button, Chip, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
-import { Connection, InviteError, createInvite, listConnections } from '@/src/services/planning/connection-invites';
+import { Connection, InviteError, createInvite, listConnections, removeConnection } from '@/src/services/planning/connection-invites';
 import { INVITE_RELATIONSHIPS, InviteRelationship } from '@/src/services/planning/invite-links';
 import { usePlanningStore } from '@/src/stores/planning-store';
 
@@ -66,6 +66,17 @@ export function ConnectedFamiliesPicker({
     onSelect(id);
   };
 
+  // Cancelling a pending invitation deletes it: the link stops working at once.
+  const cancel = async (id: string) => {
+    setError('');
+    try {
+      await removeConnection(id);
+      void load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not cancel the invitation.');
+    }
+  };
+
   const create = async (relationship: InviteRelationship) => {
     if (!profile || busy) return;
     setBusy(relationship);
@@ -112,9 +123,28 @@ export function ConnectedFamiliesPicker({
         </View>
       )}
       {pending.length > 0 ? (
-        <Text variant="caption" color={colors.text.tertiary}>
-          {pending.length === 1 ? '1 invitation is waiting to be accepted.' : `${pending.length} invitations are waiting to be accepted.`}
-        </Text>
+        <View style={styles.pending} testID="pending-invitations">
+          <Text variant="caption" color={colors.text.tertiary}>
+            {pending.length === 1 ? '1 invitation is waiting.' : `${pending.length} invitations are waiting.`}
+          </Text>
+          {pending.map((connection) => {
+            const expired = Date.parse(connection.expiresAt) <= Date.now();
+            return (
+              <View key={connection.id} style={styles.pendingRow}>
+                <Text variant="bodySmall" style={styles.pendingText}>
+                  {RELATIONSHIP_LABEL[connection.relationship ?? 'friend']} invitation · {expired ? 'expired' : `expires ${formatExpiry(connection.expiresAt)}`}
+                </Text>
+                <Button
+                  label={expired ? 'Remove' : 'Cancel'}
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => void cancel(connection.id)}
+                  testID={`${expired ? 'remove' : 'cancel'}-invitation-${connection.id}`}
+                />
+              </View>
+            );
+          })}
+        </View>
       ) : null}
 
       <Text variant="label" style={styles.gap}>
@@ -141,7 +171,15 @@ export function ConnectedFamiliesPicker({
   );
 }
 
+function formatExpiry(iso: string): string {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? 'soon' : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
 const styles = StyleSheet.create({
+  pending: { gap: spacing.xs },
+  pendingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  pendingText: { flex: 1 },
   panel: { gap: spacing.sm, backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   gap: { marginTop: spacing.sm },

@@ -345,6 +345,7 @@ export default function VenueScreen() {
             </Text>
             <FamilyEssentials
               venue={venue}
+              profile={profile ?? null}
               onHelpCheck={() => {
                 setStartReport(true);
                 setEvidenceOpen(true);

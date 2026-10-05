@@ -11,7 +11,9 @@
  * refuses to start in a production environment):
  *   GET  /__fixture/confirm?email=...   simulates clicking the verification link: confirms and redirects with a session
  *   GET  /__fixture/emails              the verification emails "sent" so far
- *   POST /__fixture/reset               forgets every account, email and connection
+ *   GET  /__fixture/reports             the visit reports stored so far (what, and only what, was uploaded)
+ *   POST /__fixture/expire-invitations  ages every pending invitation past its expiry
+ *   POST /__fixture/reset               forgets every account, email, connection and visit report
  */
 const { createRequire } = require('node:module');
 const path = require('node:path');
@@ -24,6 +26,7 @@ const REQUIRE_CONFIRMATION = process.env.FIXTURE_AUTH_CONFIRM !== '0';
 
 const users = new Map(); // email -> { id, email, password, confirmed }
 const sent = []; // { to, type, at }
+const reports = []; // visit reports, in memory
 let admin = null;
 
 const b64 = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
@@ -96,15 +99,26 @@ function vercelRes(res) {
 async function handleAccountRoutes(req, res, url) {
   const p = url.pathname;
 
-  if (req.method === 'OPTIONS' && (p.startsWith('/auth/v1/') || p === '/api/planning/connections')) {
+  if (req.method === 'OPTIONS' && (p.startsWith('/auth/v1/') || p === '/api/planning/connections' || p === '/api/planning/feedback')) {
     res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS' });
     res.end();
     return true;
   }
 
   if (p === '/__fixture/reset' && req.method === 'POST') {
-    users.clear(); sent.length = 0; admin = null;
+    users.clear(); sent.length = 0; reports.length = 0; admin = null;
     json(res, 200, { ok: true });
+    return true;
+  }
+  if (p === '/__fixture/expire-invitations') {
+    // Ages every pending invitation past its seven days, to exercise the expiry path in a browser.
+    const rows = ensureAdmin().tables.planning_connections || [];
+    for (const row of rows) if (!row.accepted_at) row.expires_at = new Date(Date.now() - 60000).toISOString();
+    json(res, 200, { expired: rows.filter((r) => !r.accepted_at).length });
+    return true;
+  }
+  if (p === '/__fixture/reports') {
+    json(res, 200, { reports });
     return true;
   }
   if (p === '/__fixture/emails') {
@@ -192,6 +206,39 @@ async function handleAccountRoutes(req, res, url) {
     const body = req.method === 'POST' || req.method === 'DELETE' ? await readBody(req) : undefined;
     const query = Object.fromEntries(url.searchParams.entries());
     await (handler.default || handler)({ method: req.method, headers: req.headers, body, query }, vercelRes(res));
+    return true;
+  }
+
+  if (p === '/api/planning/feedback') {
+    // The visit-feedback contract with the REAL rules (server/feedback/_lib/rules.js: validation, the reconciliation
+    // rule, question selection) over in-memory reports and a few fixture "official" claims, so the post-visit journey
+    // can be driven and measured in a browser. The official claims are the same for every fixture venue: toilets
+    // confirmed recently, parking confirmed long ago (stale), everything else unknown.
+    const rules = req_(path.join(__dirname, '..', '..', '..', 'server', 'feedback', '_lib', 'rules.js'));
+    const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+    const claims = [
+      { fieldKey: 'familyFacilities.toilets', valueJson: 'yes', checkedAt: daysAgo(5), sourceUrl: 'https://venue.example/visit' },
+      { fieldKey: 'familyFacilities.parking', valueJson: 'yes', checkedAt: daysAgo(90), sourceUrl: 'https://venue.example/getting-here' },
+    ];
+    if (req.method === 'GET' && url.searchParams.get('venueId')) {
+      const id = url.searchParams.get('venueId');
+      const fields = rules.summarizeReports(claims, reports.filter((r) => r.venueId === id));
+      json(res, 200, { fields, questions: rules.selectQuestions(fields) });
+      return true;
+    }
+    const userId = subFromToken((req.headers.authorization || '').replace(/^Bearer /, ''));
+    if (!userId) return json(res, 401, { error: 'Please sign in to share feedback.' }), true;
+    if (req.method === 'POST') {
+      const body = await readBody(req);
+      let input;
+      try { input = rules.validateReport(body); } catch (e) { return json(res, 400, { error: e.message }), true; }
+      const row = { id: randomUUID(), user_id: userId, venueId: input.venueId, visit_date: input.visitDate, answers: input.answers, status: 'active', created_at: new Date().toISOString() };
+      reports.push(row);
+      json(res, 200, { ok: true, id: row.id });
+      return true;
+    }
+    if (req.method === 'GET') { json(res, 200, { reports: reports.filter((r) => r.user_id === userId) }); return true; }
+    json(res, 405, { error: 'Method not allowed' });
     return true;
   }
 

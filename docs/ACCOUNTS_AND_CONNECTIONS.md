@@ -19,65 +19,40 @@ Someone arriving from an invitation link takes the same path with the link carri
 | Verification | Supabase "Confirm email" ON. "Check your email" shows the masked address, a 30 second resend cooldown and "I've verified". Following the link in the same browser signs the person in by itself. | A verified address is what makes an invitation or a connection trustworthy. Without it anyone could register as anyone. |
 | When there is no auth backend | `accountRequired()` is `isSupabaseConfigured`. A build with no Supabase URL/key (local, the fixture server, CI) behaves exactly as before accounts. | Every visual and behavioural check keeps running with no backend. A deployed build always has Supabase configured, so `disabled` never reaches a parent. |
 
-### Supabase project settings required (owner action, once)
+### Supabase Auth: the exact dashboard actions (owner action; nothing here can be done from the repository)
 
-1. Authentication → Providers → Email: **Confirm email = on**.
-2. Authentication → URL Configuration: **Site URL** = the production origin; **Redirect URLs** allow-list = the production origin and each Vercel preview origin (`https://*.vercel.app` pattern if wanted).
-3. Authentication → Rate limits: leave the defaults; the app additionally rate-limits resend by a 30 s cooldown.
-4. (Optional) Authentication → Email templates: set the "Confirm signup" and "Reset password" copy to FamilyPilot's voice.
+Verified-email accounts are mandatory (owner decision). **Do not switch "Confirm email" off to make testing easier.** The test suite does not need it off: CI and the browser verifiers run against an in-memory GoTrue fixture, never the real project.
+
+Where: Supabase dashboard → the FamilyPilot project → **Authentication**.
+
+| # | Page | Setting | Value |
+| --- | --- | --- | --- |
+| 1 | Sign In / Providers → **Email** | **Enable Email provider** | On |
+| 2 | Sign In / Providers → Email | **Confirm email** | **On** (this is the verification requirement) |
+| 3 | Sign In / Providers → Email | **Secure email change** | On (default) |
+| 4 | Sign In / Providers → Email | **Minimum password length** | **10** (the app already refuses fewer than 10 characters; this makes the server agree) |
+| 5 | Sign In / Providers | **Allow new users to sign up** | On |
+| 6 | Sign In / Providers | **Allow anonymous sign-ins** | **Off** (the connections API rejects anonymous users; leaving it off removes a way to mint throw-away accounts) |
+| 7 | **URL Configuration** | **Site URL** | `https://family-pilot-seven.vercel.app` |
+| 8 | URL Configuration | **Redirect URLs** (allow-list) | `https://family-pilot-seven.vercel.app/**` |
+| 9 | URL Configuration | Redirect URLs, **only if** you want to test real sign-up on a Vercel Preview | `https://family-pilot-*-aidanshaw92s-projects.vercel.app/**` (matches the per-deployment and per-branch preview hosts; the current PR #159 preview is `family-pilot-git-claude-familypilo-a833f0-aidanshaw92s-projects.vercel.app`). See the note below before adding it. |
+| 10 | **SMTP Settings** | **Custom SMTP** | Configure before launch (Resend, Postmark, SES or similar; sender such as `accounts@<your domain>`). Supabase's built-in sender is for trying things out: it only delivers to project members and is limited to a handful of emails an hour, so real parents would not receive verification links. |
+| 11 | **Rate Limits** | Defaults | Leave. The app also enforces a 30 s resend cooldown. |
+| 12 | **Email Templates** → Confirm signup | Optional | FamilyPilot voice. Keep the `{{ .ConfirmationURL }}` link. |
+
+What the app sends: `emailRedirectTo = <window.location.origin>/`, so the redirect must be allow-listed for every origin that is allowed to create accounts, otherwise Supabase falls back to the Site URL and the person lands on production.
+
+Notes:
+
+* **Previews and accounts (row 9).** There is one Supabase project. A sign-up on a Preview creates a real account in it, so add row 9 only if you deliberately want that. Without it, a Preview build with the Supabase variables set will send verification links to the production site, and with the variables unset (below) the Preview simply has no accounts, which is also zero-spend and zero-risk. Previews must keep Places disabled either way; accounts do not call Google.
+* **Vercel environment variables.** The client reads `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the publishable/anon key, never the service-role key). Production needs both or `accountRequired()` is false and accounts silently disappear from the deployed app. The server needs `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` for the connections API. The Vercel integration available to this session could not list project environment variables (403), so this has **not** been verified from here: check Vercel → Project → Settings → Environment Variables, or run `node familypilot/scripts/verify-client-config.mjs` against the production URL.
+* **CAPTCHA (Authentication → Attack Protection).** Do not enable it yet: the client has no CAPTCHA widget, so turning it on would block every sign-up. It is a candidate for a later slice if account abuse appears.
+* **Leaked-password protection** (Attack Protection) is plan-dependent; turn it on if the plan offers it.
+* No credentials are stored in this repository and none were invented for this change.
 
 Nothing in this change applies a migration or touches the production project.
 
-## Code map
-
-| Concern | File |
-| --- | --- |
-| Email/password validation, error classification and copy | `src/services/account/credentials.ts` |
-| create / sign in / resend / reset / sign out | `src/services/account/auth-service.ts` |
-| Signed-in state, the single `accountRequired()` rule | `src/stores/auth-store.ts` |
-| Account screen (create, sign in, verify, forgot) | `app/(onboarding)/account.tsx` |
-| Route guard: signed-out people stay on the allowed set | `useAccountGuard` in `app/_layout.tsx` |
-| Entry routing (signed out → Welcome/sign-in, signed in → setup/Home, pending invite pickup) | `app/index.tsx` |
-| Invite step | `app/(onboarding)/invite.tsx` |
-| Recipient landing and accept | `app/invite/[code].tsx` |
-| Pending invite held across the account round trip | `src/stores/pending-invite-store.ts` |
-| Invite client | `src/services/planning/connection-invites.ts`, `connection-snapshot.ts`, `invite-links.ts`, `share-invite.ts` |
-| Server | `api/planning/connections.js` |
-| "Add another family" | `src/components/planning/ConnectedFamiliesPicker.tsx`, `PlanDraftForm.tsx` |
-
-## Connected families
-
-A connection is two accounts that have agreed to share a deliberately small snapshot so that a plan can work around both families.
-
-### The invitation
-
-* Created by a signed-in parent: **partner**, **family or friend**, or **a link to send anywhere**. Nobody is asked for an email address or a phone number.
-* The link is `/invite/<code>`. The code is **256 bits of randomness**, shown once; only its **SHA-256 hash** is stored (`planning_connections.token_hash`). A leaked database cannot be turned back into working links.
-* It is **single use** and **expires after 7 days**. The second person to open a used link, or anyone opening an expired one, gets "this invitation can't be used", and the preview endpoint answers `{ valid: false }` with nothing else.
-* The link itself carries no name, email, child or postcode (asserted in `verify-account-journey.mjs`).
-
-### What is visible, and when
-
-| Moment | The other person can see |
-| --- | --- |
-| Opening the link, signed out | The inviter's **first name** only ("Sam's family invited you…") and the consent terms. Served by an unauthenticated `GET /api/planning/connections?preview=<code>` that returns `{ valid, inviter: { label } }`. |
-| After accepting | The snapshot below, and only the snapshot. |
-| Never | Addresses, children's names or birthdays, email, routines, the full profile. |
-
-The snapshot (`snapshotForSharing`, pure and unit-tested) is: the family's **first name**, the home area **rounded to about a kilometre**, the **ages** of the children (not names or dates of birth), drive limit, budget tier and the facilities they need. It is shown to the recipient **before** they accept, in their own consent screen, and either side can disconnect later.
-
-### Recipient journey
-
-1. Open the link: preview, consent terms.
-2. Not signed in → **Create an account to accept** (or sign in). The code is parked on the device (`pending-invite-store`) and survives the email round trip.
-3. Verify the email, describe their own family, then the app returns to the invitation and offers **Accept and connect**.
-4. Accept: both families now appear in each other's "Your connected families". The code is consumed; a second use fails.
-
-### Using a connection
-
-Create a plan → **Add another family** opens the picker: the families already connected (one tap to add them to the plan, as a chip) and **Invite someone new** (partner / family / friend → a fresh link). Pending invitations are counted, never listed with detail.
-
-"Partner" is a **connected person, not a shared household**: two parents still each have their own account, family profile and saved places; connecting lets a plan use both families' needs. A true shared-household model (one family, two adult accounts) is a larger change and is listed as an owner decision.
+"Partner" is a **connected person, not a shared household**: two parents still each have their own account, family profile and saved places; connecting lets a plan use both families' needs. Shared household ownership and synchronisation are explicitly **not** part of this work (owner decision): each parent keeps a device-only family profile, children's dates of birth and routines are never uploaded because an account exists, and a connection carries only the consented snapshot below.
 
 ## Verification
 
@@ -86,6 +61,14 @@ Create a plan → **Add another family** opens the picker: the families already 
 * A defect this found and fixed: a signed-out deep link to a tab route looped forever (the guard redirected to `/`, which resolves back into the tabs). The guard now sends people to Welcome or sign-in directly and only once per route.
 
 Build note: the auth-enabled bundle needs `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` at export time and `expo export --clear`, because Metro caches the inlined env.
+
+### What a connection carries (and what verify-account-qa proves)
+
+The client builds the snapshot itself (`src/services/planning/connection-snapshot.ts`) and sends only: first-name label ("Alex's family"), an area word (a postcode is cut to its outward part, a street address to its neighbourhood), latitude/longitude rounded on the device to about a kilometre, children's **ages**, drive limit, budget tier, pushchair yes/no, needed facilities, the relationship label and, only if the person ticks it, home-time windows. The server re-applies the same allow-list and rounding. Before this change the client posted the whole planning shape (exact coordinates, the typed home text, routines); the server discarded the extras but they had still left the device, and `verify-account-qa.mjs` caught it.
+
+The one place the full postcode necessarily travels is `/api/planning/location`, the stateless postcode-to-coordinates lookup (it forwards to postcodes.io, touches no database and stores nothing).
+
+`scripts/verify-account-qa.mjs` (QA of: new account, email verification, returning sign-in, wrong password, sign-out, signed-out deep link, expired invitation, expired row shown as expired with Remove, live row with Cancel, cancelled link dead at once, accepted invitation, reused invitation, a third person opening a used link, declined ("Not now", link stays usable), an existing connected person, Add another family; plus an inspection of every request body sent to the backend: no child name, no date of birth, no full postcode stored or shared, no `members`/`routines`/profile, children as ages only) passes in full.
 
 ## Not done, and why
 

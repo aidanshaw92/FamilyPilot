@@ -43,9 +43,14 @@ function Backdrop({ onClose }: { onClose: () => void }) {
 interface FilterSheetProps {
   visible: boolean;
   onClose: () => void;
+  /**
+   * `home` offers only the filters that make sense on Home's one deck: the practical needs and the food groups.
+   * Travel time and budget are Explore's "for this search only" controls and would be confusing there.
+   */
+  scope?: 'explore' | 'home';
 }
 
-export function FilterSheet({ visible, onClose }: FilterSheetProps) {
+export function FilterSheet({ visible, onClose, scope = 'explore' }: FilterSheetProps) {
   const insets = useSafeAreaInsets();
   const { data: profile } = useFamilyProfile();
   const {
@@ -73,11 +78,13 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
     };
   }, [visible]);
 
-  const isRestaurantMode = categoryFilter === 'restaurants';
+  const isRestaurantMode = scope === 'explore' && categoryFilter === 'restaurants';
   const profileDrive = profile?.maxDriveMinutes ?? 30;
 
   const handleReset = () => {
-    if (isRestaurantMode) {
+    if (scope === 'home') {
+      useFiltersStore.getState().clearAdvancedFilters();
+    } else if (isRestaurantMode) {
       setExploreMaxDrive('any');
       setExploreBudget('any');
       useFiltersStore.getState().clearAdvancedFilters();
@@ -121,38 +128,42 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
         </View>
 
         <ScrollView contentContainerStyle={styles.content}>
-          <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
-            Travel time from home
-          </Text>
-          <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint}>
-            Your profile default is {profileDrive} minutes. Change here for this search only
-          </Text>
-          <View style={styles.chipWrap}>
-            {DRIVE_FILTER_OPTIONS.map((option) => (
-              <Chip
-                key={String(option.id)}
-                label={option.label}
-                active={exploreMaxDrive === option.id}
-                onPress={() => setExploreMaxDrive(option.id)}
-              />
-            ))}
-          </View>
+          {scope === 'explore' ? (
+            <>
+              <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+                Travel time from home
+              </Text>
+              <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint}>
+                Your profile default is {profileDrive} minutes. Change here for this search only
+              </Text>
+              <View style={styles.chipWrap}>
+                {DRIVE_FILTER_OPTIONS.map((option) => (
+                  <Chip
+                    key={String(option.id)}
+                    label={option.label}
+                    active={exploreMaxDrive === option.id}
+                    onPress={() => setExploreMaxDrive(option.id)}
+                  />
+                ))}
+              </View>
 
-          <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
-            Budget
-          </Text>
-          <View style={styles.chipWrap}>
-            {BUDGET_FILTER_OPTIONS.filter((option) =>
-              isRestaurantMode ? option.id !== 'free' : true,
-            ).map((option) => (
-              <Chip
-                key={option.id}
-                label={option.label}
-                active={exploreBudget === option.id}
-                onPress={() => setExploreBudget(option.id)}
-              />
-            ))}
-          </View>
+              <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+                Budget
+              </Text>
+              <View style={styles.chipWrap}>
+                {BUDGET_FILTER_OPTIONS.filter((option) =>
+                  isRestaurantMode ? option.id !== 'free' : true,
+                ).map((option) => (
+                  <Chip
+                    key={option.id}
+                    label={option.label}
+                    active={exploreBudget === option.id}
+                    onPress={() => setExploreBudget(option.id)}
+                  />
+                ))}
+              </View>
+            </>
+          ) : null}
 
           {facilityOptions.map((group) => (
             <View key={group.id}>

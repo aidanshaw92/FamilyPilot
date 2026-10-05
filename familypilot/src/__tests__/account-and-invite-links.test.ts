@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { AUTH_FAILURE_COPY, classifyAuthError, emailProblem, maskEmail, normaliseEmail, passwordProblem } from '@/src/services/account/credentials';
 import { buildInviteUrl, inviteShareMessage, isInviteCode, parseInviteCode } from '@/src/services/planning/invite-links';
-import { snapshotForSharing } from '@/src/services/planning/connection-snapshot';
+import { coarseArea, snapshotForSharing } from '@/src/services/planning/connection-snapshot';
 import { FamilyProfile } from '@/src/types';
 
 const CODE = 'ab'.repeat(32);
@@ -82,9 +82,30 @@ describe('what a connection shares', () => {
     for (const secret of ['Sloane', 'Theo', 'Morgan', '2019-02-10', '1988']) expect(text, secret).not.toContain(secret);
   });
 
+  it('sends only the consented allow-list, with the location rounded on the device', () => {
+    const snap = snapshotForSharing(profile, 'partner');
+    expect(Object.keys(snap).sort()).toEqual(
+      ['ages', 'area', 'budgetTier', 'label', 'latitude', 'longitude', 'maxDriveMinutes', 'pushchair', 'relationship', 'required', 'shareAvailability'].sort(),
+    );
+    expect(snap.latitude).toBe(51.54);
+    expect(snap.longitude).toBe(-0.1);
+    expect(snap.routines).toBeUndefined();
+    expect(JSON.stringify(snap)).not.toContain('51.5362');
+  });
+
+  it('cuts a postcode or street address back to a neighbourhood', () => {
+    expect(coarseArea('WD23 4AB')).toBe('WD23');
+    expect(coarseArea('wd234ab')).toBe('WD23');
+    expect(coarseArea('12 High Street, Bushey')).toBe('Bushey');
+    expect(coarseArea('Islington')).toBe('Islington');
+    expect(coarseArea('')).toBe('Nearby');
+    expect(coarseArea('N1 9GU')).toBe('N1');
+  });
+
   it('shares home busy times only when asked, and the child is not named even then', () => {
     const snap = snapshotForSharing(profile, undefined, true);
     expect(snap.shareAvailability).toBe(true);
+    expect(snap.routines?.length).toBe(1);
     expect(JSON.stringify(snap)).not.toMatch(/Theo|childId/);
   });
 

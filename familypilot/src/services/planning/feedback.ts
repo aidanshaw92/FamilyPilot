@@ -9,7 +9,7 @@ export const visitQuestions = {
  cafe:{label:'Café',question:'Was the venue’s café open during your visit?',values:['yes','no','unavailable','did_not_check']},
 } as const;
 export type VisitField=keyof typeof visitQuestions;
-export type VenueTrustField={label:string;question:string;status:'needs_recheck'|'source_checked'|'editor_checked'|'parent_reported'|'unknown';value:string;sourceUrl:string|null;checkedAt:string|null;reportCount:number;lastReportedAt:string|null;observations:string[]};
+export type VenueTrustField={label:string;question:string;status:'needs_recheck'|'source_checked'|'editor_checked'|'parent_reported'|'unknown';value:string;sourceUrl:string|null;checkedAt:string|null;reportCount:number;lastReportedAt:string|null;observations:string[];/** none | single | corroborated | contested: how the parent observations relate to each other. */agreement?:'none'|'single'|'corroborated'|'contested';/** The official source was last checked a long time ago. */stale?:boolean;/** Lower is asked first; 9 means confirmed and fresh, so not asked (server rules.js). */priority?:number};
 export type VenueTrust={fields:Record<VisitField,VenueTrustField>;questions:VisitField[]};
 export async function feedbackApi(path='',method='GET',body?:unknown){
  const headers:Record<string,string>={'Content-Type':'application/json'};

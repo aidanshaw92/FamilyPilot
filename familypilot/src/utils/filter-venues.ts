@@ -95,26 +95,8 @@ function venueHasFacility(venue: Venue, facility: string): boolean {
   return detail.facilities?.includes(facility as never) ?? false;
 }
 
-export function filterVenues(
-  venues: Venue[],
-  categoryId: string,
-  advancedIds: string[],
-  maxDriveMinutes: number | 'any',
-  profileMaxDrive: number,
-  budgetFilter: ExploreBudgetFilter,
-): Venue[] {
-  const effectiveMaxDrive =
-    maxDriveMinutes === 'any' ? Infinity : maxDriveMinutes;
-
-  let result = venues.filter((venue) => {
-    // `!(<=)`, not `>`: a journey that could not be worked out (NaN) is not known to be within a limit. With
-    // no limit ("any") there is nothing to be outside of, so the venue stays.
-    if (effectiveMaxDrive !== Infinity && !(venue.driveMinutes <= effectiveMaxDrive)) return false;
-    if (!matchesCategory(venue, categoryId)) return false;
-    if (!matchesBudget(venue, budgetFilter)) return false;
-    return true;
-  });
-
+export function applyAdvancedFilters(venues: Venue[], advancedIds: string[]): Venue[] {
+  let result = venues;
   for (const filterId of advancedIds) {
     switch (filterId) {
       case 'indoor':
@@ -152,6 +134,30 @@ export function filterVenues(
         break;
     }
   }
+  return result;
+}
+
+export function filterVenues(
+  venues: Venue[],
+  categoryId: string,
+  advancedIds: string[],
+  maxDriveMinutes: number | 'any',
+  profileMaxDrive: number,
+  budgetFilter: ExploreBudgetFilter,
+): Venue[] {
+  const effectiveMaxDrive =
+    maxDriveMinutes === 'any' ? Infinity : maxDriveMinutes;
+
+  let result = venues.filter((venue) => {
+    // `!(<=)`, not `>`: a journey that could not be worked out (NaN) is not known to be within a limit. With
+    // no limit ("any") there is nothing to be outside of, so the venue stays.
+    if (effectiveMaxDrive !== Infinity && !(venue.driveMinutes <= effectiveMaxDrive)) return false;
+    if (!matchesCategory(venue, categoryId)) return false;
+    if (!matchesBudget(venue, budgetFilter)) return false;
+    return true;
+  });
+
+  result = applyAdvancedFilters(result, advancedIds);
 
   // While a food filter is on, the easiest lunch breaks ties and small gaps: a few points, never a leap over a much
   // better fit. Without one, ranking is the family score alone.

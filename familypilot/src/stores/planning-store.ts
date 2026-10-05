@@ -5,7 +5,8 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { PlanningFamily, PlanningOptions, PlanMatch } from '@/src/services/planning/planner';
 import { PlanViewModelInput } from '@/src/services/planning/plan-view-model';
 
-export interface VisitFeedbackState { status:'submitted'|'skipped'|'later'; reportId?:string; until?:string }
+/** `skipped` with `reason: 'did_not_go'` is "No, we didn't go": nothing is asked and nothing is sent. */
+export interface VisitFeedbackState { status:'submitted'|'skipped'|'later'; reportId?:string; until?:string; reason?:'did_not_go'|'nothing_to_check' }
 export interface SavedPlan { feedback?:VisitFeedbackState; id: string; date: string; plan: PlanMatch; checked: string[]; createdAt: string }
 
 /**

@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
@@ -41,6 +41,9 @@ import { HOME_ART } from '@/src/assets/art/figma-art';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
 import { useFiltersStore } from '@/src/stores/filters-store';
+import { FilterSheet } from '@/src/components/explore/FilterSheet';
+import { applyAdvancedFilters } from '@/src/utils/filter-venues';
+import { FOOD_FILTER_IDS, foodIsUnknown } from '@/src/utils/food-nearby';
 import { Venue } from '@/src/types';
 import { filterByPlanCategory, planCategoriesFor } from '@/src/utils/plan-categories';
 
@@ -72,6 +75,11 @@ export default function HomeScreen() {
   const [category, setCategory] = useState('for_you');
   const [refreshing, setRefreshing] = useState(false);
   const setFilterSheetOpen = useFiltersStore((s) => s.setFilterSheetOpen);
+  const filterSheetOpen = useFiltersStore((s) => s.filterSheetOpen);
+  const advancedFilters = useFiltersStore((s) => s.advancedFilters);
+  const clearAdvancedFilters = useFiltersStore((s) => s.clearAdvancedFilters);
+  // Both tabs can be mounted; only the one on screen may show the shared sheet.
+  const isFocused = useIsFocused();
 
   const { data: profile } = useFamilyProfile();
   const { data: venues, isLoading, isError, refetch } = useNearbyVenues();
@@ -86,7 +94,15 @@ export default function HomeScreen() {
   // that answers "nothing here" is worse than no chip (see venue-taxonomy.ts).
   const categories = useMemo(() => planCategoriesFor(ranked), [ranked]);
   const activeCategory = categories.some((c) => c.id === category) ? category : 'for_you';
-  const shortlist = useMemo(() => filterByPlanCategory(ranked, activeCategory), [ranked, activeCategory]);
+  const inCategory = useMemo(() => filterByPlanCategory(ranked, activeCategory), [ranked, activeCategory]);
+  // The practical filters (parking, toilets, food nearby...) narrow Home's deck the same way they narrow Explore.
+  const shortlist = useMemo(() => applyAdvancedFilters(inCategory, advancedFilters), [inCategory, advancedFilters]);
+  // With a food filter on, the places that could not be judged are counted, so an empty deck can say "not checked"
+  // instead of "no match".
+  const foodUnchecked = useMemo(
+    () => (advancedFilters.some((id) => FOOD_FILTER_IDS.includes(id)) ? applyAdvancedFilters(inCategory, advancedFilters.filter((id) => !FOOD_FILTER_IDS.includes(id))).filter(foodIsUnknown).length : 0),
+    [inCategory, advancedFilters],
+  );
 
   // The header gives up its optional lines when the screen is too short for the whole card (see
   // home-vertical-layout), so the card and its button always clear the floating navigation. The mode only ever
@@ -231,6 +247,7 @@ export default function HomeScreen() {
               placeholder={searchPlaceholder(width)}
               onPress={() => router.push('/(tabs)/explore' as never)}
               onFilterPress={() => setFilterSheetOpen(true)}
+              filterActive={advancedFilters.length > 0}
             />
           </View>
 
@@ -269,13 +286,27 @@ export default function HomeScreen() {
 
         {!isLoading && !isError && shortlist.length === 0 ? (
           <View style={[gutter, styles.deckSlot, { marginTop: deckTopGap(mode) }]}>
-            <EmptyState
-              icon="search-outline"
-              title="Nothing confirmed here yet"
-              message="We only show places once the family details we need have been reviewed. Try another category."
-              actionLabel="See everything nearby"
-              onAction={() => setCategory('for_you')}
-            />
+            {advancedFilters.length > 0 ? (
+              <EmptyState
+                icon="funnel-outline"
+                title={foodUnchecked > 0 ? 'No place is known to match yet' : 'Nothing matches these filters'}
+                message={
+                  foodUnchecked > 0
+                    ? `${foodUnchecked} ${foodUnchecked === 1 ? 'place hasn’t' : 'places haven’t'} been checked for food nearby, so we can’t say either way. They aren’t a “no”: clearing the food filter shows them.`
+                    : 'Try removing a filter, or another category.'
+                }
+                actionLabel="Clear filters"
+                onAction={clearAdvancedFilters}
+              />
+            ) : (
+              <EmptyState
+                icon="search-outline"
+                title="Nothing confirmed here yet"
+                message="We only show places once the family details we need have been reviewed. Try another category."
+                actionLabel="See everything nearby"
+                onAction={() => setCategory('for_you')}
+              />
+            )}
           </View>
         ) : null}
 
@@ -301,6 +332,7 @@ export default function HomeScreen() {
           </View>
         ) : null}
       </ScrollView>
+      <FilterSheet visible={filterSheetOpen && isFocused} onClose={() => setFilterSheetOpen(false)} scope="home" />
     </View>
   );
 }
