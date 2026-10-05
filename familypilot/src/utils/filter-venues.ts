@@ -1,19 +1,31 @@
 import { Venue, VenueCategory } from '@/src/types';
 import { ExploreBudgetFilter } from '@/src/stores/filters-store';
+import { categoriesWithInventory, environmentOf, matchesTaxonomy, TAXONOMY } from '@/src/utils/venue-taxonomy';
+import { isFreeSpend } from '@/src/utils/spend';
 
 export interface ExploreCategory {
   id: string;
   label: string;
 }
 
+/**
+ * Explore's rail, from the shared taxonomy (`venue-taxonomy.ts`), in its own ids and wording. Restaurants are a
+ * separate mode behind a pilot flag and are not part of the venue taxonomy.
+ */
 export const EXPLORE_CATEGORIES: ExploreCategory[] = [
-  { id: 'all', label: 'All' },
-  { id: 'parks', label: 'Parks' },
+  ...TAXONOMY.filter((entry) => entry.explore).map((entry) => ({
+    id: entry.exploreId ?? entry.id,
+    label: entry.exploreLabel ?? entry.label,
+  })),
   { id: 'restaurants', label: 'Restaurants' },
-  { id: 'farms', label: 'Farms' },
-  { id: 'museums', label: 'Museums' },
-  { id: 'activities', label: 'Activities' },
 ];
+
+/** The chips Explore offers for these venues; a category with too little in it is not offered. */
+export function exploreCategoriesFor(venues: readonly Venue[]): ExploreCategory[] {
+  const offered = categoriesWithInventory(venues, 'explore').map(({ id, label }) => ({ id, label }));
+  const restaurants = EXPLORE_CATEGORIES.find((c) => c.id === 'restaurants');
+  return restaurants ? [...offered, restaurants] : offered;
+}
 
 export const FILTER_SHEET_OPTIONS = [
   { id: 'indoor', label: 'Indoor' },
@@ -40,23 +52,6 @@ export const BUDGET_FILTER_OPTIONS: { id: ExploreBudgetFilter; label: string }[]
   { id: 'under_25', label: 'Under £25' },
   { id: 'under_50', label: 'Under £50' },
   { id: 'under_100', label: 'Under £100' },
-];
-
-const INDOOR_CATEGORIES: VenueCategory[] = [
-  'museum',
-  'soft_play',
-  'activity',
-  'restaurant',
-  'cafe',
-];
-const OUTDOOR_CATEGORIES: VenueCategory[] = ['park', 'farm', 'beach', 'zoo'];
-const ACTIVITY_CATEGORIES: VenueCategory[] = [
-  'farm',
-  'museum',
-  'soft_play',
-  'activity',
-  'zoo',
-  'attraction',
 ];
 
 function parseMaxSpend(estimatedSpend?: string): number | null {
@@ -87,22 +82,8 @@ function matchesBudget(venue: Venue, budget: ExploreBudgetFilter): boolean {
 }
 
 function matchesCategory(venue: Venue, categoryId: string): boolean {
-  switch (categoryId) {
-    case 'all':
-      return true;
-    case 'parks':
-      return venue.category === 'park';
-    case 'restaurants':
-      return venue.category === 'restaurant' || venue.category === 'cafe';
-    case 'farms':
-      return venue.category === 'farm';
-    case 'museums':
-      return venue.category === 'museum';
-    case 'activities':
-      return ACTIVITY_CATEGORIES.includes(venue.category);
-    default:
-      return true;
-  }
+  if (categoryId === 'restaurants') return venue.category === 'restaurant' || venue.category === 'cafe';
+  return matchesTaxonomy(venue, categoryId);
 }
 
 function venueHasFacility(venue: Venue, facility: string): boolean {
@@ -133,16 +114,13 @@ export function filterVenues(
   for (const filterId of advancedIds) {
     switch (filterId) {
       case 'indoor':
-        result = result.filter((v) => INDOOR_CATEGORIES.includes(v.category));
+        result = result.filter((v) => environmentOf(v).environment === 'indoor');
         break;
       case 'outdoor':
-        result = result.filter((v) => OUTDOOR_CATEGORIES.includes(v.category));
+        result = result.filter((v) => environmentOf(v).environment === 'outdoor');
         break;
       case 'free':
-        result = result.filter(
-          (v) =>
-            v.estimatedSpend?.toLowerCase() === 'free' || v.estimatedSpend?.startsWith('£0'),
-        );
+        result = result.filter((v) => isFreeSpend(v.estimatedSpend));
         break;
       case 'open_now':
         // isOpen is undefined when opening status isn't confirmed - only keep venues we know

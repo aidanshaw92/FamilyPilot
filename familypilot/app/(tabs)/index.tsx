@@ -42,7 +42,7 @@ import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { Venue } from '@/src/types';
-import { filterByPlanCategory, PLAN_CATEGORIES } from '@/src/utils/plan-categories';
+import { filterByPlanCategory, planCategoriesFor } from '@/src/utils/plan-categories';
 
 /**
  * Everything above the deck (greeting, search, plan heading, chips) is laid out in fixed points, so
@@ -82,7 +82,11 @@ export default function HomeScreen() {
     () => [...(venues ?? [])].sort((a, b) => b.familyScore.score - a.familyScore.score),
     [venues],
   );
-  const shortlist = useMemo(() => filterByPlanCategory(ranked, category), [ranked, category]);
+  // One taxonomy for Home and Explore, and a category is offered only if the venues in hand can fill it: a chip
+  // that answers "nothing here" is worse than no chip (see venue-taxonomy.ts).
+  const categories = useMemo(() => planCategoriesFor(ranked), [ranked]);
+  const activeCategory = categories.some((c) => c.id === category) ? category : 'for_you';
+  const shortlist = useMemo(() => filterByPlanCategory(ranked, activeCategory), [ranked, activeCategory]);
 
   // The header gives up its optional lines when the screen is too short for the whole card (see
   // home-vertical-layout), so the card and its button always clear the floating navigation. The mode only ever
@@ -242,8 +246,8 @@ export default function HomeScreen() {
         </View>
 
         <PillSelector
-          options={PLAN_CATEGORIES}
-          value={category}
+          options={categories}
+          value={activeCategory}
           onChange={setCategory}
           accessibilityLabel="Plan categories"
           size="home"

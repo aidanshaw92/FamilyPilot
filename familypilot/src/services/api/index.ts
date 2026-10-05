@@ -26,12 +26,8 @@ import {
 import { withCompletion } from '@/src/utils/profile-defaults';
 import { compareTravelMinutes } from '@/src/utils/travel-time';
 import { buildHomeRecommendations, personaliseVenue, personaliseVenues } from '@/src/utils/personalise-venues';
-import {
-  fetchLiveWeather,
-  fetchLiveWeatherSafe,
-  isEligibleOpeningStatus,
-  resolveOpeningStatus,
-} from '@/src/services/context/live-context';
+import { fetchLiveWeather, fetchLiveWeatherSafe } from '@/src/services/context/live-context';
+import { isVisitableVenue } from '@/src/utils/opening-today';
 import { getFocusedRecommendations } from '@/src/services/recommendation/focused-recommendations';
 import { parseDayRequest, parseDayRequestMock } from '@/src/services/recommendation/parse-day-request-client';
 import { DayRequest } from '@/src/types/day-request';
@@ -84,11 +80,12 @@ export const venueService = {
     ]);
     // Explore is a London-wide discovery surface. Do not apply the normal max-drive cut-off here;
     // keep travel time visible and let the parent filter it explicitly when they want to. A venue
-    // confirmed closed right now is excluded, though — never let the top of Home's main list be
-    // somewhere a family can't actually go today, matching the same rule the focused/proactive
-    // recommendation path already applies.
+    // that is shut for the whole of today is excluded, though: never let the top of Home's main list be
+    // somewhere a family can't actually go today. "Today" is worked out from the weekly schedule and the
+    // clock (opening-today.ts), NOT from the provider's stored open-now flag, which is a snapshot from when
+    // the search ran and was hiding every farm and most museums for the day after a night-time refresh.
     return venues
-      .filter((venue) => isEligibleOpeningStatus(resolveOpeningStatus(venue.isOpen)))
+      .filter((venue) => isVisitableVenue(venue))
       .map((venue) => personaliseVenue(venue, profile, weather))
       .sort((a, b) => b.familyScore.score - a.familyScore.score || compareTravelMinutes(a.driveMinutes, b.driveMinutes));
   },
@@ -105,7 +102,7 @@ export const venueService = {
       fetchLiveWeatherSafe(profile),
     ]);
     return venues
-      .filter((venue) => isEligibleOpeningStatus(resolveOpeningStatus(venue.isOpen)))
+      .filter((venue) => isVisitableVenue(venue))
       .map((venue) => personaliseVenue(venue, profile, weather))
       .sort((a, b) => b.familyScore.score - a.familyScore.score || compareTravelMinutes(a.driveMinutes, b.driveMinutes));
   },

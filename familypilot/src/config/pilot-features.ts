@@ -43,7 +43,7 @@ export function isPilotFeatureVisible(feature: PilotFeature): boolean {
 }
 
 export function visibleExploreCategoryIds(): string[] {
-  const categories = ['all', 'parks', 'restaurants', 'farms', 'museums', 'activities'];
+  const categories = ['all', 'parks', 'restaurants', 'farms', 'museums', 'soft_play', 'activities', 'animals'];
   return categories.filter(
     (id) => id !== 'restaurants' || isPilotFeatureVisible('explore_restaurants'),
   );

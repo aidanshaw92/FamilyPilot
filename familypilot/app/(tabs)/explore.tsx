@@ -18,7 +18,7 @@ import { venueService } from '@/src/services/api';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { RestaurantDetail, Venue } from '@/src/types';
 import { buildExploreEditorialSections } from '@/src/utils/explore-editorial-sections';
-import { EXPLORE_CATEGORIES, filterVenues } from '@/src/utils/filter-venues';
+import { EXPLORE_CATEGORIES, exploreCategoriesFor, filterVenues } from '@/src/utils/filter-venues';
 import { SAVED_EXAMPLES_NOTICE, showingSavedExamples } from '@/src/utils/saved-examples-notice';
 
 export default function ExploreScreen() {
@@ -61,12 +61,19 @@ export default function ExploreScreen() {
     }
   }, [categoryFilter, setCategoryFilter]);
 
-  const exploreCategories = useMemo(
-    () => EXPLORE_CATEGORIES.filter((category) => visibleExploreCategoryIds().includes(category.id)),
-    [],
-  );
-
   const sourceVenues = areaVenues ?? venues;
+  // The same taxonomy as Home, and a category is offered only if the venues in hand can fill it.
+  const exploreCategories = useMemo(
+    () =>
+      exploreCategoriesFor(sourceVenues ?? []).filter((category) =>
+        visibleExploreCategoryIds().includes(category.id),
+      ),
+    [sourceVenues],
+  );
+  useEffect(() => {
+    if (sourceVenues && !exploreCategories.some((c) => c.id === categoryFilter)) setCategoryFilter('all');
+  }, [sourceVenues, exploreCategories, categoryFilter, setCategoryFilter]);
+
   const filteredVenues = useMemo(
     () =>
       sourceVenues

@@ -1,10 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { colors, radius } from '@/src/design-system/tokens';
 import { photoCredit } from '@/src/services/places/place-photo-url';
+import { CategoryArt } from './CategoryArt';
 import { Skeleton } from './Skeleton';
 import { Text } from './Text';
 
@@ -47,47 +46,38 @@ interface VenueImageProps {
   loading?: 'lazy' | 'eager';
 }
 
-const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  park: 'leaf-outline',
-  farm: 'flower-outline',
-  museum: 'library-outline',
-  zoo: 'paw-outline',
-  attraction: 'sparkles-outline',
-  activity: 'bicycle-outline',
-  soft_play: 'happy-outline',
-  cafe: 'cafe-outline',
-  restaurant: 'restaurant-outline',
-  hotel: 'bed-outline',
-  shop: 'bag-outline',
-  beach: 'sunny-outline',
+const CATEGORY_NOUN: Record<string, string> = {
+  park: 'park',
+  farm: 'farm',
+  zoo: 'zoo',
+  museum: 'museum',
+  attraction: 'attraction',
+  activity: 'activity venue',
+  soft_play: 'soft play centre',
+  beach: 'beach',
+  cafe: 'cafe',
+  restaurant: 'restaurant',
 };
 
-const FALLBACK_GRADIENT: readonly [string, string] = [colors.midnight.start, colors.midnight.end];
-
-function categoryGradient(category?: string): readonly [string, string] {
-  if (category && category in colors.categoryGradients) {
-    return colors.categoryGradients[category as keyof typeof colors.categoryGradients];
-  }
-  return FALLBACK_GRADIENT;
+function categoryNoun(category?: string): string {
+  return (category && CATEGORY_NOUN[category]) || 'place';
 }
 
-/** Only show the venue's actual photo. Stock photography must not impersonate a place. Without
- * one, a category-owned gradient + icon reads as a designed placeholder rather than a broken
- * image — and upgrades to a real photo the moment one exists, with no layout change. */
+/**
+ * Only show the venue's actual photo. Stock or generated photography must not impersonate a place. Without one,
+ * FamilyPilot's own category illustration (`CategoryArt`) is drawn instead: obviously artwork, depicting a kind of
+ * place and not this place, so it reads as designed rather than broken and can never pass for a photograph. It
+ * upgrades to the real photo the moment one exists, with no layout change.
+ */
 export function VenueImage({uri,category,alt,style,borderRadius=radius.md,showCredit=true,pointerEvents='auto',loading='lazy'}:VenueImageProps){
  const [pending,setPending]=useState(Boolean(uri));const [failed,setFailed]=useState(false);
  useEffect(()=>{setPending(Boolean(uri));setFailed(false);},[uri]);
  const credit=showCredit&&!failed?photoCredit(uri):null;
- const icon = category ? CATEGORY_ICONS[category] : undefined;
- const [gradientStart, gradientEnd] = categoryGradient(category);
  return <View pointerEvents={pointerEvents} style={[styles.wrap,{borderRadius},style]}>
   {!uri||failed?
-   <LinearGradient
-     colors={[gradientStart, gradientEnd]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.empty}
-     accessible accessibilityRole="image" accessibilityLabel={`${alt}, photo not available`}
-   >
-    <Ionicons name={icon ?? 'image-outline'} size={30} color="rgba(255,255,255,0.92)" importantForAccessibility="no" />
-   </LinearGradient>
+   <View style={styles.empty} accessible accessibilityRole="image" accessibilityLabel={alt ? `${alt}, photo not available. Illustration of a ${categoryNoun(category)}` : ''}>
+    <CategoryArt category={category} />
+   </View>
   :<>
    {pending?<Skeleton height={120} borderRadius={borderRadius} style={StyleSheet.absoluteFill}/>:null}
    <Image source={{uri}} style={styles.image} contentFit="cover" transition={200} loading={loading} accessibilityLabel={alt} onLoad={()=>setPending(false)} onError={()=>{setFailed(true);setPending(false);}}/>

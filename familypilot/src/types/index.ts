@@ -123,7 +123,13 @@ export interface Venue {
   imageUrl: string;
   familyScore: FamilyScore;
   estimatedSpend?: string;
+  /** Open right now, from the weekly schedule and the clock; undefined when that cannot be said. */
   isOpen?: boolean;
+  /**
+   * The weekly schedule as data, when the provider supplied it. What "today" means for a place is worked out from
+   * this at the time of use (`describeOpeningToday`), never from a stored flag.
+   */
+  structuredOpeningHours?: OpeningHoursSchedule;
   address?: string;
   goodToKnow?: string[];
   facilities?: FacilityType[];

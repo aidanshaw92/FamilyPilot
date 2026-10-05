@@ -5,6 +5,7 @@ import { deriveEnrichmentStatusFromRecord, mapExtendedTerrainToLegacy, toConsume
 import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
 import { estimateDriveMinutes } from './geo-utils';
 import { resolvePlacePhotoUrl, resolvePlacePhotoUrls } from './place-photo-url';
+import { resolveOpenNow } from '@/src/utils/opening-today';
 
 function buildBestAgesLabelFromMeta(metadata: VenueFamilyMetadata | null): string | undefined {
   if (!metadata) return undefined;
@@ -79,6 +80,10 @@ export function mergePlaceToVenue(
   const enrichmentStatus = resolveEnrichmentStatus(place, metadata);
   const consumerStatus = toConsumerEnrichmentStatus(enrichmentStatus);
   const trustedMeta = consumerMetadata(metadata, enrichmentStatus);
+  // Open NOW comes from the stored weekly schedule and the clock. The provider's own flag is a snapshot from when the
+  // search ran, replayed from cache for hours, and is trusted only while it is still fresh (see opening-today.ts).
+  const structuredOpeningHours = toSchedule(place.openingHours);
+  const isOpenNow = resolveOpenNow(structuredOpeningHours, place.isOpen, place.fetchedAt, new Date());
   // Computed here (not just on the detail view) so Family Match on list cards — Home, Explore,
   // area search — uses verified evidence when available, instead of always falling back to
   // category-based heuristics until the user opens the venue detail page.
@@ -89,7 +94,7 @@ export function mergePlaceToVenue(
     driveMinutes,
     consumerStatus,
     trustedMeta,
-    place.isOpen,
+    isOpenNow,
   );
 
   return {
@@ -114,7 +119,8 @@ export function mergePlaceToVenue(
       explanation: [],
     },
     estimatedSpend: trustedMeta?.estimatedSpend,
-    isOpen: place.isOpen,
+    isOpen: isOpenNow,
+    structuredOpeningHours,
     address: place.address,
     goodToKnow: trustedMeta?.goodToKnow,
     facilities: trustedMeta?.facilities,
@@ -144,7 +150,6 @@ export function mergePlaceToVenueDetail(
     photos: resolvedPhotos.length > 0 ? resolvedPhotos : base.imageUrl ? [base.imageUrl] : [],
     facilities: trustedMeta?.facilities ?? [],
     openingHours: formatOpeningHours(place.openingHours),
-    structuredOpeningHours: toSchedule(place.openingHours),
     terrain: trustedMeta?.terrain ?? mapExtendedTerrainToLegacy(trustedMeta?.extendedTerrain),
     bestAges: trustedMeta?.bestAges ?? buildBestAgesLabelFromMeta(trustedMeta),
     parkingInfo: trustedMeta?.parkingInfo,
