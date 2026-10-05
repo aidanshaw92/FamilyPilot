@@ -24,6 +24,7 @@ import {
   EatNearbyRecommendation,
 } from '@/src/types';
 import { withCompletion } from '@/src/utils/profile-defaults';
+import { compareTravelMinutes } from '@/src/utils/travel-time';
 import { buildHomeRecommendations, personaliseVenue, personaliseVenues } from '@/src/utils/personalise-venues';
 import {
   fetchLiveWeather,
@@ -89,7 +90,7 @@ export const venueService = {
     return venues
       .filter((venue) => isEligibleOpeningStatus(resolveOpeningStatus(venue.isOpen)))
       .map((venue) => personaliseVenue(venue, profile, weather))
-      .sort((a, b) => b.familyScore.score - a.familyScore.score || a.driveMinutes - b.driveMinutes);
+      .sort((a, b) => b.familyScore.score - a.familyScore.score || compareTravelMinutes(a.driveMinutes, b.driveMinutes));
   },
 
   async searchArea(area: string): Promise<Venue[]> {
@@ -106,7 +107,7 @@ export const venueService = {
     return venues
       .filter((venue) => isEligibleOpeningStatus(resolveOpeningStatus(venue.isOpen)))
       .map((venue) => personaliseVenue(venue, profile, weather))
-      .sort((a, b) => b.familyScore.score - a.familyScore.score || a.driveMinutes - b.driveMinutes);
+      .sort((a, b) => b.familyScore.score - a.familyScore.score || compareTravelMinutes(a.driveMinutes, b.driveMinutes));
   },
 
   async getById(id: string): Promise<VenueDetail | null> {

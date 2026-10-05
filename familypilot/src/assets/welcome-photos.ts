@@ -8,17 +8,21 @@ import type { ImageSource } from 'expo-image';
  * experience: the approved Welcome is the photographic collage (farm/animals, zoo/wildlife, soft
  * play, pottery/creative, café, muddy wellies, aquarium).
  *
+ * Welcome is BRAND / LIFESTYLE imagery, not evidence about a venue, so a licensed photograph or a generated
+ * photograph are both allowed here (and only here: Home and Explore show real venues and never use generated
+ * imagery as a venue's photograph).
+ *
  * Rules for an entry:
- *   - A licensed, candid, editorial photograph the product may ship (no stock-looking posed family,
- *     no generated imagery, no photograph that impersonates a venue).
- *   - The file lives in `assets/images/welcome/<slot>.jpg`, is landscape-or-square ≥ 800px on the
- *     short side, and is recorded in `assets/images/welcome/CREDITS.md` (photographer, source,
- *     licence). `welcome-photos.test.ts` fails the build when a slot points at a file that is
- *     missing from either place.
+ *   - A candid, natural family-day-out image (no stock-looking posed family, no text, logo or watermark, no
+ *     image that impersonates a venue), licensed or generated for the product to ship.
+ *   - The file lives in `assets/images/welcome/<slot>.jpg`, at the size in docs/WELCOME_PHOTOGRAPHY.md, and is
+ *     recorded in `assets/images/welcome/CREDITS.md` with its Origin (photograph or generated), creator or tool,
+ *     and terms. `welcome-photos.test.ts` fails the build when a slot points at a file that is missing from
+ *     either place, or whose Origin is not stated.
  *   - React Native needs a static `require`, so each line is written out by hand when the file lands.
  *
  * The seven briefs (subject, size, placement) are in docs/WELCOME_PHOTOGRAPHY.md. The pipeline was proven on the
- * web with a throwaway image in the exact cut-out; no photograph is committed until a licensed one exists.
+ * web with a throwaway image in the exact cut-out; nothing is committed until the real file and its credit exist.
  *
  * Add a slot like so once its file and credit exist:
  *   farm: require('../../assets/images/welcome/farm.jpg'),

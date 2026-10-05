@@ -5,25 +5,29 @@ This is the complete handoff for the only visual dependency left on the approved
 
 The Welcome frame is a collage of **seven photographic cut-outs**. The cut-out shapes, their positions, the
 white sticker edge and the decorative stickers over them are implemented exactly (`WELCOME_CUTOUTS`,
-`PhotoSlot`, `WELCOME_ART`). **The photographs themselves are not in the repository**, because none could be
-legitimately obtained:
+`PhotoSlot`, `WELCOME_ART`), and the pipeline that draws a file inside each slot is wired and tested. **The
+seven images themselves are not in the repository yet.**
 
 * The photographs inside the Figma frame are *review-only crops of the owner's reference screenshot*. They are
   not licensed assets and must never ship. No app code or bundle references them.
-* This environment cannot reach any photo host (Wikimedia, Unsplash, Pexels, Pixabay and Flickr were all
-  re-tested and refused), has no image-generation capability, and a generated or stock-looking image is
-  excluded by the brief in any case.
+* Welcome is **brand / lifestyle imagery**, not evidence about a venue, so a licensed photograph **or a generated
+  photograph** is appropriate here. (Home and Explore are the opposite: they show real venues and never use
+  generated imagery as a venue's photograph. See `docs/PHOTOGRAPHY_ASSETS.md`.)
+* This environment cannot reach any photo host and has no image-generation capability, so the images are made
+  externally and supplied. The exact generation briefs are in `docs/PHOTOGRAPHY_ASSETS.md`.
 
 Until the files below exist, each slot draws its category gradient inside its exact cut-out. That is a
 **temporary fallback**, never the finished screen. Nothing about the masks, the white edge, the stickers or the
-composition changes when the photographs arrive: each file is simply drawn inside its existing slot.
+composition changes when the images arrive: each file is simply drawn inside its existing slot.
 
 ## What is needed
 
-Seven candid, editorial photographs, licensed for distribution inside a commercial app (commissioned, or CC0 /
-a licence that permits commercial redistribution, with the credit recorded). No posed stock, no generated
-imagery, no identifiable venue shown as if recommended, and any child must be covered by a model release.
-Prefer a child shown from behind, in profile, or by hands and clothing over a face-on portrait.
+Seven images that read as **one photographic campaign**: premium but natural UK family-lifestyle photography, warm
+natural daylight, candid rather than posed, realistic skin, fur and material detail, playful without looking like
+stock. Whatever their origin, they must contain no text, logo, watermark or brand mark, no identifiable venue shown
+as if recommended, and no anatomy that looks generated. If an image is generated, say so in
+`assets/images/welcome/CREDITS.md` (`Origin: generated`); if it is a photograph, it must be licensed for
+distribution in a commercial app, with a model release for any identifiable child.
 
 ### Visual tone (all seven read as one set)
 

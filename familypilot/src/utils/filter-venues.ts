@@ -122,7 +122,9 @@ export function filterVenues(
     maxDriveMinutes === 'any' ? Infinity : maxDriveMinutes;
 
   let result = venues.filter((venue) => {
-    if (venue.driveMinutes > effectiveMaxDrive) return false;
+    // `!(<=)`, not `>`: a journey that could not be worked out (NaN) is not known to be within a limit. With
+    // no limit ("any") there is nothing to be outside of, so the venue stays.
+    if (effectiveMaxDrive !== Infinity && !(venue.driveMinutes <= effectiveMaxDrive)) return false;
     if (!matchesCategory(venue, categoryId)) return false;
     if (!matchesBudget(venue, budgetFilter)) return false;
     return true;

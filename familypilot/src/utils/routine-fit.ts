@@ -37,6 +37,9 @@ export function evaluateRoutineFit(
     .sort((a, b) => a.minutes - b.minutes)[0];
 
   if (!upcoming) return { reason: null, caution: null };
+  // With no journey there is no "leave by" time, and `NaN > now` is false, which would read as a caution that
+  // the visit will clash with the nap. Say nothing rather than that.
+  if (!Number.isFinite(driveMinutes)) return { reason: null, caution: null };
 
   const { routine, minutes: routineTime } = upcoming;
   const label = routine.label?.trim() || (routine.kind === 'nap' ? 'nap' : 'feed');

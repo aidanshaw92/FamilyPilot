@@ -64,7 +64,7 @@ export function filterByPlanCategory(venues: Venue[], categoryId: string): Venue
     case 'free':
       return venues.filter(isFree);
     case 'under_hour':
-      return venues.filter((v) => v.driveMinutes <= 60);
+      return venues.filter((v) => v.driveMinutes <= 60); // an unknown journey (NaN) is not under an hour
     default:
       return venues;
   }

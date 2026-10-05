@@ -37,6 +37,7 @@ import { createRequire } from 'node:module';
 import { createReadStream, existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
 import { deflateSync } from 'node:zlib';
+import { fileURLToPath } from 'node:url';
 
 /**
  * The same distance estimator the deployed journey endpoint falls back to when Google is disabled.
@@ -576,6 +577,41 @@ const SCENE_IMAGES = [
 ];
 const IMAGES = SCENARIO === 'realistic' ? SCENE_IMAGES : SPARSE_IMAGES;
 
+/**
+ * SYNTHETIC FIXTURE PHOTOGRAPHY (test/demo only).
+ *
+ * `assets/images/fixtures/venues/<category>.jpg` (optionally `<category>-b.jpg`, `<category>-c.jpg`) are
+ * photorealistic SYNTHETIC images made so the realistic scenario can be judged by eye. They are read here,
+ * by this test server, and nowhere else: no app code imports them, nothing bundles them, and the production
+ * photo pipeline (the proxy, the cache, provider provenance) never sees them. They are never a photograph
+ * of any real venue; every one is recorded in that folder's manifest.json as synthetic. Where a category has
+ * no file the flat-colour scene above is served, and a place with no photo at all keeps the category
+ * fallback (the "no photo" state is deliberate).
+ *
+ * Only the realistic scenario uses them: the sparse scenario is the locked flat-colour composition the Home
+ * geometry verifiers measure.
+ */
+const FIXTURE_VENUE_PHOTO_DIR = join(fileURLToPath(new URL('..', import.meta.url)), 'assets', 'images', 'fixtures', 'venues');
+const FIXTURE_VENUE_PHOTOS = new Map();
+if (SCENARIO === 'realistic' && existsSync(FIXTURE_VENUE_PHOTO_DIR)) {
+  for (const file of readdirSync(FIXTURE_VENUE_PHOTO_DIR).sort()) {
+    const match = /^([a-z_]+?)(?:-[b-z])?\.jpe?g$/.exec(file);
+    if (!match) continue;
+    const list = FIXTURE_VENUE_PHOTOS.get(match[1]) ?? [];
+    list.push(readFileSync(join(FIXTURE_VENUE_PHOTO_DIR, file)));
+    FIXTURE_VENUE_PHOTOS.set(match[1], list);
+  }
+}
+const CATEGORY_BY_PHOTO_ID = new Map(PLACES.map((place) => [place.familypilotId.replace(/^fp-google-/, ''), place.category]));
+
+/** The synthetic fixture photograph for a place's category, or null when none exists for it. */
+function syntheticFixturePhoto(photoId, index) {
+  const list = FIXTURE_VENUE_PHOTOS.get(CATEGORY_BY_PHOTO_ID.get(photoId));
+  if (!list?.length) return null;
+  const seed = [...photoId].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  return list[(seed + (Number.isInteger(index) ? index : 0)) % list.length];
+}
+
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -721,6 +757,18 @@ const server = createServer((req, res) => {
         'Content-Length': body.length,
       });
       return res.end(body);
+    }
+    const synthetic = syntheticFixturePhoto(url.searchParams.get('id') || '', index);
+    if (synthetic) {
+      res.writeHead(200, {
+        'Content-Type': 'image/jpeg',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'public, max-age=3600',
+        // Machine-readable: this is not a photograph of a real place.
+        'X-FamilyPilot-Fixture': 'synthetic',
+        'Content-Length': synthetic.length,
+      });
+      return res.end(synthetic);
     }
     const image = IMAGES[Number.isInteger(index) && index >= 0 && index < IMAGES.length ? index : 0];
     res.writeHead(200, {

@@ -86,6 +86,19 @@ export function isTravelTimeKnown(minutes: number | null | undefined): boolean {
   return typeof minutes === 'number' && Number.isFinite(minutes);
 }
 
+/**
+ * Ordering by journey time with the unknown ones last. `a - b` with a NaN is NaN, which a sort treats as
+ * "equal" to everything, so one unknown journey would scramble the order of the known ones around it.
+ */
+export function compareTravelMinutes(a: number, b: number): number {
+  const aKnown = isTravelTimeKnown(a);
+  const bKnown = isTravelTimeKnown(b);
+  if (aKnown && bKnown) return a - b;
+  if (aKnown) return -1;
+  if (bKnown) return 1;
+  return 0;
+}
+
 /** The same, naming the mode, for somewhere with room: `about 14 min drive`. */
 export function travelTimeWithMode(
   minutes: number,

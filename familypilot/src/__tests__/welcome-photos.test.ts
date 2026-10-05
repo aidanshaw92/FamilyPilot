@@ -25,6 +25,15 @@ describe('Welcome collage photographs', () => {
     }
   });
 
+  it('states for every photograph whether it is a photograph or generated', () => {
+    // Welcome is brand imagery, so generated images are allowed, but the record must be honest about which.
+    const rows = credits.split('\n').filter((l) => /^\| [\w-]+ \| /.test(l) && !/^\| (Slot|-)/.test(l));
+    for (const row of rows) {
+      const origin = row.split('|')[4]?.trim();
+      expect(['photograph', 'generated'], row).toContain(origin);
+    }
+  });
+
   it('ships no photograph that is credited but not wired, or wired but not credited', () => {
     expect(new Set(creditedSlots)).toEqual(new Set(Object.keys(WELCOME_PHOTOS)));
   });
@@ -44,7 +53,7 @@ describe('Welcome collage photographs', () => {
     expect(wiring).not.toMatch(/figma-approved|figma-compare|reference/i);
   });
 
-  // The ONE outstanding asset dependency. See docs/WELCOME_PHOTOGRAPHY.md for the seven briefs.
+  // The ONE outstanding Welcome asset dependency. See docs/WELCOME_PHOTOGRAPHY.md and docs/PHOTOGRAPHY_ASSETS.md.
   const missing = SLOT_IDS.filter((id, i, all) => all.indexOf(id) === i && !(id in WELCOME_PHOTOS));
-  it.todo(`ships a licensed photograph for every Welcome slot (missing: ${missing.join(', ') || 'none'})`);
+  it.todo(`ships a photograph or generated image for every Welcome slot (missing: ${missing.join(', ') || 'none'})`);
 });

@@ -72,13 +72,24 @@ export function distanceKm(
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/** Rough drive minutes at ~40 km/h average including local roads. */
+/**
+ * Rough drive minutes at ~40 km/h average including local roads.
+ *
+ * Returns `Number.NaN` ("not worked out") when any coordinate is missing or not a finite number, because
+ * a missing coordinate is NOT the point 0,0: `distanceKm(51.5, -0.1, null, null)` computes a real distance
+ * to the Gulf of Guinea and this used to answer "about 10739 min". NaN is the one value every travel label
+ * already renders as "Travel time not worked out yet" (see `isTravelTimeKnown`), and the one the Saved backup
+ * restore already uses for the same meaning.
+ */
 export function estimateDriveMinutes(
   fromLat: number,
   fromLng: number,
   toLat: number,
   toLng: number,
 ): number {
+  for (const value of [fromLat, fromLng, toLat, toLng]) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return Number.NaN;
+  }
   const km = distanceKm(fromLat, fromLng, toLat, toLng);
   return Math.max(1, Math.round((km / 40) * 60 * 1.25));
 }
