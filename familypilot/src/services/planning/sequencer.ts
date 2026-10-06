@@ -24,7 +24,8 @@ import { formatDateLabel } from '@/src/utils/date-time-labels';
 
 import { PlanningFamily, PlanningOptions, familyRequest } from './planner';
 import { compareItineraries, mostRelevantFailure } from './sequence-ranking';
-import { describeUnknownFact } from './unknown-facts';
+import { describeUnknownFactAt } from './unknown-facts';
+import { relevantEvaluations, stopEvidenceKind } from './stop-evidence';
 import { travelSourceOf, travelTimeLabel } from '@/src/utils/travel-time';
 import {
   RoutineWindow,
@@ -353,7 +354,7 @@ function tryOrder(
         break;
       }
       if (outcome.opening.status === 'unknown') {
-        openingUnknowns.push(`${request.name}: opening hours not confirmed`);
+        openingUnknowns.push(`Opening hours not confirmed at ${request.name}`);
       }
       stops.push({
         index: i,
@@ -477,7 +478,11 @@ function tryOrder(
           { ...request.facts, driveMinutes },
           familyRequest(family, options.environment),
         );
-        const failed = match.evaluations.filter(
+        // Only the evidence that bears on what this stop is for (stop-evidence.ts): a lunch stop is never asked about
+        // recommended ages or an admission price. Outcomes are untouched, so a must-have confirmed missing at lunch is still
+        // a conflict and one nobody has confirmed is still a thing to check.
+        const evaluations = relevantEvaluations(stopEvidenceKind({ role: request.role, category: request.facts.category }), match.evaluations);
+        const failed = evaluations.filter(
           (evaluation) => evaluation.strength === 'required' && evaluation.outcome === 'unsuitable',
         );
         if (failed.length > 0) {
@@ -492,7 +497,7 @@ function tryOrder(
           };
           break;
         }
-        match.evaluations
+        evaluations
           .filter((evaluation) => evaluation.strength === 'required' && evaluation.outcome === 'unknown')
           .forEach((evaluation) =>
             unresolved.push({
@@ -504,9 +509,9 @@ function tryOrder(
               field: evaluation.field,
             }),
           );
-        match.evaluations
+        evaluations
           .filter((evaluation) => evaluation.outcome === 'unknown')
-          .forEach((evaluation) => factUnknowns.add(describeUnknownFact(evaluation.field)));
+          .forEach((evaluation) => factUnknowns.add(describeUnknownFactAt(evaluation.field, request.name)));
       }
     }
     if (ineligible) {

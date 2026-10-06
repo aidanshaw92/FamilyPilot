@@ -1,0 +1,336 @@
+{
+  "base": "http://127.0.0.1:4180",
+  "legacy": true,
+  "delays": {
+    "SLOW_SEARCH_MS": 6000,
+    "SLOW_WEATHER_MS": 9000,
+    "SLOW_PHOTO_MS": 3000
+  },
+  "results": [
+    {
+      "scenario": "first run",
+      "width": 360,
+      "msToCards": 9344,
+      "msPlainBlock": 8800,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "slow photo",
+      "width": 360,
+      "frontCardPlaceholderWhileLoading": false
+    },
+    {
+      "scenario": "kept, fresh",
+      "width": 360,
+      "msToCards": null,
+      "msPlainBlock": 2800,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": null
+    },
+    {
+      "scenario": "kept, stale",
+      "width": 360,
+      "msToCards": null,
+      "msPlainBlock": 8100,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": null
+    },
+    {
+      "scenario": "slow weather",
+      "width": 360,
+      "msToCards": 9315,
+      "msPlainBlock": 8800,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "first run",
+      "width": 390,
+      "msToCards": 9312,
+      "msPlainBlock": 8800,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "slow photo",
+      "width": 390,
+      "frontCardPlaceholderWhileLoading": false
+    },
+    {
+      "scenario": "kept, fresh",
+      "width": 390,
+      "msToCards": null,
+      "msPlainBlock": 2800,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": null
+    },
+    {
+      "scenario": "kept, stale",
+      "width": 390,
+      "msToCards": null,
+      "msPlainBlock": 8100,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": null
+    },
+    {
+      "scenario": "slow weather",
+      "width": 390,
+      "msToCards": 9331,
+      "msPlainBlock": 8800,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "first run",
+      "width": 393,
+      "msToCards": 9360,
+      "msPlainBlock": 8800,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "slow photo",
+      "width": 393,
+      "frontCardPlaceholderWhileLoading": false
+    },
+    {
+      "scenario": "kept, fresh",
+      "width": 393,
+      "msToCards": null,
+      "msPlainBlock": 2800,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": null
+    },
+    {
+      "scenario": "kept, stale",
+      "width": 393,
+      "msToCards": null,
+      "msPlainBlock": 8200,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": null
+    },
+    {
+      "scenario": "slow weather",
+      "width": 393,
+      "msToCards": 9324,
+      "msPlainBlock": 8800,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "first run",
+      "width": 430,
+      "msToCards": 9314,
+      "msPlainBlock": 8800,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "slow photo",
+      "width": 430,
+      "frontCardPlaceholderWhileLoading": false
+    },
+    {
+      "scenario": "kept, fresh",
+      "width": 430,
+      "msToCards": null,
+      "msPlainBlock": 2800,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": null
+    },
+    {
+      "scenario": "kept, stale",
+      "width": 430,
+      "msToCards": null,
+      "msPlainBlock": 8100,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": null
+    },
+    {
+      "scenario": "slow weather",
+      "width": 430,
+      "msToCards": 9304,
+      "msPlainBlock": 8700,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, there",
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    }
+  ],
+  "failures": []
+}

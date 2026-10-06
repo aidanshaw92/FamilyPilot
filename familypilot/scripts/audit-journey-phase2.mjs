@@ -519,7 +519,13 @@ async function auditJourney(browser, viewport) {
     // OSM cannot confirm toilets, baby changing or parking. A lunch stop asserting them would make the
     // day look suitable on evidence nobody has.
     ok: /opening hours not confirmed/i.test(lunchText) && !/Mapped Kitchen[^.]*confirmed (toilets|baby changing|parking)/i.test(lunchText),
-    message: (lunchText.match(/The Mapped Kitchen: [^.]{0,50}/) ?? ['no unknown stated'])[0],
+    message: (lunchText.match(/Opening hours not confirmed at The Mapped Kitchen[^\n]{0,40}/) ?? ['no unknown stated'])[0],
+  });
+  note(V, 'Plan', 'asks lunch only what lunch needs: no attraction ages or admission price for a place to eat', {
+    // stop-evidence.ts: a lunch stop is never told it "does not publish recommended ages" or that "what a visit costs" is unknown.
+    // The day's list names each stop now; the unattributed "for this place" form is what main printed for the lunch stop.
+    ok: !/Recommended ages are not published for (this place|The Mapped Kitchen)|What a visit costs (is not confirmed|at The Mapped Kitchen)/i.test(lunchText),
+    message: (lunchText.match(/[^\n]*(Recommended ages|What a visit costs)[^\n]*/) ?? ['none'])[0],
   });
 
   // --- PLAN -------------------------------------------------------------------------------------

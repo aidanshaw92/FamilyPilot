@@ -12,7 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
 import { RecommendationDeck } from '@/src/components/home/RecommendationDeck';
-import { deckMetrics, REFERENCE_WIDTH } from '@/src/utils/home-deck-geometry';
+import { RecommendationDeckSkeleton } from '@/src/components/home/RecommendationDeckSkeleton';
+import { REFERENCE_WIDTH } from '@/src/utils/home-deck-geometry';
 import {
   deckRoom,
   deckTopGap,
@@ -34,12 +35,11 @@ import {
   PillSelector,
   ScreenArt,
   SearchBar,
-  Skeleton,
   Text,
 } from '@/src/components/ui';
 import { HOME_ART } from '@/src/assets/art/figma-art';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
-import { useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
+import { useFamilyProfile, useHomeVenues } from '@/src/hooks/use-queries';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { FilterSheet } from '@/src/components/explore/FilterSheet';
 import { applyAdvancedFilters } from '@/src/utils/filter-venues';
@@ -83,16 +83,18 @@ export default function HomeScreen() {
   const isFocused = useIsFocused();
 
   const { data: profile } = useFamilyProfile();
-  const { data: venues, isLoading, isError, refetch } = useNearbyVenues();
+  // The last list this device loaded is shown at once and refreshed in place; only a first run waits (useHomeVenues).
+  const { venues, isLoading, isError, refetch } = useHomeVenues();
 
   const firstName = profile?.parentName?.split(' ')[0] ?? 'there';
   // Home is the curated answer, so it says who the picks are for: the children's names when there are some, or the
   // family. Never a guess: no children added reads "your family".
-  const pickedFor = useMemo(() => {
+  const pickedForNames = useMemo(() => {
     const kids = (profile?.members ?? []).filter((m) => m.role === 'child').map((m) => m.name.trim());
     const named = joinNames(kids);
-    return named && named.length <= 30 ? `Picked for ${named} today` : 'Picked for your family today';
+    return named && named.length <= 30 ? named : 'your family';
   }, [profile?.members]);
+  const pickedFor = `Picked for ${pickedForNames} today`;
 
   const ranked = useMemo(
     () => [...(venues ?? [])].sort((a, b) => b.familyScore.score - a.familyScore.score),
@@ -132,7 +134,6 @@ export default function HomeScreen() {
     if (next !== mode) setMode(next);
   }, [headerFit, mode, room, width]);
 
-  const { deckHeight } = deckMetrics(width, room);
   const savings = HEADER_SAVINGS[mode];
 
   // The approved header is drawn at 393pt. Narrower phones get the largest treatment that still
@@ -286,9 +287,15 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
+        {/* First run only: the deck's own shape and a line saying what is happening, never a blank block. It is
+            placed exactly where the deck will be, so nothing moves when the cards arrive. */}
         {isLoading ? (
-          <View style={[gutter, styles.deckSlot, { marginTop: deckTopGap(mode) }]}>
-            <Skeleton height={deckHeight} borderRadius={radius['3xl']} />
+          <View style={[styles.deckSlot, { marginTop: deckTopGap(mode) }]}>
+            <RecommendationDeckSkeleton
+              viewportWidth={width}
+              maxHeight={room}
+              message={`Finding today’s best places for ${pickedForNames}…`}
+            />
           </View>
         ) : null}
 

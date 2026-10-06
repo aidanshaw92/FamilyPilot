@@ -7,6 +7,7 @@ import { BetweenHome, fetchBetween } from '@/src/services/places/between-client'
 import {
   getCachedDetail,
   getCachedSearch,
+  getShowableSearch,
   setCachedDetail,
   setCachedSearch,
 } from '@/src/services/places/places-cache';
@@ -55,17 +56,44 @@ function mapLivePlacesToVenues(
   );
 }
 
+/**
+ * Home's and Explore's search. Deliberately London-wide and the SAME for every family: cards still calculate travel from
+ * the family's real home afterwards, on the device. Because nothing about the family is in it, it can be started before
+ * Home exists (see `prefetchNearby`) and shown from the cache while a fresh copy loads.
+ */
+function londonSearchParams(categories?: VenueCategory[]): PlaceSearchParams {
+  return { latitude: 51.5074, longitude: -0.1278, radiusKm: 40, categories, intent: 'explore' };
+}
+
+/**
+ * One request per search at a time. Without this, a prefetch still in flight when Home mounts (or Home and Explore
+ * mounting together) would each send the same request; with it, the second caller waits for the first. Never cached
+ * beyond the request itself: the result goes through the ordinary cache.
+ */
+const inFlight = new Map<string, Promise<Awaited<ReturnType<typeof placesApiClient.search>>>>();
+
+function liveSearchOnce(params: PlaceSearchParams) {
+  const key = searchCacheKey(params);
+  const running = inFlight.get(key);
+  if (running) return running;
+  const request = placesApiClient
+    .search(params)
+    .then(async (result) => {
+      if (result.provider === 'mock' || result.places.length === 0) {
+        throw new Error('Live places unavailable');
+      }
+      await setCachedSearch(key, result);
+      return result;
+    })
+    .finally(() => inFlight.delete(key));
+  inFlight.set(key, request);
+  return request;
+}
+
 export class PlacesRepository {
   async searchNearby(profile: FamilyProfile, categories?: VenueCategory[]): Promise<Venue[]> {
     const home = resolveHomeCoordinates(profile);
-    const params: PlaceSearchParams = {
-      // Explore is deliberately London-wide. Cards still calculate travel from the family's real home.
-      latitude: 51.5074,
-      longitude: -0.1278,
-      radiusKm: 40,
-      categories,
-      intent: 'explore',
-    };
+    const params = londonSearchParams(categories);
 
     const cacheKey = searchCacheKey(params);
     const cached = await getCachedSearch(cacheKey);
@@ -74,11 +102,7 @@ export class PlacesRepository {
     }
 
     try {
-      const result = await placesApiClient.search(params);
-      if (result.provider === 'mock' || result.places.length === 0) {
-        throw new Error('Live places unavailable');
-      }
-      await setCachedSearch(cacheKey, result);
+      const result = await liveSearchOnce(params);
       return mapLivePlacesToVenues(result.places, home);
     } catch (error) {
       if (__DEV__) {
@@ -88,6 +112,29 @@ export class PlacesRepository {
       // unreviewed/mock data, while the next query will retry the live API rather than cache them.
       return fallbackSearch(params, home);
     }
+  }
+
+  /**
+   * The last live London search this device holds that may still be SHOWN (stale-while-revalidate), or null. Read from
+   * the device only: no request is made. Never demo data, never empty. The caller must still load a fresh one.
+   */
+  async cachedNearby(profile: FamilyProfile): Promise<Venue[] | null> {
+    const kept = await getShowableSearch(searchCacheKey(londonSearchParams()));
+    if (!kept || kept.provider === 'mock' || kept.places.length === 0) return null;
+    return mapLivePlacesToVenues(kept.places, resolveHomeCoordinates(profile));
+  }
+
+  /**
+   * Starts Home's search before Home exists, so the wait overlaps the last moments of setup instead of following it.
+   * It is exactly the request Home sends next (same URL, answered by the CDN and the server's search cache like any
+   * other), it is skipped when a fresh copy is already held, and a Home that mounts while it is running waits for it
+   * rather than sending its own. Failures are silent: Home's own load reports them.
+   */
+  prefetchNearby(): void {
+    const params = londonSearchParams();
+    void getCachedSearch(searchCacheKey(params))
+      .then((cached) => (cached && cached.provider !== 'mock' && cached.places.length > 0 ? null : liveSearchOnce(params)))
+      .catch(() => undefined);
   }
 
   /** Search around a user-entered London town/postcode without substituting demo venues. */

@@ -24,6 +24,7 @@ import { PlanningConnection, listAcceptedConnections } from '@/src/services/plan
 import { PlanInvite, listPlanInvites, createPlanInvite, respondToPlanInvite, cancelPlanInvite } from '@/src/services/planning/plan-invites';
 import { SavedPlan } from '@/src/stores/planning-store';
 import { supabase } from '@/src/services/supabase/client';
+import { familyDisplayName } from '@/src/utils/family-title';
 
 const linkStyle={alignSelf:'flex-start' as const,minHeight:44,justifyContent:'center' as const};
 
@@ -132,7 +133,7 @@ export default function TripsScreen() {
   {editor?<FamilyEditor key={editor.id} initial={editor} onCancel={()=>setEditor(null)} onSave={f=>{state.setFamily(f);setEditor(null);}}/>:null}
   {tab==='families'?<>
     <Text variant="bodySmall">Family details and saved plans stay on this device unless you choose to back them up. Friend connections share only the details you explicitly approve.</Text>
-    {state.families.map(f=><Card key={f.id} style={s.panel}><Text variant="heading3">{f.label}</Text><Text>{f.area} · {f.ages.length?`Ages ${f.ages.join(', ')}`:'Adults only'} · {f.routines.length} routines</Text><Button label="Edit family and routines" variant="outline" onPress={()=>setEditor(f)}/><Button label="Remove from this device" variant="ghost" onPress={()=>state.removeFamily(f.id)}/></Card>)}
+    {state.families.map(f=><Card key={f.id} style={s.panel}><Text variant="heading3">{familyDisplayName(f.label)}</Text><Text>{f.area} · {f.ages.length?`Ages ${f.ages.join(', ')}`:'Adults only'} · {f.routines.length} routines</Text><Button label="Edit family and routines" variant="outline" onPress={()=>setEditor(f)}/><Button label="Remove from this device" variant="ghost" onPress={()=>state.removeFamily(f.id)}/></Card>)}
     {!state.families.some(f=>f.id==='mine')?<Button label="Add your family" onPress={()=>setEditor(blank(true))}/>:null}
     <Button label="Add a family together on this phone" variant="outline" onPress={()=>setEditor(blank(false))}/>
     <PlanningAccount/>
@@ -178,7 +179,7 @@ export default function TripsScreen() {
       </View>
      </View>
      <Text variant="bodySmall" color={colors.text.secondary}>From {invite.otherLabel} · {invite.planDate} · {clockLabel(invite.plan.start)}–{clockLabel(invite.plan.end)}</Text>
-     {invite.plan.timings.map(t=><Text key={t.familyId} variant="bodySmall">{t.label}: leave {clockLabel(t.depart)}, home about {clockLabel(t.home)}</Text>)}
+     {invite.plan.timings.map(t=><Text key={t.familyId} variant="bodySmall">{t.familyId==='mine'?t.label:familyDisplayName(t.label)}: leave {clockLabel(t.depart)}, home about {clockLabel(t.home)}</Text>)}
      {invite.status==='pending'?<View style={s.row}>
       <Button label="Accept" size="sm" disabled={sharingBusy} onPress={()=>void respondInvite(invite.id,'accepted')}/>
       <Button label="Decline" size="sm" variant="ghost" disabled={sharingBusy} onPress={()=>void respondInvite(invite.id,'declined')}/>
@@ -190,7 +191,7 @@ export default function TripsScreen() {
    {state.saved.map(saved=>{
     const sent=invites.filter(i=>i.direction==='sent'&&i.planId===saved.id);
     return <Card key={saved.id} style={s.panel}><Text variant="heading2">{saved.plan.name}</Text><Text>{saved.date} · {clockLabel(saved.plan.start)}–{clockLabel(saved.plan.end)}</Text>
-    {saved.plan.timings.map(t=><Text key={t.familyId}>{t.label}: leave {clockLabel(t.depart)}, home about {clockLabel(t.home)}</Text>)}
+    {saved.plan.timings.map(t=><Text key={t.familyId}>{t.familyId==='mine'?t.label:familyDisplayName(t.label)}: leave {clockLabel(t.depart)}, home about {clockLabel(t.home)}</Text>)}
     <Text variant="bodySmall">Saved timings are a snapshot. Recheck before leaving if routines, weather or travel change.</Text>
     <Text variant="heading3">Before you go</Text>{['Check opening hours and booking','Check travel time','Pack feeds and snacks','Nappies, wipes and spare clothes','Buggy and weather layers'].map(item=><Chip key={item} label={`${saved.checked.includes(item)?'✓ ':''}${item}`} active={saved.checked.includes(item)} onPress={()=>state.togglePacked(saved.id,item)}/>)}
 
@@ -205,7 +206,7 @@ export default function TripsScreen() {
     {connections.length?<>
      {inviteTargetPlanId===saved.id?<>
       <Text variant="bodySmall" color={colors.text.secondary}>Choose a connected family to invite:</Text>
-      <View style={s.row}>{connections.filter(c=>!sent.some(i=>i.status!=='declined'&&i.connectionId===c.id)).map(c=><Chip key={c.id} label={c.family?.label||'Family'} onPress={()=>void sendInvite(c.id,saved)}/>)}</View>
+      <View style={s.row}>{connections.filter(c=>!sent.some(i=>i.status!=='declined'&&i.connectionId===c.id)).map(c=><Chip key={c.id} label={familyDisplayName(c.family?.label)} onPress={()=>void sendInvite(c.id,saved)}/>)}</View>
       <Button label="Cancel" variant="ghost" size="sm" onPress={()=>setInviteTargetPlanId(null)}/>
      </>:<Button label="Invite a family to this plan" variant="outline" disabled={sharingBusy} onPress={()=>setInviteTargetPlanId(saved.id)}/>}
     </>:<Text variant="bodySmall" color={colors.text.secondary}>Connect a family under Families &amp; routines to invite them here.</Text>}

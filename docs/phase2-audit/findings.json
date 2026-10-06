@@ -279,7 +279,14 @@
     "screen": "Plan",
     "step": "does not claim the OSM restaurant has confirmed facilities",
     "ok": true,
-    "message": "The Mapped Kitchen: opening hours not confirmed\nRecommended ages are n"
+    "message": "Opening hours not confirmed at The Mapped Kitchen"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
+    "step": "asks lunch only what lunch needs: no attraction ages or admission price for a place to eat",
+    "ok": true,
+    "message": "none"
   },
   {
     "viewport": "360x800",
@@ -633,7 +640,14 @@
     "screen": "Plan",
     "step": "does not claim the OSM restaurant has confirmed facilities",
     "ok": true,
-    "message": "The Mapped Kitchen: opening hours not confirmed\nRecommended ages are n"
+    "message": "Opening hours not confirmed at The Mapped Kitchen"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "asks lunch only what lunch needs: no attraction ages or admission price for a place to eat",
+    "ok": true,
+    "message": "none"
   },
   {
     "viewport": "390x844",
@@ -987,7 +1001,14 @@
     "screen": "Plan",
     "step": "does not claim the OSM restaurant has confirmed facilities",
     "ok": true,
-    "message": "The Mapped Kitchen: opening hours not confirmed\nRecommended ages are n"
+    "message": "Opening hours not confirmed at The Mapped Kitchen"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
+    "step": "asks lunch only what lunch needs: no attraction ages or admission price for a place to eat",
+    "ok": true,
+    "message": "none"
   },
   {
     "viewport": "393x852",
@@ -1341,7 +1362,14 @@
     "screen": "Plan",
     "step": "does not claim the OSM restaurant has confirmed facilities",
     "ok": true,
-    "message": "The Mapped Kitchen: opening hours not confirmed\nRecommended ages are n"
+    "message": "Opening hours not confirmed at The Mapped Kitchen"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
+    "step": "asks lunch only what lunch needs: no attraction ages or admission price for a place to eat",
+    "ok": true,
+    "message": "none"
   },
   {
     "viewport": "430x932",
@@ -1695,7 +1723,14 @@
     "screen": "Plan",
     "step": "does not claim the OSM restaurant has confirmed facilities",
     "ok": true,
-    "message": "The Mapped Kitchen: opening hours not confirmed\nRecommended ages are n"
+    "message": "Opening hours not confirmed at The Mapped Kitchen"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "asks lunch only what lunch needs: no attraction ages or admission price for a place to eat",
+    "ok": true,
+    "message": "none"
   },
   {
     "viewport": "393x852-insets",

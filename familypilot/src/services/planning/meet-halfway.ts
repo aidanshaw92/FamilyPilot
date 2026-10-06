@@ -11,6 +11,7 @@ import { mustHaveLabel } from './must-have-labels';
 import { PlanningFamily, familyRequest } from './planner';
 import { RoutineWindow, clockMinutes, overlapMinutes, routineWindows } from './routine-windows';
 import { typicalMinutesFor } from './visit-duration';
+import { familyDisplayName } from '@/src/utils/family-title';
 
 /**
  * MEET HALFWAY: places that work for TWO families, not the point on the map between them.
@@ -157,7 +158,7 @@ const snapUp = (minutes: number) => Math.ceil(minutes / GRID_MINUTES) * GRID_MIN
 
 /** `family` as "your family" or "Hannah’s family" in a sentence. */
 export const familyPhrase = (role: FamilyRole, label: string): string =>
-  role === 'mine' ? 'your family' : `${label.replace(/’s family$/i, '')}’s family`;
+  role === 'mine' ? 'your family' : familyDisplayName(label);
 
 function factsFor(venue: Venue): MatchableVenueFacts {
   return (

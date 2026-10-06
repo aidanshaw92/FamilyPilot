@@ -5,7 +5,6 @@ import { colors, radius } from '@/src/design-system/tokens';
 import { photoCredit } from '@/src/services/places/place-photo-url';
 import { withIndefiniteArticle } from '@/src/utils/indefinite-article';
 import { CategoryArt } from './CategoryArt';
-import { Skeleton } from './Skeleton';
 import { Text } from './Text';
 
 // style is composed into an array below, so callers may pass an array or a conditional style the
@@ -80,7 +79,11 @@ export function VenueImage({uri,category,alt,style,borderRadius=radius.md,showCr
     <CategoryArt category={category} />
    </View>
   :<>
-   {pending?<Skeleton height={120} borderRadius={borderRadius} style={StyleSheet.absoluteFill}/>:null}
+   {/* While the photograph loads, the same category illustration the no-photo case draws sits underneath and the photo
+       fades in over it: a designed placeholder, not a grey block (it used to be a 120pt pulse strip on grey, which on a
+       Home card read as blank). Hidden from assistive tech, because it is not what the place looks like and the photo's
+       own label is what is read. */}
+   {pending?<View style={StyleSheet.absoluteFill} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" testID="venue-image-placeholder"><CategoryArt category={category} /></View>:null}
    <Image source={{uri}} style={styles.image} contentFit="cover" transition={200} loading={loading} accessibilityLabel={alt} onLoad={()=>setPending(false)} onError={()=>{setFailed(true);setPending(false);}}/>
   </>}
   {credit ? <View style={styles.credit} pointerEvents="none"><Text variant="caption" color="#FFFFFF" numberOfLines={3} style={styles.creditText}>Photo: {credit}</Text></View> : null}

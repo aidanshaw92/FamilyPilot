@@ -16,6 +16,7 @@ import { FamilyProfile } from '@/src/types';
 import { MOBILITY_LABELS } from '@/src/utils/family-mobility';
 import { householdPeople } from '@/src/utils/household';
 import { formatChildAge } from '@/src/utils/profile-defaults';
+import { familyDisplayName } from '@/src/utils/family-title';
 
 /**
  * YOUR FAMILY and CONNECTED FAMILIES: the two halves of "who do I plan with", side by side on the Profile.
@@ -139,7 +140,7 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
             <View style={styles.familyHead}>
               <Ionicons name="people-outline" size={20} color={colors.text.secondary} />
               <View style={styles.familyText}>
-                <Text variant="heading3">{family.label}</Text>
+                <Text variant="heading3">{familyDisplayName(family.label)}</Text>
                 <Text variant="bodySmall" color={colors.text.secondary}>
                   {sharedSummary(family)}
                 </Text>
@@ -176,7 +177,7 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
             </View>
             {sharingOpen === connection.id ? (
               <View style={styles.sharePanel} testID="connection-share-panel">
-                <Text variant="label">What {family.label} sees about you</Text>
+                <Text variant="label">What {familyDisplayName(family.label)} sees about you</Text>
                 <Text variant="bodySmall" color={colors.text.secondary}>
                   A first name, a rough area, your children’s ages, the drive you’re happy with and your must-haves. Never names or an
                   address. Nothing changes until you tap Update, and you stay connected.
@@ -216,7 +217,7 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
             <View style={styles.familyHead}>
               <Ionicons name="pin-outline" size={20} color={colors.text.secondary} />
               <View style={styles.familyText}>
-                <Text variant="heading3">{family.label}</Text>
+                <Text variant="heading3">{familyDisplayName(family.label)}</Text>
                 <Text variant="bodySmall" color={colors.text.secondary}>
                   {family.area} · starting point only, on this phone
                 </Text>

@@ -23,6 +23,7 @@ import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { FamilyProfile } from '@/src/types';
 import { fetchNearbyFood } from '@/src/services/places/nearby-food-client';
 import { BetweenHome } from '@/src/services/places/between-client';
+import { resolveHomeVenues } from '@/src/utils/home-venues-state';
 
 export function useProfileRevision() {
   return useFamilyStore((s) => s.profileRevision);
@@ -33,6 +34,8 @@ export function useFamilyProfile() {
   return useQuery({
     queryKey: ['family', 'profile', profileRevision],
     queryFn: familyService.getProfile,
+    // The profile is on the device: the first frame already has it (no "Good evening, there" before the name).
+    initialData: familyService.getProfileNow,
   });
 }
 
@@ -67,6 +70,26 @@ export function useNearbyVenues(options: { enabled?: boolean } = {}) {
     queryFn: venueService.getNearby,
     enabled: options.enabled ?? true,
   });
+}
+
+/**
+ * Home's list, never a blank wait when the device already has one.
+ *
+ * Two queries: the fresh list (`useNearbyVenues`, the same query Explore uses) and the last list this device loaded,
+ * re-ranked for the family as it is now (`getNearbyCached`, device-only, no request). Home shows the fresh list when it
+ * has it and the kept one until then, so a returning parent sees their picks at once and they are refreshed in place.
+ * Only when neither exists is Home loading; only when the fresh load failed AND nothing is kept is it an error.
+ */
+export function useHomeVenues() {
+  const profileRevision = useProfileRevision();
+  const live = useNearbyVenues();
+  const kept = useQuery({
+    queryKey: ['venues', 'nearby-kept', profileRevision],
+    queryFn: venueService.getNearbyCached,
+    staleTime: Infinity,
+    retry: false,
+  });
+  return { ...resolveHomeVenues({ live, kept }), refetch: live.refetch };
 }
 
 /**

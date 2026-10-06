@@ -14,13 +14,13 @@
     "viewport": "360x800",
     "step": "the CTA sits whole on screen once reached",
     "ok": true,
-    "message": "top 706, bottom 764 of 800"
+    "message": "top 371, bottom 429 of 800"
   },
   {
     "viewport": "360x800",
     "step": "Venue Detail offers Directions in its content",
     "ok": true,
-    "message": "found in content at y=304"
+    "message": "found in content at y=1033"
   },
   {
     "viewport": "360x800",
@@ -55,7 +55,12 @@
   },
   {
     "viewport": "360x800",
-    "step": "the household is summarised by count, not by name",
+    "step": "who is coming names the household, everyone selected",
+    "ok": true
+  },
+  {
+    "viewport": "360x800",
+    "step": "Start is a time picker, with How long offering Not sure",
     "ok": true
   },
   {
@@ -173,13 +178,13 @@
     "viewport": "390x844",
     "step": "the CTA sits whole on screen once reached",
     "ok": true,
-    "message": "top 750, bottom 808 of 844"
+    "message": "top 393, bottom 451 of 844"
   },
   {
     "viewport": "390x844",
     "step": "Venue Detail offers Directions in its content",
     "ok": true,
-    "message": "found in content at y=392"
+    "message": "found in content at y=1035"
   },
   {
     "viewport": "390x844",
@@ -214,7 +219,12 @@
   },
   {
     "viewport": "390x844",
-    "step": "the household is summarised by count, not by name",
+    "step": "who is coming names the household, everyone selected",
+    "ok": true
+  },
+  {
+    "viewport": "390x844",
+    "step": "Start is a time picker, with How long offering Not sure",
     "ok": true
   },
   {
@@ -332,13 +342,13 @@
     "viewport": "393x852",
     "step": "the CTA sits whole on screen once reached",
     "ok": true,
-    "message": "top 758, bottom 816 of 852"
+    "message": "top 397, bottom 455 of 852"
   },
   {
     "viewport": "393x852",
     "step": "Venue Detail offers Directions in its content",
     "ok": true,
-    "message": "found in content at y=400"
+    "message": "found in content at y=1039"
   },
   {
     "viewport": "393x852",
@@ -373,7 +383,12 @@
   },
   {
     "viewport": "393x852",
-    "step": "the household is summarised by count, not by name",
+    "step": "who is coming names the household, everyone selected",
+    "ok": true
+  },
+  {
+    "viewport": "393x852",
+    "step": "Start is a time picker, with How long offering Not sure",
     "ok": true
   },
   {
@@ -491,13 +506,13 @@
     "viewport": "430x932",
     "step": "the CTA sits whole on screen once reached",
     "ok": true,
-    "message": "top 838, bottom 896 of 932"
+    "message": "top 874, bottom 932 of 932"
   },
   {
     "viewport": "430x932",
     "step": "Venue Detail offers Directions in its content",
     "ok": true,
-    "message": "found in content at y=480"
+    "message": "found in content at y=1516"
   },
   {
     "viewport": "430x932",
@@ -532,7 +547,12 @@
   },
   {
     "viewport": "430x932",
-    "step": "the household is summarised by count, not by name",
+    "step": "who is coming names the household, everyone selected",
+    "ok": true
+  },
+  {
+    "viewport": "430x932",
+    "step": "Start is a time picker, with How long offering Not sure",
     "ok": true
   },
   {
@@ -636,33 +656,38 @@
     "ok": true
   },
   {
-    "viewport": "requirement-unmet",
+    "viewport": "must-have-unconfirmed",
     "step": "a venue card opens Venue Detail",
     "ok": true,
     "message": "Kettleford Play House"
   },
   {
-    "viewport": "requirement-unmet",
-    "step": "says which requirement stood in the way",
+    "viewport": "must-have-unconfirmed",
+    "step": "still builds the plan",
     "ok": true
   },
   {
-    "viewport": "requirement-unmet",
-    "step": "says nobody confirmed it rather than that the venue lacks it",
+    "viewport": "must-have-unconfirmed",
+    "step": "shows a prominent \"Needs checking before you go\" block",
     "ok": true
   },
   {
-    "viewport": "requirement-unmet",
-    "step": "does not claim the venue has none",
+    "viewport": "must-have-unconfirmed",
+    "step": "says which must-have is unconfirmed, and that the parent asked for it",
     "ok": true
   },
   {
-    "viewport": "requirement-unmet",
-    "step": "offers something the parent can change",
+    "viewport": "must-have-unconfirmed",
+    "step": "says nobody has confirmed it rather than that the venue lacks it",
     "ok": true
   },
   {
-    "viewport": "requirement-unmet",
+    "viewport": "must-have-unconfirmed",
+    "step": "is not presented as a failure",
+    "ok": true
+  },
+  {
+    "viewport": "must-have-unconfirmed",
     "step": "no internal field name reaches the screen",
     "ok": true,
     "message": ""

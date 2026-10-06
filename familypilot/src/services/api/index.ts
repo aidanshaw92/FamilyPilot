@@ -37,11 +37,14 @@ import { filterRestaurants } from '@/src/utils/filter-restaurants';
 import { ExploreBudgetFilter } from '@/src/stores/filters-store';
 import { getAllRestaurants, getRestaurantById, getRestaurantsNearVenue } from '@/src/services/eat-nearby';
 import { getPlacesRepository } from '@/src/services/places/places-repository';
+import { loadHomeList, loadKeptHomeList, prefetchHomeList } from '@/src/services/places/home-list';
 import { distanceKm } from '@/src/services/places/geo-utils';
 import { resolveUkLocation } from '@/src/services/location/location-client';
 import { withDerivedAges } from '@/src/utils/child-age';
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+export { HOME_WEATHER_WAIT_MS } from '@/src/services/places/home-list';
 
 // The one read path for hooks: ages are derived from dates of birth here, so every consumer behind
 // `useFamilyProfile` sees today's age whatever was last stored.
@@ -52,6 +55,14 @@ function getProfile(): FamilyProfile {
 export const familyService = {
   async getProfile(): Promise<FamilyProfile> {
     await delay(200);
+    return getProfile();
+  },
+
+  /**
+   * The same profile, synchronously. It lives in the on-device store, so there is nothing to wait for: screens use it as
+   * the query's initial data and draw the family's own name on the first frame instead of "there" and then the name.
+   */
+  getProfileNow(): FamilyProfile {
     return getProfile();
   },
 
@@ -71,25 +82,17 @@ export const weatherService = {
 
 export const venueService = {
   async getNearby(): Promise<Venue[]> {
-    const profile = getProfile();
-    // Weather is a soft scoring input here, not the primary thing being loaded - fetch it
-    // alongside the venue search rather than blocking on it, and never let a weather-provider
-    // outage take down venue search (fetchLiveWeatherSafe resolves to null on failure).
-    const [, venues, weather] = await Promise.all([
-      delay(300),
-      getPlacesRepository().searchNearby(profile),
-      fetchLiveWeatherSafe(profile),
-    ]);
-    // Explore is a London-wide discovery surface. Do not apply the normal max-drive cut-off here;
-    // keep travel time visible and let the parent filter it explicitly when they want to. A venue
-    // that is shut for the whole of today is excluded, though: never let the top of Home's main list be
-    // somewhere a family can't actually go today. "Today" is worked out from the weekly schedule and the
-    // clock (opening-today.ts), NOT from the provider's stored open-now flag, which is a snapshot from when
-    // the search ran and was hiding every farm and most museums for the day after a night-time refresh.
-    return venues
-      .filter((venue) => isVisitableVenue(venue))
-      .map((venue) => personaliseVenue(venue, profile, weather))
-      .sort((a, b) => b.familyScore.score - a.familyScore.score || compareTravelMinutes(a.driveMinutes, b.driveMinutes));
+    return loadHomeList(getProfile());
+  },
+
+  /** What the device kept, re-ranked for the family now, to show while a fresh list loads (see home-list.ts). */
+  async getNearbyCached(): Promise<Venue[] | null> {
+    return loadKeptHomeList(getProfile());
+  },
+
+  /** Starts Home's (family-independent) search early: see `PlacesRepository.prefetchNearby`. */
+  prefetchNearby(): void {
+    prefetchHomeList();
   },
 
   async searchArea(area: string): Promise<Venue[]> {

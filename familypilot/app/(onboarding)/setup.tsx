@@ -12,6 +12,7 @@ import { FeedEditor, NapEditor } from '@/src/components/onboarding/RoutineEditor
 import { TextField } from '@/src/components/profile/TextField';
 import { Button, Chip, Text } from '@/src/components/ui';
 import { colors, spacing } from '@/src/design-system/tokens';
+import { venueService } from '@/src/services/api';
 import { resolveUkLocation, ResolvedLocation } from '@/src/services/location/location-client';
 import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
 import { useFamilyStore } from '@/src/stores/family-store';
@@ -60,7 +61,9 @@ export default function SetupScreen() {
   const [resolvedHome, setResolvedHome] = useState<ResolvedLocation | null>(null);
   const [resolvingHome, setResolvingHome] = useState(false);
   const [familyName, setFamilyName] = useState('');
-  const [adults, setAdults] = useState<DraftAdult[]>([]);
+  // One card from the start: the first thing under "Who else is in your household?" is a person's first name, with how
+  // they're connected beneath it. Left blank it means "just me" (blank cards are never saved as people).
+  const [adults, setAdults] = useState<DraftAdult[]>(() => [blankAdult('partner')]);
   const [children, setChildren] = useState<DraftChild[]>(() => [blankChild()]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showDobErrors, setShowDobErrors] = useState(false);
@@ -125,9 +128,6 @@ export default function SetupScreen() {
       if (!parentName.trim()) next.parentName = 'Please enter your first name';
       if (!homeLocation.trim()) next.homeLocation = 'Please enter your town or postcode';
     }
-    if (step === 'household') {
-      if (adults.some((adult) => !adult.name.trim())) next.adults = 'Add a name for each adult, or remove them';
-    }
     if (step === 'children') {
       setShowDobErrors(true);
       const named = children.filter((c) => c.name.trim() || c.day || c.month || c.year);
@@ -173,6 +173,10 @@ export default function SetupScreen() {
     });
     setProfile(profile);
     completeOnboarding();
+    // Home's list does not depend on the family (it is London-wide, personalised on the device), so it starts loading
+    // now, while the next screen is read, instead of after Home opens. The same single request Home would send; Home
+    // waits for this one rather than sending its own.
+    venueService.prefetchNearby();
     // Someone who came through an invitation link goes back to it to accept. Everyone else with an account gets the
     // optional "Who do you plan days out with?" step; a build with no account backend has nothing to invite through.
     if (pendingInvite) router.replace(`/invite/${pendingInvite}` as never);
@@ -266,14 +270,6 @@ export default function SetupScreen() {
 
           {step === 'household' ? (
             <View>
-              <TextField
-                label="Family name (optional)"
-                value={familyName}
-                onChangeText={setFamilyName}
-                placeholder="e.g. Shaw"
-                autoCapitalize="words"
-                hint="Shown as “Shaw family” on your own screens. Never shared."
-              />
               {adults.map((adult, index) => (
                 <View key={adult.id} style={styles.childCard} testID={`household-adult-${index}`}>
                   <View style={styles.childHeader}>
@@ -292,13 +288,17 @@ export default function SetupScreen() {
                       </Text>
                     </Pressable>
                   </View>
+                  {/* The other person's own first name: never the family's surname (that is the household name below). */}
                   <TextField
-                    label="First name"
+                    label="Their first name"
                     value={adult.name}
                     onChangeText={(name) => setAdults((prev) => prev.map((a) => (a.id === adult.id ? { ...a, name } : a)))}
                     placeholder="e.g. Ellie"
                     autoCapitalize="words"
                   />
+                  <Text variant="caption" color={colors.text.secondary} style={styles.relationshipLabel}>
+                    How they’re connected to you
+                  </Text>
                   <View style={styles.relationshipRow}>
                     {(Object.keys(ADULT_RELATIONSHIP_LABEL) as Array<keyof typeof ADULT_RELATIONSHIP_LABEL>).map((relationship) => (
                       <Chip
@@ -312,11 +312,6 @@ export default function SetupScreen() {
                   </View>
                 </View>
               ))}
-              {errors.adults ? (
-                <Text variant="caption" color={colors.error[500]} style={styles.errorText}>
-                  {errors.adults}
-                </Text>
-              ) : null}
               {adults.length < MAX_ADULTS ? (
                 <Pressable
                   onPress={() => setAdults((prev) => [...prev, blankAdult(prev.length === 0 ? 'partner' : 'other')])}
@@ -325,15 +320,26 @@ export default function SetupScreen() {
                   testID="household-add-adult"
                 >
                   <Text variant="link" style={styles.addChildLabel}>
-                    + Add another adult
+                    {adults.length === 0 ? '+ Add an adult' : '+ Add another adult'}
                   </Text>
                 </Pressable>
               ) : null}
               <Text variant="caption" color={colors.text.secondary} style={styles.householdNote}>
-                {adults.length === 0
-                  ? 'Just you? That’s fine. You can add people later from Your family.'
-                  : 'Only first names and how you’re connected. No dates of birth, no contact details.'}
+                {adults.some((adult) => adult.name.trim())
+                  ? 'Only first names and how you’re connected. No dates of birth, no contact details.'
+                  : 'Just you? Leave this blank. You can add people later from Your family.'}
               </Text>
+              {/* A household-level label, not a person: optional, and only ever shown on this person's own screens. */}
+              <View style={styles.householdName}>
+                <TextField
+                  label="Household name (optional)"
+                  value={familyName}
+                  onChangeText={setFamilyName}
+                  placeholder="e.g. Shaw"
+                  autoCapitalize="words"
+                  hint="Your family’s surname, shown as “Shaw family” on your own screens. Never shared."
+                />
+              </View>
             </View>
           ) : null}
 
@@ -486,5 +492,7 @@ const styles = StyleSheet.create({
   errorText: { marginBottom: spacing.md },
   relationshipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs },
   householdNote: { marginTop: spacing.sm },
+  householdName: { marginTop: spacing.xl },
+  relationshipLabel: { marginTop: spacing.xs },
   footer: { paddingTop: spacing.lg, paddingBottom: spacing.md },
 });

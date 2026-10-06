@@ -27,7 +27,7 @@ export function makeSubjectResolver(
       return {
         name: null,
         noun: legacy ? 'routine' : kind === 'nap' ? 'nap' : 'feed',
-        familyLabel: family?.label ?? 'Their',
+        familyLabel: family?.label ?? '',
         yours: false,
       };
     }

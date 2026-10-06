@@ -12,21 +12,28 @@
  * prevent.
  */
 
-const UNKNOWN_FACT_SENTENCES: Record<string, string> = {
-  'familyFacilities.toilets': 'Toilets are not confirmed here',
-  'familyFacilities.babyChanging': 'Baby changing is not confirmed here',
-  'familyFacilities.parking': 'Parking is not confirmed here',
-  pushchairSuitability: 'Pushchair access is not confirmed here',
-  environment: 'Whether this place is indoors or outdoors is not confirmed',
-  energyLevel: 'How busy or lively it gets has not been reviewed',
-  estimatedSpend: 'What a visit costs is not confirmed',
-  visitDurationMinutes: 'How long a visit usually takes is not confirmed',
+/**
+ * Each sentence is written once, with the place left as a slot: `here` / `this place` when the list is about one venue,
+ * the stop's own name when a day has several and "here" would not say which.
+ */
+type Where = { at: string; of: string };
+const UNKNOWN_FACT_SENTENCES: Record<string, (where: Where) => string> = {
+  'familyFacilities.toilets': ({ at }) => `Toilets are not confirmed ${at}`,
+  'familyFacilities.babyChanging': ({ at }) => `Baby changing is not confirmed ${at}`,
+  'familyFacilities.parking': ({ at }) => `Parking is not confirmed ${at}`,
+  pushchairSuitability: ({ at }) => `Pushchair access is not confirmed ${at}`,
+  environment: ({ of }) => `Whether ${of} is indoors or outdoors is not confirmed`,
+  energyLevel: ({ at }) => `How busy or lively it gets ${at} is not confirmed`,
+  estimatedSpend: ({ at }) => `What a visit costs ${at} is not confirmed`,
+  visitDurationMinutes: ({ at }) => `How long a visit usually takes ${at} is not confirmed`,
   // Advice rather than a gate, so this says what is missing and never implies anyone was excluded.
-  ageRecommendedFit: 'Recommended ages are not published for this place',
-  ageAdmission: 'Any age policy at the door is not confirmed',
-  journey: 'The journey time is not confirmed',
-  budget: 'Whether this fits your budget is not confirmed',
+  ageRecommendedFit: ({ of }) => `Recommended ages are not published for ${of}`,
+  ageAdmission: ({ at }) => `Any age policy at the door is not confirmed ${at}`,
+  journey: ({ of }) => `The journey time to ${of} is not confirmed`,
+  budget: ({ of }) => `Whether ${of} fits your budget is not confirmed`,
 };
+
+const HERE: Where = { at: 'here', of: 'this place' };
 
 /** `familyFacilities.babyChanging` to `baby changing`, for a key nobody has written a sentence for. */
 function humaniseKey(field: string): string {
@@ -39,9 +46,20 @@ function humaniseKey(field: string): string {
   return spaced || field;
 }
 
-export function describeUnknownFact(field: string): string {
+function describe(field: string, where: Where): string {
   const known = UNKNOWN_FACT_SENTENCES[field];
-  if (known) return known;
+  if (known) return known(where);
   const words = humaniseKey(field);
-  return `${words.charAt(0).toUpperCase()}${words.slice(1)} is not confirmed`;
+  return `${words.charAt(0).toUpperCase()}${words.slice(1)} is not confirmed${where === HERE ? '' : ` ${where.at}`}`;
+}
+
+/** An unconfirmed fact about the one place a list is about: "Toilets are not confirmed here". */
+export function describeUnknownFact(field: string): string {
+  return describe(field, HERE);
+}
+
+/** The same, naming the place, for a list that covers more than one stop: "Toilets are not confirmed at Café Rouge". */
+export function describeUnknownFactAt(field: string, placeName: string): string {
+  const name = placeName.trim();
+  return name ? describe(field, { at: `at ${name}`, of: name }) : describe(field, HERE);
 }
