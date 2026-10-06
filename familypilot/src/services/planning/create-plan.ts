@@ -7,7 +7,10 @@ import { PlanStopSource, generateDayPlan, resolvedStop, stopFacts } from './day-
 import { sequenceDay } from './sequencer';
 import { PlanningFamily } from './planner';
 import { PlanDraft } from './plan-draft';
-import { PlanViewModel, PlanViewModelInput, toPlanViewModel } from './plan-view-model';
+import { PlanViewContext, PlanViewModel, PlanViewModelInput, toPlanViewModel } from './plan-view-model';
+import { VisitLength, resolveVisit } from './visit-duration';
+import { buggyFamilyIds } from './routine-subjects';
+import { mustHaveLabel } from './must-have-labels';
 import { TravelLeg } from '@/src/types/travel';
 import { travelSourceOf } from '@/src/utils/travel-time';
 
@@ -57,8 +60,18 @@ export interface CreatePlanInput {
   draft: PlanDraft;
   /** Already resolved from the draft's party ids, with coordinates. */
   families: PlanningFamily[];
-  /** Omitted when nothing is cached: the day is then built without a meal. */
+  /**
+   * Omitted when nothing is cached, or when the parent took lunch out of the plan: the day is then built without
+   * a meal.
+   */
   meal?: MealCandidate;
+  /**
+   * A place to eat is known near the venue, whether or not it is in this day. Lets the plan offer "Add a 45-minute
+   * lunch and recheck the timings" when a feed falls in the middle of the visit.
+   */
+  lunchAvailable?: boolean;
+  /** Names and the household title, added only when a screen draws the day. Never saved. */
+  viewContext?: PlanViewContext;
   /**
    * Whether the absent meal is an absent meal or a broken lookup.
    *
@@ -98,6 +111,17 @@ export interface CreatePlanSuccess {
   source: PlanViewModelInput;
 }
 
+/**
+ * One tap that changes the plan and builds it again: a different start, or a different length. Only offered where
+ * the planner knows the exact value that would work, never as a guess.
+ */
+export interface CreatePlanFailureAction {
+  kind: 'start' | 'visit';
+  label: string;
+  startAt?: string;
+  visit?: VisitLength;
+}
+
 export interface CreatePlanFailure {
   ok: false;
   /** Short, specific, and never "something went wrong". */
@@ -105,6 +129,8 @@ export interface CreatePlanFailure {
   message: string;
   /** What the parent can change to get a day. Empty when nothing would help. */
   suggestions: string[];
+  /** One-tap fixes with the exact value filled in. */
+  actions?: CreatePlanFailureAction[];
 }
 
 export type CreatePlanOutcome = CreatePlanSuccess | CreatePlanFailure;
@@ -140,20 +166,6 @@ export function createPlanSteps(input: { venueName: string; meal?: MealCandidate
   return steps;
 }
 
-/**
- * What each required constraint is called when a parent reads about it.
- *
- * Only the fields the matcher can actually fail at `required` strength appear. A field with no entry
- * falls back to the sequencer's own sentence rather than being rendered as a raw key.
- */
-const REQUIREMENT_LABELS: Record<string, string> = {
-  // Namespaced exactly as the matcher emits them. A bare `toilets` here would silently never match,
-  // and every unmet requirement would fall through to the generic sentence.
-  'familyFacilities.toilets': 'toilets',
-  'familyFacilities.babyChanging': 'baby changing',
-  'familyFacilities.parking': 'parking',
-  pushchairSuitability: 'pushchair access',
-};
 
 /**
  * An unmet requirement in a parent's words, keeping "has none" and "nobody checked" apart.
@@ -168,7 +180,7 @@ function requirementLine(requirement: UnmetRequirement, venueName: string): stri
       ? `${venueName} is recorded as difficult with a pushchair, and your family needs it to work.`
       : `Nobody has confirmed whether ${venueName} works with a pushchair, and your family needs it to.`;
   }
-  const label = REQUIREMENT_LABELS[requirement.field];
+  const label = mustHaveLabel(requirement.field);
   if (label) {
     return requirement.outcome === 'unsuitable'
       ? `${venueName} does not have ${label}, and your family needs it.`
@@ -197,6 +209,11 @@ function readableFamily(label: string): string {
   return label.trim().toLowerCase() === 'our family' ? 'your family' : label;
 }
 
+function minutesOfClock(value: string): number | null {
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+}
+
 function minutesToClock(minutes: number): string {
   const m = ((Math.round(minutes) % 1440) + 1440) % 1440;
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -209,7 +226,7 @@ function minutesToClock(minutes: number): string {
  * clashed, whose journey was too long. Collapsing that into "no plan found" throws away the only
  * part that helps, so each reason keeps its detail and carries its own suggestions.
  */
-function describeSequenceFailure(failure: SequenceFailure, venueName: string): CreatePlanFailure {
+function describeSequenceFailure(failure: SequenceFailure, venueName: string, startAt?: string): CreatePlanFailure {
   switch (failure.reason) {
     case 'requirement-unmet': {
       const lines = failure.unmet
@@ -229,13 +246,28 @@ function describeSequenceFailure(failure: SequenceFailure, venueName: string): C
       };
     }
     case 'venue-closed':
-      return {
-        ok: false,
-        title: `${venueName} is closed that day`,
-        message: failure.message,
-        suggestions: ['Try another date', 'Pick a different place'],
-      };
-    case 'venue-closes-during-visit':
+      // Open that day but not then is a different thing from shut all day, and what to try differs.
+      return failure.why === 'outside-opening-period'
+        ? {
+            ok: false,
+            title: `${venueName} isn’t open then`,
+            message: failure.message,
+            suggestions: ['Try a different start', 'Try another date', 'Pick a different place'],
+          }
+        : {
+            ok: false,
+            title: `${venueName} is closed that day`,
+            message: failure.message,
+            suggestions: ['Try another date', 'Pick a different place'],
+          };
+    case 'venue-closes-during-visit': {
+      // With the closing time and the start in hand, the exact length that fits is known: offer it.
+      const closes = failure.closesAt ? minutesOfClock(failure.closesAt) : null;
+      const from = startAt ? minutesOfClock(startAt) : null;
+      const actions: CreatePlanFailureAction[] =
+        closes !== null && from !== null && closes - from >= 30
+          ? [{ kind: 'visit', label: `Stay until it closes at ${failure.closesAt}`, visit: Math.min(480, closes - from) }]
+          : [];
       return {
         ok: false,
         title: 'The visit would run past closing',
@@ -243,11 +275,24 @@ function describeSequenceFailure(failure: SequenceFailure, venueName: string): C
           ? `${venueName} closes at ${failure.closesAt}, which is before the visit would finish.`
           : failure.message,
         suggestions: ['Start earlier', 'Choose a shorter visit'],
+        actions,
       };
-    case 'routine-conflict':
+    }
+    case 'start-too-soon':
+      // A start nobody could reach is the parent's to move, and the answer is a time, so it is offered as one.
       return {
         ok: false,
-        title: 'It clashes with your family’s routine',
+        title: 'That start is a little too soon',
+        message: `Getting everyone there by ${startAt ?? 'then'} would mean leaving before you can. The earliest everyone could arrive is ${minutesToClock(failure.earliestArrival)}.`,
+        suggestions: ['Pick a later start', 'Try another date'],
+        actions: [{ kind: 'start', label: `Start at ${minutesToClock(failure.earliestArrival)}`, startAt: minutesToClock(failure.earliestArrival) }],
+      };
+    case 'routine-conflict':
+      // No longer produced: a routine overlapping the day is advice on the plan, not a reason to refuse it. Kept so a
+      // saved failure from an older build still words itself.
+      return {
+        ok: false,
+        title: 'It overlaps one of your routines',
         message: `This day would run into ${failure.routineLabel}.`,
         suggestions: ['Start earlier', 'Choose a shorter visit', 'Try another date'],
       };
@@ -287,7 +332,7 @@ function describeSequenceFailure(failure: SequenceFailure, venueName: string): C
     case 'no-feasible-sequence': {
       // The closest miss is the useful part: it names what actually blocked the best attempt.
       if (failure.nearest) {
-        const nearest = describeSequenceFailure(failure.nearest, venueName);
+        const nearest = describeSequenceFailure(failure.nearest, venueName, startAt);
         return { ...nearest, title: nearest.title };
       }
       return {
@@ -308,7 +353,7 @@ function describeSequenceFailure(failure: SequenceFailure, venueName: string): C
   }
 }
 
-function describeGenerationFailure(failure: PlanGenerationFailure, venueName: string): CreatePlanFailure {
+function describeGenerationFailure(failure: PlanGenerationFailure, venueName: string, startAt?: string): CreatePlanFailure {
   switch (failure.kind) {
     case 'invalid-request':
       return { ok: false, title: 'Check the plan details', message: failure.message, suggestions: [] };
@@ -320,7 +365,7 @@ function describeGenerationFailure(failure: PlanGenerationFailure, venueName: st
         suggestions: ['Try again in a moment'],
       };
     case 'sequencing-failed':
-      return describeSequenceFailure(failure.failure, venueName);
+      return describeSequenceFailure(failure.failure, venueName, startAt);
     default:
       return { ok: false, title: 'No day fits yet', message: '', suggestions: [] };
   }
@@ -338,12 +383,28 @@ export async function createPlan(
     return { ok: false, title: 'Nobody is coming yet', message: 'Choose at least one family for this day.', suggestions: [] };
   }
 
-  const anchor: ResolvedStop = resolvedStop(venue, 'activity', draft.visitMinutes);
+  // The venue's own facts, through the same extractor the sequencer matches on, so the length FamilyPilot assumes, the
+  // Travel & parking section and the day cannot disagree about the place.
+  const anchorFacts = stopFacts(venue);
+  // How long at the venue: a chosen length, or one FamilyPilot works out and will say it assumed.
+  const visit = resolveVisit({
+    length: draft.visit,
+    category: venue.category,
+    venueTypicalMinutes: anchorFacts.visitDurationMinutes,
+    arriveAt: draft.startAt,
+    date: draft.date,
+    openingHours: venue.openingHours,
+  });
+  const anchor: ResolvedStop = resolvedStop(venue, 'activity', visit.minutes);
+
+  // An all-day visit has no lunch bolted onto the end of it: food is part of the day there, and a stop after eight hours
+  // would be a meal at teatime. A shorter day still gets the lunch that is already known.
+  const withMeal = meal && draft.visit !== 'all-day' ? meal : undefined;
 
   // Reported only when there is a meal to add, matching the steps `createPlanSteps` offered.
-  if (meal) step('lunch');
-  const mealStop: ResolvedStop | undefined = meal
-    ? resolvedStop(meal.place, 'meal', MEAL_DWELL_MINUTES)
+  if (withMeal) step('lunch');
+  const mealStop: ResolvedStop | undefined = withMeal
+    ? resolvedStop(withMeal.place, 'meal', MEAL_DWELL_MINUTES)
     : undefined;
 
   const request: DayPlanRequest = {
@@ -351,11 +412,15 @@ export async function createPlan(
     families,
     anchor,
     meal: mealStop,
+    visit,
     options: {
-      leaveAt: draft.leaveAt,
-      returnBy: input.returnBy ?? '',
-      bufferMinutes: input.bufferMinutes ?? 15,
-      environment: input.environment ?? 'either',
+      // Leaving home is worked back from the arrival the parent named. The floor is midnight; on today the
+      // sequencer also floors it at the current time, which is what makes a start in the past "too soon".
+      leaveAt: '00:00',
+      arriveAt: draft.startAt,
+      returnBy: input.returnBy ?? draft.returnBy ?? '',
+      bufferMinutes: input.bufferMinutes ?? draft.bufferMinutes ?? 15,
+      environment: input.environment ?? draft.environment ?? 'either',
     },
   };
 
@@ -368,11 +433,8 @@ export async function createPlan(
   });
 
   step('timing');
-  if (!result.ok) return describeGenerationFailure(result.failure, venue.name);
+  if (!result.ok) return describeGenerationFailure(result.failure, venue.name, draft.startAt);
 
-  // From the anchor's own facts, through the same extractor the sequencer matched on, so the
-  // Travel & parking section cannot disagree with the day it describes.
-  const anchorFacts = stopFacts(venue);
   const source: PlanViewModelInput = {
     itinerary: result.plan.itinerary,
     travel: result.plan.travel,
@@ -394,7 +456,17 @@ export async function createPlan(
       [anchor.placeId]: { imageUrl: input.anchorImageUrl, category: venue.category },
       ...(mealStop ? { [mealStop.placeId]: { category: 'restaurant' } } : {}),
     },
+    // What the advice on the plan is worked from. Facts about the venue and the day, and the family ids that use a
+    // pushchair: no child's name, age or routine detail is saved here.
+    visit: result.plan.visit,
+    alternatives: result.plan.alternatives,
+    pushchair: anchorFacts.pushchairSuitability,
+    buggyFamilyIds: buggyFamilyIds(families),
+    // An all-day plan has no lunch stop to add or take out: food is part of the day there, so no control is offered that would do nothing.
+    lunchAvailable: Boolean(input.lunchAvailable ?? meal) && draft.visit !== 'all-day',
+    hasRoutines: families.some((family) => family.routines.length > 0),
+    anchorCategory: venue.category,
   };
 
-  return { ok: true, view: toPlanViewModel(source), source };
+  return { ok: true, view: toPlanViewModel(source, input.viewContext), source };
 }

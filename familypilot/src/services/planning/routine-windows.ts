@@ -65,6 +65,11 @@ export function overlaps(window: RoutineWindow, from: number, to: number): boole
   return from < window.end && to > window.start;
 }
 
+/** How many minutes of the span `from`..`to` the routine's window covers. Zero when they only touch. */
+export function overlapMinutes(window: RoutineWindow, from: number, to: number): number {
+  return Math.max(0, Math.min(window.end, to) - Math.max(window.start, from));
+}
+
 /**
  * A routine that has to happen at home, colliding with the whole time the family is out.
  *

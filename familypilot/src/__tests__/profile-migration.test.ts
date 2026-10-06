@@ -132,3 +132,27 @@ describe('malformed and partial storage never throws and never fabricates', () =
     expect({ ...twice, id: once.id }).toEqual(once);
   });
 });
+
+describe('the household survives migration', () => {
+  it('keeps the family name and how each added adult relates to the household', () => {
+    const { profile } = migrateLegacyProfile({
+      parentName: 'Aidan',
+      familyName: '  Shaw ',
+      members: [
+        { id: 'p1', name: 'Aidan', role: 'parent', age: 36, dateOfBirth: '1990-01-01' },
+        { id: 'p2', name: 'Ellie', role: 'parent', relationship: 'partner', age: 35, dateOfBirth: '1991-01-01' },
+        { id: 'p3', name: 'Gran', role: 'parent', relationship: 'not-a-relationship', age: 70, dateOfBirth: '1950-01-01' },
+        { id: 'c1', name: 'Sloane', role: 'child', age: 3, dateOfBirth: '2023-01-01', dobKnown: true },
+      ],
+      homeLocation: 'N1',
+    });
+    expect(profile.familyName).toBe('Shaw');
+    expect(profile.members.find((m) => m.id === 'p2')?.relationship).toBe('partner');
+    // Anything that is not one of the three words is not a relationship.
+    expect(profile.members.find((m) => m.id === 'p3')?.relationship).toBeUndefined();
+  });
+
+  it('adds no family name nobody gave', () => {
+    expect(migrateLegacyProfile({ parentName: 'Aidan', members: [] }).profile.familyName).toBeUndefined();
+  });
+});

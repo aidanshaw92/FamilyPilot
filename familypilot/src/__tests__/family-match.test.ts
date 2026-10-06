@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { evaluateFamilyMatch } from '@/src/services/matching/family-match';
+import { evaluateFamilyMatch, matchBadgeText } from '@/src/services/matching/family-match';
 import { FamilyMember, FamilyProfile, Venue } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { OpeningHoursSchedule } from '@/src/types/opening-hours';
@@ -176,5 +176,131 @@ describe('Family Match: the honest verdict', () => {
     expect(r.cardNote).toBeTruthy();
     const closing = (r.cardNote ?? '').match(/closing soon/gi) ?? [];
     expect(closing.length).toBeLessThanOrEqual(1);
+  });
+});
+
+describe('Family Fit talks about each child', () => {
+  const two = () => profile({ members: [parent, child('c1', 'Sloane', 7), child('c2', 'Ozzie', 0, { mobility: ['buggy'] })] });
+  const base = { minRecommendedAge: 0, maxRecommendedAge: 10, toilets: 'yes', babyChanging: 'yes', parking: 'yes' } as const;
+
+  it('says who it is good for, naming both children when the evidence is about both', () => {
+    const r = run(venue({}, { ...base, pushchairSuitability: 'good' }), two(), 90);
+    expect(r.children.map((c) => [c.name, c.state])).toEqual([['Sloane', 'works'], ['Ozzie', 'works']]);
+    expect(r.headline).toMatch(/for Sloane and Ozzie today$/);
+  });
+
+  it('keeps the children apart: could work for one, check something for the other', () => {
+    const r = run(venue({}, { ...base, pushchairSuitability: 'unknown' }), two(), 90);
+    expect(r.children.find((c) => c.name === 'Ozzie')?.state).toBe('check');
+    expect(r.children.find((c) => c.name === 'Sloane')?.state).toBe('works');
+    expect(r.headline).toBe('Could work for Sloane, but check buggy access for Ozzie');
+  });
+
+  it('names only the child a breach is about', () => {
+    const r = run(venue({}, { ...base, pushchairSuitability: 'difficult' }), two(), 90);
+    expect(r.verdict).toBe('poor');
+    expect(r.headline).toBe('Probably not for Ozzie today');
+  });
+
+  it('claims nothing for a child nobody has a fact about', () => {
+    const only = profile({ members: [parent, child('c3', 'Mia', 8)] });
+    const r = run(venue({}, {}), only, 90);
+    expect(r.children[0].state).toBe('unknown');
+    expect(r.headline).not.toMatch(/Mia/);
+  });
+});
+
+describe('Family Fit never says "good for the family" from a subset of the children', () => {
+  const two = () => profile({ members: [parent, child('c1', 'Sloane', 7), child('c2', 'Ozzie', 0, { mobility: ['buggy'] })] });
+  const sevenAndNine = () => profile({ members: [parent, child('c1', 'Sloane', 7), child('c2', 'Maya', 9)] });
+  const practical = { toilets: 'yes', parking: 'yes' } as const;
+
+  it('a fact about one child alone does not become "Good for" that child while the other is unknown', () => {
+    // Baby changing is confirmed, which is a fact about Ozzie. Nothing at all is known about whether it suits Sloane.
+    const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
+    expect(r.children.map((c) => [c.name, c.state])).toEqual([['Sloane', 'unknown'], ['Ozzie', 'works']]);
+    expect(r.headline).toBe('Good for Ozzie, but we’re less certain about Sloane: no age range is recorded for this place yet');
+    expect(r.headline).not.toMatch(/^Good for Ozzie today$/);
+    expect(r.gapNames).toEqual(['Sloane']);
+  });
+
+  it('a child with a check still open is said beside the good one, even when the verdict is good', () => {
+    // Both children are inside the age range; Ozzie is a baby and baby changing has not been confirmed.
+    const r = run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'unknown', pushchairSuitability: 'good' }), two(), 80);
+    expect(r.verdict).toBe('good');
+    expect(r.children.find((c) => c.name === 'Ozzie')?.state).toBe('check');
+    expect(r.headline).toBe('Good for Sloane, but check baby changing for Ozzie');
+    expect(r.headline).not.toMatch(/Sloane and Ozzie/);
+    expect(r.gapNames).toEqual(['Ozzie']);
+  });
+
+  it('nothing confirmed for any child: the practical facts are good, and that is all the headline claims', () => {
+    const r = run(venue({}, practical), sevenAndNine(), 80);
+    expect(r.children.every((c) => c.state === 'unknown')).toBe(true);
+    expect(r.verdict).toBe('good');
+    expect(r.headline).toBe('Looks practical, but we’re less certain about Sloane and Maya: no age range is recorded for this place yet');
+    expect(r.headline).not.toMatch(/your family/);
+  });
+
+  it('lists the child nothing is confirmed for among the things to check', () => {
+    const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
+    expect(r.toCheck.map((line) => line.text)).toContain('We’re less certain how well it suits Sloane: no age range is recorded for this place yet');
+  });
+
+  it('cannot be excellent while a child is left over: excellent means nothing is left to check', () => {
+    const r = run(venue({ facilities: ['cafe'] }, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good', environment: 'indoor' }), two(), 95);
+    expect(r.gapNames).toEqual(['Sloane']);
+    expect(r.verdict).not.toBe('excellent');
+  });
+
+  it('says who is covered only when every child is: both named, no gap', () => {
+    const r = run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 78);
+    expect(r.gapNames).toEqual([]);
+    expect(r.headline).toBe('Good for Sloane and Ozzie today');
+  });
+
+  it('leaves a one-child household as it was: no gap is invented for a single child', () => {
+    const one = profile({ members: [parent, child('c3', 'Mia', 2, { mobility: ['walks'] })] });
+    const r = run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'unknown' }), one, 80);
+    expect(r.gapNames).toEqual([]);
+    expect(r.headline).toBe('Good for your family today');
+  });
+
+  it('speaks like a parent: no database phrasing anywhere a headline or a check line is shown', () => {
+    const cases = [
+      run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85),
+      run(venue({}, practical), sevenAndNine(), 80),
+      run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'unknown', pushchairSuitability: 'good' }), two(), 80),
+    ];
+    for (const r of cases) {
+      const words = [r.headline, ...r.toCheck.map((l) => l.text)].join(' ');
+      expect(words).not.toMatch(/nothing is confirmed|not confirmed|unconfirmed|unknown|null|undefined/i);
+    }
+  });
+
+  it('gives the specific reason where it is known, and a plain one where it is not', () => {
+    const noAges = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
+    expect(noAges.headline).toContain('no age range is recorded for this place yet');
+    // Ages are on record, but nothing in them speaks for Sloane: the reason is the general one, never the age one.
+    const withAges = run(venue({}, { ...practical, minRecommendedAge: 9, maxRecommendedAge: 12, babyChanging: 'yes', pushchairSuitability: 'good' }), sevenAndNine(), 80);
+    expect(withAges.headline).not.toContain('no age range is recorded');
+  });
+
+  describe('the badge', () => {
+    it('says the gap rather than "Good for Ozzie" alone', () => {
+      const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
+      expect(matchBadgeText(r)).toBe('Good fit · check Sloane');
+      expect(matchBadgeText(r)).not.toBe('Good for Ozzie');
+    });
+
+    it('falls back to a short form when the names will not fit, never to a name alone', () => {
+      const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
+      expect(matchBadgeText(r, 8)).toBe('Good fit · check kids');
+    });
+
+    it('still names both children when both are confirmed', () => {
+      const r = run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 78);
+      expect(matchBadgeText(r, 40)).toBe('Good for Sloane and Ozzie');
+    });
   });
 });

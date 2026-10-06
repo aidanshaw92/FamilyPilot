@@ -3,6 +3,8 @@ import { familyUsesBuggy } from '@/src/utils/family-mobility';
 import { routinesForPlanner } from '@/src/utils/routine-schedule';
 import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
 
+import { profileForAttendees } from '@/src/utils/household';
+
 import { PlanningFamily } from './planner';
 
 /**
@@ -21,6 +23,11 @@ export interface PlanPartySources {
   profile?: FamilyProfile | null;
   /** Households already described for planning, including ones added on this device. */
   planningFamilies?: PlanningFamily[];
+  /**
+   * Which members of the signed-in household are coming. `null`/absent is everyone. Anybody left out contributes
+   * no age, no buggy, no nap and no feed to the day, because they are not there.
+   */
+  attendeeIds?: readonly string[] | null;
 }
 
 export type UnresolvedPartyReason =
@@ -88,9 +95,13 @@ function homeOf(profile: FamilyProfile): { latitude: number; longitude: number }
 
 /** The signed-in household as a planning family, or why it could not be one. */
 export function planningFamilyFromProfile(
-  profile: FamilyProfile,
+  fullProfile: FamilyProfile,
   id = 'mine',
+  attendeeIds?: readonly string[] | null,
 ): PlanningFamily | UnresolvedPartyReason {
+  if ((fullProfile.members?.length ?? 0) === 0) return 'not-described';
+  // Only the people coming. Everything below (ages, buggy, routines) then describes exactly who is there.
+  const profile = profileForAttendees(fullProfile, attendeeIds);
   if ((profile.members?.length ?? 0) === 0) return 'not-described';
   const home = homeOf(profile);
   if (!home) return 'no-location';
@@ -143,7 +154,7 @@ export function resolvePlanParties(
     }
 
     if (id === 'mine' && sources.profile) {
-      const derived = planningFamilyFromProfile(sources.profile);
+      const derived = planningFamilyFromProfile(sources.profile, 'mine', sources.attendeeIds);
       if (typeof derived === 'string') unresolved.push({ id, reason: derived });
       else families.push(derived);
       continue;

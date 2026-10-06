@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedScrollHandler,
@@ -13,7 +13,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CheckTodaySection } from '@/src/components/venue/CheckTodaySection';
 import { CommunitySection } from '@/src/components/venue/CommunitySection';
 import { EatNearbySection } from '@/src/components/venue/EatNearbySection';
 import { EvidenceSection } from '@/src/components/venue/EvidenceSection';
@@ -38,7 +37,7 @@ import {
 import { BackButton } from '@/src/components/ui/BackButton';
 import { ArrowCta } from '@/src/components/ui/ArrowCta';
 import { CreatePlanSheet } from '@/src/components/planning/CreatePlanSheet';
-import { PlanDraft, planDraftDefaults } from '@/src/services/planning/plan-draft';
+import { PlanDraft, firstValue, planDraftDefaults, planDraftFromParams, planDraftToParams } from '@/src/services/planning/plan-draft';
 import { profileReceipt } from '@/src/utils/profile-receipt';
 import { photoAttribution } from '@/src/services/places/place-photo-url';
 import { FadeInView } from '@/src/components/ui/FadeInView';
@@ -74,7 +73,8 @@ export function generateStaticParams() {
 }
 
 export default function VenueScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const searchParams = useLocalSearchParams();
+  const id = firstValue(searchParams.id);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: venue, isLoading, isError, refetch } = useVenue(id ?? '');
@@ -91,6 +91,7 @@ export default function VenueScreen() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [startReport, setStartReport] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const fitPanelY = useRef(0);
@@ -119,6 +120,18 @@ export default function VenueScreen() {
     [profile, planningFamilies, planningOptions, planSheetOpen],
   );
   const draft = draftOverride ?? planDefaults.draft;
+
+  // "Change the plan" on a plan that could not be built returns here with the sheet open on the answers the parent had
+  // chosen, so changing one is one tap. Opened once, from the link's own parameters.
+  const reopenPlan = firstValue(searchParams.plan) === 'open';
+  const reopened = useRef(false);
+  useEffect(() => {
+    if (!reopenPlan || reopened.current) return;
+    reopened.current = true;
+    setDraftOverride(planDraftFromParams(searchParams as Record<string, string | string[] | undefined>));
+    setPlanSheetOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reopenPlan]);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (e) => {
@@ -158,17 +171,12 @@ export default function VenueScreen() {
   // back does not re-answer the rows they already answered.
   const handleCreatePlan = useCallback(
     (next: PlanDraft) => {
-      setPlanningOptions({ date: next.date, leaveAt: next.leaveAt, visitMinutes: next.visitMinutes });
+      // The start is remembered as a convenience; who is coming and how long are asked afresh each time.
+      setPlanningOptions({ date: next.date, leaveAt: next.startAt });
       setPlanSheetOpen(false);
       router.push({
         pathname: '/plan',
-        params: {
-          venue: id ?? '',
-          date: next.date,
-          leaveAt: next.leaveAt,
-          visit: String(next.visitMinutes),
-          parties: next.partyIds.join(','),
-        },
+        params: { venue: id ?? '', ...planDraftToParams(next) },
       } as never);
     },
     [id, router, setPlanningOptions],
@@ -297,24 +305,6 @@ export default function VenueScreen() {
               </Pressable>
             </View>
 
-            {description ? (
-              <View style={styles.descriptionBlock}>
-                <Text style={styles.description} numberOfLines={descriptionOpen ? undefined : DESCRIPTION_LINES}>
-                  {description}
-                </Text>
-                {descriptionIsLong ? (
-                  <Pressable
-                    onPress={() => setDescriptionOpen((open) => !open)}
-                    accessibilityRole="button"
-                    hitSlop={10}
-                    style={styles.readMore}
-                  >
-                    <Text style={styles.readMoreText}>{descriptionOpen ? 'Read less' : 'Read more'}</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            ) : null}
-
             {/* 1. Family Match: what FamilyPilot tells THIS family, and why. The first thing under the name. */}
             <View
               style={styles.block}
@@ -330,18 +320,21 @@ export default function VenueScreen() {
             {/* 2. Will it work TODAY: the opening state from the schedule and the clock, then the routine check. */}
             <View style={styles.block}>
               <TodayCard hours={venue.structuredOpeningHours} />
-              {venue.trustedFacts ? (
-                <CheckTodaySection
-                  facts={venue.trustedFacts}
-                  latitude={venue.latitude}
-                  longitude={venue.longitude}
-                />
-              ) : null}
             </View>
 
-            {/* 3. The key family essentials: what is confirmed, and one line for what is not. */}
+            {/* 3. The action this screen exists for, straight after the answer to "is it good for us, and will it work today":
+                Create a plan, drawn as the frame's CTA (node 72:2). Tapping a venue never creates a plan; this does, through
+                the sheet. It sits here, not at the foot of a long page, so nobody scrolls past everything to find it. */}
+            <ArrowCta
+              label="Create a plan"
+              onPress={() => setPlanSheetOpen(true)}
+              testID="venue-create-plan"
+              style={styles.cta}
+            />
+
+            {/* 4. What to know: the key family essentials: what is confirmed, and one line for what is not. */}
             <Text variant="heading2" style={styles.sectionTitle}>
-              Family essentials
+              What to know
             </Text>
             <FamilyEssentials
               venue={venue}
@@ -385,34 +378,77 @@ export default function VenueScreen() {
               </Text>
             ) : null}
 
-            <PhotoGallery photos={venue.photos} onPhotoPress={setHeroIndex} />
+            {/* 5. Everything else, one tap away: the description, photographs, weather alternative and parents' tips. */}
+            <View style={styles.block}>
+              <Pressable
+                onPress={() => setMoreOpen((open) => !open)}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: moreOpen }}
+                accessibilityLabel="More about this place"
+                style={styles.moreHeader}
+                testID="venue-more-toggle"
+              >
+                <View style={styles.moreText}>
+                  <Text variant="heading3">More about this place</Text>
+                  <Text variant="bodySmall" color={colors.text.secondary}>
+                    Description, photos and parents’ tips
+                  </Text>
+                </View>
+                <Ionicons name={moreOpen ? 'chevron-up' : 'chevron-down'} size={20} color={colors.text.secondary} />
+              </Pressable>
+              {moreOpen ? (
+                <View style={styles.moreBody} testID="venue-more">
+                  {description ? (
+                    <View style={styles.descriptionBlock}>
+                      <Text style={styles.description} numberOfLines={descriptionOpen ? undefined : DESCRIPTION_LINES}>
+                        {description}
+                      </Text>
+                      {descriptionIsLong ? (
+                        <Pressable
+                          onPress={() => setDescriptionOpen((open) => !open)}
+                          accessibilityRole="button"
+                          hitSlop={10}
+                          style={styles.readMore}
+                        >
+                          <Text style={styles.readMoreText}>{descriptionOpen ? 'Read less' : 'Read more'}</Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  ) : null}
 
-            {/* This is the larger version of the photograph Home previews, so it carries the full
-                attribution Google requires: the photographer, their profile, and a way to open the
-                individual photo on Google Maps. */}
-            {heroAttribution ? (
-              <View style={styles.photoAttribution}>
-                <PhotoAttributionLine attribution={heroAttribution} />
-              </View>
-            ) : null}
+                  <PhotoGallery photos={venue.photos} onPhotoPress={setHeroIndex} />
 
-            {/* Whose data this is. A licence condition for both providers. */}
-            <View style={styles.photoAttribution}>
-              <PlaceAttribution provider={venue.provider} />
+                  {/* This is the larger version of the photograph Home previews, so it carries the full
+                      attribution Google requires: the photographer, their profile, and a way to open the
+                      individual photo on Google Maps. */}
+                  {heroAttribution ? (
+                    <View style={styles.photoAttribution}>
+                      <PhotoAttributionLine attribution={heroAttribution} />
+                    </View>
+                  ) : null}
+
+                  {/* Whose data this is. A licence condition for both providers. */}
+                  <View style={styles.photoAttribution}>
+                    <PlaceAttribution provider={venue.provider} />
+                  </View>
+
+                  {isActivityVenue(venue) && isPilotFeatureVisible('eat_nearby') ? (
+                    <EatNearbySection
+                      activityVenueId={venue.id}
+                      activityVenueName={venue.name}
+                    />
+                  ) : null}
+
+                  {venue.weatherAlternative ? (
+                    <WeatherAlternativeSection alternative={venue.weatherAlternative} />
+                  ) : null}
+
+                  <CommunitySection tips={venue.communityTips} />
+                </View>
+              ) : null}
             </View>
 
-            {isActivityVenue(venue) && isPilotFeatureVisible('eat_nearby') ? (
-              <EatNearbySection
-                activityVenueId={venue.id}
-                activityVenueName={venue.name}
-              />
-            ) : null}
-
-            {venue.weatherAlternative ? (
-              <WeatherAlternativeSection alternative={venue.weatherAlternative} />
-            ) : null}
-
-            {/* 5. The deeper evidence: sources, dates and parent observations, one tap away and never hidden. */}
+            {/* 6. How we know this: the deeper evidence, sources, dates and parent observations, one tap away and never hidden. */}
             <View style={styles.block}>
               <EvidenceSection
                 venueId={venue.id}
@@ -421,16 +457,7 @@ export default function VenueScreen() {
                 startReport={startReport}
               />
             </View>
-            <CommunitySection tips={venue.communityTips} />
 
-            {/* 6. Create a plan: the one action this screen exists to offer, drawn as the frame's CTA (node 72:2), the
-                same pill as Home's "See more". Tapping a venue never creates a plan; this does, through the sheet. */}
-            <ArrowCta
-              label="Create a plan"
-              onPress={() => setPlanSheetOpen(true)}
-              testID="venue-create-plan"
-              style={styles.cta}
-            />
           </FadeInView>
         </View>
       </AnimatedScrollView>
@@ -449,20 +476,15 @@ export default function VenueScreen() {
           router.push('/profile/edit' as never);
         }}
         connections={accountRequired() && isPilotFeatureVisible('trips_tab')}
-        onAddFamily={
-          isPilotFeatureVisible('trips_tab')
-            ? () => {
-                setPlanSheetOpen(false);
-                router.push('/(tabs)/trips' as never);
-              }
-            : undefined
-        }
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  moreHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, minHeight: 56 },
+  moreText: { flex: 1, gap: 2 },
+  moreBody: { gap: spacing.md, paddingTop: spacing.md },
   container: {
     flex: 1,
     backgroundColor: colors.background,

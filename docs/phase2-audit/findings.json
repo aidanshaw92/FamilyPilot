@@ -4,7 +4,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good morning, Sarah What shall we do today? S Search places nearby Select your plan For yo"
+    "message": "Good morning, Sarah Picked for Mia and Leo today S Search places nearby Best for your fami"
   },
   {
     "viewport": "360x800",
@@ -77,7 +77,7 @@
     "screen": "Venue Detail",
     "step": "Create a plan sits whole on screen and clear of the home indicator once reached",
     "ok": true,
-    "message": "top 706, bottom 764, indicator starts at 800"
+    "message": "top 371, bottom 429, indicator starts at 800"
   },
   {
     "viewport": "360x800",
@@ -236,7 +236,7 @@
   {
     "viewport": "360x800",
     "screen": "Create a Plan",
-    "step": "summarises the household by count, never by name",
+    "step": "lists the household by name under Who’s coming, and shows no date of birth",
     "ok": true
   },
   {
@@ -292,7 +292,7 @@
     "screen": "Plan",
     "step": "summarises the day in the parent’s terms",
     "ok": true,
-    "message": "Your Saturday plan"
+    "message": "Your Friday plan"
   },
   {
     "viewport": "360x800",
@@ -358,7 +358,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good morning, Sarah What shall we do today? S Search places and activities Select your pla"
+    "message": "Good morning, Sarah Picked for Mia and Leo today S Search places and activities Best for y"
   },
   {
     "viewport": "390x844",
@@ -431,7 +431,7 @@
     "screen": "Venue Detail",
     "step": "Create a plan sits whole on screen and clear of the home indicator once reached",
     "ok": true,
-    "message": "top 750, bottom 808, indicator starts at 844"
+    "message": "top 393, bottom 451, indicator starts at 844"
   },
   {
     "viewport": "390x844",
@@ -590,7 +590,7 @@
   {
     "viewport": "390x844",
     "screen": "Create a Plan",
-    "step": "summarises the household by count, never by name",
+    "step": "lists the household by name under Who’s coming, and shows no date of birth",
     "ok": true
   },
   {
@@ -646,7 +646,7 @@
     "screen": "Plan",
     "step": "summarises the day in the parent’s terms",
     "ok": true,
-    "message": "Your Saturday plan"
+    "message": "Your Friday plan"
   },
   {
     "viewport": "390x844",
@@ -712,7 +712,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good morning, Sarah What shall we do today? S Search places and activities Select your pla"
+    "message": "Good morning, Sarah Picked for Mia and Leo today S Search places and activities Best for y"
   },
   {
     "viewport": "393x852",
@@ -785,7 +785,7 @@
     "screen": "Venue Detail",
     "step": "Create a plan sits whole on screen and clear of the home indicator once reached",
     "ok": true,
-    "message": "top 758, bottom 816, indicator starts at 852"
+    "message": "top 397, bottom 455, indicator starts at 852"
   },
   {
     "viewport": "393x852",
@@ -944,7 +944,7 @@
   {
     "viewport": "393x852",
     "screen": "Create a Plan",
-    "step": "summarises the household by count, never by name",
+    "step": "lists the household by name under Who’s coming, and shows no date of birth",
     "ok": true
   },
   {
@@ -1000,7 +1000,7 @@
     "screen": "Plan",
     "step": "summarises the day in the parent’s terms",
     "ok": true,
-    "message": "Your Saturday plan"
+    "message": "Your Friday plan"
   },
   {
     "viewport": "393x852",
@@ -1066,7 +1066,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good morning, Sarah What shall we do today? S Search places and activities Select your pla"
+    "message": "Good morning, Sarah Picked for Mia and Leo today S Search places and activities Best for y"
   },
   {
     "viewport": "430x932",
@@ -1139,7 +1139,7 @@
     "screen": "Venue Detail",
     "step": "Create a plan sits whole on screen and clear of the home indicator once reached",
     "ok": true,
-    "message": "top 838, bottom 896, indicator starts at 932"
+    "message": "top 437, bottom 495, indicator starts at 932"
   },
   {
     "viewport": "430x932",
@@ -1298,7 +1298,7 @@
   {
     "viewport": "430x932",
     "screen": "Create a Plan",
-    "step": "summarises the household by count, never by name",
+    "step": "lists the household by name under Who’s coming, and shows no date of birth",
     "ok": true
   },
   {
@@ -1354,7 +1354,7 @@
     "screen": "Plan",
     "step": "summarises the day in the parent’s terms",
     "ok": true,
-    "message": "Your Saturday plan"
+    "message": "Your Friday plan"
   },
   {
     "viewport": "430x932",
@@ -1420,7 +1420,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good morning, Sarah What shall we do today? S Search places and activities Select your pla"
+    "message": "Good morning, Sarah Picked for Mia and Leo today S Search places and activities Best for y"
   },
   {
     "viewport": "393x852-insets",
@@ -1493,7 +1493,7 @@
     "screen": "Venue Detail",
     "step": "Create a plan sits whole on screen and clear of the home indicator once reached",
     "ok": true,
-    "message": "top 724, bottom 782, indicator starts at 818"
+    "message": "top 397, bottom 455, indicator starts at 818"
   },
   {
     "viewport": "393x852-insets",
@@ -1652,7 +1652,7 @@
   {
     "viewport": "393x852-insets",
     "screen": "Create a Plan",
-    "step": "summarises the household by count, never by name",
+    "step": "lists the household by name under Who’s coming, and shows no date of birth",
     "ok": true
   },
   {
@@ -1708,7 +1708,7 @@
     "screen": "Plan",
     "step": "summarises the day in the parent’s terms",
     "ok": true,
-    "message": "Your Saturday plan"
+    "message": "Your Friday plan"
   },
   {
     "viewport": "393x852-insets",
@@ -1870,7 +1870,7 @@
     "screen": "/plan link",
     "step": "a reload rebuilds the day rather than stranding it",
     "ok": true,
-    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 09:30–13:51  Day plan Who’s coming Travel Your Saturday plan Photo: A. Fixture Stop 1 10:25 Confirmed Facts Gard"
+    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 08:35–12:56  Day plan Who’s coming Travel Your Saturday plan Photo: A. Fixture Stop 1 09:30 Confirmed Facts Gard"
   },
   {
     "viewport": "lunch",
@@ -1883,7 +1883,7 @@
     "screen": "Plan",
     "step": "candidates found: the day contains the restaurant",
     "ok": true,
-    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 09:30–13:51  Day plan Who’s coming Travel Your Saturday plan Photo: A. Fixture Stop 1 10:25 Confirmed Facts Gardens  ARRIVE 10:25 TIME THERE 1h 30m LEA"
+    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 08:35–12:56  Day plan Who’s coming Travel Your Saturday plan Photo: A. Fixture Stop 1 09:30 Confirmed Facts Gardens  ARRIVE 09:30 TIME THERE 1h 30m LEA"
   },
   {
     "viewport": "lunch",
@@ -1902,7 +1902,7 @@
     "screen": "Plan",
     "step": "nothing mapped nearby: the day omits lunch and says nothing about our lookup",
     "ok": true,
-    "message": " A day at No Photograph Park Sat 3 Oct · 09:30–12:50  Day plan Who’s coming Travel Your Saturday plan Stop 1 10:25 No Photograph Park  ARRIVE 10:25 TIME THERE 1h 30m LEAVE 11:55 OPENING Open 12:50 "
+    "message": " A day at No Photograph Park Sat 3 Oct · 08:35–11:55  Day plan Who’s coming Travel Your Saturday plan Stop 1 09:30 No Photograph Park  ARRIVE 09:30 TIME THERE 1h 30m LEAVE 11:00 OPENING Open 11:55 "
   },
   {
     "viewport": "lunch",
@@ -1921,7 +1921,7 @@
     "screen": "Plan",
     "step": "lookup failed: the day omits lunch and says the failure is ours",
     "ok": true,
-    "message": " A day at The Royal Borough Of Something Extremely Long Memorial Gardens And Family Activity Centre Sat 3 Oct · 09:30–12:50  Day plan Who’s coming Travel Your Saturday plan Photo: A. Fixture Stop 1 "
+    "message": " A day at The Royal Borough Of Something Extremely Long Memorial Gardens And Family Activity Centre Sat 3 Oct · 08:35–11:55  Day plan Who’s coming Travel Your Saturday plan Photo: A. Fixture Stop 1 "
   },
   {
     "viewport": "lunch",

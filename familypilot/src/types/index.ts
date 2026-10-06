@@ -229,10 +229,16 @@ export interface RecommendationSection {
  */
 export type ChildMobility = 'walks' | 'buggy' | 'carrier' | 'mobility-aid';
 
+/** How another adult in the household relates to the person using the app. Inclusive, optional wording. */
+export type AdultRelationship = 'partner' | 'co-parent' | 'other';
+
 export interface FamilyMember {
   id: string;
   name: string;
+  /** `parent` is any adult in the household (the name is historical): a partner, co-parent or another adult. */
   role: 'parent' | 'child';
+  /** Adults only: how this adult relates to the person who set the app up. Unset means the person themself. */
+  relationship?: AdultRelationship;
   dateOfBirth: string;
   /**
    * True only when a parent actually entered `dateOfBirth`. A profile saved before dates of birth were
@@ -268,6 +274,11 @@ export interface FamilyRoutine {
 export interface FamilyProfile {
   id: string;
   parentName: string;
+  /**
+   * Optional family name ("Shaw"), device-only, used for the household's own heading ("Shaw family"). Never
+   * uploaded: a connection sees only a first-name label.
+   */
+  familyName?: string;
   members: FamilyMember[];
   homeLocation: string;
   /** Resolved centroid for the entered town/postcode. Stored locally with the profile. */

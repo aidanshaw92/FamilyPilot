@@ -3,12 +3,17 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { BackButton } from '@/src/components/ui/BackButton';
-import { Text } from '@/src/components/ui';
+import { Chip, Text } from '@/src/components/ui';
 import { ArrowCta } from '@/src/components/ui/ArrowCta';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { PLAN_SECTION_CONTROL_PADDING, planSectionLabels } from '@/src/utils/plan-section-labels';
 import { safeFooterPadding } from '@/src/utils/safe-area';
-import { PlanSectionView, PlanViewModel } from '@/src/services/planning/plan-view-model';
+import {
+  PlanAdviceOptionView,
+  PlanAdviceView,
+  PlanSectionView,
+  PlanViewModel,
+} from '@/src/services/planning/plan-view-model';
 
 import { PlanStopCard } from './PlanStopCard';
 
@@ -34,6 +39,10 @@ export interface PlanScreenViewProps {
   notices?: string[];
   onBack: () => void;
   onSave: () => void;
+  /** Applies one of the options under a piece of routine advice: the plan builds again with that change. */
+  onApplyOption?: (option: PlanAdviceOptionView) => void;
+  /** Adds lunch to the day, or takes it out, and builds the plan again. */
+  onToggleLunch?: () => void;
   saved?: boolean;
   /** Insets, so the saved-plan action clears the home indicator on every device. */
   bottomInset?: number;
@@ -45,11 +54,14 @@ export function PlanScreenView({
   notices = [],
   onBack,
   onSave,
+  onApplyOption,
+  onToggleLunch,
   saved = false,
   bottomInset = 0,
   topInset = 0,
 }: PlanScreenViewProps) {
   const [section, setSection] = useState<PlanSectionView['id']>('day');
+  const routinesVisible = Boolean(view.routines && view.routines.headline);
   const { width } = useWindowDimensions();
   const sectionLabels = planSectionLabels(width, view.sections);
   // The approved design opens the first stop and leaves the rest closed.
@@ -136,13 +148,53 @@ export function PlanScreenView({
           <View>
             {/* Node 74:3: one quiet line, only when the planner recorded a routine the day is home
                 before. Never an alert, never invented from the clock alone. */}
-            {view.insight ? (
+            {view.insight && !routinesVisible ? (
               <View style={styles.insight} testID="plan-insight">
                 <Ionicons name="checkmark" size={14} color={colors.secondary[500]} />
                 <Text style={styles.insightText} numberOfLines={1}>
                   {view.insight}
                 </Text>
               </View>
+            ) : null}
+            {/* Unconfirmed must-haves: prominent and unresolved, never a fact either way. The day is built regardless. */}
+            {view.needsChecking.length ? (
+              <View style={styles.checkFirst} testID="plan-needs-checking">
+                <View style={styles.checkFirstHead}>
+                  <Ionicons name="alert-circle" size={18} color={colors.warning[600]} />
+                  <Text style={styles.checkFirstTitle}>Needs checking before you go</Text>
+                </View>
+                {view.needsChecking.map((line) => (
+                  <Text key={line} variant="bodySmall">
+                    {line}
+                  </Text>
+                ))}
+              </View>
+            ) : null}
+            {view.routines?.visitNote ? (
+              <Text variant="caption" color={colors.text.secondary} style={styles.visitNote} testID="plan-visit-note">
+                {view.routines.visitNote}
+              </Text>
+            ) : null}
+            {routinesVisible && view.routines ? (
+              <Block title="Around your routines" testID="plan-routines">
+                <Text variant="label">{view.routines.headline}</Text>
+                {view.routines.advice.map((item) => (
+                  <AdviceItem key={item.id} item={item} onApply={onApplyOption} />
+                ))}
+                {view.routines.homeBefore.map((line) => (
+                  <View key={line} style={styles.goodNews}>
+                    <Ionicons name="checkmark" size={14} color={colors.secondary[500]} />
+                    <Text variant="bodySmall" style={styles.goodNewsText}>
+                      {line}
+                    </Text>
+                  </View>
+                ))}
+                {view.routines.together.map((line) => (
+                  <Text key={line} variant="bodySmall" color={colors.text.secondary}>
+                    {line}
+                  </Text>
+                ))}
+              </Block>
             ) : null}
             {notices.length ? (
               <Block title="Before you go">
@@ -158,6 +210,23 @@ export function PlanScreenView({
                 <PlanStopCard stop={stop} expanded={expanded.includes(stop.index)} onToggle={() => toggle(stop.index)} />
               </View>
             ))}
+
+            {/* Food belongs to the plan: add a lunch (and the timings are rechecked) or take it out. */}
+            {onToggleLunch && view.lunch.available ? (
+              <Pressable
+                onPress={onToggleLunch}
+                accessibilityRole="button"
+                accessibilityLabel={view.lunch.included ? 'Take lunch out of the plan' : 'Add a 45-minute lunch and recheck the timings'}
+                style={styles.lunchLink}
+                hitSlop={8}
+                testID="plan-toggle-lunch"
+              >
+                <Ionicons name={view.lunch.included ? 'remove-circle-outline' : 'add-circle-outline'} size={18} color={colors.action} />
+                <Text style={styles.lunchLinkText}>
+                  {view.lunch.included ? 'Take lunch out' : 'Add a 45-minute lunch and recheck the timings'}
+                </Text>
+              </Pressable>
+            ) : null}
 
             {/* Node 73:33: the terminus, with the time the planner says the family is home. */}
             {view.party[0] ? (
@@ -257,9 +326,33 @@ export function PlanScreenView({
   );
 }
 
-function Block({ title, children }: { title: string; children: React.ReactNode }) {
+function AdviceItem({ item, onApply }: { item: PlanAdviceView; onApply?: (option: PlanAdviceOptionView) => void }) {
   return (
-    <View style={styles.block}>
+    <View style={styles.advice} testID={`plan-advice-${item.severity}`}>
+      <View style={styles.adviceHead}>
+        <View style={[styles.adviceDot, item.severity === 'soft' ? styles.adviceDotSoft : styles.adviceDotInfo]} />
+        <View style={styles.adviceText}>
+          <Text style={styles.adviceTitle}>{item.title}</Text>
+          <Text variant="bodySmall" color={colors.text.secondary}>
+            It {item.where}.
+          </Text>
+        </View>
+      </View>
+      <Text variant="bodySmall">{item.detail}</Text>
+      {onApply && item.options.length ? (
+        <View style={styles.adviceOptions}>
+          {item.options.map((option) => (
+            <Chip key={option.key} size="small" label={option.label} onPress={() => onApply(option)} />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function Block({ title, children, testID }: { title: string; children: React.ReactNode; testID?: string }) {
+  return (
+    <View style={styles.block} testID={testID}>
       <Text variant="eyebrow" style={styles.blockTitle}>
         {title.toUpperCase()}
       </Text>
@@ -339,6 +432,30 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   insightText: { flex: 1, fontFamily: 'Inter_500Medium', fontSize: 13, lineHeight: 16, color: colors.text.secondary },
+  visitNote: { marginBottom: spacing.md },
+  checkFirst: {
+    backgroundColor: colors.warning[50],
+    borderWidth: 1,
+    borderColor: colors.warning[100],
+    borderRadius: radius['2xl'],
+    padding: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  checkFirstHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  checkFirstTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 15, lineHeight: 20, color: colors.ink },
+  advice: { gap: spacing.xs, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
+  adviceHead: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
+  adviceDot: { width: 8, height: 8, borderRadius: 4, marginTop: 6 },
+  adviceDotSoft: { backgroundColor: colors.warning[500] },
+  adviceDotInfo: { backgroundColor: colors.text.tertiary },
+  adviceText: { flex: 1, gap: 2 },
+  adviceTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 15, lineHeight: 20, color: colors.ink },
+  adviceOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: spacing.xs },
+  goodNews: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  goodNewsText: { flex: 1 },
+  lunchLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 44, paddingVertical: spacing.sm },
+  lunchLinkText: { flex: 1, fontFamily: 'Inter_600SemiBold', fontSize: 14, lineHeight: 18, color: colors.action },
   headHome: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, height: 44, paddingLeft: 42 - spacing.screenPadding },
   terminus: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.action },
   headHomeTime: { fontFamily: 'Inter_600SemiBold', fontSize: 13, lineHeight: 16, color: colors.ink },

@@ -81,6 +81,22 @@ The one place the full postcode necessarily travels is `/api/planning/location`,
 
 `scripts/verify-account-qa.mjs` (QA of: new account, email verification, returning sign-in, wrong password, sign-out, signed-out deep link, expired invitation, expired row shown as expired with Remove, live row with Cancel, cancelled link dead at once, accepted invitation, reused invitation, a third person opening a used link, declined ("Not now", link stays usable), an existing connected person, Add another family; plus an inspection of every request body sent to the backend: no child name, no date of birth, no full postcode stored or shared, no `members`/`routines`/profile, children as ages only) passes in full.
 
+## Connected families after the coherence pass
+
+* **One shared model.** `useConnectedFamilies` feeds the Profile (Your family, Connected families), Who's coming and Meet halfway: a family connected on
+  the Profile is the same family offered in a plan. A family can also be added by first name and postcode, kept on this phone only
+  (no children, no routines, no travel limit are invented: the plan says it only knows where they set off from).
+* **Routines now carry their kind** (nap or feed) when the person ticks "share when naps and feeds usually happen", so advice can be
+  accurate ("the nap for Hannah's family"). Still opt-in, default off, never a name or an id (the server rewrites ids to `busy-n`). A
+  connection made before this shares only "Home time"; it is treated as a *home routine*, never called a nap it may not be.
+* **Older connections are updated in place, never remade.** Profile > Connected families > **What I share** > **Update what I share**
+  is an explicit consent panel (nothing changes until the tap). Server: `POST /api/planning/connections {action:'update', id, family}`
+  rewrites only the caller's own side of the existing row through the same `safeSnapshot` allow-list, keeping the row, its id, the other
+  family's snapshot and the relationship. `GET` returns `mySharing` (`none` / `legacy` / `current`) for the caller's own side only.
+  Until updated, the old value is read conservatively everywhere (advice, Meet halfway). Pinned by `connection-sharing-update.test.ts` and
+  `verify-account-journey.mjs` (same connection id, same relationship, kinds replace "Home time", nothing changes before the tap).
+* Disconnecting says plainly that what was shared cannot be recalled from the other family's phone.
+
 ## Not done, and why
 
 * Social sign-in (Apple, Google): adds a vendor and App Store rules; the email path is complete without it.

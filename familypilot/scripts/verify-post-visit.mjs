@@ -54,6 +54,8 @@ async function signUpWithBuggyToddler(page, email) {
   await page.getByPlaceholder('e.g. Sarah').fill('Sam');
   await page.getByPlaceholder('e.g. Mill Hill or NW7 2AB').fill('WD23 1AA');
   await next(page).click(); await settle(page, 1200);
+  // The household step (optional: "just you" continues as it is).
+  await next(page).click(); await settle(page, 1000);
   await page.getByPlaceholder('e.g. Mia').nth(0).fill('Theo');
   await page.getByLabel(/day of birth/i).nth(0).fill('15');
   await page.getByLabel(/month of birth/i).nth(0).fill('06');

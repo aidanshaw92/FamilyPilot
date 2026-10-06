@@ -39,6 +39,8 @@ import {
   editChildProblem,
 } from '@/src/utils/profile-edit-draft';
 import { createParentMember, formatBudgetTier } from '@/src/utils/profile-defaults';
+import { ADULT_RELATIONSHIP_LABEL, createAdultMember } from '@/src/utils/household';
+import { AdultRelationship } from '@/src/types';
 import { feedNoun } from '@/src/utils/routine-schedule';
 
 const BUDGET_OPTIONS: { id: FamilyProfile['budgetTier']; label: string }[] = [
@@ -90,6 +92,9 @@ export default function EditProfileScreen() {
   const updateProfile = useUpdateFamilyProfile();
 
   const [parentName, setParentName] = useState('');
+  const [familyName, setFamilyName] = useState('');
+  /** The other adults in the household: kept, edited and saved with their own ids so nothing downstream loses them. */
+  const [adults, setAdults] = useState<Array<{ id: string; name: string; relationship: AdultRelationship }>>([]);
   const [homeLocation, setHomeLocation] = useState('');
   const [children, setChildren] = useState<EditChild[]>([]);
   const [unowned, setUnowned] = useState<FamilyRoutine[]>([]);
@@ -107,6 +112,12 @@ export default function EditProfileScreen() {
     if (!profile) return;
 
     setParentName(profile.parentName);
+    setFamilyName(profile.familyName ?? '');
+    setAdults(
+      profile.members
+        .filter((m) => m.role === 'parent' && m.relationship)
+        .map((m) => ({ id: m.id, name: m.name, relationship: m.relationship as AdultRelationship })),
+    );
     setHomeLocation(profile.homeLocation);
     setMaxDriveMinutes(profile.maxDriveMinutes);
     setBudgetTier(profile.budgetTier);
@@ -133,6 +144,7 @@ export default function EditProfileScreen() {
 
     if (!parentName.trim()) nextErrors.parentName = 'Please enter your first name';
     if (!homeLocation.trim()) nextErrors.homeLocation = 'Please enter your home area';
+    if (adults.some((adult) => !adult.name.trim())) nextErrors.adults = 'Add a name for each adult, or remove them';
 
     if (children.length === 0) {
       nextErrors.children = 'Add at least one child';
@@ -176,11 +188,22 @@ export default function EditProfileScreen() {
     }
 
     const parentMember =
-      profile.members.find((m) => m.role === 'parent') ?? createParentMember(parentName);
+      profile.members.find((m) => m.role === 'parent' && !m.relationship) ??
+      profile.members.find((m) => m.role === 'parent') ??
+      createParentMember(parentName);
+    const otherAdults = adults
+      .filter((adult) => adult.name.trim())
+      .map((adult) => {
+        const existing = profile.members.find((m) => m.id === adult.id);
+        return existing
+          ? { ...existing, name: adult.name.trim(), relationship: adult.relationship }
+          : { ...createAdultMember(adult.name, adult.relationship), id: adult.id };
+      });
     const applied = applyEditedChildren(profile, children, unowned);
 
     await updateProfile.mutateAsync({
       parentName: parentName.trim(),
+      familyName: familyName.trim() || undefined,
       homeLocation: homeLocation.trim(),
       homeLatitude,
       homeLongitude,
@@ -195,7 +218,7 @@ export default function EditProfileScreen() {
         .filter(Boolean),
       routines: applied.routines,
       mustHaveFacilities,
-      members: [{ ...parentMember, name: parentName.trim() }, ...applied.members],
+      members: [{ ...parentMember, name: parentName.trim() }, ...otherAdults, ...applied.members],
     });
 
     handleBack();
@@ -290,6 +313,63 @@ export default function EditProfileScreen() {
           hint="Used to calculate real travel and weather from your general area, not your full address"
           error={errors.homeLocation}
         />
+
+        <TextField
+          label="Family name (optional)"
+          value={familyName}
+          onChangeText={setFamilyName}
+          autoCapitalize="words"
+          hint="Shown as “Shaw family” on your own screens. Never shared."
+        />
+
+        <Text variant="heading3" style={styles.sectionTitle}>
+          Other adults in your household
+        </Text>
+        {adults.map((adult, index) => (
+          <View key={adult.id} style={styles.adultCard} testID={`edit-adult-${index}`}>
+            <TextField
+              label="First name"
+              value={adult.name}
+              onChangeText={(name) => setAdults((prev) => prev.map((a) => (a.id === adult.id ? { ...a, name } : a)))}
+              autoCapitalize="words"
+            />
+            <View style={styles.adultRow}>
+              {(Object.keys(ADULT_RELATIONSHIP_LABEL) as AdultRelationship[]).map((relationship) => (
+                <Chip
+                  key={relationship}
+                  size="small"
+                  label={ADULT_RELATIONSHIP_LABEL[relationship]}
+                  active={adult.relationship === relationship}
+                  onPress={() => setAdults((prev) => prev.map((a) => (a.id === adult.id ? { ...a, relationship } : a)))}
+                />
+              ))}
+              <Pressable
+                onPress={() => setAdults((prev) => prev.filter((a) => a.id !== adult.id))}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${adult.name.trim() || 'this adult'}`}
+                hitSlop={12}
+                style={styles.adultRemove}
+              >
+                <Text variant="caption" color={colors.error[500]}>
+                  Remove
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        ))}
+        {errors.adults ? (
+          <Text variant="caption" color={colors.error[500]}>
+            {errors.adults}
+          </Text>
+        ) : null}
+        <Pressable
+          onPress={() => setAdults((prev) => [...prev, { id: createAdultMember('x', 'other').id, name: '', relationship: prev.length === 0 ? 'partner' : 'other' }])}
+          accessibilityRole="button"
+          style={styles.addAdult}
+          testID="edit-add-adult"
+        >
+          <Text variant="link">+ Add another adult</Text>
+        </Pressable>
 
         <Text variant="heading3" style={styles.sectionTitle}>
           Children
@@ -519,6 +599,10 @@ export default function EditProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  adultCard: { marginBottom: spacing.md, padding: spacing.lg, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderLight },
+  adultRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
+  adultRemove: { marginLeft: 'auto', minHeight: 44, justifyContent: 'center' },
+  addAdult: { minHeight: 44, justifyContent: 'center', marginBottom: spacing.sm },
   container: {
     flex: 1,
     backgroundColor: colors.background,

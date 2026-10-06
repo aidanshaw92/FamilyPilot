@@ -25,6 +25,7 @@ import {
 } from '@/src/types';
 import { withCompletion } from '@/src/utils/profile-defaults';
 import { compareTravelMinutes } from '@/src/utils/travel-time';
+import { BetweenHome } from '@/src/services/places/between-client';
 import { buildHomeRecommendations, personaliseVenue, personaliseVenues } from '@/src/utils/personalise-venues';
 import { fetchParentObservations } from '@/src/services/planning/parent-observation-fetch';
 import { fetchLiveWeather, fetchLiveWeatherSafe } from '@/src/services/context/live-context';
@@ -106,6 +107,20 @@ export const venueService = {
       .filter((venue) => isVisitableVenue(venue))
       .map((venue) => personaliseVenue(venue, profile, weather))
       .sort((a, b) => b.familyScore.score - a.familyScore.score || compareTravelMinutes(a.driveMinutes, b.driveMinutes));
+  },
+
+  /**
+   * Places for Meet Halfway, chosen by where BOTH families are rather than by what Home loaded. They are personalised for
+   * the signed-in family (so its Family Fit is real) and nothing else is applied: whether a place suits the other
+   * family is decided by the engine, from what they shared.
+   */
+  async getBetween(a: BetweenHome, b: BetweenHome): Promise<Venue[]> {
+    const profile = getProfile();
+    const [venues, weather] = await Promise.all([
+      getPlacesRepository().searchBetween(profile, a, b),
+      fetchLiveWeatherSafe(profile),
+    ]);
+    return venues.filter((venue) => isVisitableVenue(venue)).map((venue) => personaliseVenue(venue, profile, weather));
   },
 
   async getById(id: string): Promise<VenueDetail | null> {

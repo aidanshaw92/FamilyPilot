@@ -60,7 +60,7 @@ export function PlanningAccount(){
     <Text variant="heading3">Connect a friend’s family</Text>
     <Text variant="bodySmall" color={colors.text.secondary}>Creating or accepting an invitation shares your family label, approximate area (rounded to about 1km), children’s ages and venue preferences with that family. It does not share children’s names or addresses. Invitation links expire after seven days and can be used once.</Text>
     <View style={s.row}><Switch accessibilityLabel="Also share home busy times" value={shareAvailability} onValueChange={setShareAvailability}/><Text>Also share home busy times</Text></View>
-    <Text variant="bodySmall" color={colors.text.secondary}>Optional: shares the start and length of home routines as “Home time”, without the child’s name or whether it is a nap or feed. This lets the planner respect both families’ availability.</Text>
+    <Text variant="bodySmall" color={colors.text.secondary}>Optional: shares when naps and feeds usually happen at home, and how long they last, without any child’s name. This lets a plan work around both families’ routines.</Text>
     {!mine?<View style={styles.noticeBox}><Text variant="bodySmall">Add your own family under Families &amp; routines first.</Text></View>:null}
     <Button label="Create an invitation link" disabled={busy||!mine} onPress={()=>void run(async()=>{const result=await api('POST',{action:'create',family:{...mine,shareAvailability}});setInvite(result.code);await refresh();})}/>
     {invite?<InviteLinkCard url={buildInviteUrl(invite,inviteOrigin())} relationship="friend"/>:null}

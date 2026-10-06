@@ -45,6 +45,7 @@ import { FilterSheet } from '@/src/components/explore/FilterSheet';
 import { applyAdvancedFilters } from '@/src/utils/filter-venues';
 import { FOOD_FILTER_IDS, foodIsUnknown } from '@/src/utils/food-nearby';
 import { Venue } from '@/src/types';
+import { joinNames } from '@/src/utils/child-fit';
 import { filterByPlanCategory, planCategoriesFor } from '@/src/utils/plan-categories';
 
 /**
@@ -85,6 +86,13 @@ export default function HomeScreen() {
   const { data: venues, isLoading, isError, refetch } = useNearbyVenues();
 
   const firstName = profile?.parentName?.split(' ')[0] ?? 'there';
+  // Home is the curated answer, so it says who the picks are for: the children's names when there are some, or the
+  // family. Never a guess: no children added reads "your family".
+  const pickedFor = useMemo(() => {
+    const kids = (profile?.members ?? []).filter((m) => m.role === 'child').map((m) => m.name.trim());
+    const named = joinNames(kids);
+    return named && named.length <= 30 ? `Picked for ${named} today` : 'Picked for your family today';
+  }, [profile?.members]);
 
   const ranked = useMemo(
     () => [...(venues ?? [])].sort((a, b) => b.familyScore.score - a.familyScore.score),
@@ -225,8 +233,8 @@ export default function HomeScreen() {
                 {greetingText}
               </Text>
               {savings.subtitle === 0 ? (
-                <Text variant="bodySmall" color={colors.text.secondary} style={styles.greetingSub}>
-                  What shall we do today?
+                <Text variant="bodySmall" color={colors.text.secondary} style={styles.greetingSub} testID="home-picked-for">
+                  {pickedFor}
                 </Text>
               ) : null}
             </View>
@@ -254,7 +262,7 @@ export default function HomeScreen() {
           {savings.title === 0 ? (
             <View style={styles.sectionTitleRow}>
               <Text variant="heading2" style={styles.sectionTitle}>
-                Select your plan
+                Best for your family today
               </Text>
             </View>
           ) : (

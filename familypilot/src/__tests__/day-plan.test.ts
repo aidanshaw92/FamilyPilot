@@ -306,22 +306,16 @@ describe('failure fidelity', () => {
     if (nearest?.reason === 'venue-closes-during-visit') expect(nearest.closesAt).toBe('18:00');
   });
 
-  it('preserves the family and routine behind a routine conflict', async () => {
+  it('does not fail a day because a routine overlaps it, and carries the overlap through', async () => {
     const result = await failOn({
       families: [
         withRoutines({ id: 'nap', label: 'Nap', kind: 'nap', time: '09:00', durationMinutes: 240, atHome: true }),
       ],
       options: { ...request().options, returnBy: '15:00' },
     });
-    expect(result.ok).toBe(false);
-    if (result.ok || result.failure.kind !== 'sequencing-failed') return;
-    const failure = result.failure.failure;
-    const nearest = failure.reason === 'no-feasible-sequence' ? failure.nearest : failure;
-    expect(nearest?.reason).toBe('routine-conflict');
-    if (nearest?.reason === 'routine-conflict') {
-      expect(nearest.routineLabel).toBe('Nap');
-      expect(nearest.familyId).toBe('a');
-    }
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.plan.itinerary.routineInsights.some((i) => i.routineId === 'nap' && i.familyId === 'a')).toBe(true);
   });
 
   it('preserves both times when the return deadline cannot be met', async () => {
@@ -695,7 +689,7 @@ describe('a stop sourced from the venue the detail screen is showing', () => {
     if (result.ok) expect(result.plan.itinerary.stops[0].placeId).toBe('fp-google-detail');
   });
 
-  it('still fails closed when the facts are genuinely absent, rather than assuming a facility', async () => {
+  it('plans the day, and says what needs checking, when the facts are genuinely absent', async () => {
     const result = await generateDayPlan(
       request({
         anchor: resolvedStop(
@@ -710,17 +704,16 @@ describe('a stop sourced from the venue the detail screen is showing', () => {
       deps({ buildMatrix: matrixFor('fp-google-detail') }),
     );
 
-    expect(result.ok).toBe(false);
-    if (result.ok || result.failure.kind !== 'sequencing-failed') throw new Error('expected a sequencing failure');
-    const failure = result.failure.failure;
-    expect(failure.reason).toBe('requirement-unmet');
-    if (failure.reason !== 'requirement-unmet') return;
-    // The day scheduled perfectly; it is suitability that failed, and nobody has confirmed the
-    // toilets rather than the venue having none.
-    expect(failure.placeId).toBe('fp-google-detail');
-    expect(failure.familyId).toBe('a');
-    expect(failure.unmet).toContainEqual({ field: 'familyFacilities.toilets', outcome: 'unknown' });
-    expect(failure.unmet.every((u) => u.outcome !== 'unsuitable')).toBe(true);
+    // An unconfirmed must-have is a prominent warning, never a blocker: nobody has said the venue LACKS toilets.
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const { unresolvedMustHaves } = result.plan.itinerary;
+    expect(unresolvedMustHaves).toHaveLength(1);
+    expect(unresolvedMustHaves[0]).toMatchObject({
+      familyId: 'a',
+      placeId: 'fp-google-detail',
+      field: 'familyFacilities.toilets',
+    });
   });
 
   it('reports a requirement the venue genuinely fails as a failure, not as an unknown', async () => {

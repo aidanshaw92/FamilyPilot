@@ -298,8 +298,9 @@ describe('opening hours decide slots without inventing certainty', () => {
 });
 
 describe('the failures a person could act on', () => {
-  it('moves the day after a morning nap rather than abandoning it', () => {
-    // A four hour nap does not make the day impossible, it makes it an afternoon.
+  it('keeps the day when a morning nap overlaps it, and reports the overlap instead of refusing', () => {
+    // A routine clash is advice, not an error: the plan is still built, at the earliest time that works,
+    // and the overlap is carried for routine-advice.ts to turn into options.
     const result = sequenceDay(
       [gallery, lunch],
       [withRoutines({ id: 'nap', label: 'Nap', kind: 'nap', time: '09:00', durationMinutes: 240, atHome: true })],
@@ -309,26 +310,106 @@ describe('the failures a person could act on', () => {
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.itinerary.families[0].depart).toBeGreaterThanOrEqual(780);
+    const insights = result.itinerary.routineInsights.filter((i) => i.routineId === 'nap');
+    expect(insights.length).toBeGreaterThan(0);
+    expect(insights.every((i) => i.kind === 'nap' && i.familyId === 'a' && i.overlapMinutes > 0)).toBe(true);
   });
 
-  it('names the routine when one genuinely leaves no room', () => {
+  it('still builds the day when the nap leaves no room before the deadline, reporting the overlap', () => {
     const result = sequenceDay(
       [gallery, lunch],
       [withRoutines({ id: 'nap', label: 'Nap', kind: 'nap', time: '09:00', durationMinutes: 240, atHome: true })],
       matrix(),
-      // Closing the day at 15:00 removes the afternoon the nap pushed it into.
       { ...options, returnBy: '15:00' },
       now,
     );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.itinerary.routineInsights.some((i) => i.routineId === 'nap')).toBe(true);
+  });
+
+  it('never produces a routine-conflict failure', () => {
+    const failures = [
+      { ...options, returnBy: '15:00' },
+      { ...options, returnBy: '11:30' },
+    ].map((opts) =>
+      sequenceDay(
+        [gallery, lunch],
+        [withRoutines({ id: 'feed', label: 'Feed', kind: 'feed', time: '10:30', durationMinutes: 30, atHome: false })],
+        matrix(),
+        opts,
+        now,
+      ),
+    );
+    for (const result of failures) {
+      if (result.ok) continue;
+      const nearest = result.failure.reason === 'no-feasible-sequence' ? result.failure.nearest : result.failure;
+      expect(nearest?.reason).not.toBe('routine-conflict');
+    }
+  });
+
+  it('reports the routine that falls on each part of the outing', () => {
+    const result = sequenceDay(
+      [{ ...lunch, anchor: true }],
+      [withRoutines({ id: 'feed', label: 'Feed', kind: 'feed', time: '10:10', durationMinutes: 20, atHome: false })],
+      matrix(),
+      { ...options, arriveAt: '10:00' },
+      now,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const [insight] = result.itinerary.routineInsights;
+    expect(insight.phase).toBe('visit');
+    expect(insight.stopIndex).toBe(0);
+    expect(insight.overlapMinutes).toBe(20);
+  });
+
+  it('offers the first arrival that really works, not just the first one travel allows', () => {
+    // Whitechapel Gallery opens at 11:00. Leaving is allowed from 09:00, so 09:35 is the first arrival travel permits, and
+    // it is no use at a place that is shut: the suggestion has to be 11:00.
+    const soon = sequenceDay([gallery], [family], matrix(), { ...options, arriveAt: '09:05' }, now);
+    expect(soon.ok).toBe(false);
+    if (soon.ok) return;
+    const nearest = soon.failure.reason === 'no-feasible-sequence' ? soon.failure.nearest : soon.failure;
+    expect(nearest?.reason).toBe('start-too-soon');
+    if (nearest?.reason === 'start-too-soon') expect(nearest.earliestArrival).toBe(660);
+  });
+
+  it('says what is really in the way when nothing later works either', () => {
+    // A Monday: the gallery is shut all day, so "start a bit later" would be a lie.
+    const result = sequenceDay([gallery], [family], matrix(), { ...options, date: MONDAY, arriveAt: '09:05' }, now);
     expect(result.ok).toBe(false);
     if (result.ok) return;
-    expect(result.failure.reason).toBe('no-feasible-sequence');
-    if (result.failure.reason !== 'no-feasible-sequence') return;
-    expect(result.failure.nearest?.reason).toBe('routine-conflict');
-    if (result.failure.nearest?.reason !== 'routine-conflict') return;
-    expect(result.failure.nearest.routineLabel).toBe('Nap');
-    expect(result.failure.nearest.familyId).toBe('a');
+    const nearest = result.failure.reason === 'no-feasible-sequence' ? result.failure.nearest : result.failure;
+    expect(nearest?.reason).toBe('venue-closed');
+    if (nearest?.reason === 'venue-closed') expect(nearest.why).toBe('closed-that-day');
+  });
+
+  it('names the next routine once the family is home again', () => {
+    const result = sequenceDay(
+      [{ ...lunch, anchor: true }],
+      [withRoutines({ id: 'nap', label: 'Nap', kind: 'nap', time: '14:00', durationMinutes: 60, atHome: true })],
+      matrix(),
+      { ...options, arriveAt: '10:00' },
+      now,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.itinerary.routineInsights).toEqual([]);
+    expect(result.itinerary.homeAfter).toEqual([{ familyId: 'a', routineId: 'nap', kind: 'nap', start: 840 }]);
+  });
+
+  it('works to the arrival the parent chose, and offers the first one that works when it is too soon', () => {
+    const exact = sequenceDay([{ ...lunch, anchor: true }], [family], matrix(), { ...options, arriveAt: '11:00' }, now);
+    expect(exact.ok).toBe(true);
+    if (exact.ok) expect(exact.itinerary.stops[0].arrive).toBe(660);
+
+    const soon = sequenceDay([{ ...lunch, anchor: true }], [family], matrix(), { ...options, arriveAt: '07:00' }, now);
+    expect(soon.ok).toBe(false);
+    if (soon.ok) return;
+    const nearest = soon.failure.reason === 'no-feasible-sequence' ? soon.failure.nearest : soon.failure;
+    expect(nearest?.reason).toBe('start-too-soon');
+    if (nearest?.reason === 'start-too-soon') expect(nearest.earliestArrival).toBeGreaterThan(420);
   });
 
   it('reports a return time that cannot be met', () => {

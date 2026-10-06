@@ -10,6 +10,11 @@ import { isFreeSpend } from '@/src/utils/spend';
  * catalogue); "Indoor" in Explore's filter sheet read the category. A parent moving between the two screens was
  * shown different answers to the same question, and both rails offered categories that came back empty.
  *
+ * Home and Explore have DIFFERENT jobs, and the chips say so. Explore is for browsing: it carries the categories (farm,
+ * park, museum...). Home is the curated answer to "what is best for my family right now", so its rail holds only the
+ * situations a parent is actually in (indoors, outdoors, a rainy day, short on time, free, fits the nap). The two
+ * share rules and never disagree about a word; they do not offer the same list.
+ *
  * Each entry here is a name, a rule and nothing else. Both screens render from this list and filter with these
  * rules, and a category is offered only when the venues in hand can fill it (`categoriesWithInventory`).
  */
@@ -67,16 +72,23 @@ export const TAXONOMY: readonly TaxonomyEntry[] = [
     id: 'outdoor', label: 'Outdoor', kind: 'condition', home: true, explore: false,
     matches: (v) => environmentOf(v).environment === 'outdoor',
   },
-  { id: 'soft_play', label: 'Soft play', kind: 'type', matches: isCategory('soft_play'), home: true, explore: true },
-  { id: 'farm', exploreId: 'farms', label: 'Farm', exploreLabel: 'Farms', kind: 'type', matches: isCategory('farm'), home: true, explore: true },
-  { id: 'park', exploreId: 'parks', label: 'Park', exploreLabel: 'Parks', kind: 'type', matches: isCategory('park', 'beach'), home: true, explore: true },
+  { id: 'soft_play', label: 'Soft play', kind: 'type', matches: isCategory('soft_play'), home: false, explore: true },
+  { id: 'farm', exploreId: 'farms', label: 'Farm', exploreLabel: 'Farms', kind: 'type', matches: isCategory('farm'), home: false, explore: true },
+  { id: 'park', exploreId: 'parks', label: 'Park', exploreLabel: 'Parks', kind: 'type', matches: isCategory('park', 'beach'), home: false, explore: true },
   {
     id: 'activity', exploreId: 'activities', label: 'Activity', exploreLabel: 'Activities', kind: 'type',
     // Somewhere the family does something, rather than somewhere they walk around.
-    matches: isCategory('activity', 'attraction'), home: true, explore: true,
+    matches: isCategory('activity', 'attraction'), home: false, explore: true,
   },
-  { id: 'museum', exploreId: 'museums', label: 'Museum', exploreLabel: 'Museums', kind: 'type', matches: isCategory('museum'), home: true, explore: true },
-  { id: 'animals', label: 'Animals', kind: 'type', matches: isCategory('zoo', 'farm'), home: true, explore: true },
+  { id: 'museum', exploreId: 'museums', label: 'Museum', exploreLabel: 'Museums', kind: 'type', matches: isCategory('museum'), home: false, explore: true },
+  { id: 'animals', label: 'Animals', kind: 'type', matches: isCategory('zoo', 'farm'), home: false, explore: true },
+  {
+    // A lens, not a category: places where the family's own routine works today ("leave by 12:00 to be home in time for
+    // Ozzie's nap"). Offered only when enough places can say so, which needs routines in the profile and a nap or
+    // feed still ahead today, so for most families most of the time it is simply not there.
+    id: 'routine', label: 'Fits your day', kind: 'condition', home: true, explore: false,
+    matches: (v) => v.familyMatch?.reasons.some((reason) => reason.key === 'routine') ?? false,
+  },
   { id: 'free', label: 'Free', kind: 'condition', matches: (v) => isFreeSpend(v.estimatedSpend), home: true, explore: false },
   {
     id: 'rainy_day', label: 'Rainy day', kind: 'condition', home: true, explore: false,

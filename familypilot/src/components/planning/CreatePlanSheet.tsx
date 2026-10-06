@@ -30,8 +30,6 @@ export interface CreatePlanSheetProps {
   parties: PlanParty[];
   onDraftChange: (next: PlanDraft) => void;
   onCreate: (draft: PlanDraft) => void;
-  /** Shown in place of the party row's hint when there is no family described yet. */
-  onAddFamily?: () => void;
   /** Show the connected families and an invitation link under "Add another family". */
   connections?: boolean;
   /** True while a plan is being generated, so the button cannot be pressed twice. */
@@ -50,7 +48,6 @@ export function CreatePlanSheet({
   parties,
   onDraftChange,
   onCreate,
-  onAddFamily,
   connections = false,
   busy = false,
   receipt = null,
@@ -98,7 +95,6 @@ export function CreatePlanSheet({
           parties={parties}
           onDraftChange={onDraftChange}
           venueName={venueName}
-          onAddFamily={onAddFamily}
           connections={connections}
         />
         {receipt ? <ProfileReceipt text={receipt} onEdit={onEditProfile} style={styles.receipt} /> : null}

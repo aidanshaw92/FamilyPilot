@@ -42,6 +42,24 @@ export interface MatchLine {
   /** Stable key for lists and tests. */
   key: string;
   text: string;
+  /** The children this line is about, where it is about particular children. Absent for a line about the family or the place. */
+  childIds?: string[];
+  /** What the line is about in two or three words ("buggy access"), for the headline's "check buggy access for Ozzie". */
+  topic?: string;
+}
+
+/**
+ * How the place looks for ONE child, from the lines that name them. The headline is built from these, so a family with
+ * two children reads about both ("Good for Sloane, but check buggy access for Ozzie") rather than one verdict for "the
+ * family". `works` is confirmed fact; `check` is a caution or something nobody has confirmed; `concern` is a confirmed
+ * breach. `unknown` means no line is about them: nothing is claimed.
+ */
+export interface ChildLens {
+  id: string;
+  name: string;
+  state: 'works' | 'check' | 'concern' | 'unknown';
+  works: string[];
+  check: string[];
 }
 
 export interface FamilyMatchResult {
@@ -50,6 +68,14 @@ export interface FamilyMatchResult {
   headline: string;
   /** The children a confirmed fact is about. Empty when no fact is about a particular child. */
   forNames: string[];
+  /** Each child, and what is known about the place for them. Empty for a household with no children. */
+  children: ChildLens[];
+  /**
+   * In a household of two or more children, the children the place is NOT confirmed to work for while it is for at
+   * least one other (a check still open, or nothing known at all). Whenever this is non-empty, no sentence or badge may
+   * say the place is good for the family or for "Sloane" alone: the gap is said beside it. Empty for one child.
+   */
+  gapNames: string[];
   /** Confirmed reasons it works. Each is a fact, never an inference. */
   reasons: MatchLine[];
   /** Things that count against it for this family. Confirmed breaches first. */
@@ -120,6 +146,82 @@ function cap(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+/**
+ * The sentence a parent reads first, about the children rather than "the family".
+ *
+ * With one child it is "Good for Sloane today". With several it keeps them apart when the evidence does: "Could work
+ * for Sloane, but check buggy access for Ozzie". Children are named only where a line is about them; a household with
+ * a child nobody has a fact about reads "your family", never a guess.
+ */
+function headlineFor(input: {
+  verdict: MatchVerdict;
+  lens: ChildLens[];
+  children: readonly FamilyMember[];
+  forNames: string[];
+  lines: { breaches: MatchLine[]; softCautions: MatchLine[]; hardUnknowns: MatchLine[]; softUnknowns: MatchLine[] };
+  /** Why nothing is known for a child, in a clause ("no age range is recorded for this place yet"). */
+  unknownReason: string;
+}): string {
+  const { verdict, lens, children, forNames, lines, unknownReason } = input;
+  if (verdict === 'not_reviewed') return 'Family suitability not yet reviewed';
+
+  const namedWorks = lens.filter((l) => l.state === 'works' && l.name).map((l) => l.name);
+  // A claim "for Sloane" is only a claim about the family when it covers every child. With one child that is trivially
+  // so; with several, a child the place is not confirmed for has to be said, not left out.
+  const everyChildWorks = lens.length > 0 && lens.every((l) => l.state === 'works');
+  const who = forNames.length > 0 && everyChildWorks ? joinNames(forNames) : 'your family';
+  const multi = children.length > 1;
+  const gap = multi ? gapPhrase(lens, lines, unknownReason) : null;
+
+  if (verdict === 'poor') {
+    // Who the confirmed breach is about, where it is about particular children; otherwise the family.
+    const breachKids = lens.filter((l) => l.state === 'concern' && l.name);
+    const everyone = breachKids.length === 0 || breachKids.length === children.length;
+    const breachWho = !everyone && joinNames(breachKids.map((l) => l.name)) ? joinNames(breachKids.map((l) => l.name)) : 'your family';
+    return `Probably not for ${breachWho} today`;
+  }
+
+  // Several children, and the place is confirmed for some but not all of them: say who, and say what is open for the rest.
+  // This holds for good and possible alike, so "Good for Sloane" never reads as "good for the family" while Ozzie is unknown.
+  if (multi && gap && namedWorks.length > 0) {
+    // For `possible`, only when what holds it back is about particular children. If the journey, the opening hours or a
+    // must-have is what holds it back, the sentence is about the family, not about one child's baby changing.
+    const familyLevel = [...lines.softCautions, ...lines.hardUnknowns].some((line) => !line.childIds?.length);
+    if (verdict === 'possible' && !familyLevel) return `Could work for ${joinNames(namedWorks)}, but ${gap}`;
+    if (verdict === 'good' || verdict === 'excellent') return `${VERDICT_WORD[verdict]} for ${joinNames(namedWorks)}, but ${gap}`;
+  }
+
+  // Several children, nothing confirmed for any of them: the practical facts are good, and the headline says that is all.
+  if (multi && gap && namedWorks.length === 0 && (verdict === 'good' || verdict === 'excellent')) {
+    return `Looks practical, but ${gap}`;
+  }
+
+  return `${VERDICT_WORD[verdict]} for ${who} today`;
+}
+
+/**
+ * What is open for the children the place is not confirmed to work for, as the end of a sentence:
+ * "check buggy access for Ozzie", "we're less certain about Ozzie: <why>", or both. Null when every child is covered.
+ */
+function gapPhrase(lens: ChildLens[], lines: { hardUnknowns: MatchLine[]; softCautions: MatchLine[]; softUnknowns: MatchLine[] }, unknownReason: string): string | null {
+  const checkKids = lens.filter((l) => l.state === 'check' && l.name);
+  const unknownKids = lens.filter((l) => l.state === 'unknown' && l.name);
+  const parts: string[] = [];
+  if (checkKids.length > 0) {
+    const checkLines = [...lines.hardUnknowns, ...lines.softCautions, ...lines.softUnknowns].filter((line) =>
+      checkKids.some((kid) => line.childIds?.includes(kid.id)),
+    );
+    const topics = [...new Set(checkLines.map((line) => line.topic).filter((t): t is string => Boolean(t)))];
+    const what = topics.length === 1 ? topics[0] : 'a couple of things';
+    parts.push(`check ${what} for ${joinNames(checkKids.map((k) => k.name))}`);
+  }
+  if (unknownKids.length > 0) {
+    // Parent language, with the specific reason where it is known: "we're less certain about Sloane: no age range is recorded".
+    parts.push(`we’re less certain about ${joinNames(unknownKids.map((k) => k.name))}: ${unknownReason}`);
+  }
+  return parts.length ? parts.join(' and ') : null;
+}
+
 export function evaluateFamilyMatch({ venue, profile, score, weather, now = new Date(), parentObservations = {} }: FamilyMatchInput): FamilyMatchResult {
   const children = profile.members.filter((m) => m.role === 'child');
   // A contradicted fact is withdrawn: Family Fit treats it as unknown and says it needs rechecking. The claim itself is
@@ -187,7 +289,7 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
     // Door policy: the one age fact that can exclude.
     const months = children.map(childAgeMonths);
     if (evaluateAgeAdmission(facts, months) === 'prohibited') {
-      breaches.push({ key: 'age-admission', text: `Its age policy doesn’t admit ${sayNames(children, 'your children')}` });
+      breaches.push({ key: 'age-admission', text: `Its age policy doesn’t admit ${sayNames(children, 'your children')}`, childIds: children.map((c) => c.id), topic: 'its age policy' });
     }
 
     // Recommended ages, per child.
@@ -196,13 +298,21 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
       const inside = verdicts.filter((v) => v.side === 'inside');
       const line = suitsChildrenLine(facts, verdicts);
       if (line) {
-        reasons.push({ key: 'age', text: line });
+        reasons.push({ key: 'age', text: line, childIds: inside.map((v) => v.id), topic: 'age range' });
         venueFacts += 1;
         inside.forEach((v) => forIds.add(v.id));
       }
-      for (const text of outsideRangeCautions(facts, verdicts)) softCautions.push({ key: `age-outside-${text}`, text });
+      // The same two lines `outsideRangeCautions` writes, in the same order, each tied to the children it names.
+      const belowKids = verdicts.filter((v) => v.side === 'below');
+      const aboveKids = verdicts.filter((v) => v.side === 'above');
+      const outsideIds: string[][] = [];
+      if (belowKids.length > 0 && joinNames(belowKids.map((v) => v.name)) && facts.minRecommendedAge != null) outsideIds.push(belowKids.map((v) => v.id));
+      if (aboveKids.length > 0 && joinNames(aboveKids.map((v) => v.name)) && facts.maxRecommendedAge != null) outsideIds.push(aboveKids.map((v) => v.id));
+      outsideRangeCautions(facts, verdicts).forEach((text, index) => {
+        softCautions.push({ key: `age-outside-${text}`, text, childIds: outsideIds[index], topic: 'age range' });
+      });
       if (inside.length === 0 && verdicts.length > 0) {
-        breaches.push({ key: 'age-none', text: 'None of your children are in its recommended age range' });
+        breaches.push({ key: 'age-none', text: 'None of your children are in its recommended age range', childIds: verdicts.map((v) => v.id), topic: 'age range' });
       }
     }
 
@@ -213,18 +323,18 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
       switch (facts.pushchairSuitability) {
         case 'excellent':
         case 'good':
-          reasons.push({ key: 'buggy', text: `Good buggy access for ${who}` });
+          reasons.push({ key: 'buggy', text: `Good buggy access for ${who}`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access' });
           venueFacts += 1;
           buggyKids.forEach((c) => forIds.add(c.id));
           break;
         case 'mixed':
-          softCautions.push({ key: 'buggy-mixed', text: `Buggy access is mixed here, so ${who} may be awkward in places` });
+          softCautions.push({ key: 'buggy-mixed', text: `Buggy access is mixed here, so ${who} may be awkward in places`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access' });
           break;
         case 'difficult':
-          breaches.push({ key: 'buggy-difficult', text: `Buggy access is difficult here, and ${who} is how you get around` });
+          breaches.push({ key: 'buggy-difficult', text: `Buggy access is difficult here, and ${who} is how you get around`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access' });
           break;
         default:
-          hardUnknowns.push({ key: 'buggy-unknown', text: unknownText('pushchair', `Buggy access still to be checked for ${who}`) });
+          hardUnknowns.push({ key: 'buggy-unknown', text: unknownText('pushchair', `Buggy access still to be checked for ${who}`), childIds: buggyKids.map((c) => c.id), topic: 'buggy access' });
       }
     }
 
@@ -256,13 +366,13 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
     if (!stated.has('baby changing') && under3.length > 0) {
       const who = sayNames(under3, under3.length === 1 ? 'your little one' : 'your little ones');
       if (facts.babyChanging === 'yes') {
-        reasons.push({ key: 'baby-changing', text: `Baby changing confirmed, handy for ${who}` });
+        reasons.push({ key: 'baby-changing', text: `Baby changing confirmed, handy for ${who}`, childIds: under3.map((c) => c.id), topic: 'baby changing' });
         venueFacts += 1;
         under3.forEach((c) => forIds.add(c.id));
       } else if (facts.babyChanging === 'no') {
-        softCautions.push({ key: 'baby-changing-no', text: `No baby changing here, which ${who} would need` });
+        softCautions.push({ key: 'baby-changing-no', text: `No baby changing here, which ${who} would need`, childIds: under3.map((c) => c.id), topic: 'baby changing' });
       } else {
-        softUnknowns.push({ key: 'baby-changing-unknown', text: unknownText('babyChanging', `Baby changing still to be checked for ${who}`) });
+        softUnknowns.push({ key: 'baby-changing-unknown', text: unknownText('babyChanging', `Baby changing still to be checked for ${who}`), childIds: under3.map((c) => c.id), topic: 'baby changing' });
       }
     }
 
@@ -340,13 +450,46 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
   // ---- the words -------------------------------------------------------------------------------------------
   const named = children.filter((c) => forIds.has(c.id));
   const forNames = names(named).filter(Boolean);
-  const who = forNames.length > 0 && forNames.length === named.length ? joinNames(forNames) : 'your family';
-  const headline =
-    verdict === 'not_reviewed'
-      ? 'Family suitability not yet reviewed'
-      : verdict === 'poor'
-        ? `Probably not for ${who} today`
-        : `${VERDICT_WORD[verdict]} for ${who} today`;
+
+  // One lens per child, from the lines that name them.
+  const lens: ChildLens[] = children.map((child) => {
+    const mine = (line: MatchLine) => line.childIds?.includes(child.id) ?? false;
+    const works = reasons.filter(mine).map((l) => l.text);
+    const checkLines = [...breaches, ...softCautions, ...hardUnknowns, ...softUnknowns].filter(mine);
+    const state: ChildLens['state'] = breaches.some(mine)
+      ? 'concern'
+      : checkLines.length > 0
+        ? 'check'
+        : works.length > 0
+          ? 'works'
+          : 'unknown';
+    return { id: child.id, name: child.name.trim(), state, works, check: checkLines.map((l) => l.text) };
+  });
+
+  // Why a child has nothing said about them. With no recommended ages on record there is nothing to compare an age to, which is
+  // the usual reason; otherwise it is a plain "not enough is recorded".
+  const unknownReason =
+    facts?.minRecommendedAge == null && facts?.maxRecommendedAge == null
+      ? 'no age range is recorded for this place yet'
+      : 'not enough is recorded about this place for them yet';
+
+  // Several children and the place is confirmed for some of them but not all: whoever is left over is a gap in what is
+  // known, so it can never be "excellent" (nothing left to check), and it is listed with the things to check.
+  const confirmedKids = lens.filter((l) => l.state === 'works');
+  const gapKids = children.length > 1 && confirmedKids.length > 0 ? lens.filter((l) => l.state === 'check' || l.state === 'unknown') : [];
+  if (verdict === 'excellent' && gapKids.length > 0) verdict = 'good';
+  const gapNames = gapKids.map((l) => l.name).filter(Boolean);
+  const uncovered = gapKids.filter((l) => l.state === 'unknown' && l.name);
+  if (uncovered.length > 0) {
+    softUnknowns.push({
+      key: 'child-nothing-confirmed',
+      text: `We’re less certain how well it suits ${joinNames(uncovered.map((l) => l.name))}: ${unknownReason}`,
+      childIds: uncovered.map((l) => l.id),
+      topic: 'whether it suits them',
+    });
+  }
+
+  const headline = headlineFor({ verdict, lens, children, forNames, lines: { breaches, softCautions, hardUnknowns, softUnknowns }, unknownReason });
 
   const cautions = [...breaches, ...softCautions];
   const toCheck = [...hardUnknowns, ...softUnknowns];
@@ -362,6 +505,8 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
     verdict,
     headline,
     forNames,
+    children: lens,
+    gapNames,
     reasons,
     cautions,
     toCheck,
@@ -376,9 +521,15 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
  * ("Good for Sloane"); every other verdict is just its word, because a badge with a name on it is a claim and
  * `possible` and `poor` are not claims worth naming anyone for.
  */
-export function matchBadgeText(match: Pick<FamilyMatchResult, 'verdict' | 'forNames'>, maxNameChars = 18): string {
+export function matchBadgeText(match: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[] }, maxNameChars = 18): string {
   if (match.verdict === 'good' || match.verdict === 'excellent') {
     const word = match.verdict === 'excellent' ? 'Excellent' : 'Good';
+    // A child the place is not confirmed for is said on the badge too: "Good for Sloane" alone would read as the family.
+    const gap = joinNames(match.gapNames ?? []);
+    if (gap) {
+      const text = `${word} fit · check ${gap}`;
+      return gap.length <= maxNameChars - 6 ? text : `${word} fit · check kids`;
+    }
     const who = joinNames(match.forNames);
     if (who && who.length <= maxNameChars) return `${word} for ${who}`;
     return VERDICT_BADGE[match.verdict];
@@ -397,10 +548,21 @@ export function matchEarnsStar(verdict: MatchVerdict): boolean {
  * only what the clock says.
  */
 export function matchCardReason(match: FamilyMatchResult): string {
+  // WHY IT IS ON HOME: lead with what is about THIS family. Their routine ("Leave by 12:00 to be home in time for Ozzie’s
+  // nap") first, then a fact about a particular child, then anything else confirmed. Never the generic.
+  const others = match.reasons.filter((line) => line.key !== 'drive-ok' && line.key !== 'open-today');
+  const lead =
+    others.find((line) => line.key === 'routine') ??
+    others.find((line) => (line.childIds?.length ?? 0) > 0) ??
+    others[0];
   if (match.verdict === 'good' || match.verdict === 'excellent') {
     const open = match.reasons.find((line) => line.key === 'open-today');
-    const lead = match.reasons.find((line) => line.key !== 'drive-ok' && line.key !== 'open-today');
-    return [open?.text, lead?.text].filter(Boolean).join(' · ');
+    return [lead?.text, open?.text].filter(Boolean).join(' · ');
+  }
+  if (match.verdict === 'possible' && lead) {
+    // A place that could work still says why it is here, then the one thing to check, so the card is never only a worry.
+    const issue = match.cautions[0] ?? match.toCheck[0];
+    return [lead.text, issue?.text].filter(Boolean).join(' · ');
   }
   return match.cardNote ?? '';
 }

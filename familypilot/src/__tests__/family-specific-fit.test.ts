@@ -7,7 +7,6 @@ import { planningFamilyFromProfile } from '@/src/services/planning/plan-parties'
 import { personaliseVenue } from '@/src/utils/personalise-venues';
 import { childAgeVerdicts, outsideRangeCautions, suitsChildrenLine } from '@/src/utils/child-fit';
 import { familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
-import { noFamiliesCopy } from '@/src/utils/check-today-copy';
 import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 import {
   createFeed,
@@ -457,20 +456,5 @@ describe('profile receipt, suggestion and completion follow the new answers', ()
     const known = computeCompletionPercent(family([OLDER]));
     const legacy = computeCompletionPercent(family([{ ...OLDER, dobKnown: false }]));
     expect(known).toBeGreaterThan(legacy);
-  });
-});
-
-describe('"Will this work today?" before the planner has a family', () => {
-  it('does not ask a parent who has entered routines to add them', () => {
-    const withRoutines = family([TODDLER], { routines: [createNap(TODDLER, '13:00')] });
-    const copy = noFamiliesCopy(withRoutines);
-    expect(copy.message).toMatch(/saved/);
-    expect(copy.message).not.toMatch(/^Add /);
-    expect(copy.button).toBe('Check in Plans');
-  });
-
-  it('still asks a family with no routines to add them', () => {
-    expect(noFamiliesCopy(family([OLDER])).message).toMatch(/^Add /);
-    expect(noFamiliesCopy(null).button).toBe('Set up routines in Plans');
   });
 });

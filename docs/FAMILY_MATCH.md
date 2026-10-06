@@ -237,6 +237,25 @@ See [MASTER_PRODUCT_VISION.md § The FamilyPilot Promise](./MASTER_PRODUCT_VISIO
 
 ---
 
+## Family Fit across children (coherence pass)
+
+`evaluateFamilyMatch` also returns `children`: one lens per child (`works`, `check`, `concern`, `unknown`) built from the lines
+that name them (`MatchLine.childIds` and `topic`). The headline is built from the lenses, so a family with two children reads about
+both: *Good for Sloane and Ozzie today*; *Could work for Sloane, but check buggy access for Ozzie* (only when what holds the
+verdict at "possible" is about particular children, never when the journey or the hours are the reason); *Probably not for Ozzie
+today* (a confirmed breach about one child). A child nobody has a fact about is not named. Home's card line now leads with why
+the place is there for this family: their routine first, then a fact about a child, then anything else confirmed. See
+[PRODUCT_COHERENCE.md](./PRODUCT_COHERENCE.md).
+
+**A sentence "for" someone is a claim about the family only when it covers every child.** In a household of two or more children, a
+child the place is not confirmed for (a check still open, or nothing known) is never silently dropped: the headline names who it works
+for and says what is open for the rest (*Good for Ozzie, but we’re less certain about Sloane: no age range is recorded for this place yet*; *Good for Sloane, but check baby
+changing for Ozzie*; *Looks practical, but we’re less certain about Sloane and Maya: …*). `gapNames` carries those
+children; `matchBadgeText` says the gap on the badge (*Good fit · check Sloane*) instead of "Good for Ozzie" alone; the child with
+nothing known is listed under *to check*; and *Excellent* is not available while a child is left over. One child: unchanged.
+
+---
+
 ## Related documents
 
 - [PRODUCT_DIRECTION_V2.md §10](./PRODUCT_DIRECTION_V2.md) — V2 scoring spec

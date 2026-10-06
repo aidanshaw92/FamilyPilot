@@ -1,26 +1,25 @@
+import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
 import { routinesForPlanner } from '@/src/utils/routine-schedule';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Linking, Pressable, ScrollView, Share, View } from 'react-native';
+import { Pressable, ScrollView, Share, View } from 'react-native';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Button, Card, Text } from '@/src/components/ui';
 import { Chip } from '@/src/components/ui/Chip';
-import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { FamilyEditor } from '@/src/components/planning/FamilyEditor';
-import { TimeField, formStyles as s } from '@/src/components/ui';
-import { PlanDraftForm, PlanFormRow } from '@/src/components/planning/PlanDraftForm';
-import { PlanDraft, planDraftBlocker, planDraftDefaults } from '@/src/services/planning/plan-draft';
-import { resolvePlanParties } from '@/src/services/planning/plan-parties';
+import { formStyles as s } from '@/src/components/ui';
 import { PlanningAccount } from '@/src/components/planning/PlanningAccount';
 import { accountRequired } from '@/src/stores/auth-store';
 import { useFamilyStore } from '@/src/stores/family-store';
 import { localDate, localTime, usePlanningStore } from '@/src/stores/planning-store';
 import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
-import { PlanningFamily, clockLabel, clockMinutes, sharePlanText } from '@/src/services/planning/planner';
-import { PlanningResult, recommendPlans, addMeal } from '@/src/services/planning/recommendations';
+import { PlanningFamily, clockLabel, sharePlanText } from '@/src/services/planning/planner';
+import { makeSubjectResolver } from '@/src/services/planning/routine-subjects';
+import { toPlanViewModel } from '@/src/services/planning/plan-view-model';
+import { householdTitle } from '@/src/utils/household';
 import { PlanningConnection, listAcceptedConnections } from '@/src/services/planning/connections';
 import { PlanInvite, listPlanInvites, createPlanInvite, respondToPlanInvite, cancelPlanInvite } from '@/src/services/planning/plan-invites';
 import { SavedPlan } from '@/src/stores/planning-store';
@@ -29,18 +28,10 @@ import { supabase } from '@/src/services/supabase/client';
 const linkStyle={alignSelf:'flex-start' as const,minHeight:44,justifyContent:'center' as const};
 
 export default function TripsScreen() {
- const router=useRouter();const state=usePlanningStore();const profile=useFamilyStore(x=>x.profile);
- const [editor,setEditor]=useState<PlanningFamily|null>(null);const [selected,setSelected]=useState<string[]>(['mine']);
- const [results,setResults]=useState<PlanningResult[]>([]);const [busy,setBusy]=useState(false);const [message,setMessage]=useState('');const [searched,setSearched]=useState(false);
- const [tab,setTab]=useState<'plan'|'saved'|'families'>('plan');const [resultKey,setResultKey]=useState('');
- // Who the planner builds for: the profile household and any described on this device, resolved
- // the same way the Create a Plan sheet resolves them, so the two forms cannot disagree.
- const planDefaults=useMemo(()=>planDraftDefaults({profile,planningFamilies:state.families,options:state.options,today:localDate(),nowTime:localTime()}),[profile,state.families,state.options]);
- const draft:PlanDraft={date:state.options.date,leaveAt:state.options.leaveAt,visitMinutes:state.options.visitMinutes,partyIds:selected};
- const applyDraft=(next:PlanDraft)=>{state.setOptions({date:next.date,leaveAt:next.leaveAt,visitMinutes:next.visitMinutes});setSelected(next.partyIds);};
- const blocker=planDraftBlocker(draft,planDefaults.parties);
- const active=resolvePlanParties(selected,{profile,planningFamilies:state.families}).families;const inputKey=JSON.stringify({active,options:state.options});
- useEffect(()=>{if(state.hydrated&&state.options.date<localDate())state.setOptions({date:localDate()});},[state.hydrated]);
+ const router=useRouter();const tabBarClearance=useTabBarClearance();const state=usePlanningStore();const profile=useFamilyStore(x=>x.profile);
+ const [editor,setEditor]=useState<PlanningFamily|null>(null);
+ const [message,setMessage]=useState('');
+ const [tab,setTab]=useState<'plan'|'saved'|'families'>('plan');
  // "mine" is seeded from the profile once when first created, but a parent's home, pushchair or
  // children's ages are facts, not a planning-session choice — keep them in sync so they can't
  // silently drift from the profile that's meant to be the one source of truth. Label, budget,
@@ -60,11 +51,6 @@ export default function TripsScreen() {
    // eslint-disable-next-line react-hooks/exhaustive-deps
  },[state.hydrated,profile.homeLocation,profile.homeLatitude,profile.homeLongitude,profile.pushchair,profile.members]);
  const blank=(mine:boolean):PlanningFamily=>{const home=mine?resolveHomeCoordinates(profile):null;return {id:mine?'mine':`guest-${Date.now()}`,label:mine?'Our family':'',area:mine?profile.homeLocation:'',latitude:home?.latitude??NaN,longitude:home?.longitude??NaN,ages:mine?profile.members.filter(m=>m.role==='child').map(m=>m.age):[],maxDriveMinutes:mine?profile.maxDriveMinutes:30,budgetTier:mine?profile.budgetTier:'moderate',pushchair:mine?familyUsesBuggy(profile):false,required:[],routines:mine?routinesForPlanner(profile):[]};};
- async function find(){setBusy(true);setMessage('');setResults([]);setSearched(false);try{
-   clockMinutes(state.options.leaveAt);if(state.options.returnBy)clockMinutes(state.options.returnBy);
-   if(!active.length)throw new Error('Add your family and select who is coming.');
-   const data=await recommendPlans(active,state.options);setResults(data);setResultKey(inputKey);setSearched(true);
- }catch(e){setMessage(e instanceof Error?e.message:'Could not find plans. Please try again.');}finally{setBusy(false);}}
  async function share(text:string){try{await Share.share({message:text});}catch{setMessage('Sharing is unavailable on this device.');}}
 
  // Sharing a specific saved plan with a connected family, and tracking whether they've
@@ -139,59 +125,45 @@ export default function TripsScreen() {
    setSharingMessage(`Added "${invite.plan.name}" to your saved plans.`);
  }
  if(!state.hydrated)return <ScreenContainer><Text>Loading your plans…</Text></ScreenContainer>;
- return <ScreenContainer><ScrollView contentContainerStyle={{padding:spacing.screenPadding,paddingBottom:60,gap:spacing.md}} keyboardShouldPersistTaps="handled">
+ return <ScreenContainer><ScrollView contentContainerStyle={{padding:spacing.screenPadding,paddingBottom:tabBarClearance,gap:spacing.md}} keyboardShouldPersistTaps="handled">
   <PostVisitInbox/>
-  <Text variant="heading1">Make a plan</Text><Text color={colors.text.secondary}>A day that works for everyone.</Text>
-  <View style={s.row}>{(['plan','saved','families'] as const).map(t=><Chip key={t} label={{plan:'Plan a day',saved:'Saved plans',families:'Families & routines'}[t]} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
-  {editor?<FamilyEditor key={editor.id} initial={editor} onCancel={()=>setEditor(null)} onSave={f=>{state.setFamily(f);setSelected(ids=>[...new Set([...ids,f.id])]);setEditor(null);}}/>:null}
+  <Text variant="heading1">Plans</Text><Text color={colors.text.secondary}>Days that work for everyone involved.</Text>
+  <View style={s.row}>{(['plan','saved','families'] as const).map(t=><Chip key={t} label={{plan:'Plans',saved:'Saved plans',families:'Families & routines'}[t]} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
+  {editor?<FamilyEditor key={editor.id} initial={editor} onCancel={()=>setEditor(null)} onSave={f=>{state.setFamily(f);setEditor(null);}}/>:null}
   {tab==='families'?<>
     <Text variant="bodySmall">Family details and saved plans stay on this device unless you choose to back them up. Friend connections share only the details you explicitly approve.</Text>
-    {state.families.map(f=><Card key={f.id} style={s.panel}><Text variant="heading3">{f.label}</Text><Text>{f.area} · {f.ages.length?`Ages ${f.ages.join(', ')}`:'Adults only'} · {f.routines.length} routines</Text><Button label="Edit family and routines" variant="outline" onPress={()=>setEditor(f)}/><Button label="Remove from this device" variant="ghost" onPress={()=>{state.removeFamily(f.id);setSelected(ids=>ids.filter(id=>id!==f.id));}}/></Card>)}
+    {state.families.map(f=><Card key={f.id} style={s.panel}><Text variant="heading3">{f.label}</Text><Text>{f.area} · {f.ages.length?`Ages ${f.ages.join(', ')}`:'Adults only'} · {f.routines.length} routines</Text><Button label="Edit family and routines" variant="outline" onPress={()=>setEditor(f)}/><Button label="Remove from this device" variant="ghost" onPress={()=>state.removeFamily(f.id)}/></Card>)}
     {!state.families.some(f=>f.id==='mine')?<Button label="Add your family" onPress={()=>setEditor(blank(true))}/>:null}
     <Button label="Add a family together on this phone" variant="outline" onPress={()=>setEditor(blank(false))}/>
     <PlanningAccount/>
   </>:null}
   {tab==='plan'?<>
-   <Card style={s.panel}><Text variant="heading2">Plan a day</Text>
-    {/* The same four questions, the same form, as the Create a Plan sheet on a place. Parties come
-        from the profile first, so a parent who finished onboarding is never told to set up a family
-        they already described; a second household is added through the editor as before. */}
-    <PlanDraftForm draft={draft} parties={planDefaults.parties} onDraftChange={applyDraft} onAddFamily={()=>setEditor(blank(false))} connections={accountRequired()}/>
-    {planDefaults.needsProfile?<Button label="Set up your family" onPress={()=>router.push('/profile/edit' as never)}/>:null}
-    <Pressable onPress={()=>setTab('families')} accessibilityRole="button" accessibilityLabel="Manage families and routines" style={linkStyle} hitSlop={8}><Text variant="link">Manage families and routines</Text></Pressable>
-    <PlanFormRow label="Everyone home by">
-     <TimeField label="" value={state.options.returnBy} onChange={returnBy=>state.setOptions({returnBy})} optional/>
-     <Text variant="caption" color={colors.text.secondary}>Optional. The day is planned to end before this.</Text>
-    </PlanFormRow>
-    <PlanFormRow label="Extra time each way">
-     <View style={s.row}>{[10,15,30].map(n=><Chip size="small" key={n} label={`${n} min`} active={state.options.bufferMinutes===n} onPress={()=>state.setOptions({bufferMinutes:n})}/>)}</View>
-     <Text variant="caption" color={colors.text.secondary}>For traffic, parking and getting everyone ready.</Text>
-    </PlanFormRow>
-    <PlanFormRow label="Setting">
-     <View style={s.row}>{(['either','indoor','outdoor'] as const).map(v=><Chip size="small" key={v} label={{either:'Any setting',indoor:'Indoors',outdoor:'Outdoors'}[v]} active={state.options.environment===v} onPress={()=>state.setOptions({environment:v})}/>)}</View>
-    </PlanFormRow>
-    <Pressable onPress={()=>{const d=new Date();state.setOptions({date:localDate(),leaveAt:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`});}} accessibilityRole="button" accessibilityLabel="Leave from now" style={linkStyle} hitSlop={8}><Text variant="link">Leave from now</Text></Pressable>
-    {blocker&&!busy?<Text variant="bodySmall" color={colors.warning[600]} accessibilityRole="alert">{blocker}</Text>:null}
-    <Button label={busy?'Finding a plan for everyone…':'Find our best plans'} disabled={busy||Boolean(blocker)} onPress={()=>void find()}/>
+   {/* The Plans tab is where plans are kept and where a plan begins from a person, not a second place to build one.
+       A day is created from a place (Create a plan on any venue), so there is one way to build it, with one set of
+       questions; this tab shows what has been made and offers the two other beginnings. */}
+   <Card style={s.panel}>
+    <Text variant="heading2">Start a plan</Text>
+    <Text color={colors.text.secondary}>A plan begins with a place. Choose somewhere that suits your family, then tap Create a plan.</Text>
+    <View style={s.row}>
+     <Button label="Best for us today" onPress={()=>router.push('/(tabs)' as never)} testID="plans-go-home"/>
+     <Button label="Explore London" variant="outline" onPress={()=>router.push('/(tabs)/explore' as never)} testID="plans-go-explore"/>
+    </View>
    </Card>
+   <Card style={s.panel}>
+    <Text variant="heading2">Meet halfway</Text>
+    <Text color={colors.text.secondary}>Meeting another family? Find places that work for both of you, with fair journeys and your routines in mind.</Text>
+    <Button label="Find a place to meet" onPress={()=>router.push('/halfway' as never)} testID="plans-meet-halfway"/>
+   </Card>
+   {state.savedDays.length?<Card style={s.panel} testID="plans-saved-days">
+    <Text variant="heading2">Your plans</Text>
+    {state.savedDays.map((day,i)=>{
+     const view=toPlanViewModel(day.source,{resolveSubject:makeSubjectResolver(profile,state.families),householdTitle:householdTitle(profile)});
+     return <Pressable key={day.id} onPress={()=>router.push({pathname:'/saved-plan',params:{id:day.id}} as never)} accessibilityRole="button" accessibilityLabel={`Open ${view.title}`} style={[{minHeight:56,justifyContent:'center',gap:2},i>0?{borderTopWidth:1,borderColor:colors.border,paddingTop:spacing.sm}:undefined]}>
+      <Text variant="heading3">{view.title}</Text>
+      <Text variant="bodySmall" color={colors.text.secondary}>{view.dateSummary}</Text>
+     </Pressable>;})}
+   </Card>:<Card style={s.panel}><Text variant="bodySmall" color={colors.text.secondary}>Plans you save appear here.</Text></Card>}
    {message?<Text accessibilityRole="alert" color={colors.warning[600]}>{message}</Text>:null}
-   {searched&&inputKey!==resultKey?<Text>Preferences have changed. Find plans again to update the timings.</Text>:null}
-   {searched&&inputKey===resultKey&&!results.length?<Card style={s.panel}><Text variant="heading3">No confident match yet</Text><Text>No place in the available data meets every family’s requirements and timing. Try another date, a longer travel limit, or update a must-have. We won’t silently relax your requirements.</Text><Button label="Explore places and their details" variant="outline" onPress={()=>router.push('/(tabs)/explore' as never)}/></Card>:null}
-   {inputKey===resultKey?results.map((result,i)=>{const {plan,place,food,foodStatus,meal}=result;return (<Card key={plan.venueId} style={s.panel}>
-    <VenueImage uri={place.photos[0]} category={place.category} alt={place.name} style={{height:180,width:'100%'}}/>
-    <Text variant="label">{i===0?'Our first suggestion':'Another option'}</Text><Text variant="heading2">{plan.name}</Text>
-    <Text>{clockLabel(plan.start)}–{clockLabel(plan.end)} · {active.length} {active.length===1?'family':'families'}</Text>
-    {plan.reasons.map(reason=><Text key={reason} variant="bodySmall">✓ {reason}</Text>)}
-    {plan.timings.map(t=><View key={t.familyId} style={{gap:6,paddingVertical:10}}><Text variant="heading3">{t.label}</Text><Text>Leave {clockLabel(t.depart)} · Home about {clockLabel(t.home)}</Text><Text variant="bodySmall">{t.journey.outbound} min out / {t.journey.inbound} min back, estimated. Latest departure for a full visit before the next home commitment: {clockLabel(t.latestDeparture)}.</Text>{t.notes.map(n=><Text key={n} variant="bodySmall">{n}</Text>)}</View>)}
-    <Text variant="bodySmall" color={colors.warning[600]}>Opening hours for your visit are not verified. Confirm before committing. Return traffic is estimated; feed and sleep times remain flexible.</Text>
-    {plan.unknowns.map(u=><Text key={u} variant="bodySmall">{u}</Text>)}
-    <Button label="View venue facilities and evidence" variant="outline" onPress={()=>router.push(`/venue/${place.familypilotId}` as never)}/>
-    <Text variant="heading3">{meal?`Lunch: ${meal.name}`:'Food nearby'}</Text>{meal?<Text>Lunch at {clockLabel(meal.start)} for {meal.duration} minutes. The plan and home times include the transfer and meal.</Text>:null}<Text variant="bodySmall">{foodStatus}</Text>
-    {food.map(f=><View key={f.id} style={{gap:6}}><Text variant="heading3">{f.name}</Text><Text variant="bodySmall">{f.metres}m straight-line distance · {f.facts.join(' · ')||'Family details need checking'}</Text><Text variant="bodySmall">{f.unknowns.join(' · ')}</Text><Button label="Add a 45-minute lunch and recheck timings" variant="outline" onPress={()=>{try{const updated=addMeal(result,f,active,state.options);setResults(rows=>rows.map(row=>row.place.familypilotId===place.familypilotId?updated:row));setMessage('Lunch added. Check the updated departure and return times.');}catch(e){setMessage(e instanceof Error?e.message:'Lunch does not fit.');}}}/><Button label="Check restaurant and directions" variant="ghost" onPress={()=>void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${f.name} near ${place.name}`)}`)}/></View>)}
-    <Text variant="bodySmall">{meal?'Confirm restaurant opening hours and availability.':'Add lunch above to include meal and transfer time in your plan.'}</Text>
-    <Button label="Save this plan" onPress={()=>{state.savePlan({id:`${state.options.date}-${plan.venueId}`,date:state.options.date,plan,checked:[],createdAt:new Date().toISOString()});setTab('saved');}}/>
-    <Button label="Share a summary" variant="outline" onPress={()=>void share(sharePlanText(plan,state.options.date))}/>
-   </Card>); }):null}
   </>:null}
   {tab==='saved'?<>
    {sharingMessage?<Text accessibilityRole="alert" color={colors.warning[600]}>{sharingMessage}</Text>:null}
@@ -214,7 +186,7 @@ export default function TripsScreen() {
     </View>)}
    </Card>:null}
 
-   {!state.saved.length?<Card style={s.panel}><Text>No saved plans yet.</Text><Button label="Plan a day" onPress={()=>setTab('plan')}/></Card>:null}
+   {!state.saved.length?<Card style={s.panel}><Text>No saved plans yet.</Text><Button label="Start a plan" onPress={()=>setTab('plan')}/></Card>:null}
    {state.saved.map(saved=>{
     const sent=invites.filter(i=>i.direction==='sent'&&i.planId===saved.id);
     return <Card key={saved.id} style={s.panel}><Text variant="heading2">{saved.plan.name}</Text><Text>{saved.date} · {clockLabel(saved.plan.start)}–{clockLabel(saved.plan.end)}</Text>
@@ -238,7 +210,7 @@ export default function TripsScreen() {
      </>:<Button label="Invite a family to this plan" variant="outline" disabled={sharingBusy} onPress={()=>setInviteTargetPlanId(saved.id)}/>}
     </>:<Text variant="bodySmall" color={colors.text.secondary}>Connect a family under Families &amp; routines to invite them here.</Text>}
 
-    <Button label="Share plan" onPress={()=>void share(sharePlanText(saved.plan,saved.date))}/><Button label="Replan with current preferences" variant="outline" onPress={()=>{state.setOptions({date:saved.date<localDate()?localDate():saved.date});setTab('plan');setSearched(false);}}/><Button label="Delete saved plan" variant="ghost" onPress={()=>state.deletePlan(saved.id)}/>
+    <Button label="Share plan" onPress={()=>void share(sharePlanText(saved.plan,saved.date))}/><Button label="Plan another day" variant="outline" onPress={()=>setTab('plan')}/><Button label="Delete saved plan" variant="ghost" onPress={()=>state.deletePlan(saved.id)}/>
    </Card>;})}
   </>:null}
  </ScrollView></ScreenContainer>;

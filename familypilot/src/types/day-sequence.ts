@@ -152,6 +152,44 @@ export interface SequenceFamilyTiming {
   notes: string[];
 }
 
+/** Which part of the family's outing a routine falls in. */
+export type RoutinePhase = 'outbound' | 'visit' | 'transfer' | 'return';
+
+/**
+ * A routine (a nap or a feed) falling inside the time a family is out, as the sequencer found it.
+ *
+ * Structural on purpose. It says WHICH routine, WHEN and DURING WHAT; it carries no child's name and no judgement.
+ * Whether an overlap is a worry is decided later, with what the venue offers in front of it (buggy access, food on
+ * site, a café nearby), by `routine-advice.ts`. Keeping names out of here is also what keeps the saved plan, which
+ * can be backed up, free of children's names: the screen resolves `routineId` against the local profile.
+ *
+ * A routine overlapping the outing is never a reason to refuse the day. See `DayItinerary.routineInsights`.
+ */
+export interface RoutineInsight {
+  familyId: string;
+  routineId: string;
+  kind: 'nap' | 'feed';
+  /** The family's own flag: this routine normally happens at home. A preference, not a gate. */
+  atHome: boolean;
+  /** The routine's usual window, minutes from midnight. */
+  start: number;
+  end: number;
+  phase: RoutinePhase;
+  /** For `visit`, the stop index; for `transfer`, the index of the stop the leg leaves. */
+  stopIndex?: number;
+  /** The span of the outing the routine overlaps, so advice can say "your drive home, 12:10 to 12:40". */
+  span: { from: number; to: number };
+  overlapMinutes: number;
+}
+
+/** The next routine that falls after a family is home again: good news to say ("home before his nap"). */
+export interface HomeAfterRoutine {
+  familyId: string;
+  routineId: string;
+  kind: 'nap' | 'feed';
+  start: number;
+}
+
 export interface DayItinerary {
   date: string;
   /** In visit order. */
@@ -171,12 +209,25 @@ export interface DayItinerary {
   reasons: string[];
   fairnessGap: number;
   score: number;
+  /**
+   * Every routine that falls while a family is out, by where in the day it falls. Never a failure: a routine
+   * overlapping the outing is something to advise on (see routine-advice.ts), not a reason to refuse the day.
+   */
+  routineInsights: RoutineInsight[];
+  /** The next routine after each family is home, if any. */
+  homeAfter: HomeAfterRoutine[];
+  /**
+   * Must-haves a family stated that nobody has confirmed at a stop. The day is built regardless; the screen says plainly
+   * what needs checking. A must-have confirmed MISSING is a failure (`requirement-unmet`), never an entry here.
+   */
+  unresolvedMustHaves: UnresolvedMustHave[];
 }
 
 export type SequenceFailureReason =
   | 'requirement-unmet'
   | 'venue-closed'
   | 'venue-closes-during-visit'
+  | 'start-too-soon'
   | 'routine-conflict'
   | 'travel-unknown'
   | 'travel-infeasible'
@@ -197,6 +248,20 @@ export interface UnmetRequirement {
   field: string;
   /** `unsuitable` is a fact that fails; `unknown` is a fact nobody has confirmed. */
   outcome: 'unsuitable' | 'unknown';
+}
+
+/**
+ * A must-have a family named that nobody has confirmed at a stop. NOT a reason to refuse the day: only a must-have that is
+ * confirmed missing does that. The plan is built and this is carried as a prominent warning, with what needs checking.
+ */
+export interface UnresolvedMustHave {
+  familyId: string;
+  familyLabel: string;
+  stopIndex: number;
+  placeId: string;
+  stopName: string;
+  /** The matcher's own field name, e.g. `familyFacilities.babyChanging`. */
+  field: string;
 }
 
 export type SequenceFailure =
@@ -222,6 +287,11 @@ export type SequenceFailure =
       stopIndex: number;
       placeId: string;
       date: string;
+      /**
+       * Shut for the whole day, or open that day but not at the time asked. The words differ ("closed that day" against
+       * "isn’t open then") and so does what to try.
+       */
+      why?: 'closed-that-day' | 'outside-opening-period';
     }
   | {
       reason: 'venue-closes-during-visit';
@@ -232,11 +302,27 @@ export type SequenceFailure =
       closesAt?: string;
     }
   | {
+      /**
+       * Retained for old callers and tests; the sequencer no longer produces it. A routine overlapping the day is
+       * advice (`DayItinerary.routineInsights`), never a refusal.
+       */
       reason: 'routine-conflict';
       message: string;
       familyId: string;
       routineLabel: string;
       stopIndex?: number;
+    }
+  | {
+      /**
+       * The start the parent chose cannot be reached: leaving home on time would have to happen in the past (or
+       * before the earliest the family can leave). Carries the first arrival that WOULD work, so the screen can offer
+       * it as one tap rather than a lecture.
+       */
+      reason: 'start-too-soon';
+      message: string;
+      familyId: string;
+      /** Minutes from midnight: the earliest arrival at the first stop that every family could make. */
+      earliestArrival: number;
     }
   | {
       /**

@@ -8,6 +8,7 @@ import {
 } from '@/src/services/planning/create-plan';
 import { planStopFromRecord } from '@/src/services/planning/day-plan';
 import { PlanningFamily } from '@/src/services/planning/planner';
+import { PlanDraft } from '@/src/services/planning/plan-draft';
 import { ExternalPlaceRecord } from '@/src/types/places';
 import { DayItinerary, SequenceFailure } from '@/src/types/day-sequence';
 import { estimatedLeg } from '@/src/types/travel';
@@ -40,7 +41,16 @@ const family = (over: Partial<PlanningFamily> = {}): PlanningFamily => ({
   ...over,
 });
 
-const draft = { date: '2026-10-10', leaveAt: '09:30', partyIds: ['mine'], visitMinutes: 90 };
+const draft: PlanDraft = {
+  date: '2026-10-10',
+  startAt: '09:30',
+  partyIds: ['mine'],
+  attendeeIds: null,
+  visit: 90,
+  returnBy: '',
+  bufferMinutes: 15,
+  environment: 'either',
+};
 
 const itinerary = (): DayItinerary => ({
   date: '2026-10-10',
@@ -53,6 +63,9 @@ const itinerary = (): DayItinerary => ({
   families: [{ familyId: 'mine', label: 'Our family', depart: 570, home: 750, latestDeparture: 600, notes: [] }],
   unknowns: [],
   openingConfidence: { confirmed: 1, unknown: 0 },
+  routineInsights: [],
+  homeAfter: [],
+  unresolvedMustHaves: [],
   reasons: [],
   fairnessGap: 0,
   score: 1,
@@ -188,6 +201,12 @@ describe('a missing lunch stop says which kind of missing it is', () => {
 describe('a day that cannot be built still helps', () => {
   const run = (failure: SequenceFailure) =>
     createPlan({ venue: venue(), draft, families: [family()] }, failing(failure));
+
+  it('says "isn’t open then" when the place is open that day but not at that time', async () => {
+    const outcome = await run({ reason: 'venue-closed', message: 'Not open at that time.', stopIndex: 0, placeId: 'fp-google-anchor', date: '2026-10-10', why: 'outside-opening-period' });
+    expect(outcome).toMatchObject({ ok: false, title: 'Kentish Town City Farm isn’t open then' });
+    if (!outcome.ok) expect(outcome.suggestions).toContain('Try a different start');
+  });
 
   it('says which venue is shut and offers another date', async () => {
     const outcome = await run({ reason: 'venue-closed', message: 'Closed on Saturdays.', stopIndex: 0, placeId: 'fp-google-anchor', date: '2026-10-10' });

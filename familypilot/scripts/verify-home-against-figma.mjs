@@ -177,8 +177,8 @@ for (const run of RUNS) {
         fontSize: greeting ? getComputedStyle(greeting).fontSize : null,
         natural: greeting ? +naturalWidth(greeting).toFixed(2) : null,
       },
-      subtitle: box(leaf('What shall we do today?')),
-      sectionHeading: box(leaf('Select your plan')),
+      subtitle: box(startsWith('Picked for')),
+      sectionHeading: box(leaf('Best for your family today')),
       search: search
         ? {
             ...box(search),

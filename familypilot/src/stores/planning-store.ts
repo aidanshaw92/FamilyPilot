@@ -24,7 +24,7 @@ export interface SavedDay { id: string; createdAt: string; source: PlanViewModel
 export interface PlanningData { families: PlanningFamily[]; options: PlanningOptions; saved: SavedPlan[]; savedDays: SavedDay[] }
 /** What a restored backup may look like: one taken before multi-stop days carries no `savedDays`. */
 export type PlanningBackup = Omit<PlanningData, 'savedDays'> & { savedDays?: SavedDay[] };
-const defaults = (): PlanningData => ({ families: [], options: { date: localDate(), leaveAt:'09:00',returnBy:'',visitMinutes:90,bufferMinutes:15,environment:'either' }, saved:[], savedDays:[] });
+const defaults = (): PlanningData => ({ families: [], options: { date: localDate(), leaveAt:'',returnBy:'',visitMinutes:90,bufferMinutes:15,environment:'either' }, saved:[], savedDays:[] });
 export function localTime() { const d=new Date(); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
 export function localDate() { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 interface PlanningState extends PlanningData {

@@ -119,12 +119,12 @@ const measured = await page.evaluate(() => {
     .sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
   const tabs = [...document.querySelectorAll('[role="tab"]')];
   const greeting = startsWith('Good ');
-  const heading = leaf('Select your plan');
+  const heading = leaf('Best for your family today');
 
   return {
     boxes: {
       'greeting (7:16)': box(greeting),
-      'subtitle (7:17)': box(leaf('What shall we do today?')),
+      'subtitle (7:17)': box(startsWith('Picked for')),
       'avatar (7:18)': box(document.querySelector('[aria-label="Your family profile"]')),
       'search field (7:19)': box(search?.closest('[role="button"]')),
       'search icon (7:20)': box(search?.closest('[role="button"]')?.firstElementChild),
@@ -141,7 +141,7 @@ const measured = await page.evaluate(() => {
     },
     fonts: {
       greeting: fontOf(greeting),
-      subtitle: fontOf(leaf('What shall we do today?')),
+      subtitle: fontOf(startsWith('Picked for')),
       heading: fontOf(heading),
       pill: fontOf(pills[0]?.querySelector('div')),
       placeholder: search ? `${getComputedStyle(search).fontSize} ${getComputedStyle(search).fontFamily.split(',')[0]}` : null,

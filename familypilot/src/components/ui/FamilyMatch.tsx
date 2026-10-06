@@ -34,7 +34,7 @@ interface FamilyMatchProps {
    * What FamilyPilot works out for THIS family (family-match.ts). When given it decides the words, the star and
    * the colour, and the number is not shown: a good match says who it is good for, a possible one says possible.
    */
-  match?: Pick<FamilyMatchResult, 'verdict' | 'forNames'>;
+  match?: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[] };
   style?: ViewStyle;
 }
 

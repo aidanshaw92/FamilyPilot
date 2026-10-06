@@ -9,6 +9,7 @@ import type { MatchableVenueFacts } from '@/src/types/day-request';
 import type { MissingJourneyLeg } from '@/src/types/journey-matrix-build';
 import type { OpeningHoursSchedule } from '@/src/types/opening-hours';
 import type { VenueFamilyMetadata } from '@/src/types/places';
+import type { VisitResolution } from '@/src/services/planning/visit-duration';
 
 /**
  * The shape of a generated day, and of every way generating one can fail.
@@ -56,7 +57,13 @@ export interface ResolvedStop {
 }
 
 export interface DayPlanOptions {
+  /** The earliest the family could leave home. With `arriveAt` set it is only a floor, and `'00:00'` is the usual floor. */
   leaveAt: string;
+  /**
+   * When the family wants to arrive at the first stop (`HH:MM`): the parent's chosen start. Leaving home is worked
+   * back from it. Omitted, the sequencer scans forward from `leaveAt` for the earliest arrival that fits.
+   */
+  arriveAt?: string;
   /** `''` for no deadline. */
   returnBy: string;
   bufferMinutes: number;
@@ -80,6 +87,12 @@ export interface DayPlanRequest {
   meal?: ResolvedStop;
   secondActivity?: ResolvedStop;
   options: DayPlanOptions;
+  /**
+   * How the anchor's length was settled, so the day can say it. When its basis is an assumption ('venue-typical',
+   * 'category-typical') the planner may shorten it to get everyone home before a routine that has to happen at
+   * home; a length the parent chose is never changed.
+   */
+  visit?: VisitResolution;
 }
 
 /**
@@ -117,8 +130,28 @@ export interface TravelDiagnostics {
   missing: MissingJourneyLeg[];
 }
 
+/**
+ * A different way to run the same day that clears a routine overlap, worked out by actually re-sequencing it.
+ *
+ * Never a guess: each one was built with the same matrix and checked against opening hours and every limit, and it is
+ * only offered if it removes at least one routine overlap without adding another. The screen turns one into a single
+ * tap that changes the plan's start or length.
+ */
+export interface PlanAlternative {
+  kind: 'earlier' | 'later' | 'shorter';
+  /** When the family would arrive at the first stop, `HH:MM`. */
+  arriveAt: string;
+  /** Time at the main venue. */
+  visitMinutes: number;
+  /** Routine overlaps this removes. */
+  resolves: { familyId: string; routineId: string }[];
+}
+
 export interface DayPlanSuccess {
   itinerary: DayItinerary;
+  /** How long at the main venue, and why. */
+  visit: VisitResolution;
+  alternatives: PlanAlternative[];
   travel: TravelDiagnostics;
   caveats: PlanCaveat[];
   /** Which clock the day was planned against, so the answer can be explained and audited. */

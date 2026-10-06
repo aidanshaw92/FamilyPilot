@@ -42,6 +42,7 @@ const STAGE_ORDER: SequenceFailureReason[] = [
   'requirement-unmet',
   'routine-conflict',
   'return-by-exceeded',
+  'start-too-soon',
   'venue-closes-during-visit',
   'venue-closed',
   'travel-unknown',
