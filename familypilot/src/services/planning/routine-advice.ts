@@ -34,7 +34,7 @@ export interface RoutineSubject {
   /** The child's first name, only for the signed-in household whose profile holds it. */
   name: string | null;
   /** `feed` for a baby under a year, `meal` for an older child; naps are naps. */
-  noun: 'nap' | 'feed' | 'meal';
+  noun: 'nap' | 'feed' | 'meal' | 'routine';
   /** "Hannah", "Our family". */
   familyLabel: string;
   /** True for the household that is using the app. */
@@ -102,7 +102,8 @@ const possessive = (name: string): string => `${name}’s`;
 
 /** "Ozzie’s nap", "your nap", "the feed for Hannah’s family". */
 export function subjectPhrase(subject: RoutineSubject, kind: 'nap' | 'feed'): string {
-  const noun = kind === 'nap' ? 'nap' : subject.noun === 'meal' ? 'meal' : 'feed';
+  // A connection made before routines carried a kind shares only "Home time", so it is a home routine, not a nap.
+  const noun = subject.noun === 'routine' ? 'home routine' : kind === 'nap' ? 'nap' : subject.noun === 'meal' ? 'meal' : 'feed';
   if (subject.yours) return subject.name ? `${possessive(subject.name)} ${noun}` : `your ${noun}`;
   return `the ${noun} for ${possessive(subject.familyLabel)} family`;
 }
@@ -287,7 +288,7 @@ export function reasonAboutRoutines(context: RoutineAdviceContext): RoutineReaso
     homeBefore.push(
       subject.yours
         ? `You’re home around ${hm(family.home)}, before ${phrase} at ${hm(after.start)}.`
-        : `${possessive(subject.familyLabel)} family is home around ${hm(family.home)}, before their ${after.kind === 'nap' ? 'nap' : subject.noun === 'meal' ? 'meal' : 'feed'} at ${hm(after.start)}.`,
+        : `${possessive(subject.familyLabel)} family is home around ${hm(family.home)}, before their ${subject.noun === 'routine' ? 'home routine' : after.kind === 'nap' ? 'nap' : subject.noun === 'meal' ? 'meal' : 'feed'} at ${hm(after.start)}.`,
     );
   }
 

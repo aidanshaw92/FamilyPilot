@@ -33,7 +33,7 @@ export default function SavedPlanScreen() {
         ? toPlanViewModel(day.source, {
             resolveSubject: makeSubjectResolver(
               profile,
-              families.map((f) => ({ id: f.id, label: f.label })),
+              families,
             ),
             householdTitle: householdTitle(profile),
           })

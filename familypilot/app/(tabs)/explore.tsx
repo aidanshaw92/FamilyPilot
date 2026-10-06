@@ -428,7 +428,7 @@ const EDGE_ART_X = 690;
 const HEADER_SEAM_PX = 250;
 /** The subtitle's line height: the styles and the art shift below both use it. */
 const SUBTITLE_LINE_HEIGHT = 17;
-const SUBTITLE = 'Parks, museums and family days out across London';
+const SUBTITLE = 'Browse, search and filter family days out across London';
 const RESTAURANT_SUBTITLE = 'Family-friendly places to eat';
 
 const styles = StyleSheet.create({

@@ -156,7 +156,7 @@ export default function TripsScreen() {
    {state.savedDays.length?<Card style={s.panel} testID="plans-saved-days">
     <Text variant="heading2">Your plans</Text>
     {state.savedDays.map((day,i)=>{
-     const view=toPlanViewModel(day.source,{resolveSubject:makeSubjectResolver(profile,state.families.map(f=>({id:f.id,label:f.label}))),householdTitle:householdTitle(profile)});
+     const view=toPlanViewModel(day.source,{resolveSubject:makeSubjectResolver(profile,state.families),householdTitle:householdTitle(profile)});
      return <Pressable key={day.id} onPress={()=>router.push({pathname:'/saved-plan',params:{id:day.id}} as never)} accessibilityRole="button" accessibilityLabel={`Open ${view.title}`} style={[{minHeight:56,justifyContent:'center',gap:2},i>0?{borderTopWidth:1,borderColor:colors.border,paddingTop:spacing.sm}:undefined]}>
       <Text variant="heading3">{view.title}</Text>
       <Text variant="bodySmall" color={colors.text.secondary}>{view.dateSummary}</Text>

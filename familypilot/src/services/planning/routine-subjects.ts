@@ -15,14 +15,21 @@ import { RoutineSubject, SubjectResolver } from './routine-advice';
  */
 export function makeSubjectResolver(
   profile: Pick<FamilyProfile, 'routines' | 'members'> | null | undefined,
-  families: { id: string; label: string }[],
+  families: { id: string; label: string; routines?: { id: string; label: string }[] }[],
   mineId = 'mine',
 ): SubjectResolver {
   return (familyId, routineId, kind): RoutineSubject => {
     const family = families.find((f) => f.id === familyId);
     const yours = familyId === mineId;
     if (!yours) {
-      return { name: null, noun: kind === 'nap' ? 'nap' : 'feed', familyLabel: family?.label ?? 'Their', yours: false };
+      // Shared before routines carried a kind: only "Home time" is known, so it is never called a nap or a feed.
+      const legacy = family?.routines?.find((r) => r.id === routineId)?.label === 'Home time';
+      return {
+        name: null,
+        noun: legacy ? 'routine' : kind === 'nap' ? 'nap' : 'feed',
+        familyLabel: family?.label ?? 'Their',
+        yours: false,
+      };
     }
     const routine = (profile?.routines ?? []).find((r) => r.id === routineId);
     const child = routine?.childId

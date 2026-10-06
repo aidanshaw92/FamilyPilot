@@ -178,3 +178,34 @@ describe('Family Match: the honest verdict', () => {
     expect(closing.length).toBeLessThanOrEqual(1);
   });
 });
+
+describe('Family Fit talks about each child', () => {
+  const two = () => profile({ members: [parent, child('c1', 'Sloane', 7), child('c2', 'Ozzie', 0, { mobility: ['buggy'] })] });
+  const base = { minRecommendedAge: 0, maxRecommendedAge: 10, toilets: 'yes', babyChanging: 'yes', parking: 'yes' } as const;
+
+  it('says who it is good for, naming both children when the evidence is about both', () => {
+    const r = run(venue({}, { ...base, pushchairSuitability: 'good' }), two(), 90);
+    expect(r.children.map((c) => [c.name, c.state])).toEqual([['Sloane', 'works'], ['Ozzie', 'works']]);
+    expect(r.headline).toMatch(/for Sloane and Ozzie today$/);
+  });
+
+  it('keeps the children apart: could work for one, check something for the other', () => {
+    const r = run(venue({}, { ...base, pushchairSuitability: 'unknown' }), two(), 90);
+    expect(r.children.find((c) => c.name === 'Ozzie')?.state).toBe('check');
+    expect(r.children.find((c) => c.name === 'Sloane')?.state).toBe('works');
+    expect(r.headline).toBe('Could work for Sloane, but check buggy access for Ozzie');
+  });
+
+  it('names only the child a breach is about', () => {
+    const r = run(venue({}, { ...base, pushchairSuitability: 'difficult' }), two(), 90);
+    expect(r.verdict).toBe('poor');
+    expect(r.headline).toBe('Probably not for Ozzie today');
+  });
+
+  it('claims nothing for a child nobody has a fact about', () => {
+    const only = profile({ members: [parent, child('c3', 'Mia', 8)] });
+    const r = run(venue({}, {}), only, 90);
+    expect(r.children[0].state).toBe('unknown');
+    expect(r.headline).not.toMatch(/Mia/);
+  });
+});

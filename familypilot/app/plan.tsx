@@ -346,7 +346,7 @@ export default function PlanScreen() {
         ? toPlanViewModel(readySource, {
             resolveSubject: makeSubjectResolver(
               profile,
-              parties.families.map((f) => ({ id: f.id, label: f.label })),
+              parties.families,
             ),
             householdTitle: householdTitle(profile),
           })

@@ -2,7 +2,8 @@ const {refuseOnPreview}=require('../../server/accounts/preview-guard');
 const { randomBytes, createHash } = require('node:crypto');
 const { getSupabaseAdmin } = require('../../server/enrichment/_lib/supabase-admin');
 
-// Share only a coarse area and planning preferences. Never routine times or names of children.
+// Share only a coarse area and planning preferences. Never names of children. Routine times and whether each is a nap or a
+// feed are shared only when the person ticked "share routines" (shareAvailability), and never with a name or an id.
 function safeSnapshot(input) {
   if (!input || typeof input.label !== 'string' || typeof input.area !== 'string' || !Array.isArray(input.ages) || input.ages.length>10 || input.ages.some(n=>!Number.isFinite(n)||n<0||n>17) || !Number.isFinite(input.latitude) || Math.abs(input.latitude)>90 || !Number.isFinite(input.longitude) || Math.abs(input.longitude)>180 || !Number.isFinite(input.maxDriveMinutes) || input.maxDriveMinutes<5 || input.maxDriveMinutes>120) throw new Error('Invalid family details');
   return { label:input.label.slice(0,60),area:input.area.slice(0,80),latitude:Math.round(input.latitude*100)/100,longitude:Math.round(input.longitude*100)/100,ages:input.ages,
@@ -10,7 +11,7 @@ function safeSnapshot(input) {
     required:Array.isArray(input.required)?input.required.filter(x=>['toilets','babyChanging','parking','pushchair'].includes(x)):[],
     // Only a short, fixed set of words about who the invite is for. Never free text: this reaches another person.
     relationship:['partner','family','friend'].includes(input.relationship)?input.relationship:undefined,
-    routines:input.shareAvailability===true&&Array.isArray(input.routines)?input.routines.filter(r=>r.atHome===true&&/^([01]\d|2[0-3]):[0-5]\d$/.test(r.time)&&Number.isFinite(r.durationMinutes)&&r.durationMinutes>0&&r.durationMinutes<=240).slice(0,20).map((r,i)=>({id:`busy-${i}`,label:'Home time',kind:'nap',time:r.time,durationMinutes:r.durationMinutes,atHome:true})):[] };
+    routines:input.shareAvailability===true&&Array.isArray(input.routines)?input.routines.filter(r=>r.atHome===true&&/^([01]\d|2[0-3]):[0-5]\d$/.test(r.time)&&Number.isFinite(r.durationMinutes)&&r.durationMinutes>0&&r.durationMinutes<=240).slice(0,20).map((r,i)=>{const kind=r.kind==='feed'?'feed':'nap';return {id:`busy-${i}`,label:kind==='feed'?'Feed':'Nap',kind,time:r.time,durationMinutes:r.durationMinutes,atHome:true};}):[] };
 }
 async function previewInvitation(admin,code,res) {
   if(!/^[a-f0-9]{64}$/.test(code))return res.json({valid:false});

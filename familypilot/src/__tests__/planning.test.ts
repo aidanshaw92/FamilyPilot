@@ -35,8 +35,8 @@ describe('connection snapshot consent',()=>{
  });
  it('shares only anonymous home windows with explicit consent',async()=>{
   const {safeSnapshot}=await import('../../../api/planning/connections.js');
-  const result=safeSnapshot({...family,shareAvailability:true,routines:[{id:'feed',label:'Private feed',time:'12:00',durationMinutes:30,atHome:true},{id:'out',time:'14:00',durationMinutes:20,atHome:false}]});
-  expect(result.routines).toHaveLength(1);expect(result.routines[0].label).toBe('Home time');expect(result.routines[0].time).toBe('12:00');expect(JSON.stringify(result)).not.toContain('Private feed');
+  const result=safeSnapshot({...family,shareAvailability:true,routines:[{id:'feed',label:'Private feed',kind:'feed',time:'12:00',durationMinutes:30,atHome:true},{id:'out',time:'14:00',durationMinutes:20,atHome:false}]});
+  expect(result.routines).toHaveLength(1);expect(result.routines[0].label).toBe('Feed');expect(result.routines[0].kind).toBe('feed');expect(result.routines[0].time).toBe('12:00');expect(JSON.stringify(result)).not.toContain('Private feed');
  });
  it('rejects malformed coordinates',async()=>{const {safeSnapshot}=await import('../../../api/planning/connections.js');expect(()=>safeSnapshot({...family,latitude:NaN})).toThrow();});
 });

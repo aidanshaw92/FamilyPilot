@@ -43,8 +43,15 @@ describe('one taxonomy for Home and Explore', () => {
     expect(findEntry('all')).toBe(findEntry('for_you'));
   });
 
-  it('keeps the approved Home order and leaves restaurants out of the venue taxonomy', () => {
-    expect(PLAN_CATEGORIES.map((c) => c.label).slice(0, 4)).toEqual(['For you', 'Indoor', 'Outdoor', 'Soft play']);
+  it('gives Home and Explore different jobs: Home holds situations, Explore holds the categories', () => {
+    // Home is the curated answer to "what is best for us right now", so its rail is situations (indoors, a rainy day,
+    // short on time, fits the nap). Browsing by kind of place is Explore's job, so two directories do not compete.
+    expect(PLAN_CATEGORIES.map((c) => c.label)).toEqual(['For you', 'Indoor', 'Outdoor', 'Fits your day', 'Free', 'Rainy day', 'Under 1 hour']);
+    for (const kind of ['farm', 'park', 'museum', 'soft_play', 'activity', 'animals']) {
+      expect(PLAN_CATEGORIES.some((c) => c.id === kind), kind).toBe(false);
+      expect(findEntry(kind)?.explore, kind).toBe(true);
+    }
+    expect(EXPLORE_CATEGORIES.some((c) => c.id === 'parks')).toBe(true);
     expect(TAXONOMY.some((e) => e.id === 'restaurant' || e.exploreId === 'restaurants')).toBe(false);
     expect(EXPLORE_CATEGORIES.some((c) => c.id === 'restaurants')).toBe(true); // a separate mode, behind a pilot flag
   });
@@ -54,17 +61,27 @@ describe('a category is offered only if it can fill a list', () => {
   const venues = [...many('park', 10), ...many('museum', 6), ...many('farm', 2), ...many('soft_play', 1), ...many('zoo', 1)];
 
   it('hides a category with fewer than the useful minimum, and always offers the whole list', () => {
-    const home = planCategoriesFor(venues).map((c) => c.id);
-    expect(home).toContain('for_you');
-    expect(home).toContain('park');
-    expect(home).toContain('museum');
-    expect(home).not.toContain('farm'); // 2 < 3
-    expect(home).not.toContain('soft_play'); // 1
+    const explore = exploreCategoriesFor(venues).map((c) => c.id);
+    expect(explore).toContain('all');
+    expect(explore).toContain('parks');
+    expect(explore).toContain('museums');
+    expect(explore).not.toContain('farms'); // 2 < 3
+    expect(explore).not.toContain('soft_play'); // 1
+    expect(planCategoriesFor(venues).map((c) => c.id)).toContain('for_you');
   });
 
-  it('counts overlapping categories once per venue they contain', () => {
-    // Animals is farm + zoo: 2 + 1 = 3, which IS enough.
-    expect(planCategoriesFor(venues).map((c) => c.id)).toContain('animals');
+  it('offers a Home situation only when enough places can fill it', () => {
+    const home = planCategoriesFor(venues).map((c) => c.id);
+    expect(home).toContain('outdoor'); // parks
+    expect(home).toContain('indoor'); // museums
+    // Nobody has given a routine, so no place can say it fits the day: the lens is simply not there.
+    expect(home).not.toContain('routine');
+    const fitting = many('park', 3, { familyMatch: { reasons: [{ key: 'routine', text: 'Leave by 12:00 to be home in time for Ozzie’s nap' }] } as never });
+    expect(planCategoriesFor([...venues, ...fitting]).map((c) => c.id)).toContain('routine');
+  });
+
+  it('counts overlapping categories once per venue they contain (Animals is farm + zoo)', () => {
+    expect(exploreCategoriesFor([...venues, ...many('zoo', 2)]).map((c) => c.id)).toContain('animals');
   });
 
   it('offers the same categories on Explore, in Explore\'s own ids and wording', () => {
@@ -75,18 +92,18 @@ describe('a category is offered only if it can fill a list', () => {
   });
 
   it('reports the real count behind each offer', () => {
-    const offered = categoriesWithInventory(venues, 'home');
-    expect(offered.find((c) => c.id === 'park')?.count).toBe(10);
-    expect(offered.find((c) => c.id === 'for_you')?.count).toBe(venues.length);
+    const offered = categoriesWithInventory(venues, 'explore');
+    expect(offered.find((c) => c.id === 'parks')?.count).toBe(10);
+    expect(offered.find((c) => c.id === 'all')?.count).toBe(venues.length);
     expect(MIN_USEFUL_RESULTS).toBeGreaterThanOrEqual(2);
   });
 
   it('REGRESSION: with the real London mix (2 farms in 79) Farm is not offered; with the catalogue (8) it is', () => {
     const live = [...many('park', 34), ...many('museum', 28), ...many('attraction', 7), ...many('activity', 4), ...many('soft_play', 2), ...many('zoo', 2), ...many('farm', 2)];
-    expect(planCategoriesFor(live).map((c) => c.id)).not.toContain('farm');
+    expect(exploreCategoriesFor(live).map((c) => c.id)).not.toContain('farms');
     const withCatalogue = [...live, ...many('farm', 6), ...many('soft_play', 3)];
-    const ids = planCategoriesFor(withCatalogue).map((c) => c.id);
-    expect(ids).toContain('farm');
+    const ids = exploreCategoriesFor(withCatalogue).map((c) => c.id);
+    expect(ids).toContain('farms');
     expect(ids).toContain('soft_play');
     expect(filterByPlanCategory(withCatalogue, 'farm')).toHaveLength(8);
   });

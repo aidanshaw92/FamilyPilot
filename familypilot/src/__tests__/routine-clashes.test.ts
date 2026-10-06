@@ -287,3 +287,14 @@ describe('two families, one plan', () => {
     expect(outcome.view.routines!.together).toEqual(['Nobody’s routines are overlapped by this day.']);
   });
 });
+
+describe('a connection made before routines carried a kind', () => {
+  it('is a "home routine", never called a nap or a feed it may not be', async () => {
+    const legacy = family({ id: 'connected-2', label: 'Hannah', ages: [1], routines: [nap({ id: 'busy-0', label: 'Home time', time: '12:20' })] });
+    const outcome = await build([family(), legacy]);
+    const resolveSubject = makeSubjectResolver(profile, [family(), legacy]);
+    const named = toPlanViewModel(outcome.source, { resolveSubject });
+    expect(named.routines!.advice[0].title).toMatch(/^The home routine for Hannah’s family/);
+    expect(JSON.stringify(named.routines)).not.toMatch(/nap for Hannah/);
+  });
+});
