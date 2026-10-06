@@ -83,6 +83,11 @@ export interface FamilyMatchResult {
   /** Things the family needs or would want that nobody has confirmed. */
   toCheck: MatchLine[];
   today: { state: OpeningTodayState; label: string };
+  /**
+   * False when the place is shut today (all day, or already finished for the day) or never open. The verdict is about
+   * whether the place suits the family; this is whether they can go TODAY. No sentence may claim today when it is false.
+   */
+  availableToday: boolean;
   /** The one line worth showing on a card. */
   cardNote: string | null;
   evidence: { positives: number; venueFacts: number; breaches: number; hardUnknowns: number; /** Lines that rest on parent reports (never counted as positives). */ parentReported: number };
@@ -140,6 +145,44 @@ function mustHaveStatus(facility: FacilityType, facts: MatchableVenueFacts): { l
 }
 
 const names = (members: readonly FamilyMember[]): string[] => members.map((m) => m.name.trim());
+
+const childUsesCarrier = (member: Pick<FamilyMember, 'mobility'>): boolean => member.mobility?.includes('carrier') ?? false;
+
+/**
+ * "A sling or carrier may be easier for Ozzie": only when the venue's own evidence says the buggy will struggle, and only
+ * for a child whose family said they go in one.
+ *
+ * WHAT CAN TRIGGER IT, and nothing else:
+ *   - approved buggy access of "difficult" or "mixed" (pushchairSuitability, a trusted claim), or
+ *   - approved terrain of "hilly" or "very hilly" (extendedTerrain, a trusted claim) where buggy access is NOT
+ *     confirmed good: confirmed-good buggy access and hilly paths disagree, and disagreeing evidence says nothing.
+ * NEVER from the category (a park, zoo, farm or museum is not assumed to mean walking or rough paths), never from visit
+ * length, never from parent reports alone (they are context, not facts), never when the evidence is unknown. With no such
+ * evidence it says nothing: silence is better than personalisation nobody can stand behind.
+ *
+ * It names the children whose own answers include BOTH a buggy and a sling or carrier (mobility is recorded per child),
+ * so it is never said about a child it does not fit, and never to a family with no choice to make.
+ */
+function carrierAdvice(children: readonly FamilyMember[], facts: MatchableVenueFacts | null | undefined): MatchLine | null {
+  if (!facts) return null;
+  // A choice only for a child who goes in both: one who is only ever carried is in the sling anyway, and saying so is noise.
+  const carried = children.filter((child) => childUsesCarrier(child) && childUsesBuggy(child));
+  if (carried.length === 0) return null;
+  const buggy = facts.pushchairSuitability;
+  const hilly = facts.terrain === 'hilly' || facts.terrain === 'very_hilly';
+  const buggyStruggles = buggy === 'difficult' || buggy === 'mixed';
+  const buggyFine = buggy === 'good' || buggy === 'excellent';
+  if (!buggyStruggles && !(hilly && !buggyFine)) return null;
+  const why = buggy === 'difficult'
+    ? 'buggy access is difficult here'
+    : buggy === 'mixed'
+      ? 'buggy access is mixed here'
+      : facts.terrain === 'very_hilly'
+        ? 'the paths here are very hilly'
+        : 'the paths here are hilly';
+  const who = joinNames(names(carried)) || 'your little one';
+  return { key: 'carrier', text: `A sling or carrier may be easier for ${who}: ${why}`, childIds: carried.map((c) => c.id), topic: 'getting around' };
+}
 const sayNames = (members: readonly FamilyMember[], fallback: string): string => joinNames(names(members)) || fallback;
 
 function cap(text: string): string {
@@ -161,8 +204,11 @@ function headlineFor(input: {
   lines: { breaches: MatchLine[]; softCautions: MatchLine[]; hardUnknowns: MatchLine[]; softUnknowns: MatchLine[] };
   /** Why nothing is known for a child, in a clause ("no age range is recorded for this place yet"). */
   unknownReason: string;
+  /** Shut today (all day, or already finished): the headline may judge the place but never claim today. */
+  notToday?: boolean;
 }): string {
-  const { verdict, lens, children, forNames, lines, unknownReason } = input;
+  const { verdict, lens, children, forNames, lines, unknownReason, notToday = false } = input;
+  const when = notToday ? ', but not today' : ' today';
   if (verdict === 'not_reviewed') return 'Family suitability not yet reviewed';
 
   const namedWorks = lens.filter((l) => l.state === 'works' && l.name).map((l) => l.name);
@@ -178,7 +224,7 @@ function headlineFor(input: {
     const breachKids = lens.filter((l) => l.state === 'concern' && l.name);
     const everyone = breachKids.length === 0 || breachKids.length === children.length;
     const breachWho = !everyone && joinNames(breachKids.map((l) => l.name)) ? joinNames(breachKids.map((l) => l.name)) : 'your family';
-    return `Probably not for ${breachWho} today`;
+    return `Probably not for ${breachWho}${notToday ? '' : ' today'}`;
   }
 
   // Several children, and the place is confirmed for some but not all of them: say who, and say what is open for the rest.
@@ -196,7 +242,7 @@ function headlineFor(input: {
     return `Looks practical, but ${gap}`;
   }
 
-  return `${VERDICT_WORD[verdict]} for ${who} today`;
+  return `${VERDICT_WORD[verdict]} for ${who}${when}`;
 }
 
 /**
@@ -259,11 +305,16 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
   const usesBuggy = familyUsesBuggy(profile);
 
   // ---- today: the schedule and the clock --------------------------------------------------------------------
+  // SUITABILITY and TODAY'S AVAILABILITY are separate questions. Whether a place suits this family does not change
+  // because it is shut today; whether they can go TODAY does. So a place shut today (all day, or already finished)
+  // does not lower the verdict, and the verdict can never be worded as a claim about today: the headline says
+  // "…, but not today" and the closed line leads what is said about it. A place never open to visitors is not a
+  // "today" question, so that one stays a breach.
   const today = describeOpeningToday(venue.structuredOpeningHours, now);
-  if (today.state === 'closed_today' || today.state === 'never_open') {
-    breaches.push({ key: 'closed-today', text: today.label });
-  } else if (today.state === 'closed_for_today') {
-    softCautions.push({ key: 'closed-for-today', text: today.label });
+  const notToday = today.state === 'closed_today' || today.state === 'closed_for_today';
+  const availability: MatchLine | null = notToday ? { key: today.state === 'closed_today' ? 'closed-today' : 'closed-for-today', text: today.label } : null;
+  if (today.state === 'never_open') {
+    breaches.push({ key: 'never-open', text: today.label });
   } else if (today.state === 'closing_soon') {
     softCautions.push({ key: 'closing-soon', text: today.label });
   } else if (today.state === 'open_now' || today.state === 'open_all_day' || today.state === 'opens_later') {
@@ -316,10 +367,14 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
       }
     }
 
-    // Buggy.
+    // Buggy, and the sling or carrier where the evidence makes it the better way round (see carrierAdvice).
+    const carrier = carrierAdvice(children, facts);
     if (usesBuggy) {
       const buggyNames = sayNames(buggyKids, 'your buggy');
       const who = buggyKids.length > 0 && joinNames(names(buggyKids)) ? `${buggyNames}’s buggy` : 'your buggy';
+      // A child who can also go in a sling is not stuck where a buggy is: for them difficult buggy access is a caution
+      // with a way round, not a reason the place won't work.
+      const buggyOnly = buggyKids.filter((c) => !childUsesCarrier(c));
       switch (facts.pushchairSuitability) {
         case 'excellent':
         case 'good':
@@ -331,12 +386,17 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
           softCautions.push({ key: 'buggy-mixed', text: `Buggy access is mixed here, so ${who} may be awkward in places`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access' });
           break;
         case 'difficult':
-          breaches.push({ key: 'buggy-difficult', text: `Buggy access is difficult here, and ${who} is how you get around`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access' });
+          if (buggyOnly.length > 0 || buggyKids.length === 0) {
+            breaches.push({ key: 'buggy-difficult', text: `Buggy access is difficult here, and ${who} is how you get around`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access' });
+          } else {
+            softCautions.push({ key: 'buggy-difficult-carrier', text: `Buggy access is difficult here`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access' });
+          }
           break;
         default:
           hardUnknowns.push({ key: 'buggy-unknown', text: unknownText('pushchair', `Buggy access still to be checked for ${who}`), childIds: buggyKids.map((c) => c.id), topic: 'buggy access' });
       }
     }
+    if (carrier) softCautions.push(carrier);
 
     // Step-free: the venue holds no evidence for it, so for a child who needs it, it is always still to be checked.
     if (familyNeedsStepFree(profile)) {
@@ -409,17 +469,19 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
       if (facts.environment === 'indoor' && wet) {
         reasons.push({ key: 'weather', text: 'Indoors, so rain won’t spoil it' });
         venueFacts += 1;
-      } else if (facts.environment === 'outdoor' && bright) {
+      } else if (facts.environment === 'outdoor' && bright && !notToday) {
+        // Today's weather only matters on a day they can go.
         reasons.push({ key: 'weather', text: 'Outdoors, and the weather is good for it today' });
         venueFacts += 1;
-      } else if (facts.environment === 'outdoor' && wet) {
+      } else if (facts.environment === 'outdoor' && wet && !notToday) {
         softCautions.push({ key: 'weather-wet', text: 'Outdoors, and rain is forecast' });
       }
     }
   }
 
   // ---- routines --------------------------------------------------------------------------------------------
-  const routine = evaluateRoutineFit(profile, drive, now);
+  // Routine timing ("leave by 12:00 to be home for the nap") is about a visit TODAY: on a day they cannot go it is not said.
+  const routine = notToday ? { reason: null, caution: null } : evaluateRoutineFit(profile, drive, now);
   if (routine.reason) reasons.push({ key: 'routine', text: routine.reason });
   if (routine.caution) softCautions.push({ key: 'routine-clash', text: routine.caution });
 
@@ -489,13 +551,14 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
     });
   }
 
-  const headline = headlineFor({ verdict, lens, children, forNames, lines: { breaches, softCautions, hardUnknowns, softUnknowns }, unknownReason });
+  const headline = headlineFor({ verdict, lens, children, forNames, lines: { breaches, softCautions, hardUnknowns, softUnknowns }, unknownReason, notToday });
 
-  const cautions = [...breaches, ...softCautions];
+  // Shut today leads what stands in the way of going today, after a confirmed breach of what the family needs.
+  const cautions = [...breaches, ...(availability ? [availability] : []), ...softCautions];
   const toCheck = [...hardUnknowns, ...softUnknowns];
   // A card carries only what changes a decision: a breach, a requirement still unchecked, or a caution. The softer
   // "still to be checked" lines are for the venue's own page, where they have room and context.
-  const firstIssue = breaches[0] ?? hardUnknowns[0] ?? softCautions[0];
+  const firstIssue = breaches[0] ?? availability ?? hardUnknowns[0] ?? softCautions[0];
   const todayBit = ['open_now', 'closing_soon', 'opens_later', 'open_all_day'].includes(today.state) ? today.label : null;
   // The same fact can be both today's opening state and a caution ("Closing soon · 5pm"): say it once.
   const noteParts = [todayBit, firstIssue?.text ?? (todayBit ? null : reasons[0]?.text)].filter((part): part is string => Boolean(part));
@@ -511,6 +574,7 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
     cautions,
     toCheck,
     today: { state: today.state, label: today.label },
+    availableToday: !notToday && today.state !== 'never_open',
     cardNote,
     evidence: { positives, venueFacts, breaches: breaches.length, hardUnknowns: hardUnknowns.length, parentReported },
   };
@@ -556,7 +620,8 @@ export function matchCardReason(match: FamilyMatchResult): string {
     others.find((line) => (line.childIds?.length ?? 0) > 0) ??
     others[0];
   if (match.verdict === 'good' || match.verdict === 'excellent') {
-    const open = match.reasons.find((line) => line.key === 'open-today');
+    // Open today, or (when it is shut today) the line that says so: a good place is never shown as if it were open.
+    const open = match.reasons.find((line) => line.key === 'open-today') ?? (match.availableToday === false ? match.cautions.find((line) => line.key === 'closed-today' || line.key === 'closed-for-today') : undefined);
     return [lead?.text, open?.text].filter(Boolean).join(' · ');
   }
   if (match.verdict === 'possible' && lead) {

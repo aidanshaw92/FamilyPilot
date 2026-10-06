@@ -175,6 +175,11 @@ export interface MatchableVenueFacts {
   parking: TriState | 'unknown';
   freeParking?: TriState | 'unknown';
   pushchairSuitability: import('@/src/types/enrichment').PushchairSuitability;
+  /**
+   * How hilly the paths are, from an approved claim (never inferred from the category: a park is not assumed hilly, a
+   * zoo is not assumed to mean lots of walking). Absent or 'unknown' means nobody has said.
+   */
+  terrain?: import('@/src/types/enrichment').ExtendedTerrain;
   environment: VenueEnvironment;
   energyLevel: VenueEnergyLevel;
   visitDurationMinutes: number | null;

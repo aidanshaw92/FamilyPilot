@@ -694,6 +694,40 @@ async function listClaimsWithFreshness(familypilotPlaceId, today = new Date().to
   return { trusted, stale, expired };
 }
 
+/**
+ * `getActiveClaims` for many venues: id -> the same claims, in the same order (newest first), that `getActiveClaims`
+ * returns for each. One round trip per chunk of venues instead of one per venue.
+ */
+async function getActiveClaimsBatch(familypilotPlaceIds) {
+  const ids = [...new Set(familypilotPlaceIds)];
+  const out = new Map(ids.map((id) => [id, []]));
+  if (ids.length === 0) return out;
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    for (const id of ids) out.set(id, await getActiveClaims(id));
+    return out;
+  }
+  const { chunked, readAllRows } = require('./enrichment-store');
+  // A venue can hold many active claims, so a chunk of venues can pass the 1000-row page: read every page.
+  const pages = await Promise.all(
+    chunked(ids).map((chunk) =>
+      readAllRows(() =>
+        supabase
+          .from('venue_claims')
+          .select('*')
+          .in('familypilot_place_id', chunk)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: true }),
+      ),
+    ),
+  );
+  // Rows arrive newest first across the chunk; grouping keeps that order within each venue.
+  for (const row of pages.flat()) out.get(row.familypilot_place_id)?.push(rowToClaim(row));
+  for (const id of ids) out.set(id, out.get(id).filter((claim) => isClaimActive(claim)));
+  return out;
+}
+
 async function getActiveClaims(familypilotPlaceId) {
   const claims = await listClaimsForVenue(familypilotPlaceId, { status: 'active' });
   // Wrapped, never passed bare: `filter` supplies the element INDEX as the second argument, which
@@ -925,6 +959,7 @@ module.exports = {
   listClaimsForVenue,
   getClaimById,
   getActiveClaims,
+  getActiveClaimsBatch,
   projectActiveClaimsToPayload,
   rebuildMetadataPayloadFromClaims,
   venueHasActiveClaims,

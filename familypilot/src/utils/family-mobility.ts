@@ -49,10 +49,16 @@ export function mobilityAnswered(profile: Pick<FamilyProfile, 'members'>): boole
   return children(profile.members).some((member) => (member.mobility?.length ?? 0) > 0);
 }
 
-/** The words a parent sees for each answer: onboarding's chips, Edit profile and the Profile summary alike. */
+/**
+ * The words a parent sees for each answer: onboarding's chips, Edit profile and the Profile summary alike.
+ *
+ * Display only. The stored values (`buggy`, `carrier`) are unchanged, so every saved profile, backup and shared
+ * snapshot reads exactly as before. "Baby carrier" alone was not clear on a real phone (a carrier is also a car seat, a
+ * cot, a pram), so both name the familiar thing first: a buggy you push, a sling or carrier you wear.
+ */
 export const MOBILITY_LABELS: Record<ChildMobility, string> = {
   walks: 'Walks',
-  buggy: 'Buggy',
-  carrier: 'Baby carrier',
+  buggy: 'Buggy / pushchair',
+  carrier: 'Sling / baby carrier',
   'mobility-aid': 'Wheelchair or mobility aid',
 };

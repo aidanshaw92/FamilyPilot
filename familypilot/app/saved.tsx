@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SavedBackupPanel } from '@/src/components/saved/SavedBackupPanel';
+import { BackButton } from '@/src/components/ui/BackButton';
 import { SavedPlaceRow } from '@/src/components/shared/SavedPlaceRow';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Chip, EmptyState, SkeletonCard, Text, CHIP_GAP } from '@/src/components/ui';
@@ -39,7 +41,8 @@ const SAVED_GROUPS: { id: SavedGroup; label: string }[] = [
 ];
 
 export default function SavedScreen() {
-  const tabBarClearance = useTabBarClearance();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { data: savedItems, isLoading, refetch } = useSavedItems();
   const restoreSaved = useSavedStore((state) => state.restoreSaved);
   const [search, setSearch] = useState('');
@@ -116,7 +119,11 @@ export default function SavedScreen() {
   return (
     <ScreenContainer>
       <View style={styles.header}>
-        <Text variant="heading1">Saved</Text>
+        {/* Opened from Plans now (Saved places is no longer a tab), so it has a way back. */}
+        <View style={styles.back}>
+          <BackButton onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/trips' as never))} />
+        </View>
+        <Text variant="heading1" style={styles.title}>Saved places</Text>
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
           Places your family wants to remember
         </Text>
@@ -179,7 +186,7 @@ export default function SavedScreen() {
       ) : null}
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing['3xl'] }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -227,8 +234,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenPadding,
     paddingTop: spacing.lg,
   },
+  back: {
+    alignSelf: 'flex-start',
+  },
   subtitle: {
     marginTop: spacing.xs,
+  },
+  title: {
+    marginTop: spacing.md,
   },
   searchRow: {
     paddingHorizontal: spacing.screenPadding,

@@ -24,7 +24,11 @@ import { PlanAdviceOptionView, PlanViewModelInput, toPlanViewModel } from '@/src
 import { makeSubjectResolver } from '@/src/services/planning/routine-subjects';
 import { visitLengthToParam } from '@/src/services/planning/visit-duration';
 import { householdTitle } from '@/src/utils/household';
-import { usePlanningStore } from '@/src/stores/planning-store';
+import { PLANNING_STORAGE_KEY, usePlanningStore } from '@/src/stores/planning-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { alreadySavedId, planContentKey, savePlanDurably } from '@/src/services/planning/save-plan';
+import { buildCalendarEvent } from '@/src/services/planning/calendar-event';
+import { addToCalendar } from '@/src/services/planning/add-to-calendar';
 
 /**
  * GENERATING, then PLAN -- the last two screens of the approved journey.
@@ -106,6 +110,7 @@ export default function PlanScreen() {
   const { data: profile } = useFamilyProfile();
   const planningFamilies = usePlanningStore((state) => state.families);
   const saveDay = usePlanningStore((state) => state.saveDay);
+  const deleteDay = usePlanningStore((state) => state.deleteDay);
   const savedDays = usePlanningStore((state) => state.savedDays);
 
   // Parsed in one tested place rather than here, and from the narrowed primitives above so the
@@ -294,15 +299,53 @@ export default function PlanScreen() {
   }, [router, venueId]);
 
   const readySource = phase.status === 'ready' ? phase.source : null;
-  const handleSave = useCallback(() => {
+  // Saved is said only once the day is confirmed in the phone's storage (save-plan.ts). The state is tied to the content
+  // it was saved for, so a day rebuilt by an advice option or "Add lunch" is a new, unsaved day.
+  const [saveFor, setSaveFor] = useState<{ key: string; status: 'saving' | 'saved' | 'already' | 'failed'; message?: string } | null>(null);
+  const [calendarMessage, setCalendarMessage] = useState<string | undefined>(undefined);
+  const readyKey = readySource ? planContentKey(readySource) : null;
+  const alreadyId = useMemo(() => (readySource ? alreadySavedId(readySource, savedDays) : null), [readySource, savedDays]);
+  const currentSave = saveFor && saveFor.key === readyKey ? saveFor : null;
+  const saveState = currentSave?.status ?? (alreadyId ? 'already' : 'idle');
+  const keptId = (currentSave && (currentSave.status === 'saved' || currentSave.status === 'already') ? savedId : null) ?? alreadyId;
+
+  const handleSave = useCallback(async () => {
     // The ref, not the state, is the guard: a second tap can land before React re-renders, and each
     // press mints its own id, so state alone would store the same day twice.
-    if (!readySource || saving.current) return;
+    if (!readySource || !readyKey || saving.current) return;
     saving.current = true;
-    const id = `day-${Date.now()}`;
-    saveDay({ id, createdAt: new Date().toISOString(), source: readySource });
-    setSavedId(id);
-  }, [saveDay, readySource]);
+    setSaveFor({ key: readyKey, status: 'saving' });
+    const outcome = await savePlanDurably(readySource, {
+      existing: usePlanningStore.getState().savedDays,
+      saveDay,
+      deleteDay,
+      readStored: () => AsyncStorage.getItem(PLANNING_STORAGE_KEY),
+    });
+    saving.current = false;
+    if (outcome.status === 'failed') {
+      setSaveFor({ key: readyKey, status: 'failed', message: outcome.message });
+      return;
+    }
+    setSavedId(outcome.id);
+    setSaveFor({ key: readyKey, status: outcome.status });
+  }, [saveDay, deleteDay, readySource, readyKey]);
+
+  // "View plan": the saved plan itself, as Plans shows it. A plain push, so the phone's own Back (Safari's swipe included)
+  // and the screen's Back agree: both return here, which now reads "Already in your plans". From there, "See all your
+  // plans" goes on to the list. (Popping the stack to Plans and opening the plan over it left web history behind the
+  // app: Safari's Back then returned to this screen while the app showed Plans.)
+  const handleViewPlan = useCallback(() => {
+    if (!keptId) return;
+    router.push({ pathname: '/saved-plan', params: { id: keptId, from: 'save' } } as never);
+  }, [router, keptId]);
+
+  const handleAddToCalendar = useCallback(async () => {
+    if (!keptId || !readySource) return;
+    setCalendarMessage(undefined);
+    const result = await addToCalendar(buildCalendarEvent({ id: keptId, source: readySource }));
+    if (result === 'failed') setCalendarMessage('We couldn’t open your calendar. Please try again.');
+    if (result === 'shared') setCalendarMessage('Shared the plan’s details. Adding it straight to your calendar works in the FamilyPilot web app.');
+  }, [keptId, readySource]);
 
   /**
    * "Change the plan" goes back to the place with the sheet already open on what was chosen, so changing one answer
@@ -481,8 +524,12 @@ export default function PlanScreen() {
       onApplyOption={applyOption}
       onToggleLunch={toggleLunch}
       onBack={handleBack}
-      onSave={handleSave}
-      saved={savedDays.some((day) => day.id === savedId)}
+      onSave={() => void handleSave()}
+      saveState={saveState}
+      saveError={currentSave?.message}
+      onViewPlan={handleViewPlan}
+      onAddToCalendar={() => void handleAddToCalendar()}
+      calendarMessage={calendarMessage}
       topInset={insets.top}
       bottomInset={insets.bottom}
     />

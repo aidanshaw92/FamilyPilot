@@ -40,7 +40,7 @@ const GUESTS = [
 
 const ALL_SIZES = [[360, 800], [390, 844], [393, 852], [430, 932], [360, 640], [390, 700], [393, 740]];
 const SIZES = process.env.ONLY_SIZES ? process.env.ONLY_SIZES.split(',').map((size) => size.split('x').map(Number)) : ALL_SIZES;
-const TABS = [['/', 'Home'], ['/explore', 'Explore'], ['/trips', 'Plans'], ['/saved', 'Saved'], ['/profile', 'Profile']];
+const TABS = [['/', 'Home'], ['/explore', 'Explore'], ['/halfway', 'Halfway'], ['/trips', 'Plans'], ['/profile', 'Profile']];
 
 let failed = 0;
 const check = (name, pass, detail) => {

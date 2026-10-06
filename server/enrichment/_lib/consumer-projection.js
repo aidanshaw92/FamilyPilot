@@ -4,9 +4,10 @@
  */
 
 const { resolveEnrichmentStatus } = require('./validation');
-const { getMetadata, rowToMetadata } = require('./enrichment-store');
+const { getMetadata, getMetadataBatch, rowToMetadata } = require('./enrichment-store');
 const {
   getActiveClaims,
+  getActiveClaimsBatch,
   listClaimsWithFreshness,
   projectActiveClaimsToPayload,
   metadataRowFromPayload,
@@ -69,6 +70,52 @@ async function getConsumerMetadata(familypilotPlaceId) {
 }
 
 /**
+ * `getConsumerMetadata` for many venues: id -> exactly what `getConsumerMetadata(id)` returns, built from a handful of
+ * set-based reads instead of three or four round trips per venue.
+ *
+ * The London search applies this overlay to every place it returns (about 160). Per venue it was a metadata read, a
+ * claims read and a visit-reports read, chained, so one request made ~410 database round trips with up to 160 in
+ * flight at once. The projection itself (which claims are trusted, which a parent report has disputed, the payload a
+ * screen reads) is unchanged: the same pure functions run on the same rows, so nothing about the evidence changes.
+ */
+async function getConsumerMetadataBatch(familypilotPlaceIds) {
+  const ids = [...new Set(familypilotPlaceIds)];
+  const out = new Map(ids.map((id) => [id, null]));
+  if (ids.length === 0) return out;
+  const [rawById, claimsById] = await Promise.all([getMetadataBatch(ids), getActiveClaimsBatch(ids)]);
+
+  const candidates = new Map();
+  for (const id of ids) {
+    const raw = rawById.get(id);
+    if ((raw?.enrichmentStatus ?? 'provider_only') === 'ai_draft') continue;
+    const activeClaims = claimsById.get(id) ?? [];
+    if (activeClaims.length === 0) continue;
+    candidates.set(id, activeClaims);
+  }
+  if (candidates.size === 0) return out;
+
+  const { venueFeedbackBatch } = require('../../feedback/_lib/store');
+  const definitions = require('../../feedback/_lib/rules').FIELDS;
+  const feedbackById = await venueFeedbackBatch(candidates);
+  for (const [id, activeClaims] of candidates) {
+    const fields = feedbackById.get(id) ?? {};
+    const disputed = new Set(
+      Object.entries(fields)
+        .filter(([, field]) => field.status === 'needs_recheck')
+        .map(([key]) => definitions[key].claim),
+    );
+    const raw = rawById.get(id);
+    const projected = projectActiveClaimsToPayload(activeClaims.filter((c) => !disputed.has(c.fieldKey)));
+    const payload = attachTrustFields({ ...projected }, raw);
+    const status = resolveEnrichmentStatus(payload, raw);
+    const row = metadataRowFromPayload(id, payload, raw ?? { enrichmentStatus: status });
+    row.enrichment_status = status === 'verified' ? 'verified' : 'enriched';
+    out.set(id, rowToMetadata(row));
+  }
+  return out;
+}
+
+/**
  * Facts we still hold but no longer vouch for, for display only.
  *
  * Deliberately a separate call returning a separate shape. Putting these anywhere inside the
@@ -93,6 +140,7 @@ async function getVenueStaleFacts(familypilotPlaceId) {
 
 module.exports = {
   getConsumerMetadata,
+  getConsumerMetadataBatch,
   getVenueStaleFacts,
   attachTrustFields,
   CONSUMER_TRUST_FIELDS,

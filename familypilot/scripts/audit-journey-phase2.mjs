@@ -585,6 +585,8 @@ async function auditJourney(browser, viewport) {
       } catch { return -1; }
     });
     note(V, 'Plan', 'a double tap saves the day once, not twice', { ok: saved === 1, message: `${saved} saved day(s)` });
+    const confirmation = await page.getByTestId('plan-saved-confirmation').evaluate((n) => (n.textContent ?? '').trim()).catch(() => '');
+    note(V, 'Plan', 'saving says "Plan saved" and offers View plan', { ok: /Plan saved/.test(confirmation) && /View plan/.test(confirmation), message: confirmation || 'no confirmation' });
 
     await page.goBack();
     await settle(page, 1600);

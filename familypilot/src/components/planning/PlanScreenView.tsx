@@ -43,7 +43,22 @@ export interface PlanScreenViewProps {
   onApplyOption?: (option: PlanAdviceOptionView) => void;
   /** Adds lunch to the day, or takes it out, and builds the plan again. */
   onToggleLunch?: () => void;
+  /** A saved plan opened again (from Plans): there is nothing to save, and the action is Add to calendar. */
   saved?: boolean;
+  /**
+   * Where saving a freshly built day has got to. "saved" is only ever said once the day is confirmed in the phone's
+   * storage (save-plan.ts); "already" is the same day saved before, recognised by its content.
+   */
+  saveState?: 'idle' | 'saving' | 'saved' | 'already' | 'failed';
+  saveError?: string;
+  /** Opens the plan that was just saved, as it now appears in Plans. */
+  onViewPlan?: () => void;
+  /** A plan reached through "View plan": the way on to the Plans list, where it now sits. */
+  onSeeAllPlans?: () => void;
+  /** Hands the plan to the phone's calendar (add-to-calendar.ts). Offered only for a plan that is saved. */
+  onAddToCalendar?: () => void;
+  /** What happened after Add to calendar, when there is something to say. */
+  calendarMessage?: string;
   /** Insets, so the saved-plan action clears the home indicator on every device. */
   bottomInset?: number;
   topInset?: number;
@@ -57,9 +72,16 @@ export function PlanScreenView({
   onApplyOption,
   onToggleLunch,
   saved = false,
+  saveState = 'idle',
+  saveError,
+  onViewPlan,
+  onSeeAllPlans,
+  onAddToCalendar,
+  calendarMessage,
   bottomInset = 0,
   topInset = 0,
 }: PlanScreenViewProps) {
+  const done = saved || saveState === 'saved' || saveState === 'already';
   const [section, setSection] = useState<PlanSectionView['id']>('day');
   const routinesVisible = Boolean(view.routines && view.routines.headline);
   const { width } = useWindowDimensions();
@@ -93,15 +115,15 @@ export function PlanScreenView({
             disagree about whether the day is saved. */}
         <Pressable
           onPress={onSave}
-          disabled={saved}
+          disabled={done || saveState === 'saving'}
           accessibilityRole="button"
-          accessibilityLabel={saved ? 'Plan saved' : 'Save this plan'}
-          accessibilityState={{ disabled: saved }}
+          accessibilityLabel={done ? 'Plan saved' : 'Save this plan'}
+          accessibilityState={{ disabled: done || saveState === 'saving' }}
           style={styles.headerCircle}
           testID="plan-save-header"
         >
           <Ionicons
-            name={saved ? 'bookmark' : 'bookmark-outline'}
+            name={done ? 'bookmark' : 'bookmark-outline'}
             size={20}
             color={colors.action}
           />
@@ -320,7 +342,52 @@ export function PlanScreenView({
       {/* Node 71:30: the CTA bar. Save this plan is this product's action here; the frame's invite
           CTA belongs to the pilot-gated Plans tab. */}
       <View style={[styles.footer, { paddingBottom: safeFooterPadding(bottomInset) }]}>
-        <ArrowCta label={saved ? 'Saved' : 'Save this plan'} onPress={onSave} disabled={saved} testID="plan-save" />
+        {saved ? (
+          // A saved plan, opened again: the one thing left to do with it here is put it in the calendar (and, straight after
+          // saving, find it among the family's other plans).
+          <View style={styles.savedFooter}>
+            {onAddToCalendar ? <ArrowCta label="Add to calendar" onPress={onAddToCalendar} testID="plan-add-to-calendar" /> : null}
+            {onSeeAllPlans ? (
+              <Pressable onPress={onSeeAllPlans} accessibilityRole="link" style={styles.secondaryAction} hitSlop={8} testID="plan-see-all-plans">
+                <Text style={styles.secondaryActionText}>See all your plans</Text>
+                <Ionicons name="arrow-forward" size={16} color={colors.action} />
+              </Pressable>
+            ) : null}
+          </View>
+        ) : saveState === 'saved' || saveState === 'already' ? (
+          <View style={styles.savedFooter} testID="plan-saved-confirmation">
+            <View style={styles.savedLine} accessibilityRole="alert" accessibilityLiveRegion="polite">
+              <Ionicons name="checkmark-circle" size={20} color={colors.secondary[500]} />
+              <Text style={styles.savedText}>{saveState === 'already' ? 'Already in your plans' : 'Plan saved'}</Text>
+            </View>
+            <ArrowCta label="View plan" onPress={onViewPlan ?? (() => {})} testID="plan-view-saved" />
+            {onAddToCalendar ? (
+              <Pressable onPress={onAddToCalendar} accessibilityRole="button" style={styles.secondaryAction} hitSlop={8} testID="plan-add-to-calendar">
+                <Ionicons name="calendar-outline" size={18} color={colors.action} />
+                <Text style={styles.secondaryActionText}>Add to calendar</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : (
+          <>
+            {saveState === 'failed' && saveError ? (
+              <Text variant="bodySmall" color={colors.error[600]} accessibilityRole="alert" style={styles.saveError} testID="plan-save-error">
+                {saveError}
+              </Text>
+            ) : null}
+            <ArrowCta
+              label={saveState === 'saving' ? 'Saving…' : saveState === 'failed' ? 'Try again' : 'Save this plan'}
+              onPress={onSave}
+              disabled={saveState === 'saving'}
+              testID="plan-save"
+            />
+          </>
+        )}
+        {calendarMessage ? (
+          <Text variant="caption" color={colors.text.secondary} style={styles.calendarMessage} testID="plan-calendar-message">
+            {calendarMessage}
+          </Text>
+        ) : null}
       </View>
     </View>
   );
@@ -486,4 +553,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.borderLight,
   },
+  savedFooter: { gap: spacing.sm },
+  savedLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, justifyContent: 'center' },
+  savedText: { fontFamily: 'Inter_600SemiBold', fontSize: 16, lineHeight: 22, color: colors.ink },
+  secondaryAction: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, minHeight: 44 },
+  secondaryActionText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, lineHeight: 20, color: colors.action },
+  saveError: { textAlign: 'center', marginBottom: spacing.sm },
+  calendarMessage: { textAlign: 'center', marginTop: spacing.xs },
 });

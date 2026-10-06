@@ -350,6 +350,13 @@
   {
     "viewport": "360x800",
     "screen": "Plan",
+    "step": "saving says \"Plan saved\" and offers View plan",
+    "ok": true,
+    "message": "Plan savedView planAdd to calendar"
+  },
+  {
+    "viewport": "360x800",
+    "screen": "Plan",
     "step": "back returns to the venue the day was built around",
     "ok": true,
     "message": "/venue/fp-google-FIXTUREedgeRich"
@@ -707,6 +714,13 @@
     "step": "a double tap saves the day once, not twice",
     "ok": true,
     "message": "1 saved day(s)"
+  },
+  {
+    "viewport": "390x844",
+    "screen": "Plan",
+    "step": "saving says \"Plan saved\" and offers View plan",
+    "ok": true,
+    "message": "Plan savedView planAdd to calendar"
   },
   {
     "viewport": "390x844",
@@ -1072,6 +1086,13 @@
   {
     "viewport": "393x852",
     "screen": "Plan",
+    "step": "saving says \"Plan saved\" and offers View plan",
+    "ok": true,
+    "message": "Plan savedView planAdd to calendar"
+  },
+  {
+    "viewport": "393x852",
+    "screen": "Plan",
     "step": "back returns to the venue the day was built around",
     "ok": true,
     "message": "/venue/fp-google-FIXTUREedgeRich"
@@ -1433,6 +1454,13 @@
   {
     "viewport": "430x932",
     "screen": "Plan",
+    "step": "saving says \"Plan saved\" and offers View plan",
+    "ok": true,
+    "message": "Plan savedView planAdd to calendar"
+  },
+  {
+    "viewport": "430x932",
+    "screen": "Plan",
     "step": "back returns to the venue the day was built around",
     "ok": true,
     "message": "/venue/fp-google-FIXTUREedgeRich"
@@ -1790,6 +1818,13 @@
     "step": "a double tap saves the day once, not twice",
     "ok": true,
     "message": "1 saved day(s)"
+  },
+  {
+    "viewport": "393x852-insets",
+    "screen": "Plan",
+    "step": "saving says \"Plan saved\" and offers View plan",
+    "ok": true,
+    "message": "Plan savedView planAdd to calendar"
   },
   {
     "viewport": "393x852-insets",

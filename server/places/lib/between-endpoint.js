@@ -68,13 +68,13 @@ async function handleBetweenRequest(req, res, deps = {}) {
     const enrich =
       deps.enrich ??
       (async (list) => {
-        const { getConsumerMetadata } = require('../../enrichment/_lib/consumer-projection');
-        return Promise.all(
-          list.map(async (place) => {
-            const metadata = await getConsumerMetadata(place.familypilotId);
-            return metadata ? { ...place, enrichmentStatus: metadata.enrichmentStatus || place.enrichmentStatus, familyMetadata: metadata } : place;
-          }),
-        );
+        // One batched projection for the whole shortlist, not three or four round trips per place (see search.js).
+        const { getConsumerMetadataBatch } = require('../../enrichment/_lib/consumer-projection');
+        const byId = await getConsumerMetadataBatch(list.map((place) => place.familypilotId));
+        return list.map((place) => {
+          const metadata = byId.get(place.familypilotId);
+          return metadata ? { ...place, enrichmentStatus: metadata.enrichmentStatus || place.enrichmentStatus, familyMetadata: metadata } : place;
+        });
       });
     places = await enrich(places);
   } catch {

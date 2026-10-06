@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PlanScreenView } from '@/src/components/planning/PlanScreenView';
@@ -9,6 +9,8 @@ import { firstValue } from '@/src/services/planning/plan-draft';
 import { toPlanViewModel } from '@/src/services/planning/plan-view-model';
 import { makeSubjectResolver } from '@/src/services/planning/routine-subjects';
 import { usePlanningStore } from '@/src/stores/planning-store';
+import { buildCalendarEvent } from '@/src/services/planning/calendar-event';
+import { addToCalendar } from '@/src/services/planning/add-to-calendar';
 import { householdTitle } from '@/src/utils/household';
 
 /**
@@ -42,6 +44,19 @@ export default function SavedPlanScreen() {
   );
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/trips' as never));
+  // Reached through "View plan" straight after saving: offer the way on to Plans, where the row is marked as just saved.
+  const fromSave = firstValue(params.from) === 'save';
+  const seeAllPlans = () => router.dismissTo({ pathname: '/(tabs)/trips', params: { justSaved: id } } as never);
+
+  // A saved plan can always be put in the calendar from here, as well as straight after saving it.
+  const [calendarMessage, setCalendarMessage] = useState<string | undefined>(undefined);
+  const addPlanToCalendar = async () => {
+    if (!day) return;
+    setCalendarMessage(undefined);
+    const result = await addToCalendar(buildCalendarEvent(day));
+    if (result === 'failed') setCalendarMessage('We couldn’t open your calendar. Please try again.');
+    if (result === 'shared') setCalendarMessage('Shared the plan’s details. Adding it straight to your calendar works in the FamilyPilot web app.');
+  };
 
   if (!view) {
     return (
@@ -52,5 +67,17 @@ export default function SavedPlanScreen() {
       />
     );
   }
-  return <PlanScreenView view={view} onBack={back} onSave={() => {}} saved topInset={insets.top} bottomInset={insets.bottom} />;
+  return (
+    <PlanScreenView
+      view={view}
+      onBack={back}
+      onSave={() => {}}
+      saved
+      onAddToCalendar={() => void addPlanToCalendar()}
+      onSeeAllPlans={fromSave ? seeAllPlans : undefined}
+      calendarMessage={calendarMessage}
+      topInset={insets.top}
+      bottomInset={insets.bottom}
+    />
+  );
 }

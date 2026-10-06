@@ -3,7 +3,7 @@ import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
 import { routinesForPlanner } from '@/src/utils/routine-schedule';
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, Share, View } from 'react-native';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Button, Card, Text } from '@/src/components/ui';
@@ -25,14 +25,28 @@ import { PlanInvite, listPlanInvites, createPlanInvite, respondToPlanInvite, can
 import { SavedPlan } from '@/src/stores/planning-store';
 import { supabase } from '@/src/services/supabase/client';
 import { familyDisplayName } from '@/src/utils/family-title';
+import { useSavedStore } from '@/src/stores/saved-store';
 
 const linkStyle={alignSelf:'flex-start' as const,minHeight:44,justifyContent:'center' as const};
 
 export default function TripsScreen() {
- const router=useRouter();const tabBarClearance=useTabBarClearance();const state=usePlanningStore();const profile=useFamilyStore(x=>x.profile);
+ const savedPlaces=useSavedStore(x=>x.items.length);
+ const router=useRouter();
+ const tabBarClearance=useTabBarClearance();const state=usePlanningStore();const profile=useFamilyStore(x=>x.profile);
  const [editor,setEditor]=useState<PlanningFamily|null>(null);
  const [message,setMessage]=useState('');
  const [tab,setTab]=useState<'plan'|'saved'|'families'>('plan');
+ // "See all your plans", from a plan just saved, lands here with its id: the list opens on Plans with that row marked,
+ // so the parent sees where it went.
+ const params=useLocalSearchParams();
+ const justSavedParam=typeof params.justSaved==='string'?params.justSaved:null;
+ const [justSaved,setJustSaved]=useState<string|null>(null);
+ useEffect(()=>{
+  if(!justSavedParam)return;
+  setJustSaved(justSavedParam);
+  setTab('plan');
+  router.setParams({justSaved:undefined} as never);
+ },[justSavedParam,router]);
  // "mine" is seeded from the profile once when first created, but a parent's home, pushchair or
  // children's ages are facts, not a planning-session choice — keep them in sync so they can't
  // silently drift from the profile that's meant to be the one source of truth. Label, budget,
@@ -150,16 +164,22 @@ export default function TripsScreen() {
      <Button label="Explore London" variant="outline" onPress={()=>router.push('/(tabs)/explore' as never)} testID="plans-go-explore"/>
     </View>
    </Card>
-   <Card style={s.panel}>
-    <Text variant="heading2">Meet halfway</Text>
-    <Text color={colors.text.secondary}>Meeting another family? Find places that work for both of you, with fair journeys and your routines in mind.</Text>
-    <Button label="Find a place to meet" onPress={()=>router.push('/halfway' as never)} testID="plans-meet-halfway"/>
-   </Card>
+   {/* Saved places live here now: the bottom navigation's Saved tab became Halfway, and the places a family keeps are part
+       of what they plan from. */}
+   <Pressable onPress={()=>router.push('/saved' as never)} accessibilityRole="button" accessibilityLabel={`Saved places, ${savedPlaces} ${savedPlaces===1?'place':'places'}`} testID="plans-saved-places">
+    <Card style={s.panel}>
+     <Text variant="heading2">Saved places</Text>
+     <Text color={colors.text.secondary}>{savedPlaces?`${savedPlaces} ${savedPlaces===1?'place':'places'} your family wants to remember.`:'Places you save with the heart appear here.'}</Text>
+     <Text variant="link">Open saved places →</Text>
+    </Card>
+   </Pressable>
    {state.savedDays.length?<Card style={s.panel} testID="plans-saved-days">
     <Text variant="heading2">Your plans</Text>
     {state.savedDays.map((day,i)=>{
      const view=toPlanViewModel(day.source,{resolveSubject:makeSubjectResolver(profile,state.families),householdTitle:householdTitle(profile)});
-     return <Pressable key={day.id} onPress={()=>router.push({pathname:'/saved-plan',params:{id:day.id}} as never)} accessibilityRole="button" accessibilityLabel={`Open ${view.title}`} style={[{minHeight:56,justifyContent:'center',gap:2},i>0?{borderTopWidth:1,borderColor:colors.border,paddingTop:spacing.sm}:undefined]}>
+     const fresh=day.id===justSaved;
+     return <Pressable key={day.id} onPress={()=>router.push({pathname:'/saved-plan',params:{id:day.id}} as never)} accessibilityRole="button" accessibilityLabel={`Open ${view.title}${fresh?', just saved':''}`} testID={fresh?'plans-just-saved':undefined} style={[{minHeight:56,justifyContent:'center',gap:2},i>0?{borderTopWidth:1,borderColor:colors.border,paddingTop:spacing.sm}:undefined,fresh?{backgroundColor:colors.actionSoft,borderRadius:12,paddingHorizontal:spacing.sm,paddingBottom:spacing.xs}:undefined]}>
+      {fresh?<Text variant="caption" color={colors.action}>✓ Just saved</Text>:null}
       <Text variant="heading3">{view.title}</Text>
       <Text variant="bodySmall" color={colors.text.secondary}>{view.dateSummary}</Text>
      </Pressable>;})}
