@@ -1,26 +1,28 @@
-# Welcome photography: the one outstanding asset dependency
+# Welcome photography: the contract and the installed images
 
-This is the complete handoff for the only visual dependency left on the approved Welcome frame (Figma
-`166:128`). Everything else on Welcome, Home and Explore is implemented.
+The approved Welcome frame (Figma `166:128`) is a collage of **seven photographic cut-outs**. The cut-out shapes,
+their positions, the white sticker edge and the decorative stickers over them are implemented exactly
+(`WELCOME_CUTOUTS`, `PhotoSlot`, `WELCOME_ART`).
 
-The Welcome frame is a collage of **seven photographic cut-outs**. The cut-out shapes, their positions, the
-white sticker edge and the decorative stickers over them are implemented exactly (`WELCOME_CUTOUTS`,
-`PhotoSlot`, `WELCOME_ART`), and the pipeline that draws a file inside each slot is wired and tested. **The
-seven images themselves are not in the repository yet.**
+**Status: all seven images are installed** in `familypilot/assets/images/welcome/` (`zoo`, `farm`, `cafe`, `crafts`,
+`soft-play`, `puddles`, `aquarium`), each within the 150 KB budget, imported in `src/assets/welcome-photos.ts` and
+recorded in `assets/images/welcome/CREDITS.md` as `Origin: generated`. They are bundled brand imagery: no runtime
+request, no provider call, no cost. This document remains the contract (crop, focal point, safe area, size, format)
+that any replacement or additional image must meet.
 
 * The photographs inside the Figma frame are *review-only crops of the owner's reference screenshot*. They are
   not licensed assets and must never ship. No app code or bundle references them.
 * Welcome is **brand / lifestyle imagery**, not evidence about a venue, so a licensed photograph **or a generated
   photograph** is appropriate here. (Home and Explore are the opposite: they show real venues and never use
   generated imagery as a venue's photograph. See `docs/PHOTOGRAPHY_ASSETS.md`.)
-* This environment cannot reach any photo host and has no image-generation capability, so the images are made
-  externally and supplied. The exact generation briefs are in `docs/PHOTOGRAPHY_ASSETS.md`.
+* The images were generated externally (this environment cannot reach a photo host or generate images) and
+  processed with `scripts/prepare-welcome-photos.mjs`. The generation briefs are in `docs/PHOTOGRAPHY_ASSETS.md`.
 
-Until the files below exist, each slot draws its category gradient inside its exact cut-out. That is a
-**temporary fallback**, never the finished screen. Nothing about the masks, the white edge, the stickers or the
-composition changes when the images arrive: each file is simply drawn inside its existing slot.
+A slot with no file would fall back to its category gradient inside its exact cut-out. That is only a defensive
+fallback, never the finished screen: `welcome-photos.test.ts` fails the build if any of the seven slots has no
+image, so production never ships a gradient in place of a photograph.
 
-## What is needed
+## What each image must be
 
 Seven images that read as **one photographic campaign**: premium but natural UK family-lifestyle photography, warm
 natural daylight, candid rather than posed, realistic skin, fur and material detail, playful without looking like
@@ -80,21 +82,22 @@ pixel size** (a little larger is fine; do not supply smaller). Dimensions are wi
   `aquarium.jpg` (lower case, hyphen in `soft-play`).
 * **Destination path:** `familypilot/assets/images/welcome/<filename>`.
 
-## How to ship them
+## Replacing or adding an image
 
-1. Put each file at `familypilot/assets/images/welcome/<slot>.jpg`.
-2. Add one line per file to `assets/images/welcome/CREDITS.md` (photographer, source, licence, model release if a
-   child is shown).
-3. Add the matching static `require` in `src/assets/welcome-photos.ts` (React Native needs each one written out).
-4. `npx vitest run src/__tests__/welcome-photos.test.ts` checks the file, the credit line, the size budget, and that
-   nothing is credited but unwired or wired but uncredited. The `todo` in that test names the slots still missing;
-   it passes once all seven ship.
-5. Rebuild, and review Welcome at 360, 393 and 430 (`scripts/compare-canonical-screens.mjs`): the real
-   photographs replace the gradients inside the same cut-outs, so nothing else on the screen should move.
+1. Prepare the file: `node scripts/prepare-welcome-photos.mjs <slot>=<source>` crops it to the slot's aspect around
+   the focal point, scales it, strips metadata and writes `familypilot/assets/images/welcome/<slot>.jpg` within the
+   size budget.
+2. Update that slot's line in `assets/images/welcome/CREDITS.md` (`Origin` is `photograph` or `generated`, the
+   creator or tool, the terms; a licence and a model release for any photograph that shows an identifiable child).
+3. `src/assets/welcome-photos.ts` already imports the slot; a new slot needs a static `import` there (Metro needs
+   each one written out).
+4. `npx vitest run src/__tests__/welcome-photos.test.ts` checks the file, the credit line, that the origin is stated,
+   the size budget, that nothing is credited but unwired or wired but uncredited, and that every slot has an image.
+5. Rebuild and review Welcome at 360, 393 and 430 (`scripts/compare-canonical-screens.mjs`); nothing else on the
+   screen should move.
 
-The photographs are brand artwork, bundled with the app: **no runtime request, no provider call, no cost**. They
-are drawn behind a decorative (`aria-hidden`) layer, so assistive technology skips them; the benefit cards,
-headline and button carry all the meaning.
+The photographs are drawn behind a decorative (`aria-hidden`) layer, so assistive technology skips them; the
+benefit cards, headline and button carry all the meaning.
 
 ## Alternative: one composed collage image
 

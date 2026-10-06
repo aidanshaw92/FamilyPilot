@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { colors, radius } from '@/src/design-system/tokens';
 import { photoCredit } from '@/src/services/places/place-photo-url';
+import { withIndefiniteArticle } from '@/src/utils/indefinite-article';
 import { CategoryArt } from './CategoryArt';
 import { Skeleton } from './Skeleton';
 import { Text } from './Text';
@@ -75,7 +76,7 @@ export function VenueImage({uri,category,alt,style,borderRadius=radius.md,showCr
  const credit=showCredit&&!failed?photoCredit(uri):null;
  return <View pointerEvents={pointerEvents} style={[styles.wrap,{borderRadius},style]}>
   {!uri||failed?
-   <View style={styles.empty} accessible accessibilityRole="image" accessibilityLabel={`${alt ? `${alt}, ` : 'Place '}photo not available. Illustration of a ${categoryNoun(category)}`}>
+   <View style={styles.empty} accessible accessibilityRole="image" accessibilityLabel={`${alt ? `${alt}, ` : 'Place '}photo not available. Illustration of ${withIndefiniteArticle(categoryNoun(category))}`}>
     <CategoryArt category={category} />
    </View>
   :<>

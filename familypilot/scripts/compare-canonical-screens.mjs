@@ -101,7 +101,9 @@ async function shoot(screen, width, dsf) {
     }
     return route.continue();
   });
-  await page.clock.setFixedTime(new Date('2026-01-15T19:30:00'));
+  // The default (a Thursday evening, after the fixture venues close) is unchanged. Set CAPTURE_NOW=2026-01-15T11:00:00 to render
+  // the cards on a morning when they are open, which is what the committed Explore evidence shows.
+  await page.clock.setFixedTime(new Date(process.env.CAPTURE_NOW ?? '2026-01-15T19:30:00'));
   await page.addInitScript(
     ([seed]) => window.localStorage.setItem('familypilot-family-v1', JSON.stringify(seed)),
     [screen.state],
