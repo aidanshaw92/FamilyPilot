@@ -197,3 +197,44 @@ describe('known routine clash: advice, and it does not disturb the must-have sta
     expect(result.itinerary.unresolvedMustHaves).toEqual([]);
   });
 });
+
+describe('an explicit indoor/outdoor request that the venue cannot confirm is not silently dropped', () => {
+  const asked = (setting: 'indoor' | 'outdoor') =>
+    sequenceDay([farm({ environment: 'unknown' })], [family({ required: [] })], matrix(), { ...options, environment: setting }, now);
+
+  it('still builds the plan, and says so prominently', () => {
+    const result = asked('indoor');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.itinerary.unresolvedMustHaves.map((u) => u.field)).toEqual(['environment']);
+    const view = toPlanViewModel({ itinerary: result.itinerary, travel: { provenance: { live: 0, estimated: 2 }, trafficDowngraded: false, missing: [] }, caveats: [], anchorName: 'Kentish Town City Farm' });
+    expect(view.needsChecking).toEqual(['Whether Kentish Town City Farm is indoors or outdoors isn’t confirmed, and you asked for a particular setting today. Check before you go.']);
+  });
+
+  it('a venue confirmed to be the wrong setting is still a hard conflict, and "either" asks for nothing', () => {
+    const wrong = sequenceDay([farm({ environment: 'outdoor' })], [family({ required: [] })], matrix(), { ...options, environment: 'indoor' }, now);
+    expect(wrong.ok).toBe(false);
+    const either = sequenceDay([farm({ environment: 'unknown' })], [family({ required: [] })], matrix(), options, now);
+    if (!either.ok) throw new Error('expected a plan');
+    expect(either.itinerary.unresolvedMustHaves).toEqual([]);
+  });
+});
+
+describe('a day saved before this release still renders', () => {
+  it('has no unresolved must-haves, routine insights or home-after list, and none are needed', () => {
+    const itinerary: any = {
+      date: '2026-10-10',
+      stops: [{ index: 0, placeId: 'p', name: 'Farm', role: 'activity', anchor: true, arrive: 600, depart: 690, dwellMinutes: 90, opening: { status: 'open', reason: 'within-opening-period', closesAt: '17:00' } }],
+      legs: [],
+      families: [{ familyId: 'mine', label: 'Our family', depart: 570, home: 750, latestDeparture: 600, notes: [] }],
+      unknowns: ['baby changing'],
+      openingConfidence: { confirmed: 1, unknown: 0 },
+      reasons: [],
+      fairnessGap: 0,
+      score: 1,
+    };
+    const view = toPlanViewModel({ itinerary, travel: { provenance: { live: 1, estimated: 0 }, trafficDowngraded: false, missing: [] }, caveats: [], anchorName: 'Farm' } as never);
+    expect(view.needsChecking).toEqual([]);
+    expect(view.stops).toHaveLength(1);
+  });
+});
