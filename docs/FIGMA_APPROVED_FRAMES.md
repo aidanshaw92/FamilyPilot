@@ -85,8 +85,8 @@ Differences between the real app and the frames, classified:
 4. **Accessibility-driven, small** — the placeholder, footnote and link grey (`text.tertiary`) is `#6B7384`, not the
    frame's lighter grey, to reach 4.5:1; a keyboard focus ring on the search field; the Explore category rail and the
    Plan tabs expose their selected state to assistive technology.
-5. **Outstanding asset** — Welcome's seven photographs (see `docs/WELCOME_PHOTOGRAPHY.md`). Slots draw the category
-   gradient inside the exact cut-outs until licensed photographs ship.
+5. **Welcome photography** — installed: all seven images (generated brand imagery, credited in
+   `assets/images/welcome/CREDITS.md`) are drawn inside the exact cut-outs (see `docs/WELCOME_PHOTOGRAPHY.md`).
 6. **Genuine fidelity defects** — none open at 393.
 
 Decisions that used to be deviations and are now the frames' own: the nav is two variants (290 on Home, 310 on

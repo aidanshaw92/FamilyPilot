@@ -7,7 +7,7 @@ FamilyPilot has **two different photography contracts**. They must not be confus
 | What the images are | Brand / lifestyle imagery | Photographs of **real venues** |
 | Generated imagery | **Appropriate** (or licensed photography) | **Never** presented as a venue's photograph |
 | Where it lives | `familypilot/assets/images/welcome/` (bundled) | The provider photo pipeline (proxy, cache, attribution) |
-| When there is none | Category gradient inside the cut-out (temporary fallback) | FamilyPilot category fallback, no credit |
+| When there is none | Category gradient inside the cut-out (defensive only: all seven slots are installed and a test fails if one is missing) | FamilyPilot category illustration (`CategoryArt`), no credit |
 | Test / demo stand-ins | None | **Synthetic fixture photography**, isolated, test server only |
 
 ## The production contract for real venues
@@ -32,10 +32,11 @@ deterministic fixture/demo/testing imagery, and clearly illustrative non-evident
   judged by eye. They are never shown for a real venue in production. The deliberate "no photo" fixture venues are
   not served an image at all.
 
-## What I need from you (the environment cannot generate images)
+## Specifications for replacing or adding an image
 
-Place the files exactly here. Nothing else is needed; I write the credit and manifest lines from the generator and
-prompt you tell me you used.
+**Nothing is outstanding.** Every Welcome slot and every required fixture image is installed. This section is the spec
+to use if an image is ever replaced or added (the environment cannot generate images, so they are made externally and
+processed with the `scripts/prepare-*.mjs` scripts). Each file goes exactly here, with its credit or manifest line.
 
 ### A. Welcome: 7 files, `familypilot/assets/images/welcome/`
 
@@ -55,16 +56,16 @@ aspect and downscaling is fine. Crop, focal point, off-screen bleed and safe are
 
 ### B. Fixtures: `familypilot/assets/images/fixtures/venues/`
 
-| File | Needed? | Used by |
+| File | Status | Used by |
 | --- | --- | --- |
-| `museum.jpg` | required | Home hero, Explore |
-| `park.jpg` | required | Home hero, Explore |
-| `soft_play.jpg` | required | Explore, Home |
-| `farm.jpg` | required | Explore, Home |
-| `attraction.jpg` | required | Explore, Home |
-| `zoo.jpg` | strongly preferred | one fixture venue (flat colour scene until it exists) |
-| `activity.jpg` | strongly preferred | two fixture venues (flat colour scene until it exists) |
-| `aquarium.jpg` | optional | not used by the current fifteen |
+| `museum.jpg` | installed | Home hero, Explore |
+| `park.jpg` | installed | Home hero, Explore |
+| `soft_play.jpg` | installed | Explore, Home |
+| `farm.jpg` | installed | Explore, Home |
+| `attraction.jpg` | installed | Explore, Home |
+| `zoo.jpg` | installed | one fixture venue |
+| `activity.jpg` | installed | two fixture venues |
+| `aquarium.jpg` | optional, not installed | not used by the current fifteen venues; not needed |
 | `<category>-b.jpg`, `<category>-c.jpg` | optional | variety between venues of one category |
 
 Landscape 4:3, **1600 x 1200 px**, JPEG sRGB, **at most 400 KB each**.
@@ -144,12 +145,13 @@ Prepend this instead of the lifestyle block:
 8. **`aquarium`** (optional). A large, softly lit aquarium tunnel with a school of fish and a turtle overhead,
    a child silhouetted looking up; blue light; no signage.
 
-## What happens when the files arrive
+## When an image is replaced or added
 
-1. Welcome: copy the seven files, add `Origin: generated` credit lines to `assets/images/welcome/CREDITS.md`, add the
-   seven `require` lines to `src/assets/welcome-photos.ts`; the todo in `welcome-photos.test.ts` then passes.
-2. Fixtures: copy the files, add a `synthetic: true` entry for each to
-   `assets/images/fixtures/venues/manifest.json`; the fixture server (realistic scenario) serves them per category.
+1. Welcome: prepare the file with `scripts/prepare-welcome-photos.mjs`, update its `Origin: generated` (or
+   `photograph`) line in `assets/images/welcome/CREDITS.md`, and import it in `src/assets/welcome-photos.ts`;
+   `welcome-photos.test.ts` checks it.
+2. Fixtures: prepare the file with `scripts/prepare-fixture-photos.mjs`, which records a `synthetic: true` entry in
+   `assets/images/fixtures/venues/manifest.json`; the fixture server (realistic scenario) serves it per category.
 3. Rebuild, regenerate the realistic Home, Explore (full, partial, unreviewed, long name, no photo) and Welcome
    renders at 360/393/430, the canonical A/B/C/D boards, and run the full regression with the zero-spend tripwires.
    The "no photo" fixtures keep the category fallback on purpose.
