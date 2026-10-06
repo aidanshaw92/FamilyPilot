@@ -435,8 +435,10 @@ async function auditJourney(browser, viewport) {
   for (const row of ['WHEN', 'START', 'WHO’S COMING', 'HOW LONG']) {
     note(V, 'Create a Plan', `offers the ${row} row`, { ok: sheetText.includes(row) });
   }
-  note(V, 'Create a Plan', 'summarises the household by count, never by name', {
-    ok: sheetText.includes('2 ADULTS, 2 CHILDREN') && !sheetText.includes('MIA'),
+  // The household is named, as people (the parent's own entries on this phone), each one a toggle under Who's coming. What it must
+  // never show is a date of birth.
+  note(V, 'Create a Plan', 'lists the household by name under Who’s coming, and shows no date of birth', {
+    ok: ['SARAH', 'ALEX', 'MIA', 'LEO'].every((name) => sheetText.includes(name)) && !/\b20(21|24)-\d\d-\d\d\b|1990-03-15/.test(sheetText),
   });
   note(V, 'Create a Plan', 'keeps the submit button clear of the home indicator', await (async () => {
     const box = await page.getByTestId('create-plan-submit').boundingBox().catch(() => null);
@@ -606,12 +608,14 @@ async function auditPlanLinks(browser, viewport) {
       (t) => /No place to plan around/i.test(t)],
     ['a repeated parameter', `venue=${EDGE.rich}&venue=${EDGE.noPhoto}&date=${PLAN_DATE}&date=1999-01-01&leaveAt=09:30&visit=90&parties=mine`,
       (t) => t.includes('Save this plan')],
+    // An unreadable length is "Not sure", which is honest, rather than a number the parent never chose: the plan is built and
+    // says it assumed the length. (It used to be refused.)
     ['a malformed visit length', `venue=${EDGE.rich}&date=${PLAN_DATE}&leaveAt=09:30&visit=soon&parties=mine`,
-      (t) => /Check the plan details|does not add up|valid/i.test(t)],
+      (t) => t.includes('Save this plan') && /weren.t sure how long/i.test(t)],
     ['a date in the past', `venue=${EDGE.rich}&date=2001-01-01&leaveAt=09:30&visit=90&parties=mine`,
       (t) => /today or a future date|Check the plan details/i.test(t)],
     ['a venue that shuts before any visit fits', `venue=${EDGE.closesEarly}&date=${PLAN_DATE}&leaveAt=09:30&visit=90&parties=mine`,
-      (t) => /closes at 09:30|closed that day|run past closing/i.test(t)],
+      (t) => /closes at 09:30|closed that day|run past closing|isn.t open then|not open at that time/i.test(t)],
     ['a stale household id', `venue=${EDGE.rich}&date=${PLAN_DATE}&leaveAt=09:30&visit=90&parties=mine,ghost-household`,
       (t) => t.includes('Save this plan') && /so this day does not include them/.test(t)],
     ['no household at all', `venue=${EDGE.rich}&date=${PLAN_DATE}&leaveAt=09:30&visit=90&parties=`,
