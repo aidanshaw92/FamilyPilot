@@ -18,9 +18,12 @@ import {
   createPlanSteps,
 } from '@/src/services/planning/create-plan';
 import { mealFromFoodCandidate, planStopFromVenueDetail } from '@/src/services/planning/day-plan';
-import { firstValue, planDraftFromParams } from '@/src/services/planning/plan-draft';
+import { firstValue, planDraftFromParams, planDraftToParams } from '@/src/services/planning/plan-draft';
 import { resolvePlanParties } from '@/src/services/planning/plan-parties';
-import { PlanViewModel, PlanViewModelInput } from '@/src/services/planning/plan-view-model';
+import { PlanAdviceOptionView, PlanViewModelInput, toPlanViewModel } from '@/src/services/planning/plan-view-model';
+import { makeSubjectResolver } from '@/src/services/planning/routine-subjects';
+import { visitLengthToParam } from '@/src/services/planning/visit-duration';
+import { householdTitle } from '@/src/utils/household';
 import { usePlanningStore } from '@/src/stores/planning-store';
 
 /**
@@ -37,7 +40,11 @@ import { usePlanningStore } from '@/src/stores/planning-store';
 
 type Phase =
   | { status: 'generating' }
-  | { status: 'ready'; view: PlanViewModel }
+  /**
+   * What the planner answered, not the rendered screen: the view is built from it at draw time, with the profile on
+   * this device, so naps and feeds read with the children's names and nothing named is ever saved.
+   */
+  | { status: 'ready'; source: PlanViewModelInput }
   | { status: 'failed'; failure: CreatePlanFailure };
 
 /**
@@ -86,9 +93,15 @@ export default function PlanScreen() {
    */
   const venueId = firstValue(params.venue) ?? '';
   const dateParam = firstValue(params.date) ?? '';
-  const leaveAtParam = firstValue(params.leaveAt) ?? '';
+  const startParam = firstValue(params.start) ?? firstValue(params.leaveAt) ?? '';
   const visitParam = firstValue(params.visit) ?? '';
   const partiesParam = firstValue(params.parties) ?? '';
+  const whoParam = firstValue(params.who) ?? '';
+  const homeParam = firstValue(params.home) ?? '';
+  const bufferParam = firstValue(params.buffer) ?? '';
+  const settingParam = firstValue(params.setting) ?? '';
+  // `off`: the parent took lunch out of the day. Anything else keeps the lunch that is already known.
+  const lunchParam = firstValue(params.lunch) ?? '';
   const { data: venue, isPending: venuePending, isError: venueError } = useVenue(venueId);
   const { data: profile } = useFamilyProfile();
   const planningFamilies = usePlanningStore((state) => state.families);
@@ -98,9 +111,10 @@ export default function PlanScreen() {
   // Parsed in one tested place rather than here, and from the narrowed primitives above so the
   // result is referentially stable across renders.
   const draft = useMemo(
-    () => planDraftFromParams({ date: dateParam, leaveAt: leaveAtParam, visit: visitParam, parties: partiesParam }),
-    [dateParam, leaveAtParam, visitParam, partiesParam],
+    () => planDraftFromParams({ date: dateParam, start: startParam, visit: visitParam, parties: partiesParam, who: whoParam, home: homeParam, buffer: bufferParam, setting: settingParam }),
+    [dateParam, startParam, visitParam, partiesParam, whoParam, homeParam, bufferParam, settingParam],
   );
+  const lunchOff = lunchParam === 'off';
 
   /**
    * The lunch stop, from the OpenStreetMap discovery this venue's detail screen already ran.
@@ -118,12 +132,14 @@ export default function PlanScreen() {
     longitude: venue?.longitude,
     placeId: venue?.id,
   });
-  const lunch = useMemo(() => {
+  const knownLunch = useMemo(() => {
     const best = nearbyFood.data?.candidates?.[0];
     return best ? mealFromFoodCandidate(best) : undefined;
   }, [nearbyFood.data]);
+  // Taking lunch out of the day is the parent's choice; the lunch that is known stays available to add back.
+  const lunch = lunchOff ? undefined : knownLunch;
   /** Primitives for the generation effect's dependency list, never the objects. */
-  const lunchKey = lunch?.place.placeId ?? 'no-lunch';
+  const lunchKey = `${lunch?.place.placeId ?? 'no-lunch'}${knownLunch && lunchOff ? '|off' : ''}`;
   /**
    * Whether a lunch answer is still coming. NOT simply `isPending`.
    *
@@ -165,8 +181,6 @@ export default function PlanScreen() {
    * costs nothing when the code is correct and caps the damage when it is not.
    */
   const attempts = useRef({ key: '', count: 0 });
-  // What the view was built from, so Save stores the planner's answer and not the rendered screen.
-  const source = useRef<PlanViewModelInput | null>(null);
   const saving = useRef(false);
 
   const steps = useMemo(
@@ -178,8 +192,8 @@ export default function PlanScreen() {
   );
 
   const parties = useMemo(
-    () => resolvePlanParties(draft.partyIds, { profile, planningFamilies }),
-    [draft.partyIds, profile, planningFamilies],
+    () => resolvePlanParties(draft.partyIds, { profile, planningFamilies, attendeeIds: draft.attendeeIds }),
+    [draft.partyIds, draft.attendeeIds, profile, planningFamilies],
   );
   /** A primitive, so the generation effect cannot be restarted by array identity alone. */
   const familyIds = parties.families.map((family) => family.id).join(',');
@@ -202,7 +216,7 @@ export default function PlanScreen() {
     // venue are two separate queries: if the venue lands first, the day would be built for nobody,
     // and without this the arriving profile would never trigger a rebuild -- a cold load would
     // intermittently end on "Nobody is coming yet".
-    const key = [venueId, draft.date, draft.leaveAt, draft.visitMinutes, partiesParam, familyIds, lunchKey, foodLookupFailed ? 'food-failed' : 'food-ok'].join('|');
+    const key = [venueId, draft.date, draft.startAt, String(draft.visit), partiesParam, whoParam, homeParam, bufferParam, settingParam, familyIds, lunchKey, foodLookupFailed ? 'food-failed' : 'food-ok'].join('|');
     if (requested.current === key) return;
     if (attempts.current.key !== key) attempts.current = { key, count: 0 };
     if (attempts.current.count >= MAX_GENERATION_ATTEMPTS) return;
@@ -218,16 +232,12 @@ export default function PlanScreen() {
       const outcome = await createPlan(
         {
           venue: planStopFromVenueDetail(venue),
-          draft: {
-            date: draft.date,
-            leaveAt: draft.leaveAt,
-            visitMinutes: draft.visitMinutes,
-            partyIds: draft.partyIds,
-          },
+          draft,
           families: parties.families,
           parkingInfo: venue.parkingInfo,
           anchorImageUrl: venue.photos?.[0],
           meal: lunch,
+          lunchAvailable: Boolean(knownLunch),
           mealLookupFailed: foodLookupFailed,
         },
         {
@@ -240,8 +250,7 @@ export default function PlanScreen() {
       );
       if (cancelled) return;
       setCurrent(undefined);
-      setPhase(outcome.ok ? { status: 'ready', view: outcome.view } : { status: 'failed', failure: outcome });
-      if (outcome.ok) source.current = outcome.source;
+      setPhase(outcome.ok ? { status: 'ready', source: outcome.source } : { status: 'failed', failure: outcome });
     })();
 
     return () => {
@@ -255,7 +264,7 @@ export default function PlanScreen() {
     // Deps are the venue object and primitives only. `parties.families` is deliberately absent: it is
     // a fresh array every time the resolver runs, and `familyIds` carries the same information
     // without the identity churn.
-  }, [venue, venueId, draft, familyIds, partiesParam, foodPending, foodLookupFailed, lunchKey, lunch]);
+  }, [venue, venueId, draft, familyIds, partiesParam, whoParam, foodPending, foodLookupFailed, lunchKey, lunch, knownLunch]);
 
   /**
    * Households that were chosen and could not be planned for.
@@ -284,15 +293,66 @@ export default function PlanScreen() {
     else router.replace(venueId ? (`/venue/${venueId}` as never) : ('/(tabs)' as never));
   }, [router, venueId]);
 
+  const readySource = phase.status === 'ready' ? phase.source : null;
   const handleSave = useCallback(() => {
     // The ref, not the state, is the guard: a second tap can land before React re-renders, and each
     // press mints its own id, so state alone would store the same day twice.
-    if (!source.current || saving.current) return;
+    if (!readySource || saving.current) return;
     saving.current = true;
     const id = `day-${Date.now()}`;
-    saveDay({ id, createdAt: new Date().toISOString(), source: source.current });
+    saveDay({ id, createdAt: new Date().toISOString(), source: readySource });
     setSavedId(id);
-  }, [saveDay]);
+  }, [saveDay, readySource]);
+
+  /**
+   * "Change the plan" goes back to the place with the sheet already open on what was chosen, so changing one answer
+   * is one tap rather than starting again. Replaces this screen, so Back from the place does not return to a day that
+   * has been abandoned.
+   */
+  const handleChangePlan = useCallback(() => {
+    if (!venueId) return handleBack();
+    router.replace({ pathname: '/venue/[id]', params: { id: venueId, plan: 'open', ...planDraftToParams(draft) } } as never);
+  }, [router, venueId, draft, handleBack]);
+
+  /** Applies a verified option straight onto this screen's own answers: the plan builds again, nothing else changes. */
+  const applyOption = useCallback(
+    (option: PlanAdviceOptionView) => {
+      if (option.kind === 'add-lunch') {
+        router.setParams({ lunch: 'on' } as never);
+        return;
+      }
+      const alternative = option.alternative;
+      if (!alternative) return;
+      if (alternative.kind === 'shorter') router.setParams({ visit: visitLengthToParam(alternative.visitMinutes) } as never);
+      else router.setParams({ start: alternative.arriveAt } as never);
+    },
+    [router],
+  );
+  const toggleLunch = useCallback(() => {
+    router.setParams({ lunch: lunchOff ? 'on' : 'off' } as never);
+  }, [router, lunchOff]);
+  const applyFailureAction = useCallback(
+    (action: NonNullable<CreatePlanFailure['actions']>[number]) => {
+      if (action.kind === 'start' && action.startAt) router.setParams({ start: action.startAt } as never);
+      else if (action.kind === 'visit' && action.visit !== undefined) router.setParams({ visit: visitLengthToParam(action.visit) } as never);
+    },
+    [router],
+  );
+
+  // Names are added here and nowhere else: the planner and the saved day never carry a child's name.
+  const view = useMemo(
+    () =>
+      readySource
+        ? toPlanViewModel(readySource, {
+            resolveSubject: makeSubjectResolver(
+              profile,
+              parties.families.map((f) => ({ id: f.id, label: f.label })),
+            ),
+            householdTitle: householdTitle(profile),
+          })
+        : null,
+    [readySource, profile, parties.families],
+  );
 
   if (!venueId) {
     return (
@@ -388,16 +448,38 @@ export default function PlanScreen() {
             </View>
           ) : null}
 
-          <Button label="Change the plan" onPress={handleBack} style={styles.failureAction} />
+          {phase.failure.actions?.length ? (
+            <View style={styles.actions}>
+              {phase.failure.actions.map((action) => (
+                <Button
+                  key={action.label}
+                  label={action.label}
+                  onPress={() => applyFailureAction(action)}
+                  style={styles.failureAction}
+                  testID="plan-failure-action"
+                />
+              ))}
+            </View>
+          ) : null}
+          <Button
+            label="Change the plan"
+            variant={phase.failure.actions?.length ? 'outline' : 'primary'}
+            onPress={handleChangePlan}
+            style={styles.failureAction}
+            testID="plan-change"
+          />
         </ScrollView>
       </Shell>
     );
   }
 
+  if (!view) return null;
   return (
     <PlanScreenView
-      view={phase.view}
+      view={view}
       notices={partyNotices}
+      onApplyOption={applyOption}
+      onToggleLunch={toggleLunch}
       onBack={handleBack}
       onSave={handleSave}
       saved={savedDays.some((day) => day.id === savedId)}
@@ -516,4 +598,5 @@ const styles = StyleSheet.create({
   },
   suggestionsTitle: { marginBottom: spacing.xs },
   failureAction: { marginTop: spacing.md },
+  actions: { gap: spacing.xs },
 });

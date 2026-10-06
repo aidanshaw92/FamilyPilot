@@ -1,16 +1,28 @@
 import { useState } from 'react';
 import { ConnectedFamiliesPicker } from './ConnectedFamiliesPicker';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { AddFamilyByPostcode } from './AddFamilyByPostcode';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Chip, Text, SMALL_CHIP_GAP } from '@/src/components/ui';
 import { DateField, TimeField } from '@/src/components/ui/DateTimeField';
-import { colors, spacing } from '@/src/design-system/tokens';
-import { PlanDraft, PlanParty, VISIT_LENGTH_CHOICES } from '@/src/services/planning/plan-draft';
+import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { BUFFER_CHOICES, PlanDraft, PlanParty, isComing, toggleAttendee } from '@/src/services/planning/plan-draft';
+import {
+  MAX_VISIT_MINUTES,
+  MIN_VISIT_MINUTES,
+  VISIT_CHOICES,
+  VisitLength,
+  isPresetLength,
+} from '@/src/services/planning/visit-duration';
 import { localDate } from '@/src/stores/planning-store';
-import { START_QUICK_CHOICES, dateQuickChoices, shortDateLabel } from '@/src/utils/plan-quick-choices';
+import { dateQuickChoices, shortDateLabel } from '@/src/utils/plan-quick-choices';
 
 /**
  * The four questions behind every plan -- when, start, who's coming, how long -- as one form.
+ *
+ * START is a real time picker for when the family wants to ARRIVE (no presets to round to), WHO'S COMING names the
+ * actual household with everyone selected so a parent toggles somebody out, and HOW LONG includes "Not sure" and
+ * "All day". Everything that follows (leaving time, naps, lunch) is reasoned from those answers.
  *
  * The Create a Plan sheet on Venue Detail and the Plans tab used to ask them with two different
  * forms: different copy ("1h 30m" against "90 min"), different gating, different fields. This is
@@ -28,25 +40,15 @@ export interface PlanDraftFormProps {
   draft: PlanDraft;
   parties: PlanParty[];
   onDraftChange: (next: PlanDraft) => void;
-  /** Named in the "how long" hint: "Time at Kew Gardens." Omitted, the hint is generic. */
+  /** Named in the hints: "When you want to arrive at Kew Gardens." Omitted, the hints are generic. */
   venueName?: string;
-  /** Shown on the WHO'S COMING row, right-aligned as the frame draws it (node 76:49). */
-  onAddFamily?: () => void;
   /**
-   * With accounts, "Add another family" opens the connected families and an invitation link instead of leaving the
-   * form: this is the people the parent has connected, and a way to connect someone new.
+   * With accounts, "Add another family" lists the connected families and an invitation link; either way a family can be
+   * added inline from a name and a postcode. Nothing here sends the parent to another screen and back.
    */
   connections?: boolean;
   /** The day the quick chips count from. Defaults to today; passed in by tests and captures. */
   today?: string;
-}
-
-/** Compact on purpose: four choices read as one set of chips rather than wrapping to a stray row. */
-export function visitLengthLabel(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
 }
 
 export function PlanFormRow({
@@ -70,15 +72,19 @@ export function PlanFormRow({
   );
 }
 
-export function PlanDraftForm({ draft, parties, onDraftChange, venueName, onAddFamily, connections = false, today }: PlanDraftFormProps) {
+export function PlanDraftForm({ draft, parties, onDraftChange, venueName, connections = false, today }: PlanDraftFormProps) {
   const [addOpen, setAddOpen] = useState(false);
+  const [byPostcode, setByPostcode] = useState(false);
   const day = today ?? localDate();
   const dateChoices = dateQuickChoices(day);
   const dateIsQuick = dateChoices.some((c) => c.value === draft.date);
-  const startIsQuick = START_QUICK_CHOICES.some((c) => c.value === draft.leaveAt);
-  // "Other" stays open once chosen, so the picker is there to change again.
+  // "Other date" stays open once chosen, so the picker is there to change again.
   const [dateOpen, setDateOpen] = useState(!dateIsQuick);
-  const [startOpen, setStartOpen] = useState(!startIsQuick);
+  const [moreOpen, setMoreOpen] = useState(Boolean(draft.returnBy) || draft.environment !== 'either' || draft.bufferMinutes !== 15);
+  const [customOpen, setCustomOpen] = useState(typeof draft.visit === 'number' && !isPresetLength(draft.visit));
+
+  const mine = parties.find((p) => p.people && p.people.length > 0);
+  const others = parties.filter((p) => p !== mine);
 
   const toggleParty = (id: string) => {
     const next = draft.partyIds.includes(id)
@@ -86,6 +92,12 @@ export function PlanDraftForm({ draft, parties, onDraftChange, venueName, onAddF
       : [...draft.partyIds, id];
     onDraftChange({ ...draft, partyIds: next });
   };
+  const addFamilyId = (id: string) => {
+    if (!draft.partyIds.includes(id)) onDraftChange({ ...draft, partyIds: [...draft.partyIds, id] });
+  };
+
+  const setVisit = (visit: VisitLength) => onDraftChange({ ...draft, visit });
+  const visitIsCustom = typeof draft.visit === 'number' && !isPresetLength(draft.visit);
 
   return (
     <>
@@ -114,98 +126,191 @@ export function PlanDraftForm({ draft, parties, onDraftChange, venueName, onAddF
       </PlanFormRow>
 
       <PlanFormRow label="Start">
-        <View style={styles.chips}>
-          {START_QUICK_CHOICES.map((choice) => (
-            <Chip
-              key={choice.value}
-              size="small"
-              label={choice.label}
-              active={draft.leaveAt === choice.value}
-              onPress={() => {
-                setStartOpen(false);
-                onDraftChange({ ...draft, leaveAt: choice.value });
-              }}
-            />
-          ))}
-          <Chip
-            size="small"
-            label={!startIsQuick ? draft.leaveAt : 'Other'}
-            active={!startIsQuick || startOpen}
-            onPress={() => setStartOpen(true)}
-          />
-        </View>
-        {startOpen ? <TimeField label="" value={draft.leaveAt} onChange={(leaveAt) => onDraftChange({ ...draft, leaveAt })} /> : null}
+        {/* A real time picker, not a few presets to round to: the day is worked out from the time you actually name. */}
+        <TimeField label="" value={draft.startAt} onChange={(startAt) => onDraftChange({ ...draft, startAt })} />
         <Text variant="caption" color={colors.text.secondary}>
-          The earliest you can leave home.
+          {venueName ? `When you want to arrive at ${venueName}. ` : 'When you want to arrive. '}We’ll work out when to leave.
         </Text>
       </PlanFormRow>
 
       <PlanFormRow
         label="Who’s coming"
         action={
-          // Quiet and on the label's row, as the frame draws it: adding a second household is an
-          // occasional choice, and a full-width button here competes with the one action the form
-          // exists for.
-          connections || onAddFamily ? (
-            <Pressable
-              onPress={connections ? () => setAddOpen((open) => !open) : onAddFamily}
-              accessibilityRole="button"
-              accessibilityLabel="Add another family"
-              accessibilityState={connections ? { expanded: addOpen } : undefined}
-              hitSlop={10}
-            >
-              <Text style={styles.rowLink}>{connections && addOpen ? 'Close' : 'Add another family'}</Text>
-            </Pressable>
-          ) : undefined
+          <Pressable
+            onPress={() => setAddOpen((open) => !open)}
+            accessibilityRole="button"
+            accessibilityLabel="Add another family"
+            accessibilityState={{ expanded: addOpen }}
+            hitSlop={10}
+          >
+            <Text style={styles.rowLink}>{addOpen ? 'Close' : 'Add another family'}</Text>
+          </Pressable>
         }
       >
-        <View style={styles.chips}>
-          {/* One chip per household carrying its counts (node 76:51): "Our family · 2 adults, 2 children". */}
-          {parties.map((party) => (
-            <Chip
-              key={party.id}
-              size="small"
-              label={`${party.label} · ${party.summary}`}
-              active={draft.partyIds.includes(party.id)}
-              onPress={() => toggleParty(party.id)}
-            />
-          ))}
-        </View>
+        {/* The actual household, everyone selected: a parent takes somebody OUT rather than building a list up. */}
+        {mine ? (
+          <View style={styles.household} testID="who-household">
+            <Text variant="caption" color={colors.text.secondary} style={styles.householdTitle}>
+              {mine.label.toUpperCase()}
+            </Text>
+            <View style={styles.chips}>
+              {mine.people!.map((person) => (
+                <Chip
+                  key={person.id}
+                  size="small"
+                  label={person.name}
+                  active={isComing(draft, person.id) && draft.partyIds.includes(mine.id)}
+                  onPress={() => onDraftChange(toggleAttendee(draft, mine.people!, person.id))}
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
+        {others.length ? (
+          <View style={styles.chips}>
+            {others.map((party) => (
+              <Chip
+                key={party.id}
+                size="small"
+                label={`${party.label} · ${party.summary}`}
+                active={draft.partyIds.includes(party.id)}
+                onPress={() => toggleParty(party.id)}
+              />
+            ))}
+          </View>
+        ) : null}
         {draft.partyIds.length === 0 ? (
           <Text variant="caption" color={colors.text.secondary}>
             Nobody chosen yet
           </Text>
         ) : null}
-        {connections && addOpen ? (
-          <ConnectedFamiliesPicker
-            selectedIds={draft.partyIds}
-            onSelect={(id) => {
-              if (!draft.partyIds.includes(id)) onDraftChange({ ...draft, partyIds: [...draft.partyIds, id] });
-            }}
-            onAddManually={onAddFamily}
-          />
+        {mine && draft.attendeeIds ? (
+          <Text variant="caption" color={colors.text.secondary}>
+            Planning without {mine.people!.filter((p) => !isComing(draft, p.id)).map((p) => p.name).join(', ')}.
+          </Text>
+        ) : null}
+        {addOpen ? (
+          byPostcode || !connections ? (
+            <AddFamilyByPostcode
+              onAdded={(family) => {
+                addFamilyId(family.id);
+                setByPostcode(false);
+                setAddOpen(false);
+              }}
+              onCancel={connections ? () => setByPostcode(false) : () => setAddOpen(false)}
+            />
+          ) : (
+            <ConnectedFamiliesPicker
+              selectedIds={draft.partyIds}
+              onSelect={addFamilyId}
+              onAddManually={() => setByPostcode(true)}
+            />
+          )
         ) : null}
       </PlanFormRow>
 
       <PlanFormRow label="How long">
         <View style={styles.chips}>
-          {VISIT_LENGTH_CHOICES.map((minutes) => (
+          {VISIT_CHOICES.map((choice) => (
             <Chip
-              key={minutes}
+              key={String(choice.value)}
               size="small"
-              label={visitLengthLabel(minutes)}
-              active={draft.visitMinutes === minutes}
-              onPress={() => onDraftChange({ ...draft, visitMinutes: minutes })}
+              label={choice.label}
+              active={!visitIsCustom && draft.visit === choice.value}
+              onPress={() => {
+                setCustomOpen(false);
+                setVisit(choice.value);
+              }}
             />
           ))}
+          <Chip
+            size="small"
+            label={visitIsCustom ? `${draft.visit} min` : 'Custom'}
+            active={visitIsCustom || customOpen}
+            onPress={() => {
+              setCustomOpen(true);
+              if (!visitIsCustom) setVisit(75);
+            }}
+          />
         </View>
-        {/* Travel is always added; lunch only when one is already known, so this does not promise
-            a stop the day may not contain. */}
+        {customOpen ? <CustomMinutes value={typeof draft.visit === 'number' ? draft.visit : 75} onChange={setVisit} /> : null}
         <Text variant="caption" color={colors.text.secondary}>
-          {venueName ? `Time at ${venueName}. Travel is added around it.` : 'Time at the place. Travel is added around it.'}
+          {draft.visit === 'not-sure'
+            ? 'We’ll use what we know about the place and your routines, and tell you what we assumed.'
+            : draft.visit === 'all-day'
+              ? 'Until it closes, or about 6 hours if we don’t know when that is.'
+              : venueName
+                ? `Time at ${venueName}. Travel is added around it.`
+                : 'Time at the place. Travel is added around it.'}
         </Text>
       </PlanFormRow>
+
+      {/* The old planner's limits, kept but out of the way: most days need none of them. */}
+      <Pressable
+        onPress={() => setMoreOpen((open) => !open)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: moreOpen }}
+        accessibilityLabel="More options"
+        style={styles.moreToggle}
+        hitSlop={8}
+        testID="plan-more-options"
+      >
+        <Text style={styles.rowLink}>{moreOpen ? 'Fewer options' : 'More options'}</Text>
+      </Pressable>
+      {moreOpen ? (
+        <>
+          <PlanFormRow label="Home by">
+            <TimeField label="" value={draft.returnBy} onChange={(returnBy) => onDraftChange({ ...draft, returnBy })} optional />
+            <Text variant="caption" color={colors.text.secondary}>
+              Optional. The day is planned to end before this.
+            </Text>
+          </PlanFormRow>
+          <PlanFormRow label="Extra time each way">
+            <View style={styles.chips}>
+              {BUFFER_CHOICES.map((minutes) => (
+                <Chip key={minutes} size="small" label={`${minutes} min`} active={draft.bufferMinutes === minutes} onPress={() => onDraftChange({ ...draft, bufferMinutes: minutes })} />
+              ))}
+            </View>
+            <Text variant="caption" color={colors.text.secondary}>
+              For traffic, parking and getting everyone ready.
+            </Text>
+          </PlanFormRow>
+          <PlanFormRow label="Setting">
+            <View style={styles.chips}>
+              {(['either', 'indoor', 'outdoor'] as const).map((value) => (
+                <Chip key={value} size="small" label={{ either: 'Any setting', indoor: 'Indoors', outdoor: 'Outdoors' }[value]} active={draft.environment === value} onPress={() => onDraftChange({ ...draft, environment: value })} />
+              ))}
+            </View>
+          </PlanFormRow>
+        </>
+      ) : null}
     </>
+  );
+}
+
+/** Minutes, for the length nobody's preset covers. Kept to what the planner accepts. */
+function CustomMinutes({ value, onChange }: { value: number; onChange: (minutes: number) => void }) {
+  const [text, setText] = useState(String(value));
+  return (
+    <View style={styles.custom}>
+      <TextInput
+        accessibilityLabel="Minutes at the place"
+        value={text}
+        keyboardType="number-pad"
+        inputMode="numeric"
+        onChangeText={(next) => {
+          const cleaned = next.replace(/[^0-9]/g, '').slice(0, 3);
+          setText(cleaned);
+          const minutes = Number(cleaned);
+          if (Number.isFinite(minutes) && minutes >= MIN_VISIT_MINUTES && minutes <= MAX_VISIT_MINUTES) onChange(minutes);
+        }}
+        style={styles.customInput}
+        testID="custom-visit-minutes"
+      />
+      <Text variant="bodySmall" color={colors.text.secondary}>
+        minutes ({MIN_VISIT_MINUTES}–{MAX_VISIT_MINUTES})
+      </Text>
+    </View>
   );
 }
 
@@ -214,5 +319,21 @@ const styles = StyleSheet.create({
   labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SMALL_CHIP_GAP },
   // Node 76:49: SemiBold 13, underlined, ink.
+  moreToggle: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
+  household: { gap: spacing.xs },
+  householdTitle: { letterSpacing: 0.6 },
+  custom: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  customInput: {
+    minWidth: 88,
+    minHeight: 48,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    fontSize: 16,
+    color: colors.text.primary,
+    outlineColor: colors.action,
+  },
   rowLink: { fontFamily: 'Inter_600SemiBold', fontSize: 13, lineHeight: 16, color: colors.action, textDecorationLine: 'underline' },
 });

@@ -5,16 +5,19 @@ import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
 import {
   DayPlanRequest,
   PLANNING_TIMEZONE_FALLBACK,
+  PlanAlternative,
   PlanCaveat,
   PlanGenerationResult,
   ResolvedStop,
   TravelDiagnostics,
 } from '@/src/types/day-plan';
 import {
+  DayItinerary,
   LegEndpoint,
   MAX_SEQUENCE_STOPS,
   PlanningClock,
   SequenceFailure,
+  SequenceResult,
   StopRequest,
   StopRole,
 } from '@/src/types/day-sequence';
@@ -28,6 +31,7 @@ import { parseClockTime, venueLocalDate, venueLocalTime } from '@/src/utils/open
 
 import { buildJourneyMatrix } from './journey-matrix';
 import { homeKey, sequenceDay, stopKey } from './sequencer';
+import { MIN_USEFUL_VISIT_MINUTES, VisitResolution } from './visit-duration';
 import { FoodCandidate } from '@/src/types/nearby-food';
 import { TravelLeg } from '@/src/types/travel';
 
@@ -356,6 +360,125 @@ function blameLeg(
   return undefined;
 }
 
+type RunSequence = (requests: StopRequest[], arriveAt: string | undefined) => SequenceResult;
+
+const withAnchorDwell = (requests: StopRequest[], dwellMinutes: number): StopRequest[] =>
+  requests.map((stop) => (stop.anchor ? { ...stop, dwellMinutes } : stop));
+
+const clockOf = (minutes: number): string => {
+  const within = ((Math.round(minutes) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(within / 60)).padStart(2, '0')}:${String(within % 60).padStart(2, '0')}`;
+};
+
+const clashKey = (insight: { familyId: string; routineId: string }) => `${insight.familyId}\u0000${insight.routineId}`;
+
+/**
+ * "Not sure" how long, and a routine that has to happen at home is going to be missed: shorten the visit so
+ * everyone is home before it, if what is left is still worth the journey.
+ *
+ * Only ever asked of a length FamilyPilot chose. It re-sequences with the same matrix and keeps the shorter day only
+ * if it actually clears that routine, and it never goes below `MIN_USEFUL_VISIT_MINUTES`: a twenty-minute visit
+ * after an hour in the car is not a plan, so then the longer day stands and the advice offers the options.
+ */
+function fitVisitToRoutine(
+  itinerary: DayItinerary,
+  requests: StopRequest[],
+  run: RunSequence,
+  arriveAt: string | undefined,
+): { sequenced: SequenceResult; minutes: number; routineId: string; familyId: string } | null {
+  const anchorStop = itinerary.stops.find((stop) => stop.anchor);
+  if (!anchorStop) return null;
+  const homeOf = new Map(itinerary.families.map((family) => [family.familyId, family.home]));
+
+  let worst: { overrun: number; routineId: string; familyId: string } | null = null;
+  for (const insight of itinerary.routineInsights) {
+    // Shortening can only help a routine that starts after the visit has begun, and only one that has to
+    // happen at home: a feed on the go is advised on, not planned out.
+    if (!insight.atHome || insight.start <= anchorStop.arrive) continue;
+    const home = homeOf.get(insight.familyId);
+    if (home === undefined) continue;
+    const overrun = home - insight.start;
+    if (overrun > 0 && (!worst || overrun > worst.overrun)) {
+      worst = { overrun, routineId: insight.routineId, familyId: insight.familyId };
+    }
+  }
+  if (!worst) return null;
+
+  const minutes = Math.floor((anchorStop.dwellMinutes - worst.overrun) / 15) * 15;
+  if (minutes < MIN_USEFUL_VISIT_MINUTES) return null;
+
+  const attempt = run(withAnchorDwell(requests, minutes), arriveAt);
+  if (!attempt.ok) return null;
+  const stillClashes = attempt.itinerary.routineInsights.some(
+    (insight) => insight.atHome && insight.familyId === worst!.familyId && insight.routineId === worst!.routineId,
+  );
+  if (stillClashes) return null;
+  return { sequenced: attempt, minutes, routineId: worst.routineId, familyId: worst.familyId };
+}
+
+const OFFSETS_MINUTES = [30, 60];
+const SHORTER_BY_MINUTES = [30, 60];
+
+/**
+ * Ways to run the same day that clear a routine overlap, each one verified by sequencing it for real.
+ *
+ * One alternative per kind at most (the nearest earlier start, the nearest later start, the shortest visit
+ * change that helps), so the screen offers a few clear choices rather than a table. Never offered if it would
+ * create a new overlap or fail on opening hours or a limit: a suggestion that then refuses to build is worse than none.
+ */
+function findAlternatives(
+  base: DayItinerary,
+  requests: StopRequest[],
+  visitMinutes: number,
+  run: RunSequence,
+): PlanAlternative[] {
+  const baseClashes = new Set(base.routineInsights.map(clashKey));
+  if (baseClashes.size === 0) return [];
+  const arrive = base.stops[0]?.arrive;
+  if (arrive === undefined) return [];
+
+  const found: PlanAlternative[] = [];
+  const consider = (kind: PlanAlternative['kind'], arriveMinutes: number, minutes: number): PlanAlternative | null => {
+    if (arriveMinutes < 0 || arriveMinutes >= 1440) return null;
+    const attempt = run(withAnchorDwell(requests, minutes), clockOf(arriveMinutes));
+    if (!attempt.ok) return null;
+    const remaining = new Set(attempt.itinerary.routineInsights.map(clashKey));
+    const resolves = [...baseClashes].filter((key) => !remaining.has(key));
+    // Better means fewer overlaps, and none of them new.
+    if (!resolves.length || remaining.size >= baseClashes.size) return null;
+    if ([...remaining].some((key) => !baseClashes.has(key))) return null;
+    return {
+      kind,
+      arriveAt: clockOf(arriveMinutes),
+      visitMinutes: minutes,
+      resolves: resolves.map((key) => {
+        const [familyId, routineId] = key.split('\u0000');
+        return { familyId, routineId };
+      }),
+    };
+  };
+
+  for (const kind of ['earlier', 'later'] as const) {
+    for (const offset of OFFSETS_MINUTES) {
+      const hit = consider(kind, kind === 'earlier' ? arrive - offset : arrive + offset, visitMinutes);
+      if (hit) {
+        found.push(hit);
+        break;
+      }
+    }
+  }
+  for (const shorter of SHORTER_BY_MINUTES) {
+    const minutes = visitMinutes - shorter;
+    if (minutes < MIN_USEFUL_VISIT_MINUTES) break;
+    const hit = consider('shorter', arrive, minutes);
+    if (hit) {
+      found.push(hit);
+      break;
+    }
+  }
+  return found;
+}
+
 export async function generateDayPlan(
   request: DayPlanRequest,
   deps: GenerateDayPlanDeps,
@@ -397,20 +520,34 @@ export async function generateDayPlan(
   // A degraded matrix still goes to the sequencer. Whether a missing leg matters depends on the
   // order it settles on, and only it can decide that — rejecting here on `missing` alone would
   // throw away days that are perfectly workable.
-  const sequenced = deps.sequence(
-    stopRequests,
-    request.families,
-    build.matrix,
-    {
-      date: request.date,
-      leaveAt: request.options.leaveAt,
-      returnBy: request.options.returnBy,
-      bufferMinutes: request.options.bufferMinutes,
-      environment: request.options.environment,
-      timezone: clock.timezone,
-    },
-    clock,
-  );
+  const run = (requests: StopRequest[], arriveAt: string | undefined): SequenceResult =>
+    deps.sequence(
+      requests,
+      request.families,
+      build.matrix,
+      {
+        date: request.date,
+        leaveAt: request.options.leaveAt,
+        arriveAt,
+        returnBy: request.options.returnBy,
+        bufferMinutes: request.options.bufferMinutes,
+        environment: request.options.environment,
+        timezone: clock.timezone,
+      },
+      clock,
+    );
+
+  const arriveAt = request.options.arriveAt;
+  let sequenced = run(stopRequests, arriveAt);
+  let visit: VisitResolution = request.visit ?? { minutes: request.anchor.dwellMinutes, basis: 'chosen' };
+
+  if (sequenced.ok && (visit.basis === 'venue-typical' || visit.basis === 'category-typical')) {
+    const fitted = fitVisitToRoutine(sequenced.itinerary, stopRequests, run, arriveAt);
+    if (fitted) {
+      sequenced = fitted.sequenced;
+      visit = { ...visit, minutes: fitted.minutes, basis: 'routine-limited', routineId: fitted.routineId, familyId: fitted.familyId, unshortenedMinutes: visit.minutes };
+    }
+  }
 
   if (!sequenced.ok) {
     return {
@@ -423,6 +560,8 @@ export async function generateDayPlan(
       },
     };
   }
+
+  const alternatives = findAlternatives(sequenced.itinerary, stopRequests, visit.minutes, run);
 
   const caveats: PlanCaveat[] = [
     // Read off the structured verdict rather than the prose in `unknowns`, so the screen never
@@ -447,5 +586,5 @@ export async function generateDayPlan(
     caveats.push({ kind: 'traffic-not-predictive', planDate: request.date });
   }
 
-  return { ok: true, plan: { itinerary: sequenced.itinerary, travel, caveats, clock } };
+  return { ok: true, plan: { itinerary: sequenced.itinerary, visit, alternatives, travel, caveats, clock } };
 }

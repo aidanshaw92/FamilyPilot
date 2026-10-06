@@ -33,6 +33,8 @@ const itinerary = (over: Partial<DayItinerary> = {}): DayItinerary => ({
   families: [],
   unknowns: [],
   openingConfidence: { confirmed: 1, unknown: 0 },
+  routineInsights: [],
+  homeAfter: [],
   reasons: [],
   fairnessGap: 0,
   score: 900,

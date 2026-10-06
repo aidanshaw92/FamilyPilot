@@ -34,6 +34,8 @@ const itinerary = (over: Partial<DayItinerary> = {}): DayItinerary => ({
   }],
   unknowns: [],
   openingConfidence: { confirmed: 1, unknown: 0 },
+  routineInsights: [],
+  homeAfter: [],
   reasons: ['Required facilities checked for every family.'],
   fairnessGap: 0,
   score: 10,

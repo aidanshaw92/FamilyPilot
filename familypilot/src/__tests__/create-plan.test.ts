@@ -8,6 +8,7 @@ import {
 } from '@/src/services/planning/create-plan';
 import { planStopFromRecord } from '@/src/services/planning/day-plan';
 import { PlanningFamily } from '@/src/services/planning/planner';
+import { PlanDraft } from '@/src/services/planning/plan-draft';
 import { ExternalPlaceRecord } from '@/src/types/places';
 import { DayItinerary, SequenceFailure } from '@/src/types/day-sequence';
 import { estimatedLeg } from '@/src/types/travel';
@@ -40,7 +41,16 @@ const family = (over: Partial<PlanningFamily> = {}): PlanningFamily => ({
   ...over,
 });
 
-const draft = { date: '2026-10-10', leaveAt: '09:30', partyIds: ['mine'], visitMinutes: 90 };
+const draft: PlanDraft = {
+  date: '2026-10-10',
+  startAt: '09:30',
+  partyIds: ['mine'],
+  attendeeIds: null,
+  visit: 90,
+  returnBy: '',
+  bufferMinutes: 15,
+  environment: 'either',
+};
 
 const itinerary = (): DayItinerary => ({
   date: '2026-10-10',
@@ -53,6 +63,8 @@ const itinerary = (): DayItinerary => ({
   families: [{ familyId: 'mine', label: 'Our family', depart: 570, home: 750, latestDeparture: 600, notes: [] }],
   unknowns: [],
   openingConfidence: { confirmed: 1, unknown: 0 },
+  routineInsights: [],
+  homeAfter: [],
   reasons: [],
   fairnessGap: 0,
   score: 1,

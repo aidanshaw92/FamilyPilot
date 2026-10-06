@@ -7,8 +7,13 @@ import {
   nextDay,
   planDraftDefaults,
   summariseHousehold,
-  VISIT_LENGTH_CHOICES,
+  PlanDraft,
+  planDraftToParams,
+  toggleAttendee,
+  isComing,
+  profileForDraft,
 } from '@/src/services/planning/plan-draft';
+import { VISIT_CHOICES } from '@/src/services/planning/visit-duration';
 import { resolvePlanParties } from '@/src/services/planning/plan-parties';
 import { FamilyProfile } from '@/src/types';
 import { PlanningFamily } from '@/src/services/planning/planner';
@@ -55,18 +60,75 @@ const planningFamily = (over: Partial<PlanningFamily> = {}): PlanningFamily => (
   ...over,
 });
 
+/** A complete draft, so each test names only what it is about. */
+const draftOf = (over: Partial<PlanDraft> = {}): PlanDraft => ({
+  date: TODAY,
+  startAt: '09:30',
+  partyIds: ['mine'],
+  attendeeIds: null,
+  visit: 90,
+  returnBy: '',
+  bufferMinutes: 15,
+  environment: 'either',
+  ...over,
+});
+
 const sources = (over: Partial<PlanDraftSources> = {}): PlanDraftSources => ({ today: TODAY, ...over });
 
 describe('who’s coming, as the sheet shows it', () => {
-  it('counts the household rather than naming anyone', () => {
+  it('names the actual household, everybody coming until somebody is taken out', () => {
+    const { parties, draft } = planDraftDefaults(sources({ profile: profile({ familyName: 'Shaw' }) }));
+    expect(parties[0]).toMatchObject({ id: 'mine', label: 'Shaw family', summary: 'Aidan, Sam, Mia and Leo', ready: true });
+    expect(parties[0].people?.map((p) => p.name)).toEqual(['Aidan', 'Sam', 'Mia', 'Leo']);
+    expect(draft.attendeeIds).toBeNull();
+  });
+
+  it('calls the household "Your family" when no family name was given, rather than guessing one', () => {
     const { parties } = planDraftDefaults(sources({ profile: profile() }));
-    expect(parties[0]).toMatchObject({ id: 'mine', label: 'Our family', summary: '2 adults, 2 children', ready: true });
-    // A plan is read aloud and shown on a shared screen.
-    expect(JSON.stringify(parties)).not.toContain('Mia');
+    expect(parties[0].label).toBe('Your family');
+  });
+
+  it('gives children an age and adults a relationship, and nothing more', () => {
+    const { parties } = planDraftDefaults(sources({ profile: profile() }));
+    const mia = parties[0].people!.find((p) => p.name === 'Mia')!;
+    expect(mia.kind).toBe('child');
+    expect(mia.detail).toMatch(/year/);
     expect(JSON.stringify(parties)).not.toContain('2021');
   });
 
-  it('pluralises one child correctly', () => {
+  it('toggles a person out and back, returning to "everyone" when all are in again', () => {
+    const { parties, draft } = planDraftDefaults(sources({ profile: profile() }));
+    const people = parties[0].people!;
+    const without = toggleAttendee(draft, people, 'c2');
+    expect(without.attendeeIds).toEqual(['p1', 'p2', 'c1']);
+    expect(isComing(without, 'c2')).toBe(false);
+    expect(isComing(without, 'c1')).toBe(true);
+    const back = toggleAttendee(without, people, 'c2');
+    expect(back.attendeeIds).toBeNull();
+  });
+
+  it('plans only for the people coming: a child left at home contributes no age and no routine', () => {
+    const withRoutines = profile({
+      routines: [
+        { id: 'nap-c2', label: 'Nap', kind: 'nap', time: '13:00', durationMinutes: 60, atHome: true, childId: 'c2' },
+        { id: 'nap-c1', label: 'Nap', kind: 'nap', time: '12:30', durationMinutes: 60, atHome: true, childId: 'c1' },
+      ],
+      homeLatitude: 51.64,
+      homeLongitude: -0.36,
+    } as Partial<FamilyProfile>);
+    const { families } = resolvePlanParties(['mine'], { profile: withRoutines, attendeeIds: ['p1', 'c1'] });
+    expect(families[0].ages).toEqual([4]);
+    expect(families[0].routines.map((r) => r.id)).toEqual(['nap-c1']);
+    // The narrowed household is what Family Fit and the planner both read.
+    expect(profileForDraft(withRoutines, draftOf({ attendeeIds: ['p1'] })).members.map((m) => m.id)).toEqual(['p1']);
+  });
+
+  it('blocks a plan for nobody', () => {
+    const { parties } = planDraftDefaults(sources({ profile: profile() }));
+    expect(planDraftBlocker(draftOf({ attendeeIds: [] }), parties)).toBe('Choose who is coming.');
+  });
+
+it('pluralises one child correctly', () => {
     expect(summariseHousehold({ adults: 1, children: 1 })).toBe('1 adult, 1 child');
     expect(summariseHousehold({ adults: 2, children: 3 })).toBe('2 adults, 3 children');
     expect(summariseHousehold({ adults: 0, children: 0 })).toBe('Nobody added yet');
@@ -80,9 +142,11 @@ describe('who’s coming, as the sheet shows it', () => {
     expect(parties[0].summary).not.toContain('adult');
   });
 
-  it('says "Adults only" when a family records no children', () => {
+  it('says what is on record for a family added by postcode, not that it is "adults only"', () => {
+    // Nobody entered "no children": a postcode is all there is, so that is what is said.
     const { parties } = planDraftDefaults(sources({ planningFamilies: [planningFamily({ ages: [] })] }));
-    expect(parties[0].summary).toBe('Adults only');
+    expect(parties[0].summary).toBe('Starting point only');
+    expect(parties[0].summary).not.toMatch(/adult/i);
   });
 
   it('selects only the first party, so a plan is never silently for everyone', () => {
@@ -125,46 +189,41 @@ describe('a family we know nothing about', () => {
       profile: profile(),
       planningFamilies: [planningFamily({ latitude: Number.NaN })],
     }));
-    expect(planDraftBlocker({ date: TODAY, leaveAt: '09:30', partyIds: ['mine', 'theirs'], visitMinutes: 90 }, parties))
+    expect(planDraftBlocker(draftOf({ partyIds: ['mine', 'theirs'] }), parties))
       .toBe('One of the families still needs its details before we can plan.');
   });
 
   it('blocks an empty party', () => {
-    expect(planDraftBlocker({ date: TODAY, leaveAt: '09:30', partyIds: [], visitMinutes: 90 }, []))
+    expect(planDraftBlocker(draftOf({ partyIds: [] }), []))
       .toBe('Choose who is coming.');
   });
 });
 
-describe('when and how long', () => {
-  it('defaults to today and a sensible morning start', () => {
-    const { draft } = planDraftDefaults(sources({ profile: profile() }));
-    expect(draft).toMatchObject({ date: TODAY, leaveAt: '09:30', visitMinutes: 90 });
+describe('when, start and how long', () => {
+  it('defaults to today, a mid-morning arrival, everyone, and "Not sure" how long', () => {
+    const { draft } = planDraftDefaults(sources({ profile: profile(), options: { date: TODAY, leaveAt: '' } }));
+    expect(draft).toMatchObject({ date: TODAY, startAt: '10:00', visit: 'not-sure', attendeeIds: null, returnBy: '', bufferMinutes: 15 });
   });
 
-  it('remembers what the parent chose last time', () => {
+  it('remembers the day and start the parent chose last time, but asks how long afresh', () => {
     const { draft } = planDraftDefaults(sources({
       profile: profile(),
-      options: { date: '2026-10-17', leaveAt: '08:15', visitMinutes: 120 },
+      options: { date: '2026-10-17', leaveAt: '08:15' },
     }));
-    expect(draft).toMatchObject({ date: '2026-10-17', leaveAt: '08:15', visitMinutes: 120 });
+    expect(draft).toMatchObject({ date: '2026-10-17', startAt: '08:15', visit: 'not-sure' });
   });
 
   it('never opens on a date that has already passed', () => {
     const { draft } = planDraftDefaults(sources({
       profile: profile(),
-      options: { date: '2026-09-01', leaveAt: '09:00', visitMinutes: 90 },
+      options: { date: '2026-09-01', leaveAt: '09:00' },
     }));
     expect(draft.date).toBe(TODAY);
   });
 
-  it('snaps a stored length onto a length the sheet can show as chosen', () => {
-    // Otherwise the sheet renders four options with none of them selected.
-    const at = (visitMinutes: number) =>
-      planDraftDefaults(sources({ profile: profile(), options: { date: TODAY, leaveAt: '09:30', visitMinutes } })).draft.visitMinutes;
-    expect(at(75)).toBe(90);
-    expect(at(60)).toBe(60);
-    expect(at(1000)).toBe(180);
-    expect(VISIT_LENGTH_CHOICES).toContain(at(75));
+  it('offers "Not sure" and "All day" alongside the lengths, and a default FamilyPilot can reason about', () => {
+    expect(VISIT_CHOICES.map((c) => c.value)).toEqual(['not-sure', 60, 120, 180, 240, 'all-day']);
+    expect(planDraftDefaults(sources({ profile: profile() })).draft.visit).toBe('not-sure');
   });
 });
 
@@ -178,8 +237,8 @@ describe('the sheet’s button cannot promise a day the planner could not build'
     const { parties } = planDraftDefaults(
       sources({ profile: profile({ homeLocation: '', homeLatitude: null, homeLongitude: null }) }),
     );
-    expect(parties[0]).toMatchObject({ id: 'mine', summary: '2 adults, 2 children', ready: false });
-    expect(planDraftBlocker({ date: TODAY, leaveAt: '09:30', partyIds: ['mine'], visitMinutes: 90 }, parties))
+    expect(parties[0]).toMatchObject({ id: 'mine', summary: 'Aidan, Sam, Mia and Leo', ready: false });
+    expect(planDraftBlocker(draftOf(), parties))
       .toBe('Add your family details so we can plan around them.');
   });
 
@@ -200,32 +259,40 @@ describe('a draft read back out of a link', () => {
     expect(
       planDraftFromParams({
         date: ['2026-10-10', '2026-12-25'],
-        leaveAt: ['09:30'],
+        start: ['09:30'],
         visit: ['90', '240'],
         parties: ['mine,theirs', 'someone-else'],
       }),
-    ).toEqual({ date: '2026-10-10', leaveAt: '09:30', visitMinutes: 90, partyIds: ['mine', 'theirs'] });
+    ).toEqual(draftOf({ partyIds: ['mine', 'theirs'] }));
   });
 
-  it('reads a plain link exactly as it was written', () => {
+  it('reads a plain link exactly as it was written, and round-trips through its own parameters', () => {
+    const draft = draftOf({ date: '2026-10-10', visit: 'all-day', attendeeIds: ['p1', 'c1'], returnBy: '16:00', bufferMinutes: 30, environment: 'indoor', partyIds: ['mine', 'theirs'] });
+    expect(planDraftFromParams(planDraftToParams(draft))).toEqual(draft);
+    expect(planDraftFromParams({ date: '2026-10-10', start: '09:30', visit: 'not-sure', parties: 'mine' }))
+      .toEqual(draftOf({ date: '2026-10-10', visit: 'not-sure' }));
+  });
+
+  it('still understands a link written before the start meant "arrive"', () => {
     expect(planDraftFromParams({ date: '2026-10-10', leaveAt: '09:30', visit: '120', parties: 'mine' }))
-      .toEqual({ date: '2026-10-10', leaveAt: '09:30', visitMinutes: 120, partyIds: ['mine'] });
+      .toEqual(draftOf({ date: '2026-10-10', visit: 120 }));
   });
 
-  it('leaves a malformed answer unusable rather than substituting a day nobody chose', () => {
-    // The planner rejects these and names which answer does not add up. Quietly defaulting them
-    // would produce a plausible-looking day for a date and a length the parent never picked.
+  it('leaves a malformed date unusable, and an unreadable length "not sure", rather than substituting a day nobody chose', () => {
+    // The planner rejects a bad date and names it. A length nobody could read is honestly "not sure", not a number.
     const draft = planDraftFromParams({ date: 'not-a-date', visit: 'soon' });
     expect(draft.date).toBe('not-a-date');
-    expect(Number.isFinite(draft.visitMinutes)).toBe(false);
+    expect(draft.visit).toBe('not-sure');
     expect(planDraftFromParams({}).date).toBe('');
-    expect(planDraftFromParams({}).leaveAt).toBe('');
+    expect(planDraftFromParams({}).startAt).toBe('');
   });
 
   it('falls back to the signed-in household only for who is coming', () => {
     expect(planDraftFromParams({}).partyIds).toEqual(['mine']);
     expect(planDraftFromParams({ parties: '' }).partyIds).toEqual(['mine']);
     expect(planDraftFromParams({ parties: ' mine , theirs , ' }).partyIds).toEqual(['mine', 'theirs']);
+    expect(planDraftFromParams({}).attendeeIds).toBeNull();
+    expect(planDraftFromParams({ who: 'p1,c1' }).attendeeIds).toEqual(['p1', 'c1']);
   });
 });
 
@@ -242,7 +309,7 @@ describe('a finished profile is enough to plan from, without a planning family',
   it('offers the household ready, with no setup gate', () => {
     const result = planDraftDefaults(sources({ profile: finished, planningFamilies: [] }));
     expect(result.needsProfile).toBe(false);
-    expect(result.parties).toEqual([expect.objectContaining({ id: 'mine', label: 'Our family', ready: true })]);
+    expect(result.parties).toEqual([expect.objectContaining({ id: 'mine', label: 'Your family', ready: true })]);
     expect(planDraftBlocker(result.draft, result.parties)).toBeNull();
   });
 
@@ -263,26 +330,26 @@ describe('a finished profile is enough to plan from, without a planning family',
 
 describe('the date the sheet opens on', () => {
   it('stays on today while today\'s start is still ahead', () => {
-    expect(planDraftDefaults(sources({ nowTime: '08:00' })).draft).toMatchObject({ date: TODAY, leaveAt: '09:30' });
+    expect(planDraftDefaults(sources({ nowTime: '08:00', options: { date: TODAY, leaveAt: '09:30' } })).draft).toMatchObject({ date: TODAY, startAt: '09:30' });
   });
 
   it('opens on tomorrow once today\'s start has gone, rather than planning a day that began in the past', () => {
     // The planner would start from "now" and report the venue closed: true, and no use as a default.
-    expect(planDraftDefaults(sources({ nowTime: '20:00' })).draft).toMatchObject({ date: '2026-10-11', leaveAt: '09:30' });
+    expect(planDraftDefaults(sources({ nowTime: '20:00', options: { date: TODAY, leaveAt: '09:30' } })).draft).toMatchObject({ date: '2026-10-11', startAt: '09:30' });
   });
 
   it('keeps an explicit "leave from now" on today in the minute it was chosen', () => {
-    const options = { date: TODAY, leaveAt: '20:00', visitMinutes: 90 };
+    const options = { date: TODAY, leaveAt: '20:00' };
     expect(planDraftDefaults(sources({ options, nowTime: '20:00' })).draft.date).toBe(TODAY);
   });
 
   it('moves a stored date that is today but whose start has gone', () => {
-    const options = { date: TODAY, leaveAt: '09:00', visitMinutes: 90 };
+    const options = { date: TODAY, leaveAt: '09:00' };
     expect(planDraftDefaults(sources({ options, nowTime: '12:00' })).draft.date).toBe('2026-10-11');
   });
 
   it('leaves a stored future date alone', () => {
-    const options = { date: '2026-10-20', leaveAt: '09:00', visitMinutes: 90 };
+    const options = { date: '2026-10-20', leaveAt: '09:00' };
     expect(planDraftDefaults(sources({ options, nowTime: '23:00' })).draft.date).toBe('2026-10-20');
   });
 
@@ -292,12 +359,12 @@ describe('the date the sheet opens on', () => {
 
   it('reads a one-digit hour as a time, not as text', () => {
     // '9:30' < '10:05' is false as strings; it is true as times.
-    const options = { date: TODAY, leaveAt: '9:30', visitMinutes: 90 };
+    const options = { date: TODAY, leaveAt: '9:30' };
     expect(planDraftDefaults(sources({ options, nowTime: '10:05' })).draft.date).toBe('2026-10-11');
   });
 
   it('never rolls forward for a time it cannot read', () => {
-    const options = { date: TODAY, leaveAt: 'soon', visitMinutes: 90 };
+    const options = { date: TODAY, leaveAt: 'soon' };
     expect(planDraftDefaults(sources({ options, nowTime: '23:00' })).draft.date).toBe(TODAY);
   });
 

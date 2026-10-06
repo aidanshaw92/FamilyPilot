@@ -1,5 +1,8 @@
 import { DayItinerary, SequenceLeg, SequenceStop } from '@/src/types/day-sequence';
-import { PlanCaveat, TravelDiagnostics } from '@/src/types/day-plan';
+import { PlanAlternative, PlanCaveat, TravelDiagnostics } from '@/src/types/day-plan';
+import { PushchairSuitability } from '@/src/types/enrichment';
+import { RoutineAdviceContext, SubjectResolver, reasonAboutRoutines, subjectPhrase } from './routine-advice';
+import { VisitResolution, visitNote } from './visit-duration';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { TravelMode } from '@/src/types/travel';
 import { travelTimeWithMode } from '@/src/utils/travel-time';
@@ -83,6 +86,39 @@ export interface PlanTravelLegView {
   sourceLabel: string;
 }
 
+/** One option under a piece of advice. `alternative` and `add-lunch` re-run the plan; the screen applies them. */
+export interface PlanAdviceOptionView {
+  key: string;
+  kind: 'alternative' | 'add-lunch';
+  label: string;
+  alternative?: PlanAlternative;
+}
+
+export interface PlanAdviceView {
+  id: string;
+  /** `soft`: a routine the family keeps at home overlaps the outing. `info`: worth a line, nothing more. */
+  severity: 'soft' | 'info';
+  title: string;
+  where: string;
+  detail: string;
+  options: PlanAdviceOptionView[];
+}
+
+/**
+ * How the day sits around the family's routines. A routine overlapping the outing is advice here, never a refusal: see
+ * routine-advice.ts for the three tiers.
+ */
+export interface PlanRoutinesView {
+  headline: string;
+  advice: PlanAdviceView[];
+  homeBefore: string[];
+  together: string[];
+  /** How long was allowed and why, when FamilyPilot chose the length. */
+  visitNote: string | null;
+  /** True when no routine overlaps and at least one was given. */
+  clear: boolean;
+}
+
 export interface PlanSectionView {
   id: 'day' | 'who' | 'travel';
   label: string;
@@ -98,6 +134,13 @@ export interface PlanViewModel {
    * routine the day is home before; never invented from the time alone.
    */
   insight: string | null;
+  /** Where the day sits around naps and feeds. Null when the family gave no routines: nothing is claimed about them. */
+  routines: PlanRoutinesView | null;
+  /**
+   * Whether a lunch stop is in the day and whether one could be: lets the screen offer "Add lunch" or "Take lunch out",
+   * so food belongs to the plan instead of sitting beside it.
+   */
+  lunch: { included: boolean; available: boolean };
   /** "Sat 11 Oct · 09:45–14:30" */
   dateSummary: string;
   /** "A 5-hour Saturday" */
@@ -270,6 +313,27 @@ export interface PlanViewModelInput {
   parking?: PlanParkingInput;
   /** Photographs and categories by place id, for the stop cards. Absent stops draw a placeholder. */
   media?: Record<string, { imageUrl?: string; category?: string }>;
+  /** How long at the main venue, and why. Absent on a day saved before lengths were explained. */
+  visit?: VisitResolution;
+  /** Verified ways to clear a routine overlap, from the planner. */
+  alternatives?: PlanAlternative[];
+  /** The anchor's recorded pushchair suitability. A venue fact, so it may be saved; absent reads as unknown. */
+  pushchair?: PushchairSuitability;
+  /** Planner families that use a pushchair (ids only). */
+  buggyFamilyIds?: string[];
+  /** A place to eat is known near the venue, so a lunch could be added. */
+  lunchAvailable?: boolean;
+  /** The family gave at least one routine, so "fits your routines" is a claim with something behind it. */
+  hasRoutines?: boolean;
+  /** The anchor's category, for wording an assumed visit length. */
+  anchorCategory?: string;
+}
+
+/** What only the device knows at render time. Names live here, not in the saved plan. */
+export interface PlanViewContext {
+  resolveSubject?: SubjectResolver;
+  /** "Shaw family": what the signed-in household is called on screen. Absent, it reads "Our family". */
+  householdTitle?: string;
 }
 
 /**
@@ -319,7 +383,70 @@ function caveatLine(caveat: PlanCaveat): string {
   }
 }
 
-export function toPlanViewModel(input: PlanViewModelInput): PlanViewModel {
+function routinesView(input: PlanViewModelInput, context: PlanViewContext | undefined): PlanRoutinesView | null {
+  const { itinerary } = input;
+  const insights = itinerary.routineInsights ?? [];
+  const homeAfter = itinerary.homeAfter ?? [];
+  const resolveSubject: SubjectResolver =
+    context?.resolveSubject ??
+    ((familyId, _routineId, kind) => ({
+      name: null,
+      noun: kind === 'nap' ? 'nap' : 'feed',
+      familyLabel: itinerary.families.find((f) => f.familyId === familyId)?.label ?? 'Their',
+      yours: familyId === 'mine',
+    }));
+  // "…which gets you home before Ozzie’s nap at 12:15": the routine a shortened visit was shortened for, named here.
+  let routineSentence: string | null = null;
+  if (input.visit?.basis === 'routine-limited') {
+    const after = homeAfter.find((h) => h.familyId === input.visit?.familyId && h.routineId === input.visit?.routineId);
+    if (after) {
+      const subject = resolveSubject(after.familyId, after.routineId, after.kind);
+      const phrase = subjectPhrase(subject, after.kind);
+      routineSentence = subject.yours
+        ? `which gets you home before ${phrase} at ${planClock(after.start)}.`
+        : `which gets ${subject.familyLabel}’s family home before ${phrase} at ${planClock(after.start)}.`;
+    }
+  }
+  const note = visitNote(input.visit, input.anchorCategory, routineSentence);
+  if (!input.hasRoutines && insights.length === 0 && homeAfter.length === 0) {
+    return note ? { headline: '', advice: [], homeBefore: [], together: [], visitNote: note, clear: false } : null;
+  }
+  const adviceContext: RoutineAdviceContext = {
+    itinerary,
+    venue: { name: input.anchorName, pushchair: input.pushchair ?? 'unknown' },
+    resolveSubject,
+    buggyFamilies: new Set(input.buggyFamilyIds ?? []),
+    alternatives: input.alternatives ?? [],
+    mealIncluded: itinerary.stops.some((stop) => stop.role === 'meal'),
+    lunchAvailable: Boolean(input.lunchAvailable),
+  };
+  const reasoning = reasonAboutRoutines(adviceContext);
+  const soft = reasoning.advice.filter((a) => a.severity === 'soft').length;
+  const headline = !reasoning.hasOverlap
+    ? 'Fits the routines you told us about'
+    : soft > 0
+      ? soft === 1
+        ? 'One routine overlaps this day. Here’s what we’d suggest'
+        : `${soft} routines overlap this day. Here’s what we’d suggest`
+      : 'Worth knowing about your routines';
+  return {
+    headline,
+    advice: reasoning.advice.map((a) => ({
+      id: a.id,
+      severity: a.severity,
+      title: a.title,
+      where: a.where,
+      detail: a.detail,
+      options: a.options.map((option, index) => ({ key: `${a.id}#${index}`, kind: option.kind, label: option.label, alternative: option.alternative })),
+    })),
+    homeBefore: reasoning.homeBefore,
+    together: reasoning.together,
+    visitNote: note,
+    clear: !reasoning.hasOverlap && Boolean(input.hasRoutines),
+  };
+}
+
+export function toPlanViewModel(input: PlanViewModelInput, context?: PlanViewContext): PlanViewModel {
   const { itinerary, travel, caveats, anchorName } = input;
   const date = weekdayOf(itinerary.date);
 
@@ -357,13 +484,16 @@ export function toPlanViewModel(input: PlanViewModelInput): PlanViewModel {
     };
   });
 
+  const routines = routinesView(input, context);
+  // Where the routines section already says it (with names), the nameless per-family notes would only repeat it.
+  const noteIsCovered = (note: string) => Boolean(routines && routines.advice.length + routines.homeBefore.length > 0 && (/^Home before /.test(note) || / while out; allow /.test(note)));
   const party: PlanPartyView[] = itinerary.families.map((family) => ({
     familyId: family.familyId,
-    label: family.label,
+    label: family.familyId === 'mine' && context?.householdTitle ? context.householdTitle : family.label,
     departLabel: planClock(family.depart),
     homeLabel: planClock(family.home),
     latestDepartureLabel: planClock(family.latestDeparture),
-    notes: family.notes,
+    notes: family.notes.filter((note) => !noteIsCovered(note)),
   }));
 
   const legs: PlanTravelLegView[] = itinerary.legs.map((leg) => ({
@@ -386,12 +516,18 @@ export function toPlanViewModel(input: PlanViewModelInput): PlanViewModel {
   const homeBefore = primary?.notes
     .map((note) => /^Home before (.+) at (\d{2}:\d{2})\.$/.exec(note))
     .find((match): match is RegExpExecArray => Boolean(match));
-  const insight = primary && homeBefore ? `Home around ${planClock(primary.home)}, before ${homeBefore[1]}` : null;
+  const insight = routines?.homeBefore[0]
+    ?? (primary && homeBefore ? `Home around ${planClock(primary.home)}, before ${homeBefore[1]}` : null);
 
   return {
     title: `A day at ${anchorName}`,
     dayName: date ? date.long : null,
     insight,
+    routines,
+    lunch: {
+      included: itinerary.stops.some((stop) => stop.role === 'meal'),
+      available: Boolean(input.lunchAvailable) || itinerary.stops.some((stop) => stop.role === 'meal'),
+    },
     dateSummary: date
       ? `${date.short} ${date.day} ${date.month} · ${planClock(dayStart)}–${planClock(dayEnd)}`
       : `${planClock(dayStart)}–${planClock(dayEnd)}`,

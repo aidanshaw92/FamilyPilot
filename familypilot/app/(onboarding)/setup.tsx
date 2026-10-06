@@ -10,15 +10,19 @@ import { MobilityPicker } from '@/src/components/onboarding/MobilityPicker';
 import { OnboardingShell } from '@/src/components/onboarding/OnboardingShell';
 import { FeedEditor, NapEditor } from '@/src/components/onboarding/RoutineEditors';
 import { TextField } from '@/src/components/profile/TextField';
-import { Button, Text } from '@/src/components/ui';
+import { Button, Chip, Text } from '@/src/components/ui';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { resolveUkLocation, ResolvedLocation } from '@/src/services/location/location-client';
 import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
 import { useFamilyStore } from '@/src/stores/family-store';
 import { usePendingInviteStore } from '@/src/stores/pending-invite-store';
+import { ADULT_RELATIONSHIP_LABEL } from '@/src/utils/household';
 import {
+  DraftAdult,
   DraftChild,
+  MAX_ADULTS,
   MAX_CHILDREN,
+  blankAdult,
   anyRoutineQuestions,
   blankChild,
   buildOnboardingProfile,
@@ -30,7 +34,7 @@ import {
 } from '@/src/utils/onboarding-draft';
 import { feedNoun } from '@/src/utils/routine-schedule';
 
-type StepKey = 'parent' | 'children' | 'mobility' | 'routines';
+type StepKey = 'parent' | 'household' | 'children' | 'mobility' | 'routines';
 
 /** Names of the children who are named, in order, as a parent would say them: "Mia and Theo". */
 function sayNames(names: string[]): string {
@@ -55,6 +59,8 @@ export default function SetupScreen() {
   const [homeLocation, setHomeLocation] = useState('');
   const [resolvedHome, setResolvedHome] = useState<ResolvedLocation | null>(null);
   const [resolvingHome, setResolvingHome] = useState(false);
+  const [familyName, setFamilyName] = useState('');
+  const [adults, setAdults] = useState<DraftAdult[]>([]);
   const [children, setChildren] = useState<DraftChild[]>(() => [blankChild()]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showDobErrors, setShowDobErrors] = useState(false);
@@ -66,11 +72,11 @@ export default function SetupScreen() {
   const needsRoutines = anyRoutineQuestions(children, now);
   // The naps-and-feeds step only exists for families with a child young enough to be asked.
   const steps: StepKey[] = useMemo(
-    () => ['parent', 'children', 'mobility', ...(needsRoutines ? (['routines'] as const) : [])],
+    () => ['parent', 'household', 'children', 'mobility', ...(needsRoutines ? (['routines'] as const) : [])],
     [needsRoutines],
   );
   const step = steps[Math.min(stepIndex, steps.length - 1)];
-  const totalSteps = stepIndex < 2 ? 4 : steps.length;
+  const totalSteps = stepIndex < 3 ? 5 : steps.length;
 
   const ready = children.filter((c) => c.name.trim() && draftDob(c));
   const one = ready.length === 1 ? ready[0].name.trim() : null;
@@ -87,6 +93,11 @@ export default function SetupScreen() {
     switch (step) {
       case 'parent':
         return { title: 'Let’s get started', subtitle: 'Just your name and the area you’re in.' };
+      case 'household':
+        return {
+          title: 'Who else is in your household?',
+          subtitle: 'Anyone who might come on days out. Optional, and it stays on this device.',
+        };
       case 'children':
         return {
           title: 'Who are we planning for?',
@@ -113,6 +124,9 @@ export default function SetupScreen() {
     if (step === 'parent') {
       if (!parentName.trim()) next.parentName = 'Please enter your first name';
       if (!homeLocation.trim()) next.homeLocation = 'Please enter your town or postcode';
+    }
+    if (step === 'household') {
+      if (adults.some((adult) => !adult.name.trim())) next.adults = 'Add a name for each adult, or remove them';
     }
     if (step === 'children') {
       setShowDobErrors(true);
@@ -153,6 +167,8 @@ export default function SetupScreen() {
       parentName,
       homeLocation,
       home: resolvedHome,
+      familyName,
+      adults,
       children,
     });
     setProfile(profile);
@@ -196,7 +212,7 @@ export default function SetupScreen() {
     setStepIndex(stepIndex - 1);
   };
 
-  const isLast = stepIndex >= steps.length - 1 && step !== 'parent' && step !== 'children';
+  const isLast = stepIndex >= steps.length - 1 && step !== 'parent' && step !== 'household' && step !== 'children';
 
   return (
     <KeyboardAvoidingView
@@ -245,6 +261,79 @@ export default function SetupScreen() {
                 hint="Only a general area, for travel and weather. Never your address."
                 error={errors.homeLocation}
               />
+            </View>
+          ) : null}
+
+          {step === 'household' ? (
+            <View>
+              <TextField
+                label="Family name (optional)"
+                value={familyName}
+                onChangeText={setFamilyName}
+                placeholder="e.g. Shaw"
+                autoCapitalize="words"
+                hint="Shown as “Shaw family” on your own screens. Never shared."
+              />
+              {adults.map((adult, index) => (
+                <View key={adult.id} style={styles.childCard} testID={`household-adult-${index}`}>
+                  <View style={styles.childHeader}>
+                    <ChildAvatar name={adult.name} size={36} />
+                    <Text variant="label" color={colors.text.secondary} style={styles.childLabel}>
+                      {adult.name.trim() || ADULT_RELATIONSHIP_LABEL[adult.relationship]}
+                    </Text>
+                    <Pressable
+                      onPress={() => setAdults((prev) => prev.filter((a) => a.id !== adult.id))}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove ${adult.name.trim() || 'this adult'}`}
+                      hitSlop={14}
+                    >
+                      <Text variant="caption" color={colors.error[500]}>
+                        Remove
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <TextField
+                    label="First name"
+                    value={adult.name}
+                    onChangeText={(name) => setAdults((prev) => prev.map((a) => (a.id === adult.id ? { ...a, name } : a)))}
+                    placeholder="e.g. Ellie"
+                    autoCapitalize="words"
+                  />
+                  <View style={styles.relationshipRow}>
+                    {(Object.keys(ADULT_RELATIONSHIP_LABEL) as Array<keyof typeof ADULT_RELATIONSHIP_LABEL>).map((relationship) => (
+                      <Chip
+                        key={relationship}
+                        size="small"
+                        label={ADULT_RELATIONSHIP_LABEL[relationship]}
+                        active={adult.relationship === relationship}
+                        onPress={() => setAdults((prev) => prev.map((a) => (a.id === adult.id ? { ...a, relationship } : a)))}
+                      />
+                    ))}
+                  </View>
+                </View>
+              ))}
+              {errors.adults ? (
+                <Text variant="caption" color={colors.error[500]} style={styles.errorText}>
+                  {errors.adults}
+                </Text>
+              ) : null}
+              {adults.length < MAX_ADULTS ? (
+                <Pressable
+                  onPress={() => setAdults((prev) => [...prev, blankAdult(prev.length === 0 ? 'partner' : 'other')])}
+                  style={styles.addChild}
+                  accessibilityRole="button"
+                  testID="household-add-adult"
+                >
+                  <Text variant="link" style={styles.addChildLabel}>
+                    + Add another adult
+                  </Text>
+                </Pressable>
+              ) : null}
+              <Text variant="caption" color={colors.text.secondary} style={styles.householdNote}>
+                {adults.length === 0
+                  ? 'Just you? That’s fine. You can add people later from Your family.'
+                  : 'Only first names and how you’re connected. No dates of birth, no contact details.'}
+              </Text>
             </View>
           ) : null}
 
@@ -395,5 +484,7 @@ const styles = StyleSheet.create({
   addChild: { minHeight: 44, justifyContent: 'center', alignItems: 'center', paddingVertical: spacing.md },
   addChildLabel: { fontSize: 16, lineHeight: 24 },
   errorText: { marginBottom: spacing.md },
+  relationshipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs },
+  householdNote: { marginTop: spacing.sm },
   footer: { paddingTop: spacing.lg, paddingBottom: spacing.md },
 });

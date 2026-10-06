@@ -1,6 +1,13 @@
 import { FamilyProfile } from '@/src/types';
+import { householdPeople, householdTitle, profileForAttendees, sayPeople } from '@/src/utils/household';
 import { canPlanFor, planningFamilyFromProfile } from './plan-parties';
 import { PlanningFamily, PlanningOptions } from './planner';
+import {
+  DEFAULT_VISIT_LENGTH,
+  VisitLength,
+  visitLengthFromParam,
+  visitLengthToParam,
+} from './visit-duration';
 
 /**
  * What the Create a Plan sheet holds, and where its defaults come from.
@@ -21,21 +28,48 @@ import { PlanningFamily, PlanningOptions } from './planner';
 export interface PlanDraft {
   /** `YYYY-MM-DD`. */
   date: string;
-  /** `HH:MM`, the earliest the family can leave. */
-  leaveAt: string;
+  /**
+   * `HH:MM`: when the family wants to ARRIVE. Leaving home is worked back from it, so the plan reasons from the time
+   * the parent actually named rather than from a preset.
+   */
+  startAt: string;
   /** Which households are coming. Always at least one. */
   partyIds: string[];
-  /** Time at the main venue. */
-  visitMinutes: number;
+  /**
+   * Which members of the parent's own household are coming. `null` is everyone: the sheet opens with the whole family
+   * selected and a parent toggles somebody OUT (a baby asleep at Grandma's), which is how the day really gets decided.
+   */
+  attendeeIds: string[] | null;
+  /** How long at the main venue, including "Not sure" and "All day". */
+  visit: VisitLength;
+  /** Optional deadline, `HH:MM`: everyone home by. `''` for none. A real limit, so it stays a hard one. */
+  returnBy: string;
+  /** Extra time each way for traffic, parking and getting everyone ready. */
+  bufferMinutes: number;
+  environment: 'either' | 'indoor' | 'outdoor';
+}
+
+export const DEFAULT_BUFFER_MINUTES = 15;
+export const BUFFER_CHOICES = [10, 15, 30] as const;
+
+/** A person in the parent's own household, as the Who's coming row shows them. */
+export interface PlanPerson {
+  id: string;
+  name: string;
+  kind: 'adult' | 'child';
+  /** "Partner", "8 months": what helps tell people apart, never anything sensitive. */
+  detail?: string;
 }
 
 export interface PlanParty {
   id: string;
   label: string;
-  /** "2 adults, 2 children" -- counts only, never names or ages. */
+  /** "Aidan, Ellie, Sloane and Ozzie" for the household; counts for a family added another way. */
   summary: string;
   /** False for a household the parent has not finished describing. */
   ready: boolean;
+  /** The household's own members, present only for the parent's own family. Each can be toggled. */
+  people?: PlanPerson[];
 }
 
 export interface PlanDraftDefaults {
@@ -44,9 +78,6 @@ export interface PlanDraftDefaults {
   /** True when nothing describes the family yet, so the sheet can invite them to set it up. */
   needsProfile: boolean;
 }
-
-/** The lengths the approved sheet offers. */
-export const VISIT_LENGTH_CHOICES = [60, 90, 120, 180] as const;
 
 function countLabel(count: number, singular: string): string | null {
   if (count <= 0) return null;
@@ -76,7 +107,7 @@ export interface PlanDraftSources {
   /** Households already described for planning, including ones added on this device. */
   planningFamilies?: PlanningFamily[];
   /** Last used planning options, so a returning parent sees what they chose before. */
-  options?: Pick<PlanningOptions, 'date' | 'leaveAt' | 'visitMinutes'> | null;
+  options?: Pick<PlanningOptions, 'date' | 'leaveAt'> | null;
   /** `YYYY-MM-DD` for today, passed in rather than read, so the result is deterministic. */
   today: string;
   /**
@@ -101,30 +132,26 @@ export function nextDay(date: string): string {
 }
 
 function profileParty(profile: FamilyProfile): PlanParty {
-  const members = profile.members ?? [];
-  const adults = members.filter((m) => m.role !== 'child').length;
-  const children = members.filter((m) => m.role === 'child').length;
+  const people = householdPeople(profile);
   return {
     id: 'mine',
-    label: 'Our family',
-    summary: summariseHousehold({ adults, children }),
+    label: householdTitle(profile),
+    summary: sayPeople(people.map((p) => p.name)),
     // Ready means the planner could actually build a day for them, which is more than having
     // members: a household that has never said where they live has nowhere to leave from. Asked
     // through the resolver so the sheet's button and the plan it starts cannot disagree.
     ready: typeof planningFamilyFromProfile(profile) !== 'string',
+    people: people.map((p) => ({
+      id: p.id,
+      name: p.name,
+      kind: p.kind,
+      detail: p.kind === 'child' ? p.ageLabel : p.isYou ? 'You' : p.relationship ? ({ partner: 'Partner', 'co-parent': 'Co-parent', other: 'Adult' } as const)[p.relationship] : undefined,
+    })),
   };
 }
 
-/**
- * Nearest allowed visit length at or above what was last chosen, so a stored 75 lands on 90 rather
- * than silently becoming an option the sheet cannot show as selected.
- */
-function normaliseVisitMinutes(value: number | undefined): number {
-  if (!Number.isFinite(value)) return 90;
-  const minutes = Number(value);
-  const match = VISIT_LENGTH_CHOICES.find((choice) => choice >= minutes);
-  return match ?? VISIT_LENGTH_CHOICES[VISIT_LENGTH_CHOICES.length - 1];
-}
+/** The arrival time a first plan opens on. */
+export const DEFAULT_START_AT = '10:00';
 
 export function planDraftDefaults(sources: PlanDraftSources): PlanDraftDefaults {
   const parties: PlanParty[] = [];
@@ -141,7 +168,8 @@ export function planDraftDefaults(sources: PlanDraftSources): PlanDraftDefaults 
       label: family.id === 'mine' ? 'Our family' : family.label,
       // A planning family records children's ages and no adults, so the adult count is not known
       // here. Saying "2 adults" would be an invention; the children are what it actually holds.
-      summary: childrenLabel(children) ?? 'Adults only',
+      // Said as what is on record, not as a claim about the family: "Adults only" would assert something nobody entered.
+      summary: childrenLabel(children) ?? (family.routines.length ? 'No children added' : 'Starting point only'),
       ready: canPlanFor(family),
     });
   }
@@ -153,17 +181,24 @@ export function planDraftDefaults(sources: PlanDraftSources): PlanDraftDefaults 
 
   // A stored date in the past would plan a day that cannot happen, so today wins.
   const storedDate = sources.options?.date;
-  const leaveAt = sources.options?.leaveAt || '09:30';
+  // The start a parent last chose is remembered as a convenience, but arriving at 09:30 is not a sensible
+  // default for everyone, so the first-ever default is the middle of the morning most families aim for.
+  const startAt = sources.options?.leaveAt || DEFAULT_START_AT;
   let date = storedDate && storedDate >= sources.today ? storedDate : sources.today;
   // ...and so would today itself once its start time has gone.
-  if (date === sources.today && sources.nowTime && minutesOf(leaveAt) < minutesOf(sources.nowTime)) date = nextDay(sources.today);
+  if (date === sources.today && sources.nowTime && minutesOf(startAt) < minutesOf(sources.nowTime)) date = nextDay(sources.today);
 
   return {
     draft: {
       date,
-      leaveAt,
+      startAt,
       partyIds: [parties[0].id],
-      visitMinutes: normaliseVisitMinutes(sources.options?.visitMinutes),
+      // Everyone, unless the parent takes somebody out.
+      attendeeIds: null,
+      visit: DEFAULT_VISIT_LENGTH,
+      returnBy: '',
+      bufferMinutes: DEFAULT_BUFFER_MINUTES,
+      environment: 'either',
     },
     parties,
     needsProfile,
@@ -194,23 +229,67 @@ export const firstValue = (value: string | string[] | undefined): string | undef
   Array.isArray(value) ? value[0] : value;
 
 export function planDraftFromParams(params: PlanRouteParams): PlanDraft {
-  const parties = (firstValue(params.parties) ?? '')
-    .split(',')
-    .map((id) => id.trim())
-    .filter(Boolean);
+  const list = (value: string | string[] | undefined) =>
+    (firstValue(value) ?? '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
+  const parties = list(params.parties);
+  const who = list(params.who);
   return {
     date: firstValue(params.date) ?? '',
-    leaveAt: firstValue(params.leaveAt) ?? '',
+    // `leaveAt` is what a link written before the start meant "arrive" read as; it is still understood.
+    startAt: firstValue(params.start) ?? firstValue(params.leaveAt) ?? '',
     // The signed-in household is the only sensible default for who is coming, and it is what the
     // sheet offers first; everything else about the day stays exactly as the link said.
     partyIds: parties.length ? parties : ['mine'],
-    visitMinutes: Number(firstValue(params.visit)),
+    attendeeIds: who.length ? who : null,
+    visit: visitLengthFromParam(firstValue(params.visit)),
+    returnBy: firstValue(params.home) ?? '',
+    bufferMinutes: BUFFER_CHOICES.find((n) => String(n) === firstValue(params.buffer)) ?? DEFAULT_BUFFER_MINUTES,
+    environment: (['indoor', 'outdoor'] as const).find((e) => e === firstValue(params.setting)) ?? 'either',
   };
 }
+
+/** The route parameters a draft travels as: the inverse of `planDraftFromParams`. */
+export function planDraftToParams(draft: PlanDraft): Record<string, string> {
+  return {
+    date: draft.date,
+    start: draft.startAt,
+    visit: visitLengthToParam(draft.visit),
+    parties: draft.partyIds.join(','),
+    ...(draft.attendeeIds ? { who: draft.attendeeIds.join(',') } : {}),
+    ...(draft.returnBy ? { home: draft.returnBy } : {}),
+    ...(draft.bufferMinutes !== DEFAULT_BUFFER_MINUTES ? { buffer: String(draft.bufferMinutes) } : {}),
+    ...(draft.environment !== 'either' ? { setting: draft.environment } : {}),
+  };
+}
+
+/** Who in the parent's own household is coming. A person not named in a narrowed list stays at home. */
+export const isComing = (draft: Pick<PlanDraft, 'attendeeIds'>, personId: string): boolean =>
+  draft.attendeeIds === null || draft.attendeeIds.includes(personId);
+
+/**
+ * Toggles one person. Selecting everyone again goes back to `null`, so "everyone" stays "everyone" even if the household
+ * changes before the plan is built.
+ */
+export function toggleAttendee(draft: PlanDraft, people: PlanPerson[], personId: string): PlanDraft {
+  const current = draft.attendeeIds ?? people.map((p) => p.id);
+  const next = current.includes(personId) ? current.filter((id) => id !== personId) : [...current, personId];
+  const everyone = people.every((p) => next.includes(p.id));
+  return { ...draft, attendeeIds: everyone ? null : next };
+}
+
+/** The household the planner should use: only the people coming. */
+export const profileForDraft = <T extends Pick<FamilyProfile, 'members' | 'routines'>>(profile: T, draft: Pick<PlanDraft, 'attendeeIds'>): T =>
+  profileForAttendees(profile, draft.attendeeIds);
 
 /** Everything the sheet needs before it can generate: a party that is actually described. */
 export function planDraftBlocker(draft: PlanDraft, parties: PlanParty[]): string | null {
   if (!draft.partyIds.length) return 'Choose who is coming.';
+  if (draft.attendeeIds && draft.attendeeIds.length === 0 && draft.partyIds.length === 1 && draft.partyIds[0] === 'mine') {
+    return 'Choose who is coming.';
+  }
   const chosen = parties.filter((p) => draft.partyIds.includes(p.id));
   if (!chosen.length) return 'Choose who is coming.';
   if (chosen.some((p) => !p.ready)) {

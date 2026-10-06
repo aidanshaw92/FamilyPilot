@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedScrollHandler,
@@ -38,7 +38,7 @@ import {
 import { BackButton } from '@/src/components/ui/BackButton';
 import { ArrowCta } from '@/src/components/ui/ArrowCta';
 import { CreatePlanSheet } from '@/src/components/planning/CreatePlanSheet';
-import { PlanDraft, planDraftDefaults } from '@/src/services/planning/plan-draft';
+import { PlanDraft, firstValue, planDraftDefaults, planDraftFromParams, planDraftToParams } from '@/src/services/planning/plan-draft';
 import { profileReceipt } from '@/src/utils/profile-receipt';
 import { photoAttribution } from '@/src/services/places/place-photo-url';
 import { FadeInView } from '@/src/components/ui/FadeInView';
@@ -74,7 +74,8 @@ export function generateStaticParams() {
 }
 
 export default function VenueScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const searchParams = useLocalSearchParams();
+  const id = firstValue(searchParams.id);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: venue, isLoading, isError, refetch } = useVenue(id ?? '');
@@ -120,6 +121,18 @@ export default function VenueScreen() {
   );
   const draft = draftOverride ?? planDefaults.draft;
 
+  // "Change the plan" on a plan that could not be built returns here with the sheet open on the answers the parent had
+  // chosen, so changing one is one tap. Opened once, from the link's own parameters.
+  const reopenPlan = firstValue(searchParams.plan) === 'open';
+  const reopened = useRef(false);
+  useEffect(() => {
+    if (!reopenPlan || reopened.current) return;
+    reopened.current = true;
+    setDraftOverride(planDraftFromParams(searchParams as Record<string, string | string[] | undefined>));
+    setPlanSheetOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reopenPlan]);
+
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (e) => {
       scrollY.value = e.contentOffset.y;
@@ -158,17 +171,12 @@ export default function VenueScreen() {
   // back does not re-answer the rows they already answered.
   const handleCreatePlan = useCallback(
     (next: PlanDraft) => {
-      setPlanningOptions({ date: next.date, leaveAt: next.leaveAt, visitMinutes: next.visitMinutes });
+      // The start is remembered as a convenience; who is coming and how long are asked afresh each time.
+      setPlanningOptions({ date: next.date, leaveAt: next.startAt });
       setPlanSheetOpen(false);
       router.push({
         pathname: '/plan',
-        params: {
-          venue: id ?? '',
-          date: next.date,
-          leaveAt: next.leaveAt,
-          visit: String(next.visitMinutes),
-          parties: next.partyIds.join(','),
-        },
+        params: { venue: id ?? '', ...planDraftToParams(next) },
       } as never);
     },
     [id, router, setPlanningOptions],
@@ -449,14 +457,6 @@ export default function VenueScreen() {
           router.push('/profile/edit' as never);
         }}
         connections={accountRequired() && isPilotFeatureVisible('trips_tab')}
-        onAddFamily={
-          isPilotFeatureVisible('trips_tab')
-            ? () => {
-                setPlanSheetOpen(false);
-                router.push('/(tabs)/trips' as never);
-              }
-            : undefined
-        }
       />
     </View>
   );

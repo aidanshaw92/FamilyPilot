@@ -306,22 +306,16 @@ describe('failure fidelity', () => {
     if (nearest?.reason === 'venue-closes-during-visit') expect(nearest.closesAt).toBe('18:00');
   });
 
-  it('preserves the family and routine behind a routine conflict', async () => {
+  it('does not fail a day because a routine overlaps it, and carries the overlap through', async () => {
     const result = await failOn({
       families: [
         withRoutines({ id: 'nap', label: 'Nap', kind: 'nap', time: '09:00', durationMinutes: 240, atHome: true }),
       ],
       options: { ...request().options, returnBy: '15:00' },
     });
-    expect(result.ok).toBe(false);
-    if (result.ok || result.failure.kind !== 'sequencing-failed') return;
-    const failure = result.failure.failure;
-    const nearest = failure.reason === 'no-feasible-sequence' ? failure.nearest : failure;
-    expect(nearest?.reason).toBe('routine-conflict');
-    if (nearest?.reason === 'routine-conflict') {
-      expect(nearest.routineLabel).toBe('Nap');
-      expect(nearest.familyId).toBe('a');
-    }
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.plan.itinerary.routineInsights.some((i) => i.routineId === 'nap' && i.familyId === 'a')).toBe(true);
   });
 
   it('preserves both times when the return deadline cannot be met', async () => {

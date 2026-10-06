@@ -1,6 +1,7 @@
-import { ChildMobility, FamilyMember, FamilyProfile, FamilyRoutine } from '@/src/types';
+import { AdultRelationship, ChildMobility, FamilyMember, FamilyProfile, FamilyRoutine } from '@/src/types';
 import { AgeParts, ageFromDob, childDobProblem, parseIsoDate } from './child-age';
 import { createChildFromDob, createParentMember, withCompletion } from './profile-defaults';
+import { createAdultMember } from './household';
 import {
   DEFAULT_NAP_MINUTES,
   createFeed,
@@ -183,8 +184,25 @@ export function routinesFor(draft: DraftChild, member: FamilyMember, questions: 
   return routines;
 }
 
+/** Another adult in the household, as typed. Optional: a household of one adult is a complete answer. */
+export interface DraftAdult {
+  id: string;
+  name: string;
+  relationship: AdultRelationship;
+}
+
+export const MAX_ADULTS = 3;
+
+export function blankAdult(relationship: AdultRelationship = 'partner'): DraftAdult {
+  return { id: newDraftId('adult'), name: '', relationship };
+}
+
 export interface OnboardingInput {
   parentName: string;
+  /** Optional family name for the household's heading ("Shaw family"). Stays on the device. */
+  familyName?: string;
+  /** Other adults in the household. Entries with no name are ignored, never saved as blank people. */
+  adults?: DraftAdult[];
   homeLocation: string;
   home: { latitude: number; longitude: number };
   children: DraftChild[];
@@ -212,10 +230,16 @@ export function buildOnboardingProfile(input: OnboardingInput): FamilyProfile {
     routines.push(...routinesFor(draft, member, questions));
   }
 
+  const otherAdults = (input.adults ?? [])
+    .filter((adult) => adult.name.trim())
+    .slice(0, MAX_ADULTS)
+    .map((adult) => createAdultMember(adult.name, adult.relationship));
+
   return withCompletion({
     id: `family-${now.getTime()}`,
     parentName: input.parentName.trim(),
-    members: [createParentMember(input.parentName), ...members],
+    ...(input.familyName?.trim() ? { familyName: input.familyName.trim() } : {}),
+    members: [createParentMember(input.parentName), ...otherAdults, ...members],
     homeLocation: input.homeLocation.trim(),
     homeLatitude: input.home.latitude,
     homeLongitude: input.home.longitude,
