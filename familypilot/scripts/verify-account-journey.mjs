@@ -43,6 +43,8 @@ async function describeFamily(page, parent = 'Sam') {
   await page.getByPlaceholder('e.g. Sarah').fill(parent);
   await page.getByPlaceholder('e.g. Mill Hill or NW7 2AB').fill('WD23 1AA');
   await next(page).click(); await settle(page, 1200);
+  // The household step (optional: "just you" continues as it is).
+  await next(page).click(); await settle(page, 1000);
   await page.getByPlaceholder('e.g. Mia').nth(0).fill('Theo');
   await page.getByLabel(/day of birth/i).nth(0).fill('15');
   await page.getByLabel(/month of birth/i).nth(0).fill('06');
@@ -221,6 +223,24 @@ console.log('owner: Create a plan > Add another family');
   check(/invite someone new/i.test(t), 'and offers to invite someone new');
   check(!/WD23|example\.com/.test(t), 'no address or email is shown for the connected family');
   await shot(page, '11-add-another-family');
+
+  // The same connected family is first-class on the Profile (one shared model with Who's coming and Meet halfway).
+  await page.goto(`${BASE}/profile`, { waitUntil: 'domcontentloaded' });
+  await settle(page, 2500);
+  const profileText = await text(page);
+  check(/Connected families/.test(profileText) && /Alex/.test(profileText), 'the Profile lists the connected family under Connected families');
+  check(await page.getByText('+ Invite another family', { exact: true }).count() > 0, 'and offers + Invite another family');
+  check(/Meet halfway/.test(profileText) && /Disconnect/.test(profileText), 'with Meet halfway and Disconnect on each connected family');
+  const connectedText = await page.getByTestId('profile-connected-families').innerText();
+  // The area word (an outward code) is shared by design; a full postcode, an email or a child's name never is.
+  check(!/[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}|example\.com|Theo/.test(connectedText), 'and shows nothing the connection did not share (no full postcode, email or child name)');
+  await shot(page, '12-profile-connected-families');
+  // Meet halfway with the connected family reads its routines as "not shared" unless they opted in.
+  await page.getByRole('button', { name: 'Meet halfway', exact: true }).first().click();
+  await settle(page, 3500);
+  const halfway = await text(page);
+  check(/Meet halfway/.test(halfway) && /Places that work for both|No place works for both/.test(halfway), 'Meet halfway opens with the connected family chosen');
+  await shot(page, '13-meet-halfway-connected');
 }
 
 await browser.close();

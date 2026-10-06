@@ -135,7 +135,7 @@ for (const [width, height] of VIEWPORTS) {
   // ---- HOME: the curated answer ------------------------------------------------------------------
   await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
   await settle(page, 2600);
-  await page.screenshot({ path: join(dir, '01-home.png') });
+  await page.screenshot({ path: join(dir, '01-home.jpg'), type: 'jpeg', quality: 82 });
   const home = await text(page);
   check(`${label}: Home says who it is picking for`, /Picked for Sloane and Ozzie today/.test(home), (home.match(/Picked for[^\n]*/) ?? ['no line'])[0]);
   const heading = /Best for your family today/.test(home);
@@ -147,7 +147,7 @@ for (const [width, height] of VIEWPORTS) {
   // ---- EXPLORE: the broader browse ---------------------------------------------------------------
   await page.goto(`${BASE}/explore`, { waitUntil: 'domcontentloaded' });
   await settle(page, 2200);
-  await page.screenshot({ path: join(dir, '02-explore.png') });
+  await page.screenshot({ path: join(dir, '02-explore.jpg'), type: 'jpeg', quality: 82 });
   const explore = await text(page);
   check(`${label}: Explore is for browsing, searching and filtering`, /Browse, search and filter family days out across London/.test(explore));
   check(`${label}: Explore carries the categories Home does not`, /Parks/.test(explore) && /Museums/.test(explore));
@@ -157,7 +157,7 @@ for (const [width, height] of VIEWPORTS) {
   await card.waitFor({ state: 'visible', timeout: 15000 });
   await card.click();
   await settle(page, 2200);
-  await page.screenshot({ path: join(dir, '03-venue-detail.png') });
+  await page.screenshot({ path: join(dir, '03-venue-detail.jpg'), type: 'jpeg', quality: 82 });
   const venueUrl = page.url();
   const fitY = await y(page, 'FAMILY FIT');
   const todayY = await y(page, 'TODAY');
@@ -180,7 +180,7 @@ for (const [width, height] of VIEWPORTS) {
   await page.getByTestId('venue-create-plan').scrollIntoViewIfNeeded();
   await page.getByTestId('venue-create-plan').click();
   await page.waitForTimeout(900);
-  await page.screenshot({ path: join(dir, '04-create-plan-sheet.png') });
+  await page.screenshot({ path: join(dir, '04-create-plan-sheet.jpg'), type: 'jpeg', quality: 82 });
   const sheet = page.getByTestId('create-plan-sheet');
   const sheetText = (await sheet.innerText()).toString();
   check(`${label}: the sheet names the household, everyone selected`, /SHAW FAMILY/.test(sheetText) && ['Aidan', 'Ellie', 'Sloane', 'Ozzie'].every((n) => sheetText.includes(n)));
@@ -197,7 +197,7 @@ for (const [width, height] of VIEWPORTS) {
   await sheet.locator('input[type="time"]').fill('07:35');
   await page.getByTestId('create-plan-submit').click();
   await settle(page, 2500);
-  await page.screenshot({ path: join(dir, '05-start-too-soon.png') });
+  await page.screenshot({ path: join(dir, '05-start-too-soon.jpg'), type: 'jpeg', quality: 82 });
   const tooSoon = await text(page);
   check(`${label}: a start nobody could reach is a fix, not an error`, /That start is a little too soon/.test(tooSoon) && (await page.getByTestId('plan-failure-action').count()) === 1, (tooSoon.match(/Start at \d\d:\d\d/) ?? ['no action'])[0]);
   await page.getByTestId('plan-failure-action').click();
@@ -205,7 +205,7 @@ for (const [width, height] of VIEWPORTS) {
   check(`${label}: tapping it builds the plan`, await page.getByTestId('plan-save').isVisible().catch(() => false), page.url().replace(BASE, ''));
 
   // ---- THE PLAN: routines are advice ------------------------------------------------------------
-  await page.screenshot({ path: join(dir, '06-plan.png') });
+  await page.screenshot({ path: join(dir, '06-plan.jpg'), type: 'jpeg', quality: 82 });
   const plan = await text(page);
   check(`${label}: the plan says how long it allowed and why`, /You weren’t sure how long|Time there/.test(plan));
   const routinesBlock = page.getByTestId('plan-routines');
@@ -228,7 +228,7 @@ for (const [width, height] of VIEWPORTS) {
   // ---- PROFILE: your family, connected families --------------------------------------------------
   await page.goto(`${BASE}/profile`, { waitUntil: 'domcontentloaded' });
   await settle(page, 2000);
-  await page.screenshot({ path: join(dir, '07-profile.png') });
+  await page.screenshot({ path: join(dir, '07-profile.jpg'), type: 'jpeg', quality: 82 });
   const profile = await text(page);
   check(`${label}: Profile lists the household, adults then children`, /Your family/.test(profile) && profile.indexOf('Aidan') < profile.indexOf('Sloane') && /Partner/.test(profile) && /Ozzie/.test(profile));
   check(`${label}: Profile has Connected families as its own section`, /Connected families/.test(profile) && /Add a family by postcode/.test(profile));
@@ -238,7 +238,7 @@ for (const [width, height] of VIEWPORTS) {
   // ---- MEET HALFWAY -----------------------------------------------------------------------------
   await page.goto(`${BASE}/halfway?family=guest-hannah`, { waitUntil: 'domcontentloaded' });
   await settle(page, 3000);
-  await page.screenshot({ path: join(dir, '08-meet-halfway.png') });
+  await page.screenshot({ path: join(dir, '08-meet-halfway.jpg'), type: 'jpeg', quality: 82 });
   const halfway = await text(page);
   check(`${label}: Meet halfway shows places for both families`, (await page.getByTestId('halfway-option').count()) > 0 || (await page.getByTestId('halfway-empty').isVisible().catch(() => false)), `${await page.getByTestId('halfway-option').count()} options`);
   const options = await page.getByTestId('halfway-option').count();
@@ -247,13 +247,13 @@ for (const [width, height] of VIEWPORTS) {
     check(`${label}: it does not pretend to know a family it has only a postcode for`, /only know where Hannah’s family sets off from/.test(halfway));
     await page.getByTestId('halfway-plan').first().click();
     await settle(page, 4000);
-    await page.screenshot({ path: join(dir, '09-halfway-plan.png') });
+    await page.screenshot({ path: join(dir, '09-halfway-plan.jpg'), type: 'jpeg', quality: 82 });
     const joint = page.url();
     check(`${label}: Plan this day builds one plan for both families`, /parties=mine(%2C|,)guest-hannah/.test(joint) && (await page.getByTestId('plan-save').isVisible().catch(() => false)), joint.replace(BASE, '').slice(0, 120));
     await page.getByTestId('plan-section-who').click();
     await page.waitForTimeout(500);
     const who = await text(page);
-    check(`${label}: Who's coming lists both families, each with their own leaving time`, /Shaw family/i.test(who) && /Hannah/.test(who) && (who.match(/Leaves home/g) ?? []).length === 2, who.replace(/\s+/g, ' ').slice(0, 260));
+    check(`${label}: Who's coming lists both families, each with their own leaving time`, /Shaw family/i.test(who) && /Hannah/i.test(who) && (who.match(/Leaves home/g) ?? []).length === 2, who.replace(/\s+/g, ' ').slice(0, 260));
   }
 
   check(`${label}: no runtime errors`, errors.length === 0, errors.slice(0, 2).join(' | '));

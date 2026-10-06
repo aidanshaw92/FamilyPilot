@@ -482,16 +482,21 @@ export function matchEarnsStar(verdict: MatchVerdict): boolean {
  * only what the clock says.
  */
 export function matchCardReason(match: FamilyMatchResult): string {
+  // WHY IT IS ON HOME: lead with what is about THIS family. Their routine ("Leave by 12:00 to be home in time for Ozzie’s
+  // nap") first, then a fact about a particular child, then anything else confirmed. Never the generic.
+  const others = match.reasons.filter((line) => line.key !== 'drive-ok' && line.key !== 'open-today');
+  const lead =
+    others.find((line) => line.key === 'routine') ??
+    others.find((line) => (line.childIds?.length ?? 0) > 0) ??
+    others[0];
   if (match.verdict === 'good' || match.verdict === 'excellent') {
     const open = match.reasons.find((line) => line.key === 'open-today');
-    // WHY IT IS ON HOME: lead with what is about THIS family. Their routine ("Leave by 12:00 to be home in time for
-    // Ozzie’s nap") first, then a fact about a particular child, then anything else confirmed. Never the generic.
-    const others = match.reasons.filter((line) => line.key !== 'drive-ok' && line.key !== 'open-today');
-    const lead =
-      others.find((line) => line.key === 'routine') ??
-      others.find((line) => (line.childIds?.length ?? 0) > 0) ??
-      others[0];
     return [lead?.text, open?.text].filter(Boolean).join(' · ');
+  }
+  if (match.verdict === 'possible' && lead) {
+    // A place that could work still says why it is here, then the one thing to check, so the card is never only a worry.
+    const issue = match.cautions[0] ?? match.toCheck[0];
+    return [lead.text, issue?.text].filter(Boolean).join(' · ');
   }
   return match.cardNote ?? '';
 }

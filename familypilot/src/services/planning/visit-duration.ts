@@ -216,7 +216,7 @@ export function spokenMinutes(minutes: number): string {
   const rest = total % 60;
   if (rest === 0) return `${hours} hour${hours === 1 ? '' : 's'}`;
   if (rest === 30) return hours === 1 ? 'an hour and a half' : `${hours} and a half hours`;
-  return `${hours}h ${rest}m`;
+  return `${hours} hour${hours === 1 ? '' : 's'} ${rest} minutes`;
 }
 
 /**

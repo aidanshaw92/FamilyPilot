@@ -2,6 +2,8 @@ import { PushchairSuitability } from '@/src/types/enrichment';
 import { DayItinerary, RoutineInsight, RoutinePhase } from '@/src/types/day-sequence';
 import { PlanAlternative } from '@/src/types/day-plan';
 
+import { spokenMinutes } from './visit-duration';
+
 /**
  * What a routine overlapping the outing MEANS, and what to do about it.
  *
@@ -211,21 +213,12 @@ function pushchairLine(venue: AdviceVenue): string {
 }
 
 function describeAlternative(alternative: PlanAlternative, originalArrive: number | undefined): string {
-  if (alternative.kind === 'shorter') return `Stay ${spokenLength(alternative.visitMinutes)} instead`;
+  if (alternative.kind === 'shorter') return `Stay ${spokenMinutes(alternative.visitMinutes)} instead`;
   const arrive = alternative.arriveAt;
   if (originalArrive === undefined) return `Arrive at ${arrive} instead`;
   const [h, m] = arrive.split(':').map(Number);
   const delta = Math.abs(h * 60 + m - originalArrive);
   return `Arrive at ${arrive} (${delta} min ${alternative.kind === 'earlier' ? 'earlier' : 'later'})`;
-}
-
-function spokenLength(minutes: number): string {
-  if (minutes < 60) return `${minutes} minutes`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  if (rest === 0) return `${hours} hour${hours === 1 ? '' : 's'}`;
-  if (rest === 30) return hours === 1 ? 'an hour and a half' : `${hours} and a half hours`;
-  return `${hours}h ${rest}m`;
 }
 
 export function reasonAboutRoutines(context: RoutineAdviceContext): RoutineReasoning {
