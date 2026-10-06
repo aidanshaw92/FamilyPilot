@@ -29,6 +29,7 @@ function WebPickerField({
   onChange,
   display,
   placeholder,
+  a11yLabel,
 }: {
   kind: Kind;
   label: string;
@@ -36,8 +37,9 @@ function WebPickerField({
   onChange: (s: string) => void;
   display: string | null;
   placeholder: string;
+  a11yLabel?: string;
 }) {
-  const accessibleLabel = label || (kind === 'date' ? 'Date' : 'Time');
+  const accessibleLabel = label || a11yLabel || (kind === 'date' ? 'Date' : 'Time');
   return (
     <View style={styles.wrap}>
       {label ? (
@@ -92,7 +94,7 @@ const OVERLAY_INPUT = {
   margin: 0,
 } as const;
 
-export function DateField({ label, value, onChange }: { label: string; value: string; onChange: (s: string) => void }) {
+export function DateField({ label, value, onChange, a11yLabel }: { label: string; value: string; onChange: (s: string) => void; a11yLabel?: string }) {
   if (Platform.OS === 'web') {
     return (
       <WebPickerField
@@ -102,6 +104,7 @@ export function DateField({ label, value, onChange }: { label: string; value: st
         onChange={onChange}
         display={formatDateLabel(value)}
         placeholder="Choose a date"
+        a11yLabel={a11yLabel}
       />
     );
   }
@@ -113,11 +116,14 @@ export function TimeField({
   value,
   onChange,
   optional = false,
+  a11yLabel,
 }: {
   label: string;
   value: string;
   onChange: (s: string) => void;
   optional?: boolean;
+  /** What a screen reader calls the field when the visible label is drawn elsewhere ("Arrival time"). */
+  a11yLabel?: string;
 }) {
   if (Platform.OS === 'web') {
     return (
@@ -128,6 +134,7 @@ export function TimeField({
         onChange={onChange}
         display={formatTimeLabel(value)}
         placeholder={optional ? 'Not set' : 'Choose a time'}
+        a11yLabel={a11yLabel}
       />
     );
   }

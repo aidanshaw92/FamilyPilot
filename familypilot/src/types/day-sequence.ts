@@ -268,6 +268,11 @@ export type SequenceFailure =
       stopIndex: number;
       placeId: string;
       date: string;
+      /**
+       * Shut for the whole day, or open that day but not at the time asked. The words differ ("closed that day" against
+       * "isn’t open then") and so does what to try.
+       */
+      why?: 'closed-that-day' | 'outside-opening-period';
     }
   | {
       reason: 'venue-closes-during-visit';

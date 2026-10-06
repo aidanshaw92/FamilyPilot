@@ -19,6 +19,8 @@ import { formatClock } from '@/src/utils/clock-format';
 import { familyTitle } from '@/src/utils/family-title';
 import { FacilityType } from '@/src/types';
 import { signOut } from '@/src/services/account/auth-service';
+import { ConnectedFamiliesSection, YourFamilySection } from '@/src/components/profile/FamilySections';
+import { householdTitle } from '@/src/utils/household';
 import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
 
 const MUST_HAVE_LABELS: Partial<Record<FacilityType, string>> = {
@@ -66,15 +68,14 @@ export default function ProfileScreen() {
     );
   }
 
-  const children = profile.members.filter((m) => m.role === 'child');
   const suggestion = getProfileSuggestion(profile);
 
   return (
     <ScreenContainer>
       <View style={styles.header}>
-        <Text variant="heading1">Your family</Text>
+        <Text variant="heading1">Profile</Text>
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
-          What FamilyPilot knows about the people you plan for
+          The people you plan for, and the families you plan with
         </Text>
       </View>
 
@@ -100,7 +101,7 @@ export default function ProfileScreen() {
             {/* "The  Family" with no name, and "The Aidan Shaw Family" with a full one: the field is a
                 first name, so possessive reads right in both cases and degrades to "Your family". */}
             <Text variant="heading2" style={styles.familyName}>
-              {familyTitle(profile.parentName)}
+              {profile.familyName?.trim() ? `The ${householdTitle(profile)}` : familyTitle(profile.parentName)}
             </Text>
             {suggestion ? (
               <Pressable
@@ -130,29 +131,8 @@ export default function ProfileScreen() {
           </Card>
         </FadeInView>
 
-        <Text variant="heading2" style={styles.sectionTitle}>
-          Your children
-        </Text>
-        <Card style={styles.prefCard}>
-          {children.length === 0 ? (
-            <ProfileRow icon="person-add-outline" label="None yet" value="Add in Edit" />
-          ) : null}
-          {children.map((child, index) => (
-            <FadeInView key={child.id} delay={index * 50}>
-              <ProfileRow
-                icon="person-outline"
-                label={child.name}
-                value={[
-                  formatChildAge(child),
-                  child.dobKnown ? null : 'add birthday',
-                  ...(child.mobility ?? []).map((m) => MOBILITY_LABELS[m].toLowerCase()),
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-              />
-            </FadeInView>
-          ))}
-        </Card>
+        <YourFamilySection profile={profile} />
+        <ConnectedFamiliesSection accountsAvailable={accountRequired() && authStatus === 'signed_in'} />
 
         <Text variant="heading2" style={styles.sectionTitle}>
           Naps, feeds & must-haves

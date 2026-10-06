@@ -1,3 +1,4 @@
+import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
 import { routinesForPlanner } from '@/src/utils/routine-schedule';
@@ -27,7 +28,7 @@ import { supabase } from '@/src/services/supabase/client';
 const linkStyle={alignSelf:'flex-start' as const,minHeight:44,justifyContent:'center' as const};
 
 export default function TripsScreen() {
- const router=useRouter();const state=usePlanningStore();const profile=useFamilyStore(x=>x.profile);
+ const router=useRouter();const tabBarClearance=useTabBarClearance();const state=usePlanningStore();const profile=useFamilyStore(x=>x.profile);
  const [editor,setEditor]=useState<PlanningFamily|null>(null);
  const [message,setMessage]=useState('');
  const [tab,setTab]=useState<'plan'|'saved'|'families'>('plan');
@@ -124,7 +125,7 @@ export default function TripsScreen() {
    setSharingMessage(`Added "${invite.plan.name}" to your saved plans.`);
  }
  if(!state.hydrated)return <ScreenContainer><Text>Loading your plans…</Text></ScreenContainer>;
- return <ScreenContainer><ScrollView contentContainerStyle={{padding:spacing.screenPadding,paddingBottom:60,gap:spacing.md}} keyboardShouldPersistTaps="handled">
+ return <ScreenContainer><ScrollView contentContainerStyle={{padding:spacing.screenPadding,paddingBottom:tabBarClearance,gap:spacing.md}} keyboardShouldPersistTaps="handled">
   <PostVisitInbox/>
   <Text variant="heading1">Plans</Text><Text color={colors.text.secondary}>Days that work for everyone involved.</Text>
   <View style={s.row}>{(['plan','saved','families'] as const).map(t=><Chip key={t} label={{plan:'Plans',saved:'Saved plans',families:'Families & routines'}[t]} active={tab===t} onPress={()=>setTab(t)}/>)}</View>

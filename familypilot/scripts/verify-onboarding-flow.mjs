@@ -67,6 +67,7 @@ const SCENARIOS = [
   },
   {
     name: 'baby and toddler', kids: [KIDS.baby, KIDS.toddler],
+    household: { familyName: 'Shaw', adults: [{ name: 'Ellie', relationship: 'Partner' }] },
     profile: { children: [{ n: 'Poppy', age: 0, am: 7, mob: ['carrier', 'buggy'] }, { n: 'Theo', age: 2, am: null, mob: ['walks', 'buggy'] }], routines: [...BABY_FEEDS, 'Poppy’s nap@13:00', 'Theo’s nap@13:00', 'Theo’s meal@12:00'] },
     lines: ['Good for Theo’s age (recommended for ages 2–10)', 'Recommended from age 2, so Poppy is younger than that'],
     absent: [/Wheelchair|Step-free/],
@@ -103,11 +104,21 @@ async function startOnSetup(page) {
   await page.goto(`${BASE}/(onboarding)/setup`, { waitUntil: 'domcontentloaded' });
   await settle(page, 1800);
 }
-async function parentStep(page) {
+async function parentStep(page, household) {
   await page.getByPlaceholder('e.g. Sarah').fill('Sam');
   await page.getByPlaceholder('e.g. Mill Hill or NW7 2AB').fill('WD23 1AA');
   await next(page).click();
   await settle(page, 1200);
+  // THE HOUSEHOLD: who else comes on days out. Optional, so "Just you" simply continues; a partner is named, never guessed.
+  check(/Who else is in your household\?/.test(await page.evaluate(() => document.body.innerText)), 'the household step follows the parent step');
+  if (household?.familyName) await page.getByPlaceholder('e.g. Shaw').fill(household.familyName);
+  for (const [i, adult] of (household?.adults ?? []).entries()) {
+    await page.getByTestId('household-add-adult').click();
+    await page.getByPlaceholder('e.g. Ellie').nth(i).fill(adult.name);
+    await page.getByRole('button', { name: adult.relationship, exact: true }).nth(i).click();
+  }
+  await next(page).click();
+  await settle(page, 1000);
 }
 async function typeDob(page, i, dob) {
   await page.getByLabel(/day of birth/i).nth(i).fill(dob[0]);
@@ -123,7 +134,7 @@ for (const width of [360, 430]) {
     const { ctx, page } = await newPage(width);
     try {
       await startOnSetup(page);
-      await parentStep(page);
+      await parentStep(page, scenario.household);
 
       for (let i = 0; i < kids.length; i++) {
         if (i > 0) await page.getByRole('button', { name: /add another child/i }).click();
@@ -168,6 +179,14 @@ for (const width of [360, 430]) {
       const p = state.profile;
       check(state.hasCompletedOnboarding === true, `${label}: onboarding completed`);
 
+      if (scenario.household) {
+        const ellie = p.members.find((m) => m.name === 'Ellie');
+        check(p.familyName === scenario.household.familyName, `${label}: the family name is stored (${p.familyName})`);
+        check(ellie?.role === 'parent' && ellie?.relationship === 'partner', `${label}: Ellie is stored as the partner, by the answer given`);
+        check(p.members.filter((m) => m.role !== 'child').length === 2, `${label}: the household has exactly the two adults entered`);
+      } else {
+        check(!p.familyName && p.members.filter((m) => m.role !== 'child').length === 1, `${label}: "just you" invents no family name and no second adult`);
+      }
       const kidsOut = p.members.filter((m) => m.role === 'child');
       check(kidsOut.length === scenario.profile.children.length, `${label}: ${scenario.profile.children.length} child(ren) stored`);
       scenario.profile.children.forEach((want, i) => {
@@ -210,6 +229,27 @@ for (const width of [360, 430]) {
           routines: (profile.routines ?? []).map((r) => [r.childId, r.kind, r.time, r.durationMinutes]).sort(),
         });
         check(view(before) === view(after), `${label}: saving Edit profile unchanged keeps ids, dates, mobility and routines`);
+      }
+
+      // The household survives an edit: open Edit profile, change nothing, save, and compare the adults and the name.
+      if (scenario.household && width === 360) {
+        await page.goto(`${BASE}/profile/edit`, { waitUntil: 'domcontentloaded' });
+        await settle(page, 2000);
+        // The name and the partner sit in text boxes, so they are read from the boxes, not from the page's text.
+        const values = await page.evaluate(() => [...document.querySelectorAll('input')].map((el) => el.value));
+        check(values.includes('Ellie') && values.includes('Shaw'), `${label}: Edit profile shows the family name and the partner`);
+        const before = JSON.parse(await page.evaluate(() => localStorage.getItem('familypilot-family-v1'))).state.profile;
+        await page.getByRole('button', { name: /^save changes/i }).click();
+        await settle(page, 2500);
+        const after = JSON.parse(await page.evaluate(() => localStorage.getItem('familypilot-family-v1'))).state.profile;
+        const household = (profile) => JSON.stringify({ name: profile.familyName ?? null, adults: profile.members.filter((m) => m.role !== 'child').map((m) => [m.id, m.name, m.relationship ?? null]) });
+        check(household(before) === household(after), `${label}: saving Edit profile unchanged keeps the family name, the partner and their relationship`);
+        // Profile shows them: adults, then children.
+        await page.goto(`${BASE}/profile`, { waitUntil: 'domcontentloaded' });
+        await settle(page, 2000);
+        const profileText = await page.evaluate(() => document.body.innerText);
+        check(profileText.indexOf('Ellie') > -1 && profileText.indexOf('Ellie') < profileText.indexOf('Theo') && /Partner/.test(profileText), `${label}: Profile lists the partner before the children`);
+        check(/Connected families/.test(profileText), `${label}: Profile has a Connected families section`);
       }
     } catch (error) {
       failures.push(`${label}: threw ${error.message.slice(0, 160)}`);

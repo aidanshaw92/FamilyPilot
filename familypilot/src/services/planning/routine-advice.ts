@@ -120,6 +120,8 @@ interface Group {
   start: number;
   end: number;
   phases: RoutinePhase[];
+  /** Each part of the outing the routine touches, in the order it happens. */
+  parts: { phase: RoutinePhase; stopIndex?: number; from: number }[];
   visitStops: number[];
   overlapStart: number;
   overlapEnd: number;
@@ -137,11 +139,13 @@ function groupInsights(insights: RoutineInsight[]): Group[] {
       start: insight.start,
       end: insight.end,
       phases: [],
+      parts: [],
       visitStops: [],
       overlapStart: Number.POSITIVE_INFINITY,
       overlapEnd: Number.NEGATIVE_INFINITY,
     };
     if (!group.phases.includes(insight.phase)) group.phases.push(insight.phase);
+    group.parts.push({ phase: insight.phase, stopIndex: insight.stopIndex, from: insight.span.from });
     if (insight.phase === 'visit' && insight.stopIndex !== undefined && !group.visitStops.includes(insight.stopIndex)) {
       group.visitStops.push(insight.stopIndex);
     }
@@ -149,6 +153,7 @@ function groupInsights(insights: RoutineInsight[]): Group[] {
     group.overlapEnd = Math.max(group.overlapEnd, Math.min(insight.end, insight.span.to));
     groups.set(key, group);
   }
+  for (const group of groups.values()) group.parts.sort((a, b) => a.from - b.from);
   return [...groups.values()].sort((a, b) => a.start - b.start || a.familyId.localeCompare(b.familyId));
 }
 
@@ -173,6 +178,21 @@ function whereLine(group: Group, itinerary: DayItinerary, venueName: string): st
   if (group.phases.length === 1 && stops.length === 1) {
     return meal ? 'falls during lunch' : `falls while you’re at ${stopName(stops[0])}`;
   }
+  return joinedParts(group, itinerary, venueName);
+}
+
+/** A routine that straddles two parts of the outing says so: "begins during lunch and runs into the drive home". */
+function joinedParts(group: Group, itinerary: DayItinerary, venueName: string): string {
+  const noun = (part: Group['parts'][number]): string => {
+    if (part.phase === 'outbound') return 'the drive there';
+    if (part.phase === 'return') return 'the drive home';
+    if (part.phase === 'transfer') return 'the drive between stops';
+    const stop = itinerary.stops.find((s) => s.index === part.stopIndex);
+    return stop?.role === 'meal' ? 'lunch' : `your time at ${stop?.name ?? venueName}`;
+  };
+  // The same part twice (two stops of one kind) reads once.
+  const parts = group.parts.filter((part, i) => group.parts.findIndex((other) => noun(other) === noun(part)) === i);
+  if (parts.length === 2) return `begins during ${noun(parts[0])} and runs into ${noun(parts[1])}`;
   return `overlaps your day from ${hm(group.overlapStart)} to ${hm(group.overlapEnd)}`;
 }
 
@@ -222,6 +242,7 @@ export function reasonAboutRoutines(context: RoutineAdviceContext): RoutineReaso
     const overlapsMeal = mealStops.some(
       (stop) => group.visitStops.includes(stop.index),
     );
+    const overlapsAnchor = group.visitStops.some((i) => itinerary.stops.find((stop) => stop.index === i)?.anchor);
     const onlyMeal = overlapsMeal && group.visitStops.length > 0 && group.visitStops.every((i) => mealStops.some((m) => m.index === i)) && !group.phases.some((p) => TRAVEL.has(p));
 
     // SOFT or INFORMATIONAL (see the header). A hard conflict is a sequencer failure and never gets here.
@@ -233,7 +254,8 @@ export function reasonAboutRoutines(context: RoutineAdviceContext): RoutineReaso
     if (group.kind === 'nap') {
       if (onlyTravel) {
         lines.push('If they usually nap on the move this could suit them. If not, the options below move the day around it.');
-      } else if (duringVisit && buggyFamilies.has(group.familyId)) {
+      } else if (duringVisit && buggyFamilies.has(group.familyId) && overlapsAnchor) {
+        // The venue's pushchair record is about THIS place. If the nap falls during lunch somewhere else, it says nothing.
         lines.push(pushchairLine(venue));
       } else {
         lines.push('The options below move the day around it.');

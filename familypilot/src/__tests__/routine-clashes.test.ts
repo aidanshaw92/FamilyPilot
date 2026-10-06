@@ -242,6 +242,11 @@ describe('the length FamilyPilot chooses when the parent is not sure', () => {
     expect(outcome.view.routines!.advice.length).toBeGreaterThan(0);
   });
 
+  it('offers no lunch control on an all-day plan, where there is no lunch stop to add', async () => {
+    const outcome = await build([family()], { visit: 'all-day' }, { lunchAvailable: true });
+    expect(outcome.view.lunch).toEqual({ included: false, available: false });
+  });
+
   it('plans "All day" to a stated cap when closing time is unknown, and says so', async () => {
     const outcome = await build([family()], { visit: 'all-day' });
     expect(outcome.source.visit).toMatchObject({ basis: 'day-cap', minutes: 360 });
@@ -296,5 +301,32 @@ describe('a connection made before routines carried a kind', () => {
     const named = toPlanViewModel(outcome.source, { resolveSubject });
     expect(named.routines!.advice[0].title).toMatch(/^The home routine for Hannah’s family/);
     expect(JSON.stringify(named.routines)).not.toMatch(/nap for Hannah/);
+  });
+});
+
+describe('pushchair advice is about the place the nap falls at', () => {
+  it('says nothing about the venue’s pushchair access when the nap falls during lunch somewhere else', async () => {
+    const meal = { place: { placeId: 'fp-cafe', name: 'The Moat Cafe', category: 'cafe' as const, latitude: 51.551, longitude: -0.151 } };
+    const lunchNap = nap({ id: 'nap-lunch', time: '12:00', durationMinutes: 45 });
+    const outcome = await createPlan(
+      { venue: farm, draft: draft({ visit: 60, startAt: '10:30' }), families: [family({ routines: [lunchNap] })], meal },
+      {
+        buildMatrix: vi.fn(async () => ({
+          matrix: {
+            legs: {
+              [homeKey('mine')]: { [stopKey(FARM)]: { minutes: 20, source: 'estimated' as const } },
+              [stopKey(FARM)]: { [homeKey('mine')]: { minutes: 20, source: 'estimated' as const }, [stopKey('fp-cafe')]: { minutes: 3, source: 'estimated' as const } },
+              [stopKey('fp-cafe')]: { [homeKey('mine')]: { minutes: 20, source: 'estimated' as const }, [stopKey(FARM)]: { minutes: 3, source: 'estimated' as const } },
+            },
+          },
+          provenance: { live: 0, estimated: 5 }, trafficDowngraded: false, missing: [],
+        })) as unknown as typeof buildJourneyMatrix,
+        now: NOW,
+      },
+    );
+    if (!outcome.ok) throw new Error('expected a plan');
+    const advice = outcome.view.routines!.advice[0];
+    expect(advice.where).toBe('begins during lunch and runs into the drive home');
+    expect(advice.detail).not.toMatch(/pushchair|buggy/i);
   });
 });

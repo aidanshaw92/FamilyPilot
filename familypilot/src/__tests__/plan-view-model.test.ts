@@ -309,3 +309,16 @@ describe('frame 03: the heading, the insight and the stop rows', () => {
     expect(view.stops[1]).toMatchObject({ imageUrl: undefined, category: 'restaurant' });
   });
 });
+
+describe('a day saved before routines were advice still opens', () => {
+  it('renders from a source with none of the newer fields, and claims nothing about routines', () => {
+    const legacy = itinerary();
+    // What an older build stored: no routine insights, no home-after, no visit explanation, no alternatives.
+    delete (legacy as Partial<DayItinerary>).routineInsights;
+    delete (legacy as Partial<DayItinerary>).homeAfter;
+    const view = toPlanViewModel({ itinerary: legacy, travel: { provenance: { live: 0, estimated: 1 }, trafficDowngraded: false, missing: [] }, caveats: [], anchorName: 'Kentish Town City Farm' });
+    expect(view.routines).toBeNull();
+    expect(view.lunch).toEqual({ included: false, available: false });
+    expect(view.stops).toHaveLength(1);
+  });
+});

@@ -48,7 +48,18 @@ function migrateMember(raw: unknown): FamilyMember | 'dropped' | null {
   const dobParses = parseIsoDate(dobText) !== null;
 
   if (role === 'parent') {
-    return { id, name, role, dateOfBirth: dobParses ? dobText : '1990-01-01', age: finite(raw.age) ?? 30 };
+    // How an adult added after the first relates to the household (partner, co-parent, another adult): kept as it was
+    // stored, or it would be lost to every migration. Anything else in that field is not a relationship.
+    const relationship =
+      raw.relationship === 'partner' || raw.relationship === 'co-parent' || raw.relationship === 'other' ? raw.relationship : null;
+    return {
+      id,
+      name,
+      role,
+      dateOfBirth: dobParses ? dobText : '1990-01-01',
+      age: finite(raw.age) ?? 30,
+      ...(relationship ? { relationship } : {}),
+    };
   }
 
   const storedAge = finite(raw.age);
@@ -124,6 +135,7 @@ export function migrateLegacyProfile(raw: unknown): MigrationResult {
   const profile = withCompletion({
     id: text(source.id) || freshId('family'),
     parentName: text(source.parentName),
+    ...(optionalText(source.familyName) ? { familyName: (optionalText(source.familyName) as string).trim() } : {}),
     members,
     homeLocation: text(source.homeLocation),
     ...(lat !== null && lng !== null ? { homeLatitude: lat, homeLongitude: lng } : {}),

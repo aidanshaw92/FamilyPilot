@@ -153,6 +153,7 @@ function evaluateOpening(
         stopIndex: index,
         placeId: request.placeId,
         date: options.date,
+        why: verdict.reason === 'closed-that-day' || verdict.reason === 'never-open' ? 'closed-that-day' : 'outside-opening-period',
       },
     };
   }
@@ -317,11 +318,20 @@ function tryOrder(
       .map((family) => ({ family, leavesHome: firstArrival - outbound[family.id].minutes - buffer }))
       .find(({ leavesHome }) => leavesHome < earliest);
     if (tooSoon) {
+      // The answer a parent can act on is the first arrival that WOULD work, not merely the first one travel allows: a
+      // place that opens at 09:00 is no use at 08:05. So the day is scanned forward, with every check, for it.
+      const scan = tryOrder(order, families, windows, matrix, { ...options, arriveAt: undefined }, earliest, deadline);
+      const suggestion = scan.itinerary?.stops[0]?.arrive;
+      if (suggestion === undefined) {
+        // Nothing later works either: say what is really in the way (shut, closing, a limit), not "too soon".
+        failures.push(...scan.failures);
+        continue;
+      }
       failures.push({
         reason: 'start-too-soon',
         message: `${tooSoon.family.label} could not be there by ${hhmm(firstArrival)}: leaving would have to be at ${hhmm(tooSoon.leavesHome)}.`,
         familyId: tooSoon.family.id,
-        earliestArrival: firstPossible,
+        earliestArrival: suggestion,
       });
       continue;
     }

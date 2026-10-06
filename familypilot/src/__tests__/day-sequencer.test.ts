@@ -364,6 +364,27 @@ describe('the failures a person could act on', () => {
     expect(insight.overlapMinutes).toBe(20);
   });
 
+  it('offers the first arrival that really works, not just the first one travel allows', () => {
+    // Whitechapel Gallery opens at 11:00. Leaving is allowed from 09:00, so 09:35 is the first arrival travel permits, and
+    // it is no use at a place that is shut: the suggestion has to be 11:00.
+    const soon = sequenceDay([gallery], [family], matrix(), { ...options, arriveAt: '09:05' }, now);
+    expect(soon.ok).toBe(false);
+    if (soon.ok) return;
+    const nearest = soon.failure.reason === 'no-feasible-sequence' ? soon.failure.nearest : soon.failure;
+    expect(nearest?.reason).toBe('start-too-soon');
+    if (nearest?.reason === 'start-too-soon') expect(nearest.earliestArrival).toBe(660);
+  });
+
+  it('says what is really in the way when nothing later works either', () => {
+    // A Monday: the gallery is shut all day, so "start a bit later" would be a lie.
+    const result = sequenceDay([gallery], [family], matrix(), { ...options, date: MONDAY, arriveAt: '09:05' }, now);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    const nearest = result.failure.reason === 'no-feasible-sequence' ? result.failure.nearest : result.failure;
+    expect(nearest?.reason).toBe('venue-closed');
+    if (nearest?.reason === 'venue-closed') expect(nearest.why).toBe('closed-that-day');
+  });
+
   it('names the next routine once the family is home again', () => {
     const result = sequenceDay(
       [{ ...lunch, anchor: true }],

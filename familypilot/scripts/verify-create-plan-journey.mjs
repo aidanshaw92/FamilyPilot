@@ -171,8 +171,8 @@ async function run(browser, viewport) {
   await settle(page, 1200);
   await page.screenshot({ path: join(dir, '01-venue-detail.png') });
 
-  // Frame 02 draws Create a plan inline (node 72:2), below Restaurants close by, so it is reached
-  // by scrolling rather than pinned in a footer.
+  // Create a plan is the frame's inline CTA (node 72:2). It now sits straight after Family Fit and Today, so the
+  // action is not at the foot of a long page; it is still reached by scrolling rather than pinned in a footer.
   const cta = page.getByTestId('venue-create-plan');
   const ctaVisible = await cta.isVisible().catch(() => false);
   note(viewport.label, 'Venue Detail offers Create a plan', {
@@ -229,9 +229,14 @@ async function run(browser, viewport) {
   for (const row of ['When', 'Start', 'Who’s coming', 'How long']) {
     note(viewport.label, `the sheet shows the ${row} row`, { ok: sheetUpper.includes(row.toUpperCase()) });
   }
-  note(viewport.label, 'the household is summarised by count, not by name', {
-    ok: sheetText.includes('2 adults, 2 children') && !sheetText.includes('Mia'),
-    message: sheetText.includes('2 adults, 2 children') ? undefined : 'summary line missing',
+  // Who's coming names the real household, all selected, because the plan is for those people. The names stay on
+  // the phone: the planner and anything saved never receive them.
+  note(viewport.label, 'who is coming names the household, everyone selected', {
+    ok: ['Sarah', 'Alex', 'Mia', 'Leo'].every((name) => sheetText.includes(name)),
+    message: ['Sarah', 'Alex', 'Mia', 'Leo'].every((name) => sheetText.includes(name)) ? undefined : 'a household member is missing',
+  });
+  note(viewport.label, 'Start is a time picker, with How long offering Not sure', {
+    ok: (await sheet.locator('input[type="time"]').count()) === 1 && sheetText.includes('Not sure'),
   });
 
   const venueStillBehind = await page.evaluate(() =>

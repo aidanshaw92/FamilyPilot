@@ -237,6 +237,18 @@ See [MASTER_PRODUCT_VISION.md § The FamilyPilot Promise](./MASTER_PRODUCT_VISIO
 
 ---
 
+## Family Fit across children (coherence pass)
+
+`evaluateFamilyMatch` also returns `children`: one lens per child (`works`, `check`, `concern`, `unknown`) built from the lines
+that name them (`MatchLine.childIds` and `topic`). The headline is built from the lenses, so a family with two children reads about
+both: *Good for Sloane and Ozzie today*; *Could work for Sloane, but check buggy access for Ozzie* (only when what holds the
+verdict at "possible" is about particular children, never when the journey or the hours are the reason); *Probably not for Ozzie
+today* (a confirmed breach about one child). A child nobody has a fact about is not named. Home's card line now leads with why
+the place is there for this family: their routine first, then a fact about a child, then anything else confirmed. See
+[PRODUCT_COHERENCE.md](./PRODUCT_COHERENCE.md).
+
+---
+
 ## Related documents
 
 - [PRODUCT_DIRECTION_V2.md §10](./PRODUCT_DIRECTION_V2.md) — V2 scoring spec

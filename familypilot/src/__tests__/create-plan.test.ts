@@ -201,6 +201,12 @@ describe('a day that cannot be built still helps', () => {
   const run = (failure: SequenceFailure) =>
     createPlan({ venue: venue(), draft, families: [family()] }, failing(failure));
 
+  it('says "isn’t open then" when the place is open that day but not at that time', async () => {
+    const outcome = await run({ reason: 'venue-closed', message: 'Not open at that time.', stopIndex: 0, placeId: 'fp-google-anchor', date: '2026-10-10', why: 'outside-opening-period' });
+    expect(outcome).toMatchObject({ ok: false, title: 'Kentish Town City Farm isn’t open then' });
+    if (!outcome.ok) expect(outcome.suggestions).toContain('Try a different start');
+  });
+
   it('says which venue is shut and offers another date', async () => {
     const outcome = await run({ reason: 'venue-closed', message: 'Closed on Saturdays.', stopIndex: 0, placeId: 'fp-google-anchor', date: '2026-10-10' });
     expect(outcome).toMatchObject({

@@ -54,8 +54,10 @@ export function inviteOrigin(): string {
 export async function createInvite(
   profile: FamilyProfile,
   relationship: InviteRelationship,
+  /** Only when the person ticked it: when naps and feeds usually happen, with no names. Off unless chosen. */
+  shareRoutines = false,
 ): Promise<{ code: string; url: string; expiresAt: string; id: string }> {
-  const family = snapshotForSharing(profile, relationship);
+  const family = snapshotForSharing(profile, relationship, shareRoutines);
   const { status, data } = await request('POST', { action: 'create', family });
   if (status === 429) throw new InviteError('limit', 'You have a lot of open invitations. Cancel one before creating another.');
   if (status >= 400 || !isInviteCode(data.code)) throw new InviteError('unavailable', data.error || 'Could not create the invitation. Please try again.');
@@ -72,9 +74,9 @@ export async function previewInvite(code: string): Promise<{ valid: false } | { 
   return { valid: true, label: data.inviter?.label ?? 'A FamilyPilot family', relationship: data.inviter?.relationship ?? null };
 }
 
-export async function acceptInvite(code: string, profile: FamilyProfile): Promise<{ inviterLabel: string }> {
+export async function acceptInvite(code: string, profile: FamilyProfile, shareRoutines = false): Promise<{ inviterLabel: string }> {
   if (!isInviteCode(code)) throw new InviteError('invalid', 'That invitation link isn’t valid.');
-  const family = snapshotForSharing(profile);
+  const family = snapshotForSharing(profile, undefined, shareRoutines);
   const { status, data } = await request('POST', { action: 'accept', code, family });
   if (status === 400) throw new InviteError('expired', data.error || 'This invitation has expired, been used already, or is your own.');
   if (status >= 400) throw new InviteError('unavailable', data.error || 'Could not accept the invitation. Please try again.');

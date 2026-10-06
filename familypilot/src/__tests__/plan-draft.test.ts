@@ -338,9 +338,11 @@ describe('the date the sheet opens on', () => {
     expect(planDraftDefaults(sources({ nowTime: '20:00', options: { date: TODAY, leaveAt: '09:30' } })).draft).toMatchObject({ date: '2026-10-11', startAt: '09:30' });
   });
 
-  it('keeps an explicit "leave from now" on today in the minute it was chosen', () => {
+  it('moves a remembered start that is too close to now, because nobody could reach it', () => {
+    // 20:00 remembered, and it is 20:00: there is no time to get there. (The "Leave from now" link this used to protect is gone.)
     const options = { date: TODAY, leaveAt: '20:00' };
-    expect(planDraftDefaults(sources({ options, nowTime: '20:00' })).draft.date).toBe(TODAY);
+    expect(planDraftDefaults(sources({ options, nowTime: '20:00' })).draft.date).toBe('2026-10-11');
+    expect(planDraftDefaults(sources({ options: { date: TODAY, leaveAt: '11:00' }, nowTime: '10:00' })).draft.date).toBe(TODAY);
   });
 
   it('moves a stored date that is today but whose start has gone', () => {
@@ -372,5 +374,32 @@ describe('the date the sheet opens on', () => {
     expect(nextDay('2026-10-31')).toBe('2026-11-01');
     expect(nextDay('2026-12-31')).toBe('2027-01-01');
     expect(nextDay('2028-02-28')).toBe('2028-02-29');
+  });
+});
+
+describe('the start a first plan opens on', () => {
+  const opens = (nowTime: string) => planDraftDefaults(sources({ nowTime, options: { date: TODAY, leaveAt: '' } })).draft;
+
+  it('is mid-morning when there is room to get there', () => {
+    expect(opens('07:30')).toMatchObject({ date: TODAY, startAt: '10:00' });
+    expect(opens('08:59')).toMatchObject({ date: TODAY, startAt: '10:00' });
+  });
+
+  it('is the next half hour that leaves an hour to get ready and there, once mid-morning is too close', () => {
+    expect(opens('09:15')).toMatchObject({ date: TODAY, startAt: '10:00' });
+    expect(opens('09:30')).toMatchObject({ date: TODAY, startAt: '10:30' });
+    expect(opens('11:40')).toMatchObject({ date: TODAY, startAt: '13:00' });
+  });
+
+  it('opens on tomorrow when the next sensible start would be after 17:00', () => {
+    expect(opens('16:30')).toMatchObject({ date: '2026-10-11', startAt: '10:00' });
+    expect(opens('21:00')).toMatchObject({ date: '2026-10-11', startAt: '10:00' });
+  });
+
+  it('never defaults to a start that is in the past', () => {
+    for (const hour of [6, 8, 9, 10, 12, 14, 16, 18]) {
+      const draft = opens(`${String(hour).padStart(2, '0')}:10`);
+      if (draft.date === TODAY) expect(draft.startAt > `${String(hour).padStart(2, '0')}:10`).toBe(true);
+    }
   });
 });

@@ -152,6 +152,10 @@ function profileParty(profile: FamilyProfile): PlanParty {
 
 /** The arrival time a first plan opens on. */
 export const DEFAULT_START_AT = '10:00';
+/** Room to get everyone out of the door and there: a start nearer than this to now is not offered as a default. */
+const LEAD_MINUTES = 45;
+/** A default start later than this (17:00) is not offered today: the sheet opens on tomorrow instead. */
+const LATEST_DEFAULT_START = 17 * 60;
 
 export function planDraftDefaults(sources: PlanDraftSources): PlanDraftDefaults {
   const parties: PlanParty[] = [];
@@ -181,12 +185,24 @@ export function planDraftDefaults(sources: PlanDraftSources): PlanDraftDefaults 
 
   // A stored date in the past would plan a day that cannot happen, so today wins.
   const storedDate = sources.options?.date;
-  // The start a parent last chose is remembered as a convenience, but arriving at 09:30 is not a sensible
-  // default for everyone, so the first-ever default is the middle of the morning most families aim for.
-  const startAt = sources.options?.leaveAt || DEFAULT_START_AT;
   let date = storedDate && storedDate >= sources.today ? storedDate : sources.today;
-  // ...and so would today itself once its start time has gone.
-  if (date === sources.today && sources.nowTime && minutesOf(startAt) < minutesOf(sources.nowTime)) date = nextDay(sources.today);
+  // The start a parent last chose is remembered as a convenience. With none remembered, a sensible one is worked out from the
+  // clock: the middle of the morning most families aim for, or, on today, the next half hour that leaves room to get there.
+  let startAt = sources.options?.leaveAt || '';
+  if (!startAt) {
+    startAt = DEFAULT_START_AT;
+    if (date === sources.today && sources.nowTime) {
+      const now = minutesOf(sources.nowTime);
+      if (now + LEAD_MINUTES > minutesOf(DEFAULT_START_AT)) {
+        const next = Math.ceil((now + 60) / 30) * 30;
+        if (next > LATEST_DEFAULT_START) date = nextDay(sources.today);
+        else startAt = `${String(Math.floor(next / 60)).padStart(2, '0')}:${String(next % 60).padStart(2, '0')}`;
+      }
+    }
+  } else if (date === sources.today && sources.nowTime && minutesOf(startAt) < minutesOf(sources.nowTime) + LEAD_MINUTES) {
+    // ...and a remembered start that is too close to now (or gone) would plan a day nobody could reach.
+    date = nextDay(sources.today);
+  }
 
   return {
     draft: {

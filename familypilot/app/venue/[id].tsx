@@ -13,7 +13,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CheckTodaySection } from '@/src/components/venue/CheckTodaySection';
 import { CommunitySection } from '@/src/components/venue/CommunitySection';
 import { EatNearbySection } from '@/src/components/venue/EatNearbySection';
 import { EvidenceSection } from '@/src/components/venue/EvidenceSection';
@@ -321,13 +320,6 @@ export default function VenueScreen() {
             {/* 2. Will it work TODAY: the opening state from the schedule and the clock, then the routine check. */}
             <View style={styles.block}>
               <TodayCard hours={venue.structuredOpeningHours} />
-              {venue.trustedFacts ? (
-                <CheckTodaySection
-                  facts={venue.trustedFacts}
-                  latitude={venue.latitude}
-                  longitude={venue.longitude}
-                />
-              ) : null}
             </View>
 
             {/* 3. The action this screen exists for, straight after the answer to "is it good for us, and will it work today":

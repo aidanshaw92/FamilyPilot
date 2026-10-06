@@ -259,12 +259,20 @@ function describeSequenceFailure(failure: SequenceFailure, venueName: string, st
       };
     }
     case 'venue-closed':
-      return {
-        ok: false,
-        title: `${venueName} is closed that day`,
-        message: failure.message,
-        suggestions: ['Try another date', 'Pick a different place'],
-      };
+      // Open that day but not then is a different thing from shut all day, and what to try differs.
+      return failure.why === 'outside-opening-period'
+        ? {
+            ok: false,
+            title: `${venueName} isn’t open then`,
+            message: failure.message,
+            suggestions: ['Try a different start', 'Try another date', 'Pick a different place'],
+          }
+        : {
+            ok: false,
+            title: `${venueName} is closed that day`,
+            message: failure.message,
+            suggestions: ['Try another date', 'Pick a different place'],
+          };
     case 'venue-closes-during-visit': {
       // With the closing time and the start in hand, the exact length that fits is known: offer it.
       const closes = failure.closesAt ? minutesOfClock(failure.closesAt) : null;
@@ -467,7 +475,8 @@ export async function createPlan(
     alternatives: result.plan.alternatives,
     pushchair: anchorFacts.pushchairSuitability,
     buggyFamilyIds: buggyFamilyIds(families),
-    lunchAvailable: Boolean(input.lunchAvailable ?? meal),
+    // An all-day plan has no lunch stop to add or take out: food is part of the day there, so no control is offered that would do nothing.
+    lunchAvailable: Boolean(input.lunchAvailable ?? meal) && draft.visit !== 'all-day',
     hasRoutines: families.some((family) => family.routines.length > 0),
     anchorCategory: venue.category,
   };

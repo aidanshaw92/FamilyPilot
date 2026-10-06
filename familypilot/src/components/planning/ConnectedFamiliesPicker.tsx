@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Button, Chip, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { useConnectedFamilies } from '@/src/hooks/use-connected-families';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
-import { Connection, InviteError, createInvite, listConnections, removeConnection } from '@/src/services/planning/connection-invites';
+import { Connection } from '@/src/services/planning/connection-invites';
 import { INVITE_RELATIONSHIPS, InviteRelationship } from '@/src/services/planning/invite-links';
-import { usePlanningStore } from '@/src/stores/planning-store';
 
 import { InviteLinkCard } from './InviteLinkCard';
 
@@ -32,64 +31,16 @@ export function ConnectedFamiliesPicker({
   selectedIds: string[];
   /** Called with the planning-family id once a connected family has been added, so it can be chosen. */
   onSelect: (id: string) => void;
+  /** Opens the add-by-postcode form: a family that is not connected, from a first name and a postcode. */
   onAddManually?: () => void;
 }) {
   const { data: profile } = useFamilyProfile();
-  const setFamily = usePlanningStore((s) => s.setFamily);
-  const known = usePlanningStore((s) => s.families);
-  const [connections, setConnections] = useState<Connection[] | null>(null);
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState<InviteRelationship | null>(null);
-  const [invite, setInvite] = useState<{ url: string; relationship: InviteRelationship } | null>(null);
-
-  const load = useCallback(async () => {
-    try {
-      setConnections(await listConnections());
-      setError('');
-    } catch (e) {
-      setConnections([]);
-      setError(e instanceof Error ? e.message : 'Connections are unavailable.');
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const accepted = (connections ?? []).filter((c) => !c.pending && c.family);
-  const pending = (connections ?? []).filter((c) => c.pending);
+  const families = useConnectedFamilies();
+  const { accepted, pending, loaded, error, busy, invite } = families;
 
   const add = (connection: Connection) => {
-    if (!connection.family) return;
-    const id = `connected-${connection.id}`;
-    if (!known.some((f) => f.id === id)) setFamily({ ...connection.family, id });
-    onSelect(id);
-  };
-
-  // Cancelling a pending invitation deletes it: the link stops working at once.
-  const cancel = async (id: string) => {
-    setError('');
-    try {
-      await removeConnection(id);
-      void load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not cancel the invitation.');
-    }
-  };
-
-  const create = async (relationship: InviteRelationship) => {
-    if (!profile || busy) return;
-    setBusy(relationship);
-    setError('');
-    try {
-      const created = await createInvite(profile, relationship);
-      setInvite({ url: created.url, relationship });
-      void load();
-    } catch (e) {
-      setError(e instanceof InviteError || e instanceof Error ? e.message : 'Could not create the invitation.');
-    } finally {
-      setBusy(null);
-    }
+    const id = families.addToPlan(connection);
+    if (id) onSelect(id);
   };
 
   const first = profile?.parentName?.trim().split(/\s+/)[0];
@@ -97,7 +48,7 @@ export function ConnectedFamiliesPicker({
   return (
     <View style={styles.panel} testID="connected-families-picker">
       <Text variant="label">Your connected families</Text>
-      {connections === null ? (
+      {!loaded ? (
         <Text variant="bodySmall" color={colors.text.secondary}>
           Loading…
         </Text>
@@ -107,14 +58,13 @@ export function ConnectedFamiliesPicker({
         </Text>
       ) : (
         <View style={styles.chips}>
-          {accepted.map((connection) => {
-            const id = `connected-${connection.id}`;
-            const chosen = selectedIds.includes(id);
+          {accepted.map(({ connection, family }) => {
+            const chosen = selectedIds.includes(family.id);
             return (
               <Chip
                 key={connection.id}
                 size="small"
-                label={`${chosen ? '' : '+ '}${connection.family!.label} · ${connection.family!.ages.length} ${connection.family!.ages.length === 1 ? 'child' : 'children'}`}
+                label={`${chosen ? '' : '+ '}${family.label} · ${family.ages.length} ${family.ages.length === 1 ? 'child' : 'children'}`}
                 active={chosen}
                 onPress={() => add(connection)}
               />
@@ -138,7 +88,7 @@ export function ConnectedFamiliesPicker({
                   label={expired ? 'Remove' : 'Cancel'}
                   variant="ghost"
                   size="sm"
-                  onPress={() => void cancel(connection.id)}
+                  onPress={() => void families.cancel(connection.id)}
                   testID={`${expired ? 'remove' : 'cancel'}-invitation-${connection.id}`}
                 />
               </View>
@@ -156,7 +106,7 @@ export function ConnectedFamiliesPicker({
             key={relationship}
             size="small"
             label={busy === relationship ? 'Creating…' : `+ ${RELATIONSHIP_LABEL[relationship]}`}
-            onPress={() => void create(relationship)}
+            onPress={() => void families.create(relationship)}
           />
         ))}
       </View>
@@ -166,7 +116,7 @@ export function ConnectedFamiliesPicker({
           {error}
         </Text>
       ) : null}
-      {onAddManually ? <Button label="Add a family manually" variant="ghost" size="sm" onPress={onAddManually} /> : null}
+      {onAddManually ? <Button label="Add a family by postcode" variant="ghost" size="sm" onPress={onAddManually} testID="add-by-postcode" /> : null}
     </View>
   );
 }

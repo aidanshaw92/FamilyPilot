@@ -122,12 +122,12 @@ export function PlanDraftForm({ draft, parties, onDraftChange, venueName, connec
             onPress={() => setDateOpen(true)}
           />
         </View>
-        {dateOpen ? <DateField label="" value={draft.date} onChange={(date) => onDraftChange({ ...draft, date })} /> : null}
+        {dateOpen ? <DateField label="" a11yLabel="Date of the plan" value={draft.date} onChange={(date) => onDraftChange({ ...draft, date })} /> : null}
       </PlanFormRow>
 
       <PlanFormRow label="Start">
         {/* A real time picker, not a few presets to round to: the day is worked out from the time you actually name. */}
-        <TimeField label="" value={draft.startAt} onChange={(startAt) => onDraftChange({ ...draft, startAt })} />
+        <TimeField label="" a11yLabel="Arrival time" value={draft.startAt} onChange={(startAt) => onDraftChange({ ...draft, startAt })} />
         <Text variant="caption" color={colors.text.secondary}>
           {venueName ? `When you want to arrive at ${venueName}. ` : 'When you want to arrive. '}We’ll work out when to leave.
         </Text>
@@ -260,7 +260,7 @@ export function PlanDraftForm({ draft, parties, onDraftChange, venueName, connec
       {moreOpen ? (
         <>
           <PlanFormRow label="Home by">
-            <TimeField label="" value={draft.returnBy} onChange={(returnBy) => onDraftChange({ ...draft, returnBy })} optional />
+            <TimeField label="" a11yLabel="Home by" value={draft.returnBy} onChange={(returnBy) => onDraftChange({ ...draft, returnBy })} optional />
             <Text variant="caption" color={colors.text.secondary}>
               Optional. The day is planned to end before this.
             </Text>
