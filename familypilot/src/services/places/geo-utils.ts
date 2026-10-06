@@ -72,13 +72,35 @@ export function distanceKm(
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/** Rough drive minutes at ~40 km/h average including local roads. */
+/**
+ * Whether a latitude/longitude pair can be a place on Earth that somebody could drive to.
+ *
+ * A JSON `null` is NOT a number here. `Number.isFinite(null)` is false, but plain arithmetic coerces `null` to 0, so
+ * a venue record with null coordinates used to be measured from "0, 0" in the Gulf of Guinea: "about 10739 min". A pair
+ * of exactly 0, 0 is treated the same way, because that is where a missing coordinate lands once something has coerced
+ * it, and no family-day-out place is there.
+ */
+export function isUsableCoordinate(latitude: unknown, longitude: unknown): boolean {
+  if (typeof latitude !== 'number' || typeof longitude !== 'number') return false;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return false;
+  if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return false;
+  return !(latitude === 0 && longitude === 0);
+}
+
+/**
+ * Rough drive minutes at ~40 km/h average including local roads.
+ *
+ * Returns `NaN` when either end is not a usable coordinate. NaN is the product's existing "no journey could be worked
+ * out" value: `travelTimeLabel` renders it as "Travel time not worked out yet", and every comparison treats it as
+ * unknown. A nonsensical figure is never produced.
+ */
 export function estimateDriveMinutes(
   fromLat: number,
   fromLng: number,
   toLat: number,
   toLng: number,
 ): number {
+  if (!isUsableCoordinate(fromLat, fromLng) || !isUsableCoordinate(toLat, toLng)) return Number.NaN;
   const km = distanceKm(fromLat, fromLng, toLat, toLng);
   return Math.max(1, Math.round((km / 40) * 60 * 1.25));
 }

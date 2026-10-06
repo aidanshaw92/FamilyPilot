@@ -1,5 +1,10 @@
 # Welcome photography: the one outstanding asset dependency
 
+> **Update.** Welcome is brand / lifestyle imagery, so **generated photography is appropriate here** (it depicts no venue). This
+> supersedes the earlier "no generated imagery" wording below. Home and Explore are different: they show real venues and never
+> use generated photographs. The exact briefs, the delivery steps and the installer are in `docs/PHOTOGRAPHY_BRIEFS.md`.
+> `scripts/photos/install-welcome-photos.mjs` crops, sizes, strips metadata, credits and wires the files in one step.
+
 This is the complete handoff for the only visual dependency left on the approved Welcome frame (Figma
 `166:128`). Everything else on Welcome, Home and Explore is implemented.
 
@@ -11,8 +16,8 @@ legitimately obtained:
 * The photographs inside the Figma frame are *review-only crops of the owner's reference screenshot*. They are
   not licensed assets and must never ship. No app code or bundle references them.
 * This environment cannot reach any photo host (Wikimedia, Unsplash, Pexels, Pixabay and Flickr were all
-  re-tested and refused), has no image-generation capability, and a generated or stock-looking image is
-  excluded by the brief in any case.
+  re-tested and refused) and has no image-generation capability, so the photographs are generated or supplied
+  externally and installed with the script above. Stock-looking images and the review-crop references stay excluded.
 
 Until the files below exist, each slot draws its category gradient inside its exact cut-out. That is a
 **temporary fallback**, never the finished screen. Nothing about the masks, the white edge, the stickers or the
@@ -20,10 +25,10 @@ composition changes when the photographs arrive: each file is simply drawn insid
 
 ## What is needed
 
-Seven candid, editorial photographs, licensed for distribution inside a commercial app (commissioned, or CC0 /
-a licence that permits commercial redistribution, with the credit recorded). No posed stock, no generated
-imagery, no identifiable venue shown as if recommended, and any child must be covered by a model release.
-Prefer a child shown from behind, in profile, or by hands and clothing over a face-on portrait.
+Seven candid, editorial photographs for one campaign: generated for FamilyPilot (the generator and its commercial-use terms
+recorded in `CREDITS.md`) or commissioned / CC0. No posed stock, no identifiable venue shown as if recommended, and no real
+child's likeness without a model release (a generated child depicts no one). Prefer a child shown from behind, in profile, or
+by hands and clothing over a face-on portrait. Natural anatomy, no visible AI artefacts, no HDR look, no fantasy treatment.
 
 ### Visual tone (all seven read as one set)
 
@@ -60,7 +65,7 @@ pixel size** (a little larger is fine; do not supply smaller). Dimensions are wi
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `zoo` (`zoo.jpg`) | A giraffe, head and neck, looking towards the camera, trees or sky behind | Portrait | 123 x 202 | 369 x 606 | 0.61 | 38%, 28% (the eye) | Right 18% is off-screen | Head and neck in the upper half, eye at the focal point; keep the head inside the **left 70%**; background simple and out of focus |
 | `farm` (`farm.jpg`) | A child gently stroking a rabbit at a farm fence or hutch | Square | 174 x 174 | 521 x 522 | 1.00 | 55%, 52% (the hands on the rabbit) | Left 5% is off-screen | Child and rabbit together, centred; hands and rabbit are the focus; the child may be from behind or in profile |
-| `cafe` (`cafe.jpg`) | A latte and a croissant on a wooden table, a plant or window light behind | Near-square | 153 x 160 | 460 x 480 | 0.96 | 50%, 52% (the cup) | None | The cup and pastry centred with a little warm light; a shallow depth of field; no brand on the cup |
+| `cafe` (`cafe.jpg`) | A family-friendly café: a latte and a croissant on a wooden table, a child's babyccino at the edge, a plant or window light behind | Near-square | 153 x 160 | 460 x 480 | 0.96 | 50%, 52% (the cup) | None | The cup and pastry centred with a little warm light; a shallow depth of field; no brand on the cup |
 | `crafts` (`crafts.jpg`) | A child painting pottery or crafting, paint pots in view | Portrait | 108 x 191 | 322 x 572 | 0.56 | 40%, 50% (hands and work) | Right 21% is off-screen | Hands and the piece being painted in the centre; keep the work inside the **left 65%**; colourful paint pots may be at the edge |
 | `soft-play` (`soft-play.jpg`) | A toddler climbing a colourful soft-play frame | Landscape | 159 x 143 | 478 x 430 | 1.11 | 55%, 50% (the child) | Left 6% is off-screen | The child centred among foam shapes, mid-climb; bright primary colours; no other children's faces in frame |
 | `puddles` (`puddles.jpg`) | Yellow wellies splashing in a puddle | Landscape | 137 x 130 | 412 x 389 | 1.06 | 50%, 55% (the splash) | None | A low angle; the wellies and the splash centred; wet reflective ground; no face needed |

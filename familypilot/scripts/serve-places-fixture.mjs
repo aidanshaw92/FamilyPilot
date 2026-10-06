@@ -33,6 +33,8 @@
  * Usage: node scripts/serve-places-fixture.mjs [port] [distDir]
  */
 import { createServer } from 'node:http';
+import { fileURLToPath } from 'node:url';
+import { loadFixturePhotoSet, pickFixturePhoto } from './fixtures/fixture-photos.mjs';
 import { createRequire } from 'node:module';
 import { createReadStream, existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
@@ -469,6 +471,17 @@ const REVIEW_PHOTOS = process.env.FIXTURE_PHOTO_DIR
       .map((f) => join(process.env.FIXTURE_PHOTO_DIR, f))
   : [];
 
+/**
+ * Synthetic fixture photographs (scripts/fixtures/photos/venues/), by category. See fixture-photos.mjs: test/demo assets
+ * only, served from here and nowhere else. An empty set, or a category with none, serves the drawn images below.
+ */
+const FIXTURE_PHOTOS = loadFixturePhotoSet(join(fileURLToPath(new URL('.', import.meta.url)), 'fixtures', 'photos', 'venues'));
+const fixtureCategoryFor = (idParam) => {
+  const suffix = String(idParam ?? '');
+  const place = PLACES.find((candidate) => candidate.familypilotId.endsWith(suffix)) ?? [...EDGE_BY_ID.values()].find((candidate) => candidate.familypilotId.endsWith(suffix));
+  return place?.category ?? null;
+};
+
 const SEARCH_PLACES =
   process.env.FIXTURE_SEARCH_INCLUDES_OSM === '1'
     ? [...PLACES, EDGE_BY_ID.get('fp-osm-FIXTUREedgeOsm')]
@@ -721,6 +734,22 @@ const server = createServer((req, res) => {
         'Content-Length': body.length,
       });
       return res.end(body);
+    }
+    // Synthetic fixture photograph for this kind of place, when one has been installed. Never a provider photograph.
+    const category = fixtureCategoryFor(url.searchParams.get('id'));
+    if (category && FIXTURE_PHOTOS.size) {
+      const seed = [...(url.searchParams.get('id') || '')].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+      const picked = pickFixturePhoto(FIXTURE_PHOTOS, category, seed, index);
+      if (picked) {
+        res.writeHead(200, {
+          'Content-Type': 'image/jpeg',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, max-age=3600',
+          'Content-Length': picked.bytes.length,
+          'X-FamilyPilot-Fixture': 'synthetic-photograph',
+        });
+        return res.end(picked.bytes);
+      }
     }
     const image = IMAGES[Number.isInteger(index) && index >= 0 && index < IMAGES.length ? index : 0];
     res.writeHead(200, {

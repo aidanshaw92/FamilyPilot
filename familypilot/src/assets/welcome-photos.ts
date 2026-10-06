@@ -9,18 +9,18 @@ import type { ImageSource } from 'expo-image';
  * play, pottery/creative, café, muddy wellies, aquarium).
  *
  * Rules for an entry:
- *   - A licensed, candid, editorial photograph the product may ship (no stock-looking posed family,
- *     no generated imagery, no photograph that impersonates a venue).
- *   - The file lives in `assets/images/welcome/<slot>.jpg`, is landscape-or-square ≥ 800px on the
- *     short side, and is recorded in `assets/images/welcome/CREDITS.md` (photographer, source,
- *     licence). `welcome-photos.test.ts` fails the build when a slot points at a file that is
- *     missing from either place.
- *   - React Native needs a static `require`, so each line is written out by hand when the file lands.
+ *   - Brand / lifestyle imagery that depicts no venue: generated for FamilyPilot, commissioned, or CC0. Generated
+ *     photography IS appropriate here. (Home and Explore show real venues and never use generated photographs.)
+ *   - No stock-looking posed family, no logos, text or watermarks, no photograph that impersonates a venue.
+ *   - The file lives in `assets/images/welcome/<slot>.jpg` at the slot's 3x size, and is recorded in
+ *     `assets/images/welcome/CREDITS.md` (source, generator and licence). `welcome-photos.test.ts` fails the build when a
+ *     slot points at a file that is missing from either place.
+ *   - React Native needs a static `require`, so each line is written out. `scripts/photos/install-welcome-photos.mjs`
+ *     writes them (and the credit lines) when it installs the files.
  *
- * The seven briefs (subject, size, placement) are in docs/WELCOME_PHOTOGRAPHY.md. The pipeline was proven on the
- * web with a throwaway image in the exact cut-out; no photograph is committed until a licensed one exists.
+ * The seven briefs (subject, size, placement) are in docs/WELCOME_PHOTOGRAPHY.md and docs/PHOTOGRAPHY_BRIEFS.md.
  *
- * Add a slot like so once its file and credit exist:
+ * By hand, once a file and its credit exist:
  *   farm: require('../../assets/images/welcome/farm.jpg'),
  */
 export const WELCOME_PHOTOS: Partial<Record<string, ImageSource>> = {};

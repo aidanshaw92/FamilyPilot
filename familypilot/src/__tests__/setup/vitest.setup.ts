@@ -1,4 +1,21 @@
+import { createRequire } from 'node:module';
+
 import { vi } from 'vitest';
+
+/**
+ * React Native bundles an image through a static `require('./x.jpg')`, which Metro resolves and Node cannot: it would try
+ * to parse the JPEG as JavaScript. Any test that imports a module carrying such a require (`welcome-photos.ts`, once the
+ * photographs are wired) would fail to load at all. Resolve an image require to `{ uri: <path> }`, which is all a test
+ * needs: it never decodes the file.
+ */
+const nodeRequire = createRequire(import.meta.url);
+const extensions = (nodeRequire('node:module') as unknown as { _extensions: Record<string, (m: { exports: unknown }, filename: string) => void> })._extensions;
+for (const ext of ['.jpg', '.jpeg', '.png', '.webp']) {
+  extensions[ext] ??= (module, filename) => {
+    module.exports = { uri: filename };
+  };
+}
+
 
 // Zustand's `persist` middleware writes to AsyncStorage as a fire-and-forget
 // side effect. The real native module expects a `window`/DOM-like host and

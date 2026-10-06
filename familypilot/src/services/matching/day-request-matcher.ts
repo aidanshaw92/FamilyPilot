@@ -145,6 +145,8 @@ function evaluateBudget(
 }
 
 function evaluateJourney(driveMinutes: number, maxMinutes: number): FactMatchOutcome {
+  // A journey nobody could work out is unknown, not "too far": NaN <= anything is false, which used to read as unsuitable.
+  if (!Number.isFinite(driveMinutes)) return 'unknown';
   if (driveMinutes <= maxMinutes) return 'suitable';
   return 'unsuitable';
 }
@@ -413,7 +415,11 @@ export function rankVenueMatches(
     if (a.match.preferredUnknowns !== b.match.preferredUnknowns) {
       return a.match.preferredUnknowns - b.match.preferredUnknowns;
     }
-    return a.facts.driveMinutes - b.facts.driveMinutes;
+    // A place whose journey is unknown sorts after every place whose journey is known (NaN would break the comparator).
+    const aKnown = Number.isFinite(a.facts.driveMinutes);
+    const bKnown = Number.isFinite(b.facts.driveMinutes);
+    if (aKnown !== bKnown) return aKnown ? -1 : 1;
+    return aKnown ? a.facts.driveMinutes - b.facts.driveMinutes : 0;
   });
 
   return results.slice(0, 3);
