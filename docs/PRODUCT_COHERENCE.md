@@ -166,7 +166,7 @@ two homes ──► GET /api/places/search?intent=between&aLat&aLng&bLat&bLng[&a
 ### What each candidate is asked
 
 1. **Journey**: each family's own time from where they set off (an estimate from distance, said to be one). The longer journey
-   matters more than the average; a lopsided split is penalised, and *who* has further to go is stated.
+   matters more than the average and a lopsided split is penalised in the ranking; the split is described as fairness, never as who travels less.
 2. **Suitability**, per family, by the planner's own `matchVenueToDayRequest`. A **confirmed** miss (a must-have the venue lacks, an
    age policy, a closure, the setting) rules a place out. An **unconfirmed** must-have does **not**: the place stays, ranked lower
    (−8 per open must-have), with a *Needs checking before you go* block ("Baby changing isn't confirmed at X, and Hannah's family
@@ -176,6 +176,19 @@ two homes ──► GET /api/places/search?intent=between&aLat&aLng&bLat&bLng[&a
    uncovered; otherwise it is a *to check* line.
 4. **Routines** against the outing, only where routines are known. A routine shared as only "Home time" is called *home time*, never a nap.
 5. **Reasons** are confirmed facts only; **to check** is stated and never counted as a fit.
+
+### What a card says (copy and semantics)
+
+* **Fairness, not who travels less.** *Almost equal journeys* (within 3 minutes), *Journeys are within 7 minutes of each other* (up to 10),
+  *Journeys differ by 24 minutes* beyond that. It never says whose journey is shorter. Each family's own time stays visible as an estimate
+  ("about 28 min").
+* **Reading order on every card:** journey fairness → fit for both families → routine compatibility → useful confirmed facilities (and
+  opening) → anything that needs checking, last, with a *Needs checking before you go* block for unconfirmed must-haves.
+* **The top card only claims what is supported.** *Best for both* needs nothing to check, something known about both families, and
+  journeys within 10 minutes. With something to check it is *Promising option · 1 thing to check* (counted, one underlying issue is one
+  thing). With nothing to check but an uneven split, or only a postcode known for the other family, it is *Best compromise*. A Family Fit
+  that is only *possible*, or a place not yet reviewed for families, is something to check, never a fit. Other cards carry their category,
+  not a claim.
 
 ### Better routing of a small final shortlist (proposal; **not enabled**)
 
@@ -217,9 +230,9 @@ child.** A child the place is not confirmed for (a check still open, or nothing 
 | Household | Evidence | Headline |
 |---|---|---|
 | Sloane 7, Ozzie baby | Age range and baby changing confirmed for both | *Good for Sloane and Ozzie today* |
-| Sloane 7, Ozzie baby | Baby changing confirmed (about Ozzie); nothing about Sloane | *Good for Ozzie, but nothing is confirmed yet for Sloane* (badge: *Good fit · check Sloane*) |
+| Sloane 7, Ozzie baby | Baby changing confirmed (about Ozzie); nothing about Sloane | *Good for Ozzie, but we’re less certain about Sloane: no age range is recorded for this place yet* (badge: *Good fit · check Sloane*) |
 | Sloane 2, Ozzie baby | Both inside the age range; baby changing unconfirmed | *Good for Sloane, but check baby changing for Ozzie* |
-| Sloane 7, Maya 9 | Toilets and parking confirmed; nothing about either child | *Good on the practical side, but nothing is confirmed yet for Sloane and Maya* |
+| Sloane 7, Maya 9 | Toilets and parking confirmed; nothing about either child | *Looks practical, but we’re less certain about Sloane and Maya: no age range is recorded for this place yet* |
 | Sloane, Ozzie | Buggy access unknown | *Could work for Sloane, but check buggy access for Ozzie* |
 | Sloane, Ozzie | Buggy access difficult | *Probably not for Ozzie today* |
 
@@ -284,8 +297,8 @@ Run on this branch, against the synthetic places fixture (no Google, no accounts
 | Check | Result |
 |---|---|
 | `tsc --noEmit` | clean |
-| `vitest run` | 156 files, **2,471 tests pass** (this round adds `must-have-states` 13, `meet-halfway-catalogue` 21, `between-contract` 15, `between-client` 3, `connection-sharing-update` 9, 8 multi-child cases in `family-match`, and reworked `meet-halfway` / `day-plan` expectations for the new must-have semantics) |
-| `verify-product-coherence` (360, 390, 393, 430) | **176 / 176**: now also proves Home never lists the catalogue-only farm yet Meet halfway offers it as *Best for both*; the Home fallback is labelled; an unconfirmed must-have keeps a place with a *Needs checking* block and a plan still builds; a place confirmed to lack it is ruled out; a confirmed miss is a hard conflict at plan time |
+| `vitest run` | 156 files, **2,483 tests pass** (this round adds `must-have-states` 13, `meet-halfway-catalogue` 21, `between-contract` 15, `between-client` 3, `connection-sharing-update` 9, multi-child copy cases in `family-match`, Halfway fairness-wording, top-card-label, card-order and de-duplication cases in `meet-halfway`, and reworked `meet-halfway` / `day-plan` expectations for the new must-have semantics) |
+| `verify-product-coherence` (360, 390, 393, 430) | **200 / 200**: now also proves fairness wording (never who travels less), that "Best for both" never sits over something to check, and the card reading order; and proves Home never lists the catalogue-only farm yet Meet halfway offers it as *Best for both*; the Home fallback is labelled; an unconfirmed must-have keeps a place with a *Needs checking* block and a plan still builds; a place confirmed to lack it is ruled out; a confirmed miss is a hard conflict at plan time |
 | `verify-create-plan-journey` | **133 / 133**: an unconfirmed must-have now builds the plan with *Needs checking before you go* (it used to be a dead end) |
 | `verify-account-journey` (auth build, in-memory fixture) | **53 / 53**: an older connection reads as home time only, nothing changes until *Update what I share*, the same connection id and relationship are kept, "Home time" is replaced by kinds, and the other family reads the older share conservatively in Meet halfway |
 | `verify-account-qa`, `verify-post-visit` | pass in full (30 checks in `verify-post-visit`) |

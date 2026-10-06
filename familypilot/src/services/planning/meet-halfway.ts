@@ -49,6 +49,14 @@ const GRID_MINUTES = 5;
 export const MAX_OPTIONS = 5;
 /** A gap this small is "about the same": not worth a sentence about who has further to go. */
 const EVEN_GAP_MINUTES = 3;
+/** Up to this, the split is "within N minutes of each other"; beyond it the gap is stated plainly. */
+const CLOSE_GAP_MINUTES = 10;
+
+/** How even the journeys are, in fairness words. Never says who travels less. */
+export function fairnessLine(gap: number): string {
+  if (gap <= EVEN_GAP_MINUTES) return "Almost equal journeys";
+  return gap <= CLOSE_GAP_MINUTES ? `Journeys are within ${gap} minutes of each other` : `Journeys differ by ${gap} minutes`;
+}
 
 export interface HalfwayInput {
   /** The places in hand (Home's London set). */
@@ -85,10 +93,19 @@ export interface HalfwayOption {
   gap: number;
   /** Who has the longer journey, when the gap is worth saying. */
   longerFor: FamilyRole | null;
-  /** Confirmed reasons it works for both. Each is a fact or a computed result, never an inference. */
+  /** How even the two journeys are, in fairness words. First on the card. */
+  fairness: string;
+  /** What is confirmed, in card order: fairness, fit, routines, facilities. Each is a fact or a computed result, never an inference. */
   reasons: string[];
   /** What nobody has confirmed, or a routine to plan around. Stated, never counted as a fit. */
   toCheck: string[];
+  /** How many things need checking. Excludes the note that only a postcode-only family's journey was checked. */
+  checks: number;
+  /**
+   * Whether "works for both" is genuinely supported: nothing to check, something known about both families, and journeys
+   * within ten minutes of each other. Only then may the top card say "Best for both".
+   */
+  supported: boolean;
   /** Whether the opening hours were confirmed at the time they would be there. */
   hoursConfirmed: boolean;
   /**
@@ -300,16 +317,21 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
     const gap = Math.abs(minutes[0] - minutes[1]);
     const longerFor: FamilyRole | null = gap > EVEN_GAP_MINUTES ? (minutes[0] > minutes[1] ? 'mine' : 'other') : null;
 
-    const reasons: string[] = [];
+    // The card reads in this order: journey fairness, fit for both families, routine compatibility, useful confirmed
+    // facilities, then anything that needs checking. Each group is built separately and joined in that order.
+    const fit: string[] = [];
+    const routineLines: string[] = [];
+    const facilityLines: string[] = [];
     const toCheck: string[] = [];
     let bonus = 0;
 
-    // Journeys.
-    if (longerFor === null) reasons.push('Journeys within a few minutes of each other');
-    else {
-      const shorter = longerFor === 'mine' ? ('other' as const) : ('mine' as const);
-      reasons.push(`${upperFirst(familyPhrase(shorter, (shorter === 'mine' ? mine : other).label))} has the shorter journey`);
-    }
+    // Journey fairness: about how even the split is, never about which family travels less.
+    const fairness = fairnessLine(gap);
+
+    // Ages: each family only where there are ages on record.
+    const ageFits = roles
+      .map(([role, family]) => ({ role, family, fit: family.ages.length ? evaluateAgeRecommendation(facts, yearsToMonths(family.ages)) : ('unknown' as const) }))
+      .filter((entry) => entry.fit !== 'unknown');
 
     // Each family's own Family Fit. Yours reads your household; theirs reads only what they shared. A claim "for" a family is
     // made only when no child in it is left uncovered: "Good for Sloane" is not "good for the family" while Ozzie is unknown.
@@ -328,6 +350,7 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
           : undefined,
       ],
     ];
+    const saidFit = new Set<FamilyRole>();
     for (const [role, result] of fits) {
       if (!result) continue;
       const who = familyPhrase(role, (role === 'mine' ? mine : other).label);
@@ -336,31 +359,43 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
         bonus -= 12;
         // Said as it is, never softened. Yours carries its own sentence; theirs is worded without a second person.
         toCheck.push(role === 'mine' ? sentence : `Family Fit says this probably isn’t right for ${who}`);
+        saidFit.add(role);
       } else if (result.verdict === 'excellent' || result.verdict === 'good') {
         if (hasChildGap(result)) {
           // Confirmed for some of the children only: the gap is what the parent reads, and it earns half the credit.
-          toCheck.push(role === 'mine' ? sentence : `Not confirmed for every child in ${who}`);
+          toCheck.push(role === 'mine' ? sentence : `We’re less certain it suits every child in ${who}`);
+          saidFit.add(role);
           bonus += result.verdict === 'excellent' ? 6 : 3;
         } else {
-          reasons.push(role === 'mine' ? sentence : `Family Fit is ${result.verdict} for ${who}`);
+          fit.push(role === 'mine' ? sentence : `Family Fit is ${result.verdict} for ${who}`);
           bonus += result.verdict === 'excellent' ? 12 : 7;
         }
+      } else if (
+        result.verdict === 'possible' &&
+        !unresolved.some((item) => item.role === role) &&
+        // The ages line below is the more specific way to say the same thing for them.
+        !(role === 'other' && ageFits.some((entry) => entry.role === 'other' && (entry.fit === 'none' || entry.fit === 'some')))
+      ) {
+        // Not a fit and not a failure: it could work, with something to look at. Said, so "for both" is never claimed over it.
+        // Not said again where an unconfirmed must-have already explains it: that is one thing to check, not two.
+        toCheck.push(role === 'mine' ? sentence : `Family Fit is only a possible match for ${who}`);
+        saidFit.add(role);
       }
     }
+    // A place nobody has reviewed for families has no fit to speak of: said once, for the venue, not once per family.
+    if (fits.some(([, result]) => result?.verdict === 'not_reviewed')) toCheck.push('We haven’t reviewed this place for families yet');
 
-    // Ages: each family only where there are ages on record.
-    const ageFits = roles
-      .map(([role, family]) => ({ role, family, fit: family.ages.length ? evaluateAgeRecommendation(facts, yearsToMonths(family.ages)) : ('unknown' as const) }))
-      .filter((entry) => entry.fit !== 'unknown');
+    // Ages (declared above the Family Fit loop; the lines are added here).
     if (ageFits.length === 2 && ageFits.every((entry) => entry.fit === 'all')) {
-      reasons.push('Suits the ages of both families’ children');
+      fit.push('Suits the ages of both families’ children');
       bonus += 6;
     } else if (ageFits.length > 0 && ageFits.every((entry) => entry.fit === 'all')) {
-      reasons.push(`Suits the ages of the children in ${familyPhrase(ageFits[0].role, ageFits[0].family.label)}`);
+      fit.push(`Suits the ages of the children in ${familyPhrase(ageFits[0].role, ageFits[0].family.label)}`);
     } else {
       for (const entry of ageFits) {
         if (entry.fit === 'none' || entry.fit === 'some') {
-          toCheck.push(`Recommended ages may not suit all the children in ${familyPhrase(entry.role, entry.family.label)}`);
+          // Your own Family Fit sentence already names the children and the reason; saying it twice would be two things to check.
+          if (!saidFit.has(entry.role)) toCheck.push(`Recommended ages may not suit all the children in ${familyPhrase(entry.role, entry.family.label)}`);
           bonus -= 4;
         }
       }
@@ -375,10 +410,10 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
       if (overlapping) clash.push(role);
     }
     if (withRoutines.length === 2 && clash.length === 0) {
-      reasons.push(`Works around both families’ ${routineKinds([...windows.mine, ...windows.other])}`);
+      routineLines.push(`Works around both families’ ${routineKinds([...windows.mine, ...windows.other])}`);
       bonus += 10;
     } else if (withRoutines.length === 1 && clash.length === 0) {
-      reasons.push(`Works around the ${routineKinds(windows[withRoutines[0][0]])} for ${familyPhrase(withRoutines[0][0], withRoutines[0][1].label)}`);
+      routineLines.push(`Works around the ${routineKinds(windows[withRoutines[0][0]])} for ${familyPhrase(withRoutines[0][0], withRoutines[0][1].label)}`);
       bonus += 5;
     }
     for (const role of clash) {
@@ -405,17 +440,17 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
 
     // The venue's own confirmed facilities that matter to a family day.
     const youngest = Math.min(...[...mine.ages, ...other.ages, 99]);
-    if (facts.babyChanging === 'yes' && youngest < 3) reasons.push('Baby changing confirmed');
+    if (facts.babyChanging === 'yes' && youngest < 3) facilityLines.push('Baby changing confirmed');
     if (venue.facilities?.includes('cafe')) {
-      reasons.push('Café on site');
+      facilityLines.push('Café on site');
       bonus += 3;
     }
-    if (facts.parking === 'yes') reasons.push(facts.freeParking === 'yes' ? 'Free parking confirmed' : 'Parking confirmed');
+    if (facts.parking === 'yes') facilityLines.push(facts.freeParking === 'yes' ? 'Free parking confirmed' : 'Parking confirmed');
 
     // The day.
     const hoursConfirmed = verdict.status === 'open';
     if (hoursConfirmed) {
-      reasons.push('Open when you’d be there');
+      facilityLines.push('Open when you’d be there');
       bonus += 4;
     } else {
       toCheck.push('Opening hours not confirmed for that day');
@@ -424,7 +459,14 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
     // Fairness is the point: the longer journey weighs more than the average, and a lopsided split is penalised.
     const score = 100 - farthest * 1.0 - gap * 0.8 - (minutes[0] + minutes[1]) * 0.15 + bonus;
 
-    options.push({ venue, journeys, gap, longerFor, reasons, toCheck, hoursConfirmed, unresolved, needsChecking, score });
+    const reasons = [fairness, ...fit, ...routineLines, ...facilityLines];
+    // Whether "for both" is genuinely supported. A postcode-only family is a caveat (only their journey was checked),
+    // not a thing to check, but it still means nothing was confirmed for them.
+    const onlyJourneyKnown = !otherKnown.children && !otherKnown.routines;
+    const checks = toCheck.length - (onlyJourneyKnown ? 1 : 0);
+    const supported = checks === 0 && !onlyJourneyKnown && gap <= CLOSE_GAP_MINUTES;
+
+    options.push({ venue, journeys, gap, longerFor, fairness, reasons, toCheck, checks, supported, hoursConfirmed, unresolved, needsChecking, score });
   }
 
   options.sort((a, b) => b.score - a.score || a.venue.name.localeCompare(b.venue.name));
@@ -436,4 +478,15 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
     earliestArrival: options.length === 0 && excluded.tooSoon > 0 && earliest !== null ? hhmm(earliest) : undefined,
     otherKnown,
   };
+}
+
+/**
+ * What the top card is called. "Best for both" is a claim, so it is reserved for an option where it is supported; one with
+ * something to check is a promising option, and one that is simply the best of an uneven or thinly-known set is the best
+ * compromise. The other cards carry their category, not a claim.
+ */
+export function topCardLabel(option: Pick<HalfwayOption, 'checks' | 'supported'>): string {
+  if (option.supported) return 'Best for both';
+  if (option.checks > 0) return `Promising option · ${option.checks} ${option.checks === 1 ? 'thing' : 'things'} to check`;
+  return 'Best compromise';
 }

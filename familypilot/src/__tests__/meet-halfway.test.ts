@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { meetHalfway } from '@/src/services/planning/meet-halfway';
+import { fairnessLine, meetHalfway, topCardLabel } from '@/src/services/planning/meet-halfway';
 import { PlanningFamily, Routine } from '@/src/services/planning/planner';
 import { estimateDriveMinutes } from '@/src/services/places/geo-utils';
 import { Venue } from '@/src/types';
@@ -77,11 +77,25 @@ describe('it is not the midpoint', () => {
     expect(option.gap).toBe(Math.abs(expectMine - expectTheirs));
   });
 
-  it('says journeys are close when they are, and who has further to go when they are not', () => {
+  it('speaks of fairness, never of which family travels less', () => {
     const fair = run([FAIR]).options[0];
-    expect(fair.reasons.some((r) => /within a few minutes|shorter journey/.test(r))).toBe(true);
+    expect(fair.fairness).toMatch(/^(Almost equal journeys|Journeys are within \d+ minutes of each other)$/);
     const near = run([NEAR_MINE]).options[0];
-    expect(near.reasons.join(' ')).toMatch(/Your family has the shorter journey/);
+    expect(near.fairness).toMatch(/^Journeys differ by \d+ minutes$/);
+    for (const option of [fair, near]) {
+      const text = [...option.reasons, ...option.toCheck].join(' ');
+      expect(text).not.toMatch(/shorter journey|has further to go|longer journey/i);
+    }
+  });
+
+  it('puts fairness first and says it in numbers a parent can check', () => {
+    const [option] = run([FAIR]).options;
+    expect(option.reasons[0]).toBe(option.fairness);
+    expect(fairnessLine(0)).toBe('Almost equal journeys');
+    expect(fairnessLine(3)).toBe('Almost equal journeys');
+    expect(fairnessLine(7)).toBe('Journeys are within 7 minutes of each other');
+    expect(fairnessLine(10)).toBe('Journeys are within 10 minutes of each other');
+    expect(fairnessLine(11)).toBe('Journeys differ by 11 minutes');
   });
 });
 
@@ -196,5 +210,94 @@ describe('it spends nothing', () => {
   it('offers at most five', () => {
     const many = Array.from({ length: 12 }, (_, i) => venue(`P${i}`, 51.57 + i * 0.001, -0.08));
     expect(run(many).options).toHaveLength(5);
+  });
+});
+
+describe('the top card only says "Best for both" when that is supported', () => {
+  const goodFit = { verdict: 'good', headline: 'Good for Sloane and Ozzie today', reasons: [], cautions: [], toCheck: [], forNames: [], children: [] } as never;
+  const supported = () => venue('Fair Fields', 51.57, -0.08, { familyMatch: goodFit });
+
+  it('is "Best for both" for a confirmed, even, well-known option', () => {
+    const [option] = run([supported()]).options;
+    expect(option.checks).toBe(0);
+    expect(option.supported).toBe(true);
+    expect(topCardLabel(option)).toBe('Best for both');
+  });
+
+  it('is a promising option, with the count, when a must-have is unknown for either family', () => {
+    const needsChanging = other({ required: ['babyChanging'] });
+    const unknown = venue('Fair Fields', 51.57, -0.08, { familyMatch: goodFit }, { babyChanging: 'unknown' });
+    const [option] = run([unknown], { other: needsChanging }).options;
+    expect(option.unresolved).toHaveLength(1);
+    expect(option.supported).toBe(false);
+    expect(topCardLabel(option)).toBe('Promising option · 1 thing to check');
+    expect(topCardLabel(option)).not.toMatch(/Best for both/);
+
+    const mineNeeds = { ...mine, required: ['babyChanging' as const] };
+    const [forMine] = run([unknown], { mine: mineNeeds }).options;
+    expect(topCardLabel(forMine)).toMatch(/^Promising option/);
+  });
+
+  it('counts each thing: two things to check reads as two', () => {
+    const both = venue('Fair Fields', 51.57, -0.08, { familyMatch: goodFit, structuredOpeningHours: undefined }, { babyChanging: 'unknown' });
+    const [option] = run([both], { other: other({ required: ['babyChanging'] }) }).options;
+    expect(option.checks).toBe(2);
+    expect(topCardLabel(option)).toBe('Promising option · 2 things to check');
+  });
+
+  it('is "Best compromise" when nothing is open but the journeys are uneven', () => {
+    const [option] = run([venue('Camden Green', 51.552, -0.141, { familyMatch: goodFit })]).options;
+    expect(option.gap).toBeGreaterThan(10);
+    expect(option.checks).toBe(0);
+    expect(topCardLabel(option)).toBe('Best compromise');
+  });
+
+  it('is "Best compromise", not "Best for both", when only a postcode is known for the other family', () => {
+    const postcode = other({ ages: [], routines: [], required: [], label: 'Hannah' });
+    const [option] = run([supported()], { other: postcode }).options;
+    expect(option.checks).toBe(0);
+    expect(option.supported).toBe(false);
+    expect(topCardLabel(option)).toBe('Best compromise');
+  });
+
+  it('a Family Fit that is only possible, or a place not reviewed for families, is something to check, not a fit', () => {
+    const possible = venue('Fair Fields', 51.57, -0.08, { familyMatch: { ...(goodFit as object), verdict: 'possible', headline: 'Could work for Sloane, but check buggy access for Ozzie today' } as never });
+    const [option] = run([possible]).options;
+    expect(option.toCheck).toContain('Could work for Sloane, but check buggy access for Ozzie');
+    expect(topCardLabel(option)).toMatch(/^Promising option/);
+    const unreviewed = venue('Fair Fields', 51.57, -0.08, { familyMatch: { ...(goodFit as object), verdict: 'not_reviewed', headline: 'Family suitability not yet reviewed' } as never });
+    expect(run([unreviewed]).options[0].toCheck).toContain('We haven’t reviewed this place for families yet');
+  });
+});
+
+describe('each card reads in one order', () => {
+  it('journey fairness, then fit for both, then routines, then confirmed facilities, then what to check', () => {
+    const nap = { id: 'n', label: 'Nap', kind: 'nap' as const, time: '15:30', durationMinutes: 60, atHome: true };
+    const fit = { verdict: 'good', headline: 'Good for Sloane and Ozzie today', reasons: [], cautions: [], toCheck: [], forNames: [], children: [] } as never;
+    const place = venue('Fair Fields', 51.57, -0.08, { familyMatch: fit, facilities: ['cafe'] });
+    const [option] = run([place], { mine: { ...mine, routines: [nap] }, other: other({ routines: [{ ...nap, id: 'o' }] }) }).options;
+    const at = (pattern: RegExp) => option.reasons.findIndex((line) => pattern.test(line));
+    const order = [at(/journeys/i), at(/Good for Sloane and Ozzie/), at(/Suits the ages/), at(/Works around/), at(/Baby changing confirmed|Café|parking/i), at(/Open when/)];
+    expect(order.every((index) => index >= 0)).toBe(true);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+    // What needs checking is not mixed into the confirmed lines.
+    expect(option.reasons.join(' ')).not.toMatch(/isn’t confirmed|not reviewed|less certain/);
+  });
+});
+
+describe('one underlying issue is one thing to check', () => {
+  it('your own Family Fit sentence and the ages line are not both listed for the same problem', () => {
+    const possible = { verdict: 'possible', headline: 'Could work for Sloane, but check age range for Ozzie today', reasons: [], cautions: [], toCheck: [], forNames: [], children: [] } as never;
+    // The venue's ages are 6 to 12, so the children in `mine` (3 and a baby) are outside it.
+    const place = venue('Big Kids', 51.57, -0.08, { familyMatch: possible }, { minRecommendedAge: 6, maxRecommendedAge: 12 });
+    const [option] = run([place]).options;
+    const aboutAges = option.toCheck.filter((line) => /age/i.test(line) && /your family|Ozzie|Sloane/.test(line));
+    expect(aboutAges).toEqual(['Could work for Sloane, but check age range for Ozzie']);
+  });
+
+  it('for the other family, one line says it, not a fit sentence and an ages line for the same problem', () => {
+    const place = venue('Big Kids', 51.57, -0.08, {}, { minRecommendedAge: 6, maxRecommendedAge: 12 });
+    const [option] = run([place]).options;
+    expect(option.toCheck.filter((line) => /Hannah/.test(line))).toHaveLength(1);
   });
 });

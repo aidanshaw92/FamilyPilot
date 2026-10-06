@@ -123,6 +123,21 @@ async function freshContext(width, height, guest, extraProfile = {}) {
   return { context, page };
 }
 
+/** No card may say "Best for both" while it also lists something to check. */
+async function bestForBothIsHonest(page) {
+  return page.evaluate(() => {
+    const cards = [...document.querySelectorAll('[data-testid="halfway-option"]')];
+    return cards.every((card) => !/Best for both/.test(card.innerText) || !/Needs checking|thing to check|things to check|\n\? /.test(card.innerText));
+  });
+}
+
+/** The lines on a card, in the order a parent reads them: fairness, fit, routines, facilities, then what to check. */
+async function cardOrder(card) {
+  const text = await card.innerText();
+  const at = (pattern) => text.search(pattern);
+  return [at(/Almost equal journeys|Journeys are within|Journeys differ by/), at(/Family Fit|Suits the ages/), at(/Needs checking before you go|\n\? /)];
+}
+
 const BARNET = 'Barnet Common Fixture Farm';
 const FINCHLEY = 'Finchley Fixture Play Barn';
 const HENDON = 'Hendon Fixture Yard';
@@ -294,7 +309,12 @@ for (const [width, height] of VIEWPORTS) {
   await settle(page, 3000);
   const between = await text(page);
   check(`${label}: Meet halfway says it looked between the two homes, not only at Home`, /We looked at \d+ places? between your two homes/.test(between));
-  check(`${label}: a place only the stored catalogue holds is offered, and it is the best for both`, between.includes(BARNET) && between.indexOf('Best for both') < between.indexOf(BARNET) && between.indexOf(BARNET) - between.indexOf('Best for both') < 60, (between.match(/Best for both[^\n]*\n[^\n]*/) ?? ['none'])[0]);
+  const topHeading = (between.match(/(Best for both|Best compromise|Promising option[^\n]*)\n[^\n]*/) ?? [''])[0].replace(/\n/g, ' | ');
+  check(`${label}: a place only the stored catalogue holds is offered first, under a heading that makes only the claim it can support`, between.includes(BARNET) && topHeading.includes(BARNET) && /^(Best compromise|Promising option · \d things? to check)/.test(topHeading), topHeading);
+  check(`${label}: journeys are described as fairness, never as who travels less`, /Almost equal journeys|Journeys are within \d+ minutes of each other|Journeys differ by \d+ minutes/.test(between) && !/shorter journey|longer journey|has further to go/i.test(between));
+  check(`${label}: estimated wording is kept ("about N min")`, (between.match(/about \d+ min/g) ?? []).length >= 2);
+  check(`${label}: "Best for both" never appears over something still to check`, await bestForBothIsHonest(page));
+  check(`${label}: the card reads fairness, then fit, then what needs checking`, await (async () => { const [f, fit, chk] = await cardOrder(page.getByTestId('halfway-option').first()); return f >= 0 && (fit < 0 || f < fit) && (chk < 0 || (fit < 0 ? f : fit) < chk); })());
   check(`${label}: it is not the Home fallback`, (await page.getByTestId('halfway-fallback').count()) === 0);
   await page.screenshot({ path: join(dir, '10-halfway-between.jpg'), type: 'jpeg', quality: 82 });
 
@@ -317,6 +337,7 @@ for (const [width, height] of VIEWPORTS) {
   check(`${label}: an unconfirmed must-have keeps the place on the list, with a prominent "needs checking" block`, needText.includes(FINCHLEY) && (await needy.page.getByTestId('halfway-needs-checking').count()) > 0 && /Needs checking before you go/i.test(needText));
   check(`${label}: it says exactly what to check, for the family that needs it`, /Baby changing isn’t confirmed at Finchley Fixture Play Barn, and Hannah’s family needs it/.test(needText));
   check(`${label}: a place confirmed to LACK the must-have is ruled out`, !needText.includes(HENDON));
+  check(`${label}: a place with an unconfirmed must-have is never labelled "Best for both"`, await bestForBothIsHonest(needy.page) && !/Best for both/.test(await needy.page.getByTestId('halfway-option').filter({ hasText: FINCHLEY }).first().innerText()));
   check(`${label}: and an unconfirmed one is never worded as missing`, !/No baby changing|does not have baby changing/i.test(needText));
   await needy.page.getByTestId('halfway-needs-checking').first().scrollIntoViewIfNeeded();
   await needy.page.waitForTimeout(400);
@@ -328,6 +349,14 @@ for (const [width, height] of VIEWPORTS) {
   const jointPlan = await text(needy.page);
   check(`${label}: Plan this day still builds the plan, with what needs checking said on it`, (await needy.page.getByTestId('plan-save').isVisible().catch(() => false)) && /Needs checking before you go/i.test(jointPlan) && /Baby changing isn’t confirmed at Finchley Fixture Play Barn/.test(jointPlan), jointPlan.replace(/\s+/g, ' ').slice(0, 200));
   await needy.context.close();
+
+  // "Best for both" is still available when it is supported: a household of one child, a family that shared their child's age.
+  const clear = await freshContext(width, height, { ...GUEST, ages: [2] }, { members: PROFILE.members.filter((m) => m.id !== 'c2'), routines: [] });
+  await clear.page.goto(`${BASE}/halfway?family=guest-hannah`, { waitUntil: 'domcontentloaded' });
+  await settle(clear.page, 3200);
+  const clearText = await text(clear.page);
+  check(`${label}: a confirmed, even, well-known option is still called "Best for both"`, /Best for both/.test(clearText) && await bestForBothIsHonest(clear.page), (clearText.match(/Best for both[^\n]*\n[^\n]*/) ?? ['no heading'])[0]);
+  await clear.context.close();
 
   // A must-have confirmed MISSING is a hard conflict at plan time, and says so.
   const miss = await freshContext(width, height, GUEST, { mustHaveFacilities: ['baby_changing'] });

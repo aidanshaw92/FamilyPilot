@@ -219,7 +219,7 @@ describe('Family Fit never says "good for the family" from a subset of the child
     // Baby changing is confirmed, which is a fact about Ozzie. Nothing at all is known about whether it suits Sloane.
     const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
     expect(r.children.map((c) => [c.name, c.state])).toEqual([['Sloane', 'unknown'], ['Ozzie', 'works']]);
-    expect(r.headline).toBe('Good for Ozzie, but nothing is confirmed yet for Sloane');
+    expect(r.headline).toBe('Good for Ozzie, but we’re less certain about Sloane: no age range is recorded for this place yet');
     expect(r.headline).not.toMatch(/^Good for Ozzie today$/);
     expect(r.gapNames).toEqual(['Sloane']);
   });
@@ -238,13 +238,13 @@ describe('Family Fit never says "good for the family" from a subset of the child
     const r = run(venue({}, practical), sevenAndNine(), 80);
     expect(r.children.every((c) => c.state === 'unknown')).toBe(true);
     expect(r.verdict).toBe('good');
-    expect(r.headline).toBe('Good on the practical side, but nothing is confirmed yet for Sloane and Maya');
+    expect(r.headline).toBe('Looks practical, but we’re less certain about Sloane and Maya: no age range is recorded for this place yet');
     expect(r.headline).not.toMatch(/your family/);
   });
 
   it('lists the child nothing is confirmed for among the things to check', () => {
     const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
-    expect(r.toCheck.map((line) => line.text)).toContain('Nothing is confirmed yet about how it suits Sloane');
+    expect(r.toCheck.map((line) => line.text)).toContain('We’re less certain how well it suits Sloane: no age range is recorded for this place yet');
   });
 
   it('cannot be excellent while a child is left over: excellent means nothing is left to check', () => {
@@ -264,6 +264,26 @@ describe('Family Fit never says "good for the family" from a subset of the child
     const r = run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'unknown' }), one, 80);
     expect(r.gapNames).toEqual([]);
     expect(r.headline).toBe('Good for your family today');
+  });
+
+  it('speaks like a parent: no database phrasing anywhere a headline or a check line is shown', () => {
+    const cases = [
+      run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85),
+      run(venue({}, practical), sevenAndNine(), 80),
+      run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'unknown', pushchairSuitability: 'good' }), two(), 80),
+    ];
+    for (const r of cases) {
+      const words = [r.headline, ...r.toCheck.map((l) => l.text)].join(' ');
+      expect(words).not.toMatch(/nothing is confirmed|not confirmed|unconfirmed|unknown|null|undefined/i);
+    }
+  });
+
+  it('gives the specific reason where it is known, and a plain one where it is not', () => {
+    const noAges = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
+    expect(noAges.headline).toContain('no age range is recorded for this place yet');
+    // Ages are on record, but nothing in them speaks for Sloane: the reason is the general one, never the age one.
+    const withAges = run(venue({}, { ...practical, minRecommendedAge: 9, maxRecommendedAge: 12, babyChanging: 'yes', pushchairSuitability: 'good' }), sevenAndNine(), 80);
+    expect(withAges.headline).not.toContain('no age range is recorded');
   });
 
   describe('the badge', () => {

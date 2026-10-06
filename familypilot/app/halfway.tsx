@@ -12,7 +12,7 @@ import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useConnectedFamilies } from '@/src/hooks/use-connected-families';
 import { useBetweenVenues, useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
-import { HalfwayOption, familyPhrase, meetHalfway } from '@/src/services/planning/meet-halfway';
+import { HalfwayOption, familyPhrase, meetHalfway, topCardLabel } from '@/src/services/planning/meet-halfway';
 import { DEFAULT_START_AT, firstValue, planDraftToParams } from '@/src/services/planning/plan-draft';
 import { planningFamilyFromProfile } from '@/src/services/planning/plan-parties';
 import { PlanningFamily } from '@/src/services/planning/planner';
@@ -318,7 +318,7 @@ function Results({
             />
             <View style={styles.cardTitle}>
               <Text variant="caption" color={colors.text.secondary}>
-                {index === 0 ? 'Best for both' : formatCategory(option.venue.category)}
+                {index === 0 ? topCardLabel(option) : formatCategory(option.venue.category)}
               </Text>
               <Text variant="heading3" numberOfLines={2}>
                 {option.venue.name}
