@@ -11,7 +11,7 @@ import { DateField, TimeField } from '@/src/components/ui/DateTimeField';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useConnectedFamilies } from '@/src/hooks/use-connected-families';
-import { useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
+import { useBetweenVenues, useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
 import { HalfwayOption, familyPhrase, meetHalfway } from '@/src/services/planning/meet-halfway';
 import { DEFAULT_START_AT, firstValue, planDraftToParams } from '@/src/services/planning/plan-draft';
 import { planningFamilyFromProfile } from '@/src/services/planning/plan-parties';
@@ -31,8 +31,10 @@ import { travelTimeLabel } from '@/src/utils/travel-time';
  * hands the place and both families to the same Plan screen every other plan uses, with lunch, routines and advice, so a
  * meeting is not a separate product.
  *
- * It uses the places Home already loaded and the free distance estimate for journeys: opening it makes no search and no
- * paid route request.
+ * WHERE THE PLACES COME FROM. Not from Home, which is one family's recommendations and would bias the answer toward them.
+ * `useBetweenVenues` reads the stored venue catalogue in the corridor between the two homes (a database read: no Google, no
+ * spend), and the engine then applies both families' needs. Home's places are used only if that lookup fails, and the
+ * screen says so. Journeys are the free distance estimate: opening this makes no paid route request.
  */
 export default function MeetHalfwayScreen() {
   const router = useRouter();
@@ -41,7 +43,6 @@ export default function MeetHalfwayScreen() {
   const preselected = firstValue(params.family);
 
   const { data: profile } = useFamilyProfile();
-  const { data: venues, isLoading, isError, refetch } = useNearbyVenues();
   const authStatus = useAuthStore((s) => s.status);
   const signedIn = accountRequired() && authStatus === 'signed_in';
   const connected = useConnectedFamilies(signedIn);
@@ -57,18 +58,29 @@ export default function MeetHalfwayScreen() {
   // Everyone this person could meet, from one model: connected families (accepted) and families added by postcode.
   const candidates = useMemo(() => {
     const byId = new Map<string, { id: string; label: string; family: PlanningFamily }>();
-    for (const { family } of connected.accepted) byId.set(family.id, { id: family.id, label: family.label, family });
+    // Families on this phone first (added by postcode, or a connection stored for a plan); a connection loaded from the
+    // account then replaces its stored copy, so a family that has since updated what they share is read as they are now.
     for (const family of stored) {
-      if (family.id.startsWith('guest-') || family.id.startsWith('connected-')) {
-        // The stored copy wins for a family already on this phone; a connection not yet stored comes from the hook.
-        byId.set(family.id, { id: family.id, label: family.label, family });
-      }
+      if (family.id.startsWith('guest-') || family.id.startsWith('connected-')) byId.set(family.id, { id: family.id, label: family.label, family });
     }
+    for (const { family } of connected.accepted) byId.set(family.id, { id: family.id, label: family.label, family });
     return [...byId.values()];
   }, [connected.accepted, stored]);
 
   const mine = useMemo(() => (profile ? planningFamilyFromProfile(profile) : 'not-described'), [profile]);
   const other = candidates.find((c) => c.id === chosen)?.family ?? null;
+
+  // Candidates come from where BOTH families are. Home's list is only the fallback when the catalogue cannot be reached.
+  const between = useBetweenVenues(
+    typeof mine === 'string' || !other ? null : { latitude: mine.latitude, longitude: mine.longitude, maxDriveMinutes: mine.maxDriveMinutes },
+    typeof mine === 'string' || !other ? null : { latitude: other.latitude, longitude: other.longitude, maxDriveMinutes: other.maxDriveMinutes },
+  );
+  const homeFallback = useNearbyVenues({ enabled: between.isError });
+  const usingHomeFallback = between.isError && Boolean(homeFallback.data);
+  const venues = between.data ?? (usingHomeFallback ? homeFallback.data : undefined);
+  const isLoading = between.isLoading || (between.isError && homeFallback.isLoading);
+  const isError = between.isError && homeFallback.isError;
+  const refetch = () => (between.isError ? Promise.all([between.refetch(), homeFallback.refetch()]) : between.refetch());
   const dateChoices = dateQuickChoices(today);
   const dateIsQuick = dateChoices.some((c) => c.value === date);
 
@@ -202,7 +214,7 @@ export default function MeetHalfwayScreen() {
         ) : isError ? (
           <EmptyState icon="cloud-offline-outline" title="We couldn’t load places" message="Check your connection and try again." actionLabel="Try again" onAction={() => void refetch()} />
         ) : result ? (
-          <Results result={result} other={other.label} onPlan={plan} onOpen={(option) => router.push(`/venue/${option.venue.id}` as never)} onStartAt={setStartAt} />
+          <Results result={result} other={other.label} usingHomeFallback={usingHomeFallback} onPlan={plan} onOpen={(option) => router.push(`/venue/${option.venue.id}` as never)} onStartAt={setStartAt} />
         ) : null}
       </ScrollView>
     </View>
@@ -212,21 +224,47 @@ export default function MeetHalfwayScreen() {
 function Results({
   result,
   other,
+  usingHomeFallback,
   onPlan,
   onOpen,
   onStartAt,
 }: {
   result: ReturnType<typeof meetHalfway>;
   other: string;
+  usingHomeFallback: boolean;
   onPlan: (option: HalfwayOption) => void;
   onOpen: (option: HalfwayOption) => void;
   onStartAt: (time: string) => void;
 }) {
+  const notes = (
+    <>
+      {usingHomeFallback ? (
+        <Text variant="caption" color={colors.warning[600]} testID="halfway-fallback">
+          We couldn’t search between your homes just now, so these are the places already on Home. There may be better ones in between.
+        </Text>
+      ) : result.considered > 0 ? (
+        <Text variant="caption" color={colors.text.secondary} testID="halfway-source">
+          We looked at {result.considered} {result.considered === 1 ? 'place' : 'places'} between your two homes, not just the ones on Home.
+        </Text>
+      ) : null}
+      {result.otherKnown.routinesLegacy ? (
+        <Text variant="caption" color={colors.text.secondary} testID="halfway-legacy-routines">
+          {familyPhrase('other', other)} shared when they’re home but not what for, so we treat those times as fixed. They can update what they share for better advice.
+        </Text>
+      ) : null}
+    </>
+  );
   if (result.options.length === 0) {
     const { excluded } = result;
     return (
       <View style={styles.empty} testID="halfway-empty">
         <Text variant="heading3">No place works for both of you yet</Text>
+        {notes}
+        {result.considered === 0 ? (
+          <Text variant="bodySmall" color={colors.text.secondary}>
+            We don’t have any places on record between your two homes yet.
+          </Text>
+        ) : null}
         {result.earliestArrival ? (
           <>
             <Text variant="bodySmall" color={colors.text.secondary}>
@@ -248,7 +286,7 @@ function Results({
             ) : null}
             {excluded.requirements > 0 ? (
               <Text variant="bodySmall" color={colors.text.secondary}>
-                {excluded.requirements} need something confirmed first (a must-have, or an age policy). They’re not a “no”: nobody has checked.
+                {excluded.requirements} are ruled out: they’re confirmed to lack something one of you needs, or their age policy doesn’t admit you.
               </Text>
             ) : null}
             <Text variant="bodySmall" color={colors.text.secondary}>
@@ -262,6 +300,7 @@ function Results({
   return (
     <View style={styles.results} testID="halfway-results">
       <Text variant="heading2">Places that work for both</Text>
+      {notes}
       {!result.otherKnown.children && !result.otherKnown.routines ? (
         <Text variant="caption" color={colors.text.secondary}>
           We only know where {familyPhrase('other', other)} sets off from, so we’ve checked journeys, opening hours and what you need.
@@ -303,11 +342,25 @@ function Results({
               ✓ {line}
             </Text>
           ))}
-          {option.toCheck.map((line) => (
-            <Text key={line} variant="bodySmall" color={colors.text.secondary}>
-              ? {line}
-            </Text>
-          ))}
+          {option.needsChecking.length > 0 ? (
+            <View style={styles.needsChecking} testID="halfway-needs-checking">
+              <Text variant="label" color={colors.warning[600]}>
+                Needs checking before you go
+              </Text>
+              {option.needsChecking.map((line) => (
+                <Text key={line} variant="bodySmall">
+                  {line}.
+                </Text>
+              ))}
+            </View>
+          ) : null}
+          {option.toCheck
+            .filter((line) => !option.needsChecking.includes(line))
+            .map((line) => (
+              <Text key={line} variant="bodySmall" color={colors.text.secondary}>
+                ? {line}
+              </Text>
+            ))}
           <View style={styles.actions}>
             <Button label="Plan this day" size="sm" onPress={() => onPlan(option)} testID="halfway-plan" />
             <Button label="See the place" size="sm" variant="ghost" onPress={() => onOpen(option)} />
@@ -332,6 +385,7 @@ const styles = StyleSheet.create({
   cardHead: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
   thumb: { width: 62, height: 62 },
   cardTitle: { flex: 1, gap: 2 },
+  needsChecking: { gap: 2, backgroundColor: colors.warning[50], borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.warning[100] },
   journeys: { gap: 2, paddingVertical: spacing.xs },
   journeyRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },
   journeyWho: { flex: 1 },

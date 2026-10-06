@@ -76,8 +76,16 @@ async function startAccount(page) {
   await page.getByRole('button', { name: /get started/i }).first().click(); await settle(page, 1200);
 }
 async function inviteUrl(page, option = 'invite-option-partner') {
+  // Newest card first. Wait for the card COUNT to grow, not merely for a card to exist: a card from the previous invitation is
+  // already there, and reading it would return the old link and call two invitations one.
+  const cards = page.getByTestId('invite-link-card');
+  const before = await cards.count();
   await page.getByTestId(option).click();
-  await page.getByTestId('invite-link-card').first().waitFor({ timeout: 8000 });
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('[data-testid="invite-link-card"]').length > n,
+    before,
+    { timeout: 8000 },
+  );
   return (await page.getByTestId('invite-link-text').first().innerText()).trim();
 }
 

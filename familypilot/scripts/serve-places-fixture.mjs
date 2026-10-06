@@ -486,6 +486,43 @@ const REVIEW_PHOTOS = process.env.FIXTURE_PHOTO_DIR
       .map((f) => join(process.env.FIXTURE_PHOTO_DIR, f))
   : [];
 
+/**
+ * Places that exist ONLY in the stored catalogue, never in the search payload Home loads. They are what Meet Halfway's
+ * `intent=between` can reach and Home cannot: the real endpoint reads `place_records` by geography, so a venue between two
+ * families that Home (personalised to one of them) never showed is still a candidate. Synthetic, like everything here.
+ */
+const CATALOGUE_ONLY = [
+  // Roughly between Bushey and Walthamstow (the verifier's two homes): the fair place, deliberately absent from Home.
+  { name: 'Barnet Common Fixture Farm', category: 'farm', latitude: 51.625, longitude: -0.19, over: {} },
+  // Also between them, but baby changing has never been confirmed: a must-have that is unknown, not missing.
+  { name: 'Finchley Fixture Play Barn', category: 'soft_play', latitude: 51.605, longitude: -0.17, over: { familyFacilities: { toilets: 'yes', babyChanging: 'unknown', parking: 'yes' } } },
+  // Between them and confirmed to have no baby changing: a hard miss for a family that needs it.
+  { name: 'Hendon Fixture Yard', category: 'activity', latitude: 51.615, longitude: -0.21, over: { familyFacilities: { toilets: 'yes', babyChanging: 'no', parking: 'yes' } } },
+  // Nowhere near the corridor between those two homes.
+  { name: 'Croydon Fixture Gardens', category: 'park', latitude: 51.37, longitude: -0.1, over: {} },
+].map((entry, index) => {
+  const id = `fp-google-FIXTUREcatalogue${String(index).padStart(4, '0')}`;
+  const place = {
+    ...fixturePlace(0),
+    familypilotId: id,
+    externalId: `google:FIXTUREcatalogue${index}`,
+    name: entry.name,
+    category: entry.category,
+    latitude: entry.latitude,
+    longitude: entry.longitude,
+    googlePrimaryType: entry.category,
+    googleTypes: [entry.category],
+  };
+  place.photos = place.photos.map((u) => u.replace(/id=[^&]*/, `id=${id.slice('fp-google-'.length)}`));
+  if (SCENARIO === 'realistic') {
+    place.enrichmentStatus = 'enriched';
+    place.familyMetadata = scenarioMetadata(id, entry.over);
+  }
+  return place;
+});
+const STORED_CATALOGUE = [...PLACES, ...CATALOGUE_ONLY];
+const betweenModule = createRequire(import.meta.url)('../../server/places/lib/between.js');
+
 const SEARCH_PLACES =
   process.env.FIXTURE_SEARCH_INCLUDES_OSM === '1'
     ? [...PLACES, EDGE_BY_ID.get('fp-osm-FIXTUREedgeOsm')]
@@ -734,6 +771,38 @@ const server = createServer(async (req, res) => {
     });
   }
 
+  // Meet Halfway's candidates: the REAL first pass (server/places/lib/between.js) over the stored-catalogue stand-in, so the
+  // corridor, fairness and limit behave exactly as deployed. Nothing is ever fetched from a provider.
+  if (url.pathname === '/api/places/search' && url.searchParams.get('intent') === 'between') {
+    const point = (a, b) => ({ latitude: Number(url.searchParams.get(a)), longitude: Number(url.searchParams.get(b)) });
+    const a = point('aLat', 'aLng');
+    const b = point('bLat', 'bLng');
+    if (![a, b].every((p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude))) {
+      return sendJson(res, 400, { error: 'Invalid home coordinates', code: 'INVALID_HOMES' });
+    }
+    if (process.env.FIXTURE_BETWEEN_OUTAGE === '1') {
+      return sendJson(res, 503, { error: 'The venue catalogue is unavailable', code: 'CATALOGUE_UNAVAILABLE', googleCalls: 0 });
+    }
+    const optionalKm = (name) => {
+      const n = Number(url.searchParams.get(name));
+      return Number.isFinite(n) && n > 0 ? n : undefined;
+    };
+    const shortlist = betweenModule.firstPass(a, b, STORED_CATALOGUE, {
+      maxKmA: optionalKm('aMaxKm'),
+      maxKmB: optionalKm('bMaxKm'),
+      limit: url.searchParams.get('limit'),
+    });
+    return sendJson(res, 200, {
+      places: shortlist.map((entry) => entry.place),
+      provider: 'stored-catalogue',
+      intent: 'between',
+      googleCalls: 0,
+      considered: STORED_CATALOGUE.length,
+      shortlisted: shortlist.length,
+      fetchedAt: new Date().toISOString(),
+    });
+  }
+
   if (url.pathname === '/api/places/search') {
     return sendJson(res, 200, {
       places: SEARCH_PLACES,
@@ -749,7 +818,7 @@ const server = createServer(async (req, res) => {
 
   if (url.pathname === '/api/places/detail') {
     const id = url.searchParams.get('id');
-    const place = EDGE_BY_ID.get(id) ?? PLACES.find((candidate) => candidate.familypilotId === id);
+    const place = EDGE_BY_ID.get(id) ?? STORED_CATALOGUE.find((candidate) => candidate.familypilotId === id);
     if (!place) return sendJson(res, 404, { error: 'Place not found', code: 'NOT_FOUND' });
     return sendJson(res, 200, {
       place,

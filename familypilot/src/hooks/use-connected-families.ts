@@ -4,9 +4,11 @@ import { useFamilyProfile } from '@/src/hooks/use-queries';
 import {
   Connection,
   InviteError,
+  MySharing,
   createInvite,
   listConnections,
   removeConnection,
+  updateSharing,
 } from '@/src/services/planning/connection-invites';
 import { InviteRelationship } from '@/src/services/planning/invite-links';
 import { PlanningFamily } from '@/src/services/planning/planner';
@@ -37,6 +39,11 @@ export interface ConnectedFamilies {
   cancel: (id: string) => Promise<void>;
   /** Ends a connection. The other family's copy of what was shared cannot be recalled, and the screen says so. */
   disconnect: (id: string) => Promise<void>;
+  /**
+   * Updates what I share in an existing connection, in place: no reconnecting. Only ever called from the explicit
+   * "Update what I share" panel, so every change is something the person asked for.
+   */
+  updateSharing: (connectionId: string, shareRoutines: boolean) => Promise<MySharing | null>;
   /** Puts a connection into the planning store so a plan can include it; returns its planning-family id. */
   addToPlan: (connection: Connection) => string | null;
   refresh: () => Promise<void>;
@@ -113,11 +120,31 @@ export function useConnectedFamilies(enabled = true): ConnectedFamilies {
     [refresh, removeFamily],
   );
 
+  const share = useCallback(
+    async (connectionId: string, shareRoutines: boolean): Promise<MySharing | null> => {
+      if (!profile) return null;
+      setError('');
+      try {
+        const result = await updateSharing(connectionId, profile, shareRoutines);
+        await refresh();
+        return result;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Could not update what you share.');
+        return null;
+      }
+    },
+    [profile, refresh],
+  );
+
   const addToPlan = useCallback(
     (connection: Connection): string | null => {
       if (!connection.family) return null;
       const id = connectedFamilyId(connection.id);
-      if (!known.some((f) => f.id === id)) setFamily({ ...connection.family, id });
+      // The copy on this phone is replaced when what they share has changed (they may have updated it since), so a plan
+      // never works from a stale picture of the other family. An unchanged copy is left alone.
+      const stored = known.find((f) => f.id === id);
+      const fresh = { ...connection.family, id };
+      if (!stored || JSON.stringify(stored) !== JSON.stringify(fresh)) setFamily(fresh);
       return id;
     },
     [known, setFamily],
@@ -136,6 +163,7 @@ export function useConnectedFamilies(enabled = true): ConnectedFamilies {
     create,
     cancel,
     disconnect,
+    updateSharing: share,
     addToPlan,
     refresh,
   };

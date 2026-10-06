@@ -3,6 +3,7 @@ import { PlanAlternative, PlanCaveat, TravelDiagnostics } from '@/src/types/day-
 import { PushchairSuitability } from '@/src/types/enrichment';
 import { RoutineAdviceContext, SubjectResolver, reasonAboutRoutines, subjectPhrase } from './routine-advice';
 import { VisitResolution, visitNote } from './visit-duration';
+import { mustHaveLabel } from './must-have-labels';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { TravelMode } from '@/src/types/travel';
 import { travelTimeWithMode } from '@/src/utils/travel-time';
@@ -134,6 +135,11 @@ export interface PlanViewModel {
    * routine the day is home before; never invented from the time alone.
    */
   insight: string | null;
+  /**
+   * Must-haves a family named that nobody has confirmed at a stop: the plan is built, and this says plainly what to check
+   * before going. Prominent, and never worded as a fact either way. A must-have confirmed MISSING stops the plan instead.
+   */
+  needsChecking: string[];
   /** Where the day sits around naps and feeds. Null when the family gave no routines: nothing is claimed about them. */
   routines: PlanRoutinesView | null;
   /**
@@ -383,6 +389,34 @@ function caveatLine(caveat: PlanCaveat): string {
   }
 }
 
+const upperFirst = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
+
+/**
+ * "Baby changing isn't confirmed at Kentish Town City Farm, and you said you need it. Check with them before you go."
+ *
+ * One line per must-have per family, naming the stops it is unconfirmed at. A field with no parent-facing name is left out
+ * rather than shown as a key. Neither a yes nor a no: only what nobody has checked.
+ */
+function needsCheckingLines(itinerary: DayItinerary): string[] {
+  const groups = new Map<string, { familyId: string; familyLabel: string; label: string; stops: string[] }>();
+  for (const item of itinerary.unresolvedMustHaves ?? []) {
+    const label = mustHaveLabel(item.field);
+    if (!label) continue;
+    const key = `${item.familyId}|${label}`;
+    const group = groups.get(key) ?? { familyId: item.familyId, familyLabel: item.familyLabel, label, stops: [] };
+    if (!group.stops.includes(item.stopName)) group.stops.push(item.stopName);
+    groups.set(key, group);
+  }
+  return [...groups.values()].map((group) => {
+    const where = group.stops.length === 1 ? group.stops[0] : `${group.stops.slice(0, -1).join(', ')} and ${group.stops[group.stops.length - 1]}`;
+    if (group.familyId === 'mine') {
+      return `${upperFirst(group.label)} isn’t confirmed at ${where}, and you said you need it. Check before you go.`;
+    }
+    const who = `${group.familyLabel.replace(/’s family$/i, '')}’s family`;
+    return `${upperFirst(group.label)} isn’t confirmed at ${where}, and ${who} needs it. Check before you go.`;
+  });
+}
+
 function routinesView(input: PlanViewModelInput, context: PlanViewContext | undefined): PlanRoutinesView | null {
   const { itinerary } = input;
   const insights = itinerary.routineInsights ?? [];
@@ -523,6 +557,7 @@ export function toPlanViewModel(input: PlanViewModelInput, context?: PlanViewCon
     title: `A day at ${anchorName}`,
     dayName: date ? date.long : null,
     insight,
+    needsChecking: needsCheckingLines(itinerary),
     routines,
     lunch: {
       included: itinerary.stops.some((stop) => stop.role === 'meal'),

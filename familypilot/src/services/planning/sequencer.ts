@@ -16,6 +16,7 @@ import {
   SequenceResult,
   SequenceStop,
   StopOpening,
+  UnresolvedMustHave,
   StopRequest,
 } from '@/src/types/day-sequence';
 import { isOpenOn } from '@/src/utils/opening-hours';
@@ -460,7 +461,13 @@ function tryOrder(
     // Eligibility per stop, reusing the matcher the single-venue planner uses so there is one
     // definition of what suits a family. The drive a constraint is judged against is the leg the
     // family actually took to reach that stop.
+    //
+    // THE RULE: a required constraint that is confirmed to FAIL is a hard conflict and refuses the day. One nobody has
+    // confirmed is not. An unconfirmed must-have means "check this", not "you cannot go": it is carried on the itinerary
+    // as an unresolved must-have and the screen says what needs checking. Unknown never becomes a yes and never becomes
+    // a no.
     const factUnknowns = new Set<string>();
+    const unresolved: UnresolvedMustHave[] = [];
     let ineligible: SequenceFailure | null = null;
     for (const family of families) {
       for (let i = 0; i < order.length && !ineligible; i += 1) {
@@ -470,19 +477,10 @@ function tryOrder(
           { ...request.facts, driveMinutes },
           familyRequest(family, options.environment),
         );
-        if (!match.eligible) {
-          // Which required constraints failed, and whether each failed on a fact or on the absence
-          // of one. Collapsing the two would let "nobody has checked" be reported as "it has none".
-          const unmet = match.evaluations
-            .filter(
-              (evaluation) =>
-                evaluation.strength === 'required' &&
-                (evaluation.outcome === 'unsuitable' || evaluation.outcome === 'unknown'),
-            )
-            .map((evaluation) => ({
-              field: evaluation.field,
-              outcome: evaluation.outcome as 'unsuitable' | 'unknown',
-            }));
+        const failed = match.evaluations.filter(
+          (evaluation) => evaluation.strength === 'required' && evaluation.outcome === 'unsuitable',
+        );
+        if (failed.length > 0) {
           ineligible = {
             reason: 'requirement-unmet',
             message: `${request.name} does not meet what ${family.label} requires.`,
@@ -490,10 +488,22 @@ function tryOrder(
             placeId: request.placeId,
             familyId: family.id,
             familyLabel: family.label,
-            unmet,
+            unmet: failed.map((evaluation) => ({ field: evaluation.field, outcome: 'unsuitable' as const })),
           };
           break;
         }
+        match.evaluations
+          .filter((evaluation) => evaluation.strength === 'required' && evaluation.outcome === 'unknown')
+          .forEach((evaluation) =>
+            unresolved.push({
+              familyId: family.id,
+              familyLabel: family.label,
+              stopIndex: i,
+              placeId: request.placeId,
+              stopName: request.name,
+              field: evaluation.field,
+            }),
+          );
         match.evaluations
           .filter((evaluation) => evaluation.outcome === 'unknown')
           .forEach((evaluation) => factUnknowns.add(describeUnknownFact(evaluation.field)));
@@ -526,6 +536,7 @@ function tryOrder(
         ],
         routineInsights: insights,
         homeAfter,
+        unresolvedMustHaves: unresolved,
         fairnessGap,
         // Scheduling quality only. Whether hours are confirmed is compared separately and first,
         // in compareItineraries, so it never depends on the magnitude of these terms.

@@ -156,6 +156,20 @@ export function PlanScreenView({
                 </Text>
               </View>
             ) : null}
+            {/* Unconfirmed must-haves: prominent and unresolved, never a fact either way. The day is built regardless. */}
+            {view.needsChecking.length ? (
+              <View style={styles.checkFirst} testID="plan-needs-checking">
+                <View style={styles.checkFirstHead}>
+                  <Ionicons name="alert-circle" size={18} color={colors.warning[600]} />
+                  <Text style={styles.checkFirstTitle}>Needs checking before you go</Text>
+                </View>
+                {view.needsChecking.map((line) => (
+                  <Text key={line} variant="bodySmall">
+                    {line}
+                  </Text>
+                ))}
+              </View>
+            ) : null}
             {view.routines?.visitNote ? (
               <Text variant="caption" color={colors.text.secondary} style={styles.visitNote} testID="plan-visit-note">
                 {view.routines.visitNote}
@@ -419,6 +433,17 @@ const styles = StyleSheet.create({
   },
   insightText: { flex: 1, fontFamily: 'Inter_500Medium', fontSize: 13, lineHeight: 16, color: colors.text.secondary },
   visitNote: { marginBottom: spacing.md },
+  checkFirst: {
+    backgroundColor: colors.warning[50],
+    borderWidth: 1,
+    borderColor: colors.warning[100],
+    borderRadius: radius['2xl'],
+    padding: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  checkFirstHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  checkFirstTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 15, lineHeight: 20, color: colors.ink },
   advice: { gap: spacing.xs, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
   adviceHead: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
   adviceDot: { width: 8, height: 8, borderRadius: 4, marginTop: 6 },

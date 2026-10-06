@@ -243,6 +243,67 @@ console.log('owner: Create a plan > Add another family');
   await shot(page, '13-meet-halfway-connected');
 }
 
+
+// ---------------------------------------------------------------- 4. an older connection updates what it shares, in place
+console.log('owner: an older connection shares richer routines without reconnecting');
+{
+  const { page } = owner;
+  const before = await (await fetch(`${BASE}/__fixture/make-legacy-sharing`)).json();
+  check(before.changed === 1, `the connection is rewritten as an older version stored it (${before.changed} connection)`);
+  const idBefore = before.ids[0];
+
+  // The owner gives their profile a nap to share (the onboarding defaults for this household carry none).
+  await page.evaluate(() => {
+    const key = 'familypilot-family-v1';
+    const stored = JSON.parse(localStorage.getItem(key));
+    const child = stored.state.profile.members.find((m) => m.role === 'child');
+    stored.state.profile.routines = [{ id: 'nap-a', label: 'Nap', kind: 'nap', time: '12:30', durationMinutes: 90, atHome: true, childId: child?.id }];
+    localStorage.setItem(key, JSON.stringify(stored));
+  });
+  await page.goto(`${BASE}/profile`, { waitUntil: 'domcontentloaded' });
+  await settle(page, 3000);
+  const row = page.getByTestId('connected-family-row').first();
+  const legacyText = await row.innerText();
+  check(/You share when you.?re home, but not what for/.test(legacyText), 'an older share is described as home time only, never as naps or feeds');
+  check(await page.getByTestId('connection-legacy-note').count() > 0 && /treat them cautiously/.test(legacyText) && /You stay connected/.test(legacyText), 'it says plans treat it cautiously and that no reconnecting is needed');
+  check(!/Connect again|Reconnect|re-invite/i.test(legacyText), 'and never asks the parent to reconnect');
+  await shot(page, '14-legacy-connection');
+
+  // The other family reads that older share conservatively in Meet halfway: "home time", never naps or feeds.
+  {
+    const other = guest.page;
+    await other.goto(`${BASE}/halfway?family=connected-${idBefore}`, { waitUntil: 'domcontentloaded' });
+    await settle(other, 4000);
+    const seen = await text(other);
+    check(await other.getByTestId('halfway-legacy-routines').count() > 0 && /shared when they.?re home but not what for/.test(seen), 'Meet halfway says an older share is home time only, and that it is treated as fixed');
+    check(!/\bnaps\b|\bfeeds\b/.test(seen.replace(/Share when naps and feeds/g, '')), 'and never calls it a nap or a feed');
+    await shot(other, '14b-halfway-legacy');
+  }
+
+  // Nothing changes until the parent asks.
+  await page.getByTestId('connection-what-i-share').first().click();
+  await page.waitForTimeout(500);
+  check(await page.getByTestId('connection-share-panel').isVisible(), 'What I share opens an explicit consent panel');
+  const panel = await page.getByTestId('connection-share-panel').innerText();
+  check(/Nothing changes until you tap Update/.test(panel) && /never names or an address/i.test(panel.replace(/\s+/g, ' ')), 'the panel says exactly what is seen and that nothing changes until Update');
+  const stillLegacy = await (await fetch(`${BASE}/__fixture/connections`)).json();
+  check(stillLegacy.rows.find((r) => r.accepted).owner.join() === 'Home time:none', 'until the parent taps Update, the stored share is unchanged (still home time)');
+  await shot(page, '15-update-sharing-panel');
+
+  await page.getByTestId('connection-update-sharing').click();
+  await settle(page, 2500);
+  const after = await (await fetch(`${BASE}/__fixture/connections`)).json();
+  const acceptedAfter = after.rows.filter((r) => r.accepted);
+  check(acceptedAfter.length === 1 && acceptedAfter[0].id === idBefore && after.rows.length === stillLegacy.rows.length, 'the same connection is kept: no new invitation, no reconnecting');
+  check(acceptedAfter[0].relationship === stillLegacy.rows.find((r) => r.id === idBefore).relationship, `and its relationship (${acceptedAfter[0].relationship}) is preserved`);
+  check(acceptedAfter[0].owner.length > 0 && acceptedAfter[0].owner.every((x) => /:(nap|feed)$/.test(x)), `routines are now shared with their kind (${acceptedAfter[0].owner.join(', ')})`);
+  check(!acceptedAfter[0].owner.join().includes('Home time'), 'and the old "Home time" value is replaced');
+  const updatedText = await page.getByTestId('connected-family-row').first().innerText();
+  check(/You share when naps and feeds usually happen/.test(updatedText) && await page.getByTestId('connection-legacy-note').count() === 0, 'the Profile now says so, and the older-connection note is gone');
+  check(await page.getByTestId('connection-sharing-updated').count() > 0, 'a confirmation says the other family now sees it and that they are still connected');
+  await shot(page, '16-sharing-updated');
+}
+
 await browser.close();
 console.log(failures.length ? `\n${failures.length} FAILED` : '\nall passed');
 process.exit(failures.length ? 1 : 0);

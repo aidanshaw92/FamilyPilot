@@ -3,6 +3,7 @@ import { mockVenueDetails, mockVenues } from '@/src/data/mock-data';
 import { MockPlacesProvider } from '@/src/services/providers/mock-places-provider';
 import { mergePlaceToVenue, mergePlaceToVenueDetail } from '@/src/services/places/merge-place';
 import { PlacesApiError, placesApiClient } from '@/src/services/places/places-api-client';
+import { BetweenHome, fetchBetween } from '@/src/services/places/between-client';
 import {
   getCachedDetail,
   getCachedSearch,
@@ -114,6 +115,17 @@ export class PlacesRepository {
       throw new Error('No live places were returned for that area.');
     }
     await setCachedSearch(cacheKey, result);
+    return mapLivePlacesToVenues(result.places, home);
+  }
+
+  /**
+   * Stored-catalogue places in the corridor between two homes (Meet Halfway's candidates). A database read on the server:
+   * no discovery and no spend. Throws when the catalogue cannot be reached, so "unavailable" is never shown as "nothing".
+   * Distances on each Venue are from the SIGNED-IN family's home; Meet Halfway re-measures both journeys itself.
+   */
+  async searchBetween(profile: FamilyProfile, a: BetweenHome, b: BetweenHome): Promise<Venue[]> {
+    const home = resolveHomeCoordinates(profile);
+    const result = await fetchBetween(a, b);
     return mapLivePlacesToVenues(result.places, home);
   }
 

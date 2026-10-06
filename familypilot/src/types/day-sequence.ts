@@ -216,6 +216,11 @@ export interface DayItinerary {
   routineInsights: RoutineInsight[];
   /** The next routine after each family is home, if any. */
   homeAfter: HomeAfterRoutine[];
+  /**
+   * Must-haves a family stated that nobody has confirmed at a stop. The day is built regardless; the screen says plainly
+   * what needs checking. A must-have confirmed MISSING is a failure (`requirement-unmet`), never an entry here.
+   */
+  unresolvedMustHaves: UnresolvedMustHave[];
 }
 
 export type SequenceFailureReason =
@@ -243,6 +248,20 @@ export interface UnmetRequirement {
   field: string;
   /** `unsuitable` is a fact that fails; `unknown` is a fact nobody has confirmed. */
   outcome: 'unsuitable' | 'unknown';
+}
+
+/**
+ * A must-have a family named that nobody has confirmed at a stop. NOT a reason to refuse the day: only a must-have that is
+ * confirmed missing does that. The plan is built and this is carried as a prominent warning, with what needs checking.
+ */
+export interface UnresolvedMustHave {
+  familyId: string;
+  familyLabel: string;
+  stopIndex: number;
+  placeId: string;
+  stopName: string;
+  /** The matcher's own field name, e.g. `familyFacilities.babyChanging`. */
+  field: string;
 }
 
 export type SequenceFailure =

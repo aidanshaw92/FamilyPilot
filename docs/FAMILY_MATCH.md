@@ -247,6 +247,13 @@ today* (a confirmed breach about one child). A child nobody has a fact about is 
 the place is there for this family: their routine first, then a fact about a child, then anything else confirmed. See
 [PRODUCT_COHERENCE.md](./PRODUCT_COHERENCE.md).
 
+**A sentence "for" someone is a claim about the family only when it covers every child.** In a household of two or more children, a
+child the place is not confirmed for (a check still open, or nothing known) is never silently dropped: the headline names who it works
+for and says what is open for the rest (*Good for Ozzie, but nothing is confirmed yet for Sloane*; *Good for Sloane, but check baby
+changing for Ozzie*; *Good on the practical side, but nothing is confirmed yet for Sloane and Maya*). `gapNames` carries those
+children; `matchBadgeText` says the gap on the badge (*Good fit · check Sloane*) instead of "Good for Ozzie" alone; the child with
+nothing known is listed under *to check*; and *Excellent* is not available while a child is left over. One child: unchanged.
+
 ---
 
 ## Related documents

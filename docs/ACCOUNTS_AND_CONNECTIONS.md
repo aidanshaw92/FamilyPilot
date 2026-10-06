@@ -89,6 +89,12 @@ The one place the full postcode necessarily travels is `/api/planning/location`,
 * **Routines now carry their kind** (nap or feed) when the person ticks "share when naps and feeds usually happen", so advice can be
   accurate ("the nap for Hannah's family"). Still opt-in, default off, never a name or an id (the server rewrites ids to `busy-n`). A
   connection made before this shares only "Home time"; it is treated as a *home routine*, never called a nap it may not be.
+* **Older connections are updated in place, never remade.** Profile > Connected families > **What I share** > **Update what I share**
+  is an explicit consent panel (nothing changes until the tap). Server: `POST /api/planning/connections {action:'update', id, family}`
+  rewrites only the caller's own side of the existing row through the same `safeSnapshot` allow-list, keeping the row, its id, the other
+  family's snapshot and the relationship. `GET` returns `mySharing` (`none` / `legacy` / `current`) for the caller's own side only.
+  Until updated, the old value is read conservatively everywhere (advice, Meet halfway). Pinned by `connection-sharing-update.test.ts` and
+  `verify-account-journey.mjs` (same connection id, same relationship, kinds replace "Home time", nothing changes before the tap).
 * Disconnecting says plainly that what was shared cannot be recalled from the other family's phone.
 
 ## Not done, and why

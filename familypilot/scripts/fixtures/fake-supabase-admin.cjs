@@ -55,6 +55,8 @@ function createFakeAdmin(resolveUser, tables = {}) {
       then: (resolve) => {
         if (op === 'delete') { for (const r of matches()) rows.splice(rows.indexOf(r), 1); return resolve({ error: null }); }
         if (op === 'upsert') { rows.push(inserted); return resolve({ error: null }); }
+        // An awaited update (no .select()/.maybeSingle()) still applies, as it does against Postgres.
+        if (op === 'update') { for (const r of matches()) Object.assign(r, patch); return resolve({ error: null }); }
         if (head) return resolve({ count: matches().length, error: null });
         return resolve({ data: matches(), error: null });
       },

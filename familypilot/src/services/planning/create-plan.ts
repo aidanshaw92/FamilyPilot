@@ -10,6 +10,7 @@ import { PlanDraft } from './plan-draft';
 import { PlanViewContext, PlanViewModel, PlanViewModelInput, toPlanViewModel } from './plan-view-model';
 import { VisitLength, resolveVisit } from './visit-duration';
 import { buggyFamilyIds } from './routine-subjects';
+import { mustHaveLabel } from './must-have-labels';
 import { TravelLeg } from '@/src/types/travel';
 import { travelSourceOf } from '@/src/utils/travel-time';
 
@@ -165,20 +166,6 @@ export function createPlanSteps(input: { venueName: string; meal?: MealCandidate
   return steps;
 }
 
-/**
- * What each required constraint is called when a parent reads about it.
- *
- * Only the fields the matcher can actually fail at `required` strength appear. A field with no entry
- * falls back to the sequencer's own sentence rather than being rendered as a raw key.
- */
-const REQUIREMENT_LABELS: Record<string, string> = {
-  // Namespaced exactly as the matcher emits them. A bare `toilets` here would silently never match,
-  // and every unmet requirement would fall through to the generic sentence.
-  'familyFacilities.toilets': 'toilets',
-  'familyFacilities.babyChanging': 'baby changing',
-  'familyFacilities.parking': 'parking',
-  pushchairSuitability: 'pushchair access',
-};
 
 /**
  * An unmet requirement in a parent's words, keeping "has none" and "nobody checked" apart.
@@ -193,7 +180,7 @@ function requirementLine(requirement: UnmetRequirement, venueName: string): stri
       ? `${venueName} is recorded as difficult with a pushchair, and your family needs it to work.`
       : `Nobody has confirmed whether ${venueName} works with a pushchair, and your family needs it to.`;
   }
-  const label = REQUIREMENT_LABELS[requirement.field];
+  const label = mustHaveLabel(requirement.field);
   if (label) {
     return requirement.outcome === 'unsuitable'
       ? `${venueName} does not have ${label}, and your family needs it.`

@@ -20,12 +20,26 @@ import { planningApiUrl } from './recommendations';
  * buggy comes and the must-have facilities. It never includes an address, a name, a date of birth, or routines unless
  * `shareAvailability` is chosen. Before an invitation is accepted the invitee sees only the label.
  */
+/**
+ * What the signed-in person currently shares in one connection (their own side, returned to them only):
+ *   none     no routines are shared;
+ *   legacy   shared before routines carried a kind: the other family knows only "home time", and plans treat it
+ *            conservatively (never as a nap or a feed) until it is updated;
+ *   current  shared with their kind.
+ */
+export interface MySharing {
+  routines: 'none' | 'legacy' | 'current';
+  routineCount: number;
+}
+
 export interface Connection {
   id: string;
   pending: boolean;
   expiresAt: string;
   relationship: InviteRelationship | null;
   family: PlanningFamily | null;
+  /** Absent from a server that predates it: read as "unknown", never as "none". */
+  mySharing?: MySharing | null;
 }
 
 async function token(): Promise<string> {
@@ -87,6 +101,20 @@ export async function listConnections(): Promise<Connection[]> {
   const { status, data } = await request('GET');
   if (status >= 400) throw new InviteError('unavailable', data.error || 'Connections are unavailable. Please try again.');
   return data.connections as Connection[];
+}
+
+/**
+ * Updates what the signed-in person shares in a connection they already have, IN PLACE: the connection, its id and the other
+ * family's side are untouched, so nobody reconnects. It is only ever called because the person chose to (the Profile's
+ * "Update what I share" panel), and what is sent is exactly `snapshotForSharing`'s allow-list: ages and must-haves as before,
+ * and routines (with their kind, never a name) only if `shareRoutines` is true.
+ */
+export async function updateSharing(connectionId: string, profile: FamilyProfile, shareRoutines: boolean): Promise<MySharing> {
+  const family = snapshotForSharing(profile, undefined, shareRoutines);
+  const { status, data } = await request('POST', { action: 'update', id: connectionId, family });
+  if (status === 404) throw new InviteError('expired', data.error || 'That connection is no longer there.');
+  if (status >= 400) throw new InviteError('unavailable', data.error || 'Could not update what you share. Please try again.');
+  return data.mySharing as MySharing;
 }
 
 export async function removeConnection(id: string): Promise<void> {

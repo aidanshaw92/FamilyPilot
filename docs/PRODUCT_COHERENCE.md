@@ -83,11 +83,18 @@ VENUE  →  CREATE A PLAN (small sheet)  →  BUILDING YOUR DAY  →  THE PLAN
 
 ## 5. Routine clashes are not errors
 
-| Tier | What it is | What happens |
+| State | What it is | What happens |
 |---|---|---|
-| **Hard conflict** | Cannot be built: closed, closes during the visit, journey beyond a stated limit, a start that is in the past, a must-have ruled out (or unconfirmed: fails closed), a return-by that cannot be met | A sequencer **failure**, with the exact fix where one exists |
+| **Hard conflict** | Cannot be built: closed, closes during the visit, journey beyond a stated limit, a start that is in the past, a must-have the venue is **confirmed to lack**, a return-by that cannot be met | A sequencer **failure**, with the exact fix where one exists |
+| **Unresolved must-have** | A must-have the family stated that **nobody has confirmed** at the venue (unknown, not missing) | The plan **is built**. A prominent *Needs checking before you go* block, first on the Day plan, says exactly what to check |
 | **Soft clash** | A routine kept at home overlaps the outing; a feed falls on a drive | The plan is built. Advice plus verified options |
-| **Informational** | A routine the family says happens out; a nap on a drive (some children nap in the car); a feed that lines up with the lunch stop | One line, nothing more |
+| **Informational** | A routine the family says happens out; a nap on a drive (some children nap in the car); a feed that lines up with the lunch stop; an assumed visit length | One line, nothing more |
+
+**Must-haves (decided).** *Confirmed missing* is a hard conflict. *Unknown or unconfirmed* is a prominent warning and never a
+blocker: the parent can still create the plan, and it says plainly *"Baby changing isn't confirmed at Kentish Town City Farm,
+and you said you need it. Check before you go."* Unknown never becomes a yes and never becomes a no. This is one rule applied
+in three places: the sequencer (`DayItinerary.unresolvedMustHaves`, only `outcome: 'unsuitable'` is a `requirement-unmet`
+failure), the plan screen (`PlanViewModel.needsChecking`, `plan-needs-checking`), and Meet halfway (below).
 
 * The sequencer reports each overlap as a `RoutineInsight` (which routine, when, during which part of the outing). It never
   produces `routine-conflict`. `routine-advice.ts` turns insights into words; it states only what is known.
@@ -117,26 +124,82 @@ routines line up ("Both families' naps fall between 12:30 and 13:50, so planning
 family is home. A connected family's routines are used **only if they chose to share them**, and then only their time, length
 and kind (nap or feed): never a name. With only a postcode, nothing is claimed about their children or routines, and the
 plan says so. A connection made before routines carried a kind shares only "Home time": it is called a *home routine*, never a
-nap it may not be.
+nap it may not be. That older value is left exactly as it was until its owner updates it (section 10); it is never turned into a
+nap or a feed on someone's behalf.
 
 ## 7. Meet halfway
 
-**Not the midpoint.** The geometric middle can be a motorway junction and ignores everything that matters. Nothing computes a
-midpoint. Each place already in hand (Home's London set) is asked the same questions of **both** families:
+**Not the midpoint, and not Home's list.** The geometric middle can be a motorway junction. Home is personalised to *one* family,
+so ranking only the places Home loaded biases the answer toward the first family's neighbourhood and can miss the genuinely best
+compromise. Candidates are now chosen **by geography from the stored venue catalogue**, before either family's preferences apply.
 
-1. **Journey**: each family's own time from where they set off, an estimate from distance and said to be one. The longer journey
-   matters more than the average; a lopsided split is penalised and the fairer shorter-for-whom sentence is stated.
-2. **Suitability**: the planner's own `matchVenueToDayRequest` per family (their limit, must-haves, age policy; unknown fails
-   closed), so every option can actually become a plan.
-3. **Reasons**, confirmed only: your own Family Fit; ages for both where both are known; both families' routines against the
-   outing; open at the time they would be there; baby changing, café, parking where confirmed.
-4. **To check**, stated and never counted as a fit: unconfirmed hours; a routine that falls in the outing ("the plan will suggest
-   options"); that only the journey could be checked for a postcode-only family.
+### Candidate architecture
 
-*Journey*: *about 28 min for your family · about 31 min for Hannah's family*. **Journey**: `/halfway`: choose a connected family or add one by
-postcode inline → date and start → ranked options → **Plan this day** builds the normal plan for both. It reuses
-`useConnectedFamilies`, `AddFamilyByPostcode`, the shared plan route and the existing estimate; it makes **no** search, no paid
-route request and no new cache key.
+```
+two homes ──► GET /api/places/search?intent=between&aLat&aLng&bLat&bLng[&aMaxKm&bMaxKm&limit]
+               │  (an early return in search.js, before primePlacesBudget / provider choice / search chain)
+               ▼
+   readBetween  ── place_records (provider google, explore categories, ≤ 30 days old)
+               │      database box round the two homes, ≤ 800 rows
+               ▼
+   firstPass    ── straight-line km from each home; keep a CORRIDOR (an ellipse with the homes as its foci:
+               │      dA + dB ≤ dAB + max(6 km, 0.6·dAB)); fairness = max(dA,dB) + 0.5·|dA−dB|; ≤ 60 (cap 80)
+               ▼
+   canonical + consumer-metadata overlay (stored reads, same as every search)
+               ▼
+   app: venueService.getBetween ─► meetHalfway (both families' journeys, limits, must-haves, age policy,
+                                  Family Fit, routines, opening hours) ─► ranked, explained top five
+```
+
+* **Zero spend, structurally.** `intent=between` is a database read that returns before `primePlacesBudget`, before the provider is
+  chosen and before the search chain exists; `between.js` and `between-endpoint.js` import no API key, no budget gate and no
+  Google client. `between-contract.test.ts` asserts the ordering on the source, the import graph, the untouched billable counters
+  and that the provider chain is never called (with `PLACES_PROVIDER=google`). No new function file: the 12-function deploy budget holds.
+* **Privacy of the request.** Where two families live is in the request, so the app rounds both homes to about a kilometre first (the same
+  rounding a connection's snapshot uses; the corridor needs no more) and the response is `Cache-Control: private`, so no shared cache keeps it.
+  `between-client.test.ts` asserts no coordinate in the URL has more than two decimals.
+* **Unavailable is not empty.** If the catalogue cannot be reached the endpoint answers 503, and the screen falls back to Home's
+  places **and says so** ("There may be better ones in between").
+* **First pass is cheap and wrong on purpose** (straight line, no routing). It only decides *which* places are worth asking the
+  expensive questions of. The Home set is never consulted for candidates.
+
+### What each candidate is asked
+
+1. **Journey**: each family's own time from where they set off (an estimate from distance, said to be one). The longer journey
+   matters more than the average; a lopsided split is penalised, and *who* has further to go is stated.
+2. **Suitability**, per family, by the planner's own `matchVenueToDayRequest`. A **confirmed** miss (a must-have the venue lacks, an
+   age policy, a closure, the setting) rules a place out. An **unconfirmed** must-have does **not**: the place stays, ranked lower
+   (−8 per open must-have), with a *Needs checking before you go* block ("Baby changing isn't confirmed at X, and Hannah's family
+   needs it").
+3. **Family Fit for both families, only from consented data.** Yours from your profile; theirs from what they shared (ages, must-haves,
+   pushchair), with no names and no routines in that profile. A claim "for" a family is made only when no child in it is left
+   uncovered; otherwise it is a *to check* line.
+4. **Routines** against the outing, only where routines are known. A routine shared as only "Home time" is called *home time*, never a nap.
+5. **Reasons** are confirmed facts only; **to check** is stated and never counted as a fit.
+
+### Better routing of a small final shortlist (proposal; **not enabled**)
+
+The plan already builds its journey matrix at plan time through the existing journey probe, and Google's `journeys` scope refuses in
+production, so today every Halfway leg is an estimate. If you want measured times for the final top five (≈ 10 legs) it fits the
+existing routing architecture and cost controls, but it **is** new paid behaviour (Routes calls), so it needs your approval and a
+daily cap before it is switched on. Until then nothing in Halfway is routed, and the screen says journeys are estimated.
+
+### Example, two families who live apart
+
+Bushey (51.643, −0.360) and Walthamstow (51.590, −0.020), about 24 km. Home's set (Family A's neighbourhood) holds Bushey Heath
+Farm, Stanmore Country Park and Watford Fields; the genuinely fair place, **Barnet Common Farm** (51.625, −0.190), is *not* in it.
+
+| Candidate set | Best | Journeys (A / B) | Longer leg | Gap |
+|---|---|---|---|---|
+| Home's set only | Stanmore Country Park | 8 / 38 min | 38 min | 30 min |
+| Stored catalogue, corridor first pass | **Barnet Common Farm** | **22 / 23 min** | **23 min** | **1 min** |
+
+Croydon and a farm behind Bushey are dropped by the corridor; Walthamstow Marshes is kept but ranks well behind (44 / 2 min).
+(Pinned by `meet-halfway-catalogue.test.ts`, including the reverse family order, a must-have confirmed missing, an unconfirmed
+one, and a legacy "Home time" share.)
+
+**Journey**: `/halfway`: choose a connected family or add one by postcode → date and start → ranked options → **Plan this day** builds
+the normal plan for both.
 
 ## 8. Venue Detail
 
@@ -147,13 +210,23 @@ is removed: Create a plan does that job with the family's routines as advice.
 
 ## 9. Family Fit across children
 
-`evaluateFamilyMatch` now produces a lens per child (`works` / `check` / `concern` / `unknown`) from the lines that name them, and
-the headline is built from the lenses:
+`evaluateFamilyMatch` produces a lens per child (`works` / `check` / `concern` / `unknown`) from the lines that name them, and the
+headline is built from the lenses. **The rule: a sentence "for" someone is a claim about the family only when it covers every
+child.** A child the place is not confirmed for (a check still open, or nothing known) is never silently dropped:
 
-* *Good for Sloane and Ozzie today*
-* *Could work for Sloane, but check buggy access for Ozzie*
-* *Probably not for Ozzie today* (a confirmed breach about one child)
-* *Good for your family today* when no confirmed fact is about a particular child. Never a guess.
+| Household | Evidence | Headline |
+|---|---|---|
+| Sloane 7, Ozzie baby | Age range and baby changing confirmed for both | *Good for Sloane and Ozzie today* |
+| Sloane 7, Ozzie baby | Baby changing confirmed (about Ozzie); nothing about Sloane | *Good for Ozzie, but nothing is confirmed yet for Sloane* (badge: *Good fit · check Sloane*) |
+| Sloane 2, Ozzie baby | Both inside the age range; baby changing unconfirmed | *Good for Sloane, but check baby changing for Ozzie* |
+| Sloane 7, Maya 9 | Toilets and parking confirmed; nothing about either child | *Good on the practical side, but nothing is confirmed yet for Sloane and Maya* |
+| Sloane, Ozzie | Buggy access unknown | *Could work for Sloane, but check buggy access for Ozzie* |
+| Sloane, Ozzie | Buggy access difficult | *Probably not for Ozzie today* |
+
+* `FamilyMatchResult.gapNames` names the children left uncovered while another is covered; the badge says the gap
+  (`matchBadgeText`), never "Good for Ozzie" alone; the child with nothing known is listed under *to check*.
+* Excellent means nothing is left to check, so a household with an uncovered child cannot be *Excellent*.
+* One child: unchanged. Meet halfway applies the same rule to **both** families (theirs from shared data only, without names).
 
 The score still ranks; the sentence is what is told. Parent-reported evidence keeps its label and is never a reason.
 
@@ -163,6 +236,23 @@ Profile → **Your family** (adults then children: you, partner, co-parent; chil
 **Connected families** (accepted connections with what they share in one line; families added by postcode; pending invitations;
 **+ Invite another family**; *Meet halfway*; **Disconnect** with the honest note that what was shared cannot be recalled). One
 hook (`useConnectedFamilies`) feeds Profile, Who's coming and Meet halfway.
+
+### Older connections: update what I share, in place (no reconnecting)
+
+A connection made before routines carried a kind shares only "Home time". It keeps working and is **never** asked to reconnect.
+
+* Each accepted row says what *you* share ("You share when you're home, but not what for (an older connection)") and, for an older
+  share, that plans treat it cautiously until you update it, and that you stay connected.
+* **What I share** opens an explicit consent panel: what the other family sees (a first name, a rough area, ages, drive limit, must-haves;
+  never names or an address), a switch for naps and feeds (opening on what is shared today), and **Update what I share**. *Nothing
+  changes until that tap.*
+* Server: `POST /api/planning/connections { action: 'update', id, family }` rewrites **only the caller's own side** of the existing row
+  through the same `safeSnapshot` allow-list, keeps the row, its id, the other family's snapshot and the relationship, and returns
+  `mySharing`. `GET` now returns `mySharing` per connection (`none` / `legacy` / `current`), the caller's own data only.
+* **Until updated, the old value is treated conservatively**: advice and Meet halfway call it *home time*, never a nap or a feed, and Meet
+  halfway says "Hannah's family shared when they're home but not what for".
+* A stored copy of a connection on this phone is replaced when what they share has changed, and Meet halfway prefers the live
+  connection over a stored copy, so a plan never works from a stale picture of the other family.
 
 ## 11. Privacy and the data model
 
@@ -174,15 +264,18 @@ hook (`useConnectedFamilies`) feeds Profile, Who's coming and Meet halfway.
 * Connections share what they always did (first-name label, area rounded to ~1 km, children's ages, drive limit, preferences).
   Routines remain **opt-in** (default off) and now carry their **kind** (nap/feed) so advice can be accurate; never a name or an
   id (the server rewrites ids to `busy-n`). The consent copy says so.
+* An update to what you share is an explicit action, rewrites only your own side, and uses the same allow-list (ages, must-haves, drive limit;
+  routines only if you opt in, with their kind and never a name or an id).
 * Add-by-postcode stores a first name, a postcode area and coordinates on this phone only.
 
 ## 12. Cost and providers
 
-* **New paid or provider calls: none.** Meet halfway and the alternatives reuse the places Home already loaded and the existing
-  free distance estimate. The postcode lookup is the existing free `/api/planning/location`. No Google Places/Routes behaviour
-  changed; cost controls untouched.
-* The retired Plans-tab finder (`recommendPlans`) was the one path that could open new place-search cache keys; it is no
-  longer reachable from the UI.
+* **New paid or provider calls: none.** Meet halfway's candidates are a **database read** of the stored catalogue (`intent=between`), which
+  returns before the budget, the provider choice and the search chain; the alternatives reuse the free distance estimate; the postcode
+  lookup is the existing free `/api/planning/location`. No Google Places/Routes behaviour changed; cost controls untouched. No new
+  serverless function (the 12-function budget holds).
+* Better routing of the final shortlist is a **proposal that needs your approval** (section 7); it is not enabled.
+* The retired Plans-tab finder (`recommendPlans`) was the one path that could open new place-search cache keys; it is no longer reachable.
 
 ## 13. Verification
 
@@ -191,16 +284,21 @@ Run on this branch, against the synthetic places fixture (no Google, no accounts
 | Check | Result |
 |---|---|
 | `tsc --noEmit` | clean |
-| `vitest run` | 151 files, 2,400 tests pass (new: `routine-clashes` 23, `meet-halfway` 16, `household` 11, and additions to `plan-draft`, `day-sequencer`, `create-plan`, `family-match`, `venue-taxonomy`, `profile-migration`, `plan-view-model`) |
-| `verify-product-coherence` (360, 390, 393, 430) | 132 / 132: Home, Explore, Venue Detail order, the sheet, too-soon fix, routines as advice with a one-tap option, Profile, Meet halfway to a joint plan |
+| `vitest run` | 156 files, **2,471 tests pass** (this round adds `must-have-states` 13, `meet-halfway-catalogue` 21, `between-contract` 15, `between-client` 3, `connection-sharing-update` 9, 8 multi-child cases in `family-match`, and reworked `meet-halfway` / `day-plan` expectations for the new must-have semantics) |
+| `verify-product-coherence` (360, 390, 393, 430) | **176 / 176**: now also proves Home never lists the catalogue-only farm yet Meet halfway offers it as *Best for both*; the Home fallback is labelled; an unconfirmed must-have keeps a place with a *Needs checking* block and a plan still builds; a place confirmed to lack it is ruled out; a confirmed miss is a hard conflict at plan time |
+| `verify-create-plan-journey` | **133 / 133**: an unconfirmed must-have now builds the plan with *Needs checking before you go* (it used to be a dead end) |
+| `verify-account-journey` (auth build, in-memory fixture) | **53 / 53**: an older connection reads as home time only, nothing changes until *Update what I share*, the same connection id and relationship are kept, "Home time" is replaced by kinds, and the other family reads the older share conservatively in Meet halfway |
+| `verify-account-qa`, `verify-post-visit` | pass in full (30 checks in `verify-post-visit`) |
 | `verify-nav-clearance` | every tab and the filter sheet at 360×800, 390×844, 393×852, 430×932 and the shorter 360×640, 390×700, 393×740, plus Plans > Families and Saved: pass |
 | `verify-explore-clearance` | pass |
-| `verify-home-against-figma` | 89 / 89 (the approved Home frame, with the new heading and subtitle in the same positions) |
+| `verify-home-against-figma` | 89 / 89 (the approved Home frame) |
 | `verify-plan-screens-against-design` | 56 / 56 |
-| `verify-create-plan-journey` | 132 / 132 |
-| `verify-onboarding-flow` | every check, including the household step and Edit profile keeping the family name and the partner |
+| `verify-onboarding-flow` | every check |
 | `verify-deck-gesture`, `verify-deck-images`, `verify-home-fit`, `verify-home-greeting`, `verify-home-food-filters`, `verify-dynamic-content` | 11/11, 2/2, 36/36, 15/15, all, 43/43 |
-| `verify-account-journey`, `verify-account-qa`, `verify-post-visit` (auth build with the in-memory fixture) | all pass, including the Profile listing the connected family and nothing the connection did not share |
+
+Two notes on the run. `remediation.test.ts` reads the exported `dist`, so the suite must not run while `expo export` is rewriting it (it
+failed three assertions exactly once, for that reason, and passed on every clean run). And `verify-account-qa`'s invite helper raced:
+it waited for *a* link card rather than for the *new* one, so two invitations could read as one; it now waits for the card count to grow.
 
 Renders: `docs/product-coherence/<width>x<height>/` (Home, Explore, Venue Detail, the sheet, a too-soon start, the plan, Profile, Meet
 halfway, a joint plan). The Home verifier's subtitle and heading lookups were updated to the new words; the geometry they assert did not move.
@@ -215,10 +313,16 @@ silently produced a build with accounts switched on. The plain build must be mad
 * Native (iOS/Android) time picker: web uses the platform's own `<input type=time>`; native keeps the HH:MM text field.
 * Restaurant photographs are never fabricated; the placeholder stays.
 
-## 15. Owner decisions still open
+## 15. Owner decisions
 
-1. **Unknown must-haves still block a plan** (fail closed), while Family Fit says *Possible*. Kept as the documented principle;
-   say if you want a plan to proceed with a "check this" line instead.
+Decided in this round (and implemented):
+
+1. **Unconfirmed must-haves are a warning, not a blocker.** Confirmed missing = hard conflict; unknown = prominent *Needs checking*; routine
+   clash = advice; informational timing = a note.
+2. **Meet halfway never ranks only Home's places**: it queries the stored catalogue between the homes (no Google, no spend).
+3. **Older connections never have to reconnect**: an explicit *Update what I share* flow, conservative until then.
+
+Still open:
+
+1. **Measured journeys for Meet halfway's final top five** (≈ 10 Routes legs per search): new paid behaviour, needs your approval and a daily cap.
 2. **Home rail**: the category chips moved to Explore. Say if you want any back on Home.
-3. **Connections made before this release** share routines as "Home time" (no kind). They read as a *home routine* until the
-   family re-connects with the updated consent.

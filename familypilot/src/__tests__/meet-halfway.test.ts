@@ -102,14 +102,19 @@ describe('only places a plan could be built for', () => {
     expect(result.options[0].toCheck).toContain('Opening hours not confirmed for that day');
   });
 
-  it('applies each family’s must-haves with the planner’s own rule: unknown fails closed', () => {
+  it('applies each family’s must-haves: a confirmed miss rules a place out, an unconfirmed one is a warning', () => {
     const needsChanging = other({ required: ['babyChanging'] });
     const unknown = venue('Unchecked', 51.57, -0.08, {}, { babyChanging: 'unknown' });
     const no = venue('None', 51.571, -0.081, {}, { babyChanging: 'no' });
     const yes = venue('Confirmed', 51.572, -0.082, {}, { babyChanging: 'yes' });
     const result = run([unknown, no, yes], { other: needsChanging });
-    expect(result.options.map((o) => o.venue.id)).toEqual(['Confirmed']);
-    expect(result.excluded.requirements).toBe(2);
+    // Only the CONFIRMED miss is excluded. The unconfirmed place is offered, below the confirmed one, saying what to check.
+    expect(result.options.map((o) => o.venue.id)).toEqual(['Confirmed', 'Unchecked']);
+    expect(result.excluded.requirements).toBe(1);
+    const unchecked = result.options.find((o) => o.venue.id === 'Unchecked')!;
+    expect(unchecked.unresolved).toEqual([{ role: 'other', field: 'familyFacilities.babyChanging', label: 'baby changing' }]);
+    expect(unchecked.toCheck[0]).toBe('Baby changing isn’t confirmed at Unchecked, and Hannah’s family needs it. Check before you go');
+    expect(result.options.find((o) => o.venue.id === 'Confirmed')!.unresolved).toEqual([]);
   });
 
   it('does not offer a start that has already gone for one of them, and says when it would work', () => {
@@ -127,7 +132,7 @@ describe('a family known only by postcode is not pretended about', () => {
 
   it('checks only the journey for them, and says so', () => {
     const result = run([FAIR], { other: postcodeOnly });
-    expect(result.otherKnown).toEqual({ children: false, routines: false });
+    expect(result.otherKnown).toEqual({ children: false, routines: false, routinesLegacy: false });
     const option = result.options[0];
     expect(option.toCheck.join(' ')).toMatch(/only know where Hannah’s family sets off from/);
     const text = [...option.reasons, ...option.toCheck].join(' ');

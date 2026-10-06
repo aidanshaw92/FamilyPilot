@@ -9,6 +9,7 @@ import { Button, Card, Chip, Text } from '@/src/components/ui';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { useConnectedFamilies } from '@/src/hooks/use-connected-families';
 import { INVITE_RELATIONSHIPS, InviteRelationship } from '@/src/services/planning/invite-links';
+import { MySharing } from '@/src/services/planning/connection-invites';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { usePlanningStore } from '@/src/stores/planning-store';
 import { FamilyProfile } from '@/src/types';
@@ -74,7 +75,35 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
   const [shareRoutines, setShareRoutines] = useState(false);
   const [adding, setAdding] = useState(false);
   const [confirm, setConfirm] = useState<string | null>(null);
+  // The "what I share" panel: which connection is open, what the switch says, and the line confirming a change.
+  const [sharingOpen, setSharingOpen] = useState<string | null>(null);
+  const [shareChoice, setShareChoice] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [updated, setUpdated] = useState<string | null>(null);
   const { accepted, pending, loaded, error, busy, invite } = families;
+
+  const openSharing = (connectionId: string, mine: MySharing | null | undefined) => {
+    // The switch opens on what is shared today, so an update is only ever a change the person makes.
+    setShareChoice(Boolean(mine && mine.routines !== 'none'));
+    setUpdated(null);
+    setSharingOpen((open) => (open === connectionId ? null : connectionId));
+  };
+  const saveSharing = async (connectionId: string, label: string) => {
+    setSaving(true);
+    const result = await families.updateSharing(connectionId, shareChoice);
+    setSaving(false);
+    if (result) {
+      setSharingOpen(null);
+      // Said from what was actually stored, not from the switch: with no routines on the profile there is nothing to see.
+      const said =
+        result.routines === 'current'
+          ? 'now sees when naps and feeds usually happen'
+          : shareChoice
+            ? 'has nothing to see yet, because there are no routines on your profile to share'
+            : 'no longer sees your routines';
+      setUpdated(`${label}: ${said}. You’re still connected.`);
+    }
+  };
 
   const meet = (familyId: string) => router.push({ pathname: '/halfway', params: { family: familyId } } as never);
 
@@ -116,8 +145,26 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
                 </Text>
               </View>
             </View>
+            {connection.mySharing ? (
+              <Text variant="caption" color={colors.text.secondary} testID="connection-my-sharing">
+                {mySharingLine(connection.mySharing)}
+              </Text>
+            ) : null}
+            {connection.mySharing?.routines === 'legacy' ? (
+              <Text variant="caption" color={colors.warning[600]} testID="connection-legacy-note">
+                You shared your home times before routines had a kind, so plans treat them cautiously (never as a nap or a feed) until you
+                update what you share. You stay connected.
+              </Text>
+            ) : null}
             <View style={styles.actions}>
               <Button label="Meet halfway" size="sm" variant="outline" onPress={() => meet(family.id)} />
+              <Button
+                label="What I share"
+                size="sm"
+                variant="ghost"
+                onPress={() => openSharing(connection.id, connection.mySharing)}
+                testID="connection-what-i-share"
+              />
               {confirm === connection.id ? (
                 <>
                   <Button label="Disconnect now" size="sm" onPress={() => { void families.disconnect(connection.id); setConfirm(null); }} />
@@ -127,6 +174,35 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
                 <Button label="Disconnect" size="sm" variant="ghost" onPress={() => setConfirm(connection.id)} />
               )}
             </View>
+            {sharingOpen === connection.id ? (
+              <View style={styles.sharePanel} testID="connection-share-panel">
+                <Text variant="label">What {family.label} sees about you</Text>
+                <Text variant="bodySmall" color={colors.text.secondary}>
+                  A first name, a rough area, your children’s ages, the drive you’re happy with and your must-haves. Never names or an
+                  address. Nothing changes until you tap Update, and you stay connected.
+                </Text>
+                <View style={styles.shareRow}>
+                  <Switch
+                    accessibilityLabel="Share when naps and feeds usually happen"
+                    value={shareChoice}
+                    onValueChange={setShareChoice}
+                    testID="connection-share-routines"
+                  />
+                  <Text variant="bodySmall" style={styles.familyText}>
+                    Share when naps and feeds usually happen (no names), so plans can work around both families’ routines.
+                  </Text>
+                </View>
+                <View style={styles.actions}>
+                  <Button label={saving ? 'Updating…' : 'Update what I share'} size="sm" onPress={() => void saveSharing(connection.id, family.label)} testID="connection-update-sharing" />
+                  <Button label="Cancel" size="sm" variant="ghost" onPress={() => setSharingOpen(null)} />
+                </View>
+              </View>
+            ) : null}
+            {updated && sharingOpen === null && updated.startsWith(family.label) ? (
+              <Text variant="caption" color={colors.action} testID="connection-sharing-updated">
+                {updated}
+              </Text>
+            ) : null}
             {confirm === connection.id ? (
               <Text variant="caption" color={colors.text.tertiary}>
                 What was shared before can’t be recalled from their phone.
@@ -208,10 +284,19 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
   );
 }
 
+/** What I share in a connection, in a line. */
+function mySharingLine(sharing: MySharing): string {
+  if (sharing.routines === 'current') return 'You share when naps and feeds usually happen.';
+  if (sharing.routines === 'legacy') return 'You share when you’re home, but not what for (an older connection).';
+  return 'You don’t share your routines with them.';
+}
+
 /** What this connection has actually shared, in a line: only what the snapshot holds. */
 function sharedSummary(family: PlanningFamily): string {
   const parts = [family.area, family.ages.length ? `${family.ages.length} ${family.ages.length === 1 ? 'child' : 'children'}` : null];
-  parts.push(family.routines.length ? 'shares their routines' : 'routines not shared');
+  // A routine shared before routines carried a kind is only "home time": never called a nap or a feed.
+  const legacy = family.routines.length > 0 && family.routines.some((r) => r.label === 'Home time');
+  parts.push(legacy ? 'shares when they’re home (older link)' : family.routines.length ? 'shares their routines' : 'routines not shared');
   return parts.filter(Boolean).join(' · ');
 }
 
@@ -251,4 +336,5 @@ const styles = StyleSheet.create({
   invite: { gap: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.borderLight },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   shareRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  sharePanel: { gap: spacing.sm, padding: spacing.md, borderRadius: 12, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface },
 });

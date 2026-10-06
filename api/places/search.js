@@ -8,6 +8,7 @@ const { filterPlacesToCanonicalPrimaries } = require('../../server/places/lib/ca
  * require time and make the one line that carries the OSM-only guarantee untestable.
  */
 const nearbyFoodEndpoint = require('../../server/places/lib/nearby-food-endpoint');
+const betweenEndpoint = require('../../server/places/lib/between-endpoint');
 const {
   buildSearchCacheKey,
   readSearchCache,
@@ -118,6 +119,16 @@ module.exports = async function handler(req, res) {
    */
   if (req.query.intent === 'nearby-food') {
     return nearbyFoodEndpoint.handleNearbyFoodRequest(req, res);
+  }
+
+  /**
+   * Meet Halfway's candidates: stored catalogue places in the corridor between two homes, handled and returned here for
+   * the same reason as `nearby-food` above. It is a database read. It returns before `primePlacesBudget`, before the
+   * provider is chosen and before the search chain exists, so it cannot discover through Google or spend a billable unit,
+   * and `between-endpoint.js` imports no API key, no budget gate and no Google client.
+   */
+  if (req.query.intent === 'between') {
+    return betweenEndpoint.handleBetweenRequest(req, res);
   }
 
   // Loads today's shared billable total before anything can spend, so the daily cap counts what

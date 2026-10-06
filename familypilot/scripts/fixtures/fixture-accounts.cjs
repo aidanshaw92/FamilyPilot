@@ -117,6 +117,25 @@ async function handleAccountRoutes(req, res, url) {
     json(res, 200, { expired: rows.filter((r) => !r.accepted_at).length });
     return true;
   }
+  if (p === '/__fixture/make-legacy-sharing') {
+    // Rewrites the OWNER side of every accepted connection as an older version stored it: routines shared before routines
+    // carried a kind, so only "Home time" is known. Used to exercise the update-in-place consent flow in a browser.
+    const rows = ensureAdmin().tables.planning_connections || [];
+    let changed = 0;
+    for (const row of rows) {
+      if (!row.accepted_at) continue;
+      row.owner_snapshot = { ...row.owner_snapshot, routines: [{ id: 'busy-0', label: 'Home time', time: '12:30', durationMinutes: 90, atHome: true }] };
+      changed += 1;
+    }
+    json(res, 200, { changed, ids: rows.filter((r) => r.accepted_at).map((r) => r.id) });
+    return true;
+  }
+  if (p === '/__fixture/connections') {
+    // What is stored, for assertions about "no reconnecting": ids, whether accepted, and each side's routine labels.
+    const rows = ensureAdmin().tables.planning_connections || [];
+    json(res, 200, { rows: rows.map((r) => ({ id: r.id, accepted: Boolean(r.accepted_at), owner: (r.owner_snapshot?.routines || []).map((x) => `${x.label}:${x.kind ?? 'none'}`), guest: (r.guest_snapshot?.routines || []).map((x) => `${x.label}:${x.kind ?? 'none'}`), relationship: r.owner_snapshot?.relationship ?? null })) });
+    return true;
+  }
   if (p === '/__fixture/reports') {
     json(res, 200, { reports });
     return true;

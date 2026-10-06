@@ -22,6 +22,7 @@ import { useSavedStore } from '@/src/stores/saved-store';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { FamilyProfile } from '@/src/types';
 import { fetchNearbyFood } from '@/src/services/places/nearby-food-client';
+import { BetweenHome } from '@/src/services/places/between-client';
 
 export function useProfileRevision() {
   return useFamilyStore((s) => s.profileRevision);
@@ -59,11 +60,28 @@ export function useWeather() {
   });
 }
 
-export function useNearbyVenues() {
+export function useNearbyVenues(options: { enabled?: boolean } = {}) {
   const profileRevision = useProfileRevision();
   return useQuery({
     queryKey: ['venues', 'nearby', profileRevision],
     queryFn: venueService.getNearby,
+    enabled: options.enabled ?? true,
+  });
+}
+
+/**
+ * Meet Halfway's candidate places: the stored catalogue between two homes, NOT Home's list. Keyed on the homes (rounded to
+ * about a kilometre, which is all a connection shares) so choosing the same family again reuses the answer.
+ */
+export function useBetweenVenues(a: BetweenHome | null, b: BetweenHome | null) {
+  const profileRevision = useProfileRevision();
+  const key = (home: BetweenHome | null) => [home?.latitude.toFixed(3), home?.longitude.toFixed(3), home?.maxDriveMinutes];
+  return useQuery({
+    queryKey: ['venues', 'between', profileRevision, ...key(a), ...key(b)],
+    queryFn: () => venueService.getBetween(a!, b!),
+    enabled: Boolean(a && b),
+    staleTime: 15 * 60 * 1000,
+    retry: 1,
   });
 }
 

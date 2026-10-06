@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { evaluateFamilyMatch } from '@/src/services/matching/family-match';
+import { evaluateFamilyMatch, matchBadgeText } from '@/src/services/matching/family-match';
 import { FamilyMember, FamilyProfile, Venue } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { OpeningHoursSchedule } from '@/src/types/opening-hours';
@@ -207,5 +207,80 @@ describe('Family Fit talks about each child', () => {
     const r = run(venue({}, {}), only, 90);
     expect(r.children[0].state).toBe('unknown');
     expect(r.headline).not.toMatch(/Mia/);
+  });
+});
+
+describe('Family Fit never says "good for the family" from a subset of the children', () => {
+  const two = () => profile({ members: [parent, child('c1', 'Sloane', 7), child('c2', 'Ozzie', 0, { mobility: ['buggy'] })] });
+  const sevenAndNine = () => profile({ members: [parent, child('c1', 'Sloane', 7), child('c2', 'Maya', 9)] });
+  const practical = { toilets: 'yes', parking: 'yes' } as const;
+
+  it('a fact about one child alone does not become "Good for" that child while the other is unknown', () => {
+    // Baby changing is confirmed, which is a fact about Ozzie. Nothing at all is known about whether it suits Sloane.
+    const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
+    expect(r.children.map((c) => [c.name, c.state])).toEqual([['Sloane', 'unknown'], ['Ozzie', 'works']]);
+    expect(r.headline).toBe('Good for Ozzie, but nothing is confirmed yet for Sloane');
+    expect(r.headline).not.toMatch(/^Good for Ozzie today$/);
+    expect(r.gapNames).toEqual(['Sloane']);
+  });
+
+  it('a child with a check still open is said beside the good one, even when the verdict is good', () => {
+    // Both children are inside the age range; Ozzie is a baby and baby changing has not been confirmed.
+    const r = run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'unknown', pushchairSuitability: 'good' }), two(), 80);
+    expect(r.verdict).toBe('good');
+    expect(r.children.find((c) => c.name === 'Ozzie')?.state).toBe('check');
+    expect(r.headline).toBe('Good for Sloane, but check baby changing for Ozzie');
+    expect(r.headline).not.toMatch(/Sloane and Ozzie/);
+    expect(r.gapNames).toEqual(['Ozzie']);
+  });
+
+  it('nothing confirmed for any child: the practical facts are good, and that is all the headline claims', () => {
+    const r = run(venue({}, practical), sevenAndNine(), 80);
+    expect(r.children.every((c) => c.state === 'unknown')).toBe(true);
+    expect(r.verdict).toBe('good');
+    expect(r.headline).toBe('Good on the practical side, but nothing is confirmed yet for Sloane and Maya');
+    expect(r.headline).not.toMatch(/your family/);
+  });
+
+  it('lists the child nothing is confirmed for among the things to check', () => {
+    const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
+    expect(r.toCheck.map((line) => line.text)).toContain('Nothing is confirmed yet about how it suits Sloane');
+  });
+
+  it('cannot be excellent while a child is left over: excellent means nothing is left to check', () => {
+    const r = run(venue({ facilities: ['cafe'] }, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good', environment: 'indoor' }), two(), 95);
+    expect(r.gapNames).toEqual(['Sloane']);
+    expect(r.verdict).not.toBe('excellent');
+  });
+
+  it('says who is covered only when every child is: both named, no gap', () => {
+    const r = run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 78);
+    expect(r.gapNames).toEqual([]);
+    expect(r.headline).toBe('Good for Sloane and Ozzie today');
+  });
+
+  it('leaves a one-child household as it was: no gap is invented for a single child', () => {
+    const one = profile({ members: [parent, child('c3', 'Mia', 2, { mobility: ['walks'] })] });
+    const r = run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'unknown' }), one, 80);
+    expect(r.gapNames).toEqual([]);
+    expect(r.headline).toBe('Good for your family today');
+  });
+
+  describe('the badge', () => {
+    it('says the gap rather than "Good for Ozzie" alone', () => {
+      const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
+      expect(matchBadgeText(r)).toBe('Good fit · check Sloane');
+      expect(matchBadgeText(r)).not.toBe('Good for Ozzie');
+    });
+
+    it('falls back to a short form when the names will not fit, never to a name alone', () => {
+      const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
+      expect(matchBadgeText(r, 8)).toBe('Good fit · check kids');
+    });
+
+    it('still names both children when both are confirmed', () => {
+      const r = run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 78);
+      expect(matchBadgeText(r, 40)).toBe('Good for Sloane and Ozzie');
+    });
   });
 });

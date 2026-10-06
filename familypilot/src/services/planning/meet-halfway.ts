@@ -1,11 +1,13 @@
 import { matchVenueToDayRequest } from '@/src/services/matching/day-request-matcher';
+import { evaluateFamilyMatch, FamilyMatchResult } from '@/src/services/matching/family-match';
 import { evaluateAgeRecommendation, yearsToMonths } from '@/src/services/matching/age-suitability';
 import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
 import { estimateDriveMinutes } from '@/src/services/places/geo-utils';
-import { Venue } from '@/src/types';
+import { FacilityType, FamilyMember, FamilyProfile, Venue } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { isOpenOn } from '@/src/utils/opening-hours';
 
+import { mustHaveLabel } from './must-have-labels';
 import { PlanningFamily, familyRequest } from './planner';
 import { RoutineWindow, clockMinutes, overlapMinutes, routineWindows } from './routine-windows';
 import { typicalMinutesFor } from './visit-duration';
@@ -15,22 +17,29 @@ import { typicalMinutesFor } from './visit-duration';
  *
  * The middle of two homes is the wrong answer. It can be a motorway junction or a river; it ignores that one family drives
  * 12 minutes and the other 40, that one has a baby asleep at 12:30, that the café shuts at 3, that one family needs baby
- * changing. So nothing here ever computes a midpoint. Each place the product already knows about is asked the same
- * questions of BOTH families, and the answer is a ranked, explained shortlist:
+ * changing. So nothing here ever computes a midpoint. Each candidate place is asked the same questions of BOTH families,
+ * and the answer is a ranked, explained shortlist.
+ *
+ * WHERE THE CANDIDATES COME FROM. Not from Home. Home is personalised to one family, so ranking Home's places would bias
+ * the answer toward the first family's neighbourhood and could miss the best compromise entirely. The candidates are the
+ * stored venue catalogue's places in the corridor between the two homes (`server/places/lib/between.js`: a database read,
+ * a cheap straight-line fairness pass, no Google, no spend). This function receives that shortlist and does the
+ * family-specific part:
  *
  *   journey        each family's own time there and back (an estimate from distance, said to be one), and how fair the
  *                  split is: the longer journey matters more than the average.
- *   suitability    the planner's own definition of "works for this family" (`matchVenueToDayRequest`), per family: limits,
- *                  must-have facilities (unknown fails closed, exactly as the plan would), age policy. A place a plan could
- *                  not be built for is never offered.
- *   Family Fit     the signed-in family's own fit (`venue.familyMatch`), and ages for the other family only where they
- *                  chose to share them.
+ *   suitability    the planner's own definition of "works for this family" (`matchVenueToDayRequest`), per family. A
+ *                  CONFIRMED miss (a must-have the place lacks, an age policy, a closure) rules a place out. A must-have
+ *                  nobody has confirmed does not: the place stays, ranked lower, with "check before you go" said plainly.
+ *   Family Fit     each family's own fit: yours from your profile (`venue.familyMatch`), theirs only from what they chose
+ *                  to share (ages, must-haves, pushchair). Never "good for the family" while a child is not covered.
  *   routines       each family's naps and feeds against the day the arrival time implies, only where routines are known.
- *   the day        opening hours at the time they would be there; weather via the family's own fit.
+ *                  A routine shared before routines had a kind ("Home time") is never called a nap or a feed.
+ *   the day        opening hours at the time they would be there.
  *
  * WHAT IT WILL NOT DO. It will not pretend to know a family it only has a postcode for: with no children and no routines on
  * record, nothing is claimed for them beyond the journey, and the result says so. It makes no network call, no search and
- * no paid route request: the places are the ones Home already loaded, and every journey is the free distance estimate.
+ * no paid route request: every journey is the free distance estimate.
  *
  * Pure: no clock (the caller passes `now`), no stores, no I/O.
  */
@@ -82,6 +91,14 @@ export interface HalfwayOption {
   toCheck: string[];
   /** Whether the opening hours were confirmed at the time they would be there. */
   hoursConfirmed: boolean;
+  /**
+   * Must-haves nobody has confirmed at this place, per family. NOT a blocker: the place is offered, ranked below one where
+   * they are confirmed, and the screen says what to check. A must-have confirmed MISSING never reaches here: the place is
+   * excluded.
+   */
+  unresolved: { role: FamilyRole; field: string; label: string }[];
+  /** The "check before you go" sentences for `unresolved`, one per family. Also first in `toCheck`; the screen shows them prominently. */
+  needsChecking: string[];
   score: number;
 }
 
@@ -90,7 +107,10 @@ export interface HalfwayExclusions {
   journey: number;
   /** Shut on the day, or before they would arrive. */
   closed: number;
-  /** A must-have, an age policy or the setting that one family's plan could not meet (including must-haves nobody has confirmed). */
+  /**
+   * A must-have the place is confirmed to lack, an age policy or the setting that one family's plan could not meet. A
+   * must-have nobody has confirmed is NOT counted here: it is carried on the option as `unresolved`.
+   */
   requirements: number;
   /** The start would already have gone for one family. */
   tooSoon: number;
@@ -103,7 +123,12 @@ export interface HalfwayResult {
   /** When every place was ruled out by time alone, the first arrival that would work for both. `HH:MM`. */
   earliestArrival?: string;
   /** What FamilyPilot does not know about the other family, so the screen can say it plainly. */
-  otherKnown: { children: boolean; routines: boolean };
+  otherKnown: {
+    children: boolean;
+    routines: boolean;
+    /** Their routines were shared before routines carried a kind: only "home time" is known, and is treated conservatively. */
+    routinesLegacy: boolean;
+  };
 }
 
 const hhmm = (minutes: number): string => {
@@ -133,8 +158,57 @@ function windowsOf(family: PlanningFamily): RoutineWindow[] {
   }
 }
 
+/** A routine shared before routines carried a kind has only this label: it is a home routine, never claimed to be a nap. */
+export const LEGACY_ROUTINE_LABEL = 'Home time';
+const isLegacyRoutine = (window: RoutineWindow): boolean => window.label === LEGACY_ROUTINE_LABEL;
+
 const routineKinds = (windows: RoutineWindow[]): string =>
-  windows.every((w) => w.kind === 'nap') ? 'naps' : windows.every((w) => w.kind === 'feed') ? 'feeds' : 'naps and feeds';
+  windows.some(isLegacyRoutine)
+    ? 'home time'
+    : windows.every((w) => w.kind === 'nap')
+      ? 'naps'
+      : windows.every((w) => w.kind === 'feed')
+        ? 'feeds'
+        : 'naps and feeds';
+
+const FACILITY_FOR_REQUIRED: Record<PlanningFamily['required'][number], FacilityType> = {
+  toilets: 'toilets',
+  babyChanging: 'baby_changing',
+  parking: 'parking',
+  pushchair: 'pushchair_friendly',
+};
+
+/**
+ * A profile for Family Fit built ONLY from what a connection shared: ages, must-haves, whether they use a pushchair, the
+ * journey limit. No names (so no sentence can name a child), no routines (the engine reads those itself, against the real
+ * journey), nothing invented about who walks and who rides.
+ */
+function sharedProfile(family: PlanningFamily): FamilyProfile {
+  const members: FamilyMember[] = [
+    { id: `${family.id}-adult`, name: '', role: 'parent', dateOfBirth: '', age: 35 },
+    ...family.ages.map(
+      (age, index): FamilyMember => ({ id: `${family.id}-child-${index}`, name: '', role: 'child', dateOfBirth: '', age, dobKnown: false }),
+    ),
+  ];
+  return {
+    id: family.id,
+    parentName: '',
+    members,
+    homeLocation: family.area,
+    budgetTier: family.budgetTier,
+    maxDriveMinutes: family.maxDriveMinutes,
+    completionPercent: 100,
+    mustHaveFacilities: family.required.map((field) => FACILITY_FOR_REQUIRED[field]),
+    routines: [],
+    pushchair: family.pushchair ? 'a pushchair' : null,
+  } as unknown as FamilyProfile;
+}
+
+/** Whether a Family Fit covers some of a household's children but leaves another not covered (a check open, or nothing known). */
+const hasChildGap = (fit: Pick<FamilyMatchResult, 'children'> | undefined): boolean => {
+  const kids = fit?.children ?? [];
+  return kids.length > 1 && kids.some((kid) => kid.state === 'works') && kids.some((kid) => kid.state === 'check' || kid.state === 'unknown');
+};
 
 export function meetHalfway(input: HalfwayInput): HalfwayResult {
   const { mine, other, date, arriveAt, today, nowMinutes } = input;
@@ -145,8 +219,13 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
     ['mine', mine],
     ['other', other],
   ];
-  const otherKnown = { children: other.ages.length > 0, routines: other.routines.length > 0 };
   const windows = { mine: windowsOf(mine), other: windowsOf(other) };
+  const otherKnown = {
+    children: other.ages.length > 0,
+    routines: other.routines.length > 0,
+    routinesLegacy: windows.other.length > 0 && windows.other.every(isLegacyRoutine),
+  };
+  const otherProfile = sharedProfile(other);
 
   const options: HalfwayOption[] = [];
   let earliest: number | null = null;
@@ -187,10 +266,24 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
       continue;
     }
 
-    // 5. The planner's own definition of "works for this family", asked of BOTH. A place a plan could not be built for
-    //    (including a must-have nobody has confirmed) is not offered, so every option here can become a plan.
-    const unsuitable = roles.some(([, family], i) => !matchVenueToDayRequest({ ...facts, driveMinutes: minutes[i] }, familyRequest(family, environment)).eligible);
-    if (unsuitable) {
+    // 5. The planner's own definition of "works for this family", asked of BOTH. Two kinds of "no":
+    //    - a CONFIRMED miss (the place lacks a must-have, an age policy refuses them, the setting is wrong): ruled out.
+    //    - a must-have NOBODY HAS CONFIRMED: not a blocker. The place stays, ranked lower, and the screen says what to check.
+    //    Unknown never becomes a yes and never becomes a no. Every option here can still become a plan.
+    const unresolved: HalfwayOption['unresolved'] = [];
+    let confirmedMiss = false;
+    roles.forEach(([role, family], i) => {
+      const { evaluations } = matchVenueToDayRequest({ ...facts, driveMinutes: minutes[i] }, familyRequest(family, environment));
+      for (const evaluation of evaluations) {
+        if (evaluation.strength !== 'required') continue;
+        if (evaluation.outcome === 'unsuitable') confirmedMiss = true;
+        else if (evaluation.outcome === 'unknown') {
+          const label = mustHaveLabel(evaluation.field);
+          if (label) unresolved.push({ role, field: evaluation.field, label });
+        }
+      }
+    });
+    if (confirmedMiss) {
       excluded.requirements += 1;
       continue;
     }
@@ -218,15 +311,41 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
       reasons.push(`${upperFirst(familyPhrase(shorter, (shorter === 'mine' ? mine : other).label))} has the shorter journey`);
     }
 
-    // Your own Family Fit, which already reads your household, the venue's evidence and today.
-    const fit = venue.familyMatch;
-    if (fit && (fit.verdict === 'excellent' || fit.verdict === 'good')) {
-      reasons.push(fit.headline.replace(/ today$/, ''));
-      bonus += fit.verdict === 'excellent' ? 12 : 7;
-    } else if (fit && fit.verdict === 'poor') {
-      bonus -= 12;
-      // Your own Family Fit says it is probably not right for someone in your family: said as it is, never softened.
-      toCheck.push(fit.headline.replace(/ today$/, ''));
+    // Each family's own Family Fit. Yours reads your household; theirs reads only what they shared. A claim "for" a family is
+    // made only when no child in it is left uncovered: "Good for Sloane" is not "good for the family" while Ozzie is unknown.
+    const sharesAnything = other.ages.length > 0 || other.required.length > 0 || other.pushchair;
+    const fits: [FamilyRole, FamilyMatchResult | undefined][] = [
+      ['mine', venue.familyMatch],
+      [
+        'other',
+        sharesAnything
+          ? evaluateFamilyMatch({
+              venue: { ...venue, driveMinutes: minutes[1] },
+              profile: otherProfile,
+              score: venue.familyScore?.score ?? Number.NaN,
+              now: new Date(`${date}T${hhmm(arrive)}:00`),
+            })
+          : undefined,
+      ],
+    ];
+    for (const [role, result] of fits) {
+      if (!result) continue;
+      const who = familyPhrase(role, (role === 'mine' ? mine : other).label);
+      const sentence = result.headline.replace(/ today$/, '');
+      if (result.verdict === 'poor') {
+        bonus -= 12;
+        // Said as it is, never softened. Yours carries its own sentence; theirs is worded without a second person.
+        toCheck.push(role === 'mine' ? sentence : `Family Fit says this probably isn’t right for ${who}`);
+      } else if (result.verdict === 'excellent' || result.verdict === 'good') {
+        if (hasChildGap(result)) {
+          // Confirmed for some of the children only: the gap is what the parent reads, and it earns half the credit.
+          toCheck.push(role === 'mine' ? sentence : `Not confirmed for every child in ${who}`);
+          bonus += result.verdict === 'excellent' ? 6 : 3;
+        } else {
+          reasons.push(role === 'mine' ? sentence : `Family Fit is ${result.verdict} for ${who}`);
+          bonus += result.verdict === 'excellent' ? 12 : 7;
+        }
+      }
     }
 
     // Ages: each family only where there are ages on record.
@@ -272,6 +391,18 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
       toCheck.push(`We only know where ${familyPhrase('other', other.label)} sets off from, so only the journey is checked for them`);
     }
 
+    // Must-haves nobody has confirmed here: first among the things to check, one line per family.
+    const needing = new Map<string, string[]>();
+    for (const item of unresolved) {
+      const who = familyPhrase(item.role, (item.role === 'mine' ? mine : other).label);
+      needing.set(who, [...(needing.get(who) ?? []), item.label]);
+    }
+    const needsChecking = [...needing.entries()].map(
+      ([who, labels]) => `${upperFirst([...new Set(labels)].join(' and '))} isn’t confirmed at ${venue.name}, and ${who} needs it. Check before you go`,
+    );
+    toCheck.unshift(...needsChecking);
+    bonus -= 8 * unresolved.length;
+
     // The venue's own confirmed facilities that matter to a family day.
     const youngest = Math.min(...[...mine.ages, ...other.ages, 99]);
     if (facts.babyChanging === 'yes' && youngest < 3) reasons.push('Baby changing confirmed');
@@ -293,7 +424,7 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
     // Fairness is the point: the longer journey weighs more than the average, and a lopsided split is penalised.
     const score = 100 - farthest * 1.0 - gap * 0.8 - (minutes[0] + minutes[1]) * 0.15 + bonus;
 
-    options.push({ venue, journeys, gap, longerFor, reasons, toCheck, hoursConfirmed, score });
+    options.push({ venue, journeys, gap, longerFor, reasons, toCheck, hoursConfirmed, unresolved, needsChecking, score });
   }
 
   options.sort((a, b) => b.score - a.score || a.venue.name.localeCompare(b.venue.name));

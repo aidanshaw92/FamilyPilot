@@ -99,6 +99,35 @@ async function y(page, label) {
 
 const browser = await chromium.launch(launchOptions);
 
+/** A fresh phone with this household and this one other family, for the scenarios that need a different guest. */
+async function freshContext(width, height, guest, extraProfile = {}) {
+  const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2 });
+  const page = await context.newPage();
+  await page.clock.setFixedTime(NOW);
+  await page.addInitScript(
+    ({ profile, guest: g }) => {
+      localStorage.setItem(
+        'familypilot-family-v1',
+        JSON.stringify({ state: { profile, hasCompletedOnboarding: true, hasSeenSplash: true, profileRevision: 2 }, version: 1 }),
+      );
+      localStorage.setItem(
+        'familypilot-planning-v1',
+        JSON.stringify({
+          state: { families: [g], options: { date: '2026-01-13', leaveAt: '10:00', returnBy: '', visitMinutes: 90, bufferMinutes: 15, environment: 'either' }, saved: [], savedDays: [] },
+          version: 0,
+        }),
+      );
+    },
+    { profile: { ...PROFILE, ...extraProfile }, guest },
+  );
+  return { context, page };
+}
+
+const BARNET = 'Barnet Common Fixture Farm';
+const FINCHLEY = 'Finchley Fixture Play Barn';
+const HENDON = 'Hendon Fixture Yard';
+const CAUTION_VENUE = 'fp-google-FIXTUREnotArealPlaceId0008';
+
 for (const [width, height] of VIEWPORTS) {
   const label = `${width}x${height}`;
   const dir = join(OUT, label);
@@ -256,8 +285,57 @@ for (const [width, height] of VIEWPORTS) {
     check(`${label}: Who's coming lists both families, each with their own leaving time`, /Shaw family/i.test(who) && /Hannah/i.test(who) && (who.match(/Leaves home/g) ?? []).length === 2, who.replace(/\s+/g, ' ').slice(0, 260));
   }
 
+  // ---- MEET HALFWAY: candidates come from the catalogue between the homes, not from Home ----------------------
+  // Home (personalised to one family) never lists the Barnet farm; the stored catalogue does, and it is between the homes.
+  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+  await settle(page, 2200);
+  check(`${label}: Home does not list the catalogue-only farm (so the next check cannot pass by accident)`, !(await text(page)).includes(BARNET));
+  await page.goto(`${BASE}/halfway?family=guest-hannah`, { waitUntil: 'domcontentloaded' });
+  await settle(page, 3000);
+  const between = await text(page);
+  check(`${label}: Meet halfway says it looked between the two homes, not only at Home`, /We looked at \d+ places? between your two homes/.test(between));
+  check(`${label}: a place only the stored catalogue holds is offered, and it is the best for both`, between.includes(BARNET) && between.indexOf('Best for both') < between.indexOf(BARNET) && between.indexOf(BARNET) - between.indexOf('Best for both') < 60, (between.match(/Best for both[^\n]*\n[^\n]*/) ?? ['none'])[0]);
+  check(`${label}: it is not the Home fallback`, (await page.getByTestId('halfway-fallback').count()) === 0);
+  await page.screenshot({ path: join(dir, '10-halfway-between.jpg'), type: 'jpeg', quality: 82 });
+
+  // When the catalogue cannot be reached it falls back to Home's places and SAYS so, rather than looking complete.
+  await page.route('**/api/places/search?*intent=between*', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'down', code: 'CATALOGUE_UNAVAILABLE' }) }));
+  await page.goto(`${BASE}/halfway?family=guest-hannah`, { waitUntil: 'domcontentloaded' });
+  await settle(page, 4500);
+  const fallback = await text(page);
+  check(`${label}: an unreachable catalogue falls back to Home's places and says there may be better ones in between`, (await page.getByTestId('halfway-fallback').count()) > 0 && /There may be better ones in between/.test(fallback) && !fallback.includes(BARNET));
+  await page.unroute('**/api/places/search?*intent=between*');
+
   check(`${label}: no runtime errors`, errors.length === 0, errors.slice(0, 2).join(' | '));
   await context.close();
+
+  // ---- must-have states, with a family that needs baby changing ----------------------------------------------
+  const needy = await freshContext(width, height, { ...GUEST, ages: [1], required: ['babyChanging'] });
+  await needy.page.goto(`${BASE}/halfway?family=guest-hannah`, { waitUntil: 'domcontentloaded' });
+  await settle(needy.page, 3200);
+  const needText = await text(needy.page);
+  check(`${label}: an unconfirmed must-have keeps the place on the list, with a prominent "needs checking" block`, needText.includes(FINCHLEY) && (await needy.page.getByTestId('halfway-needs-checking').count()) > 0 && /Needs checking before you go/i.test(needText));
+  check(`${label}: it says exactly what to check, for the family that needs it`, /Baby changing isn’t confirmed at Finchley Fixture Play Barn, and Hannah’s family needs it/.test(needText));
+  check(`${label}: a place confirmed to LACK the must-have is ruled out`, !needText.includes(HENDON));
+  check(`${label}: and an unconfirmed one is never worded as missing`, !/No baby changing|does not have baby changing/i.test(needText));
+  await needy.page.getByTestId('halfway-needs-checking').first().scrollIntoViewIfNeeded();
+  await needy.page.waitForTimeout(400);
+  await needy.page.screenshot({ path: join(dir, '11-halfway-needs-checking.jpg'), type: 'jpeg', quality: 82 });
+  // Planning it still works: an unknown must-have never stops a plan.
+  const finchleyCard = needy.page.getByTestId('halfway-option').filter({ hasText: FINCHLEY }).first();
+  await finchleyCard.getByTestId('halfway-plan').click();
+  await settle(needy.page, 4200);
+  const jointPlan = await text(needy.page);
+  check(`${label}: Plan this day still builds the plan, with what needs checking said on it`, (await needy.page.getByTestId('plan-save').isVisible().catch(() => false)) && /Needs checking before you go/i.test(jointPlan) && /Baby changing isn’t confirmed at Finchley Fixture Play Barn/.test(jointPlan), jointPlan.replace(/\s+/g, ' ').slice(0, 200));
+  await needy.context.close();
+
+  // A must-have confirmed MISSING is a hard conflict at plan time, and says so.
+  const miss = await freshContext(width, height, GUEST, { mustHaveFacilities: ['baby_changing'] });
+  await miss.page.goto(`${BASE}/plan?venue=${CAUTION_VENUE}&date=2026-01-17&leaveAt=09:30&visit=90&parties=mine`, { waitUntil: 'domcontentloaded' });
+  await settle(miss.page, 5200);
+  const missText = await text(miss.page);
+  check(`${label}: a must-have confirmed missing is a hard conflict, in plain words`, /does not have baby changing, and your family needs it/.test(missText) && !/Save this plan/.test(missText), missText.replace(/\s+/g, ' ').slice(0, 220));
+  await miss.context.close();
 }
 
 await browser.close();

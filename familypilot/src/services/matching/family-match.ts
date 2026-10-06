@@ -70,6 +70,12 @@ export interface FamilyMatchResult {
   forNames: string[];
   /** Each child, and what is known about the place for them. Empty for a household with no children. */
   children: ChildLens[];
+  /**
+   * In a household of two or more children, the children the place is NOT confirmed to work for while it is for at
+   * least one other (a check still open, or nothing known at all). Whenever this is non-empty, no sentence or badge may
+   * say the place is good for the family or for "Sloane" alone: the gap is said beside it. Empty for one child.
+   */
+  gapNames: string[];
   /** Confirmed reasons it works. Each is a fact, never an inference. */
   reasons: MatchLine[];
   /** Things that count against it for this family. Confirmed breaches first. */
@@ -158,8 +164,12 @@ function headlineFor(input: {
   if (verdict === 'not_reviewed') return 'Family suitability not yet reviewed';
 
   const namedWorks = lens.filter((l) => l.state === 'works' && l.name).map((l) => l.name);
-  const worksAll = forNames.length > 0 && forNames.length === children.filter((c) => lens.find((l) => l.id === c.id)?.state === 'works').length;
-  const who = forNames.length > 0 && worksAll ? joinNames(forNames) : 'your family';
+  // A claim "for Sloane" is only a claim about the family when it covers every child. With one child that is trivially
+  // so; with several, a child the place is not confirmed for has to be said, not left out.
+  const everyChildWorks = lens.length > 0 && lens.every((l) => l.state === 'works');
+  const who = forNames.length > 0 && everyChildWorks ? joinNames(forNames) : 'your family';
+  const multi = children.length > 1;
+  const gap = multi ? gapPhrase(lens, lines) : null;
 
   if (verdict === 'poor') {
     // Who the confirmed breach is about, where it is about particular children; otherwise the family.
@@ -169,21 +179,44 @@ function headlineFor(input: {
     return `Probably not for ${breachWho} today`;
   }
 
-  if (verdict === 'possible') {
-    const checkKids = lens.filter((l) => l.state === 'check' && l.name);
-    // Only when what holds it at "possible" is about particular children. If the journey, the opening hours or a
+  // Several children, and the place is confirmed for some but not all of them: say who, and say what is open for the rest.
+  // This holds for good and possible alike, so "Good for Sloane" never reads as "good for the family" while Ozzie is unknown.
+  if (multi && gap && namedWorks.length > 0) {
+    // For `possible`, only when what holds it back is about particular children. If the journey, the opening hours or a
     // must-have is what holds it back, the sentence is about the family, not about one child's baby changing.
     const familyLevel = [...lines.softCautions, ...lines.hardUnknowns].some((line) => !line.childIds?.length);
-    if (!familyLevel && namedWorks.length > 0 && checkKids.length > 0) {
-      const checkLines = [...lines.hardUnknowns, ...lines.softCautions, ...lines.softUnknowns].filter((line) =>
-        checkKids.some((kid) => line.childIds?.includes(kid.id)),
-      );
-      const topics = [...new Set(checkLines.map((line) => line.topic).filter((t): t is string => Boolean(t)))];
-      const what = topics.length === 1 ? topics[0] : 'a couple of things';
-      return `Could work for ${joinNames(namedWorks)}, but check ${what} for ${joinNames(checkKids.map((k) => k.name))}`;
-    }
+    if (verdict === 'possible' && !familyLevel) return `Could work for ${joinNames(namedWorks)}, but ${gap}`;
+    if (verdict === 'good' || verdict === 'excellent') return `${VERDICT_WORD[verdict]} for ${joinNames(namedWorks)}, but ${gap}`;
   }
+
+  // Several children, nothing confirmed for any of them: the practical facts are good, and the headline says that is all.
+  if (multi && gap && namedWorks.length === 0 && (verdict === 'good' || verdict === 'excellent')) {
+    return `Good on the practical side, but ${gap}`;
+  }
+
   return `${VERDICT_WORD[verdict]} for ${who} today`;
+}
+
+/**
+ * What is open for the children the place is not confirmed to work for, as the end of a sentence:
+ * "check buggy access for Ozzie", "nothing is confirmed yet for Ozzie", or both. Null when every child is covered.
+ */
+function gapPhrase(lens: ChildLens[], lines: { hardUnknowns: MatchLine[]; softCautions: MatchLine[]; softUnknowns: MatchLine[] }): string | null {
+  const checkKids = lens.filter((l) => l.state === 'check' && l.name);
+  const unknownKids = lens.filter((l) => l.state === 'unknown' && l.name);
+  const parts: string[] = [];
+  if (checkKids.length > 0) {
+    const checkLines = [...lines.hardUnknowns, ...lines.softCautions, ...lines.softUnknowns].filter((line) =>
+      checkKids.some((kid) => line.childIds?.includes(kid.id)),
+    );
+    const topics = [...new Set(checkLines.map((line) => line.topic).filter((t): t is string => Boolean(t)))];
+    const what = topics.length === 1 ? topics[0] : 'a couple of things';
+    parts.push(`check ${what} for ${joinNames(checkKids.map((k) => k.name))}`);
+  }
+  if (unknownKids.length > 0) {
+    parts.push(`nothing is confirmed yet for ${joinNames(unknownKids.map((k) => k.name))}`);
+  }
+  return parts.length ? parts.join(' and ') : null;
 }
 
 export function evaluateFamilyMatch({ venue, profile, score, weather, now = new Date(), parentObservations = {} }: FamilyMatchInput): FamilyMatchResult {
@@ -430,6 +463,22 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
     return { id: child.id, name: child.name.trim(), state, works, check: checkLines.map((l) => l.text) };
   });
 
+  // Several children and the place is confirmed for some of them but not all: whoever is left over is a gap in what is
+  // known, so it can never be "excellent" (nothing left to check), and it is listed with the things to check.
+  const confirmedKids = lens.filter((l) => l.state === 'works');
+  const gapKids = children.length > 1 && confirmedKids.length > 0 ? lens.filter((l) => l.state === 'check' || l.state === 'unknown') : [];
+  if (verdict === 'excellent' && gapKids.length > 0) verdict = 'good';
+  const gapNames = gapKids.map((l) => l.name).filter(Boolean);
+  const uncovered = gapKids.filter((l) => l.state === 'unknown' && l.name);
+  if (uncovered.length > 0) {
+    softUnknowns.push({
+      key: 'child-nothing-confirmed',
+      text: `Nothing is confirmed yet about how it suits ${joinNames(uncovered.map((l) => l.name))}`,
+      childIds: uncovered.map((l) => l.id),
+      topic: 'whether it suits them',
+    });
+  }
+
   const headline = headlineFor({ verdict, lens, children, forNames, lines: { breaches, softCautions, hardUnknowns, softUnknowns } });
 
   const cautions = [...breaches, ...softCautions];
@@ -447,6 +496,7 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
     headline,
     forNames,
     children: lens,
+    gapNames,
     reasons,
     cautions,
     toCheck,
@@ -461,9 +511,15 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
  * ("Good for Sloane"); every other verdict is just its word, because a badge with a name on it is a claim and
  * `possible` and `poor` are not claims worth naming anyone for.
  */
-export function matchBadgeText(match: Pick<FamilyMatchResult, 'verdict' | 'forNames'>, maxNameChars = 18): string {
+export function matchBadgeText(match: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[] }, maxNameChars = 18): string {
   if (match.verdict === 'good' || match.verdict === 'excellent') {
     const word = match.verdict === 'excellent' ? 'Excellent' : 'Good';
+    // A child the place is not confirmed for is said on the badge too: "Good for Sloane" alone would read as the family.
+    const gap = joinNames(match.gapNames ?? []);
+    if (gap) {
+      const text = `${word} fit · check ${gap}`;
+      return gap.length <= maxNameChars - 6 ? text : `${word} fit · check kids`;
+    }
     const who = joinNames(match.forNames);
     if (who && who.length <= maxNameChars) return `${word} for ${who}`;
     return VERDICT_BADGE[match.verdict];

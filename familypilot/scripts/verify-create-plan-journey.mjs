@@ -494,15 +494,14 @@ try {
   const reference = VIEWPORTS[2];
   console.log('\n=== failure paths (393x852) ===');
 
-  // A must-have at a venue nobody has reviewed: the single likeliest dead end in production.
-  await runFailurePaths(browser, reference, { mustHaveFacilities: ['baby_changing'] }, 'requirement-unmet', [
-    ['says which requirement stood in the way', (text) => /baby changing/i.test(text)],
-    [
-      'says nobody confirmed it rather than that the venue lacks it',
-      (text) => text.includes('Nobody has confirmed baby changing'),
-    ],
-    ['does not claim the venue has none', (text) => !/does not have baby changing/.test(text)],
-    ['offers something the parent can change', (text) => text.includes('WHAT WOULD HELP')],
+  // A must-have at a venue nobody has reviewed: the single likeliest situation in production. It is NOT a dead end: an
+  // unconfirmed must-have means "check this", never "you cannot go". The plan is built, and says plainly what needs checking.
+  await runFailurePaths(browser, reference, { mustHaveFacilities: ['baby_changing'] }, 'must-have-unconfirmed', [
+    ['still builds the plan', (text) => text.includes('Save this plan')],
+    ['shows a prominent "Needs checking before you go" block', (text) => /needs checking before you go/i.test(text)],
+    ['says which must-have is unconfirmed, and that the parent asked for it', (text) => /Baby changing isn’t confirmed at .*you said you need it/.test(text)],
+    ['says nobody has confirmed it rather than that the venue lacks it', (text) => !/does not have baby changing|No baby changing here/.test(text)],
+    ['is not presented as a failure', (text) => !/does not fit your family yet/.test(text)],
   ]);
 
   // A day that succeeds for one household while another was dropped must say so.
