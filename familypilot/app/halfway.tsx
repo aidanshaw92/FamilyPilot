@@ -21,6 +21,7 @@ import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
 import { formatCategory } from '@/src/utils/format-category';
 import { dateQuickChoices, shortDateLabel } from '@/src/utils/plan-quick-choices';
 import { travelTimeLabel } from '@/src/utils/travel-time';
+import { familyDisplayName } from '@/src/utils/family-title';
 
 /**
  * MEET HALFWAY: a place that works for two families.
@@ -143,7 +144,7 @@ export default function MeetHalfwayScreen() {
               <Chip
                 key={candidate.id}
                 size="small"
-                label={candidate.label}
+                label={familyDisplayName(candidate.label)}
                 active={chosen === candidate.id}
                 onPress={() => setChosen(candidate.id)}
               />
@@ -329,7 +330,7 @@ function Results({
             {option.journeys.map((journey) => (
               <View key={journey.familyId} style={styles.journeyRow}>
                 <Text variant="bodySmall" color={colors.text.secondary} style={styles.journeyWho}>
-                  {journey.role === 'mine' ? 'Your family' : journey.label}
+                  {journey.role === 'mine' ? 'Your family' : familyDisplayName(journey.label)}
                 </Text>
                 <Text variant="bodySmall" style={styles.journeyTime}>
                   {travelTimeLabel(journey.minutes, 'estimated')}

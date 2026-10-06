@@ -7,6 +7,7 @@ import { mustHaveLabel } from './must-have-labels';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { TravelMode } from '@/src/types/travel';
 import { travelTimeWithMode } from '@/src/utils/travel-time';
+import { familyDisplayName } from '@/src/utils/family-title';
 
 /**
  * The boundary between the planner and the approved Plan screen.
@@ -420,7 +421,7 @@ function needsCheckingLines(itinerary: DayItinerary): string[] {
     if (group.familyId === 'mine') {
       return `${upperFirst(group.label)} isn’t confirmed at ${where}, and you said you need it. Check before you go.`;
     }
-    const who = `${group.familyLabel.replace(/’s family$/i, '')}’s family`;
+    const who = familyDisplayName(group.familyLabel);
     return `${upperFirst(group.label)} isn’t confirmed at ${where}, and ${who} needs it. Check before you go.`;
   })];
 }
@@ -434,7 +435,7 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
     ((familyId, _routineId, kind) => ({
       name: null,
       noun: kind === 'nap' ? 'nap' : 'feed',
-      familyLabel: itinerary.families.find((f) => f.familyId === familyId)?.label ?? 'Their',
+      familyLabel: itinerary.families.find((f) => f.familyId === familyId)?.label ?? '',
       yours: familyId === 'mine',
     }));
   // "…which gets you home before Ozzie’s nap at 12:15": the routine a shortened visit was shortened for, named here.
@@ -446,7 +447,7 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
       const phrase = subjectPhrase(subject, after.kind);
       routineSentence = subject.yours
         ? `which gets you home before ${phrase} at ${planClock(after.start)}.`
-        : `which gets ${subject.familyLabel}’s family home before ${phrase} at ${planClock(after.start)}.`;
+        : `which gets ${familyDisplayName(subject.familyLabel)} home before ${phrase} at ${planClock(after.start)}.`;
     }
   }
   const note = visitNote(input.visit, input.anchorCategory, routineSentence);
@@ -531,7 +532,7 @@ export function toPlanViewModel(input: PlanViewModelInput, context?: PlanViewCon
   const noteIsCovered = (note: string) => Boolean(routines && routines.advice.length + routines.homeBefore.length > 0 && (/^Home before /.test(note) || / while out; allow /.test(note)));
   const party: PlanPartyView[] = itinerary.families.map((family) => ({
     familyId: family.familyId,
-    label: family.familyId === 'mine' && context?.householdTitle ? context.householdTitle : family.label,
+    label: family.familyId === 'mine' ? (context?.householdTitle || family.label) : familyDisplayName(family.label),
     departLabel: planClock(family.depart),
     homeLabel: planClock(family.home),
     latestDepartureLabel: planClock(family.latestDeparture),

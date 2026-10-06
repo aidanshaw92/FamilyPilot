@@ -238,7 +238,7 @@ export function PlanScreenView({
             ) : null}
 
             {view.unknowns.length ? (
-              <Block title="Nobody has confirmed these">
+              <Block title="Check before you go" testID="plan-check-before">
                 {view.unknowns.map((line) => (
                   <Text key={line} variant="bodySmall" color={colors.warning[600]}>
                     {line}

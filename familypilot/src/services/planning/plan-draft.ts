@@ -8,6 +8,7 @@ import {
   visitLengthFromParam,
   visitLengthToParam,
 } from './visit-duration';
+import { familyDisplayName } from '@/src/utils/family-title';
 
 /**
  * What the Create a Plan sheet holds, and where its defaults come from.
@@ -169,7 +170,7 @@ export function planDraftDefaults(sources: PlanDraftSources): PlanDraftDefaults 
     const children = family.ages.length;
     parties.push({
       id: family.id,
-      label: family.id === 'mine' ? 'Our family' : family.label,
+      label: family.id === 'mine' ? 'Our family' : familyDisplayName(family.label),
       // A planning family records children's ages and no adults, so the adult count is not known
       // here. Saying "2 adults" would be an invention; the children are what it actually holds.
       // Said as what is on record, not as a claim about the family: "Adults only" would assert something nobody entered.

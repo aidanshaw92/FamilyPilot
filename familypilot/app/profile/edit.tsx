@@ -315,11 +315,11 @@ export default function EditProfileScreen() {
         />
 
         <TextField
-          label="Family name (optional)"
+          label="Household name (optional)"
           value={familyName}
           onChangeText={setFamilyName}
           autoCapitalize="words"
-          hint="Shown as “Shaw family” on your own screens. Never shared."
+          hint="Your family’s surname, shown as “Shaw family” on your own screens. Never shared."
         />
 
         <Text variant="heading3" style={styles.sectionTitle}>
@@ -328,7 +328,7 @@ export default function EditProfileScreen() {
         {adults.map((adult, index) => (
           <View key={adult.id} style={styles.adultCard} testID={`edit-adult-${index}`}>
             <TextField
-              label="First name"
+              label="Their first name"
               value={adult.name}
               onChangeText={(name) => setAdults((prev) => prev.map((a) => (a.id === adult.id ? { ...a, name } : a)))}
               autoCapitalize="words"

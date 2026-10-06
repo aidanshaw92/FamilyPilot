@@ -1,0 +1,350 @@
+{
+  "base": "http://127.0.0.1:4173",
+  "legacy": false,
+  "delays": {
+    "SLOW_SEARCH_MS": 6000,
+    "SLOW_WEATHER_MS": 9000,
+    "SLOW_PHOTO_MS": 3000
+  },
+  "results": [
+    {
+      "scenario": "first run",
+      "width": 360,
+      "msToCards": 6290,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 5800,
+      "skeletonMessage": "Finding today’s best places for Ozzie…",
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": {
+        "top": 0,
+        "height": 0
+      },
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "slow photo",
+      "width": 360,
+      "frontCardPlaceholderWhileLoading": true
+    },
+    {
+      "scenario": "kept, fresh",
+      "width": 360,
+      "msToCards": 134,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "kept, stale",
+      "width": 360,
+      "msToCards": 128,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "slow weather",
+      "width": 360,
+      "msToCards": 2866,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 2500,
+      "skeletonMessage": "Finding today’s best places for Ozzie…",
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": {
+        "top": 0,
+        "height": 0
+      },
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "first run",
+      "width": 390,
+      "msToCards": 6334,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 5900,
+      "skeletonMessage": "Finding today’s best places for Ozzie…",
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": {
+        "top": 0,
+        "height": 0
+      },
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "slow photo",
+      "width": 390,
+      "frontCardPlaceholderWhileLoading": true
+    },
+    {
+      "scenario": "kept, fresh",
+      "width": 390,
+      "msToCards": 128,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "kept, stale",
+      "width": 390,
+      "msToCards": 127,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "slow weather",
+      "width": 390,
+      "msToCards": 2838,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 2500,
+      "skeletonMessage": "Finding today’s best places for Ozzie…",
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": {
+        "top": 0,
+        "height": 0
+      },
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "first run",
+      "width": 393,
+      "msToCards": 6351,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 5900,
+      "skeletonMessage": "Finding today’s best places for Ozzie…",
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": {
+        "top": 0,
+        "height": 0
+      },
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "slow photo",
+      "width": 393,
+      "frontCardPlaceholderWhileLoading": true
+    },
+    {
+      "scenario": "kept, fresh",
+      "width": 393,
+      "msToCards": 135,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "kept, stale",
+      "width": 393,
+      "msToCards": 247,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 100,
+      "skeletonMessage": "Finding today’s best places for Ozzie…",
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": {
+        "top": 0,
+        "height": 0
+      },
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "slow weather",
+      "width": 393,
+      "msToCards": 2914,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 2500,
+      "skeletonMessage": "Finding today’s best places for Ozzie…",
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": {
+        "top": 0,
+        "height": 0
+      },
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "first run",
+      "width": 430,
+      "msToCards": 6324,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 5900,
+      "skeletonMessage": "Finding today’s best places for Ozzie…",
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": {
+        "top": 0,
+        "height": 0
+      },
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "slow photo",
+      "width": 430,
+      "frontCardPlaceholderWhileLoading": true
+    },
+    {
+      "scenario": "kept, fresh",
+      "width": 430,
+      "msToCards": 252,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 100,
+      "skeletonMessage": "Finding today’s best places for Ozzie…",
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": {
+        "top": 0,
+        "height": 0
+      },
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "kept, stale",
+      "width": 430,
+      "msToCards": 127,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 0,
+      "skeletonMessage": null,
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": null,
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    },
+    {
+      "scenario": "slow weather",
+      "width": 430,
+      "msToCards": 2834,
+      "msPlainBlock": 0,
+      "msNothingInDeckPlace": 0,
+      "msSkeleton": 2500,
+      "skeletonMessage": "Finding today’s best places for Ozzie…",
+      "headerMovedPx": {
+        "avatar": 0,
+        "chips": 0
+      },
+      "deckVsSkeletonPx": {
+        "top": 0,
+        "height": 0
+      },
+      "greetings": [
+        "Good morning, Aidan"
+      ],
+      "cardsStayed": true
+    }
+  ],
+  "failures": []
+}

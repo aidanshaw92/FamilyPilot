@@ -262,7 +262,7 @@ describe('opening hours decide slots without inventing certainty', () => {
     if (!result.ok) return;
     expect(result.itinerary.stops[0].opening.status).toBe('unknown');
     expect(result.itinerary.stops[0].opening.status).not.toBe('open');
-    expect(result.itinerary.unknowns).toContain('Whitechapel Gallery: opening hours not confirmed');
+    expect(result.itinerary.unknowns).toContain('Opening hours not confirmed at Whitechapel Gallery');
   });
 
   it('scores a confirmed-open venue above an identical unconfirmed one', () => {

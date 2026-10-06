@@ -12,6 +12,7 @@ import { planningApiUrl } from '@/src/services/planning/recommendations';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { PlanningBackup, usePlanningStore } from '@/src/stores/planning-store';
 import { Field, formStyles as s } from '@/src/components/ui';
+import { familyDisplayName } from '@/src/utils/family-title';
 
 type Connection={id:string;pending:boolean;expiresAt:string;family:PlanningFamily|null};
 export function PlanningAccount(){
@@ -73,7 +74,7 @@ export function PlanningAccount(){
     {!connections.length?<Text variant="bodySmall" color={colors.text.secondary}>No connections yet. Create an invitation link above, or paste one you have been sent.</Text>:connections.map((c,i)=>
      <View key={c.id} style={[styles.connectionRow,i>0&&styles.connectionRowBorder]}>
       <View style={styles.connectionHeader}>
-       <Text variant="heading3" style={styles.connectionLabel} numberOfLines={1}>{c.pending?'Invitation waiting':c.family?.label}</Text>
+       <Text variant="heading3" style={styles.connectionLabel} numberOfLines={1}>{c.pending?'Invitation waiting':familyDisplayName(c.family?.label)}</Text>
        <View style={[styles.badge,c.pending?styles.badgePending:styles.badgeConnected]}>
         <Text variant="caption" color={c.pending?colors.warning[600]:colors.secondary[600]}>{c.pending?'Pending':'Connected'}</Text>
        </View>

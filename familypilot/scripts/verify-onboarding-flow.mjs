@@ -110,10 +110,17 @@ async function parentStep(page, household) {
   await next(page).click();
   await settle(page, 1200);
   // THE HOUSEHOLD: who else comes on days out. Optional, so "Just you" simply continues; a partner is named, never guessed.
-  check(/Who else is in your household\?/.test(await page.evaluate(() => document.body.innerText)), 'the household step follows the parent step');
+  const householdText = await page.evaluate(() => document.body.innerText);
+  check(/Who else is in your household\?/.test(householdText), 'the household step follows the parent step');
+  // The first field under the question is the other person's first name, with how they're connected beneath it. The
+  // household's own name is a separate, later, optional field, and nothing calls a person's first name a "family name".
+  check(/Their first name/.test(householdText) && /How they’re connected to you/.test(householdText), 'the household step asks for their first name and how they’re connected');
+  check(!/Family name/i.test(householdText) && /Household name \(optional\)/.test(householdText), 'no field calls a first name a family name; the household name is labelled as one');
+  check(householdText.indexOf('Their first name') < householdText.indexOf('Household name'), 'the person comes before the household name');
   if (household?.familyName) await page.getByPlaceholder('e.g. Shaw').fill(household.familyName);
   for (const [i, adult] of (household?.adults ?? []).entries()) {
-    await page.getByTestId('household-add-adult').click();
+    // One card is there from the start; another is added for each further adult.
+    if (i > 0) await page.getByTestId('household-add-adult').click();
     await page.getByPlaceholder('e.g. Ellie').nth(i).fill(adult.name);
     await page.getByRole('button', { name: adult.relationship, exact: true }).nth(i).click();
   }

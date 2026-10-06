@@ -388,13 +388,13 @@ describe('an unmet requirement is explained, and absence is never read as a fact
     return outcome;
   };
 
-  it('says nobody has confirmed the facility, not that the venue lacks it', async () => {
+  it('says the facility is not confirmed, not that the venue lacks it', async () => {
     const outcome = await describe_(unmet([{ field: 'familyFacilities.babyChanging', outcome: 'unknown' }]));
     // "does not fit Our family yet" is the chip label dropped into prose. A household the parent
     // named keeps its name; the signed-in one becomes "your family".
     expect(outcome.title).toBe('Kentish Town City Farm does not fit your family yet');
     expect(outcome.message).toBe(
-      'Nobody has confirmed baby changing at Kentish Town City Farm, and your family needs it.',
+      'Baby changing isn’t confirmed at Kentish Town City Farm, and your family needs it.',
     );
     expect(outcome.message).not.toContain('does not have');
     expect(outcome.suggestions).toContain('Check with the venue before you go');
@@ -413,14 +413,14 @@ describe('an unmet requirement is explained, and absence is never read as a fact
       { field: 'familyFacilities.parking', outcome: 'unknown' },
     ]));
     expect(outcome.message).toContain('does not have toilets');
-    expect(outcome.message).toContain('Nobody has confirmed parking');
+    expect(outcome.message).toContain('Parking isn’t confirmed at Kentish Town City Farm');
   });
 
   it('keeps the pushchair wording about difficulty, not about a missing facility', async () => {
     expect((await describe_(unmet([{ field: 'pushchairSuitability', outcome: 'unsuitable' }]))).message)
       .toBe('Kentish Town City Farm is recorded as difficult with a pushchair, and your family needs it to work.');
     expect((await describe_(unmet([{ field: 'pushchairSuitability', outcome: 'unknown' }]))).message)
-      .toBe('Nobody has confirmed whether Kentish Town City Farm works with a pushchair, and your family needs it to.');
+      .toBe('It isn’t confirmed whether Kentish Town City Farm works with a pushchair, and your family needs it to.');
   });
 
   it('keeps a household the parent named, in their own words', async () => {

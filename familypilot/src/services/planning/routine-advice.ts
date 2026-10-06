@@ -3,6 +3,7 @@ import { DayItinerary, RoutineInsight, RoutinePhase } from '@/src/types/day-sequ
 import { PlanAlternative } from '@/src/types/day-plan';
 
 import { spokenMinutes } from './visit-duration';
+import { familyDisplayName } from '@/src/utils/family-title';
 
 /**
  * What a routine overlapping the outing MEANS, and what to do about it.
@@ -37,7 +38,7 @@ export interface RoutineSubject {
   name: string | null;
   /** `feed` for a baby under a year, `meal` for an older child; naps are naps. */
   noun: 'nap' | 'feed' | 'meal' | 'routine';
-  /** "Hannah", "Our family". */
+  /** The family's label as shared ("Hannah’s family") or typed ("Hannah"); always shown through `familyDisplayName`. */
   familyLabel: string;
   /** True for the household that is using the app. */
   yours: boolean;
@@ -107,7 +108,7 @@ export function subjectPhrase(subject: RoutineSubject, kind: 'nap' | 'feed'): st
   // A connection made before routines carried a kind shares only "Home time", so it is a home routine, not a nap.
   const noun = subject.noun === 'routine' ? 'home routine' : kind === 'nap' ? 'nap' : subject.noun === 'meal' ? 'meal' : 'feed';
   if (subject.yours) return subject.name ? `${possessive(subject.name)} ${noun}` : `your ${noun}`;
-  return `the ${noun} for ${possessive(subject.familyLabel)} family`;
+  return `the ${noun} for ${familyDisplayName(subject.familyLabel)}`;
 }
 
 const upper = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
@@ -303,7 +304,7 @@ export function reasonAboutRoutines(context: RoutineAdviceContext): RoutineReaso
     homeBefore.push(
       subject.yours
         ? `You’re home around ${hm(family.home)}, before ${phrase} at ${hm(after.start)}.`
-        : `${possessive(subject.familyLabel)} family is home around ${hm(family.home)}, before their ${subject.noun === 'routine' ? 'home routine' : after.kind === 'nap' ? 'nap' : subject.noun === 'meal' ? 'meal' : 'feed'} at ${hm(after.start)}.`,
+        : `${upper(familyDisplayName(subject.familyLabel))} is home around ${hm(family.home)}, before their ${subject.noun === 'routine' ? 'home routine' : after.kind === 'nap' ? 'nap' : subject.noun === 'meal' ? 'meal' : 'feed'} at ${hm(after.start)}.`,
     );
   }
 
@@ -332,7 +333,7 @@ function reasonAcrossFamilies(
   const affected = new Set(advice.map((a) => a.familyId));
   const familyName = (familyId: string): string => {
     const family = itinerary.families.find((f) => f.familyId === familyId);
-    return resolveSubject(familyId, '', 'nap').yours ? 'your family' : `${possessive(family?.label ?? 'their')} family`;
+    return resolveSubject(familyId, '', 'nap').yours ? 'your family' : familyDisplayName(family?.label);
   };
 
   if (affected.size === 0) {

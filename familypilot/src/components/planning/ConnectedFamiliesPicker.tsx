@@ -8,6 +8,7 @@ import { Connection } from '@/src/services/planning/connection-invites';
 import { INVITE_RELATIONSHIPS, InviteRelationship } from '@/src/services/planning/invite-links';
 
 import { InviteLinkCard } from './InviteLinkCard';
+import { familyDisplayName } from '@/src/utils/family-title';
 
 /**
  * "Add another family", under Who's coming: the families already connected to this account, and a way to invite
@@ -64,7 +65,7 @@ export function ConnectedFamiliesPicker({
               <Chip
                 key={connection.id}
                 size="small"
-                label={`${chosen ? '' : '+ '}${family.label} · ${family.ages.length} ${family.ages.length === 1 ? 'child' : 'children'}`}
+                label={`${chosen ? '' : '+ '}${familyDisplayName(family.label)} · ${family.ages.length} ${family.ages.length === 1 ? 'child' : 'children'}`}
                 active={chosen}
                 onPress={() => add(connection)}
               />

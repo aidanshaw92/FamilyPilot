@@ -178,13 +178,13 @@ function requirementLine(requirement: UnmetRequirement, venueName: string): stri
   if (requirement.field === 'pushchairSuitability') {
     return requirement.outcome === 'unsuitable'
       ? `${venueName} is recorded as difficult with a pushchair, and your family needs it to work.`
-      : `Nobody has confirmed whether ${venueName} works with a pushchair, and your family needs it to.`;
+      : `It isn’t confirmed whether ${venueName} works with a pushchair, and your family needs it to.`;
   }
   const label = mustHaveLabel(requirement.field);
   if (label) {
     return requirement.outcome === 'unsuitable'
       ? `${venueName} does not have ${label}, and your family needs it.`
-      : `Nobody has confirmed ${label} at ${venueName}, and your family needs it.`;
+      : `${label.charAt(0).toUpperCase()}${label.slice(1)} isn’t confirmed at ${venueName}, and your family needs it.`;
   }
   switch (requirement.field) {
     case 'journey':
