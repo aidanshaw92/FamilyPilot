@@ -38,7 +38,8 @@ const GUESTS = [
   { id: 'guest-hannah', label: 'Hannah', area: 'E17', latitude: 51.59, longitude: -0.02, ages: [], maxDriveMinutes: 120, budgetTier: 'moderate', pushchair: false, required: [], routines: [] },
 ];
 
-const SIZES = [[360, 800], [390, 844], [393, 852], [430, 932], [360, 640], [390, 700], [393, 740]];
+const ALL_SIZES = [[360, 800], [390, 844], [393, 852], [430, 932], [360, 640], [390, 700], [393, 740]];
+const SIZES = process.env.ONLY_SIZES ? process.env.ONLY_SIZES.split(',').map((size) => size.split('x').map(Number)) : ALL_SIZES;
 const TABS = [['/', 'Home'], ['/explore', 'Explore'], ['/trips', 'Plans'], ['/saved', 'Saved'], ['/profile', 'Profile']];
 
 let failed = 0;
@@ -121,6 +122,22 @@ for (const [width, height] of SIZES) {
     const ok = m.navTop !== null && m.textBottom <= m.navTop - 4 && m.controlBottom <= m.navTop - 4 && m.reachable;
     check(
       `${label}: ${name} to the end clears the navigation`,
+      ok,
+      `scrolled ${Math.round(scrolled)}px; text "${m.textLabel}" ends ${Math.round(m.textBottom)}, control "${m.controlLabel}" ends ${Math.round(m.controlBottom)}, nav starts ${m.navTop === null ? 'n/a' : Math.round(m.navTop)}${m.reachable ? '' : ', control covered'}`,
+    );
+  }
+
+  // The Plans tab's other two views are long: its families list (with the account panel) and the saved plans.
+  for (const view of ['Families & routines', 'Saved plans']) {
+    await page.goto(`${BASE}/trips`, { waitUntil: 'networkidle', timeout: 60000 }).catch(() => {});
+    await page.waitForTimeout(1800);
+    await page.getByRole('button', { name: view, exact: true }).first().click().catch(() => {});
+    await page.waitForTimeout(900);
+    const scrolled = await scrollToEnd(page, width, height);
+    const m = await measure(page);
+    const ok = m.navTop !== null && m.textBottom <= m.navTop - 4 && m.controlBottom <= m.navTop - 4 && m.reachable;
+    check(
+      `${label}: Plans > ${view} to the end clears the navigation`,
       ok,
       `scrolled ${Math.round(scrolled)}px; text "${m.textLabel}" ends ${Math.round(m.textBottom)}, control "${m.controlLabel}" ends ${Math.round(m.controlBottom)}, nav starts ${m.navTop === null ? 'n/a' : Math.round(m.navTop)}${m.reachable ? '' : ', control covered'}`,
     );

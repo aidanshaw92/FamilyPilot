@@ -184,14 +184,38 @@ hook (`useConnectedFamilies`) feeds Profile, Who's coming and Meet halfway.
 * The retired Plans-tab finder (`recommendPlans`) was the one path that could open new place-search cache keys; it is no
   longer reachable from the UI.
 
-## 13. Not done, and why
+## 13. Verification
+
+Run on this branch, against the synthetic places fixture (no Google, no accounts, zero provider requests), in real Chromium:
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` | clean |
+| `vitest run` | 151 files, 2,400 tests pass (new: `routine-clashes` 23, `meet-halfway` 16, `household` 11, and additions to `plan-draft`, `day-sequencer`, `create-plan`, `family-match`, `venue-taxonomy`, `profile-migration`, `plan-view-model`) |
+| `verify-product-coherence` (360, 390, 393, 430) | 132 / 132: Home, Explore, Venue Detail order, the sheet, too-soon fix, routines as advice with a one-tap option, Profile, Meet halfway to a joint plan |
+| `verify-nav-clearance` | every tab and the filter sheet at 360×800, 390×844, 393×852, 430×932 and the shorter 360×640, 390×700, 393×740, plus Plans > Families and Saved: pass |
+| `verify-explore-clearance` | pass |
+| `verify-home-against-figma` | 89 / 89 (the approved Home frame, with the new heading and subtitle in the same positions) |
+| `verify-plan-screens-against-design` | 56 / 56 |
+| `verify-create-plan-journey` | 132 / 132 |
+| `verify-onboarding-flow` | every check, including the household step and Edit profile keeping the family name and the partner |
+| `verify-deck-gesture`, `verify-deck-images`, `verify-home-fit`, `verify-home-greeting`, `verify-home-food-filters`, `verify-dynamic-content` | 11/11, 2/2, 36/36, 15/15, all, 43/43 |
+| `verify-account-journey`, `verify-account-qa`, `verify-post-visit` (auth build with the in-memory fixture) | all pass, including the Profile listing the connected family and nothing the connection did not share |
+
+Renders: `docs/product-coherence/<width>x<height>/` (Home, Explore, Venue Detail, the sheet, a too-soon start, the plan, Profile, Meet
+halfway, a joint plan). The Home verifier's subtitle and heading lookups were updated to the new words; the geometry they assert did not move.
+
+A build note worth keeping: Metro caches inlined `EXPO_PUBLIC_*` values, so an auth-enabled export followed by a plain export
+silently produced a build with accounts switched on. The plain build must be made with `--clear` and without the Supabase variables.
+
+## 14. Not done, and why
 
 * VoiceOver/TalkBack and OS larger text: **not tested** (manual).
 * Real-device safe-area inset: cannot be injected into desktop Chromium; covered by `safe-area-footer.test.ts` and a manual pass.
 * Native (iOS/Android) time picker: web uses the platform's own `<input type=time>`; native keeps the HH:MM text field.
 * Restaurant photographs are never fabricated; the placeholder stays.
 
-## 14. Owner decisions still open
+## 15. Owner decisions still open
 
 1. **Unknown must-haves still block a plan** (fail closed), while Family Fit says *Possible*. Kept as the documented principle;
    say if you want a plan to proceed with a "check this" line instead.
