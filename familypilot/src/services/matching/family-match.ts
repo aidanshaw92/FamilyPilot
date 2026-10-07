@@ -7,6 +7,7 @@ import { childAgeVerdicts, joinNames, outsideRangeCautions, suitsChildrenLine } 
 import { childUsesBuggy, familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
 import { describeOpeningToday, OpeningTodayState } from '@/src/utils/opening-today';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
+import { driveLimitMinutes } from '@/src/utils/preferences';
 import { observationLine, ParentObservations } from '@/src/services/matching/parent-observations';
 
 /**
@@ -373,8 +374,9 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
   // ---- the journey -----------------------------------------------------------------------------------------
   const drive = venue.driveMinutes;
   if (Number.isFinite(drive)) {
-    const limit = profile.maxDriveMinutes;
-    if (Number.isFinite(limit) && drive > limit) {
+    // Only a limit the family stated can be exceeded. With none there is no "over": the journey is shown, never cautioned.
+    const limit = driveLimitMinutes(profile);
+    if (limit !== null && drive > limit) {
       const over = Math.round(drive - limit);
       const text = `${Math.round(drive)} min away, ${over} min over the ${limit} min drive we’re using`;
       // Well beyond the limit is a different thing from a few minutes over.

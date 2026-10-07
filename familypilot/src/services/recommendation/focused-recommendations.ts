@@ -17,6 +17,9 @@ function metadataForPlace(
   return familyMetadata ?? getFamilyPlaceMetadata(placeId);
 }
 
+/** How far a search reaches when the family stated no journey limit: sizes the search only, never shown or applied as a limit. */
+const NO_LIMIT_SEARCH_MINUTES = 45;
+
 export async function getFocusedRecommendations(
   profile: FamilyProfile,
   request: DayRequest,
@@ -25,7 +28,8 @@ export async function getFocusedRecommendations(
   const params = {
     latitude: home.latitude,
     longitude: home.longitude,
-    radiusKm: ((request.constraints.journey?.value.maxMinutes ?? request.maxDriveMinutes) / 60) * 40 * 1.2,
+    // A stated limit sizes the search; without one the search covers the London area (a reach, not a restriction).
+    radiusKm: (((request.constraints.journey?.value.maxMinutes ?? request.maxDriveMinutes) ?? NO_LIMIT_SEARCH_MINUTES) / 60) * 40 * 1.2,
     intent: 'explore' as const,
   };
 

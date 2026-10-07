@@ -27,8 +27,9 @@ export interface SharedFamilySnapshot {
   latitude: number;
   longitude: number;
   ages: number[];
-  maxDriveMinutes: number;
-  budgetTier: PlanningFamily['budgetTier'];
+  /** Only if the person stated one; absent otherwise. A default is never shared as if it were their preference. */
+  maxDriveMinutes?: number | null;
+  budgetTier?: PlanningFamily['budgetTier'];
   pushchair: boolean;
   required: PlanningFamily['required'];
   relationship?: InviteRelationship;
@@ -73,8 +74,8 @@ export function snapshotForSharing(
     latitude: roundKm(derived.latitude),
     longitude: roundKm(derived.longitude),
     ages: derived.ages,
-    maxDriveMinutes: derived.maxDriveMinutes,
-    budgetTier: derived.budgetTier,
+    ...(typeof derived.maxDriveMinutes === 'number' ? { maxDriveMinutes: derived.maxDriveMinutes } : {}),
+    ...(derived.budgetTier ? { budgetTier: derived.budgetTier } : {}),
     pushchair: derived.pushchair,
     required: derived.required,
     relationship,

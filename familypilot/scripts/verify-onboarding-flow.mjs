@@ -6,7 +6,7 @@
  *   - one baby, one toddler, one older child, baby + toddler, toddler + older child, and a mixed family
  *     whose children differ in mobility and routines
  *   - the naps-and-feeds step exists only when a child is young enough to be asked
- *   - drive time and budget are not asked, and keep the defaults every consumer expects
+ *   - drive time and budget are not asked, and nothing is stored for them (no limit, no budget)
  *   - the date of birth boxes reject an impossible, a future and a too-old date with a specific message
  *   - nothing is stored that the parent did not enter (no invented date of birth, no unasked answers)
  *
@@ -98,7 +98,7 @@ async function newPage(width, height = 800) {
   const page = await ctx.newPage();
   return { ctx, page };
 }
-const next = (page) => page.getByRole('button', { name: /^(continue|see my recommendations)/i }).first();
+const next = (page) => page.getByRole('button', { name: /^(continue|skip for now|see my recommendations)/i }).first();
 
 async function startOnSetup(page) {
   await page.goto(`${BASE}/(onboarding)/setup`, { waitUntil: 'domcontentloaded' });
@@ -206,7 +206,7 @@ for (const width of [360, 430]) {
       const routines = (p.routines ?? []).map((r) => `${r.label}@${r.time}`).sort();
       check(JSON.stringify(routines) === JSON.stringify([...scenario.profile.routines].sort()), `${label}: routines are ${JSON.stringify(scenario.profile.routines)} (got ${JSON.stringify(routines)})`);
       check((p.routines ?? []).every((r) => kidsOut.some((k) => k.id === r.childId)), `${label}: every routine belongs to a child`);
-      check(p.maxDriveMinutes === 30 && p.budgetTier === 'moderate', `${label}: drive time and budget keep their defaults (they are not asked)`);
+      check(p.maxDriveMinutes == null && p.budgetTier == null, `${label}: no journey limit and no budget are stored (they are not asked, and not invented)`);
       check(!p.pushchair, `${label}: no pushchair name is invented`);
 
       await page.goto(`${BASE}/venue/${VENUE}`, { waitUntil: 'domcontentloaded' });

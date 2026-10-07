@@ -1,4 +1,5 @@
 import { mockVenueDetails, mockVenues } from '@/src/data/mock-data';
+import { driveLimitMinutes } from '@/src/utils/preferences';
 import { calculateFamilyScore } from '@/src/services/scoring/family-score';
 import { evaluateFamilyMatch } from '@/src/services/matching/family-match';
 import type { ParentObservations } from '@/src/services/matching/parent-observations';
@@ -19,9 +20,11 @@ import { familyNeedsStepFree } from './family-mobility';
  * distance would be a second fabrication.
  */
 export function buildDriveCaution(profile: FamilyProfile, driveMinutes: number): string | null {
-  if (!Number.isFinite(driveMinutes) || !Number.isFinite(profile.maxDriveMinutes)) return null;
-  if (driveMinutes <= profile.maxDriveMinutes) return null;
-  return `Further than the ${profile.maxDriveMinutes} min drive we’re using`;
+  // Only a limit the family stated: with none there is nothing to be further than.
+  const limit = driveLimitMinutes(profile);
+  if (!Number.isFinite(driveMinutes) || limit === null) return null;
+  if (driveMinutes <= limit) return null;
+  return `Further than the ${limit} min drive we’re using`;
 }
 
 /**
@@ -99,7 +102,8 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
 export function personaliseVenues(venues: Venue[], profile: FamilyProfile, weather?: WeatherInfo | null): Venue[] {
   return venues
     .map((venue) => personaliseVenue(venue, profile, weather))
-    .filter((venue) => venue.driveMinutes <= profile.maxDriveMinutes + 10)
+    // A stated limit (with ten minutes' leeway) narrows the list; no stated limit narrows nothing.
+    .filter((venue) => driveLimitMinutes(profile) === null || venue.driveMinutes <= (driveLimitMinutes(profile) as number) + 10)
     .sort((a, b) => b.familyScore.score - a.familyScore.score);
 }
 
@@ -129,7 +133,7 @@ export function buildHomeRecommendations(profile: FamilyProfile): Recommendation
     sections.push({
       id: 'rec-2',
       title: 'Weekend ideas',
-      subtitle: `Within ${profile.maxDriveMinutes} minutes of home`,
+      subtitle: driveLimitMinutes(profile) === null ? 'Ideas for the weekend' : `Within ${driveLimitMinutes(profile)} minutes of home`,
       venues: weekend.slice(0, 3),
     });
   }
@@ -138,7 +142,7 @@ export function buildHomeRecommendations(profile: FamilyProfile): Recommendation
     sections.push({
       id: 'rec-3',
       title: 'Rainy day ideas',
-      subtitle: `Indoor options within ${profile.maxDriveMinutes} minutes`,
+      subtitle: driveLimitMinutes(profile) === null ? 'Indoor options' : `Indoor options within ${driveLimitMinutes(profile)} minutes`,
       venues: rainy.slice(0, 2),
     });
   }

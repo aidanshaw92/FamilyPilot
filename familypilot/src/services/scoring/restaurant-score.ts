@@ -10,6 +10,8 @@ import {
 import { getDriveMinutesFromActivity } from '@/src/data/mock-restaurants';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
 import { budgetFitReason } from '@/src/utils/budget-copy';
+import { budgetTierOf, driveLimitMinutes } from '@/src/utils/preferences';
+import { blendFactors } from './blend';
 
 const WEIGHTS = {
   ageSuitability: 0.2,
@@ -19,7 +21,6 @@ const WEIGHTS = {
   facilitiesMatch: 0.25,
 } as const;
 /** No routine factor: where to eat is chosen while browsing, and naps and feeds belong to a planned day. */
-const WEIGHT_TOTAL = Object.values(WEIGHTS).reduce((sum, weight) => sum + weight, 0);
 
 function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, Math.round(value)));
@@ -35,7 +36,7 @@ function parseMaxSpend(spend?: string): number | null {
   return match ? Number(match[1]) : null;
 }
 
-function scoreBudget(spend: string | undefined, tier: FamilyProfile['budgetTier']): number {
+function scoreBudget(spend: string | undefined, tier: NonNullable<FamilyProfile['budgetTier']>): number {
   const max = parseMaxSpend(spend);
   if (max === null) return 75;
   if (tier === 'budget') {
@@ -99,13 +100,16 @@ function buildRestaurantExplanation(
   if (isConfirmed(f.highChairs)) reasons.push('High chairs available');
   if (isConfirmed(f.babyChanging)) reasons.push('Baby changing');
   if (isConfirmed(f.pushchairSpace)) reasons.push('Pushchair friendly');
-  if (driveFromActivity === undefined && restaurant.driveMinutes <= profile.maxDriveMinutes) {
+  const limit = driveLimitMinutes(profile);
+  // Mentioned as a nicety when it is near; without a stated limit there is nothing to be within, so only a short journey is.
+  if (driveFromActivity === undefined && restaurant.driveMinutes <= (limit ?? 30)) {
     reasons.push(`About ${restaurant.driveMinutes} minutes from home`);
   }
 
   const spend = restaurant.estimatedFamilySpend ?? restaurant.estimatedSpend;
-  if (scoreBudget(spend, profile.budgetTier) >= 85) {
-    reasons.push(budgetFitReason(profile.budgetTier));
+  const tier = budgetTierOf(profile);
+  if (tier && scoreBudget(spend, tier) >= 85) {
+    reasons.push(budgetFitReason(tier));
   }
 
   if (isConfirmed(f.outdoorSeating)) reasons.push('Outdoor seating');
@@ -136,18 +140,13 @@ export function calculateRestaurantFamilyScore(
     accessibility: isConfirmed(restaurant.restaurantFeatures.stepFreeAccess) ? 90 : 68,
     distance: options?.activityVenue
       ? scoreDistanceFromActivity(driveFromActivity ?? 99)
-      : clamp(100 - (restaurant.driveMinutes / (profile.maxDriveMinutes + 1)) * 30),
+      : clamp(100 - (restaurant.driveMinutes / ((driveLimitMinutes(profile) ?? 30) + 1)) * 30),
     weatherFit: 85,
-    budgetFit: scoreBudget(spend, profile.budgetTier),
+    budgetFit: budgetTierOf(profile) ? scoreBudget(spend, budgetTierOf(profile)!) : undefined,
     facilitiesMatch: scoreFacilities(restaurant.restaurantFeatures, profile),
   };
 
-  const score = clamp(
-    Object.entries(WEIGHTS).reduce(
-      (sum, [key, weight]) => sum + (factors[key as keyof FamilyScoreFactors] ?? 0) * weight,
-      0,
-    ) / WEIGHT_TOTAL,
-  );
+  const score = clamp(blendFactors(WEIGHTS, factors));
 
   const explanation = buildRestaurantExplanation(
     restaurant,
@@ -163,9 +162,14 @@ export function calculateRestaurantFamilyScore(
 export function calculateEatNearbyRankScore(
   familyScore: number,
   driveMinutesFromActivity: number,
-  budgetFit: number,
+  budgetFit: number | undefined,
   facilitiesMatch: number,
 ): number {
+  // No stated budget: price takes no part in the order, and the other parts keep their proportions.
+  if (budgetFit === undefined) {
+    const rest = 0.5 + 0.25 + 0.13;
+    return (familyScore * 0.5 + scoreDistanceFromActivity(driveMinutesFromActivity) * 0.25 + facilitiesMatch * 0.13) / rest;
+  }
   const distanceScore = scoreDistanceFromActivity(driveMinutesFromActivity);
   return (
     familyScore * 0.5 +

@@ -90,7 +90,8 @@ export interface FamilyScoreFactors {
   accessibility: number;
   distance: number;
   weatherFit: number;
-  budgetFit: number;
+  /** Absent when the family stated no budget: nothing is scored, and the blend leaves it out (blend.ts). */
+  budgetFit?: number;
   facilitiesMatch: number;
   // There is deliberately no routine factor. Ranking used to reward a place the family could reach and leave before the
   // next nap or feed TODAY, so Home reordered itself by the clock. Ranking is about the family; routines are about a
@@ -283,8 +284,16 @@ export interface FamilyProfile {
   /** Resolved centroid for the entered town/postcode. Stored locally with the profile. */
   homeLatitude?: number | null;
   homeLongitude?: number | null;
-  budgetTier: 'budget' | 'moderate' | 'premium';
-  maxDriveMinutes: number;
+  /**
+   * Only what the parent CHOSE. Absent means "no budget stated": nothing is cut, capped or marked down for price.
+   * Never filled in by the app (see utils/preferences.ts).
+   */
+  budgetTier?: 'budget' | 'moderate' | 'premium' | null;
+  /**
+   * The longest journey the parent said they will make, in minutes. Absent means "no limit stated": nothing is cautioned,
+   * ranked down or hidden for distance, though the journey time is still shown. Never filled in by the app.
+   */
+  maxDriveMinutes?: number | null;
   completionPercent: number;
   vehicle?: string | null;
   pushchair?: string | null;

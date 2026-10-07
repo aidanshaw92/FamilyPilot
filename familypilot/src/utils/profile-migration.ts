@@ -17,7 +17,7 @@ import { withCompletion } from './profile-defaults';
  * Device-local data in, device-local data out: nothing here touches the network.
  */
 
-const BUDGET_TIERS: FamilyProfile['budgetTier'][] = ['budget', 'moderate', 'premium'];
+const BUDGET_TIERS: NonNullable<FamilyProfile['budgetTier']>[] = ['budget', 'moderate', 'premium'];
 const MOBILITY: ChildMobility[] = ['walks', 'buggy', 'carrier', 'mobility-aid'];
 const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -139,10 +139,11 @@ export function migrateLegacyProfile(raw: unknown): MigrationResult {
     members,
     homeLocation: text(source.homeLocation),
     ...(lat !== null && lng !== null ? { homeLatitude: lat, homeLongitude: lng } : {}),
-    budgetTier: BUDGET_TIERS.includes(source.budgetTier as FamilyProfile['budgetTier'])
-      ? (source.budgetTier as FamilyProfile['budgetTier'])
-      : 'moderate',
-    maxDriveMinutes: drive !== null && drive > 0 ? Math.round(drive) : 30,
+    // Only what is stored and valid. A missing or unusable value is "not set", never a default (utils/preferences.ts).
+    ...(BUDGET_TIERS.includes(source.budgetTier as NonNullable<FamilyProfile['budgetTier']>)
+      ? { budgetTier: source.budgetTier as NonNullable<FamilyProfile['budgetTier']> }
+      : {}),
+    ...(drive !== null && drive > 0 ? { maxDriveMinutes: Math.round(drive) } : {}),
     completionPercent: 0,
     vehicle: optionalText(source.vehicle),
     pushchair: optionalText(source.pushchair),

@@ -144,7 +144,7 @@
     "viewport": "360x800",
     "step": "saving from the header also settles the persistent button",
     "ok": true,
-    "message": "Saved"
+    "message": "Plan savedView planAdd to calendar"
   },
   {
     "viewport": "360x800",
@@ -157,6 +157,36 @@
     "step": "back returns to the venue",
     "ok": true,
     "message": "/venue/fp-google-FIXTUREnotArealPlaceId0010"
+  },
+  {
+    "viewport": "360x800",
+    "step": "the same day, reopened, reads \"Already in your plans\"",
+    "ok": true,
+    "message": "Already in your plansView planAdd to calendar"
+  },
+  {
+    "viewport": "360x800",
+    "step": "View plan opens the saved plan itself",
+    "ok": true,
+    "message": "/saved-plan?id=day-1768289400000&from=save"
+  },
+  {
+    "viewport": "360x800",
+    "step": "Add to calendar hands over a calendar event for this day, with nothing private in it",
+    "ok": true,
+    "message": "familypilot-kettleford-play-house.ics"
+  },
+  {
+    "viewport": "360x800",
+    "step": "the phone’s Back from the saved plan returns to the plan, still saved",
+    "ok": true,
+    "message": "/plan?venue=fp-google-FIXTUREnotArealPlaceId0010&date=2026-01-13&start=10%3A00&visit=not-sure&parties=mine · Already in your plansView planAdd to calendar"
+  },
+  {
+    "viewport": "360x800",
+    "step": "\"See all your plans\" lands on Plans, with it marked as just saved",
+    "ok": true,
+    "message": "/trips?justSaved=day-1768289400000"
   },
   {
     "viewport": "360x800",
@@ -308,7 +338,7 @@
     "viewport": "390x844",
     "step": "saving from the header also settles the persistent button",
     "ok": true,
-    "message": "Saved"
+    "message": "Plan savedView planAdd to calendar"
   },
   {
     "viewport": "390x844",
@@ -321,6 +351,36 @@
     "step": "back returns to the venue",
     "ok": true,
     "message": "/venue/fp-google-FIXTUREnotArealPlaceId0010"
+  },
+  {
+    "viewport": "390x844",
+    "step": "the same day, reopened, reads \"Already in your plans\"",
+    "ok": true,
+    "message": "Already in your plansView planAdd to calendar"
+  },
+  {
+    "viewport": "390x844",
+    "step": "View plan opens the saved plan itself",
+    "ok": true,
+    "message": "/saved-plan?id=day-1768289400000&from=save"
+  },
+  {
+    "viewport": "390x844",
+    "step": "Add to calendar hands over a calendar event for this day, with nothing private in it",
+    "ok": true,
+    "message": "familypilot-kettleford-play-house.ics"
+  },
+  {
+    "viewport": "390x844",
+    "step": "the phone’s Back from the saved plan returns to the plan, still saved",
+    "ok": true,
+    "message": "/plan?venue=fp-google-FIXTUREnotArealPlaceId0010&date=2026-01-13&start=10%3A00&visit=not-sure&parties=mine · Already in your plansView planAdd to calendar"
+  },
+  {
+    "viewport": "390x844",
+    "step": "\"See all your plans\" lands on Plans, with it marked as just saved",
+    "ok": true,
+    "message": "/trips?justSaved=day-1768289400000"
   },
   {
     "viewport": "390x844",
@@ -472,7 +532,7 @@
     "viewport": "393x852",
     "step": "saving from the header also settles the persistent button",
     "ok": true,
-    "message": "Saved"
+    "message": "Plan savedView planAdd to calendar"
   },
   {
     "viewport": "393x852",
@@ -485,6 +545,36 @@
     "step": "back returns to the venue",
     "ok": true,
     "message": "/venue/fp-google-FIXTUREnotArealPlaceId0010"
+  },
+  {
+    "viewport": "393x852",
+    "step": "the same day, reopened, reads \"Already in your plans\"",
+    "ok": true,
+    "message": "Already in your plansView planAdd to calendar"
+  },
+  {
+    "viewport": "393x852",
+    "step": "View plan opens the saved plan itself",
+    "ok": true,
+    "message": "/saved-plan?id=day-1768289400000&from=save"
+  },
+  {
+    "viewport": "393x852",
+    "step": "Add to calendar hands over a calendar event for this day, with nothing private in it",
+    "ok": true,
+    "message": "familypilot-kettleford-play-house.ics"
+  },
+  {
+    "viewport": "393x852",
+    "step": "the phone’s Back from the saved plan returns to the plan, still saved",
+    "ok": true,
+    "message": "/plan?venue=fp-google-FIXTUREnotArealPlaceId0010&date=2026-01-13&start=10%3A00&visit=not-sure&parties=mine · Already in your plansView planAdd to calendar"
+  },
+  {
+    "viewport": "393x852",
+    "step": "\"See all your plans\" lands on Plans, with it marked as just saved",
+    "ok": true,
+    "message": "/trips?justSaved=day-1768289400000"
   },
   {
     "viewport": "393x852",
@@ -636,7 +726,7 @@
     "viewport": "430x932",
     "step": "saving from the header also settles the persistent button",
     "ok": true,
-    "message": "Saved"
+    "message": "Plan savedView planAdd to calendar"
   },
   {
     "viewport": "430x932",
@@ -649,6 +739,36 @@
     "step": "back returns to the venue",
     "ok": true,
     "message": "/venue/fp-google-FIXTUREnotArealPlaceId0010"
+  },
+  {
+    "viewport": "430x932",
+    "step": "the same day, reopened, reads \"Already in your plans\"",
+    "ok": true,
+    "message": "Already in your plansView planAdd to calendar"
+  },
+  {
+    "viewport": "430x932",
+    "step": "View plan opens the saved plan itself",
+    "ok": true,
+    "message": "/saved-plan?id=day-1768289400000&from=save"
+  },
+  {
+    "viewport": "430x932",
+    "step": "Add to calendar hands over a calendar event for this day, with nothing private in it",
+    "ok": true,
+    "message": "familypilot-kettleford-play-house.ics"
+  },
+  {
+    "viewport": "430x932",
+    "step": "the phone’s Back from the saved plan returns to the plan, still saved",
+    "ok": true,
+    "message": "/plan?venue=fp-google-FIXTUREnotArealPlaceId0010&date=2026-01-13&start=10%3A00&visit=not-sure&parties=mine · Already in your plansView planAdd to calendar"
+  },
+  {
+    "viewport": "430x932",
+    "step": "\"See all your plans\" lands on Plans, with it marked as just saved",
+    "ok": true,
+    "message": "/trips?justSaved=day-1768289400000"
   },
   {
     "viewport": "430x932",

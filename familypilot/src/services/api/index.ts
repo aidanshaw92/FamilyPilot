@@ -241,7 +241,7 @@ export const restaurantService = {
     await delay(250);
     const profile = getProfile();
     const all = getAllRestaurants(profile);
-    return filterRestaurants(all, advancedIds, maxDrive, profile.maxDriveMinutes, budget);
+    return filterRestaurants(all, advancedIds, maxDrive, budget);
   },
 };
 

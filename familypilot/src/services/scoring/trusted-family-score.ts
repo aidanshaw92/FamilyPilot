@@ -263,7 +263,7 @@ export function buildTrustedExplanation(
     reasons.push(`About ${venue.driveMinutes} minutes from home`);
   }
 
-  if (factors.budgetFit >= 85 && facts.estimatedSpend) {
+  if ((factors.budgetFit ?? 0) >= 85 && facts.estimatedSpend) {
     reasons.push(`Estimated spend ${facts.estimatedSpend}`);
   }
 

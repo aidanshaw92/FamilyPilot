@@ -117,8 +117,8 @@ function mergeWithProfile(parsed, profile) {
     childAges,
     childAgeMonthsList,
     homeLocation: profile.homeLocation,
-    budgetTier: profile.budgetTier,
-    maxDriveMinutes: profile.maxDriveMinutes,
+    budgetTier: profile.budgetTier ?? null,
+    maxDriveMinutes: profile.maxDriveMinutes ?? null,
     hasPushchair: Boolean(profile.pushchair?.trim()),
     constraints,
     context: {
@@ -185,11 +185,18 @@ function reconcileConstraints(explicit, suggestions, profile) {
 
   // 1. Server and profile. Assigned last, so nothing below can have touched them.
   constraints.ageRecommendedFit = { ...AGE_RECOMMENDED_FIT };
-  constraints.budget = { ...BUDGET_WITHIN_PROFILE };
-  constraints.journey = {
-    strength: 'required',
-    value: { maxMinutes: profile.maxDriveMinutes },
-  };
+  // Only what the family stated. No budget and no journey limit on the profile means no such constraint, never a default.
+  delete constraints.budget;
+  delete constraints.journey;
+  if (profile.budgetTier === 'budget' || profile.budgetTier === 'moderate' || profile.budgetTier === 'premium') {
+    constraints.budget = { ...BUDGET_WITHIN_PROFILE };
+  }
+  if (Number.isFinite(profile.maxDriveMinutes) && profile.maxDriveMinutes >= 5 && profile.maxDriveMinutes <= 120) {
+    constraints.journey = {
+      strength: 'required',
+      value: { maxMinutes: profile.maxDriveMinutes },
+    };
+  }
 
   return constraints;
 }

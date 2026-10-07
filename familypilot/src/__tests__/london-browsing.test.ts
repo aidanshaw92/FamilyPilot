@@ -6,9 +6,9 @@ const { googlePlaceToRecord } = require('../../../server/places/lib/google-place
 
 test('Any travel time does not silently hide London venues', () => {
   const venue = { id:'test',category:'park',driveMinutes:70,familyScore:{score:0} } as Venue;
-  expect(filterVenues([venue],'all',[],'any',30,'any')).toHaveLength(1);
-  expect(filterVenues([venue],'all',[],30,30,'any')).toHaveLength(0);
-  expect(filterVenues([venue],'all',[],'any',30,'free')).toHaveLength(0);
+  expect(filterVenues([venue],'all',[],'any','any')).toHaveLength(1);
+  expect(filterVenues([venue],'all',[],30,'any')).toHaveLength(0);
+  expect(filterVenues([venue],'all',[],'any','free')).toHaveLength(0);
 });
 
 test('London defaults and Mill Hill resolve independently', () => {

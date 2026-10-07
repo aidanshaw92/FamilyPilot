@@ -5,9 +5,10 @@ const { getSupabaseAdmin } = require('../../server/enrichment/_lib/supabase-admi
 // Share only a coarse area and planning preferences. Never names of children. Routine times and whether each is a nap or a
 // feed are shared only when the person ticked "share routines" (shareAvailability), and never with a name or an id.
 function safeSnapshot(input) {
-  if (!input || typeof input.label !== 'string' || typeof input.area !== 'string' || !Array.isArray(input.ages) || input.ages.length>10 || input.ages.some(n=>!Number.isFinite(n)||n<0||n>17) || !Number.isFinite(input.latitude) || Math.abs(input.latitude)>90 || !Number.isFinite(input.longitude) || Math.abs(input.longitude)>180 || !Number.isFinite(input.maxDriveMinutes) || input.maxDriveMinutes<5 || input.maxDriveMinutes>120) throw new Error('Invalid family details');
+  if (!input || typeof input.label !== 'string' || typeof input.area !== 'string' || !Array.isArray(input.ages) || input.ages.length>10 || input.ages.some(n=>!Number.isFinite(n)||n<0||n>17) || !Number.isFinite(input.latitude) || Math.abs(input.latitude)>90 || !Number.isFinite(input.longitude) || Math.abs(input.longitude)>180 || (input.maxDriveMinutes!=null && (!Number.isFinite(input.maxDriveMinutes) || input.maxDriveMinutes<5 || input.maxDriveMinutes>120))) throw new Error('Invalid family details');
   return { label:input.label.slice(0,60),area:input.area.slice(0,80),latitude:Math.round(input.latitude*100)/100,longitude:Math.round(input.longitude*100)/100,ages:input.ages,
-    maxDriveMinutes:input.maxDriveMinutes,budgetTier:['budget','moderate','premium'].includes(input.budgetTier)?input.budgetTier:'moderate',pushchair:input.pushchair===true,
+    // A limit or budget the family never stated is stored as nothing, never as a number or a tier the server made up.
+    maxDriveMinutes:input.maxDriveMinutes==null?null:input.maxDriveMinutes,budgetTier:['budget','moderate','premium'].includes(input.budgetTier)?input.budgetTier:null,pushchair:input.pushchair===true,
     required:Array.isArray(input.required)?input.required.filter(x=>['toilets','babyChanging','parking','pushchair'].includes(x)):[],
     // Only a short, fixed set of words about who the invite is for. Never free text: this reaches another person.
     relationship:['partner','family','friend'].includes(input.relationship)?input.relationship:undefined,
