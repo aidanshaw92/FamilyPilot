@@ -89,9 +89,10 @@ export interface FamilyScoreFactors {
   ageSuitability: number;
   accessibility: number;
   distance: number;
-  weatherFit: number;
   budgetFit: number;
   facilitiesMatch: number;
+  // There is deliberately no weather factor either: Family Fit is the same whatever the weather today (it is shown beside
+  // the fit, as a condition of the day, never as part of it).
   // There is deliberately no routine factor. Ranking used to reward a place the family could reach and leave before the
   // next nap or feed TODAY, so Home reordered itself by the clock. Ranking is about the family; routines are about a
   // chosen day, and are worked out by the planner (routine-advice.ts).

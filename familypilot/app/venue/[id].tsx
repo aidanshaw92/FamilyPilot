@@ -47,7 +47,8 @@ import { safeFooterPadding } from '@/src/utils/safe-area';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { accountRequired } from '@/src/stores/auth-store';
 import { isActivityVenue } from '@/src/data/mock-restaurants';
-import { useFamilyProfile, useNearbyFood, useVenue } from '@/src/hooks/use-queries';
+import { useFamilyProfile, useNearbyFood, useParentObservations, useVenue, useWeather } from '@/src/hooks/use-queries';
+import { venueService } from '@/src/services/api';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { minTarget } from '@/src/components/ui/touch';
 import { useNamedDocumentTitle } from '@/src/hooks/use-document-title';
@@ -78,11 +79,21 @@ export default function VenueScreen() {
   const id = firstValue(searchParams.id);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: venue, isLoading, isError, refetch, isPlaceholderData } = useVenue(id ?? '', { showCardWhileLoading: true });
+  const { data: baseVenue, isLoading, isError, refetch, isPlaceholderData } = useVenue(id ?? '', { showCardWhileLoading: true });
   // True while `venue` is the CARD the parent tapped, standing in until the full detail returns. The card knows the place's
   // identity, photograph, travel time and fit badge (all of which the parent just saw), and nothing evidence-backed: so those
   // are drawn, and everything else waits for the real detail rather than being drawn from a partial record.
   const pending = Boolean(isPlaceholderData);
+  // Parent reports are read AFTER the venue's own facts are on screen and applied when they arrive: they can correct a line,
+  // never delay the page. Only for the full detail: a card standing in for it is never corrected, it is replaced.
+  const parentReports = useParentObservations(id ?? '', Boolean(baseVenue) && !pending);
+  const venue = useMemo(
+    () => (baseVenue && !pending ? venueService.withParentObservations(baseVenue, parentReports.data) : baseVenue),
+    [baseVenue, pending, parentReports.data],
+  );
+  // Today's conditions are shown beside the fit, never in it, and arrive on their own: a slow forecast leaves a quiet line
+  // out and holds nothing back.
+  const { data: weather } = useWeather();
   useNamedDocumentTitle(venue?.name);
   // Keyed on the venue's coordinates, so it starts only once the venue has loaded and two venues at
   // the same address share one lookup.
@@ -354,7 +365,7 @@ export default function VenueScreen() {
 
             {/* 2. Will it work TODAY: the opening state from the schedule and the clock, then the routine check. */}
             <View style={styles.block}>
-              <TodayCard hours={venue.structuredOpeningHours} />
+              <TodayCard hours={venue.structuredOpeningHours} weather={weather} environment={venue.trustedFacts?.environment} />
             </View>
 
             {/* 3. The action this screen exists for, straight after the answer to "is it good for us, and will it work today":

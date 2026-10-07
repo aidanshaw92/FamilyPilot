@@ -1,21 +1,24 @@
 import { describe, expect, it } from 'vitest';
 
-import { evaluateFamilyMatch, matchBadgeText, matchCardReason } from '@/src/services/matching/family-match';
+import { evaluateFamilyMatch, matchBadgeText, matchCardReason, matchClosedLine, withClosedLine } from '@/src/services/matching/family-match';
 import { FamilyMember, FamilyProfile, Venue } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { OpeningHoursSchedule } from '@/src/types/opening-hours';
 
 /**
- * FamilyPilot must never say a place works TODAY while saying it is closed today.
+ * FamilyPilot must never say a place works TODAY while saying it is closed today; and since stable Family Fit, it must
+ * not let the day change what it says about the family at all.
  *
- * Real-device run, RAF Museum: "Possible for your family today" above "Closed for today · opens tomorrow 10am". The cause
- * was that today's opening state fed the suitability verdict: a place already finished for the day became a soft caution
- * (so "Possible"), a place shut all day became a breach (so "Probably not … today", which also wrongly called it a poor
- * fit). The headline then said "today" whatever the clock said.
+ * History: real-device run, RAF Museum, "Possible for your family today" above "Closed for today · opens tomorrow 10am".
+ * Today's opening state fed the verdict (a caution, then a breach). The first fix stopped the verdict falling and added
+ * ", but not today" to the headline; that left today in the sentence, and closing-soon / open-today / weather still moved
+ * verdicts and scores.
  *
- * The rule now: SUITABILITY (does this place work for this family?) and TODAY'S AVAILABILITY (can they go today?) are
- * separate. Being shut today never lowers the verdict, never removes the place, and never disables planning another
- * day; but nothing about a place shut today may be worded as a claim about today.
+ * The rule now: SUITABILITY (does this place work for this family?) and AVAILABILITY (is it open today?) are separate
+ * questions with separate fields. Family Fit (verdict, headline, reasons, cautions, things to check, card line, score)
+ * is IDENTICAL whatever the opening state: open, closing soon, finished for the day, shut all day, or no hours. The day
+ * is reported in `today` / `availableToday` and shown as its own fact ("Closed today · opens tomorrow 10am"). The one
+ * exception is a place that is never open to visitors, which is a fact about the place and not about the day.
  */
 
 // Tuesday 6 October 2026, 11:00 on the device; the venues are in London.
@@ -74,67 +77,76 @@ function everything(r: ReturnType<typeof match>): string[] {
   return [r.headline, matchBadgeText(r), matchCardReason(r), r.cardNote ?? '', ...r.reasons.map((l) => l.text), ...r.cautions.map((l) => l.text), ...r.toCheck.map((l) => l.text)];
 }
 
-/** "today" said as a claim that they can go, as opposed to "not today" / "Closed today" / "Closed for today". */
-const CLAIMS_TODAY = /(?<!not |Closed |Closed for )\btoday\b/;
+/** The Family Fit result with the day taken out: this must not depend on the opening state. */
+const fit = (r: ReturnType<typeof match>) => {
+  const { today: _today, availableToday: _available, ...rest } = r;
+  return rest;
+};
 
-describe('every opening state: the right availability, and never a contradiction', () => {
+describe('every opening state: the right availability, and Family Fit identical', () => {
+  const baseline = fit(match(SCHEDULES['hours unknown'].hours));
   for (const [name, { hours, state, available }] of Object.entries(SCHEDULES)) {
     it(name, () => {
       const r = match(hours);
       expect(r.today.state).toBe(state);
       expect(r.availableToday).toBe(available);
-      if (!available) {
-        for (const line of everything(r)) expect(line, line).not.toMatch(CLAIMS_TODAY);
-        expect(r.headline).toMatch(/, but not today$/);
-        // The closed line is what a parent sees first about today, on the page and on the card.
-        expect(r.cautions[0].text).toMatch(/^Closed (for )?today/);
-        expect(matchCardReason(r)).toMatch(/Closed (for )?today/);
+      // The whole of what is said about the family, deep-equal to the same place with no hours at all.
+      expect(fit(r)).toEqual(baseline);
+      // And nothing of the day leaks into a sentence about the family.
+      for (const line of everything(r)) {
+        expect(line, line).not.toMatch(/\btoday\b|closing soon|closed|open (now|until)|opens/i);
       }
+      expect(r.cautions.map((l) => l.key)).not.toEqual(expect.arrayContaining(['closed-today']));
+      expect(r.reasons.map((l) => l.key)).not.toContain('open-today');
+      expect(r.cautions.map((l) => l.key)).not.toContain('closing-soon');
     });
   }
 });
 
-describe('closed today is about today, not about whether the place suits the family', () => {
-  it('the verdict is the same as on a day it is open', () => {
+describe('closed today is a fact beside the fit, not part of it', () => {
+  it('the verdict, headline and badge are the same as on a day it is open', () => {
     const open = match(SCHEDULES['open now'].hours);
-    const finished = match(SCHEDULES['already closed for today'].hours);
-    const shut = match(SCHEDULES['closed all day today'].hours);
     expect(['good', 'excellent']).toContain(open.verdict);
-    // Without the day's own positives (open today, a nap to time a visit around) the verdict may not rise; it never
-    // falls to poor, and it is never "possible" merely because of the clock.
-    for (const r of [finished, shut]) {
-      expect(r.verdict).not.toBe('poor');
-      expect(r.verdict).toBe(open.verdict);
+    for (const name of ['opens later today', 'closing soon', 'already closed for today', 'closed all day today', 'hours unknown']) {
+      const r = match(SCHEDULES[name].hours);
+      expect(r.verdict, name).toBe(open.verdict);
+      expect(r.headline, name).toBe(open.headline);
+      expect(matchBadgeText(r), name).toBe(matchBadgeText(open));
     }
   });
 
-  it('the RAF Museum case: a good place finished for the day reads "Good for Sloane, but not today" with when it opens', () => {
+  it('the RAF Museum case: a good place finished for the day reads "Good for Sloane", and the card says it is closed as a fact', () => {
     const r = match(SCHEDULES['already closed for today'].hours);
-    expect(r.headline).toMatch(/^(Good|Excellent) for Sloane, but not today$/);
-    expect(r.cautions[0].text).toMatch(/^Closed for today · opens tomorrow \d+(am|pm)$/);
-    expect(r.headline).not.toMatch(/Possible for your family today/);
+    expect(r.headline).toMatch(/^(Good|Excellent) for Sloane$/);
+    expect(r.today.label).toMatch(/^Closed for today · opens tomorrow \d+(am|pm)$/);
+    expect(matchClosedLine(r)).toBe(r.today.label);
+    expect(withClosedLine(r, matchCardReason(r))).toMatch(/^Closed for today · opens tomorrow \d+(am|pm) · /);
   });
 
   it('a place shut all day says when it next opens, and is still not called a poor fit', () => {
     const r = match(SCHEDULES['closed all day today'].hours);
-    expect(r.cautions[0].text).toBe('Closed today · opens tomorrow 10am');
+    expect(r.today.label).toBe('Closed today · opens tomorrow 10am');
+    expect(matchClosedLine(r)).toBe('Closed today · opens tomorrow 10am');
+    expect(r.verdict).not.toBe('poor');
     expect(r.headline).not.toMatch(/^Probably not/);
   });
 
-  it('no "leave by … for the nap" or "good weather today" for a day they cannot go', () => {
+  it('an open place adds nothing to its card: the closed line exists only when it is closed', () => {
+    for (const name of ['open now', 'opens later today', 'closing soon', 'hours unknown']) {
+      const r = match(SCHEDULES[name].hours);
+      expect(matchClosedLine(r), name).toBeNull();
+      expect(withClosedLine(r, 'x'), name).toBe('x');
+    }
+  });
+
+  it('no "leave by … for the nap" or opening claim for a day they cannot go', () => {
     const r = match(SCHEDULES['already closed for today'].hours);
     expect(r.reasons.map((l) => l.key)).not.toContain('routine');
     expect(r.reasons.map((l) => l.key)).not.toContain('open-today');
     expect(r.cautions.map((l) => l.key)).not.toContain('routine-clash');
   });
 
-  it('on a day it is open, the opening is still said plainly, as a fact; the headline is about the family, not about going now', () => {
-    const r = match(SCHEDULES['open now'].hours);
-    expect(r.headline).not.toMatch(/today/);
-    expect(r.reasons.map((l) => l.key)).toContain('open-today');
-  });
-
-  it('a confirmed breach still makes it poor, and still never claims today when shut', () => {
+  it('a confirmed breach still makes it poor, whatever the opening state', () => {
     const shutAndTooFar = evaluateFamilyMatch({ venue: { ...venue(SCHEDULES['closed all day today'].hours), driveMinutes: 120 } as Venue, profile: PROFILE, score: 88, now: NOW });
     expect(shutAndTooFar.verdict).toBe('poor');
     expect(shutAndTooFar.headline).toBe('Probably not for your family');

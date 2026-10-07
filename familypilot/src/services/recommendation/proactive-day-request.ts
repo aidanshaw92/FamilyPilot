@@ -1,4 +1,4 @@
-import { FamilyProfile, WeatherInfo } from '@/src/types';
+import { FamilyProfile } from '@/src/types';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
 import { DayRequest } from '@/src/types/day-request';
 import { AGE_RECOMMENDATION_STRENGTH, childAgesInMonths } from '@/src/services/matching/age-suitability';
@@ -12,50 +12,14 @@ function youngestChildAge(childAges: number[]): number | null {
   return Math.min(...childAges);
 }
 
-function timeWindowLabel(hour: number): string {
-  if (hour < 12) return 'morning';
-  if (hour < 17) return 'afternoon';
-  return 'evening';
-}
-
-function environmentPreference(
-  weather?: WeatherInfo | null,
-): DayRequest['constraints']['environment'] | undefined {
-  if (!weather) return undefined;
-
-  switch (weather.condition) {
-    case 'rainy':
-      return { strength: 'preferred', value: 'indoor' };
-    case 'sunny':
-    case 'partly_cloudy':
-      return { strength: 'preferred', value: 'outdoor' };
-    default:
-      return undefined;
-  }
-}
-
-function energyPreference(hour: number): DayRequest['constraints']['energyLevel'] | undefined {
-  if (hour < 12) {
-    return { strength: 'context', value: 'moderate' };
-  }
-  if (hour >= 17) {
-    return { strength: 'context', value: 'low' };
-  }
-  return undefined;
-}
-
 /**
- * Builds a day request from persistent profile + live context so Home can
- * recommend before the parent types anything.
+ * Builds a day request from the persistent profile alone so Home can recommend before the parent types anything.
+ * Today's weather and the time of day are deliberately not inputs: a recommendation is about the family and the place,
+ * and must not reorder itself with the clock or the forecast.
  */
-export function buildProactiveDayRequest(
-  profile: FamilyProfile,
-  weather?: WeatherInfo | null,
-  now: Date = new Date(),
-): DayRequest {
+export function buildProactiveDayRequest(profile: FamilyProfile, now: Date = new Date()): DayRequest {
   const childAges = childAgesFromProfile(profile);
   const youngest = youngestChildAge(childAges);
-  const hour = now.getHours();
   const hasPushchair = familyUsesBuggy(profile);
 
   const constraints: DayRequest['constraints'] = {
@@ -63,11 +27,6 @@ export function buildProactiveDayRequest(
     journey: { strength: 'required', value: { maxMinutes: profile.maxDriveMinutes } },
     budget: { strength: 'preferred', value: 'within_profile' },
   };
-
-  const environment = environmentPreference(weather);
-  if (environment) {
-    constraints.environment = environment;
-  }
 
   if (hasPushchair) {
     constraints.pushchair = { strength: 'preferred', value: 'not_difficult' };
@@ -77,16 +36,10 @@ export function buildProactiveDayRequest(
     constraints.babyChanging = { strength: 'preferred', value: 'yes' };
   }
 
-  const energyLevel = energyPreference(hour);
-  if (energyLevel) {
-    constraints.energyLevel = energyLevel;
-  }
-
-  const weatherPhrase = weather?.description?.trim() || 'today';
   const locationLabel = profile.homeLocation.trim() || 'near home';
 
   return {
-    rawText: `Best matches for our family ${weatherPhrase.toLowerCase()}`,
+    rawText: 'Best matches for our family',
     parsedAt: now.toISOString(),
     childAges,
     childAgeMonthsList: childAgesInMonths(profile.members),
@@ -96,8 +49,7 @@ export function buildProactiveDayRequest(
     hasPushchair,
     constraints,
     context: {
-      freeformNotes: `Proactive suggestions based on your family profile, ${locationLabel}, and ${weatherPhrase.toLowerCase()}.`,
-      timeWindow: timeWindowLabel(hour),
+      freeformNotes: `Proactive suggestions based on your family profile and ${locationLabel}.`,
     },
   };
 }

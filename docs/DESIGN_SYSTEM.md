@@ -185,8 +185,8 @@ assets.
 ### The canonical parent-facing Family Fit (traced end to end)
 
 **What the value is.** `FamilyScore.score` (`src/types`) is a 0–100 number computed *per family* by
-`src/services/scoring/family-score.ts` from seven factors (`ageSuitability`, `accessibility`, `distance`,
-`weatherFit`, `budgetFit`, `facilitiesMatch`, `routineFit`) against that family's profile. It is not stored
+`src/services/scoring/family-score.ts` from six factors (`ageSuitability`, `accessibility`, `distance`,
+`budgetFit`, `facilitiesMatch`; weather and routines are deliberately not factors, see `STABLE_FAMILY_FIT.md`) against that family's profile. It is not stored
 on the venue, so a restored Saved place has no score until it is recomputed. The UI sorts and filters on the
 0–100 value and *prints* it only through `src/utils/family-match-scale.ts`.
 

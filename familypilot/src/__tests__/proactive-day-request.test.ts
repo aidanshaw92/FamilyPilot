@@ -1,15 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { mockFamilyProfile, mockWeather } from '@/src/data/mock-data';
+import { mockFamilyProfile } from '@/src/data/mock-data';
 import { buildProactiveDayRequest } from '@/src/services/recommendation/proactive-day-request';
 
 describe('buildProactiveDayRequest', () => {
   it('builds profile-backed constraints without user text', () => {
-    const request = buildProactiveDayRequest(
-      mockFamilyProfile,
-      mockWeather,
-      new Date(2026, 7, 10, 9, 30),
-    );
+    const request = buildProactiveDayRequest(mockFamilyProfile, new Date(2026, 7, 10, 9, 30));
 
     expect(request.childAges).toEqual([4, 1]);
     expect(request.hasPushchair).toBe(true);
@@ -26,46 +22,22 @@ describe('buildProactiveDayRequest', () => {
       strength: 'preferred',
       value: 'yes',
     });
-    expect(request.context.timeWindow).toBe('morning');
   });
 
-  it('prefers indoor venues when it is raining', () => {
-    const request = buildProactiveDayRequest(mockFamilyProfile, {
-      condition: 'rainy',
-      temperature: 12,
-      description: 'Light rain expected',
-    });
-
-    expect(request.constraints.environment).toEqual({
-      strength: 'preferred',
-      value: 'indoor',
-    });
+  it('is the same request at any hour: the time of day is not an input', () => {
+    const morning = buildProactiveDayRequest(mockFamilyProfile, new Date(2026, 7, 10, 9, 30));
+    const evening = buildProactiveDayRequest(mockFamilyProfile, new Date(2026, 7, 10, 18, 0));
+    const { parsedAt: _m, ...m } = morning;
+    const { parsedAt: _e, ...e } = evening;
+    expect(e).toEqual(m);
+    expect(evening.constraints.energyLevel).toBeUndefined();
+    expect(evening.context.timeWindow).toBeUndefined();
   });
 
-  it('prefers outdoor venues on sunny days', () => {
-    const request = buildProactiveDayRequest(mockFamilyProfile, {
-      condition: 'sunny',
-      temperature: 22,
-      description: 'Bright and dry',
-    });
-
-    expect(request.constraints.environment).toEqual({
-      strength: 'preferred',
-      value: 'outdoor',
-    });
-  });
-
-  it('uses a calmer energy context in the evening', () => {
-    const request = buildProactiveDayRequest(
-      mockFamilyProfile,
-      mockWeather,
-      new Date(2026, 7, 10, 18, 0),
-    );
-
-    expect(request.constraints.energyLevel).toEqual({
-      strength: 'context',
-      value: 'low',
-    });
-    expect(request.context.timeWindow).toBe('evening');
+  it('has no environment preference: the forecast is not an input and a request never prefers indoor or outdoor', () => {
+    const request = buildProactiveDayRequest(mockFamilyProfile);
+    expect(request.constraints.environment).toBeUndefined();
+    expect(request.rawText).not.toMatch(/rain|sun|weather|today/i);
+    expect(request.context.freeformNotes).not.toMatch(/rain|sun|weather|today/i);
   });
 });

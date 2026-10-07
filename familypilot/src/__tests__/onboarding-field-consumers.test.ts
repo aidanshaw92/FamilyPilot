@@ -43,7 +43,7 @@ const lines = (p: FamilyProfile) => {
   const score = calculateFamilyScore(VENUE, p, { enrichmentStatus: 'enriched' });
   return JSON.stringify([score.explanation, score.cautions, score.factors]);
 };
-const request = (p: FamilyProfile) => JSON.stringify(buildProactiveDayRequest(p, null, MORNING));
+const request = (p: FamilyProfile) => JSON.stringify(buildProactiveDayRequest(p, MORNING));
 
 describe('each onboarding answer changes something', () => {
   it('the child’s name appears in what Family Fit says about them', () => {
