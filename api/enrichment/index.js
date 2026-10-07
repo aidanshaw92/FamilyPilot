@@ -1,7 +1,9 @@
 const { searchGoogle, getGooglePlace } = require('../../server/places/lib/google-places');
 const { primePlacesBudget } = require('../../server/places/lib/places-budget');
 const { verifyEnrichmentAuth, isAuthConfigured } = require('../../server/enrichment/_lib/auth');
-const { consumeAutomationDispatch } = require('../../server/enrichment/_lib/automation-store');
+const { consumeAutomationDispatch, getAutomationJobMode } = require('../../server/enrichment/_lib/automation-store');
+const { GOOGLE_ACCESS_DISABLED } = require('../../server/enrichment/_lib/evidence-pipeline');
+const { EXTRACTOR_VERSION } = require('../../server/enrichment/_lib/evidence-extractor');
 const {
   listQueue,
   getStats,
@@ -99,6 +101,8 @@ module.exports = async function handler(req, res) {
       return handleAutoApproveDraft(req, res);
     case 'auto-approve-batch':
       return handleAutoApproveBatch(req, res);
+    case 'enqueue-reprocess':
+      return handleEnqueueReprocess(req, res);
     default:
       return res.status(400).json({ error: `Unknown action: ${action}` });
   }
@@ -330,7 +334,22 @@ async function handleAutomationRun(req, res) {
       return res.status(401).json({ error: 'Invalid or expired automation dispatch' });
     }
 
-    const result = await generateDraftForVenue(id, { regenerate: Boolean(req.body?.regenerate), sourceOnly: true });
+    /**
+     * The queue row's mode decides how evidence is come by. The worker forwards `regenerate` as a boolean and knows no
+     * other mode, so the two modes that never touch Google are read from the row itself:
+     *
+     *   reextract         stored pages only, no network of any kind
+     *   refetch_official  the known website only, Google never asked
+     *
+     * Both regenerate: they exist to re-read venues that already have a verdict.
+     */
+    const mode = (await getAutomationJobMode(jobId)) ?? (req.body?.regenerate ? 'regenerate' : 'generate');
+    const generation = mode === 'reextract'
+      ? { regenerate: true, sourceOnly: true, evidenceMode: 'stored', jobId }
+      : mode === 'refetch_official'
+        ? { regenerate: true, sourceOnly: true, googleAccess: GOOGLE_ACCESS_DISABLED, jobId }
+        : { regenerate: Boolean(req.body?.regenerate) || mode === 'regenerate', sourceOnly: true, jobId };
+    const result = await generateDraftForVenue(id, generation);
     const approval = await tryAutoApproveDraft(id, {
       draft: result.draft,
       evidenceBundle: result.evidenceBundle,
@@ -338,6 +357,7 @@ async function handleAutomationRun(req, res) {
     return res.status(200).json({
       ok: true,
       venueId: id,
+      mode,
       draftId: result.draft?.id,
       evidenceStatus: result.draft?.evidenceStatus,
       autoApprove: approval,
@@ -345,6 +365,37 @@ async function handleAutomationRun(req, res) {
   } catch (error) {
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'Automated draft generation failed',
+    });
+  }
+}
+
+/**
+ * Queue a no-network re-read of stored evidence for every venue the current extractor has not yet been applied to.
+ *
+ * Run once after a deploy that changes `EXTRACTOR_VERSION`. It touches the queue only: the every-minute worker does the
+ * reading, one venue at a time, in `reextract` mode. Idempotent -- a venue whose newest draft already carries this
+ * version is not queued, and a job already processing is left alone.
+ */
+async function handleEnqueueReprocess(req, res) {
+  setCorsHeaders(res, 'POST');
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!verifyEnrichmentAuth(req, res)) return;
+
+  try {
+    const { getSupabaseAdmin } = require('../../server/enrichment/_lib/supabase-admin');
+    const supabase = getSupabaseAdmin();
+    if (!supabase) return res.status(503).json({ error: 'Supabase is not configured' });
+    const limit = Number.isFinite(Number(req.body?.limit)) ? Number(req.body.limit) : 500;
+    const { data, error } = await supabase.rpc('enqueue_reextract_jobs', {
+      p_extractor_version: EXTRACTOR_VERSION,
+      p_limit: limit,
+      p_place_ids: Array.isArray(req.body?.placeIds) ? req.body.placeIds : null,
+    });
+    if (error) throw new Error(error.message);
+    return res.status(200).json({ ok: true, extractorVersion: EXTRACTOR_VERSION, queued: data });
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Reprocess enqueue failed',
     });
   }
 }

@@ -66,6 +66,7 @@ export function extractMatchableFacts(
       babyChanging: UNKNOWN_TRI,
       parking: UNKNOWN_TRI,
       freeParking: UNKNOWN_TRI,
+      cafe: UNKNOWN_TRI,
       pushchairSuitability: 'unknown',
       environment: UNKNOWN_ENV,
       energyLevel: UNKNOWN_ENERGY,
@@ -90,6 +91,7 @@ export function extractMatchableFacts(
     babyChanging: triStateOrUnknown(metadata.familyFacilities?.babyChanging),
     parking: triStateOrUnknown(metadata.familyFacilities?.parking),
     freeParking: triStateOrUnknown(metadata.familyFacilities?.freeParking),
+    cafe: triStateOrUnknown(metadata.familyFacilities?.cafe),
     pushchairSuitability: metadata.pushchairSuitability ?? 'unknown',
     // The approved terrain claim only; the editorial `terrain` and `terrainNotes` are not evidence.
     terrain: metadata.extendedTerrain ?? 'unknown',

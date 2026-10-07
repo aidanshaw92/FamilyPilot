@@ -8,6 +8,7 @@ const { normaliseDraftJson } = require('./ai-draft-schema');
 const { createClaimsFromApproval } = require('./claims-store');
 const { getMetadata, saveMetadata, listQueue } = require('./enrichment-store');
 const { gatherEvidenceForVenue } = require('./evidence-pipeline');
+const { EXTRACTOR_VERSION } = require('./evidence-extractor');
 const { resolveBetaParams } = require('./beta-area');
 
 const FILE_DRAFTS_DIR = '.data';
@@ -358,10 +359,34 @@ async function generateDraftForVenue(familypilotId, options = {}) {
   const place = await getPlaceRecord(familypilotId);
   if (!place) throw new Error('Place record not found');
 
-  const evidenceBundle = await gatherEvidenceForVenue(familypilotId, place, {forceRefresh: options.sourceOnly === true});
+  /**
+   * Three ways to come by evidence, chosen by the job's mode (api/enrichment/index.js `handleAutomationRun`):
+   *
+   *   refetch (default)  crawl the venue's website; Place Details may be bought if the stored row is stale
+   *   refetch_official   crawl the website the catalogue already knows; Google is never asked
+   *   stored             no network at all: the latest stored reading of each page is re-read with the current rules
+   *
+   * `stored` exists so a rules change reaches the catalogue without a crawl, and it keeps every page's ORIGINAL
+   * provenance: `verifiedBundleForVenue` carries each row's `retrievedAt`, scope and status through unchanged, so a
+   * claim it yields is dated from the reading, not from today, and lapses when that reading would have. A page read 13
+   * days ago yields a claim good for 17 more; one read 15 days ago yields nothing, exactly as if the crawl had never
+   * been repeated. Re-extraction cannot make old evidence look newly checked, because nothing in it writes a date.
+   */
+  const evidenceMode = options.evidenceMode ?? 'refetch';
+  const evidenceBundle = evidenceMode === 'stored'
+    ? await require('./trusted-evidence').verifiedBundleForVenue(familypilotId)
+    : await gatherEvidenceForVenue(familypilotId, place, {
+      forceRefresh: options.sourceOnly === true,
+      googleAccess: options.googleAccess,
+      jobId: options.jobId,
+    });
+  if (evidenceMode === 'stored' && evidenceBundle.sources.length === 0) {
+    evidenceBundle.sourceStatus = 'no_official_source';
+  }
   const input = placeRowToInput(place, metadata, evidenceBundle);
   const result = options.sourceOnly
-    ? { draftJson: require('./trusted-evidence').reviewEvidence(evidenceBundle).draft, model: 'official-source-rules-v2', sourceContext: {}, confidenceJson: {}, tokenUsage: {}, estimatedCostUsd: 0 }
+    // The draft records which rules produced it, so a later version knows what it has not yet been applied to.
+    ? { draftJson: require('./trusted-evidence').reviewEvidence(evidenceBundle).draft, model: EXTRACTOR_VERSION, sourceContext: {}, confidenceJson: {}, tokenUsage: {}, estimatedCostUsd: 0 }
     : await generateDraft(input);
   result.evidenceStatus =
     evidenceBundle.sourceStatus === 'no_official_source' ? 'provider_only' : 'evidence_backed';
@@ -371,6 +396,11 @@ async function generateDraftForVenue(familypilotId, options = {}) {
     sourcePagesChecked: evidenceBundle.pagesChecked,
     sourceCacheHits: evidenceBundle.cacheHits,
     sourceStatus: evidenceBundle.sourceStatus,
+    // How this draft came by its evidence, kept with it so every claim approved from it can be traced to the run.
+    evidenceMode,
+    extractorVersion: EXTRACTOR_VERSION,
+    googleAccess: options.googleAccess ?? 'allowed',
+    jobId: options.jobId ?? null,
   };
   const draft = await saveDraftRecord(familypilotId, place.external_id, result);
 

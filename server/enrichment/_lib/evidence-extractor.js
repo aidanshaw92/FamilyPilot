@@ -1,7 +1,23 @@
-const { cleanEvidenceSnippet, isInterrogativeSentence } = require('./evidence-text-utils');
+const { cleanEvidenceSnippet, isInterrogativeSentence, decodeHtmlEntities } = require('./evidence-text-utils');
 const { extractPushchairEvidence } = require('./pushchair-evidence');
 const { extractEnvironmentEvidence } = require('./environment-evidence');
 const { isEligibleScope } = require('./source-identity');
+const { isBotChallengeText } = require('./html-text-extractor');
+
+/**
+ * The version of the rules in this file, recorded on every draft the rules produce (`venue_enrichment_drafts.model`).
+ *
+ * Bump it whenever a change here can alter what a stored page yields. That record is what lets stored evidence be
+ * re-read after a deploy without crawling anything: `enqueue_reextract_jobs(version)` queues exactly the venues whose
+ * newest draft was produced by an older version and whose stored pages are still inside the approval window. Before
+ * this existed the improved rules of PR #159 reached one venue in two days, because nothing knew which venues they had
+ * not yet been applied to (see docs/VENUE_EVIDENCE_RECOVERY.md).
+ *
+ *   v2  the rules as deployed up to 7 Oct 2026
+ *   v3  entity decoding, multi-window reading, facility lists, parking and buggy wording, day restrictions, the
+ *       navigation-chrome guard
+ */
+const EXTRACTOR_VERSION = 'official-source-rules-v3';
 
 /**
  * What makes a sentence say this venue has a playground.
@@ -41,6 +57,10 @@ const { isEligibleScope } = require('./source-identity');
  */
 const OFF_SITE_ADJACENCY = [
   /\bnear\s?by\b/i,
+  // "The nearest car park is Britannia Parking on Upper Marsh" (Leake Street Arches); "the nearest public car parks
+  // are at Drury Lane" (the Courtauld). The nearest car park is, by construction, not this venue's own.
+  /\bnearest\b/i,
+  /\bwalking\s+distance\b/i,
   /\bnearby\b/i,
   /\b\d+[\s-]?minutes?[\s'’]*\s*walk\b/i,
   /\bminutes?[\s'’]+\s*walk\b/i,
@@ -54,6 +74,13 @@ const OFF_SITE_ADJACENCY = [
 
 const OFF_SITE_FACILITY = [
   /\bshopping\s+cent(?:re|er)\b/i,
+  // "Public car parking is available at Sloane Square Car Park, Cheltenham Terrace" (Saatchi Gallery): a public car
+  // park, and a NAMED one, is somebody else's. A venue's own car park is "our car park" or "the car park".
+  /\bpublic\s+car\s+park/i,
+  /\bat\s+(?:[A-Z][\w'\u2019-]*\s+){1,4}Car\s+Park\b/,
+  // Parking "available on Seagrave Road" is a public road's parking (the Design Museum, whose own page also says "The
+  // museum does not have a car park"). A venue's own car park is reached FROM a road, it is not ON one.
+  /\bavailable\s+(?:on|along)\s+(?:[A-Z][\w'\u2019-]*\s+){1,3}(?:Road|Street|Lane|Avenue|Way|Drive|Crescent|Square|Place|Hill)\b/,
   /\bleisure\s+cent(?:re|er)\b/i,
   /\bretail\s+park\b/i,
   /\bNCP\b/,
@@ -390,6 +417,31 @@ function isOffSiteCafe(sentence) {
   return /\b(?:nearby|near\s+the\s+(?:station|gates?|entrance\s+road)|across\s+the\s+(?:road|street)|down\s+the\s+(?:road|street)|round\s+the\s+corner|minutes?\s+(?:walk|away|from)|neighbouring|sister\s+(?:site|venue|museum|farm)|other\s+(?:sites?|venues?|locations?)|elsewhere|local\s+caf|find\s+(?:a\s+)?caf|recommend(?:ed)?\s+caf|in\s+the\s+(?:town|village|high\s+street))\b/i.test(sentence);
 }
 
+/**
+ * The venue's OWN car park, described rather than announced.
+ *
+ * The parking patterns wanted the words "parking (is) available"; venues' own pages rarely use them. Read on 7 Oct
+ * 2026 from the stored corpus, every one of these is a venue describing its own car park and none served a fact:
+ *
+ *   Belmont Children's Farm   "You can park in the top car park and walk down to reception"
+ *   Chiltern Open Air Museum  "We have a large car park with dedicated disabled parking."
+ *   Streatham Common          "There is a small car park at the top of Streatham Common South"
+ *   Beckenham Place Park      "there is a 'park and pay' car park within Beckenham Place Park with 108 parking places"
+ *   Northwick Park (Brent)    "Children's playground or play area Onsite car park Pavilion"
+ *   Gladstone Park (Brent)    "A small surfaced car park, open from 6am to 9pm, is accessed from Dollis Hill Lane."
+ *
+ * Every sentence still passes the parking guards in `matchField`: off-site wording ("nearby", "nearest", a public or
+ * named car park), buggy, bike and coach bays, cycling directions, and limited or Blue Badge-only parking.
+ */
+const OWN_CAR_PARK_PATTERNS = [
+  /\byou\s+can\s+park\s+(?:in|at)\s+(?:the|our)\b[^.!?]{0,30}\bcar\s+park\b/i,
+  /\b(?:we\s+have|there\s+is|there's)\s+(?:a|an|our)\s+(?:[\w'\u2018\u2019-]+\s+){0,4}car\s+park\b/i,
+  /\bon[\s-]?site\s+car\s+park\b/i,
+  // "a car park within Beckenham Place Park"; never "a car park within suitable walking distance" (SEA LIFE London).
+  /\bcar\s+park\s+within\s+(?:the\s+(?:park|grounds|site|gardens|estate|farm)\b|[A-Z])/,
+  /\bcar\s+park\b[^.!?]{0,40}\bis\s+accessed\s+(?:from|via)\b/i,
+];
+
 const FIELD_PATTERNS = [
   {
     field: 'toilets',
@@ -409,6 +461,12 @@ const FIELD_PATTERNS = [
       // "There are three accessible toilets in the park" (Golders Hill), "There is an accessible toilet in the
       // museum" (Gunnersbury): the venue's own toilets, placed.
       /\b(?:there\s+(?:is|are)|we\s+have|you(?:'ll|\s+will)\s+find)\s+(?:an?\s+|\d+\s+|two\s+|three\s+|four\s+|several\s+)?(?:(?:accessible|disabled|public|baby|family|unisex)\s+)*toilets?\s+(?:in|at|near|by|beside|within|inside|next\s+to)\b/i,
+      // The same placed statement with the placements the 7 Oct 2026 replay found: "There are toilets on the ground,
+      // second and third floors" (V&A East Storehouse), "There are toilets to the rear of the Gardens Cafe" (Horniman),
+      // "Toilets are located at: Chumleigh Gardens" is already covered above.
+      /\b(?:there\s+(?:is|are)|we\s+have)\s+(?:an?\s+|\d+\s+|two\s+|three\s+|several\s+)?(?:(?:accessible|disabled|public|unisex)\s+)*toilets?\s+(?:on\s+(?:the|every|each|all)\b|to\s+the\s+(?:rear|side|left|right)\s+of\b|opposite\b|available\b)/i,
+      // "There are two wheelchair accessible toilets in the Wood." (Highgate Wood)
+      /\b(?:there\s+(?:is|are)|we\s+have)\s+(?:an?\s+|\d+\s+|two\s+|three\s+|several\s+)?wheelchair[\s-]accessible\s+toilets?\s+(?:in|at|near|by|on)\b/i,
     ],
     no: [
       /no\s+toilet/i,
@@ -435,7 +493,11 @@ const FIELD_PATTERNS = [
     field: 'freeParking',
     yes: [
       /free\s+parking/i,
+      // "Free car parking (see above opening times)" (Rickmansworth Aquadrome), "The Museum Car Park is FREE".
+      /free\s+car\s+parking/i,
       /parking\s+is\s+free/i,
+      // "Parking is provided free of charge in our car park directly outside the Studio Tour" (Warner Bros.).
+      /parking\s+(?:is\s+)?(?:provided\s+)?free\s+of\s+charge/i,
       /no\s+parking\s+(?:fee|charge)/i,
       /complimentary\s+parking/i,
     ],
@@ -454,11 +516,13 @@ const FIELD_PATTERNS = [
       /on.?site\s+parking/i,
       /free\s+parking/i,
       /(?:large\s+)?free\s+car\s+park/i,
+      /free\s+car\s+parking/i,
       /car\s+park(?:ing)?\s+(is\s+)?available/i,
       /car\s+park\s+(is\s+)?(?:provided|on site|on-site)/i,
       /visitors?\s+car\s+park/i,
       /parking\s+spaces\s+(are\s+)?provided/i,
       /(?:cars|vehicles|minibuses|coaches)\s+(?:are\s+)?welcome\s+to\s+use\s+(?:our\s+)?(?:large\s+)?(?:free\s+)?car\s+park/i,
+      ...OWN_CAR_PARK_PATTERNS,
     ],
     no: [
       /no\s+parking/i,
@@ -468,6 +532,12 @@ const FIELD_PATTERNS = [
       // negative is as useful to a parent as a positive, and was being missed.
       /(?:car\s+)?parking\s+is\s+not\s+(?:allowed|permitted)/i,
       /(?:do\s+not|don't|does\s+not|doesn't)\s+(?:have|offer|provide)\s+(?:any\s+)?(?:on.?site\s+)?parking/i,
+      // "The museum does not have a car park" (Design Museum), "Highgate Wood doesn't have a car park."
+      /(?:do\s+not|don't|does\s+not|doesn't)\s+have\s+(?:a|any|its\s+own|our\s+own)\s+(?:visitor\s+)?car\s+park/i,
+      /\bno\s+(?:visitor\s+)?car\s+park(?:ing)?\s+(?:spaces\s+)?(?:on.?site|at\s+the\s+(?:venue|site|museum|farm|park|gallery))/i,
+      /\bthere\s+are\s+no\s+(?:car\s+)?parking\s+facilities\b/i,
+      // "There is no dedicated parking at Babylon Park." "There is no designated Storehouse parking." (V&A East)
+      /\bno\s+(?:dedicated|designated|on.?site|visitor|customer)\s+(?:[A-Z][\w'\u2019]*\s+)?(?:car\s+)?parking\b/i,
     ],
   },
   {
@@ -498,6 +568,19 @@ const FIELD_PATTERNS = [
       // exists to avoid, and it was mine. Generalising waits for corpus evidence that earns it.
       /\bthe\s+caf[eé]\s+is\s+dog[\s-]friendly/i,
       ...OWN_CAFE_PATTERNS,
+      // The venue's own café, introduced as one of its features: "The Aquadrome also offers ... an excellent cafe"
+      // (Rickmansworth Aquadrome), "With its diverse woodland habitat, popular café with terrace, large playground"
+      // (Highgate Wood). "its" and "offers" bind the café to the subject of the page; `isOffSiteCafe` still removes
+      // "a café nearby".
+      /\b(?:offers|boasts|features)\b[^.!?]{0,80}\b(?:a|an)\s+(?:[\w'\u2019-]+\s+){0,2}caf[e\u00e9]s?(?![A-Za-z])/i,
+      /\bwith\s+its\b[^.!?]{0,60}\bcaf[e\u00e9]s?(?![A-Za-z])/i,
+      // "A temporary pop-up shop and cafe are open on Level G" (the Design Museum, while its main café is rebuilt),
+      // "Our cafe and bookshop is open to everyone" (Discover). Open now is the strongest statement a café can make;
+      // a closure or a plan in the same statement still withholds it.
+      /\bcaf[e\u00e9]s?\s+(?:is|are)\s+(?:now\s+)?open\b/i,
+      // A venue that publishes its café's opening times has a café: "Café Opening Times Tuesday – Sunday, 10am – 4pm"
+      // (Headstone Manor & Museum, whose Moat Café no other sentence states in a readable way).
+      /\bcaf[e\u00e9]\s+opening\s+(?:times|hours)\b/i,
     ],
     no: [/no\s+caf[eé]/i],
   },
@@ -533,6 +616,8 @@ function splitSentences(text) {
 /** Parking=yes requires explicit availability language — not address, location, or transport context alone. */
 function hasExplicitParkingAvailability(sentence) {
   return (
+    OWN_CAR_PARK_PATTERNS.some((re) => re.test(sentence)) ||
+    /free\s+car\s+park(?:ing)?/i.test(sentence) ||
     /parking\s+(is\s+)?available/i.test(sentence) ||
     /(?:free\s+)?parking\s+(is\s+)?provided/i.test(sentence) ||
     /on.?site\s+parking/i.test(sentence) ||
@@ -631,6 +716,54 @@ function hasParkingNegation(sentence) {
 
 function hasLimitedParking(sentence) {
   return /\blimited\s+(?:on.?site\s+)?parking\b|\bparking\s+(?:is\s+)?limited\b/i.test(sentence);
+}
+
+/**
+ * Blue Badge and disabled parking, as a phrase to take OUT of a sentence before the general parking patterns are
+ * re-tested. `hasRestrictedParking` used to drop the whole sentence, which is right for "eight bays in the park for Blue
+ * Badge holders only" and wrong for Belmont Children's Farm, whose contact page says "You can park in the top car park
+ * ... the third car park in the bottom of the valley where there is further parking spaces and disabled parking":
+ * general parking, with disabled parking as well. Same mask-and-retest shape as the buggy and bike bays above.
+ */
+const RESTRICTED_PARKING_PHRASE =
+  /\b(?:blue\s+badge|disabled|accessible)\s+(?:holders?\s+)?(?:parking|car\s+park(?:ing)?|bays?|spaces?|spots?)(?:\s+(?:bays?|spaces?))?\b/gi;
+
+/**
+ * A restriction that governs the WHOLE statement rather than naming one kind of bay: "Eight parking spaces are provided
+ * for Blue Badge holders only." Nothing in such a sentence is general parking, so it is never masked and retested.
+ */
+const RESTRICTION_QUALIFIER =
+  /\b(?:for|to)\s+(?:blue\s+badge|disabled)\s+(?:badge\s+)?holders?\b|\b(?:blue\s+badge|disabled)\s+(?:badge\s+)?holders?\s+only\b/i;
+
+function isOnlyRestrictedParking(sentence, yesPatterns) {
+  const text = String(sentence ?? '');
+  if (RESTRICTION_QUALIFIER.test(text)) return true;
+  // General parking must LEAD. "You can park in the top car park ... and disabled parking" states general parking and
+  // adds disabled bays; "Disabled parking is available within the main Visitor car park" is about disabled parking,
+  // whatever car park it is in, and stays unknown (Hatfield Park, pinned in non-vehicle-parking.test.ts).
+  RESTRICTED_PARKING_PHRASE.lastIndex = 0;
+  const restricted = RESTRICTED_PARKING_PHRASE.exec(text);
+  RESTRICTED_PARKING_PHRASE.lastIndex = 0;
+  const masked = text.replace(RESTRICTED_PARKING_PHRASE, (m) => ' '.repeat(m.length));
+  const general = (yesPatterns ?? [])
+    .map((re) => re.exec(masked))
+    .filter(Boolean)
+    .map((m) => m.index);
+  if (general.length === 0) return true;
+  return restricted ? Math.min(...general) > restricted.index : false;
+}
+
+/**
+ * "No parking" that is a street restriction, not a statement about the venue.
+ *
+ * Streatham Common served `parking = no` from "Double yellow lines mean no parking at any time" and "Streatham High
+ * Street has no parking" -- the roads around the common -- while its own Friends' page says "There is a small car park
+ * at the top of Streatham Common South". The Saatchi Gallery's page has "(No parking Mon-Sat 7am to 7pm ...) Royal
+ * Hospital Road". A negative read off a road's parking rules is as wrong as a positive read off somebody else's car
+ * park, so it leaves the field unknown instead.
+ */
+function isStreetParkingRestriction(sentence) {
+  return /\b(?:double|single)\s+yellow\b|\byellow\s+lines?\b|\bcontrolled\s+parking\b|\bparking\s+(?:zones?|permits?|restrictions?)\b|\bCPZ\b|\bno\s+parking\s+(?:at\s+any\s+time|mon|tue|wed|thu|fri|sat|sun|between|\d)|\b(?:High\s+Street|Road|Street|Lane|Avenue)\s+has\s+no\s+parking\b|\bno\s+loading\b/i.test(String(sentence ?? ''));
 }
 
 function hasRestrictedParking(sentence) {
@@ -769,10 +902,40 @@ function isQuestionOnlyEvidence(sentence) {
 
 function isSuspiciousEmbeddedContent(sentence) {
   return (
-    /\b(?:bakerloo|piccadilly|jubilee|central|district|northern|victoria)\s+line\b|\b(?:bakerloo|piccadilly|jubilee|central|district|northern|victoria)\b[^.!?]{0,40}\btoilets?\b|\b(?:tube|railway|underground)\s+station\b|\bplatform\s+\d+\b|\btransport\s+for\s+london\b/i.test(
+    // A line name that is part of a PLACE name is not a tube line: "All Victoria Park's public toilets have an
+    // accessible cubicle" (Tower Hamlets) was discarded as Victoria-line contamination, and with it the park's toilets.
+    /\b(?:bakerloo|piccadilly|jubilee|central|district|northern|victoria)\s+line\b|\b(?:bakerloo|piccadilly|jubilee|central|district|northern|victoria)\b(?!['\u2019]?s?\s+(?:park|gardens?|square|embankment|hall|house|museum)\b)[^.!?]{0,40}\btoilets?\b|\b(?:tube|railway|underground)\s+station\b|\bplatform\s+\d+\b|\btransport\s+for\s+london\b/i.test(
       sentence,
     )
   );
+}
+
+/**
+ * Site furniture that survived the HTML cleaner: a footer or menu flattened into the text.
+ *
+ * "Back To Top Home News & Events The Park Activities - volunteering, play areas, sports The Friends Sitemap Friends of
+ * Waterlow Park ... Site by diditon.com" (Waterlow Park, 7 Oct 2026 replay) read as a playground. A page's navigation
+ * names its sections; it does not state that the venue has them. Two or more DIFFERENT markers in one window is the
+ * threshold: a single "Newsletter" after a council's amenities list (London Fields) is still the list.
+ */
+const NAVIGATION_CHROME_MARKERS = [
+  /\bsitemap\b/i,
+  /\bback\s+to\s+top\b/i,
+  /\bsite\s+by\b/i,
+  /\bskip\s+to\s+(?:main\s+)?content\b/i,
+  /\bnews\s*&\s*events\b/i,
+  /\bcookie\s+(?:policy|settings|preferences)\b/i,
+  /\bprivacy\s+(?:policy|notice)\b/i,
+  /\bterms\s+(?:and|&)\s+conditions\b/i,
+  /\ball\s+rights\s+reserved\b/i,
+  /\bfollow\s+us\b/i,
+  /\buncategorised\b/i,
+];
+function isNavigationChrome(sentence) {
+  const text = String(sentence ?? '');
+  let markers = 0;
+  for (const marker of NAVIGATION_CHROME_MARKERS) if (marker.test(text)) markers += 1;
+  return markers >= 2;
 }
 
 function isScopedToiletClosure(sentence) {
@@ -783,14 +946,88 @@ function hasVenueWideToiletAbsence(sentence) {
   return /\bno\s+(?:public\s+)?toilets?\s+(?:are\s+)?(?:available|provided|on.?site|at\s+(?:the|this)\s+(?:venue|site))\b|\b(?:the|this)\s+(?:venue|site)\s+(?:does\s+not|doesn't)\s+(?:have|provide|offer)\s+(?:any\s+)?toilets?\b/i.test(sentence);
 }
 
+/**
+ * Words that stop a positive statement counting: a closure, a plan, a refusal, a refurbishment.
+ *
+ * Unchanged from the sentence-wide guard it came from, except for the refurbishment wording, which the 7 Oct 2026
+ * replay found publishing a café from "we are rebuilding our cafe and shop spaces on Level G" (the Design Museum).
+ */
+const AVAILABILITY_NEGATION =
+  /\b(?:not|without|unavailable|closed|broken|planned|proposed|soon|temporarily)\b|\bwill\b(?!\s+(?:find|see|notice|discover)\b)|\bno\s+(?!charge|fee)|\b(?:refurbishing|rebuilding|renovating|being\s+(?:refurbished|rebuilt|renovated)|under\s+construction|out\s+of\s+(?:use|order|service))\b/i;
+
+/**
+ * A weekly or holiday closure is a SCHEDULE, not unavailability: "Café Opening Times Tuesday – Sunday, 10am – 4pm
+ * Closed: Monday" (Headstone Manor) states a café, and "the toilets will be closed on Christmas Day" states toilets.
+ * Taken out of the scope before the closure words are looked for; "closed for refurbishment", "closed until further
+ * notice" and "temporarily closed" are untouched.
+ */
+const SCHEDULE_DAY = '(?:mon|tues|wednes|thurs|fri|satur|sun)days?';
+const SCHEDULE_CLOSURE = new RegExp(
+  `\\bclosed:?\\s+(?:on\\s+)?(?:${SCHEDULE_DAY}(?:\\s*(?:-|\u2013|to|and|&|,)\\s*${SCHEDULE_DAY})*(?:\\s+except\\s+bank\\s+holidays)?|bank\\s+holidays?|christmas\\s+(?:day|eve)|boxing\\s+day|new\\s+years?['\u2019]?s?\\s+day)\\b`,
+  'gi',
+);
+function withoutScheduleClosures(text) {
+  return String(text ?? '').replace(SCHEDULE_CLOSURE, ' ');
+}
+
+/** A statement ends at a terminator, a bullet or an arrow ("Soft Play -> Café -> Farm" is three items). */
+const STATEMENT_BOUNDARY = /[.!?;\u2022\u2192]/;
+
+/**
+ * The text a negation must sit in to govern THIS match.
+ *
+ * The guard used to test the whole windowed sentence, which is right for prose and wrong for flattened pages, where a
+ * "sentence" is several hundred characters of joined headings and paragraphs with no punctuation. Belmont Children's
+ * Farm's homepage reads "Café After playing check out our café for a bite to eat and refreshments Please note soft
+ * play has to come before the farm ... unfortunately you can not access the soft play after Food is not allowed in the
+ * soft play area": the "not"s are about the soft play, 170 characters on, and they suppressed the farm's café.
+ *
+ * So: the punctuated statement containing the match, as before, when it is an ordinary length; and only when it is a
+ * run-on chunk longer than an ordinary statement, a window of 60 characters before and 100 after the match. Every
+ * negation the guard has ever been tested against sits inside that window ("Baby changing facilities are currently
+ * unavailable", "The toilets in the visitor centre ... are closed until spring"), and a well-punctuated sentence is
+ * judged exactly as it was.
+ */
+const MAX_STATEMENT = 240;
+function negationScope(sentence, matchIndex, matchLength) {
+  const text = String(sentence ?? '');
+  let start = matchIndex;
+  while (start > 0 && !STATEMENT_BOUNDARY.test(text[start - 1])) start -= 1;
+  let end = matchIndex + matchLength;
+  while (end < text.length && !STATEMENT_BOUNDARY.test(text[end])) end += 1;
+  if (end - start <= MAX_STATEMENT) return text.slice(start, end);
+  return text.slice(Math.max(start, matchIndex - 60), Math.min(end, matchIndex + matchLength + 100));
+}
+
+/**
+ * Availability restricted to particular days: "The toilets are open Thursday and Sunday, 11am-4pm" (Mayow Park), "The
+ * Kiosk Community Café: every Saturday 9am to 2pm" (South Norwood Country Park). A family arriving on a Wednesday is not
+ * served by either, and the yes/no field cannot say "on Saturdays". So it stays unknown -- the restriction is not
+ * flattened into a yes -- and the venue goes to the verification queue, where the restriction is recorded in words.
+ * Opening hours that span the week ("Monday – Saturday: 9am – 5pm") are not a restriction and are not matched.
+ */
+const DAY = '(?:mon|tues|wednes|thurs|fri|satur|sun)day';
+const DAY_RESTRICTED = new RegExp(
+  `\\bevery\\s+${DAY}\\b|\\b(?:weekends?|${DAY}s?)\\s+only\\b|\\bonly\\s+(?:open\\s+)?(?:on\\s+)?(?:weekends?|${DAY}s?)\\b|\\bopen\\s+(?:on\\s+)?${DAY}s?\\s+(?:and|&)\\s+${DAY}s?\\b|\\b(?:summer|winter|seasonal)\\s+only\\b`,
+  'i',
+);
+function isDayRestricted(sentence, matchIndex, matchLength) {
+  const after = String(sentence ?? '').slice(matchIndex, matchIndex + matchLength + 100);
+  return DAY_RESTRICTED.test(after);
+}
+
 function matchField(sentence, patterns, fieldId) {
-  if (isQuestionOnlyEvidence(sentence) || isSuspiciousEmbeddedContent(sentence)) return null;
+  if (isQuestionOnlyEvidence(sentence) || isSuspiciousEmbeddedContent(sentence) || isNavigationChrome(sentence)) return null;
   if (fieldId === 'parking' && hasParkingNegation(sentence)) {
     return { value: 'no', confidence: 'high' };
   }
-  if (fieldId === 'parking' && (hasLimitedParking(sentence) || hasRestrictedParking(sentence))) {
-    // Restricted or limited parking is not equivalent to generally available parking.
-    // It remains unknown until the richer parking-details field is reviewed.
+  if (fieldId === 'parking' && hasLimitedParking(sentence)) {
+    // Limited parking is not equivalent to generally available parking. It remains unknown until the richer
+    // parking-details field is reviewed.
+    return null;
+  }
+  if (fieldId === 'parking' && hasRestrictedParking(sentence) && isOnlyRestrictedParking(sentence, patterns.yes)) {
+    // Blue Badge or disabled parking only. General parking stated in the same sentence still counts (see above).
     return null;
   }
   if (fieldId === 'toilets' && isScopedToiletClosure(sentence)) {
@@ -802,14 +1039,20 @@ function matchField(sentence, patterns, fieldId) {
       : null;
   }
   for (const re of patterns.no) {
-    if (re.test(sentence)) return { value: 'no', confidence: 'high' };
+    if (!re.test(sentence)) continue;
+    // A road's parking rules are not the venue's parking.
+    if ((fieldId === 'parking' || fieldId === 'freeParking') && isStreetParkingRestriction(sentence)) continue;
+    return { value: 'no', confidence: 'high' };
   }
   for (const re of patterns.yes) {
-    if (!re.test(sentence)) continue;
-    // Availability cannot be inferred from a mention in a closure, future plan, or question.
+    const match = re.exec(sentence);
+    if (!match) continue;
+    // Availability cannot be inferred from a mention in a closure, future plan, or question. Judged on the statement
+    // that carries the match, not on everything a flattened page joined to it: see `negationScope`.
     // "You will find baby changing facilities at ground level" describes what is there; only a plan
     // ("will be installed", "will open") is excluded.
-    if (/\b(?:not|without|unavailable|closed|broken|planned|proposed|soon|temporarily)\b|\bwill\b(?!\s+(?:find|see|notice|discover)\b)|\bno\s+(?!charge|fee)/i.test(sentence)) continue;
+    if (AVAILABILITY_NEGATION.test(withoutScheduleClosures(negationScope(sentence, match.index, match[0].length)))) continue;
+    if ((fieldId === 'toilets' || fieldId === 'cafe') && isDayRestricted(sentence, match.index, match[0].length)) continue;
     if (fieldId === 'parking' && hasParkingNegation(sentence)) continue;
     if (fieldId === 'parking' && !isExplicitParkingStatement(sentence)) continue;
     // A conditional entitlement is not a general "Free parking" promise to a family arriving by car.
@@ -837,12 +1080,74 @@ function matchField(sentence, patterns, fieldId) {
     if (fieldId === 'parking' || fieldId === 'freeParking') {
       // "Parking confirmed on site" must not be said about a car park down the road,
       if (hasOffSiteParking(sentence)) continue;
-      // about a buggy park,
+      // about a buggy park, a bike rack or a coach bay,
       if (isNonVehicleParkingOnly(sentence, patterns.yes)) continue;
       // or about the bike parking on a page's cycling directions.
       if (isCycleTravelContext(sentence)) continue;
     }
     return { value: 'yes', confidence: 'high' };
+  }
+  return null;
+}
+
+/**
+ * A FACILITY LIST on the venue's own page: "Facilities include: play area café outdoor gym" (Mayow Park, Lewisham),
+ * "Amenities 2 children's play areas ... Lido and lido café ... Toilets and accessible toilets" (London Fields, Hackney),
+ * "Facilities Rough surfaced car park for approximately 50 vehicles" (Fryent Country Park, Brent).
+ *
+ * Council park pages publish their facilities this way and almost never in sentences, which is why parks were the
+ * weakest category in the coverage audit. The list is the council's own statement about this park, so an item in it is
+ * evidence -- under conditions that keep it from being navigation:
+ *
+ *   - the list is introduced by its own heading word, within 250 characters and no sentence terminator of the item;
+ *   - the span is not site navigation (two or more menu words: "Venue hire", "Get in touch", "Menu", "Contact us" ...),
+ *     which is how the William Morris Gallery's menu "Access Café Facilities Venue hire Group visits" is refused;
+ *   - the item is not qualified away: a closure or plan next to it (the ordinary negation guard), "nearby", or a
+ *     day-only restriction ("The Kiosk Community Café: every Saturday 9am to 2pm").
+ *
+ * Only cafe, toilets and a car park are read from lists. Baby changing and buggy access are never inferred from a list
+ * heading: their wording is specific enough to be matched where it is actually stated.
+ */
+// A HEADING, not the noun in prose: "Facilities" or "Amenities" capitalised as a label, or followed by "include" or a
+// colon. Lower-case "baby changing facilities in the cafe" (Hackney City Farm) is a sentence about baby changing, and
+// reading it as a list published the café from it in the first replay.
+const LIST_INTRO =
+  /\b(?:(?:Park\s+)?Facilities(?:\s+at\s+[A-Z][\w'\u2019 ]{0,40})?|Amenities|[Ff]acilities\s+include\s*:?|[Ff]acilities\s*:|[Aa]menities\s*:|[Ii]n\s+the\s+[Pp]ark,?\s+you\s+(?:can|will)\s+find\s*:?)(?![\w])/g;
+const LIST_NAVIGATION_WORDS =
+  /\b(?:menu|venue\s+hire|get\s+in\s+touch|contact\s+us|sign\s+(?:up|in)|log\s+in|search|membership|donate|newsletter|tickets?|shop|group\s+visits|explore\s+the\s+local\s+area|what'?s\s+on|home)\b/gi;
+const LIST_ITEMS = {
+  cafe: /\bcaf[e\u00e9]s?(?![A-Za-z])/i,
+  toilets: /\btoilets?\b|\bpublic\s+conveniences\b/i,
+  parking: /\b(?:free\s+|onsite\s+|on-site\s+|surfaced\s+)?car\s+park(?:s|ing)?\b/i,
+};
+function matchFacilityList(sentence, fieldId) {
+  const itemPattern = LIST_ITEMS[fieldId];
+  if (!itemPattern) return null;
+  const text = String(sentence ?? '');
+  if (isQuestionOnlyEvidence(text) || isSuspiciousEmbeddedContent(text) || isNavigationChrome(text)) return null;
+  LIST_INTRO.lastIndex = 0;
+  let intro;
+  while ((intro = LIST_INTRO.exec(text)) !== null) {
+    const from = intro.index + intro[0].length;
+    let span = text.slice(from, from + 250);
+    const stop = span.search(/[.!?]/);
+    if (stop !== -1) span = span.slice(0, stop);
+    const item = itemPattern.exec(span);
+    if (!item) continue;
+    // Navigation BETWEEN the heading and the item means the "list" is a menu. What follows the item is irrelevant:
+    // London Fields' amenities are followed by the council's own "Newsletter Sign up" footer.
+    if ((span.slice(0, item.index).match(LIST_NAVIGATION_WORDS) ?? []).length >= 2) continue;
+    const at = from + item.index;
+    if (AVAILABILITY_NEGATION.test(withoutScheduleClosures(text.slice(at, at + item[0].length + 60)))) continue;
+    if (isDayRestricted(text, at, item[0].length)) continue;
+    if (/\b(?:nearby|nearest|local|neighbouring)\s*$/i.test(text.slice(Math.max(0, at - 30), at))) continue;
+    if (fieldId === 'cafe' && isOffSiteCafe(text.slice(at, at + 80))) continue;
+    if (fieldId === 'parking' && (hasOffSiteParking(text.slice(at, at + 80)) || /\bcoach\b/i.test(text.slice(Math.max(0, at - 15), at)))) continue;
+    return {
+      value: 'yes',
+      confidence: 'high',
+      evidenceText: cleanEvidenceSnippet(text.slice(intro.index, Math.min(text.length, at + item[0].length + 120))),
+    };
   }
   return null;
 }
@@ -870,8 +1175,19 @@ function matchField(sentence, patterns, fieldId) {
  * and trusted re-verification alike. Re-verification used to test `r.extractedText` on its own, which
  * would have dropped a title-only fact even after the title was threaded through.
  */
-function isEvidenceBearingSource({ extractedText, facts } = {}) {
-  const hasBody = typeof extractedText === 'string' && extractedText.trim() !== '';
+function isEvidenceBearingSource({ extractedText, facts, pageTitle = null } = {}) {
+  /**
+   * "Readable body" is judged on what extraction actually reads: the text with title-echo chrome removed, and never a
+   * bot-mitigation interstitial. Both were counting as pages read. Burgh House's five stored pages are each just its
+   * title and a stray "-->" ("Burgh House -->"), and Barnet Council's park pages are Imperva's "Pardon Our
+   * Interruption" text; either way the crawl stopped at the usable-page target having read nothing.
+   */
+  const readable = typeof extractedText === 'string'
+    && !isBotChallengeText(extractedText, pageTitle)
+    ? stripPageTitleChrome(decodeHtmlEntities(extractedText), decodeHtmlEntities(pageTitle))
+      .replace(/<!--|-->/g, ' ')
+    : '';
+  const hasBody = /[A-Za-z]{3,}/.test(readable);
   // A title earns its place only by producing a fact. Callers pass the facts they RE-EXTRACTED, never
   // the stored `extracted_evidence`, so the question asked is always "can this page still yield
   // something?" and not "did it once appear to?".
@@ -968,36 +1284,71 @@ function stripPageTitleChrome(text, pageTitle) {
     .join('\n');
 }
 
+/**
+ * Every place the field's anchor appears in a sentence, as a window around each.
+ *
+ * Only the FIRST occurrence used to be examined. Flattened pages repeat an anchor -- a menu says "Café" before the
+ * paragraph about the café -- so the statement could sit beyond the 320 characters after the first mention and never be
+ * read at all. At most six windows, and identical windows are read once.
+ */
+function anchorWindows(sentence, fieldId) {
+  const anchor = EVIDENCE_ANCHORS[fieldId];
+  if (!anchor) return [sentence];
+  const global = new RegExp(anchor.source, anchor.flags.includes('g') ? anchor.flags : `${anchor.flags}g`);
+  const windows = [];
+  let match;
+  while ((match = global.exec(sentence)) !== null && windows.length < 6) {
+    const start = Math.max(0, match.index - 80);
+    const end = Math.min(sentence.length, match.index + match[0].length + 320);
+    const window = sentence.slice(start, end).trim();
+    if (!windows.includes(window)) windows.push(window);
+    if (match[0].length === 0) global.lastIndex += 1;
+  }
+  return windows.length > 0 ? windows : [sentence];
+}
+
 function extractEvidenceFromText(text, sourceMeta) {
-  // Every path below reads the chrome-free text, so sitewide navigation cannot establish a fact in
-  // any field, nor reach the excerpt a parent is shown.
-  const readableText = stripPageTitleChrome(text, sourceMeta.pageTitle);
+  // Character references are decoded first, so "Caf&eacute;" is read as the café it is. Then every path below reads
+  // the chrome-free text, so sitewide navigation cannot establish a fact in any field, nor reach the excerpt a parent
+  // is shown.
+  const readableText = stripPageTitleChrome(decodeHtmlEntities(String(text ?? '')), decodeHtmlEntities(sourceMeta.pageTitle ?? null));
   const sentences = splitSentences(readableText);
   const facts = [];
+  const push = (field, match, evidenceText) => {
+    facts.push({
+      field,
+      value: match.value,
+      confidence: match.confidence,
+      evidenceText,
+      sourceUrl: sourceMeta.url,
+      sourceType: sourceMeta.sourceType,
+      retrievedAt: sourceMeta.retrievedAt,
+    });
+  };
 
   for (const pattern of FIELD_PATTERNS) {
     for (const sentence of sentences) {
       // Classify only cleaned human-readable text. Matching raw flattened HTML can
       // turn CSS selectors such as ".baby-changing" into false facility claims.
-      // Long flattened pages are windowed around the facility anchor before the
+      // Long flattened pages are windowed around EACH facility anchor before the
       // 400-char storage cap so trailing facility prose is not truncated away.
-      const focusedSentence = EVIDENCE_ANCHORS[pattern.field]?.test(sentence)
-        ? extractEvidenceWindow(sentence, pattern.field)
-        : sentence;
-      const readableSentence = cleanEvidenceSnippet(focusedSentence);
-      if (!readableSentence) continue;
-      const match = matchField(readableSentence, pattern, pattern.field);
-      if (!match) continue;
-      facts.push({
-        field: pattern.field,
-        value: match.value,
-        confidence: match.confidence,
-        evidenceText: cleanEvidenceSnippet(extractEvidenceWindow(readableSentence, pattern.field)),
-        sourceUrl: sourceMeta.url,
-        sourceType: sourceMeta.sourceType,
-        retrievedAt: sourceMeta.retrievedAt,
-      });
-      // Keep all statements so contradictory text on the same page becomes a conflict.
+      const focused = EVIDENCE_ANCHORS[pattern.field]?.test(sentence)
+        ? anchorWindows(sentence, pattern.field)
+        : [sentence];
+      let matched = false;
+      for (const focusedSentence of focused) {
+        const readableSentence = cleanEvidenceSnippet(focusedSentence);
+        if (!readableSentence) continue;
+        const match = matchField(readableSentence, pattern, pattern.field);
+        if (!match) continue;
+        push(pattern.field, match, cleanEvidenceSnippet(extractEvidenceWindow(readableSentence, pattern.field)));
+        matched = true;
+        // Keep all statements so contradictory text on the same page becomes a conflict.
+      }
+      if (!matched) {
+        const listed = matchFacilityList(sentence, pattern.field);
+        if (listed?.evidenceText) push(pattern.field, listed, listed.evidenceText);
+      }
     }
   }
 
@@ -1149,6 +1500,8 @@ function buildEvidenceBundle(venueId, sources, sourceStatus, diagnostics = null)
 }
 
 module.exports = {
+  EXTRACTOR_VERSION,
+  isNavigationChrome,
   isEvidenceBearingSource,
   extractionSourceMeta,
   extractEvidenceFromText,
@@ -1174,6 +1527,12 @@ module.exports = {
   isSuspiciousEmbeddedContent,
   isScopedToiletClosure,
   hasVenueWideToiletAbsence,
+  isStreetParkingRestriction,
+  isOnlyRestrictedParking,
+  negationScope,
+  isDayRestricted,
+  withoutScheduleClosures,
+  matchFacilityList,
   FIELD_PATTERNS,
   cleanEvidenceSnippet,
 };

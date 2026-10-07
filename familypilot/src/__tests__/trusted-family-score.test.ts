@@ -8,6 +8,7 @@ import {
   scoreTrustedFacilitiesMatch,
   scoreTrustedWeatherFit,
 } from '@/src/services/scoring/trusted-family-score';
+import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
 import { FamilyProfile, VenueDetail, WeatherInfo } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 
@@ -96,6 +97,38 @@ describe('trusted family score helpers', () => {
     // which is [24, 132) months.
     expect(scoreTrustedAgeSuitability(BASE_FACTS, [5 * 12, 3 * 12])).toBe(96);
     expect(scoreTrustedAgeSuitability(BASE_FACTS, [12 * 12])).toBe(42);
+  });
+
+  it('ranks more family-relevant confirmed evidence above less, with unknown as neutral', () => {
+    // A baby and a toddler: baby changing matters most, then toilets, parking and a café.
+    const babyAndToddler: FamilyProfile = {
+      ...PROFILE,
+      members: [
+        { id: 'c1', name: 'Sloane', role: 'child', dateOfBirth: '2023-03-01', age: 3 },
+        { id: 'c2', name: 'Ozzie', role: 'child', dateOfBirth: '2026-02-01', age: 0 },
+      ],
+    };
+    const unknown = { ...BASE_FACTS, toilets: 'unknown', babyChanging: 'unknown', parking: 'unknown', freeParking: 'unknown', cafe: 'unknown' } as MatchableVenueFacts;
+    const toiletsOnly = { ...unknown, toilets: 'yes' } as MatchableVenueFacts;
+    const wellEvidenced = { ...unknown, toilets: 'yes', babyChanging: 'yes', parking: 'yes', cafe: 'yes' } as MatchableVenueFacts;
+    const s = (f: MatchableVenueFacts) => scoreTrustedFacilitiesMatch(f, babyAndToddler)!;
+    // The old ratio scored these two the same (100): one confirmed fact looked as good as four.
+    expect(s(wellEvidenced)).toBeGreaterThan(s(toiletsOnly));
+    expect(s(toiletsOnly)).toBeGreaterThan(s(unknown));
+    expect(s(unknown)).toBe(50);
+    // A confirmed no sits below silence.
+    expect(s({ ...unknown, babyChanging: 'no' } as MatchableVenueFacts)).toBeLessThan(s(unknown));
+    // Baby changing outweighs a café for this family.
+    expect(s({ ...unknown, babyChanging: 'yes' } as MatchableVenueFacts)).toBeGreaterThan(s({ ...unknown, cafe: 'yes' } as MatchableVenueFacts));
+    // A café counts at all.
+    expect(s({ ...unknown, cafe: 'yes' } as MatchableVenueFacts)).toBeGreaterThan(s(unknown));
+  });
+
+  it('only counts baby changing for a child under four', () => {
+    const olderKids: FamilyProfile = { ...PROFILE, members: [{ id: 'c1', name: 'Mia', role: 'child', dateOfBirth: '2017-01-01', age: 9 }] };
+    const withChanging = { ...BASE_FACTS, babyChanging: 'yes' } as MatchableVenueFacts;
+    const withoutChanging = { ...BASE_FACTS, babyChanging: 'no' } as MatchableVenueFacts;
+    expect(scoreTrustedFacilitiesMatch(withChanging, olderKids)).toBe(scoreTrustedFacilitiesMatch(withoutChanging, olderKids));
   });
 
   it('scores facilities from confirmed tri-state facts', () => {
@@ -240,5 +273,14 @@ describe('negative reviewed facts are cautions, never reasons', () => {
     expect(venue.goodToKnow).toEqual(['Cafe closes at 3pm']);
     expect(cautions).not.toContain('Cafe closes at 3pm');
     expect(venue.familyScore.explanation.join('\n')).not.toMatch(/difficult/i);
+  });
+});
+
+describe('a confirmed café reaches the match facts', () => {
+  it('reads familyFacilities.cafe from the trusted projection, and never invents it', () => {
+    const meta = { enrichmentStatus: 'enriched', familyFacilities: { cafe: 'yes', toilets: 'yes' }, facilities: ['cafe', 'toilets'] } as never;
+    expect(extractMatchableFacts('fp-x', 'Park', 'park', 10, 'enriched', meta).cafe).toBe('yes');
+    expect(extractMatchableFacts('fp-x', 'Park', 'park', 10, 'enriched', { enrichmentStatus: 'enriched', familyFacilities: {} } as never).cafe).toBe('unknown');
+    expect(extractMatchableFacts('fp-x', 'Park', 'park', 10, 'provider_only', null).cafe).toBe('unknown');
   });
 });

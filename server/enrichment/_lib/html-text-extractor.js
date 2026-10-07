@@ -48,6 +48,17 @@ const LINK_KEYWORDS_STRONG = [
   'pushchairs',
   'buggy park',
   'buggy storage',
+  // Food: a measured field with its own page on many sites ("/visit/cafe/", "/plan-your-visit/food-drink/"), and the
+  // field the coverage audit found worst served. Ranked only among links the venue's own pages already publish.
+  'cafe',
+  'café',
+  'food and drink',
+  'food-and-drink',
+  'food-drink',
+  'eat and drink',
+  'eat-drink',
+  'eat & drink',
+  'eating and drinking',
 ];
 
 const LINK_KEYWORDS_WEAK = ['contact', 'location', 'directions', 'opening', 'venue'];
@@ -68,6 +79,8 @@ const LABEL_ONLY_ANCHOR_KEYWORDS = new Set([
   'family', 'families', 'children', 'childrens', 'kids',
   'baby changing', 'baby-changing', 'changing places',
   'toilet', 'toilets', 'pushchair', 'pushchairs', 'buggy park', 'buggy storage',
+  // "Cafe" in prose ("Meet friends at our cafe") is not a link to the café page; as a short label it is.
+  'cafe', 'café',
 ]);
 
 /** Navigation labels are short noun phrases; prose is not. */
@@ -121,6 +134,8 @@ const UTILITY_ANCHOR_PATTERNS = [
   /^site map$/i,
 ];
 
+const { decodeHtmlEntities } = require('./evidence-text-utils');
+
 const CONTENT_KEYWORDS = [
   'toilet', 'baby', 'changing', 'parking', 'accessible', 'wheelchair', 'pushchair',
   'buggy', 'cafe', 'restaurant', 'picnic', 'sensory', 'quiet', 'send', 'carer',
@@ -138,16 +153,6 @@ const COMMON_PATH_SEGMENTS = [
   'facilities', 'faq', 'faqs', 'getting-here', 'parking', 'family', 'families', 'children', 'kids',
   'parents', 'admission', 'toilets', 'baby-changing', 'contact', 'venue', 'location',
 ];
-
-function decodeHtmlEntities(text) {
-  return text
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
-}
 
 /**
  * Elements whose TEXT is never page content, however deeply they sit inside an article.
@@ -202,6 +207,8 @@ function stripHtml(html) {
     .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
     .replace(/<header[\s\S]*?<\/header>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
+    // Decoded like every other region. This is the path that left `Caf&eacute;` in stored text.
+    .replace(/&[#a-z0-9]+;/gi, (entity) => decodeHtmlEntities(entity))
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -609,19 +616,50 @@ function findLinkedPages(html, baseUrl, maxLinks = 4) {
   return findRelevantLinks(html, baseUrl, maxLinks).map((l) => l.url);
 }
 
+/**
+ * Bot-mitigation interstitials, which arrive as HTTP 200 and look like pages.
+ *
+ * Cloudflare's was handled. Imperva's was not: every Barnet Council park page in the store -- Sunny Hill Park, Victoria
+ * Park (Finchley), Oak Hill Park, 18 pages in all, three of the closest parks to the founder's testing area -- is the
+ * text "To regain access, please make sure that cookies and JavaScript are enabled before reloading the page." under
+ * the title "Pardon Our Interruption", stored as `ok`. Six such shells met the usable-page target, so each crawl
+ * stopped as though it had read the park's own pages, and the coverage audit counted those parks as silent rather than
+ * blocked. Detected here they are `blocked`: transient, retried, and reported as what they are.
+ */
+const BOT_CHALLENGE_HTML_MARKERS = [
+  'just a moment',
+  'cf-chl',
+  'challenge-platform',
+  'checking your browser',
+  'enable javascript and cookies to continue',
+  // Imperva / Incapsula
+  'pardon our interruption',
+  '_incapsula_resource',
+  'incapsula incident id',
+  'to regain access, please make sure that cookies and javascript are enabled',
+];
+
 function isCloudflareChallenge(html) {
   if (!html) return false;
   const lower = html.toLowerCase();
+  return BOT_CHALLENGE_HTML_MARKERS.some((marker) => lower.includes(marker));
+}
+
+/** The same test on what a STORED row kept: its title and extracted text. */
+function isBotChallengeText(text, pageTitle) {
+  const title = String(pageTitle ?? '').toLowerCase();
+  const body = String(text ?? '').toLowerCase();
+  if (/^(?:just a moment|pardon our interruption|attention required)/.test(title.trim())) return true;
   return (
-    lower.includes('just a moment') ||
-    lower.includes('cf-chl') ||
-    lower.includes('challenge-platform') ||
-    lower.includes('checking your browser') ||
-    lower.includes('enable javascript and cookies to continue')
+    body.length < 600 &&
+    (body.includes('to regain access, please make sure that cookies and javascript are enabled') ||
+      body.includes('checking your browser') ||
+      body.includes('enable javascript and cookies to continue'))
   );
 }
 
 module.exports = {
+  isBotChallengeText,
   extractPageContent,
   extractRelevantParagraphs,
   removeNonContentElements,

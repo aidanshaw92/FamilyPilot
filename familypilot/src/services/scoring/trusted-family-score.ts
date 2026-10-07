@@ -82,6 +82,22 @@ export function scoreTrustedAccessibility(
   }
 }
 
+/**
+ * How well a venue's CONFIRMED facilities serve this family, for ranking only.
+ *
+ * Weighted by what matters to the family, and with unknown counted as neutral rather than left out. The previous
+ * version scored only the facts that happened to be known, as a ratio: a venue with nothing confirmed but its toilets
+ * scored 100, exactly like one with toilets, baby changing and parking all confirmed, and a confirmed "no parking"
+ * cost more than saying nothing. It also ignored the café entirely. For a family with a baby and a toddler the second
+ * venue is the better-evidenced answer, and the ranking now says so:
+ *
+ *   - a confirmed yes earns the check's full weight, an unknown half, a confirmed no a fifth;
+ *   - baby changing weighs most, and only for a child under four (the same line Family Fit draws);
+ *   - a café counts, as somewhere to feed small children; free parking counts only on top of confirmed parking.
+ *
+ * Unknown is never a no and never a yes: it sits exactly in the middle, so evidence moves a venue up or down from where
+ * silence leaves it. Buggy access is scored separately, under accessibility.
+ */
 export function scoreTrustedFacilitiesMatch(
   facts: MatchableVenueFacts,
   profile: FamilyProfile,
@@ -91,28 +107,27 @@ export function scoreTrustedFacilitiesMatch(
     .map((m) => m.age)
     .sort((a, b) => a - b)[0];
 
-  const checks: Array<{ value: MatchableVenueFacts['toilets']; weight: number; label: string }> = [
-    { value: facts.toilets, weight: 1, label: 'toilets' },
-    { value: facts.parking, weight: 0.9, label: 'parking' },
-    { value: facts.freeParking ?? 'unknown', weight: 0.7, label: 'freeParking' },
+  const checks: Array<{ value: MatchableVenueFacts['toilets'] | undefined; weight: number }> = [
+    { value: facts.toilets, weight: 1 },
+    { value: facts.cafe, weight: 0.6 },
+    { value: facts.parking, weight: 0.8 },
   ];
-
+  if (facts.parking === 'yes') checks.push({ value: facts.freeParking, weight: 0.3 });
   if (youngestChild != null && youngestChild <= 3) {
-    checks.push({ value: facts.babyChanging, weight: 1, label: 'babyChanging' });
+    checks.push({ value: facts.babyChanging, weight: 1.2 });
   }
 
-  let knownWeight = 0;
+  let total = 0;
   let earned = 0;
-
   for (const check of checks) {
-    if (check.value === 'unknown' || check.value === undefined) continue;
-    knownWeight += check.weight;
+    total += check.weight;
     if (check.value === 'yes') earned += check.weight;
-    else if (check.value === 'no') earned += check.weight * 0.25;
+    else if (check.value === 'no') earned += check.weight * 0.2;
+    else earned += check.weight * 0.5;
   }
 
-  if (knownWeight === 0) return null;
-  return clamp((earned / knownWeight) * 100);
+  if (total === 0) return null;
+  return clamp((earned / total) * 100);
 }
 
 export function scoreTrustedWeatherFit(
