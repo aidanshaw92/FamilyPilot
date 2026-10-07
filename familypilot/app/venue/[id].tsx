@@ -52,6 +52,7 @@ import { useSavedStore } from '@/src/stores/saved-store';
 import { minTarget } from '@/src/components/ui/touch';
 import { useNamedDocumentTitle } from '@/src/hooks/use-document-title';
 import { localDate, localTime, usePlanningStore } from '@/src/stores/planning-store';
+import { describeOpeningToday } from '@/src/utils/opening-today';
 import { formatCategory } from '@/src/utils/format-category';
 import { generateVenueStaticParams } from '@/src/utils/venue-routes';
 import { travelTimeLabel } from '@/src/utils/travel-time';
@@ -114,10 +115,12 @@ export default function VenueScreen() {
         options: planningOptions,
         today: localDate(),
         nowTime: localTime(),
+        // Shut today: the sheet opens on the day it next opens, so planning stays one tap away.
+        opensAgainInDays: venue ? describeOpeningToday(venue.structuredOpeningHours, new Date()).opensAgainInDays ?? null : null,
       }),
     // `planSheetOpen` is a dependency so the date and time are read again each time the sheet opens: a
     // screen left open past the day's start must not offer a day that has already begun.
-    [profile, planningFamilies, planningOptions, planSheetOpen],
+    [profile, planningFamilies, planningOptions, planSheetOpen, venue],
   );
   const draft = draftOverride ?? planDefaults.draft;
 

@@ -138,7 +138,7 @@ export function StarGlyph({ size, color }: GlyphProps) {
 
 /* ------------------------------------------------------------------ navigation */
 
-export type NavTab = 'index' | 'explore' | 'trips' | 'saved' | 'profile';
+export type NavTab = 'index' | 'explore' | 'halfway' | 'trips' | 'saved' | 'profile';
 
 /**
  * The navigation draws its icons differently in its two approved frames (see floating-tab-bar-layout):
@@ -151,8 +151,10 @@ export type NavTab = 'index' | 'explore' | 'trips' | 'saved' | 'profile';
 const FRAME_SCALE: Record<NavVariant, number> = { home: 2.168, explore: 2.1705 };
 const NAV_BOX_PX = 120;
 const NAV_CENTRE: Record<NavVariant, { cx: Record<NavTab, number>; cy: number }> = {
-  home: { cx: { index: 95, explore: 214, trips: 333, saved: 452, profile: 571 }, cy: 77 },
-  explore: { cx: { index: 101.7, explore: 233, trips: 364.3, saved: 495.6, profile: 626.9 }, cy: 80 },
+  // A glyph is drawn around its own centre, wherever its tab sits in the pill, so the order of tabs can change without
+  // touching a single vector. Halfway is drawn in the same stroke language, around a centre of its own.
+  home: { cx: { index: 95, explore: 214, halfway: 690, trips: 333, saved: 452, profile: 571 }, cy: 77 },
+  explore: { cx: { index: 101.7, explore: 233, halfway: 758.2, trips: 364.3, saved: 495.6, profile: 626.9 }, cy: 80 },
 };
 
 /** The box a nav glyph is drawn in, in points (the frame's 120px at its scale). */
@@ -221,6 +223,17 @@ function homeGlyph(tab: NavTab, c: Stroke, sw: number, color: string, focused: b
           <Path d="M320.5 55V63M343.5 55V63M312.5 69H351.5" strokeWidth={sw} {...c} />
         </>
       );
+    case 'halfway':
+      // Two families' areas either side, the meeting place between them: a pin over a dashed line that joins two dots.
+      return (
+        <>
+          <Path d="M690 81C690 81 680 71.5 680 64.5C680 59 684.5 54.5 690 54.5C695.5 54.5 700 59 700 64.5C700 71.5 690 81 690 81Z" fill={focused ? fill : 'none'} strokeWidth={sw} {...c} />
+          <Circle cx={690} cy={64.5} r={3} fill={color} />
+          <Circle cx={671} cy={95} r={3.4} fill={color} />
+          <Circle cx={709} cy={95} r={3.4} fill={color} />
+          <Path d="M678 95H702" strokeWidth={3.2} strokeDasharray="1 6.5" {...c} />
+        </>
+      );
     case 'saved':
       return (
         <Path
@@ -269,6 +282,16 @@ function exploreGlyph(tab: NavTab, c: Stroke, sw: number, color: string, focused
           {[84.6, 91.1, 97.6].flatMap((y) =>
             [351.6, 361.1, 370.6, 380.1].map((x) => <Circle key={`${x}-${y}`} cx={x} cy={y} r={1.6} fill={color} />),
           )}
+        </>
+      );
+    case 'halfway':
+      return (
+        <>
+          <Path d="M758.2 85C758.2 85 746 73.5 746 65C746 58.3 751.5 53 758.2 53C764.9 53 770.4 58.3 770.4 65C770.4 73.5 758.2 85 758.2 85Z" fill={focused ? color : 'none'} strokeWidth={sw} {...c} />
+          {focused ? null : <Circle cx={758.2} cy={65} r={3.6} fill={color} />}
+          <Circle cx={735.2} cy={101} r={4} fill={color} />
+          <Circle cx={781.2} cy={101} r={4} fill={color} />
+          <Path d="M744 101H772.4" strokeWidth={3.6} strokeDasharray="1 7.5" {...c} />
         </>
       );
     case 'saved':

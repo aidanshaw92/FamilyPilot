@@ -426,6 +426,57 @@ async function getMetadata(familypilotId) {
   return rowToMetadata(store.metadata[familypilotId]);
 }
 
+/**
+ * `getMetadata` for many venues in one round trip per chunk: id -> metadata (or null), exactly as `getMetadata` would
+ * return for each. The search endpoint used to make one request per place (about 160 on a London search).
+ */
+const BATCH_CHUNK = 100;
+function chunked(ids, size = BATCH_CHUNK) {
+  const out = [];
+  for (let i = 0; i < ids.length; i += size) out.push(ids.slice(i, i + size));
+  return out;
+}
+
+/**
+ * Every row a query matches, read a page at a time. PostgREST answers at most `max-rows` rows (1000 on Supabase) and
+ * says nothing when it stops there, so a set-based read that could pass that number must page or it silently loses
+ * rows. `makeQuery()` returns a fresh, fully filtered query ordered by a unique tiebreaker (`id`) last, so pages
+ * neither overlap nor skip.
+ */
+const PAGE_ROWS = 1000;
+async function readAllRows(makeQuery, pageSize = PAGE_ROWS) {
+  const rows = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await makeQuery().range(from, from + pageSize - 1);
+    if (error) throw new Error(error.message);
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < pageSize) return rows;
+  }
+}
+
+async function getMetadataBatch(familypilotIds) {
+  const ids = [...new Set(familypilotIds)];
+  const out = new Map(ids.map((id) => [id, null]));
+  if (ids.length === 0) return out;
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const pages = await Promise.all(
+      chunked(ids).map(async (chunk) => {
+        // One row per venue (familypilot_place_id is the key), so a chunk is far below a page; paged anyway, for safety.
+        return readAllRows(() =>
+          supabase.from('venue_family_metadata').select('*').in('familypilot_place_id', chunk).order('familypilot_place_id', { ascending: true }),
+        );
+      }),
+    );
+    for (const row of pages.flat()) out.set(row.familypilot_place_id, rowToMetadata(row));
+    return out;
+  }
+  const store = readFileStore();
+  for (const id of ids) out.set(id, rowToMetadata(store.metadata[id]));
+  return out;
+}
+
 async function saveMetadata(familypilotId, payload, options = {}) {
   const existing = await getMetadata(familypilotId);
   const reviewedBy = payload.checkedBy || 'enrichment-admin';
@@ -641,6 +692,9 @@ module.exports = {
   listPlaceRecordsForOpeningHours,
   updatePlaceRecordOpeningHours,
   getMetadata,
+  getMetadataBatch,
+  chunked,
+  readAllRows,
   saveMetadata,
   listQueue,
   getStats,

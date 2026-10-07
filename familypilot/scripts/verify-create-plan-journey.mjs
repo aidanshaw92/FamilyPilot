@@ -347,13 +347,14 @@ async function run(browser, viewport) {
         return null;
       }
     });
+    // Saving says so plainly, and offers the next step: the persistent button becomes the confirmation and View plan.
     const footerSaved = await page
-      .getByTestId('plan-save')
+      .getByTestId('plan-saved-confirmation')
       .evaluate((node) => (node.textContent ?? '').trim())
       .catch(() => '');
     note(viewport.label, 'saving from the header also settles the persistent button', {
-      ok: footerSaved.startsWith('Saved'),
-      message: footerSaved || 'no label',
+      ok: /Plan saved/.test(footerSaved) && /View plan/.test(footerSaved) && /Add to calendar/.test(footerSaved),
+      message: footerSaved || 'no confirmation',
     });
 
     note(viewport.label, 'Save this plan persists the day', {
@@ -368,6 +369,53 @@ async function run(browser, viewport) {
     note(viewport.label, 'back returns to the venue', {
       ok: backUrl.includes(`/venue/${venueId}`),
       message: backUrl.replace(BASE, ''),
+    });
+
+    // The same day again is recognised as saved (no duplicate), and View plan opens THAT plan over Plans.
+    await page.goForward();
+    await settle(page, 2400);
+    const again = await page.getByTestId('plan-saved-confirmation').evaluate((n) => (n.textContent ?? '').trim()).catch(() => '');
+    note(viewport.label, 'the same day, reopened, reads "Already in your plans"', { ok: /Already in your plans/.test(again), message: again || 'no confirmation' });
+    await page.getByTestId('plan-view-saved').click().catch(() => {});
+    await settle(page, 1800);
+    const openedUrl = page.url();
+    const openedText = await page.evaluate(() => document.body.innerText);
+    note(viewport.label, 'View plan opens the saved plan itself', {
+      ok: openedUrl.includes('/saved-plan') && /Add to calendar/.test(openedText),
+      message: openedUrl.replace(BASE, ''),
+    });
+    // Add to calendar from the saved plan: a calendar file of this day (the phone's calendar does the adding).
+    const download = await Promise.all([
+      page.waitForEvent('download', { timeout: 5000 }).catch(() => null),
+      // The plan it came from is still mounted underneath (a plain push), with its own button: use the one on screen.
+      page.locator('[data-testid="plan-add-to-calendar"]:visible').click().catch(() => {}),
+    ]).then(([d]) => d);
+    let ics = '';
+    if (download) {
+      const path = await download.path().catch(() => null);
+      if (path) ics = (await import('node:fs')).readFileSync(path, 'utf8');
+    }
+    note(viewport.label, 'Add to calendar hands over a calendar event for this day, with nothing private in it', {
+      ok: /BEGIN:VEVENT/.test(ics) && /SUMMARY:Day out: /.test(ics) && !/nap|feed|latitude|longitude/i.test(ics),
+      message: download ? download.suggestedFilename() : 'no download',
+    });
+    // The phone's own Back (Safari's swipe) returns to the plan it came from, which knows it is saved.
+    await page.goBack();
+    await settle(page, 1400);
+    const backText = await page.getByTestId('plan-saved-confirmation').evaluate((n) => (n.textContent ?? '').trim()).catch(() => '');
+    note(viewport.label, 'the phone’s Back from the saved plan returns to the plan, still saved', {
+      ok: page.url().includes('/plan?') && /Already in your plans/.test(backText),
+      message: `${page.url().replace(BASE, '')} · ${backText || 'no confirmation'}`,
+    });
+    // And on again, then "See all your plans": Plans, with this plan marked as just saved.
+    await page.getByTestId('plan-view-saved').click().catch(() => {});
+    await settle(page, 1400);
+    await page.getByTestId('plan-see-all-plans').click().catch(() => {});
+    await settle(page, 1400);
+    const plansText = await page.evaluate(() => document.body.innerText);
+    note(viewport.label, '"See all your plans" lands on Plans, with it marked as just saved', {
+      ok: page.url().includes('/trips') && /Just saved/.test(plansText),
+      message: page.url().replace(BASE, ''),
     });
   }
 

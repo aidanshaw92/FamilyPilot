@@ -62,7 +62,7 @@ async function signUpWithBuggyToddler(page, email) {
   await page.getByLabel(/year of birth/i).nth(0).fill('2024');
   await next(page).click(); await settle(page);
   await page.getByRole('button', { name: 'Walks', exact: true }).first().click();
-  await page.getByRole('button', { name: 'Buggy', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Buggy / pushchair', exact: true }).first().click();
   await next(page).click(); await settle(page);
   for (let i = 0; i < 3; i++) {
     if (/Who do you plan days out with/i.test(await text(page))) break;

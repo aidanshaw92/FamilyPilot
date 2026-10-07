@@ -1,14 +1,16 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
+
 import { AddFamilyByPostcode } from '@/src/components/planning/AddFamilyByPostcode';
 import { PlanFormRow } from '@/src/components/planning/PlanDraftForm';
-import { BackButton } from '@/src/components/ui/BackButton';
 import { Button, Chip, EmptyState, Skeleton, Text } from '@/src/components/ui';
 import { DateField, TimeField } from '@/src/components/ui/DateTimeField';
 import { VenueImage } from '@/src/components/ui/VenueImage';
+import { HalfwayMap } from '@/src/components/planning/HalfwayMap';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useConnectedFamilies } from '@/src/hooks/use-connected-families';
 import { useBetweenVenues, useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
@@ -40,6 +42,7 @@ import { familyDisplayName } from '@/src/utils/family-title';
 export default function MeetHalfwayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const tabBarClearance = useTabBarClearance();
   const params = useLocalSearchParams();
   const preselected = firstValue(params.family);
 
@@ -55,6 +58,11 @@ export default function MeetHalfwayScreen() {
   const [startAt, setStartAt] = useState(DEFAULT_START_AT);
   const [adding, setAdding] = useState(false);
   const [chosen, setChosen] = useState<string | null>(preselected ?? null);
+  // As a tab the screen stays mounted, so a later link that names a family ("Meet halfway" on a connected family in
+  // Profile) has to select them here rather than only on first open.
+  useEffect(() => {
+    if (preselected) setChosen(preselected);
+  }, [preselected]);
 
   // Everyone this person could meet, from one model: connected families (accepted) and families added by postcode.
   const candidates = useMemo(() => {
@@ -98,7 +106,6 @@ export default function MeetHalfwayScreen() {
     });
   }, [mine, other, venues, date, startAt, today]);
 
-  const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/trips' as never));
 
   const plan = (option: HalfwayOption) => {
     if (!other) return;
@@ -124,12 +131,11 @@ export default function MeetHalfwayScreen() {
   };
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing.sm }]}>
-      <View style={styles.header}>
-        <BackButton onPress={back} />
-      </View>
+    <View style={[styles.screen, { paddingTop: insets.top + spacing.lg }]}>
+      {/* A tab of its own now (Home · Explore · Halfway · Plans · Profile), so no back button, and the content clears the
+          floating navigation like every other tab. */}
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing['3xl'] }]}
+        contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -215,7 +221,15 @@ export default function MeetHalfwayScreen() {
         ) : isError ? (
           <EmptyState icon="cloud-offline-outline" title="We couldn’t load places" message="Check your connection and try again." actionLabel="Try again" onAction={() => void refetch()} />
         ) : result ? (
-          <Results result={result} other={other.label} usingHomeFallback={usingHomeFallback} onPlan={plan} onOpen={(option) => router.push(`/venue/${option.venue.id}` as never)} onStartAt={setStartAt} />
+          <Results
+            result={result}
+            other={other.label}
+            areas={typeof mine === 'string' ? null : { mine: { latitude: mine.latitude, longitude: mine.longitude }, other: { latitude: other.latitude, longitude: other.longitude } }}
+            usingHomeFallback={usingHomeFallback}
+            onPlan={plan}
+            onOpen={(option) => router.push(`/venue/${option.venue.id}` as never)}
+            onStartAt={setStartAt}
+          />
         ) : null}
       </ScrollView>
     </View>
@@ -225,6 +239,7 @@ export default function MeetHalfwayScreen() {
 function Results({
   result,
   other,
+  areas,
   usingHomeFallback,
   onPlan,
   onOpen,
@@ -232,11 +247,15 @@ function Results({
 }: {
   result: ReturnType<typeof meetHalfway>;
   other: string;
+  /** Where each family sets off from. Drawn only as approximate areas (halfway-map.ts); never shown as a point. */
+  areas: { mine: { latitude: number; longitude: number }; other: { latitude: number; longitude: number } } | null;
   usingHomeFallback: boolean;
   onPlan: (option: HalfwayOption) => void;
   onOpen: (option: HalfwayOption) => void;
   onStartAt: (time: string) => void;
 }) {
+  const [mappedId, setMappedId] = useState<string | null>(null);
+  const mapped = result.options.find((option) => option.venue.id === mappedId) ?? result.options[0];
   const notes = (
     <>
       {usingHomeFallback ? (
@@ -307,8 +326,16 @@ function Results({
           We only know where {familyPhrase('other', other)} sets off from, so we’ve checked journeys, opening hours and what you need.
         </Text>
       ) : null}
+      {/* The map follows the place being looked at: the top recommendation first, any other with "Show on map". */}
+      {areas && mapped ? (
+        <HalfwayMap
+          mine={{ ...areas.mine, label: 'Your family' }}
+          other={{ ...areas.other, label: familyDisplayName(other) }}
+          venue={{ latitude: mapped.venue.latitude, longitude: mapped.venue.longitude, name: mapped.venue.name }}
+        />
+      ) : null}
       {result.options.map((option, index) => (
-        <View key={option.venue.id} style={styles.card} testID="halfway-option">
+        <View key={option.venue.id} style={[styles.card, option.venue.id === mapped?.venue.id && areas ? styles.cardMapped : null]} testID="halfway-option">
           <View style={styles.cardHead}>
             <VenueImage
               uri={option.venue.imageUrl}
@@ -365,6 +392,9 @@ function Results({
           <View style={styles.actions}>
             <Button label="Plan this day" size="sm" onPress={() => onPlan(option)} testID="halfway-plan" />
             <Button label="See the place" size="sm" variant="ghost" onPress={() => onOpen(option)} />
+            {areas && option.venue.id !== mapped?.venue.id ? (
+              <Button label="Show on map" size="sm" variant="ghost" onPress={() => setMappedId(option.venue.id)} testID="halfway-show-on-map" />
+            ) : null}
           </View>
         </View>
       ))}
@@ -377,12 +407,12 @@ function Results({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  header: { paddingHorizontal: spacing.screenPadding, paddingBottom: spacing.sm, alignItems: 'flex-start' },
   content: { paddingHorizontal: spacing.screenPadding, gap: spacing.lg },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   results: { gap: spacing.md },
   empty: { gap: spacing.sm, backgroundColor: colors.surface, borderRadius: radius.xl, padding: spacing.lg, borderWidth: 1, borderColor: colors.borderLight },
   card: { gap: spacing.sm, backgroundColor: colors.surface, borderRadius: radius.xl, padding: spacing.lg, borderWidth: 1, borderColor: colors.borderLight },
+  cardMapped: { borderColor: colors.action },
   cardHead: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
   thumb: { width: 62, height: 62 },
   cardTitle: { flex: 1, gap: 2 },

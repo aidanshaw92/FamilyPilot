@@ -43,6 +43,8 @@ export interface OpeningToday {
   closesAt?: number;
   /** Today's opening spans as local minutes, for a venue that opens in more than one block. */
   spans: Array<{ start: number; end: number; realEnd?: number }>;
+  /** Shut today: in how many days it next opens (1 = tomorrow), when the schedule says. */
+  opensAgainInDays?: number;
 }
 
 const FALLBACK_ZONE = 'Europe/London';
@@ -150,10 +152,12 @@ export function describeOpeningToday(hours: OpeningHoursSchedule | null | undefi
   }
 
   const next = nextOpening(intervals, nowAbs);
+  // How many days until it opens again, so a plan made from here can start on a day it is open.
+  const opensAgainInDays = next ? next.dayOffset : undefined;
   if (spans.length === 0) {
-    return { state: 'closed_today', label: `Closed today${next ? ` · ${opensPhrase(next)}` : ''}`, spans };
+    return { state: 'closed_today', label: `Closed today${next ? ` · ${opensPhrase(next)}` : ''}`, spans, opensAgainInDays };
   }
-  return { state: 'closed_for_today', label: `Closed for today${next ? ` · ${opensPhrase(next)}` : ''}`, spans };
+  return { state: 'closed_for_today', label: `Closed for today${next ? ` · ${opensPhrase(next)}` : ''}`, spans, opensAgainInDays };
 }
 
 /**

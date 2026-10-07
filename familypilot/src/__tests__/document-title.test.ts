@@ -22,3 +22,9 @@ describe('documentTitleFor', () => {
     expect(documentTitleFor('/something/else')).toBe('FamilyPilot');
   });
 });
+
+describe('the Halfway tab', () => {
+  it('is announced as Meet halfway', () => {
+    expect(documentTitleFor('/halfway')).toBe('Meet halfway · FamilyPilot');
+  });
+});

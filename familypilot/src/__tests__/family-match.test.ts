@@ -91,13 +91,17 @@ describe('Family Match: the honest verdict', () => {
     expect(r.cautions.map((l) => l.text).join('|')).toMatch(/Theo is younger/);
   });
 
-  it('says closed today when a place is shut all day, and is not a good fit', () => {
+  it('says closed today when a place is shut all day, without calling it a poor fit (suitability and today are separate)', () => {
+    // Was: closed today made the verdict "poor". Being shut today says nothing about whether the place suits the family,
+    // and a parent may well plan it for tomorrow; what it must never do is claim today. See closed-today.test.ts.
     const monday = new Date(2026, 9, 5, 11, 0, 0);
     const hours: OpeningHoursSchedule = { timezone: 'Europe/London', periods: [0, 2, 3, 4, 5, 6].map((d) => ({ open: { day: d, hour: 10, minute: 0 }, close: { day: d, hour: 16, minute: 30 } })) };
     const r = evaluateFamilyMatch({ venue: venue({ structuredOpeningHours: hours }, { toilets: 'yes' }), profile: profile(), score: 90, now: monday });
-    expect(r.verdict).toBe('poor');
+    expect(r.verdict).not.toBe('poor');
+    expect(r.availableToday).toBe(false);
     expect(r.today.state).toBe('closed_today');
     expect(r.cautions[0].text).toBe('Closed today · opens tomorrow 10am');
+    expect(r.headline).toMatch(/, but not today$/);
   });
 
   it('keeps a place FamilyPilot has not reviewed as Not yet reviewed, still saying what is known', () => {

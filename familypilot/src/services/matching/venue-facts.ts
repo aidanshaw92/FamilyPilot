@@ -91,6 +91,8 @@ export function extractMatchableFacts(
     parking: triStateOrUnknown(metadata.familyFacilities?.parking),
     freeParking: triStateOrUnknown(metadata.familyFacilities?.freeParking),
     pushchairSuitability: metadata.pushchairSuitability ?? 'unknown',
+    // The approved terrain claim only; the editorial `terrain` and `terrainNotes` are not evidence.
+    terrain: metadata.extendedTerrain ?? 'unknown',
     environment: environmentOrUnknown(metadata.environment),
     energyLevel: energyOrUnknown(metadata.energyLevel),
     visitDurationMinutes: metadata.visitDurationMinutes ?? null,

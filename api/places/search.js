@@ -94,6 +94,31 @@ async function searchLondonGrid(configuredProvider, intent) {
 }
 
 
+/**
+ * Times the stages of one search: each `mark(name)` closes the stage that has been running since the previous mark.
+ * `finish` writes them as a `Server-Timing` header (with the region and cache state as descriptions) and one structured
+ * log line, so a real phone's request can be broken down without guessing.
+ */
+function createStageTimer() {
+  const started = Date.now();
+  let last = started;
+  const stages = [];
+  return {
+    mark(name) {
+      const now = Date.now();
+      stages.push([name, now - last]);
+      last = now;
+    },
+    finish(res, extra = {}) {
+      const total = Date.now() - started;
+      const header = [...stages.map(([name, ms]) => `${name};dur=${ms}`), `total;dur=${total}`].join(', ');
+      res.setHeader('Server-Timing', header);
+      res.setHeader('X-FamilyPilot-Region', process.env.VERCEL_REGION || 'local');
+      console.info(JSON.stringify({ tag: 'places_search_timing', region: process.env.VERCEL_REGION || 'local', total, stages: Object.fromEntries(stages), ...extra }));
+    },
+  };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -131,9 +156,14 @@ module.exports = async function handler(req, res) {
     return betweenEndpoint.handleBetweenRequest(req, res);
   }
 
+  // Where the time goes, per stage, on every response (`Server-Timing`, readable in a browser's network panel or with
+  // `curl -I`), plus the region the function ran in. Zero cost: it measures, it changes nothing.
+  const timing = createStageTimer();
+
   // Loads today's shared billable total before anything can spend, so the daily cap counts what
   // every other serverless instance has already bought rather than only this one.
   await primePlacesBudget();
+  timing.mark('budget');
 
   const latitude = Number(req.query.lat);
   const longitude = Number(req.query.lng);
@@ -159,12 +189,22 @@ module.exports = async function handler(req, res) {
     categories,
   });
 
+  // The stored catalogue is a database read with no spend; for London it is always merged below, so it is read alongside
+  // the search cache rather than after it. A failure here is the same best-effort miss it always was.
+  const storedCatalogue = isLondonGrid
+    ? readCatalogue().catch((error) => {
+        console.warn(JSON.stringify({ tag: 'places_catalogue_read_failed', message: error?.message || 'read failed' }));
+        return [];
+      })
+    : Promise.resolve([]);
+
   let cached = null;
   try {
     cached = await readSearchCache(cacheKey);
   } catch (error) {
     console.warn(JSON.stringify({ tag: 'places_search_cache_read_failed', message: error?.message || 'read failed' }));
   }
+  timing.mark('cache');
 
   let result;
   let cacheState = 'miss';
@@ -187,7 +227,7 @@ module.exports = async function handler(req, res) {
         // London; the response says plainly that it was not refreshed.
         result = cached.payload;
         cacheState = 'stale';
-      } else if (blocked && isLondonGrid && (await readCatalogue()).length > 0) {
+      } else if (blocked && isLondonGrid && (await storedCatalogue).length > 0) {
         // No cached search and we may not buy one, but the stored catalogue is a database read: serve that.
         result = { places: [], provider: 'google', fallbackUsed: false };
         cacheState = 'catalogue';
@@ -213,6 +253,7 @@ module.exports = async function handler(req, res) {
     return res.status(503).json({ error: 'Live places are temporarily unavailable. Please retry.' });
   }
 
+  timing.mark('provider');
   if (cacheState === 'miss' && result.provider !== 'mock') {
     await writeSearchCache(cacheKey, result, {
       provider: result.provider,
@@ -227,7 +268,7 @@ module.exports = async function handler(req, res) {
   const liveOnly = places;
   if (isLondonGrid && result.provider !== 'mock') {
     try {
-      const stored = await readCatalogue();
+      const stored = await storedCatalogue;
       if (stored.length > 0) {
         places = await filterPlacesToCanonicalPrimaries(mergeCatalogue(places, stored));
       }
@@ -235,10 +276,15 @@ module.exports = async function handler(req, res) {
       console.warn(JSON.stringify({ tag: 'places_catalogue_merge_failed', message: error?.message || 'merge failed' }));
     }
   }
+  timing.mark('catalogue');
   // Production Explore discovery feeds the insert-triggered enrichment queue. This also covers
   // explicit London area/postcode searches so useful outer-London places become richer over time.
   // Preview reads never enqueue work against the production worker.
-  if (process.env.VERCEL_ENV === 'production' && intent === 'explore') {
+  // It writes place_records only, which nothing below reads, so it runs alongside the evidence and food reads rather than
+  // before them. It still runs on cached searches too: the cache is shared, so a page can have been filled by a request
+  // that did not discover (a Preview), or by one whose upsert failed, and this is what retries it.
+  const discovery = (async () => {
+    if (!(process.env.VERCEL_ENV === 'production' && intent === 'explore')) return;
     try {
       const { getSupabaseAdmin } = require('../../server/enrichment/_lib/supabase-admin');
       const db = getSupabaseAdmin();
@@ -254,37 +300,50 @@ module.exports = async function handler(req, res) {
         if (error) console.error('[places] Discovery queue failed',error.code);
       }
     } catch(error) { console.error('[places] Discovery unavailable',error instanceof Error ? error.name : 'Error'); }
-  }
-  try {
-    const { getConsumerMetadata } = require('../../server/enrichment/_lib/consumer-projection');
-    places = await Promise.all(
-      places.map(async (place) => {
-        const metadata = await getConsumerMetadata(place.familypilotId);
-        if (!metadata) return place;
-        return {
-          ...place,
-          enrichmentStatus: metadata.enrichmentStatus || place.enrichmentStatus,
-          familyMetadata: metadata,
-        };
-      }),
-    );
+  })();
+  // The evidence overlay and the stored food lookup are independent reads, so they run together (and with discovery).
+  //
+  // Evidence: every place is overlaid with its consumer-safe metadata in ONE batched projection
+  // (getConsumerMetadataBatch): a few set-based reads instead of three or four per place (~410 round trips for a London
+  // search, up to 160 in flight at once). The same trusted claims, disputes and projection as before.
+  // Food: which places already have a stored food lookup (OpenStreetMap, from Venue Detail's "Restaurants close by"): one
+  // database read, no provider. Places never looked up have no `foodNearby`, and stay unknown on the screen.
+  const evidence = (async () => {
+    try {
+      const { getConsumerMetadataBatch } = require('../../server/enrichment/_lib/consumer-projection');
+      return await getConsumerMetadataBatch(places.map((place) => place.familypilotId));
+    } catch {
+      return null; // Best-effort metadata overlay
+    }
+  })();
+  const food = (async () => {
+    try {
+      const { attachFoodProximity } = require('../../server/places/lib/food-proximity');
+      const { getSupabaseAdmin } = require('../../server/enrichment/_lib/supabase-admin');
+      return await attachFoodProximity(places, getSupabaseAdmin());
+    } catch (error) {
+      console.warn(JSON.stringify({ tag: 'places_food_proximity_failed', message: error?.message || 'failed' }));
+      return places;
+    }
+  })();
+  const [metadataById, withFood] = await Promise.all([evidence, food, discovery]);
+  places = withFood;
+  if (metadataById) {
+    places = places.map((place) => {
+      const metadata = metadataById.get(place.familypilotId);
+      if (!metadata) return place;
+      return {
+        ...place,
+        enrichmentStatus: metadata.enrichmentStatus || place.enrichmentStatus,
+        familyMetadata: metadata,
+      };
+    });
     // rankPlaces (inside searchWithFallback) ran before real enrichment status was known - every
     // place was still 'provider_only' then. Now that it's overlaid, nudge verified/enriched venues
     // ahead of provider-only ones without disturbing relevance order within each trust tier.
     places = reorderByEnrichment(places);
-  } catch {
-    // Best-effort metadata overlay
   }
-
-  // Which places already have a stored food lookup (OpenStreetMap, from Venue Detail's "Restaurants close by"): one
-  // database read, no provider. Places never looked up have no `foodNearby`, and stay unknown on the screen.
-  try {
-    const { attachFoodProximity } = require('../../server/places/lib/food-proximity');
-    const { getSupabaseAdmin } = require('../../server/enrichment/_lib/supabase-admin');
-    places = await attachFoodProximity(places, getSupabaseAdmin());
-  } catch (error) {
-    console.warn(JSON.stringify({ tag: 'places_food_proximity_failed', message: error?.message || 'failed' }));
-  }
+  timing.mark('evidence');
 
   // The CDN is the second line of defence after the Postgres cache: it answers repeat loads without
   // invoking this function at all. Bounded by the same window the store uses, so the two cannot
@@ -293,6 +352,7 @@ module.exports = async function handler(req, res) {
     'Cache-Control',
     `public, max-age=60, s-maxage=${Math.round(ttlHours() * 3600)}, stale-while-revalidate=600`,
   );
+  timing.finish(res, { cacheState, places: places.length });
 
   return res.status(200).json({
     places,

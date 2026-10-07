@@ -29,16 +29,16 @@ const VENUE = 'fp-google-FIXTUREedgeRich';
 const NOW = new Date('2026-10-02T09:00:00.000Z');
 
 const KIDS = {
-  baby: { kind: 'baby', name: 'Poppy', dob: ['12', '02', '2026'], mobility: ['Buggy', 'Baby carrier'] },
-  toddler: { kind: 'toddler', name: 'Theo', dob: ['15', '06', '2024'], mobility: ['Walks', 'Buggy'] },
+  baby: { kind: 'baby', name: 'Poppy', dob: ['12', '02', '2026'], mobility: ['Buggy / pushchair', 'Sling / baby carrier'] },
+  toddler: { kind: 'toddler', name: 'Theo', dob: ['15', '06', '2024'], mobility: ['Walks', 'Buggy / pushchair'] },
   older: { kind: 'older', name: 'Mia', dob: ['20', '03', '2018'], mobility: ['Walks'] },
   aid: { kind: 'older', name: 'Ada', dob: ['03', '09', '2019'], mobility: ['Wheelchair or mobility aid'] },
 };
 /** The chips each kind of child is offered, so the n-th chip with a label can be found by child order. */
 const OFFERS = {
-  baby: ['Baby carrier', 'Buggy', 'Wheelchair or mobility aid'],
-  toddler: ['Walks', 'Buggy', 'Baby carrier', 'Wheelchair or mobility aid'],
-  older: ['Walks', 'Buggy', 'Wheelchair or mobility aid'],
+  baby: ['Sling / baby carrier', 'Buggy / pushchair', 'Wheelchair or mobility aid'],
+  toddler: ['Walks', 'Buggy / pushchair', 'Sling / baby carrier', 'Wheelchair or mobility aid'],
+  older: ['Walks', 'Buggy / pushchair', 'Wheelchair or mobility aid'],
 };
 
 /** Every switch is turned on in the routines step; a baby's feed defaults to every 4 hours from 07:00. */
@@ -157,8 +157,8 @@ for (const width of [360, 430]) {
       check(/Choose all that apply/.test(body0), `${label}: mobility says "choose all that apply"`);
       const walksOffered = await page.getByRole('button', { name: 'Walks', exact: true }).count();
       check(walksOffered === kids.filter((k) => OFFERS[k.kind].includes('Walks')).length, `${label}: "Walks" is offered only to children old enough to walk`);
-      const carrierOffered = await page.getByRole('button', { name: 'Baby carrier', exact: true }).count();
-      check(carrierOffered === kids.filter((k) => OFFERS[k.kind].includes('Baby carrier')).length, `${label}: "Baby carrier" is not offered to older children`);
+      const carrierOffered = await page.getByRole('button', { name: 'Sling / baby carrier', exact: true }).count();
+      check(carrierOffered === kids.filter((k) => OFFERS[k.kind].includes('Sling / baby carrier')).length, `${label}: "Sling / baby carrier" is not offered to older children`);
       for (let i = 0; i < kids.length; i++) {
         for (const chip of kids[i].mobility) {
           const idx = kids.slice(0, i).filter((k) => OFFERS[k.kind].includes(chip)).length;

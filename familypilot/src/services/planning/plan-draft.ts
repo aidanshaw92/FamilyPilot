@@ -117,6 +117,11 @@ export interface PlanDraftSources {
    * which would be true and useless. Omitted, today stays today.
    */
   nowTime?: string;
+  /**
+   * The venue is shut today (all day, or finished for the day) and next opens in this many days. The sheet then opens on
+   * that day rather than on a day that can only end in "closed that day". A date the parent chose is never overridden.
+   */
+  opensAgainInDays?: number | null;
 }
 
 /** Minutes since midnight for `H:MM` or `HH:MM`; an unreadable time never counts as passed. */
@@ -203,6 +208,16 @@ export function planDraftDefaults(sources: PlanDraftSources): PlanDraftDefaults 
   } else if (date === sources.today && sources.nowTime && minutesOf(startAt) < minutesOf(sources.nowTime) + LEAD_MINUTES) {
     // ...and a remembered start that is too close to now (or gone) would plan a day nobody could reach.
     date = nextDay(sources.today);
+  }
+  // Shut today: open the sheet on the day it next opens, at the usual start, unless the parent had chosen a later date.
+  const opensIn = sources.opensAgainInDays;
+  if (opensIn && opensIn > 0 && !(storedDate && storedDate > sources.today)) {
+    let opensOn = sources.today;
+    for (let i = 0; i < opensIn; i += 1) opensOn = nextDay(opensOn);
+    if (date < opensOn) {
+      date = opensOn;
+      startAt = sources.options?.leaveAt || DEFAULT_START_AT;
+    }
   }
 
   return {

@@ -34,6 +34,8 @@ interface PlanningState extends PlanningData {
   saveDay:(d:SavedDay)=>void; deleteDay:(id:string)=>void;
   togglePacked:(id:string,item:string)=>void; replace:(data:PlanningBackup)=>void; clear:()=>void;
 }
+/** Where the planning state is persisted (AsyncStorage key), so a save can be confirmed by reading it back. */
+export const PLANNING_STORAGE_KEY = 'familypilot-planning-v1';
 export const usePlanningStore=create<PlanningState>()(persist((set)=>({
   ...defaults(),hydrated:false,
   setFeedback:(id,feedback)=>set(s=>({saved:s.saved.map(p=>p.id===id?{...p,feedback}:p)})),
@@ -48,4 +50,4 @@ export const usePlanningStore=create<PlanningState>()(persist((set)=>({
   // A backup taken before multi-stop days existed has no `savedDays`. Spreading it as-is would set
   // the array to undefined and break every reader, so the field is defaulted on the way in.
   replace:data=>set({...data,savedDays:data.savedDays??[]}),clear:()=>set(defaults()),
-}),{name:'familypilot-planning-v1',skipHydration:Platform.OS==='web'&&typeof window==='undefined',storage:createJSONStorage(()=>AsyncStorage),partialize:({families,options,saved,savedDays})=>({families,options,saved,savedDays}),onRehydrateStorage:()=>()=>usePlanningStore.setState({hydrated:true})}));
+}),{name:PLANNING_STORAGE_KEY,skipHydration:Platform.OS==='web'&&typeof window==='undefined',storage:createJSONStorage(()=>AsyncStorage),partialize:({families,options,saved,savedDays})=>({families,options,saved,savedDays}),onRehydrateStorage:()=>()=>usePlanningStore.setState({hydrated:true})}));
