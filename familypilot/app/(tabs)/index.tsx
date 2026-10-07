@@ -45,6 +45,7 @@ import { FilterSheet } from '@/src/components/explore/FilterSheet';
 import { applyAdvancedFilters } from '@/src/utils/filter-venues';
 import { FOOD_FILTER_IDS, foodIsUnknown } from '@/src/utils/food-nearby';
 import { Venue } from '@/src/types';
+import { seedVenueDetail } from '@/src/services/venue-detail-seed';
 import { joinNames } from '@/src/utils/child-fit';
 import { filterByPlanCategory, planCategoriesFor } from '@/src/utils/plan-categories';
 
@@ -160,7 +161,11 @@ export default function HomeScreen() {
     }
   };
 
-  const openVenue = (venue: Venue) => router.push(`/venue/${venue.id}` as never);
+  const openVenue = (venue: Venue) => {
+    // The card the parent tapped is what the place shows while its full detail loads (see venue-detail-seed).
+    seedVenueDetail(venue);
+    router.push(`/venue/${venue.id}` as never);
+  };
 
   return (
     <View style={styles.screen}>
@@ -295,7 +300,7 @@ export default function HomeScreen() {
             <RecommendationDeckSkeleton
               viewportWidth={width}
               maxHeight={room}
-              message={`Finding today’s best places for ${pickedForNames}…`}
+              message={`Finding the best places for ${pickedForNames}…`}
             />
           </View>
         ) : null}

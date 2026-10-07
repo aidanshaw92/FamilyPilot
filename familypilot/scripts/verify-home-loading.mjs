@@ -153,7 +153,7 @@ for (const width of WIDTHS) {
       check(r.msToCards !== null && r.msToCards < SLOW_SEARCH_MS + 2000, `${width} first run: cards by ${r.msToCards}ms, not held for the weather (${SLOW_WEATHER_MS}ms)`);
       check(r.msPlainBlock === 0, `${width} first run: never a plain empty block (${r.msPlainBlock}ms)`);
       check(r.msNothingInDeckPlace <= 300, `${width} first run: the deck's place is never empty once the header is up (${r.msNothingInDeckPlace}ms)`);
-      check(r.msSkeleton > 0 && /Finding today’s best places for Ozzie/.test(r.skeletonMessage ?? ''), `${width} first run: the deck-shaped skeleton says what is happening, for this family`);
+      check(r.msSkeleton > 0 && /Finding the best places for Ozzie/.test(r.skeletonMessage ?? ''), `${width} first run: the deck-shaped skeleton says what is happening, for this family`);
       check(r.deckVsSkeletonPx && Math.abs(r.deckVsSkeletonPx.top) <= 1 && Math.abs(r.deckVsSkeletonPx.height) <= 1, `${width} first run: the cards take the skeleton's exact place (${JSON.stringify(r.deckVsSkeletonPx)})`);
       check(r.headerMovedPx.avatar === 0 && r.headerMovedPx.chips === 0, `${width} first run: the header and chips do not move (${JSON.stringify(r.headerMovedPx)})`);
       check(r.greetings.length === 1 && /Aidan/.test(r.greetings[0]), `${width} first run: the greeting has the family's name from the first frame (${r.greetings.join(' → ')})`);

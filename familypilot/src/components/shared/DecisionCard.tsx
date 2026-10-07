@@ -11,6 +11,7 @@ import { Text } from '@/src/components/ui/Text';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
+import { seedVenueDetail } from '@/src/services/venue-detail-seed';
 import {
   EXPLORE_CARD_CONTENT_PADDING,
   EXPLORE_CARD_PADDING_LEFT,
@@ -19,7 +20,7 @@ import {
   exploreCardCtaLabel,
 } from '@/src/utils/explore-card-layout';
 import { getMatchClassification } from '@/src/utils/family-match-classification';
-import { matchCardReason, VERDICT_BADGE } from '@/src/services/matching/family-match';
+import { matchCardReason, VERDICT_BADGE, withClosedLine } from '@/src/services/matching/family-match';
 
 import { RecommendationPattern } from './RecommendationPattern';
 import { travelTimeLabel } from '@/src/utils/travel-time';
@@ -42,6 +43,7 @@ function DecisionCardComponent({
   const isHero = variant === 'hero';
 
   const handleViewDetails = () => {
+    seedVenueDetail(venue);
     if (onViewDetails) {
       onViewDetails();
       return;
@@ -59,7 +61,7 @@ function DecisionCardComponent({
     // ellipsis rather than showing it, which reads as a cut-off fragment instead of a fact.)
     // An unreviewed place has no reason line: the badge under the title already says "Not yet
     // reviewed", its only heuristic reason is the distance, and the meta line carries that.
-    const reason = match ? matchCardReason(match) : unreviewed ? '' : venue.familyScore.explanation.slice(0, 2).join(' · ');
+    const reason = match ? withClosedLine(match, matchCardReason(match)) : unreviewed ? '' : venue.familyScore.explanation.slice(0, 2).join(' · ');
     const ctaLabel = exploreCardCtaLabel(windowWidth, unreviewed);
 
     // The Explore result card (Figma "Explore card", node 90:106): the photograph down the left,

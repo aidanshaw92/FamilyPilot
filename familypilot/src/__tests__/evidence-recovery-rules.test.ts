@@ -286,3 +286,35 @@ describe('discovery', () => {
     expect(scoreLink('/news/summer https://example.org/news/summer', 'Meet friends and family at our cafe this summer for a special treat').score).toBe(0);
   });
 });
+
+/**
+ * Age-adjacent wording on a venue's own pages must never become a recommended-age FACT through the extractor that the
+ * worker actually runs. There is no producer of venue-recommended ages (docs/AGE_SUITABILITY_YIELD.md): the extractor
+ * emits facility, accessibility and pushchair facts only, so no sentence about ages, tickets, heights or children's
+ * facilities can create one. This pins that, with real sentences from the stored pages.
+ */
+describe('the extractor never produces an age fact', () => {
+  const SENTENCES = [
+    'Please note, children under the age of 2 go free but the recommended age of the attraction is children aged 6 and over.',
+    'This playground is suitable for children 4 to 7, 8 to 14 years old.',
+    'Soft play sessions are open to children aged 6 months to 10 years.',
+    'Child (4 – 17 years): £10.50. Children under 4 years: Free.',
+    'Strictly for ages 5 & under. Guests under the age of 5 require a paying adult to accompany them.',
+    'Children under 1.2m can still enjoy a wide range of attractions including Drift Trikes and Inflatables.',
+    'We have a children’s playground, a soft play area for little ones, and a parent and baby room.',
+    'Activities are generally appropriate for children aged 5+, younger visitors are also very welcome.',
+    'Great for toddlers and young children. A perfect family friendly day out for all ages.',
+  ];
+
+  it('emits no field about ages for any of them', () => {
+    for (const text of SENTENCES) {
+      const fields = extractEvidenceFromText(text, meta).map((f: { field: string }) => f.field);
+      expect(fields.filter((f: string) => /age|recommended|suitab/i.test(f)), text).toEqual([]);
+    }
+  });
+
+  it('and none of the venue-level age statements leaks into facilities either', () => {
+    const fields = extractEvidenceFromText(SENTENCES.join(' '), meta).map((f: { field: string; value: string }) => f.field);
+    expect(fields.some((f: string) => /^(minRecommendedAge|maxRecommendedAge|ageSuitability|recommendedAge)/.test(f))).toBe(false);
+  });
+});

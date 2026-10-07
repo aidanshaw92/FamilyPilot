@@ -22,6 +22,7 @@ import { useSavedStore } from '@/src/stores/saved-store';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { FamilyProfile } from '@/src/types';
 import { fetchNearbyFood } from '@/src/services/places/nearby-food-client';
+import { venueDetailPlaceholder } from '@/src/services/venue-detail-seed';
 import { BetweenHome } from '@/src/services/places/between-client';
 import { resolveHomeVenues } from '@/src/utils/home-venues-state';
 
@@ -108,12 +109,22 @@ export function useBetweenVenues(a: BetweenHome | null, b: BetweenHome | null) {
   });
 }
 
-export function useVenue(id: string) {
+/**
+ * One place, in full. With `showCardWhileLoading`, and when the parent arrived from a card, `placeholderData` stands in
+ * for it until the detail request returns, so the screen can show what the card already knew instead of a blank skeleton
+ * (see `venue-detail-seed`). While `isPlaceholderData` is true the data is the CARD, not the place: never evidence, never
+ * stored, and replaced wholesale by the real detail.
+ */
+export function useVenue(id: string, options: { showCardWhileLoading?: boolean } = {}) {
   const profileRevision = useProfileRevision();
   return useQuery({
     queryKey: ['venues', id, profileRevision],
     queryFn: () => venueService.getById(id),
     enabled: Boolean(id),
+    // OPT-IN, and only for the screen that knows how to draw a card honestly (it draws identity, never evidence, until the
+    // full detail is in). Anything else that reads a venue (planning, the restaurant page) must get the real detail or
+    // nothing: a plan built from a card's partial opening hours would be built on data nobody checked.
+    placeholderData: options.showCardWhileLoading ? () => venueDetailPlaceholder(id) : undefined,
   });
 }
 

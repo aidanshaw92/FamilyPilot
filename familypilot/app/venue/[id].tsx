@@ -78,7 +78,11 @@ export default function VenueScreen() {
   const id = firstValue(searchParams.id);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: venue, isLoading, isError, refetch } = useVenue(id ?? '');
+  const { data: venue, isLoading, isError, refetch, isPlaceholderData } = useVenue(id ?? '', { showCardWhileLoading: true });
+  // True while `venue` is the CARD the parent tapped, standing in until the full detail returns. The card knows the place's
+  // identity, photograph, travel time and fit badge (all of which the parent just saw), and nothing evidence-backed: so those
+  // are drawn, and everything else waits for the real detail rather than being drawn from a partial record.
+  const pending = Boolean(isPlaceholderData);
   useNamedDocumentTitle(venue?.name);
   // Keyed on the venue's coordinates, so it starts only once the venue has loaded and two venues at
   // the same address share one lookup.
@@ -283,7 +287,7 @@ export default function VenueScreen() {
           <View style={styles.grabber} />
           <FadeInView>
             <View style={styles.nameRow}>
-              <Text variant="heading1" style={styles.name}>
+              <Text variant="heading1" style={styles.name} testID="venue-name">
                 {venue.name}
               </Text>
               {/* The compact badge beside the name (node 49:5); "Why this score" carries the word. */}
@@ -308,6 +312,23 @@ export default function VenueScreen() {
               </Pressable>
             </View>
 
+            {pending ? (
+              <View
+                style={styles.pendingBody}
+                testID="venue-detail-pending"
+                accessible
+                accessibilityRole="progressbar"
+                accessibilityLabel={`Getting the details for ${venue.name}`}
+              >
+                <Skeleton height={132} style={styles.loadingGap} />
+                <Skeleton height={64} style={styles.loadingGap} />
+                <Skeleton height={52} style={styles.loadingGap} />
+                <Skeleton height={160} />
+              </View>
+            ) : null}
+
+            {pending ? null : (
+            <>
             {/* 1. Family Match: what FamilyPilot tells THIS family, and why. The first thing under the name. */}
             <View
               style={styles.block}
@@ -460,6 +481,8 @@ export default function VenueScreen() {
                 startReport={startReport}
               />
             </View>
+            </>
+            )}
 
           </FadeInView>
         </View>
@@ -497,6 +520,9 @@ const styles = StyleSheet.create({
   },
   loadingGap: {
     marginBottom: spacing.lg,
+  },
+  pendingBody: {
+    marginTop: spacing.lg,
   },
   heroContainer: {
     height: HERO_HEIGHT,

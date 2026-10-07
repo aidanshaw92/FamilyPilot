@@ -87,3 +87,72 @@ describe('what never counts', () => {
     for (const t of ['Hackney City Farm is a city farm', 'A museum for curious minds', 'Soft play centre in Watford']) expect(kind(t), t).toBe('rejected');
   });
 });
+
+/**
+ * HARDENING, from the 7 Oct 2026 audit of the stored official pages (docs/AGE_SUITABILITY_YIELD.md). Before this the
+ * recommended-range rule would have accepted any number after "recommended for / best for / ideal for / suitable for":
+ * a visit length, a head count, a ride height, a group size, a school year. Nothing publishes from this contract yet; these
+ * pin what a producer must never be allowed to accept when one is built.
+ */
+describe('age-adjacent wording never becomes a recommended age', () => {
+  const NOT_AN_AGE: Array<[string, string]> = [
+    ['visit length', 'Best for a visit of 2 to 3 hours.'],
+    ['head count', 'Recommended for 4 people per table.'],
+    ['group size', 'Ideal for groups of 10 to 20.'],
+    ['ride height', 'Suitable for riders over 1.2m.'],
+    ['guest height', 'Designed for guests 90cm to 140cm tall.'],
+    ['family ticket definition', 'Family ticket: recommended for 2 adults and 2 children aged 3-15.'],
+    ['school workshop', 'Our school workshops are suitable for children aged 5 to 11 (Key Stage 1 and 2).'],
+    ['school group', 'The school visit is suitable for pupils in Year 3 and 4.'],
+    ['adult audience', 'Recommended for adults aged 18 and over.'],
+    ['evening event', 'Suitable for ages 18+ only after 6pm.'],
+    ['price bands', 'Under 5s: £4. Ages 5–12: £6.'],
+    ['under-3s free', 'Under 3s free. Recommended for children 3 and over to pay the child price.'],
+    ['a rating', 'Best for 5 stars on arrival.'],
+    ['a capacity', 'Suitable for up to 30 children at a time.'],
+    ['family friendly', 'A great family friendly day out for all the family.'],
+    ['existence of children’s facilities', 'We have a children’s playground, baby changing and a soft play area for little ones.'],
+    ['category', 'Hackney City Farm is a city farm.'],
+    ['height restriction', 'Children under 1.2m can still enjoy a wide range of attractions.'],
+    ['admission rule', 'Only adults supervising children up to the age of 12 will be admitted.'],
+    ['ticket band', 'Child (4 – 17 years): £10.50 Children under 4 years: Free'],
+    ['membership definition', 'Explore the Museum and Gardens as a family (up to 2 adults and 3 children aged three and above).'],
+    ['ride pricing', 'Add a ride on the Time Machine Coaster for just £3 per child aged 12 and under.'],
+    ['an online resource', 'online resources available for families, with activities to do at home with children aged 6–11 years.'],
+    ['a costume rule', 'Children aged 14 and under are welcome to wear costumes at Young V&A.'],
+  ];
+
+  it.each(NOT_AN_AGE)('%s is not a recommended age', (_why, text) => {
+    const r = classifyAgeStatement(text, own);
+    expect(['recommended_range', 'facility_range', 'door_policy'], text).not.toContain(r.kind);
+  });
+
+  it('a range stated in months is rejected, never rounded to years', () => {
+    // Belmont's soft play, real wording. Before: read as "up to 6".
+    for (const t of ['Belmont Farm’s purpose built soft play area accommodates children from 6 months to 10 years', 'Our soft play area is for children aged 6 months and over']) {
+      const r = classifyAgeStatement(t, own);
+      expect(r.kind, t).toBe('rejected');
+      expect(r.toYears ?? null, t).toBeNull();
+    }
+  });
+
+  it('a session, class or party for an age is a programme, not the venue’s range (plurals included)', () => {
+    for (const t of ['Soft Play sessions are open to children aged 2 to 5', 'Our workshops are suitable for children aged 5 to 11', 'Birthday parties are best for children aged 4 to 8', 'Holiday clubs are recommended for ages 6 to 12']) {
+      expect(kind(t), t).toBe('rejected');
+    }
+  });
+
+  it('still accepts the one wording the audit found at venue level, and the playgrounds', () => {
+    expect(classifyAgeStatement('the recommended age of the attraction is children aged 6 and over', own)).toMatchObject({ kind: 'recommended_range', fromYears: 6, toYears: null });
+    expect(classifyAgeStatement('Recommended for ages 3–8', own)).toMatchObject({ kind: 'recommended_range', fromYears: 3, toYears: 8 });
+    expect(classifyAgeStatement('Suitable for children aged 5+', own)).toMatchObject({ kind: 'recommended_range', fromYears: 5, toYears: null });
+    expect(classifyAgeStatement('This playground is suitable for children 4 to 7, 8 to 14 years old', own).kind).toBe('facility_range');
+  });
+
+  it('the sentence must be about the venue’s own pages: the same wording from a parent or a stranger is nothing', () => {
+    const t = 'the recommended age of the attraction is children aged 6 and over';
+    expect(classifyAgeStatement(t, { sourceType: 'parent_report', subjectScope: 'venue_own_subtree' }).kind).toBe('rejected');
+    expect(classifyAgeStatement(t, { sourceType: 'visitor_info', subjectScope: 'other_catalogue_venue' }).kind).toBe('rejected');
+    expect(classifyAgeStatement(t, { sourceType: 'visitor_info', subjectScope: 'sibling_unverified' }).kind).toBe('rejected');
+  });
+});

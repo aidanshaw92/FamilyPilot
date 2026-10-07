@@ -1,5 +1,7 @@
 # Age suitability: the evidence contract and what the existing cohort can supply
 
+Re-measured on the current corpus on 7 Oct 2026, with the contract hardened against non-age numbers: [AGE_SUITABILITY_YIELD.md](AGE_SUITABILITY_YIELD.md).
+
 Status: PR #159, not merged. Existing official evidence only (the venues' own stored pages); no new data, no new
 fetching, no spend, nothing written to production. Read-only queries on 5 Oct 2026 over the **138** browsable venues.
 

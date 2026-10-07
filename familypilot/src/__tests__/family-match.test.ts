@@ -127,10 +127,12 @@ describe('Family Match: the honest verdict', () => {
     expect(r.headline).toBe('Excellent for Sloane');
   });
 
-  it('uses "your family" when no confirmed fact is about a particular child', () => {
+  it('uses "your family" when no confirmed fact is about a particular child, and does not say "Good for" it', () => {
+    // Toilets are about the place and the visit, not about whether the activity suits the family: it is promising, not "good for".
     const p = profile({ members: [parent, child('c1', 'Sloane', 7)] });
     const r = run(venue({}, { toilets: 'yes' }), p);
-    expect(r.headline).toBe('Good for your family');
+    expect(r.headline).toBe('Looks promising for your family');
+    expect(r.headline).not.toMatch(/^(Good|Excellent) for/);
   });
 
   it('never prints a name it does not have', () => {
@@ -222,12 +224,14 @@ describe('Family Fit never says "good for the family" from a subset of the child
   const sevenAndNine = () => profile({ members: [parent, child('c1', 'Sloane', 7), child('c2', 'Maya', 9)] });
   const practical = { toilets: 'yes', parking: 'yes' } as const;
 
-  it('a fact about one child alone does not become "Good for" that child while the other is unknown', () => {
-    // Baby changing is confirmed, which is a fact about Ozzie. Nothing at all is known about whether it suits Sloane.
+  it('a practical fact about one child is "easy to visit with" them, never "Good for" them, while the other is unknown', () => {
+    // Baby changing and buggy access are confirmed, which makes the VISIT easy with Ozzie. Nothing at all is known about whether
+    // the place suits Sloane, and nothing about Ozzie says it suits him as an activity either.
     const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
-    expect(r.children.map((c) => [c.name, c.state])).toEqual([['Sloane', 'unknown'], ['Ozzie', 'works']]);
-    expect(r.headline).toBe('Good for Ozzie, but we’re less certain about Sloane: no age range is recorded for this place yet');
-    expect(r.headline).not.toMatch(/^Good for Ozzie today$/);
+    expect(r.children.map((c) => [c.name, c.state, c.basis])).toEqual([['Sloane', 'unknown', null], ['Ozzie', 'works', 'logistics']]);
+    expect(r.headline).toBe('Easy to visit with Ozzie, but we’re less certain about Sloane: no age range is recorded for this place yet');
+    expect(r.headline).not.toMatch(/Good for/);
+    expect(r.forNames).toEqual([]);
     expect(r.gapNames).toEqual(['Sloane']);
   });
 
@@ -270,7 +274,7 @@ describe('Family Fit never says "good for the family" from a subset of the child
     const one = profile({ members: [parent, child('c3', 'Mia', 2, { mobility: ['walks'] })] });
     const r = run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'unknown' }), one, 80);
     expect(r.gapNames).toEqual([]);
-    expect(r.headline).toBe('Good for your family');
+    expect(r.headline).toBe('Looks promising for your family');
   });
 
   it('speaks like a parent: no database phrasing anywhere a headline or a check line is shown', () => {

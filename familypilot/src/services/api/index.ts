@@ -128,8 +128,7 @@ export const venueService = {
 
   async getById(id: string): Promise<VenueDetail | null> {
     const profile = getProfile();
-    const [, detail, weather, parentObservations] = await Promise.all([
-      delay(200),
+    const [detail, weather, parentObservations] = await Promise.all([
       getPlacesRepository().getVenueDetail(id, profile),
       fetchLiveWeatherSafe(profile),
       fetchParentObservations(id),
