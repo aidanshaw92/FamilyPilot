@@ -153,7 +153,7 @@ rules carry a version, `EXTRACTOR_VERSION` in `server/enrichment/_lib/evidence-e
 they produce. After deploying a change that bumps it, queue one no-network re-read of stored evidence:
 
 ```sql
-select public.enqueue_reextract_jobs('official-source-rules-v3');   -- the new version string
+select public.enqueue_reextract_jobs('official-source-rules-v4');   -- the new version string
 ```
 
 or `POST /api/enrichment?action=enqueue-reprocess` with the admin token. This queues a `reextract` job for every

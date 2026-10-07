@@ -1,16 +1,19 @@
 # Venue evidence recovery
 
-Branch `feat/venue-evidence-recovery`. Not merged and not deployed. Written 7 Oct 2026.
+Merged to `main` as PR #165 (`1ec2b3f`) and, for the extractor v4 parking correction, PR #166 (`26a856f`); both
+deployed on 7 Oct 2026. Sections 0 to 8 were written before the merge and describe the local work. Section 9 records
+what the deployed code did in production.
 
 This work tests one promise: *will this place work for our family with a baby and a toddler?* The question was not
 how many fields are filled. It was whether the facts a family needs were already published by the venue and lost
 somewhere between the page and the app, and if so, where.
 
-**Where each check ran.** Every check in this document ran locally: unit tests, the replay set, typecheck and the web
-build. The production database was used only for read-only aggregate queries and to export the public venue text in
-the replay set. No personal records were read. Nothing was deployed, re-queued or written to production, and no Google
-or other provider calls were made. The production host cannot be reached from the sandbox, so nothing here was
-verified in production.
+**Where each check ran.** Every check in sections 1 to 8 ran locally: unit tests, the replay set, typecheck and the
+web build. Before the merge the production database was used only for read-only aggregate queries and to export the
+public venue text in the replay set. Section 9 is production: its figures are read-only queries against the production
+database after the deploy, and the only production writes made by hand were the authorised migration and the job
+enqueues it describes. No personal records were read at any point. The deployed app was not opened on a device from
+here; the production host cannot be reached from the sandbox.
 
 ## 0. Reconciling the claim counts (183, 182, 72, 77)
 
@@ -204,8 +207,9 @@ The fixtures pin what must be recovered, and what must not:
 
 ## 5. The launch set
 
-These are the 30 destinations nearest Mill Hill. Of the 150 values (30 venues × 5 core fields), **11 are served
-today and 31 will be publishable after deploy and refetch**. Twelve of the 30 have no readable text of their own
+These are the 30 destinations nearest Mill Hill. Of the 150 values (30 venues × 5 core fields), **11 were served
+before this work and the local replay predicted 31 after deploy and refetch**; production serves **33** after the
+pass (section 9). Twelve of the 30 have no readable text of their own
 (blocked, bot-challenged, JavaScript-only or wrong website). No extractor change can help those.
 [venue-verification/VERIFICATION_QUEUE.md](venue-verification/VERIFICATION_QUEUE.md) has the venue-by-venue table and
 the queue. It includes:
@@ -255,9 +259,10 @@ subset of a general car park ("108 places including 6 reserved for blue badge ho
 
 ### Production run
 
-Recorded in section 9 once done. The order is: deploy; `enqueue_venue_enrichment_jobs('reextract', <5 canary ids>)`;
-inspect the claims those five produced and withdrew; `enqueue_reextract_jobs('official-source-rules-v3')` for the rest;
-then `refetch_official` only for destinations with no eligible stored reading inside the window.
+Done on 7 Oct 2026 and recorded in section 9. The order was: deploy; `enqueue_venue_enrichment_jobs('reextract',
+<5 canary ids>)`; inspect the claims those five produced and withdrew; `enqueue_reextract_jobs(EXTRACTOR_VERSION)` for
+the rest; `refetch_official` only for destinations with no eligible stored reading inside the window; then, after the
+v4 deploy, `enqueue_reextract_jobs('official-source-rules-v4')` once more.
 
 ## 7. Staff answers (still a decision)
 
@@ -265,8 +270,8 @@ The claims schema has no source type for a venue's emailed or phoned answer. See
 
 ## 8. Limitations
 
-- **All results are measured locally.** The replay uses each page's stored text. A live refetch reads today's page,
-  which may say more, less or something different.
+- **Sections 1 to 8 are measured locally.** The replay uses each page's stored text. A live refetch reads today's
+  page, which may say more, less or something different. Section 9 has the production figures.
 - **Hampstead Heath** now gets toilets from its own page's section about Golders Hill Park, which is part of the Heath.
   That is correct, but the quote describes one area of a large site.
 - **Rules that leave true facts unknown:**
@@ -292,6 +297,159 @@ The claims schema has no source type for a venue's emailed or phoned answer. See
 
   Your Step 1 iPhone review is still outstanding and is separate.
 
-## 9. Production results
+## 9. Production results (7 Oct 2026)
 
-To be filled in after the deploy and the reprocessing pass, using the section 0 definitions.
+Everything in this section is production, measured with the section 0 definitions: a *served* claim is an active row
+whose `valid_until` is today or later and whose approver is not the legacy `ai_auto_approved`; *core facts* are the
+five fields (baby changing, toilets, café, parking, buggy access) on the 151 destinations. "Before" is the snapshot
+taken at about 12:00 UTC, before the first job ran. "After" was taken at 16:44 UTC, after the last job completed at
+16:38 UTC and the queue held nothing pending or processing. Times are UTC.
+
+**What was written to production by hand:** the migration `20261007150000_reextract_job_modes.sql` (two job modes and
+two queueing functions), and job enqueues through those functions. Every claim, draft and evidence row below was
+written by the deployed worker running the ordinary approval path. Nothing was typed in as a claim.
+
+### 9.1 Deployments and proof the new code ran
+
+| Deploy | Merge | What it carried | How deployment was verified |
+| --- | --- | --- | --- |
+| PR #165 | `1ec2b3f` | extractor v3, `reextract` and `refetch_official` modes, the Google-disabled path, `EXTRACTOR_VERSION` on drafts | GitHub commit status "Vercel" = `success` ("Deployment has completed") and a GitHub Production deployment object on that exact SHA, checked before the canary was queued |
+| PR #166 | `26a856f` | extractor v4 (parking stated for disabled or Blue Badge visitors is restricted parking) | the same two signals on `26a856f`, checked before the v4 re-read was queued |
+
+Database state alone cannot show which code is deployed, so the handlers were also checked from their output: every
+draft the jobs produced carries the deployed version in `model` (`official-source-rules-v3`, then `-v4`) and the
+job's id, evidence mode and Google setting in `source_context`. Drafts from the old code carry none of these. The
+Vercel API itself refused this session's token (403), so the GitHub signals were the verification.
+
+### 9.2 Jobs
+
+The job table holds one row per venue, so a venue that ran in two modes is counted under its last. The canary ran
+first (five venues chosen to exercise different rules: Gladstone Park, RAF Museum, Golders Hill Park, Mayow Park,
+Streatham Common); its claims were inspected before the rest was queued.
+
+| Pass | Queued | Outcome |
+| --- | ---: | --- |
+| Canary `reextract` (v3) | 5 | all completed, claims as predicted by the replay (section 9.5 has the one exception) |
+| Full `reextract` (v3) | 98 | all completed first attempt |
+| `refetch_official` (Google disabled) | 50 | all completed first attempt; 8 rows were later re-queued as v4 `reextract` because the refetch had given them an eligible fresh reading |
+| `reextract` (v4) | 103 | all completed first attempt |
+| **Final rows** | **144** | `reextract` completed 102, `refetch_official` completed 42, failed 0, pending 0, processing 0, `last_error` null on every row |
+
+### 9.3 Google
+
+`google_places_usage` for 7 Oct was identical before and after the whole operation: geocoding 1, nearby search 18,
+place photos 190, **Place Details 0**. The first three were ordinary app traffic earlier in the day; none moved while
+the jobs ran. Every `refetch_official` draft records `googleAccess: 'disabled'`, and every `reextract` draft records
+`evidenceMode: 'stored'`, the path that makes no network call at all.
+
+### 9.4 Coverage: before and after
+
+Served core facts on the 151 destinations:
+
+| Field | Before | After | Positive after | Negative after |
+| --- | ---: | ---: | ---: | ---: |
+| Baby changing | 21 | 24 | 24 yes | 0 |
+| Toilets | 21 | 32 | 32 yes | 0 |
+| Café or food | 5 | 37 | 37 yes | 0 |
+| Parking | 25 | 35 | 21 yes | 14 no |
+| Buggy access | 5 | 10 | 5 excellent or good | 5 mixed or difficult |
+| **Total** | **77** | **138** | | |
+
+| Measure | Before | After |
+| --- | ---: | ---: |
+| Destinations with three or more core facts | 9 | 24 |
+| Destinations with at least one core fact | not snapshotted | 63 |
+| Destinations with none | not snapshotted | 88 |
+| Served claims, all fields and venues | 182 | 248 |
+| Venues with a served claim | 72 | 79 |
+| Rows with `status = 'active'` | 183 | 249 |
+| Disputed (quarantined, never served) | 121 | 129 |
+| Superseded (replaced, never served) | 529 | 554 |
+| Expired | 0 | 0 |
+
+Local versus production: the replay set predicted the launch set would go from 11 to 31 served values; production
+went from 11 to 33 (Roundwood Park's toilets and café came from the Brent page the refetch read for the first time).
+The replay could not predict catalogue-wide totals because it holds only the venues with exported text, so there is no
+local figure to set against 138.
+
+### 9.5 Every claim the passes created, changed or withdrawn
+
+All rows created or set to `disputed` from the first job (12:25 UTC) to the last were read with their quotes.
+
+- **73 claims created**, all active and served: café 32, toilets 13, parking 14 (8 yes, 6 no), baby changing 3, free
+  parking 3, playground 2, buggy 6 (excellent 1, good 3, mixed 2). Each quote was checked against the field: the
+  cafés and toilets come from council facility lists and "plan your visit" pages; the six parking `no` values all
+  state the absence in the venue's own words ("no parking facilities", "no dedicated parking", "there is no car
+  park"); the three `free parking` values each say "free" of the venue's own car park.
+- **25 claims replaced with the same value.** Only the quote changed, from an HTML-entity form (`&amp;`, `&#8217;`)
+  to decoded text. Value, source URL, reading date and expiry are unchanged, so nothing a parent sees moved.
+- **0 claims replaced with a different value.**
+- **8 claims withdrawn** (set to `disputed`), each one correct:
+
+| Venue | Field | Was | Why withdrawn | State now |
+| --- | --- | --- | --- | --- |
+| Mudchute Park and Farm | parking | no | the page's two statements conflict, so neither is published | unknown |
+| Streatham Common | parking | no | the quote was about double yellow lines on surrounding roads, not the common's own car park | unknown; the page that mentions the car park was read on 20 Sep, outside the 14-day window, and today's refetch of the Friends' site did not reach it |
+| Tate Modern | parking | no | v3 read "parking spaces for disabled visitors" as general parking and the conflict withdrew the true `no` | **`no` restored by v4 at 15:29 UTC**, quoting "There are no parking facilities at Tate Modern" |
+| Tate Britain | parking | yes | v3's "Accessible car parking … spaces for disabled visitors" is restricted parking | withdrawn by v4 at 15:16 UTC; unknown, which is right: the page states only disabled parking |
+| Stanborough Park | parking | yes | the quote was "free parking for Blue Badge holders", restricted parking | replaced at 16:13 UTC by a new `yes` quoting the same page's general statement that "parking is available" and the site gets busy |
+| Mayow Park | toilets | yes | the toilets are open only on Thursdays and Sundays; a day restriction is not published as plain `yes` | unknown (the canary's intended withdrawal) |
+| Sydenham Hill Wood | toilets | yes | the page says the nearest toilets are in Dulwich Park, a different place | unknown |
+| SEA LIFE London | buggy | mixed | the newer reading supports `excellent` (lifts to every level) | `excellent` |
+
+No confirmed restriction was lost: the restricted-parking, day-restricted and off-site cases above all end as
+unknown rather than as `no`, and no `yes` was published from a restriction. No override entry was changed by the
+passes.
+
+### 9.6 The v3 to v4 correction
+
+The canary and full v3 pass were correct on every rule they were designed to test, and wrong on one they were not:
+parking stated *for* disabled or Blue Badge visitors inside a sentence or list item that also said "car parking". PR
+#166 added that case to the restricted-parking rules (section 6), with tests pinning Tate Modern (`no` only), Tate
+Britain (unknown), Beckenham Place Park (a reserved subset of a general car park stays `yes`), Golders Hill Park
+(Blue Badge bays only stays unknown) and Hatfield House (disabled parking "within the main visitor car park" is not
+counted). After the v4 deploy, `enqueue_reextract_jobs('official-source-rules-v4')` queued 103 venues and nothing was
+fetched. Production now holds the expected four states: Tate Modern `no`, Tate Britain unknown, Beckenham Place Park
+`yes`, Golders Hill Park unknown. v4 produced 106 drafts: 75 approved from stored text, 27 pending review from
+stored text (nothing publishable), 4 pending review from refetches.
+
+### 9.7 What the refetch found
+
+The 50 `refetch_official` venues were those with no eligible stored reading inside the window: 22 whose every stored
+page was blocked, 5 never readable, 6 Historic England register entries now pointed at council pages by override, 2
+without a website but with an override, and 14 with only stale or unattributable pages. Google was disabled on all
+of them. Of the 42 still in refetch mode at the end:
+
+| Outcome | Venues | Examples |
+| --- | ---: | --- |
+| Readable, attributable, produced claims | 1 | Roundwood Park (toilets and café from Brent's park-finder page) |
+| Readable but not attributable to the venue (shared operator page) | 6 | Primrose Hill, Tooting Commons, Walthamstow Wetlands, Madame Tussauds, Horniman Butterfly House, Heartwood Forest |
+| Nothing readable: bot challenge or error on every page | 35 | the Barnet parks, London Zoo, Alexandra Park, Broomfield Park, the national museums |
+
+The bot-protected sites returned the same challenge pages they returned in September. They were requested once each,
+through the ordinary fetcher, and no protection was bypassed.
+
+### 9.8 Where the 151 destinations stand
+
+Classification by the newest stored reading of each of the venue's pages:
+
+| Class | Venues | Meaning |
+| --- | ---: | --- |
+| Has at least one served core fact | 63 | |
+| Bot-blocked | 36 | every page is a challenge or 403 page: Barnet parks (Imperva), London Zoo, Alexandra Palace, Broomfield, Belair, Clissold, Danson, Holland Park, Southwark Park, the British, Science and Natural History Museums, IWM, Kew, Jump In Elstree and others |
+| Readable but silent | 33 | own text, read and attributable, says nothing the rules can publish: Byron Park, King Edward VII Park, Waterlow Park, The Regent's Park, Streatham Common, the Royal Parks, Battersea, Dulwich, Greenwich, Richmond, Bushy, Cutty Sark, Museum of the Home and others |
+| Readable only through an unattributable shared page | 7 | Crystal Palace Park, Heartwood Forest, Horniman Butterfly House, Madame Tussauds, Primrose Hill, Trent Park, Walthamstow Wetlands |
+| No website in the catalogue | 7 | College Lane Campus LRC, Hogwarts Castle, Kingston Museum, Platform 9¾, Streatham Vale Park, Tooting Commons, Troubadour |
+| Fetch errors | 3 | Clapham Common, Gadebridge Park, Highbury Fields |
+| JavaScript shell (bodies under 200 characters) | 2 | Burgh House, Wimbledon Lawn Tennis Museum |
+
+The 88 with no served core fact are the last six rows. Of these, only the 33 silent and the 7 shared-page venues have
+text a rule change could ever reach; the other 48 need a person or a different source. The verification queue in
+[venue-verification/VERIFICATION_QUEUE.md](venue-verification/VERIFICATION_QUEUE.md) was rebuilt from this table for
+the launch set.
+
+### 9.9 Not verified from here
+
+The deployed app was not opened on a device. The parent-facing result (the facts on Venue Detail, the Family Fit
+rows and the ranking they drive) is what the Step 1 iPhone review covers. The server-side tests for those paths passed
+locally before the merge (sections 3 and 4).
