@@ -28,13 +28,16 @@ const IPHONE_INSETS = { top: 59, bottom: 34 };
 /** Read straight off the frame's nodes. x, y, w, h on the 393 x 852 artboard. */
 const FIGMA = {
   'greeting (7:16)': [24, 58, 244, 31],
-  'subtitle (7:17)': [24, 94, 162, 17],
+  // The two header text nodes are re-based on the amended copy (#164): "Picked for Rosie" and "Best for your family" no
+  // longer end in "today" (Home is about the family, not about leaving now). Position and type are the frame's; the
+  // widths are the rendered text runs of the new words (106.9 and 189.4). The Figma file still shows the old words.
+  'subtitle (7:17)': [24, 94, 107, 17],
   'avatar (7:18)': [323, 61, 46, 46],
   'search field (7:19)': [24, 126, 345, 56],
   'search icon (7:20)': [46, 144, 22, 22],
   'placeholder (7:23)': [80, 145, 205, 19],
   'filter disc (7:24)': [318, 131, 46, 46],
-  'section heading (7:30)': [24, 198, 165, 27],
+  'section heading (7:30)': [24, 198, 189, 27],
   'pill 1 — For you (7:32)': [24, 234, 92, 44],
   'pill 2 — Indoor (7:34)': [126, 234, 85, 44],
   'pill 3 — Outdoor (7:36)': [221, 234, 98, 44],
@@ -102,6 +105,15 @@ const measured = await page.evaluate(() => {
     [...document.querySelectorAll('div')].find(
       (el) => el.children.length === 0 && (el.textContent ?? '').trim().startsWith(p),
     );
+  // The text itself, not the element: the subtitle's element stretches across the header row, so its box says nothing about
+  // the words. Compared against the frame's text node.
+  const textBox = (el) => {
+    if (!el) return null;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const r = range.getBoundingClientRect();
+    return [+r.left.toFixed(2), +r.top.toFixed(2), +r.width.toFixed(2), +r.height.toFixed(2)];
+  };
   const fontOf = (el) => {
     if (!el) return null;
     const cs = getComputedStyle(el);
@@ -119,12 +131,12 @@ const measured = await page.evaluate(() => {
     .sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
   const tabs = [...document.querySelectorAll('[role="tab"]')];
   const greeting = startsWith('Good ');
-  const heading = leaf('Best for your family today');
+  const heading = leaf('Best for your family');
 
   return {
     boxes: {
       'greeting (7:16)': box(greeting),
-      'subtitle (7:17)': box(startsWith('Picked for')),
+      'subtitle (7:17)': textBox(startsWith('Picked for')),
       'avatar (7:18)': box(document.querySelector('[aria-label="Your family profile"]')),
       'search field (7:19)': box(search?.closest('[role="button"]')),
       'search icon (7:20)': box(search?.closest('[role="button"]')?.firstElementChild),

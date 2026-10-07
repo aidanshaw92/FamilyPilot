@@ -37,7 +37,7 @@ Nothing here is merged or deployed. It is on the branch `claude/familypilot-home
 
 ## 2. Home vs Explore
 
-* **Home** is the curated answer: *Best for your family today*, with *Picked for Sloane and Ozzie today* under the greeting.
+* **Home** is the curated answer: *Best for your family*, with *Picked for Sloane and Ozzie* under the greeting (no "today": Home is about the family, not about leaving now; see STABLE_FAMILY_PERSONALISATION.md).
   Its rail holds **situations** (For you, Indoor, Outdoor, Fits your day, Free, Rainy day, Under 1 hour), not kinds of place.
   *Fits your day* appears only when enough places can say "Leave by 12:00 to be home in time for Ozzie's nap" (needs routines in
   the profile and a nap or feed still ahead today), so it is usually simply absent. Each deck card's line leads with **why**:

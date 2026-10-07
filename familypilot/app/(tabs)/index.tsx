@@ -94,7 +94,8 @@ export default function HomeScreen() {
     const named = joinNames(kids);
     return named && named.length <= 30 ? named : 'your family';
   }, [profile?.members]);
-  const pickedFor = `Picked for ${pickedForNames} today`;
+  // No "today": Home answers "what looks good for our family?", not "what can we do now" (browse first, plan second).
+  const pickedFor = `Picked for ${pickedForNames}`;
 
   const ranked = useMemo(
     () => [...(venues ?? [])].sort((a, b) => b.familyScore.score - a.familyScore.score),
@@ -263,7 +264,7 @@ export default function HomeScreen() {
           {savings.title === 0 ? (
             <View style={styles.sectionTitleRow}>
               <Text variant="heading2" style={styles.sectionTitle}>
-                Best for your family today
+                Best for your family
               </Text>
             </View>
           ) : (

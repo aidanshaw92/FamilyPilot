@@ -97,12 +97,20 @@ a child is inferred from a category: an unreviewed park says nothing about Sloan
 
 - **Halfway's routine check.** There the parent chooses a day and an arrival time first, so it is a check against
   stated intent, not the clock. Its candidates are now ranked without routines like everywhere else.
-- **Home's header, "Best for your family today" / "Picked for Sloane and Ozzie today".** It is the approved Figma frame
-  (two visual verifiers pin it), and Home does still show places open today and use today's weather. **Owner question:**
-  keep "today", or drop it now that Home is about the family?
-- **Home still leaves out places shut all day today.** Family Fit no longer marks them down (#163), but Home's list
-  (`isVisitableVenue`) does not show them. **Owner question** for Step 2 or later: should Home show a great place that is
-  closed today, labelled "Closed today"?
+
+## Owner decisions on review
+
+- **Home's header loses "today" (done in this PR).** "Best for your family today" → **"Best for your family"**, and "Picked
+  for Sloane and Ozzie today" → **"Picked for Sloane and Ozzie"**. Typography, geometry and spacing are unchanged; only
+  the words are shorter. The Figma verifiers now look for the new heading, `compare-home-to-figma.mjs`'s reference widths
+  for the two text nodes are re-measured from the amended copy, and `verify-product-coherence.mjs` fails if either line
+  says "today". The Figma file itself still shows the old words and should be updated there to match.
+- **Approved follow-up contract (not in this PR): places closed today stay discoverable.** A venue that is a strong family
+  match but closed today should remain on Home and Explore, clearly labelled "Closed today" with its next opening time
+  ("Opens tomorrow 10am"), rather than being removed. Home's list currently drops it (`isVisitableVenue` in
+  `home-list.ts`). Changing that is a ranking and discovery change for a later pass: decide where such a place ranks
+  against open ones, keep Family Fit's verdict unaffected (as #163 already does), and keep Create a plan defaulting to the
+  next open day.
 
 ## Tests
 
@@ -138,7 +146,7 @@ a child is inferred from a category: an unreviewed park says nothing about Sloan
 | Create a Plan journey | 153/153 |
 | Journey audit, phase 2 | 301/301 |
 | Plan screens against design | 56/56 |
-| Home against Figma / compare to Figma | 89/89 / pass |
+| Home against Figma / compare to Figma (header text nodes re-based on the amended copy: subtitle 106.9 vs 107, heading 189.4 vs 189) | 89/89 / pass |
 | Deck gesture | 11/11 |
 | Dynamic content (realistic fixture) | 43/43 |
 | Home loading, navigation clearance, onboarding flow | all passed |

@@ -181,10 +181,12 @@ for (const [width, height] of VIEWPORTS) {
   await settle(page, 2600);
   await page.screenshot({ path: join(dir, '01-home.jpg'), type: 'jpeg', quality: 82 });
   const home = await text(page);
-  check(`${label}: Home says who it is picking for`, /Picked for Sloane and Ozzie today/.test(home), (home.match(/Picked for[^\n]*/) ?? ['no line'])[0]);
-  const heading = /Best for your family today/.test(home);
+  // Who the picks are for, and never "today": Home is about the family, not about leaving now.
+  check(`${label}: Home says who it is picking for`, /Picked for Sloane and Ozzie(?! today)/.test(home), (home.match(/Picked for[^\n]*/) ?? ['no line'])[0]);
+  const heading = /Best for your family(?! today)/.test(home);
   // The heading gives way on a screen too short for the whole card (home-vertical-layout), as it always has.
-  check(`${label}: Home is headed "Best for your family today" (or compacts it on a short screen)`, heading || height < 740, heading ? undefined : 'compact header');
+  check(`${label}: Home is headed "Best for your family" (or compacts it on a short screen)`, heading || height < 740, heading ? undefined : 'compact header');
+  check(`${label}: Home's header never claims "today"`, !/Picked for[^\n]*today|Best for your family today/.test(home), (home.match(/Picked for[^\n]*|Best for your family[^\n]*/g) ?? []).join(' / '));
   check(`${label}: Home offers situations, not a second category directory`, !/\n(Park|Museum|Farm|Soft play|Animals)\n/.test(home) && /Rainy day/.test(home), 'rail: ' + (home.match(/For you[\s\S]{0,140}/) ?? [''])[0].replace(/\s+/g, ' '));
   check(`${label}: Home does not scroll sideways`, (await overflow(page)) <= 1);
   // Browse first, plan second: the family has naps and feeds, and Home still never tells them when to leave.
