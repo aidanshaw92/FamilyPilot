@@ -230,9 +230,9 @@ child.** A child the place is not confirmed for (a check still open, or nothing 
 | Household | Evidence | Headline |
 |---|---|---|
 | Sloane 7, Ozzie baby | Age range and baby changing confirmed for both | *Good for Sloane and Ozzie today* |
-| Sloane 7, Ozzie baby | Baby changing confirmed (about Ozzie); nothing about Sloane | *Good for Ozzie, but we’re less certain about Sloane: no age range is recorded for this place yet* (badge: *Good fit · check Sloane*) |
+| Sloane 7, Ozzie baby | Baby changing confirmed (about Ozzie); nothing about Sloane | *Easy to visit with Ozzie, but we haven’t yet confirmed whether this activity suits Sloane* (badge: *Good fit · check Sloane*) |
 | Sloane 2, Ozzie baby | Both inside the age range; baby changing unconfirmed | *Good for Sloane, but check baby changing for Ozzie* |
-| Sloane 7, Maya 9 | Toilets and parking confirmed; nothing about either child | *Looks practical, but we’re less certain about Sloane and Maya: no age range is recorded for this place yet* |
+| Sloane 7, Maya 9 | Toilets and parking confirmed; nothing about either child | *Looks practical, but we haven’t yet confirmed whether this activity suits Sloane and Maya* |
 | Sloane, Ozzie | Buggy access unknown | *Could work for Sloane, but check buggy access for Ozzie* |
 | Sloane, Ozzie | Buggy access difficult | *Probably not for Ozzie today* |
 

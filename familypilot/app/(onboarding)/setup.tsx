@@ -114,7 +114,7 @@ export default function SetupScreen() {
       default:
         return {
           title: routineNames.length === 1 ? `${routineNames[0]}’s usual day` : `${sayNames(routineNames)}’s usual days`,
-          subtitle: 'So we can say when to leave to be home in time.',
+          subtitle: 'So your plans can work around naps and feeds.',
         };
     }
   })();

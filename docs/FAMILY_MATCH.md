@@ -249,8 +249,9 @@ the place is there for this family: their routine first, then a fact about a chi
 
 **A sentence "for" someone is a claim about the family only when it covers every child.** In a household of two or more children, a
 child the place is not confirmed for (a check still open, or nothing known) is never silently dropped: the headline names who it works
-for and says what is open for the rest (*Good for Ozzie, but we’re less certain about Sloane: no age range is recorded for this place yet*; *Good for Sloane, but check baby
-changing for Ozzie*; *Looks practical, but we’re less certain about Sloane and Maya: …*). `gapNames` carries those
+for and says what is open for the rest (*Easy to visit with Ozzie, but we haven’t yet confirmed whether this activity suits Sloane*; *Good for Sloane, but check baby
+changing for Ozzie*; *Looks practical, but we haven’t yet confirmed whether this activity suits Sloane and Maya*). Practical facts (buggy
+access, baby changing) say "easy to visit with", never "good for": see [FIT_ACTIVITY_VS_LOGISTICS.md](./FIT_ACTIVITY_VS_LOGISTICS.md). `gapNames` carries those
 children; `matchBadgeText` says the gap on the badge (*Good fit · check Sloane*) instead of "Good for Ozzie" alone; the child with
 nothing known is listed under *to check*; and *Excellent* is not available while a child is left over. One child: unchanged.
 

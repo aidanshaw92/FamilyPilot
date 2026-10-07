@@ -17,6 +17,7 @@ import { useBetweenVenues, useFamilyProfile, useNearbyVenues } from '@/src/hooks
 import { HalfwayOption, familyPhrase, meetHalfway, topCardLabel } from '@/src/services/planning/meet-halfway';
 import { DEFAULT_START_AT, firstValue, planDraftToParams } from '@/src/services/planning/plan-draft';
 import { planningFamilyFromProfile } from '@/src/services/planning/plan-parties';
+import { seedVenueDetail } from '@/src/services/venue-detail-seed';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { localDate, localTime, usePlanningStore } from '@/src/stores/planning-store';
 import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
@@ -227,7 +228,10 @@ export default function MeetHalfwayScreen() {
             areas={typeof mine === 'string' ? null : { mine: { latitude: mine.latitude, longitude: mine.longitude }, other: { latitude: other.latitude, longitude: other.longitude } }}
             usingHomeFallback={usingHomeFallback}
             onPlan={plan}
-            onOpen={(option) => router.push(`/venue/${option.venue.id}` as never)}
+            onOpen={(option) => {
+              seedVenueDetail(option.venue);
+              router.push(`/venue/${option.venue.id}` as never);
+            }}
             onStartAt={setStartAt}
           />
         ) : null}

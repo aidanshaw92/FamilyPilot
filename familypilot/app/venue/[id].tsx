@@ -78,7 +78,11 @@ export default function VenueScreen() {
   const id = firstValue(searchParams.id);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: venue, isLoading, isError, refetch } = useVenue(id ?? '');
+  const { data: venue, isLoading, isError, refetch, isPlaceholderData } = useVenue(id ?? '', { showCardWhileLoading: true });
+  // True while `venue` is the CARD the parent tapped, standing in until the full detail returns. The card knows the place's
+  // identity, photograph, travel time and fit badge (all of which the parent just saw), and nothing evidence-backed: so those
+  // are drawn, and everything else waits for the real detail rather than being drawn from a partial record.
+  const pending = Boolean(isPlaceholderData);
   useNamedDocumentTitle(venue?.name);
   // Keyed on the venue's coordinates, so it starts only once the venue has loaded and two venues at
   // the same address share one lookup.
@@ -238,6 +242,7 @@ export default function VenueScreen() {
   const description = venue.description?.trim() ?? '';
   const descriptionIsLong = description.length > 140;
   const scrollToFit = () => {
+    if (pending) return;
     scrollRef.current?.scrollTo({ y: Math.max(0, fitPanelY.current - spacing.lg), animated: true });
   };
 
@@ -283,7 +288,7 @@ export default function VenueScreen() {
           <View style={styles.grabber} />
           <FadeInView>
             <View style={styles.nameRow}>
-              <Text variant="heading1" style={styles.name}>
+              <Text variant="heading1" style={styles.name} testID="venue-name">
                 {venue.name}
               </Text>
               {/* The compact badge beside the name (node 49:5); "Why this score" carries the word. */}
@@ -303,11 +308,38 @@ export default function VenueScreen() {
                   {formatCategory(venue.category)} · {travelTimeLabel(venue.driveMinutes, 'estimated')}
                 </Text>
               </View>
-              <Pressable onPress={scrollToFit} accessibilityRole="button" hitSlop={10} style={minTarget(16)}>
+              {/* The explanation it scrolls to is not on screen until the full detail is: held invisibly and inert until then, so
+                  the row keeps its height and nothing moves when the real screen replaces the card. */}
+              <Pressable
+                onPress={scrollToFit}
+                disabled={pending}
+                accessibilityRole="button"
+                accessibilityElementsHidden={pending}
+                importantForAccessibility={pending ? 'no-hide-descendants' : 'auto'}
+                hitSlop={10}
+                style={[minTarget(16), pending ? styles.hiddenWhilePending : null]}
+              >
                 <Text style={styles.whyLink}>Why this fit</Text>
               </Pressable>
             </View>
 
+            {pending ? (
+              <View
+                style={styles.pendingBody}
+                testID="venue-detail-pending"
+                accessible
+                accessibilityRole="progressbar"
+                accessibilityLabel={`Getting the details for ${venue.name}`}
+              >
+                <Skeleton height={132} style={styles.loadingGap} />
+                <Skeleton height={64} style={styles.loadingGap} />
+                <Skeleton height={52} style={styles.loadingGap} />
+                <Skeleton height={160} />
+              </View>
+            ) : null}
+
+            {pending ? null : (
+            <>
             {/* 1. Family Match: what FamilyPilot tells THIS family, and why. The first thing under the name. */}
             <View
               style={styles.block}
@@ -460,6 +492,8 @@ export default function VenueScreen() {
                 startReport={startReport}
               />
             </View>
+            </>
+            )}
 
           </FadeInView>
         </View>
@@ -497,6 +531,12 @@ const styles = StyleSheet.create({
   },
   loadingGap: {
     marginBottom: spacing.lg,
+  },
+  pendingBody: {
+    marginTop: spacing.lg,
+  },
+  hiddenWhilePending: {
+    opacity: 0,
   },
   heroContainer: {
     height: HERO_HEIGHT,

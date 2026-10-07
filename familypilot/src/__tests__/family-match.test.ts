@@ -127,10 +127,12 @@ describe('Family Match: the honest verdict', () => {
     expect(r.headline).toBe('Excellent for Sloane');
   });
 
-  it('uses "your family" when no confirmed fact is about a particular child', () => {
+  it('uses "your family" when no confirmed fact is about a particular child, and does not say "Good for" it', () => {
+    // Toilets are about the place and the visit, not about whether the activity suits the family: it is promising, not "good for".
     const p = profile({ members: [parent, child('c1', 'Sloane', 7)] });
     const r = run(venue({}, { toilets: 'yes' }), p);
-    expect(r.headline).toBe('Good for your family');
+    expect(r.headline).toBe('Looks promising for your family');
+    expect(r.headline).not.toMatch(/^(Good|Excellent) for/);
   });
 
   it('never prints a name it does not have', () => {
@@ -222,12 +224,14 @@ describe('Family Fit never says "good for the family" from a subset of the child
   const sevenAndNine = () => profile({ members: [parent, child('c1', 'Sloane', 7), child('c2', 'Maya', 9)] });
   const practical = { toilets: 'yes', parking: 'yes' } as const;
 
-  it('a fact about one child alone does not become "Good for" that child while the other is unknown', () => {
-    // Baby changing is confirmed, which is a fact about Ozzie. Nothing at all is known about whether it suits Sloane.
+  it('a practical fact about one child is "easy to visit with" them, never "Good for" them, while the other is unknown', () => {
+    // Baby changing and buggy access are confirmed, which makes the VISIT easy with Ozzie. Nothing at all is known about whether
+    // the place suits Sloane, and nothing about Ozzie says it suits him as an activity either.
     const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
-    expect(r.children.map((c) => [c.name, c.state])).toEqual([['Sloane', 'unknown'], ['Ozzie', 'works']]);
-    expect(r.headline).toBe('Good for Ozzie, but we’re less certain about Sloane: no age range is recorded for this place yet');
-    expect(r.headline).not.toMatch(/^Good for Ozzie today$/);
+    expect(r.children.map((c) => [c.name, c.state, c.basis])).toEqual([['Sloane', 'unknown', null], ['Ozzie', 'works', 'logistics']]);
+    expect(r.headline).toBe('Easy to visit with Ozzie, but we haven’t yet confirmed whether this activity suits Sloane');
+    expect(r.headline).not.toMatch(/Good for/);
+    expect(r.forNames).toEqual([]);
     expect(r.gapNames).toEqual(['Sloane']);
   });
 
@@ -245,13 +249,13 @@ describe('Family Fit never says "good for the family" from a subset of the child
     const r = run(venue({}, practical), sevenAndNine(), 80);
     expect(r.children.every((c) => c.state === 'unknown')).toBe(true);
     expect(r.verdict).toBe('good');
-    expect(r.headline).toBe('Looks practical, but we’re less certain about Sloane and Maya: no age range is recorded for this place yet');
+    expect(r.headline).toBe('Looks practical, but we haven’t yet confirmed whether this activity suits Sloane and Maya');
     expect(r.headline).not.toMatch(/your family/);
   });
 
   it('lists the child nothing is confirmed for among the things to check', () => {
     const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
-    expect(r.toCheck.map((line) => line.text)).toContain('We’re less certain how well it suits Sloane: no age range is recorded for this place yet');
+    expect(r.toCheck.map((line) => line.text)).toContain('We haven’t yet confirmed whether this activity suits Sloane');
   });
 
   it('cannot be excellent while a child is left over: excellent means nothing is left to check', () => {
@@ -270,7 +274,7 @@ describe('Family Fit never says "good for the family" from a subset of the child
     const one = profile({ members: [parent, child('c3', 'Mia', 2, { mobility: ['walks'] })] });
     const r = run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'unknown' }), one, 80);
     expect(r.gapNames).toEqual([]);
-    expect(r.headline).toBe('Good for your family');
+    expect(r.headline).toBe('Looks promising for your family');
   });
 
   it('speaks like a parent: no database phrasing anywhere a headline or a check line is shown', () => {
@@ -285,12 +289,17 @@ describe('Family Fit never says "good for the family" from a subset of the child
     }
   });
 
-  it('gives the specific reason where it is known, and a plain one where it is not', () => {
+  it('says it the same natural way whether or not ages are on record, and never blames the venue for not publishing one', () => {
     const noAges = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
-    expect(noAges.headline).toContain('no age range is recorded for this place yet');
-    // Ages are on record, but nothing in them speaks for Sloane: the reason is the general one, never the age one.
+    expect(noAges.headline).toContain('we haven’t yet confirmed whether this activity suits Sloane');
+    // Ages are on record, but nothing in them speaks for Sloane: the same sentence, with no database talk in either case.
     const withAges = run(venue({}, { ...practical, minRecommendedAge: 9, maxRecommendedAge: 12, babyChanging: 'yes', pushchairSuitability: 'good' }), sevenAndNine(), 80);
-    expect(withAges.headline).not.toContain('no age range is recorded');
+    // (With ages on record the venue HAS stated a range, so "check age range for Sloane" is the true and specific thing.)
+    for (const r of [noAges, withAges]) {
+      const words = [r.headline, ...r.toCheck.map((l) => l.text)].join(' ');
+      expect(words).not.toMatch(/recorded|published|for this place yet|less certain/i);
+    }
+    expect([noAges.headline, ...noAges.toCheck.map((l) => l.text)].join(' ')).not.toMatch(/age range/i);
   });
 
   describe('the badge', () => {

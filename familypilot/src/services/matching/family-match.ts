@@ -36,8 +36,14 @@ import { observationLine, ParentObservations } from '@/src/services/matching/par
  *    never as a fit and never as a failure.
  *  - `excellent` needs several confirmed positives, at least two of them facts about the venue, and nothing left to
  *    check. `good` needs at least two confirmed positives and nothing against.
+ *  - TWO KINDS OF EVIDENCE ABOUT A CHILD, kept apart. ACTIVITY FIT is evidence that the place itself is suitable for that
+ *    child: today only the venue's own published recommended ages including them. VISIT LOGISTICS is evidence that taking
+ *    that child is practical: buggy access, baby changing and the like. Logistics never says "Good for Ozzie"; it says
+ *    "Easy to visit with Ozzie". "Good for <child>" needs activity evidence, and a child without any is said to be uncertain
+ *    ("We haven't yet confirmed whether this activity suits Sloane"), never filled in from their age or the kind of place. A baby who is
+ *    carried, fed and changed is led by logistics, so no activity gap is raised for a child under a year old.
  *  - Children are named only where a fact is about that child (the recommended ages include them, their buggy is
- *    covered, baby changing for a baby), so "Good for Sloane" is a claim with evidence.
+ *    covered, baby changing for a baby), and the sentence says which kind of fact it is.
  *  - A place FamilyPilot has not reviewed is `not_reviewed`, whatever the number says; the logistics that ARE known
  *    (open today, how far) are still stated.
  */
@@ -51,6 +57,12 @@ export interface MatchLine {
   childIds?: string[];
   /** What the line is about in two or three words ("buggy access"), for the headline's "check buggy access for Ozzie". */
   topic?: string;
+  /**
+   * For a line about particular children: `activity` is evidence about whether the place suits them (a recommended age
+   * range); `logistics` is evidence about whether taking them is practical (buggy access, baby changing). Only an
+   * `activity` line can make a child "good for" a place.
+   */
+  aspect?: 'activity' | 'logistics';
 }
 
 /**
@@ -63,6 +75,11 @@ export interface ChildLens {
   id: string;
   name: string;
   state: 'works' | 'check' | 'concern' | 'unknown';
+  /**
+   * What `works` rests on: `activity` when the venue's own recommended ages include the child, `logistics` when only the
+   * practical facts (buggy, baby changing) are confirmed. Null unless `state` is `works`.
+   */
+  basis: 'activity' | 'logistics' | null;
   works: string[];
   check: string[];
 }
@@ -128,6 +145,12 @@ export const VERDICT_BADGE: Record<MatchVerdict, string> = {
   not_reviewed: 'Not yet reviewed',
 };
 
+/**
+ * A child younger than this is led by the practical facts: they are carried, fed and changed, so "does the place suit
+ * them" is not a question the venue's evidence can usefully answer, and no activity gap is raised for them.
+ */
+const LOGISTICS_LED_BELOW_MONTHS = 12;
+
 type Status = 'yes' | 'no' | 'unknown';
 const status = (value: unknown): Status => (value === 'yes' ? 'yes' : value === 'no' ? 'no' : 'unknown');
 
@@ -150,6 +173,16 @@ function mustHaveStatus(facility: FacilityType, facts: MatchableVenueFacts): { l
 }
 
 const names = (members: readonly FamilyMember[]): string[] => members.map((m) => m.name.trim());
+
+/**
+ * The one way FamilyPilot says it has not confirmed that the place itself suits a child, in a parent's words and with the
+ * child's name: "we haven't yet confirmed whether this activity suits Sloane". It makes no claim about the venue (it does
+ * not say the venue failed to publish anything, and does not suggest it should have), and no claim about the child: nothing
+ * is inferred from their age or the kind of place. Used everywhere it is said, so it never reads two ways.
+ */
+export function unconfirmedSuitsClause(childNames: readonly string[]): string {
+  return `we haven’t yet confirmed whether this activity suits ${joinNames(childNames)}`;
+}
 
 const childUsesCarrier = (member: Pick<FamilyMember, 'mobility'>): boolean => member.mobility?.includes('carrier') ?? false;
 
@@ -186,7 +219,7 @@ function carrierAdvice(children: readonly FamilyMember[], facts: MatchableVenueF
         ? 'the paths here are very hilly'
         : 'the paths here are hilly';
   const who = joinNames(names(carried)) || 'your little one';
-  return { key: 'carrier', text: `A sling or carrier may be easier for ${who}: ${why}`, childIds: carried.map((c) => c.id), topic: 'getting around' };
+  return { key: 'carrier', text: `A sling or carrier may be easier for ${who}: ${why}`, childIds: carried.map((c) => c.id), topic: 'getting around', aspect: 'logistics' };
 }
 const sayNames = (members: readonly FamilyMember[], fallback: string): string => joinNames(names(members)) || fallback;
 
@@ -205,25 +238,22 @@ function headlineFor(input: {
   verdict: MatchVerdict;
   lens: ChildLens[];
   children: readonly FamilyMember[];
-  forNames: string[];
   lines: { breaches: MatchLine[]; softCautions: MatchLine[]; hardUnknowns: MatchLine[]; softUnknowns: MatchLine[] };
-  /** Why nothing is known for a child, in a clause ("no age range is recorded for this place yet"). */
-  unknownReason: string;
   /** Shut today (all day, or already finished): the headline may judge the place but never claim today. */
   notToday?: boolean;
 }): string {
-  const { verdict, lens, children, forNames, lines, unknownReason, notToday = false } = input;
+  const { verdict, lens, children, lines, notToday = false } = input;
   // A judgement about the family, not about leaving now. Only a place that is shut today says so, as a fact.
   const when = notToday ? ', but not today' : '';
   if (verdict === 'not_reviewed') return 'Family suitability not yet reviewed';
 
-  const namedWorks = lens.filter((l) => l.state === 'works' && l.name).map((l) => l.name);
-  // A claim "for Sloane" is only a claim about the family when it covers every child. With one child that is trivially
-  // so; with several, a child the place is not confirmed for has to be said, not left out.
-  const everyChildWorks = lens.length > 0 && lens.every((l) => l.state === 'works');
-  const who = forNames.length > 0 && everyChildWorks ? joinNames(forNames) : 'your family';
+  // Two different claims, never one. "Good for Sloane" is about the PLACE and needs the venue's own recommended ages to
+  // include her. "Easy to visit with Ozzie" is about the VISIT: his buggy or his changing is confirmed. A child whose only
+  // confirmed facts are practical is in the second group however many of them there are.
+  const suitedNames = lens.filter((l) => l.state === 'works' && l.basis === 'activity' && l.name).map((l) => l.name);
+  const easyNames = lens.filter((l) => l.state === 'works' && l.basis === 'logistics' && l.name).map((l) => l.name);
   const multi = children.length > 1;
-  const gap = multi ? gapPhrase(lens, lines, unknownReason) : null;
+  const gap = multi ? gapPhrase(lens, lines) : null;
 
   if (verdict === 'poor') {
     // Who the confirmed breach is about, where it is about particular children; otherwise the family.
@@ -233,29 +263,42 @@ function headlineFor(input: {
     return `Probably not for ${breachWho}`;
   }
 
-  // Several children, and the place is confirmed for some but not all of them: say who, and say what is open for the rest.
-  // This holds for good and possible alike, so "Good for Sloane" never reads as "good for the family" while Ozzie is unknown.
-  if (multi && gap && namedWorks.length > 0) {
+  // For several children where the evidence is about some of them only, the sentence keeps them apart and says what is
+  // open for the rest. `possible` says "Could work for" so a caution is never dressed as a recommendation.
+  const word = multi && gap && verdict === 'possible' ? 'Could work' : VERDICT_WORD[verdict];
+  const suited = suitedNames.length > 0 ? `${word} for ${joinNames(suitedNames)}` : null;
+  const easy = easyNames.length > 0 ? `easy to visit with ${joinNames(easyNames)}` : null;
+  const lead = suited ? (easy ? `${suited}, and ${easy}` : suited) : easy ? cap(easy) : null;
+
+  if (multi && gap && lead) {
     // For `possible`, only when what holds it back is about particular children. If the journey, the opening hours or a
     // must-have is what holds it back, the sentence is about the family, not about one child's baby changing.
     const familyLevel = [...lines.softCautions, ...lines.hardUnknowns].some((line) => !line.childIds?.length);
-    if (verdict === 'possible' && !familyLevel) return `Could work for ${joinNames(namedWorks)}, but ${gap}`;
-    if (verdict === 'good' || verdict === 'excellent') return `${VERDICT_WORD[verdict]} for ${joinNames(namedWorks)}, but ${gap}`;
+    if (verdict !== 'possible' || !familyLevel) return `${lead}, but ${gap}`;
   }
 
   // Several children, nothing confirmed for any of them: the practical facts are good, and the headline says that is all.
-  if (multi && gap && namedWorks.length === 0 && (verdict === 'good' || verdict === 'excellent')) {
+  if (multi && gap && !lead && (verdict === 'good' || verdict === 'excellent')) {
     return `Looks practical, but ${gap}`;
   }
 
-  return `${VERDICT_WORD[verdict]} for ${who}${when}`;
+  // Everyone the household has is covered, by one kind of evidence or both. A `possible` verdict means something stands in
+  // the way at the level of the family (the journey, the opening hours), so practical facts alone do not headline it: only
+  // the place's own recommended ages do.
+  if (lead && lens.length > 0 && lens.every((l) => l.state === 'works') && (verdict !== 'possible' || suited)) return `${lead}${when}`;
+
+  // No evidence about any particular child. What is confirmed is about the place and the visit (toilets, parking, a
+  // café), so it is never said as "Good for your family": that would claim the activity suits them.
+  if (verdict === 'good') return `Looks promising for your family${when}`;
+  if (verdict === 'excellent') return `Looks very promising for your family${when}`;
+  return `${VERDICT_WORD[verdict]} for your family${when}`;
 }
 
 /**
  * What is open for the children the place is not confirmed to work for, as the end of a sentence:
- * "check buggy access for Ozzie", "we're less certain about Ozzie: <why>", or both. Null when every child is covered.
+ * "check buggy access for Ozzie", "we haven't yet confirmed whether this activity suits Ozzie", or both. Null when every child is covered.
  */
-function gapPhrase(lens: ChildLens[], lines: { hardUnknowns: MatchLine[]; softCautions: MatchLine[]; softUnknowns: MatchLine[] }, unknownReason: string): string | null {
+function gapPhrase(lens: ChildLens[], lines: { hardUnknowns: MatchLine[]; softCautions: MatchLine[]; softUnknowns: MatchLine[] }): string | null {
   const checkKids = lens.filter((l) => l.state === 'check' && l.name);
   const unknownKids = lens.filter((l) => l.state === 'unknown' && l.name);
   const parts: string[] = [];
@@ -268,10 +311,9 @@ function gapPhrase(lens: ChildLens[], lines: { hardUnknowns: MatchLine[]; softCa
     parts.push(`check ${what} for ${joinNames(checkKids.map((k) => k.name))}`);
   }
   if (unknownKids.length > 0) {
-    // Parent language, with the specific reason where it is known: "we're less certain about Sloane: no age range is recorded".
-    parts.push(`we’re less certain about ${joinNames(unknownKids.map((k) => k.name))}: ${unknownReason}`);
+    parts.push(unconfirmedSuitsClause(unknownKids.map((k) => k.name)));
   }
-  return parts.length ? parts.join(' and ') : null;
+  return parts.length ? parts.join(', and ') : null;
 }
 
 export function evaluateFamilyMatch({ venue, profile, score, weather, now = new Date(), parentObservations = {} }: FamilyMatchInput): FamilyMatchResult {
@@ -303,6 +345,7 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
   const softCautions: MatchLine[] = [];
   const hardUnknowns: MatchLine[] = [];
   const softUnknowns: MatchLine[] = [];
+  /** Children the place is confirmed SUITABLE for: activity evidence only. Practical facts never add a child here. */
   const forIds = new Set<string>();
   let venueFacts = 0;
 
@@ -355,7 +398,7 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
       const inside = verdicts.filter((v) => v.side === 'inside');
       const line = suitsChildrenLine(facts, verdicts);
       if (line) {
-        reasons.push({ key: 'age', text: line, childIds: inside.map((v) => v.id), topic: 'age range' });
+        reasons.push({ key: 'age', text: line, childIds: inside.map((v) => v.id), topic: 'age range', aspect: 'activity' });
         venueFacts += 1;
         inside.forEach((v) => forIds.add(v.id));
       }
@@ -366,10 +409,10 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
       if (belowKids.length > 0 && joinNames(belowKids.map((v) => v.name)) && facts.minRecommendedAge != null) outsideIds.push(belowKids.map((v) => v.id));
       if (aboveKids.length > 0 && joinNames(aboveKids.map((v) => v.name)) && facts.maxRecommendedAge != null) outsideIds.push(aboveKids.map((v) => v.id));
       outsideRangeCautions(facts, verdicts).forEach((text, index) => {
-        softCautions.push({ key: `age-outside-${text}`, text, childIds: outsideIds[index], topic: 'age range' });
+        softCautions.push({ key: `age-outside-${text}`, text, childIds: outsideIds[index], topic: 'age range', aspect: 'activity' });
       });
       if (inside.length === 0 && verdicts.length > 0) {
-        breaches.push({ key: 'age-none', text: 'None of your children are in its recommended age range', childIds: verdicts.map((v) => v.id), topic: 'age range' });
+        breaches.push({ key: 'age-none', text: 'None of your children are in its recommended age range', childIds: verdicts.map((v) => v.id), topic: 'age range', aspect: 'activity' });
       }
     }
 
@@ -384,22 +427,21 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
       switch (facts.pushchairSuitability) {
         case 'excellent':
         case 'good':
-          reasons.push({ key: 'buggy', text: `Good buggy access for ${who}`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access' });
+          reasons.push({ key: 'buggy', text: `Good buggy access for ${who}`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access', aspect: 'logistics' });
           venueFacts += 1;
-          buggyKids.forEach((c) => forIds.add(c.id));
           break;
         case 'mixed':
-          softCautions.push({ key: 'buggy-mixed', text: `Buggy access is mixed here, so ${who} may be awkward in places`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access' });
+          softCautions.push({ key: 'buggy-mixed', text: `Buggy access is mixed here, so ${who} may be awkward in places`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access', aspect: 'logistics' });
           break;
         case 'difficult':
           if (buggyOnly.length > 0 || buggyKids.length === 0) {
-            breaches.push({ key: 'buggy-difficult', text: `Buggy access is difficult here, and ${who} is how you get around`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access' });
+            breaches.push({ key: 'buggy-difficult', text: `Buggy access is difficult here, and ${who} is how you get around`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access', aspect: 'logistics' });
           } else {
-            softCautions.push({ key: 'buggy-difficult-carrier', text: `Buggy access is difficult here`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access' });
+            softCautions.push({ key: 'buggy-difficult-carrier', text: `Buggy access is difficult here`, childIds: buggyKids.map((c) => c.id), topic: 'buggy access', aspect: 'logistics' });
           }
           break;
         default:
-          hardUnknowns.push({ key: 'buggy-unknown', text: unknownText('pushchair', `Buggy access still to be checked for ${who}`), childIds: buggyKids.map((c) => c.id), topic: 'buggy access' });
+          hardUnknowns.push({ key: 'buggy-unknown', text: unknownText('pushchair', `Buggy access still to be checked for ${who}`), childIds: buggyKids.map((c) => c.id), topic: 'buggy access', aspect: 'logistics' });
       }
     }
     if (carrier) softCautions.push(carrier);
@@ -432,13 +474,12 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
     if (!stated.has('baby changing') && under3.length > 0) {
       const who = sayNames(under3, under3.length === 1 ? 'your little one' : 'your little ones');
       if (facts.babyChanging === 'yes') {
-        reasons.push({ key: 'baby-changing', text: `Baby changing confirmed, handy for ${who}`, childIds: under3.map((c) => c.id), topic: 'baby changing' });
+        reasons.push({ key: 'baby-changing', text: `Baby changing confirmed, handy for ${who}`, childIds: under3.map((c) => c.id), topic: 'baby changing', aspect: 'logistics' });
         venueFacts += 1;
-        under3.forEach((c) => forIds.add(c.id));
       } else if (facts.babyChanging === 'no') {
-        softCautions.push({ key: 'baby-changing-no', text: `No baby changing here, which ${who} would need`, childIds: under3.map((c) => c.id), topic: 'baby changing' });
+        softCautions.push({ key: 'baby-changing-no', text: `No baby changing here, which ${who} would need`, childIds: under3.map((c) => c.id), topic: 'baby changing', aspect: 'logistics' });
       } else {
-        softUnknowns.push({ key: 'baby-changing-unknown', text: unknownText('babyChanging', `Baby changing still to be checked for ${who}`), childIds: under3.map((c) => c.id), topic: 'baby changing' });
+        softUnknowns.push({ key: 'baby-changing-unknown', text: unknownText('babyChanging', `Baby changing still to be checked for ${who}`), childIds: under3.map((c) => c.id), topic: 'baby changing', aspect: 'logistics' });
       }
     }
 
@@ -500,7 +541,12 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
   reasons.sort((a, b) => rank(a.key) - rank(b.key));
 
   // ---- the verdict -----------------------------------------------------------------------------------------
-  const positives = reasons.length;
+  // "Open today" is one of the positives that can lift a place to good or excellent. A place that is shut today must not
+  // lose that point: whether it suits this family is the same on a Tuesday it is shut as on a Wednesday it is open (shut
+  // today is stated as a fact, never scored). So a place whose hours say it is shut today is counted as the open place it
+  // is on its other days, and nothing else about the verdict moves. Places open today, and places with no hours stated,
+  // are counted exactly as before.
+  const positives = reasons.length + (notToday ? 1 : 0);
   let verdict: MatchVerdict;
   if (unreviewed) {
     verdict = breaches.length > 0 ? 'poor' : 'not_reviewed';
@@ -530,15 +576,12 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
         : works.length > 0
           ? 'works'
           : 'unknown';
-    return { id: child.id, name: child.name.trim(), state, works, check: checkLines.map((l) => l.text) };
+    // What the confirmed facts about this child rest on: the place's own recommended ages (activity), or only the practical
+    // facts (logistics). A practical fact never makes a child "suited".
+    const basis: ChildLens['basis'] =
+      state !== 'works' ? null : reasons.some((l) => mine(l) && l.aspect === 'activity') ? 'activity' : 'logistics';
+    return { id: child.id, name: child.name.trim(), state, basis, works, check: checkLines.map((l) => l.text) };
   });
-
-  // Why a child has nothing said about them. With no recommended ages on record there is nothing to compare an age to, which is
-  // the usual reason; otherwise it is a plain "not enough is recorded".
-  const unknownReason =
-    facts?.minRecommendedAge == null && facts?.maxRecommendedAge == null
-      ? 'no age range is recorded for this place yet'
-      : 'not enough is recorded about this place for them yet';
 
   // Several children and the place is confirmed for some of them but not all: whoever is left over is a gap in what is
   // known, so it can never be "excellent" (nothing left to check), and it is listed with the things to check.
@@ -546,17 +589,29 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
   const gapKids = children.length > 1 && confirmedKids.length > 0 ? lens.filter((l) => l.state === 'check' || l.state === 'unknown') : [];
   if (verdict === 'excellent' && gapKids.length > 0) verdict = 'good';
   const gapNames = gapKids.map((l) => l.name).filter(Boolean);
-  const uncovered = gapKids.filter((l) => l.state === 'unknown' && l.name);
+  // Whom the place is NOT confirmed to suit: children nothing is known about (in a household where it is known for another),
+  // and children for whom only practical facts are confirmed. Practical facts say the visit is easy, not that the place
+  // suits the child, so for a child old enough to take part the gap is said. A baby who is carried, fed and changed is led
+  // by logistics: no activity gap is raised for them. Said after the verdict is settled, so it never moves a rating; it
+  // keeps the uncertainty visible without inferring anything from age or category.
+  const ledByLogistics = (id: string) => {
+    const child = children.find((c) => c.id === id);
+    return child ? childAgeMonths(child) < LOGISTICS_LED_BELOW_MONTHS : false;
+  };
+  const uncovered = [
+    ...gapKids.filter((l) => l.state === 'unknown' && l.name),
+    ...(unreviewed ? [] : lens.filter((l) => l.state === 'works' && l.basis === 'logistics' && l.name && !ledByLogistics(l.id))),
+  ];
   if (uncovered.length > 0) {
     softUnknowns.push({
       key: 'child-nothing-confirmed',
-      text: `We’re less certain how well it suits ${joinNames(uncovered.map((l) => l.name))}: ${unknownReason}`,
+      text: cap(unconfirmedSuitsClause(uncovered.map((l) => l.name))),
       childIds: uncovered.map((l) => l.id),
       topic: 'whether it suits them',
     });
   }
 
-  const headline = headlineFor({ verdict, lens, children, forNames, lines: { breaches, softCautions, hardUnknowns, softUnknowns }, unknownReason, notToday });
+  const headline = headlineFor({ verdict, lens, children, lines: { breaches, softCautions, hardUnknowns, softUnknowns }, notToday });
 
   // Shut today leads what stands in the way of going today, after a confirmed breach of what the family needs.
   const cautions = [...breaches, ...(availability ? [availability] : []), ...softCautions];
@@ -612,6 +667,24 @@ export function matchEarnsStar(verdict: MatchVerdict): boolean {
 }
 
 /**
+ * The factual "shut today" line for a card: "Closed today · opens tomorrow 9am". Null unless the place is shut today (all
+ * day, or already finished). It is a fact about the place on the day the screen is read; it is NOT part of Family Fit: the
+ * verdict, the score and the ranking are identical whether it is shown or not. Cards show it so a place that looks
+ * perfectly visitable never hides that it is shut, whatever its verdict and however little room the card has.
+ */
+export function matchClosedLine(match: Pick<FamilyMatchResult, 'availableToday' | 'today'>): string | null {
+  if (match.availableToday !== false) return null;
+  return match.today.state === 'closed_today' || match.today.state === 'closed_for_today' ? match.today.label : null;
+}
+
+/** A card's reason with the shut-today fact first, so it is the last thing a narrow card can cut. Nothing is added to an open place. */
+export function withClosedLine(match: Pick<FamilyMatchResult, 'availableToday' | 'today'>, reason: string): string {
+  const closed = matchClosedLine(match);
+  if (!closed || reason.toLowerCase().includes(closed.toLowerCase())) return reason;
+  return reason ? `${closed} · ${reason}` : closed;
+}
+
+/**
  * The line under a card's title. For a good match, whether it is open and the most personal confirmed reason (the
  * journey leads the line on the card, so it is not repeated here); for a possible or poor one, what stands in the way; for a place not yet reviewed,
  * only what the clock says.
@@ -629,7 +702,8 @@ export function matchCardReason(match: FamilyMatchResult): string {
   }
   if (match.verdict === 'possible' && lead) {
     // A place that could work still says why it is here, then the one thing to check, so the card is never only a worry.
-    const issue = match.cautions[0] ?? match.toCheck[0];
+    // The "we haven't yet confirmed whether this activity suits" line is for the venue page: a card carries only what changes a decision.
+    const issue = match.cautions[0] ?? match.toCheck.find((line) => line.key !== 'child-nothing-confirmed');
     return [lead.text, issue?.text].filter(Boolean).join(' · ');
   }
   return match.cardNote ?? '';

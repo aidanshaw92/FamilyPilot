@@ -14,7 +14,7 @@ import { spring } from '@/src/design-system/animations/presets';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { Venue } from '@/src/types';
 import { getTravelSignal } from '@/src/utils/family-signals';
-import { matchCardReason } from '@/src/services/matching/family-match';
+import { matchCardReason, withClosedLine } from '@/src/services/matching/family-match';
 import { formatCategory } from '@/src/utils/format-category';
 
 interface PlaceShowcaseCardProps {
@@ -69,7 +69,11 @@ export function PlaceShowcaseCard({
   // room for it: on a short phone the card shrinks (see home-vertical-layout) and the photograph keeps the space.
   const cardHeight = height ?? Math.round(width * 1.28);
   const travel = getTravelSignal(venue.driveMinutes).label;
-  const reason = venue.familyMatch && cardHeight >= 380 ? matchCardReason(venue.familyMatch) : '';
+  // The shut-today fact is shown on every card, including the short ones that have no room for the reason: a place that
+  // looks perfectly visitable must not hide that it is closed.
+  const reason = venue.familyMatch
+    ? withClosedLine(venue.familyMatch, cardHeight >= 380 ? matchCardReason(venue.familyMatch) : '')
+    : '';
   // With the note showing, the journey leads the note and the badge row holds the badge alone, so a long badge
   // ("Good for Sloane and Theo") is never squeezed against the distance.
   const note = reason ? `${travel} · ${reason}` : '';

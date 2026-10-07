@@ -249,7 +249,9 @@ describe('the loading state is the deck’s own shape, in the deck’s own place
   });
 
   it('it says what is happening, for this family, to the eye and to a screen reader', () => {
-    expect(home).toContain('message={`Finding today’s best places for ${pickedForNames}…`}');
+    expect(home).toContain('message={`Finding the best places for ${pickedForNames}…`}');
+    // Browsing is not planning: nothing on Home before a plan assumes the parent is going today.
+    expect(home).not.toContain('Finding today');
     expect(skeleton).toContain('accessibilityRole="progressbar"');
     expect(skeleton).toContain('accessibilityLabel={message}');
   });
