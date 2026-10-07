@@ -92,10 +92,9 @@ export interface FamilyScoreFactors {
   weatherFit: number;
   budgetFit: number;
   facilitiesMatch: number;
-  /** Whether today's routines (nap/feed) leave a comfortable window for this venue's drive
-   * time — see evaluateRoutineFit. Replaces a former "popularity" factor that was always a
-   * fixed constant with no real signal behind it. */
-  routineFit: number;
+  // There is deliberately no routine factor. Ranking used to reward a place the family could reach and leave before the
+  // next nap or feed TODAY, so Home reordered itself by the clock. Ranking is about the family; routines are about a
+  // chosen day, and are worked out by the planner (routine-advice.ts).
 }
 
 export interface FamilyScore {

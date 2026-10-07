@@ -128,9 +128,9 @@ describe('closed today is about today, not about whether the place suits the fam
     expect(r.cautions.map((l) => l.key)).not.toContain('routine-clash');
   });
 
-  it('on a day it is open, today is still said plainly', () => {
+  it('on a day it is open, the opening is still said plainly, as a fact; the headline is about the family, not about going now', () => {
     const r = match(SCHEDULES['open now'].hours);
-    expect(r.headline).toMatch(/ today$/);
+    expect(r.headline).not.toMatch(/today/);
     expect(r.reasons.map((l) => l.key)).toContain('open-today');
   });
 

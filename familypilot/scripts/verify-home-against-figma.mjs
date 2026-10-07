@@ -178,7 +178,7 @@ for (const run of RUNS) {
         natural: greeting ? +naturalWidth(greeting).toFixed(2) : null,
       },
       subtitle: box(startsWith('Picked for')),
-      sectionHeading: box(leaf('Best for your family today')),
+      sectionHeading: box(leaf('Best for your family')),
       search: search
         ? {
             ...box(search),

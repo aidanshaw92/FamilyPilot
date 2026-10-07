@@ -114,7 +114,6 @@ export function mergePlaceToVenue(
         weatherFit: 0,
         budgetFit: 0,
         facilitiesMatch: 0,
-        routineFit: 0,
       },
       explanation: [],
     },

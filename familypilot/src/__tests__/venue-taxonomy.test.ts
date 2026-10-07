@@ -44,9 +44,10 @@ describe('one taxonomy for Home and Explore', () => {
   });
 
   it('gives Home and Explore different jobs: Home holds situations, Explore holds the categories', () => {
-    // Home is the curated answer to "what is best for us right now", so its rail is situations (indoors, a rainy day,
-    // short on time, fits the nap). Browsing by kind of place is Explore's job, so two directories do not compete.
-    expect(PLAN_CATEGORIES.map((c) => c.label)).toEqual(['For you', 'Indoor', 'Outdoor', 'Fits your day', 'Free', 'Rainy day', 'Under 1 hour']);
+    // Home is the curated answer to "what looks good for our family", so its rail is situations (indoors, a rainy day,
+    // short on time). Browsing by kind of place is Explore's job, so two directories do not compete. There is no
+    // "Fits your day": that lens assumed the family was leaving now, and whether a day works is the planner's question.
+    expect(PLAN_CATEGORIES.map((c) => c.label)).toEqual(['For you', 'Indoor', 'Outdoor', 'Free', 'Rainy day', 'Under 1 hour']);
     for (const kind of ['farm', 'park', 'museum', 'soft_play', 'activity', 'animals']) {
       expect(PLAN_CATEGORIES.some((c) => c.id === kind), kind).toBe(false);
       expect(findEntry(kind)?.explore, kind).toBe(true);
@@ -74,10 +75,9 @@ describe('a category is offered only if it can fill a list', () => {
     const home = planCategoriesFor(venues).map((c) => c.id);
     expect(home).toContain('outdoor'); // parks
     expect(home).toContain('indoor'); // museums
-    // Nobody has given a routine, so no place can say it fits the day: the lens is simply not there.
-    expect(home).not.toContain('routine');
+    // No routine lens, whatever the places say: browsing does not assume the family is leaving now.
     const fitting = many('park', 3, { familyMatch: { reasons: [{ key: 'routine', text: 'Leave by 12:00 to be home in time for Ozzie’s nap' }] } as never });
-    expect(planCategoriesFor([...venues, ...fitting]).map((c) => c.id)).toContain('routine');
+    expect(planCategoriesFor([...venues, ...fitting]).map((c) => c.id)).not.toContain('routine');
   });
 
   it('counts overlapping categories once per venue they contain (Animals is farm + zoo)', () => {

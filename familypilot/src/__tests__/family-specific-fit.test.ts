@@ -7,7 +7,6 @@ import { planningFamilyFromProfile } from '@/src/services/planning/plan-parties'
 import { personaliseVenue } from '@/src/utils/personalise-venues';
 import { childAgeVerdicts, outsideRangeCautions, suitsChildrenLine } from '@/src/utils/child-fit';
 import { familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
-import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 import {
   createFeed,
   createNap,
@@ -358,32 +357,16 @@ describe('routines belong to a child and read by name', () => {
     expect(routineLabel({ ...orphan, label: '' }, [])).toBe('nap');
   });
 
-  it('puts the child’s name in the leave-by line a parent reads', () => {
-    const profile = family([mia], { routines: [createNap(mia, '12:30')] });
-    const fit = evaluateRoutineFit(profile, 20, new Date(2026, 5, 1, 9, 0));
-    expect(fit.reason).toBe('Leave by 12:10 to be home in time for Mia’s nap');
-  });
-
-  it('the leave-by line follows a rename too, not just the planner', () => {
-    const nap = createNap(mia, '12:30');
-    const profile = family([{ ...mia, name: 'Maya' }], { routines: [nap] });
-    expect(evaluateRoutineFit(profile, 20, new Date(2026, 5, 1, 9, 0)).reason).toBe(
-      'Leave by 12:10 to be home in time for Maya’s nap',
-    );
-  });
-
-  it('with two children, the soonest routine across both wins and is named', () => {
+  it('naps and feeds are never said while browsing: no leave-by line, no clash, named or not', () => {
+    // Before a plan exists, a place is judged on the family, not on the clock. The named routine lines ("Leave by 12:00
+    // to be home in time for Theo's nap", "A visit today may run into Theo's nap time") assumed the family was leaving now.
     const profile = family([mia, theo], {
-      routines: [createNap(mia, '14:00'), createNap(theo, '12:15'), createFeed(theo, '17:00')],
+      routines: [createNap(mia, '14:00'), createNap(theo, '10:00'), createFeed(theo, '17:00')],
     });
-    const fit = evaluateRoutineFit(profile, 15, new Date(2026, 5, 1, 9, 0));
-    expect(fit.reason).toBe('Leave by 12:00 to be home in time for Theo’s nap');
-  });
-
-  it('the caution names the child when leaving now would already run into the nap', () => {
-    const profile = family([theo], { routines: [createNap(theo, '10:00')] });
-    const fit = evaluateRoutineFit(profile, 30, new Date(2026, 5, 1, 9, 40));
-    expect(fit.caution).toBe('A visit today may run into Theo’s nap time (around 10:00)');
+    const venue = { ...detail(FACTS), id: 'v-routine', enrichmentStatus: 'enriched' } as unknown as Venue;
+    const said = personaliseVenue(venue, profile);
+    const text = JSON.stringify([said.familyScore.explanation, said.familyScore.cautions, said.familyMatch]);
+    expect(text).not.toMatch(/Leave by|nap time|in time for|Theo’s nap|Mia’s nap|feed/);
   });
 
   it('the planner receives copies with no child’s name and no child id', () => {

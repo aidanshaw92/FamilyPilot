@@ -82,13 +82,8 @@ export const TAXONOMY: readonly TaxonomyEntry[] = [
   },
   { id: 'museum', exploreId: 'museums', label: 'Museum', exploreLabel: 'Museums', kind: 'type', matches: isCategory('museum'), home: false, explore: true },
   { id: 'animals', label: 'Animals', kind: 'type', matches: isCategory('zoo', 'farm'), home: false, explore: true },
-  {
-    // A lens, not a category: places where the family's own routine works today ("leave by 12:00 to be home in time for
-    // Ozzie's nap"). Offered only when enough places can say so, which needs routines in the profile and a nap or
-    // feed still ahead today, so for most families most of the time it is simply not there.
-    id: 'routine', label: 'Fits your day', kind: 'condition', home: true, explore: false,
-    matches: (v) => v.familyMatch?.reasons.some((reason) => reason.key === 'routine') ?? false,
-  },
+  // "Fits your day" (places where the next nap or feed left time to go now) was removed: browsing does not assume the
+  // family is leaving now. Whether a chosen day works around naps and feeds is answered by the planner.
   { id: 'free', label: 'Free', kind: 'condition', matches: (v) => isFreeSpend(v.estimatedSpend), home: true, explore: false },
   {
     id: 'rainy_day', label: 'Rainy day', kind: 'condition', home: true, explore: false,

@@ -5,7 +5,6 @@ import { budgetFitReason } from '@/src/utils/budget-copy';
 import { PROVIDER_ONLY_FAMILY_MATCH_CAP } from '@/src/constants/places-quality';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 import { buildFacilityMissingCaution } from '@/src/utils/facility-match';
-import { evaluateRoutineFit, RoutineFit } from '@/src/utils/routine-fit';
 
 import { childAgesInMonths } from '@/src/services/matching/age-suitability';
 import {
@@ -26,21 +25,13 @@ const WEIGHTS = {
   weatherFit: 0.1,
   budgetFit: 0.1,
   facilitiesMatch: 0.15,
-  routineFit: 0.1,
 } as const;
+/** The weights no longer sum to one (the routine factor's tenth was removed), so the blend is divided by their total. */
+const WEIGHT_TOTAL = Object.values(WEIGHTS).reduce((sum, weight) => sum + weight, 0);
 
 /** A missing must-have facility caps how "family-suitable" a venue can score, the same way an
  * unreviewed venue is capped — a caution shouldn't be the only place this shows up. */
 const FACILITY_MISSING_CAP = 35;
-
-/** Turns today's nap/feed timing into a score contribution: comfortable time to spare scores
- * well, a visit that would run into a routine scores poorly, and no routines set (or nothing
- * upcoming today) is neutral — never a thumb on the scale either way. */
-function scoreRoutineFit(reason: string | null, caution: string | null): number {
-  if (reason) return 92;
-  if (caution) return 45;
-  return 75;
-}
 
 export interface FamilyScoreOptions {
   enrichmentStatus?: EnrichmentStatus;
@@ -78,8 +69,7 @@ function clamp(value: number, min = 0, max = 100): number {
 /**
  * What the age factor contributes when no venue has published a recommendation for these ages.
  *
- * The same neutral value scoreRoutineFit uses for "nothing to say either way", and deliberately
- * not a suitability judgement: it keeps the weighted average well-defined without asserting that
+ * A neutral value for "nothing to say either way", and deliberately not a suitability judgement: it keeps the weighted average well-defined without asserting that
  * a venue does or does not suit a child. Nothing may turn this number into an explanation — a
  * neutral placeholder is the absence of evidence, not evidence of a good fit.
  *
@@ -122,7 +112,6 @@ function buildHeuristicExplanation(
   profile: FamilyProfile,
   factors: FamilyScoreFactors,
   isProviderOnly: boolean,
-  routineFit: RoutineFit,
 ): string[] {
   if (isProviderOnly) {
     // The "not yet reviewed" disclaimer used to lead this list, and the UI ticks every line of it
@@ -134,13 +123,8 @@ function buildHeuristicExplanation(
   const reasons: string[] = [];
   const hasPushchair = familyUsesBuggy(profile);
 
-  // Lead with whatever is most specific to this exact venue, visit, and family — a time-bound
-  // routine fit, a concrete duration, distance, or facility fact — before the heuristic age
-  // line below, which (with no reviewed age data to go on) is almost always trivially true and
-  // reads as boilerplate ("X is a great age for this park") if it's allowed to always lead.
-  if (routineFit.reason) {
-    reasons.push(routineFit.reason);
-  }
+  // Lead with whatever is most specific to this exact venue and family — a concrete duration,
+  // distance, or facility fact. Never a routine: "leave by…" is about a chosen day, not the place.
 
   if (venue.visitDurationMinutes) {
     reasons.push(`Typically a ${formatDurationAdjective(venue.visitDurationMinutes)} visit`);
@@ -208,7 +192,6 @@ export function calculateFamilyScore(
       ? 50
       : clamp(Math.min((venue.facilities?.length ?? 0) * 11, 96));
   const missingMustHave = buildFacilityMissingCaution(profile, venue.facilities) != null;
-  const routineFit = evaluateRoutineFit(profile, venue.driveMinutes);
 
   const factors: FamilyScoreFactors = {
     ageSuitability:
@@ -224,14 +207,13 @@ export function calculateFamilyScore(
       (useTrusted ? scoreTrustedBudget(facts, profile.budgetTier) : null) ??
       scoreBudgetHeuristic(venue, profile.budgetTier),
     facilitiesMatch: missingMustHave ? Math.min(facilitiesMatchRaw, FACILITY_MISSING_CAP) : facilitiesMatchRaw,
-    routineFit: scoreRoutineFit(routineFit.reason, routineFit.caution),
   };
 
   let score = clamp(
     Object.entries(WEIGHTS).reduce(
       (sum, [key, weight]) => sum + factors[key as keyof FamilyScoreFactors] * weight,
       0,
-    ),
+    ) / WEIGHT_TOTAL,
   );
 
   if (isProviderOnly) {
@@ -240,8 +222,8 @@ export function calculateFamilyScore(
 
   const explanation =
     useTrusted && facts
-      ? buildTrustedExplanation(venue, profile, facts, factors, weather, routineFit)
-      : buildHeuristicExplanation(venue, profile, factors, isProviderOnly, routineFit);
+      ? buildTrustedExplanation(venue, profile, facts, factors, weather)
+      : buildHeuristicExplanation(venue, profile, factors, isProviderOnly);
   const cautions = useTrusted && facts ? buildTrustedCautions(profile, facts, factors) : [];
 
   return { score, factors, explanation, cautions };

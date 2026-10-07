@@ -6,7 +6,6 @@ import { ExternalPlaceRecord } from '@/src/types/places';
 import { Venue } from '@/src/types';
 import { getTravelSignal } from '@/src/utils/family-signals';
 import { filterVenues } from '@/src/utils/filter-venues';
-import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 import {
   compareTravelMinutes,
   isTravelTimeKnown,
@@ -95,14 +94,6 @@ describe('a venue with no coordinates', () => {
     expect(filterVenues(all, 'all', [], 'any', 30, 'any').map((v) => v.id)).toHaveLength(2);
   });
 
-  it('does not claim the visit will clash with a nap it has no journey for', () => {
-    const profile = {
-      routines: [{ id: 'r1', kind: 'nap', time: '13:00' }],
-      members: [],
-    } as never;
-    const now = new Date('2026-01-15T09:00:00');
-    expect(evaluateRoutineFit(profile, venue.driveMinutes, now)).toEqual({ reason: null, caution: null });
-  });
 });
 
 describe('ordering by journey time with unknown journeys', () => {

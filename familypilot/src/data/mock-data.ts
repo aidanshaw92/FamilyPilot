@@ -25,7 +25,6 @@ const familyScore = (
     weatherFit: score - 3,
     budgetFit: score - 1,
     facilitiesMatch: score,
-    routineFit: score - 4,
   },
   explanation,
 });

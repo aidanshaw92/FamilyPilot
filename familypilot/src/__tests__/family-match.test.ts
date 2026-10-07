@@ -47,7 +47,7 @@ describe('Family Match: the honest verdict', () => {
   it('says Good for the named child when confirmed facts are about that child', () => {
     const r = run(venue({}, { minRecommendedAge: 1, maxRecommendedAge: 10, toilets: 'yes', pushchairSuitability: 'good', babyChanging: 'yes' }));
     expect(r.verdict).toBe('good');
-    expect(r.headline).toBe('Good for Sloane and Theo today');
+    expect(r.headline).toBe('Good for Sloane and Theo');
     expect(r.forNames).toEqual(['Sloane', 'Theo']);
     expect(r.reasons.map((l) => l.text)).toContain('Suits Sloane and Theo (recommended for ages 1–10)');
     expect(r.reasons.map((l) => l.text)).toContain('Good buggy access for Theo’s buggy');
@@ -124,13 +124,13 @@ describe('Family Match: the honest verdict', () => {
     const p = profile({ members: [parent, child('c1', 'Sloane', 7)] });
     const r = run(venue({}, { minRecommendedAge: 5, maxRecommendedAge: 12, toilets: 'yes', parking: 'yes' }), p, 92);
     expect(r.verdict).toBe('excellent');
-    expect(r.headline).toBe('Excellent for Sloane today');
+    expect(r.headline).toBe('Excellent for Sloane');
   });
 
   it('uses "your family" when no confirmed fact is about a particular child', () => {
     const p = profile({ members: [parent, child('c1', 'Sloane', 7)] });
     const r = run(venue({}, { toilets: 'yes' }), p);
-    expect(r.headline).toBe('Good for your family today');
+    expect(r.headline).toBe('Good for your family');
   });
 
   it('never prints a name it does not have', () => {
@@ -162,11 +162,14 @@ describe('Family Match: the honest verdict', () => {
     expect(run(venue({}, { babyChanging: 'yes' }), base).reasons.map((l) => l.text)).toContain('Baby changing confirmed, handy for Theo');
   });
 
-  it('puts a nap clash on the card as a caution', () => {
+  it('never reads the routines: a nap about to start is the planner’s business, not a reason or a caution about the place', () => {
     const p = profile({ routines: [{ id: 'r1', kind: 'nap', time: '11:20', durationMinutes: 90, atHome: true, childId: 'c2', label: '' }] as never });
-    const r = run(venue({ driveMinutes: 25 }, { toilets: 'yes' }), p);
-    expect(r.cautions.map((l) => l.text).join('|')).toMatch(/Theo’s nap/);
-    expect(r.verdict).toBe('possible');
+    const withRoutine = run(venue({ driveMinutes: 25 }, { toilets: 'yes' }), p);
+    const without = run(venue({ driveMinutes: 25 }, { toilets: 'yes' }), profile({}));
+    const said = [...withRoutine.reasons, ...withRoutine.cautions, ...withRoutine.toCheck].map((l) => l.text).join('|');
+    expect(said).not.toMatch(/nap|feed|leave by|routine/i);
+    expect(withRoutine.verdict).toBe(without.verdict);
+    expect(withRoutine.headline).toBe(without.headline);
   });
 
   it('gives the card the one line that changes a decision', () => {
@@ -190,7 +193,7 @@ describe('Family Fit talks about each child', () => {
   it('says who it is good for, naming both children when the evidence is about both', () => {
     const r = run(venue({}, { ...base, pushchairSuitability: 'good' }), two(), 90);
     expect(r.children.map((c) => [c.name, c.state])).toEqual([['Sloane', 'works'], ['Ozzie', 'works']]);
-    expect(r.headline).toMatch(/for Sloane and Ozzie today$/);
+    expect(r.headline).toMatch(/for Sloane and Ozzie$/);
   });
 
   it('keeps the children apart: could work for one, check something for the other', () => {
@@ -203,7 +206,7 @@ describe('Family Fit talks about each child', () => {
   it('names only the child a breach is about', () => {
     const r = run(venue({}, { ...base, pushchairSuitability: 'difficult' }), two(), 90);
     expect(r.verdict).toBe('poor');
-    expect(r.headline).toBe('Probably not for Ozzie today');
+    expect(r.headline).toBe('Probably not for Ozzie');
   });
 
   it('claims nothing for a child nobody has a fact about', () => {
@@ -260,14 +263,14 @@ describe('Family Fit never says "good for the family" from a subset of the child
   it('says who is covered only when every child is: both named, no gap', () => {
     const r = run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 78);
     expect(r.gapNames).toEqual([]);
-    expect(r.headline).toBe('Good for Sloane and Ozzie today');
+    expect(r.headline).toBe('Good for Sloane and Ozzie');
   });
 
   it('leaves a one-child household as it was: no gap is invented for a single child', () => {
     const one = profile({ members: [parent, child('c3', 'Mia', 2, { mobility: ['walks'] })] });
     const r = run(venue({}, { ...practical, minRecommendedAge: 0, maxRecommendedAge: 10, babyChanging: 'unknown' }), one, 80);
     expect(r.gapNames).toEqual([]);
-    expect(r.headline).toBe('Good for your family today');
+    expect(r.headline).toBe('Good for your family');
   });
 
   it('speaks like a parent: no database phrasing anywhere a headline or a check line is shown', () => {

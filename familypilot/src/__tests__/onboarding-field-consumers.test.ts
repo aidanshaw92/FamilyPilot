@@ -8,7 +8,6 @@ import { familyTitle } from '@/src/utils/family-title';
 import { personaliseVenue } from '@/src/utils/personalise-venues';
 import { DraftChild, blankChild, buildOnboardingProfile, newNap } from '@/src/utils/onboarding-draft';
 import { profileReceipt } from '@/src/utils/profile-receipt';
-import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 import { FamilyProfile, Venue, VenueDetail } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 
@@ -77,15 +76,21 @@ describe('each onboarding answer changes something', () => {
     expect(plain.familyScore.cautions ?? []).not.toContain('Wheelchair and mobility-aid access isn’t confirmed here');
   });
 
-  it('a nap time changes the leave-by line, and names the child', () => {
+  it('a nap time reaches the planner, where a chosen day is worked out around it', () => {
     const early = family({ naps: [{ ...newNap(), time: '12:00' }] });
     const late = family({ naps: [{ ...newNap(), time: '14:00' }] });
-    expect(evaluateRoutineFit(early, 20, MORNING).reason).toBe('Leave by 11:40 to be home in time for Mia’s nap');
-    expect(evaluateRoutineFit(late, 20, MORNING).reason).toBe('Leave by 13:40 to be home in time for Mia’s nap');
+    const naps = (p: FamilyProfile) => (planningFamilyFromProfile({ ...p, homeLatitude: 51.6, homeLongitude: -0.3 }) as { routines: { kind: string; time: string }[] }).routines.filter((r) => r.kind === 'nap').map((r) => r.time);
+    expect(naps(early)).toEqual(['12:00']);
+    expect(naps(late)).toEqual(['14:00']);
   });
 
-  it('no nap means no routine line at all', () => {
-    expect(evaluateRoutineFit(family({ naps: [] }), 20, MORNING)).toEqual({ reason: null, caution: null });
+  it('a nap time never changes how a place is judged or ranked while browsing', () => {
+    const venue = { ...VENUE, id: 'p1' } as unknown as Venue;
+    const early = personaliseVenue(venue, family({ naps: [{ ...newNap(), time: '12:00' }] }));
+    const none = personaliseVenue(venue, family({ naps: [] }));
+    expect(early.familyScore.score).toBe(none.familyScore.score);
+    expect(early.familyScore.explanation).toEqual(none.familyScore.explanation);
+    expect(early.familyMatch?.headline).toBe(none.familyMatch?.headline);
   });
 
   it('feed times reach the planner and the receipt', () => {

@@ -6,7 +6,6 @@ import {
   VenueMatchResult,
 } from '@/src/types/day-request';
 import { FacilityType, FamilyProfile } from '@/src/types';
-import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 import { buildFacilityMissingCaution } from '@/src/utils/facility-match';
 import { describeAgeAdmission, describeAgeCaveats } from './age-admission';
 
@@ -200,12 +199,9 @@ export function buildFocusedRecommendation(
   journeySource?: 'live' | 'estimated',
   profile?: FamilyProfile,
 ): FocusedRecommendation {
-  const routineFit = profile ? evaluateRoutineFit(profile, facts.driveMinutes) : { reason: null, caution: null };
+  // No routine timing here: a recommendation is made while browsing, and naps and feeds belong to a planned day.
   const extraCautions = profile
-    ? [
-        buildFacilityMissingCaution(profile, confirmedFacilities(facts)),
-        routineFit.caution,
-      ].filter((caution): caution is string => Boolean(caution))
+    ? [buildFacilityMissingCaution(profile, confirmedFacilities(facts))].filter((caution): caution is string => Boolean(caution))
     : [];
   // Age rules that explain without excluding -- an activity minimum, an accompaniment rule, a
   // scope that could not be read, or a door whose sources disagree. Listed BEFORE the generic
@@ -221,7 +217,7 @@ export function buildFocusedRecommendation(
     driveMinutes: facts.driveMinutes,
     estimatedSpend: facts.estimatedSpend ?? undefined,
     fit: match.fit!,
-    reasons: routineFit.reason ? [{ field: 'routine', text: routineFit.reason }, ...reasons] : reasons,
+    reasons,
     caveats: caveats.slice(0, 2),
     unknowns: buildFocusedUnknowns(match.evaluations),
     enrichmentStatus:

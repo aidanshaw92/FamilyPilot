@@ -15,7 +15,7 @@ import {
   newNap,
   questionsFor,
 } from '@/src/utils/onboarding-draft';
-import { evaluateRoutineFit } from '@/src/utils/routine-fit';
+import { resolveRoutines } from '@/src/utils/routine-schedule';
 import { profileReceipt } from '@/src/utils/profile-receipt';
 
 /** A fixed "today" so every age below is exact. */
@@ -257,10 +257,9 @@ describe('what the new profile does downstream', () => {
     expect(muchLater.members.find((m) => m.role === 'child')!.age).toBe(3);
   });
 
-  it('a nap is named in the leave-by line a parent reads', () => {
+  it('a nap is saved with its time and named for the child, as the plan says it', () => {
     const profile = build([TODDLER({ naps: [{ ...newNap(), time: '13:00' }] })]);
-    const fit = evaluateRoutineFit(profile, 30, new Date(2026, 5, 15, 9, 0));
-    expect(fit.reason).toBe('Leave by 12:30 to be home in time for Theo’s nap');
+    expect(resolveRoutines(profile).map((r) => [r.label, r.time])).toEqual([['Theo’s nap', '13:00']]);
   });
 
   it('the receipt reflects the answers without naming anyone', () => {

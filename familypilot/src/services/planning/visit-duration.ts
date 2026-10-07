@@ -219,36 +219,44 @@ export function spokenMinutes(minutes: number): string {
   return `${hours} hour${hours === 1 ? '' : 's'} ${rest} minutes`;
 }
 
+/** "1 hr 30 min", "2 hr", "45 min": how long, in the plan screen's own short form. */
+export function allowedLabel(minutes: number): string {
+  const total = Math.max(0, Math.round(minutes));
+  const hours = Math.floor(total / 60);
+  const rest = total % 60;
+  if (hours === 0) return `${rest} min`;
+  return rest === 0 ? `${hours} hr` : `${hours} hr ${rest} min`;
+}
+
 /**
- * One line saying how long the plan allowed and why, for the plan screen.
+ * One line saying how long the plan allowed, for the plan screen, in a parent's words: "We’ve allowed 1 hr 30 min".
  *
- * Only for a length FamilyPilot chose. A length the parent chose is theirs and needs no explaining. The wording
- * keeps an assumption an assumption ("typical for a farm") and a venue's own figure a venue's figure.
+ * Only for a length FamilyPilot chose (a length the parent chose is theirs and needs no explaining). It is a fragment
+ * with no full stop: the screen ends it with "— you can change this." where it can offer the change, and a full stop
+ * where it cannot (a saved plan). How the length was chosen (a venue's own figure, a typical length for the kind of
+ * place, a routine, closing time) stays in the plan's data as `VisitResolution.basis`; the parent is not given the
+ * implementation commentary ("typical for a park", "a planning assumption"), only what changes what they do: a routine
+ * the length was cut for, and opening hours nobody has confirmed.
  */
 export function visitNote(
   resolution: VisitResolution | undefined,
-  category: VenueCategory | string | undefined,
+  _category: VenueCategory | string | undefined,
   routineSentence?: string | null,
 ): string | null {
   if (!resolution) return null;
-  const spoken = spokenMinutes(resolution.minutes);
+  const allowed = `We’ve allowed ${allowedLabel(resolution.minutes)}`;
   switch (resolution.basis) {
     case 'chosen':
       return null;
     case 'venue-typical':
-      return `You weren’t sure how long, so we allowed about ${spoken}. That is the usual visit length recorded for this place.`;
-    case 'category-typical': {
-      const noun = categoryNoun(category);
-      return `You weren’t sure how long, so we allowed about ${spoken}${noun ? `, which is typical for ${noun}` : ''}. It is a planning assumption, not something we know about this place.`;
-    }
+    case 'category-typical':
+      return allowed;
     case 'routine-limited':
-      return routineSentence
-        ? `You weren’t sure how long, so we kept it to about ${spoken}, ${routineSentence}`
-        : `You weren’t sure how long, so we shortened it to ${spoken} to fit your routines.`;
+      return routineSentence ? `${allowed}, ${routineSentence.replace(/\.$/, '')}` : `${allowed}, to fit your routines`;
     case 'until-closing':
-      return `All day here means until it closes at ${resolution.closesAt}: ${spoken} from your arrival.`;
+      return `${allowed}, until it closes at ${resolution.closesAt}`;
     case 'day-cap':
-      return `All day is planned as ${spoken} here, because we don’t know when it closes. It is a planning assumption: check the hours.`;
+      return `${allowed}. We don’t know when it closes, so check the hours`;
     default:
       return null;
   }
