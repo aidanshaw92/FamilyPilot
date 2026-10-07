@@ -617,9 +617,9 @@ async function auditPlanLinks(browser, viewport) {
     ['a repeated parameter', `venue=${EDGE.rich}&venue=${EDGE.noPhoto}&date=${PLAN_DATE}&date=1999-01-01&leaveAt=09:30&visit=90&parties=mine`,
       (t) => t.includes('Save this plan')],
     // An unreadable length is "Not sure", which is honest, rather than a number the parent never chose: the plan is built and
-    // says it assumed the length. (It used to be refused.)
+    // says how long it allowed, offering the change ("We've allowed 2 hr 30 min — you can change this"). (It used to be refused.)
     ['a malformed visit length', `venue=${EDGE.rich}&date=${PLAN_DATE}&leaveAt=09:30&visit=soon&parties=mine`,
-      (t) => t.includes('Save this plan') && /weren.t sure how long/i.test(t)],
+      (t) => t.includes('Save this plan') && /We.ve allowed .* you can change this/i.test(t)],
     ['a date in the past', `venue=${EDGE.rich}&date=2001-01-01&leaveAt=09:30&visit=90&parties=mine`,
       (t) => /today or a future date|Check the plan details/i.test(t)],
     ['a venue that shuts before any visit fits', `venue=${EDGE.closesEarly}&date=${PLAN_DATE}&leaveAt=09:30&visit=90&parties=mine`,

@@ -10,7 +10,6 @@ import {
 import { getDriveMinutesFromActivity } from '@/src/data/mock-restaurants';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
 import { budgetFitReason } from '@/src/utils/budget-copy';
-import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 
 const WEIGHTS = {
   ageSuitability: 0.2,
@@ -18,14 +17,9 @@ const WEIGHTS = {
   distance: 0.2,
   budgetFit: 0.15,
   facilitiesMatch: 0.25,
-  routineFit: 0.05,
 } as const;
-
-function scoreRoutineFit(reason: string | null, caution: string | null): number {
-  if (reason) return 92;
-  if (caution) return 45;
-  return 75;
-}
+/** No routine factor: where to eat is chosen while browsing, and naps and feeds belong to a planned day. */
+const WEIGHT_TOTAL = Object.values(WEIGHTS).reduce((sum, weight) => sum + weight, 0);
 
 function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, Math.round(value)));
@@ -136,7 +130,6 @@ export function calculateRestaurantFamilyScore(
       : restaurant.driveMinutes);
 
   const spend = restaurant.estimatedFamilySpend ?? restaurant.estimatedSpend;
-  const routineFit = evaluateRoutineFit(profile, driveFromActivity ?? restaurant.driveMinutes);
 
   const factors: FamilyScoreFactors = {
     ageSuitability: scoreAgeFit(restaurant.restaurantFeatures, childAges),
@@ -147,14 +140,13 @@ export function calculateRestaurantFamilyScore(
     weatherFit: 85,
     budgetFit: scoreBudget(spend, profile.budgetTier),
     facilitiesMatch: scoreFacilities(restaurant.restaurantFeatures, profile),
-    routineFit: scoreRoutineFit(routineFit.reason, routineFit.caution),
   };
 
   const score = clamp(
     Object.entries(WEIGHTS).reduce(
-      (sum, [key, weight]) => sum + factors[key as keyof FamilyScoreFactors] * weight,
+      (sum, [key, weight]) => sum + (factors[key as keyof FamilyScoreFactors] ?? 0) * weight,
       0,
-    ),
+    ) / WEIGHT_TOTAL,
   );
 
   const explanation = buildRestaurantExplanation(

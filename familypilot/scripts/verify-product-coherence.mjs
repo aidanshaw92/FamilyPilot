@@ -187,6 +187,9 @@ for (const [width, height] of VIEWPORTS) {
   check(`${label}: Home is headed "Best for your family today" (or compacts it on a short screen)`, heading || height < 740, heading ? undefined : 'compact header');
   check(`${label}: Home offers situations, not a second category directory`, !/\n(Park|Museum|Farm|Soft play|Animals)\n/.test(home) && /Rainy day/.test(home), 'rail: ' + (home.match(/For you[\s\S]{0,140}/) ?? [''])[0].replace(/\s+/g, ' '));
   check(`${label}: Home does not scroll sideways`, (await overflow(page)) <= 1);
+  // Browse first, plan second: the family has naps and feeds, and Home still never tells them when to leave.
+  const PRE_PLAN_TIMING = /Leave by|in time for|nap time|feed time|Fits your day/;
+  check(`${label}: Home never tells the family when to leave (routines are for the plan)`, !PRE_PLAN_TIMING.test(home), (home.match(PRE_PLAN_TIMING) ?? [''])[0]);
 
   // ---- EXPLORE: the broader browse ---------------------------------------------------------------
   await page.goto(`${BASE}/explore`, { waitUntil: 'domcontentloaded' });
@@ -195,6 +198,7 @@ for (const [width, height] of VIEWPORTS) {
   const explore = await text(page);
   check(`${label}: Explore is for browsing, searching and filtering`, /Browse, search and filter family days out across London/.test(explore));
   check(`${label}: Explore carries the categories Home does not`, /Parks/.test(explore) && /Museums/.test(explore));
+  check(`${label}: Explore never tells the family when to leave`, !PRE_PLAN_TIMING.test(explore), (explore.match(PRE_PLAN_TIMING) ?? [''])[0]);
 
   // ---- VENUE DETAIL ------------------------------------------------------------------------------
   const card = page.locator('[role="button"][aria-label$="view details"]').first();
@@ -214,6 +218,7 @@ for (const [width, height] of VIEWPORTS) {
   check(`${label}: Create a plan is within a screen and a half of the top`, ctaY < height * 1.5, `${Math.round(ctaY)}px of ${height}`);
   const detail = await text(page);
   check(`${label}: Family Fit speaks about the children`, /(for|Sloane|Ozzie|your family)/i.test(detail) && /FAMILY FIT/.test(detail), (detail.match(/FAMILY FIT\n([^\n]+)/) ?? ['', ''])[1]);
+  check(`${label}: Venue Detail says why it might work, never when to leave`, !PRE_PLAN_TIMING.test(detail), (detail.match(PRE_PLAN_TIMING) ?? [''])[0]);
   await page.getByTestId('venue-more-toggle').click();
   await page.waitForTimeout(300);
   check(`${label}: "More about this place" opens on a tap`, await page.getByTestId('venue-more').isVisible());
@@ -251,7 +256,7 @@ for (const [width, height] of VIEWPORTS) {
   // ---- THE PLAN: routines are advice ------------------------------------------------------------
   await page.screenshot({ path: join(dir, '06-plan.jpg'), type: 'jpeg', quality: 82 });
   const plan = await text(page);
-  check(`${label}: the plan says how long it allowed and why`, /You weren’t sure how long|Time there/.test(plan));
+  check(`${label}: the plan says how long it allowed, in a parent's words`, /We’ve allowed|Time there/.test(plan) && !/planning assumption|typical for/.test(plan));
   const routinesBlock = page.getByTestId('plan-routines');
   const hasRoutines = await routinesBlock.isVisible().catch(() => false);
   check(`${label}: the plan reasons about Ozzie's nap`, hasRoutines, hasRoutines ? (await routinesBlock.innerText()).toString().replace(/\s+/g, ' ').slice(0, 160) : 'no routines block');

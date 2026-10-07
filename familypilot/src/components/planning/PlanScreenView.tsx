@@ -41,6 +41,8 @@ export interface PlanScreenViewProps {
   onSave: () => void;
   /** Applies one of the options under a piece of routine advice: the plan builds again with that change. */
   onApplyOption?: (option: PlanAdviceOptionView) => void;
+  /** Reopens Create a plan on this plan's answers, so the length (or anything else) can be changed. Absent on a saved plan. */
+  onChangePlan?: () => void;
   /** Adds lunch to the day, or takes it out, and builds the plan again. */
   onToggleLunch?: () => void;
   /** A saved plan opened again (from Plans): there is nothing to save, and the action is Add to calendar. */
@@ -70,6 +72,7 @@ export function PlanScreenView({
   onBack,
   onSave,
   onApplyOption,
+  onChangePlan,
   onToggleLunch,
   saved = false,
   saveState = 'idle',
@@ -193,13 +196,67 @@ export function PlanScreenView({
               </View>
             ) : null}
             {view.routines?.visitNote ? (
+              // "We’ve allowed 1 hr 30 min — you can change this." The change is offered only where it can be made.
               <Text variant="caption" color={colors.text.secondary} style={styles.visitNote} testID="plan-visit-note">
                 {view.routines.visitNote}
+                {onChangePlan ? (
+                  <>
+                    {' — '}
+                    <Text
+                      variant="caption"
+                      color={colors.action}
+                      style={styles.visitChange}
+                      onPress={onChangePlan}
+                      accessibilityRole="link"
+                      testID="plan-visit-change"
+                    >
+                      you can change this
+                    </Text>
+                    .
+                  </>
+                ) : (
+                  '.'
+                )}
               </Text>
             ) : null}
             {routinesVisible && view.routines ? (
               <Block title="Around your routines" testID="plan-routines">
-                <Text variant="label">{view.routines.headline}</Text>
+                <Text variant="label" style={view.routines.recommendation ? styles.recommendationTitle : undefined} testID="plan-routines-headline">
+                  {view.routines.headline}
+                </Text>
+                {view.routines.recommendation ? (
+                  // FamilyPilot's answer first: the change, what it does, one tap to use it. Then the other options, then the
+                  // details for anyone who wants them.
+                  <View style={styles.recommendation} testID="plan-recommendation">
+                    {view.routines.recommendation.lines.map((line) => (
+                      <Text key={line} variant="bodySmall">
+                        {line}
+                      </Text>
+                    ))}
+                    {onApplyOption ? (
+                      <View style={styles.adviceOptions} testID="plan-recommendation-apply">
+                        <Chip
+                          size="small"
+                          active
+                          label={view.routines.recommendation.option.label}
+                          onPress={() => onApplyOption(view.routines!.recommendation!.option)}
+                        />
+                      </View>
+                    ) : null}
+                    {onApplyOption && view.routines.otherOptions.length ? (
+                      <View style={styles.otherOptions}>
+                        <Text variant="caption" color={colors.text.secondary}>
+                          Or
+                        </Text>
+                        <View style={styles.adviceOptions}>
+                          {view.routines.otherOptions.map((option) => (
+                            <Chip key={option.key} size="small" label={option.label} onPress={() => onApplyOption(option)} />
+                          ))}
+                        </View>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
                 {view.routines.advice.map((item) => (
                   <AdviceItem key={item.id} item={item} onApply={onApplyOption} />
                 ))}
@@ -500,6 +557,10 @@ const styles = StyleSheet.create({
   },
   insightText: { flex: 1, fontFamily: 'Inter_500Medium', fontSize: 13, lineHeight: 16, color: colors.text.secondary },
   visitNote: { marginBottom: spacing.md },
+  visitChange: { textDecorationLine: 'underline' },
+  recommendationTitle: { fontFamily: 'Inter_700Bold', fontSize: 17, lineHeight: 22, color: colors.ink },
+  recommendation: { gap: spacing.xs },
+  otherOptions: { gap: 4, marginTop: spacing.xs },
   checkFirst: {
     backgroundColor: colors.warning[50],
     borderWidth: 1,

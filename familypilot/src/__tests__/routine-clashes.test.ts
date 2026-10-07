@@ -124,6 +124,59 @@ describe('a nap that falls on the day is advice, not a refusal', () => {
   });
 });
 
+describe('the plan leads with what to do, then the details', () => {
+  // Sunday, so earlier starts are not ruled out by the clock. Arrive 11:00 for two hours: a nap at home from 12:45 begins
+  // during the visit and runs into the drive home. Arriving at 10:00 clears it; so does staying one hour.
+  const sunday = { date: '2026-10-11', startAt: '11:00', visit: 120 } as const;
+  const feedOut = { id: 'feed', label: 'Feed', kind: 'feed', time: '11:30', durationMinutes: 30, atHome: false } as Routine;
+
+  it('leads with the best verified change, says what it clears, and offers it in one tap', async () => {
+    const outcome = await build([family({ routines: [nap({ time: '12:45' })] })], sunday);
+    const routines = outcome.view.routines!;
+    expect(routines.headline).toBe('Best option: arrive around 10:00');
+    expect(routines.recommendation!.lines).toEqual(['That keeps the day clear of your nap.']);
+    expect(routines.recommendation!.option.label).toBe('Arrive at 10:00');
+    // The change is a verified re-run: applied, the nap no longer overlaps the day at all.
+    const applied = await build([family({ routines: [nap({ time: '12:45' })] })], { ...sunday, startAt: routines.recommendation!.option.alternative!.arriveAt });
+    expect(applied.source.itinerary.routineInsights).toEqual([]);
+  });
+
+  it('prefers moving the time to cutting the visit short, and still offers the other change underneath, once', async () => {
+    const routines = (await build([family({ routines: [nap({ time: '12:45' })] })], sunday)).view.routines!;
+    expect(routines.recommendation!.option.alternative!.kind).toBe('earlier');
+    expect(routines.otherOptions.map((o) => o.label)).toEqual(['Stay 1 hour instead']);
+    // The details stay, without repeating the options the recommendation already offers.
+    expect(routines.advice.length).toBeGreaterThan(0);
+    expect(routines.advice.every((a) => a.options.length === 0)).toBe(true);
+    expect(routines.advice.map((a) => a.detail).join(' ')).not.toMatch(/options below/i);
+  });
+
+  it('says what the change leaves, without claiming where it now falls', async () => {
+    const routines = (await build([family({ routines: [nap({ time: '12:45' }), feedOut] })], sunday)).view.routines!;
+    expect(routines.recommendation!.lines).toEqual(['That keeps the day clear of your nap.', 'Your feed still falls during the day.']);
+  });
+
+  it('names the children on this device', async () => {
+    const outcome = await build([family({ routines: [nap({ time: '12:45' })] })], sunday);
+    const named = toPlanViewModel(outcome.source, { resolveSubject: makeSubjectResolver(profile, [{ id: 'mine', label: 'Our family' }]) });
+    expect(named.routines!.recommendation!.lines[0]).toBe('That keeps the day clear of Ozzie’s nap.');
+  });
+
+  it('when no change clears it, says the plan still works and gives the details', async () => {
+    // A nap at home from 11:30 falls inside the visit whichever nearby time or length is tried.
+    const routines = (await build([family({ routines: [nap({ time: '11:30' })] })], { date: '2026-10-11' })).view.routines!;
+    expect(routines.recommendation).toBeNull();
+    expect(routines.headline).toBe('This plan works, with one routine to plan around');
+    expect(routines.advice.some((a) => a.severity === 'soft')).toBe(true);
+  });
+
+  it('with nothing to act on, says the plan should work well', async () => {
+    const routines = (await build([family({ routines: [nap({ time: '14:30' })] })])).view.routines!;
+    expect(routines.headline).toBe('This plan should work well');
+    expect(routines.recommendation).toBeNull();
+  });
+});
+
 describe('buggy advice is for families who use a buggy, from what the venue record says', () => {
   const during = nap({ time: '10:30', durationMinutes: 60 });
 
@@ -204,11 +257,14 @@ describe('names are added when the screen draws the plan, never saved with it', 
 });
 
 describe('the length FamilyPilot chooses when the parent is not sure', () => {
-  it('uses a typical length for the kind of place, and says it is an assumption', async () => {
+  it('uses a typical length for the kind of place, says how long in a parent’s words, and keeps the provenance in the data', async () => {
     const outcome = await build([family()], { visit: 'not-sure' });
+    // Provenance stays with the plan: it is a typical length for a farm, not something known about this place.
     expect(outcome.source.visit).toMatchObject({ basis: 'category-typical', minutes: 120 });
     expect(outcome.source.itinerary.stops[0].dwellMinutes).toBe(120);
-    expect(outcome.view.routines!.visitNote).toMatch(/typical for a farm\. It is a planning assumption/);
+    // The parent reads the length and that it can be changed, not the implementation commentary.
+    expect(outcome.view.routines!.visitNote).toBe('We’ve allowed 2 hr');
+    expect(outcome.view.routines!.visitNote).not.toMatch(/typical|assumption/);
   });
 
   it('uses the venue’s own typical visit where the record has one', async () => {
@@ -227,7 +283,7 @@ describe('the length FamilyPilot chooses when the parent is not sure', () => {
     const outcome = await build([family({ routines: [nap({ time: '12:15' })] })], { visit: 'not-sure' });
     expect(outcome.source.visit).toMatchObject({ basis: 'routine-limited', minutes: 90, unshortenedMinutes: 120 });
     expect(outcome.source.itinerary.routineInsights).toEqual([]);
-    expect(outcome.view.routines!.visitNote).toMatch(/kept it to about an hour and a half, which gets you home before your nap at 12:15/);
+    expect(outcome.view.routines!.visitNote).toBe('We’ve allowed 1 hr 30 min, which gets you home before your nap at 12:15');
   });
 
   it('never shortens a length the parent chose', async () => {

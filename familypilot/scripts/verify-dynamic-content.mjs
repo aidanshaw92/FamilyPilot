@@ -229,7 +229,7 @@ console.log('\nHome is data-driven');
   let emptyShown = false;
   const tried = [];
   // Home's rail holds situations (Home is the curated answer; the categories are Explore's), so these are the chips tried.
-  for (const name of ['Outdoor', 'Rainy day', 'Fits your day', 'Under 1 hour', 'Free', 'Indoor']) {
+  for (const name of ['Outdoor', 'Rainy day', 'Under 1 hour', 'Free', 'Indoor']) {
     if ((await page.getByRole('button', { name, exact: true }).count()) === 0) continue;
     tried.push(name);
     await page.getByRole('button', { name, exact: true }).click();

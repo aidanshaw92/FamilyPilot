@@ -4,7 +4,7 @@ import { childAgeMonths } from '@/src/services/matching/age-suitability';
 /**
  * Per-child naps and feeds, and how they reach the planner.
  *
- * The planner and `evaluateRoutineFit` still read one flat list of `FamilyRoutine`; this module owns
+ * The planner still reads one flat list of `FamilyRoutine`; this module owns
  * how that list is built (several naps and feeds per child, a feed interval expanded into discrete
  * times) and how each entry is named. A routine belongs to a child by `childId`, and its label is
  * resolved from the child's *current* name when it is read, so renaming Mia never leaves "Maia's nap"

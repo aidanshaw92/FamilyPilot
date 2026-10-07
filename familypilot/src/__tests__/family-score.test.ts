@@ -32,39 +32,43 @@ function venue(overrides: Partial<VenueDetail> = {}): VenueDetail {
   };
 }
 
-describe('calculateFamilyScore — routine fit', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 0, 1, 9, 0));
-  });
+describe('calculateFamilyScore — never ranks by the clock', () => {
+  // Browse first, plan second: the ranking is about the family, not about whether the next nap or feed leaves time to set
+  // off NOW. It used to: a routine factor scored a venue 92 with time to spare and 45 without, so Home reordered itself
+  // through the morning. Routines belong to a chosen day and are worked out by the planner (routine-advice.ts).
   afterEach(() => {
     vi.useRealTimers();
   });
+  const withRoutines: FamilyProfile = {
+    ...PROFILE,
+    routines: [
+      { id: 'r1', label: 'Nap', kind: 'nap', time: '09:10', durationMinutes: 60, atHome: true },
+      { id: 'r2', label: 'Lunch', kind: 'feed', time: '12:00', durationMinutes: 30, atHome: true },
+    ],
+  };
 
-  it('scores higher when there is a comfortable window before the next routine', () => {
-    const profile: FamilyProfile = {
-      ...PROFILE,
-      routines: [{ id: 'r1', label: 'Lunch', kind: 'feed', time: '15:00', durationMinutes: 30, atHome: true }],
-    };
-    const withTime = calculateFamilyScore(venue(), profile, {}).factors.routineFit;
-    const withoutRoutine = calculateFamilyScore(venue(), PROFILE, {}).factors.routineFit;
-    expect(withTime).toBeGreaterThan(withoutRoutine);
+  it('has no routine factor at all', () => {
+    expect(Object.keys(calculateFamilyScore(venue(), withRoutines, {}).factors)).not.toContain('routineFit');
   });
 
-  it('scores lower when leaving now would already run into the next routine', () => {
-    const soonProfile: FamilyProfile = {
-      ...PROFILE,
-      routines: [{ id: 'r1', label: 'Nap', kind: 'nap', time: '09:10', durationMinutes: 60, atHome: true }],
+  it('gives the same score at any time of day, routines or not', () => {
+    const at = (h: number, m: number) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 0, 1, h, m));
+      const result = calculateFamilyScore(venue({ driveMinutes: 25 }), withRoutines, {});
+      vi.useRealTimers();
+      return result;
     };
-    // driveMinutes (15) means leaving now can't beat a nap only 10 minutes away.
-    const fit = calculateFamilyScore(venue({ driveMinutes: 15 }), soonProfile, {}).factors.routineFit;
-    const neutral = calculateFamilyScore(venue({ driveMinutes: 15 }), PROFILE, {}).factors.routineFit;
-    expect(fit).toBeLessThan(neutral);
+    const scores = [at(8, 0), at(9, 5), at(11, 50), at(15, 0)].map((r) => r.score);
+    expect(new Set(scores).size).toBe(1);
+    expect(at(9, 5).score).toBe(calculateFamilyScore(venue({ driveMinutes: 25 }), PROFILE, {}).score);
   });
 
-  it('is neutral when the family has no routines set', () => {
-    const { factors } = calculateFamilyScore(venue(), PROFILE, {});
-    expect(factors.routineFit).toBe(75);
+  it('never explains a place with a time to leave', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 0, 1, 9, 0));
+    const { explanation, cautions } = calculateFamilyScore(venue({ driveMinutes: 30 }), withRoutines, {});
+    expect([...explanation, ...(cautions ?? [])].join(' ')).not.toMatch(/leave by|nap|feed|lunch time|routine/i);
   });
 });
 
@@ -75,16 +79,6 @@ describe('calculateFamilyScore — bespoke explanations', () => {
   });
   afterEach(() => {
     vi.useRealTimers();
-  });
-
-  it('leads with the routine-fit "leave by" line when a routine is set and there is time', () => {
-    const profile: FamilyProfile = {
-      ...PROFILE,
-      routines: [{ id: 'r1', label: 'Lunch', kind: 'feed', time: '12:00', durationMinutes: 30, atHome: true }],
-    };
-    const { explanation } = calculateFamilyScore(venue({ driveMinutes: 30 }), profile, {});
-    expect(explanation[0]).toContain('Leave by');
-    expect(explanation[0]).toContain('Lunch');
   });
 
   it('surfaces a concrete visit-duration line rather than only the age-suitability filler', () => {

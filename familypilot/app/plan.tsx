@@ -522,6 +522,7 @@ export default function PlanScreen() {
       view={view}
       notices={partyNotices}
       onApplyOption={applyOption}
+      onChangePlan={handleChangePlan}
       onToggleLunch={toggleLunch}
       onBack={handleBack}
       onSave={() => void handleSave()}

@@ -6,13 +6,18 @@ import { childAgeMonths } from '@/src/services/matching/age-suitability';
 import { childAgeVerdicts, joinNames, outsideRangeCautions, suitsChildrenLine } from '@/src/utils/child-fit';
 import { childUsesBuggy, familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
 import { describeOpeningToday, OpeningTodayState } from '@/src/utils/opening-today';
-import { evaluateRoutineFit } from '@/src/utils/routine-fit';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 import { observationLine, ParentObservations } from '@/src/services/matching/parent-observations';
 
 /**
- * Family Match: whether a place will work for THIS family today, and why, derived from the household, the venue's
- * evidence and today's context.
+ * Family Match: whether a place suits THIS family, and why, derived from the household and the venue's evidence.
+ *
+ * BROWSE FIRST, PLAN SECOND. This is what Home, Explore, Halfway and Venue Detail say BEFORE the parent has said when
+ * they want to go, so it is built from what is stable about the family (the children and what is confirmed for them,
+ * buggy or sling, must-haves, how far they will travel) and never from the clock: no "leave by", no nap or feed timing,
+ * nothing that assumes they are setting off now. Whether a particular day works around naps and feeds is the planner's
+ * job, once they have chosen a date and a time (routine-advice.ts). Today's opening state is still stated, as a fact
+ * about the place, and today's weather where it genuinely matters (rain and an outdoor place).
  *
  * WHAT THIS REPLACES. The Family Fit number is a weighted blend in which every fact nobody has checked is replaced by
  * a neutral default (an unknown age range scores 75, an unknown buggy score 70, "good weather" is guessed from the
@@ -32,7 +37,7 @@ import { observationLine, ParentObservations } from '@/src/services/matching/par
  *  - `excellent` needs several confirmed positives, at least two of them facts about the venue, and nothing left to
  *    check. `good` needs at least two confirmed positives and nothing against.
  *  - Children are named only where a fact is about that child (the recommended ages include them, their buggy is
- *    covered, their nap is respected, baby changing for a baby), so "Good for Sloane today" is a claim with evidence.
+ *    covered, baby changing for a baby), so "Good for Sloane" is a claim with evidence.
  *  - A place FamilyPilot has not reviewed is `not_reviewed`, whatever the number says; the logistics that ARE known
  *    (open today, how far) are still stated.
  */
@@ -64,7 +69,7 @@ export interface ChildLens {
 
 export interface FamilyMatchResult {
   verdict: MatchVerdict;
-  /** The sentence a parent reads first: "Good for Sloane today". */
+  /** The sentence a parent reads first: "Good for Sloane". */
   headline: string;
   /** The children a confirmed fact is about. Empty when no fact is about a particular child. */
   forNames: string[];
@@ -192,7 +197,7 @@ function cap(text: string): string {
 /**
  * The sentence a parent reads first, about the children rather than "the family".
  *
- * With one child it is "Good for Sloane today". With several it keeps them apart when the evidence does: "Could work
+ * With one child it is "Good for Sloane". With several it keeps them apart when the evidence does: "Could work
  * for Sloane, but check buggy access for Ozzie". Children are named only where a line is about them; a household with
  * a child nobody has a fact about reads "your family", never a guess.
  */
@@ -208,7 +213,8 @@ function headlineFor(input: {
   notToday?: boolean;
 }): string {
   const { verdict, lens, children, forNames, lines, unknownReason, notToday = false } = input;
-  const when = notToday ? ', but not today' : ' today';
+  // A judgement about the family, not about leaving now. Only a place that is shut today says so, as a fact.
+  const when = notToday ? ', but not today' : '';
   if (verdict === 'not_reviewed') return 'Family suitability not yet reviewed';
 
   const namedWorks = lens.filter((l) => l.state === 'works' && l.name).map((l) => l.name);
@@ -224,7 +230,7 @@ function headlineFor(input: {
     const breachKids = lens.filter((l) => l.state === 'concern' && l.name);
     const everyone = breachKids.length === 0 || breachKids.length === children.length;
     const breachWho = !everyone && joinNames(breachKids.map((l) => l.name)) ? joinNames(breachKids.map((l) => l.name)) : 'your family';
-    return `Probably not for ${breachWho}${notToday ? '' : ' today'}`;
+    return `Probably not for ${breachWho}`;
   }
 
   // Several children, and the place is confirmed for some but not all of them: say who, and say what is open for the rest.
@@ -479,16 +485,15 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
     }
   }
 
-  // ---- routines --------------------------------------------------------------------------------------------
-  // Routine timing ("leave by 12:00 to be home for the nap") is about a visit TODAY: on a day they cannot go it is not said.
-  const routine = notToday ? { reason: null, caution: null } : evaluateRoutineFit(profile, drive, now);
-  if (routine.reason) reasons.push({ key: 'routine', text: routine.reason });
-  if (routine.caution) softCautions.push({ key: 'routine-clash', text: routine.caution });
+  // ---- routines: deliberately absent ----------------------------------------------------------------------------
+  // Naps and feeds are not read here. "Leave by 10:48 to be home for Ozzie's feed" assumed the parent was going now, and
+  // counted that as a reason the place suits them. Routines are about a chosen day and time, so they are worked out by
+  // the planner once there is one (routine-advice.ts), and never rank, recommend or caution against a place before then.
 
   // Lead with what is about THIS family (their children, their needs), then the venue's facilities, and the plain
   // logistics (open today, how far) last: the first lines a parent reads should be the ones only they would get.
   const rank = (key: string): number => {
-    const order = ['age', 'buggy', 'must-', 'baby-changing', 'routine', 'toilets', 'parking', 'cafe', 'weather', 'open-today', 'drive-ok'];
+    const order = ['age', 'buggy', 'must-', 'baby-changing', 'toilets', 'parking', 'cafe', 'weather', 'open-today', 'drive-ok'];
     const index = order.findIndex((prefix) => key === prefix || key.startsWith(prefix));
     return index === -1 ? order.length : index;
   };
@@ -612,13 +617,11 @@ export function matchEarnsStar(verdict: MatchVerdict): boolean {
  * only what the clock says.
  */
 export function matchCardReason(match: FamilyMatchResult): string {
-  // WHY IT IS ON HOME: lead with what is about THIS family. Their routine ("Leave by 12:00 to be home in time for Ozzie’s
-  // nap") first, then a fact about a particular child, then anything else confirmed. Never the generic.
+  // WHY IT IS ON HOME: lead with what is about THIS family: a confirmed fact about a particular child (their ages are
+  // in the recommended range, their buggy is covered), then anything else confirmed. Never the generic, and never the
+  // clock: a card is read while browsing, not while leaving.
   const others = match.reasons.filter((line) => line.key !== 'drive-ok' && line.key !== 'open-today');
-  const lead =
-    others.find((line) => line.key === 'routine') ??
-    others.find((line) => (line.childIds?.length ?? 0) > 0) ??
-    others[0];
+  const lead = others.find((line) => (line.childIds?.length ?? 0) > 0) ?? others[0];
   if (match.verdict === 'good' || match.verdict === 'excellent') {
     // Open today, or (when it is shut today) the line that says so: a good place is never shown as if it were open.
     const open = match.reasons.find((line) => line.key === 'open-today') ?? (match.availableToday === false ? match.cautions.find((line) => line.key === 'closed-today' || line.key === 'closed-for-today') : undefined);

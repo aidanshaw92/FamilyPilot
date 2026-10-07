@@ -5,7 +5,6 @@ import type { ParentObservations } from '@/src/services/matching/parent-observat
 import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDetail, WeatherInfo } from '@/src/types';
 
 import { getChildNames } from './profile-defaults';
-import { evaluateRoutineFit } from './routine-fit';
 import { buildFacilityMissingCaution } from './facility-match';
 import { familyNeedsStepFree } from './family-mobility';
 
@@ -67,9 +66,8 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
   const detail = toVenueDetail(venue);
   const enrichmentStatus: EnrichmentStatus = venue.enrichmentStatus ?? 'provider_only';
   const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus, weather });
-  const routineFit = evaluateRoutineFit(profile, venue.driveMinutes);
   // Everything that counts AGAINST this family lives on the score, in one list: profile-derived
-  // cautions first (the ones a parent can act on before leaving), then the reviewed facts that
+  // cautions first, then the reviewed facts that
   // count against them. The venue's own notes stay in `goodToKnow` and render as notes, not
   // warnings: "The cafe has highchairs" is not a caution, and it was being drawn as one.
   const cautions = [
@@ -78,7 +76,6 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
         buildDriveCaution(profile, venue.driveMinutes),
         buildFacilityMissingCaution(profile, detail.facilities),
         buildStepFreeCaution(profile),
-        routineFit.caution,
         ...(familyScore.cautions ?? []),
       ].filter((caution): caution is string => Boolean(caution)),
     ),

@@ -1,6 +1,5 @@
 import { FamilyProfile, FamilyScoreFactors, VenueDetail, WeatherInfo } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
-import { RoutineFit } from '@/src/utils/routine-fit';
 import { evaluateAgeRecommendation } from '@/src/services/matching/age-suitability';
 import { childAgeVerdicts, outsideRangeCautions, suitsChildrenLine } from '@/src/utils/child-fit';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
@@ -194,17 +193,13 @@ export function buildTrustedExplanation(
   facts: MatchableVenueFacts,
   factors: FamilyScoreFactors,
   weather?: WeatherInfo | null,
-  routineFit?: RoutineFit,
 ): string[] {
   const reasons: string[] = [];
   const children = profile.members.filter((m) => m.role === 'child');
 
-  // Lead with the most time-bound, bespoke facts before the reviewed-but-often-generic ones
-  // below — a routine-fit line or a concrete visit duration says something no other venue's
-  // card would say in quite the same way.
-  if (routineFit?.reason) {
-    reasons.push(routineFit.reason);
-  }
+  // Lead with the most bespoke facts before the reviewed-but-often-generic ones below — a concrete
+  // visit duration says something no other venue's card would say in quite the same way. Never a
+  // routine: whether a day works around naps and feeds is the planner's question, not the place's.
 
   if (facts.visitDurationMinutes != null) {
     reasons.push(`Typically a ${formatDurationAdjective(facts.visitDurationMinutes)} visit`);

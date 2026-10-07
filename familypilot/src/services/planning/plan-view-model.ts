@@ -2,7 +2,7 @@ import { DayItinerary, SequenceLeg, SequenceStop } from '@/src/types/day-sequenc
 import { PlanAlternative, PlanCaveat, TravelDiagnostics } from '@/src/types/day-plan';
 import { PushchairSuitability } from '@/src/types/enrichment';
 import { RoutineAdviceContext, SubjectResolver, reasonAboutRoutines, subjectPhrase } from './routine-advice';
-import { VisitResolution, visitNote } from './visit-duration';
+import { VisitResolution, allowedLabel, visitNote } from './visit-duration';
 import { mustHaveLabel } from './must-have-labels';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { TravelMode } from '@/src/types/travel';
@@ -110,8 +110,25 @@ export interface PlanAdviceView {
  * How the day sits around the family's routines. A routine overlapping the outing is advice here, never a refusal: see
  * routine-advice.ts for the three tiers.
  */
+/**
+ * FamilyPilot's answer, before the diagnostics: the one change that clears the most routine clashes, verified by
+ * re-running the day (an alternative's `resolves` are the routines it no longer overlaps at all, and it adds none).
+ */
+export interface PlanRecommendationView {
+  /** "Best option: arrive around 10:00" / "Best option: stay 1 hr instead". */
+  title: string;
+  /** What it does and what it leaves, in sentences that claim no more than the re-run proved. */
+  lines: string[];
+  /** Applying it re-runs the plan with this change. */
+  option: PlanAdviceOptionView;
+}
+
 export interface PlanRoutinesView {
   headline: string;
+  /** Leads the section when a change would clear a clash. */
+  recommendation: PlanRecommendationView | null;
+  /** The other verified changes, under the recommendation. */
+  otherOptions: PlanAdviceOptionView[];
   advice: PlanAdviceView[];
   homeBefore: string[];
   together: string[];
@@ -426,6 +443,70 @@ function needsCheckingLines(itinerary: DayItinerary): string[] {
   })];
 }
 
+/** Two options are the same change when they would re-run the day the same way. */
+function optionIdentity(option: PlanAdviceOptionView): string {
+  const a = option.alternative;
+  return a ? `${a.kind}|${a.arriveAt}|${a.visitMinutes}` : option.kind;
+}
+
+/**
+ * The best verified change for the clashes that matter (a routine kept at home that the outing runs into), or null when
+ * none clears one. Best = clears the most of those clashes; then moving the time over cutting the visit short (the
+ * parent asked for this place for this long); then the smallest move; then earlier over later.
+ */
+function recommend(
+  reasoning: ReturnType<typeof reasonAboutRoutines>['advice'],
+  advice: PlanAdviceView[],
+  resolveSubject: SubjectResolver,
+  originalArrive: number | undefined,
+): PlanRecommendationView | null {
+  const softKeys = new Set(reasoning.filter((a) => a.severity === 'soft').map((a) => `${a.familyId}\u0000${a.routineId}`));
+  const candidates = new Map<string, PlanAdviceOptionView>();
+  for (const item of advice) for (const option of item.options) if (option.alternative) candidates.set(optionIdentity(option), option);
+  const clears = (option: PlanAdviceOptionView) =>
+    (option.alternative?.resolves ?? []).filter((r) => softKeys.has(`${r.familyId}\u0000${r.routineId}`)).length;
+  const shift = (option: PlanAdviceOptionView) => {
+    const a = option.alternative!;
+    if (a.kind === 'shorter' || originalArrive === undefined) return 0;
+    const [h, m] = a.arriveAt.split(':').map(Number);
+    return Math.abs(h * 60 + m - originalArrive);
+  };
+  const kindRank = (option: PlanAdviceOptionView) => ({ earlier: 0, later: 1, shorter: 2 })[option.alternative!.kind];
+  const best = [...candidates.values()]
+    .filter((option) => clears(option) > 0)
+    .sort((x, y) => clears(y) - clears(x) || Number(x.alternative!.kind === 'shorter') - Number(y.alternative!.kind === 'shorter') || shift(x) - shift(y) || kindRank(x) - kindRank(y))[0];
+  if (!best) return null;
+
+  const alternative = best.alternative!;
+  const phrase = (a: { familyId: string; routineId: string; kind: 'nap' | 'feed' }) => subjectPhrase(resolveSubject(a.familyId, a.routineId, a.kind), a.kind);
+  const resolved = new Set(alternative.resolves.map((r) => `${r.familyId}\u0000${r.routineId}`));
+  const cleared = reasoning.filter((a) => resolved.has(`${a.familyId}\u0000${a.routineId}`)).map(phrase);
+  const left = reasoning.filter((a) => !resolved.has(`${a.familyId}\u0000${a.routineId}`));
+  // Names come from this device's profile; without them two naps read the same ("your nap"), so they are counted instead.
+  const distinct = [...new Set(cleared)];
+  const what = distinct.length === cleared.length ? joinPhrases(cleared) : `${cleared.length} of your routines`;
+  const lines = [`That keeps the day clear of ${what}.`];
+  for (const item of left) {
+    // Still overlapping after the change (the re-run never adds one). Where it would fall is not known for the new
+    // times, so the sentence says only that it does.
+    lines.push(
+      item.severity === 'soft'
+        ? `${upperFirst(phrase(item))} would still overlap the day; the details are below.`
+        : `${upperFirst(phrase(item))} still falls during the day.`,
+    );
+  }
+  const title =
+    alternative.kind === 'shorter'
+      ? `Best option: stay ${allowedLabel(alternative.visitMinutes)} instead`
+      : `Best option: arrive around ${alternative.arriveAt}`;
+  return { title, lines, option: { ...best, label: alternative.kind === 'shorter' ? `Stay ${allowedLabel(alternative.visitMinutes)}` : `Arrive at ${alternative.arriveAt}` } };
+}
+
+function joinPhrases(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? '';
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+}
+
 function routinesView(input: PlanViewModelInput, context: PlanViewContext | undefined): PlanRoutinesView | null {
   const { itinerary } = input;
   const insights = itinerary.routineInsights ?? [];
@@ -452,7 +533,7 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
   }
   const note = visitNote(input.visit, input.anchorCategory, routineSentence);
   if (!input.hasRoutines && insights.length === 0 && homeAfter.length === 0) {
-    return note ? { headline: '', advice: [], homeBefore: [], together: [], visitNote: note, clear: false } : null;
+    return note ? { headline: '', recommendation: null, otherOptions: [], advice: [], homeBefore: [], together: [], visitNote: note, clear: false } : null;
   }
   const adviceContext: RoutineAdviceContext = {
     itinerary,
@@ -465,23 +546,41 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
   };
   const reasoning = reasonAboutRoutines(adviceContext);
   const soft = reasoning.advice.filter((a) => a.severity === 'soft').length;
-  const headline = !reasoning.hasOverlap
-    ? 'Fits the routines you told us about'
-    : soft > 0
-      ? soft === 1
-        ? 'One routine overlaps this day. Here’s what we’d suggest'
-        : `${soft} routines overlap this day. Here’s what we’d suggest`
-      : 'Worth knowing about your routines';
+  const advice: PlanAdviceView[] = reasoning.advice.map((a) => ({
+    id: a.id,
+    severity: a.severity,
+    title: a.title,
+    where: a.where,
+    detail: a.detail,
+    options: a.options.map((option, index) => ({ key: `${a.id}#${index}`, kind: option.kind, label: option.label, alternative: option.alternative })),
+  }));
+  const recommendation = soft > 0 ? recommend(reasoning.advice, advice, resolveSubject, itinerary.stops[0]?.arrive) : null;
+  // The answer first. A day with nothing to act on "should work well"; a clash that one verified change clears leads with
+  // that change; a clash nothing clears says so plainly, and the details follow.
+  const headline = recommendation
+    ? recommendation.title
+    : soft === 0
+      ? 'This plan should work well'
+      : soft === 1
+        ? 'This plan works, with one routine to plan around'
+        : `This plan works, with ${soft} routines to plan around`;
+  // The recommendation's own option is not offered twice; every other verified option is, once.
+  const seen = new Set<string>(recommendation ? [optionIdentity(recommendation.option)] : []);
+  const otherOptions: PlanAdviceOptionView[] = [];
+  for (const item of advice) {
+    for (const option of item.options) {
+      const identity = optionIdentity(option);
+      if (seen.has(identity)) continue;
+      seen.add(identity);
+      otherOptions.push(option);
+    }
+  }
   return {
     headline,
-    advice: reasoning.advice.map((a) => ({
-      id: a.id,
-      severity: a.severity,
-      title: a.title,
-      where: a.where,
-      detail: a.detail,
-      options: a.options.map((option, index) => ({ key: `${a.id}#${index}`, kind: option.kind, label: option.label, alternative: option.alternative })),
-    })),
+    recommendation,
+    otherOptions: recommendation ? otherOptions : [],
+    // With the recommendation leading, the options sit above the details, so a detail that points at them says so.
+    advice: recommendation ? advice.map((item) => ({ ...item, detail: item.detail.replace(/([Tt])he options below/g, '$1he options above'), options: [] })) : advice,
     homeBefore: reasoning.homeBefore,
     together: reasoning.together,
     visitNote: note,

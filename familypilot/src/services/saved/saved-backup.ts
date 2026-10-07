@@ -155,7 +155,6 @@ export function backedUpItemToSavedItem(row: BackedUpItem): SavedItem {
         weatherFit: Number.NaN,
         budgetFit: Number.NaN,
         facilitiesMatch: Number.NaN,
-        routineFit: Number.NaN,
       },
       explanation: [],
     },
