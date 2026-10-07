@@ -165,6 +165,8 @@ export interface CommunityTip {
 
 export interface VenueDetail extends Venue {
   website?: string;
+  /** A confirmed, sourced admission price. Absent for every place today: a missing price is unknown, never free (services/pricing). */
+  admission?: import('@/src/services/pricing/admission').AdmissionPricing;
   phone?: string;
   photos: string[];
   facilities: FacilityType[];

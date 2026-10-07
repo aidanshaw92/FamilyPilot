@@ -74,6 +74,21 @@ function parseMaxSpend(estimatedSpend?: string): number | null {
   return null;
 }
 
+/**
+ * Whether enough places have a price on record for a price filter to mean anything.
+ *
+ * A place with no price is not "over budget" and not "free": it is unknown, and a price filter drops unknowns (it cannot say
+ * yes). When no place has a price, "Free" and "Under £25" return nothing at all, which reads as "there is nowhere free in
+ * London". So the price filters are offered only once a tenth of the places in hand carry a price; until then the sheet
+ * does not offer a control that can only empty the list.
+ */
+export const PRICE_FILTER_MIN_SHARE = 0.1;
+export function hasPriceCoverage(venues: readonly Pick<Venue, 'estimatedSpend'>[]): boolean {
+  if (venues.length === 0) return false;
+  const priced = venues.filter((v) => parseMaxSpend(v.estimatedSpend) !== null).length;
+  return priced / venues.length >= PRICE_FILTER_MIN_SHARE;
+}
+
 function matchesBudget(venue: Venue, budget: ExploreBudgetFilter): boolean {
   if (budget === 'any') return true;
   const spend = parseMaxSpend(venue.estimatedSpend);
