@@ -114,7 +114,28 @@ function placeRowAgeDays(placeRow) {
   return (Date.now() - timestamp) / 86_400_000;
 }
 
+/**
+ * `options.googleAccess === GOOGLE_ACCESS_DISABLED` is an execution path, not a budget setting.
+ *
+ * The budget gate (`places-budget.js`) decides whether a Google call MAY be made and refuses it loudly. This is the
+ * other question: whether this run is one that asks at all. A re-extraction of stored pages, or a refetch of websites
+ * the catalogue already knows, has no use for Place Details whatever the row's age, so the request is never built.
+ * Nothing here depends on an environment variable being set correctly in production, which is what "fails closed"
+ * means for a cost control: the path that cannot spend is the one with no call in it.
+ */
+const GOOGLE_ACCESS_DISABLED = 'disabled';
+
 async function ensurePlaceDetails(familypilotId, placeRow, options = {}) {
+  if (options.googleAccess === GOOGLE_ACCESS_DISABLED) {
+    // Logged with the same shape as the budget gate's skip, so the two reasons for not asking Google read alike.
+    console.warn(JSON.stringify({
+      tag: 'enrichment_place_details_skipped',
+      familypilotPlaceId: familypilotId,
+      code: 'google_access_disabled',
+      detail: 'this run never asks Google: stored record used as is',
+    }));
+    return placeRow;
+  }
   // A reviewed official-source override supplies the website, so a fresh row needs nothing from Google: without this,
   // a venue Google holds no website for (Tooting Commons) bought a Place Details call on every crawl to learn so again.
   const knowsWebsite = Boolean(placeRow?.website) || hasOfficialSourceOverride(familypilotId);
@@ -326,7 +347,10 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
   /** A page may never be handed more time than the gather itself has left. */
   const pageBudgetNow = () => Math.min(PAGE_BUDGET_MS, windowRemaining());
 
-  const enrichedPlace = await ensurePlaceDetails(familypilotPlaceId, placeRow);
+  const enrichedPlace = await ensurePlaceDetails(familypilotPlaceId, placeRow, {
+    googleAccess: options.googleAccess,
+    jobId: options.jobId,
+  });
 
   /**
    * Who this crawl is for, and who else shares the sites it may touch. Without the second half a
@@ -605,6 +629,7 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
 module.exports = {
   gatherEvidenceForVenue,
   ensurePlaceDetails,
+  GOOGLE_ACCESS_DISABLED,
   MAX_PAGES,
   USABLE_PAGE_TARGET,
   MAX_FETCH_ATTEMPTS,

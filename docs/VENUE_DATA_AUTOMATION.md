@@ -145,6 +145,25 @@ update private.venue_data_settings set refresh_enabled=false where id=true;
 
 This stops this maintenance function, not the pre-existing discovery/report worker. Diagnose and resolve the underlying issue before re-enabling it.
 
+## After a change to the extractor
+
+Improved extraction rules used to reach a venue only when the periodic refresh happened to revisit it (at most 50
+venues a day, and only those untouched for 14 days or near expiry), so a rules release took weeks to show. Now the
+rules carry a version, `EXTRACTOR_VERSION` in `server/enrichment/_lib/evidence-extractor.js`, recorded on every draft
+they produce. After deploying a change that bumps it, queue one no-network re-read of stored evidence:
+
+```sql
+select public.enqueue_reextract_jobs('official-source-rules-v3');   -- the new version string
+```
+
+or `POST /api/enrichment?action=enqueue-reprocess` with the admin token. This queues a `reextract` job for every
+destination whose newest draft was made by an older version and whose stored pages are still inside the 14-day approval
+window; the every-minute worker then re-reads each venue's stored pages with the current rules and runs the ordinary
+approval, dating every claim from the original reading. It is idempotent (a second call queues nothing new), it never
+asks Google, and it fetches nothing. Venues whose stored evidence is too old to publish from are left for the ordinary
+refresh, or for `enqueue_venue_enrichment_jobs('refetch_official', array[...])`, which re-crawls known websites with
+Google disabled.
+
 ## Validation and practical limits
 
 320 automated tests passed across 32 suites; shipped app type checking and the 47-route web export passed. Tests cover unsupported/model-invented facts, stale/future sources, contradictory evidence, withdrawal after source changes, field expiry, attendance/date validation, reminder timing, report conflicts, repeated accounts and source rechecks.

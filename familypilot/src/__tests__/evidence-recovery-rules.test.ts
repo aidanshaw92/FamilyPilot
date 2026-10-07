@@ -11,6 +11,7 @@ const {
   negationScope,
   matchFacilityList,
   isStreetParkingRestriction,
+  isNavigationChrome,
 } = require('../../../server/enrichment/_lib/evidence-extractor');
 const { decodeHtmlEntities, cleanEvidenceSnippet } = require('../../../server/enrichment/_lib/evidence-text-utils');
 const { isBotChallengeText, isCloudflareChallenge, scoreLink } = require('../../../server/enrichment/_lib/html-text-extractor');
@@ -211,6 +212,27 @@ describe('pages that were counted as read but carried nothing', () => {
     expect(isEvidenceBearingSource({ extractedText: 'To regain access, please make sure that cookies and JavaScript are enabled before reloading the page.', pageTitle: 'Pardon Our Interruption', facts: [] })).toBe(false);
     expect(isEvidenceBearingSource({ extractedText: 'Burgh House -->', pageTitle: 'Burgh House', facts: [] })).toBe(false);
     expect(isEvidenceBearingSource({ extractedText: 'Our opening hours vary by season, please check before travelling.' })).toBe(true);
+  });
+});
+
+describe('navigation chrome is not a statement', () => {
+  it('a flattened footer naming "play areas" is not a playground (Waterlow Park)', () => {
+    const footer = 'Thursday on Lauderdale lawn Uncategorised Funny Bones on stage 30 August Uncategorised Sunday 23 August '
+      + '– Monoversals take to the stage in the Park Back To Top Home News & Events The Park Activities – volunteering, '
+      + 'play areas, sports The Friends Sitemap Friends of Waterlow Park The Voice of Park Users Site by diditon.com';
+    expect(isNavigationChrome(footer)).toBe(true);
+    const facts = extractEvidenceFromText(footer, meta);
+    expect(facts.find((f: { field: string }) => f.field === 'playground')).toBeUndefined();
+  });
+
+  it('one stray "Newsletter" after a council amenities list does not unread the list (London Fields)', () => {
+    const amenities = 'Amenities 2 children’s play areas Cricket pitch Lido and lido café Outdoor gym Pétanque area '
+      + 'Table tennis table 2 tennis courts Toilets and accessible toilets Wildflower meadow Book courts and pitches '
+      + 'Newsletter Sign up for the parks newsletter';
+    expect(isNavigationChrome(amenities)).toBe(false);
+    const facts = extractEvidenceFromText(amenities, meta);
+    expect(facts.find((f: { field: string }) => f.field === 'toilets')?.value).toBe('yes');
+    expect(facts.find((f: { field: string }) => f.field === 'cafe')?.value).toBe('yes');
   });
 });
 

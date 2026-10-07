@@ -541,7 +541,29 @@ async function createApprovedClaim({
     checkedAt,
   });
 
+  /**
+   * The same fact from the same reading is not a new claim.
+   *
+   * `replace_venue_claim` supersedes whatever is active and inserts, unconditionally: on 7 Oct 2026 production held 529
+   * superseded rows behind 183 active ones, most of them a page re-read saying what it said before. That churn was
+   * tolerable while every run was a refetch, because the reading date moved. Re-extracting STORED pages keeps the
+   * reading date, so a second pass over the same text must change nothing -- otherwise "idempotent" would be a claim
+   * about the values and not about the rows. Identity is the whole published fact: value, source, quote, the date it
+   * was read and the date it lapses. A new reading of the same page, or a new quote for the same value, still replaces.
+   */
+  const current = await getActiveClaimForField(familypilotPlaceId, fieldKey);
+  if (current && isSameClaim(current, claim)) return current;
+
   return replaceActiveClaim(claim);
+}
+
+function isSameClaim(current, next) {
+  return JSON.stringify(current.valueJson) === JSON.stringify(next.valueJson)
+    && (current.sourceUrl ?? null) === (next.sourceUrl ?? null)
+    && (current.evidenceExcerpt ?? null) === (next.evidenceExcerpt ?? null)
+    && String(current.checkedAt ?? '').slice(0, 10) === String(next.checkedAt ?? '').slice(0, 10)
+    && String(current.validUntil ?? '').slice(0, 10) === String(next.validUntil ?? '').slice(0, 10)
+    && (current.approvedBy ?? null) === (next.approvedBy ?? null);
 }
 
 /**

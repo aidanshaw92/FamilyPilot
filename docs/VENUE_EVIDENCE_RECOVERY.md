@@ -12,6 +12,31 @@ the replay set. No personal records were read. Nothing was deployed, re-queued o
 or other provider calls were made. The production host cannot be reached from the sandbox, so nothing here was
 verified in production.
 
+## 0. Reconciling the claim counts (183, 182, 72, 77)
+
+Four numbers describe the same production table on 7 Oct 2026, and each answers a different question. The before/after
+figures in this document use the definitions below throughout.
+
+| Figure | Definition | Value on 7 Oct 2026 |
+| --- | ---: | ---: |
+| Rows with `status = 'active'` | every active row in `venue_claims`, any field, any venue | **183** |
+| Served claims | active rows whose `valid_until` is today or later and whose approver is not the legacy `ai_auto_approved` (the two conditions `isClaimActive` applies before a parent sees a fact) | **182** |
+| Venues with a served claim | distinct venues among the 182 | **72** |
+| Served core facts on destinations | the 182 restricted to the five fields this work is about (baby changing, toilets, café, parking, buggy access) and to the 151 destinations | **77** (79 across all venues) |
+
+What the other statuses hold: **121 disputed** (quarantined by the subject-scope guard or a source conflict; never
+served), **529 superseded** (an earlier reading of the same field, replaced; never served), **0 expired**. Only one
+active row is past its `valid_until` (Headstone Manor's buggy rating, an editor's claim from 11 Aug), so there is no
+expiry wave: 179 of the 183 active rows were created on or after 1 Oct, during the refresh that followed PR #159.
+
+The due diligence report quotes the 183 figure. A figure of about 73 is the venue count, not a claim count: no
+definition over this table yields 73 claims. The report's "claims expire after 60 days" is also not what the code does:
+facility, accessibility, SEND and buggy claims lapse 30 days after the reading they came from, everything else 90
+(`expiryDate` in `trusted-evidence.js`; `claim-freshness.js` mirrors it).
+
+For the before/after measurement in sections 4 and 6, "before" is the served-core-facts definition, per field and per
+venue, on 7 Oct 2026, and "after" is the same query after the reprocessing pass.
+
 ## 1. Baseline (production, 7 Oct 2026)
 
 The baseline covers 151 stored destinations: parks, farms, museums, zoos, play and attractions. Restaurants are
@@ -188,30 +213,49 @@ the queue. It includes:
 - the email: [venue-email-template.md](venue-verification/venue-email-template.md);
 - the answer record: [answers-template.csv](venue-verification/answers-template.csv).
 
-## 6. Production actions (blocked: these need your approval, then merge and deploy)
+## 6. Getting the rules to the catalogue without a crawl and without Google
 
-None of these has been done.
+Root cause 1 (improved rules never reach stored venues) is fixed on this branch by reading what is already stored,
+rather than by fetching it again:
 
-1. **Merge and deploy** this branch.
-2. **Refetch the catalogue once** under the new rules. Insert one pending `regenerate` job per destination whose newest
-   evidence predates the deploy:
-   - in `venue_enrichment_jobs`: `status='pending'`, `mode='regenerate'`, `available_at=now()`;
-   - the minute worker drains it.
+- **Two job modes that never ask Google.** `reextract` re-reads the latest stored reading of each of a venue's pages
+  with the current extractor and no network of any kind. `refetch_official` re-crawls the website the catalogue
+  already knows. Both run through the ordinary approval pipeline (`reviewEvidence`, `reconcileSourceClaims`,
+  `approveDraft`) with every gate unchanged. The API reads the mode from the queue row
+  (`automation-store.getAutomationJobMode`), because the edge worker forwards only a `regenerate` boolean.
+- **Google is off by construction, not by setting.** `ensurePlaceDetails` takes `googleAccess: 'disabled'` and returns
+  the stored row before any request exists. This is independent of `ENRICHMENT_DETAILS_REFRESH_DAYS` and of the budget
+  gate's environment flags, which stay as they were. `evidence-reprocess.test.ts` proves it against a control: the same
+  stale, websiteless row asks Google on the ordinary path and never on the disabled one, and a whole gather in
+  `refetch_official` touches only the known website.
+- **Provenance is untouched.** `verifiedBundleForVenue` carries each stored row's `retrievedAt`, scope and fetch status
+  through unchanged, so a claim produced by re-extraction is dated from the reading and lapses when that reading would
+  have. A page read 15 days ago yields nothing. Nothing in the path writes a date.
+- **Idempotent.** An approval that would re-create an identical active claim (same value, source, quote, reading date,
+  expiry and approver) is a no-op (`claims-store.createApprovedClaim`). Before this, every re-read superseded and
+  re-inserted the same fact: 529 superseded rows behind 183 active ones.
+- **Traceable.** Every draft records `model = EXTRACTOR_VERSION` and `source_context.{evidenceMode, extractorVersion,
+  googleAccess, jobId}`. A claim's `approved_from_draft_id` therefore says which run and which rules produced it, and a
+  withdrawal in the same run is a `disputed` row whose `updated_at` falls in the run.
+- **Repeatable after any future extractor change (gate 6).** `EXTRACTOR_VERSION` in `evidence-extractor.js` is bumped
+  when the rules change. `select enqueue_reextract_jobs('<version>')` (or `POST ?action=enqueue-reprocess`) queues a
+  `reextract` job for every destination whose newest draft was made by an older version and whose stored pages are
+  still inside the approval window. It touches the queue only; the every-minute worker does the reading. No crawl is
+  triggered by a deploy.
 
-   Website fetches are free. To be certain the pass makes no Place Details calls, set
-   `ENRICHMENT_DETAILS_REFRESH_DAYS=60` for its duration. Almost every place row was fetched between 28 Sep and 7 Oct,
-   so it is inside the 14-day default anyway. Venues with an override skip Place Details already. Restore the value
-   afterwards.
-3. **Re-run the baseline queries** after the pass and compare them with section 1. This is the first measurement in
-   production. Everything above is a local replay.
-4. **Decide how venue staff answers are stored.** The claims schema has no source type for them (see the queue
-   document).
+The migration is `familypilot/supabase/migrations/20261007150000_reextract_job_modes.sql`.
 
-Separately, root cause 1 is still present. Without a release-triggered refetch, every future extractor improvement
-will wait weeks to reach venues. A small follow-up should enqueue `regenerate` for venues whose evidence predates the
-current extractor version.
+### Production run
 
-## 7. Limitations
+Recorded in section 9 once done. The order is: deploy; `enqueue_venue_enrichment_jobs('reextract', <5 canary ids>)`;
+inspect the claims those five produced and withdrew; `enqueue_reextract_jobs('official-source-rules-v3')` for the rest;
+then `refetch_official` only for destinations with no eligible stored reading inside the window.
+
+## 7. Staff answers (still a decision)
+
+The claims schema has no source type for a venue's emailed or phoned answer. See the queue document.
+
+## 8. Limitations
 
 - **All results are measured locally.** The replay uses each page's stored text. A live refetch reads today's page,
   which may say more, less or something different.
@@ -240,8 +284,6 @@ current extractor version.
 
   Your Step 1 iPhone review is still outstanding and is separate.
 
-## 8. Next action
+## 9. Production results
 
-Approve, merge and deploy. Then run the one-off refetch in section 6 and re-measure the section 1 baseline in
-production. That single pass is expected to deliver most of the gain measured here, at no provider cost and with no
-contact with venues. After that, work through the queue in priority order, starting with the Barnet browser check.
+To be filled in after the deploy and the reprocessing pass, using the section 0 definitions.

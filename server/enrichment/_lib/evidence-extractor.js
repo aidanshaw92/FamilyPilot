@@ -5,6 +5,21 @@ const { isEligibleScope } = require('./source-identity');
 const { isBotChallengeText } = require('./html-text-extractor');
 
 /**
+ * The version of the rules in this file, recorded on every draft the rules produce (`venue_enrichment_drafts.model`).
+ *
+ * Bump it whenever a change here can alter what a stored page yields. That record is what lets stored evidence be
+ * re-read after a deploy without crawling anything: `enqueue_reextract_jobs(version)` queues exactly the venues whose
+ * newest draft was produced by an older version and whose stored pages are still inside the approval window. Before
+ * this existed the improved rules of PR #159 reached one venue in two days, because nothing knew which venues they had
+ * not yet been applied to (see docs/VENUE_EVIDENCE_RECOVERY.md).
+ *
+ *   v2  the rules as deployed up to 7 Oct 2026
+ *   v3  entity decoding, multi-window reading, facility lists, parking and buggy wording, day restrictions, the
+ *       navigation-chrome guard
+ */
+const EXTRACTOR_VERSION = 'official-source-rules-v3';
+
+/**
  * What makes a sentence say this venue has a playground.
  *
  * Named rather than inlined because `isSoftPlayOnlyPlayground` below re-tests exactly these against
@@ -895,6 +910,34 @@ function isSuspiciousEmbeddedContent(sentence) {
   );
 }
 
+/**
+ * Site furniture that survived the HTML cleaner: a footer or menu flattened into the text.
+ *
+ * "Back To Top Home News & Events The Park Activities - volunteering, play areas, sports The Friends Sitemap Friends of
+ * Waterlow Park ... Site by diditon.com" (Waterlow Park, 7 Oct 2026 replay) read as a playground. A page's navigation
+ * names its sections; it does not state that the venue has them. Two or more DIFFERENT markers in one window is the
+ * threshold: a single "Newsletter" after a council's amenities list (London Fields) is still the list.
+ */
+const NAVIGATION_CHROME_MARKERS = [
+  /\bsitemap\b/i,
+  /\bback\s+to\s+top\b/i,
+  /\bsite\s+by\b/i,
+  /\bskip\s+to\s+(?:main\s+)?content\b/i,
+  /\bnews\s*&\s*events\b/i,
+  /\bcookie\s+(?:policy|settings|preferences)\b/i,
+  /\bprivacy\s+(?:policy|notice)\b/i,
+  /\bterms\s+(?:and|&)\s+conditions\b/i,
+  /\ball\s+rights\s+reserved\b/i,
+  /\bfollow\s+us\b/i,
+  /\buncategorised\b/i,
+];
+function isNavigationChrome(sentence) {
+  const text = String(sentence ?? '');
+  let markers = 0;
+  for (const marker of NAVIGATION_CHROME_MARKERS) if (marker.test(text)) markers += 1;
+  return markers >= 2;
+}
+
 function isScopedToiletClosure(sentence) {
   return /\b(?:these|those|the|our|one|a|this)\s+(?:public\s+)?toilets?\b[^.!?]{0,80}\b(?:closed|unavailable|out\s+of\s+service)\b|\b(?:closed|unavailable|out\s+of\s+service)\b[^.!?]{0,80}\b(?:toilet\s+block|these|those|the)\b/i.test(sentence);
 }
@@ -974,7 +1017,7 @@ function isDayRestricted(sentence, matchIndex, matchLength) {
 }
 
 function matchField(sentence, patterns, fieldId) {
-  if (isQuestionOnlyEvidence(sentence) || isSuspiciousEmbeddedContent(sentence)) return null;
+  if (isQuestionOnlyEvidence(sentence) || isSuspiciousEmbeddedContent(sentence) || isNavigationChrome(sentence)) return null;
   if (fieldId === 'parking' && hasParkingNegation(sentence)) {
     return { value: 'no', confidence: 'high' };
   }
@@ -1081,7 +1124,7 @@ function matchFacilityList(sentence, fieldId) {
   const itemPattern = LIST_ITEMS[fieldId];
   if (!itemPattern) return null;
   const text = String(sentence ?? '');
-  if (isQuestionOnlyEvidence(text) || isSuspiciousEmbeddedContent(text)) return null;
+  if (isQuestionOnlyEvidence(text) || isSuspiciousEmbeddedContent(text) || isNavigationChrome(text)) return null;
   LIST_INTRO.lastIndex = 0;
   let intro;
   while ((intro = LIST_INTRO.exec(text)) !== null) {
@@ -1457,6 +1500,8 @@ function buildEvidenceBundle(venueId, sources, sourceStatus, diagnostics = null)
 }
 
 module.exports = {
+  EXTRACTOR_VERSION,
+  isNavigationChrome,
   isEvidenceBearingSource,
   extractionSourceMeta,
   extractEvidenceFromText,

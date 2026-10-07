@@ -14,4 +14,24 @@ async function consumeAutomationDispatch(jobId, dispatchToken, venueId) {
   return data === true;
 }
 
-module.exports = { consumeAutomationDispatch };
+/**
+ * The job's own mode, read from the queue row rather than trusted from the request.
+ *
+ * The edge worker forwards one boolean (`regenerate`), so a mode it does not know collapses to "not regenerate". The
+ * API is the one place that holds service credentials and the job id, so it reads the mode itself. A job that cannot
+ * be read runs as the plainest mode (`generate`), which is the existing behaviour and spends nothing new.
+ */
+async function getAutomationJobMode(jobId) {
+  if (!jobId) return null;
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('venue_enrichment_jobs')
+    .select('mode')
+    .eq('id', jobId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.mode ?? null;
+}
+
+module.exports = { consumeAutomationDispatch, getAutomationJobMode };

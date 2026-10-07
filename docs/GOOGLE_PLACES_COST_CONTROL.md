@@ -129,6 +129,13 @@ All of these are environment variables. Unset means "inherit the layer above".
 | `PLACES_DETAIL_FRESH_DAYS` | `7` | how long a stored venue is served without a refresh |
 | `ENRICHMENT_DETAILS_REFRESH_DAYS` | `14` | how often enrichment re-buys Place Details |
 
+Two enrichment job modes sit outside this table because they contain no Google call to switch: `reextract` (re-read
+stored pages with the current extractor, no network at all) and `refetch_official` (re-crawl the website the catalogue
+already knows). Both pass `googleAccess: 'disabled'` to `ensurePlaceDetails`, which returns the stored row before a
+request exists, whatever the row's age and whatever these variables say. `evidence-reprocess.test.ts` pins that against
+a control. Use them for any pass whose purpose is to apply new rules or to re-read known websites, so that the pass
+cannot spend even if a variable above is wrong.
+
 **To stop all Google spend immediately:** set `GOOGLE_PLACES_ENABLED=false` in the Vercel production
 environment and redeploy. The app keeps serving stored venues and says in each response that it did
 not refresh. Nothing silently falls back to a live call, and nothing silently falls back to demo
