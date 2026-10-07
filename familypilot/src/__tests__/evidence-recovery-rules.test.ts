@@ -215,6 +215,26 @@ describe('pages that were counted as read but carried nothing', () => {
   });
 });
 
+describe('parking stated for disabled visitors is restricted parking (7 Oct 2026 production re-read)', () => {
+  // Tate Modern: the same page carries both. Before v4 the first read as general parking and the true "no" was withdrawn
+  // as a conflict with it.
+  const tateHeading = 'Facilities at Tate Modern Assistance dogs Autism Communication cards Access events Website Contact Us '
+    + 'Accessible car parking There are twelve parking spaces for disabled visitors, accessed via Park Street.';
+  it('"parking spaces for disabled visitors" under an "Accessible car parking" heading is not general parking', () => {
+    expect(field(tateHeading, 'parking')).toEqual([]);
+    expect(field('BY CAR There are no parking facilities at Tate Modern or in the surrounding streets.', 'parking')).toEqual(['parking=no']);
+    expect(field(`${tateHeading} BY CAR There are no parking facilities at Tate Modern or in the surrounding streets.`, 'parking')).toEqual(['parking=no']);
+  });
+  it('a reserved subset of a general car park keeps the general parking (Beckenham Place Park)', () => {
+    expect(field('Yes, there is a park and pay car park within Beckenham Place Park with 108 parking places including 6 places reserved for blue badge holders and electric charging stations.', 'parking')).toEqual(['parking=yes']);
+  });
+  it('general parking that merely adds disabled bays still counts; disabled-only still does not', () => {
+    expect(field('We have a large car park with dedicated disabled parking.', 'parking')).toEqual(['parking=yes']);
+    expect(field('Golders Hill Park car park eight bays in the park for Blue Badge holders only.', 'parking')).toEqual([]);
+    expect(field('Disabled parking is available within the main Visitor car park.', 'parking')).toEqual([]);
+  });
+});
+
 describe('navigation chrome is not a statement', () => {
   it('a flattened footer naming "play areas" is not a playground (Waterlow Park)', () => {
     const footer = 'Thursday on Lauderdale lawn Uncategorised Funny Bones on stage 30 August Uncategorised Sunday 23 August '

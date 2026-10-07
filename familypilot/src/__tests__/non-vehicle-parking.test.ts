@@ -57,8 +57,13 @@ describe('parking for things that are not cars does not establish car parking', 
   });
 
   it('preserves the car-parking qualifiers that make up the bulk of the corpus', () => {
-    // accessible 92 occurrences, priority 66, coach 18 -- all of them cars (or coaches), all kept.
-    expect(parkingFacts('Accessible parking is available for visitors with a Blue Badge.')).toContain('parking=yes');
+    // accessible 92 occurrences, priority 66, coach 18 -- all of them cars (or coaches), none rejected as a
+    // non-vehicle. "Accessible parking ... for visitors with a Blue Badge" is a car, but it is RESTRICTED parking,
+    // and since v4 the restricted-parking guard leaves it unknown like every other Blue Badge-only statement (Golders
+    // Hill Park below, Tate Modern in evidence-recovery-rules.test.ts). What this test pins is that the vehicle mask
+    // does not touch it: the sentence reaches the parking rules at all.
+    expect(parkingFacts('Accessible parking is available for visitors with a Blue Badge.')).toEqual([]);
+    expect(parkingFacts('Accessible parking is available for visitors with a Blue Badge. There is also a large visitor car park.')).toContain('parking=yes');
     expect(parkingFacts('Priority parking is available close to the main doors.')).toContain('parking=yes');
     expect(parkingFacts('Coach parking is available by prior arrangement.')).toContain('parking=yes');
   });

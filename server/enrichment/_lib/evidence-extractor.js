@@ -16,8 +16,10 @@ const { isBotChallengeText } = require('./html-text-extractor');
  *   v2  the rules as deployed up to 7 Oct 2026
  *   v3  entity decoding, multi-window reading, facility lists, parking and buggy wording, day restrictions, the
  *       navigation-chrome guard
+ *   v4  parking stated "for disabled visitors" and "accessible car parking" headings are restricted parking, not
+ *       general parking (Tate Modern, Tate Britain)
  */
-const EXTRACTOR_VERSION = 'official-source-rules-v3';
+const EXTRACTOR_VERSION = 'official-source-rules-v4';
 
 /**
  * What makes a sentence say this venue has a playground.
@@ -726,18 +728,26 @@ function hasLimitedParking(sentence) {
  * general parking, with disabled parking as well. Same mask-and-retest shape as the buggy and bike bays above.
  */
 const RESTRICTED_PARKING_PHRASE =
-  /\b(?:blue\s+badge|disabled|accessible)\s+(?:holders?\s+)?(?:parking|car\s+park(?:ing)?|bays?|spaces?|spots?)(?:\s+(?:bays?|spaces?))?\b/gi;
+  /\b(?:blue\s+badge|disabled|accessible)\s+(?:holders?\s+)?(?:parking|car\s+park(?:ing)?|bays?|spaces?|spots?)(?:\s+(?:bays?|spaces?))?\b|\b(?:parking\s+)?(?:spaces?|bays?|places?)\s+(?:are\s+)?(?:provided\s+|reserved\s+|available\s+|set\s+aside\s+)?for\s+(?:disabled|blue\s+badge|wheelchair)\s+(?:visitors|drivers|guests|customers|users|people|badge\s+holders|holders)?\b/gi;
 
 /**
  * A restriction that governs the WHOLE statement rather than naming one kind of bay: "Eight parking spaces are provided
  * for Blue Badge holders only." Nothing in such a sentence is general parking, so it is never masked and retested.
  */
 const RESTRICTION_QUALIFIER =
-  /\b(?:for|to)\s+(?:blue\s+badge|disabled)\s+(?:badge\s+)?holders?\b|\b(?:blue\s+badge|disabled)\s+(?:badge\s+)?holders?\s+only\b/i;
+  /\b(?:for|to)\s+(?:blue\s+badge|disabled)\s+(?:badge\s+)?holders?\b|\b(?:blue\s+badge|disabled)\s+(?:badge\s+)?holders?\s+only\b|\bfor\s+(?:disabled|blue\s+badge)\s+(?:visitors|drivers|guests|customers|users|people)\b/i;
+
+/**
+ * A reserved SUBSET of general parking: "108 parking places including 6 places reserved for blue badge holders"
+ * (Beckenham Place Park). The qualifier that follows governs the subset, not the statement, so the general parking
+ * before it still counts.
+ */
+const SUBSET_LEAD = /\b(?:including|incl\.|of\s+which|with\s+\d+|plus\s+\d+|some\s+of\s+(?:which|them))\b[^.!?]{0,40}$/i;
 
 function isOnlyRestrictedParking(sentence, yesPatterns) {
   const text = String(sentence ?? '');
-  if (RESTRICTION_QUALIFIER.test(text)) return true;
+  const qualifier = RESTRICTION_QUALIFIER.exec(text);
+  if (qualifier && !SUBSET_LEAD.test(text.slice(0, qualifier.index))) return true;
   // General parking must LEAD. "You can park in the top car park ... and disabled parking" states general parking and
   // adds disabled bays; "Disabled parking is available within the main Visitor car park" is about disabled parking,
   // whatever car park it is in, and stays unknown (Hatfield Park, pinned in non-vehicle-parking.test.ts).
@@ -766,8 +776,19 @@ function isStreetParkingRestriction(sentence) {
   return /\b(?:double|single)\s+yellow\b|\byellow\s+lines?\b|\bcontrolled\s+parking\b|\bparking\s+(?:zones?|permits?|restrictions?)\b|\bCPZ\b|\bno\s+parking\s+(?:at\s+any\s+time|mon|tue|wed|thu|fri|sat|sun|between|\d)|\b(?:High\s+Street|Road|Street|Lane|Avenue)\s+has\s+no\s+parking\b|\bno\s+loading\b/i.test(String(sentence ?? ''));
 }
 
+/**
+ * Parking stated FOR disabled visitors rather than as disabled bays: "There are twelve parking spaces for disabled
+ * visitors, accessed via Park Street" under the heading "Accessible car parking" (Tate Modern and Tate Britain, found in
+ * the production re-read of 7 Oct 2026). The adjective-first patterns below never saw it, so Tate Britain published
+ * general parking from it and Tate Modern's true "no parking facilities" was withdrawn as a conflict with it.
+ */
+const PARKING_FOR_DISABLED =
+  /\b(?:parking\s+)?(?:spaces?|bays?|places?)\s+(?:are\s+)?(?:provided\s+|reserved\s+|available\s+|set\s+aside\s+)?for\s+(?:disabled|blue\s+badge|wheelchair)\b|\bfor\s+(?:disabled|blue\s+badge)\s+(?:visitors|drivers|guests|customers|users|people|badge\s+holders|holders)\b/i;
+
 function hasRestrictedParking(sentence) {
   return (
+    /\baccessible\s+(?:car\s+)?parking\b/i.test(sentence) ||
+    PARKING_FOR_DISABLED.test(sentence) ||
     /\b(?:blue\s+badge|disabled)\s+(?:holder\s+)?parking\b/i.test(sentence) ||
     /\bparking\b[^.!?]{0,80}\b(?:blue\s+badge|disabled)\s+holders?\s+only\b/i.test(sentence) ||
     /\b(?:blue\s+badge|disabled)\s+holders?\s+only\b[^.!?]{0,80}\bparking\b/i.test(sentence)
@@ -1143,6 +1164,11 @@ function matchFacilityList(sentence, fieldId) {
     if (/\b(?:nearby|nearest|local|neighbouring)\s*$/i.test(text.slice(Math.max(0, at - 30), at))) continue;
     if (fieldId === 'cafe' && isOffSiteCafe(text.slice(at, at + 80))) continue;
     if (fieldId === 'parking' && (hasOffSiteParking(text.slice(at, at + 80)) || /\bcoach\b/i.test(text.slice(Math.max(0, at - 15), at)))) continue;
+    // A listed "Accessible car parking" or "parking spaces for disabled visitors" is a restricted bay, not the venue's
+    // general parking (Tate Modern's and Tate Britain's facilities lists, 7 Oct 2026). Judged on the item and its
+    // immediate context, the same way the sentence rule judges a whole statement.
+    if (fieldId === 'parking' && hasRestrictedParking(text.slice(Math.max(0, at - 20), at + item[0].length + 80))
+      && isOnlyRestrictedParking(text.slice(Math.max(0, at - 20), at + item[0].length + 80), FIELD_PATTERNS.find((f) => f.field === 'parking')?.yes)) continue;
     return {
       value: 'yes',
       confidence: 'high',
