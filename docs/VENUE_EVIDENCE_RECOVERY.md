@@ -245,6 +245,14 @@ rather than by fetching it again:
 
 The migration is `familypilot/supabase/migrations/20261007150000_reextract_job_modes.sql`.
 
+**v4 (same day).** Reviewing every claim the v3 production pass created or withdrew found one rule gap: "Accessible car
+parking: There are twelve parking spaces for disabled visitors, accessed via Park Street" read as general parking. It
+published Tate Britain's parking as `yes` and, on Tate Modern's page, conflicted with the true "There are no parking
+facilities at Tate Modern", withdrawing it. v4 treats parking stated *for* disabled or Blue Badge visitors, and an
+"Accessible car parking" heading, as restricted parking (unknown), in sentences and in facility lists, while a reserved
+subset of a general car park ("108 places including 6 reserved for blue badge holders") keeps the general parking.
+`enqueue_reextract_jobs('official-source-rules-v4')` re-reads the stored pages; nothing is fetched.
+
 ### Production run
 
 Recorded in section 9 once done. The order is: deploy; `enqueue_venue_enrichment_jobs('reextract', <5 canary ids>)`;
