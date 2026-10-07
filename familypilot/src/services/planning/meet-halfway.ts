@@ -364,7 +364,7 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
       } else if (result.verdict === 'excellent' || result.verdict === 'good') {
         if (hasChildGap(result)) {
           // Confirmed for some of the children only: the gap is what the parent reads, and it earns half the credit.
-          toCheck.push(role === 'mine' ? sentence : `We’re less certain it suits every child in ${who}`);
+          toCheck.push(role === 'mine' ? sentence : `We haven’t yet confirmed whether this activity suits every child in ${who}`);
           saidFit.add(role);
           bonus += result.verdict === 'excellent' ? 6 : 3;
         } else {

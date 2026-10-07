@@ -40,7 +40,7 @@ import { observationLine, ParentObservations } from '@/src/services/matching/par
  *    child: today only the venue's own published recommended ages including them. VISIT LOGISTICS is evidence that taking
  *    that child is practical: buggy access, baby changing and the like. Logistics never says "Good for Ozzie"; it says
  *    "Easy to visit with Ozzie". "Good for <child>" needs activity evidence, and a child without any is said to be uncertain
- *    ("we're less certain how well it suits Sloane"), never filled in from their age or the kind of place. A baby who is
+ *    ("We haven't yet confirmed whether this activity suits Sloane"), never filled in from their age or the kind of place. A baby who is
  *    carried, fed and changed is led by logistics, so no activity gap is raised for a child under a year old.
  *  - Children are named only where a fact is about that child (the recommended ages include them, their buggy is
  *    covered, baby changing for a baby), and the sentence says which kind of fact it is.
@@ -174,6 +174,16 @@ function mustHaveStatus(facility: FacilityType, facts: MatchableVenueFacts): { l
 
 const names = (members: readonly FamilyMember[]): string[] => members.map((m) => m.name.trim());
 
+/**
+ * The one way FamilyPilot says it has not confirmed that the place itself suits a child, in a parent's words and with the
+ * child's name: "we haven't yet confirmed whether this activity suits Sloane". It makes no claim about the venue (it does
+ * not say the venue failed to publish anything, and does not suggest it should have), and no claim about the child: nothing
+ * is inferred from their age or the kind of place. Used everywhere it is said, so it never reads two ways.
+ */
+export function unconfirmedSuitsClause(childNames: readonly string[]): string {
+  return `we haven’t yet confirmed whether this activity suits ${joinNames(childNames)}`;
+}
+
 const childUsesCarrier = (member: Pick<FamilyMember, 'mobility'>): boolean => member.mobility?.includes('carrier') ?? false;
 
 /**
@@ -229,12 +239,10 @@ function headlineFor(input: {
   lens: ChildLens[];
   children: readonly FamilyMember[];
   lines: { breaches: MatchLine[]; softCautions: MatchLine[]; hardUnknowns: MatchLine[]; softUnknowns: MatchLine[] };
-  /** Why nothing is known for a child, in a clause ("no age range is recorded for this place yet"). */
-  unknownReason: string;
   /** Shut today (all day, or already finished): the headline may judge the place but never claim today. */
   notToday?: boolean;
 }): string {
-  const { verdict, lens, children, lines, unknownReason, notToday = false } = input;
+  const { verdict, lens, children, lines, notToday = false } = input;
   // A judgement about the family, not about leaving now. Only a place that is shut today says so, as a fact.
   const when = notToday ? ', but not today' : '';
   if (verdict === 'not_reviewed') return 'Family suitability not yet reviewed';
@@ -245,7 +253,7 @@ function headlineFor(input: {
   const suitedNames = lens.filter((l) => l.state === 'works' && l.basis === 'activity' && l.name).map((l) => l.name);
   const easyNames = lens.filter((l) => l.state === 'works' && l.basis === 'logistics' && l.name).map((l) => l.name);
   const multi = children.length > 1;
-  const gap = multi ? gapPhrase(lens, lines, unknownReason) : null;
+  const gap = multi ? gapPhrase(lens, lines) : null;
 
   if (verdict === 'poor') {
     // Who the confirmed breach is about, where it is about particular children; otherwise the family.
@@ -288,9 +296,9 @@ function headlineFor(input: {
 
 /**
  * What is open for the children the place is not confirmed to work for, as the end of a sentence:
- * "check buggy access for Ozzie", "we're less certain about Ozzie: <why>", or both. Null when every child is covered.
+ * "check buggy access for Ozzie", "we haven't yet confirmed whether this activity suits Ozzie", or both. Null when every child is covered.
  */
-function gapPhrase(lens: ChildLens[], lines: { hardUnknowns: MatchLine[]; softCautions: MatchLine[]; softUnknowns: MatchLine[] }, unknownReason: string): string | null {
+function gapPhrase(lens: ChildLens[], lines: { hardUnknowns: MatchLine[]; softCautions: MatchLine[]; softUnknowns: MatchLine[] }): string | null {
   const checkKids = lens.filter((l) => l.state === 'check' && l.name);
   const unknownKids = lens.filter((l) => l.state === 'unknown' && l.name);
   const parts: string[] = [];
@@ -303,10 +311,9 @@ function gapPhrase(lens: ChildLens[], lines: { hardUnknowns: MatchLine[]; softCa
     parts.push(`check ${what} for ${joinNames(checkKids.map((k) => k.name))}`);
   }
   if (unknownKids.length > 0) {
-    // Parent language, with the specific reason where it is known: "we're less certain about Sloane: no age range is recorded".
-    parts.push(`we’re less certain about ${joinNames(unknownKids.map((k) => k.name))}: ${unknownReason}`);
+    parts.push(unconfirmedSuitsClause(unknownKids.map((k) => k.name)));
   }
-  return parts.length ? parts.join(' and ') : null;
+  return parts.length ? parts.join(', and ') : null;
 }
 
 export function evaluateFamilyMatch({ venue, profile, score, weather, now = new Date(), parentObservations = {} }: FamilyMatchInput): FamilyMatchResult {
@@ -534,7 +541,12 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
   reasons.sort((a, b) => rank(a.key) - rank(b.key));
 
   // ---- the verdict -----------------------------------------------------------------------------------------
-  const positives = reasons.length;
+  // "Open today" is one of the positives that can lift a place to good or excellent. A place that is shut today must not
+  // lose that point: whether it suits this family is the same on a Tuesday it is shut as on a Wednesday it is open (shut
+  // today is stated as a fact, never scored). So a place whose hours say it is shut today is counted as the open place it
+  // is on its other days, and nothing else about the verdict moves. Places open today, and places with no hours stated,
+  // are counted exactly as before.
+  const positives = reasons.length + (notToday ? 1 : 0);
   let verdict: MatchVerdict;
   if (unreviewed) {
     verdict = breaches.length > 0 ? 'poor' : 'not_reviewed';
@@ -571,13 +583,6 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
     return { id: child.id, name: child.name.trim(), state, basis, works, check: checkLines.map((l) => l.text) };
   });
 
-  // Why a child has nothing said about them. With no recommended ages on record there is nothing to compare an age to, which is
-  // the usual reason; otherwise it is a plain "not enough is recorded".
-  const unknownReason =
-    facts?.minRecommendedAge == null && facts?.maxRecommendedAge == null
-      ? 'no age range is recorded for this place yet'
-      : 'not enough is recorded about this place for them yet';
-
   // Several children and the place is confirmed for some of them but not all: whoever is left over is a gap in what is
   // known, so it can never be "excellent" (nothing left to check), and it is listed with the things to check.
   const confirmedKids = lens.filter((l) => l.state === 'works');
@@ -600,13 +605,13 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
   if (uncovered.length > 0) {
     softUnknowns.push({
       key: 'child-nothing-confirmed',
-      text: `We’re less certain how well it suits ${joinNames(uncovered.map((l) => l.name))}: ${unknownReason}`,
+      text: cap(unconfirmedSuitsClause(uncovered.map((l) => l.name))),
       childIds: uncovered.map((l) => l.id),
       topic: 'whether it suits them',
     });
   }
 
-  const headline = headlineFor({ verdict, lens, children, lines: { breaches, softCautions, hardUnknowns, softUnknowns }, unknownReason, notToday });
+  const headline = headlineFor({ verdict, lens, children, lines: { breaches, softCautions, hardUnknowns, softUnknowns }, notToday });
 
   // Shut today leads what stands in the way of going today, after a confirmed breach of what the family needs.
   const cautions = [...breaches, ...(availability ? [availability] : []), ...softCautions];
@@ -697,7 +702,7 @@ export function matchCardReason(match: FamilyMatchResult): string {
   }
   if (match.verdict === 'possible' && lead) {
     // A place that could work still says why it is here, then the one thing to check, so the card is never only a worry.
-    // The "less certain how well it suits" line is for the venue page: a card carries only what changes a decision.
+    // The "we haven't yet confirmed whether this activity suits" line is for the venue page: a card carries only what changes a decision.
     const issue = match.cautions[0] ?? match.toCheck.find((line) => line.key !== 'child-nothing-confirmed');
     return [lead.text, issue?.text].filter(Boolean).join(' · ');
   }

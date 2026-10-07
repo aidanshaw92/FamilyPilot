@@ -95,7 +95,7 @@ describe('logistics can never become activity fit', () => {
   it('a baby with baby changing and a buggy is "easy to visit with", and the other child is said to be uncertain', () => {
     const r = run(venue({ babyChanging: 'yes', pushchairSuitability: 'good', toilets: 'yes' }), households[3][1]);
     expect(r.children.map((c) => [c.name, c.basis])).toEqual([['Maya', null], ['Ozzie', 'logistics']]);
-    expect(r.headline).toBe('Easy to visit with Ozzie, but we’re less certain about Maya: no age range is recorded for this place yet');
+    expect(r.headline).toBe('Easy to visit with Ozzie, but we haven’t yet confirmed whether this activity suits Maya');
   });
 
   it('only a recommended age range that includes the child makes the place "good for" them', () => {
@@ -135,7 +135,7 @@ describe('Sloane stays uncertain without age evidence', () => {
   it('a toddler with only practical facts is not claimed as suited, and the uncertainty is on the venue page', () => {
     const r = run(venue({ pushchairSuitability: 'good', toilets: 'yes' }), households[1][1]);
     expect(r.headline).toBe('Easy to visit with Sloane');
-    expect(r.toCheck.map((l) => l.text)).toContain('We’re less certain how well it suits Sloane: no age range is recorded for this place yet');
+    expect(r.toCheck.map((l) => l.text)).toContain('We haven’t yet confirmed whether this activity suits Sloane');
   });
 
   it('the uncertainty is not invented from the child’s age or the kind of place', () => {
@@ -149,18 +149,18 @@ describe('Sloane stays uncertain without age evidence', () => {
   it('a baby under a year old is led by logistics: no activity gap is raised for them', () => {
     const r = run(venue({ babyChanging: 'yes', pushchairSuitability: 'good', toilets: 'yes' }), households[0][1]);
     expect(r.headline).toBe('Easy to visit with Ozzie');
-    expect(r.toCheck.map((l) => l.text).join(' ')).not.toMatch(/less certain how well it suits Ozzie/);
+    expect(r.toCheck.map((l) => l.text).join(' ')).not.toMatch(/activity suits Ozzie/);
   });
 
   it('a child a year old or more is not treated as logistics-led', () => {
     const r = run(venue({ babyChanging: 'yes', pushchairSuitability: 'good' }), profile([child('c9', 'Isla', 1, { mobility: ['buggy'] })]));
-    expect(r.toCheck.map((l) => l.text).join(' ')).toMatch(/less certain how well it suits Isla/);
+    expect(r.toCheck.map((l) => l.text).join(' ')).toMatch(/activity suits Isla/);
   });
 
   it('never raises the uncertainty for a place nobody has reviewed', () => {
     const r = run(venue({}, { enrichmentStatus: 'provider_only', trustedFacts: undefined } as Partial<Venue>), households[1][1]);
     expect(r.verdict).toBe('not_reviewed');
-    expect(r.toCheck.map((l) => l.text).join(' ')).not.toMatch(/less certain how well it suits/);
+    expect(r.toCheck.map((l) => l.text).join(' ')).not.toMatch(/activity suits/);
   });
 });
 
@@ -176,7 +176,7 @@ describe('what the change does NOT touch', () => {
   it('never puts the uncertainty line on a card', () => {
     const r = run(venue({ toilets: 'yes', pushchairSuitability: 'good', babyChanging: 'yes', parking: 'yes' }), households[1][1], 65);
     expect(r.verdict).toBe('possible');
-    expect(matchCardReason(r)).not.toMatch(/less certain how well it suits/);
+    expect(matchCardReason(r)).not.toMatch(/activity suits/);
   });
 
   it('a badge for logistics alone carries no child’s name', () => {

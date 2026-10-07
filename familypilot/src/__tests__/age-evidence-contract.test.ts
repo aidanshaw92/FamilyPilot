@@ -156,3 +156,15 @@ describe('age-adjacent wording never becomes a recommended age', () => {
     expect(classifyAgeStatement(t, { sourceType: 'visitor_info', subjectScope: 'sibling_unverified' }).kind).toBe('rejected');
   });
 });
+
+describe('a venue-level candidate is not a fact until its own pages agree (SEA LIFE, 7 Oct 2026)', () => {
+  // Real sentences from the same venue's own stored pages. Each classifies on its own; together they conflict, which is why a
+  // producer must reconcile across pages and why this venue's age stays unknown (docs/AGE_SUITABILITY_YIELD.md).
+  it('the price-note sentence reads as a venue-level range, and the same site\'s accessibility guide says "all ages"', () => {
+    const faq = classifyAgeStatement('Please note, children under the age of 2* go free but the recommended age of the attraction is children aged 6 and over.', own);
+    const guide = classifyAgeStatement('SEA LIFE London Aquarium is suitable all children of all ages.', own);
+    expect(faq).toMatchObject({ kind: 'recommended_range', fromYears: 6, toYears: null });
+    expect(guide.kind).toBe('rejected');
+    expect(guide.reason).toBe('marketing');
+  });
+});

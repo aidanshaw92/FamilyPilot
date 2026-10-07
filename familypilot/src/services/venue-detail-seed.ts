@@ -1,3 +1,4 @@
+import { useFamilyStore } from '@/src/stores/family-store';
 import type { Venue, VenueDetail } from '@/src/types';
 
 /**
@@ -14,13 +15,20 @@ import type { Venue, VenueDetail } from '@/src/types';
  *     photograph; `isPlaceholderData` is true while it is on screen, and the venue screen draws only what a card knows
  *     (identity, photograph, fit badge) and leaves everything evidence-backed (the fit explanation, today's opening
  *     state, what to know, the plan action) as a labelled placeholder until the full detail is in.
- *   - It is short-lived. A card from a few minutes ago is no longer what the parent saw; the seed expires, and a
- *     deep link or a reload has none.
+ *   - It is short-lived and tied to the profile that tapped. A card from a few minutes ago is no longer what the parent
+ *     saw, so the seed expires; a card carries a fit worded with this household's children's names, so it is only ever
+ *     shown for the profile it was personalised from (every profile edit or fresh onboarding bumps `profileRevision` and
+ *     drops it; the profile itself is stored on the device, so a different account on the same device reads the same
+ *     household and sees nothing it would not see anyway); and a deep link or a reload has none. It lives in memory
+ *     only and is never persisted.
  *   - It never outranks anything richer. If the detail is already in the cache, `placeholderData` is not used at all.
  */
 const SEED_TTL_MS = 5 * 60 * 1000;
 const SEED_LIMIT = 30;
-const seeds = new Map<string, { venue: Venue; at: number }>();
+const seeds = new Map<string, { venue: Venue; at: number; owner: string }>();
+
+/** Whose card it is: the profile it was personalised from. Read at both ends, so a seed never outlives a change of profile. */
+const currentOwner = (): string => String(useFamilyStore.getState().profileRevision);
 
 /** Remember the card the parent just tapped. Call it immediately before navigating to the place. */
 export function seedVenueDetail(venue: Venue, now: number = Date.now()): void {
@@ -29,7 +37,7 @@ export function seedVenueDetail(venue: Venue, now: number = Date.now()): void {
   // no travel time on purpose; standing it in for the detail would show a fit nobody has judged.
   if (!venue.familyMatch || !Number.isFinite(venue.familyScore?.score) || !Number.isFinite(venue.driveMinutes)) return;
   seeds.delete(venue.id);
-  seeds.set(venue.id, { venue, at: now });
+  seeds.set(venue.id, { venue, at: now, owner: currentOwner() });
   // Oldest first: a Map iterates in insertion order.
   while (seeds.size > SEED_LIMIT) {
     const oldest = seeds.keys().next().value;
@@ -45,7 +53,7 @@ export function seedVenueDetail(venue: Venue, now: number = Date.now()): void {
 export function venueDetailPlaceholder(id: string, now: number = Date.now()): VenueDetail | undefined {
   const seed = seeds.get(id);
   if (!seed) return undefined;
-  if (now - seed.at > SEED_TTL_MS) {
+  if (now - seed.at > SEED_TTL_MS || seed.owner !== currentOwner()) {
     seeds.delete(id);
     return undefined;
   }

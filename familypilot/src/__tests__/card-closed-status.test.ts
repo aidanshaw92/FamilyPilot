@@ -88,6 +88,35 @@ describe('it never feeds Family Fit', () => {
   });
 });
 
+describe('being shut today can never move the verdict (exhaustive over the evidence that sits at the thresholds)', () => {
+  const kids = [
+    [child('a', 'Sloane', 3)],
+    [child('a', 'Sloane', 3), child('b', 'Ozzie', 0)],
+  ];
+  it('verdict, children, names, gaps and to-check lines are identical open or shut, for every combination', () => {
+    let compared = 0;
+    for (const members of kids) {
+      const p = { ...profile, members: [profile.members[0], ...members] } as FamilyProfile;
+      for (const toilets of ['yes', 'unknown'] as const) for (const parking of ['yes', 'no', 'unknown'] as const)
+        for (const babyChanging of ['yes', 'unknown'] as const) for (const pushchairSuitability of ['good', 'unknown'] as const)
+          for (const ages of [[null, null], [0, 6]] as const) for (const score of [55, 65, 75, 85, 95]) for (const driveMinutes of [10, 40]) {
+            const f = { toilets, parking, babyChanging, pushchairSuitability, minRecommendedAge: ages[0], maxRecommendedAge: ages[1] } as Partial<MatchableVenueFacts>;
+            const open = evaluateFamilyMatch({ venue: { ...venue(OPEN_TODAY, f), driveMinutes }, profile: p, score, now: NOW });
+            const shut = evaluateFamilyMatch({ venue: { ...venue(SHUT_TODAY, f), driveMinutes }, profile: p, score, now: NOW });
+            const label = JSON.stringify({ f, score, driveMinutes, kids: members.length });
+            expect(shut.verdict, label).toBe(open.verdict);
+            expect(shut.children, label).toEqual(open.children);
+            expect(shut.forNames, label).toEqual(open.forNames);
+            expect(shut.gapNames, label).toEqual(open.gapNames);
+            expect(shut.toCheck.map((l) => l.text), label).toEqual(open.toCheck.map((l) => l.text));
+            expect(shut.headline.replace(/, but not today$/, ''), label).toBe(open.headline);
+            compared += 1;
+          }
+    }
+    expect(compared).toBe(2 * 2 * 3 * 2 * 2 * 2 * 5 * 2);
+  });
+});
+
 describe('the cards use it', () => {
   it('both card variants route their reason through withClosedLine', async () => {
     const fs = await import('node:fs');

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { QueryClient, QueryObserver } from '@tanstack/react-query';
 
 import { clearVenueDetailSeeds, seedVenueDetail, venueDetailPlaceholder } from '@/src/services/venue-detail-seed';
+import { useFamilyStore } from '@/src/stores/family-store';
 import type { Venue } from '@/src/types';
 
 /**
@@ -55,6 +56,19 @@ describe('the seed is the card, labelled partial', () => {
     expect(venueDetailPlaceholder('fp-seed', t0 + 4 * 60_000)).toBeDefined();
     expect(venueDetailPlaceholder('fp-seed', t0 + 6 * 60_000)).toBeUndefined();
     expect(venueDetailPlaceholder('fp-seed', t0 + 4 * 60_000)).toBeUndefined();
+  });
+
+  it('belongs to the profile that tapped it: a profile change drops it, and it is not shown again afterwards', () => {
+    const revision = useFamilyStore.getState().profileRevision;
+    try {
+      seedVenueDetail(venue());
+      useFamilyStore.setState({ profileRevision: revision + 1 });
+      expect(venueDetailPlaceholder('fp-seed')).toBeUndefined();
+      useFamilyStore.setState({ profileRevision: revision });
+      expect(venueDetailPlaceholder('fp-seed')).toBeUndefined(); // already dropped, not resurrected
+    } finally {
+      useFamilyStore.setState({ profileRevision: revision });
+    }
   });
 
   it('is bounded, dropping the oldest first', () => {
@@ -117,6 +131,27 @@ describe('through React Query: placeholder, never cache', () => {
     expect(r.isPlaceholderData).toBe(false);
     expect(r.data).toBeUndefined();
     stop();
+  });
+
+  it('planning shares the venue\'s query but not its placeholder: its own observer stays pending until the real detail is in', async () => {
+    seedVenueDetail(venue());
+    const client = new QueryClient();
+    const key = ['venues', 'fp-seed', 4];
+    let resolve!: (v: unknown) => void;
+    const queryFn = () => new Promise((r) => { resolve = r; });
+    const screen = new QueryObserver(client, { queryKey: key, queryFn, placeholderData: (() => venueDetailPlaceholder('fp-seed')) as never });
+    const planning = new QueryObserver(client, { queryKey: key, queryFn });
+    const stopA = screen.subscribe(() => {});
+    const stopB = planning.subscribe(() => {});
+    expect(screen.getCurrentResult().isPlaceholderData).toBe(true);
+    // Planning (app/plan.tsx waits on isPending) sees no data at all while the screen shows the card.
+    expect(planning.getCurrentResult().isPending).toBe(true);
+    expect(planning.getCurrentResult().data).toBeUndefined();
+    resolve(detail);
+    await new Promise((r) => setTimeout(r, 10));
+    expect(planning.getCurrentResult().isPending).toBe(false);
+    expect((planning.getCurrentResult().data as { description: string }).description).toBe('The full description');
+    stopA(); stopB();
   });
 
   it('the detail already in the cache is never replaced by the card', async () => {

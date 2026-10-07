@@ -242,6 +242,7 @@ export default function VenueScreen() {
   const description = venue.description?.trim() ?? '';
   const descriptionIsLong = description.length > 140;
   const scrollToFit = () => {
+    if (pending) return;
     scrollRef.current?.scrollTo({ y: Math.max(0, fitPanelY.current - spacing.lg), animated: true });
   };
 
@@ -307,7 +308,17 @@ export default function VenueScreen() {
                   {formatCategory(venue.category)} · {travelTimeLabel(venue.driveMinutes, 'estimated')}
                 </Text>
               </View>
-              <Pressable onPress={scrollToFit} accessibilityRole="button" hitSlop={10} style={minTarget(16)}>
+              {/* The explanation it scrolls to is not on screen until the full detail is: held invisibly and inert until then, so
+                  the row keeps its height and nothing moves when the real screen replaces the card. */}
+              <Pressable
+                onPress={scrollToFit}
+                disabled={pending}
+                accessibilityRole="button"
+                accessibilityElementsHidden={pending}
+                importantForAccessibility={pending ? 'no-hide-descendants' : 'auto'}
+                hitSlop={10}
+                style={[minTarget(16), pending ? styles.hiddenWhilePending : null]}
+              >
                 <Text style={styles.whyLink}>Why this fit</Text>
               </Pressable>
             </View>
@@ -523,6 +534,9 @@ const styles = StyleSheet.create({
   },
   pendingBody: {
     marginTop: spacing.lg,
+  },
+  hiddenWhilePending: {
+    opacity: 0,
   },
   heroContainer: {
     height: HERO_HEIGHT,

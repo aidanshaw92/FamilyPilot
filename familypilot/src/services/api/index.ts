@@ -29,6 +29,7 @@ import { BetweenHome } from '@/src/services/places/between-client';
 import { buildHomeRecommendations, personaliseVenue, personaliseVenues } from '@/src/utils/personalise-venues';
 import { fetchParentObservations } from '@/src/services/planning/parent-observation-fetch';
 import { fetchLiveWeather, fetchLiveWeatherSafe } from '@/src/services/context/live-context';
+import { withinMs } from '@/src/utils/soft-deadline';
 import { isVisitableVenue } from '@/src/utils/opening-today';
 import { getFocusedRecommendations } from '@/src/services/recommendation/focused-recommendations';
 import { parseDayRequest, parseDayRequestMock } from '@/src/services/recommendation/parse-day-request-client';
@@ -42,6 +43,8 @@ import { distanceKm } from '@/src/services/places/geo-utils';
 import { resolveUkLocation } from '@/src/services/location/location-client';
 import { withDerivedAges } from '@/src/utils/child-age';
 
+/** How long the venue page will wait for today's weather before it goes ahead without it. */
+const VENUE_WEATHER_WAIT_MS = 1500;
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export { HOME_WEATHER_WAIT_MS } from '@/src/services/places/home-list';
@@ -130,7 +133,10 @@ export const venueService = {
     const profile = getProfile();
     const [detail, weather, parentObservations] = await Promise.all([
       getPlacesRepository().getVenueDetail(id, profile),
-      fetchLiveWeatherSafe(profile),
+      // Today's weather is one soft line on the venue page. A weather read that hangs used to hold the whole screen for as
+      // long as it took (measured: 9 s behind a 150 ms detail request); it now gets a short grace and the page goes ahead
+      // without it.
+      withinMs(fetchLiveWeatherSafe(profile), VENUE_WEATHER_WAIT_MS, null),
       fetchParentObservations(id),
     ]);
     if (!detail) return null;

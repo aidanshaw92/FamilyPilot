@@ -5,8 +5,10 @@ audit in [AGE_EVIDENCE_CONTRACT.md](AGE_EVIDENCE_CONTRACT.md) to the current cor
 re-reads, and answers one question: **is there enough explicit activity-age evidence on pages we already hold to justify
 building an age producer?**
 
-**No.** One destination in 151 states a recommended age for the venue as a whole. Nothing was built to extract ages.
-The classifier that any future producer would have to pass was found to accept non-age numbers, and was hardened.
+**No.** One destination in 151 has a sentence that reads as a recommended age for the venue as a whole, and on
+inspection that sentence is not safe to publish (see "SEA LIFE" below), so the confirmed yield is **zero**. Nothing was
+built to extract ages. The classifier that any future producer would have to pass was found to accept non-age numbers,
+and was hardened.
 
 ## What counts
 
@@ -41,7 +43,7 @@ bot-blocked, script-only, failed or have no website, so no rule can reach them.
 
 | What the page says | Venues | Counts as the venue's recommended age? |
 | --- | ---: | --- |
-| Explicit recommended age for the venue as a whole | **1** | **Yes.** SEA LIFE London: "the recommended age of the attraction is children aged 6 and over" |
+| Sentence that reads as a recommended age for the venue as a whole | **1** | **Not accepted.** SEA LIFE London: "the recommended age of the attraction is children aged 6 and over". Its own site contradicts it, and it sits in a ticket-price note |
 | Explicit age range for one part: a playground or play equipment | 2 | No. Shown for that part only. Battersea Park (4–14), Burgess Park (up to 14) |
 | Explicit range for one soft-play area, stated in months | 1 | No. Belmont Children's Farm, "6 months to 10 years", which the contract cannot represent in years |
 | Explicit range for a session, class, walk, event or package | 9 | No. William Morris Gallery, Flip Out (Brent Cross, Watford, Canary Wharf), Colne Valley, Discover Children's Story Centre, Chiswick House, Beckenham Place Park (junior parkrun), National Maritime Museum (a sensory session) |
@@ -52,7 +54,7 @@ bot-blocked, script-only, failed or have no website, so no rule can reach them.
 A venue can appear in more than one row (SEA LIFE has a recommended age and a supervision rule; Flip Out Watford has a
 session range and a plain-word audience).
 
-**Realistic recoverable coverage: 1 venue in 151 (0.7%), or 1 in the 100 whose pages we can read.** Counting every
+**Realistic recoverable coverage: 0 confirmed venues in 151, from 1 candidate in the 100 whose pages we can read.** Counting every
 explicit range for a part or a session as if it described the venue, the ceiling is 13 venues (9% of 151), and doing
 that would be wrong: a soft-play range is not a farm's range, and a rule that applied it to the whole place would mark
 a visit to the farm as "outside the recommended ages" for a ten-year-old.
@@ -61,15 +63,37 @@ a visit to the farm as "outside the recommended ages" for a ten-year-old.
 
 - **No age extractor, no new claim shape, no re-extraction.** One venue does not justify a producer, an approval path
   and a re-read of the catalogue, and the venues with ranges mostly state them for a session or a part.
-- **SEA LIFE's "6 and over" can be entered through the existing editorial path** if you want it on that one venue now:
-  `minRecommendedAge` and `maxRecommendedAge` are already claim fields, and an editor-approved age is the right way for
-  one venue. That is a product decision, not made here.
+- **SEA LIFE's "6 and over" is not published and no data was changed.** If a person later wants an age on that venue,
+  `minRecommendedAge` and `maxRecommendedAge` are already claim fields with an editor-approved path, but the live page and
+  the venue's other pages would first have to be read together by that person (see below).
 - **The wording is the fix.** Every recommendation is unaffected by missing ages in data, so the change that matters is
   to stop presenting logistics as activity fit and to say plainly that the age is unconfirmed (see the semantic contract
   in `family-match.ts`).
 - **What would change the answer:** crawling activity, "plan your visit" and family pages the discovery step does not
   pick today (new fetching), or an operator-level age page for chains such as Merlin. Neither is cheap, and neither is
   assumed here.
+
+## SEA LIFE London: why "6 and over" is left unknown
+
+Inspected from the stored original page (`https://www.visitsealife.com/london/plan-your-visit/information/faqs/`, read
+1 Oct 2026, scope `venue_own_subtree`) and the venue's other stored pages. The live site cannot be reached from the
+sandbox and was not bypassed.
+
+1. **The sentence is explicit about "the attraction"**: "Please note, children under the age of 2\* go free but the
+   recommended age of the attraction is children aged 6 and over." Read alone it would qualify.
+2. **Its context is a ticket-price note, not a statement of who the aquarium is for.** It opens "Please note", carries an
+   asterisk on the free-entry age, and sits beside the under-2s-go-free rule and "effective from 20 July 2023". The stored
+   text is flattened, so the question it answers is not recoverable; the surrounding wording points to child pricing.
+3. **The same site says the opposite.** The aquarium's own Accessibility Guide (stored, same scope): "SEA LIFE London Aquarium
+   is suitable all children of all ages." Its home page: "entertain and educate visitors of all ages." A search summary of the
+   venue's help centre (not read directly, so unverified) reports a third audience, "families with children aged 4 to 10".
+4. **The venue's own pages invite babies**: under-2s are admitted free, baby changing is in every toilet, buggies are
+   welcome throughout.
+
+Two official statements about the same venue disagree (6 and over versus all ages), and the one that qualifies is
+tucked into a pricing note. The evidence rules everywhere else in this codebase say a conflict becomes unknown, and that
+is applied here: **age suitability for SEA LIFE stays unknown.** Nothing is written to production. A producer built later
+must also compare statements across a venue's pages before accepting any, not only classify one sentence at a time.
 
 ## Safety findings, fixed
 
