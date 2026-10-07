@@ -13,6 +13,27 @@ const WHEELCHAIR_TERMS = /\b(wheelchair(s)?|mobility scooter(s)?)\b/i;
 const TERRAIN_TERMS =
   /\b(ramps?|steps?|stairs|gravel|mud(dy)?|uneven|paved|smooth|step.?free|flat|accessible routes?|paths?)\b/i;
 
+/**
+ * Statements that a pushchair can GET AROUND, as opposed to being allowed in.
+ *
+ * "Prams are allowed" is permission; on its own it has always produced `good` at MEDIUM confidence, which never
+ * publishes, and that is deliberately kept. These say something stronger -- that the place works with a pushchair --
+ * and were found on venues' own pages in the 7 Oct 2026 replay with nothing published from them:
+ *
+ *   Flip Out Watford          "Yes — Flip Out Watford is wheelchair accessible and buggy-friendly."
+ *   Tate Modern               "All entrances are accessible with a buggy."
+ *   Kentish Town City Farm    "Plenty of room for buggies"
+ *
+ * Alone they classify as `good` at high confidence; with step-free or lift wording, `excellent`, exactly as a welcome
+ * does; and every limitation and denial on the page still wins (a mixed or difficult signal is never outweighed).
+ * "Accessible for buggies" was already a welcome (Woodside Animal Farm) and joins this group.
+ */
+const EXPLICIT_ACCESS_PATTERNS = [
+  /\b(?:bugg(?:y|ies)|pushchairs?|prams?|strollers?)[\s-]friendly\b/i,
+  /\baccessible\s+(?:for|to|with)\s+(?:a\s+|your\s+)?(?:bugg(?:y|ies)|prams?|pushchairs?|strollers?)\b/i,
+  /\bplenty\s+of\s+(?:room|space)\s+for\s+(?:bugg(?:y|ies)|prams?|pushchairs?|strollers?)\b/i,
+];
+
 const WELCOME_PATTERNS = [
   /\b(bugg(y|ies)|pram(s)?|pushchair(s)?|stroller(s)?)\s+(are\s+)?(welcome|allowed|permitted)\b/i,
   // "Accessible for buggies" is how a venue says yes without using a welcome verb, and leaving it
@@ -28,6 +49,7 @@ const WELCOME_PATTERNS = [
   /\baccessible\s+(?:for|to)\s+(?:bugg(?:y|ies)|pram(?:s)?|pushchair(?:s)?|stroller(?:s)?)\b/i,
   /\b(welcome|allowed|permitted)\b[^.]{0,40}\b(bugg(y|ies)|pram(s)?|pushchair(s)?|stroller(s)?)\b/i,
   /\b(bugg(y|ies)|pram(s)?|pushchair(s)?|stroller(s)?)\s+(can|may)\s+(be\s+)?(used|brought|taken)\b/i,
+  ...EXPLICIT_ACCESS_PATTERNS,
 ];
 
 const DIFFICULT_PATTERNS = [
@@ -56,7 +78,22 @@ const MIXED_PATTERNS = [
   // pushchair. 17 occurrences across the stored corpus, and before this it supported nothing -- so a
   // page that both welcomed buggies AND asked visitors to park them read as an unqualified `good`.
   /\bleave\s+(?:your\s+)?(?:bugg(?:y|ies)|pushchairs?|prams?|strollers?)\b/i,
+  // "We may ask that some buggies are left in a buggy park" (Saatchi Gallery) is the same limitation, passive.
+  /\b(?:bugg(?:y|ies)|pushchairs?|prams?|strollers?)\s+(?:are|be|is)\s+left\b/i,
+  // A pushchair that has to be folded cannot be used there: "it must be fully closed or folded before boarding"
+  // (London Eye), "you will need to collapse your buggy".
+  /\bmust\s+be\s+(?:fully\s+)?(?:folded|collapsed|closed\s+or\s+folded)\b/i,
+  /\b(?:fold|collapse)\s+(?:your|the)\s+(?:bugg(?:y|ies)|pushchairs?|prams?|strollers?)\b/i,
 ];
+
+/**
+ * Leaving a pushchair as an OPTION is not a limitation. "We also have a free buggy bay if you wish to leave your Buggy
+ * during peak seasons" (SEA LIFE London) sits on a page that also says "we are fully accessible with lifts throughout",
+ * and read as `mixed` it put two of the aquarium's own pages in conflict and withdrew the field. Masked before the
+ * limitation patterns run; "please leave", "we encourage you to leave" and "must leave" are untouched.
+ */
+const OPTIONAL_LEAVE =
+  /\b(?:if\s+you\s+(?:wish|want|would\s+like|prefer)\s+to|you\s+(?:can|may)(?:\s+also)?|where\s+you\s+can|option\s+to)\s+leave\s+(?:your\s+)?(?:bugg(?:y|ies)|pushchairs?|prams?|strollers?)\b/gi;
 
 const CAVEAT_PATTERNS = [
   /\bgravel\b/i,
@@ -193,8 +230,9 @@ function classifyPushchairSuitability(rawText) {
   const positiveText = maskNegatedPositives(combinedText);
 
   const hasWelcome = WELCOME_PATTERNS.some((re) => re.test(positiveText));
+  const hasExplicitAccess = EXPLICIT_ACCESS_PATTERNS.some((re) => re.test(positiveText));
   const hasDifficult = DIFFICULT_PATTERNS.some((re) => re.test(combinedText));
-  const hasMixedSignal = MIXED_PATTERNS.some((re) => re.test(combinedText));
+  const hasMixedSignal = MIXED_PATTERNS.some((re) => re.test(combinedText.replace(OPTIONAL_LEAVE, ' XOPTIONALX ')));
   const caveatCount = countMatches(CAVEAT_PATTERNS, combinedText);
   const excellentCount = countMatches(EXCELLENT_PATTERNS, positiveText);
 
@@ -216,6 +254,10 @@ function classifyPushchairSuitability(rawText) {
 
   if (hasWelcome && excellentCount >= 1 && caveatCount === 0) {
     return { value: 'excellent', confidence: 'high' };
+  }
+
+  if (hasExplicitAccess) {
+    return { value: 'good', confidence: 'high' };
   }
 
   if (hasWelcome) {
@@ -353,6 +395,7 @@ function extractPushchairEvidence(text, sourceMeta) {
 }
 
 module.exports = {
+  EXPLICIT_ACCESS_PATTERNS,
   extractPushchairEvidence,
   orderByDecidingSentence,
   classifyPushchairSuitability,

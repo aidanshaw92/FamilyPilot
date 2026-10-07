@@ -1332,8 +1332,10 @@ describe('FIXED 15: three separate crawl ceilings, so a failed fetch no longer e
       if (!outcome.ok) {
         return { ok: false, fetchStatus: 'error', httpStatus: 404, error: 'HTTP 404', url, html: null };
       }
+      // Each page reads differently, as real pages do: the crawl no longer counts word-for-word duplicates as pages
+      // read (a soft 404 answering every path with the homepage), so identical text here would end crawls early.
       const text = outcome.text
-        ?? 'Baby changing facilities are available in the accessible toilet on the ground floor.';
+        ?? `Baby changing facilities are available in the accessible toilet on the ground floor. (${new URL(url).pathname})`;
       return {
         ok: true,
         fetchStatus: 'ok',
@@ -1393,6 +1395,15 @@ describe('FIXED 15: three separate crawl ceilings, so a failed fetch no longer e
   }
 
   const pathsAttempted = () => attempts.map((a) => new URL(a.url).pathname);
+
+  it('does not count a page whose text is word for word one already read (a soft 404) as a page read', async () => {
+    // A site that answers every path with its homepage: before, six copies met the usable-page target and the crawl
+    // stopped having read one page. Now the copies are recorded but do not count, so the crawl keeps looking.
+    const bundle = await crawl(() => ({ ok: true, text: 'Welcome to the farm. Opening times vary through the year.' }));
+    expect(bundle.diagnostics.usablePageCount).toBe(1);
+    expect(bundle.diagnostics.stopReason).not.toBe('usable_page_target');
+    expect((bundle.diagnostics as unknown as { duplicatePages: unknown[] }).duplicatePages.length).toBeGreaterThan(0);
+  });
 
   it('reaches the high-value candidates after the homepage and four 404s (the exact lost case)', async () => {
     /**
@@ -2068,12 +2079,12 @@ describe('FIXED 19: evidence-bearing pages, and misses proved by stored content'
        */
       const src = require('node:fs').readFileSync(
         require('node:path').join(__dirname, '../../../server/enrichment/_lib/trusted-evidence.js'), 'utf8');
-      expect(src).toContain('isEvidenceBearingSource({extractedText:r.extractedText,facts})');
+      expect(src).toContain('isEvidenceBearingSource({extractedText:r.extractedText,facts,pageTitle:r.pageTitle})');
       expect(src, 'the bare truthy test must be gone').not.toMatch(/&&\s*r\.extractedText\s*\)/);
       expect(src, 'must never judge on stored evidence').not.toMatch(/extractedEvidence/);
       // extraction must precede the decision
       expect(src.indexOf('const facts=extractEvidenceFromText'))
-        .toBeLessThan(src.indexOf('isEvidenceBearingSource({extractedText:r.extractedText,facts})'));
+        .toBeLessThan(src.indexOf('isEvidenceBearingSource({extractedText:r.extractedText,facts,pageTitle:r.pageTitle})'));
     });
   });
 

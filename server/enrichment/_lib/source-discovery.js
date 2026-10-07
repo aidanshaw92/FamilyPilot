@@ -125,7 +125,11 @@ function normalisePageUrl(url, baseUrl) {
  */
 function buildCommonPathCandidates(homepageUrl, maxCandidates = 8) {
   const base = new URL(homepageUrl);
-  const root = `${base.origin}${base.pathname.replace(/\/+$/, '')}`;
+  // A website that is a document ("trentcountrypark.com/Welcome.html") is rooted at its folder: the guesses were
+  // "Welcome.html/visit", "Welcome.html/accessibility" ..., which no server answers, and spent the venue's crawl
+  // budget on errors (Trent Park, 7 Oct 2026: three of its six failed fetches are those).
+  const folder = base.pathname.replace(/\/[^/]+\.(?:s?html?|php|aspx?|jsp)$/i, '');
+  const root = `${base.origin}${folder.replace(/\/+$/, '')}`;
   const candidates = [];
 
   for (const segment of PATH_PRIORITY) {

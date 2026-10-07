@@ -15,6 +15,7 @@ const { extractEvidenceFromText, buildEvidenceBundle, extractionSourceMeta, isEv
 const { getCachedEvidence, saveEvidenceRecord } = require('./evidence-store');
 const { listVenueIdentities } = require('./enrichment-store');
 const { classifySubjectScope } = require('./source-identity');
+const { officialWebsiteFor, hasOfficialSourceOverride } = require('./official-source-overrides');
 
 const { PAGE_BUDGET_MS } = require('./source-fetcher');
 
@@ -114,7 +115,10 @@ function placeRowAgeDays(placeRow) {
 }
 
 async function ensurePlaceDetails(familypilotId, placeRow, options = {}) {
-  if (placeRow?.website && placeRowAgeDays(placeRow) < DETAILS_REFRESH_DAYS) {
+  // A reviewed official-source override supplies the website, so a fresh row needs nothing from Google: without this,
+  // a venue Google holds no website for (Tooting Commons) bought a Place Details call on every crawl to learn so again.
+  const knowsWebsite = Boolean(placeRow?.website) || hasOfficialSourceOverride(familypilotId);
+  if (knowsWebsite && placeRowAgeDays(placeRow) < DETAILS_REFRESH_DAYS) {
     return placeRow;
   }
   if (!familypilotId.startsWith('fp-google-')) return placeRow;
@@ -328,11 +332,16 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
    * Who this crawl is for, and who else shares the sites it may touch. Without the second half a
    * crawl cannot tell a venue's own deeper page from a sibling venue's front door.
    */
-  const catalogue = options.catalogue ?? (await listVenueIdentities());
+  // Every identity -- this venue's and the rest of the catalogue's -- goes through the same override, so scope is
+  // decided against the page the crawl actually starts from (official-source-overrides.js).
+  const catalogue = (options.catalogue ?? (await listVenueIdentities())).map((identity) => ({
+    ...identity,
+    website: officialWebsiteFor(identity.familypilotPlaceId, identity.website),
+  }));
   const venue = {
     familypilotPlaceId,
     name: enrichedPlace?.name ?? placeRow?.name ?? null,
-    website: enrichedPlace?.website ?? null,
+    website: officialWebsiteFor(familypilotPlaceId, enrichedPlace?.website ?? null),
   };
   /** What the head actually cost, reported rather than assumed. */
   const headElapsedMs = clock() - gatherStartedAt;
@@ -340,7 +349,7 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
   // The page budget is computed per fetch, not once: it shrinks as the window does.
   const pageOptions = { ...options, venue, catalogue };
   const discovery = discoverSourceUrls({
-    website: enrichedPlace?.website,
+    website: venue.website,
     googleDescription: enrichedPlace?.description,
   });
 
@@ -387,6 +396,9 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
   const evidenceByPage = [];
   /** Fetched cleanly, nothing to read: reported so the loss is visible rather than silent. */
   const emptyShells = [];
+  /** Fetched cleanly, but word for word a page already read in this crawl. */
+  const duplicatePages = [];
+  const seenTexts = new Set();
   let fetchAttempts = 0;
 
   const recordResult = (result) => {
@@ -403,11 +415,25 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
       result.fetchStatus === 'fetched_truncated';
     const usable = fetchSucceeded && isEvidenceBearingSource({
       extractedText: result.extractedText,
+      pageTitle: result.pageTitle ?? null,
       // The facts this very crawl extracted, title included: a body-less page counts only if it
       // produced something.
       facts: result.facts,
     });
     if (fetchSucceeded && !usable) emptyShells.push({ url: result.url, fetchStatus: result.fetchStatus });
+    /**
+     * The same text under another URL is not another page read. Sites that answer every unknown path with their
+     * homepage (a soft 404), or serve one FAQ at two addresses, made a crawl look six pages deep after reading two:
+     * Swanley Park's FAQ and four Royal Parks pages are stored twice each. The duplicate is still recorded and still
+     * extracted -- its facts are identical, so nothing is lost -- it just stops counting towards the target.
+     */
+    const textKey = typeof result.extractedText === 'string' ? result.extractedText.trim() : '';
+    const duplicate = usable && textKey !== '' && seenTexts.has(textKey);
+    if (usable && textKey !== '') seenTexts.add(textKey);
+    if (duplicate) {
+      duplicatePages.push({ url: result.url, fetchStatus: result.fetchStatus });
+      return;
+    }
 
     if (usable) {
       pagesFetched.push({
@@ -554,6 +580,7 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
      */
     usablePageCount: usablePageCount(),
     emptyShells,
+    duplicatePages,
     candidatesRemaining: queue.length,
     stopReason,
     /**

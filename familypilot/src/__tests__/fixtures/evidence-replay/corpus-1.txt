@@ -1,0 +1,157 @@
+P|fp-google-ChIJ_RrImU0adkgRe7t4e8XkrXc|https://www.waterlowpark.org.uk/|venue_own_subtree|official_website|2026-09-29 00:22:05.433+00|ok|Friends of Waterlow Park – The Voice of Park Users
+S|You can find out more about the Trust and the advisory group on www.waterlowparktrust.org.uk Follow us on X (formerly Twitter) for regular updates from around the park See our posts Park closing times Know Waterlow Park Click the map to see where everything is in the park, from the Cafe in Lauderdale House to Lux in the Waterlow Park Centre and more.
+P|fp-google-ChIJ_RrImU0adkgRe7t4e8XkrXc|https://www.waterlowpark.org.uk/visitors-to-the-friends-stall-at-the-highgate-fair/|venue_own_subtree|visitor_info|2026-09-29 00:22:07.528+00|ok|Visitors to the Friends’ stall at the Highgate Fair – Friends of Waterlow Park
+S|Thursday on Lauderdale lawn Uncategorised Funny Bones on stage 30 August Uncategorised Sunday 23 August – Monoversals take to the stage in the Park Back To Top Home News & Events The Park Activities – volunteering, play areas, sports The Friends Sitemap Friends of Waterlow Park The Voice of Park Users Site by diditon.com Visitors to the Friends&#8217; stall at the Highgate Fair &#8211; Friends of Waterlow Park Skip to content Menu 14th June 2026 Visitors to the Friends&#8217; stall at the Highgate Fair A sunny afternoon brought out the crowds to the Highgate Fair &#8211; Camden Mayor Cllr Tricia Leman and local MP Tulip Siddiq both stopped by to see our display of beneficial weeds Big plant
+P|fp-google-ChIJ_X4Ce_0PdkgREqwQu2aBoOY|https://www.royalparks.org.uk/visit/parks/kensington-gardens/diana-memorial-playground|venue_own_subtree|official_website|2026-10-01 21:25:02.596+00|ok|Diana Princess of Wales Memorial Playground   The Royal Parks
+S|When children visit the renewed playground, they will now experience: A brand new 17-metre by 12-metre Galleon moored on a sandy beach.
+S|Children should not be allowed to enter or leave the playground without an adult carer.
+S|Over 1 million visitors enjoy this free playground every year.
+S|The playground was specially designed to be more inclusive, offering something for everyone and seeks to support children with their physical, creative, social and educational development.
+S|Inspired by the stories of Peter Pan, the playground is a magical environment that encourages children to follow their imaginations, learn together and explore whilst they play.
+S|For everyone's safety and enjoyment please observe the following: Please supervise your children at all times Glass bottles or jars are not allowed Cycling, rollerblading, scooters and ball sports are not allowed Adult bicycles/Cargo bikes are not permitted Smoking is not permitted in the playground (including e-cigarettes) Alcohol is not permitted in the playground Only registered Assistance Dogs will be permitted Supervision This playground is permanently attended when open.
+S|Kensington Gardens The Diana Princess of Wales Memorial Playground Located next to Kensington Palace, the playground is a fitting tribute to a princess who loved the innocence of childhood.
+S|The playground originally opened in 2000, and in 2025/26 the playground underwent a £3million renewal by The Royal Parks charity, reopening on Wednesday 5 August 2026.
+S|The playground is extremely popular.
+S|On busy days when the playground reaches full capacity there will be a queue for entry.
+S|There are tables outside the playground and plenty of space in the surrounding area if you wish to have a party in the park.
+S|We understand you may need to leave the playground for a short time and wish to rejoin those who are still inside.
+S|Please make this clear to the playground staff when you leave or you may not be able to re-enter immediately.
+S|Please note: unaccompanied adults may only enter the playground between 9.30 and 10.00.
+S|Safety precautions The playground is likely to be very busy at all times.
+S|The playground staff will monitor activities, provide first aid and summon any other assistance that might be required.
+S|Linked Projects Diana, Princess of Wales Memorial Playground renewal Share Share this page on facebook Share this page on twitter Share this page on whatsapp Copy page URL to clipboard Copied
+S|Diana Princess of Wales Memorial Playground   The Royal Parks { const main = if (main) }); } }  @click.prevent= focusMain()  @keydown.enter.prevent= focusMain()  @keydown.space.prevent= focusMain()  class= sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:bg-green focus:text-white focus:px-4 focus:py-2 focus:rounded focus:shadow-lg focus:z-[1250]  > Skip to main content 01.09.2026 Unfortunately, we are unable to take group bookings at the Diana Memorial Playground until further notice.
+P|fp-google-ChIJ_X4Ce_0PdkgREqwQu2aBoOY|https://www.royalparks.org.uk/visit/parks/kensington-gardens/diana-memorial-playground/playground-renewal|venue_own_subtree|visitor_info|2026-10-01 21:25:04.436+00|ok|Diana, Princess of Wales Memorial Playground renewal   The Royal Parks
+S|The renewed playground will retain the characteristics of the existing Peter Pan-inspired playground but will provide more accessible and inclusive play, as well as challenging physical play, so that children of all abilities can enjoy creative and imaginative play together.
+S|To further improve accessibility and inclusivity some of the paths in the playground will be resurfaced and a new accessible path will be created.
+S|Kensington Gardens Diana, Princess of Wales Memorial Playground renewal After welcoming children for 25 years of play, since the playground opened in 2000, many of the playground's play features have now reached the end of their life.
+S|The Royal Parks charity is undertaking a £3 million renewal of the much-loved playground.
+S|The playground will reopen on Wednesday 5 August 2026 .
+S|Diana, Princess of Wales Memorial Playground renewal   The Royal Parks { const main = if (main) }); } }  @click.prevent= focusMain()  @keydown.enter.prevent= focusMain()  @keydown.space.prevent= focusMain()  class= sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:bg-green focus:text-white focus:px-4 focus:py-2 focus:rounded focus:shadow-lg focus:z-[1250]  > Skip to main content Join the herd!
+P|fp-google-ChIJ_zIJCh8XdkgRnCvSmVMa1iY|https://www.belmontfarm.co.uk/|venue_own_subtree|official_website|2026-10-01 21:48:02.148+00|ok|Welcome to Belmont Farm - Connecting You to Nature in North West London
+S|Plan your visit Soft Play → Café → Farm Make the most out of your day at Belmont Farm Soft Play Our Soft Play has a baby section, role play section and larger section that goes down three stories Parents can sit and enjoy a coffee, while children play We have cameras in the larger section so you can keep an eye on your little ones Café After playing check out our café for a bite to eat and refreshments Please note soft play has to come before the farm due to cross contamination, this means if you go down to the farm unfortunately you can not access the soft play after Food is not allowed in the soft play area but you are more then welcome to have a drink Please note the farm will be closed o
+S|Indoor & Outdoor Visitors Farm Soft Play Café The Farm Please note the farm will be closed on Wednesday 30th September 2026 from 12pm, however the soft play will be open as normal All on London’s working farm in a hidden valley Welcome to Belmont Farm!
+S|Gallery Farm Tickets Soft Play Fun Belmont Farm’s purpose built soft play area accommodates children from 6 months to 10 years and is the perfect place to let off steam and test the mind and body.
+S|Monday to Sunday from 09:30 till 16:45 / Last entry to the farm: 15:30 Note you must visit soft play BEFORE you visit the farm if you are planning on visiting both Bakery & Café Monday to Sunday from 09:30 till 16:45 NOTE: You must tell the farm staff or reception of any allergies before heading out onto the farm We are a contactless business and therefore unable to take cash Sign up to our Newsletter Get the latest news on what is happening on Belmont Farm.
+P|fp-google-ChIJ_zIJCh8XdkgRnCvSmVMa1iY|https://www.belmontfarm.co.uk/contact|venue_own_subtree|visitor_info|2026-10-01 21:48:02.718+00|ok|Contact Us &mdash; Belmont Farm (Copy)
+S|You can park in the top car park and walk down to reception, or follow the driveway down to the second car park or if preferred, drive to the right of the second car park and follow the driveway down to the third car park in the bottom of the valley where there is further parking spaces and disabled parking.
+P|fp-google-ChIJ_zIJCh8XdkgRnCvSmVMa1iY|https://www.belmontfarm.co.uk/fun-farm-soft-play-venue|venue_own_subtree|visitor_info|2026-10-01 21:48:02.39+00|ok|Fun Farm Soft Play &mdash; Belmont Farm (Copy)
+S|FUN FARM SOFT PLAY *For your child's safety, you must make yourself aware of our Rules & Regulations Soft Play Tickets Age-Appropriate Playtime: Ages 6 Months to 10 Years: Our Soft Play sessions are open to children within this age range, ensuring age-appropriate play and adventure.
+S|Rules & Regulations: We require all parents and guardians to review our Rules & Regulations before visiting our Soft Play area.
+S|THE SOFT PLAY AND FARM ARE TWO SEPRATE TICKETS, PLEASE REFER TO OUR FARM TAB FOR FARM ADMISSION ONLY FOOD AND DRINK PURCHASED FROM BELMONT FARM CAN BE CONSUMED ON THE FARM/CAFE.
+S|FOOD AND DRINK MUST NOT BE BROUGHT ON TO THE FARM, CAFE OR SOFT PLAY.
+P|fp-google-ChIJ-2k6HgUBdkgRy-DSFv0Bv9I|https://www.croydon.gov.uk/node/3173/south-norwood-country-park|venue_named_page|official_website|2026-10-05 00:26:03.623+00|ok|South Norwood Country Park   Croydon Council
+S|Facilities wild flower meadows wetland and lake viewing mound children's playground pitch and putt (out of operation indefinitely whilst provision of the facility is under review) visitors centre (currently closed for refurbishment) designated cycle path (part of the Water Link Way) running through the park toilets including facilities for radar keyholders are available (currently closed as part of refurbishment works) car park and several designated bays for the disabled The Kiosk Community Café: every Saturday 9am to 2pm Visitors and education centre The visitor and education centre building has been closed and inaccessible since an incident of arson.
+S|Parks and playgrounds directory Search Parks and playgrounds directory Location less than - 1/2 mile 1 mile 2 miles 3 miles 5 miles 10 miles from Proximity from a given location.
+P|fp-google-ChIJ-UxCFT47dkgRADbsEVyxCAs|https://www.better.org.uk/leisure-centre/welwyn-hatfield/stanborough-park-water-sports-centre?utm_source=google&utm_medium=organic&utm_campaign=google_my_business|venue_own_subtree|official_website|2026-10-01 21:43:02.859+00|ok|Stanborough Park Water Sports Centre   Welwyn Garden City   Better leisure
+S|Show all facilities opening times Open water Swimming Mon - Tue Closed Wed 17:30 - 19:00 Thu - Fri Closed Sat 08:00 - 10:00 Sun Closed Splashlands Mon - Sun 10:00 - 16:00 Open daily from April to September, weather permitting Timetable our facilities Car Parks Splashlands Meeting Room Hire Water Sports North & South Lake Event Field & Parkland Boat Hire Refreshments accessibility Disabled toilet Accessible Changing Accessible Parking Changing Places news & events Read more Community Roundup - July 2026 Explore the May 2026 Community Update - latest news and highlights from Better facilities across Welwyn Hatfield making a real local difference.
+S|There's also a free splash pad that's a hit with younger visitors on warm days, plus a play park and cafe on site.
+S|The park itself gives you plenty of space to relax before or after your session, and while parking is available, the site does get busy when the sun's out.
+S|Read more &rsaquo; All news & events find us Stanborough Park Water Sports Centre Stanborough Road Welwyn Garden City Hertfordshire AL8 6DF By train, tube & tram Welwyn Garden City By car Car parking available 400 total spaces available 20 disabled spaces available Parking type: Paying Cashless - 20minutes Free £1.50 - 1 Hour / £6 for 3 Hours / £10 All Day Launch map and get directions
+P|fp-google-ChIJ-UxCFT47dkgRADbsEVyxCAs|https://www.better.org.uk/leisure-centre/welwyn-hatfield/stanborough-park-water-sports-centre/facilities|venue_own_subtree|visitor_info|2026-10-01 21:43:04.275+00|ok|Facilities at Stanborough Park Water Sports Centre   Welwyn Hatfield   Better
+S|Car Parks Our car parks use an ANPR system managed by Gemini (or Apcoa) Parking Solutions.
+S|Charges start at &pound;1.50, with reduced rates for residents and free parking for Blue Badge holders registered with Stanborough Park.
+S|Enjoy 67 water jets, a paddling river and a pirate-themed playground - perfect for kids of all ages.
+P|fp-google-ChIJ05KMm0A_dkgROCJiT9GMt7Y|https://www.stalbans.gov.uk/verulamium-park-faqs|venue_named_page|faq_page|2026-10-05 00:17:06.733+00|ok|Verulamium Park FAQs   St Albans City and District Council
+S|Toggle accordion No Community and living Toggle submenu Sport and leisure Toggle submenu Sports and physical activity Playing pitches and pavilions Walking and cycling St Albans Museums Libraries and archives Markets Toggle submenu Visit St Albans markets Trade at St Albans Markets Toggle submenu Market rules and Code of Conduct Hold your own market in St Albans Contact St Albans markets Public conveniences Accessibility, equality and diversity Ukrainian Family support Allotments Parks and open spaces Toggle submenu Grounds Maintenance Verulamium Park Toggle submenu Keep Our Wildlife Wild at Verulamium Park Cycling In Verulamium Park Events in Verulamium Park Verulamium Park FAQs Clarence Pa
+S|Water exits the large lake via a fixed sluice at the Causeway (near the now closed public toilets) The flooding is happening because more water is flowing into the Lake than can flow out at the other end resulting in it backing up a bit like a blocked drain.
+P|fp-google-ChIJ0ZZcI7hrdkgR4ooSY3kKOMo|https://www.flipout.co.uk/locations/watford|venue_own_subtree|official_website|2026-10-01 21:46:09.729+00|ok|Watford's Epic No 1 Indoor Adventure Park!
+S|Go Beyond Bouncing Flip Out is PACKED with awesome attractions Explore attractions (6) Solo Trampolines Dodgems Laser Quest Drift Trikes Inflatable Ninja Playground There's lots more to explore at flip out Watford View attractions Explore attractions (6) Book a session View All (6) 1 Hour Experience 1 Hour Experience in the arena Access to all attractions You must purchase a spectator ticket to be within the park if not playing Available Holidays &amp; Weekends View DETAILS Book Now 2 Hour Experience 2 Hour Experience in the arena Access to all attractions You must purchase a spectator ticket to be within the park if not playing Available Holidays &amp; Weekends View DETAILS Book Now Family
+S|Solo Trampolines Dodgems Laser Quest Drift Trikes Inflatable Ninja Playground Roller Rink Donut Slide Sports Zone PS5 Station Toddler Soft Play Arcades The Diner Solo Trampolines Dodgems Laser Quest Drift Trikes Inflatable Ninja Playground Roller Rink Donut Slide Sports Zone PS5 Station Toddler Soft Play Arcades The Diner Jump straight to...
+P|fp-google-ChIJ0ZZcI7hrdkgR4ooSY3kKOMo|https://www.flipout.co.uk/locations/watford/frequently-asked-questions|venue_own_subtree|visitor_info|2026-10-01 21:46:10.367+00|ok|Frequently Asked Questions About Flip Out Watford   FAQs
+S|We have a lift inside the venue for easy access for wheelchair users and families with buggies, along with disabled toilets and baby changing facilities on site.
+S|Is Flip Out Watford wheelchair accessible and buggy friendly?
+S|Yes — Flip Out Watford is wheelchair accessible and buggy-friendly.
+S|Children under 1.2m can still enjoy a wide range of attractions including Drift Trikes, Inflatables, Sportz Zone, Ninja Playground, Soft Play, Solo Trampolines, Donut Ring, Slides and PS5 Stations.
+S|We offer six birthday party packages to suit different ages and group sizes: — Weekday Classic — £21.99 per person (Wednesday to Friday, term time) — Laser Quest Party — £23.99 per person (Wednesday to Friday, term time, 1.2m height restriction applies) — Classic Party — £24.99 per person — Premium Party — £29.99 per person — Ultimate Party — £39.99 per person — Little Flippers Party (children aged 5 and under) — £24.99 per person All packages include arena time, a private party room, food and more.
+S|Is Flip Out Watford suitable for toddlers and young children?
+S|We offer a Little Flippers Party package specifically for children aged 5 and under, Stay & Play sessions on Fridays from 10am to 3pm which are perfect for toddlers, and play sessions with separate pricing for children under 1.2m.
+S|We have dedicated sessions and party packages for young children aged 5 and under through to teenagers and adults.
+S|Parking is available at the Harlequin Shopping Centre car parks — the most convenient are Kings Car Park and Queens Car Park.
+S|Do you have parking?
+S|Plenty of parking is available at the Harlequin Shopping Centre car parks.
+S|The most convenient ones are Kings Car Park and Queens Car Park, but any car park around the shopping centre provides quick access to Flip Out Watford.
+P|fp-google-ChIJ2fFKeuMDdkgRLHMNKVOxX_s|https://www.flipout.co.uk/locations/canary-wharf|venue_own_subtree|official_website|2026-10-01 21:54:03.657+00|ok|Canary Wharf's Biggest & Best Indoor Adventure Park!
+S|Bumper Cars Roller Rink Laser Quest Drift Trikes Interactive Football Ninja Playground PS5 Station Toddler Soft Play Party Rooms The Diner Bumper Cars Roller Rink Laser Quest Drift Trikes Interactive Football Ninja Playground PS5 Station Toddler Soft Play Party Rooms The Diner Flip Out Canary Wharf does not have trampolines Jump straight to...
+P|fp-google-ChIJ2fFKeuMDdkgRLHMNKVOxX_s|https://www.flipout.co.uk/locations/canary-wharf/frequently-asked-questions|venue_own_subtree|visitor_info|2026-10-01 21:54:03.967+00|ok|Frequently Asked Questions About Flip Out Canary Wharf   FAQs
+S|No but we do have Bumper Cars, Roller Rink, Donut Slides, Crazy Karts, Giant racing slides, Laser Quest, Gaming Zone, Soft Play, Ball Pits, Ninja Playground, Football, Party Rooms and more!
+S|DO YOU HAVE PARKING?
+S|You can also enjoy 3 Hours FREE parking on Weekends & Bank Holidays!
+P|fp-google-ChIJ7_PV980bdkgROekbwOVWVfo|https://babylonpark.com/london/?utm_source=google&utm_medium=localcard&utm_campaign=309703_lon|venue_own_subtree|official_website|2026-10-02 09:21:01.912+00|ok|Babylon Park in London: Indoor Amusement Park
+S|The entrance is level with the pavement, and a lift is available for access to the mezzanine and basement floors.
+S|There is no dedicated parking at Babylon Park.
+S|Yes, prams are allowed and there is a dedicated pram/buggy section on the second floor.
+S|Arcade games 🕹️ From retro classics to cutting-edge hits, test your skills and rack up high scores in an epic arcade playground!
+S|Mezzanine Floor: Ovo &amp; Neta restaurant (serving pizza, hot dogs, ice cream, waffles, and more), soft play areas for toddlers and kids, and an events room.
+S|Is there parking available?
+S|However, parking spaces can be found nearby in the local area.
+S|Are prams allowed?
+P|fp-google-ChIJ97pX3M0EdkgR8YFd4G1GZJ8|https://www.saatchigallery.com/contact|venue_own_subtree|visitor_info|2026-10-01 21:36:06.947+00|ok|Contact Us » Saatchi Gallery
+S|Where are accessible toilets situated?
+S|Accessible toilets are situated on the Lower Ground Floor and Mezzanine.
+S|Yes, bike parking is available in front of the Gallery, through the gate accessed from Duke of York’s Square.
+S|Contact [email protected] to book a disabled parking space in advance of your visit.
+S|There are two blue badge disabled parking bays to the rear of the Gallery which can be accessed via Turk’s Row off Lower Sloane Street.
+S|Is bike parking available?
+S|Public car parking is available at Sloane Square Car Park, Cheltenham Terrace, London SW3 4RD.
+S|Is disabled parking available?
+S|To reserve a disabled parking bay please email [email protected] or call 0207 811 3070 How can I book a ticket for an exhibition or event?
+S|(No parking Mon-Sat 7am to 7pm / No loading Mon-Fri 7am to 10am and 4pm to 7pm) Royal Hospital Road within the double and single yellow lines.
+S|(No parking Mon-Sat between midnight – 8.30am and 6.30pm to midnight and no parking Sunday at any time) Coaches must not obstruct traffic or cause congestion at any time.
+P|fp-google-ChIJ97pX3M0EdkgR8YFd4G1GZJ8|https://www.saatchigallery.com/visit|venue_own_subtree|visitor_info|2026-10-01 21:36:05.573+00|ok|Plan your visit » Saatchi Gallery
+S|To reserve a disabled parking bay or a wheelchair please email [email protected] or telephone 0207 811 3070 Buggies and Pushchairs: We allow regular-sized buggies and pushchairs in our Galleries wherever possible.
+S|All floors have lifts and there is level access between the Galleries on each floor.
+S|Access: Assisted or ramp access is available at the Gallery’s main entrance.
+S|For the vast majority of the time, that means buggies and pushchairs are welcome in all our exhibition spaces, even during busy periods.
+S|At these times, we may ask that some buggies are left in a buggy park within the Gallery.
+P|fp-google-ChIJ99IK4v8QdkgRZNGsdKK0pb8|https://www.brent.gov.uk/parks-leisure-and-healthy-living/parks-and-open-spaces/park-finder/gladstone-park|venue_own_subtree|official_website|2026-10-01 20:58:06.88+00|ok|Gladstone Park   Brent Council
+S|Hire charges apply Facilities Children&rsquo;s playgrounds Outdoor gym Caf&eacute; Walled garden Rose terraces Duck pond Wildlife area Dollis Hill House footprint with historic interpretation boards Heritage-listed prisoners of war memorial sculpture Allotments Report a problem in this park Last updated 01/08/24 Contact details Address: Gladstone Park and Open Space, Parkside, London, Brent, NW2 6RW Learn how to use our outdoor gyms Free instructor-led, drop-in sessions are held at various outdoor gyms in parks across Brent each week.
+S|It has meadows, tree-lined avenues, a walled garden, a duck pond, sports pitches, tennis courts, an outdoor gym and children&rsquo;s playgrounds.
+S|Dogs are not permitted in the children&rsquo;s playgrounds or outdoor gym, tennis courts, multi-use games area.
+S|Search council services Search Popular searches: Buy a parking permit Find Council Tax bands and charges School admissions Home Parks leisure and healthy living Parks and open spaces Find parks and open spaces in Brent Gladstone Park Gladstone Park Gladstone Park is on a hill with views across London.
+S|A small surfaced car park, open from 6am to 9pm, is accessed from Dollis Hill Lane.
+P|fp-google-ChIJ9bI_ApKt2EcRDyvcMDwpxvE|http://www.swanleypark.co.uk/faqs/|venue_own_subtree|faq_page|2026-10-01 21:23:05.279+00|ok|FAQs – Swanley Park
+S|The play park is accessible all hours, however car parks will be locked at 9pm.
+P|fp-google-ChIJ9bI_ApKt2EcRDyvcMDwpxvE|https://www.swanleypark.co.uk/|venue_own_subtree|official_website|2026-10-01 21:23:03.156+00|ok|Swanley Park – Swanley Park
+S|Welcome Parking Information For all online bookings including Soft Play, Splash Pool and Birthday Parties.
+S|Older children can use up their energy nearby at the large, well equipped play area including swings, climbing frame and a zip wire.
+S|Sunday, November 29, 2026 10:00 am Location: Swanley Park, New Barn Road, Swanley, Kent, BR8 7PW ( start line by Swanley Park Cafe) Cost: £10.00 per child which includes festive items collected at each station and medal.
+S|Continue reading Parking Charges at Swanley Park.
+S|An ANPR system is live, and visitors will have to follow the relevant payment terms as listed on the signage in the car parks when they arrive.
+S|APRIL – SEPTEMBER OCTOBER – MARCH Up to 2 hours – FREE Up to 2 hours – FREE All day – £4.75 All day parking £2.50 Swanley Residents Information Swanley residents will not need to pay for parking, if they have previously applied for a resident permit and this been approved.
+S|Residents permits expire on the 31st March every year and will need to be renewed before this date as your parking session will not be covered should you attend the park after this date and not pay.
+S|Parking Information For all online bookings including Soft Play, Splash Pool and Birthday Parties.
+P|fp-google-ChIJ9bI_ApKt2EcRDyvcMDwpxvE|https://www.swanleypark.co.uk/parking-charges/|venue_own_subtree|visitor_info|2026-10-01 21:23:05.623+00|ok|Parking – Swanley Park
+S|Parking Car Park Location Codes The Birches – 2629   New Barn Road – 2628 Parking Charges at Swanley Park.
+S|Car Park Location Codes The Birches – 2629   New Barn Road – 2628 Parking Charges at Swanley Park.
+S|Parking &#8211; Swanley Park Skip to content Join Swanley Park on Facebook.
+P|fp-google-ChIJAdLvZfkadkgRjwFvlivSzpo|https://ktcityfarm.org.uk/visits/|venue_own_subtree|visitor_info|2026-09-29 00:24:09.215+00|ok|Visiting The Farm
+S|Accessible toilet facilities are available.
+S|24 &amp; 46 Car Parking No parking directly outside the farm, restricted parking in surrounding streets weekdays 8.30am -6.30pm, Pay and display parking on Queen’s Crescent &amp; Vicar&#8217;s Road Plenty of room for buggies Bicycle parking inside the farm School visits Click here for details of school visits About the farm Off to see the goats Kentish Town City Farm is a charity that provides opportunities to help people connect with animals, nature and the environment.&nbsp;We are an educational resource for school children to learn about animal physiology, where food comes from and the natural world.
+S|24 & 46 Car Parking No parking directly outside the farm, restricted parking in surrounding streets weekdays 8.30am -6.30pm, Pay and display parking on Queen’s Crescent & Vicar’s Road Plenty of room for buggies Bicycle parking inside the farm School visits Click here for details of school visits About the farm Off to see the goats Kentish Town City Farm is a charity that provides opportunities to help people connect with animals, nature and the environment.
+P|fp-google-ChIJATb-mYIQdkgRH82PlPcn3cs|https://www.cityoflondon.gov.uk/things-to-do/green-spaces/hampstead-heath/where-to-go-at-hampstead-heath/golders-hill-park|venue_own_subtree|official_website|2026-10-01 20:53:02.771+00|fetched_truncated|Golders Hill Park - City of London
+S|There are three accessible toilets in the park - By the cafe ///noting.fortunate.dots , dimensions are 2.13m by 1.4m with door width 0.85m.
+S|In the Park, you can find: a café tennis courts all weather table tennis tables a bandstand Golders Hill Park Zoo a children's playground a beautiful walled garden the stumpery toilets 2026 opening and closing times 2026 Opening Times Date Time 1 Jan to 25 Jan 7.30am - 4.30pm 26 Jan to 8 Feb 7.30am - 5pm 9 Feb to 22 Feb 7.30am - 5.30pm 23 Feb to 8 Mar 7.30am - 6pm 9 Mar to 22 Mar 7.30am - 6.30pm 23 Mar to 28 Mar 7.30am - 7pm 29 Mar to 12 April 7.30am - 8pm 13 April to 26 April 7.30am - 8.30pm 27 April to 16 Aug 7.30am - 9pm 17 Aug to 30 Aug 7.30am - 8.30pm 31 Aug to 13 Sep 7.30am - 8pm 14 Sep to 27 Sep 7.30am - 7.30pm 28 Sep to 4 Oct 7.30am - 7pm 5 Oct to 24 Oct 7.30am - 6.30pm 25 Oct to 15
+S|Both toilets have baby change facilities.
+S|Getting here Golders Hill Park is located on North End Way Public transport The nearest station is Golders Green on the Northern line (14 minute walk) The 210 and the 268 bus also serve the park Visit TFL's journey planner to plan your visit to the Park Parking Golders Hill Park car park eight bays in the park for Blue Badge holders only.
+S|For other parking, Jack Straws car park is a 10 minute walk.
+P|fp-google-ChIJAVlhMIUCdkgRCJEgHVbITq4|https://www.rmg.co.uk/plan-your-visit/accessibility-cutty-sark|venue_named_page|accessibility_page|2026-10-01 21:08:05.04+00|ok|Accessibility at Cutty Sark   Royal Museums Greenwich
+S|Please note: wheelchairs cannot be taken outside Cutty Sark Cutty Sark staff cannot provide assistance around the site for wheelchair users Only one wheelchair user can be on each deck of the ship at any one time, for safety reasons in the case of an emergency evacuation Accessible parking There are five accessible parking bays in the National Maritime Museum Park Row car park.
+S|There are accessible cubicles in both the men’s and the women’s toilets.
+S|There’s also a larger accessible toilet here too.
+S|There’s a second accessible toilet at the top of the access tower, across the bridge from the Main Deck.
+S|Accessible travel to Cutty Sark We’ve got all the information you need to find accessible routes to visit Cutty Sark in Greenwich Top things to do at Cutty Sark From the dizzy height of the main mast to the surprises below deck, step aboard and discover the best Cutty Sark has to offer BSL Tour: Cutty Sark Join guide John Wilson for a British Sign Language (BSL) tour of Cutty Sark and discover what life was like aboard the iconic sailing ship Awards and accreditations
+S|The two platform lifts in the Dry Berth providing access from street level to -1, and the internal lift inside the ship are 145cm deep with a 90cm doorway and can carry a maximum of four people.
+S|The two lifts in the access tower link the Main Deck, street level, and level -1.
+S|The lifts have a mirror opposite the door to help anyone reversing in a wheelchair.
+S|Toilets The main toilets are next to the cafe in the Dry Berth at level –1, underneath the ship.
+S|Buggy parking is available in the Dry Dock.
+S|Disabled parking is also available in Greenwich town centre.
+S|This car park is managed by Greenwich Council: +44 (0)20 8921 4339 or parking@royalgreenwich.gov.uk .
+S|Start in the Lower Hold, the move up via stairs or the lift to the Tween Deck; and then finally up a second set of stairs or a lift to the Main Deck.
+S|You will then cross a small bridge and take the lift or stairs down to level –1, or the Dry Berth to look under the ship’s hull.
+S|The Anchor Deck and Liverpool House can only be accessed by a short, five-step staircase .
+S|Lifts There’s a total of five lifts on site.
+S|To operate these lifts, you need to push and hold the button for the desired floor for the duration of your journey.
+S|These lifts are larger: 90cm rail to rail; and 215cm from the door to the back handrail.
+S|These lifts are operated by one push of a button.

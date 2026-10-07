@@ -96,7 +96,7 @@ async function verifiedBundleForVenue(id) {
     // here silently withheld a high-confidence fact. An empty body is passed through deliberately, so a
     // title-only page still gets its chance to produce one.
     const facts=extractEvidenceFromText(r.extractedText||'',extractionSourceMeta({url:r.sourceUrl,sourceType:r.sourceType,retrievedAt:r.retrievedAt,pageTitle:r.pageTitle}));
-    if(!isEvidenceBearingSource({extractedText:r.extractedText,facts}))continue;
+    if(!isEvidenceBearingSource({extractedText:r.extractedText,facts,pageTitle:r.pageTitle}))continue;
     sources.push({url:r.sourceUrl,sourceType:r.sourceType,retrievedAt:r.retrievedAt,fetchStatus:r.fetchStatus,
       // Carried from the stored row, never recomputed here: re-deriving provenance downstream is
       // precisely the mistake that let a crawl's assumption become a finding.

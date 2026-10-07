@@ -174,6 +174,8 @@ export interface MatchableVenueFacts {
   babyChanging: TriState | 'unknown';
   parking: TriState | 'unknown';
   freeParking?: TriState | 'unknown';
+  /** A café on site, from an approved claim. Optional so older fixtures and callers read it as unknown. */
+  cafe?: TriState | 'unknown';
   pushchairSuitability: import('@/src/types/enrichment').PushchairSuitability;
   /**
    * How hilly the paths are, from an approved claim (never inferred from the category: a park is not assumed hilly, a
