@@ -25,14 +25,14 @@ Expected return 18; a second call returns 0. **Not executed. I am stopped until 
 
 **You approved disabling new paid photo requests. It is not done and I cannot do it from here:** this session's Vercel connection lists no team and no project, so I can neither read nor change the environment. I will not report it as off until the live check below passes.
 
-What production shows (read-only, `google_places_usage`): **339** `place_photos` calls on 7 October, **91** on 6 October, **none yet recorded on 8 October** (the last row written today is the 03:00 discovery sync). The absence today is not evidence the switch is on; it may only mean no one has opened a venue yet.
+What production shows (read-only, `google_places_usage`, checked 8 October 22:30 UTC): `place_photos` calls were **116** on 5 October, **91** on 6 October, **339** on 7 October and **50** on 8 October (last written 15:14 UTC). **Paid photo requests are still being made.** The switch is not on.
 
 **Exact steps (about five minutes):**
 
 1. Vercel, the FamilyPilot project, **Settings, Environment Variables**.
 2. Add `GOOGLE_PLACES_PHOTOS_ENABLED` with value `false`, ticking **Production** and **Preview**. If it already exists, edit it rather than adding a second.
 3. **Deployments**, the latest production deployment, **Redeploy** (an environment variable only takes effect on a new deployment).
-4. Verify, not assume. In GitHub, **Actions, live-canaries, Run workflow** on `main` with `assert_fail_closed = true`, `posture_profile = production`, `verify_client_config = true`, `expect_off = photos`. It must finish green.
+4. Verify, not assume. In GitHub, **Actions, live-canaries, Run workflow** on `main` with `assert_fail_closed = true`, `posture_profile = production`, `verify_client_config = true`, `expect_off = photos`. It must finish green. **Baseline already taken:** I ran exactly this against production on 8 October at 23:16 UTC (free, no provider request; [run 25](https://github.com/aidanshaw92/FamilyPilot/actions/runs/37858462476)). The step "Assert the target is fail-closed for every paid Google scope" **failed**, which is the expected result while photos are on, and shows the check can tell the difference. After your change the same run must pass that step.
 5. Tomorrow, `select * from google_places_usage where sku = 'place_photos' order by usage_day desc limit 3;` should show no new calls dated after the redeploy.
 
 With photographs off the app shows its own placeholders (checked in the earlier fallback render). Nothing in this branch depends on photographs.
