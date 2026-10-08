@@ -46,6 +46,8 @@ describe('must stay unknown', () => {
     ['Wheelchair accessible picnic tables will be added, and the waterplay and sand area will have raised tables.', 'wheelchairAccessible'],
     // Another place's accessible toilet: Sydenham Hill Wood served "accessible toilet: yes" from this until v6.
     ['Changing Places Toilet The nearest Changing Places Toilet can be found in Dulwich Park, College Road (College Gate Entrance).', 'accessibleToilet'],
+    // Baby changing somewhere unstated: "the nearest" is not "here" (Madame Tussauds' page, identity-reviewed and rejected).
+    ['Please ask a member of staff for the nearest baby changing facilities', 'babyChanging'],
     // Somebody else's café, and a day-only kiosk.
     ['A public bicycle rack is provided by the Serpentine Bar & Kitchen cafe.', 'cafe'],
     ['The Kiosk Community Café: every Saturday 9am to 2pm', 'cafe'],

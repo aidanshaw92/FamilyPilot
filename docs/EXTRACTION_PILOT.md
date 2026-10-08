@@ -61,6 +61,10 @@ Including v5, the parking fix, the replay from `main` changes 26 facts.
 - A café with hours in a sentence that also says it is being rebuilt. The Design Museum: "Cafe & Design Kitchen 10:00 –
   17:00 ... we are rebuilding our cafe".
 - "By the cafe ///noting.fortunate.dots", a what3words pin in a list of toilets.
+- "Please ask a member of staff for the nearest baby changing facilities" (Madame Tussauds, and the same template on
+  SEA LIFE's FAQ). It does not say the baby changing is on site. Found in the merge review: once #175 makes Madame
+  Tussauds' pages eligible, this sentence would have been auto-approved. SEA LIFE keeps its baby changing from two
+  unambiguous sentences on the same page, so no served fact is lost.
 - Already refused before this pilot and still refused:
   - "The Kiosk Community Café: every Saturday 9am to 2pm" (day-only);
   - "parking is extremely limited";

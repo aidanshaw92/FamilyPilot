@@ -1201,6 +1201,9 @@ function matchField(sentence, patterns, fieldId) {
     if (fieldId === 'toilets' && /\b(?:nearest|nearby|across\s+the\s+(?:road|street)|down\s+the\s+(?:road|street)|round\s+the\s+corner|minutes?\s+(?:walk|away)|neighbouring|village\s+hall|railway\s+station)\b/i.test(sentence)) continue;
     // "The nearest Changing Places Toilet can be found in Dulwich Park" (Sydenham Hill Wood) is another place's toilet.
     if (fieldId === 'accessibleToilet' && /\b(?:nearest|nearby)\b|\bcan\s+be\s+found\s+in\s+[A-Z]/.test(sentence)) continue;
+    // "Please ask a member of staff for the nearest baby changing facilities" (Madame Tussauds) does not say it is on site.
+    // Only when it qualifies the baby changing itself: an amenities list that mentions "nearby" elsewhere is not this.
+    if (fieldId === 'babyChanging' && /\b(?:nearest|nearby)\b[^.]{0,40}\bbaby[\s-]+chang/i.test(sentence)) continue;
     // A café's or a bus route's accessibility is not the venue's.
     if (fieldId === 'wheelchairAccessible' && isNonVenueWheelchairSubject(sentence)) continue;
     if (fieldId === 'wheelchairAccessible' && VENUE_STEP_FREE_PATTERNS.includes(re) && isNonVenueStepFree(sentence)) continue;
