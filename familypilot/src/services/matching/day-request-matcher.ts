@@ -304,6 +304,23 @@ export function matchVenueToDayRequest(
     }
   }
 
+  // Step-free access for a party with a wheelchair or mobility-aid user: a confirmed "no" from the venue refuses the day, an
+  // unconfirmed one is carried as something to check (the sequencer's rule for every required fact), and a "yes" is met. Read
+  // from the venue's own wheelchair-access claim only; a buggy rating is not evidence either way, and nothing here is scored.
+  if (request.needsStepFree) {
+    if (
+      !applyConstraint(
+        evaluations,
+        'accessibility.wheelchairAccessible',
+        'required',
+        evaluateTriStateRequired(facts.wheelchairAccessible ?? 'unknown', true),
+        tally,
+      )
+    ) {
+      eligible = false;
+    }
+  }
+
   // A recorded venue rule the household cannot work around (a buggy-dependent family where pushchairs are not allowed in the
   // core experience; a step-free-dependent one where the reviewer marked a gap as covering the visit). Only a confirmed,
   // reviewed rule produces this; a venue with none recorded is not touched, and nothing here changes a score.

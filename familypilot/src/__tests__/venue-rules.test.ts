@@ -269,3 +269,43 @@ describe('Family Fit reads the venue’s rules without moving any score', () => 
     expect(none.verdict).toBe(evaluateFamilyMatch({ venue: venueWith(), profile: profile([child('c', 'Sloane', 4)]), score: 80, now: NOW }).verdict);
   });
 });
+
+describe('a party that needs step-free access', () => {
+  const stepFree = family({ stepFree: true, pushchair: false });
+  it('is refused a venue that says it is not wheelchair accessible, in the planner’s own terms', () => {
+    const no = matchVenueToDayRequest({ ...baseFacts(), wheelchairAccessible: 'no' }, familyRequest(stepFree, 'either', '2026-10-10'));
+    expect(no.eligible).toBe(false);
+    expect(no.evaluations.find((e) => e.field === 'accessibility.wheelchairAccessible')).toMatchObject({ strength: 'required', outcome: 'unsuitable' });
+  });
+
+  it('carries "not confirmed" as a thing to check rather than refusing or reassuring', () => {
+    const unknown = matchVenueToDayRequest(baseFacts(), familyRequest(stepFree, 'either', '2026-10-10'));
+    expect(unknown.evaluations.find((e) => e.field === 'accessibility.wheelchairAccessible')?.outcome).toBe('unknown');
+    const yes = matchVenueToDayRequest({ ...baseFacts(), wheelchairAccessible: 'yes' }, familyRequest(stepFree, 'either', '2026-10-10'));
+    expect(yes.evaluations.find((e) => e.field === 'accessibility.wheelchairAccessible')?.outcome).toBe('suitable');
+  });
+
+  it('asks nothing of a party that does not need it, and a buggy never stands in for it', () => {
+    const none = matchVenueToDayRequest({ ...baseFacts(), wheelchairAccessible: 'no' }, familyRequest(family(), 'either', '2026-10-10'));
+    expect(none.evaluations.some((e) => e.field === 'accessibility.wheelchairAccessible')).toBe(false);
+    expect(none.eligible).toBe(true);
+  });
+
+  it('puts the unconfirmed requirement on the saved plan in plain words', async () => {
+    const draft: PlanDraft = { date: '2026-10-10', startAt: '10:30', partyIds: ['mine'], attendeeIds: null, visit: 90, returnBy: '', bufferMinutes: 15, environment: 'either' };
+    const venue = { placeId: 'fp-v', name: 'Test Place', category: 'museum' as const, latitude: 51.54, longitude: -0.0, facts: baseFacts() };
+    const matrixBuilder = (async () => ({
+      matrix: { legs: {
+        [homeKey('mine')]: { [stopKey('fp-v')]: { minutes: 20, source: 'estimated' } },
+        [stopKey('fp-v')]: { [homeKey('mine')]: { minutes: 20, source: 'estimated' } },
+      } },
+      provenance: { live: 0, estimated: 2 }, trafficDowngraded: false, missing: [],
+    })) as never;
+    const outcome = await createPlan({ venue: venue as never, draft, families: [{ ...stepFree, id: 'mine' }] }, { buildMatrix: matrixBuilder, now: new Date('2026-10-08T08:00:00') });
+    expect(outcome.ok).toBe(true);
+    if (outcome.ok) expect(outcome.view.needsChecking.join(' ')).toMatch(/Wheelchair and step-free access isn’t confirmed at Test Place/);
+    const refused = await createPlan({ venue: { ...venue, facts: { ...baseFacts(), wheelchairAccessible: 'no' } } as never, draft, families: [{ ...stepFree, id: 'mine' }] }, { buildMatrix: matrixBuilder, now: new Date('2026-10-08T08:00:00') });
+    expect(refused.ok).toBe(false);
+    if (!refused.ok) expect(refused.message).toMatch(/does not have wheelchair and step-free access/);
+  });
+});

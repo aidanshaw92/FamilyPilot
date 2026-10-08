@@ -10,6 +10,7 @@ const LABELS: Record<string, string> = {
   'familyFacilities.babyChanging': 'baby changing',
   'familyFacilities.parking': 'parking',
   pushchairSuitability: 'pushchair access',
+  'accessibility.wheelchairAccessible': 'wheelchair and step-free access',
 };
 
 export const mustHaveLabel = (field: string): string | null => LABELS[field] ?? null;

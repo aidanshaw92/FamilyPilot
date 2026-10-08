@@ -22,6 +22,7 @@ const UNKNOWN_FACT_SENTENCES: Record<string, (where: Where) => string> = {
   'familyFacilities.babyChanging': ({ at }) => `Baby changing is not confirmed ${at}`,
   'familyFacilities.parking': ({ at }) => `Parking is not confirmed ${at}`,
   pushchairSuitability: ({ at }) => `Pushchair access is not confirmed ${at}`,
+  'accessibility.wheelchairAccessible': ({ at }) => `Wheelchair and step-free access is not confirmed ${at}`,
   environment: ({ of }) => `Whether ${of} is indoors or outdoors is not confirmed`,
   energyLevel: ({ at }) => `How busy or lively it gets ${at} is not confirmed`,
   estimatedSpend: ({ at }) => `What a visit costs ${at} is not confirmed`,

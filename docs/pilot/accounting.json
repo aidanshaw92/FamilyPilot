@@ -14,20 +14,22 @@
    "claim": 43,
    "NO HOME: stations, buses, fees and entrances have no claim type": 10,
    "NO HOME: facility detail beyond the mapped facts has no claim type": 4,
-   "NO HOME: official hours and closures have no claim type": 6,
+   "NO HOME: official hours and closures have no claim type": 4,
    "NO HOME: practical rules and closures have no claim type": 5,
    "NO HOME: pushchair rules and storage have no claim type (only a terrain rating)": 1,
+   "venue rule claim (structured; a person must approve it)": 2,
    "note only (good to know); no structured home": 2
   },
   "review": {
    "ships as reviewed activity data (code, by pull request)": 10,
    "NO HOME: pushchair rules and storage have no claim type (only a terrain rating)": 3,
    "claim": 21,
-   "note only (good to know); no structured home": 22,
-   "NO HOME: official hours and closures have no claim type": 3,
-   "NO HOME: practical rules and closures have no claim type": 4,
+   "note only (good to know); no structured home": 5,
+   "venue rule claim (structured; a person must approve it)": 23,
+   "NO HOME: official hours and closures have no claim type": 2,
+   "NO HOME: practical rules and closures have no claim type": 1,
    "price: reviewed admission data or held (no claim type)": 7,
-   "NO HOME: accessibility detail beyond wheelchair and sensory has no claim type": 6,
+   "NO HOME: accessibility detail beyond wheelchair and sensory has no claim type": 4,
    "ships as reviewed admission data (code, by pull request)": 6,
    "NO HOME: a plain activity description has no claim type": 2,
    "NO HOME: stations, buses, fees and entrances have no claim type": 1
@@ -37,7 +39,8 @@
   "noPersonUnderPilotGate": 46,
   "ifApprovedUnderPilotGate": 73,
   "noPersonAndProductionAutoField": 37,
-  "ifApprovedAndProductionAutoField": 64
+  "ifApprovedAndProductionAutoField": 64,
+  "venueRulesProposedAllNeedAPerson": 28
  },
  "productionAutoFields": [
   "toilets",
