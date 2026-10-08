@@ -114,11 +114,42 @@ See `VENUE_DETAIL_LOADING.md` for the mechanism, the measurements, the risk take
 reports can only lower a verdict, a single report never reaches Family Fit, corroborated reports are labelled
 "parent-reported, not confirmed by the venue"; planning does not read them.
 
+### A contradicted fact is not shown as confirmed first (follow-up)
+
+The risk taken above was real: for a venue with a recent report that contradicts a fact, the page drew the venue's own fact
+as confirmed (a tick, maybe a higher badge) and up to three seconds later corrected it. **No parent report exists yet**
+(`venue_visit_reports`: 0 active rows), so this is about the first one, and the fix is proportionate:
+
+- **The server says whether a correction is possible.** The detail response carries `hasRecentParentReports` (true, false or
+  null for "could not tell"): one head-only count of active reports in the last 90 days, run beside the metadata read and
+  bounded to 400 ms (`venueHasRecentReports`). It cannot fail or slow the detail beyond that bound; an error is `null`, never
+  `false`.
+- **Only when it is true**, Family Fit (the badge beside the name and the card) shows a neutral **"Checking recent parent
+  reports"** state until the reports arrive: no verdict, no tick, no star, no fact, the height of the card it becomes
+  (minimum 200 pt), a direct swap. It is bounded by the reports read's own three second ceiling; after that, or on a failure,
+  the venue's own facts are shown exactly as before.
+- **Everywhere else nothing changes**: with `false`, `null` or no flag (every venue today, an older cached payload) the page
+  draws at once and a report that still arrives corrects it as before. The page, the photograph, the name and every other
+  block are never held: only the Family Fit block waits, only for venues with reports.
+- **Alternatives considered.** Hold the whole Family Fit block for every venue until reports arrive: puts a wait on every page
+  to guard against a case that does not exist yet. Annotate each fact "from the venue's own information": true but it still
+  shows a tick that may be withdrawn. Wait for reports on the server before replying: reintroduces the delay this change removed.
+- **Residual window, stated.** The flag travels with the detail, which the CDN holds for 5 minutes (plus 10 of stale-while-
+  revalidate) and the device for 30. A venue's very first report can therefore still be shown the old way, once, for up to
+  about 45 minutes. Cards on Home and Explore deliberately use the venue's own facts only, so a card can still read "Good"
+  where the page, after a report, reads "Possible".
+- **Verified in a browser** (fixture, simulated latencies, an injected contradicting report): `verify-parent-report-
+  consistency.mjs`. A: the contradicted fact is never shown as confirmed and the state swaps directly; B: the ceiling holds at
+  3 s with a 5 s read; C: a failing read ends it; D and E: nothing shows without the flag and the page is not held.
+
 ## Tests
 
 - `stable-fit.test.ts` (new): the whole fit — order, scores, verdicts, headlines, reasons, cautions, to-check lines, card
   lines — is deep-equal across an open morning, closing soon, finished for the day, shut all day and a different day;
   nothing a parent reads about the fit mentions today, hours or weather; shut places stay listed at the same position;
   never-open places are still excluded; parent-report semantics; wiring of the non-blocking path; the 12-month convention.
+- `parent-report-consistency.test.ts` (new, 11): the flag (true / false / null on error, no count, no database and a slow
+  read; head-only; 90 days), its place in the detail response, when "checking" shows and when it never does, the bound, and
+  that the neutral state draws no verdict or fact.
 - `closed-today.test.ts`, `card-closed-status.test.ts`, `family-match.test.ts`, `trusted-family-score.test.ts`,
   `proactive-day-request.test.ts`, `home-loading.test.ts`, `soft-deadline.test.ts`: rewritten to the new contract.

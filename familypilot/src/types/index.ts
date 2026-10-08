@@ -166,6 +166,11 @@ export interface CommunityTip {
 }
 
 export interface VenueDetail extends Venue {
+  /**
+   * True when a parent report from the last 90 days could still correct a fact on this page (sent with the detail by the
+   * server). Decides only whether Family Fit shows "checking recent reports" while they are read. `null`/absent: not known.
+   */
+  hasRecentParentReports?: boolean | null;
   website?: string;
   phone?: string;
   photos: string[];
