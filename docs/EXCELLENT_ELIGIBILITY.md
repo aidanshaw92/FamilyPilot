@@ -6,6 +6,46 @@ official recommended range is neither available (0 of 134 destinations carry one
 
 Agreed and unchanged: weather, opening status and closing-soon never change a fit; the under-12-month convention stays for now.
 
+## 0. Final rule after your review (2026-10-08) — still not applied
+
+You agreed that Excellent needs activity evidence, but a playground or other child-directed provision must not qualify a child
+of any age. So R2b (section 3) is withdrawn and replaced by **R3**:
+
+> **Excellent requires, for every child aged 12 months or more, activity evidence that names an age range including that
+> child:** the venue's own recommended range, or a range the venue states for a part, area, session or regular programme (for
+> example "the playground is for ages 4 to 14", "interactive play area for under-8s"). A provision with no stated age (a
+> playground, a soft-play area, a farm's animal barn) is **shown as provision** ("Has a playground; the ages it suits aren't
+> stated") but never counts toward Excellent, never names a child as suited, and never removes the "we haven't yet confirmed
+> whether this suits Sloane" line. One-off events and ticket bands do not count.
+>
+> **Under 12 months** (the convention, kept provisionally): nothing changes in the gap line, but a baby-only household's
+> Excellent rests on logistics alone, so its badge reads **"Easy visit"**, not "Excellent fit", and the headline keeps saying
+> "Easy to visit with Ozzie".
+
+**Final measured impact** (same method as section 4: 134 destinations, 8 homes, 7 households, no stated limit or budget,
+7,504 pairs; the four part-level age statements found in stored pages are Battersea Park playground 4 to 14, Burgess Park up to
+14, Belmont Farm soft play 6 months to 10 years and London Museum Docklands play area for under-8s):
+
+| | Today | Final rule |
+| --- | ---: | ---: |
+| Excellent, households with a child of 12 months or more | 21 pairs | **0** |
+| Excellent, baby-only households (relabelled "Easy visit") | 28 pairs | 28 pairs, worded "Easy visit" |
+| Good | 767 | 767 + the 21 that drop one step = 788 |
+| Possible, Poor, Not reviewed, scores, ranking | unchanged | unchanged |
+| Venues that can show the words "Excellent fit" to anyone | 2 | **0** |
+
+If the four part-level ranges were captured as claims (they are not today), Good would rise by 16 pairs and Excellent would
+still be 0: none of those four venues has enough confirmed visit facts to reach Excellent on its other conditions. Excellent
+returns when a venue has both an age statement for the child and the confirmed visit facts, which is what the existing-facts
+recovery (`EXISTING_FACTS_AUDIT.md`) and age capture will build.
+
+**What a parent reads under R3.** At the museum that is Excellent today for a 3-year-old: badge **Good**, headline "Easy to visit
+with Sloane", the playground shown as provision, and "We haven't yet confirmed whether this activity suits Sloane" kept. For a
+2-month-old at the same place: badge **"Easy visit"**.
+
+Nothing in scoring or wording has changed; the build (one rule beside the verdict, the provision row, the badge word, tests per
+household above) waits for your go.
+
 ## 1. The problem, as the data shows it
 
 `excellent` today needs a score of 85 or more, at least four confirmed positives, at least two facts about the venue and
@@ -89,7 +129,7 @@ What this says, plainly:
    That is the strongest argument against R1.
 4. The 767 Good pairs are untouched. Where a child has only logistics, the card already says the activity is not yet confirmed.
 
-## 5. Recommendation
+## 5. Recommendation (superseded by section 0)
 
 **Adopt R2b, and fix the baby case in the words, not the logic.**
 
