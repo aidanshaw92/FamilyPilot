@@ -82,7 +82,7 @@ function browse(profile: FamilyProfile, clock: string) {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(`2026-10-07T${clock}:00+01:00`));
   try {
-    return rankForFamily(venues(), profile, null).map((v) => ({
+    return rankForFamily(venues(), profile).map((v) => ({
       name: v.name,
       score: v.familyScore.score,
       card: v.familyMatch ? matchCardReason(v.familyMatch) : '',

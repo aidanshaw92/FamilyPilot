@@ -89,9 +89,11 @@ export interface FamilyScoreFactors {
   ageSuitability: number;
   accessibility: number;
   distance: number;
-  weatherFit: number;
-  budgetFit: number;
+  /** Absent when the family stated no budget: nothing is scored, and the blend leaves it out (blend.ts). */
+  budgetFit?: number;
   facilitiesMatch: number;
+  // There is deliberately no weather factor either: Family Fit is the same whatever the weather today (it is shown beside
+  // the fit, as a condition of the day, never as part of it).
   // There is deliberately no routine factor. Ranking used to reward a place the family could reach and leave before the
   // next nap or feed TODAY, so Home reordered itself by the clock. Ranking is about the family; routines are about a
   // chosen day, and are worked out by the planner (routine-advice.ts).
@@ -164,6 +166,11 @@ export interface CommunityTip {
 }
 
 export interface VenueDetail extends Venue {
+  /**
+   * True when a parent report from the last 90 days could still correct a fact on this page (sent with the detail by the
+   * server). Decides only whether Family Fit shows "checking recent reports" while they are read. `null`/absent: not known.
+   */
+  hasRecentParentReports?: boolean | null;
   website?: string;
   /** A confirmed, sourced admission price. Absent for every place today: a missing price is unknown, never free (services/pricing). */
   admission?: import('@/src/services/pricing/admission').AdmissionPricing;
@@ -272,6 +279,16 @@ export interface FamilyRoutine {
   childId?: string;
 }
 
+/** A stored value that may have been the parent's answer or the app's default: kept for the parent to confirm, never applied. */
+export interface UnconfirmedPreferences {
+  maxDriveMinutes?: number;
+  budgetTier?: 'budget' | 'moderate' | 'premium';
+  /** Why it is unconfirmed, for anyone reading stored data later. */
+  reason: 'legacy-default-or-choice';
+  /** When the migration set it aside (ISO). */
+  recordedAt: string;
+}
+
 export interface FamilyProfile {
   id: string;
   parentName: string;
@@ -285,8 +302,23 @@ export interface FamilyProfile {
   /** Resolved centroid for the entered town/postcode. Stored locally with the profile. */
   homeLatitude?: number | null;
   homeLongitude?: number | null;
-  budgetTier: 'budget' | 'moderate' | 'premium';
-  maxDriveMinutes: number;
+  /**
+   * Only what the parent CHOSE. Absent means "no budget stated": nothing is cut, capped or marked down for price.
+   * Never filled in by the app (see utils/preferences.ts).
+   */
+  budgetTier?: 'budget' | 'moderate' | 'premium' | null;
+  /**
+   * The longest journey the parent said they will make, in minutes. Absent means "no limit stated": nothing is cautioned,
+   * ranked down or hidden for distance, though the journey time is still shown. Never filled in by the app.
+   */
+  maxDriveMinutes?: number | null;
+  /**
+   * Values an earlier version of the app stored that cannot be told from the app's own defaults (exactly 30 minutes and
+   * exactly "moderate": every profile used to be created with both). They are kept, not applied: nothing reads this to
+   * limit, cut or rank anything. A parent is asked once in Edit Profile; "Keep" promotes the value to a choice, anything
+   * else they pick answers the question. See utils/preferences.ts.
+   */
+  unconfirmedPreferences?: UnconfirmedPreferences;
   completionPercent: number;
   vehicle?: string | null;
   pushchair?: string | null;

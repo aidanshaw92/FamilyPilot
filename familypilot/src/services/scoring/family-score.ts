@@ -1,6 +1,8 @@
-import { EnrichmentStatus, FamilyProfile, FamilyScore, FamilyScoreFactors, VenueDetail, WeatherInfo } from '@/src/types';
+import { EnrichmentStatus, FamilyProfile, FamilyScore, FamilyScoreFactors, VenueDetail } from '@/src/types';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
 import { budgetFitReason } from '@/src/utils/budget-copy';
+import { budgetTierOf, driveLimitMinutes } from '@/src/utils/preferences';
+import { blendFactors } from './blend';
 
 import { PROVIDER_ONLY_FAMILY_MATCH_CAP } from '@/src/constants/places-quality';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
@@ -14,7 +16,6 @@ import {
   scoreTrustedAgeSuitability,
   scoreTrustedBudget,
   scoreTrustedFacilitiesMatch,
-  scoreTrustedWeatherFit,
   buildTrustedCautions,
 } from './trusted-family-score';
 
@@ -22,12 +23,17 @@ const WEIGHTS = {
   ageSuitability: 0.25,
   accessibility: 0.15,
   distance: 0.15,
-  weatherFit: 0.1,
   budgetFit: 0.1,
   facilitiesMatch: 0.15,
 } as const;
-/** The weights no longer sum to one (the routine factor's tenth was removed), so the blend is divided by their total. */
-const WEIGHT_TOTAL = Object.values(WEIGHTS).reduce((sum, weight) => sum + weight, 0);
+/**
+ * The weights do not sum to one (the routine and weather factors were removed, and a budget nobody stated takes no part), so
+ * the blend divides by the weights of the factors present.
+ *
+ * There is deliberately no weather factor. Family Fit is about the family and the place, and must be the same on a wet
+ * Tuesday as on a sunny Saturday: weather and opening hours are facts about a particular day, shown beside the fit
+ * (see `conditions` in family-match.ts) and used by the planner once there is a plan, never to rank or rate a place.
+ */
 
 /** A missing must-have facility caps how "family-suitable" a venue can score, the same way an
  * unreviewed venue is capped — a caution shouldn't be the only place this shows up. */
@@ -35,31 +41,6 @@ const FACILITY_MISSING_CAP = 35;
 
 export interface FamilyScoreOptions {
   enrichmentStatus?: EnrichmentStatus;
-  weather?: WeatherInfo | null;
-}
-
-/**
- * Category-based approximation of indoor/outdoor used only as a last-resort heuristic when a
- * venue has no reviewed environment fact yet. Never surfaced as a confirmed claim.
- */
-function heuristicIsIndoor(category: VenueDetail['category']): boolean | null {
-  if (['museum', 'soft_play', 'shop', 'restaurant', 'cafe', 'hotel'].includes(category)) return true;
-  if (['park', 'farm', 'beach'].includes(category)) return false;
-  return null; // zoo, attraction, activity: genuinely mixed - don't guess.
-}
-
-function scoreWeatherFitHeuristic(venue: VenueDetail, weather?: WeatherInfo | null): number {
-  const fallback = venue.category === 'museum' || venue.category === 'farm' ? 88 : 85;
-  if (!weather) return fallback;
-
-  const isIndoor = heuristicIsIndoor(venue.category);
-  if (isIndoor === null) return fallback;
-
-  const isWet = weather.condition === 'rainy';
-  const isBright = weather.condition === 'sunny' || weather.condition === 'partly_cloudy';
-
-  if (isIndoor) return isWet ? 95 : isBright ? 76 : 86;
-  return isWet ? 48 : isBright ? 95 : 80;
 }
 
 function clamp(value: number, min = 0, max = 100): number {
@@ -80,14 +61,24 @@ function clamp(value: number, min = 0, max = 100): number {
  */
 const UNKNOWN_AGE_SCORE = 75;
 
-function scoreDistance(driveMinutes: number, maxDriveMinutes: number): number {
+/**
+ * How near a place is, for ranking. With a stated limit it is judged against that limit. Without one there is no limit to
+ * be over, so nearness is a plain gentle slope, never a cliff: a place 34 minutes away is a little lower than one 25 minutes
+ * away, not "over the limit" and not several times lower. (A 30 minute limit nobody stated used to turn 34 minutes into a
+ * score of 43 against 75 at 30.)
+ */
+function scoreDistance(driveMinutes: number, maxDriveMinutes: number | null): number {
+  if (maxDriveMinutes === null) {
+    if (!Number.isFinite(driveMinutes)) return 60;
+    return clamp(98 - Math.max(0, driveMinutes - 15) * 0.5, 55, 98);
+  }
   if (driveMinutes <= maxDriveMinutes * 0.5) return 98;
   if (driveMinutes <= maxDriveMinutes) return clamp(100 - (driveMinutes / maxDriveMinutes) * 25);
   if (driveMinutes <= maxDriveMinutes + 10) return clamp(55 - (driveMinutes - maxDriveMinutes) * 3);
   return 30;
 }
 
-function scoreBudgetHeuristic(venue: VenueDetail, tier: FamilyProfile['budgetTier']): number {
+function scoreBudgetHeuristic(venue: VenueDetail, tier: NonNullable<FamilyProfile['budgetTier']>): number {
   const spend = venue.estimatedSpend ?? '';
   const isFree = spend.toLowerCase().includes('free') || spend.startsWith('£0');
   // Matches the £/££/£££ tier-symbol format used by scoreTrustedBudget - not a price range.
@@ -157,12 +148,9 @@ function buildHeuristicExplanation(
     reasons.push('Café on site for lunch');
   }
 
-  if (factors.budgetFit >= 85) {
-    reasons.push(budgetFitReason(profile.budgetTier));
-  }
-
-  if (factors.weatherFit >= 90) {
-    reasons.push('Good for today’s weather');
+  const tier = budgetTierOf(profile);
+  if (tier && (factors.budgetFit ?? 0) >= 85) {
+    reasons.push(budgetFitReason(tier));
   }
 
   // No age line here at all. This branch runs precisely when the venue has no trusted facts, so
@@ -183,8 +171,8 @@ export function calculateFamilyScore(
 
   const childMonths = childAgesInMonths(profile.members);
   const facts = venue.trustedFacts;
+  const tier = budgetTierOf(profile);
   const useTrusted = !isProviderOnly && facts != null && hasTrustedMatchSignals(facts);
-  const weather = options.weather;
 
   const facilitiesMatchRaw = useTrusted
     ? scoreTrustedFacilitiesMatch(facts, profile) ?? clamp(Math.min((venue.facilities?.length ?? 0) * 11, 96))
@@ -199,22 +187,15 @@ export function calculateFamilyScore(
     accessibility:
       (useTrusted ? scoreTrustedAccessibility(facts, profile) : null) ??
       (venue.facilities?.includes('pushchair_friendly') ? 92 : isProviderOnly ? 55 : 70),
-    distance: scoreDistance(venue.driveMinutes, profile.maxDriveMinutes),
-    weatherFit:
-      (useTrusted ? scoreTrustedWeatherFit(facts, weather) : null) ??
-      scoreWeatherFitHeuristic(venue, weather),
-    budgetFit:
-      (useTrusted ? scoreTrustedBudget(facts, profile.budgetTier) : null) ??
-      scoreBudgetHeuristic(venue, profile.budgetTier),
+    distance: scoreDistance(venue.driveMinutes, driveLimitMinutes(profile)),
+    // Only for a family that stated a budget. Without one nothing about price is scored, capped or marked down.
+    budgetFit: tier
+      ? (useTrusted ? scoreTrustedBudget(facts, tier) : null) ?? scoreBudgetHeuristic(venue, tier)
+      : undefined,
     facilitiesMatch: missingMustHave ? Math.min(facilitiesMatchRaw, FACILITY_MISSING_CAP) : facilitiesMatchRaw,
   };
 
-  let score = clamp(
-    Object.entries(WEIGHTS).reduce(
-      (sum, [key, weight]) => sum + factors[key as keyof FamilyScoreFactors] * weight,
-      0,
-    ) / WEIGHT_TOTAL,
-  );
+  let score = clamp(blendFactors(WEIGHTS, factors));
 
   if (isProviderOnly) {
     score = Math.min(score, PROVIDER_ONLY_FAMILY_MATCH_CAP);
@@ -222,7 +203,7 @@ export function calculateFamilyScore(
 
   const explanation =
     useTrusted && facts
-      ? buildTrustedExplanation(venue, profile, facts, factors, weather)
+      ? buildTrustedExplanation(venue, profile, facts, factors)
       : buildHeuristicExplanation(venue, profile, factors, isProviderOnly);
   const cautions = useTrusted && facts ? buildTrustedCautions(profile, facts, factors) : [];
 

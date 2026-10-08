@@ -24,19 +24,19 @@ describe('Explore "open now" filter', () => {
 
   it('keeps only venues confirmed open right now', () => {
     const venues = [venue('open', true), venue('closed', false), venue('unknown', undefined)];
-    const ids = filterVenues(venues, 'all', ['open_now'], 'any', 30, 'any').map((v) => v.id);
+    const ids = filterVenues(venues, 'all', ['open_now'], 'any', 'any').map((v) => v.id);
     expect(ids).toEqual(['open']);
   });
 
   it('never treats unknown opening status as open (trust model: unknown is not yes)', () => {
     const venues = [venue('unknown', undefined)];
-    const ids = filterVenues(venues, 'all', ['open_now'], 'any', 30, 'any').map((v) => v.id);
+    const ids = filterVenues(venues, 'all', ['open_now'], 'any', 'any').map((v) => v.id);
     expect(ids).toHaveLength(0);
   });
 
   it('does not affect results when the filter is not applied', () => {
     const venues = [venue('open', true), venue('closed', false), venue('unknown', undefined)];
-    const ids = filterVenues(venues, 'all', [], 'any', 30, 'any').map((v) => v.id);
+    const ids = filterVenues(venues, 'all', [], 'any', 'any').map((v) => v.id);
     expect(ids).toHaveLength(3);
   });
 });

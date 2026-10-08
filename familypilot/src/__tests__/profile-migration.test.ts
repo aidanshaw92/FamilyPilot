@@ -60,8 +60,8 @@ describe('malformed and partial storage never throws and never fabricates', () =
     for (const bad of [undefined, null, 'x', 7, [], [1, 2]]) {
       const { profile } = migrateLegacyProfile(bad);
       expect(profile.members).toEqual([]);
-      expect(profile.maxDriveMinutes).toBe(30);
-      expect(profile.budgetTier).toBe('moderate');
+      expect(profile.maxDriveMinutes).toBeUndefined();
+      expect(profile.budgetTier).toBeUndefined();
       expect(profile.routines).toEqual([]);
     }
   });
@@ -84,8 +84,8 @@ describe('malformed and partial storage never throws and never fabricates', () =
 
   it('repairs field by field rather than losing the family over one bad field', () => {
     const { profile } = migrateLegacyProfile({ ...legacy, budgetTier: 'lavish', maxDriveMinutes: -4, homeLatitude: 'x', memberships: [1, 'Zoo', null] });
-    expect(profile.budgetTier).toBe('moderate');
-    expect(profile.maxDriveMinutes).toBe(30);
+    expect(profile.budgetTier).toBeUndefined();
+    expect(profile.maxDriveMinutes).toBeUndefined();
     expect(profile.homeLatitude).toBeUndefined();
     expect(profile.memberships).toEqual(['Zoo']);
     expect(profile.parentName).toBe('Aidan');

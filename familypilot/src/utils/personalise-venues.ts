@@ -1,8 +1,9 @@
 import { mockVenueDetails, mockVenues } from '@/src/data/mock-data';
+import { driveLimitMinutes } from '@/src/utils/preferences';
 import { calculateFamilyScore } from '@/src/services/scoring/family-score';
 import { evaluateFamilyMatch } from '@/src/services/matching/family-match';
 import type { ParentObservations } from '@/src/services/matching/parent-observations';
-import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDetail, WeatherInfo } from '@/src/types';
+import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDetail } from '@/src/types';
 
 import { getChildNames } from './profile-defaults';
 import { buildFacilityMissingCaution } from './facility-match';
@@ -19,9 +20,11 @@ import { familyNeedsStepFree } from './family-mobility';
  * distance would be a second fabrication.
  */
 export function buildDriveCaution(profile: FamilyProfile, driveMinutes: number): string | null {
-  if (!Number.isFinite(driveMinutes) || !Number.isFinite(profile.maxDriveMinutes)) return null;
-  if (driveMinutes <= profile.maxDriveMinutes) return null;
-  return `Further than the ${profile.maxDriveMinutes} min drive we’re using`;
+  // Only a limit the family stated: with none there is nothing to be further than.
+  const limit = driveLimitMinutes(profile);
+  if (!Number.isFinite(driveMinutes) || limit === null) return null;
+  if (driveMinutes <= limit) return null;
+  return `Further than the ${limit} min drive we’re using`;
 }
 
 /**
@@ -62,10 +65,10 @@ function toVenueDetail(venue: Venue): VenueDetail {
   };
 }
 
-export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?: WeatherInfo | null, parentObservations?: ParentObservations): Venue {
+export function personaliseVenue(venue: Venue, profile: FamilyProfile, parentObservations?: ParentObservations): Venue {
   const detail = toVenueDetail(venue);
   const enrichmentStatus: EnrichmentStatus = venue.enrichmentStatus ?? 'provider_only';
-  const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus, weather });
+  const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus });
   // Everything that counts AGAINST this family lives on the score, in one list: profile-derived
   // cautions first, then the reviewed facts that
   // count against them. The venue's own notes stay in `goodToKnow` and render as notes, not
@@ -84,7 +87,6 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
     venue: { ...venue, facilities: detail.facilities },
     profile,
     score: familyScore.score,
-    weather,
     parentObservations,
   });
   return {
@@ -96,10 +98,11 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, weather?:
   };
 }
 
-export function personaliseVenues(venues: Venue[], profile: FamilyProfile, weather?: WeatherInfo | null): Venue[] {
+export function personaliseVenues(venues: Venue[], profile: FamilyProfile): Venue[] {
   return venues
-    .map((venue) => personaliseVenue(venue, profile, weather))
-    .filter((venue) => venue.driveMinutes <= profile.maxDriveMinutes + 10)
+    .map((venue) => personaliseVenue(venue, profile))
+    // A stated limit (with ten minutes' leeway) narrows the list; no stated limit narrows nothing.
+    .filter((venue) => driveLimitMinutes(profile) === null || venue.driveMinutes <= (driveLimitMinutes(profile) as number) + 10)
     .sort((a, b) => b.familyScore.score - a.familyScore.score);
 }
 
@@ -120,7 +123,7 @@ export function buildHomeRecommendations(profile: FamilyProfile): Recommendation
     {
       id: 'rec-1',
       title: 'Recommended for your family',
-      subtitle: `Based on ${childLabel}'s ages, today's weather, and ${locationLabel}`,
+      subtitle: `Based on ${childLabel}'s ages and ${locationLabel}`,
       venues: top,
     },
   ];
@@ -129,7 +132,7 @@ export function buildHomeRecommendations(profile: FamilyProfile): Recommendation
     sections.push({
       id: 'rec-2',
       title: 'Weekend ideas',
-      subtitle: `Within ${profile.maxDriveMinutes} minutes of home`,
+      subtitle: driveLimitMinutes(profile) === null ? 'Ideas for the weekend' : `Within ${driveLimitMinutes(profile)} minutes of home`,
       venues: weekend.slice(0, 3),
     });
   }
@@ -138,7 +141,7 @@ export function buildHomeRecommendations(profile: FamilyProfile): Recommendation
     sections.push({
       id: 'rec-3',
       title: 'Rainy day ideas',
-      subtitle: `Indoor options within ${profile.maxDriveMinutes} minutes`,
+      subtitle: driveLimitMinutes(profile) === null ? 'Indoor options' : `Indoor options within ${driveLimitMinutes(profile)} minutes`,
       venues: rainy.slice(0, 2),
     });
   }

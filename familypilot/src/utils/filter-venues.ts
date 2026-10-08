@@ -157,7 +157,6 @@ export function filterVenues(
   categoryId: string,
   advancedIds: string[],
   maxDriveMinutes: number | 'any',
-  profileMaxDrive: number,
   budgetFilter: ExploreBudgetFilter,
 ): Venue[] {
   const effectiveMaxDrive =

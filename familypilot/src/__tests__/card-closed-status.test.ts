@@ -75,16 +75,19 @@ describe('it never feeds Family Fit', () => {
     expect(shut.children).toEqual(open.children);
     expect(shut.forNames).toEqual(open.forNames);
     expect(shut.toCheck.map((l) => l.key)).toEqual(open.toCheck.map((l) => l.key));
-    expect(shut.reasons.map((l) => l.key).filter((k) => k !== 'open-today')).toEqual(open.reasons.map((l) => l.key).filter((k) => k !== 'open-today'));
+    expect(shut.reasons).toEqual(open.reasons);
+    expect(shut.cautions).toEqual(open.cautions);
+    expect(shut.cardNote).toBe(open.cardNote);
     expect(shut.evidence.venueFacts).toBe(open.evidence.venueFacts);
     expect(shut.availableToday).toBe(false);
     expect(open.availableToday).toBe(true);
   });
 
-  it('the headline keeps its judgement and only says "not today" as a fact', () => {
+  it('the headline is the same sentence open or shut: today is not in it', () => {
     const shut = run(venue(SHUT_TODAY));
     expect(shut.verdict === 'good' || shut.verdict === 'excellent').toBe(true);
-    expect(shut.headline).toMatch(/, but not today$/);
+    expect(shut.headline).toBe(run(venue(OPEN_TODAY)).headline);
+    expect(shut.headline).not.toMatch(/today/i);
   });
 });
 
@@ -109,7 +112,10 @@ describe('being shut today can never move the verdict (exhaustive over the evide
             expect(shut.forNames, label).toEqual(open.forNames);
             expect(shut.gapNames, label).toEqual(open.gapNames);
             expect(shut.toCheck.map((l) => l.text), label).toEqual(open.toCheck.map((l) => l.text));
-            expect(shut.headline.replace(/, but not today$/, ''), label).toBe(open.headline);
+            expect(shut.headline, label).toBe(open.headline);
+            expect(shut.reasons, label).toEqual(open.reasons);
+            expect(shut.cautions, label).toEqual(open.cautions);
+            expect(shut.cardNote, label).toBe(open.cardNote);
             compared += 1;
           }
     }

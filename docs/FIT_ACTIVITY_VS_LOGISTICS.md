@@ -21,9 +21,8 @@ Two different questions about a child, kept apart in `familypilot/src/services/m
    one of the positives that lift a place to *excellent*, so a place shut today could land one step lower than the same
    place open (18 of 1,152 evidence combinations tested). A place whose hours say it is shut today is now counted as the
    open place it is on its other days; open places and places with no hours are counted exactly as before.
-   Two other things still move a verdict with today, for places that are open: *closing soon* is a caution that caps a
-   place at *possible*, and today's weather adds or removes a line for an outdoor place. Neither is about being closed,
-   and both are recorded as a follow-up product decision (should anything about today affect a pre-plan fit?).
+   *(Superseded: the follow-up decision was made in `STABLE_FAMILY_FIT.md`. Nothing about today moves a verdict, a score or
+   a line any more: not closed, not closing soon, not open, not weather.)*
 4. **Nothing here changes a score, a verdict threshold or the ranking.** Only the words, and one added to-check line.
 
 ## The under-12-months convention (v1, a product convention)
