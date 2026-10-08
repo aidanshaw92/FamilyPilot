@@ -1,0 +1,15 @@
+{
+  "note": "The ten pilot destinations (docs/PILOT_10_PROFILES.md). Websites are the official sites already recorded in the catalogue. Chosen for family demand, London coverage, category mix, child-age spread and mixed evidence situations (three whose sites were wrongly marked blocked, one soft play, one toddler-and-baby specialist), not for how easy their sites are.",
+  "targets": [
+    { "id": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE", "name": "Science Museum", "website": "https://www.sciencemuseum.org.uk/" },
+    { "id": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s", "name": "Natural History Museum", "website": "https://www.nhm.ac.uk/" },
+    { "id": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE", "name": "London Zoo", "website": "https://www.londonzoo.org/" },
+    { "id": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc", "name": "Royal Air Force Museum London", "website": "https://www.rafmuseum.org.uk/london/" },
+    { "id": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI", "name": "Horniman Museum and Gardens", "website": "https://www.horniman.ac.uk/" },
+    { "id": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI", "name": "Mudchute Park and Farm", "website": "https://www.mudchute.org/" },
+    { "id": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk", "name": "Discover Children's Story Centre", "website": "https://www.discover.org.uk/" },
+    { "id": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo", "name": "Babylon Park London", "website": "https://babylonpark.com/london/" },
+    { "id": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY", "name": "Gunnersbury Park", "website": "https://www.visitgunnersbury.org/" },
+    { "id": "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4", "name": "Battersea Park", "website": "https://www.wandsworth.gov.uk/batterseapark" }
+  ]
+}
