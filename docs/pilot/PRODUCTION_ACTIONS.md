@@ -2,29 +2,24 @@
 
 Status: 2026-10-08. **Nothing on this page has been done.** No production claim has been written, no job queued, no cron changed, no paid provider called, by this work. Read-only checks were made against production at the end of the session and are stated with what they do and do not prove.
 
-## 1. Step 1: the 21-venue re-extraction (reading window closes 10 October)
+## 1. Step 1: the stored-page re-extraction (reading window: Museum of the Home closes 10 October 00:36 UTC)
 
-The approved gate is `docs/STEP1_FINAL_GATE.md` (PR #187). **The two earlier simulations (16 added / 1 corrected / 7 withdrawn, and 18 / 1 / 4) are reconciled row by row in [`STEP1_RECONCILIATION.md`](STEP1_RECONCILIATION.md)**, using the real `main` code over the 161 stored pages, in production's page order, with a network guard (0 attempts). The corpus was filtered in the first run and pages were listed in URL order in both; "80 active claims" was an arithmetic slip (production holds 76).
+**Superseded detail: [`step1/FINAL_GATE.md`](step1/FINAL_GATE.md) is the execution gate.** It lists the four withdrawals with quotations, the Colne Valley correction, the four re-quotes, the 21/19/18-venue comparison, the snapshot check, the no-network argument, the post-run checks (`step1/post-run-checks.sql`) and a tested rollback (`step1/rollback-2026-10-08.sql`). The earlier reconciliation is in `STEP1_RECONCILIATION.md`.
 
-**Result: 18 facts added, 1 corrected (Colne Valley parking: no → yes), 4 withdrawn (Sydenham Hill Wood accessible toilet; QEOP parking and free parking; Whitechapel free parking), 4 re-quotes with the same value (two are a trailing space), 67 untouched.** Withdrawn means back to unknown; nothing is deleted. Active claims at the 21 venues afterwards: 76 − 5 + 19 = **90**.
-
-Same 21 ids as the gate (checked mechanically); stored pages only; no crawler, model, Google or other paid call; only automatic claims can be touched; a second call queues 0. Two quotations that get weaker (Frameless, Tate Modern) have a 19-venue **Option B** in the reconciliation. I recommend the 21-id command you approved.
-
-**The command** (Supabase SQL editor; expected return 21; a second call returns 0):
+**Recommended: 18 venues.** Frameless, Tate Modern and Chiswick House are left out because their only effects are a weaker quotation replacing a stronger one, or a weak new quotation. Result: **16 facts added, 1 corrected (Colne Valley parking), 4 withdrawn, 1 harmless re-quote, 88 active claims afterwards.**
 
 ```sql
 select public.enqueue_reextract_jobs('official-source-rules-v6', 25, array[
   'fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY','fp-google-ChIJKUrjG7wcdkgRbfTuKDBgWXI','fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc',
   'fp-google-ChIJs_wmr0cWa0gRZpEqERRReXQ','fp-google-ChIJs_wmr0cWa0gRHr60qjwn1Mo','fp-google-ChIJ97pX3M0EdkgR8YFd4G1GZJ8',
   'fp-google-ChIJczuZfc0adkgRc8X-u3ZiHcE','fp-google-ChIJf9LtmOcddkgRRv6MezIdvSM','fp-google-ChIJc2nSALkEdkgRkuoJJBfzkUI',
-  'fp-google-ChIJId2oNroFdkgReafXXIrGnkY','fp-google-ChIJAVlhMIUCdkgRCJEgHVbITq4','fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI',
-  'fp-osm-679119297','fp-google-ChIJvS60MMEcdkgRSMlH5VxD51Y','fp-google-ChIJlRl2MakEdkgR55tr4CNv_B8',
+  'fp-google-ChIJAVlhMIUCdkgRCJEgHVbITq4','fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI','fp-google-ChIJvS60MMEcdkgRSMlH5VxD51Y',
   'fp-google-ChIJw1d-sUMFdkgRH2XN_U0Jt54','fp-google-ChIJN3hATcsSdkgRPscumUj6FqU','fp-google-ChIJF4YXjN4DdkgRvJe2-r5usvY',
   'fp-google-ChIJq-jJARlxdkgRNLTE490EqVU','fp-google-ChIJkf4NDG8ddkgRXEINXuEbip8','fp-google-ChIJzZtNX7UcdkgRzycysU2TrhM'
 ]);
 ```
 
-Monitoring (about 30 minutes later, read-only, I run it): every `reextract` job `completed` with no `last_error`; one `official-source-rules-v6` draft per venue with `evidenceMode = 'stored'`; exactly five named claims no longer active; 90 active; `google_places_usage` for the day unchanged. Undo statements for withdrawals, the correction, additions and re-quotes are in `STEP1_RECONCILIATION.md` §5. **I am stopped here until you say go.**
+Expected return 18; a second call returns 0. **Not executed. I am stopped until you authorise it.**
 
 ## 2. Google photographs: switching new paid requests off
 

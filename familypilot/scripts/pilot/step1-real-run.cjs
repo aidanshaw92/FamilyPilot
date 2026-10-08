@@ -7,7 +7,9 @@ const path = require('node:path'); const fs = require('node:fs');
 const REPO = process.env.REPO; const L = (p) => path.join(REPO, 'server/enrichment/_lib', p);
 const S = process.env.DATA || __dirname;
 const FULL = JSON.parse(fs.readFileSync(path.join(S, 'fulltext.json'), 'utf8'));
-const IDS = fs.readFileSync(path.join(S, 'ids.txt'), 'utf8').trim().split('\n').map((l) => l.split('|'));
+// EXCLUDE=<id>,<id>: run the same job for fewer venues (the per-venue work is independent), to see exactly what leaving venues out loses.
+const EXCLUDE = (process.env.EXCLUDE || '').split(',').filter(Boolean);
+const IDS = fs.readFileSync(path.join(S, 'ids.txt'), 'utf8').trim().split('\n').map((l) => l.split('|')).filter(([id]) => !EXCLUDE.includes(id));
 const claims = fs.readFileSync(path.join(S, 'claims.txt'), 'utf8').trim().split('\n').map((l) => { const [v, f, val, url, chk, vu, id, ...ex] = l.split('|'); return { familypilotPlaceId: v, fieldKey: f, valueJson: val, sourceUrl: url, checkedAt: chk, validUntil: vu, id, evidenceExcerpt: ex.join('|'), approvedBy: 'source_evidence_auto_v2', status: 'active' }; });
 // Network guard: any attempt to open a socket or fetch fails the run loudly.
 const net = require('node:net'); let attempts = 0; const origConnect = net.Socket.prototype.connect; net.Socket.prototype.connect = function () { attempts++; throw new Error('NETWORK ATTEMPT'); };

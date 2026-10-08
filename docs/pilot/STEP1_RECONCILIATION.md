@@ -108,6 +108,9 @@ next slot for these venues is 24 October and there are no open jobs), (b) a code
 
 ## 5. Command, checks, undo
 
+> **Superseded by [`step1/FINAL_GATE.md`](step1/FINAL_GATE.md).** Option B below left a weaker Chiswick House quotation in place; the recommended command is now the 18-venue one there, with a tested rollback.
+
+
 ```sql
 select public.enqueue_reextract_jobs('official-source-rules-v6', 25, array[
   'fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY','fp-google-ChIJKUrjG7wcdkgRbfTuKDBgWXI','fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc',
