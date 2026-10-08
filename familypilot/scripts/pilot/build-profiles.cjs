@@ -45,7 +45,13 @@ for (const file of files) {
     if (f.ages) { out.minMonths = f.ages[0]; out.maxMonthsExclusive = f.ages[1]; }
     if (f.label) out.label = f.label;
     if (f.scope) out.scope = f.scope;
-    if (f.q) {
+    if (f.gtk) out.goodToKnow = true;
+    if (f.held) out.held = true; // two official statements disagree: a person cannot approve either until the venue says which
+    if (f.carried) {
+      out.status = 'review';
+      out.evidence = { url: f.carried.url, readAt: f.carried.readAt, quote: f.carried.quote, carriedFrom: f.carried.from };
+      out.reviewReasons = ['carried from an earlier reading; today\'s page does not show the figure'];
+    } else if (f.q) {
       const suffix = f.u ?? '';
       const candidates = venuePages.filter((p) => {
         const pathPart = p.url.replace(/^https?:\/\/[^/]+/, '').replace(/\/$/, '') || '/';

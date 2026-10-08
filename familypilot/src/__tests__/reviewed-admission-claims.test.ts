@@ -58,8 +58,8 @@ describe('reviewed admission claims: the file', () => {
     expect(doc.state).toBe('reviewed');
     expect(claims.length).toBeGreaterThanOrEqual(30);
     expect(new Set(claims.map((c) => c.venueId)).size).toBe(claims.length);
-    expect(claims.filter((c) => c.decision === 'publish')).toHaveLength(24);
-    expect(claims.filter((c) => c.decision === 'hold')).toHaveLength(8);
+    expect(claims.filter((c) => c.decision === 'publish')).toHaveLength(26);
+    expect(claims.filter((c) => c.decision === 'hold')).toHaveLength(9);
     expect(claims.filter((c) => c.decision === 'refuse')).toHaveLength(4);
   });
 
@@ -98,10 +98,10 @@ describe('reviewed admission claims: the file', () => {
 describe('reviewed admission claims: free means the whole venue', () => {
   const free = published.filter((c) => c.pricing!.status === 'free');
 
-  it('has 19 free-entry claims, each stating free entry in the page\'s words', () => {
-    expect(free).toHaveLength(19);
+  it('has 21 free-entry claims, each stating free entry in the page\'s words', () => {
+    expect(free).toHaveLength(21);
     for (const c of free) {
-      expect(norm(c.evidence.excerpt), c.venueName).toMatch(/free (to visit|entry|for all visitors)|admission is free/);
+      expect(norm(c.evidence.excerpt), c.venueName).toMatch(/free (to visit|entry|admission|for all visitors)|admission is free/);
       expect(c.pricing!.bands, c.venueName).toBeUndefined();
     }
   });

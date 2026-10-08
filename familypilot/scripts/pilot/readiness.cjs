@@ -30,14 +30,16 @@ const has = (facts, sec, keys) => facts.some((f) => f.sec === sec && (keys ? key
  * @param layerA  { hours: boolean } what the provider layer already supplies
  */
 function readiness(facts, { view = 'auto', layerA = {} } = {}) {
-  const accepted = facts.filter((f) => f.status === 'verified' || (view === 'approved' && f.status === 'review'));
+  // A held fact (two official statements disagree) is never accepted, even in the "if approved" view.
+  const accepted = facts.filter((f) => f.status === 'verified' || (view === 'approved' && f.status === 'review' && !f.held));
 
   const requirements = {
     opening: has(accepted, 'opening', ['hours']) || Boolean(layerA.hours),
     // The cost of getting in must be established: free, or a stated price. A child concession or add-on price alone is not it.
     cost: has(accepted, 'pricing', ['free', 'variable', 'paid']),
     gettingThere: has(accepted, 'transport', ['station', 'bus', 'parking', 'entrances']),
-    childActivity: accepted.some((f) => f.sec === 'activities' && f.kind === 'provision'),
+    // Something for children to do: a permanent provision, or a play facility (a playground, soft play, a nature play area).
+    childActivity: accepted.some((f) => f.sec === 'activities' && f.kind === 'provision') || has(accepted, 'play', ['playground', 'softplay', 'natureplay']),
     familyEssentials: has(accepted, 'toilets', ['toilets', 'babyChanging', 'accessibleToilet']),
   };
   const missing = Object.entries(requirements).filter(([, ok]) => !ok).map(([k]) => k);

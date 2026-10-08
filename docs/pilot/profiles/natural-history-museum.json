@@ -1,0 +1,341 @@
+{
+  "schemaVersion": 1,
+  "id": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+  "name": "Natural History Museum",
+  "category": "museum",
+  "builtOn": "2026-10-08",
+  "counts": {
+    "verified": 8,
+    "review": 11,
+    "unknown": 3
+  },
+  "facts": [
+    {
+      "sec": "activities",
+      "key": "dinosaurs",
+      "value": null,
+      "text": "The Dinosaurs Gallery (Roaring T. rex) and the other star attractions are permanent and free. No age is given.",
+      "kind": "provision",
+      "label": "Dinosaurs Gallery with the Roaring T. rex",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/",
+        "readAt": "2026-10-08",
+        "quote": "Check out our star attractions, they’re permanently on display and always free to visit Roaring T.rex Location: Dinosaurs Gallery",
+        "pageSha256": "5b232d42837cbbd2"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "activities",
+      "key": "nature-discovery-garden",
+      "value": null,
+      "text": "The Nature Discovery Garden is open daily in daylight hours (currently closing at 16:00). No age is given.",
+      "kind": "provision",
+      "label": "Nature Discovery Garden",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/galleries-and-museum-map/our-gardens.html",
+        "readAt": "2026-10-08",
+        "quote": "Currently, our Nature Discovery Garden closes at 16:00.",
+        "pageSha256": "482995fb3e96d5cd"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "conditional, temporary or dated wording"
+      ]
+    },
+    {
+      "sec": "activities",
+      "key": "age-specific",
+      "value": null,
+      "text": "Which ages each gallery suits: not stated on the pages read.",
+      "status": "unknown",
+      "note": "The family pages say \"something for everyone\" and \"great for all ages\" without naming an age for any permanent gallery."
+    },
+    {
+      "sec": "pushchair",
+      "key": "allowed",
+      "value": null,
+      "text": "Whether pushchairs may be taken into the galleries: not stated on the pages read.",
+      "status": "unknown",
+      "note": "Only a cloakroom price for a pushchair is listed.",
+      "gap": {
+        "venue": "Natural History Museum",
+        "anchor": "Access at South Kensington"
+      }
+    },
+    {
+      "sec": "pushchair",
+      "key": "cloakroom",
+      "value": "£5",
+      "text": "The cloakroom lists \"Pushchair: £5\" among its per-item prices.",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+        "readAt": "2026-10-08",
+        "quote": "Prices per item: Umbrella: £3 Coat: £4 Bag weighing less than 4kg: £5 Bag weighing more than 4kg: £6 Folded bike: £5 Scooter: £3 Pushchair: £5",
+        "pageSha256": "04a44327a35f4294"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person"
+      ],
+      "note": "It is not clear whether this is storage for a pushchair or a charge for something else; a person must read it in context."
+    },
+    {
+      "sec": "toilets",
+      "key": "toilets",
+      "value": "yes",
+      "text": "Many toilets, all marked on the museum map.",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+        "readAt": "2026-10-08",
+        "quote": "We have many toilets, these are all marked on our Museum map , including wheelchair-accessible toilets and baby-changing facilities.",
+        "pageSha256": "04a44327a35f4294"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "toilets",
+      "key": "babyChanging",
+      "value": "yes",
+      "text": "Baby-changing facilities, marked on the museum map (which floors is not stated).",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+        "readAt": "2026-10-08",
+        "quote": "We have many toilets, these are all marked on our Museum map , including wheelchair-accessible toilets and baby-changing facilities.",
+        "pageSha256": "04a44327a35f4294"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "toilets",
+      "key": "accessibleToilet",
+      "value": "yes",
+      "text": "Wheelchair-accessible toilets, and a Changing Places toilet in the North Wing.",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+        "readAt": "2026-10-08",
+        "quote": "We also have a Changing Places toilet on the Ground Floor of our North Wing.",
+        "pageSha256": "04a44327a35f4294"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "transport",
+      "key": "station",
+      "value": "South Kensington",
+      "text": "Nearest Tube is South Kensington; a subway tunnel gives a step-free way to the Central Entrance.",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/getting-here.html",
+        "readAt": "2026-10-08",
+        "quote": "The nearest Tube station is South Kensington.",
+        "pageSha256": "a7d2c3677d8bccc9"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "transport",
+      "key": "parking",
+      "value": "no",
+      "text": "No parking on site, and parking around the museum is limited.",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/getting-here.html",
+        "readAt": "2026-10-08",
+        "quote": "We do not have parking facilities on-site and parking around the Museum is limited.",
+        "pageSha256": "a7d2c3677d8bccc9"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "a negative claim (can exclude a venue)"
+      ]
+    },
+    {
+      "sec": "transport",
+      "key": "blueBadge",
+      "value": "yes",
+      "text": "A very limited number of Blue Badge spaces on site, and twelve on Exhibition Road.",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/getting-here.html",
+        "readAt": "2026-10-08",
+        "quote": "We have a very limited number of parking spaces on site for Blue Badge holders.",
+        "pageSha256": "a7d2c3677d8bccc9"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "food",
+      "key": "cafe",
+      "value": "yes",
+      "text": "Family-friendly cafés and restaurants.",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+        "readAt": "2026-10-08",
+        "quote": "Grab a bite to eat at our family-friendly cafes and restaurants or pick up a souvenir of your visit from our shops.",
+        "pageSha256": "04a44327a35f4294"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "play",
+      "key": "playground",
+      "value": null,
+      "text": "No outdoor playground is mentioned; the gardens are the outdoor space.",
+      "status": "unknown",
+      "note": "Not an expected facility for this museum."
+    },
+    {
+      "sec": "access",
+      "key": "wheelchair",
+      "value": "yes",
+      "text": "Wheelchair accessible with lifts and step-free access to most areas; some lifts are sometimes out of service.",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+        "readAt": "2026-10-08",
+        "quote": "Our building is wheelchair accessible, with lifts and step-free access to most areas.",
+        "pageSha256": "04a44327a35f4294"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)"
+      ]
+    },
+    {
+      "sec": "access",
+      "key": "lifts-out",
+      "value": "no",
+      "text": "Lifts in the Darwin Centre and the Mammals Hall were out of order on 6 October.",
+      "scope": "area",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/galleries-and-museum-map.html",
+        "readAt": "2026-10-08",
+        "quote": "Lifts: A number of lifts in the Darwin Centre are currently out of order The lift in our Mammals Hall is currently out of order.",
+        "pageSha256": "aee2e2d39ca97a07"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)",
+        "a negative claim (can exclude a venue)",
+        "conditional, temporary or dated wording",
+        "applies to part of the venue"
+      ]
+    },
+    {
+      "sec": "access",
+      "key": "station-step-free",
+      "value": "no",
+      "text": "South Kensington station is not step free; a subway tunnel gives step-free access from the station to the museum.",
+      "scope": "area",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/getting-here.html",
+        "readAt": "2026-10-08",
+        "quote": "This station is not step free.",
+        "pageSha256": "a7d2c3677d8bccc9"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)",
+        "a negative claim (can exclude a venue)",
+        "applies to part of the venue"
+      ]
+    },
+    {
+      "sec": "opening",
+      "key": "hours",
+      "value": "10:00-17:50 daily",
+      "text": "Open daily 10:00 to 17:50 (last entry 17:30).",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit.html",
+        "readAt": "2026-10-08",
+        "quote": "Opening times Open daily 10:00–17:50 (last entry 17:30)",
+        "pageSha256": "a6b93d6d6f7b0125"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "opening",
+      "key": "closure",
+      "value": "2026-10-09 closed",
+      "text": "Closed on 9 October (tomorrow) and 24 to 26 December.",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit.html",
+        "readAt": "2026-10-08",
+        "quote": "Closed 9 October and 24–26 December",
+        "pageSha256": "a6b93d6d6f7b0125"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person",
+        "conflicts with the homepage, which says \"Open every day\""
+      ],
+      "conflict": "the homepage, which says \"Open every day\""
+    },
+    {
+      "sec": "pricing",
+      "key": "free",
+      "value": "free",
+      "text": "The galleries are free to explore; a free entry ticket is recommended to guarantee entry. Paid exhibitions are charged.",
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+        "readAt": "2026-10-08",
+        "quote": "Book a free entry ticket to the Museum to skip the queue when you arrive.",
+        "pageSha256": "04a44327a35f4294"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "a price or a free-entry claim (drives cost)"
+      ]
+    },
+    {
+      "sec": "considerations",
+      "key": "queue",
+      "value": "busy weekends and holidays",
+      "text": "At weekends and in school holidays you may have to queue to enter; a free entry ticket or membership skips the queue.",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit.html",
+        "readAt": "2026-10-08",
+        "quote": "Sometimes during weekends and school holidays we can get busy and you may have to queue to enter.",
+        "pageSha256": "a6b93d6d6f7b0125"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person",
+        "conditional, temporary or dated wording"
+      ]
+    },
+    {
+      "sec": "considerations",
+      "key": "booking",
+      "value": "free ticket recommended",
+      "text": "A free entry ticket guarantees entry and skips the queue at busy times.",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/galleries-and-museum-map/our-gardens.html",
+        "readAt": "2026-10-08",
+        "quote": "If you’d also like to go inside the Museum, get your free entry ticket on our website to guarantee your entry and skip the queue during busy times.",
+        "pageSha256": "482995fb3e96d5cd"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person"
+      ]
+    },
+    {
+      "sec": "considerations",
+      "key": "creepy-crawlies",
+      "value": "closed",
+      "text": "The Creepy Crawlies Gallery is closed and will reopen as a permanent gallery for families.",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/galleries-and-museum-map.html",
+        "readAt": "2026-10-08",
+        "quote": "The Creepy Crawlies Gallery is now closed and will reopen as a new, permanent gallery for families.",
+        "pageSha256": "aee2e2d39ca97a07"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person"
+      ]
+    }
+  ]
+}

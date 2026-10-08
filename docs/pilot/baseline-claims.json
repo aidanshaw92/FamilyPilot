@@ -1,0 +1,188 @@
+{
+  "note": "The active claims production held for the ten pilot venues on 2026-10-08, read-only from venue_claims (status active, not expired). Venues absent here (Science Museum, Natural History Museum, London Zoo) had no active claim: their stored record was an unreviewed draft and the app served them as provider-only. Each claim carries the date it was checked (read-only query of venue_claims.checked_at).",
+  "readOn": "2026-10-08",
+  "venues": {
+    "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo": [
+      {
+        "field": "environment",
+        "value": "indoor",
+        "validUntil": "2026-12-31",
+        "source": "https://babylonpark.com/london/",
+        "checkedAt": "2026-10-02"
+      },
+      {
+        "field": "familyFacilities.parking",
+        "value": "no",
+        "validUntil": "2026-11-01",
+        "source": "https://babylonpark.com/london/",
+        "checkedAt": "2026-10-02"
+      }
+    ],
+    "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4": [
+      {
+        "field": "familyFacilities.playground",
+        "value": "yes",
+        "validUntil": "2026-10-31",
+        "source": "https://www.wandsworth.gov.uk/leisure-and-culture/parks-and-open-spaces/childrens-playgrounds/battersea-park-playground-for-toddlers-and-juniors/",
+        "checkedAt": "2026-10-01"
+      }
+    ],
+    "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk": [
+      {
+        "field": "familyFacilities.cafe",
+        "value": "yes",
+        "validUntil": "2026-10-26",
+        "source": "https://discover.org.uk/your-visit",
+        "checkedAt": "2026-09-26"
+      }
+    ],
+    "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY": [
+      {
+        "field": "accessibility.accessibleToilet",
+        "value": "yes",
+        "validUntil": "2026-11-01",
+        "source": "https://www.visitgunnersbury.org/plan-your-visit",
+        "checkedAt": "2026-10-02"
+      },
+      {
+        "field": "familyFacilities.cafe",
+        "value": "yes",
+        "validUntil": "2026-11-01",
+        "source": "https://www.visitgunnersbury.org/plan-your-visit",
+        "checkedAt": "2026-10-02"
+      },
+      {
+        "field": "familyFacilities.parking",
+        "value": "yes",
+        "validUntil": "2026-11-01",
+        "source": "https://www.visitgunnersbury.org/museum/accessibility",
+        "checkedAt": "2026-10-02"
+      },
+      {
+        "field": "familyFacilities.toilets",
+        "value": "yes",
+        "validUntil": "2026-11-01",
+        "source": "https://www.visitgunnersbury.org/plan-your-visit",
+        "checkedAt": "2026-10-02"
+      }
+    ],
+    "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI": [
+      {
+        "field": "accessibility.accessibleToilet",
+        "value": "yes",
+        "validUntil": "2026-10-31",
+        "source": "https://www.horniman.ac.uk/plan-your-visit/food-drink/",
+        "checkedAt": "2026-10-01"
+      },
+      {
+        "field": "familyFacilities.babyChanging",
+        "value": "yes",
+        "validUntil": "2026-10-31",
+        "source": "https://www.horniman.ac.uk/plan-your-visit/food-drink/",
+        "checkedAt": "2026-10-01"
+      },
+      {
+        "field": "familyFacilities.cafe",
+        "value": "yes",
+        "validUntil": "2026-10-31",
+        "source": "https://www.horniman.ac.uk/plan-your-visit/food-drink/",
+        "checkedAt": "2026-10-01"
+      },
+      {
+        "field": "familyFacilities.playground",
+        "value": "yes",
+        "validUntil": "2026-10-31",
+        "source": "https://www.horniman.ac.uk/plan-your-visit/food-drink/",
+        "checkedAt": "2026-10-01"
+      },
+      {
+        "field": "familyFacilities.toilets",
+        "value": "yes",
+        "validUntil": "2026-10-31",
+        "source": "https://www.horniman.ac.uk/plan-your-visit/",
+        "checkedAt": "2026-10-01"
+      }
+    ],
+    "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI": [
+      {
+        "field": "accessibility.accessibleToilet",
+        "value": "yes",
+        "validUntil": "2026-10-31",
+        "source": "https://www.mudchute.org/plan-your-visit/facilities",
+        "checkedAt": "2026-10-01"
+      },
+      {
+        "field": "familyFacilities.babyChanging",
+        "value": "yes",
+        "validUntil": "2026-10-31",
+        "source": "https://www.mudchute.org/plan-your-visit/facilities",
+        "checkedAt": "2026-10-01"
+      },
+      {
+        "field": "familyFacilities.cafe",
+        "value": "yes",
+        "validUntil": "2026-10-31",
+        "source": "https://www.mudchute.org/plan-your-visit/faq",
+        "checkedAt": "2026-10-01"
+      }
+    ],
+    "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc": [
+      {
+        "field": "accessibility.accessibleToilet",
+        "value": "yes",
+        "validUntil": "2026-11-01",
+        "source": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+        "checkedAt": "2026-10-02"
+      },
+      {
+        "field": "familyFacilities.babyChanging",
+        "value": "yes",
+        "validUntil": "2026-11-01",
+        "source": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+        "checkedAt": "2026-10-02"
+      },
+      {
+        "field": "familyFacilities.cafe",
+        "value": "yes",
+        "validUntil": "2026-11-01",
+        "source": "https://www.rafmuseum.org.uk/london/",
+        "checkedAt": "2026-10-02"
+      },
+      {
+        "field": "familyFacilities.freeParking",
+        "value": "no",
+        "validUntil": "2026-11-01",
+        "source": "https://www.rafmuseum.org.uk/london/plan-your-day/",
+        "checkedAt": "2026-10-02"
+      },
+      {
+        "field": "familyFacilities.parking",
+        "value": "yes",
+        "validUntil": "2026-11-01",
+        "source": "https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/",
+        "checkedAt": "2026-10-02"
+      },
+      {
+        "field": "familyFacilities.playground",
+        "value": "yes",
+        "validUntil": "2026-11-01",
+        "source": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+        "checkedAt": "2026-10-02"
+      },
+      {
+        "field": "familyFacilities.toilets",
+        "value": "yes",
+        "validUntil": "2026-11-01",
+        "source": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+        "checkedAt": "2026-10-02"
+      },
+      {
+        "field": "pushchairSuitability",
+        "value": "good",
+        "validUntil": "2026-11-01",
+        "source": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+        "checkedAt": "2026-10-02"
+      }
+    ]
+  }
+}

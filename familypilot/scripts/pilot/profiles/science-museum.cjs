@@ -15,17 +15,19 @@ module.exports = {
       n: 'The page describes Pattern Pod with no age. It appears as a stop on a guide "for families with children under seven", which is the guide\'s audience, not a statement about the gallery.',
       u: '/visit/young-explorers-guide-science-museum', q: 'This free multi-sensory area allows children to play with water ripples without getting their feet wet' },
     // --- pushchair and baby
-    { sec: 'pushchair', key: 'storage', v: 'yes', t: 'Free buggy parking in the Spare Room (level -1, opposite The Garden); a small free buggy park by Pattern Pod.', u: '/visit/space-lovers-guide-science-museum',
+    { sec: 'pushchair', key: 'storage', gtk: true, v: 'yes', t: 'Free buggy parking in the Spare Room (level -1, opposite The Garden); a small free buggy park by Pattern Pod.', u: '/visit/space-lovers-guide-science-museum',
       q: 'Buggy parking is available free of charge in the Spare Room, located opposite The Garden gallery on level -1.' },
-    { sec: 'pushchair', key: 'allowed', v: 'yes', t: 'Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.', u: '/visit/young-explorers-guide-science-museum',
+    { sec: 'pushchair', key: 'allowed', gtk: true, v: 'yes', t: 'Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.', u: '/visit/young-explorers-guide-science-museum',
       q: 'Buggies are allowed in the museum and galleries. However, in certain areas, you may be asked to leave your pram in a buggy park' },
     // --- toilets
+    { sec: 'toilets', key: 'toilets', v: 'yes', t: 'Toilets on every level (the page describes the accessible ones).', u: '/visit/accessibility',
+      q: 'Accessible toilets are available on all levels of the museum.', n: 'Derived: accessible toilets are toilets. General toilet blocks are not described separately.' },
     { sec: 'toilets', key: 'babyChanging', v: 'yes', t: 'Baby changing on every floor.', u: '/visit/young-explorers-guide-science-museum',
       q: 'Baby changing facilities are located throughout all floors of the museum.' },
     { sec: 'toilets', key: 'accessibleToilet', v: 'yes', t: 'Accessible toilets on every level.', u: '/visit/accessibility',
       q: 'Accessible toilets are available on all levels of the museum.' },
-    { sec: 'toilets', key: 'changingPlaces', v: 'yes', t: 'A Changing Places toilet on level 0 (the page also carries a notice about works on 14 to 25 September).', u: '/visit/accessibility',
-      q: 'Please note the Changing Places toilet will be unavailable between 14 Sept – 25 Sept due to planned building works.', conflict: 'a notice dated 14 to 25 September, already past on the reading date' },
+    { sec: 'toilets', key: 'changingPlaces', v: 'yes', t: 'A Changing Places toilet on level 0 next to the Hans Rausing Lecture Theatre. (The page also carries a notice about works on 14 to 25 September, already past.)', u: '/visit/accessibility',
+      q: 'Changing Places Toilet on L0 next to the Hans Rausing Lecture Theatre.' },
     // --- getting there
     { sec: 'transport', key: 'blueBadge', v: 'yes', t: 'A small number of disabled spaces on Exhibition Road; Blue Badge holders may park there for four hours between 08.30 and 18.30.', u: '/visit/getting-here',
       q: 'A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30.' },
@@ -43,7 +45,7 @@ module.exports = {
     // --- access
     { sec: 'access', key: 'stepFreeRoute', v: 'yes', t: 'A step-free route for families with under-7s links the toddler galleries.', u: '/visit/young-explorers-guide-science-museum',
       q: 'this free guide can be enjoyed at your own pace and follows a step-free route through the museum' },
-    { sec: 'access', key: 'mezzanine', v: 'no', scope: 'area', t: 'No step-free access to the mezzanine in Making the Modern World and Flight.', u: '/visit/accessibility',
+    { sec: 'access', key: 'mezzanine', gtk: true, v: 'no', scope: 'area', t: 'No step-free access to the mezzanine in Making the Modern World and Flight.', u: '/visit/accessibility',
       q: 'There is currently no step-free access to the mezzanine level in Making the Modern World and Flight galleries.' },
     { sec: 'access', key: 'wheelchairLoan', v: 'yes', t: 'Wheelchairs and folding stools can be borrowed from the Information Desk.', u: '/visit/accessibility',
       q: 'You can also borrow a wheelchair or folding stool on the day by asking a member of staff at the Information Desk.' },
@@ -52,7 +54,7 @@ module.exports = {
       q: 'The museum is open daily from 10.00–18.00 (except for 24–26 December when the museum is closed).' },
     // --- pricing
     { sec: 'pricing', key: 'free', v: 'free', t: 'Free admission with a pre-booked ticket. Wonderlab, Power Up, IMAX and the Bubble Explorers show are charged.', u: '/',
-      q: 'Book your free ticket today and discover a universe of experiences at the Science Museum.' },
+      q: 'Book your free admission ticket now to visit the museum Donations welcome' },
     { sec: 'pricing', key: 'bubbleExplorers', v: '£4.50', t: 'Bubble Explorers: £4.50 per person, free for children 2 and under.', u: '/visit/young-explorers-guide-science-museum',
       q: 'Tickets are £4.50 per person with free entry for children aged 2 and under.' },
     // --- considerations

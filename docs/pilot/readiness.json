@@ -1,0 +1,254 @@
+{
+ "builtOn": "2026-10-08",
+ "rows": [
+  {
+   "name": "Babylon Park London",
+   "before": "discoverable",
+   "beforeMissing": [
+    "cost",
+    "familyEssentials"
+   ],
+   "afterAuto": "discoverable",
+   "autoMissing": [
+    "cost"
+   ],
+   "afterApproved": "discoverable",
+   "approvedMissing": [
+    "cost"
+   ],
+   "personalisation": {
+    "ageBandsCovered": 2,
+    "anyAgedProvision": true,
+    "practicalGroups": 5,
+    "childPrice": false
+   },
+   "limitations": [
+    "activities.age-specific",
+    "toilets.babyChanging",
+    "pricing.paid"
+   ]
+  },
+  {
+   "name": "Battersea Park",
+   "before": "discoverable",
+   "beforeMissing": [
+    "opening",
+    "cost",
+    "gettingThere",
+    "familyEssentials"
+   ],
+   "afterAuto": "discoverable",
+   "autoMissing": [
+    "opening",
+    "cost",
+    "familyEssentials"
+   ],
+   "afterApproved": "discoverable",
+   "approvedMissing": [
+    "cost",
+    "familyEssentials"
+   ],
+   "personalisation": {
+    "ageBandsCovered": 2,
+    "anyAgedProvision": true,
+    "practicalGroups": 2,
+    "childPrice": false
+   },
+   "limitations": [
+    "activities.toddler-provision",
+    "pushchair.terrain",
+    "toilets.toilets",
+    "transport.parking",
+    "transport.station",
+    "food.cafe",
+    "access.wheelchair",
+    "pricing.free"
+   ]
+  },
+  {
+   "name": "Discover Children's Story Centre",
+   "before": "discoverable",
+   "beforeMissing": [
+    "cost",
+    "gettingThere",
+    "familyEssentials"
+   ],
+   "afterAuto": "discoverable",
+   "autoMissing": [
+    "cost"
+   ],
+   "afterApproved": "recommendation-ready",
+   "approvedMissing": [],
+   "personalisation": {
+    "ageBandsCovered": 3,
+    "anyAgedProvision": true,
+    "practicalGroups": 5,
+    "childPrice": false
+   },
+   "limitations": []
+  },
+  {
+   "name": "Gunnersbury Park",
+   "before": "discoverable",
+   "beforeMissing": [
+    "childActivity"
+   ],
+   "afterAuto": "recommendation-ready",
+   "autoMissing": [],
+   "afterApproved": "recommendation-ready",
+   "approvedMissing": [],
+   "personalisation": {
+    "ageBandsCovered": 0,
+    "anyAgedProvision": false,
+    "practicalGroups": 5,
+    "childPrice": true
+   },
+   "limitations": [
+    "activities.age-specific",
+    "toilets.babyChanging",
+    "play.playground"
+   ]
+  },
+  {
+   "name": "Horniman Museum and Gardens",
+   "before": "discoverable",
+   "beforeMissing": [
+    "gettingThere"
+   ],
+   "afterAuto": "recommendation-ready",
+   "autoMissing": [],
+   "afterApproved": "recommendation-ready",
+   "approvedMissing": [],
+   "personalisation": {
+    "ageBandsCovered": 0,
+    "anyAgedProvision": false,
+    "practicalGroups": 7,
+    "childPrice": true
+   },
+   "limitations": [
+    "activities.age-specific"
+   ]
+  },
+  {
+   "name": "London Zoo",
+   "before": "discoverable",
+   "beforeMissing": [
+    "cost",
+    "gettingThere",
+    "childActivity",
+    "familyEssentials"
+   ],
+   "afterAuto": "discoverable",
+   "autoMissing": [
+    "cost",
+    "childActivity"
+   ],
+   "afterApproved": "highly-personalised",
+   "approvedMissing": [],
+   "personalisation": {
+    "ageBandsCovered": 3,
+    "anyAgedProvision": true,
+    "practicalGroups": 5,
+    "childPrice": true
+   },
+   "limitations": [
+    "pushchair.allowed",
+    "toilets.babyChanging",
+    "play.playground"
+   ]
+  },
+  {
+   "name": "Mudchute Park and Farm",
+   "before": "discoverable",
+   "beforeMissing": [
+    "gettingThere",
+    "childActivity"
+   ],
+   "afterAuto": "recommendation-ready",
+   "autoMissing": [],
+   "afterApproved": "recommendation-ready",
+   "approvedMissing": [],
+   "personalisation": {
+    "ageBandsCovered": 0,
+    "anyAgedProvision": false,
+    "practicalGroups": 7,
+    "childPrice": true
+   },
+   "limitations": [
+    "activities.age-specific"
+   ]
+  },
+  {
+   "name": "Natural History Museum",
+   "before": "discoverable",
+   "beforeMissing": [
+    "cost",
+    "gettingThere",
+    "childActivity",
+    "familyEssentials"
+   ],
+   "afterAuto": "discoverable",
+   "autoMissing": [
+    "cost"
+   ],
+   "afterApproved": "recommendation-ready",
+   "approvedMissing": [],
+   "personalisation": {
+    "ageBandsCovered": 0,
+    "anyAgedProvision": false,
+    "practicalGroups": 6,
+    "childPrice": true
+   },
+   "limitations": [
+    "activities.age-specific",
+    "pushchair.allowed",
+    "play.playground"
+   ]
+  },
+  {
+   "name": "Royal Air Force Museum London",
+   "before": "recommendation-ready",
+   "beforeMissing": [],
+   "afterAuto": "recommendation-ready",
+   "autoMissing": [],
+   "afterApproved": "recommendation-ready",
+   "approvedMissing": [],
+   "personalisation": {
+    "ageBandsCovered": 0,
+    "anyAgedProvision": false,
+    "practicalGroups": 7,
+    "childPrice": true
+   },
+   "limitations": [
+    "activities.age-specific"
+   ]
+  },
+  {
+   "name": "Science Museum",
+   "before": "discoverable",
+   "beforeMissing": [
+    "cost",
+    "gettingThere",
+    "childActivity",
+    "familyEssentials"
+   ],
+   "afterAuto": "discoverable",
+   "autoMissing": [
+    "cost",
+    "childActivity"
+   ],
+   "afterApproved": "highly-personalised",
+   "approvedMissing": [],
+   "personalisation": {
+    "ageBandsCovered": 3,
+    "anyAgedProvision": true,
+    "practicalGroups": 6,
+    "childPrice": true
+   },
+   "limitations": [
+    "activities.pattern-pod",
+    "play.playground"
+   ]
+  }
+ ]
+}

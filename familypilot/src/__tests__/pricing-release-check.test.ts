@@ -35,7 +35,7 @@ PARTIES.push([adult(1), adult(2), child(1, null)]);
 
 describe('reviewed admission: release gate', () => {
   it('publishes exactly the reviewed decisions, and nothing held or refused', () => {
-    expect(published.length).toBe(24);
+    expect(published.length).toBe(26);
     for (const c of REVIEWED_ADMISSION.claims) {
       expect(Boolean(reviewedAdmissionFor(c.venueId)), c.venueName).toBe(c.decision === 'publish');
     }

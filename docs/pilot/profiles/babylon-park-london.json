@@ -1,0 +1,233 @@
+{
+  "schemaVersion": 1,
+  "id": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+  "name": "Babylon Park London",
+  "category": "indoor-play",
+  "builtOn": "2026-10-08",
+  "counts": {
+    "review": 6,
+    "verified": 7,
+    "unknown": 3
+  },
+  "facts": [
+    {
+      "sec": "activities",
+      "key": "soft-play",
+      "value": null,
+      "text": "Soft play areas for toddlers and kids on the mezzanine.",
+      "kind": "provision",
+      "minMonths": 12,
+      "maxMonthsExclusive": 36,
+      "label": "Soft play areas for toddlers and kids",
+      "evidence": {
+        "url": "https://babylonpark.com/london/",
+        "readAt": "2026-10-08",
+        "quote": "Mezzanine Floor: Ovo & Neta restaurant (serving pizza, hot dogs, ice cream, waffles, and more), soft play areas for toddlers and kids, and an events room.",
+        "pageSha256": "91e5b74efd6d579f"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "says who a place is for (drives suitability)"
+      ]
+    },
+    {
+      "sec": "activities",
+      "key": "rides-arcade",
+      "value": null,
+      "text": "Seven indoor rides including bumper cars, a carousel and a kiddie wheel, hundreds of arcade games and VR. No minimum age; two rides have a 105cm height limit.",
+      "kind": "provision",
+      "label": "Indoor rides, arcade games and VR",
+      "evidence": {
+        "url": "https://babylonpark.com/london/",
+        "readAt": "2026-10-08",
+        "quote": "Rides include: Rollercoaster, drop tower, bumper cars, alien ride, axe throwing, carousel, convoy, kiddie wheel, dance challenges, and more.",
+        "pageSha256": "91e5b74efd6d579f"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "activities",
+      "key": "age-specific",
+      "value": null,
+      "text": "Ages for the soft play, carousel and kiddie wheel: not stated.",
+      "status": "unknown",
+      "note": "The page says \"toddlers and kids\" for soft play and \"no minimum age\" overall."
+    },
+    {
+      "sec": "pushchair",
+      "key": "allowed",
+      "value": "yes",
+      "text": "Prams are allowed; a dedicated pram and buggy section on the second floor.",
+      "evidence": {
+        "url": "https://babylonpark.com/london/",
+        "readAt": "2026-10-08",
+        "quote": "Are prams allowed? Yes, prams are allowed and there is a dedicated pram/buggy section on the second floor.",
+        "pageSha256": "91e5b74efd6d579f"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person"
+      ]
+    },
+    {
+      "sec": "toilets",
+      "key": "toilets",
+      "value": "yes",
+      "text": "Restrooms on the Mezzanine and Basement floors.",
+      "evidence": {
+        "url": "https://babylonpark.com/london/",
+        "readAt": "2026-10-08",
+        "quote": "Are there restrooms on-site? Yes, restrooms are available on the Mezzanine and Basement floors.",
+        "pageSha256": "91e5b74efd6d579f"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "toilets",
+      "key": "babyChanging",
+      "value": null,
+      "text": "Baby changing: not stated on the page read.",
+      "status": "unknown",
+      "note": "Restrooms are described; baby-changing is not mentioned."
+    },
+    {
+      "sec": "transport",
+      "key": "station",
+      "value": "Camden Road",
+      "text": "An 8 minute walk from Camden Road station; Camden Town (Northern line) is a short walk.",
+      "evidence": {
+        "url": "https://babylonpark.com/london/",
+        "readAt": "2026-10-08",
+        "quote": "We are an 8 minute walk from Camden Road Station.",
+        "pageSha256": "91e5b74efd6d579f"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "transport",
+      "key": "parking",
+      "value": "no",
+      "text": "No dedicated parking; spaces can be found nearby.",
+      "evidence": {
+        "url": "https://babylonpark.com/london/",
+        "readAt": "2026-10-08",
+        "quote": "Is there parking available? There is no dedicated parking at Babylon Park. However, parking spaces can be found nearby in the local area.",
+        "pageSha256": "91e5b74efd6d579f"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "a negative claim (can exclude a venue)"
+      ]
+    },
+    {
+      "sec": "food",
+      "key": "cafe",
+      "value": "yes",
+      "text": "Ovo & Neta restaurant on the mezzanine (pizza, hot dogs, ice cream, waffles); vending machines. No outside food or drink.",
+      "evidence": {
+        "url": "https://babylonpark.com/london/",
+        "readAt": "2026-10-08",
+        "quote": "Yes, the Ovo & Neta restaurant on the Mezzanine floor serves a variety of food and drinks.",
+        "pageSha256": "91e5b74efd6d579f"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "food",
+      "key": "outside-food",
+      "value": "not permitted",
+      "text": "Outside food and drinks are not permitted.",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://babylonpark.com/london/",
+        "readAt": "2026-10-08",
+        "quote": "Please note that outside food and drinks are not permitted, and alcohol is not allowed in the venue.",
+        "pageSha256": "91e5b74efd6d579f"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person"
+      ]
+    },
+    {
+      "sec": "play",
+      "key": "softplay",
+      "value": "yes",
+      "text": "Soft play areas for toddlers and kids.",
+      "evidence": {
+        "url": "https://babylonpark.com/london/",
+        "readAt": "2026-10-08",
+        "quote": "Mezzanine Floor: Ovo & Neta restaurant (serving pizza, hot dogs, ice cream, waffles, and more), soft play areas for toddlers and kids, and an events room.",
+        "pageSha256": "91e5b74efd6d579f"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "access",
+      "key": "wheelchair",
+      "value": "yes",
+      "text": "Level entrance and a lift to the mezzanine and basement; some rides are not accessible.",
+      "evidence": {
+        "url": "https://babylonpark.com/london/",
+        "readAt": "2026-10-08",
+        "quote": "Yes! The entrance is level with the pavement, and a lift is available for access to the mezzanine and basement floors.",
+        "pageSha256": "91e5b74efd6d579f"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)"
+      ]
+    },
+    {
+      "sec": "opening",
+      "key": "hours",
+      "value": "Mon-Fri 10-21; Sat 10-22; Sun 10-21",
+      "text": "Monday to Friday 10am to 9pm, Saturday 10am to 10pm, Sunday 10am to 9pm.",
+      "evidence": {
+        "url": "https://babylonpark.com/london/",
+        "readAt": "2026-10-08",
+        "quote": "Opening hours: Monday – Friday: 10:00 a.m. – 9:00 p.m. Saturday: 10:00 a.m. – 10:00 p.m. Sunday: 10:00 a.m. – 9:00 p.m.",
+        "pageSha256": "91e5b74efd6d579f"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "pricing",
+      "key": "paid",
+      "value": null,
+      "text": "Ticket prices: not on the page read.",
+      "status": "unknown",
+      "note": "Tickets are sold through the Fever app and website; the venue page shows no price. The site is created and operated by Fever Labs."
+    },
+    {
+      "sec": "considerations",
+      "key": "height",
+      "value": "105cm",
+      "text": "No minimum age, but the rollercoaster and drop tower have a minimum height of 105cm.",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://babylonpark.com/london/",
+        "readAt": "2026-10-08",
+        "quote": "there is no minimum age for access however the rollercoaster and drop tower have a minimum height restriction of 105cm",
+        "pageSha256": "91e5b74efd6d579f"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person"
+      ]
+    },
+    {
+      "sec": "considerations",
+      "key": "duration",
+      "value": 120,
+      "text": "A visit takes about two hours.",
+      "evidence": {
+        "url": "https://babylonpark.com/london/",
+        "readAt": "2026-10-08",
+        "quote": "Duration: Varies based on ticket purchased, we recommend 2 hours.",
+        "pageSha256": "91e5b74efd6d579f"
+      },
+      "status": "verified"
+    }
+  ]
+}
