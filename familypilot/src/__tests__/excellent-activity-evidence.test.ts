@@ -136,14 +136,22 @@ describe('freshness: reviewed evidence is never extended', () => {
   });
 });
 
-describe('ranking is unchanged', () => {
-  it('the score does not read activity evidence', () => {
-    const p = profile([kit(), maya()]);
-    const detail = (id: string) => ({ ...venue(id), photos: [], openingHours: [], description: '' }) as unknown as VenueDetail;
-    const withEvidence = calculateFamilyScore(detail(RAF), p);
-    const without = calculateFamilyScore(detail('fp-no-evidence'), p);
-    expect(withEvidence.score).toBe(without.score);
-    expect(withEvidence.factors).toEqual(without.factors);
+describe('the score step (for review: the only part that moves rankings)', () => {
+  const detail = (id: string) => ({ ...venue(id), photos: [], openingHours: [], description: '' }) as unknown as VenueDetail;
+  it('a provision covering every child of a year or more sets the age factor to 88; some, 80; none or a programme, unchanged', () => {
+    const at = (id: string, members: FamilyMember[]) => calculateFamilyScore(detail(id), profile(members)).factors.ageSuitability;
+    expect(at(RAF, [kit(), maya()])).toBe(88);
+    expect(at(CHISWICK, [kit(), maya()])).toBe(80);
+    expect(at(CHISWICK, [tom()])).toBe(75);
+    expect(at(BECKENHAM, [maya()])).toBe(75);
+    expect(at('fp-no-evidence', [maya()])).toBe(75);
+    expect(at(RAF, [ozzie()])).toBe(75);
+  });
+
+  it('a venue-wide recommended range still decides when there is one', () => {
+    const p = profile([maya()]);
+    const ranged = { ...detail(RAF), trustedFacts: facts({ minRecommendedAge: 10, maxRecommendedAge: 16 }) } as unknown as VenueDetail;
+    expect(calculateFamilyScore(ranged, p).factors.ageSuitability).not.toBe(88);
   });
 });
 
