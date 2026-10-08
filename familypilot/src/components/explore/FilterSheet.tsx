@@ -16,7 +16,6 @@ import {
   FILTER_SHEET_OPTIONS,
   FOOD_SHEET_OPTIONS,
 } from '@/src/utils/filter-venues';
-import { useFamilyProfile } from '@/src/hooks/use-queries';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -57,7 +56,6 @@ interface FilterSheetProps {
 
 export function FilterSheet({ visible, onClose, scope = 'explore', priceFiltersAvailable = true }: FilterSheetProps) {
   const insets = useSafeAreaInsets();
-  const { data: profile } = useFamilyProfile();
   const {
     categoryFilter,
     exploreMaxDrive,
@@ -84,7 +82,6 @@ export function FilterSheet({ visible, onClose, scope = 'explore', priceFiltersA
   }, [visible]);
 
   const isRestaurantMode = scope === 'explore' && categoryFilter === 'restaurants';
-  const profileDrive = profile?.maxDriveMinutes ?? 30;
 
   const handleReset = () => {
     if (scope === 'home') {
@@ -142,7 +139,7 @@ export function FilterSheet({ visible, onClose, scope = 'explore', priceFiltersA
                 Travel time from home
               </Text>
               <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint}>
-                Your profile default is {profileDrive} minutes. Change here for this search only
+                Every distance is shown until you choose one here. It applies to this search only
               </Text>
               <View style={styles.chipWrap}>
                 {DRIVE_FILTER_OPTIONS.map((option) => (

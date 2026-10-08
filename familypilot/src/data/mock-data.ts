@@ -22,7 +22,6 @@ const familyScore = (
     ageSuitability: score - 2,
     accessibility: score - 5,
     distance: score + 1,
-    weatherFit: score - 3,
     budgetFit: score - 1,
     facilitiesMatch: score,
   },

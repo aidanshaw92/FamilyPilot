@@ -71,11 +71,11 @@ export function filterRestaurants(
   restaurants: RestaurantDetail[],
   advancedIds: string[],
   maxDriveMinutes: number | 'any',
-  profileMaxDrive: number,
   budgetFilter: ExploreBudgetFilter,
 ): RestaurantDetail[] {
-  const effectiveMaxDrive =
-    maxDriveMinutes === 'any' ? profileMaxDrive + 10 : maxDriveMinutes;
+  // "Any" means any: the same as for places. It used to mean the profile's limit plus ten minutes, which with an unchosen
+  // 30 minute default hid every restaurant beyond 40 minutes while the filter said "Any".
+  const effectiveMaxDrive = maxDriveMinutes === 'any' ? Infinity : maxDriveMinutes;
 
   let result = restaurants.filter(
     (r) => r.driveMinutes <= effectiveMaxDrive && matchesBudget(r, budgetFilter),

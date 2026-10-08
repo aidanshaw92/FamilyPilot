@@ -43,7 +43,7 @@ const lines = (p: FamilyProfile) => {
   const score = calculateFamilyScore(VENUE, p, { enrichmentStatus: 'enriched' });
   return JSON.stringify([score.explanation, score.cautions, score.factors]);
 };
-const request = (p: FamilyProfile) => JSON.stringify(buildProactiveDayRequest(p, null, MORNING));
+const request = (p: FamilyProfile) => JSON.stringify(buildProactiveDayRequest(p, MORNING));
 
 describe('each onboarding answer changes something', () => {
   it('the child’s name appears in what Family Fit says about them', () => {
@@ -121,8 +121,11 @@ describe('what is not asked is not claimed', () => {
 
   it('the drive caution says "the drive we’re using", not "your usual"', () => {
     const venue = { ...VENUE, driveMinutes: 50 } as unknown as Venue;
-    const cautions = personaliseVenue({ ...venue, driveMinutes: 50 }, family()).familyScore.cautions ?? [];
-    expect(cautions.join(' ')).toContain('Further than the 30 min drive we’re using');
-    expect(cautions.join(' ')).not.toMatch(/your usual/i);
+    // Only a limit the family stated: a new profile has none, so nothing is "further than" anything.
+    const stated = personaliseVenue({ ...venue, driveMinutes: 50 }, { ...family(), maxDriveMinutes: 30 }).familyScore.cautions ?? [];
+    expect(stated.join(' ')).toContain('Further than the 30 min drive we’re using');
+    expect(stated.join(' ')).not.toMatch(/your usual/i);
+    const unstated = personaliseVenue({ ...venue, driveMinutes: 50 }, family()).familyScore.cautions ?? [];
+    expect(unstated.join(' ')).not.toMatch(/drive|further|over the/i);
   });
 });

@@ -95,8 +95,8 @@ Expected constraints:
 
 THE SERVER OWNS THESE - never emit them:
 - childAgeFit / ageRecommendedFit: age matching is added from the family profile.
-- journey: the drive limit comes from the family profile, not from you.
-- budget: taken from the family profile's budget tier.
+- journey: the drive limit comes from the family profile, not from you. A profile with no limit has none.
+- budget: taken from the family profile's budget tier, only if it has one.
 
 Never include venue IDs, scores, rankings or recommendations.`;
 
@@ -104,8 +104,8 @@ Never include venue IDs, scores, rankings or recommendations.`;
     rawText,
     profileSummary: {
       childAges,
-      maxDriveMinutes: profile.maxDriveMinutes,
-      budgetTier: profile.budgetTier,
+      maxDriveMinutes: profile.maxDriveMinutes ?? null,
+      budgetTier: profile.budgetTier ?? null,
       hasPushchair: Boolean(profile.pushchair?.trim()),
     },
   });

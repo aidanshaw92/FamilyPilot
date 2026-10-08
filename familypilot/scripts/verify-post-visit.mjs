@@ -41,7 +41,7 @@ async function newPage(width = 390, height = 844) {
   page.on('request', (r) => { if (r.url().includes('/api/planning/feedback') && r.method() === 'POST') feedbackPosts.push(r.postData()); });
   return { ctx, page };
 }
-const next = (page) => page.getByRole('button', { name: /^(continue|see my recommendations)/i }).first();
+const next = (page) => page.getByRole('button', { name: /^(continue|skip for now|see my recommendations)/i }).first();
 
 /** Create an account, verify it, and describe a family with a toddler in a buggy. Ends on the invite step or Home. */
 async function signUpWithBuggyToddler(page, email) {
@@ -66,7 +66,7 @@ async function signUpWithBuggyToddler(page, email) {
   await next(page).click(); await settle(page);
   for (let i = 0; i < 3; i++) {
     if (/Who do you plan days out with/i.test(await text(page))) break;
-    const btn = page.getByRole('button', { name: /^(continue|see my recommendations)/i }).first();
+    const btn = page.getByRole('button', { name: /^(continue|skip for now|see my recommendations)/i }).first();
     if (!(await btn.count())) break;
     await btn.click(); await settle(page, 1200);
   }

@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as liveContext from '@/src/services/context/live-context';
-import { HOME_WEATHER_WAIT_MS, loadHomeList, loadKeptHomeList, prefetchHomeList } from '@/src/services/places/home-list';
+import { loadHomeList, loadKeptHomeList, prefetchHomeList } from '@/src/services/places/home-list';
 import { placesApiClient } from '@/src/services/places/places-api-client';
 import {
   clearClientPlacesCache,
@@ -195,15 +195,12 @@ describe('Home’s request starts early and is only ever sent once', () => {
 });
 
 describe('a slow response does not hold Home’s list back', () => {
-  it('slow weather: the list ranks without it after HOME_WEATHER_WAIT_MS instead of waiting', async () => {
+  it('weather is not part of the list: it is never requested, so a hung forecast cannot hold Home back', async () => {
     vi.spyOn(placesApiClient, 'search').mockResolvedValue(RESULT);
-    vi.spyOn(liveContext, 'fetchLiveWeatherSafe').mockImplementation(() => new Promise(() => {}));
-    vi.useFakeTimers();
-    const home = loadHomeList(PROFILE);
-    await vi.advanceTimersByTimeAsync(HOME_WEATHER_WAIT_MS + 10);
-    const venues = await home;
+    const weather = vi.spyOn(liveContext, 'fetchLiveWeatherSafe').mockImplementation(() => new Promise(() => {}));
+    const venues = await loadHomeList(PROFILE);
     expect(venues).toHaveLength(2);
-    expect(HOME_WEATHER_WAIT_MS).toBeLessThanOrEqual(3000);
+    expect(weather).not.toHaveBeenCalled();
   });
 
   it('no fixed delay before the list: a held list is returned straight away', async () => {

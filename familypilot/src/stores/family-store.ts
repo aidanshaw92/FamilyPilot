@@ -5,6 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { FamilyProfile } from '@/src/types';
 import { withDerivedAges } from '@/src/utils/child-age';
 import { createEmptyProfile, withCompletion } from '@/src/utils/profile-defaults';
+import { stashLegacyDefaults } from '@/src/utils/preferences';
 import { migrateLegacyProfile } from '@/src/utils/profile-migration';
 
 interface FamilyState {
@@ -59,11 +60,17 @@ export const useFamilyStore = create<FamilyState>()(
     {
       name: 'familypilot-family-v1',
       // Version 1 is the first with a date of birth a parent actually entered and a per-child shape.
+      // Version 2 stops treating an unchosen 30 minute journey limit and "moderate" budget as the family's own: every
+      // profile used to be created with both, so a stored 30 / "moderate" cannot be told from an answer. Those two values
+      // are SET ASIDE under `unconfirmedPreferences` (not deleted, not applied) for the parent to confirm in Edit Profile;
+      // anything else was chosen and is untouched. See utils/preferences.ts.
       // The storage KEY keeps its name on purpose: a new key would orphan every existing family.
-      version: 1,
-      migrate: (persisted) => {
+      version: 2,
+      migrate: (persisted, fromVersion) => {
         const state = (persisted ?? {}) as Partial<FamilyState>;
-        return { ...state, profile: migrateLegacyProfile(state.profile).profile } as FamilyState;
+        const migrated = migrateLegacyProfile(state.profile).profile;
+        const profile = fromVersion < 2 ? withCompletion(stashLegacyDefaults(migrated, new Date().toISOString())) : migrated;
+        return { ...state, profile } as FamilyState;
       },
       // Every rehydrate, current version or not, brings each child's age up to today: a birthday that
       // passed while the app was closed must not wait for the next edit to show.
