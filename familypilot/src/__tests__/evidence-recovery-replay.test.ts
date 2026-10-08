@@ -160,7 +160,11 @@ describe('coverage on the replay set (88 venues with readable own pages)', () =>
       // v5: parking 36 -> 35 and freeParking 15 -> 13. Queen Elizabeth Olympic Park's "parking" was a sub-venue's car park
       // "for facility users" and its "free parking: no" an on-street bay on a nearby avenue; Whitechapel Gallery's "free
       // parking: no" was a public multistorey's charge. None of the three was the venue's own.
-    }).toEqual({ babyChanging: 26, toilets: 31, cafe: 35, parking: 35, pushchairSuitability: 10, freeParking: 13 });
+      // v6 (extraction pilot): toilets 31 -> 35 (Cutty Sark, Mudchute, Chiswick House, Hackney City Farm: placed toilets),
+      // cafe 35 -> 39 (Cutty Sark, Hackney City Farm, Tate Modern, V&A: a café as a place or with its own hours),
+      // parking 35 -> 36 (Northala Fields' own car parks "locked in accordance with park
+      // locking times"). Each is listed with its sentence in docs/EXTRACTION_PILOT.md.
+    }).toEqual({ babyChanging: 26, toilets: 35, cafe: 39, parking: 36, pushchairSuitability: 10, freeParking: 13 });
     // What production serves today for the same venues, for the before/after table.
     expect({
       babyChanging: count('babyChanging', 'live'),

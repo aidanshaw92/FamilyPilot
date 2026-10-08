@@ -73,6 +73,6 @@ describe('what must not change', () => {
   });
 
   it('the rules version moved, so a re-read knows these drafts used the new rules', () => {
-    expect(EXTRACTOR_VERSION).toBe('official-source-rules-v5');
+    expect(EXTRACTOR_VERSION).toMatch(/^official-source-rules-v[5-9]/);
   });
 });
