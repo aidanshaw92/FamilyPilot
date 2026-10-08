@@ -86,7 +86,16 @@ describe('what a rule is allowed to do', () => {
     const warns = evaluateVenueRules([DISCOVER_PUSHCHAIRS], visit({ usesPushchair: true }));
     expect(warns.blocksHousehold).toBeNull();
     expect(warns.notes).toEqual([{ ruleId: 'pushchair-play-areas', severity: 'important', text: DISCOVER_PUSHCHAIRS.text }]);
-    expect(evaluateVenueRules([DISCOVER_PUSHCHAIRS], visit())).toEqual({ closedAllDay: null, blocksHousehold: null, notes: [] });
+    expect(evaluateVenueRules([DISCOVER_PUSHCHAIRS], visit())).toEqual({ closedAllDay: null, blocksHousehold: null, exceptions: [], notes: [] });
+  });
+
+  it('names what the venue itself says softens a blocking rule, so the refusal is complete', () => {
+    const exception: VenueRule = { id: 'pushchair-exception', kind: 'caution', scope: 'venue', exceptionOf: 'pushchair-play-areas', text: 'If a pushchair is needed (twins, a sleeping child), ask front of house.' };
+    const verdict = evaluateVenueRules([DISCOVER_PUSHCHAIRS, exception], visit({ usesPushchair: true, requiresPushchair: true }));
+    expect(verdict.blocksHousehold?.id).toBe('pushchair-play-areas');
+    expect(verdict.exceptions.map((r) => r.id)).toEqual(['pushchair-exception']);
+    // A rule that softens a different rule is not an exception to this one.
+    expect(evaluateVenueRules([DISCOVER_PUSHCHAIRS, { ...exception, exceptionOf: 'something-else' }], visit({ usesPushchair: true, requiresPushchair: true })).exceptions).toEqual([]);
   });
 
   it('a pushchair restriction the reviewer did not mark as covering the visit never blocks', () => {
@@ -108,8 +117,8 @@ describe('what a rule is allowed to do', () => {
   });
 
   it('a venue with no rules returns nothing, which is not a statement that none apply', () => {
-    expect(evaluateVenueRules(undefined, visit())).toEqual({ closedAllDay: null, blocksHousehold: null, notes: [] });
-    expect(evaluateVenueRules([], visit())).toEqual({ closedAllDay: null, blocksHousehold: null, notes: [] });
+    expect(evaluateVenueRules(undefined, visit())).toEqual({ closedAllDay: null, blocksHousehold: null, exceptions: [], notes: [] });
+    expect(evaluateVenueRules([], visit())).toEqual({ closedAllDay: null, blocksHousehold: null, exceptions: [], notes: [] });
   });
 });
 
@@ -216,6 +225,16 @@ describe('createPlan carries the venue’s warnings into the saved plan', () => 
     expect(outcome.ok).toBe(false);
     if (!outcome.ok) expect(outcome.message).toContain('Pushchairs and buggies are not allowed in any storytelling or play area');
   });
+
+  it('adds the venue\'s own exception to the refusal, and says toilets "aren\'t" confirmed', async () => {
+    const exception: VenueRule = { id: 'pushchair-exception', kind: 'caution', scope: 'venue', exceptionOf: 'pushchair-play-areas', text: 'If a pushchair is needed (twins, a sleeping child), ask front of house.' };
+    const refused = await createPlan({ venue: stop([DISCOVER_PUSHCHAIRS, exception]) as never, draft, families: [family({ id: 'mine', required: ['pushchair'] })] }, deps);
+    expect(refused.ok).toBe(false);
+    if (!refused.ok) expect(refused.message).toMatch(/That doesn’t work for what your family needs\. The venue also says: If a pushchair is needed \(twins, a sleeping child\), ask front of house\./);
+    const needs = await createPlan({ venue: { ...stop(), facts: { ...baseFacts(), toilets: 'unknown' } } as never, draft, families: [family({ id: 'mine', required: ['toilets'] })] }, deps);
+    expect(needs.ok).toBe(true);
+    if (needs.ok) expect(needs.view.needsChecking.join(' ')).toMatch(/^Toilets aren’t confirmed at Discover.*you said you need them/);
+  });
 });
 
 // ---- Family Fit and Home -------------------------------------------------------------------------------------------
@@ -303,9 +322,24 @@ describe('a party that needs step-free access', () => {
     })) as never;
     const outcome = await createPlan({ venue: venue as never, draft, families: [{ ...stepFree, id: 'mine' }] }, { buildMatrix: matrixBuilder, now: new Date('2026-10-08T08:00:00') });
     expect(outcome.ok).toBe(true);
-    if (outcome.ok) expect(outcome.view.needsChecking.join(' ')).toMatch(/Wheelchair and step-free access isn’t confirmed at Test Place/);
+    if (outcome.ok) expect(outcome.view.needsChecking.join(' ')).toMatch(/Wheelchair and step-free access isn’t confirmed at Test Place, and someone in your family uses a wheelchair or mobility aid/);
     const refused = await createPlan({ venue: { ...venue, facts: { ...baseFacts(), wheelchairAccessible: 'no' } } as never, draft, families: [{ ...stepFree, id: 'mine' }] }, { buildMatrix: matrixBuilder, now: new Date('2026-10-08T08:00:00') });
     expect(refused.ok).toBe(false);
     if (!refused.ok) expect(refused.message).toMatch(/does not have wheelchair and step-free access/);
+  });
+});
+
+import { closureToday } from '@/src/services/matching/venue-rules';
+describe('one definition of "closed today" for the card and the page', () => {
+  it('finds a whole-venue closure on the venue-local day, and nothing for another day or an area', () => {
+    const NINTH = new Date('2026-10-09T09:00:00Z');
+    expect(closureToday([SCIENCE_CLOSED], NINTH)?.id).toBe('closed-2026-10-09');
+    expect(closureToday([SCIENCE_CLOSED], new Date('2026-10-10T09:00:00Z'))).toBeNull();
+    expect(closureToday([NHM_GALLERY], NINTH)).toBeNull();
+    expect(closureToday(undefined, NINTH)).toBeNull();
+  });
+  it('reads the day in the venue\'s timezone, not the device\'s', () => {
+    // 23:30 UTC on 8 October is 00:30 on 9 October in London (BST).
+    expect(closureToday([SCIENCE_CLOSED], new Date('2026-10-08T23:30:00Z'), 'Europe/London')?.id).toBe('closed-2026-10-09');
   });
 });

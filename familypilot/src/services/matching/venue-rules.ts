@@ -1,5 +1,7 @@
 import type { VenueRule, VenueRuleNote, VenueRuleVerdict, VenueRuleVisit } from '@/src/types/venue-rules';
 
+import { venueLocalDate } from '@/src/utils/opening-hours';
+
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Day of week (0 = Sunday) of a calendar date, independent of the host timezone. */
@@ -36,7 +38,7 @@ const hasBoundedDates = (rule: VenueRule): boolean => Boolean(rule.from || rule.
  * Unknown is never produced here: a venue with no rules returns no notes, which callers must not read as "no restrictions".
  */
 export function evaluateVenueRules(rules: readonly VenueRule[] | null | undefined, visit: VenueRuleVisit): VenueRuleVerdict {
-  const verdict: VenueRuleVerdict = { closedAllDay: null, blocksHousehold: null, notes: [] };
+  const verdict: VenueRuleVerdict = { closedAllDay: null, blocksHousehold: null, exceptions: [], notes: [] };
   if (!rules?.length) return verdict;
 
   const important: VenueRuleNote[] = [];
@@ -89,6 +91,21 @@ export function evaluateVenueRules(rules: readonly VenueRule[] | null | undefine
     }
   }
 
+  if (verdict.blocksHousehold) verdict.exceptions = rules.filter((r) => r.exceptionOf === verdict.blocksHousehold!.id && ruleAppliesOn(r, visit.date));
   verdict.notes = [...important, ...info];
   return verdict;
+}
+
+/**
+ * The reviewed whole-venue closure that covers the venue-local day `instant` falls on, if any. One definition for Home, Explore and
+ * Venue Detail, so a card cannot say "Closed today" while the page beneath it says "Open until 5pm".
+ */
+export function closureToday(
+  rules: readonly VenueRule[] | null | undefined,
+  instant: Date,
+  timezone: string = 'Europe/London',
+): VenueRule | null {
+  const date = venueLocalDate(instant, timezone);
+  if (!date) return null;
+  return evaluateVenueRules(rules, { date, usesPushchair: false, requiresPushchair: false, needsStepFree: false }).closedAllDay;
 }

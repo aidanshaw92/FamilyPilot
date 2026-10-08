@@ -6,7 +6,7 @@ import { activityEvidenceFor, evidenceCovers } from '@/src/services/matching/act
 import { childAgeVerdicts, joinNames, outsideRangeCautions, suitsChildrenLine } from '@/src/utils/child-fit';
 import { childUsesBuggy, childUsesMobilityAid, familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
 import { describeOpeningToday, OpeningTodayState } from '@/src/utils/opening-today';
-import { evaluateVenueRules, ruleAppliesOn } from '@/src/services/matching/venue-rules';
+import { closureToday, ruleAppliesOn } from '@/src/services/matching/venue-rules';
 import { reconcileHoursOn } from '@/src/services/places/hours-reconcile';
 import { venueLocalDate } from '@/src/utils/opening-hours';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
@@ -394,9 +394,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
   const hoursToday = describeOpeningToday(reconcileHoursOn(venue.structuredOpeningHours, venue.trustedFacts?.officialHours, now).schedule, now);
   // A reviewed whole-venue closure on today's date outranks the weekly hours, which cannot know about an exceptional closure.
   const todayDate = venueLocalDate(now, venue.structuredOpeningHours?.timezone ?? 'Europe/London');
-  const closedByRule = todayDate
-    ? evaluateVenueRules(venue.trustedFacts?.rules, { date: todayDate, usesPushchair: false, requiresPushchair: false, needsStepFree: false }).closedAllDay
-    : null;
+  const closedByRule = closureToday(venue.trustedFacts?.rules, now, venue.structuredOpeningHours?.timezone);
   const today = closedByRule ? { ...hoursToday, state: 'closed_today' as const, label: 'Closed today', spans: [] } : hoursToday;
   const notToday = today.state === 'closed_today' || today.state === 'closed_for_today';
   if (today.state === 'never_open') {

@@ -23,7 +23,7 @@ const SPECS = {
   ],
   'discover-childrens-story-centre': [
     { fact: 'pushchair.restriction', id: 'pushchair-play-areas', kind: 'pushchair', scope: 'area', area: 'Storytelling and play areas', coversCoreVisit: true },
-    { fact: 'pushchair.twins', id: 'pushchair-exception', kind: 'caution', scope: 'venue' },
+    { fact: 'pushchair.twins', id: 'pushchair-exception', kind: 'caution', scope: 'venue', exceptionOf: 'pushchair-play-areas' },
     { fact: 'considerations.booking', id: 'book-ahead', kind: 'booking', scope: 'venue' },
     { fact: 'opening.hours', id: 'closed-christmas', kind: 'closure', scope: 'venue', from: '2026-12-24', until: '2026-12-26', text: 'Closed 24, 25 and 26 December.' },
     { fact: 'opening.hours', id: 'closed-new-year', kind: 'closure', scope: 'venue', from: '2026-12-31', until: '2027-01-01', text: 'Closed 31 December and 1 January.' },
@@ -91,7 +91,7 @@ function rulesFor(profile, name = slug(profile)) {
       id: spec.id, kind: spec.kind, scope: spec.scope,
       ...(spec.area ? { area: spec.area } : {}), ...(spec.coversCoreVisit ? { coversCoreVisit: true } : {}),
       ...(spec.from ? { from: spec.from } : {}), ...(spec.until ? { until: spec.until } : {}),
-      ...(spec.weekdays ? { weekdays: spec.weekdays } : {}), ...(spec.affectsFacilities ? { affectsFacilities: spec.affectsFacilities } : {}),
+      ...(spec.weekdays ? { weekdays: spec.weekdays } : {}), ...(spec.exceptionOf ? { exceptionOf: spec.exceptionOf } : {}), ...(spec.affectsFacilities ? { affectsFacilities: spec.affectsFacilities } : {}),
       text: spec.text ?? fact.text,
     };
     out.push({ rule, fact: spec.fact, status: fact.status, evidence: fact.evidence });

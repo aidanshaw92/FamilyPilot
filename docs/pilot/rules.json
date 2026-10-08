@@ -69,6 +69,7 @@
      "id": "pushchair-exception",
      "kind": "caution",
      "scope": "venue",
+     "exceptionOf": "pushchair-play-areas",
      "text": "If a pushchair is needed (twins, a sleeping child), ask front of house; they will advise and accommodate where needed."
     },
     "fact": "pushchair.twins",

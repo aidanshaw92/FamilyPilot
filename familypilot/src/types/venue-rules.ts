@@ -52,6 +52,12 @@ export interface VenueRule {
    * listed one of these as a must-have is warned prominently; others are not told.
    */
   affectsFacilities?: Array<'toilets' | 'babyChanging' | 'parking'> | null;
+  /**
+   * The id of another rule of this venue that this one softens ("if you need a pushchair for twins, ask front of house" softens
+   * the pushchair restriction). It is its own rule with its own source. A restriction that refuses a household says its
+   * exceptions in the same message, because the venue itself does.
+   */
+  exceptionOf?: string | null;
   /** Parent-facing sentence, reviewed. Shown as written. */
   text: string;
   sourceUrl?: string | null;
@@ -84,5 +90,7 @@ export interface VenueRuleVerdict {
   closedAllDay: VenueRule | null;
   /** A rule the household cannot work around: a required thing the core visit does not allow. */
   blocksHousehold: VenueRule | null;
+  /** What the venue itself says softens the blocking rule (its `exceptionOf` rules), for the message that refuses. */
+  exceptions: VenueRule[];
   notes: VenueRuleNote[];
 }

@@ -332,7 +332,7 @@ export function matchVenueToDayRequest(
       needsStepFree: Boolean(request.needsStepFree),
     });
     if (verdict.blocksHousehold) {
-      evaluations.push({ field: 'venueRules', strength: 'required', outcome: 'unsuitable', detail: verdict.blocksHousehold.text });
+      evaluations.push({ field: 'venueRules', strength: 'required', outcome: 'unsuitable', detail: [verdict.blocksHousehold.text, ...verdict.exceptions.map((e) => e.text)].join('\n') });
       eligible = false;
     }
   }

@@ -31,17 +31,21 @@ export function TodayCard({
   weather,
   environment,
   sourceNote,
+  closedBy,
 }: {
   hours?: OpeningHoursSchedule;
   /** Said when the venue's own hours and the provider's disagree: which was used and what the other said. */
   sourceNote?: string | null;
+  /** A reviewed whole-venue closure covering today: outranks the weekly hours, exactly as it does on Home and Explore. */
+  closedBy?: string | null;
   now?: Date;
   /** Today's forecast, shown as a condition of the day. Optional and late-arriving: it is never part of Family Fit. */
   weather?: WeatherInfo | null;
   environment?: 'indoor' | 'outdoor' | 'mixed' | 'unknown';
 }) {
   const [open, setOpen] = useState(false);
-  const today = useMemo(() => describeOpeningToday(hours, now ?? new Date()), [hours, now]);
+  const fromHours = useMemo(() => describeOpeningToday(hours, now ?? new Date()), [hours, now]);
+  const today = closedBy ? { ...fromHours, state: 'closed_today' as const, label: 'Closed today', spans: [] } : fromHours;
   const week = useMemo(() => weeklyHoursLines(hours), [hours]);
   const tint = TINT[today.state];
   const conditions = describeWeatherToday(weather, environment);
@@ -74,7 +78,12 @@ export function TodayCard({
           {conditions}
         </Text>
       ) : null}
-      {sourceNote ? (
+      {closedBy ? (
+        <Text variant="bodySmall" color={colors.warning[600]} style={styles.conditions} testID="today-closure">
+          {closedBy}
+        </Text>
+      ) : null}
+      {sourceNote && !closedBy ? (
         <Text variant="bodySmall" color={colors.warning[600]} style={styles.conditions} testID="today-source-note">
           {sourceNote}
         </Text>

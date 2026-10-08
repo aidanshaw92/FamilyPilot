@@ -423,7 +423,7 @@ const upperFirst = (text: string): string => text.charAt(0).toUpperCase() + text
  * rather than shown as a key. Neither a yes nor a no: only what nobody has checked.
  */
 function needsCheckingLines(itinerary: DayItinerary): string[] {
-  const groups = new Map<string, { familyId: string; familyLabel: string; label: string; stops: string[] }>();
+  const groups = new Map<string, { familyId: string; familyLabel: string; label: string; field: string; stops: string[] }>();
   // The day's indoor/outdoor choice is the plan's, not one family's, so it is said once per stop. It is an explicit request, so an
   // unconfirmed setting is a prominent warning like any other must-have, never silently dropped.
   const settingStops: string[] = [];
@@ -435,18 +435,24 @@ function needsCheckingLines(itinerary: DayItinerary): string[] {
     const label = mustHaveLabel(item.field);
     if (!label) continue;
     const key = `${item.familyId}|${label}`;
-    const group = groups.get(key) ?? { familyId: item.familyId, familyLabel: item.familyLabel, label, stops: [] };
+    const group = groups.get(key) ?? { familyId: item.familyId, familyLabel: item.familyLabel, label, field: item.field, stops: [] };
     if (!group.stops.includes(item.stopName)) group.stops.push(item.stopName);
     groups.set(key, group);
   }
   const settingLines = settingStops.map((stop) => `Whether ${stop} is indoors or outdoors isn’t confirmed, and you asked for a particular setting today. Check before you go.`);
   return [...settingLines, ...[...groups.values()].map((group) => {
     const where = group.stops.length === 1 ? group.stops[0] : `${group.stops.slice(0, -1).join(', ')} and ${group.stops[group.stops.length - 1]}`;
+    // "Toilets aren't", not "Toilets isn't".
+    const plural = /s$/.test(group.label) && !/ss$/.test(group.label);
+    const verb = plural ? 'aren’t' : 'isn’t';
+    const it = plural ? 'them' : 'it';
+    // Step-free access is needed because someone uses a wheelchair or mobility aid, not because it was ticked as a must-have.
+    const stepFree = group.field === 'accessibility.wheelchairAccessible';
     if (group.familyId === 'mine') {
-      return `${upperFirst(group.label)} isn’t confirmed at ${where}, and you said you need it. Check before you go.`;
+      return `${upperFirst(group.label)} ${verb} confirmed at ${where}, and ${stepFree ? 'someone in your family uses a wheelchair or mobility aid' : `you said you need ${it}`}. Check before you go.`;
     }
     const who = familyDisplayName(group.familyLabel);
-    return `${upperFirst(group.label)} isn’t confirmed at ${where}, and ${who} needs it. Check before you go.`;
+    return `${upperFirst(group.label)} ${verb} confirmed at ${where}, and ${stepFree ? `someone in ${who} uses a wheelchair or mobility aid` : `${who} needs ${it}`}. Check before you go.`;
   })];
 }
 

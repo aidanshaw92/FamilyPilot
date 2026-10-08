@@ -62,6 +62,10 @@ function ruleFromClaim(claim) {
     rule.area = area;
   }
   if (v.coversCoreVisit === true) rule.coversCoreVisit = true;
+  if (v.exceptionOf != null) {
+    if (typeof v.exceptionOf !== 'string' || !ID.test(v.exceptionOf) || v.exceptionOf === id) return null;
+    rule.exceptionOf = v.exceptionOf;
+  }
   for (const key of ['from', 'until']) {
     if (v[key] == null) continue;
     if (typeof v[key] !== 'string' || !validDate(v[key])) return null;

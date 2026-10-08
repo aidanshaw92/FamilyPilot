@@ -179,9 +179,10 @@ export function createPlanSteps(input: { venueName: string; meal?: MealCandidate
 function requirementLine(requirement: UnmetRequirement, venueName: string): string | null {
   if (requirement.field === 'venueRules') {
     // The venue's own reviewed sentence, so a parent reads what the venue says rather than our paraphrase of it.
-    return requirement.detail
-      ? `${requirement.detail.replace(/[.\s]+$/, '')}. That doesn’t work for what your family needs.`
-      : `${venueName} has a rule that doesn’t work for what your family needs.`;
+    if (!requirement.detail) return `${venueName} has a rule that doesn’t work for what your family needs.`;
+    const [rule, ...exceptions] = requirement.detail.split('\n');
+    const refused = `${rule.replace(/[.\s]+$/, '')}. That doesn’t work for what your family needs.`;
+    return exceptions.length ? `${refused} The venue also says: ${exceptions.join(' ')}` : refused;
   }
   if (requirement.field === 'pushchairSuitability') {
     return requirement.outcome === 'unsuitable'
