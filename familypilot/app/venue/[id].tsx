@@ -20,6 +20,7 @@ import { FamilyMatchCard } from '@/src/components/venue/FamilyMatchCard';
 import { FamilyFitCheckingBadge, FamilyFitCheckingCard } from '@/src/components/venue/FamilyFitChecking';
 import { fitIsBeingChecked } from '@/src/utils/fit-checking';
 import { TodayCard } from '@/src/components/venue/TodayCard';
+import { AdmissionCard } from '@/src/components/venue/AdmissionCard';
 import { FamilyEssentials } from '@/src/components/venue/FamilyEssentials';
 import { PhotoGallery } from '@/src/components/venue/PhotoGallery';
 import { RestaurantsCloseBy } from '@/src/components/venue/RestaurantsCloseBy';
@@ -379,6 +380,11 @@ export default function VenueScreen() {
             {/* 2. Will it work TODAY: the opening state from the schedule and the clock, then the routine check. */}
             <View style={styles.block}>
               <TodayCard hours={venue.structuredOpeningHours} weather={weather} environment={venue.trustedFacts?.environment} />
+            </View>
+
+            {/* 2b. What it costs to get in: a sourced estimate for this household, or "Price not confirmed". */}
+            <View style={styles.block}>
+              <AdmissionCard pricing={venue.admission} profile={profile} website={venue.website} />
             </View>
 
             {/* 3. The action this screen exists for, straight after the answer to "is it good for us, and will it work today":
