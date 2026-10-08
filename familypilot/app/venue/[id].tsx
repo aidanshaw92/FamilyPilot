@@ -17,6 +17,8 @@ import { CommunitySection } from '@/src/components/venue/CommunitySection';
 import { EatNearbySection } from '@/src/components/venue/EatNearbySection';
 import { EvidenceSection } from '@/src/components/venue/EvidenceSection';
 import { FamilyMatchCard } from '@/src/components/venue/FamilyMatchCard';
+import { FamilyFitCheckingBadge, FamilyFitCheckingCard } from '@/src/components/venue/FamilyFitChecking';
+import { fitIsBeingChecked } from '@/src/utils/fit-checking';
 import { TodayCard } from '@/src/components/venue/TodayCard';
 import { FamilyEssentials } from '@/src/components/venue/FamilyEssentials';
 import { PhotoGallery } from '@/src/components/venue/PhotoGallery';
@@ -91,6 +93,13 @@ export default function VenueScreen() {
     () => (baseVenue && !pending ? venueService.withParentObservations(baseVenue, parentReports.data) : baseVenue),
     [baseVenue, pending, parentReports.data],
   );
+  // A venue the server says has recent parent reports shows Family Fit as "checking" until they are read (three seconds at
+  // most), instead of a verdict that a report may take back. A venue without recent reports never waits.
+  const fitChecking = fitIsBeingChecked({
+    pending,
+    hasRecentParentReports: baseVenue?.hasRecentParentReports,
+    reportsLoading: parentReports.isLoading,
+  });
   // Today's conditions are shown beside the fit, never in it, and arrive on their own: a slow forecast leaves a quiet line
   // out and holds nothing back.
   const { data: weather } = useWeather();
@@ -303,13 +312,17 @@ export default function VenueScreen() {
                 {venue.name}
               </Text>
               {/* The compact badge beside the name (node 49:5); "Why this score" carries the word. */}
-              <FamilyMatch
-                score={venue.familyScore.score}
-                enrichmentStatus={venue.enrichmentStatus}
-                match={venue.familyMatch}
-                size="compact"
-                onPress={scrollToFit}
-              />
+              {fitChecking ? (
+                <FamilyFitCheckingBadge />
+              ) : (
+                <FamilyMatch
+                  score={venue.familyScore.score}
+                  enrichmentStatus={venue.enrichmentStatus}
+                  match={venue.familyMatch}
+                  size="compact"
+                  onPress={scrollToFit}
+                />
+              )}
             </View>
             <View style={styles.locationRow}>
               <View style={styles.location}>
@@ -358,9 +371,7 @@ export default function VenueScreen() {
                 fitPanelY.current = HERO_HEIGHT - SHEET_OVERLAP + event.nativeEvent.layout.y;
               }}
             >
-              {venue.familyMatch ? (
-                <FamilyMatchCard match={venue.familyMatch} />
-              ) : null}
+              {fitChecking ? <FamilyFitCheckingCard /> : venue.familyMatch ? <FamilyMatchCard match={venue.familyMatch} /> : null}
             </View>
 
             {/* 2. Will it work TODAY: the opening state from the schedule and the clock, then the routine check. */}
