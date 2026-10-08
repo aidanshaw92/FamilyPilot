@@ -177,6 +177,15 @@ export interface MatchableVenueFacts {
   freeParking?: TriState | 'unknown';
   /** A café on site, from an approved claim. Optional so older fixtures and callers read it as unknown. */
   cafe?: TriState | 'unknown';
+  /**
+   * A playground on site, from an approved claim. PROVISION ONLY: it says nothing about which children it suits (no claim
+   * carries the playground's ages), so it is never read as activity suitability. Optional: older callers read unknown.
+   */
+  playground?: TriState | 'unknown';
+  /** The venue as a whole can be visited by a wheelchair user, from an approved claim. Not the same as buggy access. */
+  wheelchairAccessible?: TriState | 'unknown';
+  /** An accessible toilet on site, from an approved claim. */
+  accessibleToilet?: TriState | 'unknown';
   pushchairSuitability: import('@/src/types/enrichment').PushchairSuitability;
   /**
    * How hilly the paths are, from an approved claim (never inferred from the category: a park is not assumed hilly, a

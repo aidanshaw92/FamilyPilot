@@ -3,7 +3,7 @@ import { MatchableVenueFacts } from '@/src/types/day-request';
 import { evaluateAgeAdmission } from '@/src/services/matching/age-admission';
 import { childAgeMonths } from '@/src/services/matching/age-suitability';
 import { childAgeVerdicts, joinNames, outsideRangeCautions, suitsChildrenLine } from '@/src/utils/child-fit';
-import { childUsesBuggy, familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
+import { childUsesBuggy, childUsesMobilityAid, familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
 import { describeOpeningToday, OpeningTodayState } from '@/src/utils/opening-today';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 import { driveLimitMinutes } from '@/src/utils/preferences';
@@ -163,6 +163,9 @@ function mustHaveStatus(facility: FacilityType, facts: MatchableVenueFacts): { l
       return { label: 'baby changing', status: status(facts.babyChanging) };
     case 'parking':
       return { label: 'parking', status: status(facts.parking) };
+    case 'playground':
+      // Whether there is one, nothing more: a playground is provision, never evidence that it suits a particular child.
+      return { label: 'playground', status: status(facts.playground) };
     case 'pushchair_friendly': {
       const p = facts.pushchairSuitability;
       return { label: 'pushchair access', status: p === 'good' || p === 'excellent' ? 'yes' : p === 'difficult' ? 'no' : 'unknown' };
@@ -442,9 +445,24 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
     }
     if (carrier) softCautions.push(carrier);
 
-    // Step-free: the venue holds no evidence for it, so for a child who needs it, it is always still to be checked.
+    // Step-free: the venue's own wheelchair-access claim, for a child who uses a wheelchair or mobility aid. A logistics
+    // fact: it says the visit is possible for them, never that the place suits them. Buggy access is not read here (a
+    // venue that is fine for a buggy is not thereby wheelchair accessible), and unknown stays a thing to check.
     if (familyNeedsStepFree(profile)) {
-      hardUnknowns.push({ key: 'stepfree-unknown', text: 'Step-free and wheelchair access still to be checked' });
+      const aidKids = children.filter(childUsesMobilityAid);
+      const ids = aidKids.map((c) => c.id);
+      const who = sayNames(aidKids, 'your child');
+      if (facts.wheelchairAccessible === 'yes') {
+        reasons.push({ key: 'stepfree', text: `Wheelchair accessible, the venue says, for ${who}`, childIds: ids, topic: 'wheelchair access', aspect: 'logistics' });
+        venueFacts += 1;
+        if (facts.accessibleToilet === 'yes') {
+          reasons.push({ key: 'stepfree-toilet', text: 'Accessible toilet on site', childIds: ids, topic: 'accessible toilet', aspect: 'logistics' });
+        }
+      } else if (facts.wheelchairAccessible === 'no') {
+        breaches.push({ key: 'stepfree-no', text: `The venue says it is not wheelchair accessible, which matters for ${who}`, childIds: ids, topic: 'wheelchair access', aspect: 'logistics' });
+      } else {
+        hardUnknowns.push({ key: 'stepfree-unknown', text: 'Step-free and wheelchair access still to be checked', childIds: ids, topic: 'wheelchair access', aspect: 'logistics' });
+      }
     }
 
     // Must-haves the family stated.
@@ -514,7 +532,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
   // Lead with what is about THIS family (their children, their needs), then the venue's facilities, and the plain
   // logistics (how far) last: the first lines a parent reads should be the ones only they would get.
   const rank = (key: string): number => {
-    const order = ['age', 'buggy', 'must-', 'baby-changing', 'toilets', 'parking', 'cafe', 'drive-ok'];
+    const order = ['age', 'buggy', 'stepfree', 'must-', 'baby-changing', 'toilets', 'parking', 'cafe', 'drive-ok'];
     const index = order.findIndex((prefix) => key === prefix || key.startsWith(prefix));
     return index === -1 ? order.length : index;
   };
