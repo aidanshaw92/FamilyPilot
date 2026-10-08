@@ -2,25 +2,15 @@
 
 Status: 2026-10-08. **Nothing on this page has been done.** No production claim has been written, no job queued, no cron changed, no paid provider called, by this work. Read-only checks were made against production at the end of the session and are stated with what they do and do not prove.
 
-## 1. Step 1: the 21-venue re-extraction (window closes 10 October)
+## 1. Step 1: the 21-venue re-extraction (reading window closes 10 October)
 
-The approved gate is `docs/STEP1_FINAL_GATE.md` (on `docs/step1-final-gate`, PR #187). It is unchanged.
+The approved gate is `docs/STEP1_FINAL_GATE.md` (PR #187). **The two earlier simulations (16 added / 1 corrected / 7 withdrawn, and 18 / 1 / 4) are reconciled row by row in [`STEP1_RECONCILIATION.md`](STEP1_RECONCILIATION.md)**, using the real `main` code over the 161 stored pages, in production's page order, with a network guard (0 attempts). The corpus was filtered in the first run and pages were listed in URL order in both; "80 active claims" was an arithmetic slip (production holds 76).
 
-**Does production still match the gate? Yes, checked read-only just now:**
+**Result: 18 facts added, 1 corrected (Colne Valley parking: no → yes), 4 withdrawn (Sydenham Hill Wood accessible toilet; QEOP parking and free parking; Whitechapel free parking), 4 re-quotes with the same value (two are a trailing space), 67 untouched.** Withdrawn means back to unknown; nothing is deleted. Active claims at the 21 venues afterwards: 76 − 5 + 19 = **90**.
 
-| Gate's assumption | Production now |
-|---|---|
-| 76 active claims on the 21 venues, all automatic | 76 active, all `source_evidence_auto_v2` |
-| The five claims to be withdrawn or corrected are active | All five active (`24a699e3…`, `eabed57d…`, `37cf3fa6…`, `be6f2b75…`, `e7f221fa…`) |
-| No job has run for these venues | 168 jobs in total, none created in the last 48 hours, none open |
-| No v6 draft exists | 0 drafts from `official-source-rules-v6` |
-| Scheduler has used today's slot | Unchanged: the newest claim anywhere is checked 7 October; nothing is queueable before 24 October |
+Same 21 ids as the gate (checked mechanically); stored pages only; no crawler, model, Google or other paid call; only automatic claims can be touched; a second call queues 0. Two quotations that get weaker (Frameless, Tate Modern) have a 19-venue **Option B** in the reconciliation. I recommend the 21-id command you approved.
 
-So the dry run in the gate is not invalidated. One claim on the list (Tate Modern parking, created 7 October) predates the gate and is inside its 76.
-
-**What it does, concisely:** re-reads the stored pages of 21 venues with extractor v6 (no website fetched, no model, no Google). **18 facts added, 1 corrected (Colne Valley parking: no → yes), 4 withdrawn (Sydenham Hill Wood accessible toilet; QEOP parking and free parking; Whitechapel free parking), 17 re-quoted with the same value, 54 untouched.** Withdrawn means back to unknown; nothing is deleted.
-
-**The command** (Supabase SQL editor; expected return 21; a second call queues 0):
+**The command** (Supabase SQL editor; expected return 21; a second call returns 0):
 
 ```sql
 select public.enqueue_reextract_jobs('official-source-rules-v6', 25, array[
@@ -34,7 +24,7 @@ select public.enqueue_reextract_jobs('official-source-rules-v6', 25, array[
 ]);
 ```
 
-Checks, undo and the five claim ids are in the gate. **I am stopped here until you say go.**
+Monitoring (about 30 minutes later, read-only, I run it): every `reextract` job `completed` with no `last_error`; one `official-source-rules-v6` draft per venue with `evidenceMode = 'stored'`; exactly five named claims no longer active; 90 active; `google_places_usage` for the day unchanged. Undo statements for withdrawals, the correction, additions and re-quotes are in `STEP1_RECONCILIATION.md` §5. **I am stopped here until you say go.**
 
 ## 2. Google photographs: switching new paid requests off
 
@@ -63,7 +53,7 @@ Not requested and not done. If you decide to, these are the separate approvals, 
 | What | How much | Mechanism | A person must decide |
 |---|---|---|---|
 | Facts that passed the gate and every independent check | 38 claims (29 in production's own automatic field list) | Claims, written by the pilot's path | Optional: they need no one, but are not published until you say |
-| Facts a person has approved | 35 more claims | Claims | The 99 held items, with the review page |
+| Facts a person has approved | 35 more claims | Claims | The 74 decisions left after parking, merging and deferring (`REVIEW_REDUCTION.md`) |
 | Venue rules | 28 | `rules.<id>` claims, only from a `human:` approver | Each one |
 | Official opening hours | 16 | `hours.<id>` claims, only from a `human:` approver | Each one |
 | Age-specific activity data, admission data | 10 and 6 (+7 held) | Code, by pull request | The pull request |
