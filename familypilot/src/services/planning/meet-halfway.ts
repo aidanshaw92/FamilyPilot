@@ -213,8 +213,8 @@ function sharedProfile(family: PlanningFamily): FamilyProfile {
     parentName: '',
     members,
     homeLocation: family.area,
-    budgetTier: family.budgetTier,
-    maxDriveMinutes: family.maxDriveMinutes,
+    ...(family.budgetTier ? { budgetTier: family.budgetTier } : {}),
+    ...(typeof family.maxDriveMinutes === 'number' ? { maxDriveMinutes: family.maxDriveMinutes } : {}),
     completionPercent: 100,
     mustHaveFacilities: family.required.map((field) => FACILITY_FOR_REQUIRED[field]),
     routines: [],
@@ -256,7 +256,8 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
       estimateDriveMinutes(family.latitude, family.longitude, venue.latitude, venue.longitude),
     );
     if (minutes.some((m) => !Number.isFinite(m))) continue;
-    if (roles.some(([, family], i) => minutes[i] > family.maxDriveMinutes)) {
+    // Each family's own stated limit, where it stated one.
+    if (roles.some(([, family], i) => typeof family.maxDriveMinutes === 'number' && minutes[i] > family.maxDriveMinutes)) {
       excluded.journey += 1;
       continue;
     }

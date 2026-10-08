@@ -23,6 +23,9 @@ const profile = (over: Partial<FamilyProfile> = {}): FamilyProfile => ({
   homeLocation: 'Bromley',
   homeLatitude: 51.406,
   homeLongitude: 0.013,
+  // Stated by the family: a new profile has neither.
+  maxDriveMinutes: 30,
+  budgetTier: 'moderate',
   members: [
     { id: 'p1', name: 'Sam', role: 'parent', dateOfBirth: '1990-01-01', age: 36 },
     { id: 'c1', name: 'Ada', role: 'child', dateOfBirth: '2022-01-01', age: 4 },
@@ -62,6 +65,13 @@ describe('the signed-in household becomes something the planner can measure', ()
     });
   });
 
+  it('carries a limit and a budget only when the profile has them', () => {
+    const family = planningFamilyFromProfile(profile({ maxDriveMinutes: undefined, budgetTier: undefined }));
+    if (typeof family === 'string') throw new Error('expected a family');
+    expect('maxDriveMinutes' in family).toBe(false);
+    expect('budgetTier' in family).toBe(false);
+  });
+
   it('counts only children as ages, never the adults', () => {
     const family = planningFamilyFromProfile(profile());
     if (typeof family === 'string') throw new Error('expected a family');
@@ -92,9 +102,12 @@ describe('the signed-in household becomes something the planner can measure', ()
     expect(planningFamilyFromProfile(profile({ members: [] }))).toBe('not-described');
   });
 
-  it('refuses a drive limit that is not a usable number', () => {
-    expect(planningFamilyFromProfile(profile({ maxDriveMinutes: 0 }))).toBe('not-described');
-    expect(planningFamilyFromProfile(profile({ maxDriveMinutes: Number.NaN }))).toBe('not-described');
+  it('reads an unusable drive limit as no limit rather than as a reason not to plan', () => {
+    for (const bad of [0, -4, Number.NaN, 500]) {
+      const family = planningFamilyFromProfile(profile({ maxDriveMinutes: bad }));
+      expect(typeof family).not.toBe('string');
+      expect('maxDriveMinutes' in (family as object)).toBe(false);
+    }
   });
 
   it('copies the routines, so editing a plan cannot reach into the stored profile', () => {

@@ -146,8 +146,8 @@ describe('the profile onboarding produces', () => {
     ]);
     expect(profile.routines!.every((r) => r.childId === kid.id)).toBe(true);
     expect(familyUsesBuggy(profile)).toBe(true);
-    expect(profile.maxDriveMinutes).toBe(30);
-    expect(profile.budgetTier).toBe('moderate');
+    expect(profile.maxDriveMinutes).toBeUndefined();
+    expect(profile.budgetTier).toBeUndefined();
     expect(profile.pushchair).toBeNull();
   });
 
@@ -233,10 +233,10 @@ describe('the profile onboarding produces', () => {
     expect(profile.routines!.filter((r) => r.kind === 'feed')).toEqual([]);
   });
 
-  it('stores nothing about drive time or budget beyond the defaults every consumer expects', () => {
+  it('stores nothing about travel limit or budget: neither is asked, so neither is invented', () => {
     const profile = build([OLDER()]);
-    expect(profile.maxDriveMinutes).toBe(30);
-    expect(profile.budgetTier).toBe('moderate');
+    expect('maxDriveMinutes' in profile).toBe(false);
+    expect('budgetTier' in profile).toBe(false);
   });
 });
 
@@ -264,6 +264,6 @@ describe('what the new profile does downstream', () => {
 
   it('the receipt reflects the answers without naming anyone', () => {
     const profile = build([BABY({ mobility: ['buggy'], naps: [newNap()] })]);
-    expect(profileReceipt(profile)).toBe('Using age 8 months, pushchair, 13:00 nap and max 30 min drive');
+    expect(profileReceipt(profile)).toBe('Using age 8 months, pushchair and 13:00 nap');
   });
 });

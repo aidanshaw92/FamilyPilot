@@ -1,5 +1,6 @@
 import { FamilyProfile } from '@/src/types';
 import { familyUsesBuggy } from './family-mobility';
+import { driveLimitMinutes } from './preferences';
 
 /**
  * Frame 04's "profile receipt" (node 76:61): "Using ages 2 and 4, pushchair, 15:30 nap and max
@@ -35,8 +36,10 @@ export function profileReceipt(profile: Pick<FamilyProfile, 'members' | 'pushcha
   else if (feeds.length === 2) parts.push(`${feeds[0]} and ${feeds[1]} feeds`);
   else if (feeds.length > 2) parts.push(`${feeds.length} feeds`);
 
-  if (Number.isFinite(profile.maxDriveMinutes) && profile.maxDriveMinutes > 0) {
-    parts.push(`max ${profile.maxDriveMinutes} min drive`);
+  // Only a limit the parent stated; "max 30 min drive" must never be read out for a limit nobody chose.
+  const limit = driveLimitMinutes(profile);
+  if (limit !== null) {
+    parts.push(`max ${limit} min drive`);
   }
 
   if (parts.length === 0) return null;

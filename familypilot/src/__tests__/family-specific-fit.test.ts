@@ -427,12 +427,12 @@ describe('profile receipt, suggestion and completion follow the new answers', ()
     });
   });
 
-  it('only suggests a pushchair make to a family that uses a buggy', () => {
-    const base = { memberships: [{ id: 'm' }] as never, vehicle: 'Car' };
-    const walking = family([OLDER], base);
-    expect(getProfileSuggestion(walking)?.field).not.toBe('pushchair');
-    const buggy = family([TODDLER], base);
-    expect(getProfileSuggestion(buggy)?.field).toBe('pushchair');
+  it('never nudges toward a feature nothing uses: no pushchair make, car or membership suggestion, buggy or not', () => {
+    for (const kids of [[OLDER], [TODDLER]]) {
+      for (const extra of [{}, { memberships: [{ id: 'm' }] as never, vehicle: 'Car' }]) {
+        expect(getProfileSuggestion(family(kids, extra))).toBeNull();
+      }
+    }
   });
 
   it('completion counts real birthdays, not a pushchair name', () => {

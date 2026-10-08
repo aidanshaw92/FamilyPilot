@@ -114,7 +114,7 @@ export default function SetupScreen() {
       default:
         return {
           title: routineNames.length === 1 ? `${routineNames[0]}’s usual day` : `${sayNames(routineNames)}’s usual days`,
-          subtitle: 'So your plans can work around naps and feeds.',
+          subtitle: 'Optional. So your plans can work around naps and feeds. You can add or change them any time in Profile.',
         };
     }
   })();
@@ -217,6 +217,11 @@ export default function SetupScreen() {
   };
 
   const isLast = stepIndex >= steps.length - 1 && step !== 'parent' && step !== 'household' && step !== 'children';
+  // The household and the day's routine are optional: with nothing entered, the button says so rather than asking for a
+  // "Continue" that sounds like it needs an answer.
+  const householdEmpty = !familyName.trim() && adults.every((adult) => !adult.name.trim());
+  const routinesEmpty = children.every((child) => child.naps.length === 0 && child.feedMode === 'none');
+  const skippable = (step === 'household' && householdEmpty) || (step === 'routines' && routinesEmpty);
 
   return (
     <KeyboardAvoidingView
@@ -462,7 +467,7 @@ export default function SetupScreen() {
 
         <View style={styles.footer}>
           <Button
-            label={resolvingHome ? 'Finding your area…' : isLast ? 'See my recommendations' : 'Continue'}
+            label={resolvingHome ? 'Finding your area…' : isLast ? 'See my recommendations' : skippable ? 'Skip for now' : 'Continue'}
             size="lg"
             fullWidth
             disabled={resolvingHome}
