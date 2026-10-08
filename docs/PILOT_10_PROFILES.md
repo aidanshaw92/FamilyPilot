@@ -27,7 +27,7 @@ Reading, all from the venues' own sites on a GitHub runner: 88 requests, 78 page
 |---|---|---|
 | Facts recorded for the ten | 24 stored claims (3 venues had none) | 194 profile facts: 84 verified with no person, 85 proposed for a person, 21 unknown, 4 hypotheses |
 | Facts as claims the app would read | 24 | 46 with no person, 73 if every proposal were approved |
-| Sentences checked verbatim against the page | n/a | 194 of 194 (one carried from an earlier reading, marked) |
+| Facts that quote the venue's own sentence | n/a | 172 of 194; 171 found verbatim on today's page, 1 carried from an earlier reading and marked (the other 22 are unknowns and hypotheses, which state nothing) |
 
 Three profiles, in brief (all ten are in `docs/pilot/PROFILES.md`):
 
@@ -95,10 +95,10 @@ Per venue, measured in this pilot: about 7 to 9 pages read (no cost beyond runne
 |---|---|
 | Reading on the runner | about 400 requests, under an hour of runner time; no Google call |
 | Facts and review items | about 780 facts, about 340 items for a person |
-| Human review | 2 to 6 hours in total (modelled at about 1.5 minutes an item for the low end, two to three times that if every source is opened) |
+| Human review | about 2 to 5 hours in total (modelled at about 19 seconds an item, two to three times that if every source is opened); not measured |
 | Authoring effort | about 2 to 2.5 million model tokens, plus one session to calibrate the gate |
 | Refresh | facility facts expire in 30 days; a re-read shows by page hash which sentences changed, so only changed sentences go to a person |
-| Blocked sites | expect 1 in 10 to refuse or hide prices; the answer is another official source or an open-data layer, not a workaround |
+| Thin, refused or price-hiding sources | 3 of the 10 here (one refusal, two hidden prices); expect a similar share. The answer is another official source or an open-data layer, not a workaround |
 
 Not done in the pilot and cheap to add: downloadable maps and PDFs (listed, not read, by the bounded rule); an open-data layer (OpenStreetMap) for park facilities where official pages are thin.
 
