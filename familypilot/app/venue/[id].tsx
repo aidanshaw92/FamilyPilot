@@ -22,6 +22,7 @@ import { fitIsBeingChecked } from '@/src/utils/fit-checking';
 import { TodayCard } from '@/src/components/venue/TodayCard';
 import { AdmissionCard } from '@/src/components/venue/AdmissionCard';
 import { FamilyEssentials } from '@/src/components/venue/FamilyEssentials';
+import { VenuePractical } from '@/src/components/venue/VenuePractical';
 import { PhotoGallery } from '@/src/components/venue/PhotoGallery';
 import { RestaurantsCloseBy } from '@/src/components/venue/RestaurantsCloseBy';
 import { WeatherAlternativeSection } from '@/src/components/venue/WeatherAlternativeSection';
@@ -409,6 +410,10 @@ export default function VenueScreen() {
                 setEvidenceOpen(true);
               }}
             />
+
+            {/* 4b. The venue's own reviewed rules and what its pages say children of an age can do there. Absent when neither is
+                recorded: a missing section never means "no restrictions". */}
+            <VenuePractical venue={venue} profile={profile ?? null} />
 
             {/* 4. Food nearby, from OpenStreetMap: zero Google calls, one Overpass request per anchor shared across
                 every parent who opens it. The section renders its own pending, outage and nothing-mapped states. */}
