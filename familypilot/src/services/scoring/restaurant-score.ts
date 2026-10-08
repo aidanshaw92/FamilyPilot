@@ -137,7 +137,6 @@ export function calculateRestaurantFamilyScore(
     distance: options?.activityVenue
       ? scoreDistanceFromActivity(driveFromActivity ?? 99)
       : clamp(100 - (restaurant.driveMinutes / (profile.maxDriveMinutes + 1)) * 30),
-    weatherFit: 85,
     budgetFit: scoreBudget(spend, profile.budgetTier),
     facilitiesMatch: scoreFacilities(restaurant.restaurantFeatures, profile),
   };

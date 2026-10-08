@@ -171,7 +171,6 @@ Breakdown:
 | accessibility | Access |
 | distance | Distance |
 | budgetFit | Budget |
-| weatherFit | Weather |
 | sendSuitability | SEND fit *(planned)* |
 | travelFairness | Travel fairness *(meetups)* |
 
@@ -191,7 +190,6 @@ interface FamilyScoreFactors {
   ageSuitability: number;
   accessibility: number;
   distance: number;
-  weatherFit: number;
   budgetFit: number;
   facilitiesMatch: number;
   popularity: number;

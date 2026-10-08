@@ -1,4 +1,4 @@
-import { FamilyProfile, FamilyScoreFactors, VenueDetail, WeatherInfo } from '@/src/types';
+import { FamilyProfile, FamilyScoreFactors, VenueDetail } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { evaluateAgeRecommendation } from '@/src/services/matching/age-suitability';
 import { childAgeVerdicts, outsideRangeCautions, suitsChildrenLine } from '@/src/utils/child-fit';
@@ -130,40 +130,6 @@ export function scoreTrustedFacilitiesMatch(
   return clamp((earned / total) * 100);
 }
 
-export function scoreTrustedWeatherFit(
-  facts: MatchableVenueFacts,
-  weather?: WeatherInfo | null,
-): number | null {
-  // No live weather signal (fetch failed, or not passed in for this call site): fall back to a
-  // static environment desirability score rather than pretending we know today's conditions.
-  if (!weather) {
-    switch (facts.environment) {
-      case 'indoor':
-        return 92;
-      case 'outdoor':
-        return 84;
-      case 'mixed':
-        return 90;
-      default:
-        return null;
-    }
-  }
-
-  const isWet = weather.condition === 'rainy';
-  const isBright = weather.condition === 'sunny' || weather.condition === 'partly_cloudy';
-
-  switch (facts.environment) {
-    case 'indoor':
-      return isWet ? 97 : isBright ? 78 : 88;
-    case 'outdoor':
-      return isWet ? 45 : isBright ? 97 : 80;
-    case 'mixed':
-      return isWet ? 82 : isBright ? 90 : 86;
-    default:
-      return null;
-  }
-}
-
 export function scoreTrustedBudget(facts: MatchableVenueFacts, tier: FamilyProfile['budgetTier']): number | null {
   const spend = facts.estimatedSpend?.trim();
   if (!spend) return null;
@@ -181,22 +147,8 @@ export function scoreTrustedBudget(facts: MatchableVenueFacts, tier: FamilyProfi
   return isFree ? 88 : 86;
 }
 
-function weatherEnvironmentReason(
-  environment: MatchableVenueFacts['environment'],
-  weather?: WeatherInfo | null,
-): string | null {
-  if (!weather) {
-    if (environment === 'indoor') return 'Indoor environment confirmed';
-    if (environment === 'outdoor') return 'Outdoor environment confirmed';
-    return null;
-  }
-
-  const isWet = weather.condition === 'rainy';
-  const isBright = weather.condition === 'sunny' || weather.condition === 'partly_cloudy';
-
-  if (environment === 'indoor' && isWet) return 'Good indoor option for today’s rain';
-  if (environment === 'outdoor' && isBright) return 'Good for today’s weather';
-  if (environment === 'outdoor' && isWet) return 'Outdoor venue, and today’s forecast is rain';
+/** What the venue is, never what the day is: the environment is a confirmed fact about the place. */
+function environmentReason(environment: MatchableVenueFacts['environment']): string | null {
   if (environment === 'indoor') return 'Indoor environment confirmed';
   if (environment === 'outdoor') return 'Outdoor environment confirmed';
   return null;
@@ -207,7 +159,6 @@ export function buildTrustedExplanation(
   profile: FamilyProfile,
   facts: MatchableVenueFacts,
   factors: FamilyScoreFactors,
-  weather?: WeatherInfo | null,
 ): string[] {
   const reasons: string[] = [];
   const children = profile.members.filter((m) => m.role === 'child');
@@ -256,8 +207,8 @@ export function buildTrustedExplanation(
     if (facts.babyChanging === 'yes') reasons.push('Baby changing confirmed on site');
   }
 
-  const weatherReason = weatherEnvironmentReason(facts.environment, weather);
-  if (weatherReason) reasons.push(weatherReason);
+  const environment = environmentReason(facts.environment);
+  if (environment) reasons.push(environment);
 
   if (factors.distance >= 85) {
     reasons.push(`About ${venue.driveMinutes} minutes from home`);

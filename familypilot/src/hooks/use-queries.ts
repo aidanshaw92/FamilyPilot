@@ -14,6 +14,7 @@ import {
   venueService,
   weatherService,
 } from '@/src/services/api';
+import { fetchParentObservations } from '@/src/services/planning/parent-observation-fetch';
 import { buildProactiveDayRequest } from '@/src/services/recommendation/proactive-day-request';
 import { useDayRequestStore } from '@/src/stores/day-request-store';
 import { useFamilyStore } from '@/src/stores/family-store';
@@ -129,6 +130,23 @@ export function useVenue(id: string, options: { showCardWhileLoading?: boolean }
 }
 
 /**
+ * What other parents have reported about a venue, read AFTER the page is up. It never gates the screen: the page draws the
+ * venue's own facts at once and applies a verified correction when (and if) this resolves, a single read of the public
+ * summary that is capped at three seconds and resolves to nothing on any failure. `enabled` is the page saying the full
+ * detail is in, so a card-only placeholder never triggers a request. Keyed on the venue only: reports are about the place,
+ * not the family.
+ */
+export function useParentObservations(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['venues', id, 'parent-observations'],
+    queryFn: () => fetchParentObservations(id),
+    enabled: enabled && Boolean(id),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
+
+/**
  * Places to eat near a venue.
  *
  * Keyed on the ANCHOR's coordinates rather than on the venue id, because the answer depends only on
@@ -173,16 +191,15 @@ export function useFocusedRecommendations(request: import('@/src/types/day-reque
 /** Ensures Home has a proactive day request before the parent types anything. */
 export function useProactiveHomeRequest() {
   const { data: profile } = useFamilyProfile();
-  const { data: weather } = useWeather();
   const parsedRequest = useDayRequestStore((state) => state.parsedRequest);
   const requestSource = useDayRequestStore((state) => state.requestSource);
   const setParsedRequest = useDayRequestStore((state) => state.setParsedRequest);
 
   useEffect(() => {
     if (!profile || requestSource === 'user') return;
-    const proactiveRequest = buildProactiveDayRequest(profile, weather);
+    const proactiveRequest = buildProactiveDayRequest(profile);
     setParsedRequest(proactiveRequest, 'proactive');
-  }, [profile, weather, requestSource, setParsedRequest]);
+  }, [profile, requestSource, setParsedRequest]);
 
   return {
     parsedRequest,

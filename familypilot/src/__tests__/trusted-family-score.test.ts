@@ -6,10 +6,9 @@ import {
   hasTrustedMatchSignals,
   scoreTrustedAgeSuitability,
   scoreTrustedFacilitiesMatch,
-  scoreTrustedWeatherFit,
 } from '@/src/services/scoring/trusted-family-score';
 import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
-import { FamilyProfile, VenueDetail, WeatherInfo } from '@/src/types';
+import { FamilyProfile, VenueDetail } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 
 const PROFILE: FamilyProfile = {
@@ -176,55 +175,25 @@ describe('calculateFamilyScore with trusted facts', () => {
   });
 });
 
-const RAINY: WeatherInfo = { condition: 'rainy', temperature: 12, description: 'Rain' };
-const SUNNY: WeatherInfo = { condition: 'sunny', temperature: 20, description: 'Sunny' };
-
-describe('weather-aware weatherFit factor', () => {
-  it('scores an outdoor venue worse in the rain than in the sun', () => {
-    const rainy = scoreTrustedWeatherFit(BASE_FACTS, RAINY); // BASE_FACTS.environment === 'outdoor'
-    const sunny = scoreTrustedWeatherFit(BASE_FACTS, SUNNY);
-    expect(rainy).toBeLessThan(sunny!);
+describe('weather is not part of Family Fit', () => {
+  it('there is no weather factor and no weather option: the score cannot be handed a forecast', () => {
+    const score = calculateFamilyScore(venueWithFacts(BASE_FACTS), PROFILE);
+    expect(Object.keys(score.factors)).not.toContain('weatherFit');
+    // @ts-expect-error weather is deliberately not an option
+    const withWeather = calculateFamilyScore(venueWithFacts(BASE_FACTS), PROFILE, { weather: { condition: 'rainy', temperature: 5, description: 'Rain' } });
+    expect(withWeather).toEqual(score);
   });
 
-  it('scores an indoor venue better in the rain than in the sun', () => {
-    const indoorFacts: MatchableVenueFacts = { ...BASE_FACTS, environment: 'indoor' };
-    const rainy = scoreTrustedWeatherFit(indoorFacts, RAINY);
-    const sunny = scoreTrustedWeatherFit(indoorFacts, SUNNY);
-    expect(rainy).toBeGreaterThan(sunny!);
+  it('an outdoor and an indoor venue with the same evidence score the same whatever the day is like', () => {
+    const outdoor = calculateFamilyScore(venueWithFacts({ ...BASE_FACTS, environment: 'outdoor' }), PROFILE);
+    const indoor = calculateFamilyScore(venueWithFacts({ ...BASE_FACTS, environment: 'indoor' }), PROFILE);
+    expect(outdoor.score).toBe(indoor.score);
   });
 
-  it('falls back to a static environment score when weather is unavailable, rather than guessing', () => {
-    const withWeather = scoreTrustedWeatherFit(BASE_FACTS, SUNNY);
-    const withoutWeather = scoreTrustedWeatherFit(BASE_FACTS, null);
-    expect(withoutWeather).not.toBeNull();
-    expect(withoutWeather).not.toBe(withWeather);
-  });
-
-  it('overall Family Match score reflects live weather, not just category', () => {
-    const outdoorVenue = venueWithFacts(BASE_FACTS); // outdoor park
-    const inRain = calculateFamilyScore(outdoorVenue, PROFILE, { weather: RAINY });
-    const inSun = calculateFamilyScore(outdoorVenue, PROFILE, { weather: SUNNY });
-    expect(inRain.score).toBeLessThan(inSun.score);
-  });
-
-  it('surfaces "Good for today\'s weather" as a visible reason when other facts don\'t crowd it out', () => {
-    // Fewer confirmed facts than BASE_FACTS, so the top-4 explanation has room for the weather line.
-    const sparseFacts: MatchableVenueFacts = {
-      ...BASE_FACTS,
-      parking: 'unknown',
-      freeParking: 'unknown',
-      toilets: 'unknown',
-      babyChanging: 'unknown',
-      pushchairSuitability: 'unknown',
-    };
-    const inSun = calculateFamilyScore(venueWithFacts(sparseFacts), PROFILE, { weather: SUNNY });
-    expect(inSun.explanation.some((line) => line.includes('Good for today’s weather'))).toBe(true);
-  });
-
-  it('never crashes or regresses when no weather is passed (matches the previous static behaviour)', () => {
-    const outdoorVenue = venueWithFacts(BASE_FACTS);
-    const noWeather = calculateFamilyScore(outdoorVenue, PROFILE);
-    expect(noWeather.score).toBeGreaterThan(0);
+  it('never says anything about today\'s weather; the environment is stated as a fact about the place', () => {
+    const { explanation } = calculateFamilyScore(venueWithFacts(BASE_FACTS), PROFILE);
+    expect(explanation.join(' | ')).not.toMatch(/weather|rain|forecast|today/i);
+    expect(explanation).toContain('Outdoor environment confirmed');
   });
 });
 

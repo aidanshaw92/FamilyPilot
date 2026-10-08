@@ -152,7 +152,6 @@ export function backedUpItemToSavedItem(row: BackedUpItem): SavedItem {
         ageSuitability: Number.NaN,
         accessibility: Number.NaN,
         distance: Number.NaN,
-        weatherFit: Number.NaN,
         budgetFit: Number.NaN,
         facilitiesMatch: Number.NaN,
       },

@@ -4,7 +4,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/src/components/ui/Text';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
-import { OpeningHoursSchedule } from '@/src/types';
+import { OpeningHoursSchedule, WeatherInfo } from '@/src/types';
+import { describeWeatherToday } from '@/src/utils/day-conditions';
 import { describeOpeningToday, OpeningTodayState, weeklyHoursLines } from '@/src/utils/opening-today';
 
 /**
@@ -24,11 +25,23 @@ const TINT: Record<OpeningTodayState, { icon: keyof typeof Ionicons.glyphMap; co
   unknown: { icon: 'help-circle-outline', color: colors.text.tertiary },
 };
 
-export function TodayCard({ hours, now }: { hours?: OpeningHoursSchedule; now?: Date }) {
+export function TodayCard({
+  hours,
+  now,
+  weather,
+  environment,
+}: {
+  hours?: OpeningHoursSchedule;
+  now?: Date;
+  /** Today's forecast, shown as a condition of the day. Optional and late-arriving: it is never part of Family Fit. */
+  weather?: WeatherInfo | null;
+  environment?: 'indoor' | 'outdoor' | 'mixed' | 'unknown';
+}) {
   const [open, setOpen] = useState(false);
   const today = useMemo(() => describeOpeningToday(hours, now ?? new Date()), [hours, now]);
   const week = useMemo(() => weeklyHoursLines(hours), [hours]);
   const tint = TINT[today.state];
+  const conditions = describeWeatherToday(weather, environment);
 
   return (
     <View style={styles.card} testID="today-card">
@@ -53,6 +66,11 @@ export function TodayCard({ hours, now }: { hours?: OpeningHoursSchedule; now?: 
           </Pressable>
         ) : null}
       </View>
+      {conditions ? (
+        <Text variant="bodySmall" color={colors.text.secondary} style={styles.conditions} testID="today-conditions">
+          {conditions}
+        </Text>
+      ) : null}
       {open && week.length > 0 ? (
         <View style={styles.week} testID="today-week">
           {week.map((line) => (
@@ -77,6 +95,7 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   headText: { flex: 1, gap: 2 },
   state: { fontFamily: 'Inter_600SemiBold', color: colors.ink },
+  conditions: { marginTop: spacing.sm },
   toggle: { minHeight: 44, justifyContent: 'center' },
   week: { marginTop: spacing.md, gap: 6, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.borderLight },
 });

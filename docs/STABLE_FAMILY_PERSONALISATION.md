@@ -48,8 +48,8 @@ Routine timing entered browsing in five places:
 - Before: ✓ Good for Sloane's age · ✓ Good buggy access for Ozzie's buggy · ✓ Baby changing confirmed, handy for Ozzie ·
   **✓ Leave by 10:47 to be home in time for Ozzie's feed** · ✓ Toilets confirmed on site · ✓ Free parking confirmed
 - After: the same, without the leave-by line. The headline is unchanged ("Could work for Sloane, but check age range for
-  Ozzie"); headlines no longer end in "today" ("Good for Sloane", not "Good for Sloane today"). A place shut today still
-  says "…, but not today", and "Open today / Closed today" still shows as a fact.
+  Ozzie"); headlines no longer end in "today" ("Good for Sloane", not "Good for Sloane today"). *(Superseded by `STABLE_FAMILY_FIT.md`: the headline
+  no longer says "…, but not today"; "Closed today" is shown as its own fact on the card and on the Today card.)*
 
 Screens (same family, 09:30): `docs/stable-personalisation/before/` and `…/after/`, at 360 and 393:
 `home`, `explore`, `venue`, `plan` (10:00, "not sure" how long), `plan-routines`, `plan-clash` (11:00 for two hours).
