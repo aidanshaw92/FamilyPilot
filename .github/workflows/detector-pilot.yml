@@ -1,0 +1,52 @@
+name: Bot-challenge detector pilot (bounded, no Google, no database)
+
+# Reads a fixed list of official pages once each from a runner (the session container has no outbound web access) and
+# reports what each site returned and what the old and new detector rules make of it. ~36 GETs in total, sequential,
+# with the production fetcher's own limits. It never follows links, never retries, never asks Google and never opens
+# the database. Runs only when its own files change on a pull request, or by hand.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/detector-pilot.yml
+      - familypilot/scripts/detector-pilot.mjs
+      - familypilot/scripts/fixtures/detector-pilot-targets.json
+      - server/enrichment/_lib/html-text-extractor.js
+      - server/enrichment/_lib/source-fetcher.js
+
+permissions:
+  contents: read
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      # The rules on main, loaded beside the branch's file so its relative requires resolve.
+      - name: Keep main's detector for comparison
+        run: git show origin/main:server/enrichment/_lib/html-text-extractor.js > server/enrichment/_lib/html-text-extractor.main.cjs
+
+      - name: Read the listed pages once each
+        working-directory: familypilot
+        env:
+          OLD_DETECTOR: ${{ github.workspace }}/server/enrichment/_lib/html-text-extractor.main.cjs
+        run: node scripts/detector-pilot.mjs --json ../detector-pilot-result.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: detector-pilot-result
+          path: detector-pilot-result.json
