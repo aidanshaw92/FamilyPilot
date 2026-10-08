@@ -10,8 +10,17 @@
  * A provision covering a child can support Excellent; a programme names the child but never does, because a family may
  * not visit on the day it runs. Facilities (toilets, parking, access) are logistics and never appear here.
  *
- * Bands are the venue's words only: "toddlers" 1 to 3, "under-5s" 2 to 4, "older children" 7 to 12, "teens" 12 to 17.
- * The excerpt is the page's own words, whitespace-normalised, found in the stored text of that URL on the stated date.
+ * Bands are the venue's words only: a stated age ("4 to 14", "up to 14", "0-2", "under 7s", "6 months to 10 years") or a
+ * standard age term naming the provision itself ("toddler soft play": 1 to 3). The excerpt is the page's own words,
+ * whitespace-normalised, found in the stored text of that URL on the stated date.
+ *
+ * Not evidence, and so not here (final review, 2026-10-08):
+ *   - a page heading or tagline, however worded ("Free activities for everyone from toddlers to teens", RAF Museum
+ *     London): it markets the page, and the permanent offer beneath it states no age of its own;
+ *   - copy about the whole venue ("From toddlers ... to older children ... something here for every age", Hobbledown
+ *     Heath);
+ *   - a relative audience with no age ("Older children can use up their energy ... at the large play area", Swanley
+ *     Park): the play area is real, but the page does not say for what age.
  *
  * Each entry is relied on for 90 days from the reading (the lifetime of every non-facility claim), then it stops counting
  * until a person re-reads the page. It is never extended without a new reading.
@@ -35,22 +44,6 @@ export interface ReviewedActivityEvidence {
 export const ACTIVITY_EVIDENCE_LIFETIME_DAYS = 90;
 
 export const REVIEWED_ACTIVITY_EVIDENCE: readonly ReviewedActivityEvidence[] = [
-  {
-    venueId: 'fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc',
-    venueName: 'Royal Air Force Museum London',
-    kind: 'provision',
-    minMonths: 12,
-    maxMonthsExclusive: 216,
-    label: 'Hands-on activities and exhibits for toddlers to teens',
-    evidence: {
-      url: 'https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/',
-      retrievedAt: '2026-10-02',
-      subjectScope: 'venue_own_subtree',
-      excerpt: 'Free activities for everyone from toddlers to teens',
-    },
-    reviewNotes:
-      'The age band is the heading of the family page, over permanent provision the same page lists: "Discover hands-on activities and family-friendly exhibits in every hangar", a free outdoor playground and trails. The page’s paid events are separate. The one judgement in this file: the heading’s band is read as applying to the permanent offer it introduces.',
-  },
   {
     venueId: 'fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4',
     venueName: 'Battersea Park',
@@ -125,36 +118,6 @@ export const REVIEWED_ACTIVITY_EVIDENCE: readonly ReviewedActivityEvidence[] = [
       excerpt: 'soft play areas for toddlers and kids',
     },
     reviewNotes: '"Kids" is a vague audience and covers no one; only the toddler band is used.',
-  },
-  {
-    venueId: 'fp-google-ChIJqfua7FhzdkgRqSRaMoloxR0',
-    venueName: 'Hobbledown Heath',
-    kind: 'provision',
-    minMonths: 12,
-    maxMonthsExclusive: 156,
-    label: 'Play for toddlers to older children',
-    evidence: {
-      url: 'https://www.hobbledown.com/hounslow',
-      retrievedAt: '2026-10-02',
-      subjectScope: 'venue_own_subtree',
-      excerpt: 'From toddlers taking their first steps into adventure to older children ready to climb, jump and explore',
-    },
-    reviewNotes: '"Older children" is read as up to 12, never as teenagers.',
-  },
-  {
-    venueId: 'fp-google-ChIJ9bI_ApKt2EcRDyvcMDwpxvE',
-    venueName: 'Swanley Park',
-    kind: 'provision',
-    minMonths: 84,
-    maxMonthsExclusive: 156,
-    label: 'Play area for older children',
-    evidence: {
-      url: 'https://www.swanleypark.co.uk/',
-      retrievedAt: '2026-10-01',
-      subjectScope: 'venue_own_subtree',
-      excerpt: 'Older children can use up their energy nearby at the large, well equipped play area including swings, climbing frame and a zip wire',
-    },
-    reviewNotes: '"Older children" is read as 7 to 12.',
   },
   {
     venueId: 'fp-google-ChIJYfO01G0DdkgR4H52YH-11gw',

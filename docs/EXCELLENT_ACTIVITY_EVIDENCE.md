@@ -5,15 +5,28 @@ optional score step, which is a separate PR for review.
 
 ## The rule as built
 
-**Where the evidence comes from.** `src/data/reviewed-activity-evidence.ts` holds 14 reviewed items at 14 venues. Each
-one is the venue's own words, from its own page, on a stated date. All 14 quotations were checked against the stored text
+**Where the evidence comes from.** `src/data/reviewed-activity-evidence.ts` holds 11 reviewed items at 11 venues. Each
+one is the venue's own words, from its own page, on a stated date. Every quotation was checked against the stored text
 of that page on that date, and each is still present in the latest reading.
+
+**Final review, 8 October: three items removed.** They were in the first draft of this file and are not evidence of a
+permanent activity for an age:
+
+| Venue | The words | Why it is out |
+| --- | --- | --- |
+| RAF Museum London | "Free activities for everyone from toddlers to teens" | The heading of the family page. The permanent offer beneath it ("hands-on activities and family-friendly exhibits in every hangar", the free playground, trails) states no age of its own. A heading markets the page; it is not a statement that the exhibits suit a 2-year-old or a 15-year-old. |
+| Hobbledown Heath | "From toddlers taking their first steps into adventure to older children ready to climb, jump and explore, there's something here for every age" | Copy about the whole venue, which is the general claim the rule exists to exclude. |
+| Swanley Park | "Older children can use up their energy nearby at the large, well equipped play area" | A real play area, but "older children" carries no age. The page gives none. |
+
+The file's header now states the standard: a stated age, or a standard age term naming the provision itself ("toddler
+soft play"). Headings, taglines, whole-venue copy and ageless audiences are not evidence, and a test pins each of the three
+rejections.
 
 **The two kinds:**
 
 | Kind | What it is | Items |
 | --- | --- | ---: |
-| Permanent provision for an age | a playground, play area, soft play, space or exhibits | 11 |
+| Permanent provision for an age | a playground, play area, soft play or space, with a stated age | 8 |
 | Programme on set days | classes, a weekly run, drop-in sessions | 3 |
 
 **What it does in Family Fit,** for each child of 12 months or more not already inside the venue's own recommended range:
@@ -40,44 +53,51 @@ are identical with and without it.
 
 ## Measured (134 destinations, 8 homes, 7 households: 7,504 pairs; same harness as the proposal)
 
-| | Before | After |
-| --- | ---: | ---: |
-| Excellent pairs | 49 | **60** |
-| …for households with a child of 12 months or more | 21 | **32** |
-| Good | 767 | **798** |
-| Possible | 3,016 | **2,974** |
-| Pairs that name a child as suited | 0 | **352** |
-| Venues Excellent for a household with a child of 12 months or more | RAF Museum, SEA LIFE | **RAF Museum** |
-| Family Fit scores changed | | **0 of 7,504** |
-| Orderings identical to before | | **56 of 56** |
+| | Before | After (as first pushed) | **After (final)** |
+| --- | ---: | ---: | ---: |
+| Excellent pairs | 49 | 60 | **28** |
+| …for households with a child of 12 months or more | 21 | 32 | **0** |
+| Good | 767 | 798 | **820** |
+| Possible | 3,016 | 2,974 | **2,984** |
+| Pairs that name a child as suited | 0 | 352 | **264** |
+| Venues Excellent for a household with a child of 12 months or more | RAF Museum, SEA LIFE | RAF Museum | **none** |
+| Family Fit scores changed | | 0 of 7,504 | **0 of 7,504** |
+| Orderings identical to before | | 56 of 56 | **56 of 56** |
 
-This matches the proposal's R4, except that pairs naming a child are 352, not 368. Battersea's playground now uses the
-ages its page states (4 to 14) rather than the "toddlers" in its title, so it no longer names a 3-year-old.
+**The honest result: today no venue is Excellent for a household with a child of a year or more.** The 21 pairs that had
+it before held it on logistics alone (SEA LIFE and the RAF Museum: toilets, baby changing, parking, pushchair access,
+café). Neither venue's own pages state an age for anything permanent, so the rule cannot say the visit suits a named
+child, and it no longer does. The 28 remaining Excellent pairs are babies-only households, badged "Excellent · easy
+visit".
 
-SEA LIFE loses Excellent for older children. It had it on logistics alone: no evidence on its own pages covers them.
+**What stops the eight provision venues at Good.** Each covers the child's age, so the parent reads the activity line
+and "Good for Maya". Excellent also needs the venue's logistics confirmed (toilets, baby changing where a baby comes,
+pushchair access where a buggy comes), and none of the eight has all of them in served claims yet. Those are facility
+facts the recovery work can supply; nothing here needs reinterpreting.
+
+| Venue | Household | Verdict |
+| --- | --- | --- |
+| Burgess Park | 7 · 4 and 7 · 13 | Good for the named children |
+| Belmont Children's Farm | 7 · 4 and 7 | Good for the named children |
+| Flip Out Watford | 3 · 3 and a baby | Good for Sloane; "easy to visit with Ozzie" |
+| Chiswick House | 4 and 7 | Good for Kit; Maya not yet confirmed |
+| London Museum Docklands, Battersea Park, Babylon Park, Discover | various | Possible: activity line shown, logistics unknown |
 
 ## What a parent reads (Islington home)
 
 | Venue | Household | Badge | The activity line |
 | --- | --- | --- | --- |
-| RAF Museum London | 4 and 7 | **Excellent for Kit and Maya** | Hands-on activities and exhibits for toddlers to teens, for Kit and Maya's ages |
-| RAF Museum London | 3 and a baby | **Excellent for Sloane** | headline: "Excellent for Sloane, and easy to visit with Ozzie" |
 | Beckenham Place Park | 7 | Good for Maya | Junior parkrun for ages 4 to 14 (on set days), for Maya's age |
 | Chiswick House | 4 and 7 | Good for Kit; check Maya | Under-7s playground, for Kit's age |
 | Burgess Park | 4 and 7 | Good for Kit and Maya | Play and climbing equipment for children up to 14, for Kit and Maya's ages |
 | Flip Out Watford | 3 and a baby | Good for Sloane | Toddler soft play, for Sloane's age |
 
-## The one judgement to look at
+## The judgement that was reversed
 
-**The RAF Museum is the only venue that becomes Excellent for older children.** Its family page is headed "Free
-activities for everyone from toddlers to teens". The same page lists the permanent offer beneath that heading:
-
-- "hands-on activities and family-friendly exhibits in every hangar";
-- a free playground;
-- trails.
-
-I read the heading's age band as applying to that permanent offer. If you'd rather not, change its `kind` to `programme`.
-It will then name children but never make Excellent.
+The first draft read the RAF Museum's page heading as applying to the permanent offer beneath it, and so made the museum
+Excellent for children from 1 to 17. On the final review that is a stretch: the heading is the page's marketing line,
+and nothing beneath it names an age. The museum now reads "Good" on its confirmed logistics, with no child named, until
+its own pages say more. Hobbledown Heath and Swanley Park came out on the same test.
 
 ## Not in this change
 

@@ -19,7 +19,11 @@ import { OpeningHoursSchedule } from '@/src/types/opening-hours';
  */
 const NOW = new Date(2026, 9, 8, 11, 0, 0);
 
+const BURGESS = 'fp-google-ChIJYfO01G0DdkgR4H52YH-11gw';
+// Rejected in the final review: a marketing heading, whole-venue copy, an audience with no age.
 const RAF = 'fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc';
+const HOBBLEDOWN = 'fp-google-ChIJqfua7FhzdkgRqSRaMoloxR0';
+const SWANLEY = 'fp-google-ChIJ9bI_ApKt2EcRDyvcMDwpxvE';
 const BECKENHAM = 'fp-google-ChIJRfXNwPoBdkgRqdTuM7Baxuw';
 const CHISWICK = 'fp-osm-679119297';
 const DISCOVER = 'fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk';
@@ -58,16 +62,16 @@ const ozzie = () => child('o', 'Ozzie', 0, { mobility: ['buggy'] });
 
 describe('permanent provision for an age', () => {
   it('names every child it covers and can make the place Excellent for them', () => {
-    const r = run(RAF, [kit(), maya()]);
+    const r = run(BURGESS, [kit(), maya()]);
     expect(r.verdict).toBe('excellent');
     expect(r.forNames.sort()).toEqual(['Kit', 'Maya']);
-    expect(r.reasons[0].text).toBe('Hands-on activities and exhibits for toddlers to teens, for Kit and Maya’s ages');
+    expect(r.reasons[0].text).toBe('Play and climbing equipment for children up to 14, for Kit and Maya’s ages');
     expect(r.reasons[0].aspect).toBe('activity');
     expect(r.children.every((c) => c.basis === 'activity')).toBe(true);
   });
 
-  it('covers a teenager when the page says teens', () => {
-    expect(run(RAF, [tom()]).verdict).toBe('excellent');
+  it('covers a 13-year-old when the page states an age that includes them ("up to 14 years old")', () => {
+    expect(run(BURGESS, [tom()]).verdict).toBe('excellent');
   });
 
   it('a provision for younger children says nothing against an older one, and is never their activity line', () => {
@@ -117,7 +121,7 @@ describe('logistics never cover a child', () => {
 
   it('a toddler with a baby needs the toddler covered; the baby needs nothing', () => {
     expect(run('fp-no-evidence', [child('s', 'Sloane', 3), ozzie()]).verdict).toBe('good');
-    const r = run(RAF, [child('s', 'Sloane', 3), ozzie()]);
+    const r = run(BURGESS, [child('s', 'Sloane', 3), ozzie()]);
     expect(r.verdict).toBe('excellent');
     expect(r.easyVisit).toBe(false);
     expect(matchBadgeText(r)).toBe('Excellent for Sloane');
@@ -130,9 +134,10 @@ describe('logistics never cover a child', () => {
 
 describe('freshness: reviewed evidence is never extended', () => {
   it('counts for 90 days from its reading, then stops until a person reads the page again', () => {
-    expect(activityEvidenceFor(RAF, new Date('2026-12-31T12:00:00Z'))).toHaveLength(1);
-    expect(activityEvidenceFor(RAF, new Date('2027-01-01T12:00:00Z'))).toHaveLength(0);
-    expect(run(RAF, [maya()], new Date('2027-01-15T12:00:00Z')).verdict).toBe('good');
+    // Burgess Park was read on 1 October 2026.
+    expect(activityEvidenceFor(BURGESS, new Date('2026-12-30T12:00:00Z'))).toHaveLength(1);
+    expect(activityEvidenceFor(BURGESS, new Date('2026-12-31T12:00:00Z'))).toHaveLength(0);
+    expect(run(BURGESS, [maya()], new Date('2027-01-15T12:00:00Z')).verdict).toBe('good');
   });
 });
 
@@ -140,10 +145,29 @@ describe('ranking is unchanged', () => {
   it('the score does not read activity evidence', () => {
     const p = profile([kit(), maya()]);
     const detail = (id: string) => ({ ...venue(id), photos: [], openingHours: [], description: '' }) as unknown as VenueDetail;
-    const withEvidence = calculateFamilyScore(detail(RAF), p);
+    const withEvidence = calculateFamilyScore(detail(BURGESS), p);
     const without = calculateFamilyScore(detail('fp-no-evidence'), p);
     expect(withEvidence.score).toBe(without.score);
     expect(withEvidence.factors).toEqual(without.factors);
+  });
+});
+
+describe('headings, whole-venue copy and ageless audiences are not activity evidence', () => {
+  it('a marketing heading over an ageless permanent offer covers no child (RAF Museum London)', () => {
+    expect(activityEvidenceFor(RAF, NOW)).toEqual([]);
+    const r = run(RAF, [kit(), maya()]);
+    expect(r.forNames).toEqual([]);
+    expect(r.verdict).toBe('good');
+  });
+
+  it('copy about the whole venue covers no child (Hobbledown Heath)', () => {
+    expect(activityEvidenceFor(HOBBLEDOWN, NOW)).toEqual([]);
+    expect(run(HOBBLEDOWN, [kit()]).verdict).toBe('good');
+  });
+
+  it('"older children" with no age covers no child (Swanley Park)', () => {
+    expect(activityEvidenceFor(SWANLEY, NOW)).toEqual([]);
+    expect(run(SWANLEY, [maya()]).verdict).toBe('good');
   });
 });
 
