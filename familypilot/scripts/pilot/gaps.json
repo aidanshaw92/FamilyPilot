@@ -1,6 +1,4 @@
 {
-  "note": "Gaps left by the first three passes over the ten pilot venues. Every parent is an official page of the venue or its operator. Battersea's operator site (enablelc.org) answered HTTP 403 on the previous pass and is not tried again.",
-  "gaps": [
-    { "id": "gun-park-page", "venue": "Gunnersbury Park", "parent": "https://www.visitgunnersbury.org/plan-your-visit", "anchor": "/park/park$" }
-  ]
+  "note": "The gap list is empty. Gaps left by the first passes over the ten pilot venues were read (Science Museum getting here, London Zoo FAQ in full, NHM facilities, Discover annual-entry page); two more could not be: Battersea's operator site (enablelc.org) answered HTTP 403 and Gunnersbury's own Park link is a dead page (404). Neither is retried. Add entries here, each naming an official parent page and what to follow from it, to run a further bounded pass.",
+  "gaps": []
 }
