@@ -66,7 +66,14 @@ export function YourFamilySection({ profile }: { profile: FamilyProfile }) {
   );
 }
 
-export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvailable: boolean }) {
+/**
+ * `profile` is the section as it sits on the Profile tab (its own heading, the invite tools always open). `screen` is the
+ * same section on the Families screen, which has its own heading: the invite tools open when the parent asks to add a
+ * family, the groups are named (connected, waiting for a reply, on this phone only), and with nobody connected the screen
+ * says what a connection is for and offers "Add a family". Same data, same hook, same invitation flow: nothing here is a
+ * second copy of any of it.
+ */
+export function ConnectedFamiliesSection({ accountsAvailable, variant = 'profile' }: { accountsAvailable: boolean; variant?: 'profile' | 'screen' }) {
   const router = useRouter();
   const families = useConnectedFamilies(accountsAvailable);
   // Selected whole and filtered here: a selector that returns a new array every time re-renders without end.
@@ -75,6 +82,7 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
   const removeFamily = usePlanningStore((s) => s.removeFamily);
   const [shareRoutines, setShareRoutines] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const [confirm, setConfirm] = useState<string | null>(null);
   // The "what I share" panel: which connection is open, what the switch says, and the line confirming a change.
   const [sharingOpen, setSharingOpen] = useState<string | null>(null);
@@ -82,6 +90,10 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
   const [saving, setSaving] = useState(false);
   const [updated, setUpdated] = useState<string | null>(null);
   const { accepted, pending, loaded, error, busy, invite } = families;
+  const onScreen = variant === 'screen';
+  // On the Profile the invite tools are always there; on the Families screen they open when asked for.
+  const showAdd = !onScreen || addOpen;
+  const nobody = loaded && accepted.length === 0 && local.length === 0 && pending.length === 0;
 
   const openSharing = (connectionId: string, mine: MySharing | null | undefined) => {
     // The switch opens on what is shared today, so an update is only ever a change the person makes.
@@ -110,9 +122,11 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
 
   return (
     <View testID="profile-connected-families">
-      <Text variant="heading2" style={styles.title}>
-        Connected families
-      </Text>
+      {onScreen ? null : (
+        <Text variant="heading2" style={styles.title}>
+          Connected families
+        </Text>
+      )}
       <Card style={styles.card}>
         <Text variant="bodySmall" color={colors.text.secondary}>
           Families you plan with. They see only what they agreed to share: a first name, a rough area, the children’s ages
@@ -126,7 +140,9 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
             </Text>
           ) : accepted.length === 0 && local.length === 0 ? (
             <Text variant="bodySmall" color={colors.text.secondary} testID="profile-no-connections">
-              Nobody is connected yet.
+              {onScreen
+                ? 'No families connected yet. Connect a family to choose them under Who’s coming and to find a place that works for both of you.'
+                : 'Nobody is connected yet.'}
             </Text>
           ) : null
         ) : (
@@ -134,6 +150,12 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
             Connecting families needs an account. You can still add a family by postcode below.
           </Text>
         )}
+
+        {onScreen && accepted.length > 0 ? (
+          <Text variant="label" testID="families-connected-heading">
+            Connected
+          </Text>
+        ) : null}
 
         {accepted.map(({ connection, family }) => (
           <View key={connection.id} style={styles.family} testID="connected-family-row">
@@ -212,6 +234,12 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
           </View>
         ))}
 
+        {onScreen && local.length > 0 ? (
+          <Text variant="label" testID="families-local-heading">
+            On this phone only
+          </Text>
+        ) : null}
+
         {local.map((family) => (
           <View key={family.id} style={styles.family} testID="local-family-row">
             <View style={styles.familyHead}>
@@ -230,6 +258,12 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
           </View>
         ))}
 
+        {onScreen && pending.length > 0 ? (
+          <Text variant="label" testID="families-pending-heading">
+            Waiting for a reply
+          </Text>
+        ) : null}
+
         {pending.map((connection) => {
           const expired = Date.parse(connection.expiresAt) <= Date.now();
           return (
@@ -242,7 +276,7 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
           );
         })}
 
-        {accountsAvailable ? (
+        {accountsAvailable && showAdd ? (
           <View style={styles.invite}>
             <Text variant="label">+ Invite another family</Text>
             <View style={styles.chips}>
@@ -269,11 +303,23 @@ export function ConnectedFamiliesSection({ accountsAvailable }: { accountsAvaila
           </View>
         ) : null}
 
-        {adding ? (
-          <AddFamilyByPostcode onAdded={() => setAdding(false)} onCancel={() => setAdding(false)} />
-        ) : (
-          <Button label="Add a family by postcode" variant="ghost" size="sm" onPress={() => setAdding(true)} testID="profile-add-by-postcode" />
-        )}
+        {onScreen && !addOpen ? (
+          <Button
+            label={nobody || (accepted.length === 0 && local.length === 0) ? 'Add a family' : 'Add another family'}
+            variant={nobody ? 'primary' : 'outline'}
+            fullWidth
+            onPress={() => setAddOpen(true)}
+            testID="families-add"
+          />
+        ) : null}
+
+        {showAdd ? (
+          adding ? (
+            <AddFamilyByPostcode onAdded={() => setAdding(false)} onCancel={() => setAdding(false)} />
+          ) : (
+            <Button label="Add a family by postcode" variant="ghost" size="sm" onPress={() => setAdding(true)} testID="profile-add-by-postcode" />
+          )
+        ) : null}
 
         {error ? (
           <Text variant="caption" color={colors.error[600]} accessibilityRole="alert">
