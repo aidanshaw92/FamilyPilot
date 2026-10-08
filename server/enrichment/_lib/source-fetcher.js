@@ -163,9 +163,9 @@ async function fetchWithRedirects(urlString, redirectCount = 0, deadlineAt = nul
     if (response.status === 403 || response.status === 401) {
       const { html } = await readBoundedHtml(response, 64 * 1024);
       if (html && isCloudflareChallenge(html)) {
-        return { status: 'blocked', html, finalUrl: parsed.toString(), error: 'cloudflare_challenge' };
+        return { status: 'blocked', html, finalUrl: parsed.toString(), error: 'cloudflare_challenge', httpStatus: response.status };
       }
-      return { status: 'blocked', html: null, error: `HTTP ${response.status}` };
+      return { status: 'blocked', html: null, error: `HTTP ${response.status}`, httpStatus: response.status };
     }
 
     if (response.status === 404) {
@@ -188,8 +188,9 @@ async function fetchWithRedirects(urlString, redirectCount = 0, deadlineAt = nul
       return { status: 'too_large_unusable', html: null, bytes: contentLength || bytes, error: 'empty_or_unusable' };
     }
 
+    // The status is kept so a stored `blocked` row says whether the site refused (403) or served a shell (200).
     if (isCloudflareChallenge(html)) {
-      return { status: 'blocked', html, finalUrl: parsed.toString(), error: 'cloudflare_challenge' };
+      return { status: 'blocked', html, finalUrl: parsed.toString(), error: 'cloudflare_challenge', httpStatus: response.status };
     }
 
     if (truncated) {
