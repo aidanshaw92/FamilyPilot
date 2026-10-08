@@ -1,7 +1,8 @@
 /**
  * Proves a deployed build will refuse every paid Google scope.
  *
- * Usage: node scripts/assert-places-fail-closed.mjs <places-status.json> [--expect-master-off]
+ * Usage: node scripts/assert-places-fail-closed.mjs <places-status.json> [--profile=production] [--expect-master-off]
+ *        [--expect-off=photos,refresh]
  *
  * WHY THIS EXISTS. The Routes canary needed `GOOGLE_PLACES_ENABLED=true` and
  * `GOOGLE_JOURNEYS_ENABLED=true` in Preview for exactly one request. The owner's instruction was to
@@ -43,9 +44,19 @@ const args = process.argv.slice(2);
 const statusPath = args.find((a) => !a.startsWith('--'));
 const expectMasterOff = args.includes('--expect-master-off');
 const profile = args.includes('--profile=production') ? 'production' : 'closed';
+/**
+ * Scopes an operator has switched off by name, e.g. `--expect-off=photos` after setting
+ * `GOOGLE_PLACES_PHOTOS_ENABLED=false`. Setting the variable changes the dashboard; only the redeployed build's own
+ * snapshot shows the running code refuses, so the change is not "done" until this passes against it.
+ */
+const expectOff = (args.find((a) => a.startsWith('--expect-off=')) ?? '--expect-off=')
+  .slice('--expect-off='.length)
+  .split(',')
+  .map((name) => name.trim())
+  .filter(Boolean);
 
 if (!statusPath) {
-  console.error('usage: assert-places-fail-closed.mjs <places-status.json> [--profile=production] [--expect-master-off]');
+  console.error('usage: assert-places-fail-closed.mjs <places-status.json> [--profile=production] [--expect-master-off] [--expect-off=scope,...]');
   process.exit(2);
 }
 
@@ -122,6 +133,15 @@ if (expectMasterOff) {
   check(budget.masterEnabled === false, 'the master switch is off', `masterEnabled=${budget.masterEnabled}`);
 }
 
+if (expectOff.length) {
+  console.log('\n=== scopes switched off by name ===');
+  for (const name of expectOff) {
+    // An unknown name must fail rather than pass vacuously: a typo here would otherwise "prove" nothing.
+    check(names.includes(name), `the ${name} scope exists in the snapshot`, names.includes(name) ? 'yes' : 'ABSENT');
+    check(scopes[name]?.allowed === false, `${name} is refused`, `allowed=${scopes[name]?.allowed} reason=${scopes[name]?.reason ?? '(none)'}`);
+  }
+}
+
 // A live probe must not have happened: this is meant to be a free read.
 console.log('\n=== this check spent nothing, and the public probe cannot spend either ===');
 check(body.probe === null || body.probe === undefined, 'no live provider probe was made', JSON.stringify(body.probe ?? null));
@@ -141,7 +161,8 @@ if (failures.length) {
   process.exit(1);
 }
 if (profile === 'production') {
-  console.log(`Confirmed in "${budget.environment}": ${MUST_FAIL_CLOSED.join(' and ')} refuse, and the public live probe is closed.`);
+  const named = expectOff.length ? `, and ${expectOff.join(' and ')} refuse${expectOff.length === 1 ? 's' : ''} as switched off` : '';
+  console.log(`Confirmed in "${budget.environment}": ${MUST_FAIL_CLOSED.join(' and ')} refuse${named}, and the public live probe is closed.`);
 } else {
   console.log(`Fail-closed confirmed: all ${names.length} Google scopes refuse in "${budget.environment}".`);
 }

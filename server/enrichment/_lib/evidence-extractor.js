@@ -18,8 +18,16 @@ const { isBotChallengeText } = require('./html-text-extractor');
  *       navigation-chrome guard
  *   v4  parking stated "for disabled visitors" and "accessible car parking" headings are restricted parking, not
  *       general parking (Tate Modern, Tate Britain)
+ *   v5  a road's rule ("Parking is not permitted on Denham Court Drive") is not the venue's parking; parking for another
+ *       facility's users ("VeloPark Venue car parking ... for facility users") is not the venue's; on-street and nearby
+ *       pay-and-display is not the venue's charge; "There are two carparks" is the venue's own car park (Colne Valley
+ *       Regional Park and Queen Elizabeth Olympic Park, both serving a wrong parking fact until this version)
+ *   v6  the extraction pilot of 8 Oct 2026: venue-wide step-free and lift statements, placed toilets ("the main toilets
+ *       are next to the cafe"), a café with its own hours or as the place something is, a venue's own car parks being
+ *       locked or counted; and "the nearest Changing Places toilet can be found in Dulwich Park" is not the venue's
+ *       accessible toilet (Sydenham Hill Wood served one from it)
  */
-const EXTRACTOR_VERSION = 'official-source-rules-v4';
+const EXTRACTOR_VERSION = 'official-source-rules-v6';
 
 /**
  * What makes a sentence say this venue has a playground.
@@ -291,6 +299,38 @@ function isNonVenueWheelchairSubject(sentence) {
   return WHEELCHAIR_SUBJECT_FIRST.test(text) || WHEELCHAIR_CLAIM_FIRST.test(text);
 }
 
+/**
+ * Step-free or lift access stated for the WHOLE venue, the way venues' accessibility pages actually say it when they never
+ * use the words "wheelchair accessible". Each is from the stored corpus (8 Oct 2026), and none of their venues served a
+ * wheelchair fact:
+ *
+ *   Gunnersbury Park           "Step-free access is available throughout the museum, with some ramps and slopes"
+ *   Museum of the Home         "Step-free access is available to the Museum and to our galleries."
+ *   RAF Museum London          "We have step free access around our site and lifts to upper levels."
+ *   Queen's House              "All floors of the Queen's House have lift access."
+ *   National Maritime Museum   "The building has accessible lifts to every floor."
+ *   William Morris Gallery     "...an entrance with a ramp, accessible toilets and lift access to all floors."
+ *   Saatchi Gallery            "All floors have lifts and there is level access between the galleries on each floor."
+ *   London Eye                 "...a wheelchair-friendly attraction with full accessibility throughout."
+ *
+ * Refused by `isNonVenueStepFree`: a station's or a bus's step-free access ("Hoxton Station has step-free access", "Our
+ * nearest step-free station is Paddington"), one building or one room ("Both our community buildings offer step-free
+ * access", "The toilets ... are step-free"), and picnic tables.
+ */
+const VENUE_STEP_FREE_PATTERNS = [
+  /\bstep[\s-]free\s+access\s+(?:is\s+available\s+)?(?:throughout|to\s+all\b|around\s+(?:our|the)\s+site|to\s+the\s+(?:museum|gallery|galleries|building|house|venue)\b)/i,
+  /\b(?:accessible\s+)?lifts?\s+(?:access\s+)?(?:is\s+available\s+)?to\s+(?:all|every|each)\s+(?:floors?|levels?)\b/i,
+  /\ball\s+floors\b[^.!?]{0,40}\b(?:have|has)\s+(?:lifts?|lift\s+access)\b/i,
+  /\blevel\s+access\s+(?:throughout|between\s+the\s+galleries|to\s+all)\b/i,
+  /\bwheelchair[\s-]friendly\b[^.!?]{0,40}\bfull\s+accessibility\b/i,
+];
+
+function isNonVenueStepFree(sentence) {
+  const text = String(sentence ?? '');
+  return /\bnearest\b|\bstations?\b|\bbus(?:es)?\b|\btube\b|\boverground\b|\bcommunity\s+buildings?\b|\bpicnic\b/i.test(text)
+    || /\b(?:toilets?|caf(?:e|\u00e9)s|rooms?|cubicles?)\b[^.!?]{0,60}\b(?:are|is)\s+step[\s-]free\b/i.test(text);
+}
+
 const PLAYGROUND_PATTERNS = [/playground/i, /play\s+area/i];
 
 /**
@@ -438,11 +478,25 @@ function isOffSiteCafe(sentence) {
 const OWN_CAR_PARK_PATTERNS = [
   /\byou\s+can\s+park\s+(?:in|at)\s+(?:the|our)\b[^.!?]{0,30}\bcar\s+park\b/i,
   /\b(?:we\s+have|there\s+is|there's)\s+(?:a|an|our)\s+(?:[\w'\u2018\u2019-]+\s+){0,4}car\s+park\b/i,
+  // "There are two carparks run by Bucks County Council." (Colne Valley Regional Park's visitor centre page, under
+  // "Parking"): the venue's own car parks, written as one word and counted.
+  /\b(?:we\s+have|there\s+are)\s+(?:two|three|four|several|\d+)\s+(?:[\w'\u2018\u2019-]+\s+){0,2}car\s?parks\b/i,
+  // v6: "car parks will be locked at 9pm" (Swanley Park), "car parks are locked in accordance with park locking times"
+  // (Northala Fields), "parking: 2 car parks" (Northala Fields): the venue's own car parks, by their opening rules.
+  /\bcar\s?parks?\s+(?:will\s+be|are|is)\s+locked\b/i,
+  /\bparking:\s*\d+\s+car\s?parks?\b/i,
   /\bon[\s-]?site\s+car\s+park\b/i,
   // "a car park within Beckenham Place Park"; never "a car park within suitable walking distance" (SEA LIFE London).
   /\bcar\s+park\s+within\s+(?:the\s+(?:park|grounds|site|gardens|estate|farm)\b|[A-Z])/,
   /\bcar\s+park\b[^.!?]{0,40}\bis\s+accessed\s+(?:from|via)\b/i,
 ];
+
+/**
+ * A café with its own hours (v6). Judged on the WHOLE sentence, not just the statement around the match: "the Design
+ * Museum Cafe & Design Kitchen 10:00 – 17:00 ... we are rebuilding our cafe and shop spaces on Level G" publishes hours
+ * for a café being rebuilt, and the rebuild is further along the sentence than the usual negation window reaches.
+ */
+const CAFE_HOURS_PATTERN = /\bcaf[e\u00e9](?![A-Za-z])[^.!?]{0,60}?\b\d{1,2}[.:]\d{2}\s*(?:-|\u2013|to)\s*\d{1,2}[.:]\d{2}\b/i;
 
 const FIELD_PATTERNS = [
   {
@@ -467,6 +521,16 @@ const FIELD_PATTERNS = [
       // second and third floors" (V&A East Storehouse), "There are toilets to the rear of the Gardens Cafe" (Horniman),
       // "Toilets are located at: Chumleigh Gardens" is already covered above.
       /\b(?:there\s+(?:is|are)|we\s+have)\s+(?:an?\s+|\d+\s+|two\s+|three\s+|several\s+)?(?:(?:accessible|disabled|public|unisex)\s+)*toilets?\s+(?:on\s+(?:the|every|each|all)\b|to\s+the\s+(?:rear|side|left|right)\s+of\b|opposite\b|available\b)/i,
+      // v6, placed: "The main toilets are next to the cafe in the Dry Berth" (Cutty Sark), "There are accessible cubicles
+      // in both the men's and the women's toilets" (Cutty Sark), "Toilets, including a disabled toilet, are available in
+      // the courtyard" (Mudchute), "Baby changing is available in the toilets by the Café" (Chiswick House). The
+      // nearest-elsewhere guard below still refuses "the nearest public toilets are at the village hall".
+      /\b(?:the\s+)?(?:main\s+|public\s+)?toilets\s+are\s+(?:next\s+to|beside|by|behind|opposite|inside|underneath)\s+the\b/i,
+      /\bcubicles?\s+in\s+(?:both\s+)?the\s+(?:men|women|ladies|gents)/i,
+      /\btoilets?\b[^.!?]{0,60}\bare\s+available\s+in\s+the\b/i,
+      /\bin\s+the\s+toilets\s+(?:by|next\s+to|near|beside|in)\s+the\b/i,
+      // "There is an accessible toilet and baby changing facilities in the cafe." (Hackney City Farm)
+      /\b(?:there\s+(?:is|are)|we\s+have)\s+(?:an?\s+)?(?:accessible|disabled)\s+toilets?\s+and\b[^.!?]{0,40}\b(?:in|at)\s+the\b/i,
       // "There are two wheelchair accessible toilets in the Wood." (Highgate Wood)
       /\b(?:there\s+(?:is|are)|we\s+have)\s+(?:an?\s+|\d+\s+|two\s+|three\s+|several\s+)?wheelchair[\s-]accessible\s+toilets?\s+(?:in|at|near|by|on)\b/i,
     ],
@@ -583,12 +647,21 @@ const FIELD_PATTERNS = [
       // A venue that publishes its café's opening times has a café: "Café Opening Times Tuesday – Sunday, 10am – 4pm"
       // (Headstone Manor & Museum, whose Moat Café no other sentence states in a readable way).
       /\bcaf[e\u00e9]\s+opening\s+(?:times|hours)\b/i,
+      // v6. A café with its own hours: "Main Café 10.00 to 17.00" (V&A), "Corner Cafe, Bar, Venue Opening times Sunday to
+      // Monday 10.00-18.00" (Tate Modern). A day-only café ("every Saturday 9am to 2pm") is still refused by
+      // `isDayRestricted`.
+      CAFE_HOURS_PATTERN,
+      // The café as the place something is: "toilets are next to the cafe", "baby changing ... in the cafe", "in the
+      // toilets by the Café". Never "provided by the Serpentine Bar & Kitchen cafe": the article must touch the word.
+      // Not a what3words location tag ("By the cafe ///noting.fortunate.dots"): a map pin in a list of toilets, where the
+      // same page's "In the Park, you can find: a café" is the statement to show a reviewer.
+      /\b(?:in|inside|next\s+to|beside|by)\s+the\s+caf[e\u00e9](?![A-Za-z])(?!\s*\/{3})/i,
     ],
     no: [/no\s+caf[eé]/i],
   },
   {
     field: 'wheelchairAccessible',
-    yes: [/wheelchair\s+accessible/i, /accessible\s+(?:for|to)\s+wheelchair\s+users/i],
+    yes: [/wheelchair\s+accessible/i, /accessible\s+(?:for|to)\s+wheelchair\s+users/i, ...VENUE_STEP_FREE_PATTERNS],
     no: [/not\s+wheelchair/i],
   },
   {
@@ -771,9 +844,25 @@ function isOnlyRestrictedParking(sentence, yesPatterns) {
  * at the top of Streatham Common South". The Saatchi Gallery's page has "(No parking Mon-Sat 7am to 7pm ...) Royal
  * Hospital Road". A negative read off a road's parking rules is as wrong as a positive read off somebody else's car
  * park, so it leaves the field unknown instead.
+ *
+ * Colne Valley Regional Park served `parking = no` from "Parking is not permitted on Denham Court Drive" -- the road to
+ * the visitor centre -- two sentences after "There are two carparks run by Bucks County Council". The road is named, so
+ * a prohibition ON a named road (never AT a place: "car parking is not allowed at Leake Street Arches" is the Graffiti
+ * Tunnel's own rule and stays a no) is the road's rule.
  */
+const ROAD_ONLY_RESTRICTION =
+  /\b(?:not\s+(?:permitted|allowed)|prohibited|forbidden)\s+(?:on|along|in)\s+(?:the\s+)?(?:[A-Z][\w'\u2019-]*\s+){1,3}(?:Road|Drive|Street|Lane|Avenue|Way|Close|Crescent|Terrace|Rise|Hill|Gardens|Grove|Place)\b|\b(?:on|along|in)\s+(?:the\s+)?(?:surrounding|nearby|local|residential|neighbouring)\s+(?:roads|streets)\b|\bon[\s-]street\b/;
+/**
+ * A sentence that ALSO speaks about the venue itself keeps its negative: "There are no parking facilities at Tate Modern
+ * or in the surrounding streets" (Tate Modern) and "No parking directly outside the farm, restricted parking in
+ * surrounding streets" (Kentish Town City Farm) are each the venue's own true "no", which the street wording alone would
+ * drop.
+ */
+const VENUE_LEVEL_PARKING_NEGATIVE = /\bno\s+(?:car\s+)?parking(?:\s+facilities)?\s+(?:directly\s+)?(?:at\s+(?!any\b)|outside\s+the\b|on[\s-]?site\b|in\s+the\s+grounds\b)|\bno\s+on[\s-]?site\s+parking\b/i;
+
 function isStreetParkingRestriction(sentence) {
-  return /\b(?:double|single)\s+yellow\b|\byellow\s+lines?\b|\bcontrolled\s+parking\b|\bparking\s+(?:zones?|permits?|restrictions?)\b|\bCPZ\b|\bno\s+parking\s+(?:at\s+any\s+time|mon|tue|wed|thu|fri|sat|sun|between|\d)|\b(?:High\s+Street|Road|Street|Lane|Avenue)\s+has\s+no\s+parking\b|\bno\s+loading\b/i.test(String(sentence ?? ''));
+  const text = String(sentence ?? '');
+  return (ROAD_ONLY_RESTRICTION.test(text) && !VENUE_LEVEL_PARKING_NEGATIVE.test(text)) || /\b(?:double|single)\s+yellow\b|\byellow\s+lines?\b|\bcontrolled\s+parking\b|\bparking\s+(?:zones?|permits?|restrictions?)\b|\bCPZ\b|\bno\s+parking\s+(?:at\s+any\s+time|mon|tue|wed|thu|fri|sat|sun|between|\d)|\b(?:High\s+Street|Road|Street|Lane|Avenue)\s+has\s+no\s+parking\b|\bno\s+loading\b/i.test(text);
 }
 
 /**
@@ -784,6 +873,19 @@ function isStreetParkingRestriction(sentence) {
  */
 const PARKING_FOR_DISABLED =
   /\b(?:parking\s+)?(?:spaces?|bays?|places?)\s+(?:are\s+)?(?:provided\s+|reserved\s+|available\s+|set\s+aside\s+)?for\s+(?:disabled|blue\s+badge|wheelchair)\b|\bfor\s+(?:disabled|blue\s+badge)\s+(?:visitors|drivers|guests|customers|users|people|badge\s+holders|holders)\b/i;
+
+/**
+ * Parking that belongs to another facility's users, not to the venue's visitors.
+ *
+ * Queen Elizabeth Olympic Park served `parking = yes` from "Lee Valley VeloPark Venue car parking is available for up to
+ * 3 hours for facility users" -- a venue inside the park, whose car park charges up to £49.50 to anyone "using the car
+ * parks without visiting a venue". The same page says "There is no general parking at London Stadium". Parking stated
+ * for a facility's, club's or hotel's users, or for members, residents or staff only, says nothing about whether a
+ * family visiting the park can park.
+ */
+function isParkingForOthers(sentence) {
+  return /\bfor\s+(?:facility|venue|centre|center|club|gym|hotel|leisure\s+centre)\s+(?:users|members|guests|customers)\b|\b(?:residents?|members|staff|permit\s+holders|season\s+ticket\s+holders)\s+only\b|\bfor\s+(?:residents|staff|hotel\s+guests)\b/i.test(String(sentence ?? ''));
+}
 
 function hasRestrictedParking(sentence) {
   return (
@@ -1063,6 +1165,10 @@ function matchField(sentence, patterns, fieldId) {
     if (!re.test(sentence)) continue;
     // A road's parking rules are not the venue's parking.
     if ((fieldId === 'parking' || fieldId === 'freeParking') && isStreetParkingRestriction(sentence)) continue;
+    // Somebody else's charge: "The nearby Olympic Park Avenue has on-street pay and display spaces" (Queen Elizabeth
+    // Olympic Park, served as free parking = no). Only for the charge; a venue's own "no parking" beside a pointer to
+    // car parks nearby ("There is no parking onsite but there are numerous car parks near", Madame Tussauds) is a no.
+    if (fieldId === 'freeParking' && hasOffSiteParking(sentence)) continue;
     return { value: 'no', confidence: 'high' };
   }
   for (const re of patterns.yes) {
@@ -1090,10 +1196,17 @@ function matchField(sentence, patterns, fieldId) {
     if (fieldId === 'toilets' && (hasToiletNegation(sentence) || isScopedToiletClosure(sentence))) continue;
     if (fieldId === 'babyChanging' && !isExplicitBabyChangingStatement(sentence)) continue;
     if (fieldId === 'cafe' && isOffSiteCafe(sentence)) continue;
+    if (fieldId === 'cafe' && re === CAFE_HOURS_PATTERN && AVAILABILITY_NEGATION.test(sentence)) continue;
     // Toilets elsewhere ("the nearest public toilets are at the village hall") are not this venue's.
     if (fieldId === 'toilets' && /\b(?:nearest|nearby|across\s+the\s+(?:road|street)|down\s+the\s+(?:road|street)|round\s+the\s+corner|minutes?\s+(?:walk|away)|neighbouring|village\s+hall|railway\s+station)\b/i.test(sentence)) continue;
+    // "The nearest Changing Places Toilet can be found in Dulwich Park" (Sydenham Hill Wood) is another place's toilet.
+    if (fieldId === 'accessibleToilet' && /\b(?:nearest|nearby)\b|\bcan\s+be\s+found\s+in\s+[A-Z]/.test(sentence)) continue;
+    // "Please ask a member of staff for the nearest baby changing facilities" (Madame Tussauds) does not say it is on site.
+    // Only when it qualifies the baby changing itself: an amenities list that mentions "nearby" elsewhere is not this.
+    if (fieldId === 'babyChanging' && /\b(?:nearest|nearby)\b[^.]{0,40}\bbaby[\s-]+chang/i.test(sentence)) continue;
     // A café's or a bus route's accessibility is not the venue's.
     if (fieldId === 'wheelchairAccessible' && isNonVenueWheelchairSubject(sentence)) continue;
+    if (fieldId === 'wheelchairAccessible' && VENUE_STEP_FREE_PATTERNS.includes(re) && isNonVenueStepFree(sentence)) continue;
     // Soft play is a different facility, and a parent who asked for a playground is not served by it.
     if (fieldId === 'playground' && isSoftPlayOnlyPlayground(sentence)) continue;
     // Nor is an arcade, a trampoline park's named attraction, or a museum gallery exhibit.
@@ -1101,6 +1214,8 @@ function matchField(sentence, patterns, fieldId) {
     if (fieldId === 'parking' || fieldId === 'freeParking') {
       // "Parking confirmed on site" must not be said about a car park down the road,
       if (hasOffSiteParking(sentence)) continue;
+      // or about a car park kept for another facility's users,
+      if (isParkingForOthers(sentence)) continue;
       // about a buggy park, a bike rack or a coach bay,
       if (isNonVehicleParkingOnly(sentence, patterns.yes)) continue;
       // or about the bike parking on a page's cycling directions.
@@ -1333,6 +1448,9 @@ function anchorWindows(sentence, fieldId) {
   return windows.length > 0 ? windows : [sentence];
 }
 
+const CAFE_CLOSED_FOR_NOW =
+  /\bcaf[e\u00e9](?![A-Za-z])[^.!?]{0,40}\b(?:is|are)\s+(?:temporarily\s+closed|closed\s+for\s+business|closed\s+until\s+further\s+notice)\b|\bnot\s+heard\s+when\b[^.!?]{0,40}\breopen/i;
+
 function extractEvidenceFromText(text, sourceMeta) {
   // Character references are decoded first, so "Caf&eacute;" is read as the café it is. Then every path below reads
   // the chrome-free text, so sitewide navigation cannot establish a fact in any field, nor reach the excerpt a parent
@@ -1388,6 +1506,13 @@ function extractEvidenceFromText(text, sourceMeta) {
     facts.push(environmentFact);
   }
 
+  // A page that says its café is closed for now publishes no café (v6): Colne Valley Regional Park's visitor centre page
+  // says "The Riverside Café is temporarily closed for business" and its FAQ "We have not heard when exactly it will be
+  // reopened", while other sentences on both still describe the café ("In the cafe itself there is an open kitchen").
+  // A schedule ("The cafe is usually closed from 20th December and usually reopens 3 January") is not a closure.
+  if (CAFE_CLOSED_FOR_NOW.test(readableText)) {
+    return facts.filter((fact) => !(fact.field === 'cafe' && fact.value === 'yes'));
+  }
   return facts;
 }
 
@@ -1526,6 +1651,7 @@ function buildEvidenceBundle(venueId, sources, sourceStatus, diagnostics = null)
 }
 
 module.exports = {
+  isParkingForOthers,
   EXTRACTOR_VERSION,
   isNavigationChrome,
   isEvidenceBearingSource,

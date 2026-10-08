@@ -137,7 +137,10 @@ describe('look-alikes that must stay unknown, or keep their honest value', () =>
       // Streatham Common: "no" was read off the roads' yellow lines; its own page describes its car park.
       && !(r.venueId === VENUE.streathamCommon && r.field === 'parking')
       // SEA LIFE: two of its own pages now agree on "excellent"; "mixed" came from an optional buggy bay.
-      && !(r.venueId === VENUE.seaLife && r.field === 'pushchairSuitability'));
+      && !(r.venueId === VENUE.seaLife && r.field === 'pushchairSuitability')
+      // Colne Valley Regional Park (v5): "no" was read off "Parking is not permitted on Denham Court Drive", a road's rule;
+      // the same paragraph says "There are two carparks run by Bucks County Council".
+      && !(r.venueId === 'fp-google-ChIJq-jJARlxdkgRNLTE490EqVU' && r.field === 'parking'));
     expect(flipped).toEqual([]);
   });
 });
@@ -154,7 +157,14 @@ describe('coverage on the replay set (88 venues with readable own pages)', () =>
       parking: count('parking', 'publishable'),
       pushchairSuitability: count('pushchairSuitability', 'publishable'),
       freeParking: count('freeParking', 'publishable'),
-    }).toEqual({ babyChanging: 26, toilets: 31, cafe: 35, parking: 36, pushchairSuitability: 10, freeParking: 15 });
+      // v5: parking 36 -> 35 and freeParking 15 -> 13. Queen Elizabeth Olympic Park's "parking" was a sub-venue's car park
+      // "for facility users" and its "free parking: no" an on-street bay on a nearby avenue; Whitechapel Gallery's "free
+      // parking: no" was a public multistorey's charge. None of the three was the venue's own.
+      // v6 (extraction pilot): toilets 31 -> 35 (Cutty Sark, Mudchute, Chiswick House, Hackney City Farm: placed toilets),
+      // cafe 35 -> 39 (Cutty Sark, Hackney City Farm, Tate Modern, V&A: a café as a place or with its own hours),
+      // parking 35 -> 36 (Northala Fields' own car parks "locked in accordance with park
+      // locking times"). Each is listed with its sentence in docs/EXTRACTION_PILOT.md.
+    }).toEqual({ babyChanging: 26, toilets: 35, cafe: 39, parking: 36, pushchairSuitability: 10, freeParking: 13 });
     // What production serves today for the same venues, for the before/after table.
     expect({
       babyChanging: count('babyChanging', 'live'),

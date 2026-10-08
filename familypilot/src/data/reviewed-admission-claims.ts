@@ -1,0 +1,829 @@
+import type { AdmissionPricing } from '@/src/services/pricing/admission';
+
+/**
+ * Reviewed admission claims, prepared on 2026-10-08 from pages already stored from each venue's own website (no fetch,
+ * no provider call). Each entry is a decision a person made, with the page's own words and where and when they were read:
+ *
+ *   publish  the price or free entry may be shown, with its conditions
+ *   hold     a real price exists but no ticket is plainly the general admission, or the child terms are missing
+ *   refuse   only part of the venue is free; it must never be labelled free
+ *
+ * Verified against the stored text of each URL (36 of 36 excerpts found on the stated date and in the latest reading) and
+ * by `reviewed-admission-claims.test.ts`. See docs/PRICING_REVIEWED_CLAIMS.md. To change a price, change it here with a
+ * new excerpt and date; never edit a figure without its source.
+ */
+export interface ReviewedAdmissionClaim {
+  venueId: string;
+  venueName: string;
+  decision: 'publish' | 'hold' | 'refuse';
+  pricing?: AdmissionPricing;
+  evidence: { url: string; retrievedAt: string; subjectScope: string; excerpt: string };
+  reviewNotes: string;
+}
+
+export interface ReviewedAdmissionFile {
+  schemaVersion: number;
+  preparedOn: string;
+  state: string;
+  policy: string[];
+  claims: ReviewedAdmissionClaim[];
+}
+
+export const REVIEWED_ADMISSION: ReviewedAdmissionFile = {
+  "schemaVersion": 1,
+  "preparedOn": "2026-10-08",
+  "state": "reviewed",
+  "policy": [
+    "Every claim comes from a page already stored from the venue's own site (subject scope venue_own_subtree or venue_named_page). No page was fetched to prepare it and no provider was called.",
+    "Free means general entry to the whole venue is stated as free. A free part (a hall, a display, a splash pad) never makes the venue free; those are refused.",
+    "Where a page lists prices with and without a Gift Aid donation, the standard (without Gift Aid) price is used and the other is kept as a condition.",
+    "Only bands the page states are recorded. A child outside every stated band is unknown, never free and never charged at the adult rate.",
+    "A family ticket is recorded only when the page states who it covers.",
+    "The excerpt is the page's own words, whitespace-normalised, and must be found in the stored text of that URL on the stated date."
+  ],
+  "claims": [
+    {
+      "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+      "venueName": "Gunnersbury Park",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.visitgunnersbury.org/museum/accessibility",
+          "checkedAt": "2026-10-02"
+        },
+        "conditions": []
+      },
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/museum/accessibility",
+        "retrievedAt": "2026-10-02",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Entry is free for all visitors, and you are welcome to leave and return as many times as you like throughout the day"
+      },
+      "reviewNotes": "Stated on the museum's own page; the stored place is the park and museum together (Google lists it as a museum). Nothing on the stored pages charges for entry to either. Event, film and craft prices on other pages are events, not admission."
+    },
+    {
+      "venueId": "fp-google-ChIJvS60MMEcdkgRSMlH5VxD51Y",
+      "venueName": "Hackney City Farm",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://hackneycityfarm.co.uk/",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": []
+      },
+      "evidence": {
+        "url": "https://hackneycityfarm.co.uk/",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Hackney City Farm is free to visit."
+      },
+      "reviewNotes": "Venue-level statement on the homepage."
+    },
+    {
+      "venueId": "fp-google-ChIJIwA11GYTdkgRoeeAutW9svo",
+      "venueName": "Headstone Manor and Museum",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://headstonemanor.org/visit/",
+          "checkedAt": "2026-10-07"
+        },
+        "conditions": []
+      },
+      "evidence": {
+        "url": "https://headstonemanor.org/visit/",
+        "retrievedAt": "2026-10-07",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Opening Times Tuesday – Sunday, 10am – 4pm Closed: Monday FREE ENTRY"
+      },
+      "reviewNotes": "Venue-level statement beside the opening times. Craft-session prices elsewhere are events."
+    },
+    {
+      "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+      "venueName": "Horniman Museum and Gardens",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.horniman.ac.uk/",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": [
+          "There is a charge for the Aquarium, the Butterfly House and some events and exhibitions."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.horniman.ac.uk/",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "The Museum and Gardens are free to visit There is a charge to visit the Aquarium, Butterfly House, and some of our events and exhibitions."
+      },
+      "reviewNotes": "Museum and gardens are the venue; the charged parts are named as conditions. Membership prices on the site are not admission."
+    },
+    {
+      "venueId": "fp-google-ChIJVTZUsMcCdkgRMc_-OpJq9v8",
+      "venueName": "London Museum Docklands",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.londonmuseum.org.uk/docklands/visit/groups/",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": [
+          "Groups of 10 or more are asked to book in advance."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.londonmuseum.org.uk/docklands/visit/groups/",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Our galleries are free to visit, but we ask that groups of 10 or more book in advance"
+      },
+      "reviewNotes": "Café prices on other pages are not admission."
+    },
+    {
+      "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+      "venueName": "Mudchute Park and Farm",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.mudchute.org/plan-your-visit/faq",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": []
+      },
+      "evidence": {
+        "url": "https://www.mudchute.org/plan-your-visit/faq",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Mudchute Park and Farm is free to visit."
+      },
+      "reviewNotes": "Venue-level statement."
+    },
+    {
+      "venueId": "fp-google-ChIJKUrjG7wcdkgRbfTuKDBgWXI",
+      "venueName": "Museum of the Home",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://museumofthehome.org.uk/plan-your-visit/",
+          "checkedAt": "2026-09-27"
+        },
+        "conditions": []
+      },
+      "evidence": {
+        "url": "https://museumofthehome.org.uk/plan-your-visit/",
+        "retrievedAt": "2026-09-27",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "We are free to visit, open Tuesday–Sunday and on Bank Holidays."
+      },
+      "reviewNotes": "Venue-level statement."
+    },
+    {
+      "venueId": "fp-google-ChIJs_wmr0cWa0gRHr60qjwn1Mo",
+      "venueName": "National Maritime Museum",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.rmg.co.uk/national-maritime-museum",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": [
+          "Special exhibitions and some experiences are charged.",
+          "Booking a free ticket online guarantees an entry time."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.rmg.co.uk/national-maritime-museum",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Access to all free galleries and activities Free entry Book online"
+      },
+      "reviewNotes": "General entry free; the £12/£6 figures on the same page belong to a special exhibition."
+    },
+    {
+      "venueId": "fp-google-ChIJkf4NDG8ddkgRXEINXuEbip8",
+      "venueName": "Queen Elizabeth Olympic Park",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.queenelizabetholympicpark.co.uk/plan-your-visit/where-stay",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": [
+          "Individual attractions and venues inside the park charge separately."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.queenelizabetholympicpark.co.uk/plan-your-visit/where-stay",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Queen Elizabeth Olympic Park is free to visit every day of the week"
+      },
+      "reviewNotes": "Venue-level statement. The condition reflects that the park contains separately ticketed venues (the stored text mentions them by name on other pages); it does not price them."
+    },
+    {
+      "venueId": "fp-google-ChIJs_wmr0cWa0gRZpEqERRReXQ",
+      "venueName": "Queen's House",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.rmg.co.uk/queens-house",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": [
+          "Booking a free ticket online in advance is recommended to guarantee entry.",
+          "Tours and some experiences are charged."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.rmg.co.uk/queens-house",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "The Queen's House is free to visit. We recommend booking tickets online in advance to guarantee entry"
+      },
+      "reviewNotes": "The £35/£17.50 and £12/£6 figures on the stored page are a ticketed experience, not entry."
+    },
+    {
+      "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+      "venueName": "Royal Air Force Museum London",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.rafmuseum.org.uk/london/plan-your-day/",
+          "checkedAt": "2026-10-02"
+        },
+        "conditions": [
+          "Book a free entry ticket.",
+          "Children under 11 must be accompanied by an adult."
+        ],
+        "bookingRequired": true
+      },
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/",
+        "retrievedAt": "2026-10-02",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Children under 11 must be accompanied by an adult. Book your free entry"
+      },
+      "reviewNotes": "Free entry with booking."
+    },
+    {
+      "venueId": "fp-google-ChIJvWjCxekEdkgRoCgQVJHZH_U",
+      "venueName": "Tate Britain",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.tate.org.uk/visit/tate-britain",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": [
+          "Some exhibitions are ticketed."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.tate.org.uk/visit/tate-britain",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Tate Britain is free to visit."
+      },
+      "reviewNotes": "Venue-level statement; exhibitions are ticketed separately."
+    },
+    {
+      "venueId": "fp-google-ChIJlRl2MakEdkgR55tr4CNv_B8",
+      "venueName": "Tate Modern",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.tate.org.uk/visit/tate-modern",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": [
+          "Some exhibitions are ticketed."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.tate.org.uk/visit/tate-modern",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Our gallery is free to visit."
+      },
+      "reviewNotes": "Venue-level statement; exhibitions are ticketed separately."
+    },
+    {
+      "venueId": "fp-google-ChIJeclqF84EdkgRtKAjTmWFr0I",
+      "venueName": "The National Gallery",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.nationalgallery.org.uk/visiting/plan-your-visit",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": [
+          "Some exhibitions are ticketed."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.nationalgallery.org.uk/visiting/plan-your-visit",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "The National Gallery is free to visit."
+      },
+      "reviewNotes": "Venue-level statement."
+    },
+    {
+      "venueId": "fp-google-ChIJDwtf_QwddkgRRQHAFbZNFFM",
+      "venueName": "V&A East Storehouse",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.vam.ac.uk/east/storehouse/visit",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": [
+          "Some exhibitions and events carry a separate charge."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.vam.ac.uk/east/storehouse/visit",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Admission is free Some exhibitions and events will carry a separate charge"
+      },
+      "reviewNotes": "Taken from the Storehouse visit page. The same words on the V&A accessibility statement (a sibling page) were not used."
+    },
+    {
+      "venueId": "fp-google-ChIJw1d-sUMFdkgRH2XN_U0Jt54",
+      "venueName": "Victoria and Albert Museum",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.vam.ac.uk/south-kensington/visit",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": [
+          "Some exhibitions and events carry a separate charge."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.vam.ac.uk/south-kensington/visit",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Admission is free Some exhibitions and events carry a separate charge"
+      },
+      "reviewNotes": "Venue-level statement on the South Kensington visit page."
+    },
+    {
+      "venueId": "fp-google-ChIJyxOhp9scdkgR3ciFcAfeG1c",
+      "venueName": "Young V&A",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.vam.ac.uk/young/visit",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": [
+          "Some exhibitions are ticketed."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.vam.ac.uk/young/visit",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Closed 24 – 26 December Admission is free Visit our galleries now"
+      },
+      "reviewNotes": "Venue-level statement on the Young V&A visit page."
+    },
+    {
+      "venueId": "fp-google-ChIJzZtNX7UcdkgRzycysU2TrhM",
+      "venueName": "Whitechapel Gallery",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.whitechapelgallery.org/visit-2/",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": [
+          "Select exhibitions are ticketed (standard £15 when read; under 16s free)."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.whitechapelgallery.org/visit-2/",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Free Entry to the Gallery Ticket prices apply for select Exhibitions: Standard"
+      },
+      "reviewNotes": "General entry free. The exhibition price is recorded only as a condition."
+    },
+    {
+      "venueId": "fp-google-ChIJF4YXjN4DdkgRvJe2-r5usvY",
+      "venueName": "Sydenham Hill Wood",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.wildlondon.org.uk/nature-reserves/sydenham-hill-wood-and-coxs-walk",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": []
+      },
+      "evidence": {
+        "url": "https://www.wildlondon.org.uk/nature-reserves/sydenham-hill-wood-and-coxs-walk",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_named_page",
+        "excerpt": "we have 36 nature reserves across London - and they are all free to visit!"
+      },
+      "reviewNotes": "The statement is about all London Wildlife Trust reserves and sits on this reserve's own page (named page), so it covers this venue."
+    },
+    {
+      "venueId": "fp-google-ChIJHQ0TmmENdkgRStqMV2LSW5M",
+      "venueName": "Hanwell Zoo",
+      "decision": "publish",
+      "pricing": {
+        "status": "paid",
+        "bands": [
+          {
+            "kind": "adult",
+            "amountPence": 500,
+            "label": "Adult"
+          },
+          {
+            "kind": "child",
+            "amountPence": 400,
+            "minAgeMonths": 36,
+            "label": "Child (3 and over)"
+          },
+          {
+            "kind": "under",
+            "amountPence": 0,
+            "free": true,
+            "minAgeMonths": 0,
+            "maxAgeMonthsExclusive": 36,
+            "label": "Under 3"
+          }
+        ],
+        "source": {
+          "url": "https://hanwellzoo.co.uk/plan-your-day/",
+          "checkedAt": "2026-09-30"
+        },
+        "conditions": [
+          "The page does not say up to what age the child ticket applies.",
+          "Carers with supporting documents go free.",
+          "Season tickets are available."
+        ]
+      },
+      "evidence": {
+        "url": "https://hanwellzoo.co.uk/plan-your-day/",
+        "retrievedAt": "2026-09-30",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Single tickets Category Price Adult £5 Per Child £4 Under 3 Free"
+      },
+      "reviewNotes": "Standard single tickets. Season-ticket prices are listed beside them and are not used. The child band is left open-ended because no upper age is stated; flagged in the conditions."
+    },
+    {
+      "venueId": "fp-google-ChIJkUcf6v4PdkgRIN0LQBjlSqs",
+      "venueName": "Museum of Brands",
+      "decision": "publish",
+      "pricing": {
+        "status": "paid",
+        "bands": [
+          {
+            "kind": "adult",
+            "amountPence": 1400,
+            "label": "Adult (26 to 59)"
+          },
+          {
+            "kind": "child",
+            "amountPence": 800,
+            "minAgeMonths": 84,
+            "maxAgeMonthsExclusive": 204,
+            "label": "Child (7 to 16)"
+          },
+          {
+            "kind": "concession",
+            "amountPence": 1000,
+            "label": "Concession (60+ or 17 to 25)"
+          }
+        ],
+        "source": {
+          "url": "https://museumofbrands.com/plan-your-visit/admissions/",
+          "checkedAt": "2026-09-27"
+        },
+        "conditions": [
+          "Adults aged 17 to 25 or 60 and over pay the £10 concession, so the adult figure may be an overestimate.",
+          "Children under 7 are not priced here: the page says under 6s are free only in the Universal Credit ticket section, and does not say what a 6-year-old pays.",
+          "A £1 Universal Credit ticket is available with evidence."
+        ],
+        "familyTickets": [
+          {
+            "amountPence": 3600,
+            "minAdults": 2,
+            "maxAdults": 2,
+            "minChildren": 2,
+            "maxChildren": 2,
+            "maxChildAgeMonthsExclusive": 204,
+            "label": "Family (2 adults, 2 children)"
+          }
+        ]
+      },
+      "evidence": {
+        "url": "https://museumofbrands.com/plan-your-visit/admissions/",
+        "retrievedAt": "2026-09-27",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "£14 Adult Ticket For visitors aged 26-59 £8 Child Ticket For visitors aged 7 to 16 £10 Concession Ticket (for visitors aged 60+ or 17-25) £10 Accessible Ticket For visitors with accessibility needs £36 Family Ticket 2 Adults, 2 Children"
+      },
+      "reviewNotes": "The under-6 free statement sits inside the Universal Credit paragraph, so it is not used as a general band; a child under 7 is therefore \"unknown\" unless the party fits the family ticket."
+    },
+    {
+      "venueId": "fp-google-ChIJkeddM88adkgR80g3pdkn0vw",
+      "venueName": "The Sherlock Holmes Museum",
+      "decision": "publish",
+      "pricing": {
+        "status": "paid",
+        "bands": [
+          {
+            "kind": "adult",
+            "amountPence": 1900,
+            "label": "Adult"
+          },
+          {
+            "kind": "concession",
+            "amountPence": 1700,
+            "label": "Concession"
+          },
+          {
+            "kind": "child",
+            "amountPence": 1400,
+            "minAgeMonths": 72,
+            "maxAgeMonthsExclusive": 192,
+            "label": "Child (6 to 15)"
+          },
+          {
+            "kind": "under",
+            "amountPence": 0,
+            "free": true,
+            "minAgeMonths": 0,
+            "maxAgeMonthsExclusive": 72,
+            "label": "Under 6"
+          }
+        ],
+        "source": {
+          "url": "https://www.sherlock-holmes.co.uk/plan-your-visit/",
+          "checkedAt": "2026-09-26"
+        },
+        "conditions": []
+      },
+      "evidence": {
+        "url": "https://www.sherlock-holmes.co.uk/plan-your-visit/",
+        "retrievedAt": "2026-09-26",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Tickets Adults – £19 Concessions – £17 Children (under 16) – £14 Children (under 6) – Free"
+      },
+      "reviewNotes": "Reads cleanly. \"Children (under 16)\" is read as 6 to 15 because under 6s are listed separately as free."
+    },
+    {
+      "venueId": "fp-google-ChIJr9KR08Q9dkgR_4iyIzFBRwk",
+      "venueName": "De Havilland Aircraft Museum",
+      "decision": "publish",
+      "pricing": {
+        "status": "paid",
+        "bands": [
+          {
+            "kind": "adult",
+            "amountPence": 1200,
+            "label": "Adult (standard)"
+          },
+          {
+            "kind": "concession",
+            "amountPence": 1090,
+            "label": "Concession (standard)"
+          },
+          {
+            "kind": "child",
+            "amountPence": 650,
+            "minAgeMonths": 60,
+            "maxAgeMonthsExclusive": 204,
+            "label": "Child 5 to 16 (standard)"
+          }
+        ],
+        "source": {
+          "url": "https://www.dehavillandmuseum.co.uk/visit-us/",
+          "checkedAt": "2026-10-01"
+        },
+        "conditions": [
+          "Standard prices shown; the same tickets with a Gift Aid donation are £14 adult, £12 concession, £8 child and £35 family.",
+          "A £31.50 family ticket exists but the page does not say who it covers, so it is not used in totals.",
+          "The page does not say what children under 5 pay.",
+          "Carers of disabled visitors go free.",
+          "Outside Greater London."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.dehavillandmuseum.co.uk/visit-us/",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Adult – £14 Concessions* – £12 Child (5-16) – £8 Family – £35 Without Gift Aid (standard prices) Adult – £12 Concessions* -£10.90 Child –£6.50 Family – £31.50"
+      },
+      "reviewNotes": "Standard (without Gift Aid) list used, per the approved rule. The 5 to 16 band is stated on the Gift Aid line and applies to the same child ticket in the standard list."
+    },
+    {
+      "venueId": "fp-google-ChIJzctoGW2p2EcRPZRecMnPjCM",
+      "venueName": "London Cable Car",
+      "decision": "publish",
+      "pricing": {
+        "status": "paid",
+        "bands": [
+          {
+            "kind": "adult",
+            "amountPence": 1350,
+            "label": "Adult 16+ (round trip)"
+          },
+          {
+            "kind": "child",
+            "amountPence": 675,
+            "minAgeMonths": 60,
+            "maxAgeMonthsExclusive": 192,
+            "label": "Child 5 to 15 (round trip)"
+          }
+        ],
+        "source": {
+          "url": "https://londoncablecar.ventrata.site/en",
+          "checkedAt": "2026-09-30"
+        },
+        "conditions": [
+          "Round-trip price. A one-way trip is £7 adult and £3.50 child.",
+          "The booking page does not say what children under 5 pay.",
+          "Glass-floor and other experiences cost more."
+        ]
+      },
+      "evidence": {
+        "url": "https://londoncablecar.ventrata.site/en",
+        "retrievedAt": "2026-09-30",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Round Trip - London Cable Car A Round Trip from either Royal Victoria Docks or Greenwich Peninsula Adult 16+ 16+ Years Current price, Adult 16+: £13.50 Child 5-15 5 - 15 Years Current price, Child 5-15: £6.75"
+      },
+      "reviewNotes": "Round trip chosen as the standard visit; the operator's own booking site. One-way and premium products recorded as conditions only."
+    },
+    {
+      "venueId": "fp-google-ChIJZz8_wPNodkgRQrQBE23io9I",
+      "venueName": "Chiltern Open Air Museum",
+      "decision": "hold",
+      "evidence": {
+        "url": "https://www.coam.org.uk/visit",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Standard Admission Prices on the door Adult: £14.50* Concessions: £13.50* Disabled Person and Essential Companion: £14.50* Child (4 – 17 years): £11.50 Children under 4 years: Free"
+      },
+      "reviewNotes": "Four price lists (pre-booked or on the door, standard or premium) and the stored pages do not say which dates are premium; the asterisk on adult prices is never explained. A total would be wrong on premium days. Hold until the premium dates and the asterisk are read."
+    },
+    {
+      "venueId": "fp-google-ChIJAVlhMIUCdkgRCJEgHVbITq4",
+      "venueName": "Cutty Sark",
+      "decision": "hold",
+      "evidence": {
+        "url": "https://www.rmg.co.uk/cutty-sark",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Guaranteed entry time Audio guide included Adult £22 Child £11 Members Free"
+      },
+      "reviewNotes": "Child ages are not stated anywhere stored, and a second product (£38/£19, a combined day pass) appears on another reading of the page."
+    },
+    {
+      "venueId": "fp-google-ChIJc2nSALkEdkgRkuoJJBfzkUI",
+      "venueName": "London Eye",
+      "decision": "hold",
+      "evidence": {
+        "url": "https://www.londoneye.com/",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "From £29 per adult Standard & Fast Track Tickets"
+      },
+      "reviewNotes": "Only a \"from\" adult price for an online ticket; no child price stored. Under 2s go free but must be booked."
+    },
+    {
+      "venueId": "fp-google-ChIJc2nSALkEdkgRviluWxwFsxA",
+      "venueName": "SEA LIFE London Aquarium",
+      "decision": "hold",
+      "evidence": {
+        "url": "https://www.visitsealife.com/london/",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Under 2's Go Free From £28 per adult Standard ticket"
+      },
+      "reviewNotes": "Only a \"from\" adult price; no child price stored."
+    },
+    {
+      "venueId": "fp-google-ChIJQzfybmYFdkgR1tFou0zyzYQ",
+      "venueName": "Paradox Museum London",
+      "decision": "hold",
+      "evidence": {
+        "url": "https://paradoxmuseum.com/london/?utm_source=google&utm_medium=localcards",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Price Starting from £18.5 for children and £24 for adults"
+      },
+      "reviewNotes": "\"Starting from\" prices with no age bands; children under 14 must be with a paying adult. A minimum, not a ticket."
+    },
+    {
+      "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+      "venueName": "Discover Children's Story Centre",
+      "decision": "hold",
+      "evidence": {
+        "url": "https://discover.org.uk/your-visit",
+        "retrievedAt": "2026-09-26",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "&pound;10 Day Entry - Adult or Child &pound;9 Day Entry - Newham Adult or Child or concession"
+      },
+      "reviewNotes": "One price for adult or child, but the stored text never says whether babies or toddlers pay. Add-on activities cost £3 to £5.50."
+    },
+    {
+      "venueId": "fp-google-ChIJLcZnZgBBdkgRVa6ewdVh-1w",
+      "venueName": "Harry Potter Studio",
+      "decision": "hold",
+      "evidence": {
+        "url": "https://www.wbstudiotour.co.uk/plan-your-visit/tour-accessibility/",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "children aged 4 and under are entitled to free entry"
+      },
+      "reviewNotes": "Only the free-under-5 rule is stored; no adult or child prices were read."
+    },
+    {
+      "venueId": "fp-google-ChIJT8Zf9BwFdkgRK-CapYKxUBQ",
+      "venueName": "Hyde Park Winter Wonderland",
+      "decision": "hold",
+      "evidence": {
+        "url": "https://hydeparkwinterwonderland.com/",
+        "retrievedAt": "2026-09-30",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Qualify for free entry Save up to £45 as a family of four"
+      },
+      "reviewNotes": "Seasonal event; entry depends on the session and on add-on packages. Not a general admission."
+    },
+    {
+      "venueId": "fp-google-ChIJJUQ-d8oEdkgR-JVIDfRa6aY",
+      "venueName": "The Courtauld Gallery",
+      "decision": "refuse",
+      "evidence": {
+        "url": "https://courtauld.ac.uk/gallery/",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "new site-specific commissions for The John Browne Entrance Hall and the Ticketing Hall of the Courtauld Gallery and will be free to visit"
+      },
+      "reviewNotes": "Only the entrance and ticketing halls are free; the gallery is ticketed. Must not be labelled free."
+    },
+    {
+      "venueId": "fp-google-ChIJs0HnpkcDdkgRJjUYVf4jca4",
+      "venueName": "the Design Museum",
+      "decision": "refuse",
+      "evidence": {
+        "url": "https://designmuseum.org/plan-your-visit",
+        "retrievedAt": "2026-09-26",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Our collection display Designer Maker User is free to visit, located on Level 2."
+      },
+      "reviewNotes": "One display is free; ticketed exhibitions are the main offer. Must not be labelled free."
+    },
+    {
+      "venueId": "fp-google-ChIJi37c17o8dkgRPV9Ej8pkASM",
+      "venueName": "Hatfield Park",
+      "decision": "refuse",
+      "evidence": {
+        "url": "https://hatfield-house.co.uk/your-visit/opening-times-prices/",
+        "retrievedAt": "2026-09-28",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Entrance to The Stable Yard is free of charge."
+      },
+      "reviewNotes": "Only the Stable Yard is free; the house, gardens and park are ticketed. Must not be labelled free."
+    },
+    {
+      "venueId": "fp-google-ChIJ-UxCFT47dkgRADbsEVyxCAs",
+      "venueName": "Stanborough Park Water Sports Centre",
+      "decision": "refuse",
+      "evidence": {
+        "url": "https://www.better.org.uk/leisure-centre/welwyn-hatfield/stanborough-park-water-sports-centre?utm_source=google&utm_medium=organic&utm_campaign=google_my_business",
+        "retrievedAt": "2026-10-01",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "There's also a free splash pad that's a hit with younger visitors on warm days"
+      },
+      "reviewNotes": "The splash pad is free; water sports, boat hire and parking are charged. Must not be labelled free."
+    }
+  ]
+};
