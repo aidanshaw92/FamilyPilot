@@ -19,6 +19,7 @@ import {
 } from './age-suitability';
 import { compareTravelMinutes } from '@/src/utils/travel-time';
 import { evaluateAgeAdmission } from './age-admission';
+import { evaluateVenueRules } from './venue-rules';
 import {
   hasTrustedMatchSignals,
   scoreTrustedAccessibility,
@@ -299,6 +300,22 @@ export function matchVenueToDayRequest(
         tally,
       )
     ) {
+      eligible = false;
+    }
+  }
+
+  // A recorded venue rule the household cannot work around (a buggy-dependent family where pushchairs are not allowed in the
+  // core experience; a step-free-dependent one where the reviewer marked a gap as covering the visit). Only a confirmed,
+  // reviewed rule produces this; a venue with none recorded is not touched, and nothing here changes a score.
+  if (facts.rules?.length) {
+    const verdict = evaluateVenueRules(facts.rules, {
+      date: request.visitDate ?? '',
+      usesPushchair: request.hasPushchair,
+      requiresPushchair: request.constraints.pushchair?.strength === 'required' && request.hasPushchair,
+      needsStepFree: Boolean(request.needsStepFree),
+    });
+    if (verdict.blocksHousehold) {
+      evaluations.push({ field: 'venueRules', strength: 'required', outcome: 'unsuitable', detail: verdict.blocksHousehold.text });
       eligible = false;
     }
   }

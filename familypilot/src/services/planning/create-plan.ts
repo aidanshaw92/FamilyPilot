@@ -12,6 +12,7 @@ import { VisitLength, resolveVisit } from './visit-duration';
 import { buggyFamilyIds } from './routine-subjects';
 import { mustHaveLabel } from './must-have-labels';
 import { TravelLeg } from '@/src/types/travel';
+import { evaluateVenueRules } from '@/src/services/matching/venue-rules';
 import { travelSourceOf } from '@/src/utils/travel-time';
 
 /**
@@ -175,6 +176,12 @@ export function createPlanSteps(input: { venueName: string; meal?: MealCandidate
  * claim that stops a family going somewhere perfectly suitable.
  */
 function requirementLine(requirement: UnmetRequirement, venueName: string): string | null {
+  if (requirement.field === 'venueRules') {
+    // The venue's own reviewed sentence, so a parent reads what the venue says rather than our paraphrase of it.
+    return requirement.detail
+      ? `${requirement.detail.replace(/[.\s]+$/, '')}. That doesn’t work for what your family needs.`
+      : `${venueName} has a rule that doesn’t work for what your family needs.`;
+  }
   if (requirement.field === 'pushchairSuitability') {
     return requirement.outcome === 'unsuitable'
       ? `${venueName} is recorded as difficult with a pushchair, and your family needs it to work.`
@@ -435,6 +442,17 @@ export async function createPlan(
   step('timing');
   if (!result.ok) return describeGenerationFailure(result.failure, venue.name, draft.startAt);
 
+  // What the venue itself says that bears on THIS party and THIS date: kept on the saved source so the warning that was true
+  // when the plan was made is still on the plan when it is opened again. A venue with no recorded rules adds nothing,
+  // which is not a statement that none apply.
+  const venueNotes = evaluateVenueRules(anchorFacts.rules, {
+    date: draft.date,
+    usesPushchair: families.some((family) => family.pushchair),
+    requiresPushchair: families.some((family) => family.required.includes('pushchair')),
+    requiredFacilities: [...new Set(families.flatMap((family) => family.required.filter((r): r is 'toilets' | 'babyChanging' | 'parking' => r !== 'pushchair')))],
+    needsStepFree: families.some((family) => family.stepFree),
+  }).notes;
+
   const source: PlanViewModelInput = {
     itinerary: result.plan.itinerary,
     travel: result.plan.travel,
@@ -466,6 +484,7 @@ export async function createPlan(
     lunchAvailable: Boolean(input.lunchAvailable ?? meal) && draft.visit !== 'all-day',
     hasRoutines: families.some((family) => family.routines.length > 0),
     anchorCategory: venue.category,
+    ...(venueNotes.length ? { venueNotes } : {}),
   };
 
   return { ok: true, view: toPlanViewModel(source, input.viewContext), source };

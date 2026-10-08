@@ -5,6 +5,7 @@ import { RoutineAdviceContext, SubjectResolver, reasonAboutRoutines, subjectPhra
 import { VisitResolution, allowedLabel, visitNote } from './visit-duration';
 import { mustHaveLabel } from './must-have-labels';
 import { MatchableVenueFacts } from '@/src/types/day-request';
+import type { VenueRuleNote } from '@/src/types/venue-rules';
 import { TravelMode } from '@/src/types/travel';
 import { travelTimeWithMode } from '@/src/utils/travel-time';
 import { familyDisplayName } from '@/src/utils/family-title';
@@ -351,6 +352,12 @@ export interface PlanViewModelInput {
   hasRoutines?: boolean;
   /** The anchor's category, for wording an assumed visit length. */
   anchorCategory?: string;
+  /**
+   * What the venue's own reviewed rules say about this party on this date: a pushchair restriction for a family that brings
+   * one, a closed gallery, a lift out of order. `important` notes join the prominent "Needs checking" block; the rest go in
+   * "Worth knowing". Absent on a day saved before rules existed, or at a venue with none recorded.
+   */
+  venueNotes?: VenueRuleNote[];
 }
 
 /** What only the device knows at render time. Names live here, not in the saved plan. */
@@ -665,7 +672,7 @@ export function toPlanViewModel(input: PlanViewModelInput, context?: PlanViewCon
     title: `A day at ${anchorName}`,
     dayName: date ? date.long : null,
     insight,
-    needsChecking: needsCheckingLines(itinerary),
+    needsChecking: [...needsCheckingLines(itinerary), ...(input.venueNotes ?? []).filter((n) => n.severity === 'important').map((n) => n.text)],
     routines,
     lunch: {
       included: itinerary.stops.some((stop) => stop.role === 'meal'),
@@ -695,6 +702,6 @@ export function toPlanViewModel(input: PlanViewModelInput, context?: PlanViewCon
       parking: parkingRows(input.parking),
     },
     unknowns: itinerary.unknowns,
-    caveats: caveats.map(caveatLine).filter(Boolean),
+    caveats: [...caveats.map(caveatLine).filter(Boolean), ...(input.venueNotes ?? []).filter((n) => n.severity === 'info').map((n) => n.text)],
   };
 }

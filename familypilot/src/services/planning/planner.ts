@@ -32,6 +32,8 @@ export interface PlanningFamily {
   /** True on a shared snapshot made after defaults stopped being filled in: a limit or budget in it was stated by the family. */
   preferencesStated?: boolean;
   pushchair: boolean; required: Array<'toilets' | 'babyChanging' | 'parking' | 'pushchair'>;
+  /** Someone in the household uses a wheelchair or mobility aid, so step-free gaps in a venue's rules matter. */
+  stepFree?: boolean;
   routines: Routine[];
 }
 export interface PlanningOptions {
@@ -55,7 +57,7 @@ export function clockLabel(minutes: number): string {
  * one: `planVenue` gates on `matchVenueToDayRequest`, which applies `ageAdmission` as required,
  * so a venue that would turn a child away never reaches a plan. See matching/age-admission. */
 
-export function familyRequest(family: PlanningFamily, environment: PlanningOptions['environment']): DayRequest {
+export function familyRequest(family: PlanningFamily, environment: PlanningOptions['environment'], visitDate?: string): DayRequest {
   const constraints: DayRequest['constraints'] = {
     ageRecommendedFit: { strength: AGE_RECOMMENDATION_STRENGTH, value: 'in_range' },
     environment: { strength: 'required', value: environment },
@@ -69,7 +71,8 @@ export function familyRequest(family: PlanningFamily, environment: PlanningOptio
   }
   return { rawText: '', parsedAt: '', childAges: family.ages, homeLocation: family.area,
     ...(family.budgetTier ? { budgetTier: family.budgetTier } : {}), ...(typeof family.maxDriveMinutes === 'number' ? { maxDriveMinutes: family.maxDriveMinutes } : {}),
-    hasPushchair: family.pushchair || family.required.includes('pushchair'), constraints, context: {} };
+    hasPushchair: family.pushchair || family.required.includes('pushchair'),
+    ...(visitDate ? { visitDate } : {}), ...(family.stepFree ? { needsStepFree: true } : {}), constraints, context: {} };
 }
 
 /** Same-day scheduler: tries the earliest meeting that respects every home routine.
@@ -87,7 +90,7 @@ export function planVenue(facts: MatchableVenueFacts, families: PlanningFamily[]
   const evaluations = families.map((family) => {
     const journey = journeys[family.id];
     if (!journey || ![journey.outbound, journey.inbound].every(n => Number.isFinite(n) && n >= 0 && (typeof family.maxDriveMinutes !== 'number' || n <= family.maxDriveMinutes))) return null;
-    const match = matchVenueToDayRequest({ ...facts, driveMinutes: journey.outbound }, familyRequest(family, options.environment));
+    const match = matchVenueToDayRequest({ ...facts, driveMinutes: journey.outbound }, familyRequest(family, options.environment, options.date));
     return match.eligible ? match : null;
   });
   if (evaluations.some(e => !e)) return null;

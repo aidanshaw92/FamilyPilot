@@ -1,5 +1,5 @@
 import { FacilityType, FamilyProfile } from '@/src/types';
-import { familyUsesBuggy } from '@/src/utils/family-mobility';
+import { familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
 import { budgetTierOf, driveLimitMinutes } from '@/src/utils/preferences';
 import { routinesForPlanner } from '@/src/utils/routine-schedule';
 import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
@@ -119,6 +119,7 @@ export function planningFamilyFromProfile(
     ...(driveLimit !== null ? { maxDriveMinutes: driveLimit } : {}),
     ...(budgetTierOf(profile) ? { budgetTier: budgetTierOf(profile)! } : {}),
     pushchair: familyUsesBuggy(profile),
+    ...(familyNeedsStepFree(profile) ? { stepFree: true } : {}),
     required: plannerRequirements(profile.mustHaveFacilities),
     // Copied, so editing a plan can never reach back into the stored profile, and stripped of the
     // child's name and id: this model can be backed up to an account, the profile cannot.

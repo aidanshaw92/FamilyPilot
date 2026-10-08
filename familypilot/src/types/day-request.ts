@@ -113,6 +113,13 @@ export interface DayRequest {
   budgetTier?: FamilyProfile['budgetTier'];
   maxDriveMinutes?: number | null;
   hasPushchair: boolean;
+  /**
+   * The day being planned (`YYYY-MM-DD`), so a dated venue rule is read against it. Absent for a request with no day (a
+   * ranking card), where only undated rules are read.
+   */
+  visitDate?: string;
+  /** Someone in the party uses a wheelchair or mobility aid. Never inferred from a buggy. */
+  needsStepFree?: boolean;
   constraints: DayRequestConstraints;
   context: {
     freeformNotes?: string;
@@ -171,6 +178,8 @@ export interface MatchableVenueFacts {
    * `caveats`, which explain without excluding.
    */
   venueAgePolicy: VenueAgePolicy | null;
+  /** Reviewed venue-specific rules; see types/venue-rules.ts. Absent or empty: none recorded, which says nothing either way. */
+  rules?: import('@/src/types/venue-rules').VenueRule[];
   toilets: TriState | 'unknown';
   babyChanging: TriState | 'unknown';
   parking: TriState | 'unknown';
@@ -207,6 +216,8 @@ export interface ConstraintEvaluation {
   field: string;
   strength: ConstraintStrength;
   outcome: FactMatchOutcome;
+  /** A reviewed sentence explaining an `unsuitable` outcome, when the evidence is a venue rule. */
+  detail?: string;
 }
 
 export interface VenueMatchResult {

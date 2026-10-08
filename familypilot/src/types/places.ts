@@ -119,6 +119,11 @@ export interface VenueFamilyMetadata {
    * unknown, and unknown never excludes. Never written from an editor payload.
    */
   venueAgePolicy?: import('@/src/types/day-request').VenueAgePolicy | null;
+  /**
+   * Venue-specific rules (closures, pushchair and step-free restrictions, booking, cautions), projected server-side from
+   * approved `rules.*` claims. Absent means nobody has recorded any, which is not the same as "none apply".
+   */
+  rules?: import('@/src/types/venue-rules').VenueRule[];
   ageNotes?: string;
   terrain?: TerrainType;
   extendedTerrain?: import('@/src/types/enrichment').ExtendedTerrain;
