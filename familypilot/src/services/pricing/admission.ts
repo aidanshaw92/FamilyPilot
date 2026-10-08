@@ -111,11 +111,36 @@ export type AdmissionEstimate =
       conditions: string[];
       source: PricingSource;
     }
-  | { state: 'unknown'; reason: Unknown; detail: string; source?: PricingSource };
+  | {
+      state: 'unknown';
+      reason: Unknown;
+      detail: string;
+      source?: PricingSource;
+      /** Set for a `stale` price still within MAX_PRICE_AGE_DAYS: what the page said, to be shown dated and as possibly changed. */
+      lastKnown?: { checkedAt: string; lines: string[] };
+    };
 
 const DAY_MS = 86_400_000;
-/** A price older than this is not relied on even with no stated end: venues change prices at least yearly. */
+/**
+ * How long one reading of a price can be relied on, by what the page said (docs/PRICING_FRESHNESS_POLICY.md).
+ *
+ *   paid   180 days. Attractions revise admission at least yearly and often at a season boundary (Easter, summer, the
+ *          new year), so a reading older than six months may already be wrong. A stated end on the page (`validUntil`)
+ *          wins when it is earlier.
+ *   free   365 days. Free entry is a standing policy, not a tariff; it still carries its date.
+ *
+ * Past its window a price is never shown as current. Up to MAX_PRICE_AGE_DAYS the reading is still shown as the LAST
+ * KNOWN price, dated and worded as possibly changed, so a parent can judge it; after that no figure is shown at all.
+ */
+export const PRICE_FRESHNESS_DAYS = { paid: 180, free: 365 } as const;
+/** Beyond this not even a last-known figure is shown. */
 export const MAX_PRICE_AGE_DAYS = 400;
+
+export function priceFreshnessDays(status: AdmissionPricing['status']): number {
+  return PRICE_FRESHNESS_DAYS[status];
+}
+
+export type PriceFreshness = 'current' | 'last-known' | 'expired';
 
 function parseDay(iso: string | undefined): number | null {
   if (!iso) return null;
@@ -124,14 +149,30 @@ function parseDay(iso: string | undefined): number | null {
   return Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
 }
 
-/** Whether a stored price can be relied on for a visit on `visitDate` (ISO). */
-export function priceIsCurrent(source: PricingSource, visitDate: string): boolean {
+/** Current, last known, or expired, for a visit on `visitDate` (ISO). An unreadable date is expired: unknown fails closed. */
+export function priceFreshness(pricing: Pick<AdmissionPricing, 'status' | 'source'>, visitDate: string): PriceFreshness {
   const visit = parseDay(visitDate);
-  const checked = parseDay(source.checkedAt);
-  if (visit === null || checked === null) return false;
-  const until = parseDay(source.validUntil);
-  if (until !== null && visit > until) return false;
-  return visit - checked <= MAX_PRICE_AGE_DAYS * DAY_MS;
+  const checked = parseDay(pricing.source.checkedAt);
+  if (visit === null || checked === null) return 'expired';
+  const age = visit - checked;
+  if (age < 0 || age > MAX_PRICE_AGE_DAYS * DAY_MS) return 'expired';
+  const until = parseDay(pricing.source.validUntil);
+  if (until !== null && visit > until) return 'last-known';
+  return age <= priceFreshnessDays(pricing.status) * DAY_MS ? 'current' : 'last-known';
+}
+
+/** Whether a stored price can be relied on for a visit on `visitDate` (ISO). Paid unless the caller says free. */
+export function priceIsCurrent(source: PricingSource, visitDate: string, status: AdmissionPricing['status'] = 'paid'): boolean {
+  return priceFreshness({ status, source }, visitDate) === 'current';
+}
+
+/** What the page said, in a parent's words, for the last-known fallback: "Adult £17, Children 3 to 15 £8.50". */
+export function lastKnownLines(pricing: AdmissionPricing): string[] {
+  if (pricing.status === 'free') return ['Free entry'];
+  const bandName = (b: TicketBand): string => b.label ?? { adult: 'Adult', child: 'Child', concession: 'Concession', under: 'Youngest children' }[b.kind];
+  const bands = (pricing.bands ?? []).map((b) => `${bandName(b)} ${b.free || b.amountPence === 0 ? 'free' : money(b.amountPence)}`);
+  const family = (pricing.familyTickets ?? []).map((t) => `${t.label ?? 'Family ticket'} ${money(t.amountPence)}`);
+  return [...bands, ...family];
 }
 
 const covers = (band: TicketBand, ageMonths: number): boolean =>
@@ -153,12 +194,14 @@ export function estimateFamilyAdmission(
   visitDate: string,
 ): AdmissionEstimate {
   if (!pricing) return { state: 'unknown', reason: 'no-price', detail: 'No price has been confirmed for this place.' };
-  if (!priceIsCurrent(pricing.source, visitDate)) {
+  const freshness = priceFreshness(pricing, visitDate);
+  if (freshness !== 'current') {
     return {
       state: 'unknown',
       reason: 'stale',
       detail: 'The last price we have is out of date for this visit, so it is not shown as current.',
       source: pricing.source,
+      ...(freshness === 'last-known' ? { lastKnown: { checkedAt: pricing.source.checkedAt, lines: lastKnownLines(pricing) } } : {}),
     };
   }
   if (pricing.status === 'free') return { state: 'free', totalPence: 0, source: pricing.source };
@@ -316,7 +359,7 @@ export type PriceBadge = { kind: 'free' | 'from' | 'unknown'; text: string };
  * and is worded as a minimum; it is never presented as what a family pays. A stale or missing price is "Price not confirmed".
  */
 export function priceBadge(pricing: AdmissionPricing | null | undefined, visitDate: string): PriceBadge {
-  if (!pricing || !priceIsCurrent(pricing.source, visitDate)) return { kind: 'unknown', text: 'Price not confirmed' };
+  if (!pricing || priceFreshness(pricing, visitDate) !== 'current') return { kind: 'unknown', text: 'Price not confirmed' };
   if (pricing.status === 'free') return { kind: 'free', text: 'Free entry' };
   // Individual tickets only for "From": a family ticket is not a per-person price, so it is the fallback and no more.
   const individual = (pricing.bands ?? []).filter((b) => !b.free && b.amountPence > 0).map((b) => b.amountPence);
@@ -353,6 +396,21 @@ export function admissionView(estimate: AdmissionEstimate, pricing: AdmissionPri
     // A current price that does not cover this party (a 3-year-old where tickets start at 7) is not a stale price: say whom
     // it does not cover, and when the prices were checked, rather than "last price on record", which reads as out of date.
     const partyGap = estimate.reason === 'attendee-not-covered' || estimate.reason === 'child-age-unknown' || estimate.reason === 'no-adult-price';
+    if (estimate.lastKnown) {
+      // Past its freshness window but within 400 days: the figure is shown as what the page said on that date, never
+      // as what it costs now, and the parent is sent to the venue to confirm.
+      return {
+        headline: 'Price not confirmed',
+        breakdown: [
+          `Last known price: ${estimate.lastKnown.lines.join(', ')}.`,
+          'Prices may have changed since then. Check with the venue before you go.',
+        ],
+        conditions: [],
+        provenance: `Last checked ${fmtDate(estimate.lastKnown.checkedAt)}`,
+        isEstimate: false,
+        ...booking,
+      };
+    }
     return {
       headline: partyGap ? 'Price not confirmed for your party' : 'Price not confirmed',
       breakdown: partyGap ? [estimate.detail] : [],
