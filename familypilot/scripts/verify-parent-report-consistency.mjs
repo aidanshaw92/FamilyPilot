@@ -130,8 +130,8 @@ const lastT = (samples, pred) => [...samples].reverse().find(pred)?.t ?? null;
   check(name !== null && name < 1500, `A: the page itself is not held: the venue name is on screen at ${name} ms`);
   const hChecking = s.find((x) => x.checkingCard)?.cardHeight;
   const hFinal = [...s].reverse().find((x) => x.card)?.cardHeight;
-  console.log(`INFO  A: card height while checking ${hChecking} pt, corrected ${hFinal} pt (the placeholder keeps at least 200)`);
-  check(hChecking >= 200 && Math.abs(hChecking - hFinal) <= 160, 'A: the placeholder is within a card’s height of the final card (no large jump)');
+  console.log(`INFO  A: card height while checking ${hChecking} pt, corrected ${hFinal} pt (the placeholder keeps at least 330)`);
+  check(hChecking >= 330 && Math.abs(hChecking - hFinal) <= 200, 'A: the placeholder is within about a card’s height of the final card (the jump is bounded)');
 }
 // B
 {

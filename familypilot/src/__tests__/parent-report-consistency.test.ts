@@ -109,6 +109,6 @@ describe('the neutral state claims nothing that could be withdrawn', () => {
     expect(page).toMatch(/fitChecking \? <FamilyFitCheckingCard/);
   });
   it('holds the card’s height so the swap changes words, not layout', () => {
-    expect(src).toMatch(/minHeight: 200/);
+    expect(src).toMatch(/minHeight: 330/);
   });
 });
