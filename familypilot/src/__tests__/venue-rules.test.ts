@@ -217,3 +217,55 @@ describe('createPlan carries the venue’s warnings into the saved plan', () => 
     if (!outcome.ok) expect(outcome.message).toContain('Pushchairs and buggies are not allowed in any storytelling or play area');
   });
 });
+
+// ---- Family Fit and Home -------------------------------------------------------------------------------------------
+import { evaluateFamilyMatch } from '@/src/services/matching/family-match';
+import { FamilyMember, FamilyProfile, Venue } from '@/src/types';
+import { OpeningHoursSchedule } from '@/src/types/opening-hours';
+
+describe('Family Fit reads the venue’s rules without moving any score', () => {
+  const NOW = new Date(2026, 9, 9, 11, 0, 0); // Friday 9 October 2026, 11:00
+  const parent: FamilyMember = { id: 'p', name: 'Alex', role: 'parent', dateOfBirth: '', age: 38 };
+  const child = (id: string, name: string, age: number, mobility: FamilyMember['mobility'] = ['walks']): FamilyMember => ({
+    id, name, role: 'child', dateOfBirth: '', age, dobKnown: true, ageMonths: null, mobility,
+  });
+  const profile = (members: FamilyMember[]): FamilyProfile => ({
+    id: 'f', parentName: 'Alex', members: [parent, ...members], homeLocation: 'N1', budgetTier: 'moderate', maxDriveMinutes: 30,
+    completionPercent: 100, mustHaveFacilities: [], routines: [],
+  } as FamilyProfile);
+  const OPEN: OpeningHoursSchedule = {
+    timezone: 'Europe/London',
+    periods: [0, 1, 2, 3, 4, 5, 6].map((d) => ({ open: { day: d, hour: 10, minute: 0 }, close: { day: d, hour: 17, minute: 0 } })),
+  };
+  const venueWith = (rules?: VenueRule[]): Venue => ({
+    id: 'fp-v', name: 'Test Place', category: 'museum', latitude: 51.5, longitude: -0.1, driveMinutes: 20, imageUrl: '',
+    familyScore: { score: 80, factors: {} as never, explanation: [] }, enrichmentStatus: 'enriched',
+    structuredOpeningHours: OPEN, facilities: [],
+    trustedFacts: { ...baseFacts(rules), minRecommendedAge: 0, maxRecommendedAge: 8 },
+  } as Venue);
+
+  it('shows Closed today when a reviewed rule closes the venue today, whatever the weekly hours say', () => {
+    const match = evaluateFamilyMatch({ venue: venueWith([SCIENCE_CLOSED]), profile: profile([child('c', 'Sloane', 4)]), score: 80, now: NOW });
+    expect(match.availableToday).toBe(false);
+    expect(match.today).toMatchObject({ state: 'closed_today', label: 'Closed today' });
+    // The fit itself is untouched by the day.
+    const open = evaluateFamilyMatch({ venue: venueWith(), profile: profile([child('c', 'Sloane', 4)]), score: 80, now: NOW });
+    expect(match.verdict).toBe(open.verdict);
+    expect(open.availableToday).toBe(true);
+  });
+
+  it('says the pushchair rule as a breach for a child whose buggy is the only way round, and as a caution for one who can be carried', () => {
+    const buggyOnly = evaluateFamilyMatch({ venue: venueWith([DISCOVER_PUSHCHAIRS]), profile: profile([child('c', 'Theo', 1, ['buggy'])]), score: 80, now: NOW });
+    expect(buggyOnly.cautions.map((l) => l.text)).toContain(DISCOVER_PUSHCHAIRS.text);
+    expect(buggyOnly.verdict).toBe('poor');
+    const carried = evaluateFamilyMatch({ venue: venueWith([DISCOVER_PUSHCHAIRS]), profile: profile([child('c', 'Theo', 1, ['buggy', 'carrier'])]), score: 80, now: NOW });
+    expect(carried.cautions.map((l) => l.text)).toContain(DISCOVER_PUSHCHAIRS.text);
+    expect(carried.verdict).not.toBe('poor');
+  });
+
+  it('is silent about pushchairs to a family that has none, and never changes the score input', () => {
+    const none = evaluateFamilyMatch({ venue: venueWith([DISCOVER_PUSHCHAIRS]), profile: profile([child('c', 'Sloane', 4)]), score: 80, now: NOW });
+    expect([...none.cautions, ...none.toCheck].some((l) => l.text === DISCOVER_PUSHCHAIRS.text)).toBe(false);
+    expect(none.verdict).toBe(evaluateFamilyMatch({ venue: venueWith(), profile: profile([child('c', 'Sloane', 4)]), score: 80, now: NOW }).verdict);
+  });
+});

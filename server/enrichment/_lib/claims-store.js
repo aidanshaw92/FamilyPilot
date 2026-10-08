@@ -21,6 +21,7 @@ const {
   PROJECTED_AGE_POLICY,
 } = require('./age-policy');
 const { isHumanApprover } = require('./approval-actors');
+const { PROJECTED_RULES, isRuleFieldKey, projectRules } = require('./venue-rules');
 const { isEligibleScope } = require('./source-identity');
 
 
@@ -851,6 +852,8 @@ function projectActiveClaimsToPayload(activeClaims) {
     // one, and only a trusted, non-conflicted, venue-scoped rule may become a gate. Handled
     // below, from the claims themselves, so no per-key allow-list can drop it.
     if (isAgePolicyFieldKey(claim.fieldKey)) continue;
+    // Venue rules are a list, not a scalar: projected below from the claims themselves.
+    if (isRuleFieldKey(claim.fieldKey)) continue;
     setNestedValue(payload, claim.fieldKey, claim.valueJson);
   }
 
@@ -867,6 +870,11 @@ function projectActiveClaimsToPayload(activeClaims) {
    */
   const agePolicy = projectAgePolicy(activeClaims);
   if (agePolicy) payload[PROJECTED_AGE_POLICY] = agePolicy;
+
+  // Venue rules ride on a Symbol for the same reason the age policy does: an editor payload cannot express them, and
+  // `metadataRowFromPayload` (which also feeds persistence) never sees them. Only the consumer projection reads this.
+  const rules = projectRules(activeClaims.filter((claim) => isClaimActive(claim)));
+  if (rules.length) payload[PROJECTED_RULES] = rules;
 
   if (Object.keys(payload.familyFacilities).length === 0) delete payload.familyFacilities;
   if (Object.keys(payload.accessibility).length === 0) delete payload.accessibility;

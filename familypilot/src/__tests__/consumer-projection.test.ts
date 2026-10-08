@@ -188,6 +188,89 @@ describe('consumer metadata projection', () => {
   });
 });
 
+describe('venue rules in the consumer projection', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({toFake:['Date']});
+    vi.setSystemTime(new Date('2026-08-15T12:00:00Z'));
+    isolateFileStores();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    restoreEnv();
+  });
+
+  const rule = {
+    kind: 'pushchair', scope: 'area', area: 'storytelling and play areas', coversCoreVisit: true,
+    text: 'Pushchairs and buggies are not allowed in any storytelling or play area.',
+  };
+  const evidence = (key: string) => ({
+    [key]: { confidence: 'high', sourceUrl: 'https://example.org/visit', evidence: 'Pushchairs and buggies are not allowed.', sourceType: 'official_website' },
+  });
+  const write = async (placeId: string, id: string, value: unknown, reviewedBy: string) => {
+    const { createApprovedClaim } = await import('../../../server/enrichment/_lib/claims-store.js');
+    return createApprovedClaim({
+      familypilotPlaceId: placeId, fieldKey: `rules.${id}`, value, fieldEvidence: evidence(`rules.${id}`),
+      reviewedBy, draftId: null, checkedAt: '2026-08-10',
+    });
+  };
+
+  it('attaches a person-approved rule, with its source and date, to the consumer metadata', async () => {
+    const placeId = 'fp-google-rules-ok';
+    writeMetadata(placeId, { enrichmentStatus: 'enriched' });
+    await write(placeId, 'pushchair-play-areas', rule, 'human:alice');
+    const { getConsumerMetadata } = await import('../../../server/enrichment/_lib/consumer-projection.js');
+    const result = await getConsumerMetadata(placeId);
+    expect(result?.rules).toEqual([{
+      id: 'pushchair-play-areas', kind: 'pushchair', scope: 'area', area: 'storytelling and play areas', coversCoreVisit: true,
+      text: rule.text, sourceUrl: 'https://example.org/visit', checkedAt: '2026-08-10',
+    }]);
+  });
+
+  it('never projects a rule an automatic approver wrote, because a rule can refuse a date or a household', async () => {
+    const placeId = 'fp-google-rules-auto';
+    writeMetadata(placeId, { enrichmentStatus: 'enriched' });
+    await write(placeId, 'pushchair-play-areas', rule, 'source_evidence_auto_v2');
+    await write(placeId, 'closed-for-works', { kind: 'closure', scope: 'venue', from: '2026-08-20', until: '2026-08-21', text: 'Closed on 20 and 21 August.' }, 'enrichment-admin');
+    const { getConsumerMetadata } = await import('../../../server/enrichment/_lib/consumer-projection.js');
+    const result = await getConsumerMetadata(placeId);
+    expect(result?.rules).toBeUndefined();
+  });
+
+  it('drops a malformed rule instead of half-applying it, and keeps the well-formed ones', async () => {
+    const placeId = 'fp-google-rules-bad';
+    writeMetadata(placeId, { enrichmentStatus: 'enriched' });
+    await write(placeId, 'good', { kind: 'caution', scope: 'venue', text: 'Weekends can mean a queue to enter.' }, 'human:alice');
+    await write(placeId, 'bad-kind', { kind: 'forbidden', scope: 'venue', text: 'Something very restrictive here.' }, 'human:alice');
+    await write(placeId, 'bad-date', { kind: 'closure', scope: 'venue', from: '2026-13-40', text: 'Closed on a date that does not exist.' }, 'human:alice');
+    await write(placeId, 'no-area', { kind: 'closure', scope: 'area', until: '2026-12-01', text: 'A gallery is closed for refurbishment.' }, 'human:alice');
+    await write(placeId, 'too-short', { kind: 'caution', scope: 'venue', text: 'Busy' }, 'human:alice');
+    const { getConsumerMetadata } = await import('../../../server/enrichment/_lib/consumer-projection.js');
+    const result = await getConsumerMetadata(placeId);
+    expect(result?.rules?.map((r: { id: string }) => r.id)).toEqual(['good']);
+  });
+
+  it('does not touch the persisted metadata row, which is what the write path and the editor see', async () => {
+    const placeId = 'fp-google-rules-row';
+    writeMetadata(placeId, { enrichmentStatus: 'enriched' });
+    await write(placeId, 'pushchair-play-areas', rule, 'human:alice');
+    const { projectActiveClaimsToPayload, metadataRowFromPayload, getActiveClaims } = await import('../../../server/enrichment/_lib/claims-store.js');
+    const payload = projectActiveClaimsToPayload(await getActiveClaims(placeId));
+    expect(Object.keys(payload)).not.toContain('rules');
+    expect(JSON.stringify(metadataRowFromPayload(placeId, payload, { enrichmentStatus: 'enriched' }))).not.toContain('storytelling');
+  });
+
+  it('a venue with rules and no other claims still has consumer metadata, and a venue without rules is unchanged', async () => {
+    const placeId = 'fp-google-rules-none';
+    writeMetadata(placeId, { enrichmentStatus: 'enriched' });
+    const { createApprovedClaim } = await import('../../../server/enrichment/_lib/claims-store.js');
+    await createApprovedClaim({ familypilotPlaceId: placeId, fieldKey: 'familyFacilities.parking', value: 'yes', fieldEvidence: {}, reviewedBy: 'editor@test', draftId: null, checkedAt: '2026-08-10' });
+    const { getConsumerMetadata } = await import('../../../server/enrichment/_lib/consumer-projection.js');
+    const result = await getConsumerMetadata(placeId);
+    expect(result?.familyFacilities?.parking).toBe('yes');
+    expect('rules' in (result ?? {})).toBe(false);
+  });
+});
+
 describe('attachTrustFields', () => {
   it('copies trust metadata without adding family suitability fields', async () => {
     const { attachTrustFields } = await import('../../../server/enrichment/_lib/consumer-projection.js');

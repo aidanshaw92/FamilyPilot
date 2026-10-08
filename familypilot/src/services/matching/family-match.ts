@@ -6,6 +6,8 @@ import { activityEvidenceFor, evidenceCovers } from '@/src/services/matching/act
 import { childAgeVerdicts, joinNames, outsideRangeCautions, suitsChildrenLine } from '@/src/utils/child-fit';
 import { childUsesBuggy, childUsesMobilityAid, familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
 import { describeOpeningToday, OpeningTodayState } from '@/src/utils/opening-today';
+import { evaluateVenueRules, ruleAppliesOn } from '@/src/services/matching/venue-rules';
+import { venueLocalDate } from '@/src/utils/opening-hours';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 import { driveLimitMinutes } from '@/src/utils/preferences';
 import { observationLine, ParentObservations } from '@/src/services/matching/parent-observations';
@@ -387,7 +389,13 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
   // is not a reason, a caution, a positive or a score. Weather is not read here at all; the venue page shows it as its own
   // condition. Once there is a plan for a chosen day, the planner is where date-specific feasibility is worked out.
   // The one exception is a place whose hours say it is NEVER open to visitors: that is a fact about the place, not the day.
-  const today = describeOpeningToday(venue.structuredOpeningHours, now);
+  const hoursToday = describeOpeningToday(venue.structuredOpeningHours, now);
+  // A reviewed whole-venue closure on today's date outranks the weekly hours, which cannot know about an exceptional closure.
+  const todayDate = venueLocalDate(now, venue.structuredOpeningHours?.timezone ?? 'Europe/London');
+  const closedByRule = todayDate
+    ? evaluateVenueRules(venue.trustedFacts?.rules, { date: todayDate, usesPushchair: false, requiresPushchair: false, needsStepFree: false }).closedAllDay
+    : null;
+  const today = closedByRule ? { ...hoursToday, state: 'closed_today' as const, label: 'Closed today', spans: [] } : hoursToday;
   const notToday = today.state === 'closed_today' || today.state === 'closed_for_today';
   if (today.state === 'never_open') {
     breaches.push({ key: 'never-open', text: today.label });
@@ -499,6 +507,19 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
     }
     if (carrier) softCautions.push(carrier);
 
+    // What the venue itself says about pushchairs, in the venue's own words, for a child who goes in one. Only a reviewed
+    // rule in force today; it reads like the buggy-access evidence above (a restriction on the core visit is a breach for a
+    // child who has no other way round, a caution otherwise). Labels only: ordering is by score and nothing here moves it.
+    if (usesBuggy && todayDate) {
+      const buggyOnly = buggyKids.filter((c) => !childUsesCarrier(c));
+      for (const rule of facts.rules ?? []) {
+        if (rule.kind !== 'pushchair' || !ruleAppliesOn(rule, todayDate)) continue;
+        const line: MatchLine = { key: `buggy-rule-${rule.id}`, text: rule.text, childIds: buggyKids.map((c) => c.id), topic: 'buggy access', aspect: 'logistics' };
+        if (rule.coversCoreVisit && (buggyOnly.length > 0 || buggyKids.length === 0)) breaches.push(line);
+        else softCautions.push(line);
+      }
+    }
+
     // Step-free: the venue's own wheelchair-access claim, for a child who uses a wheelchair or mobility aid. A logistics
     // fact: it says the visit is possible for them, never that the place suits them. Buggy access is not read here (a
     // venue that is fine for a buggy is not thereby wheelchair accessible), and unknown stays a thing to check.
@@ -511,6 +532,10 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
         venueFacts += 1;
         if (facts.accessibleToilet === 'yes') {
           reasons.push({ key: 'stepfree-toilet', text: 'Accessible toilet on site', childIds: ids, topic: 'accessible toilet', aspect: 'logistics' });
+        }
+        for (const rule of facts.rules ?? []) {
+          if (rule.kind !== 'step_free' || !todayDate || !ruleAppliesOn(rule, todayDate)) continue;
+          softCautions.push({ key: `stepfree-rule-${rule.id}`, text: rule.text, childIds: ids, topic: 'wheelchair access', aspect: 'logistics' });
         }
       } else if (facts.wheelchairAccessible === 'no') {
         breaches.push({ key: 'stepfree-no', text: `The venue says it is not wheelchair accessible, which matters for ${who}`, childIds: ids, topic: 'wheelchair access', aspect: 'logistics' });
