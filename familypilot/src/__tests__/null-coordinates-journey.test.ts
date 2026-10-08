@@ -90,8 +90,8 @@ describe('a venue with no coordinates', () => {
   it('is not treated as within a drive limit, but is kept when there is no limit', () => {
     const known = venueWith({ familypilotId: 'fp-google-known', name: 'Known' });
     const all = [known, venue];
-    expect(filterVenues(all, 'all', [], 30, 30, 'any').map((v) => v.id)).toEqual(['fp-google-known']);
-    expect(filterVenues(all, 'all', [], 'any', 30, 'any').map((v) => v.id)).toHaveLength(2);
+    expect(filterVenues(all, 'all', [], 30, 'any').map((v) => v.id)).toEqual(['fp-google-known']);
+    expect(filterVenues(all, 'all', [], 'any', 'any').map((v) => v.id)).toHaveLength(2);
   });
 
 });

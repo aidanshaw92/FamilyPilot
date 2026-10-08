@@ -39,11 +39,14 @@ import {
   editChildProblem,
 } from '@/src/utils/profile-edit-draft';
 import { createParentMember, formatBudgetTier } from '@/src/utils/profile-defaults';
+import { budgetTierOf, driveLimitMinutes, unconfirmedValue, withoutUnconfirmed, UnconfirmedField } from '@/src/utils/preferences';
+import { UnconfirmedPreferenceNotice } from '@/src/components/profile/UnconfirmedPreferenceNotice';
+import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { ADULT_RELATIONSHIP_LABEL, createAdultMember } from '@/src/utils/household';
 import { AdultRelationship } from '@/src/types';
 import { feedNoun } from '@/src/utils/routine-schedule';
 
-const BUDGET_OPTIONS: { id: FamilyProfile['budgetTier']; label: string }[] = [
+const BUDGET_OPTIONS: { id: NonNullable<FamilyProfile['budgetTier']>; label: string }[] = [
   { id: 'budget', label: 'Budget-friendly' },
   { id: 'moderate', label: 'Moderate' },
   { id: 'premium', label: 'Premium' },
@@ -51,8 +54,8 @@ const BUDGET_OPTIONS: { id: FamilyProfile['budgetTier']; label: string }[] = [
 
 const DRIVE_OPTIONS = [15, 20, 30, 45, 60, 90];
 /** The offered limits plus whatever is stored, so a limit set elsewhere is never shown as nothing chosen. */
-const driveOptions = (current: number) =>
-  [...new Set([...DRIVE_OPTIONS, current])].filter((m) => Number.isFinite(m) && m > 0).sort((a, b) => a - b);
+const driveOptions = (current: number | null) =>
+  [...new Set([...DRIVE_OPTIONS, ...(current === null ? [] : [current])])].filter((m) => Number.isFinite(m) && m > 0).sort((a, b) => a - b);
 
 const MUST_HAVE_OPTIONS: { id: FacilityType; label: string }[] = [
   { id: 'toilets', label: 'Toilets' },
@@ -85,6 +88,11 @@ function ageOf(child: EditChild, now: Date): AgeParts | null {
   return { years: age, months, totalMonths: age === 0 ? months : age * 12 };
 }
 
+// Fields that nothing in this build uses are not asked for (they come back with their feature).
+const showCar = isPilotFeatureVisible('car_fit');
+const showEquipment = isPilotFeatureVisible('packing');
+const showMemberships = isPilotFeatureVisible('memberships');
+
 export default function EditProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -98,8 +106,13 @@ export default function EditProfileScreen() {
   const [homeLocation, setHomeLocation] = useState('');
   const [children, setChildren] = useState<EditChild[]>([]);
   const [unowned, setUnowned] = useState<FamilyRoutine[]>([]);
-  const [maxDriveMinutes, setMaxDriveMinutes] = useState(30);
-  const [budgetTier, setBudgetTier] = useState<FamilyProfile['budgetTier']>('moderate');
+  // Null is "not set": nothing is limited. Never initialised to a number the parent did not choose.
+  const [maxDriveMinutes, setMaxDriveMinutes] = useState<number | null>(null);
+  const [budgetTier, setBudgetTier] = useState<FamilyProfile['budgetTier']>(null);
+  // Which of the set-aside legacy values the parent has answered this visit (by keeping it or choosing anything in its row).
+  // Unanswered ones are left exactly as stored when the form is saved.
+  const [answered, setAnswered] = useState<UnconfirmedField[]>([]);
+  const answer = (field: UnconfirmedField) => setAnswered((current) => (current.includes(field) ? current : [...current, field]));
   const [vehicle, setVehicle] = useState('');
   const [pushchair, setPushchair] = useState('');
   const [travelCot, setTravelCot] = useState('');
@@ -119,8 +132,8 @@ export default function EditProfileScreen() {
         .map((m) => ({ id: m.id, name: m.name, relationship: m.relationship as AdultRelationship })),
     );
     setHomeLocation(profile.homeLocation);
-    setMaxDriveMinutes(profile.maxDriveMinutes);
-    setBudgetTier(profile.budgetTier);
+    setMaxDriveMinutes(driveLimitMinutes(profile));
+    setBudgetTier(budgetTierOf(profile));
     setVehicle(profile.vehicle ?? '');
     setPushchair(profile.pushchair ?? '');
     setTravelCot(profile.travelCot ?? '');
@@ -209,13 +222,20 @@ export default function EditProfileScreen() {
       homeLongitude,
       maxDriveMinutes,
       budgetTier,
-      vehicle: vehicle.trim() || null,
-      pushchair: pushchair.trim() || null,
-      travelCot: travelCot.trim() || null,
-      memberships: memberships
-        .split(',')
-        .map((m) => m.trim())
-        .filter(Boolean),
+      // What is still unanswered stays set aside; answered fields leave it.
+      unconfirmedPreferences: withoutUnconfirmed(profile, answered).unconfirmedPreferences,
+      // The car, equipment and memberships fields are shown only when a feature uses them; while hidden, what was saved is
+      // left exactly as it is.
+      ...(showCar ? { vehicle: vehicle.trim() || null } : {}),
+      ...(showEquipment ? { pushchair: pushchair.trim() || null, travelCot: travelCot.trim() || null } : {}),
+      ...(showMemberships
+        ? {
+            memberships: memberships
+              .split(',')
+              .map((m) => m.trim())
+              .filter(Boolean),
+          }
+        : {}),
       routines: applied.routines,
       mustHaveFacilities,
       members: [{ ...parentMember, name: parentName.trim() }, ...otherAdults, ...applied.members],
@@ -496,37 +516,82 @@ export default function EditProfileScreen() {
         ) : null}
 
         <Text variant="heading3" style={styles.sectionTitle}>
-          Day-out defaults
+          Travel and budget (optional)
         </Text>
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
-          Starting points only. Change the drive time for a single day from Home or Explore.
+          Leave these alone and nothing is limited: we show every distance and every price. Choose one and we flag places that
+          don’t fit.
         </Text>
         <Text variant="label" color={colors.text.secondary} style={styles.groupLabel}>
-          Maximum drive time
+          Longest journey you’d make
         </Text>
+        {profile && maxDriveMinutes === null && !answered.includes('maxDriveMinutes') && unconfirmedValue(profile, 'maxDriveMinutes') !== null ? (
+          <UnconfirmedPreferenceNotice
+            testID="unconfirmed-drive"
+            question={`An earlier version of the app set this to ${unconfirmedValue(profile, 'maxDriveMinutes')} minutes, and we can’t tell whether you chose it. Nothing is limited meanwhile.`}
+            keepLabel={`Yes, keep ${unconfirmedValue(profile, 'maxDriveMinutes')} minutes`}
+            onKeep={() => {
+              setMaxDriveMinutes(unconfirmedValue(profile, 'maxDriveMinutes'));
+              answer('maxDriveMinutes');
+            }}
+          />
+        ) : null}
         <View style={styles.chipRow}>
+          <Chip
+            label="No limit"
+            active={maxDriveMinutes === null}
+            onPress={() => {
+              setMaxDriveMinutes(null);
+              answer('maxDriveMinutes');
+            }}
+          />
           {driveOptions(maxDriveMinutes).map((minutes) => (
             <Chip
               key={minutes}
               label={`${minutes} min`}
               active={maxDriveMinutes === minutes}
-              onPress={() => setMaxDriveMinutes(minutes)}
+              onPress={() => {
+                setMaxDriveMinutes(minutes);
+                answer('maxDriveMinutes');
+              }}
             />
           ))}
         </View>
 
         <Text variant="label" color={colors.text.secondary} style={styles.groupLabel}>
-          Budget (currently {formatBudgetTier(budgetTier)})
+          Budget ({formatBudgetTier(budgetTier)})
         </Text>
 
         {/* The same Chip as drive time above and frame 04's option rows: one selected treatment per app. */}
+        {profile && budgetTier === null && !answered.includes('budgetTier') && unconfirmedValue(profile, 'budgetTier') !== null ? (
+          <UnconfirmedPreferenceNotice
+            testID="unconfirmed-budget"
+            question={`An earlier version of the app set this to “${formatBudgetTier(unconfirmedValue(profile, 'budgetTier'))}”, and we can’t tell whether you chose it. Nothing is limited meanwhile.`}
+            keepLabel={`Yes, keep ${formatBudgetTier(unconfirmedValue(profile, 'budgetTier'))}`}
+            onKeep={() => {
+              setBudgetTier(unconfirmedValue(profile, 'budgetTier'));
+              answer('budgetTier');
+            }}
+          />
+        ) : null}
         <View style={styles.chipRow}>
+          <Chip
+            label="No preference"
+            active={budgetTier === null}
+            onPress={() => {
+              setBudgetTier(null);
+              answer('budgetTier');
+            }}
+          />
           {BUDGET_OPTIONS.map((option) => (
             <Chip
               key={option.id}
               label={option.label}
               active={budgetTier === option.id}
-              onPress={() => setBudgetTier(option.id)}
+              onPress={() => {
+                setBudgetTier(option.id);
+                answer('budgetTier');
+              }}
             />
           ))}
         </View>
@@ -549,9 +614,12 @@ export default function EditProfileScreen() {
           ))}
         </View>
 
+        {showCar || showEquipment ? (
+          <>
         <Text variant="heading3" style={styles.sectionTitle}>
           Vehicle & equipment
         </Text>
+            {showCar ? (
         <TextField
           label="Car"
           value={vehicle}
@@ -559,6 +627,9 @@ export default function EditProfileScreen() {
           placeholder="e.g. Tesla Model Y"
           hint="Unlocks Car Fit recommendations"
         />
+            ) : null}
+            {showEquipment ? (
+              <>
         <TextField
           label="Pushchair make and model"
           value={pushchair}
@@ -573,6 +644,13 @@ export default function EditProfileScreen() {
           placeholder="Optional"
         />
 
+              </>
+            ) : null}
+          </>
+        ) : null}
+
+        {showMemberships ? (
+          <>
         <Text variant="heading3" style={styles.sectionTitle}>
           Memberships
         </Text>
@@ -583,6 +661,8 @@ export default function EditProfileScreen() {
           placeholder="e.g. National Trust, Merlin"
           hint="Separate multiple with commas"
         />
+          </>
+        ) : null}
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>

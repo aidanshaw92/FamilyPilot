@@ -27,10 +27,9 @@ import { withCompletion } from '@/src/utils/profile-defaults';
 import { compareTravelMinutes } from '@/src/utils/travel-time';
 import { BetweenHome } from '@/src/services/places/between-client';
 import { buildHomeRecommendations, personaliseVenue, personaliseVenues } from '@/src/utils/personalise-venues';
-import { fetchParentObservations } from '@/src/services/planning/parent-observation-fetch';
-import { fetchLiveWeather, fetchLiveWeatherSafe } from '@/src/services/context/live-context';
-import { withinMs } from '@/src/utils/soft-deadline';
-import { isVisitableVenue } from '@/src/utils/opening-today';
+import type { ParentObservations } from '@/src/services/matching/parent-observations';
+import { fetchLiveWeather } from '@/src/services/context/live-context';
+import { isListableVenue } from '@/src/utils/opening-today';
 import { getFocusedRecommendations } from '@/src/services/recommendation/focused-recommendations';
 import { parseDayRequest, parseDayRequestMock } from '@/src/services/recommendation/parse-day-request-client';
 import { DayRequest } from '@/src/types/day-request';
@@ -43,11 +42,7 @@ import { distanceKm } from '@/src/services/places/geo-utils';
 import { resolveUkLocation } from '@/src/services/location/location-client';
 import { withDerivedAges } from '@/src/utils/child-age';
 
-/** How long the venue page will wait for today's weather before it goes ahead without it. */
-const VENUE_WEATHER_WAIT_MS = 1500;
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-export { HOME_WEATHER_WAIT_MS } from '@/src/services/places/home-list';
 
 // The one read path for hooks: ages are derived from dates of birth here, so every consumer behind
 // `useFamilyProfile` sees today's age whatever was last stored.
@@ -105,13 +100,10 @@ export const venueService = {
     if (fromCentralLondonKm > 45) {
       throw new Error('Explore currently searches London and nearby areas. Try a London town or postcode.');
     }
-    const [venues, weather] = await Promise.all([
-      getPlacesRepository().searchAround(profile, location.latitude, location.longitude, 8),
-      fetchLiveWeatherSafe(profile),
-    ]);
+    const venues = await getPlacesRepository().searchAround(profile, location.latitude, location.longitude, 8);
     return venues
-      .filter((venue) => isVisitableVenue(venue))
-      .map((venue) => personaliseVenue(venue, profile, weather))
+      .filter((venue) => isListableVenue(venue))
+      .map((venue) => personaliseVenue(venue, profile))
       .sort((a, b) => b.familyScore.score - a.familyScore.score || compareTravelMinutes(a.driveMinutes, b.driveMinutes));
   },
 
@@ -122,25 +114,30 @@ export const venueService = {
    */
   async getBetween(a: BetweenHome, b: BetweenHome): Promise<Venue[]> {
     const profile = getProfile();
-    const [venues, weather] = await Promise.all([
-      getPlacesRepository().searchBetween(profile, a, b),
-      fetchLiveWeatherSafe(profile),
-    ]);
-    return venues.filter((venue) => isVisitableVenue(venue)).map((venue) => personaliseVenue(venue, profile, weather));
+    const venues = await getPlacesRepository().searchBetween(profile, a, b);
+    return venues.filter((venue) => isListableVenue(venue)).map((venue) => personaliseVenue(venue, profile));
   },
 
+  /**
+   * The venue's detail, personalised on the venue's own facts and nothing else. It waits for the detail request alone:
+   * today's weather is not an input to Family Fit (it is a separate condition on the page), and parent reports arrive
+   * afterwards through `withParentObservations`, so neither can hold the page back.
+   */
   async getById(id: string): Promise<VenueDetail | null> {
     const profile = getProfile();
-    const [detail, weather, parentObservations] = await Promise.all([
-      getPlacesRepository().getVenueDetail(id, profile),
-      // Today's weather is one soft line on the venue page. A weather read that hangs used to hold the whole screen for as
-      // long as it took (measured: 9 s behind a 150 ms detail request); it now gets a short grace and the page goes ahead
-      // without it.
-      withinMs(fetchLiveWeatherSafe(profile), VENUE_WEATHER_WAIT_MS, null),
-      fetchParentObservations(id),
-    ]);
+    const detail = await getPlacesRepository().getVenueDetail(id, profile);
     if (!detail) return null;
-    return { ...detail, ...personaliseVenue(detail, profile, weather, parentObservations) };
+    return { ...detail, ...personaliseVenue(detail, profile) };
+  },
+
+  /**
+   * The same detail, with parent reports taken into account once they have arrived. Pure and synchronous: a withdrawn
+   * fact moves from "why it suits" to "to check" and a labelled parent-reported line is added, the official claim itself
+   * is never touched. Applied to the detail the page already shows, so the page never waits for it.
+   */
+  withParentObservations(detail: VenueDetail, observations: ParentObservations | undefined): VenueDetail {
+    if (!observations || Object.keys(observations).length === 0) return detail;
+    return { ...detail, ...personaliseVenue(detail, getProfile(), observations) };
   },
 };
 
@@ -241,7 +238,7 @@ export const restaurantService = {
     await delay(250);
     const profile = getProfile();
     const all = getAllRestaurants(profile);
-    return filterRestaurants(all, advancedIds, maxDrive, profile.maxDriveMinutes, budget);
+    return filterRestaurants(all, advancedIds, maxDrive, budget);
   },
 };
 

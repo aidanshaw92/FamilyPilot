@@ -16,7 +16,6 @@ import {
   FILTER_SHEET_OPTIONS,
   FOOD_SHEET_OPTIONS,
 } from '@/src/utils/filter-venues';
-import { useFamilyProfile } from '@/src/hooks/use-queries';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -48,11 +47,15 @@ interface FilterSheetProps {
    * Travel time and budget are Explore's "for this search only" controls and would be confusing there.
    */
   scope?: 'explore' | 'home';
+  /**
+   * False when almost no place has a price on record: the Budget group and the "Free" filter are then left out, because they
+   * could only return an empty list (see `hasPriceCoverage`). Defaults to true.
+   */
+  priceFiltersAvailable?: boolean;
 }
 
-export function FilterSheet({ visible, onClose, scope = 'explore' }: FilterSheetProps) {
+export function FilterSheet({ visible, onClose, scope = 'explore', priceFiltersAvailable = true }: FilterSheetProps) {
   const insets = useSafeAreaInsets();
-  const { data: profile } = useFamilyProfile();
   const {
     categoryFilter,
     exploreMaxDrive,
@@ -79,7 +82,6 @@ export function FilterSheet({ visible, onClose, scope = 'explore' }: FilterSheet
   }, [visible]);
 
   const isRestaurantMode = scope === 'explore' && categoryFilter === 'restaurants';
-  const profileDrive = profile?.maxDriveMinutes ?? 30;
 
   const handleReset = () => {
     if (scope === 'home') {
@@ -93,6 +95,9 @@ export function FilterSheet({ visible, onClose, scope = 'explore' }: FilterSheet
     }
   };
 
+  // Restaurants carry their own prices; for places the filters need prices to exist (see `hasPriceCoverage`).
+  const showPrices = priceFiltersAvailable || isRestaurantMode;
+
   const facilityOptions = isRestaurantMode
     ? [
         { id: 'facilities', label: 'Family facilities', options: RESTAURANT_FILTER_OPTIONS.slice(0, 9) },
@@ -103,7 +108,7 @@ export function FilterSheet({ visible, onClose, scope = 'explore' }: FilterSheet
         },
       ]
     : [
-        { id: 'general', label: 'More filters', options: FILTER_SHEET_OPTIONS },
+        { id: 'general', label: 'More filters', options: showPrices ? FILTER_SHEET_OPTIONS : FILTER_SHEET_OPTIONS.filter((o) => o.id !== 'free') },
         { id: 'food', label: 'Food nearby', options: FOOD_SHEET_OPTIONS },
       ];
 
@@ -134,7 +139,7 @@ export function FilterSheet({ visible, onClose, scope = 'explore' }: FilterSheet
                 Travel time from home
               </Text>
               <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint}>
-                Your profile default is {profileDrive} minutes. Change here for this search only
+                Every distance is shown until you choose one here. It applies to this search only
               </Text>
               <View style={styles.chipWrap}>
                 {DRIVE_FILTER_OPTIONS.map((option) => (
@@ -147,21 +152,29 @@ export function FilterSheet({ visible, onClose, scope = 'explore' }: FilterSheet
                 ))}
               </View>
 
-              <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
-                Budget
-              </Text>
-              <View style={styles.chipWrap}>
-                {BUDGET_FILTER_OPTIONS.filter((option) =>
-                  isRestaurantMode ? option.id !== 'free' : true,
-                ).map((option) => (
-                  <Chip
-                    key={option.id}
-                    label={option.label}
-                    active={exploreBudget === option.id}
-                    onPress={() => setExploreBudget(option.id)}
-                  />
-                ))}
-              </View>
+              {showPrices ? (
+                <>
+                  <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+                    Budget
+                  </Text>
+                  <View style={styles.chipWrap}>
+                    {BUDGET_FILTER_OPTIONS.filter((option) =>
+                      isRestaurantMode ? option.id !== 'free' : true,
+                    ).map((option) => (
+                      <Chip
+                        key={option.id}
+                        label={option.label}
+                        active={exploreBudget === option.id}
+                        onPress={() => setExploreBudget(option.id)}
+                      />
+                    ))}
+                  </View>
+                </>
+              ) : (
+                <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint} testID="price-filters-note">
+                  Price filters appear once prices are confirmed for more places.
+                </Text>
+              )}
             </>
           ) : null}
 

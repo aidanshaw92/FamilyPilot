@@ -79,4 +79,21 @@ async function venueFeedbackBatch(claimsById) {
  }
  return out;
 }
-module.exports={venueFeedback,venueFeedbackBatch,householdsOf};
+/**
+ * Whether a venue has ANY active parent report in the window parent observations are read from (90 days). One head-only
+ * count, no rows. It exists so Venue Detail can tell, on its first paint, whether a parent report might still correct what
+ * it is about to show (see `hasRecentParentReports` in api/places/detail.js). `null` means "could not tell" (no database, an
+ * error or a slow read), never "no".
+ */
+async function venueHasRecentReports(id,{timeoutMs=400}={}) {
+ const admin=getSupabaseAdmin();
+ if(!admin)return null;
+ const since=new Date(Date.now()-90*86400000).toISOString().slice(0,10);
+ try{
+  const read=admin.from('venue_visit_reports').select('id',{count:'exact',head:true}).eq('familypilot_place_id',id).eq('status','active').gte('visit_date',since);
+  const result=await Promise.race([read,new Promise(resolve=>setTimeout(()=>resolve(null),timeoutMs))]);
+  if(!result||result.error||typeof result.count!=='number')return null;
+  return result.count>0;
+ }catch{return null;}
+}
+module.exports={venueFeedback,venueFeedbackBatch,householdsOf,venueHasRecentReports};

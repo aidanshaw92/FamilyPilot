@@ -29,11 +29,11 @@ export interface BetweenHome {
   latitude: number;
   longitude: number;
   /** The most this family would drive, in minutes. Narrows the corridor; the app still checks each journey itself. */
-  maxDriveMinutes?: number;
+  maxDriveMinutes?: number | null;
 }
 
 /** The straight-line km a family's drive limit can reach, generously (the app's own estimate decides, this only narrows). */
-const kmForMinutes = (minutes: number | undefined): string | null =>
+const kmForMinutes = (minutes: number | null | undefined): string | null =>
   minutes && Number.isFinite(minutes) && minutes > 0 ? String(Math.round(minutes * 1.2)) : null;
 
 /**

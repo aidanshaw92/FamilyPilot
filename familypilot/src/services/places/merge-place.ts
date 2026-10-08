@@ -111,7 +111,6 @@ export function mergePlaceToVenue(
         ageSuitability: 0,
         accessibility: 0,
         distance: 0,
-        weatherFit: 0,
         budgetFit: 0,
         facilitiesMatch: 0,
       },
