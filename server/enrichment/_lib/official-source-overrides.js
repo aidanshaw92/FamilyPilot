@@ -49,6 +49,35 @@ const OVERRIDES = {
 };
 
 /**
+ * Further roots that are the venue's OWN pages, for venues whose visitor pages live on a second host or in a section the
+ * stored website does not reach. Used only to decide whose page a stored or fetched page is (source-identity.js
+ * `ownRoots`); nothing is fetched or published from this table, and every fact still passes the same extraction and
+ * approval rules.
+ *
+ * To add one: a root that publishes only about THIS venue, checked against the catalogue so that no other venue's
+ * website is at or beneath it, with the date and the stored page that showed it.
+ */
+const OFFICIAL_ROOTS = {
+  // Crystal Palace Park. Stored website: the Crystal Palace Park Trust (crystalpalaceparktrust.org). The park's visitor
+  // pages are on crystalpalacepark.org.uk (stored 1 Oct 2026: /visit-dinosaur-playground-dnc9, "Nearby facilities ...
+  // Main public toilets, Changing Places toilet"). No other catalogue venue uses that host. Reviewed 8 Oct 2026.
+  'fp-google-ChIJ94vQ-0IBdkgRxsGErkV2hZo': ['https://www.crystalpalacepark.org.uk/'],
+  // Primrose Hill. Stored website: a page in The Regent's Park's "things to see" section. The Royal Parks publish Primrose
+  // Hill's own page beneath The Regent's Park's visit section (stored: "Primrose Hill playground ... improvement works are
+  // now complete"), which made it The Regent's Park's page. This root is deeper than The Regent's Park's, so the more
+  // specific site wins. Reviewed 8 Oct 2026.
+  'fp-google-ChIJ2yb0sesadkgRIQOyE6qMxLU': ['https://www.royalparks.org.uk/visit/parks/regents-park-primrose-hill/primrose-hill'],
+  // Dulwich Park. Stored website: one page (the map) of dulwichparkfriends.org.uk, the Friends of Dulwich Park's site,
+  // which is about this park only; its travel page ("Parking is available inside the College Road entrance") sat outside
+  // the map page's path. No other catalogue venue uses the host. Reviewed 8 Oct 2026.
+  'fp-google-ChIJbSe-4PoDdkgReFaqbED1N9o': ['https://dulwichparkfriends.org.uk/'],
+};
+
+function officialRootsFor(familypilotPlaceId) {
+  return OFFICIAL_ROOTS[familypilotPlaceId] ?? [];
+}
+
+/**
  * Websites that are never a venue's visitor page. Reading them spends fetch attempts on pages that cannot carry a
  * family fact, so discovery treats them as no official source and the venue is routed to the verification queue.
  */
@@ -69,4 +98,4 @@ function hasOfficialSourceOverride(familypilotPlaceId) {
   return Boolean(OVERRIDES[familypilotPlaceId]);
 }
 
-module.exports = { OVERRIDES, officialWebsiteFor, hasOfficialSourceOverride, isNonVisitorWebsite };
+module.exports = { OVERRIDES, OFFICIAL_ROOTS, officialRootsFor, officialWebsiteFor, hasOfficialSourceOverride, isNonVisitorWebsite };
