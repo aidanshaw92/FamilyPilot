@@ -1,5 +1,12 @@
 module.exports = {
   id: 'fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4', name: 'Battersea Park', category: 'park', site: 'wandsworth.gov.uk',
+  // Sources that could NOT be read, kept as a fact about the venue's evidence rather than forgotten. A refusal is never retried and
+  // never worked around; the venue is marked as having no readable operator source until an alternative permitted source is read.
+  sources: [
+    { host: 'enablelc.org', role: 'operator', status: 'refused', http: 403, observedOn: '2026-10-08', retry: 'never automatically',
+      note: 'The park operator\'s site answered HTTP 403 to the bounded reader.',
+      alternatives: ['The council\'s own pages (read)', 'OpenStreetMap features for the park (toilets, cafés, playgrounds), read on a runner under its open licence', 'A person who has visited, through the parent-observation path'] },
+  ],
   facts: [
     { sec: 'activities', key: 'playground', kind: 'provision', ages: [48, 180], label: 'Playground for children 4 to 14',
       t: 'A playground for 4 to 14 year olds (swings, slides, exercise stations, trapeze bars, an activity rocker). The page is titled "toddlers and juniors" but gives 4 to 14.',

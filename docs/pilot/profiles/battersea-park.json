@@ -10,6 +10,22 @@
     "unknown": 6,
     "hypothesis": 2
   },
+  "sources": [
+    {
+      "host": "enablelc.org",
+      "role": "operator",
+      "status": "refused",
+      "http": 403,
+      "observedOn": "2026-10-08",
+      "retry": "never automatically",
+      "note": "The park operator's site answered HTTP 403 to the bounded reader.",
+      "alternatives": [
+        "The council's own pages (read)",
+        "OpenStreetMap features for the park (toilets, cafés, playgrounds), read on a runner under its open licence",
+        "A person who has visited, through the parent-observation path"
+      ]
+    }
+  ],
   "facts": [
     {
       "sec": "activities",

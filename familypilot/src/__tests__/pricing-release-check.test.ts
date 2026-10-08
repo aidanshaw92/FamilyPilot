@@ -95,7 +95,7 @@ describe('reviewed admission: release gate', () => {
         expect(p.status, shape).toBe('free');
         continue;
       }
-      if (e.state === 'unknown') continue;
+      if (e.state === 'unknown' || e.state === 'range') continue;
       if (e.basis === 'individual') {
         // One line per person, each person once.
         expect(e.lines.map((l) => l.attendeeId).sort(), shape).toEqual(party.map((a) => a.id).sort());

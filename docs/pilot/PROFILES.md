@@ -71,6 +71,8 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 ## Battersea Park
 
+> **Source unavailable.** enablelc.org (operator): HTTP 403, refused, observed 2026-10-08; The park operator's site answered HTTP 403 to the bounded reader. Not retried (never automatically). Alternatives that are permitted: The council's own pages (read); OpenStreetMap features for the park (toilets, cafés, playgrounds), read on a runner under its open licence; A person who has visited, through the parent-observation path.
+
 2 verified · 4 proposed · 6 unknown · 2 hypothesis. Level if every proposal is approved: **Discoverable**.
 
 **What children can do**
@@ -173,6 +175,8 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 
 ## Gunnersbury Park
+
+> **Source unavailable.** visitgunnersbury.org (own site): HTTP 404, dead, observed 2026-10-08; The link from the venue's own site to its park page leads to a page that no longer exists. Not retried (never automatically). Alternatives that are permitted: The museum's accessibility and visit pages (read); A person who has visited.
 
 7 verified · 7 proposed · 3 unknown · 0 hypothesis. Level if every proposal is approved: **Recommendation-ready**.
 

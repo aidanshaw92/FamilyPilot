@@ -27,6 +27,7 @@ console.log('');
 for (const p of profiles.sort((a, b) => a.name.localeCompare(b.name))) {
   const r = readiness.find((x) => x.name === p.name);
   console.log(`\n## ${p.name}\n`);
+  for (const s of p.sources ?? []) console.log(`> **Source unavailable.** ${s.host} (${s.role}): HTTP ${s.http}, ${s.status}, observed ${s.observedOn}; ${s.note} Not retried (${s.retry}). Alternatives that are permitted: ${s.alternatives.join('; ')}.\n`);
   console.log(`${p.counts.verified ?? 0} verified · ${p.counts.review ?? 0} proposed · ${p.counts.unknown ?? 0} unknown · ${p.counts.hypothesis ?? 0} hypothesis. Level if every proposal is approved: **${LEVEL[r.afterApproved]}**.\n`);
   for (const sec of Object.keys(TITLES)) {
     const facts = p.facts.filter((f) => f.sec === sec);

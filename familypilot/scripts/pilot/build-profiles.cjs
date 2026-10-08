@@ -83,7 +83,7 @@ for (const file of files) {
     built.push(out);
   }
   const counts = built.reduce((m, f) => ((m[f.status] = (m[f.status] ?? 0) + 1), m), {});
-  const profile = { schemaVersion: 1, id: src.id, name: src.name, category: src.category, builtOn: today, counts, facts: built };
+  const profile = { schemaVersion: 1, id: src.id, name: src.name, category: src.category, builtOn: today, counts, ...(src.sources ? { sources: src.sources } : {}), facts: built };
   fs.writeFileSync(path.join(outDir, file.replace(/\.cjs$/, '.json')), JSON.stringify(profile, null, 2) + '\n');
   summary.push({ name: src.name, ...counts });
 }

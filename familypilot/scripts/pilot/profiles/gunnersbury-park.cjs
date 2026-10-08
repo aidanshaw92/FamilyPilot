@@ -1,5 +1,10 @@
 module.exports = {
   id: 'fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY', name: 'Gunnersbury Park', category: 'park', site: 'visitgunnersbury.org',
+  sources: [
+    { host: 'visitgunnersbury.org', role: 'own site', status: 'dead', http: 404, observedOn: '2026-10-08', retry: 'never automatically',
+      note: 'The link from the venue\'s own site to its park page leads to a page that no longer exists.',
+      alternatives: ['The museum\'s accessibility and visit pages (read)', 'A person who has visited'] },
+  ],
   facts: [
     { sec: 'activities', key: 'park-museum-lake', kind: 'provision', label: 'Park, museum and boating lake',
       t: 'A park with a museum and a boating lake, and events for children and families. No age is given.', u: '/',
