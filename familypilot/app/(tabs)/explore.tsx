@@ -20,7 +20,7 @@ import { venueService } from '@/src/services/api';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { RestaurantDetail, Venue } from '@/src/types';
 import { buildExploreEditorialSections } from '@/src/utils/explore-editorial-sections';
-import { EXPLORE_CATEGORIES, exploreCategoriesFor, filterVenues } from '@/src/utils/filter-venues';
+import { EXPLORE_CATEGORIES, exploreCategoriesFor, filterVenues, hasPriceCoverage } from '@/src/utils/filter-venues';
 import { FOOD_FILTER_IDS, foodIsUnknown } from '@/src/utils/food-nearby';
 import { UncheckedFoodGroup } from '@/src/components/explore/UncheckedFoodGroup';
 import { SAVED_EXAMPLES_NOTICE, showingSavedExamples } from '@/src/utils/saved-examples-notice';
@@ -436,7 +436,7 @@ export default function ExploreScreen() {
       )}
 
       <ScreenArt art={EXPLORE_ART_FRONT} from={1500} to={1844} anchor="bottom" />
-      <FilterSheet visible={filterSheetOpen && isFocused} onClose={() => setFilterSheetOpen(false)} />
+      <FilterSheet visible={filterSheetOpen && isFocused} onClose={() => setFilterSheetOpen(false)} priceFiltersAvailable={hasPriceCoverage(sourceVenues ?? [])} />
     </ScreenContainer>
   );
 }

@@ -44,7 +44,7 @@ import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useHomeVenues } from '@/src/hooks/use-queries';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { FilterSheet } from '@/src/components/explore/FilterSheet';
-import { applyAdvancedFilters } from '@/src/utils/filter-venues';
+import { applyAdvancedFilters, hasPriceCoverage } from '@/src/utils/filter-venues';
 import { FOOD_FILTER_IDS, foodIsUnknown } from '@/src/utils/food-nearby';
 import { Venue } from '@/src/types';
 import { seedVenueDetail } from '@/src/services/venue-detail-seed';
@@ -360,7 +360,7 @@ export default function HomeScreen() {
           </View>
         ) : null}
       </ScrollView>
-      <FilterSheet visible={filterSheetOpen && isFocused} onClose={() => setFilterSheetOpen(false)} scope="home" />
+      <FilterSheet visible={filterSheetOpen && isFocused} onClose={() => setFilterSheetOpen(false)} scope="home" priceFiltersAvailable={hasPriceCoverage(venues ?? [])} />
     </View>
   );
 }
