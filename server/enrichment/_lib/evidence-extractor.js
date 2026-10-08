@@ -18,8 +18,12 @@ const { isBotChallengeText } = require('./html-text-extractor');
  *       navigation-chrome guard
  *   v4  parking stated "for disabled visitors" and "accessible car parking" headings are restricted parking, not
  *       general parking (Tate Modern, Tate Britain)
+ *   v5  a road's rule ("Parking is not permitted on Denham Court Drive") is not the venue's parking; parking for another
+ *       facility's users ("VeloPark Venue car parking ... for facility users") is not the venue's; on-street and nearby
+ *       pay-and-display is not the venue's charge; "There are two carparks" is the venue's own car park (Colne Valley
+ *       Regional Park and Queen Elizabeth Olympic Park, both serving a wrong parking fact until this version)
  */
-const EXTRACTOR_VERSION = 'official-source-rules-v4';
+const EXTRACTOR_VERSION = 'official-source-rules-v5';
 
 /**
  * What makes a sentence say this venue has a playground.
@@ -438,6 +442,9 @@ function isOffSiteCafe(sentence) {
 const OWN_CAR_PARK_PATTERNS = [
   /\byou\s+can\s+park\s+(?:in|at)\s+(?:the|our)\b[^.!?]{0,30}\bcar\s+park\b/i,
   /\b(?:we\s+have|there\s+is|there's)\s+(?:a|an|our)\s+(?:[\w'\u2018\u2019-]+\s+){0,4}car\s+park\b/i,
+  // "There are two carparks run by Bucks County Council." (Colne Valley Regional Park's visitor centre page, under
+  // "Parking"): the venue's own car parks, written as one word and counted.
+  /\b(?:we\s+have|there\s+are)\s+(?:two|three|four|several|\d+)\s+(?:[\w'\u2018\u2019-]+\s+){0,2}car\s?parks\b/i,
   /\bon[\s-]?site\s+car\s+park\b/i,
   // "a car park within Beckenham Place Park"; never "a car park within suitable walking distance" (SEA LIFE London).
   /\bcar\s+park\s+within\s+(?:the\s+(?:park|grounds|site|gardens|estate|farm)\b|[A-Z])/,
@@ -771,9 +778,25 @@ function isOnlyRestrictedParking(sentence, yesPatterns) {
  * at the top of Streatham Common South". The Saatchi Gallery's page has "(No parking Mon-Sat 7am to 7pm ...) Royal
  * Hospital Road". A negative read off a road's parking rules is as wrong as a positive read off somebody else's car
  * park, so it leaves the field unknown instead.
+ *
+ * Colne Valley Regional Park served `parking = no` from "Parking is not permitted on Denham Court Drive" -- the road to
+ * the visitor centre -- two sentences after "There are two carparks run by Bucks County Council". The road is named, so
+ * a prohibition ON a named road (never AT a place: "car parking is not allowed at Leake Street Arches" is the Graffiti
+ * Tunnel's own rule and stays a no) is the road's rule.
  */
+const ROAD_ONLY_RESTRICTION =
+  /\b(?:not\s+(?:permitted|allowed)|prohibited|forbidden)\s+(?:on|along|in)\s+(?:the\s+)?(?:[A-Z][\w'\u2019-]*\s+){1,3}(?:Road|Drive|Street|Lane|Avenue|Way|Close|Crescent|Terrace|Rise|Hill|Gardens|Grove|Place)\b|\b(?:on|along|in)\s+(?:the\s+)?(?:surrounding|nearby|local|residential|neighbouring)\s+(?:roads|streets)\b|\bon[\s-]street\b/;
+/**
+ * A sentence that ALSO speaks about the venue itself keeps its negative: "There are no parking facilities at Tate Modern
+ * or in the surrounding streets" (Tate Modern) and "No parking directly outside the farm, restricted parking in
+ * surrounding streets" (Kentish Town City Farm) are each the venue's own true "no", which the street wording alone would
+ * drop.
+ */
+const VENUE_LEVEL_PARKING_NEGATIVE = /\bno\s+(?:car\s+)?parking(?:\s+facilities)?\s+(?:directly\s+)?(?:at\s+(?!any\b)|outside\s+the\b|on[\s-]?site\b|in\s+the\s+grounds\b)|\bno\s+on[\s-]?site\s+parking\b/i;
+
 function isStreetParkingRestriction(sentence) {
-  return /\b(?:double|single)\s+yellow\b|\byellow\s+lines?\b|\bcontrolled\s+parking\b|\bparking\s+(?:zones?|permits?|restrictions?)\b|\bCPZ\b|\bno\s+parking\s+(?:at\s+any\s+time|mon|tue|wed|thu|fri|sat|sun|between|\d)|\b(?:High\s+Street|Road|Street|Lane|Avenue)\s+has\s+no\s+parking\b|\bno\s+loading\b/i.test(String(sentence ?? ''));
+  const text = String(sentence ?? '');
+  return (ROAD_ONLY_RESTRICTION.test(text) && !VENUE_LEVEL_PARKING_NEGATIVE.test(text)) || /\b(?:double|single)\s+yellow\b|\byellow\s+lines?\b|\bcontrolled\s+parking\b|\bparking\s+(?:zones?|permits?|restrictions?)\b|\bCPZ\b|\bno\s+parking\s+(?:at\s+any\s+time|mon|tue|wed|thu|fri|sat|sun|between|\d)|\b(?:High\s+Street|Road|Street|Lane|Avenue)\s+has\s+no\s+parking\b|\bno\s+loading\b/i.test(text);
 }
 
 /**
@@ -784,6 +807,19 @@ function isStreetParkingRestriction(sentence) {
  */
 const PARKING_FOR_DISABLED =
   /\b(?:parking\s+)?(?:spaces?|bays?|places?)\s+(?:are\s+)?(?:provided\s+|reserved\s+|available\s+|set\s+aside\s+)?for\s+(?:disabled|blue\s+badge|wheelchair)\b|\bfor\s+(?:disabled|blue\s+badge)\s+(?:visitors|drivers|guests|customers|users|people|badge\s+holders|holders)\b/i;
+
+/**
+ * Parking that belongs to another facility's users, not to the venue's visitors.
+ *
+ * Queen Elizabeth Olympic Park served `parking = yes` from "Lee Valley VeloPark Venue car parking is available for up to
+ * 3 hours for facility users" -- a venue inside the park, whose car park charges up to £49.50 to anyone "using the car
+ * parks without visiting a venue". The same page says "There is no general parking at London Stadium". Parking stated
+ * for a facility's, club's or hotel's users, or for members, residents or staff only, says nothing about whether a
+ * family visiting the park can park.
+ */
+function isParkingForOthers(sentence) {
+  return /\bfor\s+(?:facility|venue|centre|center|club|gym|hotel|leisure\s+centre)\s+(?:users|members|guests|customers)\b|\b(?:residents?|members|staff|permit\s+holders|season\s+ticket\s+holders)\s+only\b|\bfor\s+(?:residents|staff|hotel\s+guests)\b/i.test(String(sentence ?? ''));
+}
 
 function hasRestrictedParking(sentence) {
   return (
@@ -1063,6 +1099,10 @@ function matchField(sentence, patterns, fieldId) {
     if (!re.test(sentence)) continue;
     // A road's parking rules are not the venue's parking.
     if ((fieldId === 'parking' || fieldId === 'freeParking') && isStreetParkingRestriction(sentence)) continue;
+    // Somebody else's charge: "The nearby Olympic Park Avenue has on-street pay and display spaces" (Queen Elizabeth
+    // Olympic Park, served as free parking = no). Only for the charge; a venue's own "no parking" beside a pointer to
+    // car parks nearby ("There is no parking onsite but there are numerous car parks near", Madame Tussauds) is a no.
+    if (fieldId === 'freeParking' && hasOffSiteParking(sentence)) continue;
     return { value: 'no', confidence: 'high' };
   }
   for (const re of patterns.yes) {
@@ -1101,6 +1141,8 @@ function matchField(sentence, patterns, fieldId) {
     if (fieldId === 'parking' || fieldId === 'freeParking') {
       // "Parking confirmed on site" must not be said about a car park down the road,
       if (hasOffSiteParking(sentence)) continue;
+      // or about a car park kept for another facility's users,
+      if (isParkingForOthers(sentence)) continue;
       // about a buggy park, a bike rack or a coach bay,
       if (isNonVehicleParkingOnly(sentence, patterns.yes)) continue;
       // or about the bike parking on a page's cycling directions.
@@ -1526,6 +1568,7 @@ function buildEvidenceBundle(venueId, sources, sourceStatus, diagnostics = null)
 }
 
 module.exports = {
+  isParkingForOthers,
   EXTRACTOR_VERSION,
   isNavigationChrome,
   isEvidenceBearingSource,
