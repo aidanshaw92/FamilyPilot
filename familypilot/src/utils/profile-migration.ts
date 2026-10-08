@@ -1,4 +1,4 @@
-import { ChildMobility, FacilityType, FamilyMember, FamilyProfile, FamilyRoutine } from '@/src/types';
+import { ChildMobility, FacilityType, FamilyMember, FamilyProfile, FamilyRoutine, UnconfirmedPreferences } from '@/src/types';
 
 import { MAX_CHILD_YEARS, parseIsoDate } from './child-age';
 import { withCompletion } from './profile-defaults';
@@ -20,6 +20,23 @@ import { withCompletion } from './profile-defaults';
 const BUDGET_TIERS: NonNullable<FamilyProfile['budgetTier']>[] = ['budget', 'moderate', 'premium'];
 const MOBILITY: ChildMobility[] = ['walks', 'buggy', 'carrier', 'mobility-aid'];
 const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function migrateUnconfirmed(raw: unknown): { unconfirmedPreferences?: UnconfirmedPreferences } {
+  if (!isRecord(raw)) return {};
+  const drive = finite(raw.maxDriveMinutes);
+  const budget = BUDGET_TIERS.includes(raw.budgetTier as NonNullable<FamilyProfile['budgetTier']>)
+    ? (raw.budgetTier as NonNullable<FamilyProfile['budgetTier']>)
+    : undefined;
+  if ((drive === null || drive <= 0) && !budget) return {};
+  return {
+    unconfirmedPreferences: {
+      reason: 'legacy-default-or-choice',
+      recordedAt: text(raw.recordedAt, new Date(0).toISOString()),
+      ...(drive !== null && drive > 0 ? { maxDriveMinutes: Math.round(drive) } : {}),
+      ...(budget ? { budgetTier: budget } : {}),
+    },
+  };
+}
 
 export interface MigrationResult {
   profile: FamilyProfile;
@@ -144,6 +161,9 @@ export function migrateLegacyProfile(raw: unknown): MigrationResult {
       ? { budgetTier: source.budgetTier as NonNullable<FamilyProfile['budgetTier']> }
       : {}),
     ...(drive !== null && drive > 0 ? { maxDriveMinutes: Math.round(drive) } : {}),
+    // Values an earlier migration set aside for the parent to confirm. Carried through every later migration, or they
+    // would be deleted by the next one (utils/preferences.ts).
+    ...migrateUnconfirmed(source.unconfirmedPreferences),
     completionPercent: 0,
     vehicle: optionalText(source.vehicle),
     pushchair: optionalText(source.pushchair),

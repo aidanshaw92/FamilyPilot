@@ -85,7 +85,7 @@ describe('what a connection shares', () => {
   it('sends only the consented allow-list, with the location rounded on the device', () => {
     const snap = snapshotForSharing(profile, 'partner');
     expect(Object.keys(snap).sort()).toEqual(
-      ['ages', 'area', 'budgetTier', 'label', 'latitude', 'longitude', 'maxDriveMinutes', 'pushchair', 'relationship', 'required', 'shareAvailability'].sort(),
+      ['ages', 'area', 'budgetTier', 'label', 'latitude', 'longitude', 'maxDriveMinutes', 'preferencesStated', 'pushchair', 'relationship', 'required', 'shareAvailability'].sort(),
     );
     expect(snap.latitude).toBe(51.54);
     expect(snap.longitude).toBe(-0.1);

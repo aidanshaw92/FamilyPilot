@@ -336,6 +336,126 @@ for (const width of [360, 430]) {
   await ctx.close();
 }
 
+// A profile saved by the app that used to fill in 30 minutes and "moderate": the two values are set aside, never applied
+// and never deleted, and the parent is asked once in Edit profile.
+{
+  console.log('legacy defaults question');
+  const seed = (extra) => ({
+    state: {
+      profile: {
+        id: 'legacy-defaults', parentName: 'Aidan', homeLocation: 'Bushey, Hertfordshire', homeLatitude: 51.643, homeLongitude: -0.36,
+        completionPercent: 80, members: [
+          { id: 'parent-1', name: 'Aidan', role: 'parent', dateOfBirth: '1990-01-01', age: 35 },
+          { id: 'k1', name: 'Rosie', role: 'child', dateOfBirth: '2020-01-01', dobKnown: true, age: 6 },
+        ], routines: [], mustHaveFacilities: [], ...extra,
+      },
+      hasCompletedOnboarding: true, hasSeenSplash: true, profileRevision: 1,
+    },
+    version: 1,
+  });
+  const stored = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('familypilot-family-v1')).state.profile);
+  const openEdit = async (page, extra) => {
+    // Seed ONCE per context: a second addInitScript would overwrite what the previous save wrote.
+    await page.goto(`${BASE}/profile/edit`, { waitUntil: 'domcontentloaded' });
+    await settle(page, 2200);
+  };
+  const run = async (label, extra, act, assert) => {
+    const { ctx, page } = await newPage(390);
+    await page.addInitScript(([key, blob]) => { if (!localStorage.getItem(key)) localStorage.setItem(key, blob); }, ['familypilot-family-v1', JSON.stringify(seed(extra))]);
+    try {
+      await openEdit(page);
+      await act(page);
+      await page.getByRole('button', { name: /^save changes/i }).click();
+      await settle(page, 2500);
+      await assert(await stored(page));
+      await openEdit(page);
+      return page;
+    } catch (error) {
+      failures.push(`legacy defaults ${label}: threw ${error.message.slice(0, 160)}`);
+      console.log(`  FAIL threw ${error.message.slice(0, 160)}`);
+      return null;
+    } finally {
+      // closed by the caller's last check below
+      globalThis.__ctx = ctx;
+    }
+  };
+
+  // A. Saved without answering: both values still set aside, nothing applied, the question is still there.
+  {
+    const page = await run('unanswered', { maxDriveMinutes: 30, budgetTier: 'moderate', vehicle: 'Golf' }, async (pg) => {
+      const text = await pg.evaluate(() => document.body.innerText);
+      check(/An earlier version of the app set this to 30 minutes/.test(text), 'defaults A: the journey question is shown, naming the value');
+      check(/An earlier version of the app set this to “Moderate”/.test(text), 'defaults A: the budget question is shown, naming the value');
+      check(/Nothing is limited meanwhile/.test(text), 'defaults A: it says nothing is limited meanwhile');
+    }, async (profile) => {
+      check(profile.maxDriveMinutes == null && profile.budgetTier == null, 'defaults A: neither is stored as a limit or budget');
+      check(profile.unconfirmedPreferences?.maxDriveMinutes === 30 && profile.unconfirmedPreferences?.budgetTier === 'moderate', 'defaults A: both are still kept, unanswered');
+      check(profile.vehicle === 'Golf', 'defaults A: the rest of the profile is untouched');
+    });
+    if (page) {
+      check(/An earlier version of the app set this to 30 minutes/.test(await page.evaluate(() => document.body.innerText)), 'defaults A: still asked next time');
+      await globalThis.__ctx.close();
+    }
+  }
+
+  // B. Kept: both become choices and nothing is left to ask.
+  {
+    const page = await run('kept', { maxDriveMinutes: 30, budgetTier: 'moderate' }, async (pg) => {
+      await pg.getByText('Yes, keep 30 minutes', { exact: true }).first().click();
+      await pg.getByText('Yes, keep Moderate', { exact: true }).first().click();
+      await pg.waitForTimeout(200);
+    }, async (profile) => {
+      check(profile.maxDriveMinutes === 30 && profile.budgetTier === 'moderate', 'defaults B: keeping stores them as the family’s own choices');
+      check(profile.unconfirmedPreferences === undefined, 'defaults B: nothing is left set aside');
+    });
+    if (page) {
+      check(!/An earlier version of the app set this/.test(await page.evaluate(() => document.body.innerText)), 'defaults B: not asked again');
+      await globalThis.__ctx.close();
+    }
+  }
+
+  // C. "No limit" / "No preference": an explicit answer, so nothing is left set aside and nothing is limited.
+  {
+    const page = await run('cleared', { maxDriveMinutes: 30, budgetTier: 'moderate' }, async (pg) => {
+      await pg.getByText('No limit', { exact: true }).first().click();
+      await pg.getByText('No preference', { exact: true }).first().click();
+      await pg.waitForTimeout(200);
+    }, async (profile) => {
+      check(profile.maxDriveMinutes == null && profile.budgetTier == null, 'defaults C: choosing none stores none');
+      check(profile.unconfirmedPreferences === undefined, 'defaults C: the answer closes the question');
+    });
+    if (page) {
+      check(!/An earlier version of the app set this/.test(await page.evaluate(() => document.body.innerText)), 'defaults C: not asked again');
+      await globalThis.__ctx.close();
+    }
+  }
+
+  // D. Only one answered: the other is still kept and still asked.
+  {
+    const page = await run('half', { maxDriveMinutes: 30, budgetTier: 'moderate' }, async (pg) => {
+      await pg.getByText('Yes, keep 30 minutes', { exact: true }).first().click();
+      await pg.waitForTimeout(200);
+    }, async (profile) => {
+      check(profile.maxDriveMinutes === 30 && profile.unconfirmedPreferences?.budgetTier === 'moderate' && profile.unconfirmedPreferences?.maxDriveMinutes === undefined, 'defaults D: the answered field is a choice, the other is still set aside');
+    });
+    if (page) {
+      const text = await page.evaluate(() => document.body.innerText);
+      check(!/set this to 30 minutes/.test(text) && /set this to “Moderate”/.test(text), 'defaults D: only the unanswered question remains');
+      await globalThis.__ctx.close();
+    }
+  }
+
+  // E. Values only a person can have chosen are never questioned.
+  {
+    const page = await run('explicit', { maxDriveMinutes: 45, budgetTier: 'budget' }, async (pg) => {
+      check(!/An earlier version of the app set this/.test(await pg.evaluate(() => document.body.innerText)), 'defaults E: a 45 minute / budget profile is not asked');
+    }, async (profile) => {
+      check(profile.maxDriveMinutes === 45 && profile.budgetTier === 'budget' && profile.unconfirmedPreferences === undefined, 'defaults E: explicit choices are untouched');
+    });
+    if (page) await globalThis.__ctx.close();
+  }
+}
+
 // The date of birth boxes, and the step that will not continue on a bad date.
 {
   const { ctx, page } = await newPage(360);

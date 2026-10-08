@@ -51,8 +51,8 @@ export const usePlanningStore=create<PlanningState>()(persist((set)=>({
   togglePacked:(id,item)=>set(s=>({saved:s.saved.map(p=>p.id===id?{...p,checked:p.checked.includes(item)?p.checked.filter(x=>x!==item):[...p.checked,item]}:p)})),
   // A backup taken before multi-stop days existed has no `savedDays`. Spreading it as-is would set
   // the array to undefined and break every reader, so the field is defaulted on the way in.
-  // A backup may carry the journey limit and budget the app used to fill in; those are not the family's choices.
-  replace:data=>set({...data,families:(data.families??[]).map(planningFamilyWithoutLegacyDefaults),savedDays:data.savedDays??[]}),clear:()=>set(defaults()),
+  // A backup may carry the journey limit and budget the app used to fill in; those are set aside, not applied or deleted.
+  replace:data=>set({...data,families:(data.families??[]).map(f=>planningFamilyWithoutLegacyDefaults(f,new Date().toISOString())),savedDays:data.savedDays??[]}),clear:()=>set(defaults()),
 }),{name:PLANNING_STORAGE_KEY,
   version:PLANNING_STATE_VERSION,
   migrate:(persisted,fromVersion)=>migratePlanningState<PlanningState>(persisted,fromVersion),

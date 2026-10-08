@@ -123,26 +123,57 @@ Child names and dates of birth stay on the device and are not in any snapshot or
 field; it now **omits** a limit or budget that was never stated instead of sharing a default as if it were the family's
 preference. The server stores `null` rather than inventing `moderate`. Nothing in this change widens what is shared.
 
-## Existing profiles (there are no server-side profiles)
+## Existing profiles: ambiguous values are set aside, not deleted
 
-There is no profile table (read-only schema listing, 2026-10-07), and the tables that could hold a snapshot of one (`planning_connections`, `planning_workspaces`, `plan_invites`, `saved_places_backups`) have 0 rows. Profiles live in the device's storage. So legacy handling is a
-client-side, one-time storage migration, not a database change:
+There is no profile table (read-only schema listing, 2026-10-07), and the tables that could hold a snapshot of one
+(`planning_connections`, `planning_workspaces`, `plan_invites`, `saved_places_backups`) had 0 rows then. Profiles live in
+the device's storage, so legacy handling is a client-side, one-time storage migration, not a database change.
 
-| Stored | Cannot tell choice from default? | Migration (family store v1 to v2) |
+**The problem.** A stored 30 minutes or "moderate" may be the parent's answer (30 was one of the chips) or the app's own
+default, and nothing recorded which. Deleting it overwrites a possible choice; keeping it applies a restriction nobody may
+have asked for. Neither is acceptable, so the migration does neither.
+
+**What it does (family store v1 to v2, planning state 0 to 1).** It sets the value **aside**:
+
+| Stored | Cannot tell choice from default? | Migration |
 | --- | --- | --- |
-| `maxDriveMinutes: 30` | yes, it was the default and also a chip | cleared (read as unset) |
-| `maxDriveMinutes` 15, 20, 45, 60, 90 or any other | no, only a parent could have set it | **kept** |
-| `budgetTier: 'moderate'` | yes | cleared |
-| `budgetTier: 'budget'` or `'premium'` | no | **kept** |
+| `maxDriveMinutes: 30` | yes, it was the default and also a chip | moved to `unconfirmedPreferences.maxDriveMinutes`; the live field is unset |
+| `maxDriveMinutes` 15, 20, 45, 60, 90 or any other | no, only a parent could have set it | **untouched**, still a stated limit |
+| `budgetTier: 'moderate'` | yes | moved to `unconfirmedPreferences.budgetTier`; the live field is unset |
+| `budgetTier: 'budget'` or `'premium'` | no | **untouched** |
+| a guest family's `120` minute postcode placeholder | almost certainly the app's | set aside the same way |
 | anything else on the profile | | untouched (children, routines, must-haves, car, equipment, memberships, household) |
 
-The cost of being wrong is one tap: a parent who did choose 30 minutes can choose it again, and from then on it is kept as a
-choice (version 2 profiles are never cleared). The cost of keeping an ambiguous value is a restriction nobody asked for.
+`unconfirmedPreferences` carries `{ maxDriveMinutes?, budgetTier?, reason: 'legacy-default-or-choice', recordedAt }`.
 
-Planning state (saved families, remembered start) has its own version (0 to 1): the same 30 / "moderate" are cleared on
-saved families, the 120 minute postcode placeholder is cleared, and the remembered start is reset because the plan sheet
-used to store the start it opened on. Typed limits and budgets, saved plans and saved days are kept. Account backups
-restored with `replace` get the same cleaning.
+- **Never applied.** `driveLimitMinutes` and `budgetTierOf` read only the live fields, so scoring, Family Fit, requests,
+  plans, ranking, Meet halfway and the snapshot a connection receives see exactly a profile that never had either. The stash
+  is read by one thing: the question below (`unconfirmedValue`). Tests assert the verdict, cautions, request constraints and
+  shared snapshot are identical to a profile with no values.
+- **The question.** Edit Profile (and the planning family editor) shows, under "Travel and budget", "An earlier version of
+  the app set this to 30 minutes, and we can't tell whether you chose it. Nothing is limited meanwhile." with a
+  "Yes, keep 30 minutes" button. It never blocks saving. **Keeping** stores the value as a choice; **tapping any option in the
+  row, "No limit" and "No preference" included, answers it** and clears that field's stash. The other field's question stays
+  until answered. Saving without touching it leaves the stash exactly as it was, so the question returns next time.
+- **Reversible.** Nothing is deleted until a parent answers. `restoreStashedPreferences` is the exact inverse of the migration
+  (tested as a round trip, and it never overwrites a choice made since). The migration is idempotent and the stash survives
+  every later profile migration (`migrateLegacyProfile` carries it), so a future version cannot drop it by accident.
+- **What it costs a parent who did choose 30 minutes.** Until they answer, no limit applies and the journey time is still
+  shown on every place. They are asked once, in Edit Profile; they are not interrupted elsewhere. I judged that the lesser
+  harm compared with silently enforcing a limit they may never have chosen.
+- **New profiles** are created with neither live field nor a stash (asserted for `createEmptyProfile`, onboarding output
+  and the browser onboarding journeys), and a value a parent sets, 30 included, is stored as a choice.
+
+**Connected families.** A snapshot now carries `preferencesStated: true` when this version made it (the server allow-list
+passes it through; it carries no personal data). A snapshot read back **without** the marker predates this change, so a 30
+minute limit or "moderate" in it is not applied to a plan (`sharedFamilyPreferences`) while any other value is. With the
+marker a 30 is taken at its word. The production tables held 0 rows when checked, so this protects other environments and
+anything created before this ships.
+
+Planning state (saved families, remembered start) has its own version (0 to 1): the same values are set aside on saved
+families, and the remembered start is reset because the plan sheet used to store the start it opened on (a time that is
+re-chosen for every plan; the one value cleared outright, deliberately). Typed limits and budgets, saved plans and saved
+days are kept. Account backups restored with `replace` get the same treatment.
 
 ## Not changed, deliberately
 
@@ -153,10 +184,11 @@ restored with `replace` get the same cleaning.
 
 ## Tests
 
-`true-defaults.test.ts` (new, 24 tests): the Whitechapel case end to end (no caution, no breach, no drive wording, same
+`true-defaults.test.ts` (new, 33 tests): the Whitechapel case end to end (no caution, no breach, no drive wording, same
 verdict at 5 and 110 minutes, gentle ordering, still flagged under a stated limit); no budget means no budget factor and a
 stated one still matters; proactive, parsed, planning and server requests carry journey/budget constraints only when
 stated; an 80 minute place is eligible with no limit and excluded with one; restaurants "Any"; the migrations (30 /
-"moderate" cleared, 45 / "budget" / "premium" kept, an explicit 30 in a v2 profile kept, planning families and remembered
-start); completion and the receipt; what the plan sheet remembers; the server request schema. Existing tests for the
+"moderate" set aside and never applied, 45 / "budget" / "premium" untouched, an explicit 30 in a v2 profile kept, a round
+trip that restores exactly, idempotence, the stash surviving a later migration, planning families and remembered start, and
+connected-family snapshots with and without the marker); completion and the receipt; what the plan sheet remembers; the server request schema. Existing tests for the
 affected contracts were rewritten to the new behaviour.

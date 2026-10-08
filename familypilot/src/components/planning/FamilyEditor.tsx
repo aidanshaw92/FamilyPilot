@@ -5,11 +5,16 @@ import { Chip } from '@/src/components/ui/Chip';
 import { colors } from '@/src/design-system/tokens';
 import { PlanningFamily, Routine, clockMinutes } from '@/src/services/planning/planner';
 import { locateArea } from '@/src/services/planning/recommendations';
+import { UnconfirmedPreferenceNotice } from '@/src/components/profile/UnconfirmedPreferenceNotice';
+import { UnconfirmedField, unconfirmedValue, withoutUnconfirmed } from '@/src/utils/preferences';
+import { formatBudgetTier } from '@/src/utils/profile-defaults';
 
 export function FamilyEditor({initial,onSave,onCancel}:{initial:PlanningFamily;onSave:(f:PlanningFamily)=>void;onCancel:()=>void}) {
  const [family,setFamily]=useState(initial);const [ages,setAges]=useState(initial.ages.join(', '));const [area,setArea]=useState(initial.area);
  const [busy,setBusy]=useState(false);const [error,setError]=useState('');
  const change=(v:Partial<PlanningFamily>)=>setFamily(f=>({...f,...v}));
+ // Answering a set-aside legacy value (keeping it, or entering or clearing anything in its field) closes its question.
+ const answered=(field:UnconfirmedField)=>withoutUnconfirmed(family,[field]).unconfirmedPreferences;
  const editRoutine=(id:string,v:Partial<Routine>)=>change({routines:family.routines.map(r=>r.id===id?{...r,...v}:r)});
  async function save(){setBusy(true);setError('');try{
    const parsed=ages.trim()?ages.split(',').map(v=>Number(v.trim())):[];
@@ -25,8 +30,10 @@ export function FamilyEditor({initial,onSave,onCancel}:{initial:PlanningFamily;o
    <Field label="Family label" value={family.label} onChange={label=>change({label})}/>
    <Field label="UK town or postcode" value={area} onChange={setArea}/>
    <Field label="Children’s ages (0 for under one)" value={ages} onChange={setAges} placeholder="3, 0"/>
-   <Field label="Maximum drive each way in minutes (optional, blank for no limit)" value={typeof family.maxDriveMinutes==='number'?String(family.maxDriveMinutes):''} onChange={v=>change({maxDriveMinutes:v.trim()===''?null:Number(v)})}/>
-   <Text variant="bodySmall">Budget preference (optional, tap again to clear)</Text><View style={formStyles.row}>{(['budget','moderate','premium'] as const).map(b=><Chip key={b} label={b} active={family.budgetTier===b} onPress={()=>change({budgetTier:family.budgetTier===b?null:b})}/>)}</View>
+   {typeof family.maxDriveMinutes!=='number'&&unconfirmedValue(family,'maxDriveMinutes')!==null?<UnconfirmedPreferenceNotice testID="unconfirmed-family-drive" question={`An earlier version of the app set ${unconfirmedValue(family,'maxDriveMinutes')} minutes here, and we can’t tell whether it was chosen. Nothing is limited meanwhile.`} keepLabel={`Yes, keep ${unconfirmedValue(family,'maxDriveMinutes')} minutes`} onKeep={()=>change({maxDriveMinutes:unconfirmedValue(family,'maxDriveMinutes'),unconfirmedPreferences:answered('maxDriveMinutes')})}/>:null}
+   <Field label="Maximum drive each way in minutes (optional, blank for no limit)" value={typeof family.maxDriveMinutes==='number'?String(family.maxDriveMinutes):''} onChange={v=>change({maxDriveMinutes:v.trim()===''?null:Number(v),unconfirmedPreferences:answered('maxDriveMinutes')})}/>
+   {!family.budgetTier&&unconfirmedValue(family,'budgetTier')!==null?<UnconfirmedPreferenceNotice testID="unconfirmed-family-budget" question={`An earlier version of the app set “${formatBudgetTier(unconfirmedValue(family,'budgetTier'))}” here, and we can’t tell whether it was chosen. Nothing is limited meanwhile.`} keepLabel={`Yes, keep ${formatBudgetTier(unconfirmedValue(family,'budgetTier'))}`} onKeep={()=>change({budgetTier:unconfirmedValue(family,'budgetTier'),unconfirmedPreferences:answered('budgetTier')})}/>:null}
+   <Text variant="bodySmall">Budget preference (optional, tap again to clear)</Text><View style={formStyles.row}>{(['budget','moderate','premium'] as const).map(b=><Chip key={b} label={b} active={family.budgetTier===b} onPress={()=>change({budgetTier:family.budgetTier===b?null:b,unconfirmedPreferences:answered('budgetTier')})}/>)}</View>
    <View style={formStyles.row}><Switch accessibilityLabel="Bringing a buggy" value={family.pushchair} onValueChange={pushchair=>change({pushchair})}/><Text>Bringing a buggy</Text></View>
    <Text variant="bodySmall">Must-have facilities (unknown details exclude a place)</Text>
    <View style={formStyles.row}>{(['toilets','babyChanging','parking','pushchair'] as const).map(field=><Chip key={field} label={{toilets:'Toilets',babyChanging:'Baby changing',parking:'Parking',pushchair:'Buggy access'}[field]} active={family.required.includes(field)} onPress={()=>change({required:family.required.includes(field)?family.required.filter(x=>x!==field):[...family.required,field]})}/>)}</View>

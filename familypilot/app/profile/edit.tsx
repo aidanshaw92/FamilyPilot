@@ -39,7 +39,8 @@ import {
   editChildProblem,
 } from '@/src/utils/profile-edit-draft';
 import { createParentMember, formatBudgetTier } from '@/src/utils/profile-defaults';
-import { budgetTierOf, driveLimitMinutes } from '@/src/utils/preferences';
+import { budgetTierOf, driveLimitMinutes, unconfirmedValue, withoutUnconfirmed, UnconfirmedField } from '@/src/utils/preferences';
+import { UnconfirmedPreferenceNotice } from '@/src/components/profile/UnconfirmedPreferenceNotice';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { ADULT_RELATIONSHIP_LABEL, createAdultMember } from '@/src/utils/household';
 import { AdultRelationship } from '@/src/types';
@@ -108,6 +109,10 @@ export default function EditProfileScreen() {
   // Null is "not set": nothing is limited. Never initialised to a number the parent did not choose.
   const [maxDriveMinutes, setMaxDriveMinutes] = useState<number | null>(null);
   const [budgetTier, setBudgetTier] = useState<FamilyProfile['budgetTier']>(null);
+  // Which of the set-aside legacy values the parent has answered this visit (by keeping it or choosing anything in its row).
+  // Unanswered ones are left exactly as stored when the form is saved.
+  const [answered, setAnswered] = useState<UnconfirmedField[]>([]);
+  const answer = (field: UnconfirmedField) => setAnswered((current) => (current.includes(field) ? current : [...current, field]));
   const [vehicle, setVehicle] = useState('');
   const [pushchair, setPushchair] = useState('');
   const [travelCot, setTravelCot] = useState('');
@@ -217,6 +222,8 @@ export default function EditProfileScreen() {
       homeLongitude,
       maxDriveMinutes,
       budgetTier,
+      // What is still unanswered stays set aside; answered fields leave it.
+      unconfirmedPreferences: withoutUnconfirmed(profile, answered).unconfirmedPreferences,
       // The car, equipment and memberships fields are shown only when a feature uses them; while hidden, what was saved is
       // left exactly as it is.
       ...(showCar ? { vehicle: vehicle.trim() || null } : {}),
@@ -518,14 +525,35 @@ export default function EditProfileScreen() {
         <Text variant="label" color={colors.text.secondary} style={styles.groupLabel}>
           Longest journey you’d make
         </Text>
+        {profile && maxDriveMinutes === null && !answered.includes('maxDriveMinutes') && unconfirmedValue(profile, 'maxDriveMinutes') !== null ? (
+          <UnconfirmedPreferenceNotice
+            testID="unconfirmed-drive"
+            question={`An earlier version of the app set this to ${unconfirmedValue(profile, 'maxDriveMinutes')} minutes, and we can’t tell whether you chose it. Nothing is limited meanwhile.`}
+            keepLabel={`Yes, keep ${unconfirmedValue(profile, 'maxDriveMinutes')} minutes`}
+            onKeep={() => {
+              setMaxDriveMinutes(unconfirmedValue(profile, 'maxDriveMinutes'));
+              answer('maxDriveMinutes');
+            }}
+          />
+        ) : null}
         <View style={styles.chipRow}>
-          <Chip label="No limit" active={maxDriveMinutes === null} onPress={() => setMaxDriveMinutes(null)} />
+          <Chip
+            label="No limit"
+            active={maxDriveMinutes === null}
+            onPress={() => {
+              setMaxDriveMinutes(null);
+              answer('maxDriveMinutes');
+            }}
+          />
           {driveOptions(maxDriveMinutes).map((minutes) => (
             <Chip
               key={minutes}
               label={`${minutes} min`}
               active={maxDriveMinutes === minutes}
-              onPress={() => setMaxDriveMinutes(minutes)}
+              onPress={() => {
+                setMaxDriveMinutes(minutes);
+                answer('maxDriveMinutes');
+              }}
             />
           ))}
         </View>
@@ -535,14 +563,35 @@ export default function EditProfileScreen() {
         </Text>
 
         {/* The same Chip as drive time above and frame 04's option rows: one selected treatment per app. */}
+        {profile && budgetTier === null && !answered.includes('budgetTier') && unconfirmedValue(profile, 'budgetTier') !== null ? (
+          <UnconfirmedPreferenceNotice
+            testID="unconfirmed-budget"
+            question={`An earlier version of the app set this to “${formatBudgetTier(unconfirmedValue(profile, 'budgetTier'))}”, and we can’t tell whether you chose it. Nothing is limited meanwhile.`}
+            keepLabel={`Yes, keep ${formatBudgetTier(unconfirmedValue(profile, 'budgetTier'))}`}
+            onKeep={() => {
+              setBudgetTier(unconfirmedValue(profile, 'budgetTier'));
+              answer('budgetTier');
+            }}
+          />
+        ) : null}
         <View style={styles.chipRow}>
-          <Chip label="No preference" active={budgetTier === null} onPress={() => setBudgetTier(null)} />
+          <Chip
+            label="No preference"
+            active={budgetTier === null}
+            onPress={() => {
+              setBudgetTier(null);
+              answer('budgetTier');
+            }}
+          />
           {BUDGET_OPTIONS.map((option) => (
             <Chip
               key={option.id}
               label={option.label}
               active={budgetTier === option.id}
-              onPress={() => setBudgetTier(option.id)}
+              onPress={() => {
+                setBudgetTier(option.id);
+                answer('budgetTier');
+              }}
             />
           ))}
         </View>

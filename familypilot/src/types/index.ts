@@ -271,6 +271,16 @@ export interface FamilyRoutine {
   childId?: string;
 }
 
+/** A stored value that may have been the parent's answer or the app's default: kept for the parent to confirm, never applied. */
+export interface UnconfirmedPreferences {
+  maxDriveMinutes?: number;
+  budgetTier?: 'budget' | 'moderate' | 'premium';
+  /** Why it is unconfirmed, for anyone reading stored data later. */
+  reason: 'legacy-default-or-choice';
+  /** When the migration set it aside (ISO). */
+  recordedAt: string;
+}
+
 export interface FamilyProfile {
   id: string;
   parentName: string;
@@ -294,6 +304,13 @@ export interface FamilyProfile {
    * ranked down or hidden for distance, though the journey time is still shown. Never filled in by the app.
    */
   maxDriveMinutes?: number | null;
+  /**
+   * Values an earlier version of the app stored that cannot be told from the app's own defaults (exactly 30 minutes and
+   * exactly "moderate": every profile used to be created with both). They are kept, not applied: nothing reads this to
+   * limit, cut or rank anything. A parent is asked once in Edit Profile; "Keep" promotes the value to a choice, anything
+   * else they pick answers the question. See utils/preferences.ts.
+   */
+  unconfirmedPreferences?: UnconfirmedPreferences;
   completionPercent: number;
   vehicle?: string | null;
   pushchair?: string | null;

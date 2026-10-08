@@ -27,6 +27,10 @@ export interface PlanningFamily {
   maxDriveMinutes?: number | null;
   /** Only a budget the family stated; absent means none. */
   budgetTier?: FamilyProfile['budgetTier'];
+  /** Set aside by a migration because it could not be told from an app default; never applied (see utils/preferences.ts). */
+  unconfirmedPreferences?: FamilyProfile['unconfirmedPreferences'];
+  /** True on a shared snapshot made after defaults stopped being filled in: a limit or budget in it was stated by the family. */
+  preferencesStated?: boolean;
   pushchair: boolean; required: Array<'toilets' | 'babyChanging' | 'parking' | 'pushchair'>;
   routines: Routine[];
 }
