@@ -64,6 +64,16 @@ function foodValue(facilities: string[]): string | null {
   return null;
 }
 
+/**
+ * A playground on site is provision, not a statement about who it suits: no claim carries the playground's own ages, so
+ * where the venue states no ages either, the row says so rather than letting "On site" read as "good for your children".
+ */
+function playgroundValue(venue: VenueDetail, facts: Facts, facilities: string[]): string | null {
+  if (facts?.playground === 'no') return 'None on site';
+  if (facts?.playground !== 'yes' && !facilities.includes('playground')) return null;
+  return agesValue(venue, facts) ? 'On site' : 'On site, ages not stated';
+}
+
 function triStateValue(state: string | undefined, yes: string, no: string, facilityConfirmed: boolean): string | null {
   if (state === 'yes' || facilityConfirmed) return yes;
   if (state === 'no') return no;
@@ -77,9 +87,12 @@ export function familyEssentialRows(venue: VenueDetail): FamilyEssentialRow[] {
   return [
     maybe('baby-changing', 'Baby changing', triStateValue(facts?.babyChanging, 'Available', 'None reviewed', facilities.includes('baby_changing'))),
     maybe('buggy', 'Buggy access', pushchairValue(facts, facilities)),
+    maybe('wheelchair', 'Wheelchair access', triStateValue(facts?.wheelchairAccessible, 'Accessible', 'Not accessible', false)),
     maybe('toilets', 'Toilets', triStateValue(facts?.toilets, 'On site', 'None on site', facilities.includes('toilets'))),
+    maybe('accessible-toilet', 'Accessible toilet', triStateValue(facts?.accessibleToilet, 'On site', 'None on site', false)),
     maybe('parking', 'Parking', parkingValue(venue, facts, facilities)),
     maybe('food', 'Food', foodValue(facilities)),
+    maybe('playground', 'Playground', playgroundValue(venue, facts, facilities)),
     maybe('ages', 'Best for ages', agesValue(venue, facts)),
     maybe('terrain', 'Terrain', venue.terrain ? formatTerrainLabel(venue.terrain) : null),
     maybe('hours', 'Opening hours', venue.openingHours?.trim() ? venue.openingHours : null),

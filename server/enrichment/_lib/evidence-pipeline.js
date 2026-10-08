@@ -15,7 +15,7 @@ const { extractEvidenceFromText, buildEvidenceBundle, extractionSourceMeta, isEv
 const { getCachedEvidence, saveEvidenceRecord } = require('./evidence-store');
 const { listVenueIdentities } = require('./enrichment-store');
 const { classifySubjectScope } = require('./source-identity');
-const { officialWebsiteFor, hasOfficialSourceOverride } = require('./official-source-overrides');
+const { officialWebsiteFor, officialRootsFor, hasOfficialSourceOverride } = require('./official-source-overrides');
 
 const { PAGE_BUDGET_MS } = require('./source-fetcher');
 
@@ -361,11 +361,13 @@ async function gatherEvidenceForVenue(familypilotPlaceId, placeRow, options = {}
   const catalogue = (options.catalogue ?? (await listVenueIdentities())).map((identity) => ({
     ...identity,
     website: officialWebsiteFor(identity.familypilotPlaceId, identity.website),
+    officialRoots: officialRootsFor(identity.familypilotPlaceId),
   }));
   const venue = {
     familypilotPlaceId,
     name: enrichedPlace?.name ?? placeRow?.name ?? null,
     website: officialWebsiteFor(familypilotPlaceId, enrichedPlace?.website ?? null),
+    officialRoots: officialRootsFor(familypilotPlaceId),
   };
   /** What the head actually cost, reported rather than assumed. */
   const headElapsedMs = clock() - gatherStartedAt;

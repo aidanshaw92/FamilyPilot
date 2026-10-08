@@ -34,7 +34,18 @@ function expiryDate(fieldKey, checkedAt) {
  * hundreds of live claims would be disputed within the hour, before anyone had approved it.
  * Repairing what is already published is Phase 6 and belongs behind its own gate.
  */
-function eligibleFact(fact, bundle, now=Date.now(), { enforceSubjectScope = true } = {}) {
+/**
+ * Whether a source's scope was changed after the fact by `scripts/rescope-evidence.mjs` rather than recorded by the crawl.
+ *
+ * A rescoped page is a venue's own page by the current identity rules, but nobody looked at it when it was read, and the
+ * dry run showed why that matters: Crystal Palace Park's venue-hire page ("Dedicated toilet facilities", a hire room) and
+ * a "recent posts" teaser on Dulwich Park's friends' site came through as facts. So its facts may appear in a draft for a
+ * person to approve, and may never be published, refreshed, contradicted or withdrawn by the automatic path.
+ */
+function isRescopedSource(source) {
+  return typeof source?.subjectScopeReason === 'string' && source.subjectScopeReason.startsWith('rescoped_');
+}
+function eligibleFact(fact, bundle, now=Date.now(), { enforceSubjectScope = true, excludeRescoped = false } = {}) {
   if (!FIELD_MAP[fact.field] || fact.evidenceStatus==='conflict' || fact.confidence!=='high') return false;
   if (!SOURCE_TYPES.has(fact.sourceType) || typeof fact.evidenceText!=='string' || fact.evidenceText.length<15) return false;
   const age = now-Date.parse(fact.retrievedAt);
@@ -46,6 +57,7 @@ function eligibleFact(fact, bundle, now=Date.now(), { enforceSubjectScope = true
     // Unknown is preferable to confidently wrong: a null scope is a row stored before provenance
     // was recorded, and it fails closed exactly like an unestablished one.
     && (!enforceSubjectScope || isEligibleScope(source.subjectScope))
+    && (!excludeRescoped || !isRescopedSource(source))
     && source.facts?.some(f=>f.field===fact.field && f.value===fact.value && f.evidenceText===fact.evidenceText));
 }
 /**
@@ -105,4 +117,4 @@ async function verifiedBundleForVenue(id) {
   }
   return buildEvidenceBundle(id,sources,'official_website');
 }
-module.exports={expiryDate,reviewEvidence,eligibleFact,verifiedBundleForVenue,FIELD_MAP,SOURCE_TYPES};
+module.exports={expiryDate,reviewEvidence,eligibleFact,isRescopedSource,verifiedBundleForVenue,FIELD_MAP,SOURCE_TYPES};

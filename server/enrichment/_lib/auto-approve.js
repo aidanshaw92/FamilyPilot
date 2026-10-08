@@ -14,8 +14,8 @@ function isAutoApproveEnabled() {
 }
 
 function buildAutoApprovePayload(rawDraftJson, evidenceBundle) {
-  // Model output is deliberately not an authority for publication.
-  return require('./trusted-evidence').reviewEvidence(evidenceBundle);
+  // Model output is deliberately not an authority for publication. Nor is a rescoped page: a person approves those.
+  return require('./trusted-evidence').reviewEvidence(evidenceBundle, { excludeRescoped: true });
 }
 
 /**
@@ -142,6 +142,9 @@ async function reconcileSourceClaims(id, bundle) {
   const {listClaimsForVenue, disputeClaim} = require('./claims-store');
   const {FIELD_MAP} = require('./trusted-evidence');
   const {isEligibleScope} = require('./source-identity');
+  const {isRescopedSource} = require('./trusted-evidence');
+  /** May establish, refresh, contradict or withdraw automatically: eligible, and recorded by a crawl, not rescoped. */
+  const speaksAutomatically = (source) => isEligibleScope(source.subjectScope) && !isRescopedSource(source);
 
   const sources = bundle?.sources ?? [];
 
@@ -214,7 +217,7 @@ async function reconcileSourceClaims(id, bundle) {
     if (!backing) continue;
 
     // (3) the Phase 6 gate, stated on provenance rather than on whether a page happened to be fetched
-    if (!isEligibleScope(backing.subjectScope)) continue;
+    if (!speaksAutomatically(backing)) continue;
 
     // (4) and (5)
     if (!statesValue(backing, field, claim.valueJson)) {
@@ -243,7 +246,7 @@ async function reconcileSourceClaims(id, bundle) {
      */
     const eligibleValues = new Set();
     for (const source of sources) {
-      if (!isEligibleScope(source.subjectScope)) continue;
+      if (!speaksAutomatically(source)) continue;
       if (!usableFor(source, claim.checkedAt)) continue;
       for (const fact of source.facts ?? []) {
         if (fact.field === field && fact.value !== 'unknown') eligibleValues.add(fact.value);
