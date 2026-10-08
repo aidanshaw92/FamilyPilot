@@ -5,6 +5,7 @@ import { colors, spacing } from '@/src/design-system/tokens';
 import { FamilyProfile, VenueDetail } from '@/src/types';
 import { relevanceFor } from '@/src/services/planning/visit-questions';
 import { familyEssentialRows } from '@/src/utils/family-essentials';
+import { familyNeedsStepFree } from '@/src/utils/family-mobility';
 
 /**
  * Frame 02's "Family essentials": label left in Medium 14.5 ink, value right in Regular 14, hairline between rows,
@@ -13,7 +14,8 @@ import { familyEssentialRows } from '@/src/utils/family-essentials';
  * facts and six unknown ones read as a page of "Not confirmed"). Unknown stays unknown: it is never turned into "no".
  *
  * An unknown is mentioned only if it could matter to THIS family (buggy access for a family with a buggy, baby
- * changing for a family with a child under four); the rest stay unknown and unmentioned on this line.
+ * changing for a family with a child under four, wheelchair access for a child who uses a wheelchair or mobility aid);
+ * the rest stay unknown and unmentioned on this line.
  *
  * Opening hours are not here: they are answered under "Today", where the useful current state leads.
  */
@@ -22,7 +24,23 @@ export function FamilyEssentials({ venue, profile = null, onHelpCheck }: { venue
   const confirmed = rows.filter((row) => row.confirmed);
   // An unknown that this family cannot be affected by is not worth a line here: no buggy, no buggy-access worry; no
   // child under four, no baby-changing worry. It is still on the page, under "How we know this".
-  const irrelevant = (key: string) => (key === 'buggy' ? relevanceFor('pushchair', profile) === 0 : key === 'baby-changing' ? relevanceFor('babyChanging', profile) === 0 : false);
+  // Wheelchair access and an accessible toilet are listed as unknown only for a family with a child who uses a wheelchair
+  // or mobility aid; a playground only when the family said they need one. Confirmed, each is always shown.
+  const irrelevant = (key: string) => {
+    switch (key) {
+      case 'buggy':
+        return relevanceFor('pushchair', profile) === 0;
+      case 'baby-changing':
+        return relevanceFor('babyChanging', profile) === 0;
+      case 'wheelchair':
+      case 'accessible-toilet':
+        return !familyNeedsStepFree(profile);
+      case 'playground':
+        return !(profile?.mustHaveFacilities ?? []).includes('playground');
+      default:
+        return false;
+    }
+  };
   const unknown = rows.filter((row) => !row.confirmed && !irrelevant(row.key));
 
   return (

@@ -37,6 +37,8 @@ export const FILTER_SHEET_OPTIONS = [
   { id: 'parking', label: 'Parking' },
   { id: 'toilets', label: 'Toilets' },
   { id: 'baby_changing', label: 'Baby changing' },
+  { id: 'playground', label: 'Playground' },
+  { id: 'wheelchair', label: 'Wheelchair accessible' },
 ] as const;
 
 /** The "Food nearby" group in the filter sheet: a cafe on site, or food within a short walk. */
@@ -139,6 +141,13 @@ export function applyAdvancedFilters(venues: Venue[], advancedIds: string[]): Ve
         break;
       case 'baby_changing':
         result = result.filter((v) => venueHasFacility(v, 'baby_changing'));
+        break;
+      case 'playground':
+        // A confirmed playground, nothing about whom it suits.
+        result = result.filter((v) => venueHasFacility(v, 'playground'));
+        break;
+      case 'wheelchair':
+        result = result.filter((v) => v.trustedFacts?.wheelchairAccessible === 'yes');
         break;
       case 'food_onsite':
       case 'food_5':
