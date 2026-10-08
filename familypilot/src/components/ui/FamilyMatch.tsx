@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { EnrichmentStatus } from '@/src/types';
 import { describeFamilyMatch } from '@/src/utils/family-match-scale';
-import { FamilyMatchResult, matchBadgeText, matchEarnsStar, VERDICT_BADGE } from '@/src/services/matching/family-match';
+import { FamilyMatchResult, matchBadgeText, matchClassification, matchEarnsStar } from '@/src/services/matching/family-match';
 
 import { Text } from './Text';
 import { StarGlyph } from './icons';
@@ -34,7 +34,7 @@ interface FamilyMatchProps {
    * What FamilyPilot works out for THIS family (family-match.ts). When given it decides the words, the star and
    * the colour, and the number is not shown: a good match says who it is good for, a possible one says possible.
    */
-  match?: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[] };
+  match?: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[]; easyVisit?: boolean };
   style?: ViewStyle;
 }
 
@@ -63,7 +63,7 @@ export function FamilyMatch({
         unreviewed: !matchEarnsStar(verdictMatch.verdict),
         number: matchEarnsStar(verdictMatch.verdict) ? '★' : null,
         badgeLabel: matchBadgeText(verdictMatch, size === 'compact' ? 12 : 18),
-        spoken: `${matchBadgeText(verdictMatch, 40)}. ${VERDICT_BADGE[verdictMatch.verdict]}`,
+        spoken: `${matchBadgeText(verdictMatch, 40)}. ${matchClassification(verdictMatch)}`,
       }
     : legacy;
   // Unknown is unknown: a badge with no number and no status would be a verdict in disguise.

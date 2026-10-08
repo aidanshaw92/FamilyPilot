@@ -20,7 +20,7 @@ import {
   exploreCardCtaLabel,
 } from '@/src/utils/explore-card-layout';
 import { getMatchClassification } from '@/src/utils/family-match-classification';
-import { matchCardReason, VERDICT_BADGE, withClosedLine } from '@/src/services/matching/family-match';
+import { matchCardReason, matchClassification, withClosedLine } from '@/src/services/matching/family-match';
 
 import { RecommendationPattern } from './RecommendationPattern';
 import { travelTimeLabel } from '@/src/utils/travel-time';
@@ -53,7 +53,7 @@ function DecisionCardComponent({
 
   if (variant === 'list') {
     const match = venue.familyMatch;
-    const classification = match ? VERDICT_BADGE[match.verdict] : getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
+    const classification = match ? matchClassification(match) : getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
     const unreviewed = venue.enrichmentStatus === 'provider_only';
     // Two concrete facts read as bespoke; one alone can look like a generic template repeated
     // across every card, so combine the two most relevant reasons where there's a second one.
