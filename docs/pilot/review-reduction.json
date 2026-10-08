@@ -26,8 +26,8 @@
    "remaining": 74
   },
   {
-   "name": "Rejected: the evidence does not support it",
-   "why": "Both independent verifiers found it unsupported, or a mechanical check failed. Not published; listed with the reason; a person can overturn it.",
+   "name": "Rejected: a mechanical check failed",
+   "why": "A number the quote lacks, a facility the quote does not mention, a page that is not the venue's. Not published; listed with the reason; a person can overturn it.",
    "removed": 0,
    "remaining": 74
   }
@@ -92,7 +92,7 @@
    ]
   },
   {
-   "stage": "Rejected: the evidence does not support it",
+   "stage": "Rejected: a mechanical check failed",
    "items": []
   }
  ],

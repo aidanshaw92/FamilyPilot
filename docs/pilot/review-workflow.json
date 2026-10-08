@@ -1,0 +1,5245 @@
+{
+ "builtOn": "2026-10-08",
+ "summary": {
+  "items": 171,
+  "removedFromQueue": {
+   "parked": 51,
+   "merged": 6,
+   "deferred": 18,
+   "rejected": 0
+  },
+  "tiers": {
+   "expert": 31,
+   "reviewer": 50,
+   "grouped": 15
+  },
+  "grouped": {
+   "groups": 2,
+   "groupSizes": [
+    4,
+    4
+   ],
+   "sampleReads": 6,
+   "readIndividually": 7,
+   "groupApprovals": 2
+  },
+  "humanDecisions": {
+   "expertReads": 31,
+   "reviewerReads": 50,
+   "groupedReads": 13,
+   "groupApprovals": 2,
+   "totalReads": 94,
+   "totalDecisions": 96
+  },
+  "previouslyAutomaticNowDecidedByAPerson": 23,
+  "modelFlagged": {
+   "inQueue": 1,
+   "movedUpBecauseOfIt": 0
+  },
+  "byExpertReason": {
+   "an official-hours reading: it can contradict the provider's hours": 10,
+   "a whole-venue closure or a restriction on the core visit: it can refuse a date or a household": 5,
+   "a price or entry fact in front of a parent": 13,
+   "two sources disagree, or it was carried from an earlier reading": 1,
+   "a \"no\" on access can take a venue out of a household's day": 5
+  },
+  "pages": 38
+ },
+ "groups": [
+  {
+   "key": "toilets.toilets|yes",
+   "size": 4,
+   "sample": [
+    "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.toilets",
+    "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.toilets",
+    "ChIJV_iXMtcadkgRqBI84CY_crE:toilets.toilets"
+   ],
+   "members": [
+    "ChIJ7_PV980bdkgROekbwOVWVfo:toilets.toilets",
+    "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.toilets",
+    "ChIJV_iXMtcadkgRqBI84CY_crE:toilets.toilets",
+    "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.toilets"
+   ]
+  },
+  {
+   "key": "transport.blueBadge|yes",
+   "size": 4,
+   "sample": [
+    "ChIJrcFVE-YNdkgRJQPxAxaTnMY:transport.blueBadge",
+    "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:transport.blueBadge",
+    "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.blueBadge"
+   ],
+   "members": [
+    "ChIJrcFVE-YNdkgRJQPxAxaTnMY:transport.blueBadge",
+    "ChIJV_iXMtcadkgRqBI84CY_crE:transport.blueBadge",
+    "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:transport.blueBadge",
+    "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.blueBadge"
+   ]
+  }
+ ],
+ "items": [
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:activities.soft-play",
+   "venue": "Babylon Park London",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "field": "activities.soft-play",
+   "value": null,
+   "text": "Soft play areas for toddlers and kids on the mezzanine.",
+   "url": "https://babylonpark.com/london/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:activities.rides-arcade",
+   "venue": "Babylon Park London",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "field": "activities.rides-arcade",
+   "value": null,
+   "text": "Indoor rides including bumper cars, a carousel and a kiddie wheel, plus hundreds of games and VR experiences. No minimum age; the rollercoaster and drop tower have a minimum height of 105cm.",
+   "url": "https://babylonpark.com/london/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:pushchair.allowed",
+   "venue": "Babylon Park London",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "field": "pushchair.allowed",
+   "value": "yes",
+   "text": "Prams are allowed; a dedicated pram and buggy section on the second floor.",
+   "url": "https://babylonpark.com/london/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [],
+   "dest": "NO HOME: pushchair rules and storage have no claim type (only a terrain rating)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:toilets.toilets",
+   "venue": "Babylon Park London",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "field": "toilets.toilets",
+   "value": "yes",
+   "text": "Restrooms on the Mezzanine and Basement floors.",
+   "url": "https://babylonpark.com/london/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:transport.station",
+   "venue": "Babylon Park London",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "field": "transport.station",
+   "value": "Camden Road",
+   "text": "Babylon Park is an 8 minute walk from Camden Road station.",
+   "url": "https://babylonpark.com/london/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted-spot-check",
+   "findings": [],
+   "dest": "NO HOME: stations, buses, fees and entrances have no claim type",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:transport.parking",
+   "venue": "Babylon Park London",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "field": "transport.parking",
+   "value": "no",
+   "text": "No dedicated parking; spaces can be found nearby.",
+   "url": "https://babylonpark.com/london/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:food.cafe",
+   "venue": "Babylon Park London",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "field": "food.cafe",
+   "value": "yes",
+   "text": "The Ovo & Neta restaurant on the Mezzanine floor serves a variety of food and drinks; vending machines are available throughout the park; outside food and drinks are not permitted.",
+   "url": "https://babylonpark.com/london/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says throughout; the quote does not"
+    }
+   ],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "an independent check doubted it",
+    "narrowed to what its sentence supports"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:food.outside-food",
+   "venue": "Babylon Park London",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "field": "food.outside-food",
+   "value": "not permitted",
+   "text": "Outside food and drinks are not permitted.",
+   "url": "https://babylonpark.com/london/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [],
+   "dest": "note only (good to know); no structured home",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:play.softplay",
+   "venue": "Babylon Park London",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "field": "play.softplay",
+   "value": "yes",
+   "text": "Soft play areas for toddlers and kids.",
+   "url": "https://babylonpark.com/london/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: facility detail beyond the mapped facts has no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "duplicateOf": "ChIJ7_PV980bdkgROekbwOVWVfo:activities.soft-play",
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:access.wheelchair",
+   "venue": "Babylon Park London",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "field": "access.wheelchair",
+   "value": "yes",
+   "text": "Level entrance and a lift to the mezzanine and basement; some rides are not accessible.",
+   "url": "https://babylonpark.com/london/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says accessible; the quote does not"
+    }
+   ],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "an independent check doubted it"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:opening.hours",
+   "venue": "Babylon Park London",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "field": "opening.hours",
+   "value": "Mon-Fri 10-21; Sat 10-22; Sun 10-21",
+   "text": "Monday to Friday 10am to 9pm, Saturday 10am to 10pm, Sunday 10am to 9pm.",
+   "url": "https://babylonpark.com/london/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": true,
+   "impact": "high",
+   "route": "accepted",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "an official-hours reading: it can contradict the provider's hours"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:considerations.height",
+   "venue": "Babylon Park London",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "field": "considerations.height",
+   "value": "105cm",
+   "text": "No minimum age, but the rollercoaster and drop tower have a minimum height of 105cm.",
+   "url": "https://babylonpark.com/london/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:considerations.duration",
+   "venue": "Babylon Park London",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "field": "considerations.duration",
+   "value": 120,
+   "text": "Duration varies depending on the ticket purchased; the venue recommends allowing 2 hours.",
+   "url": "https://babylonpark.com/london/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: practical rules and closures have no claim type",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:activities.playground",
+   "venue": "Battersea Park",
+   "venueId": "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4",
+   "field": "activities.playground",
+   "value": null,
+   "text": "A playground for 4 to 14 year olds (swings, slides, exercise stations, trapeze bars, an activity rocker). The page is titled \"toddlers and juniors\" but gives 4 to 14.",
+   "url": "https://www.wandsworth.gov.uk/leisure-and-culture/parks-and-open-spaces/childrens-playgrounds/battersea-park-playground-for-toddlers-and-juniors/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "shares-content",
+     "level": "warn",
+     "detail": "18% of the proposal's content words are in the quote"
+    }
+   ],
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "an independent check doubted it"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:activities.childrens-zoo",
+   "venue": "Battersea Park",
+   "venueId": "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4",
+   "field": "activities.childrens-zoo",
+   "value": null,
+   "text": "A children's zoo is listed among the park's features.",
+   "url": "https://www.wandsworth.gov.uk/batterseapark",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:transport.entrances",
+   "venue": "Battersea Park",
+   "venueId": "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4",
+   "field": "transport.entrances",
+   "value": "yes",
+   "text": "Pedestrian gates at Albert Bridge Road, Prince of Wales Drive and Queenstown Road.",
+   "url": "https://www.wandsworth.gov.uk/batterseapark",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted-spot-check",
+   "findings": [],
+   "dest": "NO HOME: stations, buses, fees and entrances have no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:play.playground",
+   "venue": "Battersea Park",
+   "venueId": "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4",
+   "field": "play.playground",
+   "value": "yes",
+   "text": "An open-access playground.",
+   "url": "https://www.wandsworth.gov.uk/leisure-and-culture/parks-and-open-spaces/childrens-playgrounds/battersea-park-playground-for-toddlers-and-juniors/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:opening.hours",
+   "venue": "Battersea Park",
+   "venueId": "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4",
+   "field": "opening.hours",
+   "value": "8am until dusk",
+   "text": "Opening times 8am until dusk; park gates open 6.30am to 10.30pm.",
+   "url": "https://www.wandsworth.gov.uk/batterseapark",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": true,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "an official-hours reading: it can contradict the provider's hours"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:considerations.cascades",
+   "venue": "Battersea Park",
+   "venueId": "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4",
+   "field": "considerations.cascades",
+   "value": "restoration",
+   "text": "The historic waterfall is being restored with Lottery funding.",
+   "url": "https://www.wandsworth.gov.uk/batterseapark",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.baby-toddler-space",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "activities.baby-toddler-space",
+   "value": null,
+   "text": "A Baby and Toddler Sensory Story Space dedicated to 0-2 year olds, free with your Entry ticket; timed 45-minute sessions should be booked.",
+   "url": "https://discover.org.uk/your-visit/faqs/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "narrowed to what its sentence supports"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.baby-storytelling",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "activities.baby-storytelling",
+   "value": null,
+   "text": "Baby Storytelling for 0 to 2: 30 minutes every day, £2 on top of Entry.",
+   "url": "https://www.discover.org.uk/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.storytelling-0-5",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "activities.storytelling-0-5",
+   "value": null,
+   "text": "Storytelling for 0 to 5 (this season: Julian Is a Mermaid, until 18 October).",
+   "url": "https://www.discover.org.uk/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.story-worlds",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "activities.story-worlds",
+   "value": null,
+   "text": "Two floors of Story Worlds and a Story Garden for play and imagination, with Story Builders through the day. No age is given for the permanent worlds.",
+   "url": "https://discover.org.uk/your-visit/faqs/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.exhibition-0-8",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "activities.exhibition-0-8",
+   "value": null,
+   "text": "Luna Loves London immersive exhibition, open now, age guide 0-8, duration 50 mins, every day at various times.",
+   "url": "https://www.discover.org.uk/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "narrowed to what its sentence supports"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.restriction",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "pushchair.restriction",
+   "value": "no pushchairs in play areas",
+   "text": "Pushchairs and buggies are not allowed in any storytelling or play areas. Buggy parking on the ground floor; bring a sling for a smaller baby.",
+   "url": "https://discover.org.uk/getting-here/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": true,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a whole-venue closure or a restriction on the core visit: it can refuse a date or a household"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.twins",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "pushchair.twins",
+   "value": "ask staff",
+   "text": "If a pushchair is needed (twins, a sleeping child), ask front of house; they will advise and accommodate where needed.",
+   "url": "https://discover.org.uk/your-visit/faqs/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.storage",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "pushchair.storage",
+   "value": "yes",
+   "text": "Buggy storage is available in the basement and/or garden; many spaces cannot have buggies in.",
+   "url": "https://discover.org.uk/your-visit/faqs/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "polarity",
+     "level": "warn",
+     "detail": "the quote has a negation near the subject while the fact says yes"
+    }
+   ],
+   "dest": "NO HOME: pushchair rules and storage have no claim type (only a terrain rating)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.toilets",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "toilets.toilets",
+   "value": "yes",
+   "text": "Toilets on all main floors.",
+   "url": "https://discover.org.uk/your-visit/faqs/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.babyChanging",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "toilets.babyChanging",
+   "value": "yes",
+   "text": "Toilets with baby changing facilities on all main floors.",
+   "url": "https://discover.org.uk/your-visit/faqs/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": true,
+   "duplicateOf": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.toilets",
+   "restatesProduction": false,
+   "tier": "merged",
+   "why": [
+    "the same sentence as ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.toilets"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.accessibleToilet",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "toilets.accessibleToilet",
+   "value": "yes",
+   "text": "Wheelchair accessible toilets; no Changing Places toilet.",
+   "url": "https://discover.org.uk/your-visit/faqs/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "polarity",
+     "level": "warn",
+     "detail": "the quote has a negation near the subject while the fact says yes"
+    }
+   ],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "an independent check doubted it"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.station",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "transport.station",
+   "value": "Stratford High Street DLR",
+   "text": "One minute from Stratford High Street DLR station. Many bus routes.",
+   "url": "https://discover.org.uk/getting-here/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: stations, buses, fees and entrances have no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.parking",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "transport.parking",
+   "value": "no",
+   "text": "No parking on site; Stratford multi-storey car park is a 5 minute walk. Blue Badge bays nearby.",
+   "url": "https://discover.org.uk/getting-here/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "a \"no\" can hide a venue"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:considerations.stale-step-free-notice",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "considerations.stale-step-free-notice",
+   "value": "stale",
+   "text": "The page says there is no step-free access at Stratford High Street station \"until July 2025\" - a date already past.",
+   "url": "https://discover.org.uk/getting-here/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "dated",
+     "level": "warn",
+     "detail": "the quote refers to 2025, before the reading"
+    }
+   ],
+   "dest": "NO HOME: practical rules and closures have no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:food.cafe",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "food.cafe",
+   "value": "yes",
+   "text": "A café on the ground floor; on busier days a coffee-and-snack shack in the garden is open.",
+   "url": "https://discover.org.uk/your-visit/faqs/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:access.wheelchair",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "access.wheelchair",
+   "value": "yes",
+   "text": "Lifts to all floors; staff can help.",
+   "url": "https://discover.org.uk/your-visit/faqs/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:access.sensory",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "access.sensory",
+   "value": "yes",
+   "text": "Sensory-adapted and BSL events; children with SEN and other additional needs are welcome on any day.",
+   "url": "https://discover.org.uk/your-visit/faqs/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:access.saturday-club",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "access.saturday-club",
+   "value": "yes",
+   "text": "Mighty Mega, a free Saturday-morning club (2 hours) for disabled children and children with SEN, age guide 5 to 11.",
+   "url": "https://www.discover.org.uk/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "NO HOME: accessibility detail beyond wheelchair and sensory has no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:opening.hours",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "opening.hours",
+   "value": "10:00-17:00 daily",
+   "text": "Open every day 10am to 5pm (closed 24, 25, 26, 31 December and 1 January).",
+   "url": "https://discover.org.uk/your-visit/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": true,
+   "hours": true,
+   "impact": "high",
+   "route": "accepted-spot-check",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a whole-venue closure or a restriction on the core visit: it can refuse a date or a household",
+    "an official-hours reading: it can contradict the provider's hours"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pricing.paid",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "pricing.paid",
+   "value": "£10 Day Entry (Adult or Child); £9 Newham",
+   "text": "Day Entry is £10 (adult or child), £9 for Newham residents and concessions. Whether babies and toddlers pay is not stated.",
+   "url": "https://discover.org.uk/your-visit",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "price: reviewed admission data or held (no claim type)",
+   "modelFlag": true,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a price or entry fact in front of a parent"
+   ],
+   "modelReadings": [
+    "narrower",
+    "unclear"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pricing.under1",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "pricing.under1",
+   "value": "free (or discounted)",
+   "text": "The Annual Entry tickets page says 0-1 year olds receive free tickets.",
+   "url": "https://discover.org.uk/your-visit/about-annual-entry-tickets/",
+   "previouslyAutomatic": false,
+   "held": true,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "price: reviewed admission data or held (no claim type)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "two sources disagree, or it was carried from an earlier reading",
+    "a price or entry fact in front of a parent"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pricing.addons",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "pricing.addons",
+   "value": "£3-£5.50",
+   "text": "Add-on storytelling, exhibitions and other tickets cost £3 to £5.50.",
+   "url": "https://discover.org.uk/your-visit/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "price: reviewed admission data or held (no claim type)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a price or entry fact in front of a parent"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:considerations.booking",
+   "venue": "Discover Children's Story Centre",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "field": "considerations.booking",
+   "value": "advance booking recommended",
+   "text": "Advance booking is recommended; entry can reach capacity on busy days.",
+   "url": "https://discover.org.uk/your-visit/faqs/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:activities.park-museum-lake",
+   "venue": "Gunnersbury Park",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "field": "activities.park-museum-lake",
+   "value": null,
+   "text": "A park with a museum and boating on the lake.",
+   "url": "https://www.visitgunnersbury.org/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:pushchair.terrain",
+   "venue": "Gunnersbury Park",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "field": "pushchair.terrain",
+   "value": "tarmac, uneven in places",
+   "text": "A network of tarmac paths; because the park is a natural environment, paths may be uneven in places.",
+   "url": "https://www.visitgunnersbury.org/plan-your-visit",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "batch",
+   "findings": [],
+   "dest": "note only (good to know); no structured home",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:toilets.toilets",
+   "venue": "Gunnersbury Park",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "field": "toilets.toilets",
+   "value": "yes",
+   "text": "A park toilet block near the museum, and a toilet in the museum.",
+   "url": "https://www.visitgunnersbury.org/plan-your-visit",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:toilets.accessibleToilet",
+   "venue": "Gunnersbury Park",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "field": "toilets.accessibleToilet",
+   "value": "yes",
+   "text": "There is an accessible toilet in the museum and another in the park toilet block, which is near the museum.",
+   "url": "https://www.visitgunnersbury.org/plan-your-visit",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:transport.station",
+   "venue": "Gunnersbury Park",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "field": "transport.station",
+   "value": "Acton Town",
+   "text": "Ten minutes' walk from Acton Town (Piccadilly, District) or South Ealing; Kew Bridge rail; E3, 65 and H91 buses.",
+   "url": "https://www.visitgunnersbury.org/plan-your-visit",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: stations, buses, fees and entrances have no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:transport.parking",
+   "venue": "Gunnersbury Park",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "field": "transport.parking",
+   "value": "yes",
+   "text": "Two car parks. Up to 30 minutes free if you register on the RingGo app or the machine (you cannot register for another free half hour for 2 hours after leaving); 30 minutes to 1 hour £1; longer than an hour £1 per hour. Charges apply at all times, including bank holidays. Blue Badge parking is free.",
+   "url": "https://www.visitgunnersbury.org/plan-your-visit",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:transport.blueBadge",
+   "venue": "Gunnersbury Park",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "field": "transport.blueBadge",
+   "value": "yes",
+   "text": "Free designated disabled parking in both car parks.",
+   "url": "https://www.visitgunnersbury.org/plan-your-visit",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:food.cafe",
+   "venue": "Gunnersbury Park",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "field": "food.cafe",
+   "value": "yes",
+   "text": "The park café: weekdays 7am to 5pm, weekends 7am to 6pm.",
+   "url": "https://www.visitgunnersbury.org/plan-your-visit",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted-spot-check",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:access.wheelchair",
+   "venue": "Gunnersbury Park",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "field": "access.wheelchair",
+   "value": "yes",
+   "text": "The museum lift serves all galleries and suits wheelchairs, including small motorised ones.",
+   "url": "https://www.visitgunnersbury.org/plan-your-visit",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:access.stepFree",
+   "venue": "Gunnersbury Park",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "field": "access.stepFree",
+   "value": "yes",
+   "text": "Step-free access throughout the museum (some ramps and slopes); lift access to the first and second floors (all museum levels); a wheelchair to borrow on request.",
+   "url": "https://www.visitgunnersbury.org/museum/accessibility",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says wheelchair, all, lifts; the quote does not"
+    }
+   ],
+   "dest": "NO HOME: accessibility detail beyond wheelchair and sensory has no claim type",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:access.relaxed",
+   "venue": "Gunnersbury Park",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "field": "access.relaxed",
+   "value": "yes",
+   "text": "Relaxed sessions every half term; quieter times are typically weekdays 2pm to 4pm and weekends 10am to 12pm.",
+   "url": "https://www.visitgunnersbury.org/museum/accessibility",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:opening.hours",
+   "venue": "Gunnersbury Park",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "field": "opening.hours",
+   "value": "Park 7:00-dusk; Museum Tue-Sun 10:00-16:30",
+   "text": "Park open daily from 7am until dusk; museum Tuesday to Sunday 10am to 4.30pm (closed Mondays).",
+   "url": "https://www.visitgunnersbury.org/plan-your-visit",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": true,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "an official-hours reading: it can contradict the provider's hours"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:pricing.free",
+   "venue": "Gunnersbury Park",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "field": "pricing.free",
+   "value": "free",
+   "text": "The museum and park are free to enter; the car park has usage fees, though parking for blue badge holders in the designated disabled bays is free.",
+   "url": "https://www.visitgunnersbury.org/plan-your-visit",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "shares-content",
+     "level": "warn",
+     "detail": "20% of the proposal's content words are in the quote"
+    },
+    {
+     "id": "interpretation-size",
+     "level": "warn",
+     "detail": "27 words proposed against 8 quoted"
+    }
+   ],
+   "dest": "ships as reviewed admission data (code, by pull request)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a price or entry fact in front of a parent"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:considerations.dogs",
+   "venue": "Gunnersbury Park",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "field": "considerations.dogs",
+   "value": "no dogs in museum",
+   "text": "No dogs in the museum except assistance dogs.",
+   "url": "https://www.visitgunnersbury.org/plan-your-visit",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:activities.kusuma-nature-play",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "activities.kusuma-nature-play",
+   "value": null,
+   "text": "The Gardens Cafe is located next to the Kusuma Nature Play Area at the bottom of the Meadow Field.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/food-drink/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:activities.animal-walk",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "activities.animal-walk",
+   "value": null,
+   "text": "An Animal Walk and a Nature Trail in the gardens (the Butterfly House and Animal Walk can close at short notice in high temperatures).",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:pushchair.storage",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "pushchair.storage",
+   "value": "yes",
+   "text": "Buggy parking in Gallery Square, inside the main gate to the Kusuma Nature Play Area and next to the Butterfly House.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "note only (good to know); no structured home",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:toilets.babyChanging",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "toilets.babyChanging",
+   "value": "yes",
+   "text": "Baby changing in the Gallery Square toilets, near the Bandstand and by the Kusuma Nature Play Area.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:toilets.toilets",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "toilets.toilets",
+   "value": "yes",
+   "text": "Toilets off Gallery Square (downstairs), in the gardens near the Bandstand, and by the Kusuma Nature Play Area.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:toilets.accessibleToilet",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "toilets.accessibleToilet",
+   "value": "yes",
+   "text": "There are inclusive toilets in the Museum, Gardens and Café; the Museum does not provide hoists or adult changing facilities.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:toilets.babyFeeding",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "toilets.babyFeeding",
+   "value": "yes",
+   "text": "A breastfeeding room off Gallery Square; breastfeeding is welcome everywhere.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: facility detail beyond the mapped facts has no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.station",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "transport.station",
+   "value": "Forest Hill",
+   "text": "A five to ten minute walk from Forest Hill station, with local buses.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: stations, buses, fees and entrances have no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.parking",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "transport.parking",
+   "value": "no",
+   "text": "No on-site parking except limited Blue Badge parking.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "a \"no\" can hide a venue"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:food.cafe",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "food.cafe",
+   "value": "yes",
+   "text": "The Horniman Cafe is open 9am to 5pm daily.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/food-drink/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:food.picnic",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "food.picnic",
+   "value": "yes",
+   "text": "Picnic tables on the Bandstand Terrace and by the nature play area; the Dutch Barn for rainy days.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/food-drink/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted-spot-check",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:play.natureplay",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "play.natureplay",
+   "value": "yes",
+   "text": "Kusuma Nature Play Area.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/food-drink/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "duplicateOf": "ChIJSzwgydoDdkgRndnXVYQGXBI:activities.kusuma-nature-play",
+   "restatesProduction": true,
+   "tier": "merged",
+   "why": [
+    "the same sentence as ChIJSzwgydoDdkgRndnXVYQGXBI:activities.kusuma-nature-play"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:access.wheelchair",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "access.wheelchair",
+   "value": "yes",
+   "text": "The museum and gardens are wheelchair friendly, with accessible toilets.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:access.steep-paths",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "access.steep-paths",
+   "value": "no",
+   "text": "Some garden paths are very steep, and the Nature Trail is uneven and can be muddy.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a \"no\" on access can take a venue out of a household's day"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:opening.hours",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "opening.hours",
+   "value": "Museum 10:00-17:30; Gardens 7:15-18:30",
+   "text": "Museum open daily 10am to 5.30pm; gardens from 7.15am (8am Sundays and bank holidays) to 6.30pm.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": true,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "an official-hours reading: it can contradict the provider's hours"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:opening.closure-natural-history",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "opening.closure-natural-history",
+   "value": "Natural History Gallery closed",
+   "text": "The Natural History Gallery is closed for refurbishment.",
+   "url": "https://www.horniman.ac.uk/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:opening.closure",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "opening.closure",
+   "value": "Natural History Gallery closed",
+   "text": "The Nature Gallery and Nature Discovery Den will be closed until 5 February 2027 for the Nature + Love project.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "narrowed to what its sentence supports"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:pricing.free",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "pricing.free",
+   "value": "free",
+   "text": "The museum and gardens are free; the Aquarium, Butterfly House, Voyage to the Deep and some events are charged.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "shares-content",
+     "level": "warn",
+     "detail": "27% of the proposal's content words are in the quote"
+    }
+   ],
+   "dest": "ships as reviewed admission data (code, by pull request)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a price or entry fact in front of a parent"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:pricing.paidAttractions",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "pricing.paidAttractions",
+   "value": {
+    "aquarium": "£2 to £16.80",
+    "butterflyHouse": "£2 to £28.60"
+   },
+   "text": "Aquarium £2 to £16.80 and Butterfly House £2 to £28.60; children under 3 may visit free of charge but must book into a timeslot.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "price: reviewed admission data or held (no claim type)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a price or entry fact in front of a parent"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:considerations.busy-cafe",
+   "venue": "Horniman Museum and Gardens",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "field": "considerations.busy-cafe",
+   "value": "busy 11:30-14:30",
+   "text": "The café is very busy between 11.30am and 2.30pm, especially at weekends and in school holidays.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/food-drink/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:activities.zootown",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "activities.zootown",
+   "value": null,
+   "text": "ZooTown is an indoor role-play adventure aimed at children aged up to 8; tickets must be booked online in advance; Silver members and non-members pay £1 per child.",
+   "url": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "narrowed to what its sentence supports"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:activities.animal-talks",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "activities.animal-talks",
+   "value": null,
+   "text": "Daily animal talks, plus a schedule of upcoming events (no age given).",
+   "url": "https://www.londonzoo.org/plan-your-visit",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:pushchair.hire",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "pushchair.hire",
+   "value": "yes",
+   "text": "Pushchairs to hire from the gift shop: single £10, double £15, plus a £15 refundable deposit (card only).",
+   "url": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says only; the quote does not"
+    }
+   ],
+   "dest": "note only (good to know); no structured home",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:toilets.accessibleToilet",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "toilets.accessibleToilet",
+   "value": "yes",
+   "text": "The zoo has a Changing Places toilet and a number of accessible toilets around the Zoo.",
+   "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "narrowed to what its sentence supports"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:toilets.toilets",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "toilets.toilets",
+   "value": "yes",
+   "text": "Accessible toilets around the zoo: opposite Tiny Giants, next to the Reptile House, near the main entrance next to the African Aviary, and at The Terrace Restaurant.",
+   "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:toilets.babyFeeding",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "toilets.babyFeeding",
+   "value": "yes",
+   "text": "A breastfeeding room and quiet areas; feeding is welcome everywhere.",
+   "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted-spot-check",
+   "findings": [],
+   "dest": "NO HOME: facility detail beyond the mapped facts has no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:transport.station",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "transport.station",
+   "value": "Camden Town",
+   "text": "Camden Town (Northern line) is the nearest Tube: a 16 minute, 0.8 mile walk. Regent's Park (24 minutes) and the 274 and 88 buses also serve it.",
+   "url": "https://www.londonzoo.org/plan-your-visit/how-to-get-to-london-zoo",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: stations, buses, fees and entrances have no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:transport.parking",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "transport.parking",
+   "value": "yes",
+   "text": "Zoo car park: £16 in term time, £17.50 at weekends and in bank or school holidays, paid on the day.",
+   "url": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:transport.blueBadge",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "transport.blueBadge",
+   "value": "yes",
+   "text": "A disabled bay at the entrance; Blue Badge holders can also park on the Outer Circle for up to four hours.",
+   "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:food.cafe",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "food.cafe",
+   "value": "yes",
+   "text": "A Barista Bar next to The Terrace Restaurant serves coffees and hot drinks from 10am until the Zoo closes; The Terrace Restaurant is open 11.30am-2.30pm year round.",
+   "url": "https://www.londonzoo.org/plan-your-visit/opening-times",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "narrowed to what its sentence supports"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:food.picnic",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "food.picnic",
+   "value": "yes",
+   "text": "Outdoor picnic benches are available at the Peckish Parrot Café in the Animal Adventure area.",
+   "url": "https://www.londonzoo.org/plan-your-visit/food-and-drink",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "narrowed to what its sentence supports"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:access.wheelchair",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "access.wheelchair",
+   "value": "yes",
+   "text": "Most of the zoo is accessible for wheelchair users and those with limited mobility.",
+   "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:access.steep-slopes",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "access.steep-slopes",
+   "value": "no",
+   "text": "The slopes leading to the two tunnels in the Zoo are steep.",
+   "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a \"no\" on access can take a venue out of a household's day"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:opening.hours",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "opening.hours",
+   "value": "10:00 open; closing 17:00 until 23 Oct, then 16:00",
+   "text": "Opens 10am. Last entry 4pm and closing 5pm until 23 October; last entry 3pm and closing 4pm from 24 October to 12 February.",
+   "url": "https://www.londonzoo.org/plan-your-visit/opening-times",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": true,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "an official-hours reading: it can contradict the provider's hours"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:pricing.under3",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "pricing.under3",
+   "value": "free",
+   "text": "Children under 3 go free.",
+   "url": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "price: reviewed admission data or held (no claim type)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a price or entry fact in front of a parent"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:pricing.variable",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "pricing.variable",
+   "value": {
+    "adult16to64": "£27.70 to £34.50",
+    "child3to15": "£19.40 to £24.10"
+   },
+   "text": "Online advance prices (before 10am on the day, no donation): adult £27.70 to £34.50 and child (3 to 15) £19.40 to £24.10 depending on the day; gate prices are higher.",
+   "url": "https://www.londonzoo.org/plan-your-visit/london-zoo-tickets",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "price: reviewed admission data or held (no claim type)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a price or entry fact in front of a parent"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:considerations.supervision",
+   "venue": "London Zoo",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "field": "considerations.supervision",
+   "value": "under 16 with an adult",
+   "text": "Children under 16 are not admitted without an adult.",
+   "url": "https://www.londonzoo.org/plan-your-visit/opening-times",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: practical rules and closures have no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:activities.farm-animals",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "activities.farm-animals",
+   "value": null,
+   "text": "A 32 acre park and farm with over 100 animals, free to visit, \"for people of all ages\". No age is given for any one thing.",
+   "url": "https://www.mudchute.org/plan-your-visit/facilities",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says free; the quote does not"
+    }
+   ],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:activities.pets-corner",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "activities.pets-corner",
+   "value": null,
+   "text": "Animal petting in Pets Corner on set days in school holidays; no handling.",
+   "url": "https://www.mudchute.org/plan-your-visit/faq",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:activities.donkey-rides",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "activities.donkey-rides",
+   "value": null,
+   "text": "Donkey rides normally on summer Sundays, weather permitting.",
+   "url": "https://www.mudchute.org/plan-your-visit/faq",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted-spot-check",
+   "findings": [],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:pushchair.terrain",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "pushchair.terrain",
+   "value": "mixed",
+   "text": "Most areas are accessible by wheelchair, but paths are not all tarmac and some have a natural mud surface.",
+   "url": "https://www.mudchute.org/plan-your-visit/facilities",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "batch",
+   "findings": [],
+   "dest": "note only (good to know); no structured home",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:toilets.toilets",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "toilets.toilets",
+   "value": "yes",
+   "text": "Toilets, including a disabled toilet, are available in the courtyard.",
+   "url": "https://www.mudchute.org/plan-your-visit/facilities",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "narrowed to what its sentence supports"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:toilets.babyChanging",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "toilets.babyChanging",
+   "value": "yes",
+   "text": "Baby changing in the ladies' public toilet in the courtyard.",
+   "url": "https://www.mudchute.org/plan-your-visit/facilities",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:toilets.accessibleToilet",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "toilets.accessibleToilet",
+   "value": "yes",
+   "text": "A disabled toilet in the courtyard.",
+   "url": "https://www.mudchute.org/plan-your-visit/facilities",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:transport.station",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "transport.station",
+   "value": "Crossharbour DLR",
+   "text": "DLR to Crossharbour (recommended), Island Gardens or Mudchute; D3, D6 and 135 buses.",
+   "url": "https://www.mudchute.org/plan-your-visit/getting-here",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: stations, buses, fees and entrances have no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:transport.parking",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "transport.parking",
+   "value": "no",
+   "text": "No visitor parking on site; limited meter parking on Pier Street and nearby.",
+   "url": "https://www.mudchute.org/plan-your-visit/getting-here",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "a \"no\" can hide a venue"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:food.cafe",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "food.cafe",
+   "value": "yes",
+   "text": "Mudchute Kitchen Café, Tuesday to Sunday 10am to 5pm (daily in school holidays).",
+   "url": "https://www.mudchute.org/plan-your-visit/opening-times",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:food.picnic",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "food.picnic",
+   "value": "yes",
+   "text": "Bring your own food, but eat in the courtyard only.",
+   "url": "https://www.mudchute.org/plan-your-visit/facilities",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:play.playground",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "play.playground",
+   "value": "adjacent",
+   "text": "An outdoor play area in Millwall Park, next door.",
+   "url": "https://www.mudchute.org/plan-your-visit/facilities",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:access.wheelchair",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "access.wheelchair",
+   "value": "yes",
+   "text": "Most areas of the farm are accessible by wheelchair, though not all paths are tarmac; some ground can become muddy during and after heavy rain.",
+   "url": "https://www.mudchute.org/plan-your-visit/facilities",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says all; the quote does not"
+    },
+    {
+     "id": "interpretation-size",
+     "level": "warn",
+     "detail": "25 words proposed against 9 quoted"
+    }
+   ],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "an independent check doubted it",
+    "narrowed to what its sentence supports"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:opening.hours",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "opening.hours",
+   "value": "Farm 9-16; Park dawn-dusk",
+   "text": "Farm open every day 9am to 4pm (animals go in from 3pm); park open every day dawn to dusk.",
+   "url": "https://www.mudchute.org/plan-your-visit/opening-times",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": true,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "an official-hours reading: it can contradict the provider's hours"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:considerations.monday-courtyard",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "considerations.monday-courtyard",
+   "value": "courtyard closed Mondays",
+   "text": "The Main Courtyard is closed on Mondays except during school holidays, and there is no access to the Mudchute toilets when the courtyard is closed.",
+   "url": "https://www.mudchute.org/plan-your-visit/opening-times",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "narrowed to what its sentence supports"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:pricing.free",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "pricing.free",
+   "value": "free",
+   "text": "Free to visit; donations welcome.",
+   "url": "https://www.mudchute.org/plan-your-visit/faq",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "ships as reviewed admission data (code, by pull request)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a price or entry fact in front of a parent"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:considerations.hygiene",
+   "venue": "Mudchute Park and Farm",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "field": "considerations.hygiene",
+   "value": "wash hands",
+   "text": "Visitors are encouraged to wash their hands thoroughly after touching any animals (and are asked not to touch young lambs during lambing).",
+   "url": "https://www.mudchute.org/plan-your-visit/faq",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "narrowed to what its sentence supports"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:activities.dinosaurs",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "activities.dinosaurs",
+   "value": null,
+   "text": "Roaring T. rex (in the Dinosaurs Gallery) and the museum's other star attractions are permanently on display and always free to visit. No age is given.",
+   "url": "https://www.nhm.ac.uk/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:activities.nature-discovery-garden",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "activities.nature-discovery-garden",
+   "value": null,
+   "text": "The Nature Discovery Garden is open daily in daylight hours (currently closing at 16:00). No age is given.",
+   "url": "https://www.nhm.ac.uk/visit/galleries-and-museum-map/our-gardens.html",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:pushchair.cloakroom",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "pushchair.cloakroom",
+   "value": "£5",
+   "text": "The cloakroom lists \"Pushchair: £5\" among its per-item prices.",
+   "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [],
+   "dest": "NO HOME: pushchair rules and storage have no claim type (only a terrain rating)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.toilets",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "toilets.toilets",
+   "value": "yes",
+   "text": "Many toilets, all marked on the museum map.",
+   "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.babyChanging",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "toilets.babyChanging",
+   "value": "yes",
+   "text": "Baby-changing facilities, marked on the museum map (which floors is not stated).",
+   "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted-spot-check",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "duplicateOf": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.toilets",
+   "restatesProduction": false,
+   "tier": "merged",
+   "why": [
+    "the same sentence as ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.toilets"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.accessibleToilet",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "toilets.accessibleToilet",
+   "value": "yes",
+   "text": "Wheelchair-accessible toilets, and a Changing Places toilet in the North Wing.",
+   "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says accessible, wheelchair; the quote does not"
+    }
+   ],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "an independent check doubted it"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:transport.station",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "transport.station",
+   "value": "South Kensington",
+   "text": "Nearest Tube is South Kensington; a subway tunnel gives a step-free way to the Central Entrance.",
+   "url": "https://www.nhm.ac.uk/visit/getting-here.html",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says free, step-free; the quote does not"
+    }
+   ],
+   "dest": "NO HOME: stations, buses, fees and entrances have no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:transport.parking",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "transport.parking",
+   "value": "no",
+   "text": "No general parking facilities on site and parking around the museum is limited; a very limited number of on-site spaces are available for Blue Badge holders, booked in advance.",
+   "url": "https://www.nhm.ac.uk/visit/getting-here.html",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "a \"no\" can hide a venue",
+    "narrowed to what its sentence supports"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:transport.blueBadge",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "transport.blueBadge",
+   "value": "yes",
+   "text": "A very limited number of Blue Badge spaces on site, and twelve on Exhibition Road.",
+   "url": "https://www.nhm.ac.uk/visit/getting-here.html",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:food.cafe",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "food.cafe",
+   "value": "yes",
+   "text": "Family-friendly cafés and restaurants.",
+   "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:access.wheelchair",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "access.wheelchair",
+   "value": "yes",
+   "text": "Wheelchair accessible with lifts and step-free access to most areas; some lifts are sometimes out of service.",
+   "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:access.lifts-out",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "access.lifts-out",
+   "value": "no",
+   "text": "Lifts in the Darwin Centre and the Mammals Hall are listed as currently out of order. The page does not date the notice, so it is shown as of the reading.",
+   "url": "https://www.nhm.ac.uk/visit/galleries-and-museum-map.html",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a \"no\" on access can take a venue out of a household's day"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:access.station-step-free",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "access.station-step-free",
+   "value": "no",
+   "text": "South Kensington station is not step free; a subway tunnel gives step-free access from the station to the museum.",
+   "url": "https://www.nhm.ac.uk/visit/getting-here.html",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "interpretation-size",
+     "level": "warn",
+     "detail": "19 words proposed against 6 quoted"
+    }
+   ],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a \"no\" on access can take a venue out of a household's day"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:opening.hours",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "opening.hours",
+   "value": "10:00-17:50 daily",
+   "text": "Open daily 10:00 to 17:50 (last entry 17:30). The page also lists closures on 9 October and 24 to 26 December.",
+   "url": "https://www.nhm.ac.uk/visit.html",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": true,
+   "impact": "high",
+   "route": "accepted",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "an official-hours reading: it can contradict the provider's hours"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:opening.closure",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "opening.closure",
+   "value": "2026-10-09 closed",
+   "text": "The South Kensington site is closed on Friday 9 October 2026 for a charity gala, and on 24 to 26 December.",
+   "url": "https://www.nhm.ac.uk/visit.html",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": true,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a whole-venue closure or a restriction on the core visit: it can refuse a date or a household"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:pricing.free",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "pricing.free",
+   "value": "free",
+   "text": "A free entry ticket can be booked to skip the queue on arrival; some exhibitions are paid.",
+   "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "ships as reviewed admission data (code, by pull request)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a price or entry fact in front of a parent"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:considerations.queue",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "considerations.queue",
+   "value": "busy weekends and holidays",
+   "text": "At weekends and in school holidays you may have to queue to enter; a free entry ticket or membership skips the queue.",
+   "url": "https://www.nhm.ac.uk/visit.html",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says free; the quote does not"
+    }
+   ],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "an independent check doubted it"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:considerations.booking",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "considerations.booking",
+   "value": "free ticket recommended",
+   "text": "A free entry ticket guarantees entry and skips the queue at busy times.",
+   "url": "https://www.nhm.ac.uk/visit/galleries-and-museum-map/our-gardens.html",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:considerations.creepy-crawlies",
+   "venue": "Natural History Museum",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "field": "considerations.creepy-crawlies",
+   "value": "closed",
+   "text": "The Creepy Crawlies Gallery is closed and will reopen as a permanent gallery for families.",
+   "url": "https://www.nhm.ac.uk/visit/galleries-and-museum-map.html",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:activities.playground",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "activities.playground",
+   "value": null,
+   "text": "A free outdoor playground with mini models of famous aircraft including a Spitfire. No age is given.",
+   "url": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:activities.aeroplay",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "activities.aeroplay",
+   "value": null,
+   "text": "AeroPlay! is the museum's soft play area, next to the café in Hangar 4. No age is given.",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/food-and-drink/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:activities.hands-on",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "activities.hands-on",
+   "value": null,
+   "text": "Hands-on activities and family-friendly exhibits in every hangar.",
+   "url": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: a plain activity description has no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:pushchair.access",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "pushchair.access",
+   "value": "yes",
+   "text": "Wide aisles in the hangars make access easy for wheelchairs and pushchairs.",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [],
+   "dest": "NO HOME: pushchair rules and storage have no claim type (only a terrain rating)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:toilets.babyChanging",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "toilets.babyChanging",
+   "value": "yes",
+   "text": "Baby changing in every hangar; a Changing Places toilet in Hangar 2.",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says every; the quote does not"
+    }
+   ],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:toilets.toilets",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "toilets.toilets",
+   "value": "yes",
+   "text": "Toilets in every hangar (the page calls them accessible toilets).",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says every; the quote does not"
+    }
+   ],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:transport.station",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "transport.station",
+   "value": "Colindale",
+   "text": "Near Colindale (Northern line, Edgware branch); the 303 bus stops outside the main entrance.",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [],
+   "dest": "NO HOME: stations, buses, fees and entrances have no claim type",
+   "modelFlag": true,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "narrower",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:transport.parking",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "transport.parking",
+   "value": "yes",
+   "text": "On-site car park; parking is charged (see the charges item).",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:transport.parkingFee",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "transport.parkingFee",
+   "value": "£8.50 up to 3h; £11.00 3-6h",
+   "text": "Cars up to 3 hours £8.50; 3 to 6 hours £11.00.",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [],
+   "dest": "NO HOME: stations, buses, fees and entrances have no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:food.cafe",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "food.cafe",
+   "value": "yes",
+   "text": "Hendon Kitchen, a family-friendly café with a canteen-style menu.",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/food-and-drink/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": true,
+   "tier": "deferred",
+   "why": [
+    "production already serves this value from an active claim"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:play.playground",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "play.playground",
+   "value": "yes",
+   "text": "Free outdoor playground.",
+   "url": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "duplicateOf": "ChIJse1x6SoRdkgR83yrIhNV5gc:activities.playground",
+   "restatesProduction": true,
+   "tier": "merged",
+   "why": [
+    "the same sentence as ChIJse1x6SoRdkgR83yrIhNV5gc:activities.playground"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:play.softplay",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "play.softplay",
+   "value": "yes",
+   "text": "AeroPlay! soft play is next to the café, which is in Hangar 4.",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/food-and-drink/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: facility detail beyond the mapped facts has no claim type",
+   "modelFlag": false,
+   "amended": true,
+   "duplicateOf": "ChIJse1x6SoRdkgR83yrIhNV5gc:activities.aeroplay",
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:access.wheelchair",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "access.wheelchair",
+   "value": "yes",
+   "text": "Wide aisles throughout the hangars make access easy for wheelchairs and pushchairs; a limited number of manual wheelchairs and mobility scooters can be borrowed free, weather permitting, on a first-come, first-served basis.",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says free; the quote does not"
+    },
+    {
+     "id": "interpretation-size",
+     "level": "warn",
+     "detail": "32 words proposed against 12 quoted"
+    }
+   ],
+   "dest": "claim",
+   "modelFlag": true,
+   "amended": true,
+   "duplicateOf": "ChIJse1x6SoRdkgR83yrIhNV5gc:pushchair.access",
+   "restatesProduction": false,
+   "tier": "merged",
+   "why": [
+    "the same sentence as ChIJse1x6SoRdkgR83yrIhNV5gc:pushchair.access"
+   ],
+   "modelReadings": [
+    "narrower",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:access.stepFree",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "access.stepFree",
+   "value": "yes",
+   "text": "Step-free access around the site and lifts to upper levels.",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says lifts; the quote does not"
+    }
+   ],
+   "dest": "NO HOME: accessibility detail beyond wheelchair and sensory has no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:access.sensory",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "access.sensory",
+   "value": "yes",
+   "text": "Free SEND family backpacks with sensory items; quiet rooms.",
+   "url": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:opening.hours",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "opening.hours",
+   "value": "10:00-17:00 daily",
+   "text": "Open daily 10am to 5pm; last entry 4.30pm.",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": true,
+   "impact": "high",
+   "route": "accepted",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "an official-hours reading: it can contradict the provider's hours"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:opening.theatre",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "opening.theatre",
+   "value": "4D Theatre closed",
+   "text": "The 4D Theatre is temporarily closed for refurbishment.",
+   "url": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "narrowed to what its sentence supports"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:pricing.free",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "pricing.free",
+   "value": "free",
+   "text": "Admission to all areas of the Museum is free, and donations are welcome.",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "ships as reviewed admission data (code, by pull request)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a price or entry fact in front of a parent"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:considerations.supervision",
+   "venue": "Royal Air Force Museum London",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "field": "considerations.supervision",
+   "value": "under 11 with an adult",
+   "text": "Children under 11 must be accompanied by an adult.",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted-spot-check",
+   "findings": [],
+   "dest": "NO HOME: practical rules and closures have no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:activities.the-garden",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "activities.the-garden",
+   "value": null,
+   "text": "The Garden is a hands-on play gallery for 3 to 6 year olds.",
+   "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:activities.bubble-explorers",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "activities.bubble-explorers",
+   "value": null,
+   "text": "Bubble Explorers is a live bubbles show for children 7 and under, at weekends and daily in school holidays (£4.50; free for 2 and under).",
+   "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:activities.wonderlab",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "activities.wonderlab",
+   "value": null,
+   "text": "Wonderlab is the interactive gallery for children 7 to 14 (a paid gallery).",
+   "url": "https://www.sciencemuseum.org.uk/visit/space-lovers-guide-science-museum",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:pushchair.storage",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "pushchair.storage",
+   "value": "yes",
+   "text": "Free buggy parking in the Spare Room (level -1, opposite The Garden; pushchairs must be empty), and a small free buggy park by Pattern Pod on level 0 for use while you visit that area.",
+   "url": "https://www.sciencemuseum.org.uk/visit/space-lovers-guide-science-museum",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "note only (good to know); no structured home",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:pushchair.allowed",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "pushchair.allowed",
+   "value": "yes",
+   "text": "Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.",
+   "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": true,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a whole-venue closure or a restriction on the core visit: it can refuse a date or a household"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.toilets",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "toilets.toilets",
+   "value": "yes",
+   "text": "Toilets on every level (the page describes the accessible ones).",
+   "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says every; the quote does not"
+    }
+   ],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "an independent check doubted it"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.babyChanging",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "toilets.babyChanging",
+   "value": "yes",
+   "text": "Baby changing on every floor.",
+   "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says every; the quote does not"
+    }
+   ],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "an independent check doubted it"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.accessibleToilet",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "toilets.accessibleToilet",
+   "value": "yes",
+   "text": "Accessible toilets on every level.",
+   "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "individual",
+   "findings": [
+    {
+     "id": "no-over-reach",
+     "level": "warn",
+     "detail": "the proposal says every; the quote does not"
+    }
+   ],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "duplicateOf": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.toilets",
+   "restatesProduction": false,
+   "tier": "merged",
+   "why": [
+    "the same sentence as ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.toilets"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.changingPlaces",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "toilets.changingPlaces",
+   "value": "yes",
+   "text": "A Changing Places toilet on level 0 next to the Hans Rausing Lecture Theatre.",
+   "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.blueBadge",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "transport.blueBadge",
+   "value": "yes",
+   "text": "A small number of disabled spaces on Exhibition Road; Blue Badge holders may park there for four hours between 08.30 and 18.30.",
+   "url": "https://www.sciencemuseum.org.uk/visit/getting-here",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.station",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "transport.station",
+   "value": "South Kensington",
+   "text": "South Kensington (District, Circle, Piccadilly) is a 5 minute walk. The nearest step-free Tube is Knightsbridge, a 15 to 20 minute walk.",
+   "url": "https://www.sciencemuseum.org.uk/visit/getting-here",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: stations, buses, fees and entrances have no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.parking",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "transport.parking",
+   "value": "no",
+   "text": "No car parking at the museum and local parking is very limited; nearest pay and display is in Prince Consort Road and Queen's Gate.",
+   "url": "https://www.sciencemuseum.org.uk/visit/getting-here",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "high impact: a wrong \"yes\" costs a family a wasted journey",
+    "a \"no\" can hide a venue"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:food.cafe",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "food.cafe",
+   "value": "yes",
+   "text": "Three cafés and a milkshake and ice cream bar.",
+   "url": "https://www.sciencemuseum.org.uk/visit/food-and-drink",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:food.picnic",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "food.picnic",
+   "value": "yes",
+   "text": "Bring your own food: dedicated picnic areas on levels -1, 2 and 3.",
+   "url": "https://www.sciencemuseum.org.uk/visit/food-and-drink",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "claim",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "grouped",
+   "why": [
+    "low impact, every independent check passed, equivalent to others"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:access.stepFreeRoute",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "access.stepFreeRoute",
+   "value": "yes",
+   "text": "A free guide for families with children under seven follows a step-free route through the museum, with five experiences for toddlers and young explorers.",
+   "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "NO HOME: accessibility detail beyond wheelchair and sensory has no claim type",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:access.mezzanine",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "access.mezzanine",
+   "value": "no",
+   "text": "Currently there is no step-free access to the mezzanine level in the Making the Modern World and Flight galleries.",
+   "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a \"no\" on access can take a venue out of a household's day"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:access.wheelchairLoan",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "access.wheelchairLoan",
+   "value": "yes",
+   "text": "Wheelchairs and folding stools can be borrowed from the Information Desk.",
+   "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "NO HOME: accessibility detail beyond wheelchair and sensory has no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:opening.hours",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "opening.hours",
+   "value": "10:00-18:00 daily",
+   "text": "Open daily 10:00 to 18:00; closed 24 to 26 December.",
+   "url": "https://www.sciencemuseum.org.uk/visit",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": true,
+   "hours": true,
+   "impact": "high",
+   "route": "accepted",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a whole-venue closure or a restriction on the core visit: it can refuse a date or a household",
+    "an official-hours reading: it can contradict the provider's hours"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:pricing.free",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "pricing.free",
+   "value": "free",
+   "text": "Admission is free: a free admission ticket can be booked; donations are welcome.",
+   "url": "https://www.sciencemuseum.org.uk/",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "ships as reviewed admission data (code, by pull request)",
+   "modelFlag": false,
+   "amended": true,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a price or entry fact in front of a parent"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:pricing.bubbleExplorers",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "pricing.bubbleExplorers",
+   "value": "£4.50",
+   "text": "Bubble Explorers: £4.50 per person, free for children 2 and under.",
+   "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "price: reviewed admission data or held (no claim type)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "expert",
+   "why": [
+    "a price or entry fact in front of a parent"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:considerations.duration",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "considerations.duration",
+   "value": 120,
+   "text": "A typical visit lasts about two hours.",
+   "url": "https://www.sciencemuseum.org.uk/visit",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted-spot-check",
+   "findings": [],
+   "dest": "NO HOME: practical rules and closures have no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:considerations.supervision",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "considerations.supervision",
+   "value": "under 12 with an adult",
+   "text": "Children under 12 must be with an adult aged 18 or over.",
+   "url": "https://www.sciencemuseum.org.uk/visit",
+   "previouslyAutomatic": true,
+   "held": false,
+   "ruleOrHours": false,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "low",
+   "route": "accepted",
+   "findings": [],
+   "dest": "NO HOME: practical rules and closures have no claim type",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "parked",
+   "why": [
+    "nothing in the app can hold it yet"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:considerations.building-noise",
+   "venue": "Science Museum",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "field": "considerations.building-noise",
+   "value": "noise",
+   "text": "New galleries are being built, so there may be some extra noise.",
+   "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+   "previouslyAutomatic": false,
+   "held": false,
+   "ruleOrHours": true,
+   "refusingRule": false,
+   "hours": false,
+   "impact": "high",
+   "route": "individual",
+   "findings": [],
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "modelFlag": false,
+   "amended": false,
+   "restatesProduction": false,
+   "tier": "reviewer",
+   "why": [
+    "a rule that informs (an area closure, a caution, a booking note): it cannot refuse a date or a household on its own",
+    "high impact: a wrong \"yes\" costs a family a wasted journey"
+   ],
+   "modelReadings": [
+    "supports",
+    "supports"
+   ]
+  }
+ ]
+}

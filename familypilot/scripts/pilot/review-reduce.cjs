@@ -9,8 +9,8 @@
  *
  * A STAGE MAY REMOVE AN ITEM FROM THE HUMAN QUEUE ONLY IF IT CANNOT PUBLISH ANYTHING. Parking an item (nothing can hold it), merging a
  * duplicate, deferring a restatement of what production already serves, and rejecting an unsupported proposal all publish nothing.
- * Nothing here moves an item from "a person must decide" to "published": independent AI verification is evidence for the person, never
- * a substitute for them.
+ * Nothing here moves an item from "a person must decide" to "published": a model reading is a flag for the person, never evidence and
+ * never a substitute for them. See review-workflow.cjs for the tiers that decide who reads what.
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -58,7 +58,9 @@ take('Merged: the same sentence already in the queue', 'One reading, one decisio
 const claimValue = (r) => { const m = CLAIM_MAP[r.field]; return m ? m : r.field === 'transport.parking' ? ['familyFacilities.parking', r.value === 'no' ? 'no' : 'yes'] : null; };
 take('Deferred: restates what production already serves', 'An active production claim for the same venue, field and value already says it. Production\'s own refresh keeps it current; a person adds nothing by approving a restatement.', (r) => { const m = claimValue(r); if (!m) return false; return (baseline[r.venueId] ?? []).some((c) => c.field === m[0] && String(c.value) === String(m[1])); });
 
-take('Rejected: the evidence does not support it', 'Both independent verifiers found it unsupported, or a mechanical check failed. Not published; listed with the reason; a person can overturn it.', (r) => r.route === 'auto-reject' || (r.verdict && r.verdict.A === 'unsupported' && r.verdict.B === 'unsupported'));
+// Only a MECHANICAL failure rejects. Two models agreeing that something is unsupported is a flag for the reviewer, not a verdict, for the same
+// reason that two models agreeing something is supported is not evidence: they share a family with the author of the proposals.
+take('Rejected: a mechanical check failed', 'A number the quote lacks, a facility the quote does not mention, a page that is not the venue\'s. Not published; listed with the reason; a person can overturn it.', (r) => r.route === 'auto-reject');
 
 const remaining = live;
 const split = (pred) => remaining.filter(pred).length;

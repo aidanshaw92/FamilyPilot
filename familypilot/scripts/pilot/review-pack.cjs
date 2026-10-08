@@ -23,8 +23,11 @@ const args = process.argv.slice(2);
 const flag = (n) => (args.includes(n) ? args[args.indexOf(n) + 1] : null);
 const pack = JSON.parse(fs.readFileSync(flag('--pack'), 'utf8'));
 const order = { individual: 0, 'auto-reject': 1, batch: 2, 'accepted-spot-check': 3 };
+const TIER_ORDER = { expert: 0, reviewer: 1, grouped: 2 };
+const hasTiers = pack.queue.some((i) => i.tier);
 const rank = (i) => (i.findings.some((f) => f.level === 'fail') ? 0 : i.findings.length && i.impact === 'high' ? 1 : i.findings.length ? 2 : i.impact === 'high' ? 3 : 4);
-pack.queue.sort((a, b) => (order[a.route] ?? 9) - (order[b.route] ?? 9) || rank(a) - rank(b) || a.venue.localeCompare(b.venue));
+if (!hasTiers) pack.queue.sort((a, b) => (order[a.route] ?? 9) - (order[b.route] ?? 9) || rank(a) - rank(b) || a.venue.localeCompare(b.venue));
+else pack.queue.sort((a, b) => (TIER_ORDER[a.tier] ?? 9) - (TIER_ORDER[b.tier] ?? 9));
 const data = JSON.stringify(pack).replace(/</g, '\\u003c');
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pilot evidence review</title>
 <style>
@@ -53,7 +56,9 @@ const live=()=>{const dead=new Set();for(const e of [...log].reverse()){if(e.dec
 const state=()=>{const m=new Map();for(const e of live())if(e.decision!=='revert')m.set(e.itemId,e);return m};
 const STOP=new Set('a an and are as at be by for from has have in is it its of on or that the their there these they this to was were will with you your we our can may also not any all about near into than then them so such per each both'.split(' '));
 const words=s=>new Set(String(s||'').toLowerCase().replace(/[^a-z0-9£ ]/g,' ').split(' ').filter(w=>w.length>2&&!STOP.has(w)).map(w=>w.replace(/(ing|ies|es|s|ed)$/,'')));
-const novel=(t,q)=>{const b=words(q);return String(t||'').split(/(\\s+)/).map(w=>{const k=[...words(w)][0];return k&&!b.has(k)?'<mark>'+esc(w)+'</mark>':esc(w)}).join('')};
+const NEG=/^(not|no|never|cannot|without|unable|n't)$|n't$/i;const hasNeg=t=>String(t||'').toLowerCase().split(/[^a-z']+/).some(w=>NEG.test(w));
+const novel=(t,q)=>{const b=words(q);const qneg=hasNeg(q);return String(t||'').split(/(\\s+)/).map(w=>{const k=[...words(w)][0];const neg=NEG.test(w.replace(/[^A-Za-z']/g,''));return (neg&&!qneg)||(k&&!b.has(k))?'<mark>'+esc(w)+'</mark>':esc(w)}).join('')};
+const negNote=i=>hasNeg(i.quote)&&!hasNeg(i.proposed)?'<div class="meta" style="color:var(--warn)">The quote contains a negation (not / no / never / cannot). Check that the proposal keeps its meaning.</div>':''
 let started=null,current=null;const startTimer=id=>{if(current!==id){current=id;started=Date.now()}};
 const secs=()=>started?Math.round((Date.now()-started)/1000):0;
 function add(e){e.n=log.length?log[log.length-1].n+1:1;e.at=new Date().toISOString();e.reviewer=$('#who').value||'unnamed';log.push(e);save();render()}
@@ -65,9 +70,9 @@ function render(){const s=state();const done=Q.filter(i=>s.has(i.id)).length;$('
   if(lab!==last){h+='<h2>'+esc(lab)+'</h2>';last=lab}
   const c=i.context;const quote=c?'<div class="ctx">…'+esc(c.before.slice(-220))+'<mark>'+esc(c.quote)+'</mark>'+esc(c.after.slice(0,220))+'…</div>':'<div class="ctx"><mark>'+esc(i.quote)+'</mark> <span class="meta">(page text not in this pack)</span></div>';
   const g=i.batchGroup&&groups[i.batchGroup];
-  h+='<section class="card'+(d?' decided':'')+'" data-id="'+esc(i.id)+'"><div class="meta">'+esc(i.venue)+' · '+esc(i.field)+' · '+i.impact+' impact · '+(i.status==='verified'?'accepted by the gate':'needs a person')+'</div>'
+  h+='<section class="card'+(d?' decided':'')+'" data-id="'+esc(i.id)+'"><div class="meta">'+esc(i.venue)+' · '+esc(i.field)+' · '+i.impact+' impact · '+'needs a person'+'</div>'
    +'<div>'+i.findings.map(f=>'<span class="chip '+f.level+'" title="'+esc(f.detail)+'">'+esc(f.id)+': '+esc(f.detail)+'</span>').join('')+(i.reasons||[]).filter(r=>!/^independent/.test(r)).map(r=>'<span class="chip">'+esc(r)+'</span>').join('')+'</div>'
-   +'<p class="prop"><b>Proposed:</b> '+novel(i.proposed,i.quote)+'</p><div class="meta">Highlighted words are not in the quote.</div>'+quote
+   +'<p class="prop"><b>Proposed:</b> '+novel(i.proposed,i.quote)+'</p><div class="meta">Highlighted words are not in the quote.</div>'+negNote(i)+quote
    +'<div class="meta"><a href="'+esc(i.url)+'" target="_blank" rel="noopener">Open the page</a> · read '+esc(i.readOn)+'</div>'
    +(d?'<div class="state">'+esc(d.decision)+(d.editedText?': '+esc(d.editedText):'')+' <span class="meta">('+d.secondsOnItem+' s)</span></div>'
      :'<div class="row" data-focus="'+esc(i.id)+'"><button class="p" data-a="approve">Approve</button><button data-a="edit">Edit meaning</button><button data-a="reject">Reject</button><button data-a="unknown">Mark unknown</button>'+(g?'<button data-a="batch" '+(sampleDone(g)?'':'disabled title="Approve the sample items first"')+'>Approve all '+g.size+' equivalent</button>':'')+'</div><div class="edit"></div>')

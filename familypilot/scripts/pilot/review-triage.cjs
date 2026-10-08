@@ -137,7 +137,8 @@ if (flag('--pack')) {
     if (at < 0) return null;
     return { before: t.slice(Math.max(0, at - 260), at), quote: t.slice(at, at + first.length), after: t.slice(at + first.length, at + first.length + 260) };
   };
-  const queue = items.filter((i) => i.route !== 'accepted').map((i) => ({ ...i, context: around(i) }));
+  // `--all` keeps the automatic acceptances in the pack too: the review workflow (review-workflow.cjs) puts a person on every one.
+  const queue = items.filter((i) => args.includes('--all') || i.route !== 'accepted').map((i) => ({ ...i, context: around(i) }));
   fs.writeFileSync(flag('--pack'), JSON.stringify({ summary, batchGroups: realGroups, queue }, null, 1));
 }
 
