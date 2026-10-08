@@ -187,3 +187,26 @@ What a family is told (visit 14 Nov 2026; asserted in the test):
     Museum of Brands and Horniman ids and checks the card text for three parties.
   - Full suite: 2,879 passed.
 - **Rollback:** revert the PR, or set a claim's `decision` to `hold`.
+
+## 7. Release check (8 October)
+
+`pricing-release-check.test.ts` is the gate for showing these prices. It runs on every build. It passes for all 24
+published claims (98 checks):
+
+- **Fresh.** Every price is current on the release date. It stops being shown exactly 400 days after the reading, and
+  then becomes unknown: never shown as current, never guessed.
+  - The readings date from 26 September to 7 October, so the first price lapses on 31 October 2027.
+- **Sourced.** The price's own source is the excerpt's page, read on the stated day, from the venue's own site (an
+  eligible subject scope). The excerpt is quoted, never paraphrased.
+- **Honest for every household.** Each published price was swept across 41 household shapes: one or two adults, none to
+  four children aged 2 months to 17 years, and one with a child of unknown age. Every total is one of three things:
+  - one line per person, each person once;
+  - one family ticket that this party actually fits (adults, children and age limits);
+  - unknown.
+
+  No total ever leaves someone out.
+  - Across 4 sample households: 76 free, 5 individual totals, 1 family ticket shown as the family ticket's price
+    (individual prices unknown), and 14 unknown (9 not covered, 5 age unknown).
+- **Plain tickets.** Every family ticket states its adult and child limits, and every free band is £0.
+- **Only reviewed decisions are served.** All 24 `publish` claims are; no `hold` or `refuse` claim ever is.
+- **Museum of Brands:** the £28 adult-only option is never a family of four's total (asserted).
