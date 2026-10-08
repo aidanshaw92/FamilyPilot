@@ -22,8 +22,12 @@ const { isBotChallengeText } = require('./html-text-extractor');
  *       facility's users ("VeloPark Venue car parking ... for facility users") is not the venue's; on-street and nearby
  *       pay-and-display is not the venue's charge; "There are two carparks" is the venue's own car park (Colne Valley
  *       Regional Park and Queen Elizabeth Olympic Park, both serving a wrong parking fact until this version)
+ *   v6  the extraction pilot of 8 Oct 2026: venue-wide step-free and lift statements, placed toilets ("the main toilets
+ *       are next to the cafe"), a café with its own hours or as the place something is, a venue's own car parks being
+ *       locked or counted; and "the nearest Changing Places toilet can be found in Dulwich Park" is not the venue's
+ *       accessible toilet (Sydenham Hill Wood served one from it)
  */
-const EXTRACTOR_VERSION = 'official-source-rules-v5';
+const EXTRACTOR_VERSION = 'official-source-rules-v6';
 
 /**
  * What makes a sentence say this venue has a playground.
@@ -295,6 +299,38 @@ function isNonVenueWheelchairSubject(sentence) {
   return WHEELCHAIR_SUBJECT_FIRST.test(text) || WHEELCHAIR_CLAIM_FIRST.test(text);
 }
 
+/**
+ * Step-free or lift access stated for the WHOLE venue, the way venues' accessibility pages actually say it when they never
+ * use the words "wheelchair accessible". Each is from the stored corpus (8 Oct 2026), and none of their venues served a
+ * wheelchair fact:
+ *
+ *   Gunnersbury Park           "Step-free access is available throughout the museum, with some ramps and slopes"
+ *   Museum of the Home         "Step-free access is available to the Museum and to our galleries."
+ *   RAF Museum London          "We have step free access around our site and lifts to upper levels."
+ *   Queen's House              "All floors of the Queen's House have lift access."
+ *   National Maritime Museum   "The building has accessible lifts to every floor."
+ *   William Morris Gallery     "...an entrance with a ramp, accessible toilets and lift access to all floors."
+ *   Saatchi Gallery            "All floors have lifts and there is level access between the galleries on each floor."
+ *   London Eye                 "...a wheelchair-friendly attraction with full accessibility throughout."
+ *
+ * Refused by `isNonVenueStepFree`: a station's or a bus's step-free access ("Hoxton Station has step-free access", "Our
+ * nearest step-free station is Paddington"), one building or one room ("Both our community buildings offer step-free
+ * access", "The toilets ... are step-free"), and picnic tables.
+ */
+const VENUE_STEP_FREE_PATTERNS = [
+  /\bstep[\s-]free\s+access\s+(?:is\s+available\s+)?(?:throughout|to\s+all\b|around\s+(?:our|the)\s+site|to\s+the\s+(?:museum|gallery|galleries|building|house|venue)\b)/i,
+  /\b(?:accessible\s+)?lifts?\s+(?:access\s+)?(?:is\s+available\s+)?to\s+(?:all|every|each)\s+(?:floors?|levels?)\b/i,
+  /\ball\s+floors\b[^.!?]{0,40}\b(?:have|has)\s+(?:lifts?|lift\s+access)\b/i,
+  /\blevel\s+access\s+(?:throughout|between\s+the\s+galleries|to\s+all)\b/i,
+  /\bwheelchair[\s-]friendly\b[^.!?]{0,40}\bfull\s+accessibility\b/i,
+];
+
+function isNonVenueStepFree(sentence) {
+  const text = String(sentence ?? '');
+  return /\bnearest\b|\bstations?\b|\bbus(?:es)?\b|\btube\b|\boverground\b|\bcommunity\s+buildings?\b|\bpicnic\b/i.test(text)
+    || /\b(?:toilets?|caf(?:e|\u00e9)s|rooms?|cubicles?)\b[^.!?]{0,60}\b(?:are|is)\s+step[\s-]free\b/i.test(text);
+}
+
 const PLAYGROUND_PATTERNS = [/playground/i, /play\s+area/i];
 
 /**
@@ -445,11 +481,22 @@ const OWN_CAR_PARK_PATTERNS = [
   // "There are two carparks run by Bucks County Council." (Colne Valley Regional Park's visitor centre page, under
   // "Parking"): the venue's own car parks, written as one word and counted.
   /\b(?:we\s+have|there\s+are)\s+(?:two|three|four|several|\d+)\s+(?:[\w'\u2018\u2019-]+\s+){0,2}car\s?parks\b/i,
+  // v6: "car parks will be locked at 9pm" (Swanley Park), "car parks are locked in accordance with park locking times"
+  // (Northala Fields), "parking: 2 car parks" (Northala Fields): the venue's own car parks, by their opening rules.
+  /\bcar\s?parks?\s+(?:will\s+be|are|is)\s+locked\b/i,
+  /\bparking:\s*\d+\s+car\s?parks?\b/i,
   /\bon[\s-]?site\s+car\s+park\b/i,
   // "a car park within Beckenham Place Park"; never "a car park within suitable walking distance" (SEA LIFE London).
   /\bcar\s+park\s+within\s+(?:the\s+(?:park|grounds|site|gardens|estate|farm)\b|[A-Z])/,
   /\bcar\s+park\b[^.!?]{0,40}\bis\s+accessed\s+(?:from|via)\b/i,
 ];
+
+/**
+ * A café with its own hours (v6). Judged on the WHOLE sentence, not just the statement around the match: "the Design
+ * Museum Cafe & Design Kitchen 10:00 – 17:00 ... we are rebuilding our cafe and shop spaces on Level G" publishes hours
+ * for a café being rebuilt, and the rebuild is further along the sentence than the usual negation window reaches.
+ */
+const CAFE_HOURS_PATTERN = /\bcaf[e\u00e9](?![A-Za-z])[^.!?]{0,60}?\b\d{1,2}[.:]\d{2}\s*(?:-|\u2013|to)\s*\d{1,2}[.:]\d{2}\b/i;
 
 const FIELD_PATTERNS = [
   {
@@ -474,6 +521,16 @@ const FIELD_PATTERNS = [
       // second and third floors" (V&A East Storehouse), "There are toilets to the rear of the Gardens Cafe" (Horniman),
       // "Toilets are located at: Chumleigh Gardens" is already covered above.
       /\b(?:there\s+(?:is|are)|we\s+have)\s+(?:an?\s+|\d+\s+|two\s+|three\s+|several\s+)?(?:(?:accessible|disabled|public|unisex)\s+)*toilets?\s+(?:on\s+(?:the|every|each|all)\b|to\s+the\s+(?:rear|side|left|right)\s+of\b|opposite\b|available\b)/i,
+      // v6, placed: "The main toilets are next to the cafe in the Dry Berth" (Cutty Sark), "There are accessible cubicles
+      // in both the men's and the women's toilets" (Cutty Sark), "Toilets, including a disabled toilet, are available in
+      // the courtyard" (Mudchute), "Baby changing is available in the toilets by the Café" (Chiswick House). The
+      // nearest-elsewhere guard below still refuses "the nearest public toilets are at the village hall".
+      /\b(?:the\s+)?(?:main\s+|public\s+)?toilets\s+are\s+(?:next\s+to|beside|by|behind|opposite|inside|underneath)\s+the\b/i,
+      /\bcubicles?\s+in\s+(?:both\s+)?the\s+(?:men|women|ladies|gents)/i,
+      /\btoilets?\b[^.!?]{0,60}\bare\s+available\s+in\s+the\b/i,
+      /\bin\s+the\s+toilets\s+(?:by|next\s+to|near|beside|in)\s+the\b/i,
+      // "There is an accessible toilet and baby changing facilities in the cafe." (Hackney City Farm)
+      /\b(?:there\s+(?:is|are)|we\s+have)\s+(?:an?\s+)?(?:accessible|disabled)\s+toilets?\s+and\b[^.!?]{0,40}\b(?:in|at)\s+the\b/i,
       // "There are two wheelchair accessible toilets in the Wood." (Highgate Wood)
       /\b(?:there\s+(?:is|are)|we\s+have)\s+(?:an?\s+|\d+\s+|two\s+|three\s+|several\s+)?wheelchair[\s-]accessible\s+toilets?\s+(?:in|at|near|by|on)\b/i,
     ],
@@ -590,12 +647,21 @@ const FIELD_PATTERNS = [
       // A venue that publishes its café's opening times has a café: "Café Opening Times Tuesday – Sunday, 10am – 4pm"
       // (Headstone Manor & Museum, whose Moat Café no other sentence states in a readable way).
       /\bcaf[e\u00e9]\s+opening\s+(?:times|hours)\b/i,
+      // v6. A café with its own hours: "Main Café 10.00 to 17.00" (V&A), "Corner Cafe, Bar, Venue Opening times Sunday to
+      // Monday 10.00-18.00" (Tate Modern). A day-only café ("every Saturday 9am to 2pm") is still refused by
+      // `isDayRestricted`.
+      CAFE_HOURS_PATTERN,
+      // The café as the place something is: "toilets are next to the cafe", "baby changing ... in the cafe", "in the
+      // toilets by the Café". Never "provided by the Serpentine Bar & Kitchen cafe": the article must touch the word.
+      // Not a what3words location tag ("By the cafe ///noting.fortunate.dots"): a map pin in a list of toilets, where the
+      // same page's "In the Park, you can find: a café" is the statement to show a reviewer.
+      /\b(?:in|inside|next\s+to|beside|by)\s+the\s+caf[e\u00e9](?![A-Za-z])(?!\s*\/{3})/i,
     ],
     no: [/no\s+caf[eé]/i],
   },
   {
     field: 'wheelchairAccessible',
-    yes: [/wheelchair\s+accessible/i, /accessible\s+(?:for|to)\s+wheelchair\s+users/i],
+    yes: [/wheelchair\s+accessible/i, /accessible\s+(?:for|to)\s+wheelchair\s+users/i, ...VENUE_STEP_FREE_PATTERNS],
     no: [/not\s+wheelchair/i],
   },
   {
@@ -1130,10 +1196,14 @@ function matchField(sentence, patterns, fieldId) {
     if (fieldId === 'toilets' && (hasToiletNegation(sentence) || isScopedToiletClosure(sentence))) continue;
     if (fieldId === 'babyChanging' && !isExplicitBabyChangingStatement(sentence)) continue;
     if (fieldId === 'cafe' && isOffSiteCafe(sentence)) continue;
+    if (fieldId === 'cafe' && re === CAFE_HOURS_PATTERN && AVAILABILITY_NEGATION.test(sentence)) continue;
     // Toilets elsewhere ("the nearest public toilets are at the village hall") are not this venue's.
     if (fieldId === 'toilets' && /\b(?:nearest|nearby|across\s+the\s+(?:road|street)|down\s+the\s+(?:road|street)|round\s+the\s+corner|minutes?\s+(?:walk|away)|neighbouring|village\s+hall|railway\s+station)\b/i.test(sentence)) continue;
+    // "The nearest Changing Places Toilet can be found in Dulwich Park" (Sydenham Hill Wood) is another place's toilet.
+    if (fieldId === 'accessibleToilet' && /\b(?:nearest|nearby)\b|\bcan\s+be\s+found\s+in\s+[A-Z]/.test(sentence)) continue;
     // A café's or a bus route's accessibility is not the venue's.
     if (fieldId === 'wheelchairAccessible' && isNonVenueWheelchairSubject(sentence)) continue;
+    if (fieldId === 'wheelchairAccessible' && VENUE_STEP_FREE_PATTERNS.includes(re) && isNonVenueStepFree(sentence)) continue;
     // Soft play is a different facility, and a parent who asked for a playground is not served by it.
     if (fieldId === 'playground' && isSoftPlayOnlyPlayground(sentence)) continue;
     // Nor is an arcade, a trampoline park's named attraction, or a museum gallery exhibit.
@@ -1375,6 +1445,9 @@ function anchorWindows(sentence, fieldId) {
   return windows.length > 0 ? windows : [sentence];
 }
 
+const CAFE_CLOSED_FOR_NOW =
+  /\bcaf[e\u00e9](?![A-Za-z])[^.!?]{0,40}\b(?:is|are)\s+(?:temporarily\s+closed|closed\s+for\s+business|closed\s+until\s+further\s+notice)\b|\bnot\s+heard\s+when\b[^.!?]{0,40}\breopen/i;
+
 function extractEvidenceFromText(text, sourceMeta) {
   // Character references are decoded first, so "Caf&eacute;" is read as the café it is. Then every path below reads
   // the chrome-free text, so sitewide navigation cannot establish a fact in any field, nor reach the excerpt a parent
@@ -1430,6 +1503,13 @@ function extractEvidenceFromText(text, sourceMeta) {
     facts.push(environmentFact);
   }
 
+  // A page that says its café is closed for now publishes no café (v6): Colne Valley Regional Park's visitor centre page
+  // says "The Riverside Café is temporarily closed for business" and its FAQ "We have not heard when exactly it will be
+  // reopened", while other sentences on both still describe the café ("In the cafe itself there is an open kitchen").
+  // A schedule ("The cafe is usually closed from 20th December and usually reopens 3 January") is not a closure.
+  if (CAFE_CLOSED_FOR_NOW.test(readableText)) {
+    return facts.filter((fact) => !(fact.field === 'cafe' && fact.value === 'yes'));
+  }
   return facts;
 }
 
