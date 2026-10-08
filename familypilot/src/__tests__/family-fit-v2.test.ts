@@ -9,6 +9,7 @@ import { planningFamilyFromProfile } from '@/src/services/planning/plan-parties'
 import { SequenceOptions, homeKey, sequenceDay, stopKey } from '@/src/services/planning/sequencer';
 import type { StopRequest } from '@/src/types/day-sequence';
 import type { FamilyMember, FamilyProfile, Venue, VenueDetail } from '@/src/types';
+import { NOW, adult, detail, facts, home, kid, plannerRefuses, profile } from './helpers/surfaces';
 import type { MatchableVenueFacts } from '@/src/types/day-request';
 
 /**
@@ -16,32 +17,8 @@ import type { MatchableVenueFacts } from '@/src/types/day-request';
  * The line each test defends is one of the six distinctions: confirmed age-relevant activity, confirmed incompatibility, unknown,
  * practical logistics, household requirement, general preference. Weights are not under test because they do not change.
  */
-const NOW = new Date('2026-10-08T12:00:00Z');
 beforeAll(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(NOW); });
 afterAll(() => { vi.useRealTimers(); });
-
-const adult: FamilyMember = { id: 'p', name: 'P', role: 'parent', dateOfBirth: '', age: 36 };
-const kid = (id: string, name: string, age: number, extra: Partial<FamilyMember> = {}): FamilyMember => ({
-  id, name, role: 'child', dateOfBirth: '', age, dobKnown: true, mobility: ['walks'], ...extra,
-});
-const profile = (members: FamilyMember[], extra: Partial<FamilyProfile> = {}): FamilyProfile => ({
-  id: 'f', parentName: 'P', members: [adult, ...members], homeLocation: 'Camden', homeLatitude: 51.539, homeLongitude: -0.142,
-  completionPercent: 90, mustHaveFacilities: [], ...extra,
-} as FamilyProfile);
-
-const facts = (over: Partial<MatchableVenueFacts> = {}): MatchableVenueFacts => ({
-  placeId: 'fp-x', name: 'Test Place', category: 'museum', driveMinutes: 20, enrichmentStatus: 'verified', minRecommendedAge: null,
-  maxRecommendedAge: null, venueAgePolicy: null, toilets: 'unknown', babyChanging: 'unknown', parking: 'unknown', freeParking: 'unknown',
-  cafe: 'unknown', playground: 'unknown', wheelchairAccessible: 'unknown', accessibleToilet: 'unknown', pushchairSuitability: 'unknown',
-  environment: 'indoor', energyLevel: 'unknown', visitDurationMinutes: null, estimatedSpend: null, goodToKnow: [], warnings: [], openingStatus: 'unknown',
-  ...over,
-} as MatchableVenueFacts);
-
-const detail = (f: MatchableVenueFacts, id = 'fp-x'): VenueDetail => ({
-  id, name: 'Test Place', category: 'museum', latitude: 51.5, longitude: -0.1, driveMinutes: 20, imageUrl: '',
-  familyScore: { score: 0, factors: {} as never, explanation: [] }, photos: [], facilities: [], openingHours: '', description: '',
-  enrichmentStatus: 'enriched', trustedFacts: f,
-} as unknown as VenueDetail);
 
 const score = (f: MatchableVenueFacts, p: FamilyProfile, policy = PROPOSED_POLICY, id = 'fp-x') =>
   calculateFamilyScore(detail(f, id), p, { enrichmentStatus: 'enriched', policy, now: NOW });
@@ -227,29 +204,16 @@ describe('Home, Explore and Create a Plan apply one rule to the same household',
   const buggyKid = kid('b', 'Hal', 3, { mobility: ['buggy'] });
   const aidKid = kid('c', 'Ida', 7, { mobility: ['mobility-aid'] });
 
-  const plannerRefuses = (f: MatchableVenueFacts, p: FamilyProfile): boolean => {
-    const family = planningFamilyFromProfile(p);
-    if (typeof family === 'string') throw new Error(family);
-    const near = { ...family, maxDriveMinutes: undefined };
-    const request: StopRequest = { placeId: 'fp-x', name: 'Test Place', role: 'activity', anchor: true, dwellMinutes: 90, facts: { ...f, driveMinutes: 10 } };
-    const matrix = { legs: { [homeKey(near.id)]: { [stopKey('fp-x')]: { minutes: 10, source: 'estimated' as const } }, [stopKey('fp-x')]: { [homeKey(near.id)]: { minutes: 10, source: 'estimated' as const } } } };
-    const result = sequenceDay([request], [near], matrix, { date: '2026-11-10', leaveAt: '09:00', arriveAt: '10:30', returnBy: '', bufferMinutes: 15, environment: 'either' } as SequenceOptions, NOW);
-    if (result.ok) return false;
-    const failure = result.failure.reason === 'no-feasible-sequence' && result.failure.nearest ? result.failure.nearest : result.failure;
-    return failure.reason === 'requirement-unmet';
-  };
-  const home = (f: MatchableVenueFacts, p: FamilyProfile) => {
-    const v = personaliseVenue({ id: 'fp-x', name: 'Test Place', category: 'museum', latitude: 51.5, longitude: -0.1, driveMinutes: 10, imageUrl: '', familyScore: { score: 0, factors: {} as never, explanation: [] }, enrichmentStatus: 'enriched', facilities: [], trustedFacts: f } as unknown as Venue, p, undefined, PROPOSED_POLICY);
-    return { conflict: (v.fitConflicts?.length ?? 0) > 0, poor: v.familyMatch?.verdict === 'poor' };
-  };
-
-  // The hard-conflict policy is what makes "no parking" an unchecked fact, not a refusal, for a party with a wheelchair user.
   const was = process.env.EXPO_PUBLIC_FAMILY_FIT_V2;
   beforeAll(() => { process.env.EXPO_PUBLIC_FAMILY_FIT_V2 = 'all'; });
   afterAll(() => { if (was === undefined) delete process.env.EXPO_PUBLIC_FAMILY_FIT_V2; else process.env.EXPO_PUBLIC_FAMILY_FIT_V2 = was; });
 
   const cases: Array<[string, MatchableVenueFacts, FamilyProfile, boolean]> = [
-    ['"no parking" for a wheelchair user who needs parking: disabled bays are not covered by it, so it is to check', facts({ parking: 'no', toilets: 'yes' }), profile([aidKid], { mustHaveFacilities: ['parking'] }), false],
+    // A mobility aid is not a parking need, and general parking is not accessibility (see access-concepts.test.ts for the full matrix).
+    ['"no parking" for a wheelchair user who did not ask for parking', facts({ parking: 'no', toilets: 'yes' }), profile([aidKid]), false],
+    ['"no parking" for a wheelchair user who STATED parking: they asked for it and it is confirmed absent', facts({ parking: 'no', toilets: 'yes' }), profile([aidKid], { mustHaveFacilities: ['parking'] }), true],
+    ['"no parking" for a wheelchair user who needs Blue Badge parking, which nobody has confirmed', facts({ parking: 'no', toilets: 'yes' }), profile([aidKid], { mustHaveFacilities: ['blue_badge_parking'] }), false],
+    ['Blue Badge parking confirmed absent, for a household that needs it', facts({ blueBadgeParking: 'no', parking: 'yes' }), profile([aidKid], { mustHaveFacilities: ['blue_badge_parking'] }), true],
     ['"no parking" for a household that needs parking and has no wheelchair user', facts({ parking: 'no', toilets: 'yes' }), profile([kid('a', 'Cal', 7)], { mustHaveFacilities: ['parking'] }), true],
     ['a must-have confirmed absent', facts({ parking: 'no', toilets: 'yes' }), profile([kid('a', 'Ada', 4)], { mustHaveFacilities: ['parking'] }), true],
     ['a must-have nobody has confirmed', facts({ toilets: 'yes' }), profile([kid('a', 'Ada', 4)], { mustHaveFacilities: ['parking'] }), false],

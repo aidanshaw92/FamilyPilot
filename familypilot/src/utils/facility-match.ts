@@ -4,6 +4,7 @@ const FACILITY_NAMES: Partial<Record<FacilityType, string>> = {
   toilets: 'toilets',
   baby_changing: 'baby changing',
   parking: 'parking',
+  blue_badge_parking: 'Blue Badge parking',
   pushchair_friendly: 'pushchair access',
 };
 
@@ -19,7 +20,9 @@ export function buildFacilityMissingCaution(
   const mustHaves = profile.mustHaveFacilities ?? [];
   if (!mustHaves.length || !facilities?.length) return null;
 
-  const missing = mustHaves.filter((facility) => !facilities.includes(facility));
+  // A venue's facility list has no way to say "Blue Badge bays": its absence from the list is not a finding. That need is judged
+  // from its own claim (access-concepts.ts), by Venue Detail and the planner.
+  const missing = mustHaves.filter((facility) => facility !== 'blue_badge_parking' && !facilities.includes(facility));
   if (!missing.length) return null;
 
   const label = missing.map((facility) => FACILITY_NAMES[facility] ?? facility).join(' and ');

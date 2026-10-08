@@ -3,6 +3,7 @@ import { childAgeMonths, evaluateAgeRecommendation } from '@/src/services/matchi
 import type { FamilyProfile, FamilyScoreFactors } from '@/src/types';
 import type { MatchableVenueFacts } from '@/src/types/day-request';
 import { familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
+import { stepFreeOutcome, venueAccess } from '@/src/services/access/access-concepts';
 
 /**
  * Family Fit, read from what is CONFIRMED about this household's needs and this venue, and from nothing else.
@@ -83,8 +84,9 @@ function accessFactor(facts: MatchableVenueFacts | undefined, profile: FamilyPro
     parts.push(BUGGY_RATING[facts?.pushchairSuitability ?? ''] ?? UNKNOWN_PRACTICAL);
   }
   if (familyNeedsStepFree(profile)) {
-    const w = tri(facts?.wheelchairAccessible);
-    parts.push(w === 'yes' ? 92 : w === 'no' ? 25 : UNKNOWN_PRACTICAL);
+    // Read from the venue's own step-free and wheelchair claims only (access-concepts.ts); parking is not evidence.
+    const w = stepFreeOutcome(venueAccess(facts));
+    parts.push(w === 'met' ? 92 : w === 'unmet' ? 25 : UNKNOWN_PRACTICAL);
   }
   return parts.length ? Math.round(parts.reduce((a, b) => a + b, 0) / parts.length) : undefined;
 }
@@ -100,12 +102,10 @@ function facilityNeeds(facts: MatchableVenueFacts | undefined, profile: FamilyPr
   if ((youngest != null && youngest <= 3) || stated.has('baby_changing')) {
     needs.push({ need: 'baby changing', state: tri(facts?.babyChanging), stated: stated.has('baby_changing'), weight: stated.has('baby_changing') ? 1.8 : 1.2 });
   }
-  if (stated.has('parking')) {
-    // "No parking" says nothing about disabled bays: for a party with a step-free need it is unchecked, not absent
-    // (see parkingFor in day-request-matcher.ts).
-    const general = tri(facts?.parking);
-    needs.push({ need: 'parking', state: familyNeedsStepFree(profile) && general === 'no' ? 'unknown' : general, stated: true, weight: 1.5 });
-  }
+  // Only what the household STATED, each answered from its own claim: a mobility aid is not a parking need, general parking
+  // does not satisfy a Blue Badge need, and a Blue Badge bay does not satisfy a general-parking need (access-concepts.ts).
+  if (stated.has('parking')) needs.push({ need: 'parking', state: tri(facts?.parking), stated: true, weight: 1.5 });
+  if (stated.has('blue_badge_parking')) needs.push({ need: 'Blue Badge parking', state: tri(facts?.blueBadgeParking), stated: true, weight: 1.5 });
   return needs;
 }
 

@@ -15,6 +15,18 @@ function triStateOrUnknown(value?: TriState): TriState | 'unknown' {
   return UNKNOWN_TRI;
 }
 
+/**
+ * Blue Badge parking from the venue's own accessible-parking claims. Either claim saying "yes" is a yes; a "no" counts only when
+ * nothing says yes. General parking is never consulted: a venue with no car park can still reserve disabled bays, and a car
+ * park says nothing about them.
+ */
+function blueBadgeFrom(accessibility: VenueFamilyMetadata['accessibility']): TriState | 'unknown' {
+  const claims = [accessibility?.accessibleParking, accessibility?.disabledParkingBays].map(triStateOrUnknown);
+  if (claims.includes('yes')) return 'yes';
+  if (claims.includes('no')) return 'no';
+  return UNKNOWN_TRI;
+}
+
 function environmentOrUnknown(value?: VenueEnvironment): VenueEnvironment {
   if (value === 'indoor' || value === 'outdoor' || value === 'mixed' || value === 'unknown') {
     return value;
@@ -69,6 +81,10 @@ export function extractMatchableFacts(
       cafe: UNKNOWN_TRI,
       playground: UNKNOWN_TRI,
       wheelchairAccessible: UNKNOWN_TRI,
+      blueBadgeParking: UNKNOWN_TRI,
+      stepFreeAccess: UNKNOWN_TRI,
+      stepFreeStation: UNKNOWN_TRI,
+      publicTransport: UNKNOWN_TRI,
       accessibleToilet: UNKNOWN_TRI,
       pushchairSuitability: 'unknown',
       environment: UNKNOWN_ENV,
@@ -99,6 +115,12 @@ export function extractMatchableFacts(
     cafe: triStateOrUnknown(metadata.familyFacilities?.cafe),
     playground: triStateOrUnknown(metadata.familyFacilities?.playground),
     wheelchairAccessible: triStateOrUnknown(metadata.accessibility?.wheelchairAccessible),
+    // Each of these answers ONE question from ITS OWN claim. None is derived from another: not Blue Badge from general parking,
+    // not step-free from a wheelchair claim or a buggy rating, not a station from the car park. Unknown stays unknown.
+    blueBadgeParking: blueBadgeFrom(metadata.accessibility),
+    stepFreeAccess: triStateOrUnknown(metadata.accessibility?.stepFreeEntrance),
+    stepFreeStation: triStateOrUnknown(metadata.transport?.stepFreeStation),
+    publicTransport: triStateOrUnknown(metadata.transport?.publicTransport),
     accessibleToilet: triStateOrUnknown(metadata.accessibility?.accessibleToilet),
     pushchairSuitability: metadata.pushchairSuitability ?? 'unknown',
     // The approved terrain claim only; the editorial `terrain` and `terrainNotes` are not evidence.

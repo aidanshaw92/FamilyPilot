@@ -8,6 +8,7 @@ export type FacilityType =
   | 'baby_changing'
   | 'playground'
   | 'parking'
+  | 'blue_badge_parking'
   | 'shade'
   | 'splash_pad'
   | 'picnic'
@@ -344,6 +345,20 @@ export interface FamilyProfile {
   /** Facilities this family always needs — used to flag a venue that's missing one
    * (see facility-match.ts) instead of just listing every facility a venue happens to have. */
   mustHaveFacilities?: FacilityType[];
+  /**
+   * How the family needs to get there, when they said. Never inferred (not from a car, a buggy or a mobility aid), and
+   * independent of every other access need: see services/access/access-concepts.ts.
+   */
+  transportNeeds?: TransportNeeds;
+}
+
+/** A transport need the family stated: `required` can rule a venue out once it is CONFIRMED unmet; `preferred` never does. */
+export type TransportNeedStrength = 'required' | 'preferred';
+export interface TransportNeeds {
+  /** The venue's nearest station has step-free access. */
+  stepFreeStation?: TransportNeedStrength;
+  /** The venue can be reached by public transport. */
+  publicTransport?: TransportNeedStrength;
 }
 
 export interface WeatherInfo {

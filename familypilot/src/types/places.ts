@@ -147,6 +147,8 @@ export interface VenueFamilyMetadata {
   accessibleToilet?: FacilityStatus;
   accessibility?: import('@/src/types/enrichment').AccessibilityInfo;
   accessibilityNotes?: string;
+  /** How to get there other than by car, from its own approved claims. Independent of parking and of every accessibility claim. */
+  transport?: import('@/src/types/enrichment').TransportInfo;
   sendInfo?: import('@/src/types/enrichment').SendInfo;
   sendNotes?: string;
   familyNotes?: string;

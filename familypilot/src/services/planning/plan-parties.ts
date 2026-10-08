@@ -57,7 +57,7 @@ export interface ResolvedPlanParties {
 /**
  * The profile's must-haves, as planner requirements.
  *
- * Only the four the matcher can actually gate on appear. A must-have with no matching constraint is
+ * Only the five the matcher can actually gate on appear. A must-have with no matching constraint is
  * left out rather than approximated: inventing a gate would fail days closed for a facility the
  * planner has no evidence rule for, and silently widening what "required" means is worse than
  * honouring only what we can check.
@@ -66,6 +66,7 @@ const REQUIRED_BY_FACILITY: Partial<Record<FacilityType, PlanningFamily['require
   toilets: 'toilets',
   baby_changing: 'babyChanging',
   parking: 'parking',
+  blue_badge_parking: 'blueBadgeParking',
   pushchair_friendly: 'pushchair',
 };
 
@@ -121,6 +122,9 @@ export function planningFamilyFromProfile(
     pushchair: familyUsesBuggy(profile),
     ...(familyNeedsStepFree(profile) ? { stepFree: true } : {}),
     required: plannerRequirements(profile.mustHaveFacilities),
+    ...(profile.transportNeeds && (profile.transportNeeds.stepFreeStation || profile.transportNeeds.publicTransport)
+      ? { transport: { ...(profile.transportNeeds.stepFreeStation ? { stepFreeStation: profile.transportNeeds.stepFreeStation } : {}), ...(profile.transportNeeds.publicTransport ? { publicTransport: profile.transportNeeds.publicTransport } : {}) } }
+      : {}),
     // Copied, so editing a plan can never reach back into the stored profile, and stripped of the
     // child's name and id: this model can be backed up to an account, the profile cannot.
     routines: routinesForPlanner(profile),

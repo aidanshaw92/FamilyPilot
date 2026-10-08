@@ -7,7 +7,7 @@ import { childAgeVerdicts, joinNames, outsideRangeCautions, suitsChildrenLine } 
 import { childUsesBuggy, childUsesMobilityAid, familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
 import { describeOpeningToday, OpeningTodayState } from '@/src/utils/opening-today';
 import { closureToday, ruleAppliesOn } from '@/src/services/matching/venue-rules';
-import { activeFitPolicy } from '@/src/services/scoring/fit-policy';
+import { ACCESS_NEED_LABEL, householdAccessNeeds, needOutcome, stepFreeOutcome, venueAccess } from '@/src/services/access/access-concepts';
 import { reconcileHoursOn } from '@/src/services/places/hours-reconcile';
 import { venueLocalDate } from '@/src/utils/opening-hours';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
@@ -181,15 +181,17 @@ type Status = 'yes' | 'no' | 'unknown';
 const status = (value: unknown): Status => (value === 'yes' ? 'yes' : value === 'no' ? 'no' : 'unknown');
 
 /** Must-have facilities the profile can state, mapped to the venue fact that answers each. */
-function mustHaveStatus(facility: FacilityType, facts: MatchableVenueFacts, stepFreeParty = false): { label: string; status: Status } | null {
+function mustHaveStatus(facility: FacilityType, facts: MatchableVenueFacts): { label: string; status: Status } | null {
   switch (facility) {
     case 'toilets':
       return { label: 'toilets', status: status(facts.toilets) };
     case 'baby_changing':
       return { label: 'baby changing', status: status(facts.babyChanging) };
     case 'parking':
-      // See parkingFor in day-request-matcher.ts: for a party with a step-free need, "no parking" is not "no disabled parking".
-      return { label: 'parking', status: stepFreeParty && facts.parking === 'no' && activeFitPolicy().conflictsLast ? 'unknown' : status(facts.parking) };
+      // General parking only. Blue Badge bays are their own must-have, read from their own claim (access-concepts.ts).
+      return { label: 'parking', status: status(facts.parking) };
+    case 'blue_badge_parking':
+      return { label: 'Blue Badge parking', status: status(facts.blueBadgeParking) };
     case 'playground':
       // Whether there is one, nothing more: a playground is provision, never evidence that it suits a particular child.
       return { label: 'playground', status: status(facts.playground) };
@@ -533,8 +535,15 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
       const aidKids = children.filter(childUsesMobilityAid);
       const ids = aidKids.map((c) => c.id);
       const who = sayNames(aidKids, 'your child');
-      if (facts.wheelchairAccessible === 'yes') {
-        reasons.push({ key: 'stepfree', text: `Wheelchair accessible, the venue says, for ${who}`, childIds: ids, topic: 'wheelchair access', aspect: 'logistics' });
+      // The step-free need is answered by the venue's own step-free and wheelchair claims and by nothing else (access-concepts.ts).
+      const access = venueAccess(facts);
+      const stepFree = stepFreeOutcome(access);
+      if (stepFree === 'met') {
+        reasons.push({
+          key: 'stepfree',
+          text: access.wheelchair_access === 'yes' ? `Wheelchair accessible, the venue says, for ${who}` : `Step-free access, the venue says, for ${who}`,
+          childIds: ids, topic: 'wheelchair access', aspect: 'logistics',
+        });
         venueFacts += 1;
         if (facts.accessibleToilet === 'yes') {
           reasons.push({ key: 'stepfree-toilet', text: 'Accessible toilet on site', childIds: ids, topic: 'accessible toilet', aspect: 'logistics' });
@@ -543,8 +552,12 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
           if (rule.kind !== 'step_free' || !todayDate || !ruleAppliesOn(rule, todayDate)) continue;
           softCautions.push({ key: `stepfree-rule-${rule.id}`, text: rule.text, childIds: ids, topic: 'wheelchair access', aspect: 'logistics' });
         }
-      } else if (facts.wheelchairAccessible === 'no') {
-        breaches.push({ key: 'stepfree-no', text: `The venue says it is not wheelchair accessible, which matters for ${who}`, childIds: ids, topic: 'wheelchair access', aspect: 'logistics' });
+      } else if (stepFree === 'unmet') {
+        breaches.push({
+          key: 'stepfree-no',
+          text: access.wheelchair_access === 'no' ? `The venue says it is not wheelchair accessible, which matters for ${who}` : `The venue says it is not step-free, which matters for ${who}`,
+          childIds: ids, topic: 'wheelchair access', aspect: 'logistics',
+        });
       } else {
         hardUnknowns.push({ key: 'stepfree-unknown', text: 'Step-free and wheelchair access still to be checked', childIds: ids, topic: 'wheelchair access', aspect: 'logistics' });
       }
@@ -553,7 +566,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
     // Must-haves the family stated.
     const stated = new Set<string>();
     for (const facility of profile.mustHaveFacilities ?? []) {
-      const entry = mustHaveStatus(facility, facts, familyNeedsStepFree(profile));
+      const entry = mustHaveStatus(facility, facts);
       if (!entry || stated.has(entry.label)) continue;
       // pushchair access is already handled above for a family with a buggy.
       if (facility === 'pushchair_friendly' && usesBuggy) continue;
@@ -566,6 +579,22 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
         breaches.push({ key: `must-${entry.label}`, text: `No ${entry.label} here, and you said you need it` });
       } else {
         hardUnknowns.push({ key: `must-${entry.label}`, text: unknownText(observedKey, `${cap(entry.label)}, which you said you need, still to be checked`, cap(entry.label)) });
+      }
+    }
+
+    // How the family said it needs to get there: its own concept, read from its own claim, never from parking. A required need
+    // confirmed unmet is a breach (the planner refuses it too); a preference never is.
+    for (const need of householdAccessNeeds(profile).filter((n) => n.source === 'transport_need')) {
+      const outcome = needOutcome(need, venueAccess(facts));
+      const label = ACCESS_NEED_LABEL[need.concept];
+      if (outcome === 'met') {
+        reasons.push({ key: `transport-${need.concept}`, text: `${cap(label)} confirmed, which you ${need.strength === 'required' ? 'said you need' : 'prefer'}` });
+        venueFacts += 1;
+      } else if (outcome === 'unmet') {
+        if (need.strength === 'required') breaches.push({ key: `transport-${need.concept}`, text: `No ${label} here, and you said you need it` });
+        else softCautions.push({ key: `transport-${need.concept}`, text: `No ${label} here, which you prefer` });
+      } else if (need.strength === 'required') {
+        hardUnknowns.push({ key: `transport-${need.concept}`, text: `${cap(label)}, which you said you need, still to be checked` });
       }
     }
 

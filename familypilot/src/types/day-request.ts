@@ -91,6 +91,12 @@ export interface DayRequestConstraints {
   babyChanging?: DayConstraint<'yes'>;
   toilets?: DayConstraint<'yes'>;
   parking?: DayConstraint<'yes'>;
+  /** Disabled-bay / Blue Badge parking. Its own constraint: general parking neither satisfies nor contradicts it. */
+  blueBadgeParking?: DayConstraint<'yes'>;
+  /** The venue's nearest station is step-free. Its own constraint: never read from parking or from the wheelchair claim. */
+  stepFreeStation?: DayConstraint<'yes'>;
+  /** The venue is reachable by public transport. */
+  publicTransport?: DayConstraint<'yes'>;
   energyLevel?: DayConstraint<EnergyNeed>;
   visitDuration?: DayConstraint<{ maxMinutes?: number; minMinutes?: number }>;
   budget?: DayConstraint<'within_profile'>;
@@ -184,8 +190,17 @@ export interface MatchableVenueFacts {
   officialHours?: import('@/src/types/official-hours').OfficialHoursRule[];
   toilets: TriState | 'unknown';
   babyChanging: TriState | 'unknown';
+  /** GENERAL parking on site. Says nothing about Blue Badge bays, step-free access or how the family gets there. */
   parking: TriState | 'unknown';
   freeParking?: TriState | 'unknown';
+  /** Blue Badge / disabled-bay parking, from its own approved claim (`accessibility.accessibleParking`, or `disabledParkingBays`). Not read from general parking. */
+  blueBadgeParking?: TriState | 'unknown';
+  /** Step-free entrance and route, from its own approved claim (`accessibility.stepFreeEntrance`). Distinct from a wheelchair-access claim. */
+  stepFreeAccess?: TriState | 'unknown';
+  /** The nearest station is step-free, from its own approved transport claim. Not read from parking. */
+  stepFreeStation?: TriState | 'unknown';
+  /** Reachable by public transport, from its own approved transport claim. */
+  publicTransport?: TriState | 'unknown';
   /** A café on site, from an approved claim. Optional so older fixtures and callers read it as unknown. */
   cafe?: TriState | 'unknown';
   /**

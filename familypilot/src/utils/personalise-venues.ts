@@ -44,12 +44,13 @@ export function buildStepFreeCaution(profile: FamilyProfile): string | null {
 }
 
 /** The facilities the venue is CONFIRMED not to have (a claim says no), as opposed to the ones nobody has confirmed. */
-function confirmedAbsentFacilities(venue: Venue, stepFreeParty: boolean): FacilityType[] {
+function confirmedAbsentFacilities(venue: Venue): FacilityType[] {
   const f = venue.trustedFacts;
   const absent: FacilityType[] = [];
   if (f?.toilets === 'no') absent.push('toilets');
   if (f?.babyChanging === 'no') absent.push('baby_changing');
-  if (f?.parking === 'no' && !stepFreeParty) absent.push('parking');
+  if (f?.parking === 'no') absent.push('parking');
+  if (f?.blueBadgeParking === 'no') absent.push('blue_badge_parking');
   return absent;
 }
 
@@ -92,7 +93,7 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, parentObs
       [
         buildDriveCaution(profile, venue.driveMinutes),
         (policy ?? activeFitPolicy()).evidenceAware
-          ? buildConfirmedMissingCaution(profile, confirmedAbsentFacilities(venue, familyNeedsStepFree(profile)))
+          ? buildConfirmedMissingCaution(profile, confirmedAbsentFacilities(venue))
           : buildFacilityMissingCaution(profile, detail.facilities),
         buildStepFreeCaution(profile),
         ...(familyScore.cautions ?? []),

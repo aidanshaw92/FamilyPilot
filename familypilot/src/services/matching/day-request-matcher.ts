@@ -20,7 +20,7 @@ import {
 import { compareTravelMinutes } from '@/src/utils/travel-time';
 import { evaluateAgeAdmission } from './age-admission';
 import { evaluateVenueRules } from './venue-rules';
-import { activeFitPolicy } from '@/src/services/scoring/fit-policy';
+import { stepFreeOutcome, venueAccess, type NeedOutcome } from '@/src/services/access/access-concepts';
 import {
   hasTrustedMatchSignals,
   scoreTrustedAccessibility,
@@ -154,6 +154,10 @@ function evaluateJourney(driveMinutes: number, maxMinutes: number): FactMatchOut
   return 'unsuitable';
 }
 
+function needToOutcome(outcome: NeedOutcome): FactMatchOutcome {
+  return outcome === 'met' ? 'suitable' : outcome === 'unmet' ? 'unsuitable' : 'unknown';
+}
+
 function applyConstraint(
   evaluations: ConstraintEvaluation[],
   field: string,
@@ -199,18 +203,6 @@ function classifyFit(
   }
   if (tally.preferredPoints >= 2) return 'Strong fit';
   return 'Possible fit';
-}
-
-/**
- * What "parking" is worth as evidence for THIS party. A venue that says it has no parking has said nothing about disabled bays:
- * of the ten pilot venues, four that say "no parking on site" (Natural History Museum, Science Museum, Horniman, Discover) also
- * publish Blue Badge spaces or bays nearby, and the app holds no field for that. For a party with a wheelchair or mobility-aid
- * user, a general "no" is therefore not evidence that the parking they need is missing, so under the hard-conflict policy it is
- * carried as something to check, never as a refusal. A "yes" is unchanged, and so is every party without a step-free need.
- */
-function parkingFor(request: DayRequest, facts: MatchableVenueFacts): MatchableVenueFacts['parking'] {
-  if (request.needsStepFree && facts.parking === 'no' && activeFitPolicy().conflictsLast) return 'unknown';
-  return facts.parking;
 }
 
 export function matchVenueToDayRequest(
@@ -319,14 +311,15 @@ export function matchVenueToDayRequest(
 
   // Step-free access for a party with a wheelchair or mobility-aid user: a confirmed "no" from the venue refuses the day, an
   // unconfirmed one is carried as something to check (the sequencer's rule for every required fact), and a "yes" is met. Read
-  // from the venue's own wheelchair-access claim only; a buggy rating is not evidence either way, and nothing here is scored.
+  // from the venue's own step-free and wheelchair-access claims only (access-concepts.ts): a buggy rating, general parking and
+  // the category are not evidence either way, and nothing here is scored.
   if (request.needsStepFree) {
     if (
       !applyConstraint(
         evaluations,
         'accessibility.wheelchairAccessible',
         'required',
-        evaluateTriStateRequired(facts.wheelchairAccessible ?? 'unknown', true),
+        needToOutcome(stepFreeOutcome(venueAccess(facts))),
         tally,
       )
     ) {
@@ -389,10 +382,24 @@ export function matchVenueToDayRequest(
         evaluations,
         'familyFacilities.parking',
         request.constraints.parking.strength,
-        evaluateTriStateRequired(parkingFor(request, facts), true),
+        evaluateTriStateRequired(facts.parking, true),
         tally,
       )
     ) {
+      eligible = false;
+    }
+  }
+
+  // Blue Badge parking and the two transport needs: each answered from its OWN claim, none from general parking or from each
+  // other. A family states these; nothing is inferred from a mobility aid, a vehicle or a buggy.
+  const access = venueAccess(facts);
+  for (const [constraint, field, concept] of [
+    [request.constraints.blueBadgeParking, 'accessibility.accessibleParking', 'blue_badge_parking'],
+    [request.constraints.stepFreeStation, 'transport.stepFreeStation', 'step_free_station'],
+    [request.constraints.publicTransport, 'transport.publicTransport', 'public_transport'],
+  ] as const) {
+    if (!constraint || constraint.strength === 'context') continue;
+    if (!applyConstraint(evaluations, field, constraint.strength, needToOutcome(access[concept] === 'yes' ? 'met' : access[concept] === 'no' ? 'unmet' : 'unknown'), tally)) {
       eligible = false;
     }
   }
