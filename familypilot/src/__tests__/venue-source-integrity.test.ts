@@ -385,7 +385,9 @@ describe('FIXED 7: the publication gate fails closed on unestablished provenance
     expect(autoApprove, 'reconciliation must not consult a scope-blind verdict')
       .not.toContain('enforceSubjectScope:false');
     expect(autoApprove, 'the gate is now the claim\'s own backing scope')
-      .toContain('if (!isEligibleScope(backing.subjectScope)) continue;');
+      .toContain('if (!speaksAutomatically(backing)) continue;');
+    // ...which is still the recorded scope first, and additionally refuses a page rescoped after the fact.
+    expect(autoApprove).toContain('const speaksAutomatically = (source) => isEligibleScope(source.subjectScope) && !isRescopedSource(source);');
   });
 });
 

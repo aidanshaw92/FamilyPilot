@@ -66,6 +66,24 @@ function pathSegments(url) {
     .filter(Boolean);
 }
 
+/**
+ * Trailing segments that name a language or a front page rather than a section of the site.
+ *
+ * Madame Tussauds' stored website is `madametussauds.com/london/en/`, and its visitor pages live at `/london/plan-your-
+ * visit/...`. Read literally, `en` made the venue's own section `/london/en`, so every one of its own pages was "the same
+ * site, relationship not established" and its true facts were withheld ("There is no parking onsite"). The same shape:
+ * Trent Park's `/Welcome.html`, Wimbledon's `/index.html`, the Cable Car's `/en`. Only a TRAILING segment is dropped, and
+ * only one of these words, so a real section (`/london`, `/docklands`) is never widened.
+ */
+const NON_SECTION_SEGMENT = /^(?:en|en[-_](?:gb|uk|us)|uk|gb|home|index(?:\.[a-z]+)?|default(?:\.[a-z]+)?|welcome(?:\.[a-z]+)?)$/;
+
+/** The path that identifies a site entry: its segments, without a trailing language or front-page segment. */
+function identitySegments(url) {
+  const segments = pathSegments(url);
+  while (segments.length > 0 && NON_SECTION_SEGMENT.test(segments[segments.length - 1])) segments.pop();
+  return segments;
+}
+
 /** Whether `candidate` is at or beneath `base` (both as segment arrays). */
 function isAtOrUnder(candidate, base) {
   return base.every((segment, index) => candidate[index] === segment);
@@ -79,17 +97,52 @@ function isAtOrUnder(candidate, base) {
  * Failing to promote is the safe direction.
  */
 function nameTokens(venueName) {
-  return String(venueName ?? '')
+  return primaryName(venueName)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
     .split(' ')
     .filter((word) => word.length >= 4);
 }
 
+/**
+ * The venue's own name, without an operator or place suffix after a comma, dash or bar.
+ *
+ * "Walthamstow Wetlands, London Wildlife Trust" required `london`, `wildlife` and `trust` in a page's URL as well as
+ * `walthamstow` and `wetlands`, so the reserve's own page (`/nature-reserves/walthamstow-wetlands`) could never be
+ * recognised as named. The suffix names the operator, which is exactly what must NOT identify one venue among the
+ * operator's several.
+ */
+function primaryName(venueName) {
+  return String(venueName ?? '').split(/,|\s[-–|]\s/)[0];
+}
+
 function textNamesVenue(text, tokens) {
   if (tokens.length === 0) return false;
   const haystack = String(text ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ');
   return tokens.every((token) => haystack.includes(token));
+}
+
+/**
+ * Every root that identifies this venue's own pages, as `{ host, segments }`.
+ *
+ *   1. its stored website, without a trailing language or front-page segment;
+ *   2. reviewed extra official roots (`officialRoots`, from official-source-overrides.js), for a venue whose own visitor
+ *      pages live on a second host or deeper than its stored website (Crystal Palace Park's pages are on
+ *      crystalpalacepark.org.uk; its stored website is the trust's domain);
+ *
+ * The WHOLE host is never assumed to be one venue's, even where no other catalogue venue uses it and the host name names
+ * the venue: a chain's site (askitalian.co.uk, nandos.co.uk) passes both tests and covers every branch. A venue whose
+ * dedicated site is wider than its stored website gets a reviewed root instead (official-source-overrides.js).
+ */
+function ownRoots(entry) {
+  const roots = [];
+  const host = urlHost(entry?.website);
+  if (host) roots.push({ host, segments: identitySegments(entry.website) });
+  for (const url of entry?.officialRoots ?? []) {
+    const rootHost = urlHost(url);
+    if (rootHost) roots.push({ host: rootHost, segments: identitySegments(url) });
+  }
+  return roots;
 }
 
 /**
@@ -109,21 +162,20 @@ function classifySubjectScope({ sourceUrl, pageTitle = null, venue, catalogue = 
   if (!sourceUrl || !srcHost || !ownHost) {
     return { scope: 'sibling_unverified', reason: 'no_comparable_url' };
   }
-  if (srcHost !== ownHost) {
+
+  const srcSegments = pathSegments(sourceUrl);
+  const ownSegments = identitySegments(ownWebsite);
+  const mine = ownRoots(venue);
+  const others = catalogue.filter((row) => row.familypilotPlaceId !== venue.familypilotPlaceId);
+
+  if (!mine.some((root) => root.host === srcHost)) {
     // Another venue may still own this host, and that is worth recording rather than losing.
-    const foreign = catalogue.find(
-      (row) => row.familypilotPlaceId !== venue.familypilotPlaceId
-        && urlHost(row.website) === srcHost
-        && isAtOrUnder(pathSegments(sourceUrl), pathSegments(row.website)),
-    );
+    const foreign = others.find((row) => ownRoots(row).some((root) => root.host === srcHost && isAtOrUnder(srcSegments, root.segments)));
     if (foreign) {
       return { scope: 'other_catalogue_venue', reason: 'offsite_page_owned_by_another_venue', ownedBy: foreign.familypilotPlaceId };
     }
     return { scope: 'sibling_unverified', reason: 'different_host' };
   }
-
-  const srcSegments = pathSegments(sourceUrl);
-  const ownSegments = pathSegments(ownWebsite);
 
   /**
    * The most specific catalogue site this page falls under wins.
@@ -138,20 +190,21 @@ function classifySubjectScope({ sourceUrl, pageTitle = null, venue, catalogue = 
   let bestDepth = -1;
   let bestIsOwn = false;
   let bestOther = null;
-  for (const row of catalogue) {
-    if (urlHost(row.website) !== srcHost) continue;
-    const rowSegments = pathSegments(row.website);
-    if (!isAtOrUnder(srcSegments, rowSegments)) continue;
-    const isOwn = row.familypilotPlaceId === venue.familypilotPlaceId;
-    if (rowSegments.length > bestDepth) {
-      bestDepth = rowSegments.length;
-      bestIsOwn = isOwn;
-      bestOther = isOwn ? null : row;
-    } else if (rowSegments.length === bestDepth && isOwn) {
-      bestIsOwn = true;
-      bestOther = null;
+  const consider = (roots, row, isOwn) => {
+    for (const root of roots) {
+      if (root.host !== srcHost || !isAtOrUnder(srcSegments, root.segments)) continue;
+      if (root.segments.length > bestDepth) {
+        bestDepth = root.segments.length;
+        bestIsOwn = isOwn;
+        bestOther = isOwn ? null : row;
+      } else if (root.segments.length === bestDepth && isOwn) {
+        bestIsOwn = true;
+        bestOther = null;
+      }
     }
-  }
+  };
+  for (const row of others) consider(ownRoots(row), row, false);
+  consider(mine, null, true);
 
   if (bestDepth >= 0 && bestIsOwn) {
     return { scope: 'venue_own_subtree', reason: 'under_own_website' };
@@ -161,7 +214,7 @@ function classifySubjectScope({ sourceUrl, pageTitle = null, venue, catalogue = 
   }
 
   // A strict ancestor of the venue's own path: the operator's page, above this venue.
-  if (srcSegments.length < ownSegments.length && isAtOrUnder(ownSegments, srcSegments)) {
+  if (srcHost === ownHost && srcSegments.length < ownSegments.length && isAtOrUnder(ownSegments, srcSegments)) {
     return { scope: 'organisation_ancestor', reason: 'ancestor_of_own_website' };
   }
 
@@ -218,4 +271,6 @@ module.exports = {
   pathSegments,
   isAtOrUnder,
   nameTokens,
+  identitySegments,
+  ownRoots,
 };
