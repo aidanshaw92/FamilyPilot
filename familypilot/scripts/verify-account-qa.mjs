@@ -40,7 +40,7 @@ async function newPage(width = 390, height = 844) {
   });
   return { ctx, page };
 }
-const next = (page) => page.getByRole('button', { name: /^(continue|see my recommendations)/i }).first();
+const next = (page) => page.getByRole('button', { name: /^(continue|skip for now|see my recommendations)/i }).first();
 
 async function describeFamily(page, parent, child = { name: 'Theo', dob: ['15', '06', '2024'] }, postcode = 'WD23 1AA') {
   await page.getByPlaceholder('e.g. Sarah').fill(parent);
@@ -58,7 +58,7 @@ async function describeFamily(page, parent, child = { name: 'Theo', dob: ['15', 
   for (let i = 0; i < 3; i++) {
     const t = await text(page);
     if (/Who do you plan days out with/i.test(t) || /Accept and connect|You.?re connected/i.test(t)) break;
-    const btn = page.getByRole('button', { name: /^(continue|see my recommendations)/i }).first();
+    const btn = page.getByRole('button', { name: /^(continue|skip for now|see my recommendations)/i }).first();
     if (!(await btn.count())) break;
     await btn.click(); await settle(page, 1200);
   }

@@ -27,7 +27,7 @@ describe('one taxonomy for Home and Explore', () => {
     const pairs: Array<[string, string]> = [['park', 'parks'], ['farm', 'farms'], ['museum', 'museums'], ['activity', 'activities'], ['soft_play', 'soft_play'], ['animals', 'animals']];
     for (const [homeId, exploreId] of pairs) {
       const home = filterByPlanCategory(venues, homeId).map((v) => v.id);
-      const explore = filterVenues(venues, exploreId, [], 'any', 30, 'any').map((v) => v.id).sort();
+      const explore = filterVenues(venues, exploreId, [], 'any', 'any').map((v) => v.id).sort();
       expect(explore, `${homeId} / ${exploreId}`).toEqual([...home].sort());
     }
   });
@@ -121,7 +121,7 @@ describe('indoor and outdoor mean one thing everywhere', () => {
   it('Home\'s Indoor and Explore\'s Indoor filter agree', () => {
     const venues = [...many('museum', 3), ...many('park', 3), venue('museum', { trustedFacts: { environment: 'outdoor' } as never })];
     const home = filterByPlanCategory(venues, 'indoor').map((v) => v.id).sort();
-    const explore = filterVenues(venues, 'all', ['indoor'], 'any', 30, 'any').map((v) => v.id).sort();
+    const explore = filterVenues(venues, 'all', ['indoor'], 'any', 'any').map((v) => v.id).sort();
     expect(explore).toEqual(home);
     expect(home).toHaveLength(3); // the outdoor museum is not indoor
   });

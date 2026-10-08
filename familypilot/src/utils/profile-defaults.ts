@@ -10,8 +10,7 @@ export function createEmptyProfile(): FamilyProfile {
     parentName: '',
     members: [],
     homeLocation: '',
-    budgetTier: 'moderate',
-    maxDriveMinutes: 30,
+    // No budget and no journey limit until the parent states one (utils/preferences.ts).
     completionPercent: 0,
     vehicle: null,
     pushchair: null,
@@ -96,7 +95,7 @@ export function formatChildAge(member: Pick<FamilyMember, 'age' | 'ageMonths'>):
 }
 
 export function formatBudgetTier(tier: FamilyProfile['budgetTier']): string {
-  return tier.charAt(0).toUpperCase() + tier.slice(1);
+  return tier ? tier.charAt(0).toUpperCase() + tier.slice(1) : 'No preference';
 }
 
 export function getChildNames(profile: FamilyProfile): string {

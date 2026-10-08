@@ -12,6 +12,7 @@ import {
 } from '@/src/services/planning/connection-invites';
 import { InviteRelationship } from '@/src/services/planning/invite-links';
 import { PlanningFamily } from '@/src/services/planning/planner';
+import { sharedFamilyPreferences } from '@/src/utils/preferences';
 import { usePlanningStore } from '@/src/stores/planning-store';
 
 /**
@@ -143,7 +144,7 @@ export function useConnectedFamilies(enabled = true): ConnectedFamilies {
       // The copy on this phone is replaced when what they share has changed (they may have updated it since), so a plan
       // never works from a stale picture of the other family. An unchanged copy is left alone.
       const stored = known.find((f) => f.id === id);
-      const fresh = { ...connection.family, id };
+      const fresh = { ...sharedFamilyPreferences(connection.family), id };
       if (!stored || JSON.stringify(stored) !== JSON.stringify(fresh)) setFamily(fresh);
       return id;
     },
@@ -154,7 +155,7 @@ export function useConnectedFamilies(enabled = true): ConnectedFamilies {
   return {
     accepted: all
       .filter((c) => !c.pending && c.family)
-      .map((connection) => ({ connection, family: { ...(connection.family as PlanningFamily), id: connectedFamilyId(connection.id) } })),
+      .map((connection) => ({ connection, family: { ...sharedFamilyPreferences(connection.family as PlanningFamily), id: connectedFamilyId(connection.id) } })),
     pending: all.filter((c) => c.pending),
     loaded: connections !== null,
     error,

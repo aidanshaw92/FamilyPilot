@@ -11,8 +11,8 @@ import {
 import { buildHomeRecommendations, personaliseVenues } from '@/src/utils/personalise-venues';
 
 describe('profile completion', () => {
-  it('returns a low score for an empty profile with only defaults', () => {
-    expect(computeCompletionPercent(createEmptyProfile())).toBe(25);
+  it('returns zero for an empty profile: defaults the app made up count for nothing', () => {
+    expect(computeCompletionPercent(createEmptyProfile())).toBe(0);
   });
 
   it('increases as optional fields are added', () => {

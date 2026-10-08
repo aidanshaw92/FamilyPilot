@@ -71,7 +71,7 @@ describe('the day-request parse', () => {
   it('projects the profile to ages, limits and a buggy flag', () => {
     const projected = parseRequestProfile(profile());
     for (const token of SENTINELS) expect(mentions(projected, token), `parse profile must not contain ${token}`).toBe(false);
-    expect(projected).toMatchObject({ homeLocation: '', maxDriveMinutes: 30, budgetTier: 'moderate', pushchair: 'yes' });
+    expect(projected).toMatchObject({ homeLocation: '', maxDriveMinutes: null, budgetTier: null, pushchair: 'yes' });
     expect((projected.members as Array<{ age: number }>).map((m) => m.age)).toEqual([0, 8]);
   });
 

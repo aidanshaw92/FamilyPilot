@@ -32,23 +32,38 @@ how slow production is.
 
 ## What holds up the full screen
 
-The full screen needs the detail request, today's weather and the parent-feedback read. They run in parallel, and the
-screen waits for the slowest. Measured, with the detail request at 150 ms and one other request slow:
+The full screen needs the detail request and nothing else. Measured (simulated latencies, local fixture), with the detail
+request at 150 ms and one other request slow:
 
-| Slow dependency | Full screen before this PR | Full screen now |
+| Slow dependency | Full screen, #167 baseline | Full screen now |
 | --- | ---: | ---: |
-| none | about 340 ms | about 280 ms |
-| weather, 9 s | **about 9.1 s** | about 1.6 s |
-| parent feedback, 4 s | about 3.1 s | about 3.1 s |
+| none | about 280 ms | about 280 ms |
+| weather, 9 s | about 1.6 s | **about 280 ms** |
+| parent feedback, 4 s | about 3.1 s | **about 280 ms** |
 
-- **Weather: fixed.** It is one soft line on the page, and a hung weather read held the whole screen for as long as it took.
-  The page now gives it 1.5 s and goes ahead without it (`soft-deadline.ts`). The artificial 200 ms floor on the detail
-  request is also gone.
-- **Parent feedback: not changed, recorded as a follow-up.** `fetchParentObservations` is capped at 3 s by design, and
-  holds the screen for up to that long because the observations can withdraw a fact from Family Fit ("needs recheck").
-  Rendering without them first and correcting afterwards would show a confirmed fact that then disappears, which is
-  worse than a short wait. The right fix is to render the full screen at once and apply observations when they arrive,
-  with the change made visible, which is a behaviour change to design, not a low-risk patch.
+- **Weather: out of the blocking path.** It is not an input to Family Fit (see `STABLE_FAMILY_FIT.md`). The page asks for
+  it on its own and draws one quiet line on the Today card when it arrives (`useWeather`, cached from Home).
+- **Parent feedback: out of the blocking path.** `getById` waits for the detail alone. `useParentObservations` starts only
+  once the real detail is on screen (never for the card standing in for it) and `venueService.withParentObservations`
+  applies the result to the detail already shown. Capped at 3 s inside `fetchParentObservations`, one request, resolves to
+  nothing on any failure. Planning never reads it: the plan sheet reads the same venue query, which carries no reports.
+
+### The risk this takes, and the safest alternative
+
+Parent reports can **withdraw** a fact ("Toilets needs rechecking: recent parent reports differ from the venue's own
+information") or add a labelled parent-reported line. Rendering the venue's own facts first means that, for a venue with a
+contradicted fact, the parent can read the official line for up to about 3 s before the correction replaces it, and the
+verdict can move down one step when it does (it can never move up: reports never raise a verdict, a test checks this).
+
+- Why this is acceptable: the official line is the venue's own published fact and is shown as such; a single report never
+  reaches Family Fit; corroborated reports are always labelled "parent-reported, not confirmed by the venue"; the claim
+  itself is never edited. Today there are no parent reports to apply (`venue_visit_reports` has 0 active rows on 2026-10-07, read-only count), so no family sees a
+  correction in the beta unless parents start contradicting a fact.
+- What can jump: only the lines inside the Family Fit card that change, and the Today card gaining its weather line. Nothing
+  above them moves (the name, photograph and badge are drawn before and are not re-laid out by the correction).
+- **Safest alternative if this proves unacceptable:** keep the page non-blocking but hold only the Family Fit card behind a
+  short skeleton (about 800 ms) for venues that have reports, found from a flag on the detail response. That removes the
+  visible change at the cost of one small server-side flag. Not built: no venue has reports yet.
 
 ## Run it
 
