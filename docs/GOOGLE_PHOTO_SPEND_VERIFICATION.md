@@ -139,8 +139,10 @@ before anything else.
 Environment Variables**. Add `GOOGLE_PLACES_PHOTOS_ENABLED` = `false` for **Production** (and Preview), then redeploy the
 production deployment (an env change applies only to new deployments). Effect: every cache miss returns 503, which the app
 treats as "no photograph" and draws the category artwork. Images already in the CDN keep working until their hour expires.
-Note I have not rendered the app with this switch off in a browser against production; the hardening change in section 9
-adds a verified fixture for that state.
+**Verified in a browser against the local fixture** (not production): with `/api/places/photo` answering 503 `no-store`
+exactly as the handler does when the switch is off, Home and Explore at 390 px rendered the designed category artwork on every
+card (4 on Home, 5 on Explore), with no broken image and no page error. One cosmetic remainder: a "Google Maps" credit line
+still sits under the Home card though no photograph is shown. A production check after the redeploy is still worth doing.
 
 **B. Google Cloud: restrict the key.** Console **APIs & Services > Credentials**, open the key used as
 `GOOGLE_PLACES_API_KEY` > **API restrictions > Restrict key** > tick only the APIs the app uses (Places API (New); Routes and
@@ -173,8 +175,10 @@ same day. They should agree within a few percent; if the Google figure is higher
 
 ## 9. Proposed hardening (separate PR; no production change until you approve)
 
-Small, code-only, no new feature: (1) accept only identifiers present in our `place_records` and only the three known query
-parameters, so the endpoint cannot be used to spend on arbitrary places or cache keys; (2) a photograph-specific daily
+Small, code-only, no new feature: (1) accept only the known query parameters and, preferably, only identifiers present in our `place_records`, so the
+endpoint cannot be used to spend on arbitrary places (trade-off: live search results not yet stored would show category
+artwork until stored; your call) and so extra parameters cannot multiply cache keys (a caller can still vary `credit`; a
+database-backed once-per-photograph-per-hour ledger would close that and needs a migration); (2) a photograph-specific daily
 limit counted in photographs, not requests; (3) a fixture and verifier proving the app renders correctly with photographs
 disabled. A transactionally enforced global cap (an atomic reserve-and-count database function) is possible but needs a
 migration and, given Google's own quota is the real control, I do not recommend it until C is confirmed unavailable.
