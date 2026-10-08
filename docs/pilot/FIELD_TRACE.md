@@ -48,7 +48,7 @@ The route a fact takes: **source page → evidence quote → profile item → pr
 | Door age policy | `agePolicy.*` claim | Breach | — | — | **Hard**: a child turned away refuses the plan | Used; none published for the pilot |
 | "Under 11 must be with an adult" | none in the pilot path | — | — | — | — | **Collected, unused** (the accompaniment rule exists in the model but no claim is written for it) |
 | Admission prices | Code (`reviewed-admission-claims.ts`) | Budget factor (needs a spend tier) | — | Admission card | Soft preference | Used where reviewed; London Zoo's day-types unsupported (see HOURS_AND_PRICING.md) |
-| Visit length | Editorial field, not claim-driven | — | — | Visit-length hint | Visit length for the plan | Used where an editor set it; **pilot durations (6 venues) are not wired** |
+| Visit length | Editorial field, not claim-driven | — | — | Visit-length hint | Visit length for the plan | Used where an editor set it; **the two pilot durations (Babylon Park, Science Museum) are not wired** |
 | Booking, queue, busy times, height limits, noise | `rules.*` (new) | — | — | "Before you go" | "Worth knowing" | Was dropped; now shown |
 
 ## What remains collected but unused
@@ -57,7 +57,7 @@ The route a fact takes: **source page → evidence quote → profile item → pr
 2. Stations, buses, entrances, buggy storage and hire: need a *Getting there* field on Venue Detail and in the plan.
 3. Official-page hours and seasonal hours: need the source hierarchy in HOURS_AND_PRICING.md.
 4. Accompaniment rules ("under 11 with an adult"): the model exists, the claim writer does not.
-5. Pilot visit durations: six venues have one; the field is editor-only.
+5. Pilot visit durations: two venues have one (Babylon Park, Science Museum); the field is editor-only.
 
 ## Where the old path dropped information
 
