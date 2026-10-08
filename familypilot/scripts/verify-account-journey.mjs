@@ -36,7 +36,7 @@ async function newPage(width = 390, height = 844) {
   page.on('pageerror', (e) => console.log(`  pageerror: ${e.message}`));
   return { ctx, page };
 }
-const next = (page) => page.getByRole('button', { name: /^(continue|see my recommendations)/i }).first();
+const next = (page) => page.getByRole('button', { name: /^(continue|skip for now|see my recommendations)/i }).first();
 const api = async (path, init) => (await fetch(`${BASE}${path}`, init)).json();
 
 async function describeFamily(page, parent = 'Sam') {
@@ -56,7 +56,7 @@ async function describeFamily(page, parent = 'Sam') {
   for (let i = 0; i < 3; i++) {
     const t = await text(page);
     if (/Who do you plan days out with|Recommended for|Family Fit/i.test(t)) break;
-    const btn = page.getByRole('button', { name: /^(continue|see my recommendations)/i }).first();
+    const btn = page.getByRole('button', { name: /^(continue|skip for now|see my recommendations)/i }).first();
     if (!(await btn.count())) break;
     await btn.click(); await settle(page, 1200);
   }

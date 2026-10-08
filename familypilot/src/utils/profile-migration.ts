@@ -1,4 +1,4 @@
-import { ChildMobility, FacilityType, FamilyMember, FamilyProfile, FamilyRoutine } from '@/src/types';
+import { ChildMobility, FacilityType, FamilyMember, FamilyProfile, FamilyRoutine, UnconfirmedPreferences } from '@/src/types';
 
 import { MAX_CHILD_YEARS, parseIsoDate } from './child-age';
 import { withCompletion } from './profile-defaults';
@@ -17,9 +17,26 @@ import { withCompletion } from './profile-defaults';
  * Device-local data in, device-local data out: nothing here touches the network.
  */
 
-const BUDGET_TIERS: FamilyProfile['budgetTier'][] = ['budget', 'moderate', 'premium'];
+const BUDGET_TIERS: NonNullable<FamilyProfile['budgetTier']>[] = ['budget', 'moderate', 'premium'];
 const MOBILITY: ChildMobility[] = ['walks', 'buggy', 'carrier', 'mobility-aid'];
 const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function migrateUnconfirmed(raw: unknown): { unconfirmedPreferences?: UnconfirmedPreferences } {
+  if (!isRecord(raw)) return {};
+  const drive = finite(raw.maxDriveMinutes);
+  const budget = BUDGET_TIERS.includes(raw.budgetTier as NonNullable<FamilyProfile['budgetTier']>)
+    ? (raw.budgetTier as NonNullable<FamilyProfile['budgetTier']>)
+    : undefined;
+  if ((drive === null || drive <= 0) && !budget) return {};
+  return {
+    unconfirmedPreferences: {
+      reason: 'legacy-default-or-choice',
+      recordedAt: text(raw.recordedAt, new Date(0).toISOString()),
+      ...(drive !== null && drive > 0 ? { maxDriveMinutes: Math.round(drive) } : {}),
+      ...(budget ? { budgetTier: budget } : {}),
+    },
+  };
+}
 
 export interface MigrationResult {
   profile: FamilyProfile;
@@ -139,10 +156,14 @@ export function migrateLegacyProfile(raw: unknown): MigrationResult {
     members,
     homeLocation: text(source.homeLocation),
     ...(lat !== null && lng !== null ? { homeLatitude: lat, homeLongitude: lng } : {}),
-    budgetTier: BUDGET_TIERS.includes(source.budgetTier as FamilyProfile['budgetTier'])
-      ? (source.budgetTier as FamilyProfile['budgetTier'])
-      : 'moderate',
-    maxDriveMinutes: drive !== null && drive > 0 ? Math.round(drive) : 30,
+    // Only what is stored and valid. A missing or unusable value is "not set", never a default (utils/preferences.ts).
+    ...(BUDGET_TIERS.includes(source.budgetTier as NonNullable<FamilyProfile['budgetTier']>)
+      ? { budgetTier: source.budgetTier as NonNullable<FamilyProfile['budgetTier']> }
+      : {}),
+    ...(drive !== null && drive > 0 ? { maxDriveMinutes: Math.round(drive) } : {}),
+    // Values an earlier migration set aside for the parent to confirm. Carried through every later migration, or they
+    // would be deleted by the next one (utils/preferences.ts).
+    ...migrateUnconfirmed(source.unconfirmedPreferences),
     completionPercent: 0,
     vehicle: optionalText(source.vehicle),
     pushchair: optionalText(source.pushchair),

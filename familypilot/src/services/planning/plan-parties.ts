@@ -1,5 +1,6 @@
 import { FacilityType, FamilyProfile } from '@/src/types';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
+import { budgetTierOf, driveLimitMinutes } from '@/src/utils/preferences';
 import { routinesForPlanner } from '@/src/utils/routine-schedule';
 import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
 
@@ -105,8 +106,8 @@ export function planningFamilyFromProfile(
   if ((profile.members?.length ?? 0) === 0) return 'not-described';
   const home = homeOf(profile);
   if (!home) return 'no-location';
-  const driveLimit = Number(profile.maxDriveMinutes);
-  if (!Number.isFinite(driveLimit) || driveLimit <= 0) return 'not-described';
+  // A plan needs a place to start from and people to plan for. It does not need a travel limit: only a stated one applies.
+  const driveLimit = driveLimitMinutes(profile);
 
   return {
     id,
@@ -115,8 +116,8 @@ export function planningFamilyFromProfile(
     latitude: home.latitude,
     longitude: home.longitude,
     ages: (profile.members ?? []).filter((m) => m.role === 'child').map((m) => m.age),
-    maxDriveMinutes: driveLimit,
-    budgetTier: profile.budgetTier,
+    ...(driveLimit !== null ? { maxDriveMinutes: driveLimit } : {}),
+    ...(budgetTierOf(profile) ? { budgetTier: budgetTierOf(profile)! } : {}),
     pushchair: familyUsesBuggy(profile),
     required: plannerRequirements(profile.mustHaveFacilities),
     // Copied, so editing a plan can never reach back into the stored profile, and stripped of the
@@ -128,9 +129,7 @@ export function planningFamilyFromProfile(
 /** Whether the planner could actually measure a day for this household. */
 export const canPlanFor = (family: PlanningFamily): boolean =>
   Number.isFinite(family.latitude) &&
-  Number.isFinite(family.longitude) &&
-  Number.isFinite(family.maxDriveMinutes) &&
-  family.maxDriveMinutes > 0;
+  Number.isFinite(family.longitude);
 
 export function resolvePlanParties(
   partyIds: string[],

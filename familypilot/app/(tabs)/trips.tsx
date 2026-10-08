@@ -65,7 +65,7 @@ export default function TripsScreen() {
    }
    // eslint-disable-next-line react-hooks/exhaustive-deps
  },[state.hydrated,profile.homeLocation,profile.homeLatitude,profile.homeLongitude,profile.pushchair,profile.members]);
- const blank=(mine:boolean):PlanningFamily=>{const home=mine?resolveHomeCoordinates(profile):null;return {id:mine?'mine':`guest-${Date.now()}`,label:mine?'Our family':'',area:mine?profile.homeLocation:'',latitude:home?.latitude??NaN,longitude:home?.longitude??NaN,ages:mine?profile.members.filter(m=>m.role==='child').map(m=>m.age):[],maxDriveMinutes:mine?profile.maxDriveMinutes:30,budgetTier:mine?profile.budgetTier:'moderate',pushchair:mine?familyUsesBuggy(profile):false,required:[],routines:mine?routinesForPlanner(profile):[]};};
+ const blank=(mine:boolean):PlanningFamily=>{const home=mine?resolveHomeCoordinates(profile):null;return {id:mine?'mine':`guest-${Date.now()}`,label:mine?'Our family':'',area:mine?profile.homeLocation:'',latitude:home?.latitude??NaN,longitude:home?.longitude??NaN,ages:mine?profile.members.filter(m=>m.role==='child').map(m=>m.age):[],...(mine&&typeof profile.maxDriveMinutes==='number'?{maxDriveMinutes:profile.maxDriveMinutes}:{}),...(mine&&profile.budgetTier?{budgetTier:profile.budgetTier}:{}),pushchair:mine?familyUsesBuggy(profile):false,required:[],routines:mine?routinesForPlanner(profile):[]};};
  async function share(text:string){try{await Share.share({message:text});}catch{setMessage('Sharing is unavailable on this device.');}}
 
  // Sharing a specific saved plan with a connected family, and tracking whether they've

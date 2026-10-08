@@ -1,5 +1,10 @@
 # Personalised onboarding: assessment and sequence
 
+> **Superseded.** Drive time and budget no longer have defaults at all: a new profile has neither, and nothing is limited or
+> priced until the parent states one. See `HIDDEN_DEFAULTS_AND_PROFILE_FIELDS.md`. The text below describes the earlier approach
+> (silent defaults), which turned an unchosen 30 minutes into a restriction.
+
+
 Written before any onboarding code changed. Everything below was traced in the repository, not assumed.
 The Figma file (`LNpbdnuAWcfWf9spvB7jBz`) holds five approved frames (Home, Venue Detail, Plan, Create a
 plan, Generating) and no onboarding frame, so the onboarding takes its language from those frames and from

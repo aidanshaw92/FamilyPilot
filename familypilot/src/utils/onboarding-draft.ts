@@ -243,10 +243,8 @@ export function buildOnboardingProfile(input: OnboardingInput): FamilyProfile {
     homeLocation: input.homeLocation.trim(),
     homeLatitude: input.home.latitude,
     homeLongitude: input.home.longitude,
-    // Not asked at the start: these are what a family wants on a given day. The defaults keep every
-    // consumer working, and Home, Explore and Profile are where they are changed.
-    budgetTier: 'moderate',
-    maxDriveMinutes: 30,
+    // No travel limit and no budget: neither is asked at the start, and neither is invented. They are what a family wants
+    // on a given day, and are set (optionally) in Profile. Until then nothing is limited.
     completionPercent: 0,
     vehicle: null,
     pushchair: null,

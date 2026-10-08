@@ -242,11 +242,11 @@ describe('the sheet’s button cannot promise a day the planner could not build'
       .toBe('Add your family details so we can plan around them.');
   });
 
-  it('is not ready for a described household whose drive limit is unusable', () => {
+  it('is ready for a described household with no drive limit: a plan needs a place to start from, not a limit', () => {
     const { parties } = planDraftDefaults(
-      sources({ planningFamilies: [planningFamily({ maxDriveMinutes: 0 })] }),
+      sources({ planningFamilies: [planningFamily({ maxDriveMinutes: undefined })] }),
     );
-    expect(parties[0].ready).toBe(false);
+    expect(parties[0].ready).toBe(true);
   });
 });
 

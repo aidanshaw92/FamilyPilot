@@ -40,11 +40,11 @@ describe('food nearby: filters keep only what is known', () => {
   it('the filter changes the order only among places that pass, and never above a much better fit', () => {
     const better = venue('much-better', { foodNearby: food(9, 0, 1) }, 90);
     const easy = venue('easy-lunch', { facilities: ['cafe'] as never }, 70);
-    const ids = filterVenues([easy, better], 'all', ['food_10'], 'any', 30, 'any').map((v) => v.id);
+    const ids = filterVenues([easy, better], 'all', ['food_10'], 'any', 'any').map((v) => v.id);
     expect(ids).toEqual(['much-better', 'easy-lunch']);
     const near = venue('near', { foodNearby: food(3, 1, 1) }, 70);
     const far = venue('far', { foodNearby: food(10, 0, 1) }, 71);
-    expect(filterVenues([far, near], 'all', ['food_10'], 'any', 30, 'any').map((v) => v.id)).toEqual(['near', 'far']);
+    expect(filterVenues([far, near], 'all', ['food_10'], 'any', 'any').map((v) => v.id)).toEqual(['near', 'far']);
     expect(foodRankBonus(unknown)).toBe(0);
   });
 });

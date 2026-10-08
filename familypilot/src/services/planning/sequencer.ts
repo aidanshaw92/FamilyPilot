@@ -256,7 +256,8 @@ function tryOrder(
         });
         return { itinerary: null, failures };
       }
-      if (estimate.minutes > family.maxDriveMinutes) {
+      // Only a limit the family stated can make a journey infeasible; with none, any measured journey is allowed.
+      if (typeof family.maxDriveMinutes === 'number' && estimate.minutes > family.maxDriveMinutes) {
         failures.push({
           reason: 'travel-infeasible',
           // Source-aware, NOT blanket-hedged. A matrix leg can genuinely be routed, and calling a

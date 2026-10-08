@@ -1,5 +1,6 @@
 import { FamilyProfile } from '@/src/types';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
+import { budgetTierOf, driveLimitMinutes } from '@/src/utils/preferences';
 import { DayRequest } from '@/src/types/day-request';
 import { AGE_RECOMMENDATION_STRENGTH, childAgesInMonths } from '@/src/services/matching/age-suitability';
 import { parseExplicitTextConstraints } from './explicit-constraint-parser';
@@ -30,8 +31,8 @@ export function parseRequestProfile(profile: FamilyProfile): Record<string, unkn
       .filter((member) => member.role === 'child')
       .map((member) => ({ role: 'child', age: member.age, ageMonths: member.ageMonths ?? null })),
     homeLocation: '',
-    budgetTier: profile.budgetTier,
-    maxDriveMinutes: profile.maxDriveMinutes,
+    budgetTier: budgetTierOf(profile),
+    maxDriveMinutes: driveLimitMinutes(profile),
     pushchair: familyUsesBuggy(profile) ? 'yes' : null,
   };
 }
@@ -70,13 +71,18 @@ export async function parseDayRequest(
 export function parseDayRequestMock(rawText: string, profile: FamilyProfile): DayRequest {
   const { constraints: explicit } = parseExplicitTextConstraints(rawText);
 
-  const constraints = {
+  const limit = driveLimitMinutes(profile);
+  const tier = budgetTierOf(profile);
+  const constraints: DayRequest['constraints'] = {
     ...(explicit as DayRequest['constraints']),
-    // Server-owned, assigned last so nothing above can have touched them.
+    // Server-owned, assigned last so nothing above can have touched them. A budget or a journey limit exists only if the
+    // family stated one.
     ageRecommendedFit: { strength: AGE_RECOMMENDATION_STRENGTH, value: 'in_range' as const },
-    budget: { strength: 'preferred' as const, value: 'within_profile' as const },
-    journey: { strength: 'required' as const, value: { maxMinutes: profile.maxDriveMinutes } },
   };
+  delete constraints.budget;
+  delete constraints.journey;
+  if (tier) constraints.budget = { strength: 'preferred', value: 'within_profile' };
+  if (limit !== null) constraints.journey = { strength: 'required', value: { maxMinutes: limit } };
 
   return {
     rawText,
@@ -84,8 +90,8 @@ export function parseDayRequestMock(rawText: string, profile: FamilyProfile): Da
     childAges: profile.members.filter((m) => m.role === 'child').map((m) => m.age),
     childAgeMonthsList: childAgesInMonths(profile.members),
     homeLocation: profile.homeLocation,
-    budgetTier: profile.budgetTier,
-    maxDriveMinutes: profile.maxDriveMinutes,
+    ...(tier ? { budgetTier: tier } : {}),
+    ...(limit !== null ? { maxDriveMinutes: limit } : {}),
     hasPushchair: familyUsesBuggy(profile) || explicit.pushchair != null,
     constraints,
     context: { freeformNotes: rawText.slice(0, 200) },

@@ -29,9 +29,10 @@ describe('a soft input never holds a screen longer than its grace', () => {
 });
 
 describe('wiring', () => {
-  it('the venue page waits for weather only within its grace, and still waits for the detail itself', () => {
+  it('the venue page waits for the detail alone: neither weather nor parent reports are in the blocking path', () => {
     const source = fs.readFileSync('src/services/api/index.ts', 'utf8');
-    expect(source).toMatch(/withinMs\(fetchLiveWeatherSafe\(profile\), VENUE_WEATHER_WAIT_MS, null\)/);
-    expect(source).toMatch(/getPlacesRepository\(\)\.getVenueDetail\(id, profile\),\s*\/\/ Today's weather/);
+    const getById = source.slice(source.indexOf('async getById'), source.indexOf('withParentObservations('));
+    expect(getById).toContain('getPlacesRepository().getVenueDetail(id, profile)');
+    expect(getById).not.toMatch(/Promise\.all|fetchLiveWeather|fetchParentObservations|withinMs/);
   });
 });

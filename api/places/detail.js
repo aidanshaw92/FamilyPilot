@@ -181,6 +181,8 @@ module.exports = async function handler(req, res) {
       getVenueStaleFacts,
     } = require('../../server/enrichment/_lib/consumer-projection');
     const primaryId = await resolvePrimaryPlaceId(id);
+    // Started now and awaited after the metadata, so the count runs beside the reads the detail already makes.
+    const reportsFlag = require('../../server/feedback/_lib/store').venueHasRecentReports(primaryId);
     const metadata = await getConsumerMetadata(primaryId);
     if (metadata) {
       detail.metadata = metadata;
@@ -190,6 +192,11 @@ module.exports = async function handler(req, res) {
     // impossible to reach by reading the venue's metadata, so that a screen which has never heard
     // of stale evidence cannot render one as confirmed.
     detail.staleFacts = await getVenueStaleFacts(primaryId);
+    // Whether a parent report could still correct a fact on this page. A sibling like `staleFacts`, true/false/null (null is
+    // "could not tell"). It lets the screen show Family Fit as "checking recent reports" only for the venues where that is true,
+    // instead of showing an official fact as confirmed and correcting it a moment later. Read beside the metadata, bounded to
+    // 400 ms, and it cannot fail the detail (an error is `null`).
+    detail.hasRecentParentReports = await reportsFlag;
   } catch {
     // Metadata load is best-effort — provider facts still returned
   }

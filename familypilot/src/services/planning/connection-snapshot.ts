@@ -27,8 +27,15 @@ export interface SharedFamilySnapshot {
   latitude: number;
   longitude: number;
   ages: number[];
-  maxDriveMinutes: number;
-  budgetTier: PlanningFamily['budgetTier'];
+  /** Only if the person stated one; absent otherwise. A default is never shared as if it were their preference. */
+  maxDriveMinutes?: number | null;
+  budgetTier?: PlanningFamily['budgetTier'];
+  /**
+   * Always true on a snapshot made by this version: any limit or budget above was stated by the family. A snapshot without
+   * it predates that, so a 30 minute limit or "moderate" in it may have been a default and is not applied (see
+   * `sharedFamilyPreferences`).
+   */
+  preferencesStated?: true;
   pushchair: boolean;
   required: PlanningFamily['required'];
   relationship?: InviteRelationship;
@@ -73,8 +80,9 @@ export function snapshotForSharing(
     latitude: roundKm(derived.latitude),
     longitude: roundKm(derived.longitude),
     ages: derived.ages,
-    maxDriveMinutes: derived.maxDriveMinutes,
-    budgetTier: derived.budgetTier,
+    ...(typeof derived.maxDriveMinutes === 'number' ? { maxDriveMinutes: derived.maxDriveMinutes } : {}),
+    ...(derived.budgetTier ? { budgetTier: derived.budgetTier } : {}),
+    preferencesStated: true,
     pushchair: derived.pushchair,
     required: derived.required,
     relationship,

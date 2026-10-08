@@ -13,7 +13,7 @@ import {
 } from '@/src/services/places/places-cache';
 import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
 import { FamilyProfile, Venue, VenueDetail, VenueCategory } from '@/src/types';
-import { PlaceSearchParams } from '@/src/types/places';
+import { PlaceDetailResult, PlaceSearchParams } from '@/src/types/places';
 
 const clientMockProvider = new MockPlacesProvider();
 
@@ -88,6 +88,12 @@ function liveSearchOnce(params: PlaceSearchParams) {
     .finally(() => inFlight.delete(key));
   inFlight.set(key, request);
   return request;
+}
+
+
+/** Carries the server's "a parent report could still correct this page" flag onto the detail; absent when it was not sent. */
+function withReportsFlag(detail: VenueDetail, result: Pick<PlaceDetailResult, 'hasRecentParentReports'>): VenueDetail {
+  return result.hasRecentParentReports === undefined ? detail : { ...detail, hasRecentParentReports: result.hasRecentParentReports };
 }
 
 export class PlacesRepository {
@@ -181,22 +187,28 @@ export class PlacesRepository {
 
     const cached = await getCachedDetail(id);
     if (cached) {
-      return mergePlaceToVenueDetail(
-        cached.place,
-        cached.metadata ?? cached.place.familyMetadata ?? getFamilyPlaceMetadata(id),
-        home.latitude,
-        home.longitude,
+      return withReportsFlag(
+        mergePlaceToVenueDetail(
+          cached.place,
+          cached.metadata ?? cached.place.familyMetadata ?? getFamilyPlaceMetadata(id),
+          home.latitude,
+          home.longitude,
+        ),
+        cached,
       );
     }
 
     try {
       const result = await placesApiClient.getDetail(id);
       await setCachedDetail(id, result);
-      return mergePlaceToVenueDetail(
-        result.place,
-        result.metadata ?? result.place.familyMetadata ?? getFamilyPlaceMetadata(id),
-        home.latitude,
-        home.longitude,
+      return withReportsFlag(
+        mergePlaceToVenueDetail(
+          result.place,
+          result.metadata ?? result.place.familyMetadata ?? getFamilyPlaceMetadata(id),
+          home.latitude,
+          home.longitude,
+        ),
+        result,
       );
     } catch (error) {
       // Mock and legacy ids are served locally whatever the API says. For a real id the two
