@@ -91,6 +91,7 @@ export function extractMatchableFacts(
     maxRecommendedAge: metadata.maxRecommendedAge ?? null,
     venueAgePolicy: metadata.venueAgePolicy ?? null,
     ...(metadata.rules?.length ? { rules: metadata.rules } : {}),
+    ...(metadata.officialHours?.length ? { officialHours: metadata.officialHours } : {}),
     toilets: triStateOrUnknown(metadata.familyFacilities?.toilets),
     babyChanging: triStateOrUnknown(metadata.familyFacilities?.babyChanging),
     parking: triStateOrUnknown(metadata.familyFacilities?.parking),

@@ -49,8 +49,9 @@ const placeFor = (profile) => {
 };
 
 const { PROJECTED_RULES } = require(path.join(__dirname, '..', '..', '..', 'server', 'enrichment', '_lib', 'venue-rules.js'));
+const { PROJECTED_OFFICIAL_HOURS } = require(path.join(__dirname, '..', '..', '..', 'server', 'enrichment', '_lib', 'official-hours.js'));
 const metadata = (id, payload, extras, state) => ({
-  familypilotPlaceId: id, enrichmentStatus: 'enriched', ...payload, ...extras, ...(payload[PROJECTED_RULES]?.length ? { rules: payload[PROJECTED_RULES] } : {}), provenance: {}, lastChecked: '2026-10-08',
+  familypilotPlaceId: id, enrichmentStatus: 'enriched', ...payload, ...extras, ...(payload[PROJECTED_RULES]?.length ? { rules: payload[PROJECTED_RULES] } : {}), ...(payload[PROJECTED_OFFICIAL_HOURS]?.length ? { officialHours: payload[PROJECTED_OFFICIAL_HOURS] } : {}), provenance: {}, lastChecked: '2026-10-08',
   checkedBy: state === 'after' ? 'pilot-profile' : 'stored-claims', updatedAt: '2026-10-08',
 });
 

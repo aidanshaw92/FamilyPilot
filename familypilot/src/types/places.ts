@@ -124,6 +124,8 @@ export interface VenueFamilyMetadata {
    * approved `rules.*` claims. Absent means nobody has recorded any, which is not the same as "none apply".
    */
   rules?: import('@/src/types/venue-rules').VenueRule[];
+  /** The venue's own reviewed opening hours, projected from approved `hours.*` claims; see types/official-hours.ts. */
+  officialHours?: import('@/src/types/official-hours').OfficialHoursRule[];
   ageNotes?: string;
   terrain?: TerrainType;
   extendedTerrain?: import('@/src/types/enrichment').ExtendedTerrain;

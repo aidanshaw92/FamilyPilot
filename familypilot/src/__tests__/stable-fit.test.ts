@@ -198,7 +198,8 @@ describe('the venue page: what blocks it and what does not (wiring)', () => {
     // ... and are applied to the detail already on screen, only when not pending.
     expect(page).toMatch(/baseVenue && !pending \? venueService\.withParentObservations\(baseVenue, parentReports\.data\)/);
     // The forecast is a separate, late condition on the Today card, not an input to the fit.
-    expect(page).toMatch(/<TodayCard hours=\{venue\.structuredOpeningHours\} weather=\{weather\}/);
+    // (Its hours are the reconciled schedule for today, which is the provider's own unless the venue's reviewed hours disagree.)
+    expect(page).toMatch(/<TodayCard hours=\{todayHours\.schedule\} sourceNote=\{[^}]*\} weather=\{weather\}/);
   });
 
   it('planning reads the venue detail without parent reports or the card placeholder', async () => {

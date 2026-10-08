@@ -10,7 +10,9 @@ const path = require('node:path');
 const root = path.join(__dirname, '..', '..', '..');
 const { projectActiveClaimsToPayload } = require(path.join(root, 'server/enrichment/_lib/claims-store.js'));
 const { PROJECTED_RULES } = require(path.join(root, 'server/enrichment/_lib/venue-rules.js'));
+const { PROJECTED_OFFICIAL_HOURS } = require(path.join(root, 'server/enrichment/_lib/official-hours.js'));
 const { rulesFor } = require('./rules.cjs');
+const { hoursFor } = require('./hours.cjs');
 
 /** profile fact (section.key) -> claim field key and the value the claim carries. */
 const CLAIM_MAP = {
@@ -69,6 +71,16 @@ function claimsFor(profile, view) {
       claims.push({
         fieldKey: `rules.${id}`, valueJson: { ...rest, text }, status: 'active', confidence: 'high', approvedBy: 'human:pilot-review-assumed',
         sourceUrl: evidence.url, evidenceExcerpt: evidence.quote, checkedAt: evidence.readAt, validUntil: addDays(evidence.readAt, 30),
+      });
+    }
+  }
+  // Official opening hours: a structured reading that can contradict the provider's hours, so the same rule applies as for venue rules.
+  if (view === 'approved') {
+    for (const { rule, evidence } of hoursFor(profile)) {
+      const { id, ...rest } = rule;
+      claims.push({
+        fieldKey: `hours.${id}`, valueJson: rest, status: 'active', confidence: 'high', approvedBy: 'human:pilot-review-assumed',
+        sourceUrl: evidence.url, evidenceExcerpt: evidence.quote, checkedAt: evidence.readAt, validUntil: addDays(evidence.readAt, 45),
       });
     }
   }

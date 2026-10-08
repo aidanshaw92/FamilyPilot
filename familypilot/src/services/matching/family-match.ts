@@ -7,6 +7,7 @@ import { childAgeVerdicts, joinNames, outsideRangeCautions, suitsChildrenLine } 
 import { childUsesBuggy, childUsesMobilityAid, familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
 import { describeOpeningToday, OpeningTodayState } from '@/src/utils/opening-today';
 import { evaluateVenueRules, ruleAppliesOn } from '@/src/services/matching/venue-rules';
+import { reconcileHoursOn } from '@/src/services/places/hours-reconcile';
 import { venueLocalDate } from '@/src/utils/opening-hours';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 import { driveLimitMinutes } from '@/src/utils/preferences';
@@ -389,7 +390,8 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
   // is not a reason, a caution, a positive or a score. Weather is not read here at all; the venue page shows it as its own
   // condition. Once there is a plan for a chosen day, the planner is where date-specific feasibility is worked out.
   // The one exception is a place whose hours say it is NEVER open to visitors: that is a fact about the place, not the day.
-  const hoursToday = describeOpeningToday(venue.structuredOpeningHours, now);
+  // The venue's own reviewed hours outrank the provider's weekly pattern for today when the two disagree (see hours-reconcile.ts).
+  const hoursToday = describeOpeningToday(reconcileHoursOn(venue.structuredOpeningHours, venue.trustedFacts?.officialHours, now).schedule, now);
   // A reviewed whole-venue closure on today's date outranks the weekly hours, which cannot know about an exceptional closure.
   const todayDate = venueLocalDate(now, venue.structuredOpeningHours?.timezone ?? 'Europe/London');
   const closedByRule = todayDate

@@ -23,6 +23,7 @@ import { TodayCard } from '@/src/components/venue/TodayCard';
 import { AdmissionCard } from '@/src/components/venue/AdmissionCard';
 import { FamilyEssentials } from '@/src/components/venue/FamilyEssentials';
 import { VenuePractical } from '@/src/components/venue/VenuePractical';
+import { reconcileHoursOn } from '@/src/services/places/hours-reconcile';
 import { PhotoGallery } from '@/src/components/venue/PhotoGallery';
 import { RestaurantsCloseBy } from '@/src/components/venue/RestaurantsCloseBy';
 import { WeatherAlternativeSection } from '@/src/components/venue/WeatherAlternativeSection';
@@ -94,6 +95,11 @@ export default function VenueScreen() {
   const venue = useMemo(
     () => (baseVenue && !pending ? venueService.withParentObservations(baseVenue, parentReports.data) : baseVenue),
     [baseVenue, pending, parentReports.data],
+  );
+  // Today's hours: the venue's own reviewed hours where they disagree with the provider's, with a note saying so.
+  const todayHours = useMemo(
+    () => reconcileHoursOn(venue?.structuredOpeningHours, venue?.trustedFacts?.officialHours, new Date()),
+    [venue?.structuredOpeningHours, venue?.trustedFacts?.officialHours],
   );
   // A venue the server says has recent parent reports shows Family Fit as "checking" until they are read (three seconds at
   // most), instead of a verdict that a report may take back. A venue without recent reports never waits.
@@ -380,7 +386,7 @@ export default function VenueScreen() {
 
             {/* 2. Will it work TODAY: the opening state from the schedule and the clock, then the routine check. */}
             <View style={styles.block}>
-              <TodayCard hours={venue.structuredOpeningHours} weather={weather} environment={venue.trustedFacts?.environment} />
+              <TodayCard hours={todayHours.schedule} sourceNote={todayHours.note?.text ?? null} weather={weather} environment={venue.trustedFacts?.environment} />
             </View>
 
             {/* 2b. What it costs to get in: a sourced estimate for this household, or "Price not confirmed". */}

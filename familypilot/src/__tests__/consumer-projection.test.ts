@@ -271,6 +271,52 @@ describe('venue rules in the consumer projection', () => {
   });
 });
 
+describe('official hours in the consumer projection', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({toFake:['Date']});
+    vi.setSystemTime(new Date('2026-08-15T12:00:00Z'));
+    isolateFileStores();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    restoreEnv();
+  });
+  const write = async (placeId: string, id: string, value: unknown, reviewedBy: string) => {
+    const { createApprovedClaim } = await import('../../../server/enrichment/_lib/claims-store.js');
+    return createApprovedClaim({
+      familypilotPlaceId: placeId, fieldKey: `hours.${id}`, value,
+      fieldEvidence: { [`hours.${id}`]: { confidence: 'high', sourceUrl: 'https://example.org/visit', evidence: 'Open daily 10am to 4pm.', sourceType: 'official_website' } },
+      reviewedBy, draftId: null, checkedAt: '2026-08-10',
+    });
+  };
+  const winter = { scope: 'venue', days: [0, 1, 2, 3, 4, 5, 6], open: '10:00', close: '16:00', from: '2026-10-24', until: '2027-02-12', lastEntry: '15:00' };
+
+  it('projects a person-approved reading, with its season and source', async () => {
+    const placeId = 'fp-google-hours-ok';
+    writeMetadata(placeId, { enrichmentStatus: 'enriched' });
+    await write(placeId, 'winter', winter, 'human:alice');
+    const { getConsumerMetadata } = await import('../../../server/enrichment/_lib/consumer-projection.js');
+    const result = await getConsumerMetadata(placeId);
+    expect(result?.officialHours).toEqual([{
+      id: 'winter', scope: 'venue', days: [0, 1, 2, 3, 4, 5, 6], open: '10:00', close: '16:00', from: '2026-10-24', until: '2027-02-12',
+      lastEntry: '15:00', sourceUrl: 'https://example.org/visit', checkedAt: '2026-08-10',
+    }]);
+  });
+
+  it('never projects one an automatic approver wrote, and drops a malformed one', async () => {
+    const placeId = 'fp-google-hours-bad';
+    writeMetadata(placeId, { enrichmentStatus: 'enriched' });
+    await write(placeId, 'auto', winter, 'source_evidence_auto_v2');
+    await write(placeId, 'bad-clock', { ...winter, open: '25:99' }, 'human:alice');
+    await write(placeId, 'no-text', { ...winter, close: null }, 'human:alice');
+    await write(placeId, 'good-dusk', { scope: 'venue', days: [1], open: '07:00', close: null, closeText: 'dusk' }, 'human:alice');
+    const { getConsumerMetadata } = await import('../../../server/enrichment/_lib/consumer-projection.js');
+    const result = await getConsumerMetadata(placeId);
+    expect(result?.officialHours?.map((r: { id: string }) => r.id)).toEqual(['good-dusk']);
+    expect(result?.officialHours?.[0].closeText).toBe('dusk');
+  });
+});
+
 describe('attachTrustFields', () => {
   it('copies trust metadata without adding family suitability fields', async () => {
     const { attachTrustFields } = await import('../../../server/enrichment/_lib/consumer-projection.js');

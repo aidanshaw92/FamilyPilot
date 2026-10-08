@@ -15,6 +15,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..', '..', '..');
 const { CLAIM_MAP, claimsFor } = require('./profile-claims.cjs');
 const { rulesFor } = require('./rules.cjs');
+const { hoursFor } = require('./hours.cjs');
 const ev = require(path.join(root, 'server/enrichment/_lib/evidence-extractor.js'));
 const { FIELD_MAP } = require(path.join(root, 'server/enrichment/_lib/trusted-evidence.js'));
 
@@ -36,7 +37,7 @@ const prodAutoFields = new Set(Object.keys(FIELD_MAP));
 const disposition = (f, ruleFacts = new Set()) => {
   const key = `${f.sec}.${f.key}`;
   if (CLAIM_MAP[key] || key === 'transport.parking') return 'claim';
-  if (ruleFacts.has(key)) return 'venue rule claim (structured; a person must approve it)';
+  if (ruleFacts.has(key)) return 'venue rule or official-hours claim (structured; a person must approve it)';
   if (CLAIM_MAP[key] || key === 'transport.parking') return 'claim';
   if (f.sec === 'activities' && f.minMonths != null) return 'ships as reviewed activity data (code, by pull request)';
   if (f.sec === 'pricing') return f.key === 'free' ? 'ships as reviewed admission data (code, by pull request)' : 'price: reviewed admission data or held (no claim type)';
@@ -54,17 +55,19 @@ const funnel = { total: 0, verified: 0, review: 0, unknown: 0, hypothesis: 0, he
 const byDisposition = { verified: {}, review: {} };
 for (const p of profiles) for (const f of p.facts) {
   funnel.total += 1; funnel[f.status] += 1; if (f.held) funnel.held += 1;
-  const ruleFacts = new Set(rulesFor(p).map((r) => r.fact));
+  const ruleFacts = new Set([...rulesFor(p), ...hoursFor(p)].map((r) => r.fact));
   if (f.status === 'verified' || f.status === 'review') { const d = disposition(f, ruleFacts); byDisposition[f.status][d] = (byDisposition[f.status][d] ?? 0) + 1; }
 }
-let rulesProposed = 0;
+let rulesProposed = 0, hoursProposed = 0;
 let claimsAuto = 0, claimsApproved = 0, claimsAutoProdFields = 0, claimsApprovedProdFields = 0;
 for (const p of profiles) {
   // Venue rules are a separate, later claim type (all need a person); they are counted on their own below so that the original
   // funnel (what the profile facts alone become) stays comparable with the figures first reported.
   const all = claimsFor(p, 'approved');
   rulesProposed += all.filter((c) => c.fieldKey.startsWith('rules.')).length;
-  const a = claimsFor(p, 'auto').filter((c) => !c.fieldKey.startsWith('rules.')), b = all.filter((c) => !c.fieldKey.startsWith('rules.'));
+  hoursProposed += all.filter((c) => c.fieldKey.startsWith('hours.')).length;
+  const legacy = (c) => !c.fieldKey.startsWith('rules.') && !c.fieldKey.startsWith('hours.');
+  const a = claimsFor(p, 'auto').filter(legacy), b = all.filter(legacy);
   claimsAuto += a.length; claimsApproved += b.length;
   const prodOk = (c) => { const fk = c.fieldKey; return Object.values(FIELD_MAP).includes(fk); };
   claimsAutoProdFields += a.filter(prodOk).length; claimsApprovedProdFields += b.filter(prodOk).length;
@@ -93,7 +96,7 @@ for (const p of profiles) {
     cmp.rows.push({ venue: p.name, fact: `${f.sec}.${f.key}`, profile: f.value, extractor: vals.join('/') || '-', result: r });
   }
 }
-const out = { builtOn: '2026-10-08', funnel, byDisposition, claims: { noPersonUnderPilotGate: claimsAuto, ifApprovedUnderPilotGate: claimsApproved, noPersonAndProductionAutoField: claimsAutoProdFields, ifApprovedAndProductionAutoField: claimsApprovedProdFields, venueRulesProposedAllNeedAPerson: rulesProposed }, productionAutoFields: [...prodAutoFields], crossCheck: { agree: cmp.agree, conflict: cmp.conflict, extractorMissed: cmp.extractorMissed, profileFactsWithNoProductionField: cmp.profileOnlyNoField }, rows: cmp.rows };
+const out = { builtOn: '2026-10-08', funnel, byDisposition, claims: { noPersonUnderPilotGate: claimsAuto, ifApprovedUnderPilotGate: claimsApproved, noPersonAndProductionAutoField: claimsAutoProdFields, ifApprovedAndProductionAutoField: claimsApprovedProdFields, venueRulesProposedAllNeedAPerson: rulesProposed, officialHoursProposedAllNeedAPerson: hoursProposed }, productionAutoFields: [...prodAutoFields], crossCheck: { agree: cmp.agree, conflict: cmp.conflict, extractorMissed: cmp.extractorMissed, profileFactsWithNoProductionField: cmp.profileOnlyNoField }, rows: cmp.rows };
 console.log(JSON.stringify({ funnel, byDisposition, claims: out.claims, crossCheck: out.crossCheck }, null, 1));
 for (const r of cmp.rows.filter((x) => x.result !== 'agree')) console.log(r.result.padEnd(14), r.venue.padEnd(32), r.fact.padEnd(26), 'profile', r.profile, '| extractor', r.extractor);
 if (flag('--json')) fs.writeFileSync(flag('--json'), JSON.stringify(out, null, 1));

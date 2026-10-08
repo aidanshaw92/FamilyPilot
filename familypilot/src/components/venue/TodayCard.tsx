@@ -30,8 +30,11 @@ export function TodayCard({
   now,
   weather,
   environment,
+  sourceNote,
 }: {
   hours?: OpeningHoursSchedule;
+  /** Said when the venue's own hours and the provider's disagree: which was used and what the other said. */
+  sourceNote?: string | null;
   now?: Date;
   /** Today's forecast, shown as a condition of the day. Optional and late-arriving: it is never part of Family Fit. */
   weather?: WeatherInfo | null;
@@ -69,6 +72,11 @@ export function TodayCard({
       {conditions ? (
         <Text variant="bodySmall" color={colors.text.secondary} style={styles.conditions} testID="today-conditions">
           {conditions}
+        </Text>
+      ) : null}
+      {sourceNote ? (
+        <Text variant="bodySmall" color={colors.warning[600]} style={styles.conditions} testID="today-source-note">
+          {sourceNote}
         </Text>
       ) : null}
       {open && week.length > 0 ? (

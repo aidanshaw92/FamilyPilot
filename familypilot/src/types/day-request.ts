@@ -180,6 +180,8 @@ export interface MatchableVenueFacts {
   venueAgePolicy: VenueAgePolicy | null;
   /** Reviewed venue-specific rules; see types/venue-rules.ts. Absent or empty: none recorded, which says nothing either way. */
   rules?: import('@/src/types/venue-rules').VenueRule[];
+  /** Reviewed opening hours from the venue's own pages; reconciled against the provider's by `reconcileHours`. */
+  officialHours?: import('@/src/types/official-hours').OfficialHoursRule[];
   toilets: TriState | 'unknown';
   babyChanging: TriState | 'unknown';
   parking: TriState | 'unknown';
