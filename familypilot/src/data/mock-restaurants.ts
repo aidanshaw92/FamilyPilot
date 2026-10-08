@@ -30,7 +30,6 @@ function baseScore(score: number, explanation: string[]): FamilyScore {
       ageSuitability: score - 2,
       accessibility: score - 4,
       distance: score,
-      weatherFit: 85,
       budgetFit: score - 3,
       facilitiesMatch: score - 1,
     },

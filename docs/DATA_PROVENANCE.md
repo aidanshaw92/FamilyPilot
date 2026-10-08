@@ -86,7 +86,6 @@ Each field carries `FieldProvenance`: `{ source, updatedAt, reliability, label? 
 | distance | coordinates | provider + computed |
 | budgetFit | estimatedSpend, profile | estimated + profile |
 | facilitiesMatch | facilities | familypilot |
-| weatherFit | weather service | mock (future: live) |
 
 ---
 

@@ -51,7 +51,8 @@ describe('Family Match: the honest verdict', () => {
     expect(r.forNames).toEqual(['Sloane', 'Theo']);
     expect(r.reasons.map((l) => l.text)).toContain('Suits Sloane and Theo (recommended for ages 1–10)');
     expect(r.reasons.map((l) => l.text)).toContain('Good buggy access for Theo’s buggy');
-    expect(r.reasons.map((l) => l.text)).toContain('Open until 5pm');
+    // Opening state is a fact about the day, not a reason the place suits them.
+    expect(r.reasons.map((l) => l.text)).not.toContain('Open until 5pm');
   });
 
   it('does not call a place a good fit when it is over the family’s drive limit', () => {
@@ -100,15 +101,16 @@ describe('Family Match: the honest verdict', () => {
     expect(r.verdict).not.toBe('poor');
     expect(r.availableToday).toBe(false);
     expect(r.today.state).toBe('closed_today');
-    expect(r.cautions[0].text).toBe('Closed today · opens tomorrow 10am');
-    expect(r.headline).toMatch(/, but not today$/);
+    expect(r.today.label).toBe('Closed today · opens tomorrow 10am');
+    expect(r.cautions.map((l) => l.text)).not.toContain('Closed today · opens tomorrow 10am');
+    expect(r.headline).not.toMatch(/today/i);
   });
 
   it('keeps a place FamilyPilot has not reviewed as Not yet reviewed, still saying what is known', () => {
     const r = run(venue({ enrichmentStatus: 'provider_only' }), profile(), 99);
     expect(r.verdict).toBe('not_reviewed');
     expect(r.headline).toBe('Family suitability not yet reviewed');
-    expect(r.reasons.map((l) => l.text)).toEqual(expect.arrayContaining(['Open until 5pm', '20 min away']));
+    expect(r.reasons.map((l) => l.text)).toEqual(['20 min away']);
   });
 
   it('REGRESSION: a high blended score with nothing confirmed is Possible, never Good', () => {
@@ -142,14 +144,20 @@ describe('Family Match: the honest verdict', () => {
     expect(r.forNames).toEqual([]);
   });
 
-  it('treats rain on an outdoor place as a caution, not a reason', () => {
-    const r = evaluateFamilyMatch({
-      venue: venue({}, { environment: 'outdoor', toilets: 'yes' }), profile: profile({ members: [parent, child('c1', 'Sloane', 7)] }), score: 80, now: NOW,
-      weather: { condition: 'rainy', temperature: 11, description: 'Rain' },
-    });
-    expect(r.reasons.some((l) => /weather/i.test(l.text))).toBe(false);
-    expect(r.cautions.map((l) => l.text)).toContain('Outdoors, and rain is forecast');
-    expect(r.verdict).toBe('possible');
+  it('weather is not an input: rain and sun on an indoor or outdoor place change nothing about the fit', () => {
+    const outdoor = venue({}, { environment: 'outdoor', toilets: 'yes' });
+    const p = profile({ members: [parent, child('c1', 'Sloane', 7)] });
+    const base = run(outdoor, p);
+    for (const condition of ['rainy', 'sunny', 'cloudy', 'partly_cloudy'] as const) {
+      const r = evaluateFamilyMatch({
+        venue: outdoor, profile: p, score: 80, now: NOW,
+        // @ts-expect-error weather is deliberately not an input to Family Fit
+        weather: { condition, temperature: 11, description: 'x' },
+      });
+      expect(r).toEqual(base);
+    }
+    expect(base.reasons.some((l) => /weather|rain/i.test(l.text))).toBe(false);
+    expect(base.cautions.some((l) => /weather|rain/i.test(l.text))).toBe(false);
   });
 
   it('leaves out the journey when it has not been worked out', () => {
@@ -176,15 +184,18 @@ describe('Family Match: the honest verdict', () => {
 
   it('gives the card the one line that changes a decision', () => {
     const r = run(venue({}, { toilets: 'yes', babyChanging: 'yes', minRecommendedAge: 1, maxRecommendedAge: 10 }));
-    expect(r.cardNote).toBe('Open until 5pm · Buggy access still to be checked for Theo’s buggy');
+    expect(r.cardNote).toBe('Buggy access still to be checked for Theo’s buggy');
   });
 
-  it('says "Closing soon" once on the card, though it is both today\'s state and a caution', () => {
-    const late = new Date(Date.UTC(2026, 9, 6, 15, 40, 0)) // 16:40 in London (BST);
-    const r = evaluateFamilyMatch({ venue: venue({}, { toilets: 'yes', babyChanging: 'yes', pushchairSuitability: 'good', minRecommendedAge: 1, maxRecommendedAge: 10 }), profile: profile(), score: 85, now: late });
-    expect(r.cardNote).toBeTruthy();
-    const closing = (r.cardNote ?? '').match(/closing soon/gi) ?? [];
-    expect(closing.length).toBeLessThanOrEqual(1);
+  it('closing soon is a fact about the day: it does not lower the verdict or appear in what is said about the fit', () => {
+    const late = new Date(Date.UTC(2026, 9, 6, 15, 40, 0)); // 16:40 in London (BST), closing at 17:00
+    const facts = { toilets: 'yes', babyChanging: 'yes', pushchairSuitability: 'good', minRecommendedAge: 1, maxRecommendedAge: 10 } as const;
+    const closing = evaluateFamilyMatch({ venue: venue({}, facts), profile: profile(), score: 85, now: late });
+    const morning = evaluateFamilyMatch({ venue: venue({}, facts), profile: profile(), score: 85, now: NOW });
+    expect(closing.today.state).toBe('closing_soon');
+    expect(closing.verdict).toBe(morning.verdict);
+    expect(closing.cardNote).toBe(morning.cardNote);
+    expect(JSON.stringify([closing.reasons, closing.cautions, closing.toCheck, closing.headline])).not.toMatch(/closing|until|today/i);
   });
 });
 

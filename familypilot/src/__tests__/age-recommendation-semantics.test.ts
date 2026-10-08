@@ -248,7 +248,7 @@ describe('producers never emit a required age recommendation', () => {
   });
 
   it('proactive day request emits the soft key and no legacy key', () => {
-    const parsed = buildProactiveDayRequest(profile, null, now);
+    const parsed = buildProactiveDayRequest(profile, now);
     expect(parsed.constraints.ageRecommendedFit).toEqual({ strength: 'preferred', value: 'in_range' });
     expect(parsed.constraints.childAgeFit).toBeUndefined();
     expect(parsed.childAgeMonthsList).toEqual([7, 96]);

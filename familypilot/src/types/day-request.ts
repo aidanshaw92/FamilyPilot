@@ -109,8 +109,9 @@ export interface DayRequest {
    */
   childAgeMonthsList?: number[];
   homeLocation: string;
-  budgetTier: FamilyProfile['budgetTier'];
-  maxDriveMinutes: number;
+  /** Only when the family stated one: see utils/preferences.ts. */
+  budgetTier?: FamilyProfile['budgetTier'];
+  maxDriveMinutes?: number | null;
   hasPushchair: boolean;
   constraints: DayRequestConstraints;
   context: {

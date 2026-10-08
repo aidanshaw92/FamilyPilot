@@ -1,12 +1,12 @@
 import { FacilityType, FamilyProfile, FamilyMember, Venue } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
-import { WeatherInfo } from '@/src/types';
 import { evaluateAgeAdmission } from '@/src/services/matching/age-admission';
 import { childAgeMonths } from '@/src/services/matching/age-suitability';
 import { childAgeVerdicts, joinNames, outsideRangeCautions, suitsChildrenLine } from '@/src/utils/child-fit';
 import { childUsesBuggy, familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
 import { describeOpeningToday, OpeningTodayState } from '@/src/utils/opening-today';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
+import { driveLimitMinutes } from '@/src/utils/preferences';
 import { observationLine, ParentObservations } from '@/src/services/matching/parent-observations';
 
 /**
@@ -16,19 +16,20 @@ import { observationLine, ParentObservations } from '@/src/services/matching/par
  * they want to go, so it is built from what is stable about the family (the children and what is confirmed for them,
  * buggy or sling, must-haves, how far they will travel) and never from the clock: no "leave by", no nap or feed timing,
  * nothing that assumes they are setting off now. Whether a particular day works around naps and feeds is the planner's
- * job, once they have chosen a date and a time (routine-advice.ts). Today's opening state is still stated, as a fact
- * about the place, and today's weather where it genuinely matters (rain and an outdoor place).
+ * job, once they have chosen a date and a time (routine-advice.ts). Today's opening state is still reported (`today`,
+ * `availableToday`) as a fact about the day, and weather is shown by the venue page as its own condition: neither is a reason,
+ * a caution or a score, so the verdict is the same whatever the day.
  *
  * WHAT THIS REPLACES. The Family Fit number is a weighted blend in which every fact nobody has checked is replaced by
- * a neutral default (an unknown age range scores 75, an unknown buggy score 70, "good weather" is guessed from the
- * category, and so on). That keeps the blend defined, and it also meant a place with no evidence at all could score
+ * a neutral default (an unknown age range scores 75, an unknown buggy score 70, a distance beyond the limit is a soft
+ * penalty, and so on). That keeps the blend defined, and it also meant a place with no evidence at all could score
  * 4.6 out of 5 and be called "Good fit" while breaching the family's drive limit or missing something they said they
  * need. The number is therefore still used to RANK, and no longer decides what a parent is TOLD.
  *
  * THE RULES.
  *  - A reason is shown only for a fact that is confirmed (or computed from the schedule and the clock). Nothing is
  *    inferred from a category.
- *  - A confirmed breach of something the family needs (a must-have facility confirmed absent, closed all day today, a
+ *  - A confirmed breach of something the family needs (a must-have facility confirmed absent, hours that say it is never open to visitors, a
  *    door policy that does not admit a child, every child outside the recommended ages, buggy access reviewed as
  *    difficult for a family with a buggy) makes the verdict `poor`.
  *  - A requirement that is simply UNKNOWN (a must-have nobody has checked, buggy access for a family with a buggy,
@@ -120,7 +121,6 @@ export interface FamilyMatchInput {
   profile: FamilyProfile;
   /** The blended Family Fit score (0 to 100). Used only to tell poor from possible and good from excellent. */
   score: number;
-  weather?: WeatherInfo | null;
   now?: Date;
   /**
    * What parents have reported, ALREADY filtered by the confidence contract (`parentObservationsFromTrust`): only
@@ -239,12 +239,10 @@ function headlineFor(input: {
   lens: ChildLens[];
   children: readonly FamilyMember[];
   lines: { breaches: MatchLine[]; softCautions: MatchLine[]; hardUnknowns: MatchLine[]; softUnknowns: MatchLine[] };
-  /** Shut today (all day, or already finished): the headline may judge the place but never claim today. */
-  notToday?: boolean;
 }): string {
-  const { verdict, lens, children, lines, notToday = false } = input;
-  // A judgement about the family, not about leaving now. Only a place that is shut today says so, as a fact.
-  const when = notToday ? ', but not today' : '';
+  const { verdict, lens, children, lines } = input;
+  // A judgement about the family and the place, never about leaving now: nothing about today's date, hours or weather is
+  // in it, so the same sentence is true on every day the screen is read.
   if (verdict === 'not_reviewed') return 'Family suitability not yet reviewed';
 
   // Two different claims, never one. "Good for Sloane" is about the PLACE and needs the venue's own recommended ages to
@@ -285,13 +283,13 @@ function headlineFor(input: {
   // Everyone the household has is covered, by one kind of evidence or both. A `possible` verdict means something stands in
   // the way at the level of the family (the journey, the opening hours), so practical facts alone do not headline it: only
   // the place's own recommended ages do.
-  if (lead && lens.length > 0 && lens.every((l) => l.state === 'works') && (verdict !== 'possible' || suited)) return `${lead}${when}`;
+  if (lead && lens.length > 0 && lens.every((l) => l.state === 'works') && (verdict !== 'possible' || suited)) return lead;
 
   // No evidence about any particular child. What is confirmed is about the place and the visit (toilets, parking, a
   // café), so it is never said as "Good for your family": that would claim the activity suits them.
-  if (verdict === 'good') return `Looks promising for your family${when}`;
-  if (verdict === 'excellent') return `Looks very promising for your family${when}`;
-  return `${VERDICT_WORD[verdict]} for your family${when}`;
+  if (verdict === 'good') return 'Looks promising for your family';
+  if (verdict === 'excellent') return 'Looks very promising for your family';
+  return `${VERDICT_WORD[verdict]} for your family`;
 }
 
 /**
@@ -316,7 +314,7 @@ function gapPhrase(lens: ChildLens[], lines: { hardUnknowns: MatchLine[]; softCa
   return parts.length ? parts.join(', and ') : null;
 }
 
-export function evaluateFamilyMatch({ venue, profile, score, weather, now = new Date(), parentObservations = {} }: FamilyMatchInput): FamilyMatchResult {
+export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), parentObservations = {} }: FamilyMatchInput): FamilyMatchResult {
   const children = profile.members.filter((m) => m.role === 'child');
   // A contradicted fact is withdrawn: Family Fit treats it as unknown and says it needs rechecking. The claim itself is
   // not touched anywhere; this is only what is told to this family until a source is re-checked.
@@ -353,28 +351,26 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
   const buggyKids = children.filter(childUsesBuggy);
   const usesBuggy = familyUsesBuggy(profile);
 
-  // ---- today: the schedule and the clock --------------------------------------------------------------------
-  // SUITABILITY and TODAY'S AVAILABILITY are separate questions. Whether a place suits this family does not change
-  // because it is shut today; whether they can go TODAY does. So a place shut today (all day, or already finished)
-  // does not lower the verdict, and the verdict can never be worded as a claim about today: the headline says
-  // "…, but not today" and the closed line leads what is said about it. A place never open to visitors is not a
-  // "today" question, so that one stays a breach.
+  // ---- the day: kept OUT of the fit ---------------------------------------------------------------------------
+  // SUITABILITY and AVAILABILITY are separate questions. Whether a place suits this family does not change because it is
+  // shut today, closes at five, or the forecast is rain: the same family and the same place get the same verdict on a
+  // Tuesday it is shut as on a Wednesday it is open. So today's opening state is reported beside the fit (`today`,
+  // `availableToday`: facts about the day the screen is read, used to say "Closed today" on a card, never to rate it) and
+  // is not a reason, a caution, a positive or a score. Weather is not read here at all; the venue page shows it as its own
+  // condition. Once there is a plan for a chosen day, the planner is where date-specific feasibility is worked out.
+  // The one exception is a place whose hours say it is NEVER open to visitors: that is a fact about the place, not the day.
   const today = describeOpeningToday(venue.structuredOpeningHours, now);
   const notToday = today.state === 'closed_today' || today.state === 'closed_for_today';
-  const availability: MatchLine | null = notToday ? { key: today.state === 'closed_today' ? 'closed-today' : 'closed-for-today', text: today.label } : null;
   if (today.state === 'never_open') {
     breaches.push({ key: 'never-open', text: today.label });
-  } else if (today.state === 'closing_soon') {
-    softCautions.push({ key: 'closing-soon', text: today.label });
-  } else if (today.state === 'open_now' || today.state === 'open_all_day' || today.state === 'opens_later') {
-    reasons.push({ key: 'open-today', text: today.label });
   }
 
   // ---- the journey -----------------------------------------------------------------------------------------
   const drive = venue.driveMinutes;
   if (Number.isFinite(drive)) {
-    const limit = profile.maxDriveMinutes;
-    if (Number.isFinite(limit) && drive > limit) {
+    // Only a limit the family stated can be exceeded. With none there is no "over": the journey is shown, never cautioned.
+    const limit = driveLimitMinutes(profile);
+    if (limit !== null && drive > limit) {
       const over = Math.round(drive - limit);
       const text = `${Math.round(drive)} min away, ${over} min over the ${limit} min drive we’re using`;
       // Well beyond the limit is a different thing from a few minutes over.
@@ -508,22 +504,6 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
         parentReported += 1;
       }
     }
-
-    // Weather against the confirmed environment.
-    if (weather && (facts.environment === 'indoor' || facts.environment === 'outdoor')) {
-      const wet = weather.condition === 'rainy';
-      const bright = weather.condition === 'sunny' || weather.condition === 'partly_cloudy';
-      if (facts.environment === 'indoor' && wet) {
-        reasons.push({ key: 'weather', text: 'Indoors, so rain won’t spoil it' });
-        venueFacts += 1;
-      } else if (facts.environment === 'outdoor' && bright && !notToday) {
-        // Today's weather only matters on a day they can go.
-        reasons.push({ key: 'weather', text: 'Outdoors, and the weather is good for it today' });
-        venueFacts += 1;
-      } else if (facts.environment === 'outdoor' && wet && !notToday) {
-        softCautions.push({ key: 'weather-wet', text: 'Outdoors, and rain is forecast' });
-      }
-    }
   }
 
   // ---- routines: deliberately absent ----------------------------------------------------------------------------
@@ -532,21 +512,18 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
   // the planner once there is one (routine-advice.ts), and never rank, recommend or caution against a place before then.
 
   // Lead with what is about THIS family (their children, their needs), then the venue's facilities, and the plain
-  // logistics (open today, how far) last: the first lines a parent reads should be the ones only they would get.
+  // logistics (how far) last: the first lines a parent reads should be the ones only they would get.
   const rank = (key: string): number => {
-    const order = ['age', 'buggy', 'must-', 'baby-changing', 'toilets', 'parking', 'cafe', 'weather', 'open-today', 'drive-ok'];
+    const order = ['age', 'buggy', 'must-', 'baby-changing', 'toilets', 'parking', 'cafe', 'drive-ok'];
     const index = order.findIndex((prefix) => key === prefix || key.startsWith(prefix));
     return index === -1 ? order.length : index;
   };
   reasons.sort((a, b) => rank(a.key) - rank(b.key));
 
   // ---- the verdict -----------------------------------------------------------------------------------------
-  // "Open today" is one of the positives that can lift a place to good or excellent. A place that is shut today must not
-  // lose that point: whether it suits this family is the same on a Tuesday it is shut as on a Wednesday it is open (shut
-  // today is stated as a fact, never scored). So a place whose hours say it is shut today is counted as the open place it
-  // is on its other days, and nothing else about the verdict moves. Places open today, and places with no hours stated,
-  // are counted exactly as before.
-  const positives = reasons.length + (notToday ? 1 : 0);
+  // Positives are the confirmed things about this family and this place. Nothing about the day is among them, so the verdict
+  // cannot move with the clock or the forecast.
+  const positives = reasons.length;
   let verdict: MatchVerdict;
   if (unreviewed) {
     verdict = breaches.length > 0 ? 'poor' : 'not_reviewed';
@@ -611,18 +588,15 @@ export function evaluateFamilyMatch({ venue, profile, score, weather, now = new 
     });
   }
 
-  const headline = headlineFor({ verdict, lens, children, lines: { breaches, softCautions, hardUnknowns, softUnknowns }, notToday });
+  const headline = headlineFor({ verdict, lens, children, lines: { breaches, softCautions, hardUnknowns, softUnknowns } });
 
-  // Shut today leads what stands in the way of going today, after a confirmed breach of what the family needs.
-  const cautions = [...breaches, ...(availability ? [availability] : []), ...softCautions];
+  const cautions = [...breaches, ...softCautions];
   const toCheck = [...hardUnknowns, ...softUnknowns];
   // A card carries only what changes a decision: a breach, a requirement still unchecked, or a caution. The softer
-  // "still to be checked" lines are for the venue's own page, where they have room and context.
-  const firstIssue = breaches[0] ?? availability ?? hardUnknowns[0] ?? softCautions[0];
-  const todayBit = ['open_now', 'closing_soon', 'opens_later', 'open_all_day'].includes(today.state) ? today.label : null;
-  // The same fact can be both today's opening state and a caution ("Closing soon · 5pm"): say it once.
-  const noteParts = [todayBit, firstIssue?.text ?? (todayBit ? null : reasons[0]?.text)].filter((part): part is string => Boolean(part));
-  const cardNote = noteParts.filter((part, i) => noteParts.findIndex((other) => other.trim().toLowerCase() === part.trim().toLowerCase()) === i).join(' · ') || null;
+  // "still to be checked" lines are for the venue's own page, where they have room and context. Today's opening state is
+  // not among them (a card says "Closed today" separately, as a fact: see withClosedLine).
+  const firstIssue = breaches[0] ?? hardUnknowns[0] ?? softCautions[0];
+  const cardNote = firstIssue?.text ?? reasons[0]?.text ?? null;
 
   return {
     verdict,
@@ -692,13 +666,12 @@ export function withClosedLine(match: Pick<FamilyMatchResult, 'availableToday' |
 export function matchCardReason(match: FamilyMatchResult): string {
   // WHY IT IS ON HOME: lead with what is about THIS family: a confirmed fact about a particular child (their ages are
   // in the recommended range, their buggy is covered), then anything else confirmed. Never the generic, and never the
-  // clock: a card is read while browsing, not while leaving.
-  const others = match.reasons.filter((line) => line.key !== 'drive-ok' && line.key !== 'open-today');
+  // clock: a card is read while browsing, not while leaving. A shut-today place is marked by `withClosedLine`, which is a
+  // fact about the day and changes nothing here.
+  const others = match.reasons.filter((line) => line.key !== 'drive-ok');
   const lead = others.find((line) => (line.childIds?.length ?? 0) > 0) ?? others[0];
   if (match.verdict === 'good' || match.verdict === 'excellent') {
-    // Open today, or (when it is shut today) the line that says so: a good place is never shown as if it were open.
-    const open = match.reasons.find((line) => line.key === 'open-today') ?? (match.availableToday === false ? match.cautions.find((line) => line.key === 'closed-today' || line.key === 'closed-for-today') : undefined);
-    return [lead?.text, open?.text].filter(Boolean).join(' · ');
+    return lead?.text ?? '';
   }
   if (match.verdict === 'possible' && lead) {
     // A place that could work still says why it is here, then the one thing to check, so the card is never only a worry.

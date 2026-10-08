@@ -198,6 +198,11 @@ export interface PlaceDetailResult {
   fetchedAt: string;
   fallbackUsed: boolean;
   fallbackReason?: string;
+  /**
+   * Whether a parent report in the last 90 days could still correct a fact on this page. `null`/absent: not known. Used only
+   * to decide whether Family Fit shows "checking recent reports" while they are read (never to hide anything for long).
+   */
+  hasRecentParentReports?: boolean | null;
 }
 
 export interface PlacesDataError {

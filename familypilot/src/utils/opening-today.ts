@@ -201,6 +201,16 @@ export function isVisitableVenue(
   return isVisitableToday(today.state);
 }
 
+/**
+ * Whether a venue belongs in Home, Explore and Halfway at all. Only a place whose hours say it is never open to visitors
+ * is left out. Being shut TODAY (all day, or already finished) is not a reason to hide a place: discovery is not about
+ * leaving now, a parent planning Saturday on a Tuesday needs to see it, and the shut-today fact is shown on the card
+ * instead (see matchClosedLine). `isVisitableVenue` is the narrower "could they go today" question, for when there is a day.
+ */
+export function isListableVenue(venue: { structuredOpeningHours?: OpeningHoursSchedule }, now: Date = new Date()): boolean {
+  return describeOpeningToday(venue.structuredOpeningHours, now).state !== 'never_open';
+}
+
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // a UK week starts on Monday
 

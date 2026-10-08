@@ -163,6 +163,21 @@ const LEAD_MINUTES = 45;
 /** A default start later than this (17:00) is not offered today: the sheet opens on tomorrow instead. */
 const LATEST_DEFAULT_START = 17 * 60;
 
+/**
+ * What of a submitted plan is worth REMEMBERING for next time: only what the parent changed.
+ *
+ * The sheet opens on a suggestion (the next sensible start, today or the day the place next opens). Storing the submitted
+ * start and date whether or not they were touched turned a suggestion into a remembered choice: a start worked out from
+ * 14:10 on a Tuesday came back as "your usual start" the following week. A value the parent left alone is the app's
+ * suggestion and is re-worked each time; a value they changed is theirs.
+ */
+export function optionsToRemember(submitted: Pick<PlanDraft, 'date' | 'startAt'>, suggested: Pick<PlanDraft, 'date' | 'startAt'>): Partial<Pick<PlanningOptions, 'date' | 'leaveAt'>> {
+  const chosen: Partial<Pick<PlanningOptions, 'date' | 'leaveAt'>> = {};
+  if (submitted.date !== suggested.date) chosen.date = submitted.date;
+  if (submitted.startAt !== suggested.startAt) chosen.leaveAt = submitted.startAt;
+  return chosen;
+}
+
 export function planDraftDefaults(sources: PlanDraftSources): PlanDraftDefaults {
   const parties: PlanParty[] = [];
 

@@ -65,11 +65,13 @@ export function addMeal(result:PlanningResult,food:FoodOption,families:PlanningF
   plan.reasons.push(`Includes ${mealMinutes} minutes at ${food.name} and ${transfer} minutes to transfer and settle in.`);
   return {...result,plan,meal:{name:food.name,start:plan.start+options.visitMinutes+transfer,duration:mealMinutes,transfer}};
 }
+/** How far a plan search reaches for a family that stated no journey limit. Sizes the search; it is never applied as a limit. */
+const PLAN_SEARCH_REACH_MINUTES = 50;
 export async function recommendPlans(families: PlanningFamily[], options: PlanningOptions): Promise<PlanningResult[]> {
   if (!families.length || families.length > 6) throw new Error('Choose between one and six families.');
   if (families.some(f => !Number.isFinite(f.latitude) || !Number.isFinite(f.longitude))) throw new Error('Confirm an area for every family.');
   // Search around every family; a geometric midpoint can miss suitable and fair venues.
-  const searches = await Promise.all(families.map(f => placesApiClient.search({ latitude:f.latitude, longitude:f.longitude, radiusKm:Math.min(50,f.maxDriveMinutes*0.8), intent:'explore' })));
+  const searches = await Promise.all(families.map(f => placesApiClient.search({ latitude:f.latitude, longitude:f.longitude, radiusKm:Math.min(50,(typeof f.maxDriveMinutes==='number'?f.maxDriveMinutes:PLAN_SEARCH_REACH_MINUTES)*0.8), intent:'explore' })));
   if (searches.some(s => s.provider === 'mock')) throw new Error('Live places are not available. We will not recommend demonstration venues as real plans.');
   const places = [...new Map(searches.flatMap(s => s.places).filter(p=>p.provider !== 'mock').map(p => [p.familypilotId,p])).values()].slice(0,60);
   const outbound = await Promise.all(families.map(f => journeyTimes(f,places)));
