@@ -1,7 +1,38 @@
-{
+import type { AdmissionPricing } from '@/src/services/pricing/admission';
+
+/**
+ * Reviewed admission claims, prepared on 2026-10-08 from pages already stored from each venue's own website (no fetch,
+ * no provider call). Each entry is a decision a person made, with the page's own words and where and when they were read:
+ *
+ *   publish  the price or free entry may be shown, with its conditions
+ *   hold     a real price exists but no ticket is plainly the general admission, or the child terms are missing
+ *   refuse   only part of the venue is free; it must never be labelled free
+ *
+ * Verified against the stored text of each URL (36 of 36 excerpts found on the stated date and in the latest reading) and
+ * by `reviewed-admission-claims.test.ts`. See docs/PRICING_REVIEWED_CLAIMS.md. To change a price, change it here with a
+ * new excerpt and date; never edit a figure without its source.
+ */
+export interface ReviewedAdmissionClaim {
+  venueId: string;
+  venueName: string;
+  decision: 'publish' | 'hold' | 'refuse';
+  pricing?: AdmissionPricing;
+  evidence: { url: string; retrievedAt: string; subjectScope: string; excerpt: string };
+  reviewNotes: string;
+}
+
+export interface ReviewedAdmissionFile {
+  schemaVersion: number;
+  preparedOn: string;
+  state: string;
+  policy: string[];
+  claims: ReviewedAdmissionClaim[];
+}
+
+export const REVIEWED_ADMISSION: ReviewedAdmissionFile = {
   "schemaVersion": 1,
   "preparedOn": "2026-10-08",
-  "state": "staged-not-published",
+  "state": "reviewed",
   "policy": [
     "Every claim comes from a page already stored from the venue's own site (subject scope venue_own_subtree or venue_named_page). No page was fetched to prepare it and no provider was called.",
     "Free means general entry to the whole venue is stated as free. A free part (a hall, a display, a splash pad) never makes the venue free; those are refused.",
@@ -795,4 +826,4 @@
       "reviewNotes": "The splash pad is free; water sports, boat hire and parking are charged. Must not be labelled free."
     }
   ]
-}
+};

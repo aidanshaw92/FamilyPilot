@@ -358,6 +358,11 @@ const EDGE_PLACES = [
   }),
   // No photograph at all: the category gradient has to carry the hero.
   edgePlace('fp-google-FIXTUREedgeNoPhoto', { name: 'No Photograph Park', photos: [], openingHours: WIDE_HOURS }),
+  // Detail-only venues carrying the ids of two REVIEWED admission claims (src/data/reviewed-admission-claims.ts), so the
+  // "To get in" card can be checked with a real reviewed price: a paid venue whose family ticket is the only route a
+  // party with under-7s can be priced by, and a free one with charged parts. Everything else about them is synthetic.
+  edgePlace('fp-google-ChIJkUcf6v4PdkgRIN0LQBjlSqs', { name: 'Reviewed Price Museum', category: 'museum', openingHours: WIDE_HOURS }),
+  edgePlace('fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI', { name: 'Reviewed Free Museum', category: 'museum', openingHours: WIDE_HOURS }),
   // An OpenStreetMap-sourced venue. ODbL requires crediting its contributors wherever its data is
   // shown, and three such venues are served to parents in production today, so the audit renders one.
   edgePlace('fp-osm-FIXTUREedgeOsm', {

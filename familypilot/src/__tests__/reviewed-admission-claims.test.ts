@@ -1,9 +1,11 @@
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { REVIEWED_ADMISSION } from '@/src/data/reviewed-admission-claims';
+import { mergePlaceToVenueDetail } from '@/src/services/places/merge-place';
+import { reviewedAdmissionFor } from '@/src/services/pricing/reviewed-admission';
 import {
   AdmissionPricing,
+  admissionView,
   Attendee,
   estimateFamilyAdmission,
   priceBadge,
@@ -26,8 +28,7 @@ interface Claim {
   reviewNotes: string;
 }
 
-const file = path.resolve(__dirname, '../../data/pricing/reviewed-admission-claims.json');
-const doc = JSON.parse(readFileSync(file, 'utf8')) as { preparedOn: string; state: string; claims: Claim[] };
+const doc = REVIEWED_ADMISSION as unknown as { preparedOn: string; state: string; claims: Claim[] };
 const claims = doc.claims;
 const published = claims.filter((c) => c.decision === 'publish');
 const byName = (name: string) => {
@@ -53,8 +54,8 @@ const FAMILIES: Record<string, Attendee[]> = {
 };
 
 describe('reviewed admission claims: the file', () => {
-  it('is staged, not published, and has about 30 reviewed venues with one decision each', () => {
-    expect(doc.state).toBe('staged-not-published');
+  it('has about 30 reviewed venues with one decision each', () => {
+    expect(doc.state).toBe('reviewed');
     expect(claims.length).toBeGreaterThanOrEqual(30);
     expect(new Set(claims.map((c) => c.venueId)).size).toBe(claims.length);
     expect(claims.filter((c) => c.decision === 'publish')).toHaveLength(24);
@@ -218,5 +219,55 @@ describe('reviewed admission claims: what three families are told', () => {
 
   it('every published claim gives a card label, and none is "Price not confirmed" for next month', () => {
     for (const c of published) expect(priceBadge(c.pricing, VISIT).kind, c.venueName).not.toBe('unknown');
+  });
+});
+
+describe('reviewed admission claims: what the venue page is given', () => {
+  const idOf = (name: string) => claims.find((c) => c.venueName === name)!.venueId;
+  const view = (name: string, family: Attendee[]) => admissionView(estimateFamilyAdmission(reviewedAdmissionFor(idOf(name)), family, VISIT), reviewedAdmissionFor(idOf(name)));
+
+  it('only a publish decision reaches a venue; hold, refuse and unknown venues get nothing, which reads "Price not confirmed"', () => {
+    expect(reviewedAdmissionFor(idOf('Tate Britain'))?.status).toBe('free');
+    expect(reviewedAdmissionFor(idOf('Hanwell Zoo'))?.status).toBe('paid');
+    for (const c of claims.filter((x) => x.decision !== 'publish')) expect(reviewedAdmissionFor(c.venueId), c.venueName).toBeNull();
+    expect(reviewedAdmissionFor('fp-google-not-a-venue')).toBeNull();
+    expect(view('The Courtauld Gallery', FAMILIES['two adults, 4y and 1y']).headline).toBe('Price not confirmed');
+    expect(view('Cutty Sark', FAMILIES['two adults, 4y and 1y']).headline).toBe('Price not confirmed');
+  });
+
+  it('free general entry stays distinct from what is charged inside', () => {
+    const v = view('Horniman Museum and Gardens', FAMILIES['two adults, 7y and 10y']);
+    expect(v.headline).toBe('Free entry');
+    expect(v.conditions.join(' ')).toMatch(/charge for the Aquarium, the Butterfly House/);
+  });
+
+  it('Museum of Brands, two adults with a 4-year-old and a 1-year-old: the verified family ticket and why, never an invented £28', () => {
+    const v = view('Museum of Brands', FAMILIES['two adults, 4y and 1y']);
+    expect(v.headline).toBe('Family ticket £36');
+    const all = [v.headline, ...v.breakdown, ...v.conditions].join(' ');
+    expect(all).not.toMatch(/£28/);
+    expect(all).toMatch(/Ask the venue whether a cheaper way in applies/);
+    expect(all).toMatch(/under 6s are free only in the Universal Credit ticket section/);
+    // ...and where every ticket can be worked out, the family ticket is compared, not assumed.
+    expect(view('Museum of Brands', FAMILIES['two adults, 7y and 10y']).breakdown.join(' ')).toMatch(/Buying individually would be £44/);
+  });
+
+  it('the venue detail record carries the reviewed price, whatever the venue’s enrichment status', () => {
+    const place = { familypilotId: idOf('Hanwell Zoo'), name: 'Hanwell Zoo', category: 'zoo', latitude: 51.51, longitude: -0.34, photos: [], provider: 'google' };
+    const detail = mergePlaceToVenueDetail(place as never, null, 51.5, -0.3);
+    expect(detail.admission?.bands?.find((b: { kind: string }) => b.kind === 'adult')?.amountPence).toBe(500);
+    const unpriced = mergePlaceToVenueDetail({ ...place, familypilotId: 'fp-google-unpriced' } as never, null, 51.5, -0.3);
+    expect(unpriced.admission).toBeUndefined();
+  });
+});
+
+describe('a current price that does not cover the party is not a stale price', () => {
+  it('one adult and a 3-year-old at Museum of Brands: "not confirmed for your party", with whom it does not cover', () => {
+    const pricing = reviewedAdmissionFor(claims.find((c) => c.venueName === 'Museum of Brands')!.venueId);
+    const v = admissionView(estimateFamilyAdmission(pricing, [adult('a1'), child('Sloane', 3)], VISIT), pricing);
+    expect(v.headline).toBe('Price not confirmed for your party');
+    expect(v.breakdown.join(' ')).toMatch(/No ticket on record covers Sloane at this age/);
+    expect(v.provenance).toMatch(/^Prices checked /);
+    expect(v.provenance).not.toMatch(/Last price on record/);
   });
 });

@@ -1,3 +1,4 @@
+import { reviewedAdmissionFor } from '@/src/services/pricing/reviewed-admission';
 import { ExternalPlaceRecord, StructuredOpeningHours, VenueFamilyMetadata } from '@/src/types/places';
 import { EnrichmentStatus, OpeningHoursSchedule, TrustMetadata, Venue, VenueDetail } from '@/src/types';
 
@@ -146,6 +147,8 @@ export function mergePlaceToVenueDetail(
   return {
     ...base,
     website: place.website,
+    // A reviewed, sourced admission price (services/pricing/reviewed-admission.ts), or nothing: unknown, never free.
+    admission: reviewedAdmissionFor(place.familypilotId) ?? undefined,
     phone: place.phone,
     photos: resolvedPhotos.length > 0 ? resolvedPhotos : base.imageUrl ? [base.imageUrl] : [],
     facilities: trustedMeta?.facilities ?? [],

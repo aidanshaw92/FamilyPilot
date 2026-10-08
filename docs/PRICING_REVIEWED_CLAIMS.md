@@ -147,38 +147,43 @@ What a family is told (visit 14 Nov 2026; asserted in the test):
 
 **3. #171's own tests still pass (31).**
 
-## 5. For your review before publishing
+## 5. Decisions taken after your review (8 Oct 2026)
 
-1. **Two free claims rest on a wider statement than the venue's own name.**
-   - Gunnersbury: the "free for all visitors" sentence is on the museum's page. The stored place is the park and museum
-     together, and nothing stored charges for either.
-   - Sydenham Hill Wood: "all 36 reserves are free" is printed on this reserve's own page.
+1. **Museum of Brands, under-7s: verified, and the cheaper route is not shown.**
+   - Every stored Museum of Brands page (5 pages) was searched.
+   - The only statement about young children's entry is inside the Universal Credit paragraph: "plus £1 each for up to
+     4 accompanying children aged 7-16 (children under 6 are free)".
+   - No page says what a child under 7 pays on a standard ticket, and none mentions a 6-year-old at all. So the £28
+     "adults only" route is not proven to admit both children and is never shown.
+   - A party with under-7s that fits the family ticket (2 adults, 2 children) is shown **"Family ticket £36"**, with the
+     reason ("No ticket on record covers <child> at this age. Ask the venue whether a cheaper way in applies.") and the
+     museum's conditions.
+   - A party the family ticket does not fit (one adult and a 3-year-old) is shown **"Price not confirmed for your
+     party"**, naming who is not covered. It never shows a figure and never reads as a stale price.
+2. **Free general entry stays separate from paid parts.** The headline is "Free entry", and what is charged inside follows
+   as the venue's conditions (Horniman: "There is a charge for the Aquarium, the Butterfly House and some events and
+   exhibitions"). A refused venue (only part free) and a held one get no price at all: "Price not confirmed".
+3. Two smaller flags from the review are unchanged:
+   - Gunnersbury's and Sydenham Hill Wood's free statements are one step from the literal sentence.
+   - Hanwell Zoo's child ticket has no stated upper age; this is shown as a condition.
 
-   I consider both sound. They are flagged because each is one step from the literal sentence.
-2. **Museum of Brands, under-7s.**
-   - The page says under-6s are free only inside the Universal Credit paragraph, so no general under-6 band is recorded.
-   - A party of 2 adults with a 4-year-old and a 1-year-old is therefore priced by the family ticket they fit (£36). Paying
-     for the adults alone may be cheaper (£28) if the under-6 rule applies generally.
-   - The figure is a real ticket the party can buy, but it may overstate.
-   - Options:
-     - (a) accept it;
-     - (b) have #171 label a family-ticket-only answer "up to £36";
-     - (c) drop the family ticket from this claim.
+## 6. The implementation in this PR (publishes on merge)
 
-   I recommend (b), as a small follow-up in #171.
-3. **Hanwell Zoo's child ticket has no stated upper age.** A teenager is charged the £4 child price. This is recorded as
-   a condition.
-
-## 6. What publishing would involve (not done)
-
-- The claims store has no admission field today: `server/enrichment/_lib/claims-store.js` handles facility and visit
-  fields only.
-- Publishing therefore needs one of two steps:
-  - (a) ship this file as reviewed seed data read by #171's admission view, keyed by venue id; or
-  - (b) add an `admission` claim field with a 400-day `valid_until`, and write the 24 rows through the approved-claim path.
-    The source URL, read date and excerpt are kept as evidence.
-- (a) is smaller and needs no production write. (b) is the long-term home.
-- Either way, nothing is shown until #171 merges, and nothing reaches production without your approval.
-- Rollback:
-  - (a) revert the file;
-  - (b) delete the rows by batch id.
+- The 36 reviewed claims live in `familypilot/src/data/reviewed-admission-claims.ts`, one typed source of truth with each
+  decision's excerpt, URL and date.
+- `services/pricing/reviewed-admission.ts` returns a price for a `publish` decision only. `merge-place.ts` puts it on the
+  venue's detail record whatever the venue's enrichment status; Hanwell Zoo, the Sherlock Holmes Museum and the Cable
+  Car are `ai_draft`.
+- **Freshness:** `priceIsCurrent` stops a price being shown 400 days after its reading, which is late September to early
+  October 2027 for these.
+- **Not in this PR:**
+  - Explore's price filters still read `estimatedSpend` and stay hidden (#171's coverage rule).
+  - Cards show no price badge. Both are follow-ups once these prices are live.
+- **Verification:**
+  - `reviewed-admission-claims.test.ts` (38). It covers the earlier checks plus: only `publish` reaches a venue; hold,
+    refuse and unknown venues read "Price not confirmed"; free stays separate from paid parts; Museum of Brands never
+    shows £28; the party-gap wording; and that the detail record carries the price.
+  - `verify-admission-card.mjs` (browser, fixture, 360 and 430) opens two detail-only fixture venues that carry the
+    Museum of Brands and Horniman ids and checks the card text for three parties.
+  - Full suite: 2,879 passed.
+- **Rollback:** revert the PR, or set a claim's `decision` to `hold`.
