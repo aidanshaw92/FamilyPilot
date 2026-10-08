@@ -126,7 +126,7 @@ as confirmed (a tick, maybe a higher badge) and up to three seconds later correc
   `false`.
 - **Only when it is true**, Family Fit (the badge beside the name and the card) shows a neutral **"Checking recent parent
   reports"** state until the reports arrive: no verdict, no tick, no star, no fact, the height of the card it becomes
-  (minimum 200 pt), a direct swap. It is bounded by the reports read's own three second ceiling; after that, or on a failure,
+  (minimum 330 pt; the worst card in the fixture is 154 pt taller, measured), a direct swap. It is bounded by the reports read's own three second ceiling; after that, or on a failure,
   the venue's own facts are shown exactly as before.
 - **Everywhere else nothing changes**: with `false`, `null` or no flag (every venue today, an older cached payload) the page
   draws at once and a report that still arrives corrects it as before. The page, the photograph, the name and every other

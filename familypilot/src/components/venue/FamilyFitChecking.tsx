@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { Skeleton } from '@/src/components/ui/Skeleton';
 import { Text } from '@/src/components/ui/Text';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 
@@ -36,6 +37,12 @@ export function FamilyFitCheckingCard() {
       <Text variant="body" color={colors.text.tertiary}>
         Making sure nothing a parent has reported recently changes this.
       </Text>
+      {/* Quiet placeholder rows (no words, no ticks): they hold roughly the room the lines will take. */}
+      <View style={styles.rows} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+        <Skeleton height={18} width="88%" />
+        <Skeleton height={18} width="72%" />
+        <Skeleton height={18} width="80%" />
+      </View>
     </View>
   );
 }
@@ -49,7 +56,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.fill,
     alignSelf: 'flex-start',
   },
-  // A card is about 200 points tall once its lines arrive; holding that room means the swap is a change of words, not a jump.
+  // A card is 250 to 500 points tall once its lines arrive; holding about 330 keeps the swap to a change of words, not a jump.
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.xl,
@@ -57,7 +64,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderLight,
     gap: spacing.md,
-    minHeight: 200,
+    minHeight: 330,
   },
+  rows: { gap: spacing.md, paddingTop: spacing.sm },
   headline: {},
 });
