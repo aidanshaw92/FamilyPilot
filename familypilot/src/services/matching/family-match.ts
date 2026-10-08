@@ -157,6 +157,22 @@ export const VERDICT_BADGE: Record<MatchVerdict, string> = {
  */
 const LOGISTICS_LED_BELOW_MONTHS = 12;
 
+/**
+ * What a confirmed-practical match is called when every child is under a year. The visit is the activity for a baby, so
+ * what was judged is how EASY the visit is (buggy access, changing, feeding), never that an activity suits them. It is
+ * a different claim from "Good fit" or "Excellent fit", so it has a different name and never borrows the word Excellent.
+ */
+export const EASY_VISIT_LABEL = 'Easy visit';
+
+/** The generic classification under a name: the verdict word, or "Easy visit" for a household of babies only. */
+export function matchClassification(match: Pick<FamilyMatchResult, 'verdict'> & { easyVisit?: boolean }): string {
+  return isEasyVisit(match) ? EASY_VISIT_LABEL : VERDICT_BADGE[match.verdict];
+}
+
+function isEasyVisit(match: Pick<FamilyMatchResult, 'verdict'> & { easyVisit?: boolean }): boolean {
+  return Boolean(match.easyVisit) && (match.verdict === 'good' || match.verdict === 'excellent');
+}
+
 type Status = 'yes' | 'no' | 'unknown';
 const status = (value: unknown): Status => (value === 'yes' ? 'yes' : value === 'no' ? 'no' : 'unknown');
 
@@ -245,11 +261,13 @@ function cap(text: string): string {
  */
 function headlineFor(input: {
   verdict: MatchVerdict;
+  /** Every child is under a year: the claim can only be about how easy the visit is. */
+  easyVisit?: boolean;
   lens: ChildLens[];
   children: readonly FamilyMember[];
   lines: { breaches: MatchLine[]; softCautions: MatchLine[]; hardUnknowns: MatchLine[]; softUnknowns: MatchLine[] };
 }): string {
-  const { verdict, lens, children, lines } = input;
+  const { verdict, easyVisit, lens, children, lines } = input;
   // A judgement about the family and the place, never about leaving now: nothing about today's date, hours or weather is
   // in it, so the same sentence is true on every day the screen is read.
   if (verdict === 'not_reviewed') return 'Family suitability not yet reviewed';
@@ -296,6 +314,7 @@ function headlineFor(input: {
 
   // No evidence about any particular child. What is confirmed is about the place and the visit (toilets, parking, a
   // café), so it is never said as "Good for your family": that would claim the activity suits them.
+  if (easyVisit && (verdict === 'good' || verdict === 'excellent')) return children.length > 1 ? 'Looks easy to visit with your babies' : 'Looks easy to visit with your baby';
   if (verdict === 'good') return 'Looks promising for your family';
   if (verdict === 'excellent') return 'Looks very promising for your family';
   return `${VERDICT_WORD[verdict]} for your family`;
@@ -648,7 +667,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
     });
   }
 
-  const headline = headlineFor({ verdict, lens, children, lines: { breaches, softCautions, hardUnknowns, softUnknowns } });
+  const headline = headlineFor({ verdict, easyVisit, lens, children, lines: { breaches, softCautions, hardUnknowns, softUnknowns } });
 
   const cautions = [...breaches, ...softCautions];
   const toCheck = [...hardUnknowns, ...softUnknowns];
@@ -681,8 +700,16 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
  * `possible` and `poor` are not claims worth naming anyone for.
  */
 export function matchBadgeText(match: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[]; easyVisit?: boolean }, maxNameChars = 18): string {
-  // A household of babies only: the Excellent rests on how easy the visit is, and the badge says that, not a judged activity.
-  if (match.verdict === 'excellent' && match.easyVisit) return 'Excellent · easy visit';
+  // A household of babies only: what is confirmed is how easy the visit is, and the badge says exactly that. It never says
+  // Excellent or Good, which would claim an activity was judged for them. A baby the place is not confirmed for is said.
+  if (isEasyVisit(match)) {
+    const gap = joinNames(match.gapNames ?? []);
+    if (gap) {
+      const text = `${EASY_VISIT_LABEL} · check ${gap}`;
+      return gap.length <= maxNameChars - 6 ? text : `${EASY_VISIT_LABEL} · check kids`;
+    }
+    return EASY_VISIT_LABEL;
+  }
   if (match.verdict === 'good' || match.verdict === 'excellent') {
     const word = match.verdict === 'excellent' ? 'Excellent' : 'Good';
     // A child the place is not confirmed for is said on the badge too: "Good for Sloane" alone would read as the family.

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { REVIEWED_ACTIVITY_EVIDENCE } from '@/src/data/reviewed-activity-evidence';
 import { activityEvidenceFor } from '@/src/services/matching/activity-evidence';
-import { evaluateFamilyMatch, matchBadgeText } from '@/src/services/matching/family-match';
+import { EASY_VISIT_LABEL, evaluateFamilyMatch, matchBadgeText, matchClassification } from '@/src/services/matching/family-match';
 import { calculateFamilyScore } from '@/src/services/scoring/family-score';
 import { FamilyMember, FamilyProfile, Venue, VenueDetail } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
@@ -112,11 +112,44 @@ describe('logistics never cover a child', () => {
     expect(r.forNames).toEqual([]);
   });
 
-  it('under a year the visit is the activity: Excellent stands, and the badge says it is an easy visit', () => {
+  it('under a year the badge says Easy visit: it never says Excellent, which would claim an activity was judged', () => {
     const r = run('fp-no-evidence', [ozzie()]);
-    expect(r.verdict).toBe('excellent');
     expect(r.easyVisit).toBe(true);
-    expect(matchBadgeText(r)).toBe('Excellent · easy visit');
+    expect(matchBadgeText(r)).toBe(EASY_VISIT_LABEL);
+    expect(matchBadgeText(r)).not.toMatch(/excellent|good/i);
+    expect(matchClassification(r)).toBe('Easy visit');
+    expect(r.headline).toBe('Easy to visit with Ozzie');
+    expect(r.forNames).toEqual([]);
+    expect(r.children.every((c) => c.basis !== 'activity')).toBe(true);
+  });
+
+  it('easy visit applies to a household of babies only: a toddler in the household brings the activity question back', () => {
+    const withToddler = run('fp-no-evidence', [child('s', 'Sloane', 3), ozzie()]);
+    expect(withToddler.easyVisit).toBe(false);
+    expect(matchBadgeText(withToddler)).not.toBe(EASY_VISIT_LABEL);
+    expect(matchClassification(withToddler)).not.toBe(EASY_VISIT_LABEL);
+    // Twin babies are still babies only.
+    const twins = run('fp-no-evidence', [ozzie(), child('p', 'Pip', 0, { mobility: ['buggy'] })]);
+    expect(twins.easyVisit).toBe(true);
+    expect(matchBadgeText(twins)).toBe(EASY_VISIT_LABEL);
+  });
+
+  it('a baby at exactly twelve months is a child of a year, not a baby: no Easy visit label', () => {
+    const oneYear = child('y', 'Yan', 1, { ageMonths: 12 });
+    const r = run('fp-no-evidence', [oneYear]);
+    expect(r.easyVisit).toBe(false);
+    expect(matchBadgeText(r)).not.toBe(EASY_VISIT_LABEL);
+  });
+
+  it('a place that is not easy to visit with a baby is not labelled Easy visit', () => {
+    const r = run('fp-no-evidence', [ozzie()], NOW, { pushchairSuitability: 'difficult' });
+    expect(matchBadgeText(r)).not.toBe(EASY_VISIT_LABEL);
+    expect(matchClassification(r)).not.toBe(EASY_VISIT_LABEL);
+  });
+
+  it('Easy visit does not move Family Fit: the verdict and the score are the ones the ranking already used', () => {
+    const r = run('fp-no-evidence', [ozzie()]);
+    expect(['good', 'excellent']).toContain(r.verdict);
   });
 
   it('a toddler with a baby needs the toddler covered; the baby needs nothing', () => {

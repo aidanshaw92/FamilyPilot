@@ -42,8 +42,12 @@ rejections.
 - the venue's own recommended range; or
 - a permanent provision for their age.
 
-**Babies.** Under 12 months the visit is the activity, as before. A household of babies only keeps its Excellent, and the
-badge reads **"Excellent · easy visit"**, so it never implies an activity was judged.
+**Babies.** Under 12 months the visit is the activity, as before. For a household of babies only, what is confirmed is
+how easy the visit is, so the badge, the screen-reader label and the card classification all read **"Easy visit"**
+(and the headline "Easy to visit with Ozzie"). The word Excellent (or Good) is never used for it, because that would claim an
+activity was judged. Nothing about ranking changes: the verdict underneath is the one Meet Halfway and the score already
+used, and only its wording differs. A baby the place is not confirmed for reads "Easy visit · check Ozzie". A household
+with a toddler, or a child of exactly twelve months, is not a babies-only household and gets the ordinary labels.
 
 **Freshness.** An item counts for 90 days from its reading, the lifetime of every non-facility claim. After that it stops
 counting until a person reads the page again. It is never extended.
@@ -67,8 +71,8 @@ are identical with and without it.
 **The honest result: today no venue is Excellent for a household with a child of a year or more.** The 21 pairs that had
 it before held it on logistics alone (SEA LIFE and the RAF Museum: toilets, baby changing, parking, pushchair access,
 café). Neither venue's own pages state an age for anything permanent, so the rule cannot say the visit suits a named
-child, and it no longer does. The 28 remaining Excellent pairs are babies-only households, badged "Excellent · easy
-visit".
+child, and it no longer does. The 28 pairs that remain at the top verdict are babies-only households, and they
+read "Easy visit", not "Excellent": no Excellent candidate has been created to fill the badge.
 
 **What stops the eight provision venues at Good.** Each covers the child's age, so the parent reads the activity line
 and "Good for Maya". Excellent also needs the venue's logistics confirmed (toilets, baby changing where a baby comes,
