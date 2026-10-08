@@ -1,0 +1,96 @@
+// Not part of the suite. Copy to src/__tests__/zz-excellent-options.test.ts and run:
+//   CATALOGUE=<export> OUT=<json> PART_RANGES='{"<id>":[min,max]}' npx vitest run src/__tests__/zz-excellent-options.test.ts
+// The export is one row per destination: id|category|lat|lng|status|facility codes (toilets, baby changing, parking, free parking, cafe: y/n/-)|pushchair|env|energy|terrain|minAge|maxAge|playground(y/-).
+// It is read-only production data and is never committed. See docs/EXCELLENT_ELIGIBILITY.md.
+import { it, vi } from 'vitest';
+import fs from 'node:fs';
+import { personaliseVenue } from '@/src/utils/personalise-venues';
+import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
+import { estimateDriveMinutes } from '@/src/services/places/geo-utils';
+
+const tri = (c: string) => (c === 'y' ? 'yes' : c === 'n' ? 'no' : undefined);
+const rows = fs.readFileSync(process.env.CATALOGUE as string, 'utf8').trim().split('\n').map((line) => {
+  const [id, category, lat, lng, status, f, pushchair, env, energy, terrain, min, max, playground] = line.split('|');
+  return { id, category, lat: Number(lat), lng: Number(lng), status, f, pushchair, env, energy, terrain, min, max, playground };
+});
+// Part-level age evidence found by hand in stored pages (AGE_SUITABILITY_YIELD.md): ids resolved by the caller.
+const PART_RANGES: Record<string, [number, number]> = JSON.parse(process.env.PART_RANGES ?? '{}');
+
+const HOMES: Record<string, [number, number]> = {
+  'N1 Islington': [51.5362, -0.103], 'E17 Walthamstow': [51.5886, -0.0196], 'SW4 Clapham': [51.462, -0.138],
+  'W5 Ealing': [51.513, -0.305], 'SE10 Greenwich': [51.4826, 0.0077], 'NW7 Mill Hill': [51.615, -0.245],
+  'BR1 Bromley': [51.406, 0.014], 'HA1 Harrow': [51.579, -0.337],
+};
+const child = (id: string, name: string, age: number, mob: string[] = ['walks'], months?: number) => ({ id, name, role: 'child', dateOfBirth: '', age, dobKnown: true, ageMonths: months ?? (age === 0 ? 2 : null), mobility: mob });
+const parent = { id: 'p', name: 'Alex', role: 'parent', dateOfBirth: '', age: 38 };
+const FAMILIES: Record<string, any[]> = {
+  'baby (2 months)': [child('b', 'Ozzie', 0, ['buggy'])],
+  'baby (10 months)': [child('b', 'Ozzie', 0, ['buggy'], 10)],
+  'toddler (3)': [child('a', 'Sloane', 3, ['buggy'])],
+  'school (7)': [child('a', 'Maya', 7)],
+  'two kids (4, 7)': [child('a', 'Kit', 4), child('b', 'Maya', 7)],
+  'baby + toddler': [child('a', 'Sloane', 3, ['buggy']), child('b', 'Ozzie', 0, ['buggy'])],
+  'teen (13)': [child('a', 'Tom', 13)],
+};
+// New-user reality: no limit and no budget stated.
+const profileFor = (home: [number, number], kids: any[]): any => ({
+  id: 'f', parentName: 'Alex', members: [parent, ...kids], homeLocation: 'x', homeLatitude: home[0], homeLongitude: home[1],
+  completionPercent: 100, mustHaveFacilities: [], routines: [],
+});
+const hours = (days: number[]) => ({ timezone: 'Europe/London', periods: days.map((d) => ({ open: { day: d, hour: 10, minute: 0 }, close: { day: d, hour: 17, minute: 0 } })) });
+const ALL = [0, 1, 2, 3, 4, 5, 6];
+
+function venueFor(r: (typeof rows)[number], home: [number, number]) {
+  const drive = estimateDriveMinutes(home[0], home[1], r.lat, r.lng);
+  const reviewed = r.status === 'enriched' || r.status === 'verified';
+  const meta: any = reviewed ? {
+    enrichmentStatus: 'enriched',
+    familyFacilities: { toilets: tri(r.f[0]), babyChanging: tri(r.f[1]), parking: tri(r.f[2]), freeParking: tri(r.f[3]), cafe: tri(r.f[4]) },
+    pushchairSuitability: r.pushchair === '-' ? undefined : r.pushchair,
+    environment: r.env === '-' ? undefined : r.env, energyLevel: r.energy === '-' ? undefined : r.energy,
+    extendedTerrain: r.terrain === '-' ? undefined : r.terrain,
+    minRecommendedAge: r.min === '' ? null : Number(r.min), maxRecommendedAge: r.max === '' ? null : Number(r.max),
+  } : null;
+  const facts = extractMatchableFacts(r.id, r.id, r.category, drive, reviewed ? 'enriched' : 'provider_only', meta, undefined);
+  return {
+    id: r.id, name: r.id, category: r.category, latitude: r.lat, longitude: r.lng, driveMinutes: drive, imageUrl: '',
+    familyScore: { score: 0, factors: {}, explanation: [] }, enrichmentStatus: reviewed ? 'enriched' : 'provider_only',
+    structuredOpeningHours: hours(ALL), trustedFacts: facts, facilities: [], estimatedSpend: undefined,
+  } as any;
+}
+
+type Option = { key: string; label: string; supports: (r: (typeof rows)[number], kid: any) => boolean };
+const ageYears = (kid: any) => (kid.ageMonths != null && kid.age === 0 ? kid.ageMonths / 12 : kid.age);
+const OPTIONS: Option[] = [
+  { key: 'R0', label: 'current: logistics can earn Excellent', supports: () => true },
+  { key: 'R1', label: 'venue-wide recommended range includes the child (A only)', supports: (r, kid) => r.min !== '' && Number(r.min) <= ageYears(kid) && (r.max === '' || ageYears(kid) <= Number(r.max)) },
+  { key: 'R2a', label: 'A, or a stated range for a part or session that includes the child (B)', supports: (r, kid) => OPTIONS[1].supports(r, kid) || (PART_RANGES[r.id] ? PART_RANGES[r.id][0] <= ageYears(kid) && ageYears(kid) <= PART_RANGES[r.id][1] : false) },
+  { key: 'R2b', label: 'A, B, or confirmed child-directed provision (a playground) with nothing that excludes the child (C)', supports: (r, kid) => OPTIONS[2].supports(r, kid) || (r.playground === 'y' && !(r.max !== '' && ageYears(kid) > Number(r.max)) && !(r.min !== '' && ageYears(kid) < Number(r.min))) },
+];
+
+it('excellent options', () => {
+  vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-06T10:30:00+01:00'));
+  const out: any = { rows: rows.length, reviewed: rows.filter((r) => r.status === 'enriched' || r.status === 'verified').length, withPlayground: rows.filter((r) => r.playground === 'y').length, options: {}, byFamily: {}, venues: {} };
+  for (const o of OPTIONS) out.options[o.key] = { label: o.label, excellentPairs: 0, venuesEverExcellent: new Set<string>() };
+  let pairs = 0, good = 0, excellent = 0;
+  for (const [hname, home] of Object.entries(HOMES)) for (const [fname, kids] of Object.entries(FAMILIES)) {
+    const profile = profileFor(home, kids);
+    for (const r of rows) {
+      const v = personaliseVenue(venueFor(r, home), profile); const m = v.familyMatch; if (!m) continue;
+      pairs += 1; if (m.verdict === 'good') good += 1;
+      if (m.verdict !== 'excellent') continue;
+      excellent += 1;
+      const older = kids.filter((k) => ageYears(k) >= 1); // 12 months or more
+      for (const o of OPTIONS) {
+        const ok = o.key === 'R0' || older.every((k) => o.supports(r, k));
+        if (ok) { out.options[o.key].excellentPairs += 1; out.options[o.key].venuesEverExcellent.add(r.id); (out.byFamily[fname] ??= {})[o.key] = ((out.byFamily[fname] ?? {})[o.key] ?? 0) + 1; }
+      }
+      const e = (out.venues[r.id] ??= { cat: r.category, playground: r.playground === 'y', families: new Set<string>() }); e.families.add(fname);
+    }
+  }
+  out.pairs = pairs; out.goodPairs = good; out.excellentPairs = excellent;
+  for (const o of OPTIONS) out.options[o.key].venuesEverExcellent = [...out.options[o.key].venuesEverExcellent];
+  for (const k of Object.keys(out.venues)) out.venues[k].families = [...out.venues[k].families];
+  vi.useRealTimers();
+  fs.writeFileSync(process.env.OUT as string, JSON.stringify(out, null, 1));
+}, 600000);

@@ -72,7 +72,11 @@ today") plus facilities, which is the failure the Excellent proposal below is ab
 without the forecast: top-10 overlap between main and this branch on the base condition is **0.962** (minimum 0.90 over
 the 40 pairs), i.e. what people see at the top of Home is stable; only the labels are more cautious.
 
-## Proposal (NOT applied): what should earn "Excellent"
+## Proposal (NOT applied; superseded by `EXCELLENT_ELIGIBILITY.md`): what should earn "Excellent"
+
+> **Superseded 2026-10-08.** The rule below (every child of 12 months or more needs the venue's own recommended range) was
+> declined: no venue has one. `EXCELLENT_ELIGIBILITY.md` proposes an evidence-based alternative with measurements. Kept for
+> the record of the first measurement.
 
 Today `excellent` needs score ≥ 85, ≥ 4 positives, ≥ 2 facts about the venue, no soft unknowns. "Facts about the venue"
 are toilets, baby changing, parking, café and buggy access, which are *visit logistics*. So an Excellent match can be
