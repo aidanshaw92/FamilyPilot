@@ -207,8 +207,10 @@ export function matchVenueToDayRequest(
   const tally = { preferredPoints: 0, preferredUnknowns: 0, preferredUnsuitable: 0 };
   let eligible = true;
 
+  // Only a journey limit the family stated can rule a place out. No limit, no journey constraint.
   const journey = request.constraints.journey?.value.maxMinutes ?? request.maxDriveMinutes;
   if (
+    typeof journey === 'number' &&
     !applyConstraint(
       evaluations,
       'journey',
@@ -358,7 +360,8 @@ export function matchVenueToDayRequest(
     }
   }
 
-  if (request.constraints.budget && request.constraints.budget.strength !== 'context') {
+  // Likewise a budget: without one stated there is nothing for a price to be outside of.
+  if (request.budgetTier && request.constraints.budget && request.constraints.budget.strength !== 'context') {
     if (
       !applyConstraint(
         evaluations,

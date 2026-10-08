@@ -14,7 +14,7 @@ import { Chip, EmptyState, ErrorState, EXPLORE_CHIP, ScreenArt, SearchBar, Secti
 import { EXPLORE_ART_BEHIND, EXPLORE_ART_FRONT } from '@/src/assets/art/figma-art';
 import { isPilotFeatureVisible, visibleExploreCategoryIds } from '@/src/config/pilot-features';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
-import { useFamilyProfile, useNearbyVenues, useRestaurants } from '@/src/hooks/use-queries';
+import { useNearbyVenues, useRestaurants } from '@/src/hooks/use-queries';
 import { venueService } from '@/src/services/api';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { RestaurantDetail, Venue } from '@/src/types';
@@ -40,7 +40,6 @@ export default function ExploreScreen() {
     isError: restaurantsError,
     refetch: refetchRestaurants,
   } = useRestaurants();
-  const { data: profile } = useFamilyProfile();
   const {
     categoryFilter,
     exploreMaxDrive,
@@ -86,7 +85,6 @@ export default function ExploreScreen() {
             categoryFilter,
             advancedFilters,
             exploreMaxDrive,
-            profile?.maxDriveMinutes ?? 30,
             exploreBudget,
           ).filter((venue) =>
             areaVenues
@@ -94,7 +92,7 @@ export default function ExploreScreen() {
               : `${venue.name} ${venue.address ?? ''}`.toLowerCase().includes(search.toLowerCase().trim()),
           )
         : [],
-    [sourceVenues, areaVenues, categoryFilter, advancedFilters, exploreMaxDrive, exploreBudget, profile?.maxDriveMinutes, search],
+    [sourceVenues, areaVenues, categoryFilter, advancedFilters, exploreMaxDrive, exploreBudget, search],
   );
 
   // With a food filter on, say how many places could not be checked, so a place with no lookup is never mistaken for a
@@ -102,8 +100,8 @@ export default function ExploreScreen() {
   const foodUncheckedVenues = useMemo(() => {
     if (isRestaurantMode || !sourceVenues || !advancedFilters.some((id) => FOOD_FILTER_IDS.includes(id))) return [];
     const others = advancedFilters.filter((id) => !FOOD_FILTER_IDS.includes(id));
-    return filterVenues(sourceVenues, categoryFilter, others, exploreMaxDrive, profile?.maxDriveMinutes ?? 30, exploreBudget).filter(foodIsUnknown);
-  }, [isRestaurantMode, sourceVenues, advancedFilters, categoryFilter, exploreMaxDrive, exploreBudget, profile?.maxDriveMinutes]);
+    return filterVenues(sourceVenues, categoryFilter, others, exploreMaxDrive, exploreBudget).filter(foodIsUnknown);
+  }, [isRestaurantMode, sourceVenues, advancedFilters, categoryFilter, exploreMaxDrive, exploreBudget]);
   const foodUncheckedCount = foodUncheckedVenues.length;
   const foodNote = foodUncheckedCount > 0 ? `${foodUncheckedCount} not checked for food nearby, so not shown` : '';
 

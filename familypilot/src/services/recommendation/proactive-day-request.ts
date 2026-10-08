@@ -1,5 +1,6 @@
 import { FamilyProfile } from '@/src/types';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
+import { budgetTierOf, driveLimitMinutes } from '@/src/utils/preferences';
 import { DayRequest } from '@/src/types/day-request';
 import { AGE_RECOMMENDATION_STRENGTH, childAgesInMonths } from '@/src/services/matching/age-suitability';
 
@@ -22,10 +23,13 @@ export function buildProactiveDayRequest(profile: FamilyProfile, now: Date = new
   const youngest = youngestChildAge(childAges);
   const hasPushchair = familyUsesBuggy(profile);
 
+  const limit = driveLimitMinutes(profile);
+  const tier = budgetTierOf(profile);
   const constraints: DayRequest['constraints'] = {
     ageRecommendedFit: { strength: AGE_RECOMMENDATION_STRENGTH, value: 'in_range' },
-    journey: { strength: 'required', value: { maxMinutes: profile.maxDriveMinutes } },
-    budget: { strength: 'preferred', value: 'within_profile' },
+    // Only what the family stated: no journey limit and no budget means neither constraint exists.
+    ...(limit !== null ? { journey: { strength: 'required' as const, value: { maxMinutes: limit } } } : {}),
+    ...(tier ? { budget: { strength: 'preferred' as const, value: 'within_profile' as const } } : {}),
   };
 
   if (hasPushchair) {
@@ -44,8 +48,8 @@ export function buildProactiveDayRequest(profile: FamilyProfile, now: Date = new
     childAges,
     childAgeMonthsList: childAgesInMonths(profile.members),
     homeLocation: profile.homeLocation,
-    budgetTier: profile.budgetTier,
-    maxDriveMinutes: profile.maxDriveMinutes,
+    ...(tier ? { budgetTier: tier } : {}),
+    ...(limit !== null ? { maxDriveMinutes: limit } : {}),
     hasPushchair,
     constraints,
     context: {

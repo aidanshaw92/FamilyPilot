@@ -74,11 +74,11 @@ describe('Restaurant budget scoring', () => {
 
     const cheapScore = calculateRestaurantFamilyScore(cheap, budgetProfile);
     const expensiveScore = calculateRestaurantFamilyScore(expensive, budgetProfile);
-    expect(cheapScore.factors.budgetFit).toBeGreaterThan(expensiveScore.factors.budgetFit);
+    expect(cheapScore.factors.budgetFit!).toBeGreaterThan(expensiveScore.factors.budgetFit!);
 
     const cheapPremium = calculateRestaurantFamilyScore(cheap, premiumProfile);
     const expensivePremium = calculateRestaurantFamilyScore(expensive, premiumProfile);
-    expect(expensivePremium.factors.budgetFit).toBeGreaterThanOrEqual(cheapPremium.factors.budgetFit);
+    expect(expensivePremium.factors.budgetFit!).toBeGreaterThanOrEqual(cheapPremium.factors.budgetFit!);
   });
 });
 
@@ -96,7 +96,6 @@ describe('Unknown restaurant facility data', () => {
       })),
       ['baby_changing'],
       'any',
-      mockFamilyProfile.maxDriveMinutes,
       'any',
     );
 
@@ -111,7 +110,6 @@ describe('Unknown restaurant facility data', () => {
       })),
       [],
       'any',
-      mockFamilyProfile.maxDriveMinutes,
       'any',
     );
     expect(
@@ -127,7 +125,7 @@ describe('Restaurant filters', () => {
       familyScore: calculateRestaurantFamilyScore(r, mockFamilyProfile),
     }));
 
-    const filtered = filterRestaurants(all, ['kids_menu'], 'any', 30, 'any');
+    const filtered = filterRestaurants(all, ['kids_menu'], 'any', 'any');
     expect(filtered.length).toBeGreaterThan(0);
     expect(filtered.every((r) => r.restaurantFeatures.kidsMenu === 'confirmed')).toBe(true);
   });
@@ -138,7 +136,7 @@ describe('Restaurant filters', () => {
       familyScore: calculateRestaurantFamilyScore(r, mockFamilyProfile),
     }));
 
-    const filtered = filterRestaurants(all, [], 'any', 30, 'under_25');
+    const filtered = filterRestaurants(all, [], 'any', 'under_25');
     for (const restaurant of filtered) {
       const spend = restaurant.estimatedFamilySpend ?? restaurant.estimatedSpend ?? '';
       const match = spend.match(/£(\d+)/);

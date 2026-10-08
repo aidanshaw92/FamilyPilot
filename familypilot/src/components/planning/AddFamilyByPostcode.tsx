@@ -20,9 +20,6 @@ import { usePlanningStore } from '@/src/stores/planning-store';
  * The postcode is resolved by the existing free lookup (`/api/planning/location`), the same one the profile uses.
  */
 
-/** No travel limit was entered for them, so none is invented: the largest the planner allows keeps theirs from blocking. */
-export const UNKNOWN_FAMILY_DRIVE_MINUTES = 120;
-
 export function AddFamilyByPostcode({
   onAdded,
   onCancel,
@@ -60,8 +57,7 @@ export function AddFamilyByPostcode({
         longitude: located.longitude,
         // Not known, so not entered: no children, no must-haves, no routines.
         ages: [],
-        maxDriveMinutes: UNKNOWN_FAMILY_DRIVE_MINUTES,
-        budgetTier: 'moderate',
+        // Not known, so not entered: another family's limit and budget are theirs to state, never ours to assume.
         pushchair: false,
         required: [],
         routines: [],

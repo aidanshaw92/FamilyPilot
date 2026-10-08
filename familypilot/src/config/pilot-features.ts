@@ -15,7 +15,8 @@ export type PilotFeature =
   | 'eat_nearby'
   | 'saved_restaurants'
   | 'concierge'
-  | 'need_now';
+  | 'need_now'
+  | 'memberships';
 
 const DEFERRED_PILOT_FEATURES = new Set<PilotFeature>([
   // 'trips_tab' is live: multi-family day planning with drive-time/routine-aware scheduling,
@@ -28,6 +29,9 @@ const DEFERRED_PILOT_FEATURES = new Set<PilotFeature>([
   'eat_nearby',
   'saved_restaurants',
   'concierge',
+  // Memberships and passes feed no recommendation or saving yet: the field is kept (and shown again with the feature)
+  // but nobody is asked for it before something uses it.
+  'memberships',
   // Store stock/hours here are illustrative placeholders, not real data for these named
   // businesses — keep this out of the pilot build until it's backed by a real source.
   'need_now',

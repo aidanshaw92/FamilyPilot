@@ -12,6 +12,8 @@ import { Button, Card, EmptyState, Skeleton, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
 import { formatBudgetTier, formatChildAge } from '@/src/utils/profile-defaults';
+import { budgetTierOf, driveLimitMinutes } from '@/src/utils/preferences';
+import { isPilotFeatureVisible } from '@/src/config/pilot-features';
 import { MOBILITY_LABELS } from '@/src/utils/family-mobility';
 import { resolveRoutines } from '@/src/utils/routine-schedule';
 import { getProfileSuggestion } from '@/src/utils/profile-completion';
@@ -69,6 +71,7 @@ export default function ProfileScreen() {
   }
 
   const suggestion = getProfileSuggestion(profile);
+  const limit = driveLimitMinutes(profile);
 
   return (
     <ScreenContainer>
@@ -168,16 +171,18 @@ export default function ProfileScreen() {
           <ProfileRow icon="location-outline" label="Home" value={profile.homeLocation || 'Not set'} />
           <ProfileRow
             icon="car-outline"
-            label="Max drive"
-            value={`${profile.maxDriveMinutes} minutes`}
+            label="Longest journey"
+            value={limit === null ? 'No limit' : `${limit} minutes`}
           />
           <ProfileRow
             icon="wallet-outline"
             label="Budget"
-            value={formatBudgetTier(profile.budgetTier)}
+            value={formatBudgetTier(budgetTierOf(profile))}
           />
         </Card>
 
+        {isPilotFeatureVisible('car_fit') ? (
+          <>
         <Text variant="heading2" style={styles.sectionTitle}>
           Vehicle
         </Text>
@@ -189,6 +194,11 @@ export default function ProfileScreen() {
           />
         </Card>
 
+          </>
+        ) : null}
+
+        {isPilotFeatureVisible('packing') ? (
+          <>
         <Text variant="heading2" style={styles.sectionTitle}>
           Equipment
         </Text>
@@ -205,6 +215,11 @@ export default function ProfileScreen() {
           />
         </Card>
 
+          </>
+        ) : null}
+
+        {isPilotFeatureVisible('memberships') ? (
+          <>
         <Text variant="heading2" style={styles.sectionTitle}>
           Memberships & discounts
         </Text>
@@ -219,6 +234,9 @@ export default function ProfileScreen() {
             }
           />
         </Card>
+
+          </>
+        ) : null}
 
         {accountRequired() && authStatus === 'signed_in' ? (
           <>

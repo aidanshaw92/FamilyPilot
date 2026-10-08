@@ -22,7 +22,15 @@ import { describeUnknownFact } from './unknown-facts';
 export type { Routine } from './routine-windows';
 export interface PlanningFamily {
   id: string; label: string; area: string; latitude: number; longitude: number;
-  ages: number[]; maxDriveMinutes: number; budgetTier: FamilyProfile['budgetTier'];
+  ages: number[];
+  /** Only a limit the family stated; absent means none (nothing is rejected for distance). */
+  maxDriveMinutes?: number | null;
+  /** Only a budget the family stated; absent means none. */
+  budgetTier?: FamilyProfile['budgetTier'];
+  /** Set aside by a migration because it could not be told from an app default; never applied (see utils/preferences.ts). */
+  unconfirmedPreferences?: FamilyProfile['unconfirmedPreferences'];
+  /** True on a shared snapshot made after defaults stopped being filled in: a limit or budget in it was stated by the family. */
+  preferencesStated?: boolean;
   pushchair: boolean; required: Array<'toilets' | 'babyChanging' | 'parking' | 'pushchair'>;
   routines: Routine[];
 }
@@ -50,16 +58,17 @@ export function clockLabel(minutes: number): string {
 export function familyRequest(family: PlanningFamily, environment: PlanningOptions['environment']): DayRequest {
   const constraints: DayRequest['constraints'] = {
     ageRecommendedFit: { strength: AGE_RECOMMENDATION_STRENGTH, value: 'in_range' },
-    journey: { strength: 'required', value: { maxMinutes: family.maxDriveMinutes } },
     environment: { strength: 'required', value: environment },
-    budget: { strength: 'preferred', value: 'within_profile' },
   };
+  // A limit or budget only if the family stated one: an unset value is no constraint, never a default.
+  if (typeof family.maxDriveMinutes === 'number') constraints.journey = { strength: 'required', value: { maxMinutes: family.maxDriveMinutes } };
+  if (family.budgetTier) constraints.budget = { strength: 'preferred', value: 'within_profile' };
   for (const field of family.required) {
     if (field === 'pushchair') constraints.pushchair = { strength: 'required', value: 'not_difficult' };
     else constraints[field] = { strength: 'required', value: 'yes' };
   }
   return { rawText: '', parsedAt: '', childAges: family.ages, homeLocation: family.area,
-    budgetTier: family.budgetTier, maxDriveMinutes: family.maxDriveMinutes,
+    ...(family.budgetTier ? { budgetTier: family.budgetTier } : {}), ...(typeof family.maxDriveMinutes === 'number' ? { maxDriveMinutes: family.maxDriveMinutes } : {}),
     hasPushchair: family.pushchair || family.required.includes('pushchair'), constraints, context: {} };
 }
 
@@ -77,7 +86,7 @@ export function planVenue(facts: MatchableVenueFacts, families: PlanningFamily[]
   const deadline = options.returnBy ? clockMinutes(options.returnBy) : 1439;
   const evaluations = families.map((family) => {
     const journey = journeys[family.id];
-    if (!journey || ![journey.outbound, journey.inbound].every(n => Number.isFinite(n) && n >= 0 && n <= family.maxDriveMinutes)) return null;
+    if (!journey || ![journey.outbound, journey.inbound].every(n => Number.isFinite(n) && n >= 0 && (typeof family.maxDriveMinutes !== 'number' || n <= family.maxDriveMinutes))) return null;
     const match = matchVenueToDayRequest({ ...facts, driveMinutes: journey.outbound }, familyRequest(family, options.environment));
     return match.eligible ? match : null;
   });

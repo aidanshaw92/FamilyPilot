@@ -37,7 +37,7 @@ import {
 import { BackButton } from '@/src/components/ui/BackButton';
 import { ArrowCta } from '@/src/components/ui/ArrowCta';
 import { CreatePlanSheet } from '@/src/components/planning/CreatePlanSheet';
-import { PlanDraft, firstValue, planDraftDefaults, planDraftFromParams, planDraftToParams } from '@/src/services/planning/plan-draft';
+import { PlanDraft, firstValue, optionsToRemember, planDraftDefaults, planDraftFromParams, planDraftToParams } from '@/src/services/planning/plan-draft';
 import { profileReceipt } from '@/src/utils/profile-receipt';
 import { photoAttribution } from '@/src/services/places/place-photo-url';
 import { FadeInView } from '@/src/components/ui/FadeInView';
@@ -189,15 +189,17 @@ export default function VenueScreen() {
   // back does not re-answer the rows they already answered.
   const handleCreatePlan = useCallback(
     (next: PlanDraft) => {
-      // The start is remembered as a convenience; who is coming and how long are asked afresh each time.
-      setPlanningOptions({ date: next.date, leaveAt: next.startAt });
+      // A date or start the parent CHANGED is remembered as a convenience; a suggestion they left alone is not (it is worked
+      // out again each time, from the clock). Who is coming and how long are asked afresh each time.
+      const chosen = optionsToRemember(next, planDefaults.draft);
+      if (Object.keys(chosen).length > 0) setPlanningOptions(chosen);
       setPlanSheetOpen(false);
       router.push({
         pathname: '/plan',
         params: { venue: id ?? '', ...planDraftToParams(next) },
       } as never);
     },
-    [id, router, setPlanningOptions],
+    [id, router, setPlanningOptions, planDefaults],
   );
 
   const handleDirections = useCallback(() => {
