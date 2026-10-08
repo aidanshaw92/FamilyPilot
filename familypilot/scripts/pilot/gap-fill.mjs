@@ -47,10 +47,23 @@ async function read(url, cap = 30_000) {
   return { url, finalUrl: r.finalUrl ?? url, status: r.status, httpStatus: r.httpStatus ?? null, html: ok ? html : null,
     fullText: ok ? visible(html).slice(0, cap) : null, title: ok ? title(html) : null, readAt: new Date().toISOString() };
 }
+/** Every anchor on the page, not only the ones the production extractor scores as relevant. */
+function allAnchors(html, base) {
+  const seen = new Set();
+  const out = [];
+  for (const m of html.matchAll(/<a\b[^>]*href=["']([^"'#][^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    let url;
+    try { url = new URL(m[1], base).toString(); } catch { continue; }
+    if (!/^https?:/.test(url) || /\.(pdf|jpe?g|png|gif|svg|webp|zip)(\?|$)/i.test(url) || seen.has(url)) continue;
+    seen.add(url);
+    out.push({ url, anchorText: m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 90) });
+  }
+  return out;
+}
 function follow(parent, anchor, allowHosts = []) {
   const re = new RegExp(anchor, 'i');
   const host = new URL(parent.finalUrl).host.replace(/^www\./, '');
-  const links = findRelevantLinks(parent.html, parent.finalUrl, 400);
+  const links = allAnchors(parent.html, parent.finalUrl);
   const pick = links.find((l) => {
     let h; try { h = new URL(l.url).host.replace(/^www\./, ''); } catch { return false; }
     return re.test(`${l.anchorText} ${l.url}`) && (h === host || allowHosts.some((a) => h === a || h.endsWith(`.${a}`)));
@@ -70,6 +83,14 @@ for (const g of gaps) {
     const parent = await read(g.parent);
     console.log(`  parent ${parent.status} http=${parent.httpStatus ?? '-'}`);
     if (!parent.html) { pages.push({ venue: g.venue, gap: g.id, url: g.parent, status: parent.status, readAt: parent.readAt, fullText: null }); continue; }
+    if (g.listLinks) {
+      const host = new URL(parent.finalUrl).host.replace(/^www\./, '');
+      for (const l of allAnchors(parent.html, parent.finalUrl)) {
+        let h; try { h = new URL(l.url).host.replace(/^www\./, ''); } catch { continue; }
+        if (h === host || (g.allowHosts ?? []).some((a) => h.endsWith(a))) console.log(`  LINK ${l.anchorText} | ${l.url}`);
+      }
+      if (!g.anchor) continue;
+    }
     const hit = follow(parent, g.anchor, g.allowHosts);
     if (!hit) { console.log('  no link on the parent matches; nothing followed'); pages.push({ venue: g.venue, gap: g.id, url: g.parent, status: 'no-link', readAt: parent.readAt, fullText: null }); continue; }
     let page = await read(hit.url);

@@ -1,11 +1,7 @@
 {
-  "note": "Gaps left by the first pass over the ten pilot venues (docs/PILOT_10_PROFILES.md). Every parent is an official page of the venue or its operator.",
+  "note": "Gaps left by the first two passes over the ten pilot venues. Every parent is an official page of the venue or its operator. 'listLinks' prints the parent's own links (no extra request) so a later gap can name the right one.",
   "gaps": [
-    { "id": "sm-getting-here", "venue": "Science Museum", "parent": "https://www.sciencemuseum.org.uk/visit", "anchor": "getting[- ]here" },
-    { "id": "lz-faq-full", "venue": "London Zoo", "parent": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions", "fullCap": 150000 },
-    { "id": "nhm-facilities", "venue": "Natural History Museum", "parent": "https://www.nhm.ac.uk/visit.html", "anchor": "facilit" },
-    { "id": "bat-enable", "venue": "Battersea Park", "parent": "https://www.wandsworth.gov.uk/leisure-and-culture/parks-and-open-spaces/childrens-playgrounds/battersea-park-playground-for-toddlers-and-juniors/", "anchor": "enablelc", "allowHosts": ["enablelc.org"], "hops": 2, "anchor2": "battersea" },
-    { "id": "dis-annual", "venue": "Discover Children's Story Centre", "parent": "https://discover.org.uk/your-visit/", "anchor": "annual[- ]entry|prices" },
-    { "id": "gun-park", "venue": "Gunnersbury Park", "parent": "https://www.visitgunnersbury.org/", "anchor": "playground|the-park|park/|children|famil" }
+    { "id": "bat-enable", "venue": "Battersea Park", "parent": "https://www.wandsworth.gov.uk/leisure-and-culture/parks-and-open-spaces/childrens-playgrounds/battersea-park-playground-for-toddlers-and-juniors/", "anchor": "enablelc", "allowHosts": ["enablelc.org"], "hops": 2, "anchor2": "battersea", "listLinks": true },
+    { "id": "gun-links", "venue": "Gunnersbury Park", "parent": "https://www.visitgunnersbury.org/plan-your-visit", "listLinks": true }
   ]
 }
