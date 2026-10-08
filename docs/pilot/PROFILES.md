@@ -9,18 +9,18 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 | Babylon Park London | Discoverable | Discoverable | **Discoverable** | cost |
 | Battersea Park | Discoverable | Discoverable | **Discoverable** | cost, familyEssentials |
 | Discover Children's Story Centre | Discoverable | Discoverable | **Recommendation-ready** | - |
-| Gunnersbury Park | Discoverable | Discoverable | **Recommendation-ready** | - |
-| Horniman Museum and Gardens | Discoverable | Discoverable | **Recommendation-ready** | - |
+| Gunnersbury Park | Discoverable | Recommendation-ready | **Recommendation-ready** | - |
+| Horniman Museum and Gardens | Discoverable | Recommendation-ready | **Recommendation-ready** | - |
 | London Zoo | Discoverable | Discoverable | **Highly personalised** | - |
-| Mudchute Park and Farm | Discoverable | Discoverable | **Recommendation-ready** | - |
+| Mudchute Park and Farm | Discoverable | Recommendation-ready | **Recommendation-ready** | - |
 | Natural History Museum | Discoverable | Discoverable | **Recommendation-ready** | - |
-| Royal Air Force Museum London | Discoverable | Discoverable | **Recommendation-ready** | - |
+| Royal Air Force Museum London | Recommendation-ready | Recommendation-ready | **Recommendation-ready** | - |
 | Science Museum | Discoverable | Discoverable | **Highly personalised** | - |
 
 
 ## Babylon Park London
 
-8 verified · 5 proposed · 3 unknown · 0 hypothesis. Level if every proposal is approved: **Discoverable**.
+7 verified · 6 proposed · 3 unknown · 0 hypothesis. Level if every proposal is approved: **Discoverable**.
 
 **What children can do**
 
@@ -30,7 +30,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 **Pushchairs and buggies**
 
-- ✔ Prams are allowed; a dedicated pram and buggy section on the second floor. [source](https://babylonpark.com/london/) · read 2026-10-08
+- ◐ Prams are allowed; a dedicated pram and buggy section on the second floor. [source](https://babylonpark.com/london/) · read 2026-10-08 _Needs a person: not a fact type that may be accepted without a person._
 
 **Toilets and baby changing**
 
@@ -501,7 +501,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 ## Science Museum
 
-11 verified · 11 proposed · 1 unknown · 1 hypothesis. Level if every proposal is approved: **Highly personalised**.
+12 verified · 11 proposed · 1 unknown · 1 hypothesis. Level if every proposal is approved: **Highly personalised**.
 
 **What children can do**
 
@@ -517,6 +517,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 **Toilets and baby changing**
 
+- ✔ Toilets on every level (the page describes the accessible ones). [source](https://www.sciencemuseum.org.uk/visit/accessibility) · read 2026-10-08 _Derived: accessible toilets are toilets. General toilet blocks are not described separately._
 - ✔ Baby changing on every floor. [source](https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum) · read 2026-10-08
 - ✔ Accessible toilets on every level. [source](https://www.sciencemuseum.org.uk/visit/accessibility) · read 2026-10-08
 - ✔ A Changing Places toilet on level 0 next to the Hans Rausing Lecture Theatre. (The page also carries a notice about works on 14 to 25 September, already past.) [source](https://www.sciencemuseum.org.uk/visit/accessibility) · read 2026-10-08
