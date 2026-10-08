@@ -28,6 +28,7 @@ l.push('Driven through the real exported web app against the pilot fixture (prov
 l.push('', '"Today" is the app on production\'s stored claims for these ten venues. "With the pilot" assumes every proposed fact, rule and hours reading has been approved. Nothing here is published.', '');
 l.push('| Scenario | Today | With the pilot |', '|---|---|---|');
 for (const sc of after.filter((r) => r.width === 393)) l.push(`| ${sc.title} | ${say(find(before, sc.key, 393))} | ${say(sc)} |`);
+l.push('', 'Three rows are mainly about a screen before the plan: age-specific activity (Venue Detail\'s "For children"), incomplete price (the "To get in" card says Price not confirmed) and the closed day read on the day (the Explore card and Venue Detail both say Closed today). Their assertions are in the checks table; the plan column above shows what the same plan says.');
 l.push('', '## Checks');
 l.push('', 'Each is a named assertion about what is on screen. All pass at both widths in the pilot state; the "today" run is not asserted against (it is the baseline).', '');
 l.push('| Scenario | Checks | 360 px | 393 px |', '|---|---|---|---|');
