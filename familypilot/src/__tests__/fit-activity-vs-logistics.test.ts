@@ -87,7 +87,8 @@ describe('logistics can never become activity fit', () => {
 
   it('a verdict word is never used as a claim about a child without a recommended age range behind it', () => {
     const r = run(venue({ babyChanging: 'yes', toilets: 'yes', parking: 'yes', pushchairSuitability: 'excellent' }), households[2][1], 95);
-    expect(r.verdict).toBe('excellent');
+    // Logistics alone no longer earn Excellent for a child of a year or more (EXCELLENT_RULE_V2): Sloane is 3.
+    expect(r.verdict).toBe('good');
     expect(r.headline).toMatch(/^Easy to visit with Sloane and Ozzie/);
     expect(r.headline).not.toMatch(/Excellent for/);
   });
@@ -167,7 +168,9 @@ describe('Sloane stays uncertain without age evidence', () => {
 describe('what the change does NOT touch', () => {
   it('leaves the verdict exactly as it was: only the words changed', () => {
     const f = { babyChanging: 'yes', toilets: 'yes', parking: 'yes', pushchairSuitability: 'good' } as const;
-    expect(run(venue(f), households[1][1], 85).verdict).toBe('excellent');
+    // Excellent now also needs activity evidence for every child of a year or more, so logistics alone stop at Good.
+    expect(run(venue(f), households[1][1], 85).verdict).toBe('good');
+    expect(run(venue(f), households[0][1], 85).verdict).toBe('excellent');
     expect(run(venue(f), households[1][1], 75).verdict).toBe('good');
     expect(run(venue(f), households[1][1], 40).verdict).toBe('poor');
     expect(run(venue({ ...f, pushchairSuitability: 'difficult' }), households[1][1], 90).verdict).toBe('poor');

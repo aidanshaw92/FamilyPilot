@@ -2,6 +2,7 @@ import { FacilityType, FamilyProfile, FamilyMember, Venue } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { evaluateAgeAdmission } from '@/src/services/matching/age-admission';
 import { childAgeMonths } from '@/src/services/matching/age-suitability';
+import { activityEvidenceFor, evidenceCovers } from '@/src/services/matching/activity-evidence';
 import { childAgeVerdicts, joinNames, outsideRangeCautions, suitsChildrenLine } from '@/src/utils/child-fit';
 import { childUsesBuggy, childUsesMobilityAid, familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
 import { describeOpeningToday, OpeningTodayState } from '@/src/utils/opening-today';
@@ -114,10 +115,15 @@ export interface FamilyMatchResult {
   /** The one line worth showing on a card. */
   cardNote: string | null;
   evidence: { positives: number; venueFacts: number; breaches: number; hardUnknowns: number; /** Lines that rest on parent reports (never counted as positives). */ parentReported: number };
+  /**
+   * True when every child is under a year: the visit itself is the activity, so an Excellent rests on how easy the visit
+   * is, and the badge says so ("Excellent · easy visit") rather than implying the place was judged for an activity.
+   */
+  easyVisit: boolean;
 }
 
 export interface FamilyMatchInput {
-  venue: Pick<Venue, 'driveMinutes' | 'trustedFacts' | 'structuredOpeningHours' | 'enrichmentStatus' | 'facilities' | 'category' | 'estimatedSpend'>;
+  venue: Pick<Venue, 'driveMinutes' | 'trustedFacts' | 'structuredOpeningHours' | 'enrichmentStatus' | 'facilities' | 'category' | 'estimatedSpend'> & { id?: string };
   profile: FamilyProfile;
   /** The blended Family Fit score (0 to 100). Used only to tell poor from possible and good from excellent. */
   score: number;
@@ -384,6 +390,10 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
   }
 
   // ---- the venue's evidence --------------------------------------------------------------------------------
+  /** Children inside the venue's own recommended age range: activity evidence about the whole place. */
+  const rangeIds = new Set<string>();
+  /** Children a permanent, age-specific provision on the venue's own pages covers (a playground for under-7s). */
+  const provisionIds = new Set<string>();
   if (facts) {
     // Door policy: the one age fact that can exclude.
     const months = children.map(childAgeMonths);
@@ -401,6 +411,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
         venueFacts += 1;
         inside.forEach((v) => forIds.add(v.id));
       }
+      inside.forEach((v) => rangeIds.add(v.id));
       // The same two lines `outsideRangeCautions` writes, in the same order, each tied to the children it names.
       const belowKids = verdicts.filter((v) => v.side === 'below');
       const aboveKids = verdicts.filter((v) => v.side === 'above');
@@ -412,6 +423,30 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
       });
       if (inside.length === 0 && verdicts.length > 0) {
         breaches.push({ key: 'age-none', text: 'None of your children are in its recommended age range', childIds: verdicts.map((v) => v.id), topic: 'age range', aspect: 'activity' });
+      }
+    }
+
+    // What the venue's own pages say children of an age can do there (reviewed; docs/EXCELLENT_RULE_V2.md). Only for a
+    // child of a year or more (younger, the visit is the activity) and not already inside the whole-venue range. A line
+    // names the children it covers; evidence for other ages is never read as unsuitability for a child it does not cover.
+    // A programme on set days names the child but is not a fact about the place on any day, so it is not a venue fact.
+    const ageKnown = children.filter((c) => Number.isFinite(childAgeMonths(c)) && childAgeMonths(c) >= LOGISTICS_LED_BELOW_MONTHS && !rangeIds.has(c.id));
+    for (const item of venue.id ? activityEvidenceFor(venue.id, now) : []) {
+      const covered = ageKnown.filter((c) => evidenceCovers(item, childAgeMonths(c)));
+      const who = joinNames(names(covered));
+      if (covered.length === 0 || !who) continue;
+      const programme = item.kind === 'programme';
+      reasons.push({
+        key: `activity-${item.label}`,
+        text: `${item.label}${programme ? ' (on set days)' : ''}, for ${who}’s ${covered.length > 1 ? 'ages' : 'age'}`,
+        childIds: covered.map((c) => c.id),
+        topic: 'activity',
+        aspect: 'activity',
+      });
+      covered.forEach((c) => forIds.add(c.id));
+      if (!programme) {
+        venueFacts += 1;
+        covered.forEach((c) => provisionIds.add(c.id));
       }
     }
 
@@ -532,7 +567,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
   // Lead with what is about THIS family (their children, their needs), then the venue's facilities, and the plain
   // logistics (how far) last: the first lines a parent reads should be the ones only they would get.
   const rank = (key: string): number => {
-    const order = ['age', 'buggy', 'stepfree', 'must-', 'baby-changing', 'toilets', 'parking', 'cafe', 'drive-ok'];
+    const order = ['age', 'activity', 'buggy', 'stepfree', 'must-', 'baby-changing', 'toilets', 'parking', 'cafe', 'drive-ok'];
     const index = order.findIndex((prefix) => key === prefix || key.startsWith(prefix));
     return index === -1 ? order.length : index;
   };
@@ -583,6 +618,13 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
   const confirmedKids = lens.filter((l) => l.state === 'works');
   const gapKids = children.length > 1 && confirmedKids.length > 0 ? lens.filter((l) => l.state === 'check' || l.state === 'unknown') : [];
   if (verdict === 'excellent' && gapKids.length > 0) verdict = 'good';
+  // Excellent says the place suits the children, so every child of a year or more must be covered by activity evidence that
+  // holds on any day: the venue's own recommended ages, or a permanent provision for their age. Logistics (toilets, parking,
+  // access) never cover a child, and a programme on set days covers no ordinary visit. Under a year the visit is the
+  // activity, as everywhere else in Family Fit. Rankings are untouched: the verdict is a label, ordering is by score.
+  const activityAge = children.filter((c) => !(childAgeMonths(c) < LOGISTICS_LED_BELOW_MONTHS));
+  if (verdict === 'excellent' && !activityAge.every((c) => rangeIds.has(c.id) || provisionIds.has(c.id))) verdict = 'good';
+  const easyVisit = children.length > 0 && activityAge.length === 0;
   const gapNames = gapKids.map((l) => l.name).filter(Boolean);
   // Whom the place is NOT confirmed to suit: children nothing is known about (in a household where it is known for another),
   // and children for whom only practical facts are confirmed. Practical facts say the visit is easy, not that the place
@@ -629,6 +671,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
     availableToday: !notToday && today.state !== 'never_open',
     cardNote,
     evidence: { positives, venueFacts, breaches: breaches.length, hardUnknowns: hardUnknowns.length, parentReported },
+    easyVisit,
   };
 }
 
@@ -637,7 +680,9 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
  * ("Good for Sloane"); every other verdict is just its word, because a badge with a name on it is a claim and
  * `possible` and `poor` are not claims worth naming anyone for.
  */
-export function matchBadgeText(match: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[] }, maxNameChars = 18): string {
+export function matchBadgeText(match: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[]; easyVisit?: boolean }, maxNameChars = 18): string {
+  // A household of babies only: the Excellent rests on how easy the visit is, and the badge says that, not a judged activity.
+  if (match.verdict === 'excellent' && match.easyVisit) return 'Excellent · easy visit';
   if (match.verdict === 'good' || match.verdict === 'excellent') {
     const word = match.verdict === 'excellent' ? 'Excellent' : 'Good';
     // A child the place is not confirmed for is said on the badge too: "Good for Sloane" alone would read as the family.
