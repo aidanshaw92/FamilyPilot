@@ -146,7 +146,7 @@ before anything else.
 2. **Deployments**, open the current Production deployment, **... > Redeploy** (an environment change reaches only new
    deployments). Wait for "Ready".
 3. Check without spending: open `https://<production domain>/api/places/status` (no `?probe=live`). It reports the cost
-   posture from configuration only; the `photos` scope must read disabled with the reason
+   posture from configuration only; `placesBudget.scopes.photos` must read `"allowed": false` with the reason
    `GOOGLE_PLACES_PHOTOS_ENABLED=false`. Then open one photo URL from a card (`/api/places/photo?id=...`): it must answer
    **503** with `"code"` for the disabled scope, which happens before any Google request.
 4. Next morning, `google_places_usage` should show no new `photos` rows (I can read that for you).
