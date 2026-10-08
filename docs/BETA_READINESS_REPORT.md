@@ -7,8 +7,7 @@ claim rests on the fixture or on code I say so.
 ## Verdict
 
 **Ready with limitations, conditional on three things you control:** merge #168 and #169 (without them the product still
-penalises places over a travel limit nobody set, and rates a place differently with the weather), settle the photo-spend
-decision, and confirm the production account and Google configuration (I cannot read Vercel from here). Without those it is
+penalises places over a travel limit nobody set, and rates a place differently with the weather), switch off or hard-cap photographs at Google, and confirm the production account and Google configuration (I cannot read Vercel from here). Without those it is
 **Not ready**. With them, the honest description of the beta is: *London-wide in intent, thin in coverage; recommendations
 are practical rather than activity-specific; no prices yet.*
 
@@ -23,7 +22,7 @@ are practical rather than activity-specific; no prices yet.*
 | **Pricing** | **Nothing to show.** 0 of 168 venues have a price; honest "Price not confirmed" with a link to the venue's site; Explore price filters hidden (they could only empty the list). Calculator and rules built and tested (#171). Reliable data needs a reviewed extraction (staged plan). | `PRICING_COVERAGE_AUDIT.md` |
 | **Catalogue** | 151 destinations in London, **57 fully usable** (reviewed with website, photo and hours). Missing categories (playgrounds, swimming/leisure, libraries, nature). Thin: outer south (1), outer east (2), south of the river centre (6). Duplicates: one three-listing cluster. | `CATALOGUE_COVERAGE_AUDIT.md`; Phase B proposal awaits approval |
 | **Connected Families** | Reachable from Home and Explore by a labelled action (#170); accepted and pending told apart; same consent and privacy as before. Verified in the auth-enabled fixture, **not in production** (production Supabase client config unverified from here). | `FAMILIES_ACTION.md`; 69 auth-journey checks |
-| **Spend** | Production Google is on and spending about £25 a month at today's traffic, growing with use; photographs dominate (339 calls today). Two active database cron jobs can call Google. Code controls are strong; Google-side quotas and Vercel caps are unverified. | `PROVIDER_SPEND_AUDIT.md` |
+| **Spend** | Production Google is on. Photographs dominate: 339 requests on 7 October (about 170 photographs; each is two Google requests). **The usage table does not explain the reported £100 charge, so it is a lower bound.** The application cap is a best-effort guard, not a hard global cap, and the photo endpoint is public; only a Google Cloud quota is a hard cap and none is verified. Recommendation: switch new paid photograph calls off until one is. Two active database cron jobs can call Google. | `GOOGLE_PHOTO_SPEND_VERIFICATION.md`, `PROVIDER_SPEND_AUDIT.md` |
 | **Product quality** | Two broken interactions found and fixed (price filters returning nothing; filter copy saying the profile default was 30 minutes). Others fixed: "today's weather" copy, closed-today hiding places, hidden restaurant "Any" limit, plan sheet remembering a suggested time as a choice. | PR descriptions |
 
 ## The nine questions, for a parent
@@ -43,8 +42,9 @@ are practical rather than activity-specific; no prices yet.*
 ## Prioritised blockers to inviting the families
 
 1. **Merge #168 and #169, in either order** (adjacent-line conflicts in three files; I will resolve on request). *You.*
-2. **Photo spend.** Decide: switch photographs off, cap them (suggest 200 a day), or accept up to about £330 a month at the
-   default ceiling. Put a Google Cloud budget alert and per-API quotas in place. *You.*
+2. **Photo spend.** Switch new paid photograph calls off now; re-enable only after a Google Cloud daily quota (suggest 200
+   new photographs a day, about $35 to $52 a month) is set and checked, and the unexplained £100 is reconciled against Google's
+   SKU report (`GOOGLE_PHOTO_SPEND_VERIFICATION.md`, exact steps in section 8). *You.*
 3. **Verify production configuration** (I cannot): Supabase client keys in the production build
    (`node familypilot/scripts/verify-client-config.mjs <url>`), and the Vercel caps. *You.*
 4. **Choose beta households in dense areas, or approve the catalogue pilot** (Phase B, 60 to 80 places from open datasets,

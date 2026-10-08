@@ -1,6 +1,8 @@
 # Provider spend: current state, estimates and what needs your decision
 
-Written 2026-10-07 after the unexpected Google charge (about £100). **I made no Google call, enqueued no job and changed no
+Written 2026-10-07 after the unexpected Google charge (about £100). **Corrected 2026-10-08: one photograph is two Google
+requests, the usage table counts requests, and the application cap is not a hard global cap; see
+`GOOGLE_PHOTO_SPEND_VERIFICATION.md`, which supersedes the photograph figures below.** **I made no Google call, enqueued no job and changed no
 setting or quota in producing this.** It builds on `GOOGLE_PLACES_COST_CONTROL.md`, which already describes the six call sites and
 the budget guard; this is a verification of the current state plus estimates.
 
@@ -14,7 +16,11 @@ the budget guard; this is a verification of the current state plus estimates.
   runs on PRs that touch `google-places.js` and stands down (a `NOT PROVEN` warning, no spend) unless the Preview environment
   explicitly allows one Place Details call; `transit-live-smoke` uses TfL. Opening a PR from the current work triggers none
   of the billable paths (PR #168's capture job used the fixture).
-- Photos: the proxy sets a 10-minute browser and 1-hour CDN cache on success, `no-store` on errors.
+- Photos: the proxy sets a 10-minute browser and 1-hour CDN cache on success, `no-store` on errors. **Correction:** each
+  uncached photograph is **two** billable requests (a Place Details lookup for the photo reference, then the media call),
+  both counted under scope `photos`; the table below therefore counts requests, so 339 on 7 October is about 170 photographs.
+- **Correction:** the application cap (per-instance window, per-instance read of a shared total at most once a minute,
+  fire-and-forget recording) is a best-effort guard, not a global hard cap. Only a Google Cloud quota is.
 - Defaults if nothing is set: 2,000 calls per scope per day, 60 per window, and **production is on by default**
   (`VERCEL_ENV=production`); Preview and development are off.
 
@@ -28,14 +34,17 @@ the budget guard; this is a verification of the current state plus estimates.
 | Oct 5 | 116 | 25 | 9 | 0 |
 | Oct 6 | 91 | 9 | 0 | 0 |
 | Oct 7 (so far) | **339** | 27 | 0 | 2 |
-| **Total** | **684** | **88** | **14** | **2** |
+| **Total** | **684 requests (about 340 photographs)** | **88** | **14** | **2** |
 
 (Plus one Routes element in Preview on Oct 3.) These are production-environment rows, i.e. real traffic: your own testing and
 anyone else opening the app. The sandbox cannot reach the production host, so none of it is mine.
 
-**Estimated cost of that week, at the list prices as I understand them (about $7 per 1,000 photos, $32 per 1,000 Nearby Search
-Pro, $17 to $20 per 1,000 Place Details, $5 per 1,000 geocodes): about $7.9, roughly £6, i.e. about £25 a month at this pace.**
-I have no access to Google billing and prices change: treat this as an order of magnitude and read the SKU report. Google's
+**Estimated cost of that week from this table alone, at the list prices as I understand them: roughly $8 to $10 before free
+allowances.** That cannot account for a charge of about £100, so **the table is a lower bound and the gap is unexplained**
+(possible causes and the reconciliation steps are in `GOOGLE_PHOTO_SPEND_VERIFICATION.md` section 6). I have no access to
+Google billing and prices change: treat this as an order of magnitude and read the SKU report. The detail and search field
+masks include website, opening hours and `editorialSummary`; the highest field sets the SKU, so those calls are probably in a
+higher tier than the figures I used. Google's
 monthly free allowances may absorb some or most of it; do not rely on that.
 
 ## 3. Standing sources of automatic spend
@@ -50,20 +59,23 @@ monthly free allowances may absorb some or most of it; do not rely on that.
 Job table: 102 `reextract` and 42 `refetch_official` jobs completed (no Google), 17 `generate` and 7 `regenerate`
 completed (the 14 Place Details above).
 
-## 4. What the beta would cost if nothing changes
+## 4. What the beta would cost if nothing changes (corrected)
 
-Photos dominate and scale with use. There are about 420 distinct photographs in the catalogue (about 140 venues x 3). With a
-1-hour CDN cache each distinct photograph is bought at most once an hour while it is being looked at. Plausible bands for 20 to
-30 families (a guess, not a measurement):
+Photographs dominate and scale with use. About 420 distinct photographs are in the catalogue (about 140 venues x 3). Each
+uncached photograph is two requests: a lookup (probably $5 to $17 per 1,000) and the media call (about $7 per 1,000).
+Corrected exposure, **if the daily cap held exactly** (it does not):
 
-| Use | Photo calls per day | Photo cost per month |
-| --- | ---: | ---: |
-| light (today's pace) | 100 to 350 | about £15 to £60 |
-| busy (daily use by most families) | 500 to 1,500 | about £90 to £270 |
-| ceiling (the 2,000 default cap, every day) | 2,000 | about £330 |
+| Use | Photographs / day | Requests / day | Cost per month |
+| --- | ---: | ---: | ---: |
+| today's pace | 100 to 350 | 200 to 700 | about $15 to $60 |
+| 200 new photographs a day (proposed limit) | 200 | 400 | about $35 to $52 |
+| the 2,000-request default, every day | 1,000 | 2,000 | about $300 to $630 (£235 to £490) |
 
-Nearby Search is bounded by the 6-hour search cache plus the Mon/Thu sync: roughly £5 to £10 a month. Place Details by the
-daily 50-job ceiling: up to about £30 a month, normally far less.
+Because the endpoint is public, accepts any place identifier and keys its cache on the whole query string, volume can be
+driven by a caller and is bounded only by the leaky application cap unless a Google quota exists.
+
+Nearby Search is bounded by the 6-hour search cache plus the Mon/Thu sync; Place Details by the daily 50-job ceiling. Both
+probably sit in a higher SKU tier than first assumed; verify against the SKU report.
 
 ## 5. What I could not verify, and what only you can do
 
@@ -75,10 +87,12 @@ daily 50-job ceiling: up to about £30 a month, normally far less.
 
 ## 6. Recommendations (all need your decision; I have changed nothing)
 
+0. **Revised 2026-10-08:** switch new paid photograph calls off now and re-enable only after a Google-side daily quota is
+   confirmed (`GOOGLE_PHOTO_SPEND_VERIFICATION.md` section 8 has the exact steps).
 1. **Aim for £0 additional Google spend in the beta by switching photographs off or capping them**, because they are the only
    line that grows with the number of families. Options in order of cost-to-you: (a) set `GOOGLE_PLACES_PHOTOS_ENABLED=false`
-   (a refused photograph is a failed image load, which `VenueImage` handles by falling back to its category artwork; I have not rendered that state in a browser with the flag off, so check it before relying on it); (b) cap it, e.g. a per-scope daily limit of
-   200 (about £1.40 a day, £40 a month worst case); (c) replace Google photos with owned or licensed imagery over time (the
+   (a refused photograph is a failed image load, which `VenueImage` handles by falling back to its category artwork; I have not rendered that state in a browser with the flag off, so check it before relying on it); (b) cap it with a **Google Cloud quota** (the application variable counts requests and is not a hard cap), e.g. 200
+   photographs a day (about $35 to $52 a month); (c) replace Google photos with owned or licensed imagery over time (the
    only permanent fix, and a content task).
 2. Put the Google Cloud-side budget alert and a hard per-API quota (photos, Nearby Search, Place Details) in place; code
    controls can be changed by a commit, quotas cannot.
@@ -95,4 +109,4 @@ daily 50-job ceiling: up to about £30 a month, normally far less.
 | Stable Family Fit, defaults, Families action, pricing foundation (PRs A to D) | £0 (no provider call added; one forecast fetch per list removed) | £0 |
 | Catalogue pilot from open datasets | £0 | £0 |
 | Pricing extraction from stored pages | £0 | £0 |
-| Today's production traffic | n/a | about £25 a month at this pace; up to about £330 at the default photo ceiling |
+| Today's production traffic | n/a | unreconciled (see section 2); photographs about $15 to $60 a month at today's pace; $300 to $630 if the default cap held exactly, higher if it does not |
