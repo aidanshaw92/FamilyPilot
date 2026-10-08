@@ -1,3 +1,5 @@
+import { FamiliesAction } from '@/src/components/navigation/FamiliesAction';
+import { COMPACT_FAMILIES_ROW } from '@/src/utils/home-vertical-layout';
 import { useIsFocused, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -42,7 +44,7 @@ import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile, useHomeVenues } from '@/src/hooks/use-queries';
 import { useFiltersStore } from '@/src/stores/filters-store';
 import { FilterSheet } from '@/src/components/explore/FilterSheet';
-import { applyAdvancedFilters } from '@/src/utils/filter-venues';
+import { applyAdvancedFilters, hasPriceCoverage } from '@/src/utils/filter-venues';
 import { FOOD_FILTER_IDS, foodIsUnknown } from '@/src/utils/food-nearby';
 import { Venue } from '@/src/types';
 import { seedVenueDetail } from '@/src/services/venue-detail-seed';
@@ -271,9 +273,14 @@ export default function HomeScreen() {
               <Text variant="heading2" style={styles.sectionTitle}>
                 Best for your family
               </Text>
+              {/* The way into Families, on the heading row's free right-hand side: same height as the row, so nothing moves. */}
+              <FamiliesAction style={styles.familiesAction} />
             </View>
           ) : (
-            <View style={styles.compactChipsGap} />
+            // On a short screen the heading is dropped; the action keeps a slim row of its own rather than disappearing.
+            <View style={styles.compactFamiliesRow}>
+              <FamiliesAction />
+            </View>
           )}
         </View>
 
@@ -353,7 +360,7 @@ export default function HomeScreen() {
           </View>
         ) : null}
       </ScrollView>
-      <FilterSheet visible={filterSheetOpen && isFocused} onClose={() => setFilterSheetOpen(false)} scope="home" />
+      <FilterSheet visible={filterSheetOpen && isFocused} onClose={() => setFilterSheetOpen(false)} scope="home" priceFiltersAvailable={hasPriceCoverage(venues ?? [])} />
     </View>
   );
 }
@@ -402,8 +409,11 @@ const styles = StyleSheet.create({
   sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    justifyContent: 'space-between',
     gap: spacing.sm,
   },
+  // The heading row is 16 + 26 + 9 = 51 tall; the 44 point pill sits inside it (4 + 44 = 48).
+  familiesAction: { marginTop: 4 },
   sectionTitle: {
     marginTop: 16,
     marginBottom: 9,
@@ -418,6 +428,13 @@ const styles = StyleSheet.create({
   // Stands in for the plan heading's own margins in the compact header, so the chips keep clear of the search field.
   compactChipsGap: {
     height: 14,
+  },
+  // Short screens only: the pill's own row (44), in place of the 14 point gap.
+  compactFamiliesRow: {
+    height: COMPACT_FAMILIES_ROW,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   attribution: {
     marginTop: spacing.xs,
