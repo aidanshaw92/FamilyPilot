@@ -135,14 +135,41 @@ before anything else.
 
 ## 8. Exact instructions (I have changed nothing)
 
-**A. Stop new paid photograph calls now (recommended until C is done).** Vercel: Project **FamilyPilot > Settings >
-Environment Variables**. Add `GOOGLE_PLACES_PHOTOS_ENABLED` = `false` for **Production** (and Preview), then redeploy the
-production deployment (an env change applies only to new deployments). Effect: every cache miss returns 503, which the app
-treats as "no photograph" and draws the category artwork. Images already in the CDN keep working until their hour expires.
-**Verified in a browser against the local fixture** (not production): with `/api/places/photo` answering 503 `no-store`
-exactly as the handler does when the switch is off, Home and Explore at 390 px rendered the designed category artwork on every
-card (4 on Home, 5 on Explore), with no broken image and no page error. One cosmetic remainder: a "Google Maps" credit line
-still sits under the Home card though no photograph is shown. A production check after the redeploy is still worth doing.
+**A. Stop new paid photograph calls now (approved in principle 2026-10-08; for you to apply).**
+
+*Production* (Vercel, project **FamilyPilot**):
+
+1. **Settings > Environment Variables > Add New.** Key `GOOGLE_PLACES_PHOTOS_ENABLED`, value `false`, environment
+   **Production** only. Save. (Leave `GOOGLE_PLACES_ENABLED` and every other variable as they are: the master switch stays on so
+   stored-venue details keep working; only the photo scope is refused. The code checks the photo flag after the master switch,
+   so `false` here refuses every photo request whatever the master says.)
+2. **Deployments**, open the current Production deployment, **... > Redeploy** (an environment change reaches only new
+   deployments). Wait for "Ready".
+3. Check without spending: open `https://<production domain>/api/places/status` (no `?probe=live`). It reports the cost
+   posture from configuration only; the `photos` scope must read disabled with the reason
+   `GOOGLE_PLACES_PHOTOS_ENABLED=false`. Then open one photo URL from a card (`/api/places/photo?id=...`): it must answer
+   **503** with `"code"` for the disabled scope, which happens before any Google request.
+4. Next morning, `google_places_usage` should show no new `photos` rows (I can read that for you).
+
+*Preview* (same page): Preview deployments are already off for every Google scope unless `GOOGLE_PLACES_ENABLED` is set for
+Preview (the master switch defaults to on only when `VERCEL_ENV` is `production`). Check that no Preview-scoped
+`GOOGLE_PLACES_ENABLED=true` exists; for belt and braces add `GOOGLE_PLACES_PHOTOS_ENABLED=false` for **Preview** as well.
+Nothing to redeploy for Preview: the next Preview build picks it up.
+
+*To undo:* delete the variable (or set `true`) and redeploy. Do that only after section C and the hardening in section 9.
+
+*What parents see.* Every venue photograph that is not already cached becomes the designed category artwork (a soft play
+illustration, a park scene). **What stays:** photographs already in the CDN keep showing until their hour runs out, and in a
+phone's browser for its 10 minutes; the Welcome screens use licensed photographs we own and are unaffected. There is no stored
+copy of any Google photograph to fall back on (the terms do not allow keeping one), so within about an hour of the redeploy every
+venue card shows artwork. **Verified in a browser** against the local fixture, refusing the photo endpoint exactly as the switch
+does, at 360 and 393 points: Home, Explore and Venue Detail render the category artwork with no broken image, no page error and
+no request to any Google host (Saved was empty in the fixture). Not verified on production or a phone.
+
+*Not the permanent look.* Artwork everywhere is a stopgap. The way back to real photographs is, in order: the hardening in
+section 9 (endpoint accepts only our own venues and known parameters, a photograph-specific cap), a Google daily quota (C), then
+re-enabling at 200 new photographs a day; and in parallel, photographs we may keep (venue-supplied with permission, or Wikimedia
+Commons with attribution) for the most-viewed venues.
 
 **B. Google Cloud: restrict the key.** Console **APIs & Services > Credentials**, open the key used as
 `GOOGLE_PLACES_API_KEY` > **API restrictions > Restrict key** > tick only the APIs the app uses (Places API (New); Routes and

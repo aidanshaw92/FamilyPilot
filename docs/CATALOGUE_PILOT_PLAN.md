@@ -9,10 +9,8 @@ The open-data hosts are not reachable from this environment (the network policy 
 `data.gov.uk`, `overpass-api.de`, `www.wikidata.org`, `opendata.arcgis.com` and `www.activeplaces.com`). So **I have not
 read a single dataset record**. Consequences, stated plainly:
 
-- The venue list in section 5 is a **provisional shortlist of named places I am confident exist**, written from general
-  knowledge to give the matching step a target. It is **not** drawn from a licensed dataset yet, carries no coordinates or
-  identifiers, and every row must be matched to a record in an OGL (or otherwise permitted) source and **dropped if it cannot
-  be**. Nothing in it is a claim about opening hours, facilities, prices or ages.
+- There is **no pilot list yet**. The previous draft's names-from-memory shortlist has been withdrawn (section 5): the list
+  will be produced only from the licensed files.
 - The licence statements in section 3 are my understanding of each publisher's terms; each must be read on the dataset page
   at the point of download and recorded in the batch.
 - To go further I need network access to those hosts (Network access in the environment settings: add them under Allowed
@@ -86,26 +84,20 @@ separate decision.)
 4. The expected hit rate is low because the targeted areas are the thin ones, but the dense central-south slots will collide
    with existing rows such as Burgess Park and Battersea Park; those are skipped, not duplicated.
 
-## 5. Provisional shortlist for matching (unverified, see section 0)
+## 5. The pilot list comes from the datasets, not from names
 
-Parks and green spaces with play provision, named by borough. Each is to be matched to an OS Open Greenspace record
-(function class "Public Park Or Garden" or "Play Space") and **dropped if there is none or the licence is not as expected**.
-Anything already stored is skipped at matching.
+**Revised 2026-10-08.** An earlier draft of this section listed places by name from general knowledge to steer matching. That has
+been withdrawn: no pilot row, and no candidate list, will be written from memory. The list is produced only from licensed
+records, once the files can be read:
 
-| Area | Named candidates |
-| --- | --- |
-| Outer South: Bromley | Crystal Palace Park; High Elms Country Park; Jubilee Country Park (Hayes); Kelsey Park (Beckenham); Norman Park; Priory Gardens (Orpington) |
-| Outer South: Croydon | Lloyd Park; Wandle Park; South Norwood Country Park; Heathfield; Purley Beeches |
-| Outer South: Sutton | Carshalton Park; Oaks Park; Cheam Park; Nonsuch Park |
-| Outer South: Kingston and Merton | Canbury Gardens; Hogsmill Local Nature Reserve; Morden Hall Park; Wimbledon Park; Mitcham Common; Wandle Meadow Nature Park (allow 22 in total; trim by matching) |
-| Outer East: Havering | Bedfords Park; Raphael Park; Havering Country Park; Hornchurch Country Park; Harrow Lodge Park |
-| Outer East: Barking and Dagenham | Barking Park; Mayesbrook Park; Valence Park; Central Park (Dagenham) |
-| Outer East: Redbridge | Fairlop Waters Country Park; Hainault Forest Country Park; Valentines Park; Wanstead Park; Claybury Park |
-| Outer East: Bexley and Newham | Danson Park; Lesnes Abbey Woods; Hall Place and Gardens; Foots Cray Meadows; Thames Barrier Park; West Ham Park; Central Park (East Ham) |
-| Central south: Lambeth, Southwark, Wandsworth | Kennington Park; Archbishop's Park; Brockwell Park; Southwark Park; Peckham Rye Park; Dulwich Park; Vauxhall Park; Ruskin Park; Myatt's Fields Park; Bermondsey Spa Gardens; Geraldine Mary Harmsworth Park; Clapham Common; Tooting Bec Common (16 slots; trim by matching) |
-| Missing categories, by rule | up to 14 council swimming pools or leisure centres in the three target areas from Sport England Active Places (the first one or two per borough with a public pool), named only after the dataset is read |
-
-About 58 named parks and green spaces plus 14 rule-selected leisure sites, trimmed to 74 or fewer by matching.
+1. Download OS Open Greenspace (and, where its licence is confirmed, Sport England Active Places) and record each file's
+   licence text, version and retrieval date.
+2. Keep features inside the three target areas whose source classification is a public park or garden or a play space (pools
+   and leisure centres from Active Places, with a public pool).
+3. Drop anything already stored (section 4), anything too small to be a destination (a minimum area, set and published with the
+   list), and anything without a name in the source.
+4. Rank by area and by distance from the target areas' centres, and take up to 74.
+5. Publish that list, with each row's source identifier, licence, attribution and coordinates, **before** any import, for review.
 
 ## 6. Acceptance criteria (measured, not asserted)
 
@@ -138,6 +130,8 @@ rows be hidden from the app without deleting them, which is the first lever.
 
 ## 9. What I need before starting
 
+0. The existing-facts recovery comes first (`EXISTING_FACTS_AUDIT.md`): 74 current venues can gain a visible fact from pages
+   we already hold, which is a better return than new rows that start with none.
 1. Your go for Phase B, **and** network access to the hosts in section 0 (or the files).
 2. Confirmation that OGL-only (no OSM) is acceptable for the pilot.
 3. Agreement that the pilot is described as *coverage with honest "not yet reviewed" labelling*, not as new recommendations.
