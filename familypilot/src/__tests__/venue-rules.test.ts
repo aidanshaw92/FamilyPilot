@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { evaluateVenueRules, ruleAppliesOn } from '@/src/services/matching/venue-rules';
 import { matchVenueToDayRequest } from '@/src/services/matching/day-request-matcher';
@@ -18,12 +18,17 @@ import type { VenueRule } from '@/src/types/venue-rules';
  * only to a party that needs step-free; nothing here changes a score.
  */
 
+// The notices were read on this day; the clock is fixed to it, because a reading older than 90 days no longer refuses a visit.
+const READ = '2026-10-08';
+beforeAll(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(`${READ}T12:00:00Z`)); });
+afterAll(() => { vi.useRealTimers(); });
+
 const DISCOVER_PUSHCHAIRS: VenueRule = {
-  id: 'pushchair-play-areas', kind: 'pushchair', scope: 'area', area: 'storytelling and play areas', coversCoreVisit: true,
+  id: 'pushchair-play-areas', kind: 'pushchair', scope: 'area', area: 'storytelling and play areas', coversCoreVisit: true, checkedAt: READ,
   text: 'Pushchairs and buggies are not allowed in any storytelling or play area. Buggy parking is on the ground floor; bring a sling for a smaller baby.',
 };
 const SCIENCE_CLOSED: VenueRule = {
-  id: 'closed-2026-10-09', kind: 'closure', scope: 'venue', from: '2026-10-09', until: '2026-10-09',
+  id: 'closed-2026-10-09', kind: 'closure', scope: 'venue', from: '2026-10-09', until: '2026-10-09', checkedAt: READ,
   text: 'Closed on 9 October.',
 };
 const NHM_GALLERY: VenueRule = {
@@ -86,7 +91,7 @@ describe('what a rule is allowed to do', () => {
     const warns = evaluateVenueRules([DISCOVER_PUSHCHAIRS], visit({ usesPushchair: true }));
     expect(warns.blocksHousehold).toBeNull();
     expect(warns.notes).toEqual([{ ruleId: 'pushchair-play-areas', severity: 'important', text: DISCOVER_PUSHCHAIRS.text }]);
-    expect(evaluateVenueRules([DISCOVER_PUSHCHAIRS], visit())).toEqual({ closedAllDay: null, blocksHousehold: null, exceptions: [], notes: [] });
+    expect(evaluateVenueRules([DISCOVER_PUSHCHAIRS], visit())).toEqual({ closedAllDay: null, blocksHousehold: null, exceptions: [], notes: [], downgraded: [] });
   });
 
   it('names what the venue itself says softens a blocking rule, so the refusal is complete', () => {
@@ -117,8 +122,8 @@ describe('what a rule is allowed to do', () => {
   });
 
   it('a venue with no rules returns nothing, which is not a statement that none apply', () => {
-    expect(evaluateVenueRules(undefined, visit())).toEqual({ closedAllDay: null, blocksHousehold: null, exceptions: [], notes: [] });
-    expect(evaluateVenueRules([], visit())).toEqual({ closedAllDay: null, blocksHousehold: null, exceptions: [], notes: [] });
+    expect(evaluateVenueRules(undefined, visit())).toEqual({ closedAllDay: null, blocksHousehold: null, exceptions: [], notes: [], downgraded: [] });
+    expect(evaluateVenueRules([], visit())).toEqual({ closedAllDay: null, blocksHousehold: null, exceptions: [], notes: [], downgraded: [] });
   });
 });
 

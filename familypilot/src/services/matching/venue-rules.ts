@@ -1,4 +1,4 @@
-import type { VenueRule, VenueRuleNote, VenueRuleVerdict, VenueRuleVisit } from '@/src/types/venue-rules';
+import type { RuleDowngrade, VenueRule, VenueRuleNote, VenueRuleVerdict, VenueRuleVisit } from '@/src/types/venue-rules';
 
 import { venueLocalDate } from '@/src/utils/opening-hours';
 
@@ -26,6 +26,44 @@ export function ruleAppliesOn(rule: VenueRule, date: string): boolean {
 const hasBoundedDates = (rule: VenueRule): boolean => Boolean(rule.from || rule.until || rule.weekdays?.length);
 
 /**
+ * How old a reading may be and still refuse a visit. A closure is the one rule that removes a venue from a family's day, so
+ * it is held to a standard: a venue can reopen early, a notice can be withdrawn, and a page that has not been read for a
+ * quarter says nothing about this week. Older than this, the rule still shows, as a warning that names its reading date.
+ */
+export const HARD_RULE_MAX_AGE_DAYS = 90;
+
+function daysBetween(from: string, to: string): number {
+  const a = Date.parse(`${from}T00:00:00Z`);
+  const b = Date.parse(`${to}T00:00:00Z`);
+  return Math.round((b - a) / 86_400_000);
+}
+
+/**
+ * May this rule refuse a visit? It may only if it was read recently enough, has a reading date at all, and no other reading
+ * of the venue's pages contradicts it. Everything else downgrades it to a warning, and says why (for the audit, not the parent).
+ */
+function mayRefuse(rule: VenueRule, today: string): RuleDowngrade | null {
+  if (rule.contradiction) return 'contradicted';
+  if (!rule.checkedAt || !DATE.test(rule.checkedAt)) return 'undated';
+  const age = daysBetween(rule.checkedAt, today);
+  // A reading dated after the day it is judged is a clock or data fault, not a fresh reading.
+  if (age < 0) return 'undated';
+  if (age > HARD_RULE_MAX_AGE_DAYS) return 'stale';
+  return null;
+}
+
+function readingSuffix(rule: VenueRule, reason: RuleDowngrade): string {
+  const when = rule.checkedAt && DATE.test(rule.checkedAt) ? ` as of ${formatDay(rule.checkedAt)}` : '';
+  if (reason === 'contradicted') return ` Another page says otherwise${rule.contradiction ? `: ${rule.contradiction}` : ''}. Check before you go.`;
+  return `${when ? ` (Listed${when}.)` : ''} Check before you go.`;
+}
+
+function formatDay(date: string): string {
+  const [y, m, d] = date.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+}
+
+/**
  * What a venue's recorded rules mean for one visit by one household.
  *
  * THE LINE BETWEEN BLOCK, WARN AND SAY NOTHING:
@@ -38,16 +76,22 @@ const hasBoundedDates = (rule: VenueRule): boolean => Boolean(rule.from || rule.
  * Unknown is never produced here: a venue with no rules returns no notes, which callers must not read as "no restrictions".
  */
 export function evaluateVenueRules(rules: readonly VenueRule[] | null | undefined, visit: VenueRuleVisit): VenueRuleVerdict {
-  const verdict: VenueRuleVerdict = { closedAllDay: null, blocksHousehold: null, exceptions: [], notes: [] };
+  const verdict: VenueRuleVerdict = { closedAllDay: null, blocksHousehold: null, exceptions: [], notes: [], downgraded: [] };
   if (!rules?.length) return verdict;
+  const today = visit.today && DATE.test(visit.today) ? visit.today : venueLocalDate(new Date(), 'Europe/London') ?? '';
 
   const important: VenueRuleNote[] = [];
   const info: VenueRuleNote[] = [];
   const seen = new Set<string>();
-  const push = (list: VenueRuleNote[], rule: VenueRule) => {
+  const push = (list: VenueRuleNote[], rule: VenueRule, suffix = '') => {
     if (seen.has(rule.id)) return;
     seen.add(rule.id);
-    list.push({ ruleId: rule.id, severity: list === important ? 'important' : 'info', text: rule.text });
+    list.push({ ruleId: rule.id, severity: list === important ? 'important' : 'info', text: `${rule.text}${suffix}` });
+  };
+  /** A rule that cannot refuse says so in words and is recorded. The family still sees it, prominently. */
+  const downgrade = (rule: VenueRule, reason: RuleDowngrade, extra = '') => {
+    verdict.downgraded.push({ ruleId: rule.id, reason });
+    push(important, rule, reason === 'excepted' ? extra : readingSuffix(rule, reason));
   };
 
   for (const rule of rules) {
@@ -58,8 +102,20 @@ export function evaluateVenueRules(rules: readonly VenueRule[] | null | undefine
         // Only a dated whole-venue closure that covers a readable date refuses it. An undated "closed" is a statement the
         // reviewer did not bound, so it is shown as a warning rather than silently ruling the venue out for ever.
         if (rule.scope === 'venue') {
-          if (DATE.test(visit.date) && hasBoundedDates(rule)) verdict.closedAllDay ??= rule;
-          else push(important, rule);
+          if (!(DATE.test(visit.date) && hasBoundedDates(rule))) {
+            push(important, rule);
+            break;
+          }
+          // The venue itself may soften its own closure ("closed on 25 December, gardens open"). That is a rule of its own,
+          // with its own source, and it speaks in the same message.
+          const softened = rules.filter((r) => r.exceptionOf === rule.id && ruleAppliesOn(r, visit.date));
+          if (softened.length > 0) {
+            downgrade(rule, 'excepted', ` ${softened.map((r) => r.text).join(' ')}`);
+            break;
+          }
+          const why = mayRefuse(rule, today);
+          if (why) downgrade(rule, why);
+          else verdict.closedAllDay ??= rule;
           break;
         }
         const takesAway = (rule.affectsFacilities ?? []).some((f) => visit.requiredFacilities?.includes(f));
@@ -69,7 +125,9 @@ export function evaluateVenueRules(rules: readonly VenueRule[] | null | undefine
       case 'pushchair': {
         if (!visit.usesPushchair && !visit.requiresPushchair) break;
         if (visit.requiresPushchair && rule.coversCoreVisit) {
-          verdict.blocksHousehold ??= rule;
+          const why = mayRefuse(rule, today);
+          if (why) downgrade(rule, why);
+          else verdict.blocksHousehold ??= rule;
           break;
         }
         push(important, rule);
@@ -78,7 +136,9 @@ export function evaluateVenueRules(rules: readonly VenueRule[] | null | undefine
       case 'step_free': {
         if (!visit.needsStepFree) break;
         if (rule.coversCoreVisit && rule.scope === 'venue') {
-          verdict.blocksHousehold ??= rule;
+          const why = mayRefuse(rule, today);
+          if (why) downgrade(rule, why);
+          else verdict.blocksHousehold ??= rule;
           break;
         }
         push(important, rule);
@@ -107,5 +167,5 @@ export function closureToday(
 ): VenueRule | null {
   const date = venueLocalDate(instant, timezone);
   if (!date) return null;
-  return evaluateVenueRules(rules, { date, usesPushchair: false, requiresPushchair: false, needsStepFree: false }).closedAllDay;
+  return evaluateVenueRules(rules, { date, today: date, usesPushchair: false, requiresPushchair: false, needsStepFree: false }).closedAllDay;
 }

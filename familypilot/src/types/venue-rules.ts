@@ -61,7 +61,14 @@ export interface VenueRule {
   /** Parent-facing sentence, reviewed. Shown as written. */
   text: string;
   sourceUrl?: string | null;
+  /** The date the venue's page was read (`YYYY-MM-DD`). A rule with no reading date can warn but can never block. */
   checkedAt?: string | null;
+  /**
+   * What the venue's other pages say against this rule, in their words ("the homepage says Open every day"). Set by the
+   * reviewer when two readings disagree and a person has not settled which one governs. A contradicted rule warns and never
+   * blocks: a mistaken exclusion costs a family a day out, a warning costs them a phone call.
+   */
+  contradiction?: string | null;
 }
 
 export interface VenueRuleNote {
@@ -83,7 +90,15 @@ export interface VenueRuleVisit {
   requiredFacilities?: ReadonlyArray<'toilets' | 'babyChanging' | 'parking'>;
   /** Someone in the party uses a wheelchair or mobility aid. */
   needsStepFree: boolean;
+  /**
+   * The day the decision is made (`YYYY-MM-DD`), which is what the age of a reading is measured against. Not the visit day:
+   * a notice read this morning about Christmas Eve is a fresh notice. Defaults to today in London.
+   */
+  today?: string;
 }
+
+/** Why a rule that would have refused a visit only warns about it. */
+export type RuleDowngrade = 'stale' | 'undated' | 'contradicted' | 'excepted';
 
 export interface VenueRuleVerdict {
   /** The whole venue is closed on this date: do not schedule it. */
@@ -93,4 +108,6 @@ export interface VenueRuleVerdict {
   /** What the venue itself says softens the blocking rule (its `exceptionOf` rules), for the message that refuses. */
   exceptions: VenueRule[];
   notes: VenueRuleNote[];
+  /** Rules that would have refused the visit but were not allowed to, with the reason. Never shown to a parent as such. */
+  downgraded: Array<{ ruleId: string; reason: RuleDowngrade }>;
 }
