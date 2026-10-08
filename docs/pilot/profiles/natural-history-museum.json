@@ -264,20 +264,24 @@
       "sec": "opening",
       "key": "closure",
       "value": "2026-10-09 closed",
-      "text": "Closed on 9 October (tomorrow) and 24 to 26 December.",
+      "text": "The South Kensington site is closed on Friday 9 October 2026 for a charity gala, and on 24 to 26 December.",
       "goodToKnow": true,
       "evidence": {
         "url": "https://www.nhm.ac.uk/visit.html",
         "readAt": "2026-10-08",
-        "quote": "Closed 9 October and 24–26 December",
+        "quote": "Closed 9 October and 24–26 December … Our South Kensington site will be closed on Friday 9 October 2026, as we’re hosting a charity gala.",
+        "quotes": [
+          "Closed 9 October and 24–26 December",
+          "Our South Kensington site will be closed on Friday 9 October 2026, as we’re hosting a charity gala."
+        ],
         "pageSha256": "a6b93d6d6f7b0125"
       },
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person",
-        "conflicts with the homepage, which says \"Open every day\""
+        "conflicts with the homepage and the footer, which say \"Open every day\" and list only 24–26 December. They are standing text; the dedicated, dated notice on the visit page is the more specific statement, and no page says the museum is open on 9 October"
       ],
-      "conflict": "the homepage, which says \"Open every day\""
+      "conflict": "the homepage and the footer, which say \"Open every day\" and list only 24–26 December. They are standing text; the dedicated, dated notice on the visit page is the more specific statement, and no page says the museum is open on 9 October"
     },
     {
       "sec": "pricing",

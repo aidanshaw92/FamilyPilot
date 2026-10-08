@@ -278,11 +278,17 @@ describe('Family Fit reads the venue’s rules without moving any score', () => 
     expect(open.availableToday).toBe(true);
   });
 
-  it('says the pushchair rule as a breach for a child whose buggy is the only way round, and as a caution for one who can be carried', () => {
-    const buggyOnly = evaluateFamilyMatch({ venue: venueWith([DISCOVER_PUSHCHAIRS]), profile: profile([child('c', 'Theo', 1, ['buggy'])]), score: 80, now: NOW });
+  it('says the pushchair rule as a breach only for a household that stated buggy access as a must-have, and as a caution otherwise', () => {
+    const stated = { mustHaveFacilities: ['pushchair_friendly' as const] };
+    const buggyOnly = evaluateFamilyMatch({ venue: venueWith([DISCOVER_PUSHCHAIRS]), profile: { ...profile([child('c', 'Theo', 1, ['buggy'])]), ...stated }, score: 80, now: NOW });
     expect(buggyOnly.cautions.map((l) => l.text)).toContain(DISCOVER_PUSHCHAIRS.text);
     expect(buggyOnly.verdict).toBe('poor');
-    const carried = evaluateFamilyMatch({ venue: venueWith([DISCOVER_PUSHCHAIRS]), profile: profile([child('c', 'Theo', 1, ['buggy', 'carrier'])]), score: 80, now: NOW });
+    // The same restriction for a household that merely brings a buggy: said prominently, the venue's words, but not a verdict.
+    const merely = evaluateFamilyMatch({ venue: venueWith([DISCOVER_PUSHCHAIRS]), profile: profile([child('c', 'Theo', 1, ['buggy'])]), score: 80, now: NOW });
+    expect(merely.cautions.map((l) => l.text)).toContain(DISCOVER_PUSHCHAIRS.text);
+    expect(merely.verdict).not.toBe('poor');
+    // A child who can be carried is a caution even for a household that stated it.
+    const carried = evaluateFamilyMatch({ venue: venueWith([DISCOVER_PUSHCHAIRS]), profile: { ...profile([child('c', 'Theo', 1, ['buggy', 'carrier'])]), ...stated }, score: 80, now: NOW });
     expect(carried.cautions.map((l) => l.text)).toContain(DISCOVER_PUSHCHAIRS.text);
     expect(carried.verdict).not.toBe('poor');
   });

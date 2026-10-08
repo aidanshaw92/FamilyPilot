@@ -20,6 +20,7 @@ import {
 import { compareTravelMinutes } from '@/src/utils/travel-time';
 import { evaluateAgeAdmission } from './age-admission';
 import { evaluateVenueRules } from './venue-rules';
+import { activeFitPolicy } from '@/src/services/scoring/fit-policy';
 import {
   hasTrustedMatchSignals,
   scoreTrustedAccessibility,
@@ -200,6 +201,18 @@ function classifyFit(
   return 'Possible fit';
 }
 
+/**
+ * What "parking" is worth as evidence for THIS party. A venue that says it has no parking has said nothing about disabled bays:
+ * of the ten pilot venues, four that say "no parking on site" (Natural History Museum, Science Museum, Horniman, Discover) also
+ * publish Blue Badge spaces or bays nearby, and the app holds no field for that. For a party with a wheelchair or mobility-aid
+ * user, a general "no" is therefore not evidence that the parking they need is missing, so under the hard-conflict policy it is
+ * carried as something to check, never as a refusal. A "yes" is unchanged, and so is every party without a step-free need.
+ */
+function parkingFor(request: DayRequest, facts: MatchableVenueFacts): MatchableVenueFacts['parking'] {
+  if (request.needsStepFree && facts.parking === 'no' && activeFitPolicy().conflictsLast) return 'unknown';
+  return facts.parking;
+}
+
 export function matchVenueToDayRequest(
   facts: MatchableVenueFacts,
   request: DayRequest,
@@ -334,6 +347,11 @@ export function matchVenueToDayRequest(
     if (verdict.blocksHousehold) {
       evaluations.push({ field: 'venueRules', strength: 'required', outcome: 'unsuitable', detail: [verdict.blocksHousehold.text, ...verdict.exceptions.map((e) => e.text)].join('\n') });
       eligible = false;
+    } else if (verdict.closedAllDay) {
+      // A reviewed closure on the chosen date. The sequencer says it first and in its own words; the matcher says it too so that
+      // every caller that asks "does this suit the household that day" (Meet Halfway, the single-venue planner) gets the same answer.
+      evaluations.push({ field: 'venueRules', strength: 'required', outcome: 'unsuitable', detail: verdict.closedAllDay.text });
+      eligible = false;
     }
   }
 
@@ -371,7 +389,7 @@ export function matchVenueToDayRequest(
         evaluations,
         'familyFacilities.parking',
         request.constraints.parking.strength,
-        evaluateTriStateRequired(facts.parking, true),
+        evaluateTriStateRequired(parkingFor(request, facts), true),
         tally,
       )
     ) {

@@ -7,6 +7,7 @@ import { childAgeVerdicts, joinNames, outsideRangeCautions, suitsChildrenLine } 
 import { childUsesBuggy, childUsesMobilityAid, familyNeedsStepFree, familyUsesBuggy } from '@/src/utils/family-mobility';
 import { describeOpeningToday, OpeningTodayState } from '@/src/utils/opening-today';
 import { closureToday, ruleAppliesOn } from '@/src/services/matching/venue-rules';
+import { activeFitPolicy } from '@/src/services/scoring/fit-policy';
 import { reconcileHoursOn } from '@/src/services/places/hours-reconcile';
 import { venueLocalDate } from '@/src/utils/opening-hours';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
@@ -180,14 +181,15 @@ type Status = 'yes' | 'no' | 'unknown';
 const status = (value: unknown): Status => (value === 'yes' ? 'yes' : value === 'no' ? 'no' : 'unknown');
 
 /** Must-have facilities the profile can state, mapped to the venue fact that answers each. */
-function mustHaveStatus(facility: FacilityType, facts: MatchableVenueFacts): { label: string; status: Status } | null {
+function mustHaveStatus(facility: FacilityType, facts: MatchableVenueFacts, stepFreeParty = false): { label: string; status: Status } | null {
   switch (facility) {
     case 'toilets':
       return { label: 'toilets', status: status(facts.toilets) };
     case 'baby_changing':
       return { label: 'baby changing', status: status(facts.babyChanging) };
     case 'parking':
-      return { label: 'parking', status: status(facts.parking) };
+      // See parkingFor in day-request-matcher.ts: for a party with a step-free need, "no parking" is not "no disabled parking".
+      return { label: 'parking', status: stepFreeParty && facts.parking === 'no' && activeFitPolicy().conflictsLast ? 'unknown' : status(facts.parking) };
     case 'playground':
       // Whether there is one, nothing more: a playground is provision, never evidence that it suits a particular child.
       return { label: 'playground', status: status(facts.playground) };
@@ -515,7 +517,11 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
       for (const rule of facts.rules ?? []) {
         if (rule.kind !== 'pushchair' || !ruleAppliesOn(rule, todayDate)) continue;
         const line: MatchLine = { key: `buggy-rule-${rule.id}`, text: rule.text, childIds: buggyKids.map((c) => c.id), topic: 'buggy access', aspect: 'logistics' };
-        if (rule.coversCoreVisit && (buggyOnly.length > 0 || buggyKids.length === 0)) breaches.push(line);
+        // A breach only for a household that STATED buggy access as something it cannot do without: the planner's own line
+        // (hard-conflicts.ts), so Home never says "probably not" about a place Create a Plan would take the family to with
+        // the venue's words at the top. For a household that merely brings a buggy it is a prominent caution.
+        const statedMustHave = (profile.mustHaveFacilities ?? []).includes('pushchair_friendly');
+        if (rule.coversCoreVisit && statedMustHave && (buggyOnly.length > 0 || buggyKids.length === 0)) breaches.push(line);
         else softCautions.push(line);
       }
     }
@@ -547,7 +553,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
     // Must-haves the family stated.
     const stated = new Set<string>();
     for (const facility of profile.mustHaveFacilities ?? []) {
-      const entry = mustHaveStatus(facility, facts);
+      const entry = mustHaveStatus(facility, facts, familyNeedsStepFree(profile));
       if (!entry || stated.has(entry.label)) continue;
       // pushchair access is already handled above for a family with a buggy.
       if (facility === 'pushchair_friendly' && usesBuggy) continue;

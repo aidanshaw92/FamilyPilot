@@ -46,7 +46,7 @@ const SPECS = {
     { fact: 'considerations.hygiene', id: 'wash-hands-animals', kind: 'caution', scope: 'area', area: 'Animal areas' },
   ],
   'natural-history-museum': [
-    { fact: 'opening.closure', id: 'closed-2026-10-09', kind: 'closure', scope: 'venue', from: '2026-10-09', until: '2026-10-09', text: 'Closed on 9 October.' },
+    { fact: 'opening.closure', id: 'closed-2026-10-09', kind: 'closure', scope: 'venue', from: '2026-10-09', until: '2026-10-09', text: 'The South Kensington museum is closed on Friday 9 October 2026 for a charity gala.' },
     { fact: 'opening.closure', id: 'closed-christmas', kind: 'closure', scope: 'venue', from: '2026-12-24', until: '2026-12-26', text: 'Closed 24, 25 and 26 December.' },
     { fact: 'access.lifts-out', id: 'lifts-out-of-order', kind: 'step_free', scope: 'area', area: 'Darwin Centre and Mammals Hall lifts' },
     { fact: 'access.station-step-free', id: 'station-not-step-free', kind: 'step_free', scope: 'area', area: 'South Kensington station' },

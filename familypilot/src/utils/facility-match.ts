@@ -25,3 +25,18 @@ export function buildFacilityMissingCaution(
   const label = missing.map((facility) => FACILITY_NAMES[facility] ?? facility).join(' and ');
   return `Missing ${label}, which you said your family needs`;
 }
+
+/**
+ * The same caution, for a must-have the venue is CONFIRMED not to have. A facility nobody has confirmed is not missing, it is
+ * unchecked (Family Fit lists it under "To check"), so it is not cautioned here. Used by the evidence-aware policy; the
+ * current policy keeps `buildFacilityMissingCaution`.
+ */
+export function buildConfirmedMissingCaution(
+  profile: FamilyProfile,
+  confirmedAbsent: ReadonlyArray<FacilityType>,
+): string | null {
+  const missing = (profile.mustHaveFacilities ?? []).filter((facility) => confirmedAbsent.includes(facility));
+  if (!missing.length) return null;
+  const label = missing.map((facility) => FACILITY_NAMES[facility] ?? facility).join(' and ');
+  return `Missing ${label}, which you said your family needs`;
+}

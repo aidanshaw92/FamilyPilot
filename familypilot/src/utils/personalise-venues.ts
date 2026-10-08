@@ -2,11 +2,15 @@ import { mockVenueDetails, mockVenues } from '@/src/data/mock-data';
 import { driveLimitMinutes } from '@/src/utils/preferences';
 import { calculateFamilyScore } from '@/src/services/scoring/family-score';
 import { evaluateFamilyMatch } from '@/src/services/matching/family-match';
+import { hardConflictsFor } from '@/src/services/matching/hard-conflicts';
 import type { ParentObservations } from '@/src/services/matching/parent-observations';
 import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDetail } from '@/src/types';
 
+import { compareVenuesForFamily } from '@/src/services/places/fit-order';
 import { getChildNames } from './profile-defaults';
-import { buildFacilityMissingCaution } from './facility-match';
+import { buildConfirmedMissingCaution, buildFacilityMissingCaution } from './facility-match';
+import { activeFitPolicy, type FitPolicy } from '@/src/services/scoring/fit-policy';
+import type { FacilityType } from '@/src/types';
 import { familyNeedsStepFree } from './family-mobility';
 
 /**
@@ -39,6 +43,16 @@ export function buildStepFreeCaution(profile: FamilyProfile): string | null {
   return familyNeedsStepFree(profile) ? 'Wheelchair and mobility-aid access isn’t confirmed here' : null;
 }
 
+/** The facilities the venue is CONFIRMED not to have (a claim says no), as opposed to the ones nobody has confirmed. */
+function confirmedAbsentFacilities(venue: Venue, stepFreeParty: boolean): FacilityType[] {
+  const f = venue.trustedFacts;
+  const absent: FacilityType[] = [];
+  if (f?.toilets === 'no') absent.push('toilets');
+  if (f?.babyChanging === 'no') absent.push('baby_changing');
+  if (f?.parking === 'no' && !stepFreeParty) absent.push('parking');
+  return absent;
+}
+
 function toVenueDetail(venue: Venue): VenueDetail {
   const existing = mockVenueDetails[venue.id];
   // The legacy fixture's own driveMinutes/explanation are stale for whichever home
@@ -65,10 +79,10 @@ function toVenueDetail(venue: Venue): VenueDetail {
   };
 }
 
-export function personaliseVenue(venue: Venue, profile: FamilyProfile, parentObservations?: ParentObservations): Venue {
+export function personaliseVenue(venue: Venue, profile: FamilyProfile, parentObservations?: ParentObservations, policy?: FitPolicy): Venue {
   const detail = toVenueDetail(venue);
   const enrichmentStatus: EnrichmentStatus = venue.enrichmentStatus ?? 'provider_only';
-  const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus });
+  const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus, ...(policy ? { policy } : {}) });
   // Everything that counts AGAINST this family lives on the score, in one list: profile-derived
   // cautions first, then the reviewed facts that
   // count against them. The venue's own notes stay in `goodToKnow` and render as notes, not
@@ -77,7 +91,9 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, parentObs
     ...new Set(
       [
         buildDriveCaution(profile, venue.driveMinutes),
-        buildFacilityMissingCaution(profile, detail.facilities),
+        (policy ?? activeFitPolicy()).evidenceAware
+          ? buildConfirmedMissingCaution(profile, confirmedAbsentFacilities(venue, familyNeedsStepFree(profile)))
+          : buildFacilityMissingCaution(profile, detail.facilities),
         buildStepFreeCaution(profile),
         ...(familyScore.cautions ?? []),
       ].filter((caution): caution is string => Boolean(caution)),
@@ -93,6 +109,7 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, parentObs
     ...venue,
     familyScore: { ...familyScore, cautions },
     familyMatch,
+    fitConflicts: hardConflictsFor(venue.trustedFacts, profile),
     goodToKnow: detail.goodToKnow,
     facilities: detail.facilities,
   };
@@ -103,7 +120,7 @@ export function personaliseVenues(venues: Venue[], profile: FamilyProfile): Venu
     .map((venue) => personaliseVenue(venue, profile))
     // A stated limit (with ten minutes' leeway) narrows the list; no stated limit narrows nothing.
     .filter((venue) => driveLimitMinutes(profile) === null || venue.driveMinutes <= (driveLimitMinutes(profile) as number) + 10)
-    .sort((a, b) => b.familyScore.score - a.familyScore.score);
+    .sort((a, b) => compareVenuesForFamily(a, b));
 }
 
 export function buildHomeRecommendations(profile: FamilyProfile): RecommendationSection[] {

@@ -86,6 +86,8 @@ export interface EatNearbyRecommendation {
 }
 
 export interface FamilyScoreFactors {
+  // Under the evidence-aware policy (services/scoring/fit-policy.ts) a factor with nothing to say about the household is NaN:
+  // the blend leaves it out, and every comparison with it is false, so nothing reads it as high or low.
   ageSuitability: number;
   accessibility: number;
   distance: number;
@@ -110,6 +112,11 @@ export interface FamilyScore {
    * warning — and a caution shown with a tick is a false claim.
    */
   cautions?: string[];
+  /**
+   * Why each factor is what it is, per child and per need, when the evidence-aware policy computed the score (see
+   * services/scoring/fit-policy.ts). Absent under the current policy.
+   */
+  basis?: import('@/src/services/scoring/evidence-aware-factors').FitBasis;
 }
 
 export type EnrichmentStatus = 'provider_only' | 'ai_draft' | 'enriched' | 'verified';
@@ -129,6 +136,12 @@ export interface Venue {
    * `familyScore` number ranks; this decides the words.
    */
   familyMatch?: import('@/src/services/matching/family-match').FamilyMatchResult;
+  /**
+   * Confirmed incompatibilities between this venue and the household's non-negotiables, asked of the planner's own matcher
+   * (services/matching/hard-conflicts.ts). Present once personalised. Empty means none is confirmed, which is not the same as
+   * none existing: an unknown is never listed.
+   */
+  fitConflicts?: Array<{ field: string; detail?: string }>;
   estimatedSpend?: string;
   /** Open right now, from the weekly schedule and the clock; undefined when that cannot be said. */
   isOpen?: boolean;
