@@ -5,8 +5,8 @@
   "category": "museum",
   "builtOn": "2026-10-08",
   "counts": {
-    "verified": 11,
-    "review": 8,
+    "verified": 9,
+    "review": 10,
     "unknown": 1
   },
   "facts": [
@@ -102,7 +102,10 @@
         "quote": "There are inclusive toilets available in the Museum, Gardens and Café.",
         "pageSha256": "07c4f7f88813cd83"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says accessible; the quote does not"
+      ]
     },
     {
       "sec": "toilets",
@@ -230,10 +233,17 @@
       "evidence": {
         "url": "https://www.horniman.ac.uk/plan-your-visit/",
         "readAt": "2026-10-08",
-        "quote": "The Museum is open daily, from 10am - 5.30pm",
+        "quote": "The Museum is open daily, from 10am - 5.30pm … the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm",
+        "quotes": [
+          "The Museum is open daily, from 10am - 5.30pm",
+          "the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm"
+        ],
         "pageSha256": "07c4f7f88813cd83"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "conditional, temporary or dated wording"
+      ]
     },
     {
       "sec": "opening",
@@ -280,7 +290,11 @@
       "evidence": {
         "url": "https://www.horniman.ac.uk/plan-your-visit/",
         "readAt": "2026-10-08",
-        "quote": "Aquarium : £2–£16.80 Butterfly House : £2–£28.60 Voyage to the Dee p: £2–£30",
+        "quote": "Aquarium : £2–£16.80 Butterfly House : £2–£28.60 Voyage to the Dee p: £2–£30 … children under three may visit free of charge",
+        "quotes": [
+          "Aquarium : £2–£16.80 Butterfly House : £2–£28.60 Voyage to the Dee p: £2–£30",
+          "children under three may visit free of charge"
+        ],
         "pageSha256": "07c4f7f88813cd83"
       },
       "status": "review",

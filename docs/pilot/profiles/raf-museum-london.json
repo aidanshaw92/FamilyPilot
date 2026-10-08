@@ -5,9 +5,9 @@
   "category": "museum",
   "builtOn": "2026-10-08",
   "counts": {
-    "verified": 12,
+    "verified": 10,
     "unknown": 1,
-    "review": 7
+    "review": 9
   },
   "facts": [
     {
@@ -90,7 +90,10 @@
         "quote": "All our hangars have accessible toilets. All have baby changing facilities and in Hangar 2 you will find a Changing Places Toilet.",
         "pageSha256": "7335b7c167cc3a0c"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says every; the quote does not"
+      ]
     },
     {
       "sec": "toilets",
@@ -103,7 +106,10 @@
         "quote": "All our hangars have accessible toilets.",
         "pageSha256": "7335b7c167cc3a0c"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says every; the quote does not"
+      ]
     },
     {
       "sec": "transport",
@@ -113,7 +119,11 @@
       "evidence": {
         "url": "https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/",
         "readAt": "2026-10-08",
-        "quote": "Our London site is near Colindale Underground Station , on the Edgware branch of the Northern Line (black line).",
+        "quote": "Our London site is near Colindale Underground Station , on the Edgware branch of the Northern Line (black line). … the 303 bus to Edgeware stops right outside the museum's main entrance",
+        "quotes": [
+          "Our London site is near Colindale Underground Station , on the Edgware branch of the Northern Line (black line).",
+          "the 303 bus to Edgeware stops right outside the museum's main entrance"
+        ],
         "pageSha256": "9a70f401649e6f40"
       },
       "status": "verified"
@@ -122,7 +132,7 @@
       "sec": "transport",
       "key": "parking",
       "value": "yes",
-      "text": "On-site car park, charged: up to 3 hours £8.50, 3 to 6 hours £11, Blue Badge holders pay too.",
+      "text": "On-site car park; parking is charged (see the charges item).",
       "evidence": {
         "url": "https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/",
         "readAt": "2026-10-08",
@@ -151,7 +161,7 @@
       "sec": "food",
       "key": "cafe",
       "value": "yes",
-      "text": "Hendon Kitchen, a family-friendly café, and Café Hangar 4.",
+      "text": "Hendon Kitchen, a family-friendly café with a canteen-style menu.",
       "evidence": {
         "url": "https://www.rafmuseum.org.uk/london/plan-your-day/food-and-drink/",
         "readAt": "2026-10-08",

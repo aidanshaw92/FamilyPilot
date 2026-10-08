@@ -6,12 +6,14 @@
  *
  * For every fact with a sentence: the sentence must be found, whitespace-normalised, on a page of the venue's own site whose
  * address ends with the stated suffix. A sentence that is not found STOPS the build. A found sentence is then put through
- * the gate in profile-lib.cjs, which decides verified or review. Facts without a sentence stay hypothesis or unknown.
+ * the gate in profile-lib.cjs, which decides verified or review, and (for a fact the gate would accept) the independent
+ * checks in review-checks.cjs, which can send it to a person. Facts without a sentence stay hypothesis or unknown.
  */
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { gate, norm, SECTIONS } = require('./profile-lib.cjs');
+const { runChecks, worst } = require('./review-checks.cjs');
 
 const args = process.argv.slice(2);
 const flag = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
@@ -57,19 +59,32 @@ for (const file of files) {
         const pathPart = p.url.replace(/^https?:\/\/[^/]+/, '').replace(/\/$/, '') || '/';
         return suffix === '/' ? pathPart === '/' || pathPart === '' : pathPart.replace(/\/$/, '').endsWith(suffix.replace(/\/$/, ''));
       });
-      const hit = candidates.find((p) => norm(p.text).includes(norm(f.q)));
+      // A fact may rest on several sentences of the SAME page (`q` as an array): each is found verbatim on it, and the proposal may
+      // use only what they say together. One sentence per fact is not required; the proposal being wider than its quotes is the
+      // defect the independent checks look for (review-checks.cjs).
+      const quotes = Array.isArray(f.q) ? f.q : [f.q];
+      const hit = candidates.find((p) => quotes.every((q) => norm(p.text).includes(norm(q))));
       if (!hit) {
         failures += 1;
-        console.error(`NOT FOUND  ${src.name} ${f.sec}.${f.key}  suffix=${suffix}  pages=${candidates.length}\n    "${f.q.slice(0, 110)}"`);
+        console.error(`NOT FOUND  ${src.name} ${f.sec}.${f.key}  suffix=${suffix}  pages=${candidates.length}\n    "${quotes.map((q) => q.slice(0, 110)).join('" + "')}"`);
         out.status = 'error';
         built.push(out);
         continue;
       }
-      out.evidence = { url: hit.url, readAt: hit.readAt.slice(0, 10), quote: f.q, pageSha256: crypto.createHash('sha256').update(hit.text).digest('hex').slice(0, 16) };
+      out.evidence = { url: hit.url, readAt: hit.readAt.slice(0, 10), quote: quotes.join(' … '), ...(quotes.length > 1 ? { quotes } : {}), pageSha256: crypto.createHash('sha256').update(hit.text).digest('hex').slice(0, 16) };
       if ((f.st ?? 'fact') === 'fact') {
         const g = gate(f, { url: hit.url, readAt: hit.readAt.slice(0, 10) }, today);
         out.status = g.status;
         if (g.reasons.length) out.reviewReasons = g.reasons;
+        // The independent checks run on every fact the gate would accept, and a fact that fails or is doubted by one is not accepted
+        // without a person. The gate asks "is this the right KIND of fact"; these ask "does the evidence say what the proposal says".
+        if (out.status === 'verified') {
+          const found = runChecks({ ...out, evidence: out.evidence }, { slug: file.replace(/\.cjs$/, ''), site: src.site }).filter((c) => c.level !== 'pass');
+          if (found.length) {
+            out.status = 'review';
+            out.reviewReasons = [...(out.reviewReasons ?? []), ...found.map((c) => `independent check (${c.id}): ${c.detail}`)];
+          }
+        }
       } else {
         out.status = f.st; // a hypothesis keeps its basis sentence but is never shown as a fact
       }

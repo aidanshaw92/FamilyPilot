@@ -5,9 +5,9 @@
   "category": "park",
   "builtOn": "2026-10-08",
   "counts": {
-    "review": 4,
-    "verified": 2,
+    "review": 5,
     "unknown": 6,
+    "verified": 1,
     "hypothesis": 2
   },
   "sources": [
@@ -62,7 +62,10 @@
         "quote": "It has a riverside promenade, a large lake, many notable trees and ecological areas, children's play areas, a children's zoo, the Pump House gallery, ceremony venue and sports facilities.",
         "pageSha256": "dfaac2e1e3436ec1"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (shares-content): 17% of the proposal's content words are in the quote"
+      ]
     },
     {
       "sec": "activities",
@@ -104,7 +107,7 @@
       "evidence": {
         "url": "https://www.wandsworth.gov.uk/batterseapark",
         "readAt": "2026-10-08",
-        "quote": "Pedestrian access at Albert Bridge Road, Prince of Wales Drive and Queenstown Road (SW11 4NJ).",
+        "quote": "main gate pedestrian access at Albert Bridge Road, Prince of Wales Drive and Queenstown Road (SW11 4NJ)",
         "pageSha256": "dfaac2e1e3436ec1"
       },
       "status": "verified"

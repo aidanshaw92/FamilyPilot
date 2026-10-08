@@ -120,7 +120,11 @@
     "evidence": {
      "url": "https://discover.org.uk/your-visit/",
      "readAt": "2026-10-08",
-     "quote": "Discover is open every day, 10am - 5pm",
+     "quote": "Discover is open every day, 10am - 5pm … We're closed on 24, 25, 26, 31 December and 1 January over the festive period.",
+     "quotes": [
+      "Discover is open every day, 10am - 5pm",
+      "We're closed on 24, 25, 26, 31 December and 1 January over the festive period."
+     ],
      "pageSha256": "6c7bf457e9d6cdee"
     }
    }
@@ -202,11 +206,15 @@
      "close": "17:30"
     },
     "fact": "opening.hours",
-    "status": "verified",
+    "status": "review",
     "evidence": {
      "url": "https://www.horniman.ac.uk/plan-your-visit/",
      "readAt": "2026-10-08",
-     "quote": "The Museum is open daily, from 10am - 5.30pm",
+     "quote": "The Museum is open daily, from 10am - 5.30pm … the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm",
+     "quotes": [
+      "The Museum is open daily, from 10am - 5.30pm",
+      "the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm"
+     ],
      "pageSha256": "07c4f7f88813cd83"
     }
    },
@@ -227,11 +235,15 @@
      "close": "18:30"
     },
     "fact": "opening.hours",
-    "status": "verified",
+    "status": "review",
     "evidence": {
      "url": "https://www.horniman.ac.uk/plan-your-visit/",
      "readAt": "2026-10-08",
-     "quote": "The Museum is open daily, from 10am - 5.30pm",
+     "quote": "The Museum is open daily, from 10am - 5.30pm … the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm",
+     "quotes": [
+      "The Museum is open daily, from 10am - 5.30pm",
+      "the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm"
+     ],
      "pageSha256": "07c4f7f88813cd83"
     }
    },
@@ -247,11 +259,15 @@
      "close": "18:30"
     },
     "fact": "opening.hours",
-    "status": "verified",
+    "status": "review",
     "evidence": {
      "url": "https://www.horniman.ac.uk/plan-your-visit/",
      "readAt": "2026-10-08",
-     "quote": "The Museum is open daily, from 10am - 5.30pm",
+     "quote": "The Museum is open daily, from 10am - 5.30pm … the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm",
+     "quotes": [
+      "The Museum is open daily, from 10am - 5.30pm",
+      "the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm"
+     ],
      "pageSha256": "07c4f7f88813cd83"
     }
    }

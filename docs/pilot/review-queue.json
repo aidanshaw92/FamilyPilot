@@ -108,6 +108,23 @@
    "estimatedSeconds": 19
   },
   {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:considerations.duration",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "venue": "Babylon Park London",
+   "held": false,
+   "field": "considerations.duration",
+   "proposed": "A visit takes about two hours.",
+   "value": 120,
+   "sentence": "Duration: Varies based on ticket purchased, we recommend 2 hours.",
+   "url": "https://babylonpark.com/london/",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "independent check (shares-content): 20% of the proposal's content words are in the quote"
+   ],
+   "wordsToRead": 29,
+   "estimatedSeconds": 14
+  },
+  {
    "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:activities.playground",
    "venueId": "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4",
    "venue": "Battersea Park",
@@ -124,6 +141,23 @@
    ],
    "wordsToRead": 71,
    "estimatedSeconds": 26
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:activities.childrens-zoo",
+   "venueId": "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4",
+   "venue": "Battersea Park",
+   "held": false,
+   "field": "activities.childrens-zoo",
+   "proposed": "A children's zoo is listed among the park's features. Nothing else is said about it on the council pages.",
+   "value": null,
+   "sentence": "It has a riverside promenade, a large lake, many notable trees and ecological areas, children's play areas, a children's zoo, the Pump House gallery, ceremony venue and sports facilities.",
+   "url": "https://www.wandsworth.gov.uk/batterseapark",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "independent check (shares-content): 17% of the proposal's content words are in the quote"
+   ],
+   "wordsToRead": 61,
+   "estimatedSeconds": 23
   },
   {
    "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:play.playground",
@@ -280,6 +314,23 @@
    "estimatedSeconds": 27
   },
   {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.storage",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "venue": "Discover Children's Story Centre",
+   "held": false,
+   "field": "pushchair.storage",
+   "proposed": "Buggy storage on the ground floor, and in the basement or garden.",
+   "value": "yes",
+   "sentence": "We have storage for buggies in our basement and/ or garden but many of our spaces cannot have buggies in",
+   "url": "https://discover.org.uk/your-visit/faqs/",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "independent check (polarity): the quote has a negation near the subject while the fact says yes"
+   ],
+   "wordsToRead": 48,
+   "estimatedSeconds": 20
+  },
+  {
    "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.accessibleToilet",
    "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
    "venue": "Discover Children's Story Centre",
@@ -355,7 +406,7 @@
    "venue": "Discover Children's Story Centre",
    "held": false,
    "field": "access.sensory",
-   "proposed": "Sensory-adapted and BSL events, and a free Saturday club for disabled children and children with SEN (5 to 11).",
+   "proposed": "Sensory-adapted and BSL events; children with SEN and other additional needs are welcome on any day.",
    "value": "yes",
    "sentence": "we welcome kids with SEN and other additional needs on any and every day but you can also choose from various Sensory Adapted and BSL events",
    "url": "https://discover.org.uk/your-visit/faqs/",
@@ -363,7 +414,24 @@
    "reasons": [
     "an accessibility claim (high impact)"
    ],
-   "wordsToRead": 50,
+   "wordsToRead": 47,
+   "estimatedSeconds": 19
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:access.saturday-club",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "venue": "Discover Children's Story Centre",
+   "held": false,
+   "field": "access.saturday-club",
+   "proposed": "Mighty Mega, a free Saturday-morning club (2 hours) for disabled children and children with SEN, age guide 5 to 11.",
+   "value": "yes",
+   "sentence": "Mighty Mega Dates: Saturday mornings Age guide: 5-11 Duration: 2 hours A free weekly club at Discover for disabled children and children with SEN",
+   "url": "https://www.discover.org.uk/",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "an accessibility claim (high impact)"
+   ],
+   "wordsToRead": 49,
    "estimatedSeconds": 20
   },
   {
@@ -495,16 +563,16 @@
    "venue": "Gunnersbury Park",
    "held": false,
    "field": "access.relaxed",
-   "proposed": "Relaxed sessions every half term; quieter times are weekdays 2 to 4pm, weekend mornings 10 to 12.",
+   "proposed": "Relaxed sessions every half term; quieter times are typically weekdays 2pm to 4pm and weekends 10am to 12pm.",
    "value": "yes",
-   "sentence": "We offer Relaxed Sessions every half term.",
+   "sentence": "We offer Relaxed Sessions every half term. … quieter times are typically: weekdays: 2:00pm-4:00pm … weekends: 10:00am-12:00pm",
    "url": "https://www.visitgunnersbury.org/museum/accessibility",
    "readOn": "2026-10-08",
    "reasons": [
     "an accessibility claim (high impact)"
    ],
-   "wordsToRead": 29,
-   "estimatedSeconds": 14
+   "wordsToRead": 40,
+   "estimatedSeconds": 17
   },
   {
    "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:opening.hours",
@@ -576,6 +644,23 @@
    "estimatedSeconds": 19
   },
   {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:toilets.accessibleToilet",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "venue": "Horniman Museum and Gardens",
+   "held": false,
+   "field": "toilets.accessibleToilet",
+   "proposed": "Accessible toilets in the museum, the gardens and the café; no hoists or adult changing.",
+   "value": "yes",
+   "sentence": "There are inclusive toilets available in the Museum, Gardens and Café.",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "independent check (no-over-reach): the proposal says accessible; the quote does not"
+   ],
+   "wordsToRead": 37,
+   "estimatedSeconds": 17
+  },
+  {
    "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.parking",
    "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
    "venue": "Horniman Museum and Gardens",
@@ -630,6 +715,23 @@
    "estimatedSeconds": 25
   },
   {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:opening.hours",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "venue": "Horniman Museum and Gardens",
+   "held": false,
+   "field": "opening.hours",
+   "proposed": "Museum open daily 10am to 5.30pm; gardens from 7.15am (8am Sundays and bank holidays) to 6.30pm.",
+   "value": "Museum 10:00-17:30; Gardens 7:15-18:30",
+   "sentence": "The Museum is open daily, from 10am - 5.30pm … the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm",
+   "url": "https://www.horniman.ac.uk/plan-your-visit/",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "conditional, temporary or dated wording"
+   ],
+   "wordsToRead": 46,
+   "estimatedSeconds": 19
+  },
+  {
    "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:opening.closure",
    "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
    "venue": "Horniman Museum and Gardens",
@@ -675,15 +777,15 @@
     "aquarium": "£2 to £16.80",
     "butterflyHouse": "£2 to £28.60"
    },
-   "sentence": "Aquarium : £2–£16.80 Butterfly House : £2–£28.60 Voyage to the Dee p: £2–£30",
+   "sentence": "Aquarium : £2–£16.80 Butterfly House : £2–£28.60 Voyage to the Dee p: £2–£30 … children under three may visit free of charge",
    "url": "https://www.horniman.ac.uk/plan-your-visit/",
    "readOn": "2026-10-08",
    "reasons": [
     "a price or a free-entry claim (drives cost)"
    ],
    "note": "A range that starts at the Universal Credit price is not a price a typical family pays; no total is computed.",
-   "wordsToRead": 71,
-   "estimatedSeconds": 26
+   "wordsToRead": 80,
+   "estimatedSeconds": 29
   },
   {
    "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:considerations.busy-cafe",
@@ -710,14 +812,14 @@
    "field": "activities.zootown",
    "proposed": "ZooTown is an indoor role-play adventure aimed at children up to 8; every child is welcome. Book online; £1 per child for non-members.",
    "value": null,
-   "sentence": "ZooTown is a brand new indoor role play adventure for kids in the heart of London Zoo aimed at children aged up to 8.",
+   "sentence": "ZooTown is a brand new indoor role play adventure for kids in the heart of London Zoo aimed at children aged up to 8. … Silver members and non-members pay £1 per child",
    "url": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
    "readOn": "2026-10-08",
    "reasons": [
     "says who a place is for (drives suitability)"
    ],
-   "wordsToRead": 55,
-   "estimatedSeconds": 22
+   "wordsToRead": 64,
+   "estimatedSeconds": 24
   },
   {
    "id": "ChIJV_iXMtcadkgRqBI84CY_crE:pushchair.hire",
@@ -834,15 +936,32 @@
     "adult16to64": "£27.70 to £34.50",
     "child3to15": "£19.40 to £24.10"
    },
-   "sentence": "Online advance ticket prices without donation Off Peak Weekday Standard Standard Weekend Peak Adult (age 16-64) £ 27.70 £ 31.80 £ 33.60 £ 34.50 Child (age 3-15) £ 19.40 £ 22.20 £ 23.50 £ 24.10",
+   "sentence": "Online advance ticket prices without donation Off Peak Weekday Standard Standard Weekend Peak Adult (age 16-64) £ 27.70 £ 31.80 £ 33.60 £ 34.50 Child (age 3-15) £ 19.40 £ 22.20 £ 23.50 £ 24.10 … the prices below apply for tickets bought at the entrance, or online from 10am on the date of the visit",
    "url": "https://www.londonzoo.org/plan-your-visit/london-zoo-tickets",
    "readOn": "2026-10-08",
    "reasons": [
     "a price or a free-entry claim (drives cost)"
    ],
    "note": "Price depends on which of four day types the visit falls on, and the page does not say which dates are which. A total for a family is therefore not computed.",
-   "wordsToRead": 104,
-   "estimatedSeconds": 36
+   "wordsToRead": 125,
+   "estimatedSeconds": 42
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:activities.farm-animals",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "venue": "Mudchute Park and Farm",
+   "held": false,
+   "field": "activities.farm-animals",
+   "proposed": "A 32 acre park and farm with over 100 animals, free to visit, \"for people of all ages\". No age is given for any one thing.",
+   "value": null,
+   "sentence": "We do not charge admission fees to visit our park and farm which has 32 acres and over 100 animals for people of all ages to enjoy.",
+   "url": "https://www.mudchute.org/plan-your-visit/facilities",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "independent check (no-over-reach): the proposal says free; the quote does not"
+   ],
+   "wordsToRead": 64,
+   "estimatedSeconds": 24
   },
   {
    "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:pushchair.terrain",
@@ -1016,6 +1135,40 @@
    "estimatedSeconds": 26
   },
   {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.accessibleToilet",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "venue": "Natural History Museum",
+   "held": false,
+   "field": "toilets.accessibleToilet",
+   "proposed": "Wheelchair-accessible toilets, and a Changing Places toilet in the North Wing.",
+   "value": "yes",
+   "sentence": "We also have a Changing Places toilet on the Ground Floor of our North Wing.",
+   "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "independent check (no-over-reach): the proposal says accessible, wheelchair; the quote does not"
+   ],
+   "wordsToRead": 38,
+   "estimatedSeconds": 17
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:transport.station",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "venue": "Natural History Museum",
+   "held": false,
+   "field": "transport.station",
+   "proposed": "Nearest Tube is South Kensington; a subway tunnel gives a step-free way to the Central Entrance.",
+   "value": "South Kensington",
+   "sentence": "The nearest Tube station is South Kensington.",
+   "url": "https://www.nhm.ac.uk/visit/getting-here.html",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "independent check (no-over-reach): the proposal says free, step-free; the quote does not"
+   ],
+   "wordsToRead": 35,
+   "estimatedSeconds": 16
+  },
+  {
    "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:transport.parking",
    "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
    "venue": "Natural History Museum",
@@ -1055,7 +1208,7 @@
    "venue": "Natural History Museum",
    "held": false,
    "field": "access.lifts-out",
-   "proposed": "Lifts in the Darwin Centre and the Mammals Hall were out of order on 6 October.",
+   "proposed": "Lifts in the Darwin Centre and the Mammals Hall are listed as currently out of order. The page does not date the notice, so it is shown as of the reading.",
    "value": "no",
    "sentence": "Lifts: A number of lifts in the Darwin Centre are currently out of order The lift in our Mammals Hall is currently out of order.",
    "url": "https://www.nhm.ac.uk/visit/galleries-and-museum-map.html",
@@ -1066,8 +1219,8 @@
     "conditional, temporary or dated wording",
     "applies to part of the venue"
    ],
-   "wordsToRead": 64,
-   "estimatedSeconds": 24
+   "wordsToRead": 79,
+   "estimatedSeconds": 29
   },
   {
    "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:access.station-step-free",
@@ -1191,6 +1344,40 @@
    ],
    "wordsToRead": 35,
    "estimatedSeconds": 16
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:toilets.babyChanging",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "venue": "Royal Air Force Museum London",
+   "held": false,
+   "field": "toilets.babyChanging",
+   "proposed": "Baby changing in every hangar; a Changing Places toilet in Hangar 2.",
+   "value": "yes",
+   "sentence": "All our hangars have accessible toilets. All have baby changing facilities and in Hangar 2 you will find a Changing Places Toilet.",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "independent check (no-over-reach): the proposal says every; the quote does not"
+   ],
+   "wordsToRead": 45,
+   "estimatedSeconds": 19
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:toilets.toilets",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "venue": "Royal Air Force Museum London",
+   "held": false,
+   "field": "toilets.toilets",
+   "proposed": "Toilets in every hangar (the page calls them accessible toilets).",
+   "value": "yes",
+   "sentence": "All our hangars have accessible toilets.",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "independent check (no-over-reach): the proposal says every; the quote does not"
+   ],
+   "wordsToRead": 27,
+   "estimatedSeconds": 14
   },
   {
    "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:transport.parkingFee",
@@ -1320,14 +1507,14 @@
    "field": "activities.bubble-explorers",
    "proposed": "Bubble Explorers is a live bubbles show for children 7 and under, at weekends and daily in school holidays (£4.50; free for 2 and under).",
    "value": null,
-   "sentence": "Perfect for children aged 7 and under, Bubble Explorer s takes place on weekends and every day during school holidays.",
+   "sentence": "Perfect for children aged 7 and under, Bubble Explorer s takes place on weekends and every day during school holidays. … Tickets are £4.50 per person with free entry for children aged 2 and under",
    "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
    "readOn": "2026-10-08",
    "reasons": [
     "says who a place is for (drives suitability)"
    ],
-   "wordsToRead": 53,
-   "estimatedSeconds": 21
+   "wordsToRead": 68,
+   "estimatedSeconds": 25
   },
   {
    "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:activities.wonderlab",
@@ -1365,6 +1552,58 @@
    "estimatedSeconds": 23
   },
   {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.toilets",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "venue": "Science Museum",
+   "held": false,
+   "field": "toilets.toilets",
+   "proposed": "Toilets on every level (the page describes the accessible ones).",
+   "value": "yes",
+   "sentence": "Accessible toilets are available on all levels of the museum.",
+   "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "independent check (no-over-reach): the proposal says every; the quote does not"
+   ],
+   "note": "Derived: accessible toilets are toilets. General toilet blocks are not described separately.",
+   "wordsToRead": 43,
+   "estimatedSeconds": 18
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.babyChanging",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "venue": "Science Museum",
+   "held": false,
+   "field": "toilets.babyChanging",
+   "proposed": "Baby changing on every floor.",
+   "value": "yes",
+   "sentence": "Baby changing facilities are located throughout all floors of the museum.",
+   "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "independent check (no-over-reach): the proposal says every; the quote does not"
+   ],
+   "wordsToRead": 27,
+   "estimatedSeconds": 14
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.accessibleToilet",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "venue": "Science Museum",
+   "held": false,
+   "field": "toilets.accessibleToilet",
+   "proposed": "Accessible toilets on every level.",
+   "value": "yes",
+   "sentence": "Accessible toilets are available on all levels of the museum.",
+   "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "independent check (no-over-reach): the proposal says every; the quote does not"
+   ],
+   "wordsToRead": 26,
+   "estimatedSeconds": 13
+  },
+  {
    "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.parking",
    "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
    "venue": "Science Museum",
@@ -1389,14 +1628,14 @@
    "field": "access.stepFreeRoute",
    "proposed": "A step-free route for families with under-7s links the toddler galleries.",
    "value": "yes",
-   "sentence": "this free guide can be enjoyed at your own pace and follows a step-free route through the museum",
+   "sentence": "this free guide can be enjoyed at your own pace and follows a step-free route through the museum … perfect for families with children under seven",
    "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
    "readOn": "2026-10-08",
    "reasons": [
     "an accessibility claim (high impact)"
    ],
-   "wordsToRead": 34,
-   "estimatedSeconds": 16
+   "wordsToRead": 42,
+   "estimatedSeconds": 18
   },
   {
    "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:access.mezzanine",

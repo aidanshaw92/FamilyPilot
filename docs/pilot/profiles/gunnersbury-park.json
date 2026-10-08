@@ -108,7 +108,13 @@
       "evidence": {
         "url": "https://www.visitgunnersbury.org/plan-your-visit",
         "readAt": "2026-10-08",
-        "quote": "Acton Town Tube Station Piccadilly and District lines Turn left when you leave the station and walk along Gunnersbury Lane for about ten minutes",
+        "quote": "Acton Town Tube Station Piccadilly and District lines Turn left when you leave the station and walk along Gunnersbury Lane for about ten minutes … you can catch the E3 bus travelling towards Acton Town which will drop you outside the Popes Lane entrance … the 65 route goes along South Ealing Road … take the H91 towards West Hounslow",
+        "quotes": [
+          "Acton Town Tube Station Piccadilly and District lines Turn left when you leave the station and walk along Gunnersbury Lane for about ten minutes",
+          "you can catch the E3 bus travelling towards Acton Town which will drop you outside the Popes Lane entrance",
+          "the 65 route goes along South Ealing Road",
+          "take the H91 towards West Hounslow"
+        ],
         "pageSha256": "80e5273c99d6548a"
       },
       "status": "verified"
@@ -117,11 +123,19 @@
       "sec": "transport",
       "key": "parking",
       "value": "yes",
-      "text": "Two car parks, charged at all times: £1 for 30 minutes to 1 hour, £1 an hour after; Blue Badge holders free.",
+      "text": "Two car parks. The first 30 minutes are free; then £1 for 30 minutes to 1 hour and £1 an hour after. Charges apply at all times, including bank holidays. Blue Badge parking is free.",
       "evidence": {
         "url": "https://www.visitgunnersbury.org/plan-your-visit",
         "readAt": "2026-10-08",
-        "quote": "There are two car parks available at Gunnersbury.",
+        "quote": "There are two car parks available at Gunnersbury. … 30 minutes - 1 hour £1 … longer than an hour £1 per hour … charges apply at all times, including bank holidays … 30 minutes of free parking … parking is free",
+        "quotes": [
+          "There are two car parks available at Gunnersbury.",
+          "30 minutes - 1 hour £1",
+          "longer than an hour £1 per hour",
+          "charges apply at all times, including bank holidays",
+          "30 minutes of free parking",
+          "parking is free"
+        ],
         "pageSha256": "80e5273c99d6548a"
       },
       "status": "verified"
@@ -196,12 +210,17 @@
       "sec": "access",
       "key": "relaxed",
       "value": "yes",
-      "text": "Relaxed sessions every half term; quieter times are weekdays 2 to 4pm, weekend mornings 10 to 12.",
+      "text": "Relaxed sessions every half term; quieter times are typically weekdays 2pm to 4pm and weekends 10am to 12pm.",
       "goodToKnow": true,
       "evidence": {
         "url": "https://www.visitgunnersbury.org/museum/accessibility",
         "readAt": "2026-10-08",
-        "quote": "We offer Relaxed Sessions every half term.",
+        "quote": "We offer Relaxed Sessions every half term. … quieter times are typically: weekdays: 2:00pm-4:00pm … weekends: 10:00am-12:00pm",
+        "quotes": [
+          "We offer Relaxed Sessions every half term.",
+          "quieter times are typically: weekdays: 2:00pm-4:00pm",
+          "weekends: 10:00am-12:00pm"
+        ],
         "pageSha256": "ec86c9322aee8ef7"
       },
       "status": "review",

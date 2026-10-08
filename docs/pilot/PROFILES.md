@@ -12,7 +12,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 | Gunnersbury Park | Discoverable | Recommendation-ready | **Recommendation-ready** | - |
 | Horniman Museum and Gardens | Discoverable | Recommendation-ready | **Recommendation-ready** | - |
 | London Zoo | Discoverable | Discoverable | **Highly personalised** | - |
-| Mudchute Park and Farm | Discoverable | Recommendation-ready | **Recommendation-ready** | - |
+| Mudchute Park and Farm | Discoverable | Discoverable | **Recommendation-ready** | - |
 | Natural History Museum | Discoverable | Discoverable | **Recommendation-ready** | - |
 | Royal Air Force Museum London | Recommendation-ready | Recommendation-ready | **Recommendation-ready** | - |
 | Science Museum | Discoverable | Discoverable | **Highly personalised** | - |
@@ -20,12 +20,12 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 ## Babylon Park London
 
-7 verified · 6 proposed · 3 unknown · 0 hypothesis. Level if every proposal is approved: **Discoverable**.
+6 verified · 7 proposed · 3 unknown · 0 hypothesis. Level if every proposal is approved: **Discoverable**.
 
 **What children can do**
 
 - ◐ Soft play areas for toddlers and kids on the mezzanine. _(12 months to under 3 years, provision)_ [source](https://babylonpark.com/london/) · read 2026-10-08 _Needs a person: says who a place is for (drives suitability)._
-- ✔ Seven indoor rides including bumper cars, a carousel and a kiddie wheel, hundreds of arcade games and VR. No minimum age; two rides have a 105cm height limit. [source](https://babylonpark.com/london/) · read 2026-10-08
+- ✔ Indoor rides including bumper cars, a carousel and a kiddie wheel, plus hundreds of arcade games and VR. No minimum age; the rollercoaster and drop tower have a 105cm height limit. [source](https://babylonpark.com/london/) · read 2026-10-08
 - ? Ages for the soft play, carousel and kiddie wheel: not stated. _The page says "toddlers and kids" for soft play and "no minimum age" overall._
 
 **Pushchairs and buggies**
@@ -66,19 +66,19 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 **Worth knowing before you go**
 
 - ◐ No minimum age, but the rollercoaster and drop tower have a minimum height of 105cm. [source](https://babylonpark.com/london/) · read 2026-10-08 _Needs a person: not a fact type that may be accepted without a person._
-- ✔ A visit takes about two hours. [source](https://babylonpark.com/london/) · read 2026-10-08
+- ◐ A visit takes about two hours. [source](https://babylonpark.com/london/) · read 2026-10-08 _Needs a person: independent check (shares-content): 20% of the proposal's content words are in the quote._
 
 
 ## Battersea Park
 
 > **Source unavailable.** enablelc.org (operator): HTTP 403, refused, observed 2026-10-08; The park operator's site answered HTTP 403 to the bounded reader. Not retried (never automatically). Alternatives that are permitted: The council's own pages (read); OpenStreetMap features for the park (toilets, cafés, playgrounds), read on a runner under its open licence; A person who has visited, through the parent-observation path.
 
-2 verified · 4 proposed · 6 unknown · 2 hypothesis. Level if every proposal is approved: **Discoverable**.
+1 verified · 5 proposed · 6 unknown · 2 hypothesis. Level if every proposal is approved: **Discoverable**.
 
 **What children can do**
 
 - ◐ A playground for 4 to 14 year olds (swings, slides, exercise stations, trapeze bars, an activity rocker). The page is titled "toddlers and juniors" but gives 4 to 14. _(4 years to under 15 years, provision)_ [source](https://www.wandsworth.gov.uk/leisure-and-culture/parks-and-open-spaces/childrens-playgrounds/battersea-park-playground-for-toddlers-and-juniors/) · read 2026-10-08 _Needs a person: says who a place is for (drives suitability); conflicts with the page's own title ("for toddlers and juniors"), which suggests younger children than the stated 4 to 14._
-- ✔ A children's zoo is listed among the park's features. Nothing else is said about it on the council pages. [source](https://www.wandsworth.gov.uk/batterseapark) · read 2026-10-08
+- ◐ A children's zoo is listed among the park's features. Nothing else is said about it on the council pages. [source](https://www.wandsworth.gov.uk/batterseapark) · read 2026-10-08 _Needs a person: independent check (shares-content): 17% of the proposal's content words are in the quote._
 - ? Anything for under-4s: not stated. _The only age-specific page is for 4 to 14._
 
 **Pushchairs and buggies**
@@ -122,7 +122,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 ## Discover Children's Story Centre
 
-7 verified · 15 proposed · 0 unknown · 0 hypothesis. Level if every proposal is approved: **Recommendation-ready**.
+6 verified · 17 proposed · 0 unknown · 0 hypothesis. Level if every proposal is approved: **Recommendation-ready**.
 
 **What children can do**
 
@@ -136,7 +136,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 - ◐ Pushchairs and buggies are not allowed in any storytelling or play areas. Buggy parking on the ground floor; bring a sling for a smaller baby. [source](https://discover.org.uk/getting-here/) · read 2026-10-08 _Needs a person: not a fact type that may be accepted without a person._
 - ◐ If a pushchair is needed (twins, a sleeping child), ask front of house; they will advise and accommodate where needed. [source](https://discover.org.uk/your-visit/faqs/) · read 2026-10-08 _Needs a person: not a fact type that may be accepted without a person._
-- ✔ Buggy storage on the ground floor, and in the basement or garden. [source](https://discover.org.uk/your-visit/faqs/) · read 2026-10-08
+- ◐ Buggy storage on the ground floor, and in the basement or garden. [source](https://discover.org.uk/your-visit/faqs/) · read 2026-10-08 _Needs a person: independent check (polarity): the quote has a negation near the subject while the fact says yes._
 
 **Toilets and baby changing**
 
@@ -146,7 +146,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 **Getting there and parking**
 
-- ✔ One minute from Stratford High Street DLR (no step-free access there; use Stratford, 5 minutes). Many buses. [source](https://discover.org.uk/getting-here/) · read 2026-10-08
+- ✔ One minute from Stratford High Street DLR station. Many bus routes. [source](https://discover.org.uk/getting-here/) · read 2026-10-08 _The page also says there is no step-free access at that station "until July 2025", a date already past; that is kept as its own unresolved item, not stated here as a fact._
 - ◐ No parking on site; Stratford multi-storey car park is a 5 minute walk. Blue Badge bays nearby. [source](https://discover.org.uk/getting-here/) · read 2026-10-08 _Needs a person: a negative claim (can exclude a venue)._
 
 **Food**
@@ -156,7 +156,8 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 **Accessibility**
 
 - ◐ Lifts to all floors; staff can help. [source](https://discover.org.uk/your-visit/faqs/) · read 2026-10-08 _Needs a person: an accessibility claim (high impact)._
-- ◐ Sensory-adapted and BSL events, and a free Saturday club for disabled children and children with SEN (5 to 11). [source](https://discover.org.uk/your-visit/faqs/) · read 2026-10-08 _Needs a person: an accessibility claim (high impact)._
+- ◐ Sensory-adapted and BSL events; children with SEN and other additional needs are welcome on any day. [source](https://discover.org.uk/your-visit/faqs/) · read 2026-10-08 _Needs a person: an accessibility claim (high impact)._
+- ◐ Mighty Mega, a free Saturday-morning club (2 hours) for disabled children and children with SEN, age guide 5 to 11. [source](https://www.discover.org.uk/) · read 2026-10-08 _Needs a person: an accessibility claim (high impact)._
 
 **Opening**
 
@@ -198,7 +199,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 **Getting there and parking**
 
 - ✔ Ten minutes' walk from Acton Town (Piccadilly, District) or South Ealing; Kew Bridge rail; E3, 65 and H91 buses. [source](https://www.visitgunnersbury.org/plan-your-visit) · read 2026-10-08
-- ✔ Two car parks, charged at all times: £1 for 30 minutes to 1 hour, £1 an hour after; Blue Badge holders free. [source](https://www.visitgunnersbury.org/plan-your-visit) · read 2026-10-08
+- ✔ Two car parks. The first 30 minutes are free; then £1 for 30 minutes to 1 hour and £1 an hour after. Charges apply at all times, including bank holidays. Blue Badge parking is free. [source](https://www.visitgunnersbury.org/plan-your-visit) · read 2026-10-08
 - ✔ Free designated disabled parking in both car parks. [source](https://www.visitgunnersbury.org/plan-your-visit) · read 2026-10-08
 
 **Food**
@@ -213,7 +214,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 - ◐ The museum lift serves all galleries and suits wheelchairs, including small motorised ones. [source](https://www.visitgunnersbury.org/plan-your-visit) · read 2026-10-08 _Needs a person: an accessibility claim (high impact)._
 - ◐ Step-free access throughout the museum (some ramps and slopes); a lift to all levels; a manual wheelchair to borrow. [source](https://www.visitgunnersbury.org/museum/accessibility) · read 2026-10-08 _Needs a person: an accessibility claim (high impact)._
-- ◐ Relaxed sessions every half term; quieter times are weekdays 2 to 4pm, weekend mornings 10 to 12. [source](https://www.visitgunnersbury.org/museum/accessibility) · read 2026-10-08 _Needs a person: an accessibility claim (high impact)._
+- ◐ Relaxed sessions every half term; quieter times are typically weekdays 2pm to 4pm and weekends 10am to 12pm. [source](https://www.visitgunnersbury.org/museum/accessibility) · read 2026-10-08 _Needs a person: an accessibility claim (high impact)._
 
 **Opening**
 
@@ -230,7 +231,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 ## Horniman Museum and Gardens
 
-11 verified · 8 proposed · 1 unknown · 0 hypothesis. Level if every proposal is approved: **Recommendation-ready**.
+9 verified · 10 proposed · 1 unknown · 0 hypothesis. Level if every proposal is approved: **Recommendation-ready**.
 
 **What children can do**
 
@@ -246,7 +247,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 - ✔ Baby changing in the Gallery Square toilets, near the Bandstand and by the Kusuma Nature Play Area. [source](https://www.horniman.ac.uk/plan-your-visit/) · read 2026-10-08
 - ✔ Toilets off Gallery Square (downstairs), in the gardens near the Bandstand, and by the Kusuma Nature Play Area. [source](https://www.horniman.ac.uk/plan-your-visit/) · read 2026-10-08
-- ✔ Accessible toilets in the museum, the gardens and the café; no hoists or adult changing. [source](https://www.horniman.ac.uk/plan-your-visit/) · read 2026-10-08
+- ◐ Accessible toilets in the museum, the gardens and the café; no hoists or adult changing. [source](https://www.horniman.ac.uk/plan-your-visit/) · read 2026-10-08 _Needs a person: independent check (no-over-reach): the proposal says accessible; the quote does not._
 - ✔ A breastfeeding room off Gallery Square; breastfeeding is welcome everywhere. [source](https://www.horniman.ac.uk/plan-your-visit/) · read 2026-10-08
 
 **Getting there and parking**
@@ -270,7 +271,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 **Opening**
 
-- ✔ Museum open daily 10am to 5.30pm; gardens from 7.15am (8am Sundays and bank holidays) to 6.30pm. [source](https://www.horniman.ac.uk/plan-your-visit/) · read 2026-10-08
+- ◐ Museum open daily 10am to 5.30pm; gardens from 7.15am (8am Sundays and bank holidays) to 6.30pm. [source](https://www.horniman.ac.uk/plan-your-visit/) · read 2026-10-08 _Needs a person: conditional, temporary or dated wording._
 - ◐ The Natural History Gallery is closed for refurbishment; the Nature Gallery and Nature Discovery Den are closed until 5 February 2027. [source](https://www.horniman.ac.uk/plan-your-visit/) · read 2026-10-08 _Needs a person: not a fact type that may be accepted without a person; conditional, temporary or dated wording._
 
 **Admission and price**
@@ -300,7 +301,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 **Toilets and baby changing**
 
 - ✔ Accessible toilets around the zoo and a Changing Places toilet at Animal Adventure. [source](https://www.londonzoo.org/plan-your-visit/accessibility) · read 2026-10-08
-- ✔ Toilets (the accessible ones are listed: opposite Tiny Giants, next to the Reptile House, near the main entrance and The Terrace Restaurant). [source](https://www.londonzoo.org/plan-your-visit/accessibility) · read 2026-10-08 _Derived: accessible toilets are toilets. General toilet blocks are not described._
+- ✔ Accessible toilets around the zoo: opposite Tiny Giants, next to the Reptile House, near the main entrance next to the African Aviary, and at The Terrace Restaurant. [source](https://www.londonzoo.org/plan-your-visit/accessibility) · read 2026-10-08 _Derived: accessible toilets are toilets. General toilet blocks are not described._
 - ✔ A breastfeeding room and quiet areas; feeding is welcome everywhere. [source](https://www.londonzoo.org/plan-your-visit/accessibility) · read 2026-10-08
 - ? Baby changing: not stated on the pages read. _The pages read name a Changing Places toilet and accessible toilets but not baby-changing tables._
 
@@ -340,11 +341,11 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 ## Mudchute Park and Farm
 
-9 verified · 8 proposed · 1 unknown · 0 hypothesis. Level if every proposal is approved: **Recommendation-ready**.
+8 verified · 9 proposed · 1 unknown · 0 hypothesis. Level if every proposal is approved: **Recommendation-ready**.
 
 **What children can do**
 
-- ✔ A 32 acre park and farm with over 100 animals, free to visit, "for people of all ages". No age is given for any one thing. [source](https://www.mudchute.org/plan-your-visit/facilities) · read 2026-10-08
+- ◐ A 32 acre park and farm with over 100 animals, free to visit, "for people of all ages". No age is given for any one thing. [source](https://www.mudchute.org/plan-your-visit/facilities) · read 2026-10-08 _Needs a person: independent check (no-over-reach): the proposal says free; the quote does not._
 - ✔ Animal petting in Pets Corner on set days in school holidays; no handling. [source](https://www.mudchute.org/plan-your-visit/faq) · read 2026-10-08
 - ✔ Donkey rides normally on summer Sundays, weather permitting. [source](https://www.mudchute.org/plan-your-visit/faq) · read 2026-10-08
 - ? Which ages the farm suits best: not stated. _Reasonable inference only: farm animals suit toddlers to older children, but the pages name no age._
@@ -361,7 +362,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 **Getting there and parking**
 
-- ✔ DLR to Crossharbour (recommended), Island Gardens or Mudchute; D3, D6, D7 and 135 buses. [source](https://www.mudchute.org/plan-your-visit/getting-here) · read 2026-10-08
+- ✔ DLR to Crossharbour (recommended), Island Gardens or Mudchute; D3, D6 and 135 buses. [source](https://www.mudchute.org/plan-your-visit/getting-here) · read 2026-10-08
 - ◐ No visitor parking on site; limited meter parking on Pier Street and nearby. [source](https://www.mudchute.org/plan-your-visit/getting-here) · read 2026-10-08 _Needs a person: a negative claim (can exclude a venue)._
 
 **Food**
@@ -393,7 +394,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 ## Natural History Museum
 
-8 verified · 11 proposed · 3 unknown · 0 hypothesis. Level if every proposal is approved: **Recommendation-ready**.
+6 verified · 13 proposed · 3 unknown · 0 hypothesis. Level if every proposal is approved: **Recommendation-ready**.
 
 **What children can do**
 
@@ -410,11 +411,11 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 - ✔ Many toilets, all marked on the museum map. [source](https://www.nhm.ac.uk/visit/access-at-south-kensington.html) · read 2026-10-08
 - ✔ Baby-changing facilities, marked on the museum map (which floors is not stated). [source](https://www.nhm.ac.uk/visit/access-at-south-kensington.html) · read 2026-10-08
-- ✔ Wheelchair-accessible toilets, and a Changing Places toilet in the North Wing. [source](https://www.nhm.ac.uk/visit/access-at-south-kensington.html) · read 2026-10-08
+- ◐ Wheelchair-accessible toilets, and a Changing Places toilet in the North Wing. [source](https://www.nhm.ac.uk/visit/access-at-south-kensington.html) · read 2026-10-08 _Needs a person: independent check (no-over-reach): the proposal says accessible, wheelchair; the quote does not._
 
 **Getting there and parking**
 
-- ✔ Nearest Tube is South Kensington; a subway tunnel gives a step-free way to the Central Entrance. [source](https://www.nhm.ac.uk/visit/getting-here.html) · read 2026-10-08
+- ◐ Nearest Tube is South Kensington; a subway tunnel gives a step-free way to the Central Entrance. [source](https://www.nhm.ac.uk/visit/getting-here.html) · read 2026-10-08 _Needs a person: independent check (no-over-reach): the proposal says free, step-free; the quote does not._
 - ◐ No parking on site, and parking around the museum is limited. [source](https://www.nhm.ac.uk/visit/getting-here.html) · read 2026-10-08 _Needs a person: a negative claim (can exclude a venue)._
 - ✔ A very limited number of Blue Badge spaces on site, and twelve on Exhibition Road. [source](https://www.nhm.ac.uk/visit/getting-here.html) · read 2026-10-08
 
@@ -429,7 +430,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 **Accessibility**
 
 - ◐ Wheelchair accessible with lifts and step-free access to most areas; some lifts are sometimes out of service. [source](https://www.nhm.ac.uk/visit/access-at-south-kensington.html) · read 2026-10-08 _Needs a person: an accessibility claim (high impact)._
-- ◐ Lifts in the Darwin Centre and the Mammals Hall were out of order on 6 October. [source](https://www.nhm.ac.uk/visit/galleries-and-museum-map.html) · read 2026-10-08 _Needs a person: an accessibility claim (high impact); a negative claim (can exclude a venue); conditional, temporary or dated wording; applies to part of the venue._
+- ◐ Lifts in the Darwin Centre and the Mammals Hall are listed as currently out of order. The page does not date the notice, so it is shown as of the reading. [source](https://www.nhm.ac.uk/visit/galleries-and-museum-map.html) · read 2026-10-08 _Needs a person: an accessibility claim (high impact); a negative claim (can exclude a venue); conditional, temporary or dated wording; applies to part of the venue._
 - ◐ South Kensington station is not step free; a subway tunnel gives step-free access from the station to the museum. [source](https://www.nhm.ac.uk/visit/getting-here.html) · read 2026-10-08 _Needs a person: an accessibility claim (high impact); a negative claim (can exclude a venue); applies to part of the venue._
 
 **Opening**
@@ -450,7 +451,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 ## Royal Air Force Museum London
 
-12 verified · 7 proposed · 1 unknown · 0 hypothesis. Level if every proposal is approved: **Recommendation-ready**.
+10 verified · 9 proposed · 1 unknown · 0 hypothesis. Level if every proposal is approved: **Recommendation-ready**.
 
 **What children can do**
 
@@ -465,18 +466,18 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 **Toilets and baby changing**
 
-- ✔ Baby changing in every hangar; a Changing Places toilet in Hangar 2. [source](https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/) · read 2026-10-08
-- ✔ Toilets in every hangar (the page calls them accessible toilets). [source](https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/) · read 2026-10-08
+- ◐ Baby changing in every hangar; a Changing Places toilet in Hangar 2. [source](https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/) · read 2026-10-08 _Needs a person: independent check (no-over-reach): the proposal says every; the quote does not._
+- ◐ Toilets in every hangar (the page calls them accessible toilets). [source](https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/) · read 2026-10-08 _Needs a person: independent check (no-over-reach): the proposal says every; the quote does not._
 
 **Getting there and parking**
 
 - ✔ Near Colindale (Northern line, Edgware branch); the 303 bus stops outside the main entrance. [source](https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/) · read 2026-10-08
-- ✔ On-site car park, charged: up to 3 hours £8.50, 3 to 6 hours £11, Blue Badge holders pay too. [source](https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/) · read 2026-10-08
+- ✔ On-site car park; parking is charged (see the charges item). [source](https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/) · read 2026-10-08
 - ◐ Cars up to 3 hours £8.50; 3 to 6 hours £11.00. [source](https://www.rafmuseum.org.uk/london/plan-your-day/) · read 2026-10-08 _Needs a person: not a fact type that may be accepted without a person._
 
 **Food**
 
-- ✔ Hendon Kitchen, a family-friendly café, and Café Hangar 4. [source](https://www.rafmuseum.org.uk/london/plan-your-day/food-and-drink/) · read 2026-10-08
+- ✔ Hendon Kitchen, a family-friendly café with a canteen-style menu. [source](https://www.rafmuseum.org.uk/london/plan-your-day/food-and-drink/) · read 2026-10-08
 
 **Play facilities**
 
@@ -505,7 +506,7 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 ## Science Museum
 
-12 verified · 11 proposed · 1 unknown · 1 hypothesis. Level if every proposal is approved: **Highly personalised**.
+9 verified · 14 proposed · 1 unknown · 1 hypothesis. Level if every proposal is approved: **Highly personalised**.
 
 **What children can do**
 
@@ -521,10 +522,10 @@ Generated from `docs/pilot/profiles/*.json` (built by `scripts/pilot/build-profi
 
 **Toilets and baby changing**
 
-- ✔ Toilets on every level (the page describes the accessible ones). [source](https://www.sciencemuseum.org.uk/visit/accessibility) · read 2026-10-08 _Derived: accessible toilets are toilets. General toilet blocks are not described separately._
-- ✔ Baby changing on every floor. [source](https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum) · read 2026-10-08
-- ✔ Accessible toilets on every level. [source](https://www.sciencemuseum.org.uk/visit/accessibility) · read 2026-10-08
-- ✔ A Changing Places toilet on level 0 next to the Hans Rausing Lecture Theatre. (The page also carries a notice about works on 14 to 25 September, already past.) [source](https://www.sciencemuseum.org.uk/visit/accessibility) · read 2026-10-08
+- ◐ Toilets on every level (the page describes the accessible ones). [source](https://www.sciencemuseum.org.uk/visit/accessibility) · read 2026-10-08 _Needs a person: independent check (no-over-reach): the proposal says every; the quote does not._ _Derived: accessible toilets are toilets. General toilet blocks are not described separately._
+- ◐ Baby changing on every floor. [source](https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum) · read 2026-10-08 _Needs a person: independent check (no-over-reach): the proposal says every; the quote does not._
+- ◐ Accessible toilets on every level. [source](https://www.sciencemuseum.org.uk/visit/accessibility) · read 2026-10-08 _Needs a person: independent check (no-over-reach): the proposal says every; the quote does not._
+- ✔ A Changing Places toilet on level 0 next to the Hans Rausing Lecture Theatre. [source](https://www.sciencemuseum.org.uk/visit/accessibility) · read 2026-10-08 _The page also carries a notice about works on 14 to 25 September, already past at the reading; not part of this fact._
 
 **Getting there and parking**
 

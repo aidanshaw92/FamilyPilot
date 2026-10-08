@@ -39,6 +39,9 @@ const norm = (s) => String(s ?? '')
   .trim()
   .toLowerCase();
 
+/** The words of a fact's evidence: one sentence, or several joined when the fact rests on more than one on the same page. */
+const quoted = (fact) => (Array.isArray(fact.q) ? fact.q.join(' ') : String(fact.q ?? ''));
+
 function daysBetween(a, b) {
   return Math.floor((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
 }
@@ -60,10 +63,10 @@ function gate(fact, page, today) {
     else reasons.push('not a fact type that may be accepted without a person');
   }
   if (fact.v === 'no') reasons.push('a negative claim (can exclude a venue)');
-  if (HEDGE.test(fact.q)) reasons.push('conditional, temporary or dated wording');
+  if (HEDGE.test(quoted(fact))) reasons.push('conditional, temporary or dated wording');
   if (fact.scope === 'area') reasons.push('applies to part of the venue');
   if (fact.conflict) reasons.push(`conflicts with ${fact.conflict}`);
-  if (fact.q.length < 25) reasons.push('sentence too short to stand on its own');
+  if (quoted(fact).length < 25) reasons.push('sentence too short to stand on its own');
   return reasons.length === 0 ? { status: 'verified', reasons } : { status: 'review', reasons };
 }
 

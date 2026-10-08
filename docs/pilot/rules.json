@@ -110,7 +110,11 @@
     "evidence": {
      "url": "https://discover.org.uk/your-visit/",
      "readAt": "2026-10-08",
-     "quote": "Discover is open every day, 10am - 5pm",
+     "quote": "Discover is open every day, 10am - 5pm … We're closed on 24, 25, 26, 31 December and 1 January over the festive period.",
+     "quotes": [
+      "Discover is open every day, 10am - 5pm",
+      "We're closed on 24, 25, 26, 31 December and 1 January over the festive period."
+     ],
      "pageSha256": "6c7bf457e9d6cdee"
     }
    },
@@ -128,7 +132,11 @@
     "evidence": {
      "url": "https://discover.org.uk/your-visit/",
      "readAt": "2026-10-08",
-     "quote": "Discover is open every day, 10am - 5pm",
+     "quote": "Discover is open every day, 10am - 5pm … We're closed on 24, 25, 26, 31 December and 1 January over the festive period.",
+     "quotes": [
+      "Discover is open every day, 10am - 5pm",
+      "We're closed on 24, 25, 26, 31 December and 1 January over the festive period."
+     ],
      "pageSha256": "6c7bf457e9d6cdee"
     }
    }
@@ -363,7 +371,7 @@
      "kind": "step_free",
      "scope": "area",
      "area": "Darwin Centre and Mammals Hall lifts",
-     "text": "Lifts in the Darwin Centre and the Mammals Hall were out of order on 6 October."
+     "text": "Lifts in the Darwin Centre and the Mammals Hall are listed as currently out of order. The page does not date the notice, so it is shown as of the reading."
     },
     "fact": "access.lifts-out",
     "status": "review",

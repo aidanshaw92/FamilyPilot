@@ -23,7 +23,11 @@
       "evidence": {
         "url": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
         "readAt": "2026-10-08",
-        "quote": "ZooTown is a brand new indoor role play adventure for kids in the heart of London Zoo aimed at children aged up to 8.",
+        "quote": "ZooTown is a brand new indoor role play adventure for kids in the heart of London Zoo aimed at children aged up to 8. … Silver members and non-members pay £1 per child",
+        "quotes": [
+          "ZooTown is a brand new indoor role play adventure for kids in the heart of London Zoo aimed at children aged up to 8.",
+          "Silver members and non-members pay £1 per child"
+        ],
         "pageSha256": "2eb390649a853e57"
       },
       "status": "review",
@@ -94,11 +98,11 @@
       "sec": "toilets",
       "key": "toilets",
       "value": "yes",
-      "text": "Toilets (the accessible ones are listed: opposite Tiny Giants, next to the Reptile House, near the main entrance and The Terrace Restaurant).",
+      "text": "Accessible toilets around the zoo: opposite Tiny Giants, next to the Reptile House, near the main entrance next to the African Aviary, and at The Terrace Restaurant.",
       "evidence": {
         "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
         "readAt": "2026-10-08",
-        "quote": "These are located: Opposite Tiny Giants Next to the Reptile House Near main entrance next to African Aviary The Terrace Restaurant",
+        "quote": "we also have a number of accessible toilets around the zoo. These are located: Opposite Tiny Giants Next to the Reptile House Near main entrance next to African Aviary The Terrace Restaurant",
         "pageSha256": "c827fbfab53284aa"
       },
       "status": "verified",
@@ -137,7 +141,13 @@
       "evidence": {
         "url": "https://www.londonzoo.org/plan-your-visit/how-to-get-to-london-zoo",
         "readAt": "2026-10-08",
-        "quote": "By Tube Camden Town (16 mins / 0.8 miles walk from the Zoo) Camden Town station (Northern Line) is the nearest Underground station to the Zoo.",
+        "quote": "By Tube Camden Town (16 mins / 0.8 miles walk from the Zoo) Camden Town station (Northern Line) is the nearest Underground station to the Zoo. … Regent's Park (24 mins / 1.2 miles walk) … take the 274 bus northbound … take the 88 bus northbound",
+        "quotes": [
+          "By Tube Camden Town (16 mins / 0.8 miles walk from the Zoo) Camden Town station (Northern Line) is the nearest Underground station to the Zoo.",
+          "Regent's Park (24 mins / 1.2 miles walk)",
+          "take the 274 bus northbound",
+          "take the 88 bus northbound"
+        ],
         "pageSha256": "5e26be5d9eaebae6"
       },
       "status": "verified"
@@ -286,7 +296,11 @@
       "evidence": {
         "url": "https://www.londonzoo.org/plan-your-visit/london-zoo-tickets",
         "readAt": "2026-10-08",
-        "quote": "Online advance ticket prices without donation Off Peak Weekday Standard Standard Weekend Peak Adult (age 16-64) £ 27.70 £ 31.80 £ 33.60 £ 34.50 Child (age 3-15) £ 19.40 £ 22.20 £ 23.50 £ 24.10",
+        "quote": "Online advance ticket prices without donation Off Peak Weekday Standard Standard Weekend Peak Adult (age 16-64) £ 27.70 £ 31.80 £ 33.60 £ 34.50 Child (age 3-15) £ 19.40 £ 22.20 £ 23.50 £ 24.10 … the prices below apply for tickets bought at the entrance, or online from 10am on the date of the visit",
+        "quotes": [
+          "Online advance ticket prices without donation Off Peak Weekday Standard Standard Weekend Peak Adult (age 16-64) £ 27.70 £ 31.80 £ 33.60 £ 34.50 Child (age 3-15) £ 19.40 £ 22.20 £ 23.50 £ 24.10",
+          "the prices below apply for tickets bought at the entrance, or online from 10am on the date of the visit"
+        ],
         "pageSha256": "e499af4ca5803c73"
       },
       "status": "review",

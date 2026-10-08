@@ -5,8 +5,8 @@
   "category": "indoor-play",
   "builtOn": "2026-10-08",
   "counts": {
-    "review": 15,
-    "verified": 7
+    "review": 17,
+    "verified": 6
   },
   "facts": [
     {
@@ -149,7 +149,10 @@
         "quote": "We have storage for buggies in our basement and/ or garden but many of our spaces cannot have buggies in",
         "pageSha256": "7755ba53483f5d77"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (polarity): the quote has a negation near the subject while the fact says yes"
+      ]
     },
     {
       "sec": "toilets",
@@ -197,14 +200,19 @@
       "sec": "transport",
       "key": "station",
       "value": "Stratford High Street DLR",
-      "text": "One minute from Stratford High Street DLR (no step-free access there; use Stratford, 5 minutes). Many buses.",
+      "text": "One minute from Stratford High Street DLR station. Many bus routes.",
       "evidence": {
         "url": "https://discover.org.uk/getting-here/",
         "readAt": "2026-10-08",
-        "quote": "From Stratford High Street Station (DLR): 1 min walk. Turn right after exiting the station.",
+        "quote": "From Stratford High Street Station (DLR): 1 min walk. Turn right after exiting the station. … buses: 25, 86, 108, 425, D8, 257, 308, 104, 238, 241, 262, 158, 473, 276, UL1 and 69",
+        "quotes": [
+          "From Stratford High Street Station (DLR): 1 min walk. Turn right after exiting the station.",
+          "buses: 25, 86, 108, 425, D8, 257, 308, 104, 238, 241, 262, 158, 473, 276, UL1 and 69"
+        ],
         "pageSha256": "9d230072cea688a5"
       },
-      "status": "verified"
+      "status": "verified",
+      "note": "The page also says there is no step-free access at that station \"until July 2025\", a date already past; that is kept as its own unresolved item, not stated here as a fact."
     },
     {
       "sec": "transport",
@@ -274,12 +282,28 @@
       "sec": "access",
       "key": "sensory",
       "value": "yes",
-      "text": "Sensory-adapted and BSL events, and a free Saturday club for disabled children and children with SEN (5 to 11).",
+      "text": "Sensory-adapted and BSL events; children with SEN and other additional needs are welcome on any day.",
       "evidence": {
         "url": "https://discover.org.uk/your-visit/faqs/",
         "readAt": "2026-10-08",
         "quote": "we welcome kids with SEN and other additional needs on any and every day but you can also choose from various Sensory Adapted and BSL events",
         "pageSha256": "7755ba53483f5d77"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)"
+      ]
+    },
+    {
+      "sec": "access",
+      "key": "saturday-club",
+      "value": "yes",
+      "text": "Mighty Mega, a free Saturday-morning club (2 hours) for disabled children and children with SEN, age guide 5 to 11.",
+      "evidence": {
+        "url": "https://www.discover.org.uk/",
+        "readAt": "2026-10-08",
+        "quote": "Mighty Mega Dates: Saturday mornings Age guide: 5-11 Duration: 2 hours A free weekly club at Discover for disabled children and children with SEN",
+        "pageSha256": "b21c7b2ade91b374"
       },
       "status": "review",
       "reviewReasons": [
@@ -294,7 +318,11 @@
       "evidence": {
         "url": "https://discover.org.uk/your-visit/",
         "readAt": "2026-10-08",
-        "quote": "Discover is open every day, 10am - 5pm",
+        "quote": "Discover is open every day, 10am - 5pm … We're closed on 24, 25, 26, 31 December and 1 January over the festive period.",
+        "quotes": [
+          "Discover is open every day, 10am - 5pm",
+          "We're closed on 24, 25, 26, 31 December and 1 January over the festive period."
+        ],
         "pageSha256": "6c7bf457e9d6cdee"
       },
       "status": "verified"

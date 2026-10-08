@@ -5,8 +5,8 @@
   "category": "museum",
   "builtOn": "2026-10-08",
   "counts": {
-    "verified": 8,
-    "review": 11,
+    "verified": 6,
+    "review": 13,
     "unknown": 3
   },
   "facts": [
@@ -117,7 +117,10 @@
         "quote": "We also have a Changing Places toilet on the Ground Floor of our North Wing.",
         "pageSha256": "04a44327a35f4294"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says accessible, wheelchair; the quote does not"
+      ]
     },
     {
       "sec": "transport",
@@ -130,7 +133,10 @@
         "quote": "The nearest Tube station is South Kensington.",
         "pageSha256": "a7d2c3677d8bccc9"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says free, step-free; the quote does not"
+      ]
     },
     {
       "sec": "transport",
@@ -156,7 +162,11 @@
       "evidence": {
         "url": "https://www.nhm.ac.uk/visit/getting-here.html",
         "readAt": "2026-10-08",
-        "quote": "We have a very limited number of parking spaces on site for Blue Badge holders.",
+        "quote": "We have a very limited number of parking spaces on site for Blue Badge holders. … there are also twelve Blue Badge parking spaces on Exhibition Road",
+        "quotes": [
+          "We have a very limited number of parking spaces on site for Blue Badge holders.",
+          "there are also twelve Blue Badge parking spaces on Exhibition Road"
+        ],
         "pageSha256": "a7d2c3677d8bccc9"
       },
       "status": "verified"
@@ -202,7 +212,7 @@
       "sec": "access",
       "key": "lifts-out",
       "value": "no",
-      "text": "Lifts in the Darwin Centre and the Mammals Hall were out of order on 6 October.",
+      "text": "Lifts in the Darwin Centre and the Mammals Hall are listed as currently out of order. The page does not date the notice, so it is shown as of the reading.",
       "scope": "area",
       "evidence": {
         "url": "https://www.nhm.ac.uk/visit/galleries-and-museum-map.html",

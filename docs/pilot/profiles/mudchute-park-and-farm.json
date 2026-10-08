@@ -5,9 +5,9 @@
   "category": "farm",
   "builtOn": "2026-10-08",
   "counts": {
-    "verified": 9,
-    "unknown": 1,
-    "review": 8
+    "review": 9,
+    "verified": 8,
+    "unknown": 1
   },
   "facts": [
     {
@@ -23,7 +23,10 @@
         "quote": "We do not charge admission fees to visit our park and farm which has 32 acres and over 100 animals for people of all ages to enjoy.",
         "pageSha256": "756a7b7f98c780ab"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says free; the quote does not"
+      ]
     },
     {
       "sec": "activities",
@@ -123,11 +126,15 @@
       "sec": "transport",
       "key": "station",
       "value": "Crossharbour DLR",
-      "text": "DLR to Crossharbour (recommended), Island Gardens or Mudchute; D3, D6, D7 and 135 buses.",
+      "text": "DLR to Crossharbour (recommended), Island Gardens or Mudchute; D3, D6 and 135 buses.",
       "evidence": {
         "url": "https://www.mudchute.org/plan-your-visit/getting-here",
         "readAt": "2026-10-08",
-        "quote": "The closest DLR stations are Mudchute, Crossharbour & Island Gardens. We highly recommend using Crossharbour .",
+        "quote": "The closest DLR stations are Mudchute, Crossharbour & Island Gardens. We highly recommend using Crossharbour . … take the D3 , D6 or 135 bus towards Crossharbour",
+        "quotes": [
+          "The closest DLR stations are Mudchute, Crossharbour & Island Gardens. We highly recommend using Crossharbour .",
+          "take the D3 , D6 or 135 bus towards Crossharbour"
+        ],
         "pageSha256": "0906b26c65cd6d7c"
       },
       "status": "verified"
@@ -169,7 +176,7 @@
       "evidence": {
         "url": "https://www.mudchute.org/plan-your-visit/facilities",
         "readAt": "2026-10-08",
-        "quote": "You are welcome to bring your own food but please eat in the courtyard only.",
+        "quote": "picnic area You are welcome to bring your own food but please eat in the courtyard only.",
         "pageSha256": "756a7b7f98c780ab"
       },
       "status": "verified"

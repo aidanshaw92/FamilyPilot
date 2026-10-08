@@ -5,9 +5,9 @@
   "category": "museum",
   "builtOn": "2026-10-08",
   "counts": {
-    "review": 11,
+    "review": 14,
     "hypothesis": 1,
-    "verified": 12,
+    "verified": 9,
     "unknown": 1
   },
   "facts": [
@@ -43,7 +43,11 @@
       "evidence": {
         "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
         "readAt": "2026-10-08",
-        "quote": "Perfect for children aged 7 and under, Bubble Explorer s takes place on weekends and every day during school holidays.",
+        "quote": "Perfect for children aged 7 and under, Bubble Explorer s takes place on weekends and every day during school holidays. … Tickets are £4.50 per person with free entry for children aged 2 and under",
+        "quotes": [
+          "Perfect for children aged 7 and under, Bubble Explorer s takes place on weekends and every day during school holidays.",
+          "Tickets are £4.50 per person with free entry for children aged 2 and under"
+        ],
         "pageSha256": "519ad9faf34b5181"
       },
       "status": "review",
@@ -128,7 +132,10 @@
         "quote": "Accessible toilets are available on all levels of the museum.",
         "pageSha256": "6f7f7ce4b8756f29"
       },
-      "status": "verified",
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says every; the quote does not"
+      ],
       "note": "Derived: accessible toilets are toilets. General toilet blocks are not described separately."
     },
     {
@@ -142,7 +149,10 @@
         "quote": "Baby changing facilities are located throughout all floors of the museum.",
         "pageSha256": "519ad9faf34b5181"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says every; the quote does not"
+      ]
     },
     {
       "sec": "toilets",
@@ -155,20 +165,24 @@
         "quote": "Accessible toilets are available on all levels of the museum.",
         "pageSha256": "6f7f7ce4b8756f29"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says every; the quote does not"
+      ]
     },
     {
       "sec": "toilets",
       "key": "changingPlaces",
       "value": "yes",
-      "text": "A Changing Places toilet on level 0 next to the Hans Rausing Lecture Theatre. (The page also carries a notice about works on 14 to 25 September, already past.)",
+      "text": "A Changing Places toilet on level 0 next to the Hans Rausing Lecture Theatre.",
       "evidence": {
         "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
         "readAt": "2026-10-08",
         "quote": "Changing Places Toilet on L0 next to the Hans Rausing Lecture Theatre.",
         "pageSha256": "6f7f7ce4b8756f29"
       },
-      "status": "verified"
+      "status": "verified",
+      "note": "The page also carries a notice about works on 14 to 25 September, already past at the reading; not part of this fact."
     },
     {
       "sec": "transport",
@@ -191,7 +205,11 @@
       "evidence": {
         "url": "https://www.sciencemuseum.org.uk/visit/getting-here",
         "readAt": "2026-10-08",
-        "quote": "The nearest tube station is South Kensington. This is on the District, Circle and Piccadilly lines and is a 5-minute walk from the museum.",
+        "quote": "The nearest tube station is South Kensington. This is on the District, Circle and Piccadilly lines and is a 5-minute walk from the museum. … The nearest underground station with step-free access is Knightsbridge. This is a 15-20-minute walk to the museum.",
+        "quotes": [
+          "The nearest tube station is South Kensington. This is on the District, Circle and Piccadilly lines and is a 5-minute walk from the museum.",
+          "The nearest underground station with step-free access is Knightsbridge. This is a 15-20-minute walk to the museum."
+        ],
         "pageSha256": "751a89c00ea27a0f"
       },
       "status": "verified"
@@ -233,7 +251,13 @@
       "evidence": {
         "url": "https://www.sciencemuseum.org.uk/visit/food-and-drink",
         "readAt": "2026-10-08",
-        "quote": "You are welcome to bring your own food and drink, which you can enjoy in one of our dedicated picnic areas",
+        "quote": "You are welcome to bring your own food and drink, which you can enjoy in one of our dedicated picnic areas … the picnic terrace on level -1 … the seating area on level 2 near Galley Café … the seating area on level 3 located next to Shake Bar",
+        "quotes": [
+          "You are welcome to bring your own food and drink, which you can enjoy in one of our dedicated picnic areas",
+          "the picnic terrace on level -1",
+          "the seating area on level 2 near Galley Café",
+          "the seating area on level 3 located next to Shake Bar"
+        ],
         "pageSha256": "9592f42f34105652"
       },
       "status": "verified"
@@ -254,7 +278,11 @@
       "evidence": {
         "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
         "readAt": "2026-10-08",
-        "quote": "this free guide can be enjoyed at your own pace and follows a step-free route through the museum",
+        "quote": "this free guide can be enjoyed at your own pace and follows a step-free route through the museum … perfect for families with children under seven",
+        "quotes": [
+          "this free guide can be enjoyed at your own pace and follows a step-free route through the museum",
+          "perfect for families with children under seven"
+        ],
         "pageSha256": "519ad9faf34b5181"
       },
       "status": "review",
