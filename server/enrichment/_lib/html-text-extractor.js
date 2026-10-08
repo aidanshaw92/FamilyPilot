@@ -627,9 +627,11 @@ function findLinkedPages(html, baseUrl, maxLinks = 4) {
  * blocked. Detected here they are `blocked`: transient, retried, and reported as what they are.
  */
 const BOT_CHALLENGE_HTML_MARKERS = [
-  'just a moment',
   'cf-chl',
-  'challenge-platform',
+  // Only an interstitial sets these: the challenge options object and the orchestration path. The bare
+  // `challenge-platform` path is handled below, because ordinary pages load it too.
+  '_cf_chl_opt',
+  'challenge-platform/h/',
   'checking your browser',
   'enable javascript and cookies to continue',
   // Imperva / Incapsula
@@ -639,10 +641,32 @@ const BOT_CHALLENGE_HTML_MARKERS = [
   'to regain access, please make sure that cookies and javascript are enabled',
 ];
 
+/** An interstitial names itself in the title. "Just a moment" in body copy is a venue saying how near the station is. */
+const BOT_CHALLENGE_TITLE = /<title[^>]*>\s*(?:just a moment|attention required|pardon our interruption)/i;
+
+/**
+ * `/cdn-cgi/challenge-platform/` is not only the challenge. It is also the path of the bot-detection script Cloudflare
+ * injects into ORDINARY pages when a site turns on JavaScript Detections, so a museum's real homepage, served 200 with
+ * its whole text, carries it too. Read as a marker on its own it can mark a whole site `blocked`, and nothing stored
+ * could tell the two apart: on 8 Oct 2026 the store held 399 `cloudflare_challenge` rows across 39 venues, with no HTTP
+ * status and no text, among them the British Museum, the Science Museum, Kew and London Zoo, none of which has ever had
+ * a page read. So it identifies a challenge only around a shell: a page with a page's worth of text is a page, and a
+ * real interstitial still names itself in its title or carries `cf-chl`.
+ */
+const CF_DETECTION_SCRIPT_PATH = 'challenge-platform';
+/** Far below any real page, far above an interstitial's few lines. */
+const SHELL_TEXT_CHARS = 600;
+
 function isCloudflareChallenge(html) {
   if (!html) return false;
+  if (BOT_CHALLENGE_TITLE.test(html)) return true;
   const lower = html.toLowerCase();
-  return BOT_CHALLENGE_HTML_MARKERS.some((marker) => lower.includes(marker));
+  if (BOT_CHALLENGE_HTML_MARKERS.some((marker) => lower.includes(marker))) return true;
+  if (lower.includes(CF_DETECTION_SCRIPT_PATH)) {
+    // All visible text, not the facility-relevant paragraphs `extractPageContent` keeps: a page is a page whatever it is about.
+    return stripHtml(removeNonContentElements(html)).replace(/\s+/g, ' ').trim().length < SHELL_TEXT_CHARS;
+  }
+  return false;
 }
 
 /** The same test on what a STORED row kept: its title and extracted text. */
