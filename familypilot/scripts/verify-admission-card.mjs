@@ -1,10 +1,13 @@
 /**
- * Price honesty in a real browser, fixture only. No place in the fixture (or the catalogue) has a confirmed price, so:
+ * Price honesty in a real browser, fixture only. A place with no reviewed price (every synthetic venue):
  *   - Venue Detail shows "Price not confirmed" in a "To get in" card, with no pound sign inside it and a link to the venue's
  *     own website where there is one;
  *   - the Explore filter sheet offers no Budget group and no "Free" filter, and says why, rather than offering controls that
  *     can only return an empty list;
  *   - Home's filter sheet has no "Free" filter either.
+ * And two detail-only fixture venues carrying the ids of reviewed claims: the paid one shows its family ticket, with the
+ * reason, for a party with under-7s (never an invented cheaper total), and the free one says "Free entry" with what is
+ * charged inside.
  * Serve the SPARSE fixture (no FIXTURE_SCENARIO): the realistic one gives places prices, so its filter sheet rightly keeps the price filters.
  * Usage: node scripts/verify-admission-card.mjs [baseUrl]
  */
@@ -45,6 +48,30 @@ for (const width of [360, 430]) {
     const box = await card.boundingBox();
     check(`${width}: it fits the screen`, box && box.x >= 0 && box.x + box.width <= width + 1, JSON.stringify(box));
   }
+  // Reviewed prices, for two parties. A fresh context per party: the init script above re-seeds its profile on every load.
+  const cardFor = async (members, id) => {
+    const ctx = await browser.newContext({ viewport: { width, height: 900 }, timezoneId: 'Europe/London' });
+    await ctx.route('**/*', (route) => (/googleapis|gstatic|openstreetmap|overpass/.test(route.request().url()) ? route.abort() : route.continue()));
+    await ctx.addInitScript((profile) => {
+      localStorage.setItem('familypilot-family-v1', JSON.stringify({ state: { profile, hasCompletedOnboarding: true, hasSeenSplash: true, profileRevision: 2 }, version: 1 }));
+    }, { ...PROFILE, members });
+    const p = await ctx.newPage();
+    await p.goto(`${BASE}/venue/${id}`, { waitUntil: 'domcontentloaded' });
+    await p.getByTestId('admission-card').waitFor({ timeout: 20000 }).catch(() => {});
+    const text = (await p.getByTestId('admission-card').count()) ? (await p.getByTestId('admission-card').innerText()).replace(/\n/g, ' | ') : '';
+    await ctx.close();
+    return text;
+  };
+  const twoAdults = [...PROFILE.members, { id: 'p2', name: 'Ellie', role: 'parent', dateOfBirth: '1991-02-02', age: 35 }, { id: 'c2', name: 'Ozzie', role: 'child', dateOfBirth: '2025-05-01', age: 1, dobKnown: true, mobility: ['buggy'] }];
+  const paid = await cardFor(twoAdults, 'fp-google-ChIJkUcf6v4PdkgRIN0LQBjlSqs');
+  check(`${width}: a reviewed paid venue shows its family ticket for two adults, a 3-year-old and a 1-year-old`, /Family ticket £36/.test(paid), paid);
+  check(`${width}: says why, and invents no cheaper total`, /Ask the venue whether a cheaper way in applies/.test(paid) && !/£28/.test(paid));
+  check(`${width}: shows where and when the price was checked`, /Checked/.test(paid));
+  const oneAdult = await cardFor(PROFILE.members, 'fp-google-ChIJkUcf6v4PdkgRIN0LQBjlSqs');
+  check(`${width}: one adult and a 3-year-old: not covered, said as such, not as a stale price`, /Price not confirmed for your party/.test(oneAdult) && !/Last price on record/.test(oneAdult) && !/£\d/.test(oneAdult.split('|')[2] ?? ''), oneAdult);
+  const free = await cardFor(PROFILE.members, 'fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI');
+  check(`${width}: a reviewed free venue says Free entry`, /Free entry/.test(free), free);
+  check(`${width}: and keeps what is charged inside separate`, /charge for the Aquarium, the Butterfly House/.test(free));
   await page.goto(`${BASE}/explore`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(2500);
   await page.getByRole('button', { name: /filters/i }).first().click().catch(() => {});

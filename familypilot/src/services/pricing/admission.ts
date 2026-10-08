@@ -102,6 +102,12 @@ export type AdmissionEstimate =
       lines: AdmissionLine[];
       /** The other way, where both were computable, so a parent can see what a family ticket saved or cost. */
       alternative?: { basis: 'individual' | 'family-ticket'; totalPence: number };
+      /**
+       * Set when the family ticket is the ONLY route that could be worked out: someone in the party is not covered by any
+       * stated individual band. The family ticket is a real price the party can pay; whether a cheaper way in exists is
+       * not known, so it is shown as the family ticket's price, never as "what it costs this family".
+       */
+      individualUnknown?: { reason: Unknown; detail: string };
       conditions: string[];
       source: PricingSource;
     }
@@ -227,6 +233,7 @@ export function estimateFamilyAdmission(
       state: 'known', totalPence: family.amountPence, basis: 'family-ticket',
       lines: [{ attendeeId: 'party', label: 'Your party', amountPence: family.amountPence, free: false, rule: family.label ?? 'Family ticket' }],
       conditions, source: pricing.source,
+      individualUnknown: individualProblem ?? { reason: 'attendee-not-covered', detail: 'Not every ticket in your party is priced on record.' },
     };
   }
   return { state: 'unknown', reason: individualProblem?.reason ?? 'no-price', detail: individualProblem?.detail ?? 'The price cannot be worked out for this party.', source: pricing.source };
@@ -343,12 +350,35 @@ export function admissionView(estimate: AdmissionEstimate, pricing: AdmissionPri
     return { headline: 'Free entry', breakdown: [], conditions: pricing?.conditions ?? [], provenance: `Checked ${fmtDate(estimate.source.checkedAt)}`, isEstimate: false, ...booking };
   }
   if (estimate.state === 'unknown') {
+    // A current price that does not cover this party (a 3-year-old where tickets start at 7) is not a stale price: say whom
+    // it does not cover, and when the prices were checked, rather than "last price on record", which reads as out of date.
+    const partyGap = estimate.reason === 'attendee-not-covered' || estimate.reason === 'child-age-unknown' || estimate.reason === 'no-adult-price';
     return {
-      headline: 'Price not confirmed',
-      breakdown: [],
-      conditions: [],
-      provenance: estimate.source ? `Last price on record checked ${fmtDate(estimate.source.checkedAt)}` : null,
+      headline: partyGap ? 'Price not confirmed for your party' : 'Price not confirmed',
+      breakdown: partyGap ? [estimate.detail] : [],
+      conditions: partyGap ? pricing?.conditions ?? [] : [],
+      provenance: estimate.source
+        ? partyGap
+          ? `Prices checked ${fmtDate(estimate.source.checkedAt)}`
+          : `Last price on record checked ${fmtDate(estimate.source.checkedAt)}`
+        : null,
       isEstimate: false,
+      ...booking,
+    };
+  }
+  if (estimate.individualUnknown) {
+    // Museum of Brands, two adults with a 4-year-old and a 1-year-old: the family ticket (£36, 2 adults and 2 children) is a
+    // price this party can pay. Whether the children would be free on individual tickets is not stated outside a
+    // Universal Credit offer, so no cheaper total is invented and none is implied.
+    return {
+      headline: `Family ticket ${money(estimate.totalPence)}`,
+      breakdown: [
+        `${estimate.lines[0]?.rule ?? 'Family ticket'}: ${money(estimate.totalPence)}`,
+        `${estimate.individualUnknown.detail} Ask the venue whether a cheaper way in applies.`,
+      ],
+      conditions: estimate.conditions,
+      provenance: `Checked ${fmtDate(estimate.source.checkedAt)}`,
+      isEstimate: true,
       ...booking,
     };
   }
