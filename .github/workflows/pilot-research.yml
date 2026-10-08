@@ -1,0 +1,38 @@
+name: Venue pilot research (bounded, official sites only, no Google, no database)
+
+# Reads the official websites of the ten pilot venues from a runner (the authoring container has no outbound web):
+# the homepage plus at most 8 same-site pages each, one GET per URL, sequential with a pause, no retry, no path guessing,
+# PDF links listed and not fetched, a refusal ends that venue's crawl. About 90 requests in all. It writes nothing to
+# any database and reads no secret. Runs only when its own files change on a pull request, or by hand.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/pilot-research.yml
+      - familypilot/scripts/pilot/research-crawl.mjs
+      - familypilot/scripts/pilot/pilot-targets.json
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install root dependencies
+        run: npm ci
+      - name: Read the listed official sites
+        working-directory: familypilot
+        run: node scripts/pilot/research-crawl.mjs --out ../research.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pilot-research
+          path: research.json
