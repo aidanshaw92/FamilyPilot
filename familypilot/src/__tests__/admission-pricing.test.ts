@@ -10,6 +10,7 @@ import {
   outingTotals,
   PartyAdmission,
   priceBadge,
+  priceFreshness,
   priceIsCurrent,
 } from '@/src/services/pricing/admission';
 
@@ -58,10 +59,60 @@ describe('unknown is never zero', () => {
     const old = { ...PAID, source: { ...SRC, checkedAt: '2025-01-01' } };
     const e = estimateFamilyAdmission(old, [adult()], VISIT);
     expect(e).toMatchObject({ state: 'unknown', reason: 'stale' });
+    expect(e.state === 'unknown' && e.lastKnown, 'over 400 days: no figure at all').toBeUndefined();
     expect(priceBadge(old, VISIT).text).toBe('Price not confirmed');
     expect(priceIsCurrent({ ...SRC, validUntil: '2026-11-01' }, VISIT)).toBe(false);
     expect(priceIsCurrent({ ...SRC, validUntil: '2026-12-31' }, VISIT)).toBe(true);
     expect(priceIsCurrent({ url: 'x', checkedAt: 'not a date' }, VISIT)).toBe(false);
+  });
+});
+
+describe('freshness: a paid price lasts 180 days, free entry 365, and an old figure is shown only as last known', () => {
+  const at = (checkedAt: string) => ({ ...PAID, source: { ...SRC, checkedAt } });
+
+  it('a paid price read 180 days before the visit is current; 181 days is last known; 401 is gone', () => {
+    expect(priceFreshness(at('2026-05-18'), VISIT)).toBe('current'); // 180 days
+    expect(priceFreshness(at('2026-05-17'), VISIT)).toBe('last-known'); // 181
+    expect(priceFreshness(at('2025-10-10'), VISIT)).toBe('last-known'); // 400
+    expect(priceFreshness(at('2025-10-09'), VISIT)).toBe('expired'); // 401
+  });
+
+  it('free entry read 365 days before the visit is current, and last known a day later', () => {
+    const free = (checkedAt: string): AdmissionPricing => ({ status: 'free', source: { ...SRC, checkedAt } });
+    expect(priceFreshness(free('2025-11-14'), VISIT)).toBe('current');
+    expect(priceFreshness(free('2025-11-13'), VISIT)).toBe('last-known');
+    expect(priceBadge(free('2025-11-13'), VISIT).text).toBe('Price not confirmed');
+  });
+
+  it('a stated end on the page wins when it is earlier than the window', () => {
+    expect(priceFreshness({ ...PAID, source: { ...SRC, validUntil: '2026-11-13' } }, VISIT)).toBe('last-known');
+    expect(priceFreshness({ ...PAID, source: { ...SRC, validUntil: '2026-11-14' } }, VISIT)).toBe('current');
+  });
+
+  it('a reading of the future is never current', () => {
+    expect(priceFreshness(at('2026-11-15'), VISIT)).toBe('expired');
+  });
+
+  it('last known is never presented as the price now: no total, no badge, dated, and sent to the venue', () => {
+    const old = at('2026-05-17');
+    const e = estimateFamilyAdmission(old, [adult(), kid('k', 'Sloane', 48)], VISIT);
+    expect(e).toMatchObject({ state: 'unknown', reason: 'stale', lastKnown: { checkedAt: '2026-05-17' } });
+    expect(priceBadge(old, VISIT)).toEqual({ kind: 'unknown', text: 'Price not confirmed' });
+    const view = admissionView(e, old);
+    expect(view.headline).toBe('Price not confirmed');
+    expect(view.isEstimate).toBe(false);
+    expect(view.breakdown).toEqual([
+      'Last known price: Adult £17, Children 3 to 15 £8.50, Under 3s free free, Concessions £12, Family: 2 adults and up to 4 children £42.',
+      'Prices may have changed since then. Check with the venue before you go.',
+    ]);
+    expect(view.provenance).toBe('Last checked 17 May 2026');
+  });
+
+  it('last known free entry says so, dated, and is not badged free', () => {
+    const free: AdmissionPricing = { status: 'free', source: { ...SRC, checkedAt: '2025-11-13' } };
+    const view = admissionView(estimateFamilyAdmission(free, [adult()], VISIT), free);
+    expect(view.breakdown[0]).toBe('Last known price: Free entry.');
+    expect(priceBadge(free, VISIT).kind).toBe('unknown');
   });
 });
 

@@ -10,7 +10,7 @@ import {
   estimateFamilyAdmission,
   priceBadge,
   priceIsCurrent,
-  MAX_PRICE_AGE_DAYS,
+  priceFreshnessDays,
 } from '@/src/services/pricing/admission';
 
 /**
@@ -89,8 +89,8 @@ describe('reviewed admission claims: the file', () => {
     for (const c of published) {
       const ageDays = (prepared - Date.parse(c.pricing!.source.checkedAt)) / 86_400_000;
       expect(ageDays, c.venueName).toBeGreaterThanOrEqual(0);
-      expect(ageDays, c.venueName).toBeLessThanOrEqual(MAX_PRICE_AGE_DAYS);
-      expect(priceIsCurrent(c.pricing!.source, VISIT), c.venueName).toBe(true);
+      expect(ageDays, c.venueName).toBeLessThanOrEqual(priceFreshnessDays(c.pricing!.status));
+      expect(priceIsCurrent(c.pricing!.source, VISIT, c.pricing!.status), c.venueName).toBe(true);
     }
   });
 });

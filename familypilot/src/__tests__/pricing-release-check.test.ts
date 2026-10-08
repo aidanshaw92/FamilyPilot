@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { REVIEWED_ADMISSION } from '@/src/data/reviewed-admission-claims';
-import { estimateFamilyAdmission, MAX_PRICE_AGE_DAYS, priceIsCurrent, type Attendee } from '@/src/services/pricing/admission';
+import { estimateFamilyAdmission, MAX_PRICE_AGE_DAYS, priceFreshness, priceFreshnessDays, priceIsCurrent, type Attendee } from '@/src/services/pricing/admission';
 import { reviewedAdmissionFor } from '@/src/services/pricing/reviewed-admission';
 
 /**
@@ -53,13 +53,14 @@ describe('reviewed admission: release gate', () => {
   });
 
   it.each(published.map((c) => [c.venueName, c] as const))('%s: current on release, with a known end', (_name, c) => {
-    const source = c.pricing!.source;
-    expect(priceIsCurrent(source, RELEASE_DATE)).toBe(true);
+    const { source, status } = c.pricing!;
+    expect(priceIsCurrent(source, RELEASE_DATE, status)).toBe(true);
     const checked = Date.parse(`${source.checkedAt}T00:00:00Z`);
-    const lastDay = new Date(checked + MAX_PRICE_AGE_DAYS * 86_400_000).toISOString().slice(0, 10);
-    expect(priceIsCurrent(source, lastDay)).toBe(true);
-    const dayAfter = new Date(checked + (MAX_PRICE_AGE_DAYS + 1) * 86_400_000).toISOString().slice(0, 10);
-    expect(priceIsCurrent(source, dayAfter), 'stops being shown after 400 days').toBe(false);
+    const day = (n: number) => new Date(checked + n * 86_400_000).toISOString().slice(0, 10);
+    const window = priceFreshnessDays(status);
+    expect(priceIsCurrent(source, day(window), status)).toBe(true);
+    expect(priceFreshness(c.pricing!, day(window + 1)), `after ${window} days it is last-known, not current`).toBe('last-known');
+    expect(priceFreshness(c.pricing!, day(MAX_PRICE_AGE_DAYS + 1)), 'after 400 days no figure at all').toBe('expired');
   });
 
   it.each(published.map((c) => [c.venueName, c] as const))('%s: a paid price states its tickets plainly', (_name, c) => {
