@@ -26,7 +26,7 @@
 | **38** | **Claims** the pilot would write from the 72 without a person | production claim rows |
 | **73** | **Claims** it would write if a person approved the 99 as well (the 38 included) | production claim rows |
 
-**38 and 73 are not subsets of 71 and 99.** They are a different unit. An item is not a claim: a claim is one value in one field of the production `venue_claims` table. One item can make two claims (a parking statement that also states a fee makes `parking = yes` and `freeParking = no`), and many items make none, because the table has no field for them.
+**38 and 73 are not subsets of 72 and 99.** They are a different unit. An item is not a claim: a claim is one value in one field of the production `venue_claims` table. One item can make two claims (a parking statement that also states a fee makes `parking = yes` and `freeParking = no`), and many items make none, because the table has no field for them.
 
 ## Why fewer can be published than were accepted
 
