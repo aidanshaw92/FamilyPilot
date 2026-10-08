@@ -290,6 +290,26 @@ const EDGE_METADATA = {
     checkedBy: 'fixture',
     updatedAt: '2026-09-28',
   },
+  // A venue whose only confirmed fact is its playground, with no ages stated (the Diana Memorial Playground case): before the
+  // held-facilities change its page read "Not confirmed yet" for everything.
+  'fp-google-FIXTUREedgePlaygroundOnly': {
+    familypilotPlaceId: 'fp-google-FIXTUREedgePlaygroundOnly',
+    enrichmentStatus: 'enriched',
+    facilities: ['playground'],
+    familyFacilities: { playground: 'yes' },
+    provenance: {},
+    updatedAt: '2026-09-28',
+  },
+  // Access facts both ways: an accessible toilet on site, and the venue's own statement that it is not wheelchair accessible.
+  'fp-google-FIXTUREedgeAccess': {
+    familypilotPlaceId: 'fp-google-FIXTUREedgeAccess',
+    enrichmentStatus: 'enriched',
+    facilities: ['toilets'],
+    familyFacilities: { toilets: 'yes' },
+    accessibility: { wheelchairAccessible: 'no', accessibleToilet: 'yes' },
+    provenance: {},
+    updatedAt: '2026-09-28',
+  },
   'fp-google-FIXTUREedgeLongName': {
     familypilotPlaceId: 'fp-google-FIXTUREedgeLongName',
     enrichmentStatus: 'enriched',
@@ -358,6 +378,8 @@ const EDGE_PLACES = [
   }),
   // No photograph at all: the category gradient has to carry the hero.
   edgePlace('fp-google-FIXTUREedgeNoPhoto', { name: 'No Photograph Park', photos: [], openingHours: WIDE_HOURS }),
+  edgePlace('fp-google-FIXTUREedgePlaygroundOnly', { name: 'Playground Only Park', openingHours: WIDE_HOURS }),
+  edgePlace('fp-google-FIXTUREedgeAccess', { name: 'Access Facts Museum', category: 'museum', openingHours: WIDE_HOURS }),
   // Detail-only venues carrying the ids of two REVIEWED admission claims (src/data/reviewed-admission-claims.ts), so the
   // "To get in" card can be checked with a real reviewed price: a paid venue whose family ticket is the only route a
   // party with under-7s can be priced by, and a free one with charged parts. Everything else about them is synthetic.
