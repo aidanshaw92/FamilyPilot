@@ -1,0 +1,101 @@
+{
+ "builtOn": "2026-10-08",
+ "realItems": 170,
+ "realFlagged": {
+  "fail": 0,
+  "warn": 27,
+  "pass": 143
+ },
+ "errorTypes": {
+  "a figure changed (price, time or age)": {
+   "applicable": 63,
+   "noticed": 57,
+   "stopped": 57,
+   "noticedPct": 90,
+   "missedExamples": [
+    "Battersea Park activities.playground",
+    "Discover Children's Story Centre access.saturday-club",
+    "Gunnersbury Park opening.hours"
+   ]
+  },
+  "the quote is about a different facility": {
+   "applicable": 91,
+   "noticed": 91,
+   "stopped": 91,
+   "noticedPct": 100,
+   "missedExamples": []
+  },
+  "the quote is from a different venue's site": {
+   "applicable": 170,
+   "noticed": 170,
+   "stopped": 170,
+   "noticedPct": 100,
+   "missedExamples": []
+  },
+  "a yes became a no": {
+   "applicable": 71,
+   "noticed": 70,
+   "stopped": 69,
+   "noticedPct": 99,
+   "missedExamples": [
+    "Discover Children's Story Centre pushchair.storage"
+   ]
+  },
+  "the quote names another site of the same operator": {
+   "applicable": 78,
+   "noticed": 78,
+   "stopped": 0,
+   "noticedPct": 100,
+   "missedExamples": []
+  },
+  "the notice is out of date": {
+   "applicable": 170,
+   "noticed": 169,
+   "stopped": 0,
+   "noticedPct": 99,
+   "missedExamples": [
+    "Discover Children's Story Centre considerations.stale-step-free-notice"
+   ]
+  },
+  "the proposal claims more than the quote (listed words)": {
+   "applicable": 170,
+   "noticed": 154,
+   "stopped": 0,
+   "noticedPct": 91,
+   "missedExamples": [
+    "Babylon Park London access.wheelchair",
+    "Discover Children's Story Centre activities.baby-toddler-space",
+    "Gunnersbury Park access.stepFree"
+   ]
+  },
+  "an invented count (digits)": {
+   "applicable": 170,
+   "noticed": 170,
+   "stopped": 170,
+   "noticedPct": 100,
+   "missedExamples": []
+  },
+  "the proposal adds a claim in words the checks do not list": {
+   "applicable": 170,
+   "noticed": 8,
+   "stopped": 0,
+   "noticedPct": 5,
+   "missedExamples": [
+    "Babylon Park London activities.soft-play",
+    "Babylon Park London activities.rides-arcade",
+    "Babylon Park London pushchair.allowed"
+   ]
+  },
+  "the proposal is about something else": {
+   "applicable": 146,
+   "noticed": 143,
+   "stopped": 73,
+   "noticedPct": 98,
+   "missedExamples": [
+    "Babylon Park London considerations.duration",
+    "Horniman Museum and Gardens food.picnic",
+    "Horniman Museum and Gardens pricing.free"
+   ]
+  }
+ }
+}
