@@ -1,3 +1,4 @@
+import { FamiliesAction } from '@/src/components/navigation/FamiliesAction';
 import { useMemo, useState, useEffect } from 'react';
 import { useIsFocused } from 'expo-router';
 import { FlatList, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -23,6 +24,11 @@ import { EXPLORE_CATEGORIES, exploreCategoriesFor, filterVenues } from '@/src/ut
 import { FOOD_FILTER_IDS, foodIsUnknown } from '@/src/utils/food-nearby';
 import { UncheckedFoodGroup } from '@/src/components/explore/UncheckedFoodGroup';
 import { SAVED_EXAMPLES_NOTICE, showingSavedExamples } from '@/src/utils/saved-examples-notice';
+
+/** Below this width the heading and the Families action share a row; at or above it they do not fit side by side. */
+const EXPLORE_FAMILIES_BELOW_WIDTH = 340;
+/** The row the action takes when it sits under the subtitle: the 44 point pill plus a little air above it. */
+const EXPLORE_FAMILIES_ROW = 52;
 
 export default function ExploreScreen() {
   const isFocused = useIsFocused();
@@ -56,7 +62,12 @@ export default function ExploreScreen() {
   // The subtitle wraps on a narrow phone; everything under it, and the art beside that, moves down by the
   // extra line instead of the text being shrunk.
   const subtitleText = isRestaurantMode ? RESTAURANT_SUBTITLE : SUBTITLE;
-  const subtitleShift = Math.max(0, estimateLineCount(subtitleText, 13.6, width - spacing.screenPadding * 2) - 1) * SUBTITLE_LINE_HEIGHT;
+  // On the narrowest phones the heading and the labelled Families action do not fit on one row, so the action takes a row of
+  // its own under the subtitle and moves everything below it (and the art) down by that row, rather than clipping either.
+  const familiesBelow = width < EXPLORE_FAMILIES_BELOW_WIDTH;
+  const subtitleShift =
+    Math.max(0, estimateLineCount(subtitleText, 13.6, width - spacing.screenPadding * 2) - 1) * SUBTITLE_LINE_HEIGHT +
+    (familiesBelow ? EXPLORE_FAMILIES_ROW : 0);
 
   useEffect(() => {
     if (categoryFilter === 'restaurants' && !isPilotFeatureVisible('explore_restaurants')) {
@@ -220,10 +231,20 @@ export default function ExploreScreen() {
       <ScreenArt art={EXPLORE_ART_BEHIND} from={0} to={760} anchor="top" clipX={[EDGE_ART_X, EXPLORE_ART_BEHIND.width]} align="right" />
       <ScreenArt art={EXPLORE_ART_BEHIND} from={1500} to={1844} anchor="bottom" />
       <View style={styles.header}>
-        <Text variant="heading1" style={styles.heading}>Explore London</Text>
+        {/* A fixed-height row (the heading's own 34.5), so the labelled way into Families sits on the right without moving
+            anything below it. */}
+        <View style={styles.headingRow}>
+          <Text variant="heading1" style={[styles.heading, styles.headingText]} numberOfLines={1}>Explore London</Text>
+          {familiesBelow ? null : <FamiliesAction />}
+        </View>
         <Text variant="body" color={colors.text.secondary} style={styles.subtitle}>
           {subtitleText}
         </Text>
+        {familiesBelow ? (
+          <View style={styles.familiesRowBelow}>
+            <FamiliesAction />
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.searchRow}>
@@ -440,6 +461,15 @@ const styles = StyleSheet.create({
     fontSize: 28.4,
     lineHeight: 34.5,
   },
+  headingRow: {
+    height: 34.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  headingText: { flexShrink: 1 },
+  familiesRowBelow: { height: EXPLORE_FAMILIES_ROW, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'flex-end' },
   subtitle: {
     marginTop: 7,
     fontSize: 13.6,

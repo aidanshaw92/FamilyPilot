@@ -31,10 +31,14 @@ export interface HeaderSavings {
   deckGap: number;
 }
 
+/** The slim row the Families action keeps when the heading is dropped (it replaces the 14 point gap that stood there). */
+export const COMPACT_FAMILIES_ROW = 44;
+
 export const HEADER_SAVINGS: Record<HomeHeaderMode, HeaderSavings> = {
   full: { subtitle: 0, searchGap: 0, title: 0, deckGap: 0 },
   tight: { subtitle: 21, searchGap: 5, title: 0, deckGap: 9 },
-  compact: { subtitle: 21, searchGap: 5, title: 51, deckGap: 9 },
+  // 51 less the 22 the Families row takes over the old 14 point gap.
+  compact: { subtitle: 21, searchGap: 5, title: 51 - (COMPACT_FAMILIES_ROW - 14), deckGap: 9 },
 };
 
 /** The gap between the chips and the deck in the approved frame (frame 278 -> 307). */
