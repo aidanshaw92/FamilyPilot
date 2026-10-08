@@ -1,0 +1,540 @@
+{
+ "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo": {
+  "name": "Babylon Park London",
+  "rules": [
+   {
+    "rule": {
+     "id": "ride-height-limit",
+     "kind": "caution",
+     "scope": "area",
+     "area": "Rollercoaster and drop tower",
+     "text": "No minimum age, but the rollercoaster and drop tower have a minimum height of 105cm."
+    },
+    "fact": "considerations.height",
+    "status": "review",
+    "evidence": {
+     "url": "https://babylonpark.com/london/",
+     "readAt": "2026-10-08",
+     "quote": "there is no minimum age for access however the rollercoaster and drop tower have a minimum height restriction of 105cm",
+     "pageSha256": "91e5b74efd6d579f"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4": {
+  "name": "Battersea Park",
+  "rules": [
+   {
+    "rule": {
+     "id": "cascades-restoration",
+     "kind": "caution",
+     "scope": "area",
+     "area": "The Cascades",
+     "text": "The historic waterfall is being restored with Lottery funding."
+    },
+    "fact": "considerations.cascades",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.wandsworth.gov.uk/batterseapark",
+     "readAt": "2026-10-08",
+     "quote": "We're restoring the Cascades, Battersea Park’s historic waterfall.",
+     "pageSha256": "dfaac2e1e3436ec1"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk": {
+  "name": "Discover Children's Story Centre",
+  "rules": [
+   {
+    "rule": {
+     "id": "pushchair-play-areas",
+     "kind": "pushchair",
+     "scope": "area",
+     "area": "Storytelling and play areas",
+     "coversCoreVisit": true,
+     "text": "Pushchairs and buggies are not allowed in any storytelling or play areas. Buggy parking on the ground floor; bring a sling for a smaller baby."
+    },
+    "fact": "pushchair.restriction",
+    "status": "review",
+    "evidence": {
+     "url": "https://discover.org.uk/getting-here/",
+     "readAt": "2026-10-08",
+     "quote": "There is buggy parking available on our Ground Floor. We do not allow buggies and pushchairs in any of our s torytelling or play areas . If you have a smaller baby we recommend bringing a sling.",
+     "pageSha256": "9d230072cea688a5"
+    }
+   },
+   {
+    "rule": {
+     "id": "pushchair-exception",
+     "kind": "caution",
+     "scope": "venue",
+     "text": "If a pushchair is needed (twins, a sleeping child), ask front of house; they will advise and accommodate where needed."
+    },
+    "fact": "pushchair.twins",
+    "status": "review",
+    "evidence": {
+     "url": "https://discover.org.uk/your-visit/faqs/",
+     "readAt": "2026-10-08",
+     "quote": "If you have a particular reason why you need a buggy with you – eg twin babies or a sleeping child – do speak to our front of house team who will be able to advise and accommodate your buggy where needed.",
+     "pageSha256": "7755ba53483f5d77"
+    }
+   },
+   {
+    "rule": {
+     "id": "book-ahead",
+     "kind": "booking",
+     "scope": "venue",
+     "text": "Advance booking is recommended; entry can reach capacity on busy days."
+    },
+    "fact": "considerations.booking",
+    "status": "review",
+    "evidence": {
+     "url": "https://discover.org.uk/your-visit/faqs/",
+     "readAt": "2026-10-08",
+     "quote": "we can even reach our capacity for Entry tickets on busy days, so we recommend booking ahead online if you can to avoid disappointment",
+     "pageSha256": "7755ba53483f5d77"
+    }
+   },
+   {
+    "rule": {
+     "id": "closed-christmas",
+     "kind": "closure",
+     "scope": "venue",
+     "from": "2026-12-24",
+     "until": "2026-12-26",
+     "text": "Closed 24, 25 and 26 December."
+    },
+    "fact": "opening.hours",
+    "status": "verified",
+    "evidence": {
+     "url": "https://discover.org.uk/your-visit/",
+     "readAt": "2026-10-08",
+     "quote": "Discover is open every day, 10am - 5pm",
+     "pageSha256": "6c7bf457e9d6cdee"
+    }
+   },
+   {
+    "rule": {
+     "id": "closed-new-year",
+     "kind": "closure",
+     "scope": "venue",
+     "from": "2026-12-31",
+     "until": "2027-01-01",
+     "text": "Closed 31 December and 1 January."
+    },
+    "fact": "opening.hours",
+    "status": "verified",
+    "evidence": {
+     "url": "https://discover.org.uk/your-visit/",
+     "readAt": "2026-10-08",
+     "quote": "Discover is open every day, 10am - 5pm",
+     "pageSha256": "6c7bf457e9d6cdee"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY": {
+  "name": "Gunnersbury Park",
+  "rules": [
+   {
+    "rule": {
+     "id": "museum-closed-mondays",
+     "kind": "closure",
+     "scope": "area",
+     "area": "Museum",
+     "weekdays": [
+      1
+     ],
+     "text": "The museum is closed on Mondays; the park is open every day."
+    },
+    "fact": "opening.hours",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.visitgunnersbury.org/plan-your-visit",
+     "readAt": "2026-10-08",
+     "quote": "Opening Hours Museum Tuesday-Sunday 10am to 4:30pm Park Daily between 7am until dusk",
+     "pageSha256": "80e5273c99d6548a"
+    }
+   },
+   {
+    "rule": {
+     "id": "no-dogs-museum",
+     "kind": "caution",
+     "scope": "area",
+     "area": "Museum",
+     "text": "No dogs in the museum except assistance dogs."
+    },
+    "fact": "considerations.dogs",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.visitgunnersbury.org/plan-your-visit",
+     "readAt": "2026-10-08",
+     "quote": "Please note we do not allow dogs into the museum, with the exception of Assistance Dogs.",
+     "pageSha256": "80e5273c99d6548a"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI": {
+  "name": "Horniman Museum and Gardens",
+  "rules": [
+   {
+    "rule": {
+     "id": "steep-garden-paths",
+     "kind": "caution",
+     "scope": "area",
+     "area": "Garden paths and Nature Trail",
+     "text": "Some garden paths are very steep, and the Nature Trail is uneven and can be muddy."
+    },
+    "fact": "access.steep-paths",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.horniman.ac.uk/plan-your-visit/",
+     "readAt": "2026-10-08",
+     "quote": "Some of the paths are very steep and on wet or frosty days may not be suitable for wheelchair users or anyone who is unstable on their feet.",
+     "pageSha256": "07c4f7f88813cd83"
+    }
+   },
+   {
+    "rule": {
+     "id": "natural-history-gallery-closed",
+     "kind": "closure",
+     "scope": "area",
+     "area": "Natural History Gallery",
+     "text": "The Natural History Gallery is closed for refurbishment."
+    },
+    "fact": "opening.closure",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.horniman.ac.uk/plan-your-visit/",
+     "readAt": "2026-10-08",
+     "quote": "Please note: for the Nature + Love project the Nature Gallery and Nature Discovery Den will be closed until 5 February 2027.",
+     "pageSha256": "07c4f7f88813cd83"
+    }
+   },
+   {
+    "rule": {
+     "id": "nature-gallery-closed",
+     "kind": "closure",
+     "scope": "area",
+     "area": "Nature Gallery and Nature Discovery Den",
+     "until": "2027-02-05",
+     "text": "The Nature Gallery and Nature Discovery Den are closed until 5 February 2027."
+    },
+    "fact": "opening.closure",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.horniman.ac.uk/plan-your-visit/",
+     "readAt": "2026-10-08",
+     "quote": "Please note: for the Nature + Love project the Nature Gallery and Nature Discovery Den will be closed until 5 February 2027.",
+     "pageSha256": "07c4f7f88813cd83"
+    }
+   },
+   {
+    "rule": {
+     "id": "busy-cafe-lunch",
+     "kind": "caution",
+     "scope": "area",
+     "area": "Café",
+     "text": "The café is very busy between 11.30am and 2.30pm, especially at weekends and in school holidays."
+    },
+    "fact": "considerations.busy-cafe",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.horniman.ac.uk/plan-your-visit/food-drink/",
+     "readAt": "2026-10-08",
+     "quote": "The Cafe gets very busy between 11.30am and 2.30pm, and especially so during weekends and school holidays.",
+     "pageSha256": "1872115b4ebdf319"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE": {
+  "name": "London Zoo",
+  "rules": [
+   {
+    "rule": {
+     "id": "steep-tunnel-slopes",
+     "kind": "pushchair",
+     "scope": "area",
+     "area": "Slopes to the two tunnels",
+     "text": "The slopes to the two tunnels are steep (relevant to pushchairs)."
+    },
+    "fact": "access.steep-slopes",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+     "readAt": "2026-10-08",
+     "quote": "Please note that the slopes leading to the two tunnels in the Zoo are steep.",
+     "pageSha256": "c827fbfab53284aa"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI": {
+  "name": "Mudchute Park and Farm",
+  "rules": [
+   {
+    "rule": {
+     "id": "courtyard-closed-mondays",
+     "kind": "closure",
+     "scope": "area",
+     "area": "Main courtyard",
+     "weekdays": [
+      1
+     ],
+     "affectsFacilities": [
+      "toilets",
+      "babyChanging"
+     ],
+     "text": "The main courtyard (with the toilets and baby changing) is closed on Mondays outside school holidays, so there is no toilet access."
+    },
+    "fact": "considerations.monday-courtyard",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.mudchute.org/plan-your-visit/opening-times",
+     "readAt": "2026-10-08",
+     "quote": "Main Courtyard Closed Mondays except during school holidays. No access to Mudchute Toilets when the Courtyard is closed.",
+     "pageSha256": "88c3ac5f087332c7"
+    }
+   },
+   {
+    "rule": {
+     "id": "wash-hands-animals",
+     "kind": "caution",
+     "scope": "area",
+     "area": "Animal areas",
+     "text": "Wash hands after touching animals; pregnant visitors are advised not to touch pregnant ewes, goats, lambs or kids."
+    },
+    "fact": "considerations.hygiene",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.mudchute.org/plan-your-visit/faq",
+     "readAt": "2026-10-08",
+     "quote": "Visitors to the Farm are encouraged to wash their hands thoroughly after touching any animals.",
+     "pageSha256": "b59553fe8f0899ac"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s": {
+  "name": "Natural History Museum",
+  "rules": [
+   {
+    "rule": {
+     "id": "closed-2026-10-09",
+     "kind": "closure",
+     "scope": "venue",
+     "from": "2026-10-09",
+     "until": "2026-10-09",
+     "text": "Closed on 9 October."
+    },
+    "fact": "opening.closure",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.nhm.ac.uk/visit.html",
+     "readAt": "2026-10-08",
+     "quote": "Closed 9 October and 24–26 December",
+     "pageSha256": "a6b93d6d6f7b0125"
+    }
+   },
+   {
+    "rule": {
+     "id": "closed-christmas",
+     "kind": "closure",
+     "scope": "venue",
+     "from": "2026-12-24",
+     "until": "2026-12-26",
+     "text": "Closed 24, 25 and 26 December."
+    },
+    "fact": "opening.closure",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.nhm.ac.uk/visit.html",
+     "readAt": "2026-10-08",
+     "quote": "Closed 9 October and 24–26 December",
+     "pageSha256": "a6b93d6d6f7b0125"
+    }
+   },
+   {
+    "rule": {
+     "id": "lifts-out-of-order",
+     "kind": "step_free",
+     "scope": "area",
+     "area": "Darwin Centre and Mammals Hall lifts",
+     "text": "Lifts in the Darwin Centre and the Mammals Hall were out of order on 6 October."
+    },
+    "fact": "access.lifts-out",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.nhm.ac.uk/visit/galleries-and-museum-map.html",
+     "readAt": "2026-10-08",
+     "quote": "Lifts: A number of lifts in the Darwin Centre are currently out of order The lift in our Mammals Hall is currently out of order.",
+     "pageSha256": "aee2e2d39ca97a07"
+    }
+   },
+   {
+    "rule": {
+     "id": "station-not-step-free",
+     "kind": "step_free",
+     "scope": "area",
+     "area": "South Kensington station",
+     "text": "South Kensington station is not step free; a subway tunnel gives step-free access from the station to the museum."
+    },
+    "fact": "access.station-step-free",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.nhm.ac.uk/visit/getting-here.html",
+     "readAt": "2026-10-08",
+     "quote": "This station is not step free.",
+     "pageSha256": "a7d2c3677d8bccc9"
+    }
+   },
+   {
+    "rule": {
+     "id": "weekend-queue",
+     "kind": "caution",
+     "scope": "venue",
+     "text": "At weekends and in school holidays you may have to queue to enter; a free entry ticket or membership skips the queue."
+    },
+    "fact": "considerations.queue",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.nhm.ac.uk/visit.html",
+     "readAt": "2026-10-08",
+     "quote": "Sometimes during weekends and school holidays we can get busy and you may have to queue to enter.",
+     "pageSha256": "a6b93d6d6f7b0125"
+    }
+   },
+   {
+    "rule": {
+     "id": "free-ticket-guarantees-entry",
+     "kind": "booking",
+     "scope": "venue",
+     "text": "A free entry ticket guarantees entry and skips the queue at busy times."
+    },
+    "fact": "considerations.booking",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.nhm.ac.uk/visit/galleries-and-museum-map/our-gardens.html",
+     "readAt": "2026-10-08",
+     "quote": "If you’d also like to go inside the Museum, get your free entry ticket on our website to guarantee your entry and skip the queue during busy times.",
+     "pageSha256": "482995fb3e96d5cd"
+    }
+   },
+   {
+    "rule": {
+     "id": "creepy-crawlies-closed",
+     "kind": "closure",
+     "scope": "area",
+     "area": "Creepy Crawlies Gallery",
+     "text": "The Creepy Crawlies Gallery is closed and will reopen as a permanent gallery for families."
+    },
+    "fact": "considerations.creepy-crawlies",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.nhm.ac.uk/visit/galleries-and-museum-map.html",
+     "readAt": "2026-10-08",
+     "quote": "The Creepy Crawlies Gallery is now closed and will reopen as a new, permanent gallery for families.",
+     "pageSha256": "aee2e2d39ca97a07"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc": {
+  "name": "Royal Air Force Museum London",
+  "rules": [
+   {
+    "rule": {
+     "id": "4d-theatre-closed",
+     "kind": "closure",
+     "scope": "area",
+     "area": "4D Theatre",
+     "until": "2026-12-31",
+     "text": "The 4D Theatre is temporarily closed for refurbishment until 31 December 2026."
+    },
+    "fact": "opening.theatre",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+     "readAt": "2026-10-08",
+     "quote": "4D Theatre Experience - 31 December 2026 Temporarily Closed for Refurbishment",
+     "pageSha256": "61bcf590914204f6"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE": {
+  "name": "Science Museum",
+  "rules": [
+   {
+    "rule": {
+     "id": "bulky-buggies-parked",
+     "kind": "pushchair",
+     "scope": "venue",
+     "text": "Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas."
+    },
+    "fact": "pushchair.allowed",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+     "readAt": "2026-10-08",
+     "quote": "Buggies are allowed in the museum and galleries. However, in certain areas, you may be asked to leave your pram in a buggy park",
+     "pageSha256": "519ad9faf34b5181"
+    }
+   },
+   {
+    "rule": {
+     "id": "mezzanine-not-step-free",
+     "kind": "step_free",
+     "scope": "area",
+     "area": "Mezzanine in Making the Modern World and Flight",
+     "text": "No step-free access to the mezzanine in Making the Modern World and Flight."
+    },
+    "fact": "access.mezzanine",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+     "readAt": "2026-10-08",
+     "quote": "There is currently no step-free access to the mezzanine level in Making the Modern World and Flight galleries.",
+     "pageSha256": "6f7f7ce4b8756f29"
+    }
+   },
+   {
+    "rule": {
+     "id": "closed-christmas",
+     "kind": "closure",
+     "scope": "venue",
+     "from": "2026-12-24",
+     "until": "2026-12-26",
+     "text": "Closed 24, 25 and 26 December."
+    },
+    "fact": "opening.hours",
+    "status": "verified",
+    "evidence": {
+     "url": "https://www.sciencemuseum.org.uk/visit",
+     "readAt": "2026-10-08",
+     "quote": "The museum is open daily from 10.00–18.00 (except for 24–26 December when the museum is closed).",
+     "pageSha256": "fda0be0a14a8efc3"
+    }
+   },
+   {
+    "rule": {
+     "id": "building-noise",
+     "kind": "caution",
+     "scope": "venue",
+     "text": "New galleries are being built, so there may be some extra noise."
+    },
+    "fact": "considerations.building-noise",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+     "readAt": "2026-10-08",
+     "quote": "We're currently building new galleries in the museum so there may be some additional noise during your visit.",
+     "pageSha256": "6f7f7ce4b8756f29"
+    }
+   }
+  ]
+ }
+}
