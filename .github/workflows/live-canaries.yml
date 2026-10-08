@@ -47,6 +47,11 @@ on:
         options:
           - closed
           - production
+      expect_off:
+        description: Comma-separated scopes that must refuse in addition to the profile, e.g. photos (free, no provider request)
+        type: string
+        required: false
+        default: ''
       verify_cache_headers:
         description: Verify the food cache fixes against the deployment (costs ONE Overpass query)
         type: boolean
@@ -133,13 +138,21 @@ jobs:
         if: ${{ inputs.assert_fail_closed }}
         env:
           PROFILE: ${{ inputs.posture_profile }}
+          EXPECT_OFF: ${{ inputs.expect_off }}
         run: |
           set -euo pipefail
           cd familypilot
+          extra=()
+          if [ -n "${EXPECT_OFF:-}" ]; then
+            case "$EXPECT_OFF" in
+              *[!a-z,]*) echo "::error::expect_off may only name scopes, e.g. photos,refresh"; exit 1 ;;
+            esac
+            extra+=("--expect-off=${EXPECT_OFF}")
+          fi
           if [ "${PROFILE:-closed}" = "production" ]; then
-            node scripts/assert-places-fail-closed.mjs /tmp/target-status.json --profile=production
+            node scripts/assert-places-fail-closed.mjs /tmp/target-status.json --profile=production "${extra[@]}"
           else
-            node scripts/assert-places-fail-closed.mjs /tmp/target-status.json
+            node scripts/assert-places-fail-closed.mjs /tmp/target-status.json "${extra[@]}"
           fi
 
       # Runs first and costs nothing. A canary that spends before confirming its own preconditions is
