@@ -25,7 +25,7 @@ module.exports = {
     { sec: 'transport', key: 'blueBadge', v: 'yes', t: 'A disabled bay at the entrance; Blue Badge holders can also park on the Outer Circle for up to four hours.', u: '/plan-your-visit/accessibility',
       q: 'There is a disabled parking bay in front of the entrance to the zoo, disabled visitors can also park on the Outer Circle for up to four hours with a Blue Badge.' },
     { sec: 'food', key: 'cafe', v: 'yes', t: 'The Terrace Restaurant, Peckish Parrot Café, a Barista Bar and kiosks.', u: '/plan-your-visit/opening-times',
-      q: 'Coffees and hot drinks are available from our Barista Bar, next to The Terrace Restaurant , from 10am until the Zoo closes.' },
+      q: ['Coffees and hot drinks are available from our Barista Bar, next to The Terrace Restaurant , from 10am until the Zoo closes.', 'The Terrace Restaurant is open for eat in or take aways from 11.30am - 2.30pm year round.'] },
     { sec: 'food', key: 'picnic', v: 'yes', t: 'Outdoor picnic benches.', u: '/plan-your-visit/food-and-drink', q: 'Outdoor picnic benches are available.' },
     { sec: 'play', key: 'playground', st: 'unknown', t: 'An outdoor playground: not stated on the pages read.', n: 'ZooTown is the indoor play space.' },
     { sec: 'access', key: 'wheelchair', v: 'yes', t: 'Most of the zoo is accessible for wheelchair users and those with limited mobility.', u: '/plan-your-visit/accessibility',

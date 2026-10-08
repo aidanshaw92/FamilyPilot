@@ -16,7 +16,7 @@ module.exports = {
       u: '/visit/young-explorers-guide-science-museum', q: 'This free multi-sensory area allows children to play with water ripples without getting their feet wet' },
     // --- pushchair and baby
     { sec: 'pushchair', key: 'storage', gtk: true, v: 'yes', t: 'Free buggy parking in the Spare Room (level -1, opposite The Garden); a small free buggy park by Pattern Pod.', u: '/visit/space-lovers-guide-science-museum',
-      q: 'Buggy parking is available free of charge in the Spare Room, located opposite The Garden gallery on level -1.' },
+      q: ['Buggy parking is available free of charge in the Spare Room, located opposite The Garden gallery on level -1.', 'We have a small free buggy parking area next to Pattern Pod on level 0 for the duration of your visit in that area.'] },
     { sec: 'pushchair', key: 'allowed', gtk: true, v: 'yes', t: 'Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.', u: '/visit/young-explorers-guide-science-museum',
       q: 'Buggies are allowed in the museum and galleries. However, in certain areas, you may be asked to leave your pram in a buggy park' },
     // --- toilets
@@ -45,7 +45,7 @@ module.exports = {
     { sec: 'play', key: 'playground', st: 'unknown', t: 'No outdoor playground: not applicable to this venue; indoor play is The Garden and Pattern Pod.', n: 'Not an expected facility for a museum; shown only through the activities above.' },
     // --- access
     { sec: 'access', key: 'stepFreeRoute', v: 'yes', t: 'A step-free route for families with under-7s links the toddler galleries.', u: '/visit/young-explorers-guide-science-museum',
-      q: ['this free guide can be enjoyed at your own pace and follows a step-free route through the museum', 'perfect for families with children under seven'] },
+      q: ['discover five favourite experiences for toddlers and young explorers at the Science Museum', 'this free guide can be enjoyed at your own pace and follows a step-free route through the museum', 'perfect for families with children under seven'] },
     { sec: 'access', key: 'mezzanine', gtk: true, v: 'no', scope: 'area', t: 'No step-free access to the mezzanine in Making the Modern World and Flight.', u: '/visit/accessibility',
       q: 'There is currently no step-free access to the mezzanine level in Making the Modern World and Flight galleries.' },
     { sec: 'access', key: 'wheelchairLoan', v: 'yes', t: 'Wheelchairs and folding stools can be borrowed from the Information Desk.', u: '/visit/accessibility',

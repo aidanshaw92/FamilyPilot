@@ -1,0 +1,989 @@
+{
+ "startedWith": 99,
+ "stages": [
+  {
+   "name": "Held for a person",
+   "why": "Everything the gate or an independent check would not accept on its own.",
+   "removed": 0,
+   "remaining": 99
+  },
+  {
+   "name": "Parked: nothing in the app can hold it",
+   "why": "No claim type, rule, hours or reviewed-data home. Approving it would publish nothing, so reviewing it now is wasted. It stays in the profile as a source note and is reviewed the day a field exists for it.",
+   "removed": 20,
+   "remaining": 79
+  },
+  {
+   "name": "Merged: the same sentence already in the queue",
+   "why": "One reading, one decision: a second proposal from the identical sentence on the identical page is decided with the first.",
+   "removed": 1,
+   "remaining": 78
+  },
+  {
+   "name": "Deferred: restates what production already serves",
+   "why": "An active production claim for the same venue, field and value already says it. Production's own refresh keeps it current; a person adds nothing by approving a restatement.",
+   "removed": 4,
+   "remaining": 74
+  },
+  {
+   "name": "Rejected: the evidence does not support it",
+   "why": "Both independent verifiers found it unsupported, or a mechanical check failed. Not published; listed with the reason; a person can overturn it.",
+   "removed": 0,
+   "remaining": 74
+  }
+ ],
+ "humanDecisions": 74,
+ "of": {
+  "needExpertOrOwner": 29,
+  "standardReviewerQueue": 39,
+  "lowImpactBatch": 6
+ },
+ "independentlyVerified": {
+  "bothSupport": 72,
+  "notBothSupport": 2
+ },
+ "byDestination": {
+  "ships as reviewed activity data (code, by pull request)": 10,
+  "claim": 23,
+  "venue rule or official-hours claim (structured; a person must approve it)": 28,
+  "price: reviewed admission data or held (no claim type)": 7,
+  "ships as reviewed admission data (code, by pull request)": 6
+ },
+ "pagesToOpen": 34,
+ "withheld": [
+  {
+   "stage": "Parked: nothing in the app can hold it",
+   "items": [
+    "ChIJ7_PV980bdkgROekbwOVWVfo:pushchair.allowed",
+    "ChIJ7_PV980bdkgROekbwOVWVfo:food.outside-food",
+    "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.storage",
+    "ChIJJ2CD1mEddkgRAuOi9iSzBrk:considerations.stale-step-free-notice",
+    "ChIJJ2CD1mEddkgRAuOi9iSzBrk:access.saturday-club",
+    "ChIJrcFVE-YNdkgRJQPxAxaTnMY:pushchair.terrain",
+    "ChIJrcFVE-YNdkgRJQPxAxaTnMY:access.stepFree",
+    "ChIJSzwgydoDdkgRndnXVYQGXBI:activities.animal-walk",
+    "ChIJV_iXMtcadkgRqBI84CY_crE:pushchair.hire",
+    "ChIJp8y37pgCdkgRBeRSa2iabyI:activities.farm-animals",
+    "ChIJp8y37pgCdkgRBeRSa2iabyI:pushchair.terrain",
+    "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:activities.nature-discovery-garden",
+    "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:pushchair.cloakroom",
+    "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:transport.station",
+    "ChIJse1x6SoRdkgR83yrIhNV5gc:pushchair.access",
+    "ChIJse1x6SoRdkgR83yrIhNV5gc:transport.station",
+    "ChIJse1x6SoRdkgR83yrIhNV5gc:transport.parkingFee",
+    "ChIJse1x6SoRdkgR83yrIhNV5gc:access.stepFree",
+    "ChIJP9oAE0MFdkgR3iKGFKZO1SE:access.stepFreeRoute",
+    "ChIJP9oAE0MFdkgR3iKGFKZO1SE:access.wheelchairLoan"
+   ]
+  },
+  {
+   "stage": "Merged: the same sentence already in the queue",
+   "items": [
+    "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.accessibleToilet"
+   ]
+  },
+  {
+   "stage": "Deferred: restates what production already serves",
+   "items": [
+    "ChIJ7_PV980bdkgROekbwOVWVfo:transport.parking",
+    "ChIJOWBQvA4FdkgRQf5iYYFF1v4:play.playground",
+    "ChIJse1x6SoRdkgR83yrIhNV5gc:toilets.babyChanging",
+    "ChIJse1x6SoRdkgR83yrIhNV5gc:toilets.toilets"
+   ]
+  },
+  {
+   "stage": "Rejected: the evidence does not support it",
+   "items": []
+  }
+ ],
+ "remaining": [
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:activities.soft-play",
+   "venue": "Babylon Park London",
+   "field": "activities.soft-play",
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:food.cafe",
+   "venue": "Babylon Park London",
+   "field": "food.cafe",
+   "dest": "claim",
+   "impact": "low",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:access.wheelchair",
+   "venue": "Babylon Park London",
+   "field": "access.wheelchair",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:considerations.height",
+   "venue": "Babylon Park London",
+   "field": "considerations.height",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:activities.playground",
+   "venue": "Battersea Park",
+   "field": "activities.playground",
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:opening.hours",
+   "venue": "Battersea Park",
+   "field": "opening.hours",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:considerations.cascades",
+   "venue": "Battersea Park",
+   "field": "considerations.cascades",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.baby-toddler-space",
+   "venue": "Discover Children's Story Centre",
+   "field": "activities.baby-toddler-space",
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.baby-storytelling",
+   "venue": "Discover Children's Story Centre",
+   "field": "activities.baby-storytelling",
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.storytelling-0-5",
+   "venue": "Discover Children's Story Centre",
+   "field": "activities.storytelling-0-5",
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.exhibition-0-8",
+   "venue": "Discover Children's Story Centre",
+   "field": "activities.exhibition-0-8",
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.restriction",
+   "venue": "Discover Children's Story Centre",
+   "field": "pushchair.restriction",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.twins",
+   "venue": "Discover Children's Story Centre",
+   "field": "pushchair.twins",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.accessibleToilet",
+   "venue": "Discover Children's Story Centre",
+   "field": "toilets.accessibleToilet",
+   "dest": "claim",
+   "impact": "low",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.parking",
+   "venue": "Discover Children's Story Centre",
+   "field": "transport.parking",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:access.wheelchair",
+   "venue": "Discover Children's Story Centre",
+   "field": "access.wheelchair",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:access.sensory",
+   "venue": "Discover Children's Story Centre",
+   "field": "access.sensory",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pricing.paid",
+   "venue": "Discover Children's Story Centre",
+   "field": "pricing.paid",
+   "dest": "price: reviewed admission data or held (no claim type)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "narrower",
+    "B": "unclear"
+   }
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pricing.under1",
+   "venue": "Discover Children's Story Centre",
+   "field": "pricing.under1",
+   "dest": "price: reviewed admission data or held (no claim type)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pricing.addons",
+   "venue": "Discover Children's Story Centre",
+   "field": "pricing.addons",
+   "dest": "price: reviewed admission data or held (no claim type)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:considerations.booking",
+   "venue": "Discover Children's Story Centre",
+   "field": "considerations.booking",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:access.wheelchair",
+   "venue": "Gunnersbury Park",
+   "field": "access.wheelchair",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:access.relaxed",
+   "venue": "Gunnersbury Park",
+   "field": "access.relaxed",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:opening.hours",
+   "venue": "Gunnersbury Park",
+   "field": "opening.hours",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:pricing.free",
+   "venue": "Gunnersbury Park",
+   "field": "pricing.free",
+   "dest": "ships as reviewed admission data (code, by pull request)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:considerations.dogs",
+   "venue": "Gunnersbury Park",
+   "field": "considerations.dogs",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.parking",
+   "venue": "Horniman Museum and Gardens",
+   "field": "transport.parking",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:access.wheelchair",
+   "venue": "Horniman Museum and Gardens",
+   "field": "access.wheelchair",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:access.steep-paths",
+   "venue": "Horniman Museum and Gardens",
+   "field": "access.steep-paths",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:opening.hours",
+   "venue": "Horniman Museum and Gardens",
+   "field": "opening.hours",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:opening.closure-natural-history",
+   "venue": "Horniman Museum and Gardens",
+   "field": "opening.closure-natural-history",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:opening.closure",
+   "venue": "Horniman Museum and Gardens",
+   "field": "opening.closure",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:pricing.free",
+   "venue": "Horniman Museum and Gardens",
+   "field": "pricing.free",
+   "dest": "ships as reviewed admission data (code, by pull request)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:pricing.paidAttractions",
+   "venue": "Horniman Museum and Gardens",
+   "field": "pricing.paidAttractions",
+   "dest": "price: reviewed admission data or held (no claim type)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:considerations.busy-cafe",
+   "venue": "Horniman Museum and Gardens",
+   "field": "considerations.busy-cafe",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:activities.zootown",
+   "venue": "London Zoo",
+   "field": "activities.zootown",
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:food.cafe",
+   "venue": "London Zoo",
+   "field": "food.cafe",
+   "dest": "claim",
+   "impact": "low",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:access.wheelchair",
+   "venue": "London Zoo",
+   "field": "access.wheelchair",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:access.steep-slopes",
+   "venue": "London Zoo",
+   "field": "access.steep-slopes",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:opening.hours",
+   "venue": "London Zoo",
+   "field": "opening.hours",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:pricing.under3",
+   "venue": "London Zoo",
+   "field": "pricing.under3",
+   "dest": "price: reviewed admission data or held (no claim type)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:pricing.variable",
+   "venue": "London Zoo",
+   "field": "pricing.variable",
+   "dest": "price: reviewed admission data or held (no claim type)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:transport.parking",
+   "venue": "Mudchute Park and Farm",
+   "field": "transport.parking",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:play.playground",
+   "venue": "Mudchute Park and Farm",
+   "field": "play.playground",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:access.wheelchair",
+   "venue": "Mudchute Park and Farm",
+   "field": "access.wheelchair",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:opening.hours",
+   "venue": "Mudchute Park and Farm",
+   "field": "opening.hours",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:considerations.monday-courtyard",
+   "venue": "Mudchute Park and Farm",
+   "field": "considerations.monday-courtyard",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:pricing.free",
+   "venue": "Mudchute Park and Farm",
+   "field": "pricing.free",
+   "dest": "ships as reviewed admission data (code, by pull request)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:considerations.hygiene",
+   "venue": "Mudchute Park and Farm",
+   "field": "considerations.hygiene",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.accessibleToilet",
+   "venue": "Natural History Museum",
+   "field": "toilets.accessibleToilet",
+   "dest": "claim",
+   "impact": "low",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:transport.parking",
+   "venue": "Natural History Museum",
+   "field": "transport.parking",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:access.wheelchair",
+   "venue": "Natural History Museum",
+   "field": "access.wheelchair",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:access.lifts-out",
+   "venue": "Natural History Museum",
+   "field": "access.lifts-out",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:access.station-step-free",
+   "venue": "Natural History Museum",
+   "field": "access.station-step-free",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:opening.closure",
+   "venue": "Natural History Museum",
+   "field": "opening.closure",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:pricing.free",
+   "venue": "Natural History Museum",
+   "field": "pricing.free",
+   "dest": "ships as reviewed admission data (code, by pull request)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:considerations.queue",
+   "venue": "Natural History Museum",
+   "field": "considerations.queue",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:considerations.booking",
+   "venue": "Natural History Museum",
+   "field": "considerations.booking",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:considerations.creepy-crawlies",
+   "venue": "Natural History Museum",
+   "field": "considerations.creepy-crawlies",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:access.wheelchair",
+   "venue": "Royal Air Force Museum London",
+   "field": "access.wheelchair",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "narrower",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:access.sensory",
+   "venue": "Royal Air Force Museum London",
+   "field": "access.sensory",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:opening.theatre",
+   "venue": "Royal Air Force Museum London",
+   "field": "opening.theatre",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:pricing.free",
+   "venue": "Royal Air Force Museum London",
+   "field": "pricing.free",
+   "dest": "ships as reviewed admission data (code, by pull request)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:activities.the-garden",
+   "venue": "Science Museum",
+   "field": "activities.the-garden",
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:activities.bubble-explorers",
+   "venue": "Science Museum",
+   "field": "activities.bubble-explorers",
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:activities.wonderlab",
+   "venue": "Science Museum",
+   "field": "activities.wonderlab",
+   "dest": "ships as reviewed activity data (code, by pull request)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:pushchair.allowed",
+   "venue": "Science Museum",
+   "field": "pushchair.allowed",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.toilets",
+   "venue": "Science Museum",
+   "field": "toilets.toilets",
+   "dest": "claim",
+   "impact": "low",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.babyChanging",
+   "venue": "Science Museum",
+   "field": "toilets.babyChanging",
+   "dest": "claim",
+   "impact": "low",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.parking",
+   "venue": "Science Museum",
+   "field": "transport.parking",
+   "dest": "claim",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:access.mezzanine",
+   "venue": "Science Museum",
+   "field": "access.mezzanine",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:pricing.free",
+   "venue": "Science Museum",
+   "field": "pricing.free",
+   "dest": "ships as reviewed admission data (code, by pull request)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:pricing.bubbleExplorers",
+   "venue": "Science Museum",
+   "field": "pricing.bubbleExplorers",
+   "dest": "price: reviewed admission data or held (no claim type)",
+   "impact": "high",
+   "owner": true,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:considerations.building-noise",
+   "venue": "Science Museum",
+   "field": "considerations.building-noise",
+   "dest": "venue rule or official-hours claim (structured; a person must approve it)",
+   "impact": "high",
+   "owner": false,
+   "verifiers": {
+    "A": "supports",
+    "B": "supports"
+   }
+  }
+ ]
+}

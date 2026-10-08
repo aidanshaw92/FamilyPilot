@@ -34,7 +34,7 @@ const SPECS = {
   ],
   'horniman-museum-and-gardens': [
     { fact: 'access.steep-paths', id: 'steep-garden-paths', kind: 'caution', scope: 'area', area: 'Garden paths and Nature Trail' },
-    { fact: 'opening.closure', id: 'natural-history-gallery-closed', kind: 'closure', scope: 'area', area: 'Natural History Gallery', text: 'The Natural History Gallery is closed for refurbishment.' },
+    { fact: 'opening.closure-natural-history', id: 'natural-history-gallery-closed', kind: 'closure', scope: 'area', area: 'Natural History Gallery', text: 'The Natural History Gallery is closed for refurbishment.' },
     { fact: 'opening.closure', id: 'nature-gallery-closed', kind: 'closure', scope: 'area', area: 'Nature Gallery and Nature Discovery Den', until: '2027-02-05', text: 'The Nature Gallery and Nature Discovery Den are closed until 5 February 2027.' },
     { fact: 'considerations.busy-cafe', id: 'busy-cafe-lunch', kind: 'caution', scope: 'area', area: 'Café' },
   ],
@@ -42,7 +42,7 @@ const SPECS = {
     { fact: 'access.steep-slopes', id: 'steep-tunnel-slopes', kind: 'pushchair', scope: 'area', area: 'Slopes to the two tunnels' },
   ],
   'mudchute-park-and-farm': [
-    { fact: 'considerations.monday-courtyard', id: 'courtyard-closed-mondays', kind: 'closure', scope: 'area', area: 'Main courtyard', weekdays: [1], affectsFacilities: ['toilets', 'babyChanging'] },
+    { fact: 'considerations.monday-courtyard', id: 'courtyard-closed-mondays', kind: 'closure', scope: 'area', area: 'Main courtyard', weekdays: [1], affectsFacilities: ['toilets'] },
     { fact: 'considerations.hygiene', id: 'wash-hands-animals', kind: 'caution', scope: 'area', area: 'Animal areas' },
   ],
   'natural-history-museum': [
@@ -55,7 +55,8 @@ const SPECS = {
     { fact: 'considerations.creepy-crawlies', id: 'creepy-crawlies-closed', kind: 'closure', scope: 'area', area: 'Creepy Crawlies Gallery' },
   ],
   'raf-museum-london': [
-    { fact: 'opening.theatre', id: '4d-theatre-closed', kind: 'closure', scope: 'area', area: '4D Theatre', until: '2026-12-31' },
+    // No `until`: the only date on the page is the one every event listing carries, not a reopening date (two verifiers agreed).
+    { fact: 'opening.theatre', id: '4d-theatre-closed', kind: 'closure', scope: 'area', area: '4D Theatre' },
   ],
   'science-museum': [
     { fact: 'pushchair.allowed', id: 'bulky-buggies-parked', kind: 'pushchair', scope: 'venue' },

@@ -29,7 +29,14 @@
       "sec": "activities",
       "key": "park-museum-lake",
       "value": null,
-      "text": "A park with a museum and a boating lake, and events for children and families. No age is given.",
+      "text": "A park with a museum and boating on the lake.",
+      "amended": {
+        "from": "A park with a museum and a boating lake, and events for children and families. No age is given.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "kind": "provision",
       "label": "Park, museum and boating lake",
       "evidence": {
@@ -38,7 +45,11 @@
         "quote": "wandering around the museum or boating on the lake - there's plenty to enjoy at Gunnersbury.",
         "pageSha256": "04e0038397ae709e"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -64,7 +75,11 @@
       "reviewReasons": [
         "not a fact type that may be accepted without a person",
         "conditional, temporary or dated wording"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -77,20 +92,35 @@
         "quote": "There is also an accessible toilet in the park toilet block, which is located near the museum.",
         "pageSha256": "80e5273c99d6548a"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
       "key": "accessibleToilet",
       "value": "yes",
-      "text": "Accessible toilets in the museum (ground floor, no RADAR key) and the park toilet block.",
+      "text": "There is an accessible toilet in the museum and another in the park toilet block, which is near the museum.",
+      "amended": {
+        "from": "Accessible toilets in the museum (ground floor, no RADAR key) and the park toilet block.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.visitgunnersbury.org/plan-your-visit",
         "readAt": "2026-10-08",
         "quote": "There is an accessible toilet in the museum. There is also an accessible toilet in the park toilet block, which is located near the museum.",
         "pageSha256": "80e5273c99d6548a"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -117,13 +147,24 @@
         ],
         "pageSha256": "80e5273c99d6548a"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
       "key": "parking",
       "value": "yes",
-      "text": "Two car parks. The first 30 minutes are free; then £1 for 30 minutes to 1 hour and £1 an hour after. Charges apply at all times, including bank holidays. Blue Badge parking is free.",
+      "text": "Two car parks. Up to 30 minutes free if you register on the RingGo app or the machine (you cannot register for another free half hour for 2 hours after leaving); 30 minutes to 1 hour £1; longer than an hour £1 per hour. Charges apply at all times, including bank holidays. Blue Badge parking is free.",
+      "amended": {
+        "from": "Two car parks. The first 30 minutes are free; then £1 for 30 minutes to 1 hour and £1 an hour after. Charges apply at all times, including bank holidays. Blue Badge parking is free.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "supports"
+        }
+      },
       "evidence": {
         "url": "https://www.visitgunnersbury.org/plan-your-visit",
         "readAt": "2026-10-08",
@@ -138,7 +179,11 @@
         ],
         "pageSha256": "80e5273c99d6548a"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -151,20 +196,35 @@
         "quote": "Designated disabled parking for blue badge holders can be found in both car parks and parking is free.",
         "pageSha256": "80e5273c99d6548a"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "food",
       "key": "cafe",
       "value": "yes",
-      "text": "The Pure in the Park café: weekdays 7am to 5pm, weekends 7am to 6pm.",
+      "text": "The park café: weekdays 7am to 5pm, weekends 7am to 6pm.",
+      "amended": {
+        "from": "The Pure in the Park café: weekdays 7am to 5pm, weekends 7am to 6pm.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.visitgunnersbury.org/plan-your-visit",
         "readAt": "2026-10-08",
         "quote": "Café Monday to Friday: 7am to 5pm Weekends: 7am to 6pm",
         "pageSha256": "80e5273c99d6548a"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "play",
@@ -188,13 +248,24 @@
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
       "key": "stepFree",
       "value": "yes",
-      "text": "Step-free access throughout the museum (some ramps and slopes); a lift to all levels; a manual wheelchair to borrow.",
+      "text": "Step-free access throughout the museum (some ramps and slopes); lift access to the first and second floors (all museum levels); a wheelchair to borrow on request.",
+      "amended": {
+        "from": "Step-free access throughout the museum (some ramps and slopes); a lift to all levels; a manual wheelchair to borrow.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.visitgunnersbury.org/museum/accessibility",
         "readAt": "2026-10-08",
@@ -204,7 +275,11 @@
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
@@ -226,7 +301,11 @@
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "opening",
@@ -244,13 +323,24 @@
         "conditional, temporary or dated wording",
         "conflicts with the provider (Google) hours, which show the park as open 24 hours"
       ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "conflict": "the provider (Google) hours, which show the park as open 24 hours"
     },
     {
       "sec": "pricing",
       "key": "free",
       "value": "free",
-      "text": "The museum and park are free to enter; car parking is charged.",
+      "text": "The museum and park are free to enter; the car park has usage fees, though parking for blue badge holders in the designated disabled bays is free.",
+      "amended": {
+        "from": "The museum and park are free to enter; car parking is charged.",
+        "verdicts": {
+          "A": "supports",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.visitgunnersbury.org/plan-your-visit",
         "readAt": "2026-10-08",
@@ -260,7 +350,11 @@
       "status": "review",
       "reviewReasons": [
         "a price or a free-entry claim (drives cost)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "considerations",
@@ -276,7 +370,11 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     }
   ]
 }

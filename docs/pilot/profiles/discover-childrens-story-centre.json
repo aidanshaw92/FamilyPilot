@@ -13,7 +13,14 @@
       "sec": "activities",
       "key": "baby-toddler-space",
       "value": null,
-      "text": "A play space for 0 to 2 year olds only (free with an Entry ticket; book a 45 minute session). Older siblings have a small craft area.",
+      "text": "A Baby and Toddler Sensory Story Space dedicated to 0-2 year olds, free with your Entry ticket; timed 45-minute sessions should be booked.",
+      "amended": {
+        "from": "A play space for 0 to 2 year olds only (free with an Entry ticket; book a 45 minute session). Older siblings have a small craft area.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "kind": "provision",
       "minMonths": 0,
       "maxMonthsExclusive": 36,
@@ -27,7 +34,11 @@
       "status": "review",
       "reviewReasons": [
         "says who a place is for (drives suitability)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -47,7 +58,11 @@
       "status": "review",
       "reviewReasons": [
         "says who a place is for (drives suitability)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -67,7 +82,11 @@
       "status": "review",
       "reviewReasons": [
         "says who a place is for (drives suitability)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -82,13 +101,24 @@
         "quote": "Everyone who visits gets to play in our two floors of Story Worlds, and our Story Garden.",
         "pageSha256": "7755ba53483f5d77"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
       "key": "exhibition-0-8",
       "value": null,
-      "text": "Luna Loves London immersive exhibition, age guide 0 to 8, 50 minutes (add-on ticket).",
+      "text": "Luna Loves London immersive exhibition, open now, age guide 0-8, duration 50 mins, every day at various times.",
+      "amended": {
+        "from": "Luna Loves London immersive exhibition, age guide 0 to 8, 50 minutes (add-on ticket).",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "kind": "programme",
       "minMonths": 0,
       "maxMonthsExclusive": 108,
@@ -102,7 +132,11 @@
       "status": "review",
       "reviewReasons": [
         "says who a place is for (drives suitability)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "pushchair",
@@ -119,7 +153,11 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "pushchair",
@@ -136,13 +174,24 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "pushchair",
       "key": "storage",
       "value": "yes",
-      "text": "Buggy storage on the ground floor, and in the basement or garden.",
+      "text": "Buggy storage is available in the basement and/or garden; many spaces cannot have buggies in.",
+      "amended": {
+        "from": "Buggy storage on the ground floor, and in the basement or garden.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://discover.org.uk/your-visit/faqs/",
         "readAt": "2026-10-08",
@@ -152,7 +201,11 @@
       "status": "review",
       "reviewReasons": [
         "independent check (polarity): the quote has a negation near the subject while the fact says yes"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -165,20 +218,35 @@
         "quote": "We have toilets with baby changing facilities on all of our main floors.",
         "pageSha256": "7755ba53483f5d77"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
       "key": "babyChanging",
       "value": "yes",
-      "text": "Toilets with baby changing on all main floors. No facility to heat baby food or milk.",
+      "text": "Toilets with baby changing facilities on all main floors.",
+      "amended": {
+        "from": "Toilets with baby changing on all main floors. No facility to heat baby food or milk.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://discover.org.uk/your-visit/faqs/",
         "readAt": "2026-10-08",
         "quote": "We have toilets with baby changing facilities on all of our main floors.",
         "pageSha256": "7755ba53483f5d77"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -194,7 +262,11 @@
       "status": "review",
       "reviewReasons": [
         "conditional, temporary or dated wording"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -212,6 +284,10 @@
         "pageSha256": "9d230072cea688a5"
       },
       "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "note": "The page also says there is no step-free access at that station \"until July 2025\", a date already past; that is kept as its own unresolved item, not stated here as a fact."
     },
     {
@@ -228,7 +304,11 @@
       "status": "review",
       "reviewReasons": [
         "a negative claim (can exclude a venue)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "considerations",
@@ -247,20 +327,35 @@
         "conditional, temporary or dated wording",
         "conflicts with the reading date (the notice is more than a year old)"
       ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "conflict": "the reading date (the notice is more than a year old)"
     },
     {
       "sec": "food",
       "key": "cafe",
       "value": "yes",
-      "text": "A café and bookshop on the ground floor; a snack shack in the garden on busier days.",
+      "text": "A café on the ground floor; on busier days a coffee-and-snack shack in the garden is open.",
+      "amended": {
+        "from": "A café and bookshop on the ground floor; a snack shack in the garden on busier days.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://discover.org.uk/your-visit/faqs/",
         "readAt": "2026-10-08",
         "quote": "We have a cafe on our ground floor – and on busier days the coffee-and-snack shack in our garden is open.",
         "pageSha256": "7755ba53483f5d77"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
@@ -276,7 +371,11 @@
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
@@ -292,7 +391,11 @@
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
@@ -308,7 +411,11 @@
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "opening",
@@ -325,7 +432,11 @@
         ],
         "pageSha256": "6c7bf457e9d6cdee"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "pricing",
@@ -342,13 +453,24 @@
       "reviewReasons": [
         "carried from an earlier reading; today's page does not show the figure"
       ],
+      "semantic": {
+        "A": "narrower",
+        "B": "unclear"
+      },
       "note": "Today's reading of the same page shows the ticket names without the amounts, so the figure is carried from the 26 September reading already held; a person decides whether it is still current."
     },
     {
       "sec": "pricing",
       "key": "under1",
       "value": "free (or discounted)",
-      "text": "Babies under 1: one page says \"0-1 year olds ... receive free tickets\", the FAQ says under-1 tickets are \"discounted\".",
+      "text": "The Annual Entry tickets page says 0-1 year olds receive free tickets.",
+      "amended": {
+        "from": "Babies under 1: one page says \"0-1 year olds ... receive free tickets\", the FAQ says under-1 tickets are \"discounted\".",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "held": true,
       "evidence": {
         "url": "https://discover.org.uk/your-visit/about-annual-entry-tickets/",
@@ -361,6 +483,10 @@
         "a price or a free-entry claim (drives cost)",
         "conflicts with the FAQ, which says Under 1s tickets are \"discounted\""
       ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "conflict": "the FAQ, which says Under 1s tickets are \"discounted\""
     },
     {
@@ -377,7 +503,11 @@
       "status": "review",
       "reviewReasons": [
         "a price or a free-entry claim (drives cost)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "considerations",
@@ -394,7 +524,11 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     }
   ]
 }

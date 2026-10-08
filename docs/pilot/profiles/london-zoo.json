@@ -15,7 +15,14 @@
       "sec": "activities",
       "key": "zootown",
       "value": null,
-      "text": "ZooTown is an indoor role-play adventure aimed at children up to 8; every child is welcome. Book online; £1 per child for non-members.",
+      "text": "ZooTown is an indoor role-play adventure aimed at children aged up to 8; tickets must be booked online in advance; Silver members and non-members pay £1 per child.",
+      "amended": {
+        "from": "ZooTown is an indoor role-play adventure aimed at children up to 8; every child is welcome. Book online; £1 per child for non-members.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "kind": "provision",
       "minMonths": 0,
       "maxMonthsExclusive": 108,
@@ -33,13 +40,24 @@
       "status": "review",
       "reviewReasons": [
         "says who a place is for (drives suitability)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
       "key": "animal-talks",
       "value": null,
-      "text": "Daily animal talks and events (no age given).",
+      "text": "Daily animal talks, plus a schedule of upcoming events (no age given).",
+      "amended": {
+        "from": "Daily animal talks and events (no age given).",
+        "verdicts": {
+          "A": "narrower",
+          "B": "supports"
+        }
+      },
       "kind": "programme",
       "label": "Daily animal talks",
       "evidence": {
@@ -48,7 +66,11 @@
         "quote": "Find out more about our exciting upcoming events schedule, our enlightening daily animal talks",
         "pageSha256": "84acad2791c014b9"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "pushchair",
@@ -65,7 +87,11 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "pushchair",
@@ -85,14 +111,25 @@
       "sec": "toilets",
       "key": "accessibleToilet",
       "value": "yes",
-      "text": "Accessible toilets around the zoo and a Changing Places toilet at Animal Adventure.",
+      "text": "The zoo has a Changing Places toilet and a number of accessible toilets around the Zoo.",
+      "amended": {
+        "from": "Accessible toilets around the zoo and a Changing Places toilet at Animal Adventure.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
         "readAt": "2026-10-08",
         "quote": "As well as our changing place toilet, we also have a number of accessible toilets around the Zoo.",
         "pageSha256": "c827fbfab53284aa"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -106,6 +143,10 @@
         "pageSha256": "c827fbfab53284aa"
       },
       "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "note": "Derived: accessible toilets are toilets. General toilet blocks are not described."
     },
     {
@@ -119,7 +160,11 @@
         "quote": "For added privacy, quiet areas and a breastfeeding room are also available.",
         "pageSha256": "c827fbfab53284aa"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -150,7 +195,11 @@
         ],
         "pageSha256": "5e26be5d9eaebae6"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -163,7 +212,11 @@
         "quote": "Parking is available in the Zoo’s car park at a cost of £16 in term time or £17.50 on weekends and bank or school holidays, payable on the day.",
         "pageSha256": "2eb390649a853e57"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -176,36 +229,66 @@
         "quote": "There is a disabled parking bay in front of the entrance to the zoo, disabled visitors can also park on the Outer Circle for up to four hours with a Blue Badge.",
         "pageSha256": "c827fbfab53284aa"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "food",
       "key": "cafe",
       "value": "yes",
-      "text": "The Terrace Restaurant, Peckish Parrot Café, a Barista Bar and kiosks.",
+      "text": "A Barista Bar next to The Terrace Restaurant serves coffees and hot drinks from 10am until the Zoo closes; The Terrace Restaurant is open 11.30am-2.30pm year round.",
+      "amended": {
+        "from": "The Terrace Restaurant, Peckish Parrot Café, a Barista Bar and kiosks.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.londonzoo.org/plan-your-visit/opening-times",
         "readAt": "2026-10-08",
-        "quote": "Coffees and hot drinks are available from our Barista Bar, next to The Terrace Restaurant , from 10am until the Zoo closes.",
+        "quote": "Coffees and hot drinks are available from our Barista Bar, next to The Terrace Restaurant , from 10am until the Zoo closes. … The Terrace Restaurant is open for eat in or take aways from 11.30am - 2.30pm year round.",
+        "quotes": [
+          "Coffees and hot drinks are available from our Barista Bar, next to The Terrace Restaurant , from 10am until the Zoo closes.",
+          "The Terrace Restaurant is open for eat in or take aways from 11.30am - 2.30pm year round."
+        ],
         "pageSha256": "7b3c4a016742d1ab"
       },
       "status": "review",
       "reviewReasons": [
         "conditional, temporary or dated wording"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "food",
       "key": "picnic",
       "value": "yes",
-      "text": "Outdoor picnic benches.",
+      "text": "Outdoor picnic benches are available at the Peckish Parrot Café in the Animal Adventure area.",
+      "amended": {
+        "from": "Outdoor picnic benches.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.londonzoo.org/plan-your-visit/food-and-drink",
         "readAt": "2026-10-08",
         "quote": "Outdoor picnic benches are available.",
         "pageSha256": "27c23a9bf7c06ff2"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "play",
@@ -229,13 +312,24 @@
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
       "key": "steep-slopes",
       "value": "no",
-      "text": "The slopes to the two tunnels are steep (relevant to pushchairs).",
+      "text": "The slopes leading to the two tunnels in the Zoo are steep.",
+      "amended": {
+        "from": "The slopes to the two tunnels are steep (relevant to pushchairs).",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "scope": "area",
       "goodToKnow": true,
       "evidence": {
@@ -249,7 +343,11 @@
         "an accessibility claim (high impact)",
         "a negative claim (can exclude a venue)",
         "applies to part of the venue"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "opening",
@@ -267,6 +365,10 @@
       "reviewReasons": [
         "conflicts with the provider (Google) hours, which show 10am to 5pm every day and will be wrong from 24 October"
       ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "conflict": "the provider (Google) hours, which show 10am to 5pm every day and will be wrong from 24 October"
     },
     {
@@ -283,7 +385,11 @@
       "status": "review",
       "reviewReasons": [
         "a price or a free-entry claim (drives cost)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "pricing",
@@ -307,6 +413,10 @@
       "reviewReasons": [
         "a price or a free-entry claim (drives cost)"
       ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "note": "Price depends on which of four day types the visit falls on, and the page does not say which dates are which. A total for a family is therefore not computed."
     },
     {
@@ -320,7 +430,11 @@
         "quote": "Children under 16 will not be admitted without an adult.",
         "pageSha256": "7b3c4a016742d1ab"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     }
   ]
 }

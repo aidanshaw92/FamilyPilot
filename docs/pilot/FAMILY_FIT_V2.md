@@ -23,7 +23,7 @@ Six kinds of information, kept apart: **confirmed age-relevant activities** (ran
 | State | #1 today | #1 proposed | Top-5 overlap per household (A–I) | Confirmed-conflict venues in the top five: today → proposed |
 |---|---|---|---|---|
 | before | RAF Museum 8/9, Mudchute 1/9 | RAF Museum 5/9, Babylon Park 1/9, Horniman 1/9, Mudchute 1/9, Gunnersbury 1/9 | 3, 4, 4, 4, 3, 3, 4, 4, 4 | 1 → 0 |
-| afterAuto | RAF Museum 8/9, Discover 1/9 | London Zoo 4/9, Discover 3/9, RAF Museum 1/9, Mudchute 1/9 | 4, 4, 3, 3, 3, 4, 3, 4, 3 | 1 → 0 |
+| afterAuto | RAF Museum 8/9, Discover 1/9 | London Zoo 4/9, Discover 3/9, RAF Museum 1/9, Mudchute 1/9 | 4, 4, 3, 3, 3, 4, 3, 4, 3 | 0 → 0 |
 | after | RAF Museum 7/9, Science Museum 1/9, Discover 1/9 | Science Museum 5/9, London Zoo 2/9, Discover 1/9, Babylon Park 1/9 | 4, 4, 3, 2, 4, 4, 1, 4, 4 | 3 → 0 |
 
 ## Top five, current vs proposed: **before** (what production serves today for these ten venues)

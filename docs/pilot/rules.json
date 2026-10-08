@@ -213,13 +213,13 @@
      "area": "Natural History Gallery",
      "text": "The Natural History Gallery is closed for refurbishment."
     },
-    "fact": "opening.closure",
+    "fact": "opening.closure-natural-history",
     "status": "review",
     "evidence": {
-     "url": "https://www.horniman.ac.uk/plan-your-visit/",
+     "url": "https://www.horniman.ac.uk/",
      "readAt": "2026-10-08",
-     "quote": "Please note: for the Nature + Love project the Nature Gallery and Nature Discovery Den will be closed until 5 February 2027.",
-     "pageSha256": "07c4f7f88813cd83"
+     "quote": "The Natural History Gallery is closed for refurbishment.",
+     "pageSha256": "c3e0af782d97efca"
     }
    },
    {
@@ -268,7 +268,7 @@
      "kind": "pushchair",
      "scope": "area",
      "area": "Slopes to the two tunnels",
-     "text": "The slopes to the two tunnels are steep (relevant to pushchairs)."
+     "text": "The slopes leading to the two tunnels in the Zoo are steep."
     },
     "fact": "access.steep-slopes",
     "status": "review",
@@ -294,10 +294,9 @@
       1
      ],
      "affectsFacilities": [
-      "toilets",
-      "babyChanging"
+      "toilets"
      ],
-     "text": "The main courtyard (with the toilets and baby changing) is closed on Mondays outside school holidays, so there is no toilet access."
+     "text": "The Main Courtyard is closed on Mondays except during school holidays, and there is no access to the Mudchute toilets when the courtyard is closed."
     },
     "fact": "considerations.monday-courtyard",
     "status": "review",
@@ -314,7 +313,7 @@
      "kind": "caution",
      "scope": "area",
      "area": "Animal areas",
-     "text": "Wash hands after touching animals; pregnant visitors are advised not to touch pregnant ewes, goats, lambs or kids."
+     "text": "Visitors are encouraged to wash their hands thoroughly after touching any animals (and are asked not to touch young lambs during lambing)."
     },
     "fact": "considerations.hygiene",
     "status": "review",
@@ -337,14 +336,18 @@
      "scope": "venue",
      "from": "2026-10-09",
      "until": "2026-10-09",
-     "text": "Closed on 9 October."
+     "text": "The South Kensington museum is closed on Friday 9 October 2026 for a charity gala."
     },
     "fact": "opening.closure",
     "status": "review",
     "evidence": {
      "url": "https://www.nhm.ac.uk/visit.html",
      "readAt": "2026-10-08",
-     "quote": "Closed 9 October and 24–26 December",
+     "quote": "Closed 9 October and 24–26 December … Our South Kensington site will be closed on Friday 9 October 2026, as we’re hosting a charity gala.",
+     "quotes": [
+      "Closed 9 October and 24–26 December",
+      "Our South Kensington site will be closed on Friday 9 October 2026, as we’re hosting a charity gala."
+     ],
      "pageSha256": "a6b93d6d6f7b0125"
     }
    },
@@ -362,7 +365,11 @@
     "evidence": {
      "url": "https://www.nhm.ac.uk/visit.html",
      "readAt": "2026-10-08",
-     "quote": "Closed 9 October and 24–26 December",
+     "quote": "Closed 9 October and 24–26 December … Our South Kensington site will be closed on Friday 9 October 2026, as we’re hosting a charity gala.",
+     "quotes": [
+      "Closed 9 October and 24–26 December",
+      "Our South Kensington site will be closed on Friday 9 October 2026, as we’re hosting a charity gala."
+     ],
      "pageSha256": "a6b93d6d6f7b0125"
     }
    },
@@ -460,8 +467,7 @@
      "kind": "closure",
      "scope": "area",
      "area": "4D Theatre",
-     "until": "2026-12-31",
-     "text": "The 4D Theatre is temporarily closed for refurbishment until 31 December 2026."
+     "text": "The 4D Theatre is temporarily closed for refurbishment."
     },
     "fact": "opening.theatre",
     "status": "review",
@@ -499,7 +505,7 @@
      "kind": "step_free",
      "scope": "area",
      "area": "Mezzanine in Making the Modern World and Flight",
-     "text": "No step-free access to the mezzanine in Making the Modern World and Flight."
+     "text": "Currently there is no step-free access to the mezzanine level in the Making the Modern World and Flight galleries."
     },
     "fact": "access.mezzanine",
     "status": "review",

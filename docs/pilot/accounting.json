@@ -1,8 +1,8 @@
 {
  "builtOn": "2026-10-08",
  "funnel": {
-  "total": 195,
-  "verified": 71,
+  "total": 196,
+  "verified": 72,
   "review": 99,
   "unknown": 21,
   "hypothesis": 4,
@@ -10,26 +10,26 @@
  },
  "byDisposition": {
   "verified": {
-   "NO HOME: a plain activity description has no claim type": 11,
+   "NO HOME: a plain activity description has no claim type": 12,
    "claim": 36,
-   "NO HOME: stations, buses, fees and entrances have no claim type": 9,
+   "NO HOME: stations, buses, fees and entrances have no claim type": 8,
    "NO HOME: facility detail beyond the mapped facts has no claim type": 4,
    "venue rule or official-hours claim (structured; a person must approve it)": 5,
-   "note only (good to know); no structured home": 2,
-   "NO HOME: practical rules and closures have no claim type": 4
+   "NO HOME: practical rules and closures have no claim type": 5,
+   "note only (good to know); no structured home": 2
   },
   "review": {
    "ships as reviewed activity data (code, by pull request)": 10,
    "NO HOME: pushchair rules and storage have no claim type (only a terrain rating)": 4,
    "claim": 28,
    "note only (good to know); no structured home": 4,
-   "venue rule or official-hours claim (structured; a person must approve it)": 27,
-   "NO HOME: practical rules and closures have no claim type": 2,
-   "NO HOME: a plain activity description has no claim type": 4,
+   "venue rule or official-hours claim (structured; a person must approve it)": 28,
+   "NO HOME: practical rules and closures have no claim type": 1,
    "NO HOME: accessibility detail beyond wheelchair and sensory has no claim type": 5,
    "price: reviewed admission data or held (no claim type)": 7,
    "ships as reviewed admission data (code, by pull request)": 6,
-   "NO HOME: stations, buses, fees and entrances have no claim type": 2
+   "NO HOME: a plain activity description has no claim type": 3,
+   "NO HOME: stations, buses, fees and entrances have no claim type": 3
   }
  },
  "claims": {
@@ -57,7 +57,7 @@
   "agree": 44,
   "conflict": 2,
   "extractorMissed": 11,
-  "profileFactsWithNoProductionField": 115
+  "profileFactsWithNoProductionField": 116
  },
  "rows": [
   {

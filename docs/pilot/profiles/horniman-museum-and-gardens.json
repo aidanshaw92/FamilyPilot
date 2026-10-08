@@ -5,7 +5,7 @@
   "category": "museum",
   "builtOn": "2026-10-08",
   "counts": {
-    "verified": 9,
+    "verified": 10,
     "review": 10,
     "unknown": 1
   },
@@ -14,7 +14,14 @@
       "sec": "activities",
       "key": "kusuma-nature-play",
       "value": null,
-      "text": "Kusuma Nature Play Area, in the gardens, with its own toilets with baby changing, café and picnic tables. No age is given.",
+      "text": "The Gardens Cafe is located next to the Kusuma Nature Play Area at the bottom of the Meadow Field.",
+      "amended": {
+        "from": "Kusuma Nature Play Area, in the gardens, with its own toilets with baby changing, café and picnic tables. No age is given.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "kind": "provision",
       "label": "Kusuma Nature Play Area",
       "evidence": {
@@ -23,7 +30,11 @@
         "quote": "The Gardens Cafe is located next to the Kusuma Nature Play Area at the bottom of the Meadow Field",
         "pageSha256": "1872115b4ebdf319"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -41,7 +52,11 @@
       "status": "review",
       "reviewReasons": [
         "conditional, temporary or dated wording"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -63,7 +78,11 @@
         "quote": "Buggy parking is available in Gallery Square, inside the main gate to Kusuma Nature Play Area and next to the Butterfly House.",
         "pageSha256": "07c4f7f88813cd83"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -76,7 +95,11 @@
         "quote": "Baby changing facilities are available in both of the toilets in Gallery Square.",
         "pageSha256": "07c4f7f88813cd83"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -89,23 +112,35 @@
         "quote": "Toilets are located off Gallery Square downstairs, and they are wheelchair accessible.",
         "pageSha256": "07c4f7f88813cd83"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
       "key": "accessibleToilet",
       "value": "yes",
-      "text": "Accessible toilets in the museum, the gardens and the café; no hoists or adult changing.",
+      "text": "There are inclusive toilets in the Museum, Gardens and Café; the Museum does not provide hoists or adult changing facilities.",
+      "amended": {
+        "from": "Accessible toilets in the museum, the gardens and the café; no hoists or adult changing.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.horniman.ac.uk/plan-your-visit/",
         "readAt": "2026-10-08",
         "quote": "There are inclusive toilets available in the Museum, Gardens and Café.",
         "pageSha256": "07c4f7f88813cd83"
       },
-      "status": "review",
-      "reviewReasons": [
-        "independent check (no-over-reach): the proposal says accessible; the quote does not"
-      ]
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -118,7 +153,11 @@
         "quote": "Breastfeeding is welcome everywhere at the Horniman, but if you would prefer a private space, feel free to use the Breastfeeding Room located off Gallery Square.",
         "pageSha256": "07c4f7f88813cd83"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -131,7 +170,11 @@
         "quote": "We are a five- to 10-minute walk from Forest Hill station and very well served by local buses.",
         "pageSha256": "07c4f7f88813cd83"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -147,20 +190,35 @@
       "status": "review",
       "reviewReasons": [
         "a negative claim (can exclude a venue)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "food",
       "key": "cafe",
       "value": "yes",
-      "text": "The Horniman Cafe (9am to 5pm daily) and the Gardens Cafe by the nature play area.",
+      "text": "The Horniman Cafe is open 9am to 5pm daily.",
+      "amended": {
+        "from": "The Horniman Cafe (9am to 5pm daily) and the Gardens Cafe by the nature play area.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.horniman.ac.uk/plan-your-visit/food-drink/",
         "readAt": "2026-10-08",
         "quote": "The Horniman Cafe The Cafe is open from 9am – 5pm daily.",
         "pageSha256": "1872115b4ebdf319"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "food",
@@ -173,7 +231,11 @@
         "quote": "There are lots of picnicking tables on the Bandstand Terrace and two large tables at the end of the Kusuma Nature Play Area",
         "pageSha256": "1872115b4ebdf319"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "play",
@@ -186,7 +248,11 @@
         "quote": "The Gardens Cafe is located next to the Kusuma Nature Play Area at the bottom of the Meadow Field",
         "pageSha256": "1872115b4ebdf319"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
@@ -202,7 +268,11 @@
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
@@ -223,7 +293,11 @@
         "a negative claim (can exclude a venue)",
         "conditional, temporary or dated wording",
         "applies to part of the venue"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "opening",
@@ -243,13 +317,46 @@
       "status": "review",
       "reviewReasons": [
         "conditional, temporary or dated wording"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
+    },
+    {
+      "sec": "opening",
+      "key": "closure-natural-history",
+      "value": "Natural History Gallery closed",
+      "text": "The Natural History Gallery is closed for refurbishment.",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://www.horniman.ac.uk/",
+        "readAt": "2026-10-08",
+        "quote": "The Natural History Gallery is closed for refurbishment.",
+        "pageSha256": "c3e0af782d97efca"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person",
+        "conditional, temporary or dated wording"
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "opening",
       "key": "closure",
       "value": "Natural History Gallery closed",
-      "text": "The Natural History Gallery is closed for refurbishment; the Nature Gallery and Nature Discovery Den are closed until 5 February 2027.",
+      "text": "The Nature Gallery and Nature Discovery Den will be closed until 5 February 2027 for the Nature + Love project.",
+      "amended": {
+        "from": "The Natural History Gallery is closed for refurbishment; the Nature Gallery and Nature Discovery Den are closed until 5 February 2027.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "goodToKnow": true,
       "evidence": {
         "url": "https://www.horniman.ac.uk/plan-your-visit/",
@@ -261,7 +368,11 @@
       "reviewReasons": [
         "not a fact type that may be accepted without a person",
         "conditional, temporary or dated wording"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "pricing",
@@ -277,7 +388,11 @@
       "status": "review",
       "reviewReasons": [
         "a price or a free-entry claim (drives cost)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "pricing",
@@ -286,7 +401,14 @@
         "aquarium": "£2 to £16.80",
         "butterflyHouse": "£2 to £28.60"
       },
-      "text": "Aquarium £2 to £16.80 and Butterfly House £2 to £28.60 (the low end is the Universal Credit price); children under 3 may visit free but must book a timeslot.",
+      "text": "Aquarium £2 to £16.80 and Butterfly House £2 to £28.60; children under 3 may visit free of charge but must book into a timeslot.",
+      "amended": {
+        "from": "Aquarium £2 to £16.80 and Butterfly House £2 to £28.60 (the low end is the Universal Credit price); children under 3 may visit free but must book a timeslot.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.horniman.ac.uk/plan-your-visit/",
         "readAt": "2026-10-08",
@@ -301,6 +423,10 @@
       "reviewReasons": [
         "a price or a free-entry claim (drives cost)"
       ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "note": "A range that starts at the Universal Credit price is not a price a typical family pays; no total is computed."
     },
     {
@@ -318,7 +444,11 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     }
   ]
 }

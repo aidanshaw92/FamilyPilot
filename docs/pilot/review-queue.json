@@ -57,6 +57,23 @@
    "estimatedSeconds": 17
   },
   {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:food.cafe",
+   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "venue": "Babylon Park London",
+   "held": false,
+   "field": "food.cafe",
+   "proposed": "The Ovo & Neta restaurant on the Mezzanine floor serves a variety of food and drinks; vending machines are available throughout the park; outside food and drinks are not permitted.",
+   "value": "yes",
+   "sentence": "Yes, the Ovo & Neta restaurant on the Mezzanine floor serves a variety of food and drinks.",
+   "url": "https://babylonpark.com/london/",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "independent check (no-over-reach): the proposal says throughout; the quote does not"
+   ],
+   "wordsToRead": 58,
+   "estimatedSeconds": 23
+  },
+  {
    "id": "ChIJ7_PV980bdkgROekbwOVWVfo:food.outside-food",
    "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
    "venue": "Babylon Park London",
@@ -108,23 +125,6 @@
    "estimatedSeconds": 19
   },
   {
-   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:considerations.duration",
-   "venueId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
-   "venue": "Babylon Park London",
-   "held": false,
-   "field": "considerations.duration",
-   "proposed": "A visit takes about two hours.",
-   "value": 120,
-   "sentence": "Duration: Varies based on ticket purchased, we recommend 2 hours.",
-   "url": "https://babylonpark.com/london/",
-   "readOn": "2026-10-08",
-   "reasons": [
-    "independent check (shares-content): 20% of the proposal's content words are in the quote"
-   ],
-   "wordsToRead": 29,
-   "estimatedSeconds": 14
-  },
-  {
    "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:activities.playground",
    "venueId": "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4",
    "venue": "Battersea Park",
@@ -141,23 +141,6 @@
    ],
    "wordsToRead": 71,
    "estimatedSeconds": 26
-  },
-  {
-   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:activities.childrens-zoo",
-   "venueId": "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4",
-   "venue": "Battersea Park",
-   "held": false,
-   "field": "activities.childrens-zoo",
-   "proposed": "A children's zoo is listed among the park's features. Nothing else is said about it on the council pages.",
-   "value": null,
-   "sentence": "It has a riverside promenade, a large lake, many notable trees and ecological areas, children's play areas, a children's zoo, the Pump House gallery, ceremony venue and sports facilities.",
-   "url": "https://www.wandsworth.gov.uk/batterseapark",
-   "readOn": "2026-10-08",
-   "reasons": [
-    "independent check (shares-content): 17% of the proposal's content words are in the quote"
-   ],
-   "wordsToRead": 61,
-   "estimatedSeconds": 23
   },
   {
    "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:play.playground",
@@ -217,7 +200,7 @@
    "venue": "Discover Children's Story Centre",
    "held": false,
    "field": "activities.baby-toddler-space",
-   "proposed": "A play space for 0 to 2 year olds only (free with an Entry ticket; book a 45 minute session). Older siblings have a small craft area.",
+   "proposed": "A Baby and Toddler Sensory Story Space dedicated to 0-2 year olds, free with your Entry ticket; timed 45-minute sessions should be booked.",
    "value": null,
    "sentence": "We also have a new space dedicated to 0-2 year olds, our Baby and Toddler Sensory Story Space is free with your Entry ticket but timed sessions (45 minutes) should be booked.",
    "url": "https://discover.org.uk/your-visit/faqs/",
@@ -225,8 +208,8 @@
    "reasons": [
     "says who a place is for (drives suitability)"
    ],
-   "wordsToRead": 67,
-   "estimatedSeconds": 25
+   "wordsToRead": 63,
+   "estimatedSeconds": 24
   },
   {
    "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.baby-storytelling",
@@ -268,7 +251,7 @@
    "venue": "Discover Children's Story Centre",
    "held": false,
    "field": "activities.exhibition-0-8",
-   "proposed": "Luna Loves London immersive exhibition, age guide 0 to 8, 50 minutes (add-on ticket).",
+   "proposed": "Luna Loves London immersive exhibition, open now, age guide 0-8, duration 50 mins, every day at various times.",
    "value": null,
    "sentence": "Exhibition Luna Loves London Dates: OPEN NOW * Age guide: 0-8 Duration: 50 mins * Every day, various times",
    "url": "https://www.discover.org.uk/",
@@ -276,8 +259,8 @@
    "reasons": [
     "says who a place is for (drives suitability)"
    ],
-   "wordsToRead": 41,
-   "estimatedSeconds": 18
+   "wordsToRead": 45,
+   "estimatedSeconds": 19
   },
   {
    "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.restriction",
@@ -319,7 +302,7 @@
    "venue": "Discover Children's Story Centre",
    "held": false,
    "field": "pushchair.storage",
-   "proposed": "Buggy storage on the ground floor, and in the basement or garden.",
+   "proposed": "Buggy storage is available in the basement and/or garden; many spaces cannot have buggies in.",
    "value": "yes",
    "sentence": "We have storage for buggies in our basement and/ or garden but many of our spaces cannot have buggies in",
    "url": "https://discover.org.uk/your-visit/faqs/",
@@ -327,8 +310,8 @@
    "reasons": [
     "independent check (polarity): the quote has a negation near the subject while the fact says yes"
    ],
-   "wordsToRead": 48,
-   "estimatedSeconds": 20
+   "wordsToRead": 51,
+   "estimatedSeconds": 21
   },
   {
    "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.accessibleToilet",
@@ -459,7 +442,7 @@
    "venue": "Discover Children's Story Centre",
    "held": true,
    "field": "pricing.under1",
-   "proposed": "Babies under 1: one page says \"0-1 year olds ... receive free tickets\", the FAQ says under-1 tickets are \"discounted\".",
+   "proposed": "The Annual Entry tickets page says 0-1 year olds receive free tickets.",
    "value": "free (or discounted)",
    "sentence": "0-1 year olds and carers for our disabled visitors receive free tickets.",
    "url": "https://discover.org.uk/your-visit/about-annual-entry-tickets/",
@@ -468,8 +451,8 @@
     "a price or a free-entry claim (drives cost)",
     "conflicts with the FAQ, which says Under 1s tickets are \"discounted\""
    ],
-   "wordsToRead": 51,
-   "estimatedSeconds": 21
+   "wordsToRead": 43,
+   "estimatedSeconds": 18
   },
   {
    "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pricing.addons",
@@ -546,7 +529,7 @@
    "venue": "Gunnersbury Park",
    "held": false,
    "field": "access.stepFree",
-   "proposed": "Step-free access throughout the museum (some ramps and slopes); a lift to all levels; a manual wheelchair to borrow.",
+   "proposed": "Step-free access throughout the museum (some ramps and slopes); lift access to the first and second floors (all museum levels); a wheelchair to borrow on request.",
    "value": "yes",
    "sentence": "Step-free access is available throughout the museum, with some ramps and slopes",
    "url": "https://www.visitgunnersbury.org/museum/accessibility",
@@ -554,8 +537,8 @@
    "reasons": [
     "an accessibility claim (high impact)"
    ],
-   "wordsToRead": 36,
-   "estimatedSeconds": 16
+   "wordsToRead": 43,
+   "estimatedSeconds": 18
   },
   {
    "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:access.relaxed",
@@ -598,7 +581,7 @@
    "venue": "Gunnersbury Park",
    "held": false,
    "field": "pricing.free",
-   "proposed": "The museum and park are free to enter; car parking is charged.",
+   "proposed": "The museum and park are free to enter; the car park has usage fees, though parking for blue badge holders in the designated disabled bays is free.",
    "value": "free",
    "sentence": "Our museum and park are free entry .",
    "url": "https://www.visitgunnersbury.org/plan-your-visit",
@@ -606,8 +589,8 @@
    "reasons": [
     "a price or a free-entry claim (drives cost)"
    ],
-   "wordsToRead": 28,
-   "estimatedSeconds": 14
+   "wordsToRead": 43,
+   "estimatedSeconds": 18
   },
   {
    "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:considerations.dogs",
@@ -642,23 +625,6 @@
    ],
    "wordsToRead": 44,
    "estimatedSeconds": 19
-  },
-  {
-   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:toilets.accessibleToilet",
-   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
-   "venue": "Horniman Museum and Gardens",
-   "held": false,
-   "field": "toilets.accessibleToilet",
-   "proposed": "Accessible toilets in the museum, the gardens and the café; no hoists or adult changing.",
-   "value": "yes",
-   "sentence": "There are inclusive toilets available in the Museum, Gardens and Café.",
-   "url": "https://www.horniman.ac.uk/plan-your-visit/",
-   "readOn": "2026-10-08",
-   "reasons": [
-    "independent check (no-over-reach): the proposal says accessible; the quote does not"
-   ],
-   "wordsToRead": 37,
-   "estimatedSeconds": 17
   },
   {
    "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.parking",
@@ -732,12 +698,30 @@
    "estimatedSeconds": 19
   },
   {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:opening.closure-natural-history",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "venue": "Horniman Museum and Gardens",
+   "held": false,
+   "field": "opening.closure-natural-history",
+   "proposed": "The Natural History Gallery is closed for refurbishment.",
+   "value": "Natural History Gallery closed",
+   "sentence": "The Natural History Gallery is closed for refurbishment.",
+   "url": "https://www.horniman.ac.uk/",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "not a fact type that may be accepted without a person",
+    "conditional, temporary or dated wording"
+   ],
+   "wordsToRead": 32,
+   "estimatedSeconds": 15
+  },
+  {
    "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:opening.closure",
    "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
    "venue": "Horniman Museum and Gardens",
    "held": false,
    "field": "opening.closure",
-   "proposed": "The Natural History Gallery is closed for refurbishment; the Nature Gallery and Nature Discovery Den are closed until 5 February 2027.",
+   "proposed": "The Nature Gallery and Nature Discovery Den will be closed until 5 February 2027 for the Nature + Love project.",
    "value": "Natural History Gallery closed",
    "sentence": "Please note: for the Nature + Love project the Nature Gallery and Nature Discovery Den will be closed until 5 February 2027.",
    "url": "https://www.horniman.ac.uk/plan-your-visit/",
@@ -746,7 +730,7 @@
     "not a fact type that may be accepted without a person",
     "conditional, temporary or dated wording"
    ],
-   "wordsToRead": 59,
+   "wordsToRead": 58,
    "estimatedSeconds": 23
   },
   {
@@ -772,7 +756,7 @@
    "venue": "Horniman Museum and Gardens",
    "held": false,
    "field": "pricing.paidAttractions",
-   "proposed": "Aquarium £2 to £16.80 and Butterfly House £2 to £28.60 (the low end is the Universal Credit price); children under 3 may visit free but must book a timeslot.",
+   "proposed": "Aquarium £2 to £16.80 and Butterfly House £2 to £28.60; children under 3 may visit free of charge but must book into a timeslot.",
    "value": {
     "aquarium": "£2 to £16.80",
     "butterflyHouse": "£2 to £28.60"
@@ -784,8 +768,8 @@
     "a price or a free-entry claim (drives cost)"
    ],
    "note": "A range that starts at the Universal Credit price is not a price a typical family pays; no total is computed.",
-   "wordsToRead": 80,
-   "estimatedSeconds": 29
+   "wordsToRead": 75,
+   "estimatedSeconds": 27
   },
   {
    "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:considerations.busy-cafe",
@@ -810,7 +794,7 @@
    "venue": "London Zoo",
    "held": false,
    "field": "activities.zootown",
-   "proposed": "ZooTown is an indoor role-play adventure aimed at children up to 8; every child is welcome. Book online; £1 per child for non-members.",
+   "proposed": "ZooTown is an indoor role-play adventure aimed at children aged up to 8; tickets must be booked online in advance; Silver members and non-members pay £1 per child.",
    "value": null,
    "sentence": "ZooTown is a brand new indoor role play adventure for kids in the heart of London Zoo aimed at children aged up to 8. … Silver members and non-members pay £1 per child",
    "url": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
@@ -818,8 +802,8 @@
    "reasons": [
     "says who a place is for (drives suitability)"
    ],
-   "wordsToRead": 64,
-   "estimatedSeconds": 24
+   "wordsToRead": 69,
+   "estimatedSeconds": 26
   },
   {
    "id": "ChIJV_iXMtcadkgRqBI84CY_crE:pushchair.hire",
@@ -844,16 +828,16 @@
    "venue": "London Zoo",
    "held": false,
    "field": "food.cafe",
-   "proposed": "The Terrace Restaurant, Peckish Parrot Café, a Barista Bar and kiosks.",
+   "proposed": "A Barista Bar next to The Terrace Restaurant serves coffees and hot drinks from 10am until the Zoo closes; The Terrace Restaurant is open 11.30am-2.30pm year round.",
    "value": "yes",
-   "sentence": "Coffees and hot drinks are available from our Barista Bar, next to The Terrace Restaurant , from 10am until the Zoo closes.",
+   "sentence": "Coffees and hot drinks are available from our Barista Bar, next to The Terrace Restaurant , from 10am until the Zoo closes. … The Terrace Restaurant is open for eat in or take aways from 11.30am - 2.30pm year round.",
    "url": "https://www.londonzoo.org/plan-your-visit/opening-times",
    "readOn": "2026-10-08",
    "reasons": [
     "conditional, temporary or dated wording"
    ],
-   "wordsToRead": 38,
-   "estimatedSeconds": 17
+   "wordsToRead": 72,
+   "estimatedSeconds": 27
   },
   {
    "id": "ChIJV_iXMtcadkgRqBI84CY_crE:access.wheelchair",
@@ -878,7 +862,7 @@
    "venue": "London Zoo",
    "held": false,
    "field": "access.steep-slopes",
-   "proposed": "The slopes to the two tunnels are steep (relevant to pushchairs).",
+   "proposed": "The slopes leading to the two tunnels in the Zoo are steep.",
    "value": "no",
    "sentence": "Please note that the slopes leading to the two tunnels in the Zoo are steep.",
    "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
@@ -888,7 +872,7 @@
     "a negative claim (can exclude a venue)",
     "applies to part of the venue"
    ],
-   "wordsToRead": 44,
+   "wordsToRead": 45,
    "estimatedSeconds": 19
   },
   {
@@ -1020,7 +1004,7 @@
    "venue": "Mudchute Park and Farm",
    "held": false,
    "field": "access.wheelchair",
-   "proposed": "Most areas wheelchair accessible; muddy after heavy rain.",
+   "proposed": "Most areas of the farm are accessible by wheelchair, though not all paths are tarmac; some ground can become muddy during and after heavy rain.",
    "value": "yes",
    "sentence": "Most areas of the farm are accessible by wheelchair",
    "url": "https://www.mudchute.org/plan-your-visit/facilities",
@@ -1028,8 +1012,8 @@
    "reasons": [
     "an accessibility claim (high impact)"
    ],
-   "wordsToRead": 22,
-   "estimatedSeconds": 12
+   "wordsToRead": 39,
+   "estimatedSeconds": 17
   },
   {
    "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:opening.hours",
@@ -1037,7 +1021,7 @@
    "venue": "Mudchute Park and Farm",
    "held": false,
    "field": "opening.hours",
-   "proposed": "Farm open every day 9am to 4pm (animals go in from 3pm); park dawn to dusk. Pets corner and courtyard are closed on Mondays outside school holidays.",
+   "proposed": "Farm open every day 9am to 4pm (animals go in from 3pm); park open every day dawn to dusk.",
    "value": "Farm 9-16; Park dawn-dusk",
    "sentence": "Farm: Every day 9am–4pm (animals go in from 3pm) Park: Every day dawn–dusk",
    "url": "https://www.mudchute.org/plan-your-visit/opening-times",
@@ -1045,8 +1029,8 @@
    "reasons": [
     "conflicts with the provider (Google) hours, which show Monday closed"
    ],
-   "wordsToRead": 50,
-   "estimatedSeconds": 20
+   "wordsToRead": 42,
+   "estimatedSeconds": 18
   },
   {
    "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:considerations.monday-courtyard",
@@ -1054,7 +1038,7 @@
    "venue": "Mudchute Park and Farm",
    "held": false,
    "field": "considerations.monday-courtyard",
-   "proposed": "The main courtyard (with the toilets and baby changing) is closed on Mondays outside school holidays, so there is no toilet access.",
+   "proposed": "The Main Courtyard is closed on Mondays except during school holidays, and there is no access to the Mudchute toilets when the courtyard is closed.",
    "value": "courtyard closed Mondays",
    "sentence": "Main Courtyard Closed Mondays except during school holidays. No access to Mudchute Toilets when the Courtyard is closed.",
    "url": "https://www.mudchute.org/plan-your-visit/opening-times",
@@ -1062,7 +1046,7 @@
    "reasons": [
     "not a fact type that may be accepted without a person"
    ],
-   "wordsToRead": 51,
+   "wordsToRead": 54,
    "estimatedSeconds": 21
   },
   {
@@ -1088,7 +1072,7 @@
    "venue": "Mudchute Park and Farm",
    "held": false,
    "field": "considerations.hygiene",
-   "proposed": "Wash hands after touching animals; pregnant visitors are advised not to touch pregnant ewes, goats, lambs or kids.",
+   "proposed": "Visitors are encouraged to wash their hands thoroughly after touching any animals (and are asked not to touch young lambs during lambing).",
    "value": "wash hands",
    "sentence": "Visitors to the Farm are encouraged to wash their hands thoroughly after touching any animals.",
    "url": "https://www.mudchute.org/plan-your-visit/faq",
@@ -1096,8 +1080,8 @@
    "reasons": [
     "not a fact type that may be accepted without a person"
    ],
-   "wordsToRead": 44,
-   "estimatedSeconds": 19
+   "wordsToRead": 48,
+   "estimatedSeconds": 20
   },
   {
    "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:activities.nature-discovery-garden",
@@ -1174,7 +1158,7 @@
    "venue": "Natural History Museum",
    "held": false,
    "field": "transport.parking",
-   "proposed": "No parking on site, and parking around the museum is limited.",
+   "proposed": "No general parking facilities on site and parking around the museum is limited; a very limited number of on-site spaces are available for Blue Badge holders, booked in advance.",
    "value": "no",
    "sentence": "We do not have parking facilities on-site and parking around the Museum is limited.",
    "url": "https://www.nhm.ac.uk/visit/getting-here.html",
@@ -1182,8 +1166,8 @@
    "reasons": [
     "a negative claim (can exclude a venue)"
    ],
-   "wordsToRead": 32,
-   "estimatedSeconds": 15
+   "wordsToRead": 50,
+   "estimatedSeconds": 20
   },
   {
    "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:access.wheelchair",
@@ -1247,17 +1231,17 @@
    "venue": "Natural History Museum",
    "held": false,
    "field": "opening.closure",
-   "proposed": "Closed on 9 October (tomorrow) and 24 to 26 December.",
+   "proposed": "The South Kensington site is closed on Friday 9 October 2026 for a charity gala, and on 24 to 26 December.",
    "value": "2026-10-09 closed",
-   "sentence": "Closed 9 October and 24–26 December",
+   "sentence": "Closed 9 October and 24–26 December … Our South Kensington site will be closed on Friday 9 October 2026, as we’re hosting a charity gala.",
    "url": "https://www.nhm.ac.uk/visit.html",
    "readOn": "2026-10-08",
    "reasons": [
     "not a fact type that may be accepted without a person",
-    "conflicts with the homepage, which says \"Open every day\""
+    "conflicts with the homepage and the footer, which say \"Open every day\" and list only 24–26 December. They are standing text; the dedicated, dated notice on the visit page is the more specific statement, and no page says the museum is open on 9 October"
    ],
-   "wordsToRead": 36,
-   "estimatedSeconds": 16
+   "wordsToRead": 102,
+   "estimatedSeconds": 35
   },
   {
    "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:pricing.free",
@@ -1265,7 +1249,7 @@
    "venue": "Natural History Museum",
    "held": false,
    "field": "pricing.free",
-   "proposed": "The galleries are free to explore; a free entry ticket is recommended to guarantee entry. Paid exhibitions are charged.",
+   "proposed": "A free entry ticket can be booked to skip the queue on arrival; some exhibitions are paid.",
    "value": "free",
    "sentence": "Book a free entry ticket to the Museum to skip the queue when you arrive.",
    "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
@@ -1273,8 +1257,8 @@
    "reasons": [
     "a price or a free-entry claim (drives cost)"
    ],
-   "wordsToRead": 42,
-   "estimatedSeconds": 18
+   "wordsToRead": 40,
+   "estimatedSeconds": 17
   },
   {
    "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:considerations.queue",
@@ -1380,6 +1364,23 @@
    "estimatedSeconds": 14
   },
   {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:transport.station",
+   "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "venue": "Royal Air Force Museum London",
+   "held": false,
+   "field": "transport.station",
+   "proposed": "Near Colindale (Northern line, Edgware branch); the 303 bus stops outside the main entrance.",
+   "value": "Colindale",
+   "sentence": "Our London site is near Colindale Underground Station , on the Edgware branch of the Northern Line (black line). … the 303 bus to Edgeware stops right outside the museum's main entrance",
+   "url": "https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/",
+   "readOn": "2026-10-08",
+   "reasons": [
+    "independent semantic verification: narrower / supports, so the wording may go beyond the sentence"
+   ],
+   "wordsToRead": 60,
+   "estimatedSeconds": 23
+  },
+  {
    "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:transport.parkingFee",
    "venueId": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
    "venue": "Royal Air Force Museum London",
@@ -1402,7 +1403,7 @@
    "venue": "Royal Air Force Museum London",
    "held": false,
    "field": "access.wheelchair",
-   "proposed": "Wide aisles in the hangars suit wheelchairs; manual wheelchairs and mobility scooters can be borrowed free.",
+   "proposed": "Wide aisles throughout the hangars make access easy for wheelchairs and pushchairs; a limited number of manual wheelchairs and mobility scooters can be borrowed free, weather permitting, on a first-come, first-served basis.",
    "value": "yes",
    "sentence": "Wide aisles throughout the hangars make access easy for wheelchairs and pushchairs.",
    "url": "https://www.rafmuseum.org.uk/london/plan-your-day/",
@@ -1410,8 +1411,8 @@
    "reasons": [
     "an accessibility claim (high impact)"
    ],
-   "wordsToRead": 33,
-   "estimatedSeconds": 15
+   "wordsToRead": 49,
+   "estimatedSeconds": 20
   },
   {
    "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:access.stepFree",
@@ -1453,7 +1454,7 @@
    "venue": "Royal Air Force Museum London",
    "held": false,
    "field": "opening.theatre",
-   "proposed": "The 4D Theatre is temporarily closed for refurbishment until 31 December 2026.",
+   "proposed": "The 4D Theatre is temporarily closed for refurbishment.",
    "value": "4D Theatre closed",
    "sentence": "4D Theatre Experience - 31 December 2026 Temporarily Closed for Refurbishment",
    "url": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
@@ -1462,8 +1463,8 @@
     "not a fact type that may be accepted without a person",
     "conditional, temporary or dated wording"
    ],
-   "wordsToRead": 39,
-   "estimatedSeconds": 17
+   "wordsToRead": 35,
+   "estimatedSeconds": 16
   },
   {
    "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:pricing.free",
@@ -1471,7 +1472,7 @@
    "venue": "Royal Air Force Museum London",
    "held": false,
    "field": "pricing.free",
-   "proposed": "Admission to all areas is free; donations welcome. Parking is charged.",
+   "proposed": "Admission to all areas of the Museum is free, and donations are welcome.",
    "value": "free",
    "sentence": "Admission to all areas of the Museum is free, and donations are welcome.",
    "url": "https://www.rafmuseum.org.uk/london/plan-your-day/",
@@ -1479,8 +1480,8 @@
    "reasons": [
     "a price or a free-entry claim (drives cost)"
    ],
-   "wordsToRead": 32,
-   "estimatedSeconds": 15
+   "wordsToRead": 34,
+   "estimatedSeconds": 16
   },
   {
    "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:activities.the-garden",
@@ -1626,16 +1627,16 @@
    "venue": "Science Museum",
    "held": false,
    "field": "access.stepFreeRoute",
-   "proposed": "A step-free route for families with under-7s links the toddler galleries.",
+   "proposed": "A free guide for families with children under seven follows a step-free route through the museum, with five experiences for toddlers and young explorers.",
    "value": "yes",
-   "sentence": "this free guide can be enjoyed at your own pace and follows a step-free route through the museum … perfect for families with children under seven",
+   "sentence": "discover five favourite experiences for toddlers and young explorers at the Science Museum … this free guide can be enjoyed at your own pace and follows a step-free route through the museum … perfect for families with children under seven",
    "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
    "readOn": "2026-10-08",
    "reasons": [
     "an accessibility claim (high impact)"
    ],
-   "wordsToRead": 42,
-   "estimatedSeconds": 18
+   "wordsToRead": 69,
+   "estimatedSeconds": 26
   },
   {
    "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:access.mezzanine",
@@ -1643,7 +1644,7 @@
    "venue": "Science Museum",
    "held": false,
    "field": "access.mezzanine",
-   "proposed": "No step-free access to the mezzanine in Making the Modern World and Flight.",
+   "proposed": "Currently there is no step-free access to the mezzanine level in the Making the Modern World and Flight galleries.",
    "value": "no",
    "sentence": "There is currently no step-free access to the mezzanine level in Making the Modern World and Flight galleries.",
    "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
@@ -1654,8 +1655,8 @@
     "conditional, temporary or dated wording",
     "applies to part of the venue"
    ],
-   "wordsToRead": 54,
-   "estimatedSeconds": 21
+   "wordsToRead": 60,
+   "estimatedSeconds": 23
   },
   {
    "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:access.wheelchairLoan",
@@ -1680,7 +1681,7 @@
    "venue": "Science Museum",
    "held": false,
    "field": "pricing.free",
-   "proposed": "Free admission with a pre-booked ticket. Wonderlab, Power Up, IMAX and the Bubble Explorers show are charged.",
+   "proposed": "Admission is free: a free admission ticket can be booked; donations are welcome.",
    "value": "free",
    "sentence": "Book your free admission ticket now to visit the museum Donations welcome",
    "url": "https://www.sciencemuseum.org.uk/",
@@ -1688,8 +1689,8 @@
    "reasons": [
     "a price or a free-entry claim (drives cost)"
    ],
-   "wordsToRead": 37,
-   "estimatedSeconds": 17
+   "wordsToRead": 33,
+   "estimatedSeconds": 15
   },
   {
    "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:pricing.bubbleExplorers",

@@ -34,6 +34,8 @@ module.exports = {
       q: 'Some of the paths are very steep and on wet or frosty days may not be suitable for wheelchair users or anyone who is unstable on their feet.' },
     { sec: 'opening', key: 'hours', v: 'Museum 10:00-17:30; Gardens 7:15-18:30', t: 'Museum open daily 10am to 5.30pm; gardens from 7.15am (8am Sundays and bank holidays) to 6.30pm.', u: '/plan-your-visit',
       q: ['The Museum is open daily, from 10am - 5.30pm', 'the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm'] },
+    { sec: 'opening', key: 'closure-natural-history', gtk: true, v: 'Natural History Gallery closed', t: 'The Natural History Gallery is closed for refurbishment.', u: '/',
+      q: 'The Natural History Gallery is closed for refurbishment.' },
     { sec: 'opening', key: 'closure', gtk: true, v: 'Natural History Gallery closed', t: 'The Natural History Gallery is closed for refurbishment; the Nature Gallery and Nature Discovery Den are closed until 5 February 2027.', u: '/plan-your-visit',
       q: 'Please note: for the Nature + Love project the Nature Gallery and Nature Discovery Den will be closed until 5 February 2027.' },
     { sec: 'pricing', key: 'free', v: 'free', t: 'The museum and gardens are free; the Aquarium, Butterfly House, Voyage to the Deep and some events are charged.', u: '/plan-your-visit',

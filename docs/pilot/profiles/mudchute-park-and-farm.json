@@ -26,7 +26,11 @@
       "status": "review",
       "reviewReasons": [
         "independent check (no-over-reach): the proposal says free; the quote does not"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -41,7 +45,11 @@
         "quote": "Animal Petting in Pets Corner is available during school holidays on specific days.",
         "pageSha256": "b59553fe8f0899ac"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -56,7 +64,11 @@
         "quote": "Donkey rides are only available during late Spring / Summer, and are weather dependent.",
         "pageSha256": "b59553fe8f0899ac"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -81,20 +93,35 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
       "key": "toilets",
       "value": "yes",
-      "text": "Toilets in the courtyard, including a disabled toilet. No access when the courtyard is closed (Mondays outside school holidays).",
+      "text": "Toilets, including a disabled toilet, are available in the courtyard.",
+      "amended": {
+        "from": "Toilets in the courtyard, including a disabled toilet. No access when the courtyard is closed (Mondays outside school holidays).",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.mudchute.org/plan-your-visit/facilities",
         "readAt": "2026-10-08",
         "quote": "Toilets, including a disabled toilet, are available in the courtyard and extensive hand washing facilities are available throughout the farm.",
         "pageSha256": "756a7b7f98c780ab"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -107,7 +134,11 @@
         "quote": "Baby changing facilities are available in the ladies public toilet within the courtyard.",
         "pageSha256": "756a7b7f98c780ab"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -120,7 +151,11 @@
         "quote": "Toilets, including a disabled toilet, are available in the courtyard",
         "pageSha256": "756a7b7f98c780ab"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -137,7 +172,11 @@
         ],
         "pageSha256": "0906b26c65cd6d7c"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -153,7 +192,11 @@
       "status": "review",
       "reviewReasons": [
         "a negative claim (can exclude a venue)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "food",
@@ -166,7 +209,11 @@
         "quote": "Mudchute Kitchen Café Tuesday to Sunday 10am - 5pm Open everyday during school holidays and on bank holidays.",
         "pageSha256": "88c3ac5f087332c7"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "food",
@@ -179,7 +226,11 @@
         "quote": "picnic area You are welcome to bring your own food but please eat in the courtyard only.",
         "pageSha256": "756a7b7f98c780ab"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "play",
@@ -197,13 +248,24 @@
       "status": "review",
       "reviewReasons": [
         "applies to part of the venue"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
       "key": "wheelchair",
       "value": "yes",
-      "text": "Most areas wheelchair accessible; muddy after heavy rain.",
+      "text": "Most areas of the farm are accessible by wheelchair, though not all paths are tarmac; some ground can become muddy during and after heavy rain.",
+      "amended": {
+        "from": "Most areas wheelchair accessible; muddy after heavy rain.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "supports"
+        }
+      },
       "evidence": {
         "url": "https://www.mudchute.org/plan-your-visit/facilities",
         "readAt": "2026-10-08",
@@ -213,13 +275,24 @@
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "opening",
       "key": "hours",
       "value": "Farm 9-16; Park dawn-dusk",
-      "text": "Farm open every day 9am to 4pm (animals go in from 3pm); park dawn to dusk. Pets corner and courtyard are closed on Mondays outside school holidays.",
+      "text": "Farm open every day 9am to 4pm (animals go in from 3pm); park open every day dawn to dusk.",
+      "amended": {
+        "from": "Farm open every day 9am to 4pm (animals go in from 3pm); park dawn to dusk. Pets corner and courtyard are closed on Mondays outside school holidays.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.mudchute.org/plan-your-visit/opening-times",
         "readAt": "2026-10-08",
@@ -230,13 +303,24 @@
       "reviewReasons": [
         "conflicts with the provider (Google) hours, which show Monday closed"
       ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "conflict": "the provider (Google) hours, which show Monday closed"
     },
     {
       "sec": "considerations",
       "key": "monday-courtyard",
       "value": "courtyard closed Mondays",
-      "text": "The main courtyard (with the toilets and baby changing) is closed on Mondays outside school holidays, so there is no toilet access.",
+      "text": "The Main Courtyard is closed on Mondays except during school holidays, and there is no access to the Mudchute toilets when the courtyard is closed.",
+      "amended": {
+        "from": "The main courtyard (with the toilets and baby changing) is closed on Mondays outside school holidays, so there is no toilet access.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "goodToKnow": true,
       "evidence": {
         "url": "https://www.mudchute.org/plan-your-visit/opening-times",
@@ -247,7 +331,11 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "pricing",
@@ -263,13 +351,24 @@
       "status": "review",
       "reviewReasons": [
         "a price or a free-entry claim (drives cost)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "considerations",
       "key": "hygiene",
       "value": "wash hands",
-      "text": "Wash hands after touching animals; pregnant visitors are advised not to touch pregnant ewes, goats, lambs or kids.",
+      "text": "Visitors are encouraged to wash their hands thoroughly after touching any animals (and are asked not to touch young lambs during lambing).",
+      "amended": {
+        "from": "Wash hands after touching animals; pregnant visitors are advised not to touch pregnant ewes, goats, lambs or kids.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "goodToKnow": true,
       "evidence": {
         "url": "https://www.mudchute.org/plan-your-visit/faq",
@@ -280,7 +379,11 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     }
   ]
 }

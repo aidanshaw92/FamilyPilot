@@ -31,6 +31,14 @@ const pages = pagesFile.split(',').flatMap((file) => {
     : raw.venues.flatMap((v) => v.pages.filter((p) => p.fullText).map((p) => ({ venue: v.name, url: p.url, title: p.title, readAt: p.readAt, text: p.fullText })));
 });
 
+// Amendments: where two blind semantic verifications (docs/pilot/SEMANTIC_VERIFICATION.md) found a proposal wider than the sentence
+// recorded for it, the proposal is narrowed to what the sentence supports. The original wording is kept on the fact, so the change is
+// auditable and nothing is silently rewritten.
+const amendments = fs.existsSync(path.join(__dirname, 'profiles', 'amendments.json')) ? JSON.parse(fs.readFileSync(path.join(__dirname, 'profiles', 'amendments.json'), 'utf8')) : {};
+// The record of the two blind semantic verifications. It is evidence, never an approval: it can only make an item need a person, or give
+// the person something to read; it never publishes anything and never turns a held item into an accepted one.
+const svFile = path.join(__dirname, '..', '..', '..', 'docs', 'pilot', 'semantic-verification.json');
+const semantic = new Map((fs.existsSync(svFile) ? JSON.parse(fs.readFileSync(svFile, 'utf8')).items : []).map((i) => [i.id, i]));
 const files = fs.readdirSync(path.join(__dirname, 'profiles')).filter((f) => f.endsWith('.cjs')).filter((f) => !only || f.startsWith(only));
 let failures = 0;
 const summary = [];
@@ -40,8 +48,11 @@ for (const file of files) {
   const src = require(path.join(__dirname, 'profiles', file));
   const venuePages = pages.filter((p) => p.venue === src.name);
   const built = [];
-  for (const f of src.facts) {
+  for (const f0 of src.facts) {
+    const amendment = amendments[`${file.replace(/\.cjs$/, '')}:${f0.sec}.${f0.key}`];
+    const f = amendment ? { ...f0, t: amendment.text } : f0;
     const out = { sec: f.sec, key: f.key, value: f.v ?? null, text: f.t };
+    if (amendment) out.amended = { from: f0.t, verdicts: amendment.verdicts };
     if (!SECTIONS.includes(f.sec)) throw new Error(`${file}: unknown section ${f.sec}`);
     if (f.kind) out.kind = f.kind;
     if (f.ages) { out.minMonths = f.ages[0]; out.maxMonthsExclusive = f.ages[1]; }
@@ -91,6 +102,14 @@ for (const file of files) {
     } else {
       out.status = f.st ?? 'unknown';
       if (out.status === 'fact') { failures += 1; console.error(`FACT WITHOUT SENTENCE ${src.name} ${f.sec}.${f.key}`); }
+    }
+    const sv = semantic.get(`${src.id.replace('fp-google-', '')}:${f.sec}.${f.key}`);
+    if (sv) {
+      out.semantic = { A: sv.finalA, B: sv.finalB };
+      if (out.status === 'verified' && !(sv.finalA === 'supports' && sv.finalB === 'supports')) {
+        out.status = 'review';
+        out.reviewReasons = [...(out.reviewReasons ?? []), `independent semantic verification: ${sv.finalA} / ${sv.finalB}, so the wording may go beyond the sentence`];
+      }
     }
     if (f.n) out.note = f.n;
     if (f.gap) out.gap = f.gap;

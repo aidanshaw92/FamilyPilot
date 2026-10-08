@@ -34,7 +34,7 @@ module.exports = {
     { sec: 'access', key: 'station-step-free', v: 'no', scope: 'area', t: 'South Kensington station is not step free; a subway tunnel gives step-free access from the station to the museum.', u: '/visit/getting-here.html',
       q: 'This station is not step free.' },
     { sec: 'opening', key: 'hours', v: '10:00-17:50 daily', t: 'Open daily 10:00 to 17:50 (last entry 17:30).', u: '/visit.html',
-      q: 'Opening times Open daily 10:00–17:50 (last entry 17:30)' },
+      q: 'Opening times Open daily 10:00–17:50 (last entry 17:30) Closed 9 October and 24–26 December' },
     { sec: 'opening', key: 'closure', gtk: true, v: '2026-10-09 closed', t: 'The South Kensington site is closed on Friday 9 October 2026 for a charity gala, and on 24 to 26 December.', u: '/visit.html',
       q: ['Closed 9 October and 24–26 December', 'Our South Kensington site will be closed on Friday 9 October 2026, as we’re hosting a charity gala.'],
       conflict: 'the homepage and the footer, which say "Open every day" and list only 24–26 December. They are standing text; the dedicated, dated notice on the visit page is the more specific statement, and no page says the museum is open on 9 October' },

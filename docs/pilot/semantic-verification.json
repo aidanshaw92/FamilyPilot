@@ -1,0 +1,3265 @@
+{
+ "builtOn": "2026-10-08",
+ "method": "Blind semantic verification: each proposal is shown to an independent model with only the claim and the venue's own words around it (no author reasoning, no status), twice with different models and different batch compositions. Pass A: Claude Opus. Pass B: Claude Sonnet (a Fable pass was attempted and failed on a usage limit). Both are the same model family as the author of the proposals, so errors can be correlated; seeded wrong claims measure whether they catch what they should. Verdicts are evidence for a person, never an approval.",
+ "seeded": {
+  "planted": 16,
+  "caughtByA": 16,
+  "caughtByB": 16,
+  "items": [
+   {
+    "seedType": "polarity+addition",
+    "claim": "Free parking is available on site for visitors.",
+    "A": "unsupported",
+    "B": "unsupported"
+   },
+   {
+    "seedType": "addition",
+    "claim": "Free Blue Badge parking is available on site.",
+    "A": "unsupported",
+    "B": "unsupported"
+   },
+   {
+    "seedType": "scope",
+    "claim": "No dogs anywhere in the park or the museum.",
+    "A": "unsupported",
+    "B": "narrower"
+   },
+   {
+    "seedType": "over-reach",
+    "claim": "The zoo is too steep for pushchairs.",
+    "A": "unsupported",
+    "B": "unsupported"
+   },
+   {
+    "seedType": "number",
+    "claim": "Children under 5 go free.",
+    "A": "unsupported",
+    "B": "unsupported"
+   },
+   {
+    "seedType": "extra day",
+    "claim": "The main courtyard (with the toilets and baby changing) is closed on Mondays and Tuesdays outside school holidays.",
+    "A": "unsupported",
+    "B": "unsupported"
+   },
+   {
+    "seedType": "number",
+    "claim": "The Garden is a hands-on play gallery for 2 to 6 year olds.",
+    "A": "unsupported",
+    "B": "unsupported"
+   },
+   {
+    "seedType": "dropped condition",
+    "claim": "Wonderlab is the free interactive gallery for children 7 to 14.",
+    "A": "unsupported",
+    "B": "unsupported"
+   },
+   {
+    "seedType": "number",
+    "claim": "Bubble Explorers: £4.50 per person, free for children 5 and under.",
+    "A": "unsupported",
+    "B": "unsupported"
+   },
+   {
+    "seedType": "time",
+    "claim": "Lifts in the Darwin Centre and the Mammals Hall are permanently out of order.",
+    "A": "unsupported",
+    "B": "unsupported"
+   },
+   {
+    "seedType": "scope",
+    "claim": "No step-free access to the museum's upper floors.",
+    "A": "unsupported",
+    "B": "unsupported"
+   },
+   {
+    "seedType": "time",
+    "claim": "The 4D Theatre is permanently closed.",
+    "A": "unsupported",
+    "B": "unsupported"
+   },
+   {
+    "seedType": "number",
+    "claim": "A play space for 0 to 5 year olds (free with an Entry ticket; book a 45 minute session).",
+    "A": "unsupported",
+    "B": "unsupported"
+   },
+   {
+    "seedType": "dropped condition",
+    "claim": "Park open daily from 7am until dusk; museum open every day 10am to 4.30pm.",
+    "A": "narrower",
+    "B": "unsupported"
+   },
+   {
+    "seedType": "time",
+    "claim": "The Creepy Crawlies Gallery has closed permanently.",
+    "A": "unsupported",
+    "B": "unsupported"
+   },
+   {
+    "seedType": "polarity",
+    "claim": "Wheelchair accessible toilets and a Changing Places toilet.",
+    "A": "unsupported",
+    "B": "unsupported"
+   }
+  ]
+ },
+ "items": [
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:activities.soft-play",
+   "kind": "held",
+   "venue": "Babylon Park London",
+   "field": "activities.soft-play",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "Under \"Mezzanine Floor\" the page lists \"soft play areas for toddlers and kids\".",
+   "noteB": "\"Mezzanine Floor: ... soft play areas for toddlers and kids\" matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:pushchair.allowed",
+   "kind": "held",
+   "venue": "Babylon Park London",
+   "field": "pushchair.allowed",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says 'Yes, prams are allowed and there is a dedicated pram/buggy section on the second floor'.",
+   "noteB": "\"Yes, prams are allowed and there is a dedicated pram/buggy section on the second floor\" matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:transport.parking",
+   "kind": "held",
+   "venue": "Babylon Park London",
+   "field": "transport.parking",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"There is no dedicated parking at Babylon Park. However, parking spaces can be found nearby in the local area.\"",
+   "noteB": "\"There is no dedicated parking at Babylon Park. However, parking spaces can be found nearby in the local area\" matches both halves of the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:food.outside-food",
+   "kind": "held",
+   "venue": "Babylon Park London",
+   "field": "food.outside-food",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The text says 'outside food and drinks are not permitted' word for word.",
+   "noteB": "'outside food and drinks are not permitted' is stated directly.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:access.wheelchair",
+   "kind": "held",
+   "venue": "Babylon Park London",
+   "field": "access.wheelchair",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'The entrance is level with the pavement, and a lift is available for access to the mezzanine and basement floors. However, for safety reasons, some rides may not be accessible' matches the claim, which only drops the hedge 'may'.",
+   "noteB": "\"The entrance is level with the pavement, and a lift is available for access to the mezzanine and basement floors\" and \"some rides may not be accessible\" match, though the claim states the rides point slightly more firmly than 'may'.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:considerations.height",
+   "kind": "held",
+   "venue": "Babylon Park London",
+   "field": "considerations.height",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"there is no minimum age for access however the rollercoaster and drop tower have a minimum height restriction of 105cm\".",
+   "noteB": "\"no minimum age for access however the rollercoaster and drop tower have a minimum height restriction of 105cm\" matches exactly.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:considerations.duration",
+   "kind": "held",
+   "venue": "Babylon Park London",
+   "field": "considerations.duration",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "dropped-condition",
+    "over-reach"
+   ],
+   "issuesB": [
+    "dropped-condition",
+    "over-reach"
+   ],
+   "noteA": "The page says \"Duration: Varies based on ticket purchased, we recommend 2 hours\". That is a recommendation with a condition, but the claim states it as the fixed length of a visit.",
+   "noteB": "\"Varies based on ticket purchased, we recommend 2 hours\" is a recommendation with a variable duration, not a statement that a visit takes about two hours.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:activities.playground",
+   "kind": "held",
+   "venue": "Battersea Park",
+   "field": "activities.playground",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page titled 'Battersea Park Playground for toddlers and juniors' says 'suitable for children 4 to 7, 8 to 14 years old' and lists 'Swings Slide units Exercise stations Trapeze bars Activity rocker', so the claim is a faithful rephrasing.",
+   "noteB": "\"suitable for children 4 to 7, 8 to 14 years old\" and the equipment list (swings, slide units, exercise stations, trapeze bars, activity rocker) match, and the title mismatch is correctly noted.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:activities.childrens-zoo",
+   "kind": "held",
+   "venue": "Battersea Park",
+   "field": "activities.childrens-zoo",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "\"a children's zoo\" is listed, but \"Nothing else is said about it on the council pages\" is not supported: the same page's \"In the park\" list links a \"Battersea Park Zoo\" item, and one passage cannot show what the other council pages leave out.",
+   "noteB": "\"children's play areas, a children's zoo, the Pump House gallery\" supports the listing, but the claim that nothing else is said about it on the council pages goes beyond this page (which also shows a 'Battersea Park Zoo' link).",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:play.playground",
+   "kind": "held",
+   "venue": "Battersea Park",
+   "field": "play.playground",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page for 'Battersea Park Playground for toddlers and juniors' states 'Open access playground.', which is all the claim says.",
+   "noteB": "The page states 'Open access playground.' for Battersea Park Playground for toddlers and juniors.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:opening.hours",
+   "kind": "held",
+   "venue": "Battersea Park",
+   "field": "opening.hours",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "This repeats 'Opening times: 8am until dusk' and 'park gates open 6.30am to 10.30pm' exactly as the page gives them.",
+   "noteB": "The claim repeats 'Opening times: 8am until dusk' and 'park gates open 6.30am to 10.30pm' exactly as the page gives them.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:considerations.cascades",
+   "kind": "held",
+   "venue": "Battersea Park",
+   "field": "considerations.cascades",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"We're restoring the Cascades, Battersea Park's historic waterfall\" \"With support from the National Lottery Heritage Fund\", and it describes this as ongoing work.",
+   "noteB": "'We're restoring the Cascades, Battersea Park’s historic waterfall' and 'With support from the National Lottery Heritage Fund' cover both the restoration and the Lottery funding.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.baby-toddler-space",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "activities.baby-toddler-space",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach",
+    "age"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "The text says the space is \"dedicated to 0-2 year olds\", which does not clearly mean \"only\" them. Nothing mentions a craft area for older siblings.",
+   "noteB": "'Dedicated to 0-2 year olds', 'free with your Entry ticket' and 'timed sessions (45 minutes) should be booked' are stated, but 'only' and the older siblings' small craft area are not in the text.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.baby-storytelling",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "activities.baby-storytelling",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"Baby Storytelling Dates: Every day * Age guide: 0-2 Duration: 30 mins ... £2 in addition to your Entry ticket\" supports the age, length, days and price.",
+   "noteB": "\"Baby Storytelling Dates: Every day * Age guide: 0-2 Duration: 30 mins * Times vary £2 in addition to your Entry ticket\" supports every part of the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.storytelling-0-5",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "activities.storytelling-0-5",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"Storytelling: Julian Is a Mermaid Dates: 2 Aug – 18 Oct * Age guide: 0-5\" supports the age band and end date, and on the read date (8 October 2026) the run is still current.",
+   "noteB": "The listing gives 'Julian Is a Mermaid', 'Dates: 2 Aug – 18 Oct', 'Age guide: 0-5'. It was read 2026-10-08, so the end date has not passed and the claim dates it correctly.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.exhibition-0-8",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "activities.exhibition-0-8",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "price",
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "\"Age guide: 0-8 Duration: 50 mins\" and \"brand new immersive exhibition\" are stated, but the text never says the exhibition needs a separate add-on ticket; it only calls events and exhibitions \"the perfect addition to your visit\" and says \"Book now\".",
+   "noteB": "\"Age guide: 0-8 Duration: 50 mins\" are stated, but the text only calls exhibitions a \"perfect addition to your visit\" and never says an add-on or separate ticket is required.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.restriction",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "pushchair.restriction",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"We do not allow buggies and pushchairs in any of our storytelling or play areas\", \"buggy parking available on our Ground Floor\" and \"If you have a smaller baby we recommend bringing a sling\", which the claim matches.",
+   "noteB": "'There is buggy parking available on our Ground Floor. We do not allow buggies and pushchairs in any of our storytelling or play areas. If you have a smaller baby we recommend bringing a sling' matches all parts of the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.twins",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "pushchair.twins",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'If you have a particular reason why you need a buggy with you – eg twin babies or a sleeping child – do speak to our front of house team who will be able to advise and accommodate your buggy where needed' is faithfully rephrased.",
+   "noteB": "The text says that if you need a buggy, 'eg twin babies or a sleeping child', speak to 'our front of house team who will be able to advise and accommodate your buggy where needed'.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.storage",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "pushchair.storage",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach",
+    "dropped-condition"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "The text says 'We have storage for buggies in our basement and/ or garden' and says nothing about ground-floor storage, and the claim drops 'many of our spaces cannot have buggies in'.",
+   "noteB": "The text says 'storage for buggies in our basement and/ or garden' and says nothing about the ground floor.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.accessibleToilet",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "toilets.accessibleToilet",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"wheelchair accessible toilets, though we do not currently have 'Changing Places' toilets available\" matches both parts, and the present-tense claim does not say this is permanent.",
+   "noteB": "'Wheelchair accessible toilets, though we do not currently have Changing Places toilets available' matches the present-tense claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.parking",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "transport.parking",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"There is no parking available on the Discover site\", \"Stratford multi-story car park. (5 min walk)\" and \"There are blue badge holder bays in the immediate vicinity of Discover\".",
+   "noteB": "\"There is no parking available on the Discover site\", \"Stratford multi-story car park. (5 min walk)\" and \"blue badge holder bays in the immediate vicinity of Discover\" cover every part.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:considerations.stale-step-free-notice",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "considerations.stale-step-free-notice",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"there is no step free access at Stratford High Street Station until July 2025\", and the claim reports that wording accurately and correctly notes that the date was already past when the page was read on 2026-10-08.",
+   "noteB": "The page does say \"no step free access at Stratford High Street Station until July 2025\", and with a read date of 2026-10-08 that date is past, so the claim accurately reports a stale statement about the station (it should not be published as current advice).",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:access.wheelchair",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "access.wheelchair",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"Discover has lifts to all floors\" and \"Just ask our staff on the day if you need any additional assistance\".",
+   "noteB": "\"Discover has lifts to all floors\" and \"Just ask our staff on the day if you need any additional assistance\" support both parts.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:access.sensory",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "access.sensory",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The FAQ says 'We welcome kids with SEN and other additional needs on any and every day but you can also choose from various Sensory Adapted and BSL events', which the claim rephrases faithfully.",
+   "noteB": "The text says \"we welcome kids with SEN and other additional needs on any and every day but you can also choose from various Sensory Adapted and BSL events\", which matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:access.saturday-club",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "access.saturday-club",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'Dates: Saturday mornings Age guide: 5-11 Duration: 2 hours A free weekly club at Discover for disabled children and children with SEN' supports every part of the claim.",
+   "noteB": "'Mighty Mega Dates: Saturday mornings Age guide: 5-11 Duration: 2 hours A free weekly club ... for disabled children and children with SEN' matches every part of the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pricing.paid",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "pricing.paid",
+   "A": "narrower",
+   "B": "unclear",
+   "issuesA": [
+    "ambiguous"
+   ],
+   "issuesB": [
+    "ambiguous"
+   ],
+   "noteA": "The quoted '£10 Day Entry - Adult or Child £9 Day Entry - Newham Adult or Child or concession' supports the prices, but no page text was supplied, so the statement that the page does not say whether babies and toddlers pay cannot be checked.",
+   "noteB": "The prices match '£10 Day Entry - Adult or Child' and '£9 ... Newham Adult or Child or concession', but 'residents' is inferred, no surrounding text is supplied to confirm the babies-and-toddlers statement, and the page was read 2026-09-26, earlier than the other items.",
+   "finalA": "narrower",
+   "finalB": "unclear"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pricing.under1",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "pricing.under1",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach",
+    "price"
+   ],
+   "issuesB": [
+    "over-reach",
+    "ambiguous"
+   ],
+   "noteA": "This page says only \"0-1 year olds and carers for our disabled visitors receive free tickets\"; the item contains no FAQ text calling under-1 tickets \"discounted\", so that part is unsupported.",
+   "noteB": "'0-1 year olds and carers for our disabled visitors receive free tickets' supports the free part, but the only 'Discounted' wording is for Newham residents' Annual Entry tickets, and no FAQ saying under-1 tickets are discounted appears in the text.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pricing.addons",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "pricing.addons",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"Add-on Storytelling, Immersive Exhibitions and other tickets cost between £3-£5.50\", and the claim rephrases this faithfully.",
+   "noteB": "'Add-on Storytelling, Immersive Exhibitions and other tickets cost between £3-£5.50' matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:considerations.booking",
+   "kind": "held",
+   "venue": "Discover Children's Story Centre",
+   "field": "considerations.booking",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'we can even reach our capacity for Entry tickets on busy days, so we recommend booking ahead online' says the same thing as the claim.",
+   "noteB": "'we can even reach our capacity for Entry tickets on busy days, so we recommend booking ahead online' supports both parts.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:pushchair.terrain",
+   "kind": "held",
+   "venue": "Gunnersbury Park",
+   "field": "pushchair.terrain",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The claim faithfully rephrases \"There is a network of tarmac paths within the park ... because the park is a natural environment, paths may be uneven in places.\"",
+   "noteB": "Claim restates 'network of tarmac paths... because the park is a natural environment, paths may be uneven in places' faithfully.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:access.wheelchair",
+   "kind": "held",
+   "venue": "Gunnersbury Park",
+   "field": "access.wheelchair",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "This faithfully rephrases 'a self-operated lift serves all the galleries and is suitable for wheelchairs, including small motorised ones.'",
+   "noteB": "\"a self-operated lift serves all the galleries and is suitable for wheelchairs, including small motorised ones\" matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:access.stepFree",
+   "kind": "held",
+   "venue": "Gunnersbury Park",
+   "field": "access.stepFree",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "The text supports 'Step-free access is available throughout the museum, with some ramps and slopes' and 'Lift access to the first and second floors (all museum levels)', but says only 'A wheelchair is available to borrow on request' and never says it is a manual one.",
+   "noteB": "The text says \"A wheelchair is available to borrow on request\" and never says it is a manual wheelchair; the step-free and lift parts are supported.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:access.relaxed",
+   "kind": "held",
+   "venue": "Gunnersbury Park",
+   "field": "access.relaxed",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"We offer Relaxed Sessions every half term\" and that quieter times are typically \"Weekdays: 2:00pm–4:00pm\" and \"Weekends: 10:00am–12:00pm\"; the claim leaves out the school-holiday times but adds nothing.",
+   "noteB": "\"We offer Relaxed Sessions every half term\", \"Weekdays: 2:00pm–4:00pm\" and \"Weekends: 10:00am–12:00pm\" are all stated, with \"typically\" preserved.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:opening.hours",
+   "kind": "held",
+   "venue": "Gunnersbury Park",
+   "field": "opening.hours",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"Museum Tuesday-Sunday 10am to 4:30pm Park Daily between 7am until dusk\" gives every time and day in the claim, and \"closed Mondays\" follows directly from the museum's listed opening being Tuesday-Sunday.",
+   "noteB": "'Park Daily between 7am until dusk' and 'Museum Tuesday-Sunday 10am to 4:30pm' match, and closed Mondays follows directly from Tuesday-Sunday.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:pricing.free",
+   "kind": "held",
+   "venue": "Gunnersbury Park",
+   "field": "pricing.free",
+   "A": "supports",
+   "B": "narrower",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "dropped-condition"
+   ],
+   "noteA": "The page says 'Our museum and park are free entry' and 'The car park does have some fees for usage' ('charges apply at all times'); Blue Badge parking is free, but the claim does not say every space is charged.",
+   "noteB": "'Our museum and park are free entry' and 'The car park does have some fees' are supported, but 'parking is free' for blue badge holders in designated bays contradicts a flat 'car parking is charged'.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:considerations.dogs",
+   "kind": "held",
+   "venue": "Gunnersbury Park",
+   "field": "considerations.dogs",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'we do not allow dogs into the museum, with the exception of Assistance Dogs' matches the claim.",
+   "noteB": "'we do not allow dogs into the museum, with the exception of Assistance Dogs' matches the claim exactly.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:activities.animal-walk",
+   "kind": "held",
+   "venue": "Horniman Museum and Gardens",
+   "field": "activities.animal-walk",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The text names the \"Nature Trail\" and the \"Animal Walk\" in its section on the Gardens and says \"The Butterfly House and Animal Walk may close at short notice during very high temperatures\"; the claim's \"high temperatures\" is a slight softening of \"very high\" but keeps the meaning.",
+   "noteB": "The text names the \"Animal Walk\" and the \"Nature Trail\" in the Gardens section and says \"The Butterfly House and Animal Walk may close at short notice during very high temperatures\".",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:toilets.accessibleToilet",
+   "kind": "held",
+   "venue": "Horniman Museum and Gardens",
+   "field": "toilets.accessibleToilet",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "ambiguous",
+    "over-reach"
+   ],
+   "issuesB": [
+    "scope"
+   ],
+   "noteA": "The page says 'inclusive toilets available in the Museum, Gardens and Café', and 'inclusive' is not the same as 'accessible'; the text uses 'accessible' only for the Gardens toilets near the Bandstand and by the Kusuma Nature Play Area, while 'The Museum does not provide hoists or adult changing facilities' supports the second part.",
+   "noteB": "\"There are inclusive toilets available in the Museum, Gardens and Café\" is stated, but \"The Museum does not provide hoists or adult changing facilities\" is limited to the Museum and the claim reads as covering the gardens and café too.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.parking",
+   "kind": "held",
+   "venue": "Horniman Museum and Gardens",
+   "field": "transport.parking",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "This faithfully rephrases 'We have no onsite parking, other than limited parking for Blue Badge holders.'",
+   "noteB": "\"We have no onsite parking, other than limited parking for Blue Badge holders\" matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:access.wheelchair",
+   "kind": "held",
+   "venue": "Horniman Museum and Gardens",
+   "field": "access.wheelchair",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The claim restates \"The Museum and Gardens are both wheelchair friendly with accessible toilets\" exactly.",
+   "noteB": "\"The Museum and Gardens are both wheelchair friendly with accessible toilets\" is restated faithfully.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:access.steep-paths",
+   "kind": "held",
+   "venue": "Horniman Museum and Gardens",
+   "field": "access.steep-paths",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"The Gardens have tarmac or concrete paths throughout. Some of the paths are very steep\" and \"The ground on the Nature Trail is uneven and can be muddy in rainy weather\" cover both parts of the claim.",
+   "noteB": "\"Some of the paths are very steep\" and \"The ground on the Nature Trail is uneven and can be muddy in rainy weather\" support the claim; 'can be muddy' preserves the hedge.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:opening.hours",
+   "kind": "held",
+   "venue": "Horniman Museum and Gardens",
+   "field": "opening.hours",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"The Museum is open daily, from 10am - 5.30pm\" and \"The Gardens are open daily, from 7.15am (or 8am Sunday and Bank Holidays) until 6.30pm\", which match the claim exactly.",
+   "noteB": "'The Museum is open daily, from 10am - 5.30pm' and 'Gardens are open daily, from 7.15am (or 8am Sunday and Bank Holidays) until 6.30pm' match the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:opening.closure",
+   "kind": "held",
+   "venue": "Horniman Museum and Gardens",
+   "field": "opening.closure",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "scope",
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach",
+    "scope"
+   ],
+   "noteA": "The page says \"the Nature Gallery and Nature Discovery Den will be closed until 5 February 2027\" for \"the Nature + Love project\"; it says nothing about a \"Natural History Gallery\" or about \"refurbishment\".",
+   "noteB": "The closure of \"the Nature Gallery and Nature Discovery Den ... until 5 February 2027\" is stated, but nothing in the text mentions a Natural History Gallery or a refurbishment.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:pricing.free",
+   "kind": "held",
+   "venue": "Horniman Museum and Gardens",
+   "field": "pricing.free",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'The Museum and Gardens are open, and free to visit. There is a charge for the Aquarium, Butterfly House, Voyage to the Deep, and some events' matches the claim exactly.",
+   "noteB": "'The Museum and Gardens are open, and free to visit. There is a charge for the Aquarium, Butterfly House, Voyage to the Deep, and some events' matches every part of the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:pricing.paidAttractions",
+   "kind": "held",
+   "venue": "Horniman Museum and Gardens",
+   "field": "pricing.paidAttractions",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "price",
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "'Aquarium : £2–£16.80 Butterfly House : £2–£28.60' and 'Children under three may visit free of charge ... but you must book into a timeslot' are supported, but nothing says the £2 low end is a Universal Credit price.",
+   "noteB": "The ranges \"£2–£16.80\" and \"£2–£28.60\" and \"Children under three may visit free of charge ... you must book into a timeslot\" are stated, but nothing says the £2 low end is the Universal Credit price.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:considerations.busy-cafe",
+   "kind": "held",
+   "venue": "Horniman Museum and Gardens",
+   "field": "considerations.busy-cafe",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"The Cafe gets very busy between 11.30am and 2.30pm, and especially so during weekends and school holidays\".",
+   "noteB": "\"The Cafe gets very busy between 11.30am and 2.30pm, and especially so during weekends and school holidays\" is a faithful rephrase.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:activities.zootown",
+   "kind": "held",
+   "venue": "London Zoo",
+   "field": "activities.zootown",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach",
+    "dropped-condition"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "The page supports 'aimed at children aged up to 8', 'must be purchased online in advance' and 'Silver members and non-members pay £1 per child', but nothing in the text says 'every child is welcome'.",
+   "noteB": "'Aimed at children aged up to 8', online booking and '£1 per child' are stated, but 'every child is welcome' is not in the text.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:pushchair.hire",
+   "kind": "held",
+   "venue": "London Zoo",
+   "field": "pushchair.hire",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'single buggies cost £10 and double buggies cost £15 to hire. Both require a £15 refundable deposit (card only)', from the gift shop, matches every part of the claim.",
+   "noteB": "'Single buggies cost £10 and double buggies cost £15... Both require a £15 refundable deposit (card only)' and hire is from the gift shop, matching the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:food.cafe",
+   "kind": "held",
+   "venue": "London Zoo",
+   "field": "food.cafe",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "The text names only \"our Barista Bar, next to The Terrace Restaurant\" and \"The Terrace Restaurant\". It does not mention a Peckish Parrot Café or any kiosks.",
+   "noteB": "The text names only 'Barista Bar' and 'The Terrace Restaurant'; 'Peckish Parrot Café' and 'kiosks' appear nowhere in the passage.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:access.wheelchair",
+   "kind": "held",
+   "venue": "London Zoo",
+   "field": "access.wheelchair",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The claim restates \"most of the Zoo is accessible for wheelchair users and those with limited mobility\" word for word.",
+   "noteB": "\"most of the Zoo is accessible for wheelchair users and those with limited mobility\" matches the claim word for word.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:access.steep-slopes",
+   "kind": "held",
+   "venue": "London Zoo",
+   "field": "access.steep-slopes",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "'The slopes leading to the two tunnels in the Zoo are steep' supports the main point, but the page says this under wheelchair and limited-mobility access and never mentions pushchairs, so the '(relevant to pushchairs)' gloss is added.",
+   "noteB": "\"the slopes leading to the two tunnels in the Zoo are steep\" is stated, but the text never mentions pushchairs, so the \"relevant to pushchairs\" part is the writer's addition.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:opening.hours",
+   "kind": "held",
+   "venue": "London Zoo",
+   "field": "opening.hours",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The table '3 September - 23 October 2026 10am 4pm 5pm' and '24 October 2026 - 12 February 2027 10am 3pm 4pm' matches the claim, and these periods are current at the read date of 2026-10-08.",
+   "noteB": "The table rows \"3 September - 23 October 2026 10am 4pm 5pm\" and \"24 October 2026 - 12 February 2027 10am 3pm 4pm\" match the claim exactly.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:pricing.under3",
+   "kind": "held",
+   "venue": "London Zoo",
+   "field": "pricing.under3",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"Children under the age of 3 years are entitled to free entry\". The page also asks visitors to book a ticket for them, but that is a booking request and does not change whether entry is free.",
+   "noteB": "\"Children under the age of 3 years are entitled to free entry to both of our Zoos\" supports 'under 3 go free' (a ticket still has to be booked for them, but the entry is free).",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:pricing.variable",
+   "kind": "held",
+   "venue": "London Zoo",
+   "field": "pricing.variable",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The 'Online advance ticket prices without donation' table gives Adult (age 16-64) £27.70-£34.50 and Child (age 3-15) £19.40-£24.10 across the Off Peak/Weekday Standard/Standard Weekend/Peak columns; 'The prices below apply for tickets bought at the entrance, or online from 10am on the date of the visit' makes advance mean before 10am; every gate price shown (e.g. Adult £32.50-£40.00 incl. donation) is higher than the matching advance price incl. donation (£30.50-£38.00).",
+   "noteB": "The without-donation online advance table gives adult £27.70-£34.50 and child (3-15) £19.40-£24.10, and the gate/online-from-10am prices (e.g. £32.50-£40.00 adult) are higher.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:activities.farm-animals",
+   "kind": "held",
+   "venue": "Mudchute Park and Farm",
+   "field": "activities.farm-animals",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"We do not charge admission fees to visit our park and farm which has 32 acres and over 100 animals for people of all ages to enjoy\", and the claim quotes \"for people of all ages\" faithfully.",
+   "noteB": "\"We do not charge admission fees ... 32 acres and over 100 animals for people of all ages to enjoy\" supports every part of the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:pushchair.terrain",
+   "kind": "held",
+   "venue": "Mudchute Park and Farm",
+   "field": "pushchair.terrain",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says 'Most areas of the farm are accessible by wheelchair but our paths are not all tarmac, several having a natural mud surface', which the claim rephrases faithfully.",
+   "noteB": "The text says 'Most areas of the farm are accessible by wheelchair but our paths are not all tarmac, several having a natural mud surface', which the claim rephrases faithfully.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:transport.parking",
+   "kind": "held",
+   "venue": "Mudchute Park and Farm",
+   "field": "transport.parking",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "This faithfully rephrases \"we do not have on-site parking for visitors. However there is limited meter parking on Pier Street and neighbouring streets.\"",
+   "noteB": "\"we do not have on-site parking for visitors. However there is limited meter parking on Pier Street and neighbouring streets\" matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:play.playground",
+   "kind": "held",
+   "venue": "Mudchute Park and Farm",
+   "field": "play.playground",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'There is an outdoor play area in Milwall Park which is adjacent to Mudchute Park' matches the claim, which correctly places it in the neighbouring park rather than on the farm.",
+   "noteB": "\"an outdoor play area in Milwall Park which is adjacent to Mudchute Park\" supports an outdoor play area in the neighbouring park, correctly not placed inside the farm.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:access.wheelchair",
+   "kind": "held",
+   "venue": "Mudchute Park and Farm",
+   "field": "access.wheelchair",
+   "A": "narrower",
+   "B": "supports",
+   "issuesA": [
+    "over-reach",
+    "dropped-condition"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"Most areas of the farm are accessible by wheelchair but our paths are not all tarmac\" and \"some of the ground can become muddy\"; the claim drops the \"some\" and \"can\" qualifiers and the caveat about the paths.",
+   "noteB": "'Most areas of the farm are accessible by wheelchair' and 'During and after heavy rain, some of the ground can become muddy' support the claim, which is a compressed but faithful rephrasing.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports",
+   "reamended": true
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:opening.hours",
+   "kind": "held",
+   "venue": "Mudchute Park and Farm",
+   "field": "opening.hours",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "dropped-condition",
+    "ambiguous"
+   ],
+   "issuesB": [
+    "dropped-condition",
+    "ambiguous"
+   ],
+   "noteA": "Farm and park hours match \"Farm: Every day 9am–4pm (animals go in from 3pm) Park: Every day dawn–dusk\", but the pets corner is listed as \"Closed during School Holidays\" (so not only on Mondays), and the courtyard text is cut off at \"Main Courtyard Closed Mon\", so the courtyard part of the claim cannot be checked.",
+   "noteB": "Farm, park and courtyard parts match the text, but the pets corner entry reads 'Closed during School Holidays' then 'Monday: Closed', so saying it is closed Mondays 'outside school holidays' implies it is open in holidays, which the text does not support.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports",
+   "reamended": true
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:considerations.monday-courtyard",
+   "kind": "held",
+   "venue": "Mudchute Park and Farm",
+   "field": "considerations.monday-courtyard",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "'Main Courtyard Closed Mondays except during school holidays. No access to Mudchute Toilets when the Courtyard is closed' supports the closure and toilets, but this item's text never mentions baby changing being in the courtyard.",
+   "noteB": "\"Closed Mondays except during school holidays. No access to Mudchute Toilets when the Courtyard is closed\" supports the closure and the toilet consequence, but the text shown does not say the baby changing is in the courtyard, so that parenthetical is not supported by these words.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:pricing.free",
+   "kind": "held",
+   "venue": "Mudchute Park and Farm",
+   "field": "pricing.free",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"Mudchute Park and Farm is free to visit. Donations are welcome at the donation points around the farm.\"",
+   "noteB": "\"Mudchute Park and Farm is free to visit. Donations are welcome\" matches exactly.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:considerations.hygiene",
+   "kind": "held",
+   "venue": "Mudchute Park and Farm",
+   "field": "considerations.hygiene",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "'encouraged to wash their hands thoroughly after touching any animals' is supported, but the passage cuts off at 'Precautions for Pregnant Women Avoid', so the advice about pregnant visitors and ewes, goats, lambs or kids is not in the text.",
+   "noteB": "\"encouraged to wash their hands thoroughly after touching any animals\" is stated, but the pregnancy advice about ewes, goats, lambs or kids is cut off at \"Precautions for Pregnant Women Avoid\" and is not in the text.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:activities.nature-discovery-garden",
+   "kind": "held",
+   "venue": "Natural History Museum",
+   "field": "activities.nature-discovery-garden",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says the garden \"is open daily, but only during daylight hours\" and \"Currently, our Nature Discovery Garden closes at 16:00\"; the claim keeps the word \"currently\", and the passage gives no age.",
+   "noteB": "'open daily, but only during daylight hours' and 'Currently, our Nature Discovery Garden closes at 16:00' are both kept as stated, with 'currently' preserved; no age is mentioned.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:pushchair.cloakroom",
+   "kind": "held",
+   "venue": "Natural History Museum",
+   "field": "pushchair.cloakroom",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The cloakroom 'Prices per item' list includes 'Pushchair: £5' word for word.",
+   "noteB": "The cloakroom price list on the page includes 'Pushchair: £5'.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.accessibleToilet",
+   "kind": "held",
+   "venue": "Natural History Museum",
+   "field": "toilets.accessibleToilet",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page mentions \"wheelchair-accessible toilets\" and \"a Changing Places toilet on the Ground Floor of our North Wing\".",
+   "noteB": "The text lists \"wheelchair-accessible toilets\" and \"a Changing Places toilet on the Ground Floor of our North Wing\".",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:transport.station",
+   "kind": "held",
+   "venue": "Natural History Museum",
+   "field": "transport.station",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'The nearest Tube station is South Kensington' and 'From the station use the subway tunnel for step-free access to our Central Entrance via our Subway Gate' support the claim; but the page also says 'This station is not step free', so the claim must not be read as a step-free route from the train.",
+   "noteB": "Text says 'The nearest Tube station is South Kensington' and 'use the subway tunnel for step-free access to our Central Entrance via our Subway Gate'; the claim does not say the station itself is step free, so it is not contradicted.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:transport.parking",
+   "kind": "held",
+   "venue": "Natural History Museum",
+   "field": "transport.parking",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "dropped-condition"
+   ],
+   "issuesB": [
+    "dropped-condition",
+    "over-reach"
+   ],
+   "noteA": "The page does say 'We do not have parking facilities on-site and parking around the Museum is limited', but it goes on to say 'We have a very limited number of parking spaces on site for Blue Badge holders', so a flat 'No parking on site' leaves out that exception.",
+   "noteB": "'We do not have parking facilities on-site' is stated, but the same page says 'We have a very limited number of parking spaces on site for Blue Badge holders', so a flat 'no parking on site' is too wide.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:access.wheelchair",
+   "kind": "held",
+   "venue": "Natural History Museum",
+   "field": "access.wheelchair",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"wheelchair accessible, with lifts and step-free access to most areas\" and \"Occasionally, some of our lifts may be out of service\".",
+   "noteB": "\"wheelchair accessible, with lifts and step-free access to most areas\" and \"Occasionally, some of our lifts may be out of service\" cover every part of the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:access.lifts-out",
+   "kind": "held",
+   "venue": "Natural History Museum",
+   "field": "access.lifts-out",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says 'A number of lifts in the Darwin Centre are currently out of order' and 'The lift in our Mammals Hall is currently out of order', and the claim correctly presents this as an undated notice as of the reading date.",
+   "noteB": "'A number of lifts in the Darwin Centre are currently out of order. The lift in our Mammals Hall is currently out of order.' matches, and the claim itself flags that the notice is undated and shown as of the reading.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:access.station-step-free",
+   "kind": "held",
+   "venue": "Natural History Museum",
+   "field": "access.station-step-free",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "About South Kensington, the page says 'This station is not step free. From the station use the subway tunnel for step-free access to our Central Entrance via our Subway Gate'; the claim's 'to the museum' matches this, though the text names the Central Entrance via the Subway Gate.",
+   "noteB": "'South Kensington ... This station is not step free. From the station use the subway tunnel for step-free access to our Central Entrance via our Subway Gate' supports both parts of the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:opening.closure",
+   "kind": "held",
+   "venue": "Natural History Museum",
+   "field": "opening.closure",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"Closed 9 October and 24–26 December\" and \"Our South Kensington site will be closed on Friday 9 October 2026, as we're hosting a charity gala\"; the claim keeps the specific dates and was read on 2026-10-08, so the closure is still upcoming.",
+   "noteB": "'Closed 9 October and 24-26 December' and 'closed on Friday 9 October 2026, as we're hosting a charity gala' support both closures; the December dates are given without a year but sit in the same current opening-times line.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:pricing.free",
+   "kind": "held",
+   "venue": "Natural History Museum",
+   "field": "pricing.free",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "The text says \"Book a free entry ticket to the Museum to skip the queue\", not that a ticket guarantees entry, and it never says the galleries are free to explore; it supports only that \"paid exhibitions\" exist.",
+   "noteB": "The text says 'Book a free entry ticket... to skip the queue', not to guarantee entry, and 'galleries are free to explore' does not appear in this passage; paid exhibitions are only implied by 'For paid exhibitions'.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:considerations.queue",
+   "kind": "held",
+   "venue": "Natural History Museum",
+   "field": "considerations.queue",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"Sometimes during weekends and school holidays ... you may have to queue to enter\" and \"Members and ticket holders can skip the queues\", listing \"Book a free entry ticket\" and \"Become a member\"; the claim keeps the hedge with \"may\".",
+   "noteB": "'Sometimes during weekends and school holidays ... you may have to queue to enter. Members and ticket holders can skip the queues' with 'Book a free entry ticket' supports the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:considerations.booking",
+   "kind": "held",
+   "venue": "Natural History Museum",
+   "field": "considerations.booking",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"get your free entry ticket on our website to guarantee your entry and skip the queue during busy times\" for going inside the Museum, which matches the claim.",
+   "noteB": "Text says a free entry ticket will \"guarantee your entry and skip the queue during busy times\", which is what the claim says.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:considerations.creepy-crawlies",
+   "kind": "held",
+   "venue": "Natural History Museum",
+   "field": "considerations.creepy-crawlies",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"The Creepy Crawlies Gallery is now closed and will reopen as a new, permanent gallery for families\" (last updated 6 October 2026, read 8 October 2026) matches the claim exactly.",
+   "noteB": "The page, last updated 6 October 2026, says 'The Creepy Crawlies Gallery is now closed and will reopen as a new, permanent gallery for families.'",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:pushchair.access",
+   "kind": "held",
+   "venue": "Royal Air Force Museum London",
+   "field": "pushchair.access",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "This faithfully rephrases \"Wide aisles throughout the hangars make access easy for wheelchairs and pushchairs.\"",
+   "noteB": "Claim restates 'Wide aisles throughout the hangars make access easy for wheelchairs and pushchairs'.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:toilets.babyChanging",
+   "kind": "held",
+   "venue": "Royal Air Force Museum London",
+   "field": "toilets.babyChanging",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"All our hangars have accessible toilets. All have baby changing facilities and in Hangar 2 you will find a Changing Places Toilet\" means every hangar has baby changing, and it places the Changing Places toilet in Hangar 2.",
+   "noteB": "\"All our hangars have accessible toilets. All have baby changing facilities and in Hangar 2 you will find a Changing Places Toilet\" matches both parts.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:toilets.toilets",
+   "kind": "held",
+   "venue": "Royal Air Force Museum London",
+   "field": "toilets.toilets",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'All our hangars have accessible toilets' supports toilets in every hangar, and the claim calls them accessible toilets, as the page does.",
+   "noteB": "\"All our hangars have accessible toilets\" directly supports toilets in every hangar, and the claim keeps the 'accessible' wording.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:transport.parkingFee",
+   "kind": "held",
+   "venue": "Royal Air Force Museum London",
+   "field": "transport.parkingFee",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "Under PARKING CHARGES the page lists 'Cars up to 3 hours £8.50 per vehicle Cars 3-6 hours £11.00 per vehicle'.",
+   "noteB": "\"Cars up to 3 hours £8.50 per vehicle Cars 3-6 hours £11.00 per vehicle\" matches exactly.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:access.wheelchair",
+   "kind": "held",
+   "venue": "Royal Air Force Museum London",
+   "field": "access.wheelchair",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "dropped-condition",
+    "over-reach"
+   ],
+   "issuesB": [
+    "dropped-condition"
+   ],
+   "noteA": "'Wide aisles throughout the hangars make access easy for wheelchairs' is supported, but the loan is limited to 'A limited number of manual wheelchairs and mobility scooters (weather permitting)... on a first-come, first-served basis', and the claim leaves those conditions out.",
+   "noteB": "The aisle statement is supported, but the claim drops \"A limited number of\", \"(weather permitting)\" and \"first-come, first-served\" from the free loan.",
+   "amended": true,
+   "finalA": "narrower",
+   "finalB": "supports",
+   "reamended": true
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:access.stepFree",
+   "kind": "held",
+   "venue": "Royal Air Force Museum London",
+   "field": "access.stepFree",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"We have step-free access around our site\" and \"All of our hangars offer ... Lifts to upper levels\" support both parts.",
+   "noteB": "Text says 'We have step-free access around our site' and hangars offer 'Lifts to upper levels', which matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:access.sensory",
+   "kind": "held",
+   "venue": "Royal Air Force Museum London",
+   "field": "access.sensory",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says 'Pick up a free SEND family backpack filled with sensory items' and 'Quiet Rooms are located in H1, H3, H4, H5 and H6'.",
+   "noteB": "'Pick up a free SEND family backpack filled with sensory items' and 'Quiet Rooms are located in H1, H3, H4, H5 and H6' cover both parts.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:opening.theatre",
+   "kind": "held",
+   "venue": "Royal Air Force Museum London",
+   "field": "opening.theatre",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "time",
+    "ambiguous"
+   ],
+   "issuesB": [
+    "time",
+    "ambiguous"
+   ],
+   "noteA": "The page lists '4D Theatre Experience - 31 December 2026 Temporarily Closed for Refurbishment' in the same event-listing format as the other events ('Battle of Britain Cockpit Experience - 31 December 2026 £32.00'), so the date looks like when the listing runs to, not a stated end of the closure, and 'until 31 December 2026' is not supported.",
+   "noteB": "\"Temporarily Closed for Refurbishment\" is stated, but \"31 December 2026\" is the date shown on every event listing (the other events show the same date with prices), so \"until 31 December 2026\" is not stated as a reopening or closure-end date.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:pricing.free",
+   "kind": "held",
+   "venue": "Royal Air Force Museum London",
+   "field": "pricing.free",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "price",
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "'Admission to all areas of the Museum is free, and donations are welcome' supports the first part, but the text says nothing about parking or its cost.",
+   "noteB": "'Admission to all areas of the Museum is free, and donations are welcome' is stated, but nothing in the text says parking is charged.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:activities.the-garden",
+   "kind": "held",
+   "venue": "Science Museum",
+   "field": "activities.the-garden",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page calls The Garden \"a must-visit for 3–6-year-olds\" where you \"Discover science through play in four exciting interactive areas\", which the claim rephrases faithfully.",
+   "noteB": "\"a must-visit for 3-6-year-olds, The Garden. Discover science through play in four exciting interactive areas\" supports a hands-on play space aimed at 3 to 6 year olds.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:activities.bubble-explorers",
+   "kind": "held",
+   "venue": "Science Museum",
+   "field": "activities.bubble-explorers",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page calls it 'this live show' about bubbles, 'Perfect for children aged 7 and under', that 'takes place on weekends and every day during school holidays', and says 'Tickets are £4.50 per person with free entry for children aged 2 and under'.",
+   "noteB": "\"Perfect for children aged 7 and under ... takes place on weekends and every day during school holidays. Tickets are £4.50 per person with free entry for children aged 2 and under\" covers every part of the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:activities.wonderlab",
+   "kind": "held",
+   "venue": "Science Museum",
+   "field": "activities.wonderlab",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'Wonderlab (level 3), our interactive gallery for children aged 7-14' and 'Wonderlab is a paid-for experience' support every part.",
+   "noteB": "'our interactive gallery for children aged 7-14' and 'Wonderlab is a paid-for experience' support both parts.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:pushchair.allowed",
+   "kind": "held",
+   "venue": "Science Museum",
+   "field": "pushchair.allowed",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'Buggies are allowed in the museum and galleries. However, in certain areas, you may be asked to leave your pram in a buggy park as it will be too bulky' matches the claim.",
+   "noteB": "'Buggies are allowed in the museum and galleries. However, in certain areas, you may be asked to leave your pram in a buggy park as it will be too bulky' matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.toilets",
+   "kind": "held",
+   "venue": "Science Museum",
+   "field": "toilets.toilets",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"Accessible toilets are available on all levels of the museum\", which entails toilets on every level, and the claim's parenthesis keeps the accessible qualifier.",
+   "noteB": "\"Accessible toilets are available on all levels of the museum\" supports the claim, and the parenthetical keeps it limited to the accessible toilets.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.babyChanging",
+   "kind": "held",
+   "venue": "Science Museum",
+   "field": "toilets.babyChanging",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"Baby changing facilities are located throughout all floors of the museum\" supports \"every floor\".",
+   "noteB": "'Baby changing facilities are located throughout all floors of the museum' supports 'every floor'.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.accessibleToilet",
+   "kind": "held",
+   "venue": "Science Museum",
+   "field": "toilets.accessibleToilet",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"Accessible toilets are available on all levels of the museum\", which the claim restates faithfully.",
+   "noteB": "\"Accessible toilets are available on all levels of the museum\" is the same as 'on every level'.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.parking",
+   "kind": "held",
+   "venue": "Science Museum",
+   "field": "transport.parking",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'We do not have car parking facilities and local parking is very limited' and 'The nearest pay and display car parking is in Prince Consort Road and Queen's Gate' match the claim.",
+   "noteB": "\"We do not have car parking facilities and local parking is very limited\" and \"The nearest pay and display car parking is in Prince Consort Road and Queen's Gate\" support every part.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:access.stepFreeRoute",
+   "kind": "held",
+   "venue": "Science Museum",
+   "field": "access.stepFreeRoute",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach",
+    "scope"
+   ],
+   "noteA": "The page says the guide 'follows a step-free route through the museum' and 'through free galleries', with 'five favourite experiences for toddlers'; it never says the route links 'toddler galleries'.",
+   "noteB": "Text says the guide 'follows a step-free route through the museum' with 'five favourite experiences', including giant engines and historic aircraft; it does not say the route links 'toddler galleries'.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:access.mezzanine",
+   "kind": "held",
+   "venue": "Science Museum",
+   "field": "access.mezzanine",
+   "A": "supports",
+   "B": "narrower",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "time",
+    "dropped-condition"
+   ],
+   "noteA": "\"There is currently no step-free access to the mezzanine level in Making the Modern World and Flight galleries\". The claim's present tense matches \"currently\" and does not say the lack of access is permanent.",
+   "noteB": "The text says 'There is currently no step-free access', in a context of building works, and the claim drops 'currently', which makes a temporary condition read as permanent.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:access.wheelchairLoan",
+   "kind": "held",
+   "venue": "Science Museum",
+   "field": "access.wheelchairLoan",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"You can also borrow a wheelchair or folding stool on the day by asking a member of staff at the Information Desk\", although there is only \"A limited number of wheelchairs\".",
+   "noteB": "\"You can also borrow a wheelchair or folding stool on the day by asking a member of staff at the Information Desk\" supports the claim (the page also says only a limited number of wheelchairs are available).",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:pricing.free",
+   "kind": "held",
+   "venue": "Science Museum",
+   "field": "pricing.free",
+   "A": "narrower",
+   "B": "unsupported",
+   "issuesA": [
+    "price",
+    "over-reach"
+   ],
+   "issuesB": [
+    "price",
+    "dropped-condition",
+    "over-reach"
+   ],
+   "noteA": "'Book your free admission ticket now to visit the museum Donations welcome' supports free admission with a ticket, but nothing in the text says Wonderlab, Power Up, IMAX or Bubble Explorers are charged (Wonderlab appears only with opening times, no price).",
+   "noteB": "The text says \"Book your free admission ticket now\" but nothing in it says Wonderlab, Power Up, IMAX or Bubble Explorers are charged, and it does not state that a pre-booked ticket is required.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports",
+   "reamended": true
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:pricing.bubbleExplorers",
+   "kind": "held",
+   "venue": "Science Museum",
+   "field": "pricing.bubbleExplorers",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says 'Tickets are £4.50 per person with free entry for children aged 2 and under' for Bubble Explorers.",
+   "noteB": "\"Tickets are £4.50 per person with free entry for children aged 2 and under\" for Bubble Explorers matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:considerations.building-noise",
+   "kind": "held",
+   "venue": "Science Museum",
+   "field": "considerations.building-noise",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says 'We're currently building new galleries in the museum so there may be some additional noise during your visit', and the claim keeps the present tense ('are being built').",
+   "noteB": "\"We're currently building new galleries in the museum so there may be some additional noise during your visit\" matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:toilets.accessibleToilet",
+   "kind": "accepted",
+   "venue": "Mudchute Park and Farm",
+   "field": "toilets.accessibleToilet",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"Toilets, including a disabled toilet, are available in the courtyard\".",
+   "noteB": "\"Toilets, including a disabled toilet, are available in the courtyard\" states it directly.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.babyChanging",
+   "kind": "accepted",
+   "venue": "Discover Children's Story Centre",
+   "field": "toilets.babyChanging",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "\"We have toilets with baby changing facilities on all of our main floors\" supports the first sentence, but nothing in the text says there is no facility to heat baby food or milk.",
+   "noteB": "'Toilets with baby changing facilities on all of our main floors' is stated, but nothing in the text says there is no facility to heat baby food or milk.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:transport.station",
+   "kind": "accepted",
+   "venue": "Royal Air Force Museum London",
+   "field": "transport.station",
+   "A": "narrower",
+   "B": "supports",
+   "issuesA": [
+    "ambiguous"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page text supports 'near Colindale Underground Station, on the Edgware branch of the Northern Line', but the '303 bus ... stops right outside the museum's main entrance' wording appears only in quotedWords and not in any supplied page passage, so a person must check it on the page.",
+   "noteB": "'near Colindale Underground Station, on the Edgware branch of the Northern Line' and 'the 303 bus to Edgeware stops right outside the museum's main entrance' match the claim.",
+   "finalA": "narrower",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:transport.blueBadge",
+   "kind": "accepted",
+   "venue": "Gunnersbury Park",
+   "field": "transport.blueBadge",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"Designated disabled parking for blue badge holders can be found in both car parks and parking is free\"; \"disabled parking\" fairly stands for the blue badge bays.",
+   "noteB": "'Designated disabled parking for blue badge holders can be found in both car parks and parking is free' supports designated disabled parking that is free in both car parks; the blue badge condition is implicit in 'designated disabled parking'.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:considerations.duration",
+   "kind": "accepted",
+   "venue": "Science Museum",
+   "field": "considerations.duration",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"an average visit lasts around two hours\" is faithfully rephrased as \"a typical visit lasts about two hours\".",
+   "noteB": "\"an average visit lasts around two hours\" matches \"a typical visit lasts about two hours\".",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:food.cafe",
+   "kind": "accepted",
+   "venue": "Royal Air Force Museum London",
+   "field": "food.cafe",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'Hendon Kitchen is a light and bright family-friendly café serving a hearty canteen style menu' matches the claim.",
+   "noteB": "'Hendon Kitchen is a light and bright family-friendly café serving a hearty canteen style menu' is a faithful rephrase.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:transport.blueBadge",
+   "kind": "accepted",
+   "venue": "London Zoo",
+   "field": "transport.blueBadge",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"There is a disabled parking bay in front of the entrance to the zoo, disabled visitors can also park on the Outer Circle for up to four hours with a Blue Badge\" covers both parts, including the four-hour limit.",
+   "noteB": "'A disabled parking bay in front of the entrance' and 'park on the Outer Circle for up to four hours with a Blue Badge' match the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:food.picnic",
+   "kind": "accepted",
+   "venue": "Mudchute Park and Farm",
+   "field": "food.picnic",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"You are welcome to bring your own food but please eat in the courtyard only.\"",
+   "noteB": "\"You are welcome to bring your own food but please eat in the courtyard only\" is restated faithfully.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:considerations.supervision",
+   "kind": "accepted",
+   "venue": "Science Museum",
+   "field": "considerations.supervision",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"Children under 12 must be accompanied by an adult (aged 18+)\", and the claim restates that faithfully.",
+   "noteB": "'Children under 12 must be accompanied by an adult (aged 18+)' is faithfully restated.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:toilets.accessibleToilet",
+   "kind": "accepted",
+   "venue": "Gunnersbury Park",
+   "field": "toilets.accessibleToilet",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "The page says only 'There is an accessible toilet in the museum' and 'an accessible toilet in the park toilet block, which is located near the museum'; it says nothing about 'ground floor' or 'no RADAR key'.",
+   "noteB": "The text gives both accessible toilets but says nothing about \"ground floor\" or about a RADAR key (or no key), so those added details are unsupported.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:transport.entrances",
+   "kind": "accepted",
+   "venue": "Battersea Park",
+   "field": "transport.entrances",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "Under Main gate the page says \"Pedestrian access at Albert Bridge Road, Prince of Wales Drive and Queenstown Road (SW11 4NJ)\", which matches the claim.",
+   "noteB": "The 'Main gate' entry says 'Pedestrian access at Albert Bridge Road, Prince of Wales Drive and Queenstown Road', as claimed.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:activities.playground",
+   "kind": "accepted",
+   "venue": "Royal Air Force Museum London",
+   "field": "activities.playground",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page has \"Hours of fun in our outdoor playground\" and \"our free playground features mini models of famous aircraft, including the legendary Spitfire\", and gives no age (\"young aviators\" is not an age limit).",
+   "noteB": "'our free playground features mini models of famous aircraft, including the legendary Spitfire' and 'outdoor playground'; only 'young aviators' is said, so no age is given.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:food.picnic",
+   "kind": "accepted",
+   "venue": "London Zoo",
+   "field": "food.picnic",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "scope"
+   ],
+   "issuesB": [
+    "scope",
+    "over-reach"
+   ],
+   "noteA": "\"Outdoor picnic benches are available\" appears only in the entry for the Peckish Parrot Café (\"Find it in our Animal Adventure area\"), so the claim presents one café's seating as a zoo-wide fact with no location.",
+   "noteB": "'Outdoor picnic benches are available' sits inside the Peckish Parrot Café entry ('Find it in our Animal Adventure area'), so the bare claim reads as zoo-wide when the text ties it to that café.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:play.natureplay",
+   "kind": "accepted",
+   "venue": "Horniman Museum and Gardens",
+   "field": "play.natureplay",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page names a 'Kusuma Nature Play Area at the bottom of the Meadow Field' next to the Gardens Cafe, which supports the claim that the play area exists at the venue; the claim says nothing more.",
+   "noteB": "The text says the Gardens Cafe is 'next to the Kusuma Nature Play Area at the bottom of the Meadow Field', so the claim that the Horniman has a Kusuma Nature Play Area is stated; the claim is a bare name and adds nothing else.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.blueBadge",
+   "kind": "accepted",
+   "venue": "Science Museum",
+   "field": "transport.blueBadge",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30\" matches every number in the claim.",
+   "noteB": "The claim repeats the text: 'A small number of disabled parking spaces... Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30.'",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.station",
+   "kind": "accepted",
+   "venue": "Science Museum",
+   "field": "transport.station",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "'South Kensington ... on the District, Circle and Piccadilly lines and is a 5-minute walk' and 'The nearest Underground station with step-free access is Knightsbridge. This is a 15–20-minute walk' match the claim exactly.",
+   "noteB": "South Kensington (District, Circle, Piccadilly) \"5-minute walk\" and Knightsbridge as nearest step-free station \"15–20-minute walk\" are both stated.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:pushchair.storage",
+   "kind": "accepted",
+   "venue": "Science Museum",
+   "field": "pushchair.storage",
+   "A": "narrower",
+   "B": "supports",
+   "issuesA": [
+    "dropped-condition"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The Spare Room part matches the text. The Pattern Pod area is free only \"for the duration of your visit in that area\", and the claim leaves that condition out.",
+   "noteB": "\"free of charge in the Spare Room, located opposite The Garden gallery on level -1\" and \"a small free buggy parking area next to Pattern Pod on level 0\" cover both parts (the pushchairs-must-be-empty and for-the-duration-of-your-visit-in-that-area conditions are left out but do not change the claim).",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.station",
+   "kind": "accepted",
+   "venue": "Horniman Museum and Gardens",
+   "field": "transport.station",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says 'We are a five- to 10-minute walk from Forest Hill station and very well served by local buses'.",
+   "noteB": "\"a five- to 10-minute walk from Forest Hill station and very well served by local buses\" matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:transport.station",
+   "kind": "accepted",
+   "venue": "Mudchute Park and Farm",
+   "field": "transport.station",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"The closest DLR stations are Mudchute, Crossharbour & Island Gardens. We highly recommend using Crossharbour\" and \"Take the D3, D6 or 135 bus towards Crossharbour\".",
+   "noteB": "The text lists the 'DLR stations are Mudchute, Crossharbour & Island Gardens', says 'We highly recommend using Crossharbour', and names the 'D3, D6 or 135 bus'.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:toilets.babyChanging",
+   "kind": "accepted",
+   "venue": "Horniman Museum and Gardens",
+   "field": "toilets.babyChanging",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says baby changing is \"available in both of the toilets in Gallery Square\" and \"in the Gardens toilets near the Bandstand and Kusuma Nature Play Area\", which covers all three locations.",
+   "noteB": "The text says baby changing is in 'both of the toilets in Gallery Square' and in 'the Gardens toilets near the Bandstand and Kusuma Nature Play Area'; the toilets by the play area are also stated to include baby changing.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:activities.rides-arcade",
+   "kind": "accepted",
+   "venue": "Babylon Park London",
+   "field": "activities.rides-arcade",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "ambiguous"
+   ],
+   "issuesB": [
+    "ambiguous",
+    "dropped-condition"
+   ],
+   "noteA": "Rides, 'hundreds of games', VR and 'no minimum age for access' are all stated, but the page says 'minimum height restriction of 105cm', and the claim's '105cm height limit' could be read as a maximum, so it should say minimum.",
+   "noteB": "Rides, games, VR and 'no minimum age' are supported, but the text says 'minimum height restriction of 105cm' and the claim's 'height limit' drops 'minimum' and could be read as a maximum.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:toilets.toilets",
+   "kind": "accepted",
+   "venue": "Babylon Park London",
+   "field": "toilets.toilets",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says 'restrooms are available on the Mezzanine and Basement floors', and the claim restates that.",
+   "noteB": "\"Yes, restrooms are available on the Mezzanine and Basement floors\" matches the claim exactly.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:transport.station",
+   "kind": "accepted",
+   "venue": "Babylon Park London",
+   "field": "transport.station",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach",
+    "wrong-site"
+   ],
+   "noteA": "The page says only 'We are an 8 minute walk from Camden Road Station' and does not mention Camden Town or the Northern line.",
+   "noteB": "Only 'We are an 8 minute walk from Camden Road Station' is stated; Camden Town station, the Northern line and 'a short walk' appear nowhere in the text.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:food.cafe",
+   "kind": "accepted",
+   "venue": "Babylon Park London",
+   "field": "food.cafe",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "This item's text supports 'Ovo & Neta restaurant on the Mezzanine floor', 'Vending machines' and 'outside food and drinks are not permitted', but not the menu; another item (qc825df7) quotes the same page saying 'serving pizza, hot dogs, ice cream, waffles, and more', so a reviewer may accept the full claim.",
+   "noteB": "The restaurant name, mezzanine location, vending machines and \"outside food and drinks are not permitted\" are stated, but \"pizza, hot dogs, ice cream, waffles\" appear nowhere in the text, which says only \"a variety of food and drinks\".",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:play.softplay",
+   "kind": "accepted",
+   "venue": "Babylon Park London",
+   "field": "play.softplay",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says 'Mezzanine Floor: ... soft play areas for toddlers and kids'.",
+   "noteB": "\"Mezzanine Floor: ... soft play areas for toddlers and kids\" supports the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJ7_PV980bdkgROekbwOVWVfo:opening.hours",
+   "kind": "accepted",
+   "venue": "Babylon Park London",
+   "field": "opening.hours",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The hours match 'Monday – Friday: 10:00 a.m. – 9:00 p.m. Saturday: 10:00 a.m. – 10:00 p.m. Sunday: 10:00 a.m. – 9:00 p.m.' exactly.",
+   "noteB": "The opening hours quoted (Mon-Fri 10:00-21:00, Sat 10:00-22:00, Sun 10:00-21:00) match the claim exactly.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:activities.story-worlds",
+   "kind": "accepted",
+   "venue": "Discover Children's Story Centre",
+   "field": "activities.story-worlds",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says 'two floors of Story Worlds, and our Story Garden', 'help kids' imaginations run wild' and 'Story Builders pop up throughout the day', and the quoted text gives no age.",
+   "noteB": "'Everyone who visits gets to play in our two floors of Story Worlds, and our Story Garden' and 'Story Builders pop up throughout the day' support the claim; the excerpt gives no age for these spaces, consistent with the final sentence.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.toilets",
+   "kind": "accepted",
+   "venue": "Discover Children's Story Centre",
+   "field": "toilets.toilets",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says 'We have toilets with baby changing facilities on all of our main floors'.",
+   "noteB": "\"toilets with baby changing facilities on all of our main floors\" supports 'toilets on all main floors' (the baby changing detail is simply left out).",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.station",
+   "kind": "accepted",
+   "venue": "Discover Children's Story Centre",
+   "field": "transport.station",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says 'From Stratford High Street Station (DLR): 1 min walk' and lists 16 bus routes, so 'many bus routes' is fair.",
+   "noteB": "\"From Stratford High Street Station (DLR): 1 min walk\" and a list of 16 bus routes support \"one minute\" and \"many bus routes\".",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:food.cafe",
+   "kind": "accepted",
+   "venue": "Discover Children's Story Centre",
+   "field": "food.cafe",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "The text says 'We have a cafe on our ground floor' and the shack opens 'on busier days', but it never says where the bookshop is.",
+   "noteB": "Text says \"a cafe on our ground floor\" and the garden \"coffee-and-snack shack\" on busier days, but no bookshop is mentioned.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:opening.hours",
+   "kind": "accepted",
+   "venue": "Discover Children's Story Centre",
+   "field": "opening.hours",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says 'Discover is open every day, 10am - 5pm' and 'We're closed on 24, 25, 26, 31 December and 1 January'.",
+   "noteB": "'Open every day, 10am - 5pm' and the closure dates '24, 25, 26, 31 December and 1 January' are both stated.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:activities.park-museum-lake",
+   "kind": "accepted",
+   "venue": "Gunnersbury Park",
+   "field": "activities.park-museum-lake",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "The text supports 'wandering around the museum or boating on the lake' but says nothing about events for children and families.",
+   "noteB": "'wandering around the museum or boating on the lake' supports the museum and lake boating, but the text does not mention events for children and families (it mentions concerts and a residents' line only).",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:toilets.toilets",
+   "kind": "accepted",
+   "venue": "Gunnersbury Park",
+   "field": "toilets.toilets",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says 'There is an accessible toilet in the museum' and 'an accessible toilet in the park toilet block, which is located near the museum'.",
+   "noteB": "\"There is an accessible toilet in the museum. There is also an accessible toilet in the park toilet block, which is located near the museum.\" supports both parts.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:transport.station",
+   "kind": "accepted",
+   "venue": "Gunnersbury Park",
+   "field": "transport.station",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page gives Acton Town (Piccadilly and District) 'about ten minutes', South Ealing 'about ten minutes' walk', Kew Bridge Rail Station, and the E3, 65 and H91 buses.",
+   "noteB": "Acton Town (Piccadilly and District) 'about ten minutes', South Ealing 'about ten minutes' walk', Kew Bridge Rail and the E3, 65 and H91 buses are all named on the page; the claim does not say the 65 reaches the park.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:transport.parking",
+   "kind": "accepted",
+   "venue": "Gunnersbury Park",
+   "field": "transport.parking",
+   "A": "narrower",
+   "B": "supports",
+   "issuesA": [
+    "dropped-condition"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The prices, 'charges apply at all times, including bank holidays' and blue badge 'parking is free' are stated, but the free 30 minutes comes with the condition 'You will need to register for your free 30 minutes on the App or the machine', and the claim drops it.",
+   "noteB": "Two car parks, \"Up to 30 minutes FREE\", \"30 minutes - 1 hour £1\", \"Longer than an hour £1 per hour\", \"charges apply at all times, including bank holidays\" and Blue Badge \"parking is free\" are all stated; the free-30-minutes registration requirement is omitted but not contradicted.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:food.cafe",
+   "kind": "accepted",
+   "venue": "Gunnersbury Park",
+   "field": "food.cafe",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "The hours match 'Café Monday to Friday: 7am to 5pm Weekends: 7am to 6pm', but the page never calls it 'Pure in the Park', so the name is added.",
+   "noteB": "The hours \"Café Monday to Friday: 7am to 5pm Weekends: 7am to 6pm\" match, but the text only says \"Café\" and never names it \"Pure in the Park\".",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:activities.kusuma-nature-play",
+   "kind": "accepted",
+   "venue": "Horniman Museum and Gardens",
+   "field": "activities.kusuma-nature-play",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "The text only says 'The Gardens Cafe is located next to the Kusuma Nature Play Area at the bottom of the Meadow Field'. This passage says nothing about the play area's own toilets, baby changing or picnic tables.",
+   "noteB": "The text only places the Gardens Cafe next to the Kusuma Nature Play Area; it says nothing about the play area having its own toilets, baby changing or picnic tables.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:pushchair.storage",
+   "kind": "accepted",
+   "venue": "Horniman Museum and Gardens",
+   "field": "pushchair.storage",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The claim repeats 'Buggy parking is available in Gallery Square, inside the main gate to Kusuma Nature Play Area and next to the Butterfly House' almost word for word.",
+   "noteB": "The claim restates 'Buggy parking is available in Gallery Square, inside the main gate to Kusuma Nature Play Area and next to the Butterfly House.'",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:toilets.toilets",
+   "kind": "accepted",
+   "venue": "Horniman Museum and Gardens",
+   "field": "toilets.toilets",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The text names all three places: 'off Gallery Square downstairs', 'in the Gardens, near the Bandstand' and 'by the Kusuma Nature Play Area'.",
+   "noteB": "Text says toilets are 'off Gallery Square downstairs', 'in the Gardens, near the Bandstand' and 'by the Kusuma Nature Play Area', matching all three locations.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:toilets.babyFeeding",
+   "kind": "accepted",
+   "venue": "Horniman Museum and Gardens",
+   "field": "toilets.babyFeeding",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The text says 'Breastfeeding is welcome everywhere at the Horniman' and mentions 'the Breastfeeding Room located off Gallery Square'.",
+   "noteB": "\"Breastfeeding is welcome everywhere at the Horniman\" and \"Breastfeeding Room located off Gallery Square\" state both parts.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:food.cafe",
+   "kind": "accepted",
+   "venue": "Horniman Museum and Gardens",
+   "field": "food.cafe",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "The passage supports 'The Cafe is open from 9am – 5pm daily', but it does not mention a Gardens Cafe or where one is.",
+   "noteB": "'The Cafe is open from 9am – 5pm daily' supports the Horniman Cafe hours, but the excerpt never mentions a 'Gardens Cafe' by the nature play area.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:food.picnic",
+   "kind": "accepted",
+   "venue": "Horniman Museum and Gardens",
+   "field": "food.picnic",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The text says 'lots of picnicking tables on the Bandstand Terrace and two large tables at the end of the Kusuma Nature Play Area' and 'The Dutch Barn is open daily for picnicking in rainy weather'.",
+   "noteB": "The text says 'lots of picnicking tables on the Bandstand Terrace and two large tables at the end of the Kusuma Nature Play Area' and 'The Dutch Barn is open daily for picnicking in rainy weather', which matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:activities.animal-talks",
+   "kind": "accepted",
+   "venue": "London Zoo",
+   "field": "activities.animal-talks",
+   "A": "narrower",
+   "B": "supports",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "Only the talks are called daily ('our enlightening daily animal talks'), while events are just an 'upcoming events schedule'. 'Daily animal talks and events' can read as daily events.",
+   "noteB": "\"our exciting upcoming events schedule, our enlightening daily animal talks\" supports daily animal talks and events, and no age is stated, as the claim says.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:toilets.accessibleToilet",
+   "kind": "accepted",
+   "venue": "London Zoo",
+   "field": "toilets.accessibleToilet",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "scope",
+    "over-reach"
+   ],
+   "issuesB": [
+    "scope"
+   ],
+   "noteA": "The text confirms 'our changing place toilet' and 'a number of accessible toilets around the Zoo', but nowhere puts the Changing Places toilet 'at Animal Adventure'.",
+   "noteB": "'As well as our changing place toilet, we also have a number of accessible toilets around the Zoo' supports both toilet types, but the text never places the Changing Places toilet at Animal Adventure.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:toilets.toilets",
+   "kind": "accepted",
+   "venue": "London Zoo",
+   "field": "toilets.toilets",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The text lists 'Opposite Tiny Giants Next to the Reptile House Near main entrance next to African Aviary The Terrace Restaurant', which matches the claim.",
+   "noteB": "The page lists accessible toilets \"Opposite Tiny Giants / Next to the Reptile House / Near main entrance next to African Aviary / The Terrace Restaurant\", which is the same four locations.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:toilets.babyFeeding",
+   "kind": "accepted",
+   "venue": "London Zoo",
+   "field": "toilets.babyFeeding",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The text says 'Feeding is permitted throughout the zoo' and 'quiet areas and a breastfeeding room are also available'.",
+   "noteB": "'Feeding is permitted throughout the zoo' and 'quiet areas and a breastfeeding room are also available' support every part.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:transport.station",
+   "kind": "accepted",
+   "venue": "London Zoo",
+   "field": "transport.station",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The text says 'Camden Town (16 mins / 0.8 miles walk)', 'Camden Town station (Northern Line) is the nearest Underground station' and 'Regent's Park (24 mins / 1.2 miles walk)', and gives the 274 and 88 northbound buses as ways to reach the zoo.",
+   "noteB": "The text gives \"Camden Town (16 mins / 0.8 miles walk)\" as \"the nearest Underground station\" on the Northern Line, \"Regent's Park (24 mins / 1.2 miles walk)\", the 274 bus (\"14 mins via 274 bus\") and the 88 bus; the claim's \"serve it\" for the 88 is loose, since the text says it halves the walk, but it is not materially wrong.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:transport.parking",
+   "kind": "accepted",
+   "venue": "London Zoo",
+   "field": "transport.parking",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The text says '£16 in term time or £17.50 on weekends and bank or school holidays, payable on the day'.",
+   "noteB": "The text gives '£16 in term time or £17.50 on weekends and bank or school holidays, payable on the day', which the claim restates correctly.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJV_iXMtcadkgRqBI84CY_crE:considerations.supervision",
+   "kind": "accepted",
+   "venue": "London Zoo",
+   "field": "considerations.supervision",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The claim restates 'Children under 16 will not be admitted without an adult.'",
+   "noteB": "\"Children under 16 will not be admitted without an adult\" is the exact wording of the terms of entry.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:activities.pets-corner",
+   "kind": "accepted",
+   "venue": "Mudchute Park and Farm",
+   "field": "activities.pets-corner",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The text says 'available during school holidays on specific days' and 'we do not allow animal handling'.",
+   "noteB": "'available during school holidays on specific days' and 'we do not allow animal handling' match 'set days' and 'no handling'.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:activities.donkey-rides",
+   "kind": "accepted",
+   "venue": "Mudchute Park and Farm",
+   "field": "activities.donkey-rides",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"Outside of special events, Donkey rides are normally offered on Sundays during the Summer\" and that they \"are weather dependent\", and the claim's \"normally\" and \"weather permitting\" match that.",
+   "noteB": "'only available during late Spring / Summer, and are weather dependent' and 'Outside of special events, Donkey rides are normally offered on Sundays during the Summer' support the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:toilets.toilets",
+   "kind": "accepted",
+   "venue": "Mudchute Park and Farm",
+   "field": "toilets.toilets",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "over-reach"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "This item's text supports \"Toilets, including a disabled toilet, are available in the courtyard\", but nothing in it mentions no access when the courtyard is closed or Monday closures, so that second sentence is unsupported here.",
+   "noteB": "The toilets in the courtyard are stated, but the text says nothing about the courtyard closing on Mondays outside school holidays or about toilet access being lost then.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:toilets.babyChanging",
+   "kind": "accepted",
+   "venue": "Mudchute Park and Farm",
+   "field": "toilets.babyChanging",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The claim restates \"Baby changing facilities are available in the ladies public toilet within the courtyard\" accurately.",
+   "noteB": "'Baby changing facilities are available in the ladies public toilet within the courtyard' matches.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJp8y37pgCdkgRBeRSa2iabyI:food.cafe",
+   "kind": "accepted",
+   "venue": "Mudchute Park and Farm",
+   "field": "food.cafe",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"Mudchute Kitchen Café Tuesday to Sunday 10am - 5pm Open everyday during school holidays\", which matches the claim; the claim leaves out bank-holiday opening but says nothing that contradicts the text.",
+   "noteB": "'Tuesday to Sunday 10am - 5pm. Open everyday during school holidays and on bank holidays' matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:activities.dinosaurs",
+   "kind": "accepted",
+   "venue": "Natural History Museum",
+   "field": "activities.dinosaurs",
+   "A": "narrower",
+   "B": "supports",
+   "issuesA": [
+    "over-reach",
+    "scope"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"Permanently on display and always free\" is said of the star attractions, and Roaring T.rex is one of them with \"Location: Dinosaurs Gallery\"; the text never says the Dinosaurs Gallery as a whole is permanent and free.",
+   "noteB": "\"star attractions, they’re permanently on display and always free to visit\" with \"Roaring T.rex Location: Dinosaurs Gallery\" supports the claim, and no age appears in the text.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.toilets",
+   "kind": "accepted",
+   "venue": "Natural History Museum",
+   "field": "toilets.toilets",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The claim restates \"We have many toilets, these are all marked on our Museum map\" accurately.",
+   "noteB": "'We have many toilets, these are all marked on our Museum map' directly states both parts.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.babyChanging",
+   "kind": "accepted",
+   "venue": "Natural History Museum",
+   "field": "toilets.babyChanging",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says toilets \"are all marked on our Museum map, including ... baby-changing facilities\" and gives no floors for them, so the caveat in the claim is also correct.",
+   "noteB": "'these are all marked on our Museum map, including ... baby-changing facilities' supports the claim, and no floors are stated, as the claim says.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:transport.blueBadge",
+   "kind": "accepted",
+   "venue": "Natural History Museum",
+   "field": "transport.blueBadge",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says \"a very limited number of parking spaces on site for Blue Badge holders\" and \"also twelve Blue Badge parking spaces on Exhibition Road\"; the claim leaves out the phone booking and the council's rules but does not misstate them.",
+   "noteB": "\"a very limited number of parking spaces on site for Blue Badge holders\" and \"twelve Blue Badge parking spaces on Exhibition Road\" match the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:food.cafe",
+   "kind": "accepted",
+   "venue": "Natural History Museum",
+   "field": "food.cafe",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The claim restates \"our family-friendly cafes and restaurants\" accurately.",
+   "noteB": "The page says 'our family-friendly cafes and restaurants', which matches the claim.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:opening.hours",
+   "kind": "accepted",
+   "venue": "Natural History Museum",
+   "field": "opening.hours",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "dropped-condition"
+   ],
+   "issuesB": [
+    "dropped-condition",
+    "time"
+   ],
+   "noteA": "The hours match \"Open daily 10:00–17:50 (last entry 17:30)\", but the text right after says \"Closed 9 October and 24–26 December\"; the claim drops this, and 9 October is the day after the page was read.",
+   "noteB": "The text says 'Open daily 10:00-17:50 (last entry 17:30)' but adds 'Closed 9 October and 24-26 December', and the claim drops those closures, one of which is tomorrow (read 2026-10-08).",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports",
+   "reamended": true
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:activities.aeroplay",
+   "kind": "accepted",
+   "venue": "Royal Air Force Museum London",
+   "field": "activities.aeroplay",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "ambiguous",
+    "scope"
+   ],
+   "issuesB": [
+    "over-reach"
+   ],
+   "noteA": "The text says \"The Café is in Hangar 4, between the 4D Theatre and AeroPlay! the Museum's soft play area\", so AeroPlay is the soft play area and is next to the café, but the text places the café, not AeroPlay itself, in Hangar 4.",
+   "noteB": "The text says \"The Café is in Hangar 4, between the 4D Theatre and AeroPlay! the Museum’s soft play area\", so the Café's location is Hangar 4 and AeroPlay is beside it, but AeroPlay itself is never stated to be in Hangar 4.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:activities.hands-on",
+   "kind": "accepted",
+   "venue": "Royal Air Force Museum London",
+   "field": "activities.hands-on",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The claim repeats \"Discover hands-on activities and family-friendly exhibits in every hangar\" word for word in substance.",
+   "noteB": "The text reads \"Discover hands-on activities and family-friendly exhibits in every hangar,\" which the claim repeats.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:transport.parking",
+   "kind": "accepted",
+   "venue": "Royal Air Force Museum London",
+   "field": "transport.parking",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"There is on-site parking available — see parking charges\" supports both an on-site car park and parking being charged.",
+   "noteB": "\"There is on-site parking available — see parking charges\" supports an on-site car park that is charged.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:play.playground",
+   "kind": "accepted",
+   "venue": "Royal Air Force Museum London",
+   "field": "play.playground",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "\"Hours of fun in our outdoor playground\" and \"our free playground\" support the claim.",
+   "noteB": "'Hours of fun in our outdoor playground' and 'our free playground' on the London family-activities page support a free outdoor playground.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:play.softplay",
+   "kind": "accepted",
+   "venue": "Royal Air Force Museum London",
+   "field": "play.softplay",
+   "A": "narrower",
+   "B": "narrower",
+   "issuesA": [
+    "ambiguous",
+    "scope"
+   ],
+   "issuesB": [
+    "scope",
+    "ambiguous"
+   ],
+   "noteA": "\"The Café is in Hangar 4, between the 4D Theatre and AeroPlay! the Museum's soft play area\" puts the café in Hangar 4 and AeroPlay beside it, but does not itself say AeroPlay is in Hangar 4.",
+   "noteB": "Only \"The Café is in Hangar 4, between the 4D Theatre and AeroPlay!\" is stated, so AeroPlay's own hangar is not given.",
+   "amended": true,
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:opening.hours",
+   "kind": "accepted",
+   "venue": "Royal Air Force Museum London",
+   "field": "opening.hours",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The London site page says \"We are open daily 10.00am - 5.00pm Last entry is 4.30pm.\", which the claim restates exactly.",
+   "noteB": "'We are open daily 10.00am - 5.00pm Last entry is 4.30pm.' matches the claim exactly.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJse1x6SoRdkgR83yrIhNV5gc:considerations.supervision",
+   "kind": "accepted",
+   "venue": "Royal Air Force Museum London",
+   "field": "considerations.supervision",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The page says verbatim \"Children under 11 must be accompanied by an adult.\" under Museum admission.",
+   "noteB": "'Children under 11 must be accompanied by an adult.' is quoted verbatim in the museum admission section.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.changingPlaces",
+   "kind": "accepted",
+   "venue": "Science Museum",
+   "field": "toilets.changingPlaces",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The text says \"Changing Places Toilet on L0 next to the Hans Rausing Lecture Theatre\". The claim gives only the location, so it is not affected by the dated closure note (\"unavailable between 14 Sept – 25 Sept\") or by the RADAR-key access detail.",
+   "noteB": "\"Changing Places Toilet on L0 next to the Hans Rausing Lecture Theatre\" is stated; the 14-25 Sept unavailability notice (no year given) has already passed by the 8 October read date.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:food.cafe",
+   "kind": "accepted",
+   "venue": "Science Museum",
+   "field": "food.cafe",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The text says \"We have three cafés, a milkshake/ice cream bar and picnic areas\", which the claim restates faithfully.",
+   "noteB": "'We have three cafés, a milkshake/ice cream bar and picnic areas' matches the claim exactly.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:food.picnic",
+   "kind": "accepted",
+   "venue": "Science Museum",
+   "field": "food.picnic",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The text says \"You are welcome to bring your own food and drink ... dedicated picnic areas: The picnic terrace on Level -1 ... The seating area on Level 2 ... The seating area on Level 3\". The note that spaces are \"shared with school groups\" is left out, but the claim does not contradict it.",
+   "noteB": "'You are welcome to bring your own food and drink... dedicated picnic areas' lists Level -1 terrace, Level 2 seating area and Level 3 seating area, exactly the levels claimed.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:opening.hours",
+   "kind": "accepted",
+   "venue": "Science Museum",
+   "field": "opening.hours",
+   "A": "supports",
+   "B": "supports",
+   "issuesA": [
+    "none"
+   ],
+   "issuesB": [
+    "none"
+   ],
+   "noteA": "The text says \"open daily from 10.00–18.00 (except for 24–26 December when the museum is closed)\", which matches the claim exactly.",
+   "noteB": "'open daily from 10.00-18.00 (except for 24-26 December when the museum is closed)' matches exactly.",
+   "finalA": "supports",
+   "finalB": "supports"
+  },
+  {
+   "id": "ChIJSzwgydoDdkgRndnXVYQGXBI:opening.closure-natural-history",
+   "kind": "added",
+   "venue": "Horniman Museum and Gardens",
+   "field": "opening.closure-natural-history",
+   "A": null,
+   "B": null,
+   "finalA": "supports",
+   "finalB": "supports",
+   "note": "split out of a wider proposal so each claim has its own sentence"
+  }
+ ]
+}

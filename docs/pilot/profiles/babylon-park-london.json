@@ -28,13 +28,24 @@
       "status": "review",
       "reviewReasons": [
         "says who a place is for (drives suitability)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
       "key": "rides-arcade",
       "value": null,
-      "text": "Indoor rides including bumper cars, a carousel and a kiddie wheel, plus hundreds of arcade games and VR. No minimum age; the rollercoaster and drop tower have a 105cm height limit.",
+      "text": "Indoor rides including bumper cars, a carousel and a kiddie wheel, plus hundreds of games and VR experiences. No minimum age; the rollercoaster and drop tower have a minimum height of 105cm.",
+      "amended": {
+        "from": "Indoor rides including bumper cars, a carousel and a kiddie wheel, plus hundreds of arcade games and VR. No minimum age; the rollercoaster and drop tower have a 105cm height limit.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "kind": "provision",
       "label": "Indoor rides, arcade games and VR",
       "evidence": {
@@ -48,7 +59,11 @@
         ],
         "pageSha256": "91e5b74efd6d579f"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -72,7 +87,11 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -85,7 +104,11 @@
         "quote": "Are there restrooms on-site? Yes, restrooms are available on the Mezzanine and Basement floors.",
         "pageSha256": "91e5b74efd6d579f"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -99,14 +122,25 @@
       "sec": "transport",
       "key": "station",
       "value": "Camden Road",
-      "text": "An 8 minute walk from Camden Road station; Camden Town (Northern line) is a short walk.",
+      "text": "Babylon Park is an 8 minute walk from Camden Road station.",
+      "amended": {
+        "from": "An 8 minute walk from Camden Road station; Camden Town (Northern line) is a short walk.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://babylonpark.com/london/",
         "readAt": "2026-10-08",
         "quote": "We are an 8 minute walk from Camden Road Station.",
         "pageSha256": "91e5b74efd6d579f"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -122,20 +156,38 @@
       "status": "review",
       "reviewReasons": [
         "a negative claim (can exclude a venue)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "food",
       "key": "cafe",
       "value": "yes",
-      "text": "Ovo & Neta restaurant on the mezzanine (pizza, hot dogs, ice cream, waffles); vending machines. No outside food or drink.",
+      "text": "The Ovo & Neta restaurant on the Mezzanine floor serves a variety of food and drinks; vending machines are available throughout the park; outside food and drinks are not permitted.",
+      "amended": {
+        "from": "Ovo & Neta restaurant on the mezzanine (pizza, hot dogs, ice cream, waffles); vending machines. No outside food or drink.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://babylonpark.com/london/",
         "readAt": "2026-10-08",
         "quote": "Yes, the Ovo & Neta restaurant on the Mezzanine floor serves a variety of food and drinks.",
         "pageSha256": "91e5b74efd6d579f"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says throughout; the quote does not"
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "food",
@@ -152,7 +204,11 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "play",
@@ -165,7 +221,11 @@
         "quote": "Mezzanine Floor: Ovo & Neta restaurant (serving pizza, hot dogs, ice cream, waffles, and more), soft play areas for toddlers and kids, and an events room.",
         "pageSha256": "91e5b74efd6d579f"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
@@ -181,7 +241,11 @@
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "opening",
@@ -194,7 +258,11 @@
         "quote": "Opening hours: Monday – Friday: 10:00 a.m. – 9:00 p.m. Saturday: 10:00 a.m. – 10:00 p.m. Sunday: 10:00 a.m. – 9:00 p.m.",
         "pageSha256": "91e5b74efd6d579f"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "pricing",
@@ -219,23 +287,35 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "considerations",
       "key": "duration",
       "value": 120,
-      "text": "A visit takes about two hours.",
+      "text": "Duration varies depending on the ticket purchased; the venue recommends allowing 2 hours.",
+      "amended": {
+        "from": "A visit takes about two hours.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://babylonpark.com/london/",
         "readAt": "2026-10-08",
         "quote": "Duration: Varies based on ticket purchased, we recommend 2 hours.",
         "pageSha256": "91e5b74efd6d579f"
       },
-      "status": "review",
-      "reviewReasons": [
-        "independent check (shares-content): 20% of the proposal's content words are in the quote"
-      ]
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     }
   ]
 }
