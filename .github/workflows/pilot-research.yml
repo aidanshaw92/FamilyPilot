@@ -7,11 +7,15 @@ name: Venue pilot research (bounded, official sites only, no Google, no database
 
 on:
   workflow_dispatch:
+    inputs:
+      pass:
+        description: 'first = homepage + links for the ten venues; gaps = the named gap list only'
+        default: gaps
   pull_request:
     paths:
       - .github/workflows/pilot-research.yml
-      - familypilot/scripts/pilot/research-crawl.mjs
-      - familypilot/scripts/pilot/pilot-targets.json
+      - familypilot/scripts/pilot/gap-fill.mjs
+      - familypilot/scripts/pilot/gaps.json
 
 permissions:
   contents: read
@@ -28,9 +32,14 @@ jobs:
           cache: npm
       - name: Install root dependencies
         run: npm ci
-      - name: Read the listed official sites
+      - name: Read the listed official sites (first pass, by hand only)
+        if: github.event_name == 'workflow_dispatch' && inputs.pass == 'first'
         working-directory: familypilot
         run: node scripts/pilot/research-crawl.mjs --out ../research.json
+      - name: Read the named gaps (second pass)
+        if: github.event_name == 'pull_request' || inputs.pass == 'gaps'
+        working-directory: familypilot
+        run: node scripts/pilot/gap-fill.mjs --out ../research.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
