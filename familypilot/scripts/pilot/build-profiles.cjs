@@ -21,11 +21,13 @@ const today = flag('--today', '2026-10-08');
 const outDir = flag('--out', path.join(__dirname, '..', '..', '..', 'docs', 'pilot', 'profiles'));
 if (!pagesFile) { console.error('--pages is required'); process.exit(2); }
 
-const raw = JSON.parse(fs.readFileSync(pagesFile, 'utf8'));
-// Two shapes: the runner's research.json ({venues:[{name,pages:[{url,title,fullText,readAt}]}]}) or the flattened log parse.
-const pages = Array.isArray(raw.pages)
-  ? raw.pages.map((p) => ({ venue: p.venue, url: p.url, title: p.title, readAt: p.read, text: p.text }))
-  : raw.venues.flatMap((v) => v.pages.filter((p) => p.fullText).map((p) => ({ venue: v.name, url: p.url, title: p.title, readAt: p.readAt, text: p.fullText })));
+// One or more page files, comma separated. Shapes: the runner's research.json ({venues:[...]}) or {pages:[...]} (flattened).
+const pages = pagesFile.split(',').flatMap((file) => {
+  const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+  return Array.isArray(raw.pages)
+    ? raw.pages.filter((p) => p.text || p.fullText).map((p) => ({ venue: p.venue, url: p.url, title: p.title, readAt: p.read ?? p.readAt, text: p.text ?? p.fullText }))
+    : raw.venues.flatMap((v) => v.pages.filter((p) => p.fullText).map((p) => ({ venue: v.name, url: p.url, title: p.title, readAt: p.readAt, text: p.fullText })));
+});
 
 const files = fs.readdirSync(path.join(__dirname, 'profiles')).filter((f) => f.endsWith('.cjs')).filter((f) => !only || f.startsWith(only));
 let failures = 0;

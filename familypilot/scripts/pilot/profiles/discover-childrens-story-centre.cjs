@@ -42,6 +42,8 @@ module.exports = {
     { sec: 'opening', key: 'hours', v: '10:00-17:00 daily', t: 'Open every day 10am to 5pm (closed 24, 25, 26, 31 December and 1 January).', u: '/your-visit/',
       q: 'Discover is open every day, 10am - 5pm' },
     { sec: 'pricing', key: 'paid', st: 'unknown', t: 'The price of Day Entry: not in the page text read.', n: 'The entry prices are loaded by the booking widget and do not appear in the page text. Add-on events and exhibitions are stated as £3 to £5.50.', gap: { venue: "Discover Children's Story Centre", anchor: 'Prices' } },
+    { sec: 'pricing', key: 'under1', v: 'free (or discounted)', t: 'Babies under 1: one page says "0-1 year olds ... receive free tickets", the FAQ says under-1 tickets are "discounted".', u: '/your-visit/about-annual-entry-tickets',
+      q: '0-1 year olds and carers for our disabled visitors receive free tickets.', conflict: 'the FAQ, which says Under 1s tickets are "discounted"' },
     { sec: 'pricing', key: 'addons', v: '£3-£5.50', t: 'Add-on storytelling, exhibitions and other tickets cost £3 to £5.50.', u: '/your-visit/',
       q: 'Add-on Storytelling, Immersive Exhibitions and other tickets cost between £3-£5.50' },
     { sec: 'considerations', key: 'booking', v: 'advance booking recommended', t: 'Advance booking is recommended; entry can reach capacity on busy days.', u: '/your-visit/faqs',

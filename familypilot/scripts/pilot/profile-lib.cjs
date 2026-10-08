@@ -51,7 +51,9 @@ function gate(fact, page, today) {
   const reasons = [];
   const key = `${fact.sec}.${fact.key}`;
   if (daysBetween(page.readAt, today) > MAX_READING_AGE_DAYS) reasons.push(`page read more than ${MAX_READING_AGE_DAYS} days ago`);
-  if (!AUTO_KEYS.has(key)) {
+  // A plain statement that something exists for children, with no age attached, asks nothing of a person. Naming an age does.
+  const plainActivity = fact.sec === 'activities' && !fact.ages;
+  if (!AUTO_KEYS.has(key) && !plainActivity) {
     if (fact.sec === 'activities') reasons.push('says who a place is for (drives suitability)');
     else if (fact.sec === 'pricing') reasons.push('a price or a free-entry claim (drives cost)');
     else if (fact.sec === 'access') reasons.push('an accessibility claim (high impact)');

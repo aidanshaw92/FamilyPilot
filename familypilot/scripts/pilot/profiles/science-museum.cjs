@@ -27,10 +27,12 @@ module.exports = {
     { sec: 'toilets', key: 'changingPlaces', v: 'yes', t: 'A Changing Places toilet on level 0 (the page also carries a notice about works on 14 to 25 September).', u: '/visit/accessibility',
       q: 'Please note the Changing Places toilet will be unavailable between 14 Sept – 25 Sept due to planned building works.', conflict: 'a notice dated 14 to 25 September, already past on the reading date' },
     // --- getting there
-    { sec: 'transport', key: 'blueBadge', v: 'yes', t: 'A small number of accessible parking spaces on Exhibition Road.', u: '/visit/accessibility',
-      q: 'A small number of accessible parking spaces are available on Exhibition Road.' },
-    { sec: 'transport', key: 'station', st: 'unknown', t: 'Nearest station and bus routes: the pages read did not say.', n: 'The "Getting here" page was linked but not among the pages read.', gap: { venue: 'Science Museum', anchor: 'Getting here' } },
-    { sec: 'transport', key: 'parking', st: 'unknown', t: 'General car parking: not stated on the pages read.', n: 'Only accessible spaces are mentioned.', gap: { venue: 'Science Museum', anchor: 'Getting here' } },
+    { sec: 'transport', key: 'blueBadge', v: 'yes', t: 'A small number of disabled spaces on Exhibition Road; Blue Badge holders may park there for four hours between 08.30 and 18.30.', u: '/visit/getting-here',
+      q: 'A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30.' },
+    { sec: 'transport', key: 'station', v: 'South Kensington', t: 'South Kensington (District, Circle, Piccadilly) is a 5 minute walk. The nearest step-free Tube is Knightsbridge, a 15 to 20 minute walk.', u: '/visit/getting-here',
+      q: 'The nearest tube station is South Kensington. This is on the District, Circle and Piccadilly lines and is a 5-minute walk from the museum.' },
+    { sec: 'transport', key: 'parking', v: 'no', t: 'No car parking at the museum and local parking is very limited; nearest pay and display is in Prince Consort Road and Queen\'s Gate.', u: '/visit/getting-here',
+      q: 'We do not have car parking facilities and local parking is very limited.' },
     // --- food
     { sec: 'food', key: 'cafe', v: 'yes', t: 'Three cafés and a milkshake and ice cream bar.', u: '/visit/food-and-drink',
       q: 'There are lots of food and drink options at the Science Museum: We have three cafés, a milkshake/ice cream bar and picnic areas.' },

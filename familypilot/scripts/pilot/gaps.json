@@ -1,7 +1,6 @@
 {
-  "note": "Gaps left by the first two passes over the ten pilot venues. Every parent is an official page of the venue or its operator. 'listLinks' prints the parent's own links (no extra request) so a later gap can name the right one.",
+  "note": "Gaps left by the first three passes over the ten pilot venues. Every parent is an official page of the venue or its operator. Battersea's operator site (enablelc.org) answered HTTP 403 on the previous pass and is not tried again.",
   "gaps": [
-    { "id": "bat-enable", "venue": "Battersea Park", "parent": "https://www.wandsworth.gov.uk/leisure-and-culture/parks-and-open-spaces/childrens-playgrounds/battersea-park-playground-for-toddlers-and-juniors/", "anchor": "enablelc", "allowHosts": ["enablelc.org"], "hops": 2, "anchor2": "battersea", "listLinks": true },
-    { "id": "gun-links", "venue": "Gunnersbury Park", "parent": "https://www.visitgunnersbury.org/plan-your-visit", "listLinks": true }
+    { "id": "gun-park-page", "venue": "Gunnersbury Park", "parent": "https://www.visitgunnersbury.org/plan-your-visit", "anchor": "/park/park$" }
   ]
 }
