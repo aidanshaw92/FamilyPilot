@@ -1,3 +1,4 @@
+import { activityEvidenceFor, evidenceCovers } from '@/src/services/matching/activity-evidence';
 import { EnrichmentStatus, FamilyProfile, FamilyScore, FamilyScoreFactors, VenueDetail } from '@/src/types';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
 import { budgetFitReason } from '@/src/utils/budget-copy';
@@ -161,6 +162,26 @@ function buildHeuristicExplanation(
   return reasons.slice(0, 6);
 }
 
+/**
+ * FOR REVIEW (docs/EXCELLENT_SCORE_STEP.md); the only part of the activity-evidence rule that moves rankings.
+ *
+ * Where a venue states no recommended range, a reviewed permanent provision for a child's age (an under-7s playground, a
+ * toddler soft play) is the next-best activity evidence. It sits between unknown (75) and a whole-venue range (96):
+ * 88 when it covers every child of a year or more, 80 when it covers some. A programme on set days never counts, and a
+ * household of babies only is unchanged (the visit is the activity).
+ */
+const PROVISION_ALL_SCORE = 88;
+const PROVISION_SOME_SCORE = 80;
+function scoreProvisionAgeSuitability(venueId: string | undefined, childMonths: number[]): number | null {
+  if (!venueId) return null;
+  const provisions = activityEvidenceFor(venueId).filter((e) => e.kind === 'provision');
+  const older = childMonths.filter((m) => Number.isFinite(m) && m >= 12);
+  if (provisions.length === 0 || older.length === 0) return null;
+  const covered = older.filter((m) => provisions.some((e) => evidenceCovers(e, m)));
+  if (covered.length === older.length) return PROVISION_ALL_SCORE;
+  return covered.length > 0 ? PROVISION_SOME_SCORE : null;
+}
+
 export function calculateFamilyScore(
   venue: VenueDetail,
   profile: FamilyProfile,
@@ -183,7 +204,9 @@ export function calculateFamilyScore(
 
   const factors: FamilyScoreFactors = {
     ageSuitability:
-      (useTrusted ? scoreTrustedAgeSuitability(facts, childMonths) : null) ?? UNKNOWN_AGE_SCORE,
+      (useTrusted ? scoreTrustedAgeSuitability(facts, childMonths) : null) ??
+      (useTrusted ? scoreProvisionAgeSuitability(venue.id, childMonths) : null) ??
+      UNKNOWN_AGE_SCORE,
     accessibility:
       (useTrusted ? scoreTrustedAccessibility(facts, profile) : null) ??
       (venue.facilities?.includes('pushchair_friendly') ? 92 : isProviderOnly ? 55 : 70),
