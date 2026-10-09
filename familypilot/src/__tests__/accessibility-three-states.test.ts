@@ -5,6 +5,7 @@ import { hardConflictsFor } from '@/src/services/matching/hard-conflicts';
 import { toPlanViewModel } from '@/src/services/planning/plan-view-model';
 import { planningFamilyFromProfile } from '@/src/services/planning/plan-parties';
 import { SequenceOptions, homeKey, sequenceDay, stopKey } from '@/src/services/planning/sequencer';
+import { planVenue } from '@/src/services/planning/planner';
 import { CURRENT_POLICY, PROPOSED_POLICY } from '@/src/services/scoring/fit-policy';
 import { familyEssentialRows } from '@/src/utils/family-essentials';
 import { personaliseVenue } from '@/src/utils/personalise-venues';
@@ -168,5 +169,50 @@ describe('only a family that needs it is told anything, and nothing is inferred 
     const v = personaliseVenue(venueOf(facts({ ...GOOD, parking: 'no', wheelchairAccessible: 'yes' })), needs, undefined, PROPOSED_POLICY);
     expect(JSON.stringify(v.familyMatch)).not.toMatch(/you said you need/);
     expect(v.fitConflicts ?? []).toEqual([]);
+  });
+});
+
+describe('Meet Halfway and the single-venue planner follow the same three states', () => {
+  const fam = (who = needs) => {
+    const f = planningFamilyFromProfile(who);
+    if (typeof f === 'string') throw new Error(f);
+    return { ...f, maxDriveMinutes: undefined, routines: [] };
+  };
+  const journeys = (id: string) => ({ [id]: { outbound: 20, inbound: 20, source: 'estimated' as const } });
+  const options = { date: '2026-11-10', leaveAt: '09:00', returnBy: '', visitMinutes: 90, bufferMinutes: 15, environment: 'either' as const };
+  const at = (f: MatchableVenueFacts, who = needs) => { const family = fam(who); return planVenue({ ...f, driveMinutes: 20 }, [family], journeys(family.id), options, NOW); };
+
+  it('confirmed suitable is a plan with nothing to check', () => {
+    const p = at(facts({ ...GOOD, wheelchairAccessible: 'yes' }));
+    expect(p).not.toBeNull();
+    expect(p!.unknowns.join(' ')).not.toMatch(/wheelchair/i);
+  });
+
+  it('confirmed incompatible is refused', () => {
+    expect(at(facts({ ...GOOD, wheelchairAccessible: 'no' }))).toBeNull();
+  });
+
+  it('unknown is NOT refused: it is a plan that says wheelchair and step-free access needs checking', () => {
+    const p = at(facts({ ...GOOD, wheelchairAccessible: 'unknown' }));
+    expect(p).not.toBeNull();
+    expect(p!.unknowns).toContain('Wheelchair and step-free access is not confirmed here');
+  });
+
+  it('the yes-and-no disagreement is unknown, not a side taken', () => {
+    const p = at(facts({ ...GOOD, wheelchairAccessible: 'yes', stepFreeAccess: 'no' }));
+    expect(p).not.toBeNull();
+    expect(p!.unknowns.join(' ')).toMatch(/Wheelchair and step-free/);
+  });
+
+  it('parking never stands in for access, and other required facilities still fail closed', () => {
+    expect(at(facts({ ...GOOD, parking: 'no', wheelchairAccessible: 'unknown' }))).not.toBeNull();
+    const mustToilets = { ...needs, mustHaveFacilities: ['toilets' as const] } as typeof needs;
+    expect(at(facts({ ...GOOD, toilets: 'unknown', wheelchairAccessible: 'yes' }), mustToilets)).toBeNull();
+  });
+
+  it('a household with no mobility aid is not asked anything about access', () => {
+    const p = at(facts({ ...GOOD, wheelchairAccessible: 'unknown' }), doesNotNeed);
+    expect(p).not.toBeNull();
+    expect(p!.unknowns.join(' ')).not.toMatch(/wheelchair/i);
   });
 });
