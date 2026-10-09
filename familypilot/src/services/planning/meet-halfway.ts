@@ -193,6 +193,7 @@ const FACILITY_FOR_REQUIRED: Record<PlanningFamily['required'][number], Facility
   toilets: 'toilets',
   babyChanging: 'baby_changing',
   parking: 'parking',
+  blueBadgeParking: 'blue_badge_parking',
   pushchair: 'pushchair_friendly',
 };
 
@@ -217,6 +218,7 @@ function sharedProfile(family: PlanningFamily): FamilyProfile {
     ...(typeof family.maxDriveMinutes === 'number' ? { maxDriveMinutes: family.maxDriveMinutes } : {}),
     completionPercent: 100,
     mustHaveFacilities: family.required.map((field) => FACILITY_FOR_REQUIRED[field]),
+    ...(family.transport ? { transportNeeds: family.transport } : {}),
     routines: [],
     pushchair: family.pushchair ? 'a pushchair' : null,
   } as unknown as FamilyProfile;

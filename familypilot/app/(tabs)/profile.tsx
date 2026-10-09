@@ -29,6 +29,7 @@ const MUST_HAVE_LABELS: Partial<Record<FacilityType, string>> = {
   toilets: 'Toilets',
   baby_changing: 'Baby changing',
   parking: 'Parking',
+  blue_badge_parking: 'Blue Badge parking',
   pushchair_friendly: 'Pushchair access',
 };
 

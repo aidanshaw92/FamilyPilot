@@ -248,6 +248,8 @@ export interface UnmetRequirement {
   field: string;
   /** `unsuitable` is a fact that fails; `unknown` is a fact nobody has confirmed. */
   outcome: 'unsuitable' | 'unknown';
+  /** The venue's own reviewed sentence, when the requirement failed because of a recorded venue rule. */
+  detail?: string;
 }
 
 /**

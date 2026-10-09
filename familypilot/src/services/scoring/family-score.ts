@@ -3,6 +3,8 @@ import { familyUsesBuggy } from '@/src/utils/family-mobility';
 import { budgetFitReason } from '@/src/utils/budget-copy';
 import { budgetTierOf, driveLimitMinutes } from '@/src/utils/preferences';
 import { blendFactors } from './blend';
+import { evidenceAwareFactors } from './evidence-aware-factors';
+import { activeFitPolicy, type FitPolicy } from './fit-policy';
 
 import { PROVIDER_ONLY_FAMILY_MATCH_CAP } from '@/src/constants/places-quality';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
@@ -41,6 +43,10 @@ const FACILITY_MISSING_CAP = 35;
 
 export interface FamilyScoreOptions {
   enrichmentStatus?: EnrichmentStatus;
+  /** Which Family Fit policy to apply. Defaults to the one the environment selects, which is today's unless switched. */
+  policy?: FitPolicy;
+  /** The day the evidence is judged fresh against. Defaults to now. */
+  now?: Date;
 }
 
 function clamp(value: number, min = 0, max = 100): number {
@@ -181,7 +187,24 @@ export function calculateFamilyScore(
       : clamp(Math.min((venue.facilities?.length ?? 0) * 11, 96));
   const missingMustHave = buildFacilityMissingCaution(profile, venue.facilities) != null;
 
-  const factors: FamilyScoreFactors = {
+  const policy = options.policy ?? activeFitPolicy();
+  const evidenceAware = policy.evidenceAware && !isProviderOnly && facts != null;
+
+  const budgetFitValue = tier
+    ? (useTrusted ? scoreTrustedBudget(facts, tier) : null) ?? scoreBudgetHeuristic(venue, tier)
+    : undefined;
+  const aware = evidenceAware
+    ? evidenceAwareFactors({
+        venueId: venue.id,
+        facts,
+        profile,
+        distance: scoreDistance(venue.driveMinutes, driveLimitMinutes(profile)),
+        budgetFit: budgetFitValue,
+        now: options.now,
+      })
+    : null;
+
+  const factors: FamilyScoreFactors = aware?.factors ?? {
     ageSuitability:
       (useTrusted ? scoreTrustedAgeSuitability(facts, childMonths) : null) ?? UNKNOWN_AGE_SCORE,
     accessibility:
@@ -207,5 +230,5 @@ export function calculateFamilyScore(
       : buildHeuristicExplanation(venue, profile, factors, isProviderOnly);
   const cautions = useTrusted && facts ? buildTrustedCautions(profile, facts, factors) : [];
 
-  return { score, factors, explanation, cautions };
+  return { score, factors, explanation, cautions, ...(aware ? { basis: aware.basis } : {}) };
 }

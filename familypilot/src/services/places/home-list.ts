@@ -2,7 +2,8 @@ import { getPlacesRepository } from '@/src/services/places/places-repository';
 import { FamilyProfile, Venue } from '@/src/types';
 import { isListableVenue } from '@/src/utils/opening-today';
 import { personaliseVenue } from '@/src/utils/personalise-venues';
-import { compareTravelMinutes } from '@/src/utils/travel-time';
+import { compareVenuesForFamily } from '@/src/services/places/fit-order';
+import { activeFitPolicy, type FitPolicy } from '@/src/services/scoring/fit-policy';
 
 /**
  * Home's list: loaded fresh, or shown from what the device kept while a fresh one loads.
@@ -19,11 +20,11 @@ import { compareTravelMinutes } from '@/src/utils/travel-time';
  * "Closed today" as a fact (isListableVenue drops only places that are never open to visitors). Nothing here reads the
  * provider's stored open-now flag, a snapshot from when the search ran.
  */
-export function rankForFamily(venues: Venue[], profile: FamilyProfile): Venue[] {
+export function rankForFamily(venues: Venue[], profile: FamilyProfile, policy: FitPolicy = activeFitPolicy()): Venue[] {
   return venues
     .filter((venue) => isListableVenue(venue))
-    .map((venue) => personaliseVenue(venue, profile))
-    .sort((a, b) => b.familyScore.score - a.familyScore.score || compareTravelMinutes(a.driveMinutes, b.driveMinutes));
+    .map((venue) => personaliseVenue(venue, profile, undefined, policy))
+    .sort((a, b) => compareVenuesForFamily(a, b, policy));
 }
 
 /**

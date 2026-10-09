@@ -44,6 +44,10 @@ const FOOD_RELEVANT_FIELDS: ReadonlySet<string> = new Set([
   'familyFacilities.toilets',
   'familyFacilities.babyChanging',
   'familyFacilities.parking',
+  'accessibility.accessibleParking',
+  'transport.stepFreeStation',
+  'transport.publicTransport',
+  'accessibility.wheelchairAccessible',
 ]);
 
 /** What a stop is for: its role in the day, or, for a place to eat chosen as the day's venue, its category. */

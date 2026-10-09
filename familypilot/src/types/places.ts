@@ -119,6 +119,13 @@ export interface VenueFamilyMetadata {
    * unknown, and unknown never excludes. Never written from an editor payload.
    */
   venueAgePolicy?: import('@/src/types/day-request').VenueAgePolicy | null;
+  /**
+   * Venue-specific rules (closures, pushchair and step-free restrictions, booking, cautions), projected server-side from
+   * approved `rules.*` claims. Absent means nobody has recorded any, which is not the same as "none apply".
+   */
+  rules?: import('@/src/types/venue-rules').VenueRule[];
+  /** The venue's own reviewed opening hours, projected from approved `hours.*` claims; see types/official-hours.ts. */
+  officialHours?: import('@/src/types/official-hours').OfficialHoursRule[];
   ageNotes?: string;
   terrain?: TerrainType;
   extendedTerrain?: import('@/src/types/enrichment').ExtendedTerrain;
@@ -140,6 +147,8 @@ export interface VenueFamilyMetadata {
   accessibleToilet?: FacilityStatus;
   accessibility?: import('@/src/types/enrichment').AccessibilityInfo;
   accessibilityNotes?: string;
+  /** How to get there other than by car, from its own approved claims. Independent of parking and of every accessibility claim. */
+  transport?: import('@/src/types/enrichment').TransportInfo;
   sendInfo?: import('@/src/types/enrichment').SendInfo;
   sendNotes?: string;
   familyNotes?: string;

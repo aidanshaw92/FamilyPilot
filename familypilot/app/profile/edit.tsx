@@ -42,6 +42,7 @@ import { createParentMember, formatBudgetTier } from '@/src/utils/profile-defaul
 import { budgetTierOf, driveLimitMinutes, unconfirmedValue, withoutUnconfirmed, UnconfirmedField } from '@/src/utils/preferences';
 import { UnconfirmedPreferenceNotice } from '@/src/components/profile/UnconfirmedPreferenceNotice';
 import { isPilotFeatureVisible } from '@/src/config/pilot-features';
+import { activeFitPolicy } from '@/src/services/scoring/fit-policy';
 import { ADULT_RELATIONSHIP_LABEL, createAdultMember } from '@/src/utils/household';
 import { AdultRelationship } from '@/src/types';
 import { feedNoun } from '@/src/utils/routine-schedule';
@@ -63,6 +64,16 @@ const MUST_HAVE_OPTIONS: { id: FacilityType; label: string }[] = [
   { id: 'parking', label: 'Parking' },
   { id: 'pushchair_friendly', label: 'Pushchair access' },
 ];
+
+/**
+ * Blue Badge parking is offered only once the access-aware conflict policy is on (EXPO_PUBLIC_FAMILY_FIT_V2): a household that
+ * chose it earlier would be judged by the current policy, which cannot read it, so it stays out of reach until that policy is
+ * approved. Everything downstream already understands it.
+ */
+const mustHaveOptions = (): { id: FacilityType; label: string }[] =>
+  activeFitPolicy().conflictsLast
+    ? [...MUST_HAVE_OPTIONS.slice(0, 3), { id: 'blue_badge_parking', label: 'Blue Badge parking' }, ...MUST_HAVE_OPTIONS.slice(3)]
+    : MUST_HAVE_OPTIONS;
 
 /** Alert.alert does nothing on web, where the pilot actually runs, so removal asks with the browser's own dialog there. */
 function confirmRemove(name: string, onConfirm: () => void) {
@@ -604,7 +615,7 @@ export default function EditProfileScreen() {
           facilities that don't matter to you.
         </Text>
         <View style={styles.chipRow}>
-          {MUST_HAVE_OPTIONS.map((option) => (
+          {mustHaveOptions().map((option) => (
             <Chip
               key={option.id}
               label={option.label}
