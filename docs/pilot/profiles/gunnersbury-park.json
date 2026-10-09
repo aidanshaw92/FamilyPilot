@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "id": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+  "name": "Gunnersbury Park",
+  "category": "park",
+  "builtOn": "2026-10-08",
+  "counts": {
+    "verified": 7,
+    "unknown": 3,
+    "review": 7
+  },
+  "facts": [
+    {
+      "sec": "activities",
+      "key": "park-museum-lake",
+      "value": null,
+      "text": "A park with a museum and a boating lake, and events for children and families. No age is given.",
+      "kind": "provision",
+      "label": "Park, museum and boating lake",
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/",
+        "readAt": "2026-10-08",
+        "quote": "wandering around the museum or boating on the lake - there's plenty to enjoy at Gunnersbury.",
+        "pageSha256": "04e0038397ae709e"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "activities",
+      "key": "age-specific",
+      "value": null,
+      "text": "Which ages the park, museum and lake suit: not stated.",
+      "status": "unknown",
+      "note": "No playground, and no age for any permanent activity, is described on the pages read."
+    },
+    {
+      "sec": "pushchair",
+      "key": "terrain",
+      "value": "tarmac, uneven in places",
+      "text": "A network of tarmac paths; because the park is a natural environment, paths may be uneven in places.",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/plan-your-visit",
+        "readAt": "2026-10-08",
+        "quote": "There is a network of tarmac paths within the park at Gunnersbury. However, because the park is a natural environment, paths may be uneven in places.",
+        "pageSha256": "80e5273c99d6548a"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person",
+        "conditional, temporary or dated wording"
+      ]
+    },
+    {
+      "sec": "toilets",
+      "key": "toilets",
+      "value": "yes",
+      "text": "A park toilet block near the museum, and a toilet in the museum.",
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/plan-your-visit",
+        "readAt": "2026-10-08",
+        "quote": "There is also an accessible toilet in the park toilet block, which is located near the museum.",
+        "pageSha256": "80e5273c99d6548a"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "toilets",
+      "key": "accessibleToilet",
+      "value": "yes",
+      "text": "Accessible toilets in the museum (ground floor, no RADAR key) and the park toilet block.",
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/plan-your-visit",
+        "readAt": "2026-10-08",
+        "quote": "There is an accessible toilet in the museum. There is also an accessible toilet in the park toilet block, which is located near the museum.",
+        "pageSha256": "80e5273c99d6548a"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "toilets",
+      "key": "babyChanging",
+      "value": null,
+      "text": "Baby changing: not stated on the pages read.",
+      "status": "unknown",
+      "note": "Only accessible toilets are described."
+    },
+    {
+      "sec": "transport",
+      "key": "station",
+      "value": "Acton Town",
+      "text": "Ten minutes' walk from Acton Town (Piccadilly, District) or South Ealing; Kew Bridge rail; E3, 65 and H91 buses.",
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/plan-your-visit",
+        "readAt": "2026-10-08",
+        "quote": "Acton Town Tube Station Piccadilly and District lines Turn left when you leave the station and walk along Gunnersbury Lane for about ten minutes",
+        "pageSha256": "80e5273c99d6548a"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "transport",
+      "key": "parking",
+      "value": "yes",
+      "text": "Two car parks, charged at all times: £1 for 30 minutes to 1 hour, £1 an hour after; Blue Badge holders free.",
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/plan-your-visit",
+        "readAt": "2026-10-08",
+        "quote": "There are two car parks available at Gunnersbury.",
+        "pageSha256": "80e5273c99d6548a"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "transport",
+      "key": "blueBadge",
+      "value": "yes",
+      "text": "Free designated disabled parking in both car parks.",
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/plan-your-visit",
+        "readAt": "2026-10-08",
+        "quote": "Designated disabled parking for blue badge holders can be found in both car parks and parking is free.",
+        "pageSha256": "80e5273c99d6548a"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "food",
+      "key": "cafe",
+      "value": "yes",
+      "text": "The Pure in the Park café: weekdays 7am to 5pm, weekends 7am to 6pm.",
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/plan-your-visit",
+        "readAt": "2026-10-08",
+        "quote": "Café Monday to Friday: 7am to 5pm Weekends: 7am to 6pm",
+        "pageSha256": "80e5273c99d6548a"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "play",
+      "key": "playground",
+      "value": null,
+      "text": "A children's playground: not mentioned on the pages read.",
+      "status": "unknown",
+      "note": "A large park is likely to have one, but nothing read says so."
+    },
+    {
+      "sec": "access",
+      "key": "wheelchair",
+      "value": "yes",
+      "text": "The museum lift serves all galleries and suits wheelchairs, including small motorised ones.",
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/plan-your-visit",
+        "readAt": "2026-10-08",
+        "quote": "Inside, a self-operated lift serves all the galleries and is suitable for wheelchairs, including small motorised ones.",
+        "pageSha256": "80e5273c99d6548a"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)"
+      ]
+    },
+    {
+      "sec": "access",
+      "key": "stepFree",
+      "value": "yes",
+      "text": "Step-free access throughout the museum (some ramps and slopes); a lift to all levels; a manual wheelchair to borrow.",
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/museum/accessibility",
+        "readAt": "2026-10-08",
+        "quote": "Step-free access is available throughout the museum, with some ramps and slopes",
+        "pageSha256": "ec86c9322aee8ef7"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)"
+      ]
+    },
+    {
+      "sec": "access",
+      "key": "relaxed",
+      "value": "yes",
+      "text": "Relaxed sessions every half term; quieter times are weekdays 2 to 4pm, weekend mornings 10 to 12.",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/museum/accessibility",
+        "readAt": "2026-10-08",
+        "quote": "We offer Relaxed Sessions every half term.",
+        "pageSha256": "ec86c9322aee8ef7"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)"
+      ]
+    },
+    {
+      "sec": "opening",
+      "key": "hours",
+      "value": "Park 7:00-dusk; Museum Tue-Sun 10:00-16:30",
+      "text": "Park open daily from 7am until dusk; museum Tuesday to Sunday 10am to 4.30pm (closed Mondays).",
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/plan-your-visit",
+        "readAt": "2026-10-08",
+        "quote": "Opening Hours Museum Tuesday-Sunday 10am to 4:30pm Park Daily between 7am until dusk",
+        "pageSha256": "80e5273c99d6548a"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "conditional, temporary or dated wording",
+        "conflicts with the provider (Google) hours, which show the park as open 24 hours"
+      ],
+      "conflict": "the provider (Google) hours, which show the park as open 24 hours"
+    },
+    {
+      "sec": "pricing",
+      "key": "free",
+      "value": "free",
+      "text": "The museum and park are free to enter; car parking is charged.",
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/plan-your-visit",
+        "readAt": "2026-10-08",
+        "quote": "Our museum and park are free entry .",
+        "pageSha256": "80e5273c99d6548a"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "a price or a free-entry claim (drives cost)"
+      ]
+    },
+    {
+      "sec": "considerations",
+      "key": "dogs",
+      "value": "no dogs in museum",
+      "text": "No dogs in the museum except assistance dogs.",
+      "evidence": {
+        "url": "https://www.visitgunnersbury.org/plan-your-visit",
+        "readAt": "2026-10-08",
+        "quote": "Please note we do not allow dogs into the museum, with the exception of Assistance Dogs.",
+        "pageSha256": "80e5273c99d6548a"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person"
+      ]
+    }
+  ]
+}

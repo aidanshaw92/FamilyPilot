@@ -89,9 +89,11 @@ describe('permanent provision for an age', () => {
     expect(r.gapNames).toEqual(['Maya']);
   });
 
-  it('a baby-and-toddler space covers no 7-year-old', () => {
+  it('a baby-and-toddler space covers no 7-year-old; only a programme names them, and a programme never makes the place Excellent', () => {
     const r = run(DISCOVER, [maya()]);
-    expect(r.forNames).toEqual([]);
+    // The 0 to 2 space (a provision) says nothing for a 7-year-old. The Luna Loves London exhibition (age guide 0 to 8, an
+    // add-on programme) does name them, so the line is there, but it is a programme and the verdict stays Good.
+    expect(r.reasons.some((l) => l.key.startsWith('activity') && /baby|toddler|0 to 2/i.test(l.text))).toBe(false);
     expect(r.verdict).toBe('good');
   });
 });

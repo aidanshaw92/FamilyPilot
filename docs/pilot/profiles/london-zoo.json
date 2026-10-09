@@ -1,0 +1,312 @@
+{
+  "schemaVersion": 1,
+  "id": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+  "name": "London Zoo",
+  "category": "zoo",
+  "builtOn": "2026-10-08",
+  "counts": {
+    "review": 8,
+    "verified": 9,
+    "hypothesis": 1,
+    "unknown": 2
+  },
+  "facts": [
+    {
+      "sec": "activities",
+      "key": "zootown",
+      "value": null,
+      "text": "ZooTown is an indoor role-play adventure aimed at children up to 8; every child is welcome. Book online; £1 per child for non-members.",
+      "kind": "provision",
+      "minMonths": 0,
+      "maxMonthsExclusive": 108,
+      "label": "ZooTown: indoor role-play adventure, best for up to 8",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
+        "readAt": "2026-10-08",
+        "quote": "ZooTown is a brand new indoor role play adventure for kids in the heart of London Zoo aimed at children aged up to 8.",
+        "pageSha256": "2eb390649a853e57"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "says who a place is for (drives suitability)"
+      ]
+    },
+    {
+      "sec": "activities",
+      "key": "animal-talks",
+      "value": null,
+      "text": "Daily animal talks and events (no age given).",
+      "kind": "programme",
+      "label": "Daily animal talks",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit",
+        "readAt": "2026-10-08",
+        "quote": "Find out more about our exciting upcoming events schedule, our enlightening daily animal talks",
+        "pageSha256": "84acad2791c014b9"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "pushchair",
+      "key": "hire",
+      "value": "yes",
+      "text": "Pushchairs to hire from the gift shop: single £10, double £15, plus a £15 refundable deposit (card only).",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
+        "readAt": "2026-10-08",
+        "quote": "Pushchairs are available to hire from the gift shop. Our single buggies cost £10 and double buggies cost £15 to hire.",
+        "pageSha256": "2eb390649a853e57"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person"
+      ]
+    },
+    {
+      "sec": "pushchair",
+      "key": "allowed",
+      "value": null,
+      "text": "Own pushchairs are probably welcome.",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
+        "readAt": "2026-10-08",
+        "quote": "Pushchairs are available to hire from the gift shop.",
+        "pageSha256": "2eb390649a853e57"
+      },
+      "status": "hypothesis",
+      "note": "Pushchair hire implies pushchairs are used, but no page read says visitors may bring their own."
+    },
+    {
+      "sec": "toilets",
+      "key": "accessibleToilet",
+      "value": "yes",
+      "text": "Accessible toilets around the zoo and a Changing Places toilet at Animal Adventure.",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+        "readAt": "2026-10-08",
+        "quote": "As well as our changing place toilet, we also have a number of accessible toilets around the Zoo.",
+        "pageSha256": "c827fbfab53284aa"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "toilets",
+      "key": "toilets",
+      "value": "yes",
+      "text": "Toilets (the accessible ones are listed: opposite Tiny Giants, next to the Reptile House, near the main entrance and The Terrace Restaurant).",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+        "readAt": "2026-10-08",
+        "quote": "These are located: Opposite Tiny Giants Next to the Reptile House Near main entrance next to African Aviary The Terrace Restaurant",
+        "pageSha256": "c827fbfab53284aa"
+      },
+      "status": "verified",
+      "note": "Derived: accessible toilets are toilets. General toilet blocks are not described."
+    },
+    {
+      "sec": "toilets",
+      "key": "babyFeeding",
+      "value": "yes",
+      "text": "A breastfeeding room and quiet areas; feeding is welcome everywhere.",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+        "readAt": "2026-10-08",
+        "quote": "For added privacy, quiet areas and a breastfeeding room are also available.",
+        "pageSha256": "c827fbfab53284aa"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "toilets",
+      "key": "babyChanging",
+      "value": null,
+      "text": "Baby changing: not stated on the pages read.",
+      "status": "unknown",
+      "note": "The pages read name a Changing Places toilet and accessible toilets but not baby-changing tables.",
+      "gap": {
+        "venue": "London Zoo",
+        "anchor": "Accessibility"
+      }
+    },
+    {
+      "sec": "transport",
+      "key": "station",
+      "value": "Camden Town",
+      "text": "Camden Town (Northern line) is the nearest Tube: a 16 minute, 0.8 mile walk. Regent's Park (24 minutes) and the 274 and 88 buses also serve it.",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/how-to-get-to-london-zoo",
+        "readAt": "2026-10-08",
+        "quote": "By Tube Camden Town (16 mins / 0.8 miles walk from the Zoo) Camden Town station (Northern Line) is the nearest Underground station to the Zoo.",
+        "pageSha256": "5e26be5d9eaebae6"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "transport",
+      "key": "parking",
+      "value": "yes",
+      "text": "Zoo car park: £16 in term time, £17.50 at weekends and in bank or school holidays, paid on the day.",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
+        "readAt": "2026-10-08",
+        "quote": "Parking is available in the Zoo’s car park at a cost of £16 in term time or £17.50 on weekends and bank or school holidays, payable on the day.",
+        "pageSha256": "2eb390649a853e57"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "transport",
+      "key": "blueBadge",
+      "value": "yes",
+      "text": "A disabled bay at the entrance; Blue Badge holders can also park on the Outer Circle for up to four hours.",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+        "readAt": "2026-10-08",
+        "quote": "There is a disabled parking bay in front of the entrance to the zoo, disabled visitors can also park on the Outer Circle for up to four hours with a Blue Badge.",
+        "pageSha256": "c827fbfab53284aa"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "food",
+      "key": "cafe",
+      "value": "yes",
+      "text": "The Terrace Restaurant, Peckish Parrot Café, a Barista Bar and kiosks.",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/opening-times",
+        "readAt": "2026-10-08",
+        "quote": "Coffees and hot drinks are available from our Barista Bar, next to The Terrace Restaurant , from 10am until the Zoo closes.",
+        "pageSha256": "7b3c4a016742d1ab"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "conditional, temporary or dated wording"
+      ]
+    },
+    {
+      "sec": "food",
+      "key": "picnic",
+      "value": "yes",
+      "text": "Outdoor picnic benches.",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/food-and-drink",
+        "readAt": "2026-10-08",
+        "quote": "Outdoor picnic benches are available.",
+        "pageSha256": "27c23a9bf7c06ff2"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "play",
+      "key": "playground",
+      "value": null,
+      "text": "An outdoor playground: not stated on the pages read.",
+      "status": "unknown",
+      "note": "ZooTown is the indoor play space."
+    },
+    {
+      "sec": "access",
+      "key": "wheelchair",
+      "value": "yes",
+      "text": "Most of the zoo is accessible for wheelchair users and those with limited mobility.",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+        "readAt": "2026-10-08",
+        "quote": "However, most of the Zoo is accessible for wheelchair users and those with limited mobility.",
+        "pageSha256": "c827fbfab53284aa"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)"
+      ]
+    },
+    {
+      "sec": "access",
+      "key": "steep-slopes",
+      "value": "no",
+      "text": "The slopes to the two tunnels are steep (relevant to pushchairs).",
+      "scope": "area",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+        "readAt": "2026-10-08",
+        "quote": "Please note that the slopes leading to the two tunnels in the Zoo are steep.",
+        "pageSha256": "c827fbfab53284aa"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)",
+        "a negative claim (can exclude a venue)",
+        "applies to part of the venue"
+      ]
+    },
+    {
+      "sec": "opening",
+      "key": "hours",
+      "value": "10:00 open; closing 17:00 until 23 Oct, then 16:00",
+      "text": "Opens 10am. Last entry 4pm and closing 5pm until 23 October; last entry 3pm and closing 4pm from 24 October to 12 February.",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/opening-times",
+        "readAt": "2026-10-08",
+        "quote": "Dates Opening Last Entry Closing 3 September - 23 October 2026 10am 4pm 5pm 24 October 2026 - 12 February 2027 10am 3pm 4pm",
+        "pageSha256": "7b3c4a016742d1ab"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "conflicts with the provider (Google) hours, which show 10am to 5pm every day and will be wrong from 24 October"
+      ],
+      "conflict": "the provider (Google) hours, which show 10am to 5pm every day and will be wrong from 24 October"
+    },
+    {
+      "sec": "pricing",
+      "key": "under3",
+      "value": "free",
+      "text": "Children under 3 go free.",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
+        "readAt": "2026-10-08",
+        "quote": "Children under the age of 3 years are entitled to free entry to both of our Zoos.",
+        "pageSha256": "2eb390649a853e57"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "a price or a free-entry claim (drives cost)"
+      ]
+    },
+    {
+      "sec": "pricing",
+      "key": "variable",
+      "value": {
+        "adult16to64": "£27.70 to £34.50",
+        "child3to15": "£19.40 to £24.10"
+      },
+      "text": "Online advance prices (before 10am on the day, no donation): adult £27.70 to £34.50 and child (3 to 15) £19.40 to £24.10 depending on the day; gate prices are higher.",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/london-zoo-tickets",
+        "readAt": "2026-10-08",
+        "quote": "Online advance ticket prices without donation Off Peak Weekday Standard Standard Weekend Peak Adult (age 16-64) £ 27.70 £ 31.80 £ 33.60 £ 34.50 Child (age 3-15) £ 19.40 £ 22.20 £ 23.50 £ 24.10",
+        "pageSha256": "e499af4ca5803c73"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "a price or a free-entry claim (drives cost)"
+      ],
+      "note": "Price depends on which of four day types the visit falls on, and the page does not say which dates are which. A total for a family is therefore not computed."
+    },
+    {
+      "sec": "considerations",
+      "key": "supervision",
+      "value": "under 16 with an adult",
+      "text": "Children under 16 are not admitted without an adult.",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/opening-times",
+        "readAt": "2026-10-08",
+        "quote": "Children under 16 will not be admitted without an adult.",
+        "pageSha256": "7b3c4a016742d1ab"
+      },
+      "status": "verified"
+    }
+  ]
+}

@@ -1,0 +1,298 @@
+{
+  "schemaVersion": 1,
+  "id": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+  "name": "Royal Air Force Museum London",
+  "category": "museum",
+  "builtOn": "2026-10-08",
+  "counts": {
+    "verified": 12,
+    "unknown": 1,
+    "review": 7
+  },
+  "facts": [
+    {
+      "sec": "activities",
+      "key": "playground",
+      "value": null,
+      "text": "A free outdoor playground with mini models of famous aircraft including a Spitfire. No age is given.",
+      "kind": "provision",
+      "label": "Outdoor aviation playground",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+        "readAt": "2026-10-08",
+        "quote": "Perfect for young aviators, our free playground features mini models of famous aircraft, including the legendary Spitfire.",
+        "pageSha256": "61bcf590914204f6"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "activities",
+      "key": "aeroplay",
+      "value": null,
+      "text": "AeroPlay is the museum's soft play area, in Hangar 4 next to the café. No age is given.",
+      "kind": "provision",
+      "label": "AeroPlay soft play",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/food-and-drink/",
+        "readAt": "2026-10-08",
+        "quote": "The Café is in Hangar 4, between the 4D Theatre and AeroPlay! the Museum’s soft play area",
+        "pageSha256": "5ea8971452d87924"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "activities",
+      "key": "hands-on",
+      "value": null,
+      "text": "Hands-on activities and family-friendly exhibits in every hangar.",
+      "kind": "provision",
+      "label": "Hands-on activities in every hangar",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+        "readAt": "2026-10-08",
+        "quote": "Discover hands-on activities and family-friendly exhibits in every hangar.",
+        "pageSha256": "61bcf590914204f6"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "activities",
+      "key": "age-specific",
+      "value": null,
+      "text": "Which ages the playground, AeroPlay and the hangars suit: not stated on the pages read.",
+      "status": "unknown",
+      "note": "The family page heading says \"from toddlers to teens\" but the permanent offer beneath it names no age, so it is not used as evidence."
+    },
+    {
+      "sec": "pushchair",
+      "key": "access",
+      "value": "yes",
+      "text": "Wide aisles in the hangars make access easy for wheelchairs and pushchairs.",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/",
+        "readAt": "2026-10-08",
+        "quote": "Wide aisles throughout the hangars make access easy for wheelchairs and pushchairs.",
+        "pageSha256": "23fa4a2183d3f7c3"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person"
+      ]
+    },
+    {
+      "sec": "toilets",
+      "key": "babyChanging",
+      "value": "yes",
+      "text": "Baby changing in every hangar; a Changing Places toilet in Hangar 2.",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+        "readAt": "2026-10-08",
+        "quote": "All our hangars have accessible toilets. All have baby changing facilities and in Hangar 2 you will find a Changing Places Toilet.",
+        "pageSha256": "7335b7c167cc3a0c"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "toilets",
+      "key": "toilets",
+      "value": "yes",
+      "text": "Toilets in every hangar (the page calls them accessible toilets).",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+        "readAt": "2026-10-08",
+        "quote": "All our hangars have accessible toilets.",
+        "pageSha256": "7335b7c167cc3a0c"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "transport",
+      "key": "station",
+      "value": "Colindale",
+      "text": "Near Colindale (Northern line, Edgware branch); the 303 bus stops outside the main entrance.",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/",
+        "readAt": "2026-10-08",
+        "quote": "Our London site is near Colindale Underground Station , on the Edgware branch of the Northern Line (black line).",
+        "pageSha256": "9a70f401649e6f40"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "transport",
+      "key": "parking",
+      "value": "yes",
+      "text": "On-site car park, charged: up to 3 hours £8.50, 3 to 6 hours £11, Blue Badge holders pay too.",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/",
+        "readAt": "2026-10-08",
+        "quote": "There is on-site parking available — see parking charges .",
+        "pageSha256": "9a70f401649e6f40"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "transport",
+      "key": "parkingFee",
+      "value": "£8.50 up to 3h; £11.00 3-6h",
+      "text": "Cars up to 3 hours £8.50; 3 to 6 hours £11.00.",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/",
+        "readAt": "2026-10-08",
+        "quote": "Cars up to 3 hours £8.50 per vehicle Cars 3-6 hours £11.00 per vehicle",
+        "pageSha256": "23fa4a2183d3f7c3"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person"
+      ]
+    },
+    {
+      "sec": "food",
+      "key": "cafe",
+      "value": "yes",
+      "text": "Hendon Kitchen, a family-friendly café, and Café Hangar 4.",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/food-and-drink/",
+        "readAt": "2026-10-08",
+        "quote": "Hendon Kitchen is a light and bright family-friendly café serving a hearty canteen style menu",
+        "pageSha256": "5ea8971452d87924"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "play",
+      "key": "playground",
+      "value": "yes",
+      "text": "Free outdoor playground.",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+        "readAt": "2026-10-08",
+        "quote": "Perfect for young aviators, our free playground features mini models of famous aircraft, including the legendary Spitfire.",
+        "pageSha256": "61bcf590914204f6"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "play",
+      "key": "softplay",
+      "value": "yes",
+      "text": "AeroPlay soft play in Hangar 4.",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/food-and-drink/",
+        "readAt": "2026-10-08",
+        "quote": "The Café is in Hangar 4, between the 4D Theatre and AeroPlay! the Museum’s soft play area",
+        "pageSha256": "5ea8971452d87924"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "access",
+      "key": "wheelchair",
+      "value": "yes",
+      "text": "Wide aisles in the hangars suit wheelchairs; manual wheelchairs and mobility scooters can be borrowed free.",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/",
+        "readAt": "2026-10-08",
+        "quote": "Wide aisles throughout the hangars make access easy for wheelchairs and pushchairs.",
+        "pageSha256": "23fa4a2183d3f7c3"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)"
+      ]
+    },
+    {
+      "sec": "access",
+      "key": "stepFree",
+      "value": "yes",
+      "text": "Step-free access around the site and lifts to upper levels.",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+        "readAt": "2026-10-08",
+        "quote": "We have step-free access around our site.",
+        "pageSha256": "7335b7c167cc3a0c"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)"
+      ]
+    },
+    {
+      "sec": "access",
+      "key": "sensory",
+      "value": "yes",
+      "text": "Free SEND family backpacks with sensory items; quiet rooms.",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+        "readAt": "2026-10-08",
+        "quote": "Pick up a free SEND family backpack filled with sensory items to support your visit.",
+        "pageSha256": "61bcf590914204f6"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)"
+      ]
+    },
+    {
+      "sec": "opening",
+      "key": "hours",
+      "value": "10:00-17:00 daily",
+      "text": "Open daily 10am to 5pm; last entry 4.30pm.",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/",
+        "readAt": "2026-10-08",
+        "quote": "We are open daily 10.00am - 5.00pm Last entry is 4.30pm.",
+        "pageSha256": "9a70f401649e6f40"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "opening",
+      "key": "theatre",
+      "value": "4D Theatre closed",
+      "text": "The 4D Theatre is temporarily closed for refurbishment until 31 December 2026.",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+        "readAt": "2026-10-08",
+        "quote": "4D Theatre Experience - 31 December 2026 Temporarily Closed for Refurbishment",
+        "pageSha256": "61bcf590914204f6"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person",
+        "conditional, temporary or dated wording"
+      ]
+    },
+    {
+      "sec": "pricing",
+      "key": "free",
+      "value": "free",
+      "text": "Admission to all areas is free; donations welcome. Parking is charged.",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/",
+        "readAt": "2026-10-08",
+        "quote": "Admission to all areas of the Museum is free, and donations are welcome.",
+        "pageSha256": "23fa4a2183d3f7c3"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "a price or a free-entry claim (drives cost)"
+      ]
+    },
+    {
+      "sec": "considerations",
+      "key": "supervision",
+      "value": "under 11 with an adult",
+      "text": "Children under 11 must be accompanied by an adult.",
+      "evidence": {
+        "url": "https://www.rafmuseum.org.uk/london/plan-your-day/",
+        "readAt": "2026-10-08",
+        "quote": "Children under 11 must be accompanied by an adult.",
+        "pageSha256": "23fa4a2183d3f7c3"
+      },
+      "status": "verified"
+    }
+  ]
+}

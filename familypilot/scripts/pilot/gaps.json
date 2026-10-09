@@ -1,0 +1,4 @@
+{
+  "note": "The gap list is empty. Gaps left by the first passes over the ten pilot venues were read (Science Museum getting here, London Zoo FAQ in full, NHM facilities, Discover annual-entry page); two more could not be: Battersea's operator site (enablelc.org) answered HTTP 403 and Gunnersbury's own Park link is a dead page (404). Neither is retried. Add entries here, each naming an official parent page and what to follow from it, to run a further bounded pass.",
+  "gaps": []
+}

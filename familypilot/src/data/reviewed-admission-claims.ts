@@ -824,6 +824,66 @@ export const REVIEWED_ADMISSION: ReviewedAdmissionFile = {
         "excerpt": "There's also a free splash pad that's a hit with younger visitors on warm days"
       },
       "reviewNotes": "The splash pad is free; water sports, boat hire and parking are charged. Must not be labelled free."
+    },
+    {
+      "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+      "venueName": "London Zoo",
+      "decision": "hold",
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/london-zoo-tickets",
+        "retrievedAt": "2026-10-08",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Online advance ticket prices without donation Off Peak Weekday Standard Standard Weekend Peak Adult (age 16-64) £ 27.70 £ 31.80 £ 33.60 £ 34.50 Child (age 3-15) £ 19.40 £ 22.20 £ 23.50 £ 24.10"
+      },
+      "reviewNotes": "Paid, and the price depends on which of four day types (off-peak weekday, standard, standard weekend, peak) the visit falls on; the page does not say which dates are which, and the pricing contract has no day-type tier. A cheapest-tier figure would understate a weekend visit, so nothing is published. Children under 3 are free."
+    },
+    {
+      "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+      "venueName": "Natural History Museum",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+          "checkedAt": "2026-10-08"
+        },
+        "conditions": [
+          "A free entry ticket is recommended to guarantee entry; weekends and school holidays can be busy with a queue",
+          "Paid exhibitions and events are charged"
+        ]
+      },
+      "evidence": {
+        "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
+        "retrievedAt": "2026-10-08",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Book a free entry ticket to the Museum to skip the queue when you arrive."
+      },
+      "reviewNotes": "Pilot profile (docs/pilot): proposed, awaiting a person. General entry is stated as free; the charged parts are extras, listed as conditions."
+    },
+    {
+      "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+      "venueName": "Science Museum",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.sciencemuseum.org.uk/",
+          "checkedAt": "2026-10-08"
+        },
+        "conditions": [
+          "A free ticket must be pre-booked",
+          "Wonderlab, Power Up, IMAX and the Bubble Explorers show are charged"
+        ],
+        "bookingRequired": true
+      },
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/",
+        "retrievedAt": "2026-10-08",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Book your free admission ticket now to visit the museum Donations welcome"
+      },
+      "reviewNotes": "Pilot profile (docs/pilot): proposed, awaiting a person. General entry is stated as free; the charged parts are extras, listed as conditions."
     }
+
   ]
 };

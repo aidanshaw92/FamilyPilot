@@ -1,0 +1,391 @@
+{
+  "schemaVersion": 1,
+  "id": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+  "name": "Science Museum",
+  "category": "museum",
+  "builtOn": "2026-10-08",
+  "counts": {
+    "review": 11,
+    "hypothesis": 1,
+    "verified": 12,
+    "unknown": 1
+  },
+  "facts": [
+    {
+      "sec": "activities",
+      "key": "the-garden",
+      "value": null,
+      "text": "The Garden is a hands-on play gallery for 3 to 6 year olds.",
+      "kind": "provision",
+      "minMonths": 36,
+      "maxMonthsExclusive": 84,
+      "label": "The Garden: hands-on water, light, sound and construction play, for 3 to 6",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+        "readAt": "2026-10-08",
+        "quote": "check out one of our family favourites and a must-visit for 3–6-year-olds, The Garden",
+        "pageSha256": "519ad9faf34b5181"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "says who a place is for (drives suitability)"
+      ]
+    },
+    {
+      "sec": "activities",
+      "key": "bubble-explorers",
+      "value": null,
+      "text": "Bubble Explorers is a live bubbles show for children 7 and under, at weekends and daily in school holidays (£4.50; free for 2 and under).",
+      "kind": "programme",
+      "minMonths": 0,
+      "maxMonthsExclusive": 96,
+      "label": "Bubble Explorers live show, for children 7 and under",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+        "readAt": "2026-10-08",
+        "quote": "Perfect for children aged 7 and under, Bubble Explorer s takes place on weekends and every day during school holidays.",
+        "pageSha256": "519ad9faf34b5181"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "says who a place is for (drives suitability)"
+      ]
+    },
+    {
+      "sec": "activities",
+      "key": "wonderlab",
+      "value": null,
+      "text": "Wonderlab is the interactive gallery for children 7 to 14 (a paid gallery).",
+      "kind": "provision",
+      "minMonths": 84,
+      "maxMonthsExclusive": 180,
+      "label": "Wonderlab: interactive science gallery, for 7 to 14",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/space-lovers-guide-science-museum",
+        "readAt": "2026-10-08",
+        "quote": "Visit Wonderlab (level 3), our interactive gallery for children aged 7-14",
+        "pageSha256": "2f9979e34b3d7056"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "says who a place is for (drives suitability)"
+      ]
+    },
+    {
+      "sec": "activities",
+      "key": "pattern-pod",
+      "value": null,
+      "text": "Pattern Pod (free multi-sensory play) probably suits under-7s.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+        "readAt": "2026-10-08",
+        "quote": "This free multi-sensory area allows children to play with water ripples without getting their feet wet",
+        "pageSha256": "519ad9faf34b5181"
+      },
+      "status": "hypothesis",
+      "note": "The page describes Pattern Pod with no age. It appears as a stop on a guide \"for families with children under seven\", which is the guide's audience, not a statement about the gallery."
+    },
+    {
+      "sec": "pushchair",
+      "key": "storage",
+      "value": "yes",
+      "text": "Free buggy parking in the Spare Room (level -1, opposite The Garden); a small free buggy park by Pattern Pod.",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/space-lovers-guide-science-museum",
+        "readAt": "2026-10-08",
+        "quote": "Buggy parking is available free of charge in the Spare Room, located opposite The Garden gallery on level -1.",
+        "pageSha256": "2f9979e34b3d7056"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "pushchair",
+      "key": "allowed",
+      "value": "yes",
+      "text": "Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+        "readAt": "2026-10-08",
+        "quote": "Buggies are allowed in the museum and galleries. However, in certain areas, you may be asked to leave your pram in a buggy park",
+        "pageSha256": "519ad9faf34b5181"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person",
+        "conditional, temporary or dated wording"
+      ]
+    },
+    {
+      "sec": "toilets",
+      "key": "toilets",
+      "value": "yes",
+      "text": "Toilets on every level (the page describes the accessible ones).",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+        "readAt": "2026-10-08",
+        "quote": "Accessible toilets are available on all levels of the museum.",
+        "pageSha256": "6f7f7ce4b8756f29"
+      },
+      "status": "verified",
+      "note": "Derived: accessible toilets are toilets. General toilet blocks are not described separately."
+    },
+    {
+      "sec": "toilets",
+      "key": "babyChanging",
+      "value": "yes",
+      "text": "Baby changing on every floor.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+        "readAt": "2026-10-08",
+        "quote": "Baby changing facilities are located throughout all floors of the museum.",
+        "pageSha256": "519ad9faf34b5181"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "toilets",
+      "key": "accessibleToilet",
+      "value": "yes",
+      "text": "Accessible toilets on every level.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+        "readAt": "2026-10-08",
+        "quote": "Accessible toilets are available on all levels of the museum.",
+        "pageSha256": "6f7f7ce4b8756f29"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "toilets",
+      "key": "changingPlaces",
+      "value": "yes",
+      "text": "A Changing Places toilet on level 0 next to the Hans Rausing Lecture Theatre. (The page also carries a notice about works on 14 to 25 September, already past.)",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+        "readAt": "2026-10-08",
+        "quote": "Changing Places Toilet on L0 next to the Hans Rausing Lecture Theatre.",
+        "pageSha256": "6f7f7ce4b8756f29"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "transport",
+      "key": "blueBadge",
+      "value": "yes",
+      "text": "A small number of disabled spaces on Exhibition Road; Blue Badge holders may park there for four hours between 08.30 and 18.30.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/getting-here",
+        "readAt": "2026-10-08",
+        "quote": "A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30.",
+        "pageSha256": "751a89c00ea27a0f"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "transport",
+      "key": "station",
+      "value": "South Kensington",
+      "text": "South Kensington (District, Circle, Piccadilly) is a 5 minute walk. The nearest step-free Tube is Knightsbridge, a 15 to 20 minute walk.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/getting-here",
+        "readAt": "2026-10-08",
+        "quote": "The nearest tube station is South Kensington. This is on the District, Circle and Piccadilly lines and is a 5-minute walk from the museum.",
+        "pageSha256": "751a89c00ea27a0f"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "transport",
+      "key": "parking",
+      "value": "no",
+      "text": "No car parking at the museum and local parking is very limited; nearest pay and display is in Prince Consort Road and Queen's Gate.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/getting-here",
+        "readAt": "2026-10-08",
+        "quote": "We do not have car parking facilities and local parking is very limited.",
+        "pageSha256": "751a89c00ea27a0f"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "a negative claim (can exclude a venue)"
+      ]
+    },
+    {
+      "sec": "food",
+      "key": "cafe",
+      "value": "yes",
+      "text": "Three cafés and a milkshake and ice cream bar.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/food-and-drink",
+        "readAt": "2026-10-08",
+        "quote": "There are lots of food and drink options at the Science Museum: We have three cafés, a milkshake/ice cream bar and picnic areas.",
+        "pageSha256": "9592f42f34105652"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "food",
+      "key": "picnic",
+      "value": "yes",
+      "text": "Bring your own food: dedicated picnic areas on levels -1, 2 and 3.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/food-and-drink",
+        "readAt": "2026-10-08",
+        "quote": "You are welcome to bring your own food and drink, which you can enjoy in one of our dedicated picnic areas",
+        "pageSha256": "9592f42f34105652"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "play",
+      "key": "playground",
+      "value": null,
+      "text": "No outdoor playground: not applicable to this venue; indoor play is The Garden and Pattern Pod.",
+      "status": "unknown",
+      "note": "Not an expected facility for a museum; shown only through the activities above."
+    },
+    {
+      "sec": "access",
+      "key": "stepFreeRoute",
+      "value": "yes",
+      "text": "A step-free route for families with under-7s links the toddler galleries.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+        "readAt": "2026-10-08",
+        "quote": "this free guide can be enjoyed at your own pace and follows a step-free route through the museum",
+        "pageSha256": "519ad9faf34b5181"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)"
+      ]
+    },
+    {
+      "sec": "access",
+      "key": "mezzanine",
+      "value": "no",
+      "text": "No step-free access to the mezzanine in Making the Modern World and Flight.",
+      "scope": "area",
+      "goodToKnow": true,
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+        "readAt": "2026-10-08",
+        "quote": "There is currently no step-free access to the mezzanine level in Making the Modern World and Flight galleries.",
+        "pageSha256": "6f7f7ce4b8756f29"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)",
+        "a negative claim (can exclude a venue)",
+        "conditional, temporary or dated wording",
+        "applies to part of the venue"
+      ]
+    },
+    {
+      "sec": "access",
+      "key": "wheelchairLoan",
+      "value": "yes",
+      "text": "Wheelchairs and folding stools can be borrowed from the Information Desk.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+        "readAt": "2026-10-08",
+        "quote": "You can also borrow a wheelchair or folding stool on the day by asking a member of staff at the Information Desk.",
+        "pageSha256": "6f7f7ce4b8756f29"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "an accessibility claim (high impact)"
+      ]
+    },
+    {
+      "sec": "opening",
+      "key": "hours",
+      "value": "10:00-18:00 daily",
+      "text": "Open daily 10:00 to 18:00; closed 24 to 26 December.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit",
+        "readAt": "2026-10-08",
+        "quote": "The museum is open daily from 10.00–18.00 (except for 24–26 December when the museum is closed).",
+        "pageSha256": "fda0be0a14a8efc3"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "pricing",
+      "key": "free",
+      "value": "free",
+      "text": "Free admission with a pre-booked ticket. Wonderlab, Power Up, IMAX and the Bubble Explorers show are charged.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/",
+        "readAt": "2026-10-08",
+        "quote": "Book your free admission ticket now to visit the museum Donations welcome",
+        "pageSha256": "cb5a4c44a53fed4f"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "a price or a free-entry claim (drives cost)"
+      ]
+    },
+    {
+      "sec": "pricing",
+      "key": "bubbleExplorers",
+      "value": "£4.50",
+      "text": "Bubble Explorers: £4.50 per person, free for children 2 and under.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+        "readAt": "2026-10-08",
+        "quote": "Tickets are £4.50 per person with free entry for children aged 2 and under.",
+        "pageSha256": "519ad9faf34b5181"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "a price or a free-entry claim (drives cost)"
+      ]
+    },
+    {
+      "sec": "considerations",
+      "key": "duration",
+      "value": 120,
+      "text": "A typical visit lasts about two hours.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit",
+        "readAt": "2026-10-08",
+        "quote": "You are welcome to stay in the museum as long as you like, but an average visit lasts around two hours.",
+        "pageSha256": "fda0be0a14a8efc3"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "considerations",
+      "key": "supervision",
+      "value": "under 12 with an adult",
+      "text": "Children under 12 must be with an adult aged 18 or over.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit",
+        "readAt": "2026-10-08",
+        "quote": "Children under 12 must be accompanied by an adult (aged 18+).",
+        "pageSha256": "fda0be0a14a8efc3"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "considerations",
+      "key": "building-noise",
+      "value": "noise",
+      "text": "New galleries are being built, so there may be some extra noise.",
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+        "readAt": "2026-10-08",
+        "quote": "We're currently building new galleries in the museum so there may be some additional noise during your visit.",
+        "pageSha256": "6f7f7ce4b8756f29"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person",
+        "conditional, temporary or dated wording"
+      ]
+    }
+  ]
+}

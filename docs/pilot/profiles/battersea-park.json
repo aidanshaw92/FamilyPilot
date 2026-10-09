@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "id": "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4",
+  "name": "Battersea Park",
+  "category": "park",
+  "builtOn": "2026-10-08",
+  "counts": {
+    "review": 4,
+    "verified": 2,
+    "unknown": 6,
+    "hypothesis": 2
+  },
+  "facts": [
+    {
+      "sec": "activities",
+      "key": "playground",
+      "value": null,
+      "text": "A playground for 4 to 14 year olds (swings, slides, exercise stations, trapeze bars, an activity rocker). The page is titled \"toddlers and juniors\" but gives 4 to 14.",
+      "kind": "provision",
+      "minMonths": 48,
+      "maxMonthsExclusive": 180,
+      "label": "Playground for children 4 to 14",
+      "evidence": {
+        "url": "https://www.wandsworth.gov.uk/leisure-and-culture/parks-and-open-spaces/childrens-playgrounds/battersea-park-playground-for-toddlers-and-juniors/",
+        "readAt": "2026-10-08",
+        "quote": "This playground is suitable for children 4 to 7, 8 to 14 years old.",
+        "pageSha256": "e5d00085ddc4510e"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "says who a place is for (drives suitability)",
+        "conflicts with the page's own title (\"for toddlers and juniors\"), which suggests younger children than the stated 4 to 14"
+      ],
+      "conflict": "the page's own title (\"for toddlers and juniors\"), which suggests younger children than the stated 4 to 14"
+    },
+    {
+      "sec": "activities",
+      "key": "childrens-zoo",
+      "value": null,
+      "text": "A children's zoo is listed among the park's features. Nothing else is said about it on the council pages.",
+      "kind": "provision",
+      "label": "Children's zoo",
+      "evidence": {
+        "url": "https://www.wandsworth.gov.uk/batterseapark",
+        "readAt": "2026-10-08",
+        "quote": "It has a riverside promenade, a large lake, many notable trees and ecological areas, children's play areas, a children's zoo, the Pump House gallery, ceremony venue and sports facilities.",
+        "pageSha256": "dfaac2e1e3436ec1"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "activities",
+      "key": "toddler-provision",
+      "value": null,
+      "text": "Anything for under-4s: not stated.",
+      "status": "unknown",
+      "note": "The only age-specific page is for 4 to 14."
+    },
+    {
+      "sec": "pushchair",
+      "key": "terrain",
+      "value": null,
+      "text": "Paths and pushchair suitability: not stated on the pages read.",
+      "status": "unknown",
+      "note": "A 200-acre park; the council page says nothing about surfaces.",
+      "gap": {
+        "venue": "Battersea Park",
+        "anchor": "Enable"
+      }
+    },
+    {
+      "sec": "toilets",
+      "key": "toilets",
+      "value": null,
+      "text": "Toilets and baby changing: not stated on the council pages.",
+      "status": "unknown",
+      "note": "The park is run by Enable on behalf of the council; its own pages may say.",
+      "gap": {
+        "venue": "Battersea Park",
+        "anchor": "Enable"
+      }
+    },
+    {
+      "sec": "transport",
+      "key": "entrances",
+      "value": "yes",
+      "text": "Pedestrian gates at Albert Bridge Road, Prince of Wales Drive and Queenstown Road.",
+      "evidence": {
+        "url": "https://www.wandsworth.gov.uk/batterseapark",
+        "readAt": "2026-10-08",
+        "quote": "Pedestrian access at Albert Bridge Road, Prince of Wales Drive and Queenstown Road (SW11 4NJ).",
+        "pageSha256": "dfaac2e1e3436ec1"
+      },
+      "status": "verified"
+    },
+    {
+      "sec": "transport",
+      "key": "parking",
+      "value": "yes",
+      "text": "Car park charges: up to one hour £3.40, rising to £31.40 for more than six hours on weekdays 9am to 5pm; weekends £3.40 up to three hours, £6.80 over.",
+      "evidence": {
+        "url": "https://www.wandsworth.gov.uk/parking/parking-zones/battersea-park-area-parking-zones/",
+        "readAt": "2026-10-08",
+        "quote": "Off-street car park charges: Cars and private vehicles (maximum 16 passenger seats and not exceeding 6.5 metres in length)",
+        "pageSha256": "d233dce9f5c4ab8b"
+      },
+      "status": "hypothesis",
+      "note": "The page is titled \"Battersea Park area parking zones\" and mixes the park's car park charges with controlled-parking-zone rules; it is not established that these are the park's own charges. Not shown as a fact.",
+      "conflict": "the page title, which reads as the controlled parking zone around the park rather than the park's own car park"
+    },
+    {
+      "sec": "transport",
+      "key": "station",
+      "value": null,
+      "text": "Nearest stations and buses: not stated on the pages read.",
+      "status": "unknown",
+      "note": "Battersea Park and Queenstown Road stations are well known but not named on these pages."
+    },
+    {
+      "sec": "food",
+      "key": "cafe",
+      "value": null,
+      "text": "Cafés: not stated on the council pages.",
+      "status": "unknown",
+      "gap": {
+        "venue": "Battersea Park",
+        "anchor": "Enable"
+      }
+    },
+    {
+      "sec": "play",
+      "key": "playground",
+      "value": "yes",
+      "text": "An open-access playground.",
+      "evidence": {
+        "url": "https://www.wandsworth.gov.uk/leisure-and-culture/parks-and-open-spaces/childrens-playgrounds/battersea-park-playground-for-toddlers-and-juniors/",
+        "readAt": "2026-10-08",
+        "quote": "Battersea Park Playground for toddlers and juniors Open access playground.",
+        "pageSha256": "e5d00085ddc4510e"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "conflicts with the age shown (4 to 14), against the \"toddlers\" in the title"
+      ],
+      "conflict": "the age shown (4 to 14), against the \"toddlers\" in the title"
+    },
+    {
+      "sec": "access",
+      "key": "wheelchair",
+      "value": null,
+      "text": "Wheelchair and pushchair access: not stated on the pages read.",
+      "status": "unknown"
+    },
+    {
+      "sec": "opening",
+      "key": "hours",
+      "value": "8am until dusk",
+      "text": "Opening times 8am until dusk; park gates open 6.30am to 10.30pm.",
+      "evidence": {
+        "url": "https://www.wandsworth.gov.uk/batterseapark",
+        "readAt": "2026-10-08",
+        "quote": "Opening times: 8am until dusk Access to park facilities: park gates open 6.30am to 10.30pm",
+        "pageSha256": "dfaac2e1e3436ec1"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "conditional, temporary or dated wording",
+        "conflicts with itself: two different opening statements on one page"
+      ],
+      "conflict": "itself: two different opening statements on one page"
+    },
+    {
+      "sec": "pricing",
+      "key": "free",
+      "value": null,
+      "text": "Free to enter (a public park).",
+      "status": "hypothesis",
+      "note": "No page read states an entry charge or \"free\". Not shown as a fact."
+    },
+    {
+      "sec": "considerations",
+      "key": "cascades",
+      "value": "restoration",
+      "text": "The historic waterfall is being restored with Lottery funding.",
+      "evidence": {
+        "url": "https://www.wandsworth.gov.uk/batterseapark",
+        "readAt": "2026-10-08",
+        "quote": "We're restoring the Cascades, Battersea Park’s historic waterfall.",
+        "pageSha256": "dfaac2e1e3436ec1"
+      },
+      "status": "review",
+      "reviewReasons": [
+        "not a fact type that may be accepted without a person"
+      ]
+    }
+  ]
+}

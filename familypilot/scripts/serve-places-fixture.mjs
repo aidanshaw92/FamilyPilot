@@ -156,6 +156,18 @@ function fixturePlace(index) {
  */
 const SCENARIO = process.env.FIXTURE_SCENARIO === 'realistic' ? 'realistic' : 'sparse';
 
+/**
+ *  - `pilot` (FIXTURE_SCENARIO=pilot, PILOT_FIXTURE=<file>): the ten venues of the venue-profile pilot, read from a LOCAL file built by
+ *    `scripts/pilot/build-pilot-fixture.cjs` (before / after states). That file carries provider content (names, coordinates,
+ *    hours) so it is never committed; this server still refuses to run in a production environment and still contacts no provider.
+ */
+const PILOT_CLAIMS =
+  process.env.FIXTURE_SCENARIO === 'pilot' && process.env.PILOT_FIXTURE && existsSync(process.env.PILOT_FIXTURE.replace(/\.json$/, '.claims.json'))
+    ? JSON.parse(readFileSync(process.env.PILOT_FIXTURE.replace(/\.json$/, '.claims.json'), 'utf8'))
+    : {};
+const PILOT_PLACES =
+  process.env.FIXTURE_SCENARIO === 'pilot' && process.env.PILOT_FIXTURE ? JSON.parse(readFileSync(process.env.PILOT_FIXTURE, 'utf8')) : null;
+
 const FULL_FACILITIES = { toilets: 'yes', babyChanging: 'yes', parking: 'yes', freeParking: 'yes' };
 
 function scenarioMetadata(id, over = {}) {
@@ -252,7 +264,7 @@ function realisticPlace(place, index) {
 }
 
 const BASE_PLACES = NAMES.map((_, index) => fixturePlace(index));
-const PLACES = SCENARIO === 'realistic' ? BASE_PLACES.map(realisticPlace) : BASE_PLACES;
+const PLACES = PILOT_PLACES ?? (SCENARIO === 'realistic' ? BASE_PLACES.map(realisticPlace) : BASE_PLACES);
 
 /**
  * Venues that exist only on the detail endpoint, for the cases the uniform fifteen cannot show.
@@ -425,6 +437,7 @@ const EDGE_BY_ID = new Map(EDGE_PLACES.map((place) => [place.familypilotId, plac
  * it is the only thing that distinguishes one edge venue from another.
  */
 function FOOD_SCENARIO_FOR(placeId) {
+  if (PILOT_PLACES) return 'outage'; // the pilot shows real venues; no restaurant lookup is run, and invented ones must not appear
   if (placeId === 'fp-google-FIXTUREedgeLongName') return 'outage';
   if (placeId === 'fp-google-FIXTUREedgeNoPhoto') return 'empty';
   return 'candidates';
@@ -547,7 +560,7 @@ const CATALOGUE_ONLY = [
   }
   return place;
 });
-const STORED_CATALOGUE = [...PLACES, ...CATALOGUE_ONLY];
+const STORED_CATALOGUE = PILOT_PLACES ? PLACES : [...PLACES, ...CATALOGUE_ONLY];
 const betweenModule = createRequire(import.meta.url)('../../server/places/lib/between.js');
 
 const SEARCH_PLACES =
@@ -759,6 +772,16 @@ const { handleAccountRoutes } = createRequire(import.meta.url)('./fixtures/fixtu
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
 
+  // Pilot mode: the trust panel ("How we know this") must show what THIS venue's claims say, with their sources and dates, read
+  // through the real feedback rules. The accounts fixture below seeds one generic set of claims for every venue, which would
+  // put a parking claim on a venue that has none.
+  if (PILOT_PLACES && url.pathname === '/api/planning/feedback' && req.method === 'GET') {
+    const rules = createRequire(import.meta.url)('../../server/feedback/_lib/rules.js');
+    const claims = (PILOT_CLAIMS[url.searchParams.get('venueId')] ?? []).map((c) => ({ fieldKey: c.fieldKey, valueJson: c.valueJson, checkedAt: c.checkedAt, sourceUrl: c.sourceUrl }));
+    const fields = rules.summarizeReports(claims, [], Date.now());
+    return sendJson(res, 200, { fields, questions: rules.selectQuestions(fields) });
+  }
+
   // Accounts: a local stand-in for Supabase Auth plus the real connections handler on an in-memory table, so the
   // first-run journey and invitations can be driven end to end offline. Reached only when the bundle under test was
   // built with EXPO_PUBLIC_SUPABASE_URL pointing here; otherwise nothing calls these paths.
@@ -845,12 +868,14 @@ const server = createServer(async (req, res) => {
 
   if (url.pathname === '/api/places/detail') {
     const id = url.searchParams.get('id');
-    const place = EDGE_BY_ID.get(id) ?? STORED_CATALOGUE.find((candidate) => candidate.familypilotId === id);
+    // Pilot mode serves real venues, whose ids can coincide with ids the edge-case venues borrow for admission tests: the
+    // pilot's own record must win, or a real venue would show an invented one.
+    const place = (PILOT_PLACES ? null : EDGE_BY_ID.get(id)) ?? STORED_CATALOGUE.find((candidate) => candidate.familypilotId === id);
     if (!place) return sendJson(res, 404, { error: 'Place not found', code: 'NOT_FOUND' });
     return sendJson(res, 200, {
       place,
       // Like the deployed endpoint, which sends the consumer projection both as `metadata` and on the place.
-      metadata: EDGE_METADATA[id] ?? place.familyMetadata ?? null,
+      metadata: (PILOT_PLACES ? null : EDGE_METADATA[id]) ?? place.familyMetadata ?? null,
       requestedPlaceId: id,
       canonicalIdentity: null,
       provider: 'google',
@@ -987,11 +1012,11 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`places fixture: ${PLACES.length} synthetic venues on http://localhost:${PORT}`);
+  console.log(PILOT_PLACES ? `places fixture (pilot): ${PLACES.length} real venues, provider content read from a local file (${process.env.PILOT_FIXTURE}) on http://localhost:${PORT}` : `places fixture: ${PLACES.length} synthetic venues on http://localhost:${PORT}`);
   if (existsSync(join(DIST, 'index.html'))) {
     console.log(`serving the exported bundle from ${DIST} on the same origin`);
   } else {
     console.log(`WARNING: no index.html under ${DIST}; run \`npm run build:web\` first`);
   }
-  console.log('No Google Places request is made by this server. Nothing here is Google content.');
+  console.log(PILOT_PLACES ? 'No provider request is made by this server. The pilot file holds provider content and is never committed.' : 'No Google Places request is made by this server. Nothing here is Google content.');
 });
