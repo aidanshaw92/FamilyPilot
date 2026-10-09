@@ -1,5 +1,7 @@
 # Step 1: final execution gate
 
+> **9 October: superseded by [`APPROVAL.md`](APPROVAL.md)** for the command (now 17 venues plus a Colne Valley withdraw-only statement), the expected claim counts (87) and the rollback notes. The analysis below still stands.
+
 Status: 8 October 2026, 22:25 UTC. **Nothing has been executed.** Everything here was computed offline or read from production with `select` only. I am waiting for your explicit authorisation.
 
 ## Recommendation: run the 18-venue version (Option C), not all 21

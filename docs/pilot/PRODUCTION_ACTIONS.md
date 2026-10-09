@@ -2,24 +2,9 @@
 
 Status: 2026-10-08. **Nothing on this page has been done.** No production claim has been written, no job queued, no cron changed, no paid provider called, by this work. Read-only checks were made against production at the end of the session and are stated with what they do and do not prove.
 
-## 1. Step 1: the stored-page re-extraction (reading window: Museum of the Home closes 10 October 00:36 UTC)
+## 1. Step 1: the stored-page re-extraction (deadline 10 October 00:36 UTC)
 
-**Superseded detail: [`step1/FINAL_GATE.md`](step1/FINAL_GATE.md) is the execution gate.** It lists the four withdrawals with quotations, the Colne Valley correction, the four re-quotes, the 21/19/18-venue comparison, the snapshot check, the no-network argument, the post-run checks (`step1/post-run-checks.sql`) and a tested rollback (`step1/rollback-2026-10-08.sql`). The earlier reconciliation is in `STEP1_RECONCILIATION.md`.
-
-**Recommended: 18 venues.** Frameless, Tate Modern and Chiswick House are left out because their only effects are a weaker quotation replacing a stronger one, or a weak new quotation. Result: **16 facts added, 1 corrected (Colne Valley parking), 4 withdrawn, 1 harmless re-quote, 88 active claims afterwards.**
-
-```sql
-select public.enqueue_reextract_jobs('official-source-rules-v6', 25, array[
-  'fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY','fp-google-ChIJKUrjG7wcdkgRbfTuKDBgWXI','fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc',
-  'fp-google-ChIJs_wmr0cWa0gRZpEqERRReXQ','fp-google-ChIJs_wmr0cWa0gRHr60qjwn1Mo','fp-google-ChIJ97pX3M0EdkgR8YFd4G1GZJ8',
-  'fp-google-ChIJczuZfc0adkgRc8X-u3ZiHcE','fp-google-ChIJf9LtmOcddkgRRv6MezIdvSM','fp-google-ChIJc2nSALkEdkgRkuoJJBfzkUI',
-  'fp-google-ChIJAVlhMIUCdkgRCJEgHVbITq4','fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI','fp-google-ChIJvS60MMEcdkgRSMlH5VxD51Y',
-  'fp-google-ChIJw1d-sUMFdkgRH2XN_U0Jt54','fp-google-ChIJN3hATcsSdkgRPscumUj6FqU','fp-google-ChIJF4YXjN4DdkgRvJe2-r5usvY',
-  'fp-google-ChIJq-jJARlxdkgRNLTE490EqVU','fp-google-ChIJkf4NDG8ddkgRXEINXuEbip8','fp-google-ChIJzZtNX7UcdkgRzycysU2TrhM'
-]);
-```
-
-Expected return 18; a second call returns 0. **Not executed. I am stopped until you authorise it.**
+**Approval-ready: [`step1/APPROVAL.md`](step1/APPROVAL.md).** It holds the 17-venue command, the Colne Valley withdraw-only statement (nothing is published about parking there), the four withdrawals, the 87 expected active claims, the 16 additions, and the rollback. The supporting analysis is `step1/FINAL_GATE.md`. **Not executed; waiting for your explicit instruction.**
 
 ## 2. Google photographs: switching new paid requests off
 
