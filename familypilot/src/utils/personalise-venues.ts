@@ -12,6 +12,8 @@ import { buildConfirmedMissingCaution, buildFacilityMissingCaution } from './fac
 import { activeFitPolicy, type FitPolicy } from '@/src/services/scoring/fit-policy';
 import type { FacilityType } from '@/src/types';
 import { familyNeedsStepFree } from './family-mobility';
+import { stepFreeOutcome, venueAccess } from '@/src/services/access/access-concepts';
+import type { MatchableVenueFacts } from '@/src/types/day-request';
 
 /**
  * The drive is longer than the limit in use. That limit starts as a default (onboarding no longer asks
@@ -32,15 +34,21 @@ export function buildDriveCaution(profile: FamilyProfile, driveMinutes: number):
 }
 
 /**
- * A child who uses a mobility aid makes step-free and wheelchair access matter, and the app holds no such
- * evidence to show a parent (it is collected internally and is not part of the facts a venue is matched
- * on). So the honest statement is that it is unknown, shown only to families it matters to. It is worded
- * about wheelchairs and mobility aids on purpose: Venue Detail's "Mostly step-free" row is a reading of
- * pushchair access, and a caution that said only "step-free isn't confirmed" would contradict it. Never a
- * score and never a "yes": wheelchair evidence must not be read as buggy-suitable, or the reverse.
+ * Three states for a family that needs step-free access (a child uses a wheelchair or mobility aid), and only three:
+ *   confirmed suitable     the venue's own claims say so: nothing to warn about
+ *   confirmed incompatible the venue's own claims say not: said as a breach (Family Fit, "Probably not"), not as a caution here
+ *   unknown                nobody has confirmed it: a prominent warning, because a stated non-negotiable that nobody has checked must
+ *                          never read as a verified suitable recommendation
+ * Worded about wheelchairs and mobility aids on purpose: Venue Detail's "Mostly step-free" row is a reading of pushchair access, and
+ * a caution that said only "step-free isn't confirmed" would contradict it. Never a score and never a "yes". The warning used to be
+ * shown for every venue, including ones that had confirmed access, which contradicted the card beneath it.
  */
-export function buildStepFreeCaution(profile: FamilyProfile): string | null {
-  return familyNeedsStepFree(profile) ? 'Wheelchair and mobility-aid access isn’t confirmed here' : null;
+export function buildStepFreeCaution(profile: FamilyProfile, facts?: Partial<MatchableVenueFacts> | null, policy: FitPolicy = activeFitPolicy()): string | null {
+  if (!familyNeedsStepFree(profile)) return null;
+  // The current policy keeps its original behaviour exactly (the warning for every venue). The three-state reading ships behind the
+  // same switch as the other access rules, so that merging it changes nothing a family sees until it is approved.
+  if (!policy.conflictsLast) return 'Wheelchair and mobility-aid access isn’t confirmed here';
+  return stepFreeOutcome(venueAccess(facts)) === 'unknown' ? 'Wheelchair and mobility-aid access isn’t confirmed here' : null;
 }
 
 /** The facilities the venue is CONFIRMED not to have (a claim says no), as opposed to the ones nobody has confirmed. */
@@ -95,7 +103,7 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, parentObs
         (policy ?? activeFitPolicy()).evidenceAware
           ? buildConfirmedMissingCaution(profile, confirmedAbsentFacilities(venue))
           : buildFacilityMissingCaution(profile, detail.facilities),
-        buildStepFreeCaution(profile),
+        buildStepFreeCaution(profile, venue.trustedFacts, policy ?? activeFitPolicy()),
         ...(familyScore.cautions ?? []),
       ].filter((caution): caution is string => Boolean(caution)),
     ),

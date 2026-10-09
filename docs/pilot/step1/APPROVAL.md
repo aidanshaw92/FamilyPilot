@@ -78,7 +78,7 @@ Active claims at the 21 venues: **87** (76 − 4 withdrawn − 1 Colne Valley + 
 | Victoria and Albert Museum | café: yes | Main Café, Patisserie, Garden Café with opening times |
 | Northala Fields | parking: yes | car parks are locked in accordance with park locking times |
 
-Nine of the sixteen are wheelchair-access "yes" claims written by the automatic v6 rule you approved on 7 October ("a venue-wide lift or step-free statement"). They are positive statements, not restrictions. If you would rather have a person review those nine first, say so and I will drop those nine venues' additions into the review queue instead of this run; the four withdrawals and the other seven additions do not depend on them.
+Nine of the sixteen are wheelchair-access "yes" claims written by the automatic v6 rule you approved ("a venue-wide lift or step-free statement"). They are positive statements, not restrictions. If you would rather have a person review those nine first, say so and I will drop those nine venues' additions into the review queue instead of this run; the four withdrawals and the other seven additions do not depend on them.
 
 ## Rollback
 
