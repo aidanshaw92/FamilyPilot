@@ -14,7 +14,7 @@ const {
   recordAliasPairs,
   getCanonicalIdentity,
 } = require('./canonical-venues');
-const { assertPlacesAllowed, dedupe } = require('./places-budget');
+const { reservePlacesCall, dedupe } = require('./places-budget');
 
 const SEARCH_FIELD_MASK = [
   'places.id',
@@ -209,7 +209,7 @@ function photoProxyPath(placeId, index, photo) {
  * request names the scope it bills against, and an unnamed scope is rejected by the gate.
  */
 async function googleRequest(url, options) {
-  assertPlacesAllowed({
+  await reservePlacesCall({
     scope: options.scope,
     reason: options.reason,
     subject: options.subject,

@@ -239,3 +239,12 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20261001090000_place_search_cache.sql
           psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20261001140000_places_usage_append_only.sql
           psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/places_cost_control_check.sql
+
+      - name: Apply the atomic Google cap reservation and assert it
+        # reserve_google_places_usage is the only way the daily cap is exact across serverless instances.
+        # The check asserts privileges and ceilings; the script races many separate connections for the last
+        # units and fails unless exactly the cap is allowed.
+        run: |
+          psql -v ON_ERROR_STOP=1 -f familypilot/supabase/migrations/20261009120000_places_atomic_reserve.sql
+          psql -v ON_ERROR_STOP=1 -f familypilot/supabase/checks/places_atomic_reserve_check.sql
+          bash familypilot/supabase/checks/places_atomic_reserve_concurrency.sh

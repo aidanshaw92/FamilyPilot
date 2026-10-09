@@ -290,6 +290,21 @@ function requireLedger() {
 
 const LEDGER_MAX_AGE_MS = 5 * 60_000;
 
+/**
+ * Opt-in. When true, every billable call RESERVES its units in the database in one atomic step
+ * (public.reserve_google_places_usage) before it is allowed, against the per-scope and total caps. This is the
+ * only mode in which the daily cap is exact across concurrent instances. It fails closed: if the database
+ * cannot be reached, or does not answer within ATOMIC_TIMEOUT_MS, the call is refused rather than counted
+ * locally. Call sites must use `reservePlacesCall`; the synchronous `assertPlacesAllowed` refuses in this
+ * mode so a call site that was not migrated cannot spend outside the cap.
+ */
+function atomicCapEnabled() {
+  const raw = String(process.env.GOOGLE_PLACES_ATOMIC_CAP || '').trim().toLowerCase();
+  return raw === 'true' || raw === '1';
+}
+
+const ATOMIC_TIMEOUT_MS = 3000;
+
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -313,7 +328,7 @@ function checkBudget(scope, units = 1) {
     windowCalls = 0;
   }
 
-  if (requireLedger() && (primedDay !== today() || now - primedAt > LEDGER_MAX_AGE_MS)) {
+  if (!atomicCapEnabled() && requireLedger() && (primedDay !== today() || now - primedAt > LEDGER_MAX_AGE_MS)) {
     throw new PlacesBudgetExceededError(
       scope,
       'the shared usage ledger has not been read recently and GOOGLE_PLACES_REQUIRE_LEDGER is on, ' +
@@ -548,16 +563,10 @@ function logBlockedCall(scope, reason, detail) {
  * @param {string} [args.routeMode] 'driving' | 'walking' | 'transit' | ... for a routing scope.
  * @returns {{ units: number, sku: string, billingUnit: string }} what was actually charged.
  */
-function assertPlacesAllowed({
-  scope,
-  reason,
-  subject,
-  jobId,
-  units,
-  origins,
-  destinations,
-  routeMode,
-}) {
+function gatePlacesCall(
+  { scope, reason, subject, jobId, units, origins, destinations, routeMode },
+  { persist },
+) {
   const verdict = describeScope(scope);
   if (!verdict.allowed) {
     logBlockedCall(scope, reason, verdict.reason);
@@ -587,9 +596,79 @@ function assertPlacesAllowed({
     destinations,
     routeMode,
   });
-  persistCall(scope, SCOPES[scope].sku, billableUnits);
+  if (persist) persistCall(scope, SCOPES[scope].sku, billableUnits);
 
   return { units: billableUnits, sku: SCOPES[scope].sku, billingUnit: SCOPES[scope].billingUnit };
+}
+
+/**
+ * Synchronous gate, for the default (non-atomic) mode. In atomic mode it REFUSES: the reservation is an
+ * asynchronous database step, so a caller that has not moved to `reservePlacesCall` must not be able to
+ * spend outside the cap.
+ */
+function assertPlacesAllowed(args) {
+  if (atomicCapEnabled()) {
+    const detail = 'GOOGLE_PLACES_ATOMIC_CAP is on and this call site has not reserved its units; use reservePlacesCall';
+    logBlockedCall(args && args.scope, args && args.reason, detail);
+    throw new PlacesBudgetExceededError(args && args.scope, detail);
+  }
+  return gatePlacesCall(args, { persist: true });
+}
+
+function withTimeout(promise, ms) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`no answer from the usage ledger within ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+async function reserveInLedger(scope, sku, units) {
+  const supabase = usageRecorder();
+  if (!supabase) throw new Error('no database client is configured');
+  const { data, error } = await withTimeout(
+    Promise.resolve(
+      supabase.rpc('reserve_google_places_usage', {
+        p_sku: sku,
+        p_scope: scope,
+        p_environment: environmentName(),
+        p_units: units,
+        p_scope_cap: strictCapEnv('GOOGLE_PLACES_MAX_CALLS_PER_DAY', DEFAULT_MAX_CALLS_PER_DAY),
+        p_total_cap: totalCapEnv(),
+      }),
+    ),
+    ATOMIC_TIMEOUT_MS,
+  );
+  if (error) throw new Error(error.message || 'reservation failed');
+  if (!data || typeof data.allowed !== 'boolean') throw new Error('unreadable reservation answer');
+  return data;
+}
+
+/**
+ * The gate every billable Google call passes through. Same contract as `assertPlacesAllowed`, but
+ * asynchronous. In the default mode it is exactly that function. With GOOGLE_PLACES_ATOMIC_CAP=true it
+ * additionally reserves the units in the database atomically and throws PlacesBudgetExceededError when the
+ * reservation is refused OR cannot be made (database error, no client, timeout): it never falls back to
+ * counting locally.
+ */
+async function reservePlacesCall(args) {
+  if (!atomicCapEnabled()) return assertPlacesAllowed(args);
+
+  const charge = gatePlacesCall(args, { persist: false });
+  let answer;
+  try {
+    answer = await reserveInLedger(args.scope, charge.sku, charge.units);
+  } catch (error) {
+    const detail = `the usage ledger could not confirm the reservation (${error instanceof Error ? error.message : 'unknown'}); refusing rather than spending uncapped`;
+    logBlockedCall(args.scope, args.reason, detail);
+    throw new PlacesBudgetExceededError(args.scope, detail);
+  }
+  if (!answer.allowed) {
+    const detail = `daily ${answer.reason === 'total_cap' ? 'total' : 'scope'} cap reached (${answer.scope_used} used for this scope, ${answer.total_used} in all)`;
+    logBlockedCall(args.scope, args.reason, detail);
+    throw new PlacesBudgetExceededError(args.scope, detail);
+  }
+  return charge;
 }
 
 // --- in-flight coalescing -----------------------------------------------------------------------
@@ -646,6 +725,7 @@ function placesBudgetSnapshot() {
     maxUnitsPerDay: strictCapEnv('GOOGLE_PLACES_MAX_CALLS_PER_DAY', DEFAULT_MAX_CALLS_PER_DAY),
     maxUnitsTotalPerDay: totalCapEnv(),
     requireLedger: requireLedger(),
+    atomicCap: atomicCapEnabled(),
     billingUnits: Object.fromEntries(
       Object.entries(SCOPES).map(([scope, config]) => [scope, config.billingUnit]),
     ),
@@ -658,6 +738,8 @@ module.exports = {
   PlacesDisabledError,
   PlacesBudgetExceededError,
   assertPlacesAllowed,
+  reservePlacesCall,
+  atomicCapEnabled,
   billableUnitsFor,
   primePlacesBudget,
   isPlacesEnabled,

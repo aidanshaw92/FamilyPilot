@@ -1,7 +1,7 @@
 const { estimateDriveMinutes } = require('./geo-utils');
 const { computeRouteMatrix } = require('./route-matrix');
 const {
-  assertPlacesAllowed,
+  reservePlacesCall,
   PlacesDisabledError,
   PlacesBudgetExceededError,
 } = require('../../places/lib/places-budget');
@@ -107,7 +107,7 @@ async function getDriveTimes(origin, destinations, deps = {}) {
     //
     // THIS IS THE LINE THAT KEEPS ROUTING OFF. It runs before any request is built, and the `journeys`
     // scope carries `requiresExplicitEnable`, so an absent flag is a refusal rather than an inheritance.
-    assertPlacesAllowed({
+    await reservePlacesCall({
       scope: 'journeys',
       reason: 'drive_times',
       subject: `${validDestinations.length} destinations`,
