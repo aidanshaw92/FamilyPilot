@@ -1,0 +1,72 @@
+[
+ {
+  "name": "Royal Air Force Museum London",
+  "level": "recommendation-ready",
+  "ready": true,
+  "missing": [],
+  "used": [
+   "familyFacilities.toilets=yes [auto-accepted]",
+   "familyFacilities.babyChanging=yes [auto-accepted]",
+   "familyFacilities.cafe=yes [auto-accepted]",
+   "pushchairSuitability=good [auto-accepted]",
+   "familyFacilities.parking=yes [auto-accepted]",
+   "familyFacilities.playground=yes [auto-accepted]",
+   "accessibility.accessibleToilet=yes [auto-accepted]",
+   "pricing:free"
+  ]
+ },
+ {
+  "name": "Horniman Museum and Gardens",
+  "level": "discoverable",
+  "ready": false,
+  "missing": [
+   "gettingThere"
+  ],
+  "used": [
+   "familyFacilities.babyChanging=yes [auto-accepted]",
+   "familyFacilities.playground=yes [auto-accepted]",
+   "familyFacilities.toilets=yes [auto-accepted]",
+   "accessibility.accessibleToilet=yes [auto-accepted]",
+   "familyFacilities.cafe=yes [auto-accepted]",
+   "pricing:free"
+  ]
+ },
+ {
+  "name": "Discover Children's Story Centre",
+  "level": "discoverable",
+  "ready": false,
+  "missing": [
+   "cost",
+   "gettingThere",
+   "familyEssentials"
+  ],
+  "used": [
+   "familyFacilities.cafe=yes [auto-accepted]",
+   "activity:Baby and toddler sensory space (ages 0 to 2)"
+  ]
+ },
+ {
+  "name": "London Zoo",
+  "level": "discoverable",
+  "ready": false,
+  "missing": [
+   "cost",
+   "gettingThere",
+   "childActivity",
+   "familyEssentials"
+  ],
+  "used": []
+ },
+ {
+  "name": "Science Museum",
+  "level": "discoverable",
+  "ready": false,
+  "missing": [
+   "cost",
+   "gettingThere",
+   "childActivity",
+   "familyEssentials"
+  ],
+  "used": []
+ }
+]

@@ -34,7 +34,7 @@ mapfile -t tooling < <(git diff --name-only origin/main...HEAD -- docs familypil
   familypilot/src/__tests__/pilot-ranking.analysis.test.ts familypilot/src/__tests__/pilot-readiness.test.ts \
   familypilot/src/__tests__/pilot-review.test.ts familypilot/src/__tests__/pilot-semantic.test.ts \
   familypilot/src/__tests__/review-workflow.test.ts familypilot/src/__tests__/main-parity.analysis.test.ts \
-  familypilot/src/__tests__/family-fit-v2.analysis.test.ts familypilot/src/__tests__/publish-batch.test.ts familypilot/src/__tests__/beta-five-readiness.test.ts familypilot/src/__tests__/google-cap-enforcement.analysis.test.ts)
+  familypilot/src/__tests__/family-fit-v2.analysis.test.ts familypilot/src/__tests__/publish-batch.test.ts familypilot/src/__tests__/beta-five-readiness.test.ts familypilot/src/__tests__/live-readiness.test.ts familypilot/src/__tests__/google-cap-enforcement.analysis.test.ts)
 restore "${tooling[@]}"
 git add -A
 git commit -m "Integration without unreviewed pilot facts or pilot tooling: product code only"
