@@ -37,7 +37,8 @@ describe('a publishing batch for approved rules and hours', () => {
   it('refuses a reading older than its window, an unknown venue, and an item that is not a rule', () => {
     expect(() => build({ items: [NHM], approver: 'human:aidan', asOf: '2026-12-01' })).toThrow(/past its 30-day window/);
     expect(() => build({ items: ['ChIJnope:opening.closure'], approver: 'human:aidan', asOf: AS_OF })).toThrow(/no pilot venue/);
-    expect(() => build({ items: ['ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.toilets'], approver: 'human:aidan', asOf: AS_OF })).toThrow(/yields no rule/);
+    expect(() => build({ items: ['ChIJV_iXMtcadkgRqBI84CY_crE:pricing.variable'], approver: 'human:aidan', asOf: AS_OF })).toThrow(/yields no rule, hours reading or publishable fact/);
+    expect(() => build({ items: ['ChIJp8y37pgCdkgRBeRSa2iabyI:play.playground'], approver: 'human:aidan', asOf: AS_OF })).toThrow(/yields no rule/); // 'adjacent' is not a claim
   });
 
   it('ids depend on the label, so a re-publication after a rollback does not collide with the withdrawn rows', () => {
@@ -57,5 +58,14 @@ describe('a publishing batch for approved rules and hours', () => {
     expect(rollback).toMatch(/set status = 'disputed'/);
     expect(rollback).not.toMatch(/\bdelete\b/i);
     for (const c of claims) expect(rollback).toContain(c.id);
+  });
+
+  it('a plain facility fact becomes one claim with the venue-stated value, valid 30 days', () => {
+    const [parking] = build({ items: ['ChIJSzwgydoDdkgRndnXVYQGXBI:transport.parking'], approver: 'human:aidan', asOf: AS_OF });
+    expect(parking.fieldKey).toBe('familyFacilities.parking');
+    expect(parking.value).toBe('no');
+    const [toilets] = build({ items: ['ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.toilets'], approver: 'human:aidan', asOf: AS_OF });
+    expect([toilets.fieldKey, toilets.value]).toEqual(['familyFacilities.toilets', 'yes']);
+    expect(toilets.validUntil).toBe('2026-11-07');
   });
 });

@@ -21,6 +21,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { rulesFor } = require('./rules.cjs');
 const { hoursFor } = require('./hours.cjs');
+const { CLAIM_MAP } = require('./profile-claims.cjs');
 
 const PROFILES = path.join(__dirname, '..', '..', '..', 'docs', 'pilot', 'profiles');
 const flag = (n) => (process.argv.includes(n) ? process.argv[process.argv.indexOf(n) + 1] : null);
@@ -55,7 +56,17 @@ function build({ items, approver, warnOnly = [], asOf, label = 'batch' }) {
       const { id, ...rest } = rule;
       found.push({ fieldKey: `hours.${id}`, value: rest, evidence, days: 45 });
     }
-    if (!found.length) throw new Error(`item ${item} yields no rule or hours reading (it may be a plain fact, not a rule)`);
+    // A plain facility fact (toilets, baby changing, a café, parking, step-free): one `familyFacilities.*` / `accessibility.*` claim, valid 30 days.
+    // `adjacent` (for example a playground next door) is not a claim and publishes nothing.
+    if (!found.length) {
+      const [sec, key] = field.split(/\.(.+)/);
+      const fact = profile.facts.find((f) => f.sec === sec && f.key === key);
+      const mapped = field === 'transport.parking' ? ['familyFacilities.parking', fact?.value === 'no' ? 'no' : 'yes'] : CLAIM_MAP[field];
+      if (fact && mapped && fact.value !== 'adjacent' && (fact.status === 'verified' || fact.status === 'review') && !fact.held && fact.evidence) {
+        found.push({ fieldKey: mapped[0], value: mapped[1], evidence: fact.evidence, days: 30 });
+      }
+    }
+    if (!found.length) throw new Error(`item ${item} yields no rule, hours reading or publishable fact (prices and activities ship as reviewed data in a code change, not as claims)`);
     for (const f of found) {
       if (!f.evidence?.quote || !f.evidence?.url || !f.evidence?.readAt) throw new Error(`${f.fieldKey}: no source, quotation or reading date`);
       if (addDays(f.evidence.readAt, f.days) < asOf) throw new Error(`${f.fieldKey}: the reading of ${f.evidence.readAt} is already past its ${f.days}-day window; it must be re-read first`);

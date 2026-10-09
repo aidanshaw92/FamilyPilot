@@ -1,4 +1,4 @@
-> **Correction, 9 October (afternoon):** the "8 of 10 after review" below counted facts that currently have nowhere to be published (stations, activity descriptions). Counting only cards that *can* be published, it is **6 of 10** (RAF, Discover, Horniman, Mudchute, Zoo, Science Museum), and wave 1 alone changes none. See `NINE_CARD_SHEET.md`.
+> **Correction, 9 October (afternoon):** the "8 of 10 after review" below counted facts that currently have nowhere to be published (stations, activity descriptions). Counting only cards that *can* be published, it is **5 of 10** (RAF, Discover, Horniman, Zoo, Science Museum; Mudchute's "playground" is adjacent and publishes nothing), and wave 1 alone changes none. See `NINE_CARD_SHEET.md`.
 
 # The ten pilot venues: what a family gets, and what is still missing
 

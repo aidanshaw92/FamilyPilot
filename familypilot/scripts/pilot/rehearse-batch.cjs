@@ -46,11 +46,15 @@ create table place_records(familypilot_place_id text primary key);
 create table venue_claims(id uuid primary key default gen_random_uuid(), familypilot_place_id text not null references place_records(familypilot_place_id) on delete cascade, field_key text not null, value_json jsonb not null, confidence text check (confidence in ('high','medium','low','unknown')), source_url text, evidence_excerpt text, source_type text, source_evidence_id uuid, checked_at date not null, valid_until date, approved_at timestamptz not null default now(), approved_by text not null, approved_from_draft_id uuid, status text not null default 'active' check (status in ('active','disputed','expired','superseded')), supersedes_claim_id uuid references venue_claims(id) on delete set null, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
 create unique index idx_venue_claims_one_active_per_field on venue_claims(familypilot_place_id, field_key) where status='active';
 ${venues.map((v) => `insert into place_records values ('${v}');`).join('\n')}
-${venues.map((v, i) => `insert into venue_claims(id, familypilot_place_id, field_key, value_json, confidence, source_url, checked_at, valid_until, approved_by, status) values (gen_random_uuid(), '${v}', 'familyFacilities.toilets', '"yes"', 'high', 'https://example.org', '2026-10-01', '2026-10-31', 'source_evidence_auto_v2', 'active'), (gen_random_uuid(), '${v}', 'familyFacilities.parking', '"no"', 'high', 'https://example.org', '2026-10-01', '2026-10-31', 'source_evidence_auto_v2', 'active');`).join('\n')}`);
+${venues.map((v, i) => `insert into venue_claims(id, familypilot_place_id, field_key, value_json, confidence, source_url, checked_at, valid_until, approved_by, status) values (gen_random_uuid(), '${v}', 'familyFacilities.babyChanging', '"yes"', 'high', 'https://example.org', '2026-10-01', '2026-10-31', 'source_evidence_auto_v2', 'active'), (gen_random_uuid(), '${v}', 'familyFacilities.cafe', '"yes"', 'high', 'https://example.org', '2026-10-01', '2026-10-31', 'source_evidence_auto_v2', 'active');`).join('\n')}`);
 
 const dump = () => JSON.parse(run(`select coalesce(json_agg(json_build_object('id', id, 'venueId', familypilot_place_id, 'fieldKey', field_key, 'valueJson', value_json, 'status', status, 'confidence', confidence, 'sourceUrl', source_url, 'evidenceExcerpt', evidence_excerpt, 'checkedAt', checked_at, 'validUntil', valid_until, 'approvedBy', approved_by) order by id), '[]') from venue_claims;`).out);
-const fingerprint = (rows) => crypto.createHash('md5').update(JSON.stringify(rows.filter((r) => !/^(rules|hours)\./.test(r.fieldKey)).map((r) => [r.id, r.fieldKey, r.status, JSON.stringify(r.valueJson)]))).digest('hex');
-const seen = (rows, venueId) => { const p = projectActiveClaimsToPayload(rows.filter((r) => r.venueId === venueId)); return { rules: (p[PROJECTED_RULES] ?? []).map((r) => r.id), hours: (p[PROJECTED_OFFICIAL_HOURS] ?? []).length }; };
+const batchIds = new Set(claims.map((c) => c.id));
+const claimsB = build({ items, approver, warnOnly, asOf, label: 'rehearsal-B' });
+for (const c of claimsB) batchIds.add(c.id);
+const fingerprint = (rows) => crypto.createHash('md5').update(JSON.stringify(rows.filter((r) => !batchIds.has(r.id)).map((r) => [r.id, r.fieldKey, r.status, JSON.stringify(r.valueJson)]))).digest('hex');
+const seen = (rows, venueId) => { const p = projectActiveClaimsToPayload(rows.filter((r) => r.venueId === venueId)); return { rules: (p[PROJECTED_RULES] ?? []).map((r) => r.id), hours: (p[PROJECTED_OFFICIAL_HOURS] ?? []).length, facts: p }; };
+const factOf = (payload, fieldKey) => fieldKey.split('.').reduce((o, k) => (o == null ? undefined : o[k]), payload);
 
 const before = dump();
 const fpBefore = fingerprint(before);
@@ -66,6 +70,8 @@ check(fingerprint(afterApply) === fpBefore, 'every pre-existing claim is unchang
 const live = venues.map((v) => [v, seen(afterApply, v)]);
 check(claims.filter((c) => c.fieldKey.startsWith('rules.')).every((c) => live.find(([v]) => v === c.venueId)[1].rules.includes(c.fieldKey.slice(6))), 'the app projects every rule in the batch');
 check(claims.filter((c) => c.fieldKey.startsWith('hours.')).length === 0 || live.some(([, s]) => s.hours > 0), 'the app projects the hours readings');
+const facilityClaims = claims.filter((c) => /^(familyFacilities|accessibility)\./.test(c.fieldKey));
+check(facilityClaims.every((c) => factOf(live.find(([v]) => v === c.venueId)[1].facts, c.fieldKey) === c.value), `the app projects every facility fact in the batch (${facilityClaims.length})`);
 
 console.log('apply again (must refuse)');
 const again = run(A.apply, true);
@@ -79,13 +85,12 @@ const afterRb = dump();
 check(afterRb.length === afterApply.length, 'no row was deleted (history is kept)');
 check(afterRb.filter((r) => claims.some((c) => c.id === r.id)).every((r) => r.status === 'disputed'), 'every batch row is now disputed');
 check(fingerprint(afterRb) === fpBefore, 'every pre-existing claim is unchanged after the rollback');
-check(venues.every((v) => { const s = seen(afterRb, v); return s.rules.length === 0 && s.hours === 0; }), 'the app now projects none of the batch (back to before)');
+check(venues.every((v) => { const s = seen(afterRb, v); return s.rules.length === 0 && s.hours === 0 && facilityClaims.filter((c) => c.venueId === v).every((c) => factOf(s.facts, c.fieldKey) !== c.value || /toilets/.test(c.fieldKey) && factOf(s.facts, c.fieldKey) === 'yes' && false); }), 'the app now projects none of the batch (back to before)');
 
 console.log('re-publish under a new label after a rollback');
-const claimsB = build({ items, approver, warnOnly, asOf, label: 'rehearsal-B' });
 const B = sqlFor(claimsB, approver, 'rehearsal-B');
 const rePub = run(B.apply);
-check(dump().filter((r) => r.status === 'active' && /^(rules|hours)\./.test(r.fieldKey)).length === claims.length, `re-publication works (${rePub.out.split('\n').pop()} active)`);
+check(dump().filter((r) => r.status === 'active' && claimsB.some((c) => c.id === r.id)).length === claims.length, `re-publication works (${rePub.out.split('\n').pop()} active)`);
 
 console.log('a batch whose venue is missing is refused');
 const missing = run(sqlFor([{ ...claimsB[0], venueId: 'fp-google-DOES-NOT-EXIST', id: crypto.randomUUID() }], approver, 'x').apply, true);

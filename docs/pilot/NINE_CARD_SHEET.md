@@ -87,17 +87,18 @@ How to answer: reply "1 approve, 2 approve, 3 warning only, …" (or Unknown / E
 
 **Wave 1 is about safety, not readiness.** It stops the app sending a family to a closed place or running past closing, and warns about buggies. **It does not by itself make any venue newly "recommendation-ready"** (my internal rating: opening hours, cost, a way there, something for children, a toilet). Today only the Royal Air Force Museum meets it.
 
-The app does not hide venues below that rating; they appear with gaps named as "to check". The rating shows what a *genuinely useful* beta needs on top of wave 1. Of the other 87 cards, **these 14 lift five more venues to ready or better** (counted only on cards that can actually be published; I previously counted some that have nowhere to be published, so my earlier "8 of 10" was too high; the true figure is 6 of 10; with every publishable card approved the Zoo and Science Museum reach "highly personalised" too):
+The app does not hide venues below that rating; they appear with gaps named as "to check". The rating shows what a *genuinely useful* beta needs on top of wave 1. **Correction (second one):** I earlier said 6 of 10. That counted Mudchute's playground card, whose value is "adjacent" (a playground next door), which publishes nothing. Counting only cards that can actually be published, **12 more cards lift four more venues, so 5 of 10 are ready** (RAF already, plus Horniman, Discover, London Zoo, Science Museum):
 
-| Venue | Cards still needed (wave) | Result |
+| Venue | Cards still needed (channel) | Result |
 |---|---|---|
-| Horniman | parking (3) | recommendation-ready |
-| Mudchute | parking, playground (3) | recommendation-ready |
-| Discover | price (2), parking, toilets (3) | recommendation-ready |
-| London Zoo | price (2), parking, Zootown activity, toilets (3) | recommendation-ready |
-| Science Museum | price (2), parking, Garden or Wonderlab activity, toilets (3) | recommendation-ready |
+| Horniman | parking (claim) | recommendation-ready |
+| Discover | price (reviewed price data in a code change), parking, toilets (claims) | recommendation-ready |
+| London Zoo | price (code change), parking, toilets (claims), Zootown activity (code change) | recommendation-ready |
+| Science Museum | price (code change), parking, toilets (claims), Garden activity (code change) | recommendation-ready |
 | Royal Air Force Museum | none | already ready |
 
-That is 3 expert cards (the prices) and 11 reviewer cards: **wave 1 plus these 14 = 23 of the 96 decisions** for a six-venue useful beta.
+That is 3 expert cards (the prices) and 9 reviewer cards: **wave 1 (9) + 12 = 21 decisions** (of the 96) for a five-venue useful beta. The other 75 decisions follow later.
 
-**The four that cannot become ready yet, whatever is approved:** Natural History Museum and Gunnersbury (what children do there has no claim type to hold it), Babylon Park and Battersea Park (no confirmed price, and Battersea's way in and facilities are unconfirmed). They stay discoverable with unknowns named, which is honest. Making them ready needs new evidence or a new claim type, not a decision. **I suggest the first families see six venues recommended and four listed as "needs checking".**
+**Not reachable by any approval yet:** Mudchute (what children do there has nothing publishable), Natural History Museum and Gunnersbury (the same), Babylon Park and Battersea Park (no confirmed price; Battersea's way in and facilities unconfirmed). They stay discoverable with unknowns named. Mudchute's parking card is still worth deciding later; it just does not make the venue ready.
+
+**How each approved card reaches families (three channels, none automatic):** rules, hours and plain facts go in a claims batch (`publish-batch.cjs`, rehearsed on a throwaway database: 23 claims, 16 checks, including refusal of a second run and a full rollback); prices and activities go in a reviewed-data code change (`emit-reviewed-data.cjs`), which is a separate pull request you approve and deploy like #191. See `WAVE_APPROVAL_WORKFLOW.md`.
