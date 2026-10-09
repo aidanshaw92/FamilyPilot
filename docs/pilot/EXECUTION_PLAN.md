@@ -74,7 +74,7 @@ All of: (a) at least three timed review sessions with at least two reviewers, ti
 1. [ ] Authorise Step 1: Run A, then Run B (`step1/APPROVAL_PACKAGE.md`). Deadline 10 Oct 00:36 UTC.
 2. [ ] Set `GOOGLE_PLACES_PHOTOS_ENABLED=false` in Vercel Production and Preview, redeploy, tell me. (I cannot read or set Vercel from here: 403.)
 3. [ ] Decide the five (`DECISION_SHEET_FIVE.md`) or nominate a delegate; they are decided together with Discover's pushchair exception.
-4. [ ] Approve merging and deploying #191 at `77431e2` (`beta/MERGE_READINESS_191.md`).
+4. [ ] Approve merging and deploying #191 at `e2a7a61` (`beta/MERGE_READINESS_191.md`).
 5. [ ] **Check Supabase → Authentication → SMTP Settings: is custom SMTP enabled?** If not, invitations to families will not arrive (built-in email only reaches your own organisation's members). Then the settings in `beta/AUTH_VERIFICATION.md`: sign-ups off, Site URL, redirect URL, OTP expiry 24h. **Do these after the deploy in item 4**, not before: the old app cannot handle an invitation link.
 6. [ ] Name a person for the real-device pass (iPhone and Android) and for the expert cards.
 

@@ -1,6 +1,6 @@
 # PR #191 (inert integration): verified merge candidate
 
-9 October 2026. Candidate: `pilot/integration-inert` @ `77431e2`, draft, based on `main` `b74a4c8`. **Not merged, not deployed.** Awaiting your approval of exactly this commit.
+9 October 2026. Candidate: `pilot/integration-inert` @ `e2a7a61`, draft, based on `main` `b74a4c8`. **Not merged, not deployed.** Awaiting your approval of exactly this commit.
 
 ## Verified on this exact commit
 
@@ -8,13 +8,13 @@
 |---|---|
 | Type check (`tsc --noEmit`) | clean |
 | Full production build (`expo export`) | succeeds |
-| Full test suite, with the build present | **3383 of 3383 pass**, including the three static-route checks that need a build |
+| Full test suite, with the build present | **3384 of 3384 pass**, including the three static-route checks that need a build |
 | **Flags off preserves today's recommendations** | Home output for 14 households × 2 evidence states (headline, reasons, to-check lists, cautions, factors, score and order for each venue): **byte-identical to `main`** (115,757 bytes, `cmp` equal) |
 | **No unreviewed pilot data in the shipped bundle** | The 218 proposed pilot strings (our paraphrases and the stored quotations, from the two proposed data files and the 99-item review queue) are searched for in all 58 bundle files: **0 found**. Positive control: 42 of 49 strings from `main`'s own data file *are* found by the same scan, so the scan works. `src/data/` is identical to `main`. No `EXPO_PUBLIC_FAMILY_FIT_V2` flag text is present (unset flags compile away) |
 | **No production data changes on deployment** | The diff against `main` has **no migration, no `vercel.json` or cron change, no seed or build step that writes**. Changed server files only read claims (`claims-store`, `consumer-projection`, `official-hours`, `venue-rules`) and change nothing until a rule or hours claim exists. The one changed API function is `feedback.js`: a new branch that logs a scrubbed line and writes nothing |
 | **Invitation, password and recovery** | 40 checks in a real browser against real Supabase Auth (GoTrue): `AUTH_VERIFICATION.md` |
 | Choose-password screen | Seen in the browser (`03-choose-password`), at 390 px, on this candidate |
-| CI on the PR head | `privilege-model` green; `build-and-test` and `capture` were still running when I wrote this. I will report them before you decide |
+| CI on the PR head | See the table in the approval request: `build-and-test`, `privilege-model` and `capture` on this exact commit |
 
 ## What this PR changes for a family (everything else is identical to `main`)
 
@@ -35,7 +35,7 @@
 | Who may send? | A signed-in, non-anonymous account only (same check as the other feedback calls). Unsigned, anonymous or unknown token: 401 |
 | What is stored? | Nothing. One log line, `client-error {…}`, without the account id. Allow-listed fields only; a report cannot add fields |
 | Rate limiting and abuse | 5 distinct reports per session on the device; the server logs at most 10 a minute per account **per function instance** (best effort, enough to stop a loop filling the logs; each report is capped at about 1.5 KB). Because accounts are invitation-only the abuse surface is the invited families |
-| Residual risk | A name the family never typed into the profile (a friend's name in a plan title, for example) is not known to the scrubber. Messages are generic error text in practice, and the report holds no plan content, but this is the one case I cannot rule out |
+| Residual risk (free-text names) | The scrubber knows every name the app holds: the parent, family and children in the profile, the home area, the account email, and the labels of the families in plans (a connected family's first name). It cannot know a name typed somewhere the app does not keep as a name (a plan title, a feedback comment). Neither is ever put into an error message by the app, and a report holds no plan or comment content, only runtime error text, so a name could reach a report only by being echoed in a runtime error's own wording (for example a data-parsing error quoting a value). I judge that **acceptable for ten to thirty invited families**: the reports go to a log only you can read, hold at most one error text each, and a leak would be one name in a log line. **Not acceptable at public scale** without a stricter allow-list of message text |
 
 ## Beta safeguards on the shared production database (Priority 7)
 
