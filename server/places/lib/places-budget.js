@@ -278,6 +278,13 @@ function totalCapEnv() {
   return strictCapEnv('GOOGLE_PLACES_MAX_TOTAL_PER_DAY', 0);
 }
 
+/** Optional ceiling across every scope for the UTC calendar month. Enforced only in atomic mode. */
+function monthCapEnv() {
+  const raw = process.env.GOOGLE_PLACES_MAX_TOTAL_PER_MONTH;
+  if (raw === undefined || raw === '') return null;
+  return strictCapEnv('GOOGLE_PLACES_MAX_TOTAL_PER_MONTH', 0);
+}
+
 /**
  * Opt-in. When true, a billable call is refused unless this process has read the shared ledger for
  * today within LEDGER_MAX_AGE_MS. Without it a failed or missing ledger read silently leaves each
@@ -635,6 +642,7 @@ async function reserveInLedger(scope, sku, units) {
         p_units: units,
         p_scope_cap: strictCapEnv('GOOGLE_PLACES_MAX_CALLS_PER_DAY', DEFAULT_MAX_CALLS_PER_DAY),
         p_total_cap: totalCapEnv(),
+        p_month_cap: monthCapEnv(),
       }),
     ),
     ATOMIC_TIMEOUT_MS,
@@ -664,7 +672,8 @@ async function reservePlacesCall(args) {
     throw new PlacesBudgetExceededError(args.scope, detail);
   }
   if (!answer.allowed) {
-    const detail = `daily ${answer.reason === 'total_cap' ? 'total' : 'scope'} cap reached (${answer.scope_used} used for this scope, ${answer.total_used} in all)`;
+    const which = answer.reason === 'month_cap' ? 'monthly' : answer.reason === 'total_cap' ? 'daily total' : 'daily scope';
+    const detail = `${which} cap reached (${answer.scope_used} used for this scope today, ${answer.total_used} today in all, ${answer.month_used} this month)`;
     logBlockedCall(args.scope, args.reason, detail);
     throw new PlacesBudgetExceededError(args.scope, detail);
   }
@@ -724,6 +733,7 @@ function placesBudgetSnapshot() {
     maxUnitsPerWindow: strictCapEnv('GOOGLE_PLACES_MAX_CALLS_PER_WINDOW', DEFAULT_MAX_CALLS_PER_WINDOW),
     maxUnitsPerDay: strictCapEnv('GOOGLE_PLACES_MAX_CALLS_PER_DAY', DEFAULT_MAX_CALLS_PER_DAY),
     maxUnitsTotalPerDay: totalCapEnv(),
+    maxUnitsTotalPerMonth: monthCapEnv(),
     requireLedger: requireLedger(),
     atomicCap: atomicCapEnabled(),
     billingUnits: Object.fromEntries(

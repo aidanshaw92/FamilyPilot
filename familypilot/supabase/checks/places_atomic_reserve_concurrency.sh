@@ -7,6 +7,7 @@
 #   1. total cap       200 callers across 4 scopes, per-scope cap 30, total cap 50  -> exactly 50 allowed, no scope above 30
 #   2. scope cap only  100 callers on one scope, cap 50                              -> exactly 50 allowed
 #   3. element units   20 callers of 25 units each, cap 100                          -> exactly 4 allowed (a ceiling, not a trigger)
+#   4. month cap       100 callers, 30 units already used earlier this month, month cap 80  -> exactly 50 allowed
 #   every phase       the stored sum equals what was allowed (a refusal never counts)
 #   control           the same race using read-then-write in separate statements -> reported, NOT asserted. It is
 #                     expected to overshoot; it shows that the race this function exists to close is real.
@@ -17,7 +18,7 @@ trap 'rm -rf "$WORK"' EXIT
 q() { psql -v ON_ERROR_STOP=1 -Atq -v client_min_messages=warning "$@"; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
-reset() { q -c "delete from public.google_places_usage where environment='$ENVNAME' and usage_day=current_date"; }
+reset() { q -c "delete from public.google_places_usage where environment='$ENVNAME' and usage_day >= date_trunc('month', current_date)::date"; }
 stored_total() { q -c "select coalesce(sum(calls),0) from public.google_places_usage where environment='$ENVNAME' and usage_day=current_date"; }
 stored_scope_max() { q -c "select coalesce(max(s),0) from (select sum(calls) s from public.google_places_usage where environment='$ENVNAME' and usage_day=current_date group by scope) t"; }
 
@@ -26,7 +27,8 @@ cat > "$WORK/caller.sh" <<'CALLER'
 #!/usr/bin/env bash
 i=$1; units=$2; scap=$3; tcap=$4; shift 4
 scopes=("$@"); s=${scopes[$(( i % ${#scopes[@]} ))]}
-psql -Atq -c "select public.reserve_google_places_usage('sku_$s', '$s', '$ENVNAME', $units, $scap, $tcap)->>'allowed'" || echo error
+mcap=${MONTH_CAP:-null}
+psql -Atq -c "select public.reserve_google_places_usage('sku_$s', '$s', '$ENVNAME', $units, $scap, $tcap, $mcap)->>'allowed'" || echo error
 CALLER
 cat > "$WORK/naive.sh" <<'NAIVE'
 #!/usr/bin/env bash
@@ -62,6 +64,15 @@ reset; allowed=$(race 20 25 100 null journeys)
 echo "allowed=$allowed stored=$(stored_total)"
 [ "$allowed" = 4 ] || fail "expected exactly 4 allowed, got $allowed"
 [ "$(stored_total)" = 100 ] || fail "stored total is not 100"
+
+echo "== 4. month cap: 100 callers, 30 already used on the 1st of the month, month cap 80"
+reset
+q -c "insert into public.google_places_usage (usage_day, sku, scope, environment, calls) values (date_trunc('month', current_date)::date, 'sku_prior', 'prior', '$ENVNAME', 30) on conflict (usage_day, sku, scope, environment) do update set calls = 30"
+allowed=$(MONTH_CAP=80 race 100 1 null null details)
+month_total=$(q -c "select coalesce(sum(calls),0) from public.google_places_usage where environment='$ENVNAME' and usage_day >= date_trunc('month', current_date)::date")
+echo "allowed=$allowed month_total=$month_total"
+[ "$allowed" = 50 ] || fail "expected exactly 50 allowed under the month cap, got $allowed"
+[ "$month_total" = 80 ] || fail "month total is not 80"
 
 echo "== control (informational, not asserted): read-then-write, 100 callers, cap 50"
 reset

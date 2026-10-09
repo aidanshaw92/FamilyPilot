@@ -12,9 +12,10 @@ const budgetPath = '../../../server/places/lib/places-budget.js';
 const adminPath = '../../../server/enrichment/_lib/supabase-admin.js';
 type Budget = typeof import('../../../server/places/lib/places-budget.js');
 
-const ENV = ['GOOGLE_PLACES_ENABLED', 'GOOGLE_PLACES_DETAILS_ENABLED', 'GOOGLE_PLACES_DISCOVERY_ENABLED', 'GOOGLE_PLACES_ALLOW_LIVE_TEST', 'GOOGLE_PLACES_MAX_CALLS_PER_DAY', 'GOOGLE_PLACES_MAX_CALLS_PER_WINDOW', 'GOOGLE_PLACES_MAX_TOTAL_PER_DAY', 'GOOGLE_PLACES_ATOMIC_CAP', 'VERCEL_ENV'];
+const ENV = ['GOOGLE_PLACES_ENABLED', 'GOOGLE_PLACES_DETAILS_ENABLED', 'GOOGLE_PLACES_DISCOVERY_ENABLED', 'GOOGLE_PLACES_ALLOW_LIVE_TEST', 'GOOGLE_PLACES_MAX_CALLS_PER_DAY', 'GOOGLE_PLACES_MAX_CALLS_PER_WINDOW', 'GOOGLE_PLACES_MAX_TOTAL_PER_DAY', 'GOOGLE_PLACES_MAX_TOTAL_PER_MONTH', 'GOOGLE_PLACES_ATOMIC_CAP', 'VERCEL_ENV'];
 let saved: Record<string, string | undefined> = {};
 let rows: Record<string, number>;
+let priorDaysThisMonth = 0;
 type Mode = 'ok' | 'error' | 'throw' | 'hang' | 'garbage' | 'noclient';
 let mode: Mode;
 let rpcCalls: Array<{ name: string; args: Record<string, unknown> }>;
@@ -32,11 +33,12 @@ function installDb() {
       // The same rule as the SQL function: check and increment in one step.
       const scope = a.p_scope as string; const units = a.p_units as number;
       const scopeUsed = rows[scope] ?? 0; const totalUsed = Object.values(rows).reduce((x, y) => x + y, 0);
-      const scopeCap = a.p_scope_cap as number | null; const totalCap = a.p_total_cap as number | null;
+      const scopeCap = a.p_scope_cap as number | null; const totalCap = a.p_total_cap as number | null; const monthCap = a.p_month_cap as number | null; const monthUsed = totalUsed + priorDaysThisMonth;
       if (scopeCap !== null && scopeUsed + units > scopeCap) return Promise.resolve({ data: { allowed: false, reason: 'scope_cap', scope_used: scopeUsed, total_used: totalUsed }, error: null });
       if (totalCap !== null && totalUsed + units > totalCap) return Promise.resolve({ data: { allowed: false, reason: 'total_cap', scope_used: scopeUsed, total_used: totalUsed }, error: null });
+      if (monthCap !== null && monthUsed + units > monthCap) return Promise.resolve({ data: { allowed: false, reason: 'month_cap', scope_used: scopeUsed, total_used: totalUsed, month_used: monthUsed }, error: null });
       rows[scope] = scopeUsed + units;
-      return Promise.resolve({ data: { allowed: true, reason: 'ok', scope_used: scopeUsed + units, total_used: totalUsed + units }, error: null });
+      return Promise.resolve({ data: { allowed: true, reason: 'ok', scope_used: scopeUsed + units, total_used: totalUsed + units, month_used: monthUsed + units }, error: null });
     },
   };
   req.cache[resolved] = { id: resolved, filename: resolved, loaded: true, exports: { getSupabaseAdmin: () => (mode === 'noclient' ? null : client) }, children: [], paths: [], path: '' } as never;
@@ -51,7 +53,7 @@ async function spend(b: Budget, scope: string, n: number) {
 beforeEach(() => {
   saved = Object.fromEntries(ENV.map((k) => [k, process.env[k]]));
   Object.assign(process.env, { GOOGLE_PLACES_ENABLED: 'true', GOOGLE_PLACES_DETAILS_ENABLED: 'true', GOOGLE_PLACES_DISCOVERY_ENABLED: 'true', GOOGLE_PLACES_ALLOW_LIVE_TEST: 'true', GOOGLE_PLACES_MAX_CALLS_PER_DAY: '50', GOOGLE_PLACES_MAX_CALLS_PER_WINDOW: '100000', GOOGLE_PLACES_MAX_TOTAL_PER_DAY: '60', GOOGLE_PLACES_ATOMIC_CAP: 'true' });
-  rows = {}; mode = 'ok'; rpcCalls = []; installDb();
+  rows = {}; priorDaysThisMonth = 0; mode = 'ok'; rpcCalls = []; installDb();
   vi.spyOn(console, 'log').mockImplementation(() => {}); vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
 afterEach(() => { for (const k of ENV) { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; } vi.restoreAllMocks(); vi.useRealTimers(); });
@@ -77,9 +79,22 @@ describe('atomic cap on', () => {
     expect(results.reduce<number>((x, y) => x + y, 0)).toBe(50);
   });
 
+  it('the monthly ceiling counts earlier days and refuses with a month message', async () => {
+    process.env.GOOGLE_PLACES_MAX_TOTAL_PER_MONTH = '900';
+    priorDaysThisMonth = 880;
+    const a = instance();
+    expect(await spend(a, 'details', 40)).toBe(20);
+    await expect(a.reservePlacesCall({ scope: 'details', reason: 'test' })).rejects.toThrow(/monthly cap reached/);
+  });
+
+  it('an unusable monthly cap closes the gate', async () => {
+    process.env.GOOGLE_PLACES_MAX_TOTAL_PER_MONTH = 'nine hundred';
+    expect(await spend(instance(), 'details', 3)).toBe(0);
+  });
+
   it('sends the caps and the billable units with the reservation', async () => {
     await instance().reservePlacesCall({ scope: 'details', reason: 'test' });
-    expect(rpcCalls[0]).toMatchObject({ name: 'reserve_google_places_usage', args: { p_scope: 'details', p_units: 1, p_scope_cap: 50, p_total_cap: 60 } });
+    expect(rpcCalls[0]).toMatchObject({ name: 'reserve_google_places_usage', args: { p_scope: 'details', p_units: 1, p_scope_cap: 50, p_total_cap: 60, p_month_cap: null } });
   });
 
   it('does not also record the call through the fire-and-forget counter (no double count)', async () => {

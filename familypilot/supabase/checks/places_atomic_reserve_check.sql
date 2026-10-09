@@ -10,11 +10,11 @@ begin
     raise exception 'reserve_google_places_usage is missing or has no pinned search_path';
   end if;
 
-  if has_function_privilege('anon', 'public.reserve_google_places_usage(text,text,text,bigint,bigint,bigint)', 'EXECUTE')
-     or has_function_privilege('authenticated', 'public.reserve_google_places_usage(text,text,text,bigint,bigint,bigint)', 'EXECUTE') then
+  if has_function_privilege('anon', 'public.reserve_google_places_usage(text,text,text,bigint,bigint,bigint,bigint)', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.reserve_google_places_usage(text,text,text,bigint,bigint,bigint,bigint)', 'EXECUTE') then
     raise exception 'a client role can execute reserve_google_places_usage';
   end if;
-  if not has_function_privilege('service_role', 'public.reserve_google_places_usage(text,text,text,bigint,bigint,bigint)', 'EXECUTE') then
+  if not has_function_privilege('service_role', 'public.reserve_google_places_usage(text,text,text,bigint,bigint,bigint,bigint)', 'EXECUTE') then
     raise exception 'service_role cannot execute reserve_google_places_usage';
   end if;
 
@@ -33,6 +33,20 @@ begin
   end if;
   r := public.reserve_google_places_usage('sku_c', 'c', 'atomic-check', 100, null, null);
   if (r->>'allowed')::boolean is not true then raise exception 'NULL caps should mean no ceiling: %', r; end if;
+
+  -- Monthly ceiling: earlier days of the month count, today is added to them, a refusal writes nothing.
+  delete from public.google_places_usage where environment = 'atomic-check-m';
+  if extract(day from current_date) > 1 then
+    insert into public.google_places_usage (usage_day, sku, scope, environment, calls)
+    values (date_trunc('month', current_date)::date, 'sku_m', 'm', 'atomic-check-m', 90);
+    r := public.reserve_google_places_usage('sku_m', 'm', 'atomic-check-m', 11, null, null, 100);
+    if (r->>'allowed')::boolean is not false or r->>'reason' <> 'month_cap' then raise exception 'month ceiling not applied: %', r; end if;
+    r := public.reserve_google_places_usage('sku_m', 'm', 'atomic-check-m', 10, null, null, 100);
+    if (r->>'allowed')::boolean is not true or (r->>'month_used')::bigint <> 100 then raise exception 'month figure wrong: %', r; end if;
+    r := public.reserve_google_places_usage('sku_m', 'm', 'atomic-check-m', 1, null, null, 100);
+    if (r->>'allowed')::boolean is not false then raise exception 'month ceiling is not a ceiling: %', r; end if;
+  end if;
+  delete from public.google_places_usage where environment = 'atomic-check-m';
 
   delete from public.google_places_usage where environment = 'atomic-check' and usage_day = current_date;
   raise notice 'reserve_google_places_usage: privileges and ceilings are as expected';
