@@ -9,6 +9,7 @@ const {
   assertPlacesAllowed,
   PlacesDisabledError,
   PlacesBudgetExceededError,
+  primePlacesBudget,
 } = require('../../server/places/lib/places-budget');
 
 const POSTCODE_ONLY_MESSAGE =
@@ -30,6 +31,8 @@ module.exports = async function handler(req, res) {
       const key = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY;
       if (!key) return res.status(503).json({ error: POSTCODE_ONLY_MESSAGE });
       try {
+        // Read the shared ledger first, so GOOGLE_PLACES_REQUIRE_LEDGER can be honoured on this path too.
+        await primePlacesBudget();
         assertPlacesAllowed({ scope: 'geocoding', reason: 'town_name_lookup', subject: input });
       } catch (gateError) {
         if (gateError instanceof PlacesDisabledError || gateError instanceof PlacesBudgetExceededError) {

@@ -258,13 +258,37 @@ let windowStartedAt = Date.now();
 let windowCalls = 0;
 const dayCounts = new Map();
 
-function numericEnv(name, fallback) {
+/**
+ * A cap that is SET but unusable ("fifty", "-5", "5o") must close the gate, not quietly become the
+ * default. Falling back to the default would be wrong for a spending cap an operator deliberately
+ * tightened: a typo would raise it back to 2000.
+ */
+function strictCapEnv(name, fallback) {
   const raw = process.env[name];
   if (raw === undefined || raw === '') return fallback;
   const value = Number(raw);
-  if (!Number.isFinite(value) || value < 0) return fallback;
+  if (!Number.isFinite(value) || value < 0) return 0;
   return Math.floor(value);
 }
+
+/** Optional ceiling across every scope together. Unset means "no total cap", as before. */
+function totalCapEnv() {
+  const raw = process.env.GOOGLE_PLACES_MAX_TOTAL_PER_DAY;
+  if (raw === undefined || raw === '') return null;
+  return strictCapEnv('GOOGLE_PLACES_MAX_TOTAL_PER_DAY', 0);
+}
+
+/**
+ * Opt-in. When true, a billable call is refused unless this process has read the shared ledger for
+ * today within LEDGER_MAX_AGE_MS. Without it a failed or missing ledger read silently leaves each
+ * instance counting alone, which is the "silent fall back to uncapped" this flag exists to remove.
+ */
+function requireLedger() {
+  const raw = String(process.env.GOOGLE_PLACES_REQUIRE_LEDGER || '').trim().toLowerCase();
+  return raw === 'true' || raw === '1';
+}
+
+const LEDGER_MAX_AGE_MS = 5 * 60_000;
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -289,7 +313,15 @@ function checkBudget(scope, units = 1) {
     windowCalls = 0;
   }
 
-  const maxWindow = numericEnv('GOOGLE_PLACES_MAX_CALLS_PER_WINDOW', DEFAULT_MAX_CALLS_PER_WINDOW);
+  if (requireLedger() && (primedDay !== today() || now - primedAt > LEDGER_MAX_AGE_MS)) {
+    throw new PlacesBudgetExceededError(
+      scope,
+      'the shared usage ledger has not been read recently and GOOGLE_PLACES_REQUIRE_LEDGER is on, ' +
+        'so the daily cap cannot be enforced; refusing rather than counting alone',
+    );
+  }
+
+  const maxWindow = strictCapEnv('GOOGLE_PLACES_MAX_CALLS_PER_WINDOW', DEFAULT_MAX_CALLS_PER_WINDOW);
   if (windowCalls + units > maxWindow) {
     throw new PlacesBudgetExceededError(
       scope,
@@ -298,7 +330,7 @@ function checkBudget(scope, units = 1) {
     );
   }
 
-  const maxDay = numericEnv('GOOGLE_PLACES_MAX_CALLS_PER_DAY', DEFAULT_MAX_CALLS_PER_DAY);
+  const maxDay = strictCapEnv('GOOGLE_PLACES_MAX_CALLS_PER_DAY', DEFAULT_MAX_CALLS_PER_DAY);
   const used = dayCounts.get(dayKey(scope)) || 0;
   if (used + units > maxDay) {
     throw new PlacesBudgetExceededError(
@@ -306,6 +338,21 @@ function checkBudget(scope, units = 1) {
       `${used} billable units already used today for this scope in this process; ` +
         `this request needs ${units} more (limit ${maxDay})`,
     );
+  }
+
+  const maxTotal = totalCapEnv();
+  if (maxTotal !== null) {
+    let usedTotal = 0;
+    for (const [key, count] of dayCounts) {
+      if (key.startsWith(`${today()}:`)) usedTotal += count;
+    }
+    if (usedTotal + units > maxTotal) {
+      throw new PlacesBudgetExceededError(
+        scope,
+        `${usedTotal} billable units already used today across all scopes; ` +
+          `this request needs ${units} more (total limit ${maxTotal})`,
+      );
+    }
   }
 }
 
@@ -595,8 +642,10 @@ function placesBudgetSnapshot() {
      * would be the same confusion the budget fix removed.
      */
     windowUnits: windowCalls,
-    maxUnitsPerWindow: numericEnv('GOOGLE_PLACES_MAX_CALLS_PER_WINDOW', DEFAULT_MAX_CALLS_PER_WINDOW),
-    maxUnitsPerDay: numericEnv('GOOGLE_PLACES_MAX_CALLS_PER_DAY', DEFAULT_MAX_CALLS_PER_DAY),
+    maxUnitsPerWindow: strictCapEnv('GOOGLE_PLACES_MAX_CALLS_PER_WINDOW', DEFAULT_MAX_CALLS_PER_WINDOW),
+    maxUnitsPerDay: strictCapEnv('GOOGLE_PLACES_MAX_CALLS_PER_DAY', DEFAULT_MAX_CALLS_PER_DAY),
+    maxUnitsTotalPerDay: totalCapEnv(),
+    requireLedger: requireLedger(),
     billingUnits: Object.fromEntries(
       Object.entries(SCOPES).map(([scope, config]) => [scope, config.billingUnit]),
     ),
