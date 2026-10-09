@@ -1,0 +1,400 @@
+{
+ "classification": "AI-assisted source verification, awaiting founder approval. NOT independent human-reviewed evidence. NOT a passed Pack C control check.",
+ "preparedOn": "2026-10-09",
+ "preparedBy": "Claude (AI), against stored official-source text",
+ "founderApproval": "pending",
+ "packCStatus": "Pack C controls: round 1 caught 1 of 4, round 2 caught 0 of 4 (bar 3). Neither round is validated evidence.",
+ "claims": [
+  {
+   "itemId": "ChIJV_iXMtcadkgRqBI84CY_crE:toilets.toilets",
+   "decision": "unknown",
+   "original": "Accessible toilets around the zoo: opposite Tiny Giants, next to the Reptile House, near the main entrance next to the African Aviary, and at The Terrace Restaurant.",
+   "publish": null,
+   "establishes": "London Zoo has a Changing Places toilet (Animal Adventure) and accessible toilets at four named locations.",
+   "notEstablished": "That the zoo has ordinary (non-accessible) toilets. The page is an accessibility page and describes only accessible provision; the earlier profile recorded this as \"Derived: accessible toilets are toilets\".",
+   "removed": [
+    "The inference accessible toilets => toilets in general"
+   ],
+   "outcome": "General toilets are Unknown. The supported accessible-toilet fact is decided separately (companion decision below).",
+   "venue": "London Zoo",
+   "field": "toilets.toilets",
+   "source": {
+    "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+    "readOn": "2026-10-08",
+    "pageSha256": "c827fbfab53284aa",
+    "exactQuote": "we also have a number of accessible toilets around the zoo. These are located: Opposite Tiny Giants Next to the Reptile House Near main entrance next to African Aviary The Terrace Restaurant",
+    "quoteCheckedAgainst": "stored page text",
+    "officialVenueDomain": true,
+    "surrounding": "e to bring one, one is available from our First Aiders - information on how to contact them can be found at the changing place. Please note anyone using the facility should provide their own sling for the hoist. As well as our changing place toilet, we also have a number of accessible toilets around the Zoo. These are located: Opposite Tiny Giants Next to the Reptile House Near main entrance next to African Aviary The Terrace Restaurant London Zoo map Assistance Animals At London Zoo, dogs and other animals are not permitted, except for certain assistance animals. Assistance dogs are allowed under the following conditions: You must be the owner of your assistance dog and require it for your visit. Dogs are not permitted at our animal demonstrations and talks, in any of our walkth"
+   },
+   "currency": {
+    "readOn": "2026-10-08",
+    "ageAtVerificationDays": 1,
+    "sufficientlyCurrent": true
+   },
+   "expiry": null
+  },
+  {
+   "itemId": "ChIJV_iXMtcadkgRqBI84CY_crE:toilets.accessibleToilet",
+   "companion": true,
+   "decision": "approve",
+   "original": "The zoo has a Changing Places toilet and a number of accessible toilets around the Zoo.",
+   "publish": {
+    "kind": "claim",
+    "field": "accessibility.accessibleToilet",
+    "value": "yes",
+    "wording": "Accessible toilets around the zoo: opposite Tiny Giants, next to the Reptile House, near the main entrance next to the African Aviary, and at The Terrace Restaurant. A Changing Places toilet is at Animal Adventure."
+   },
+   "establishes": "Accessible toilets at four named locations, plus a Changing Places toilet at Animal Adventure.",
+   "notEstablished": "General toilets; baby-changing tables (the profile already records baby changing as Unknown).",
+   "removed": [],
+   "outcome": "Published as accessibility.accessibleToilet = yes. Replaces the general-toilets claim above.",
+   "venue": "London Zoo",
+   "field": "toilets.accessibleToilet",
+   "source": {
+    "url": "https://www.londonzoo.org/plan-your-visit/accessibility",
+    "readOn": "2026-10-08",
+    "pageSha256": "c827fbfab53284aa",
+    "exactQuote": "As well as our changing place toilet, we also have a number of accessible toilets around the Zoo.",
+    "quoteCheckedAgainst": "stored page text",
+    "officialVenueDomain": true,
+    "surrounding": "ed with a RADAR key. If you aren’t able to bring one, one is available from our First Aiders - information on how to contact them can be found at the changing place. Please note anyone using the facility should provide their own sling for the hoist. As well as our changing place toilet, we also have a number of accessible toilets around the Zoo. These are located: Opposite Tiny Giants Next to the Reptile House Near main entrance next to African Aviary The Terrace Restaurant London Zoo map Assistance Animals At London Zoo, dogs and other animals are not permitted, except for certain assistance animals. Assistance dogs are allowed under the following conditions: You must be the owner of you"
+   },
+   "currency": {
+    "readOn": "2026-10-08",
+    "ageAtVerificationDays": 1,
+    "sufficientlyCurrent": true
+   },
+   "expiry": {
+    "rule": "facility claim, 30 days from the reading",
+    "validUntil": "2026-11-07"
+   }
+  },
+  {
+   "itemId": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:activities.the-garden",
+   "decision": "edit",
+   "original": "The Garden is a hands-on play gallery for 3 to 6 year olds.",
+   "publish": {
+    "kind": "activity",
+    "minMonths": 36,
+    "maxMonthsExclusive": 84,
+    "label": "The Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6",
+    "wording": "The Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6",
+    "excerpt": "check out one of our family favourites and a must-visit for 3–6-year-olds, The Garden . Discover science through play in four interactive areas—construction, water, light and sound.",
+    "reviewNote": "AI-assisted source verification awaiting founder approval (docs/pilot/beta/verification), not independent human review. The page recommends The Garden for 3 to 6; a school-groups page on the same site gives the same range. 'Hands-on' and 'gallery' are not used."
+   },
+   "establishes": "The museum names The Garden (level -1) as a family favourite and \"a must-visit for 3-6-year-olds\", and describes it as science through play in four interactive areas: construction, water, light and sound. A second official page (school groups) gives the same age range, 3-6.",
+   "notEstablished": "That it is a \"gallery\" in the museum's words on this page, or \"hands-on\" (the phrase appears only on the separate school-groups page, for the group product). That it is for 3-6 only: the page recommends it for that age, it does not exclude others.",
+   "removed": [
+    "\"hands-on\"",
+    "\"play gallery\""
+   ],
+   "outcome": "Edited to the page's own description. Counts as a permanent provision for ages 3 to 6 (months 36 to under 84).",
+   "venue": "Science Museum",
+   "field": "activities.the-garden",
+   "source": {
+    "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+    "readOn": "2026-10-08",
+    "pageSha256": "519ad9faf34b5181",
+    "exactQuote": "check out one of our family favourites and a must-visit for 3–6-year-olds, The Garden",
+    "quoteCheckedAgainst": "stored page text",
+    "officialVenueDomain": true,
+    "surrounding": ", Bubble Explorer s takes place on weekends and every day during school holidays. Tickets are £4.50 per person with free entry for children aged 2 and under. Stop 3: Splash, play and explore (level -1) © Science Museum Group After enjoying the show, check out one of our family favourites and a must-visit for 3–6-year-olds, The Garden . Discover science through play in four exciting interactive areas—construction, water, light and sound. Please note that we don't provide waterproof aprons for children at the water play area in The Garden . You are welcome to bring your own. Stop 4: Discover light, sound and shapes (level 0) Head back up to the level 0 and towards the back of th"
+   },
+   "currency": {
+    "readOn": "2026-10-08",
+    "ageAtVerificationDays": 1,
+    "sufficientlyCurrent": true
+   },
+   "expiry": {
+    "rule": "activity evidence, 90 days from the reading",
+    "validUntil": "2027-01-06"
+   }
+  },
+  {
+   "itemId": "ChIJV_iXMtcadkgRqBI84CY_crE:activities.zootown",
+   "decision": "edit",
+   "original": "ZooTown is an indoor role-play adventure aimed at children aged up to 8; tickets must be booked online in advance; Silver members and non-members pay £1 per child.",
+   "publish": {
+    "kind": "activity",
+    "minMonths": 0,
+    "maxMonthsExclusive": 108,
+    "label": "ZooTown: indoor role-play adventure, best suited to children up to 8",
+    "wording": "ZooTown: indoor role-play adventure, best suited to children up to 8",
+    "excerpt": "ZooTown is a brand new indoor role play adventure for kids in the heart of London Zoo aimed at children aged up to 8.",
+    "reviewNote": "AI-assisted source verification awaiting founder approval (docs/pilot/beta/verification), not independent human review. Age band is the FAQ's 'aimed at children aged up to 8' (every child is welcome); 8 is read as inside the range. The booking rule is left out because the FAQ contradicts itself; the session fee is not activity evidence."
+   },
+   "establishes": "ZooTown is an indoor role-play adventure inside London Zoo, aimed at children up to 8; every child is welcome; babes in arms have a separate ticket category; a valid zoo admission ticket or membership is needed; sessions are 45 minutes and subject to availability.",
+   "notEstablished": "That tickets must be booked in advance. The same FAQ contradicts itself: \"ZooTown tickets must be purchased online in advance and is not available to buy in the zoo\" (last online sales 9am on the day), yet elsewhere \"There may be some availability on the day (bookable at the kiosk near the ZooTown entrance), but this cannot be guaranteed\". The booking rule is therefore ambiguous and is left out. The £1 fee is a ticket price for non-members and Silver members; it is not an activity fact and has no field here, so it is not published.",
+   "removed": [
+    "\"tickets must be booked online in advance\" (source contradicts itself)",
+    "\"Silver members and non-members pay £1 per child\" (price, not activity evidence; not published)"
+   ],
+   "outcome": "Edited. Booking requirement and session fee are Unknown. (An admission ticket or membership is also needed per the page; kept in the review notes, not the label.) Counts as a provision for ages 0 to 8 inclusive (months 0 to under 108): the FAQ asks \"my child is aged over 8, can they attend?\", which treats 8 as inside the stated range.",
+   "venue": "London Zoo",
+   "field": "activities.zootown",
+   "source": {
+    "url": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
+    "readOn": "2026-10-08",
+    "pageSha256": "2eb390649a853e57",
+    "exactQuote": "ZooTown is a brand new indoor role play adventure for kids in the heart of London Zoo aimed at children aged up to 8. … Silver members and non-members pay £1 per child",
+    "quoteCheckedAgainst": "stored page text",
+    "officialVenueDomain": true,
+    "surrounding": "th nature, while supporting our vital wildlife conservation work around the world, so we’ve developed our own great summer deals and reduced price tickets including family packages and a free return visit offer. T&Cs apply . ZooTown What is ZooTown? ZooTown is a brand new indoor role play adventure for kids in the heart of London Zoo aimed at children aged up to 8. Children can unlock a world of possibilities as they play their way through the adventure, learn new skills, and get hands-on with a whole host of costumes, toys and interactives. Where is ZooTown? ZooTown is based inside London Zoo in what was previously our Reptile House, close to our main entrance. Please note that you will need a valid admission ticket or membership to attend your ZooTown s"
+   },
+   "currency": {
+    "readOn": "2026-10-08",
+    "ageAtVerificationDays": 1,
+    "sufficientlyCurrent": true
+   },
+   "expiry": {
+    "rule": "activity evidence, 90 days from the reading",
+    "validUntil": "2027-01-06"
+   }
+  },
+  {
+   "itemId": "ChIJV_iXMtcadkgRqBI84CY_crE:transport.parking",
+   "decision": "approve",
+   "original": "Zoo car park: £16 in term time, £17.50 at weekends and in bank or school holidays, paid on the day.",
+   "publish": {
+    "kind": "claim",
+    "field": "familyFacilities.parking",
+    "value": "yes",
+    "wording": "Zoo car park: £16 in term time, £17.50 at weekends and in bank or school holidays, paid on the day."
+   },
+   "establishes": "The zoo has a car park; £16 in term time, £17.50 on weekends and bank or school holidays, payable on the day. The same answer adds no height restrictions and that the zoo is outside the Congestion Charge zone.",
+   "notEstablished": "Nothing beyond the sentence is claimed. The fee is time-sensitive, which is why the claim expires in 30 days.",
+   "removed": [],
+   "outcome": "Published exactly as proposed (parking = yes; the fee wording stays in the evidence excerpt).",
+   "venue": "London Zoo",
+   "field": "transport.parking",
+   "source": {
+    "url": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
+    "readOn": "2026-10-08",
+    "pageSha256": "2eb390649a853e57",
+    "exactQuote": "Parking is available in the Zoo’s car park at a cost of £16 in term time or £17.50 on weekends and bank or school holidays, payable on the day.",
+    "quoteCheckedAgainst": "stored page text",
+    "officialVenueDomain": true,
+    "surrounding": " Do you cater for food allergies? We cater for a variety of dietary needs, including specific allergy or dietary requirements. Please speak to a member of staff at our catering outlets who can help you with your food choice. Where can I park my car? Parking is available in the Zoo’s car park at a cost of £16 in term time or £17.50 on weekends and bank or school holidays, payable on the day. There are no height restrictions in our car park. We are outside the London Congestion Charging Zone. Parking is also available on Outer Circle just by the zoo and at car parks in the local area. Please see parking information for more details. When do the car parks open/close? The car park at London Zoo is open from 9am, closing roughly an hour a"
+   },
+   "currency": {
+    "readOn": "2026-10-08",
+    "ageAtVerificationDays": 1,
+    "sufficientlyCurrent": true
+   },
+   "expiry": {
+    "rule": "facility claim, 30 days from the reading",
+    "validUntil": "2026-11-07"
+   }
+  },
+  {
+   "itemId": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.toilets",
+   "decision": "approve",
+   "original": "Toilets on all main floors.",
+   "publish": {
+    "kind": "claim",
+    "field": "familyFacilities.toilets",
+    "value": "yes",
+    "wording": "Toilets on all main floors."
+   },
+   "establishes": "\"We have toilets with baby changing facilities on all of our main floors.\" (FAQ: Do you have baby changing facilities?) Also states wheelchair accessible toilets and no Changing Places toilet.",
+   "notEstablished": "Baby changing is also stated but is a separate field and is not part of this decision.",
+   "removed": [],
+   "outcome": "Published exactly as proposed.",
+   "venue": "Discover Children's Story Centre",
+   "field": "toilets.toilets",
+   "source": {
+    "url": "https://discover.org.uk/your-visit/faqs/",
+    "readOn": "2026-10-08",
+    "pageSha256": "7755ba53483f5d77",
+    "exactQuote": "We have toilets with baby changing facilities on all of our main floors.",
+    "quoteCheckedAgainst": "stored page text",
+    "officialVenueDomain": true,
+    "surrounding": "ou have a particular reason why you need a buggy with you – eg twin babies or a sleeping child – do speak to our front of house team who will be able to advise and accommodate your buggy where needed. Do you have baby changing facilities? Yes we do. We have toilets with baby changing facilities on all of our main floors. What about food and drink? We have a cafe on our ground floor – and on busier days the coffee-and-snack shack in our garden is open. You are also welcome to bring your own food – we always have spaces where you can eat, both inside and in the garden, though food is not allowed in the Story Worlds or events – just ask a member of staff to point you"
+   },
+   "currency": {
+    "readOn": "2026-10-08",
+    "ageAtVerificationDays": 1,
+    "sufficientlyCurrent": true
+   },
+   "expiry": {
+    "rule": "facility claim, 30 days from the reading",
+    "validUntil": "2026-11-07"
+   }
+  },
+  {
+   "itemId": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.parking",
+   "decision": "approve",
+   "original": "No car parking at the museum and local parking is very limited; nearest pay and display is in Prince Consort Road and Queen's Gate.",
+   "publish": {
+    "kind": "claim",
+    "field": "familyFacilities.parking",
+    "value": "no",
+    "wording": "No car parking at the museum and local parking is very limited; the nearest pay and display is in Prince Consort Road and Queen's Gate."
+   },
+   "establishes": "\"We do not have car parking facilities and local parking is very limited.\" The same page continues: no visitor parking in Exhibition Road; the nearest pay and display car parking is in Prince Consort Road and Queen's Gate; a small number of disabled bays on Exhibition Road for Blue Badge holders (already published separately as accessible parking).",
+   "notEstablished": "Nothing beyond the sentence. LIMITATION: the page text itself is not held in the local corpus (the site blocks the crawler); the quotation and the surrounding words are verified from the recorded read of 2026-10-08 (page hash 751a89c00ea27a0f) kept with the review card, not from a fresh fetch.",
+   "removed": [],
+   "outcome": "Published with the road names included as in the source. Re-read by hand before it expires.",
+   "venue": "Science Museum",
+   "field": "transport.parking",
+   "source": {
+    "url": "https://www.sciencemuseum.org.uk/visit/getting-here",
+    "readOn": "2026-10-08",
+    "pageSha256": "751a89c00ea27a0f",
+    "exactQuote": "We do not have car parking facilities and local parking is very limited.",
+    "quoteCheckedAgainst": "recorded page context on the review card (page text not held locally)",
+    "officialVenueDomain": true,
+    "surrounding": " bicycle Transport for London Santander Cycle docking stations are available outside V&A South Kensington and the Natural History Museum on Exhibition Road (next door to the Science Museum), and on Thurloe Place near South Kensington tube station. By car [QUOTE] There is no visitor parking in Exhibition Road. The nearest pay and display car parking is in Prince Consort Road and Queen's Gate. Disabled parking A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here f"
+   },
+   "currency": {
+    "readOn": "2026-10-08",
+    "ageAtVerificationDays": 1,
+    "sufficientlyCurrent": true
+   },
+   "expiry": {
+    "rule": "facility claim, 30 days from the reading",
+    "validUntil": "2026-11-07"
+   }
+  },
+  {
+   "itemId": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.parking",
+   "decision": "approve",
+   "original": "No on-site parking except limited Blue Badge parking.",
+   "publish": {
+    "kind": "claim",
+    "field": "familyFacilities.parking",
+    "value": "no",
+    "wording": "No on-site parking except limited Blue Badge parking."
+   },
+   "establishes": "\"We have no onsite parking, other than limited parking for Blue Badge holders.\"",
+   "notEstablished": "Where the Blue Badge bays are or how many. A general-parking \"no\" is accurate for the general visitor; the Blue Badge exception is in the wording and the quotation but is not published as a separate accessible-parking claim (not in this batch).",
+   "removed": [],
+   "outcome": "Published exactly as proposed.",
+   "venue": "Horniman Museum and Gardens",
+   "field": "transport.parking",
+   "source": {
+    "url": "https://www.horniman.ac.uk/plan-your-visit/",
+    "readOn": "2026-10-08",
+    "pageSha256": "07c4f7f88813cd83",
+    "exactQuote": "We have no onsite parking, other than limited parking for Blue Badge holders.",
+    "quoteCheckedAgainst": "stored page text",
+    "officialVenueDomain": true,
+    "surrounding": "r, please dismount and walk your bike or scooter through, for the safety of our visitors. By Car We encourage the use of public transport or active travel (walking or cycling) to come to the Horniman, to reduce emissions and benefit the environment. We have no onsite parking, other than limited parking for Blue Badge holders. A pay-and-display car park is available locally behind Sainsbury’s, and there are two pay-and-display car parks at Forest Hill station (one at the front, one at the back). Please avoid parking on private roads. For coaches, there is a drop off point outside the Museum near to the Clocktower. If you are looking for the closest electric charging poi"
+   },
+   "currency": {
+    "readOn": "2026-10-08",
+    "ageAtVerificationDays": 1,
+    "sufficientlyCurrent": true
+   },
+   "expiry": {
+    "rule": "facility claim, 30 days from the reading",
+    "validUntil": "2026-11-07"
+   }
+  },
+  {
+   "itemId": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.parking",
+   "decision": "edit",
+   "original": "No parking on site; Stratford multi-storey car park is a 5 minute walk. Blue Badge bays nearby.",
+   "publish": {
+    "kind": "claim",
+    "field": "familyFacilities.parking",
+    "value": "no",
+    "wording": "No parking on the Discover site. The closest car park is Stratford multi-storey, a 5 minute walk. Blue Badge holder bays are close to Discover, on Bridge Terrace off Bridge Road."
+   },
+   "establishes": "\"There is no parking available on the Discover site. The closest car parks are: Stratford multi-story car park. (5 min walk).\" A later line on the same page: \"There are blue badge holder bays in the immediate vicinity of Discover, on Bridge Terrace, off Bridge Road, which are clearly marked.\"",
+   "notEstablished": "The first wording said \"nearby\" for the bays and omitted where they are. Edited to the page's own location. The page also lists Stratford Westfield Shopping Centre (10 min walk) as a further car park; not added.",
+   "removed": [
+    "\"nearby\" (replaced by the page's location)"
+   ],
+   "outcome": "Edited wording; the claim is parking = no.",
+   "venue": "Discover Children's Story Centre",
+   "field": "transport.parking",
+   "source": {
+    "url": "https://discover.org.uk/getting-here/",
+    "readOn": "2026-10-08",
+    "pageSha256": "9d230072cea688a5",
+    "exactQuote": "There is no parking available on the Discover site. The closest car parks are: Stratford multi-story car park. (5 min walk).",
+    "quoteCheckedAgainst": "stored page text",
+    "officialVenueDomain": true,
+    "surrounding": "ride from the Queen Elizabeth Olympic Park and is on Cycle Superhighway 2 and a short distance from Quietway 22. You can find out more about cycle routes here . Discover has cycle parking outside the front door, on Stratford High Street. Car Parking There is no parking available on the Discover site. The closest car parks are: Stratford multi-story car park. (5 min walk). About parking here. Stratford Westfield Shopping Centre (10 min walk). About parking here. There are blue badge holder bays in the immediate vicinity of Discover, on Bridge Terrace, off Bridge Road, which are clearly marked. All blue badge holders can park in the shared use/permit parking bays in the surrounding streets (Bridge Road, Dawn Crescent"
+   },
+   "currency": {
+    "readOn": "2026-10-08",
+    "ageAtVerificationDays": 1,
+    "sufficientlyCurrent": true
+   },
+   "expiry": {
+    "rule": "facility claim, 30 days from the reading",
+    "validUntil": "2026-11-07"
+   }
+  },
+  {
+   "itemId": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.toilets",
+   "decision": "unknown",
+   "original": "Toilets on every level (the page describes the accessible ones).",
+   "publish": null,
+   "establishes": "\"Accessible toilets are available on all levels of the museum.\" A Changing Places toilet is on level 0.",
+   "notEstablished": "General toilets on every level. The proposal said \"every\" and generalised from accessible to all toilets; the profile itself noted \"General toilet blocks are not described separately\".",
+   "removed": [
+    "\"Toilets on every level\" (accessible generalised to all)"
+   ],
+   "outcome": "General toilets are Unknown. The supported accessible-toilet fact is decided separately (companion decision).",
+   "venue": "Science Museum",
+   "field": "toilets.toilets",
+   "source": {
+    "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+    "readOn": "2026-10-08",
+    "pageSha256": "6f7f7ce4b8756f29",
+    "exactQuote": "Accessible toilets are available on all levels of the museum.",
+    "quoteCheckedAgainst": "stored page text",
+    "officialVenueDomain": true,
+    "surrounding": "h hoist, changing bench and centrally located toilet. The toilet is accessible with a RADAR key. If you have forgotten your key please ask a member of staff for access. Full details can be found on the Changing Places Toilet Map . Accessible toilets Accessible toilets are available on all levels of the museum. Please refer to the museum map or ask a member of staff for locations. Accessible baby changing facilities Accessible baby changing facilities are available in the following areas: Level -1: access via Lift A and Lift D Level 0: Near Lift F Level 1: access via Staircase D and Lift F Level 2: access lift B, Lift D and Lift F Level 3: access via lif"
+   },
+   "currency": {
+    "readOn": "2026-10-08",
+    "ageAtVerificationDays": 1,
+    "sufficientlyCurrent": true
+   },
+   "expiry": null
+  },
+  {
+   "itemId": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.accessibleToilet",
+   "companion": true,
+   "decision": "edit",
+   "original": "Accessible toilets on every level.",
+   "publish": {
+    "kind": "claim",
+    "field": "accessibility.accessibleToilet",
+    "value": "yes",
+    "wording": "Accessible toilets are available on all levels of the museum."
+   },
+   "establishes": "Accessible toilets on all levels.",
+   "notEstablished": "General toilets. Baby changing is separately stated on the museum's visit guides (\"throughout all floors\") and is not part of this decision.",
+   "removed": [
+    "\"every\" replaced by the source's \"all levels\""
+   ],
+   "outcome": "Published as accessibility.accessibleToilet = yes. Replaces the general-toilets claim above.",
+   "venue": "Science Museum",
+   "field": "toilets.accessibleToilet",
+   "source": {
+    "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
+    "readOn": "2026-10-08",
+    "pageSha256": "6f7f7ce4b8756f29",
+    "exactQuote": "Accessible toilets are available on all levels of the museum.",
+    "quoteCheckedAgainst": "stored page text",
+    "officialVenueDomain": true,
+    "surrounding": "h hoist, changing bench and centrally located toilet. The toilet is accessible with a RADAR key. If you have forgotten your key please ask a member of staff for access. Full details can be found on the Changing Places Toilet Map . Accessible toilets Accessible toilets are available on all levels of the museum. Please refer to the museum map or ask a member of staff for locations. Accessible baby changing facilities Accessible baby changing facilities are available in the following areas: Level -1: access via Lift A and Lift D Level 0: Near Lift F Level 1: access via Staircase D and Lift F Level 2: access lift B, Lift D and Lift F Level 3: access via lif"
+   },
+   "currency": {
+    "readOn": "2026-10-08",
+    "ageAtVerificationDays": 1,
+    "sufficientlyCurrent": true
+   },
+   "expiry": {
+    "rule": "facility claim, 30 days from the reading",
+    "validUntil": "2026-11-07"
+   }
+  }
+ ]
+}

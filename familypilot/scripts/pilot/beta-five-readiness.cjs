@@ -109,7 +109,7 @@ function evaluate(profile, ctx, approvedCards) {
   return readiness(facts, { view: 'approved', layerA: { hours: PROVIDER_HOURS[profile.name] ?? true } });
 }
 
-function betaFiveReadiness(dir = PILOT_DIR, { exclude = [] } = {}) {
+function betaFiveReadiness(dir = PILOT_DIR, { exclude = [], include = [] } = {}) {
   const ctx = load(dir);
   const profileById = new Map(ctx.profiles.map((p) => [p.id.replace('fp-google-', ''), p]));
   const wave1 = ctx.rows.filter((r) => r.wave === '1 safety').map((r) => r.id);
@@ -123,7 +123,7 @@ function betaFiveReadiness(dir = PILOT_DIR, { exclude = [] } = {}) {
     }
   }
   // `exclude`: decisions the owner did not approve (for example a price left Unknown). They are removed before anything is judged.
-  const approved = new Set([...wave1, ...named].filter((id) => !exclude.includes(id)));
+  const approved = new Set([...wave1, ...named, ...include].filter((id) => !exclude.includes(id)));
 
   const venues = ctx.profiles.map((p) => {
     const result = evaluate(p, ctx, approved);

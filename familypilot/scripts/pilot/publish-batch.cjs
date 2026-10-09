@@ -35,7 +35,7 @@ function uuid(seed) {
   return `${x.slice(0, 8)}-${x.slice(8, 12)}-${x.slice(12, 16)}-${x.slice(16, 20)}-${x.slice(20, 32)}`;
 }
 
-function build({ items, approver, warnOnly = [], asOf, label = 'batch', textEdits = {}, dropRules = [] }) {
+function build({ items, approver, warnOnly = [], asOf, label = 'batch', textEdits = {}, dropRules = [], provenance = {} }) {
   if (!/^human:[a-z0-9._-]{2,}$/i.test(approver ?? '') || /assum|auto|pilot/i.test(approver)) throw new Error('approver must be a named person, e.g. human:aidan (nothing automatic or assumed can publish a rule)');
   const profiles = new Map(fs.readdirSync(PROFILES).filter((f) => f.endsWith('.json')).map((f) => { const p = JSON.parse(fs.readFileSync(path.join(PROFILES, f), 'utf8')); return [p.id, p]; }));
   const claims = [];
@@ -76,7 +76,7 @@ function build({ items, approver, warnOnly = [], asOf, label = 'batch', textEdit
     for (const f of found) {
       if (!f.evidence?.quote || !f.evidence?.url || !f.evidence?.readAt) throw new Error(`${f.fieldKey}: no source, quotation or reading date`);
       if (addDays(f.evidence.readAt, f.days) < asOf) throw new Error(`${f.fieldKey}: the reading of ${f.evidence.readAt} is already past its ${f.days}-day window; it must be re-read first`);
-      claims.push({ id: uuid(`${label}|${venueId}|${f.fieldKey}|${approver}|${f.evidence.readAt}`), venueId, item, ...f, validUntil: addDays(f.evidence.readAt, f.days) });
+      claims.push({ id: uuid(`${label}|${venueId}|${f.fieldKey}|${approver}|${f.evidence.readAt}`), venueId, item, ...f, ...(provenance[item] ?? {}), validUntil: addDays(f.evidence.readAt, f.days) });
     }
   }
   const seen = new Set();
@@ -86,7 +86,9 @@ function build({ items, approver, warnOnly = [], asOf, label = 'batch', textEdit
 
 function sqlFor(claims, approver, label, basis = null) {
   const venues = [...new Set(claims.map((c) => c.venueId))];
-  const rows = claims.map((c) => `  (${lit(c.id)}, ${lit(c.venueId)}, ${lit(c.fieldKey)}, ${lit(JSON.stringify(c.value))}::jsonb, 'high', ${lit(c.evidence.url)}, ${lit(c.evidence.quote)}, 'human_reviewed_official_page', ${lit(c.evidence.readAt)}, ${lit(c.validUntil)}, ${lit(approver)}, 'active')`);
+  const actors = [...new Set(claims.map((c) => c.approvedBy ?? approver))];
+  const actorList = actors.map(lit).join(', ');
+  const rows = claims.map((c) => `  (${lit(c.id)}, ${lit(c.venueId)}, ${lit(c.fieldKey)}, ${lit(JSON.stringify(c.value))}::jsonb, 'high', ${lit(c.evidence.url)}, ${lit(c.evidence.quote)}, ${lit(c.sourceType ?? 'human_reviewed_official_page')}, ${lit(c.evidence.readAt)}, ${lit(c.validUntil)}, ${lit(c.approvedBy ?? approver)}, 'active')`);
   const apply = `-- Publishing batch ${label}: ${claims.length} rule/hours claims at ${venues.length} venues, approved by ${approver}. Paste as ONE run.${basis ? `\n-- Review basis: ${basis}` : ''}
 -- Guards abort the whole transaction (nothing is kept) unless: every venue exists, none of these claims is already active, and
 -- the batch is the only change. Expected result printed last: ${claims.length} active rows.
@@ -104,7 +106,7 @@ ${rows.join(',\n')};
 do $$
 declare n integer;
 begin
-  select count(*) into n from public.venue_claims where id in (${claims.map((c) => lit(c.id)).join(', ')}) and status = 'active' and approved_by = ${lit(approver)};
+  select count(*) into n from public.venue_claims where id in (${claims.map((c) => lit(c.id)).join(', ')}) and status = 'active' and approved_by in (${actorList});
   if n <> ${claims.length} then raise exception 'Batch aborted: % of ${claims.length} rows are active. Nothing was changed.', n; end if;
 end $$;
 commit;
@@ -114,7 +116,7 @@ select count(*) as active_batch_rows from public.venue_claims where id in (${cla
 -- nothing is deleted, and the app stops using them at once). Touches nothing else. Expected result printed last: 0 active rows.
 begin;
 update public.venue_claims set status = 'disputed', updated_at = now()
- where id in (${claims.map((c) => lit(c.id)).join(', ')}) and status = 'active' and approved_by = ${lit(approver)};
+ where id in (${claims.map((c) => lit(c.id)).join(', ')}) and status = 'active' and approved_by in (${actorList});
 do $$
 declare n integer;
 begin

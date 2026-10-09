@@ -14,6 +14,8 @@ const flagOf = (n) => (process.argv.includes(n) ? process.argv[process.argv.inde
 // `--only-items a,b` limits the activity block to the cards a person approved; `--edits file.json` carries their edited wording (itemId -> text).
 const onlyItems = flagOf('--only-items') ? new Set(flagOf('--only-items').split(',').filter(Boolean)) : null;
 const textEdits = flagOf('--edits') ? JSON.parse(require('node:fs').readFileSync(flagOf('--edits'), 'utf8')) : {};
+const excerpts = flagOf('--excerpts') ? JSON.parse(fs.readFileSync(flagOf('--excerpts'), 'utf8')) : {};
+const notes = flagOf('--notes') ? JSON.parse(fs.readFileSync(flagOf('--notes'), 'utf8')) : {};
 const itemIdOf = (p, f) => `${p.id.replace('fp-google-', '')}:${f.sec}.${f.key}`;
 // Already in the shipped module from earlier reviews: do not duplicate.
 const skipActivity = new Set(['fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4:playground', 'fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk:baby-toddler-space', 'fp-google-ChIJ7_PV980bdkgROekbwOVWVfo:soft-play']);
@@ -37,9 +39,9 @@ if (want === '--activity') {
       url: ${q(f.evidence.url)},
       retrievedAt: ${q(f.evidence.readAt)},
       subjectScope: 'venue_own_subtree',
-      excerpt: ${q(f.evidence.quote)},
+      excerpt: ${q(excerpts[itemIdOf(p, f)] ?? f.evidence.quote)},
     },
-    reviewNotes: ${q('Pilot profile (docs/pilot): ' + (f.status === 'review' ? 'proposed, awaiting a person. ' : '') + (f.kind === 'provision' ? 'A permanent provision described for an age.' : 'A programme on set days; names the child but never supports Excellent.'))},
+    reviewNotes: ${q(notes[itemIdOf(p, f)] ?? 'Pilot profile (docs/pilot): ' + (f.status === 'review' ? 'proposed, awaiting a person. ' : '') + (f.kind === 'provision' ? 'A permanent provision described for an age.' : 'A programme on set days; names the child but never supports Excellent.'))},
   },`);
     }
   }

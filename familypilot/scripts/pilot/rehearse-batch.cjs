@@ -34,13 +34,16 @@ let failed = 0;
 const check = (ok, msg) => { console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (!ok) failed += 1; };
 
 const fromFile = flag('--decisions') ? fromDecisions(flag('--decisions')) : { items: [], textEdits: {}, skipped: [] };
-const items = [...new Set([...(flag('--items') ?? '').split(',').filter(Boolean), ...fromFile.items])];
-const textEdits = fromFile.textEdits;
-const dropRules = (flag('--drop-rules') ?? '').split(',').filter(Boolean);
+const mf = flag('--manifest') ? JSON.parse(fs.readFileSync(flag('--manifest'), 'utf8')) : null; // a built manifest's claims/manifest.json
+const items = [...new Set([...(flag('--items') ?? '').split(',').filter(Boolean), ...fromFile.items, ...(mf?.items ?? [])])];
+const textEdits = { ...fromFile.textEdits, ...(mf?.edits ?? {}) };
+const dropRules = [...(flag('--drop-rules') ?? '').split(',').filter(Boolean), ...(mf?.dropRules ?? [])];
+// Items whose claims carry the AI-assisted provenance (never `human:`), as in the manifest the founder is asked to approve.
+const provenance = Object.fromEntries((flag('--ai-items') ?? '').split(',').filter(Boolean).map((i) => [i, { approvedBy: 'source_verified_ai_v1', sourceType: 'ai_assisted_source_verification' }]));
 const approver = flag('--approver');
 const warnOnly = (flag('--warn-only') ?? '').split(',').filter(Boolean);
 const asOf = flag('--as-of') ?? '2026-10-09';
-const claims = build({ items, approver, warnOnly, asOf, label: 'rehearsal-A', textEdits, dropRules });
+const claims = build({ items, approver, warnOnly, asOf, label: 'rehearsal-A', textEdits, dropRules, provenance });
 const venues = [...new Set(claims.map((c) => c.venueId))];
 
 // Schema: the real columns and constraints of venue_claims (migration 20260906...), minimal place_records.
@@ -53,7 +56,7 @@ ${venues.map((v, i) => `insert into venue_claims(id, familypilot_place_id, field
 
 const dump = () => JSON.parse(run(`select coalesce(json_agg(json_build_object('id', id, 'venueId', familypilot_place_id, 'fieldKey', field_key, 'valueJson', value_json, 'status', status, 'confidence', confidence, 'sourceUrl', source_url, 'evidenceExcerpt', evidence_excerpt, 'checkedAt', checked_at, 'validUntil', valid_until, 'approvedBy', approved_by) order by id), '[]') from venue_claims;`).out);
 const batchIds = new Set(claims.map((c) => c.id));
-const claimsB = build({ items, approver, warnOnly, asOf, label: 'rehearsal-B', textEdits, dropRules });
+const claimsB = build({ items, approver, warnOnly, asOf, label: 'rehearsal-B', textEdits, dropRules, provenance });
 for (const c of claimsB) batchIds.add(c.id);
 const fingerprint = (rows) => crypto.createHash('md5').update(JSON.stringify(rows.filter((r) => !batchIds.has(r.id)).map((r) => [r.id, r.fieldKey, r.status, JSON.stringify(r.valueJson)]))).digest('hex');
 const seen = (rows, venueId) => { const p = projectActiveClaimsToPayload(rows.filter((r) => r.venueId === venueId)); return { rules: (p[PROJECTED_RULES] ?? []).map((r) => r.id), hours: (p[PROJECTED_OFFICIAL_HOURS] ?? []).length, facts: p }; };
