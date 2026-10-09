@@ -9,12 +9,19 @@ function scrub(text,n) {
   .replace(/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}(\.[A-Za-z0-9_-]*)?/g,'[token]')
   .replace(/\b[A-Za-z0-9_-]{32,}\b/g,'[id]')
   .replace(/\b-?\d{1,3}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}\b/g,'[location]')
+  // Dates of any common shape: a date of birth is the one thing a message must never carry.
+  .replace(/\b\d{4}-\d{2}-\d{2}(?:[T ][\d:.]+Z?)?\b/g,'[date]')
+  .replace(/\b\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}\b/g,'[date]')
+  .replace(/\b\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?,?\s+\d{2,4}\b/gi,'[date]')
   .replace(/\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/gi,'[postcode]')
   .slice(0,n);
 }
 /** The path only: no query string, no fragment, and ids in the path are replaced. */
 function scrubRoute(route) {
- return scrub(cap(route,200).split(/[?#]/)[0].replace(/\/(fp-[a-z0-9_-]+|[0-9a-f]{8}-[0-9a-f-]{27,})/gi,'/[id]'),120);
+ // Whatever follows a route that takes an id or a secret code (a venue, a restaurant, an invitation) is replaced, whatever it looks like.
+ return scrub(cap(route,200).split(/[?#]/)[0]
+  .replace(/\/(venue|restaurant|invite|enrichment)\/[^/]+/gi,'/$1/[id]')
+  .replace(/\/(fp-[a-z0-9_-]+|[0-9a-f]{8}-[0-9a-f-]{27,})/gi,'/[id]'),120);
 }
 function sanitiseClientError(body) {
  if(!body||typeof body!=='object')throw new Error('Invalid report');
