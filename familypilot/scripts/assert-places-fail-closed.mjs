@@ -2,7 +2,7 @@
  * Proves a deployed build will refuse every paid Google scope.
  *
  * Usage: node scripts/assert-places-fail-closed.mjs <places-status.json> [--profile=production] [--expect-master-off]
- *        [--expect-off=photos,refresh]
+ *        [--expect-off=photos,refresh] [--expect-atomic=50,60,900]
  *
  * WHY THIS EXISTS. The Routes canary needed `GOOGLE_PLACES_ENABLED=true` and
  * `GOOGLE_JOURNEYS_ENABLED=true` in Preview for exactly one request. The owner's instruction was to
@@ -55,8 +55,16 @@ const expectOff = (args.find((a) => a.startsWith('--expect-off=')) ?? '--expect-
   .map((name) => name.trim())
   .filter(Boolean);
 
+/**
+ * `--expect-atomic=<per-scope per day>,<total per day>,<total per month>`: the deployed build must be running the
+ * atomic reservation with exactly these ceilings. Like `--expect-off`, this reads the redeployed build's own snapshot,
+ * because setting a Vercel variable is not the same event as a build observing it.
+ */
+const expectAtomicArg = args.find((a) => a.startsWith('--expect-atomic='));
+const expectAtomic = expectAtomicArg ? expectAtomicArg.slice('--expect-atomic='.length).split(',').map((n) => Number(n.trim())) : null;
+
 if (!statusPath) {
-  console.error('usage: assert-places-fail-closed.mjs <places-status.json> [--profile=production] [--expect-master-off] [--expect-off=scope,...]');
+  console.error('usage: assert-places-fail-closed.mjs <places-status.json> [--profile=production] [--expect-master-off] [--expect-off=scope,...] [--expect-atomic=day,total,month]');
   process.exit(2);
 }
 
@@ -140,6 +148,16 @@ if (expectOff.length) {
     check(names.includes(name), `the ${name} scope exists in the snapshot`, names.includes(name) ? 'yes' : 'ABSENT');
     check(scopes[name]?.allowed === false, `${name} is refused`, `allowed=${scopes[name]?.allowed} reason=${scopes[name]?.reason ?? '(none)'}`);
   }
+}
+
+if (expectAtomic) {
+  console.log('\n=== atomic spending cap ===');
+  const [perScope, perDayTotal, perMonthTotal] = expectAtomic;
+  check(expectAtomic.length === 3 && expectAtomic.every((n) => Number.isInteger(n) && n > 0), '--expect-atomic names three positive whole numbers', expectAtomic.join(','));
+  check(budget.atomicCap === true, 'the atomic reservation is on', `atomicCap=${budget.atomicCap}`);
+  check(budget.maxUnitsPerDay === perScope, 'the per-scope daily ceiling is as approved', `${budget.maxUnitsPerDay} (expected ${perScope})`);
+  check(budget.maxUnitsTotalPerDay === perDayTotal, 'the all-scope daily ceiling is as approved', `${budget.maxUnitsTotalPerDay} (expected ${perDayTotal})`);
+  check(budget.maxUnitsTotalPerMonth === perMonthTotal, 'the all-scope monthly ceiling is as approved', `${budget.maxUnitsTotalPerMonth} (expected ${perMonthTotal})`);
 }
 
 // A live probe must not have happened: this is meant to be a free read.

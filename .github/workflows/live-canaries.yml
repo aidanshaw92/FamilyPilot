@@ -52,6 +52,11 @@ on:
         type: string
         required: false
         default: ''
+      expect_atomic:
+        description: 'Comma-separated per-scope-per-day,total-per-day,total-per-month ceilings the build must report with the atomic cap on, e.g. 50,60,900 (free)'
+        type: string
+        required: false
+        default: ''
       verify_cache_headers:
         description: Verify the food cache fixes against the deployment (costs ONE Overpass query)
         type: boolean
@@ -139,6 +144,7 @@ jobs:
         env:
           PROFILE: ${{ inputs.posture_profile }}
           EXPECT_OFF: ${{ inputs.expect_off }}
+          EXPECT_ATOMIC: ${{ inputs.expect_atomic }}
         run: |
           set -euo pipefail
           cd familypilot
@@ -148,6 +154,12 @@ jobs:
               *[!a-z,]*) echo "::error::expect_off may only name scopes, e.g. photos,refresh"; exit 1 ;;
             esac
             extra+=("--expect-off=${EXPECT_OFF}")
+          fi
+          if [ -n "${EXPECT_ATOMIC:-}" ]; then
+            case "$EXPECT_ATOMIC" in
+              *[!0-9,]*) echo "::error::expect_atomic may only hold numbers and commas, e.g. 50,60,900"; exit 1 ;;
+            esac
+            extra+=("--expect-atomic=${EXPECT_ATOMIC}")
           fi
           if [ "${PROFILE:-closed}" = "production" ]; then
             node scripts/assert-places-fail-closed.mjs /tmp/target-status.json --profile=production "${extra[@]}"
