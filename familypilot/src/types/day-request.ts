@@ -195,6 +195,8 @@ export interface MatchableVenueFacts {
   freeParking?: TriState | 'unknown';
   /** Blue Badge / disabled-bay parking, from its own approved claim (`accessibility.accessibleParking`, or `disabledParkingBays`). Not read from general parking. */
   blueBadgeParking?: TriState | 'unknown';
+  /** Where the Blue Badge bays are (on site, nearby, or on a named street), from its own claim. Set only while `blueBadgeParking` is yes. */
+  blueBadgeNote?: string | null;
   /** Step-free entrance and route, from its own approved claim (`accessibility.stepFreeEntrance`). Distinct from a wheelchair-access claim. */
   stepFreeAccess?: TriState | 'unknown';
   /** The nearest station is step-free, from its own approved transport claim. Not read from parking. */

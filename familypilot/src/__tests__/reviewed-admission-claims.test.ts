@@ -38,6 +38,8 @@ const byName = (name: string) => {
 };
 
 const VISIT = '2026-11-14';
+/** A price with its own short end (London Zoo's variable tickets, 30 days) is judged on a visit inside it. */
+const visitFor = (p: { source: { validUntil?: string } }) => (p.source.validUntil && p.source.validUntil < VISIT ? p.source.validUntil : VISIT);
 const ELIGIBLE_SCOPES = new Set(['venue_own_subtree', 'venue_named_page']);
 const money = (pence: number) => `£${(pence / 100).toFixed(pence % 100 === 0 ? 0 : 2)}`;
 const norm = (s: string) => s.replace(/\s+/g, ' ').toLowerCase();
@@ -58,7 +60,7 @@ describe('reviewed admission claims: the file', () => {
     expect(doc.state).toBe('reviewed');
     expect(claims.length).toBeGreaterThanOrEqual(30);
     expect(new Set(claims.map((c) => c.venueId)).size).toBe(claims.length);
-    expect(claims.filter((c) => c.decision === 'publish')).toHaveLength(24);
+    expect(claims.filter((c) => c.decision === 'publish')).toHaveLength(26);
     expect(claims.filter((c) => c.decision === 'hold')).toHaveLength(8);
     expect(claims.filter((c) => c.decision === 'refuse')).toHaveLength(4);
   });
@@ -90,7 +92,7 @@ describe('reviewed admission claims: the file', () => {
       const ageDays = (prepared - Date.parse(c.pricing!.source.checkedAt)) / 86_400_000;
       expect(ageDays, c.venueName).toBeGreaterThanOrEqual(0);
       expect(ageDays, c.venueName).toBeLessThanOrEqual(priceFreshnessDays(c.pricing!.status));
-      expect(priceIsCurrent(c.pricing!.source, VISIT, c.pricing!.status), c.venueName).toBe(true);
+      expect(priceIsCurrent(c.pricing!.source, visitFor(c.pricing!), c.pricing!.status), c.venueName).toBe(true);
     }
   });
 });
@@ -98,10 +100,10 @@ describe('reviewed admission claims: the file', () => {
 describe('reviewed admission claims: free means the whole venue', () => {
   const free = published.filter((c) => c.pricing!.status === 'free');
 
-  it('has 19 free-entry claims, each stating free entry in the page\'s words', () => {
-    expect(free).toHaveLength(19);
+  it('has 20 free-entry claims, each stating free entry in the page\'s words', () => {
+    expect(free).toHaveLength(20);
     for (const c of free) {
-      expect(norm(c.evidence.excerpt), c.venueName).toMatch(/free (to visit|entry|for all visitors)|admission is free/);
+      expect(norm(c.evidence.excerpt), c.venueName).toMatch(/free (to visit|entry|for all visitors|admission ticket)|admission is free/);
       expect(c.pricing!.bands, c.venueName).toBeUndefined();
     }
   });
@@ -135,20 +137,48 @@ describe('reviewed admission claims: free means the whole venue', () => {
 describe('reviewed admission claims: paid figures are the page\'s own', () => {
   const paid = published.filter((c) => c.pricing!.status === 'paid');
 
-  it('has 5 paid claims, and every amount appears in the cited excerpt', () => {
-    expect(paid).toHaveLength(5);
+  it('has 6 paid claims, and every amount appears in the cited excerpt', () => {
+    expect(paid).toHaveLength(6);
     for (const c of paid) {
-      for (const b of c.pricing!.bands ?? []) {
+      // The pages print "£ 27.70" with a space; whitespace is normalised, so compare without it.
+      const excerpt = c.evidence.excerpt.replace(/£\s+/g, '£');
+      const allBands = [...(c.pricing!.bands ?? []), ...(c.pricing!.tiers ?? []).flatMap((t) => t.bands)];
+      for (const b of allBands) {
         if (b.free) {
           expect(b.amountPence, c.venueName).toBe(0);
           expect(norm(c.evidence.excerpt), c.venueName).toContain('free');
         } else {
           expect(b.amountPence, c.venueName).toBeGreaterThan(0);
-          expect(c.evidence.excerpt, `${c.venueName} ${b.label}`).toContain(money(b.amountPence));
+          expect(excerpt, `${c.venueName} ${b.label}`).toContain(money(b.amountPence));
         }
       }
-      for (const t of c.pricing!.familyTickets ?? []) expect(c.evidence.excerpt, c.venueName).toContain(money(t.amountPence));
+      for (const t of c.pricing!.familyTickets ?? []) expect(excerpt, c.venueName).toContain(money(t.amountPence));
     }
+  });
+
+  it('London Zoo: four day-type tables, an adult and a child band in each, under-3s free, and a range because no calendar is recorded', () => {
+    const p = byName('London Zoo');
+    expect(p.bands).toBeUndefined();
+    expect(p.tiers!.map((t) => t.label)).toEqual(['Off Peak', 'Weekday Standard', 'Standard Weekend', 'Peak']);
+    expect(p.tiers!.map((t) => t.bands.find((b) => b.kind === 'adult')!.amountPence)).toEqual([2770, 3180, 3360, 3450]);
+    expect(p.tiers!.map((t) => t.bands.find((b) => b.kind === 'child')!.amountPence)).toEqual([1940, 2220, 2350, 2410]);
+    for (const t of p.tiers!) expect(t.bands.find((b) => b.kind === 'under')).toMatchObject({ free: true, amountPence: 0, maxAgeMonthsExclusive: 36 });
+    // Two adults, a 4-year-old and a 1-year-old: the range is across the tables; the baby adds nothing; no single total is claimed.
+    const est = estimateFamilyAdmission(p, [adult('a1'), adult('a2'), child('Ava', 4), child('Ben', 1)], visitFor(p));
+    expect(est.state).toBe('range');
+    if (est.state === 'range') {
+      expect(est.lowPence).toBe(2 * 2770 + 1940);
+      expect(est.highPence).toBe(2 * 3450 + 2410);
+    }
+    // A 16-year-old is in no stated child band and is not an adult band: unknown, never guessed.
+    expect(estimateFamilyAdmission(p, [adult('a1'), child('Eli', 16)], visitFor(p)).state).toBe('unknown');
+  });
+
+  it('Science Museum: free general admission, with the condition that a ticket can be booked', () => {
+    const p = byName('Science Museum');
+    expect(p.status).toBe('free');
+    expect(p.conditions!.join(' ')).toMatch(/General admission is free/);
+    expect(estimateFamilyAdmission(p, FAMILIES['two adults, 4y and 1y'], VISIT).state).toBe('free');
   });
 
   it('adult bands have no age limits and child bands always do, so nobody is priced by a guessed age', () => {
@@ -218,7 +248,7 @@ describe('reviewed admission claims: what three families are told', () => {
   });
 
   it('every published claim gives a card label, and none is "Price not confirmed" for next month', () => {
-    for (const c of published) expect(priceBadge(c.pricing, VISIT).kind, c.venueName).not.toBe('unknown');
+    for (const c of published) expect(priceBadge(c.pricing, visitFor(c.pricing!)).kind, c.venueName).not.toBe('unknown');
   });
 });
 

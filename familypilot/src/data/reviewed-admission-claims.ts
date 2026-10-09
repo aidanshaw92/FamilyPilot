@@ -754,6 +754,87 @@ export const REVIEWED_ADMISSION: ReviewedAdmissionFile = {
       "reviewNotes": "One price for adult or child, but the stored text never says whether babies or toddlers pay. Add-on activities cost £3 to £5.50."
     },
     {
+      "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+      "venueName": "London Zoo",
+      "decision": "publish",
+      "pricing": {
+        "status": "paid",
+        "tiers": [
+          {
+            "label": "Off Peak",
+            "bands": [
+              { "kind": "adult", "amountPence": 2770, "label": "Adult (age 16-64)" },
+              { "kind": "child", "amountPence": 1940, "minAgeMonths": 36, "maxAgeMonthsExclusive": 192, "label": "Child (age 3-15)" },
+              { "kind": "under", "amountPence": 0, "free": true, "minAgeMonths": 0, "maxAgeMonthsExclusive": 36, "label": "Under 3" }
+            ]
+          },
+          {
+            "label": "Weekday Standard",
+            "bands": [
+              { "kind": "adult", "amountPence": 3180, "label": "Adult (age 16-64)" },
+              { "kind": "child", "amountPence": 2220, "minAgeMonths": 36, "maxAgeMonthsExclusive": 192, "label": "Child (age 3-15)" },
+              { "kind": "under", "amountPence": 0, "free": true, "minAgeMonths": 0, "maxAgeMonthsExclusive": 36, "label": "Under 3" }
+            ]
+          },
+          {
+            "label": "Standard Weekend",
+            "bands": [
+              { "kind": "adult", "amountPence": 3360, "label": "Adult (age 16-64)" },
+              { "kind": "child", "amountPence": 2350, "minAgeMonths": 36, "maxAgeMonthsExclusive": 192, "label": "Child (age 3-15)" },
+              { "kind": "under", "amountPence": 0, "free": true, "minAgeMonths": 0, "maxAgeMonthsExclusive": 36, "label": "Under 3" }
+            ]
+          },
+          {
+            "label": "Peak",
+            "bands": [
+              { "kind": "adult", "amountPence": 3450, "label": "Adult (age 16-64)" },
+              { "kind": "child", "amountPence": 2410, "minAgeMonths": 36, "maxAgeMonthsExclusive": 192, "label": "Child (age 3-15)" },
+              { "kind": "under", "amountPence": 0, "free": true, "minAgeMonths": 0, "maxAgeMonthsExclusive": 36, "label": "Under 3" }
+            ]
+          }
+        ],
+        "source": {
+          "url": "https://www.londonzoo.org/plan-your-visit/london-zoo-tickets",
+          "checkedAt": "2026-10-08",
+          "validUntil": "2026-11-07"
+        },
+        "conditions": [
+          "Online advance prices without donation, booked before 10am on the day. Tickets bought at the entrance, or online from 10am on the day, cost more.",
+          "The page does not say which dates are Off Peak, Standard or Peak, so the price shown is a range.",
+          "Concession tickets (65+, students with ID, disabled adults) are cheaper and are not included here."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.londonzoo.org/plan-your-visit/london-zoo-tickets",
+        "retrievedAt": "2026-10-08",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Online advance ticket prices without donation Off Peak Weekday Standard Standard Weekend Peak Adult (age 16-64) £ 27.70 £ 31.80 £ 33.60 £ 34.50 Child (age 3-15) £ 19.40 £ 22.20 £ 23.50 £ 24.10 Concession* £ 25.90 £ 30.00 £ 31.80 £ 32.70 Under 3 FREE FREE FREE FREE"
+      },
+      "reviewNotes": "Variable ticket prices: valid 30 days from the reading (source.validUntil 7 Nov 2026), then shown only as last known and possibly changed; the site blocks our crawler so renewal is a manual re-read. Owner-reviewed 9 Oct 2026 (card 11, edited to add free entry for under-3s). Four rate tables by day type; the page does not tie dates to tiers, so the answer is a range across the venue's own tables, never one of them. The site blocks our crawler, so this reading cannot be refreshed automatically: it needs a person to re-read it before the claim's freshness window ends."
+    },
+    {
+      "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+      "venueName": "Science Museum",
+      "decision": "publish",
+      "pricing": {
+        "status": "free",
+        "source": {
+          "url": "https://www.sciencemuseum.org.uk/",
+          "checkedAt": "2026-10-08"
+        },
+        "conditions": [
+          "General admission is free; a free ticket can be booked. Donations are welcome."
+        ]
+      },
+      "evidence": {
+        "url": "https://www.sciencemuseum.org.uk/",
+        "retrievedAt": "2026-10-08",
+        "subjectScope": "venue_own_subtree",
+        "excerpt": "Book your free admission ticket now to visit the museum Donations welcome"
+      },
+      "reviewNotes": "Owner-reviewed 9 Oct 2026 (card 12, edited to say general admission). Whether particular exhibitions or galleries charge is not stated in the evidence, so the claim is limited to general admission. The site blocks our crawler, so this reading cannot be refreshed automatically."
+    },
+    {
       "venueId": "fp-google-ChIJLcZnZgBBdkgRVa6ewdVh-1w",
       "venueName": "Harry Potter Studio",
       "decision": "hold",

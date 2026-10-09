@@ -35,7 +35,7 @@ PARTIES.push([adult(1), adult(2), child(1, null)]);
 
 describe('reviewed admission: release gate', () => {
   it('publishes exactly the reviewed decisions, and nothing held or refused', () => {
-    expect(published.length).toBe(24);
+    expect(published.length).toBe(26);
     for (const c of REVIEWED_ADMISSION.claims) {
       expect(Boolean(reviewedAdmissionFor(c.venueId)), c.venueName).toBe(c.decision === 'publish');
     }
@@ -57,7 +57,9 @@ describe('reviewed admission: release gate', () => {
     expect(priceIsCurrent(source, RELEASE_DATE, status)).toBe(true);
     const checked = Date.parse(`${source.checkedAt}T00:00:00Z`);
     const day = (n: number) => new Date(checked + n * 86_400_000).toISOString().slice(0, 10);
-    const window = priceFreshnessDays(status);
+    // A price with its own stated end (London Zoo's variable tickets) is current only until then.
+    const own = source.validUntil ? Math.round((Date.parse(`${source.validUntil}T00:00:00Z`) - checked) / 86_400_000) : Infinity;
+    const window = Math.min(priceFreshnessDays(status), own);
     expect(priceIsCurrent(source, day(window), status)).toBe(true);
     expect(priceFreshness(c.pricing!, day(window + 1)), `after ${window} days it is last-known, not current`).toBe('last-known');
     expect(priceFreshness(c.pricing!, day(MAX_PRICE_AGE_DAYS + 1)), 'after 400 days no figure at all').toBe('expired');
@@ -69,7 +71,7 @@ describe('reviewed admission: release gate', () => {
       expect(p.bands ?? []).toEqual([]);
       return;
     }
-    const bands = p.bands ?? [];
+    const bands = [...(p.bands ?? []), ...(p.tiers ?? []).flatMap((t) => t.bands)];
     const family = p.familyTickets ?? [];
     expect(bands.length + family.length, 'a paid price has at least one ticket').toBeGreaterThan(0);
     for (const b of bands) {

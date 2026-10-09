@@ -105,6 +105,27 @@ function hybridSchedule(provider: OpeningHoursSchedule | undefined, venueRules: 
   return { periods, ...(provider?.timezone ? { timezone: provider.timezone } : { timezone: 'Europe/London' }) };
 }
 
+/**
+ * Dates on which UK venues commonly close or change their hours and on which a regular weekly pattern says nothing:
+ * 24, 25 and 26 December, 31 December and 1 January. Month-day only, so it never goes out of date.
+ */
+const FESTIVE_MONTH_DAYS = new Set(['12-24', '12-25', '12-26', '12-31', '01-01']);
+
+/**
+ * On a festive date the provider's weekly pattern is not evidence of being open: a venue's Christmas closure is a dated rule
+ * (types/venue-rules.ts), it lapses after 30 days unless a person re-reads the page, and a lapsed rule must not leave the
+ * weekly pattern to say "open". So the schedule is withheld (the day's opening becomes UNKNOWN, never "closed" and never
+ * "open") and a prominent note says to check. A current closure rule still refuses the date on its own; this only stops
+ * silence from being read as a normal day.
+ */
+function festiveHolding(date: string): HoursReconciliation | null {
+  if (!FESTIVE_MONTH_DAYS.has(date.slice(5))) return null;
+  return {
+    schedule: undefined, basis: 'none', agreement: 'none',
+    note: { ruleId: 'festive-hours-unconfirmed', severity: 'important', text: 'Many venues close or change their hours over Christmas and New Year, and we have not confirmed this venue’s hours for this date. Check with the venue before you go.' },
+  };
+}
+
 export function reconcileHours(
   provider: OpeningHoursSchedule | undefined,
   official: readonly OfficialHoursRule[] | null | undefined,
@@ -114,6 +135,8 @@ export function reconcileHours(
   const baseline = (agreement: HoursAgreement): HoursReconciliation => ({
     schedule: provider, basis: provider ? 'provider' : 'none', agreement: provider ? agreement : 'none', note: null,
   });
+  const festive = DATE.test(date) ? festiveHolding(date) : null;
+  if (festive) return festive;
   const parsed = DATE.test(date) ? parseCalendarDate(date) : null;
   const weekday = parsed ? weekdayOf(parsed.year, parsed.month, parsed.day) : null;
   if (!official?.length || weekday === null) return baseline('provider-only');

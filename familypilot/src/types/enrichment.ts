@@ -60,6 +60,8 @@ export interface AccessibilityInfo {
   changingPlaces?: TriState;
   accessibleParking?: TriState;
   disabledParkingBays?: TriState;
+  /** Where the Blue Badge bays are, in the venue's words and short enough for one row: "Bays nearby, not on site: Bridge Terrace". Shown only while `accessibleParking` is yes. */
+  blueBadgeNote?: string;
   lift?: TriState;
   accessibleSeating?: TriState;
   accessiblePlayEquipment?: TriState;
