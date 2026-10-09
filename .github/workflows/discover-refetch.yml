@@ -2,8 +2,10 @@ name: One controlled read of Discover's website
 
 # One-off, owner-authorised on 9 Oct 2026. Free: reads one venue's own public website with the production fetcher's bounds. No Google call,
 # no database access, no claim touched. The result is committed to its own branch for a person to read; nothing is published from it.
+# Runs once, when this branch is pushed with this trigger. Do not push to this branch again.
 on:
-  workflow_dispatch:
+  push:
+    branches: [ops/discover-refetch]
 
 permissions:
   contents: write
