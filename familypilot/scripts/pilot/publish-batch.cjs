@@ -84,10 +84,10 @@ function build({ items, approver, warnOnly = [], asOf, label = 'batch', textEdit
   return claims;
 }
 
-function sqlFor(claims, approver, label) {
+function sqlFor(claims, approver, label, basis = null) {
   const venues = [...new Set(claims.map((c) => c.venueId))];
   const rows = claims.map((c) => `  (${lit(c.id)}, ${lit(c.venueId)}, ${lit(c.fieldKey)}, ${lit(JSON.stringify(c.value))}::jsonb, 'high', ${lit(c.evidence.url)}, ${lit(c.evidence.quote)}, 'human_reviewed_official_page', ${lit(c.evidence.readAt)}, ${lit(c.validUntil)}, ${lit(approver)}, 'active')`);
-  const apply = `-- Publishing batch ${label}: ${claims.length} rule/hours claims at ${venues.length} venues, approved by ${approver}. Paste as ONE run.
+  const apply = `-- Publishing batch ${label}: ${claims.length} rule/hours claims at ${venues.length} venues, approved by ${approver}. Paste as ONE run.${basis ? `\n-- Review basis: ${basis}` : ''}
 -- Guards abort the whole transaction (nothing is kept) unless: every venue exists, none of these claims is already active, and
 -- the batch is the only change. Expected result printed last: ${claims.length} active rows.
 begin;
