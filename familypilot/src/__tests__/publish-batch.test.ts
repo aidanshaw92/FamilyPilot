@@ -2,7 +2,10 @@ import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
-const { build, sqlFor } = require('../../scripts/pilot/publish-batch.cjs');
+const { build, sqlFor, fromDecisions } = require('../../scripts/pilot/publish-batch.cjs');
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const NHM = 'ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:opening.closure';
 const DISCOVER = 'ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.restriction';
@@ -67,5 +70,54 @@ describe('a publishing batch for approved rules and hours', () => {
     const [toilets] = build({ items: ['ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.toilets'], approver: 'human:aidan', asOf: AS_OF });
     expect([toilets.fieldKey, toilets.value]).toEqual(['familyFacilities.toilets', 'yes']);
     expect(toilets.validUntil).toBe('2026-11-07');
+  });
+
+  describe('from a decisions file', () => {
+    const write = (lines: object[]) => {
+      const f = join(mkdtempSync(join(tmpdir(), 'dec-')), 'd.jsonl');
+      writeFileSync(f, lines.map((l) => JSON.stringify(l)).join('\n') + '\n');
+      return f;
+    };
+    const DIS = 'ChIJJ2CD1mEddkgRAuOi9iSzBrk';
+    const GUN = 'ChIJrcFVE-YNdkgRJQPxAxaTnMY:opening.hours';
+
+    it('publishes only approved and edited items; unknown and reject never publish; prices ship as code', () => {
+      const f = write([
+        { n: 1, itemId: `${DIS}:pushchair.restriction`, decision: 'edit', editedText: 'Edited wording.' },
+        { n: 2, itemId: `${DIS}:pushchair.twins`, decision: 'unknown' },
+        { n: 3, itemId: `${DIS}:pricing.paid`, decision: 'approve' },
+        { n: 4, itemId: NHM, decision: 'reject' },
+      ]);
+      const d = fromDecisions(f);
+      expect(d.items).toEqual([`${DIS}:pushchair.restriction`]);
+      expect(d.skipped.join('|')).toMatch(/pushchair\.twins \(unknown: not published\)/);
+      expect(d.skipped.join('|')).toMatch(/pricing\.paid \(ships as reviewed data/);
+      expect(d.skipped.join('|')).toMatch(/opening\.closure \(reject: not published\)/);
+    });
+
+    it('a revert withdraws the decision it targets, so the item is no longer published', () => {
+      const f = write([
+        { n: 1, itemId: NHM, decision: 'approve' },
+        { n: 2, decision: 'revert', targets: 1 },
+      ]);
+      expect(fromDecisions(f).items).toEqual([]);
+    });
+
+    it("an edit replaces the wording of a rule that IS the reviewed sentence, and only that rule", () => {
+      const edited = build({ items: [`${DIS}:pushchair.restriction`], approver: 'human:aidan', asOf: AS_OF, textEdits: { [`${DIS}:pushchair.restriction`]: 'Edited wording.' } });
+      expect(edited[0].value.text).toBe('Edited wording.');
+      // NHM's closure rules carry their own fixed text, so an edit to the item does not overwrite them.
+      const nhm = build({ items: [NHM], approver: 'human:aidan', asOf: AS_OF, textEdits: { [NHM]: 'Should not apply.' } });
+      expect(nhm.every((c: { value: { text: string } }) => c.value.text !== 'Should not apply.')).toBe(true);
+    });
+
+    it('a dropped rule is not written, but the hours reading from the same item still is', () => {
+      const all = build({ items: [GUN], approver: 'human:aidan', asOf: AS_OF });
+      expect(all.map((c: { fieldKey: string }) => c.fieldKey)).toContain('rules.museum-closed-mondays');
+      const dropped = build({ items: [GUN], approver: 'human:aidan', asOf: AS_OF, dropRules: ['museum-closed-mondays'] });
+      const keys = dropped.map((c: { fieldKey: string }) => c.fieldKey);
+      expect(keys).not.toContain('rules.museum-closed-mondays');
+      expect(keys).toEqual(expect.arrayContaining(['hours.park', 'hours.museum']));
+    });
   });
 });

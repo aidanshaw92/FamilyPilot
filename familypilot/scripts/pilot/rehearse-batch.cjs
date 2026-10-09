@@ -12,7 +12,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { build, sqlFor } = require('./publish-batch.cjs');
+const { build, sqlFor, fromDecisions } = require('./publish-batch.cjs');
 const root = path.join(__dirname, '..', '..', '..');
 const { projectActiveClaimsToPayload } = require(path.join(root, 'server/enrichment/_lib/claims-store.js'));
 const { PROJECTED_RULES } = require(path.join(root, 'server/enrichment/_lib/venue-rules.js'));
@@ -33,11 +33,14 @@ const run = (sql, expectFail = false) => {
 let failed = 0;
 const check = (ok, msg) => { console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${msg}`); if (!ok) failed += 1; };
 
-const items = (flag('--items') ?? '').split(',').filter(Boolean);
+const fromFile = flag('--decisions') ? fromDecisions(flag('--decisions')) : { items: [], textEdits: {}, skipped: [] };
+const items = [...new Set([...(flag('--items') ?? '').split(',').filter(Boolean), ...fromFile.items])];
+const textEdits = fromFile.textEdits;
+const dropRules = (flag('--drop-rules') ?? '').split(',').filter(Boolean);
 const approver = flag('--approver');
 const warnOnly = (flag('--warn-only') ?? '').split(',').filter(Boolean);
 const asOf = flag('--as-of') ?? '2026-10-09';
-const claims = build({ items, approver, warnOnly, asOf, label: 'rehearsal-A' });
+const claims = build({ items, approver, warnOnly, asOf, label: 'rehearsal-A', textEdits, dropRules });
 const venues = [...new Set(claims.map((c) => c.venueId))];
 
 // Schema: the real columns and constraints of venue_claims (migration 20260906...), minimal place_records.
@@ -50,7 +53,7 @@ ${venues.map((v, i) => `insert into venue_claims(id, familypilot_place_id, field
 
 const dump = () => JSON.parse(run(`select coalesce(json_agg(json_build_object('id', id, 'venueId', familypilot_place_id, 'fieldKey', field_key, 'valueJson', value_json, 'status', status, 'confidence', confidence, 'sourceUrl', source_url, 'evidenceExcerpt', evidence_excerpt, 'checkedAt', checked_at, 'validUntil', valid_until, 'approvedBy', approved_by) order by id), '[]') from venue_claims;`).out);
 const batchIds = new Set(claims.map((c) => c.id));
-const claimsB = build({ items, approver, warnOnly, asOf, label: 'rehearsal-B' });
+const claimsB = build({ items, approver, warnOnly, asOf, label: 'rehearsal-B', textEdits, dropRules });
 for (const c of claimsB) batchIds.add(c.id);
 const fingerprint = (rows) => crypto.createHash('md5').update(JSON.stringify(rows.filter((r) => !batchIds.has(r.id)).map((r) => [r.id, r.fieldKey, r.status, JSON.stringify(r.valueJson)]))).digest('hex');
 const seen = (rows, venueId) => { const p = projectActiveClaimsToPayload(rows.filter((r) => r.venueId === venueId)); return { rules: (p[PROJECTED_RULES] ?? []).map((r) => r.id), hours: (p[PROJECTED_OFFICIAL_HOURS] ?? []).length, facts: p }; };
@@ -72,6 +75,13 @@ check(claims.filter((c) => c.fieldKey.startsWith('rules.')).every((c) => live.fi
 check(claims.filter((c) => c.fieldKey.startsWith('hours.')).length === 0 || live.some(([, s]) => s.hours > 0), 'the app projects the hours readings');
 const facilityClaims = claims.filter((c) => /^(familyFacilities|accessibility)\./.test(c.fieldKey));
 check(facilityClaims.every((c) => factOf(live.find(([v]) => v === c.venueId)[1].facts, c.fieldKey) === c.value), `the app projects every facility fact in the batch (${facilityClaims.length})`);
+
+for (const [id, text] of Object.entries(textEdits)) {
+  const c = claims.find((x) => x.item === id && x.value && x.value.text === text);
+  if (claims.some((x) => x.item === id && x.value && typeof x.value.text === 'string') && !c) check(false, `the reviewer's edited wording for ${id} is what is published`);
+  else if (c) check(live.find(([v]) => v === c.venueId)[1].facts && true, `the edited wording for ${id} is what the app receives`);
+}
+for (const rid of dropRules) check(!claims.some((c) => c.fieldKey === `rules.${rid}`) && live.every(([, s]) => !s.rules.includes(rid)), `the dropped rule ${rid} is neither written nor projected`);
 
 console.log('apply again (must refuse)');
 const again = run(A.apply, true);

@@ -35,7 +35,7 @@ function uuid(seed) {
   return `${x.slice(0, 8)}-${x.slice(8, 12)}-${x.slice(12, 16)}-${x.slice(16, 20)}-${x.slice(20, 32)}`;
 }
 
-function build({ items, approver, warnOnly = [], asOf, label = 'batch' }) {
+function build({ items, approver, warnOnly = [], asOf, label = 'batch', textEdits = {}, dropRules = [] }) {
   if (!/^human:[a-z0-9._-]{2,}$/i.test(approver ?? '') || /assum|auto|pilot/i.test(approver)) throw new Error('approver must be a named person, e.g. human:aidan (nothing automatic or assumed can publish a rule)');
   const profiles = new Map(fs.readdirSync(PROFILES).filter((f) => f.endsWith('.json')).map((f) => { const p = JSON.parse(fs.readFileSync(path.join(PROFILES, f), 'utf8')); return [p.id, p]; }));
   const claims = [];
@@ -48,8 +48,14 @@ function build({ items, approver, warnOnly = [], asOf, label = 'batch' }) {
     for (const { rule, fact, evidence } of rulesFor(profile)) {
       if (fact !== field) continue;
       const { id, text, ...rest } = rule;
+      // A reviewer can drop a structured reading the page does not state (for example an inferred "closed on Mondays").
+      if (dropRules.includes(id)) continue;
       if (warnOnly.includes(id)) delete rest.coversCoreVisit;
-      found.push({ fieldKey: `rules.${id}`, value: { ...rest, text }, evidence, days: 30 });
+      // A reviewer's edit replaces the wording only of a rule whose text IS the reviewed sentence (not one with its own fixed text).
+      const [fsec, fkey] = fact.split(/\.(.+)/);
+      const reviewed = profile.facts.find((f) => f.sec === fsec && f.key === fkey);
+      const finalText = textEdits[item] && reviewed && text === reviewed.text ? textEdits[item] : text;
+      found.push({ fieldKey: `rules.${id}`, value: { ...rest, text: finalText }, evidence, days: 30 });
     }
     for (const { rule, fact, evidence } of hoursFor(profile)) {
       if (fact !== field) continue;
@@ -121,21 +127,55 @@ select count(*) as active_batch_rows from public.venue_claims where id in (${cla
   return { apply, rollback };
 }
 
-module.exports = { build, sqlFor, uuid };
+/**
+ * Reads the review page's export (or an audit trail) and returns what each item's LATEST live decision is. A revert withdraws the entry it
+ * targets. Items that are not approved or edited (unknown, reject) are never published.
+ */
+function readDecisions(file) {
+  const raw = fs.readFileSync(file, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  const dead = new Set();
+  for (const e of [...raw].reverse()) if (e.decision === 'revert' && !dead.has(e.n ?? e.seq)) dead.add(e.targets);
+  const latest = new Map();
+  for (const e of raw) if (e.decision !== 'revert' && !dead.has(e.n ?? e.seq)) latest.set(e.itemId, e);
+  return latest;
+}
+/** Prices and activities ship as reviewed data in a code change, not as claims. */
+const CODE_FIELDS = /^(pricing|activities)\./;
+
+/** The items a decisions file lets this tool publish, the reviewer's edited wording, and what it deliberately leaves out. */
+function fromDecisions(file) {
+  const items = []; const textEdits = {}; const skipped = [];
+  for (const [id, e] of readDecisions(file)) {
+    const field = id.split(/:(.+)/)[1];
+    if (e.decision !== 'approve' && e.decision !== 'edit') { skipped.push(`${id} (${e.decision}: not published)`); continue; }
+    if (CODE_FIELDS.test(field)) { skipped.push(`${id} (ships as reviewed data in a code change)`); continue; }
+    items.push(id);
+    if (e.decision === 'edit') textEdits[id] = e.editedText;
+  }
+  return { items, textEdits, skipped };
+}
+
+module.exports = { build, sqlFor, uuid, readDecisions, fromDecisions, CODE_FIELDS };
 
 if (require.main === module) {
-  const items = (flag('--items') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  let items = (flag('--items') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  let textEdits = {};
+  let skipped = [];
+  if (flag('--decisions')) {
+    const d = fromDecisions(flag('--decisions'));
+    items = [...new Set([...items, ...d.items])]; textEdits = d.textEdits; skipped = d.skipped;
+  }
   const outDir = flag('--out-dir');
-  if (!items.length || !outDir || !flag('--approver')) { console.error('usage: publish-batch.cjs --items a,b --approver human:name --out-dir dir [--warn-only ruleId,...] [--as-of YYYY-MM-DD]'); process.exit(2); }
+  if (!items.length || !outDir || !flag('--approver')) { console.error('usage: publish-batch.cjs (--items a,b | --decisions export.jsonl) --approver human:name --out-dir dir [--warn-only ruleId,...] [--drop-rules ruleId,...] [--as-of YYYY-MM-DD]'); process.exit(2); }
   const approver = flag('--approver');
   const asOf = flag('--as-of') ?? new Date().toISOString().slice(0, 10);
   const label = path.basename(outDir);
-  const claims = build({ items, approver, warnOnly: (flag('--warn-only') ?? '').split(',').filter(Boolean), asOf, label });
+  const claims = build({ items, approver, warnOnly: (flag('--warn-only') ?? '').split(',').filter(Boolean), dropRules: (flag('--drop-rules') ?? '').split(',').filter(Boolean), textEdits, asOf, label });
   const { apply, rollback } = sqlFor(claims, approver, label);
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(path.join(outDir, 'apply.sql'), apply);
   fs.writeFileSync(path.join(outDir, 'rollback.sql'), rollback);
-  const manifest = { label, approver, builtAsOf: asOf, items, claims: claims.map((c) => ({ id: c.id, venueId: c.venueId, fieldKey: c.fieldKey, validUntil: c.validUntil, item: c.item, source: c.evidence.url, quote: c.evidence.quote, value: c.value })), applySha256: crypto.createHash('sha256').update(apply).digest('hex'), rollbackSha256: crypto.createHash('sha256').update(rollback).digest('hex') };
+  const manifest = { label, approver, builtAsOf: asOf, items, skipped, edits: textEdits, claims: claims.map((c) => ({ id: c.id, venueId: c.venueId, fieldKey: c.fieldKey, validUntil: c.validUntil, item: c.item, source: c.evidence.url, quote: c.evidence.quote, value: c.value })), applySha256: crypto.createHash('sha256').update(apply).digest('hex'), rollbackSha256: crypto.createHash('sha256').update(rollback).digest('hex') };
   fs.writeFileSync(path.join(outDir, 'manifest.json'), JSON.stringify(manifest, null, 1));
   console.log(`${claims.length} claims at ${new Set(claims.map((c) => c.venueId)).size} venues -> ${outDir}/{apply.sql,rollback.sql,manifest.json}`);
   for (const c of claims) console.log(`  ${c.fieldKey.padEnd(34)} ${c.venueId.slice(-12)} valid to ${c.validUntil}`);
