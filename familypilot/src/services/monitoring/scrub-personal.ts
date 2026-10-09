@@ -3,8 +3,13 @@
  * profile, the home area or postcode, and the account email. Case-insensitive, whole words. The server scrubs again for
  * the shapes it can recognise (emails, tokens, postcodes, coordinates, dates); this covers the free text it cannot.
  */
-export function personalTerms(profile: { parentName?: string; familyName?: string; homeLocation?: string; members?: Array<{ name?: string }> } | null | undefined, email?: string | null): string[] {
-  const raw: string[] = [];
+export function personalTerms(
+  profile: { parentName?: string; familyName?: string; homeLocation?: string; members?: Array<{ name?: string }> } | null | undefined,
+  email?: string | null,
+  /** Other free text the family typed: the labels of the families in their plans (their own, and connected families' first names). */
+  labels: Array<string | undefined> = [],
+): string[] {
+  const raw: string[] = [...labels.map((l) => l ?? '')];
   if (profile) {
     raw.push(profile.parentName ?? '', profile.familyName ?? '', profile.homeLocation ?? '');
     for (const m of profile.members ?? []) raw.push(m.name ?? '');

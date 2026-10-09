@@ -5,6 +5,7 @@ import { planningApiUrl } from '@/src/services/planning/recommendations';
 import { personalTerms, scrubPersonal } from '@/src/services/monitoring/scrub-personal';
 import { useAuthStore } from '@/src/stores/auth-store';
 import { useFamilyStore } from '@/src/stores/family-store';
+import { usePlanningStore } from '@/src/stores/planning-store';
 
 /**
  * Basic crash reporting for the invitation-only beta. Off unless the build sets EXPO_PUBLIC_CLIENT_ERRORS=on.
@@ -56,7 +57,7 @@ export function resetClientErrorsForTests() {
 
 export async function reportClientError(kind: ClientErrorKind, error: unknown, route = ''): Promise<void> {
   try {
-    const terms = personalTerms(useFamilyStore.getState().profile, useAuthStore.getState().email);
+    const terms = personalTerms(useFamilyStore.getState().profile, useAuthStore.getState().email, usePlanningStore.getState().families.map((f) => f.label));
     const payload = buildClientErrorPayload(kind, error, route, terms);
     if (!shouldSend(payload) || !supabase) return;
     const { data } = await supabase.auth.getSession();
