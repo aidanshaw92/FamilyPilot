@@ -6,7 +6,8 @@
 // POSTing town names at it. With the gate closed the endpoint keeps working for postcodes and says
 // so, which is the fallback it already had for a missing key.
 const {
-  assertPlacesAllowed,
+  reservePlacesCall,
+  primePlacesBudget,
   PlacesDisabledError,
   PlacesBudgetExceededError,
 } = require('../../server/places/lib/places-budget');
@@ -30,7 +31,9 @@ module.exports = async function handler(req, res) {
       const key = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY;
       if (!key) return res.status(503).json({ error: POSTCODE_ONLY_MESSAGE });
       try {
-        assertPlacesAllowed({ scope: 'geocoding', reason: 'town_name_lookup', subject: input });
+        // Read the shared ledger first, so GOOGLE_PLACES_REQUIRE_LEDGER can be honoured on this path too.
+        await primePlacesBudget();
+        await reservePlacesCall({ scope: 'geocoding', reason: 'town_name_lookup', subject: input });
       } catch (gateError) {
         if (gateError instanceof PlacesDisabledError || gateError instanceof PlacesBudgetExceededError) {
           return res.status(gateError instanceof PlacesBudgetExceededError ? 429 : 503).json({

@@ -24,7 +24,7 @@
  * therefore still costs two billable requests, and the lever is the hit rate, not the call count.
  */
 const {
-  assertPlacesAllowed,
+  reservePlacesCall,
   dedupe,
   primePlacesBudget,
   PlacesDisabledError,
@@ -55,7 +55,7 @@ function blocked(res, error) {
 /** Resolves the photo reference by buying a Place Details call. Coalesced per process. */
 async function lookupPhotoReference(key, placeId, index) {
   return dedupe(`photo-ref:${placeId}`, async () => {
-    assertPlacesAllowed({
+    await reservePlacesCall({
       scope: 'photos',
       reason: 'photo_reference_lookup',
       subject: `fp-google-${placeId}`,
@@ -71,7 +71,7 @@ async function lookupPhotoReference(key, placeId, index) {
 }
 
 async function resolveMediaUri(key, photoName, placeId) {
-  assertPlacesAllowed({
+  await reservePlacesCall({
     scope: 'photos',
     reason: 'photo_media',
     subject: `fp-google-${placeId}`,
