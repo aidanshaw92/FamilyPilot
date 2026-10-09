@@ -34,6 +34,10 @@ describe('account credentials', () => {
     expect(classifyAuthError({ status: 429 })).toBe('rate-limited');
     expect(classifyAuthError({ message: 'Failed to fetch' })).toBe('network');
     expect(classifyAuthError(null)).toBe('other');
+    // Sign-ups switched off in Supabase Auth (the invitation-only beta) gets its own, friendly answer.
+    expect(classifyAuthError({ code: 'signup_disabled', message: 'Signups not allowed for this instance' })).toBe('invite-only');
+    expect(classifyAuthError({ message: 'Signups not allowed for this instance' })).toBe('invite-only');
+    expect(AUTH_FAILURE_COPY['invite-only']).toMatch(/Forgot password/);
     for (const copy of Object.values(AUTH_FAILURE_COPY)) expect(copy.length).toBeGreaterThan(10);
   });
 });

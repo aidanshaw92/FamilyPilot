@@ -9,7 +9,7 @@ Status: 9 October 2026. Replaces the "owner reviews everything" assumption. Noth
 | **Owner** | You | The 5 decisions that can refuse a date or a household (unless delegated in writing below); authorises each publication batch (a production write) | 5 |
 | **Expert reviewer** | A named delegate with operations, accessibility or venue-admin experience | Opening hours against the provider's, prices and free entry, a "no" on access, the held under-1 admission item | 26 |
 | **Trained reviewer** | Anyone who has done the 30-minute onboarding below | Every other high-impact fact; rules that only inform; anything a check or a model flagged; plain "yes" facts, in groups | 50 reads + 13 group reads + 2 group approvals |
-| **Second reader** | The owner or the expert, not the person whose work it is | An audit sample of the trained reviewer's work | about 15 |
+| **Second reader** | The owner or the expert, not the person whose work it is | An audit sample of the trained reviewer's work | a sample (see below) |
 | **Nobody** | Mechanical failures only | Rejected automatically, reversibly, with the reason | 0 |
 
 The five owner decisions: the Natural History Museum's closure dates (including **Friday 9 October**), the Science Museum's 24–26 December closure and its pushchair rule, Discover Children's Story Centre's festive closure and its pushchair restriction. If no suitable delegate exists you make these five. If you delegate any of them, write the name and the item in the audit trail (a line saying "delegated to X by the owner on <date>"). A refusal rule is **never** decided by one person alone: the expert decides and the owner (or a second expert) confirms, and the trail shows both.

@@ -32,12 +32,14 @@ export function maskEmail(value: string): string {
   return `${email[0]}${'*'.repeat(Math.min(3, at - 1))}${email.slice(at)}`;
 }
 
-export type AuthFailure = 'email-not-confirmed' | 'invalid-credentials' | 'already-registered' | 'rate-limited' | 'network' | 'other';
+export type AuthFailure = 'invite-only' | 'email-not-confirmed' | 'invalid-credentials' | 'already-registered' | 'rate-limited' | 'network' | 'other';
 
 /** Turns whatever Supabase Auth said into the one thing the screen has to decide on. */
 export function classifyAuthError(error: { message?: string; status?: number; code?: string } | null | undefined): AuthFailure {
   const message = (error?.message ?? '').toLowerCase();
   const code = (error?.code ?? '').toLowerCase();
+  // Public sign-up switched off (the beta is by invitation): Supabase says so by code, and by these words on older versions.
+  if (code === 'signup_disabled' || code === 'email_provider_disabled' || message.includes('signups not allowed') || message.includes('signup is disabled') || message.includes('signups are disabled')) return 'invite-only';
   if (code === 'email_not_confirmed' || message.includes('email not confirmed')) return 'email-not-confirmed';
   if (code === 'invalid_credentials' || message.includes('invalid login credentials')) return 'invalid-credentials';
   if (code === 'user_already_exists' || message.includes('already registered') || message.includes('already been registered')) return 'already-registered';
@@ -47,6 +49,7 @@ export function classifyAuthError(error: { message?: string; status?: number; co
 }
 
 export const AUTH_FAILURE_COPY: Record<AuthFailure, string> = {
+  'invite-only': 'FamilyPilot is by invitation for now. If you were invited, choose Sign in, then “Forgot password” with the email address your invitation went to, and set your own password.',
   'email-not-confirmed': 'Your email isn’t verified yet. Open the link we sent you, then try again.',
   'invalid-credentials': 'That email and password don’t match. Check them, or choose “Forgot password”.',
   'already-registered': 'There’s already an account with that email. Sign in instead.',
