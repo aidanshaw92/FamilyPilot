@@ -39,6 +39,8 @@ where familypilot_place_id in ('fp-google-ChIJId2oNroFdkgReafXXIrGnkY','fp-osm-6
 select familypilot_place_id, family_facilities, accessibility from public.venue_family_metadata
 where familypilot_place_id in ('fp-google-ChIJq-jJARlxdkgRNLTE490EqVU','fp-google-ChIJF4YXjN4DdkgRvJe2-r5usvY','fp-google-ChIJkf4NDG8ddkgRXEINXuEbip8','fp-google-ChIJzZtNX7UcdkgRzycysU2TrhM');
 
--- 8. No paid Google call from the run: no place_details / text_search row dated today (nearby_search and place_photos
+-- 8. No paid Google call from the run. BASELINE before Run A, 9 Oct 07:31 UTC: place_details 1 (06:25), place_photos 44 (06:27), nearby_search 9, which are normal app use. Parents can still
+--    buy a Place Details by opening a venue, so a higher number is not by itself the run's; check updated_at against the run window and that the reextract jobs' mode is 'reextract'.
+--    Originally: no place_details / text_search row dated today (nearby_search and place_photos
 --    move with app traffic and are not the run's; see the note in FINAL_GATE.md).
 select usage_day, sku, calls, updated_at from public.google_places_usage where usage_day >= current_date and sku not in ('nearby_search', 'place_photos', 'geocoding');

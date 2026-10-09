@@ -1,8 +1,8 @@
 # Step 1 final approval package (17 venues)
 
-Prepared 9 October 05:50 UTC. **Not executed. I will run nothing until you say "run A" / "run B".**
+Prepared 9 October 05:50 UTC; snapshot re-verified **07:31 UTC**. **Not executed. I will run nothing until you say "run A" / "run B".**
 
-## Snapshot: still matches (read-only checks at 05:47 UTC)
+## Snapshot: still matches (read-only checks at 07:31 UTC, repeated from 05:47)
 
 | Check | Result |
 |---|---|
@@ -10,7 +10,7 @@ Prepared 9 October 05:50 UTC. **Not executed. I will run nothing until you say "
 | Last change to any of them | 7 Oct 15:29 (nothing since) |
 | The function's own eligibility rule applied to the 17 | **17 of 17** eligible; oldest stored reading 27 Sep 00:36 UTC |
 | Open or pending enrichment jobs | **0** (any venue) |
-| Google usage today | **none** (last rows are 8 Oct: 19 nearby_search, 50 place_photos) |
+| Google usage today (before any Step 1 action) | **Not none:** 9 nearby_search, **1 place_details (06:25 UTC)**, **44 place_photos (06:27 UTC)**, all `production`, all from normal app use by a person (the photo switch is not yet set, and a parent opening a venue can still buy one Place Details). **None is from Step 1**: no job exists. Use these as the baseline; the ledger cannot tell a parent's call from a job's, so the proof that Run A makes none is the code path below, not the ledger |
 
 **Deadline: 10 October 00:36 UTC.** Museum of the Home's stored reading passes 13 days then; after that the command returns 16 and only that venue's wheelchair fact is lost. Nothing else expires.
 
