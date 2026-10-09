@@ -314,17 +314,11 @@ export function matchVenueToDayRequest(
   // from the venue's own step-free and wheelchair-access claims only (access-concepts.ts): a buggy rating, general parking and
   // the category are not evidence either way, and nothing here is scored.
   if (request.needsStepFree) {
-    if (
-      !applyConstraint(
-        evaluations,
-        'accessibility.wheelchairAccessible',
-        'required',
-        needToOutcome(stepFreeOutcome(venueAccess(facts))),
-        tally,
-      )
-    ) {
-      eligible = false;
-    }
+    const outcome = needToOutcome(stepFreeOutcome(venueAccess(facts)));
+    evaluations.push({ field: 'accessibility.wheelchairAccessible', strength: 'required', outcome });
+    // Unknown is "needs checking": not a confirmed no (so the venue stays), and not a confirmed yes (so it is named as unconfirmed
+    // and the fit is never "Best fit"). Only a confirmed "no" refuses. Other required facilities still fail closed.
+    if (outcome === 'unsuitable') eligible = false;
   }
 
   // A recorded venue rule the household cannot work around (a buggy-dependent family where pushchairs are not allowed in the
