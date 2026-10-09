@@ -7,7 +7,8 @@ from public.venue_enrichment_jobs
 where familypilot_place_id = any (array['fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY','fp-google-ChIJKUrjG7wcdkgRbfTuKDBgWXI','fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc','fp-google-ChIJs_wmr0cWa0gRZpEqERRReXQ','fp-google-ChIJs_wmr0cWa0gRHr60qjwn1Mo','fp-google-ChIJ97pX3M0EdkgR8YFd4G1GZJ8','fp-google-ChIJczuZfc0adkgRc8X-u3ZiHcE','fp-google-ChIJf9LtmOcddkgRRv6MezIdvSM','fp-google-ChIJc2nSALkEdkgRkuoJJBfzkUI','fp-google-ChIJAVlhMIUCdkgRCJEgHVbITq4','fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI','fp-google-ChIJvS60MMEcdkgRSMlH5VxD51Y','fp-google-ChIJw1d-sUMFdkgRH2XN_U0Jt54','fp-google-ChIJN3hATcsSdkgRPscumUj6FqU','fp-google-ChIJF4YXjN4DdkgRvJe2-r5usvY','fp-google-ChIJkf4NDG8ddkgRXEINXuEbip8','fp-google-ChIJzZtNX7UcdkgRzycysU2TrhM']::text[])
 order by status, familypilot_place_id;
 
--- 2. One official-source-rules-v6 draft per venue: 17 rows (16 if Museum of the Home was already outside its window).
+-- 2. One official-source-rules-v6 draft per venue: 18 rows = the 17 venues + Headstone Manor's draft, which the scheduler wrote at 2026-10-09 00:17 UTC before the run
+--    (16+1 if Museum of the Home was already outside its window).
 select count(*) as v6_drafts, count(distinct familypilot_place_id) as venues from public.venue_enrichment_drafts where model = 'official-source-rules-v6';
 
 -- 3. The five claims are no longer active: 5 rows, none 'active' (four withdrawn by the job; Colne Valley's by colne-withdraw-only.sql).
@@ -18,7 +19,8 @@ where id in ('24a699e3-1e99-46ac-8f45-b50e8d4e536a','eabed57d-f4e9-45a7-a8b6-f27
 -- 4. Everything the run wrote: 17 new active rows (16 added facts and the London Eye re-quote). Colne Valley has none: it publishes nothing about parking.
 select c.familypilot_place_id, c.field_key, c.value_json, c.status, c.supersedes_claim_id is not null as replaces_one, left(c.evidence_excerpt, 70) as quote
 from public.venue_claims c join public.venue_enrichment_drafts d on d.id = c.approved_from_draft_id
-where d.model = 'official-source-rules-v6' order by c.familypilot_place_id, c.field_key;
+where d.model = 'official-source-rules-v6' and d.familypilot_place_id <> 'fp-google-ChIJIwA11GYTdkgRoeeAutW9svo' -- Headstone Manor: written by the scheduler, not by this run
+order by c.familypilot_place_id, c.field_key;
 
 -- 5. Active claims at the 21 venues: 87 (76 - 4 withdrawn by the job - 1 Colne Valley + 16 added; the re-quote nets to zero).
 select count(*) as active_claims

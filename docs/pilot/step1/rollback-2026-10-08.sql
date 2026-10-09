@@ -1,4 +1,4 @@
--- Step 1 rollback (recommended 18-venue run). Paste into the Supabase SQL editor as ONE run. It is a single transaction.
+-- Step 1 rollback (the 17-venue run plus the Colne Valley withdrawal). Paste into the Supabase SQL editor as ONE run. It is a single transaction.
 -- Use it only if the run has to be undone and nothing else has changed these venues since: step 3 restores the whole
 -- venue_family_metadata serving row from the snapshot taken on 2026-10-08 (verified byte for byte against production).
 begin;
@@ -71,12 +71,18 @@ update public.venue_family_metadata set family_facilities='{"parking": "no", "ba
 update public.venue_family_metadata set family_facilities='{"toilets": "yes"}'::jsonb, accessibility='{"accessibleToilet": "yes", "wheelchairAccessible": "yes"}'::jsonb, facilities='["toilets"]'::jsonb, pushchair_suitability=NULL, step_free_access=NULL, accessible_toilet=NULL, parking_info=NULL, environment=NULL, field_provenance='{"bestAges": {"label": "ai_assisted", "source": "familypilot", "updatedAt": "2026-10-07", "reliability": "estimated"}}'::jsonb, last_checked='2026-10-07', checked_by='source_evidence_auto_v2', updated_at='2026-10-07 15:20:05.788+00' where familypilot_place_id='fp-google-ChIJw1d-sUMFdkgRH2XN_U0Jt54';
 update public.venue_family_metadata set family_facilities='{"cafe": "yes", "freeParking": "no", "babyChanging": "yes"}'::jsonb, accessibility='{}'::jsonb, facilities='["baby_changing", "cafe"]'::jsonb, pushchair_suitability=NULL, step_free_access=NULL, accessible_toilet=NULL, parking_info=NULL, environment=NULL, field_provenance='{"bestAges": {"label": "ai_assisted", "source": "familypilot", "updatedAt": "2026-10-07", "reliability": "estimated"}}'::jsonb, last_checked='2026-10-07', checked_by='source_evidence_auto_v2', updated_at='2026-10-07 15:59:04.804+00' where familypilot_place_id='fp-google-ChIJzZtNX7UcdkgRzycysU2TrhM';
 
--- 4. Check inside the transaction. Expected: 76 active claims at the 21 venues, and the id fingerprint below.
-select count(*) as active_claims,
-       md5(string_agg(id::text, ',' order by id::text collate "C")) as fingerprint
-  from public.venue_claims
- where status = 'active'
-   and familypilot_place_id in (select id from s1_ids union select unnest(array[
-     'fp-google-ChIJId2oNroFdkgReafXXIrGnkY','fp-osm-679119297','fp-google-ChIJlRl2MakEdkgR55tr4CNv_B8']::text[]));
--- If the numbers are wrong, run ROLLBACK; instead of COMMIT; nothing is kept.
+-- 4. Guard inside the transaction. If the state is not exactly the 8 October snapshot (76 active claims at the 21 venues
+--    and this id fingerprint) the script stops with an error, the transaction is aborted and NOTHING is kept.
+do $$
+declare n integer; f text;
+begin
+  select count(*), md5(string_agg(id::text, ',' order by id::text collate "C")) into n, f
+    from public.venue_claims
+   where status = 'active'
+     and familypilot_place_id in (select id from s1_ids union select unnest(array[
+       'fp-google-ChIJId2oNroFdkgReafXXIrGnkY','fp-osm-679119297','fp-google-ChIJlRl2MakEdkgR55tr4CNv_B8']::text[]));
+  if n <> 76 or f <> '882b02667bf8e90022b7c0150b8c2fae' then
+    raise exception 'Rollback check failed: % active claims, fingerprint %. Nothing was changed.', n, f;
+  end if;
+end $$;
 commit;
