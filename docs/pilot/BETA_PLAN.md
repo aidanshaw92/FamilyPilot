@@ -1,5 +1,7 @@
 # Controlled beta: a staged, reversible plan
 
+> **9 October:** the "two deployments" structure below is superseded. Accounts are disabled on Preview and the project is at the 12-function limit, so the beta is the production deployment, invitation-only, flags off. See [`beta/BETA_OPERATIONS.md`](beta/BETA_OPERATIONS.md). The stage gates, evidence checks and rollback ladder below still hold.
+
 Status: 8 October 2026. A plan, and the checks already run for it. **Nothing in it has been done**: no merge, no production write, no flag, no publication. Each stage ends at a decision that is yours.
 
 Principles: nothing unreviewed is published or merged; every stage can be undone and the undo is written down before the stage starts; the next stage never starts because the previous one ran, only because its gate passed; and a family is never shown a fact, a refusal or a recommendation that a person has not decided.

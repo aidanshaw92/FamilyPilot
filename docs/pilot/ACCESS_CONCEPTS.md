@@ -59,3 +59,15 @@ The matcher builds its constraints from the household's stated needs and answers
 1. This regression suite passes (it does: 3,387 tests, with only the three known "after build" static-route checks failing because there is no build in the test environment).
 2. The pilot claims that carry Blue Badge, step-free and rule evidence are reviewed by a person; until then a household that selects Blue Badge parking sees "still to be checked" everywhere, which is honest but unhelpful.
 3. You approve activation. I have not activated anything.
+
+## Three states for a household that needs step-free access (9 October)
+
+A family with a wheelchair or mobility-aid user meets exactly three states, and every surface says the same thing in each (`accessibility-three-states.test.ts`, 9 combinations of the two claims on Home, Explore, Venue Detail, Create a Plan and a saved plan reopened from storage):
+
+| State | The venue's own claims | Home / Explore | Venue Detail | Create a Plan | Saved plan |
+|---|---|---|---|---|---|
+| **Confirmed suitable** | either claim "yes", neither "no" | no warning; can be a verified recommendation | "Accessible" | builds clean | no access note |
+| **Confirmed incompatible** | a "no" with no "yes" | a conflict (flag-gated), ordered last, never a recommendation | "Not accessible" | refused, in the venue's words | n/a |
+| **Unknown, needs checking** | no claim, or yes and no together | discoverable with a prominent warning; never "good" or "excellent" | "Not confirmed" | builds, with the gap named | the plan **never calls itself accessible**; the same line is kept on reopen |
+
+Unknown is not incompatible. Parking is never read as a mobility need, and the pushchair, Blue Badge, general parking, step-free and wheelchair evidence stay separate fields. A household with no mobility aid sees none of this. The one open decision is how `planVenue` (Meet Halfway and recommendation paths) treats an unknown wheelchair claim for a mobility-aid household: today it excludes the venue, as it does for any unknown must-have; the day planner carries it as "check". I recommend carrying it as "check" there too. Not changed.
