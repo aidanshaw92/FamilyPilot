@@ -57,7 +57,9 @@ describe('reviewed admission: release gate', () => {
     expect(priceIsCurrent(source, RELEASE_DATE, status)).toBe(true);
     const checked = Date.parse(`${source.checkedAt}T00:00:00Z`);
     const day = (n: number) => new Date(checked + n * 86_400_000).toISOString().slice(0, 10);
-    const window = priceFreshnessDays(status);
+    // A price with its own stated end (London Zoo's variable tickets) is current only until then.
+    const own = source.validUntil ? Math.round((Date.parse(`${source.validUntil}T00:00:00Z`) - checked) / 86_400_000) : Infinity;
+    const window = Math.min(priceFreshnessDays(status), own);
     expect(priceIsCurrent(source, day(window), status)).toBe(true);
     expect(priceFreshness(c.pricing!, day(window + 1)), `after ${window} days it is last-known, not current`).toBe('last-known');
     expect(priceFreshness(c.pricing!, day(MAX_PRICE_AGE_DAYS + 1)), 'after 400 days no figure at all').toBe('expired');

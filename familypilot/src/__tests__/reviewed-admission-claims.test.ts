@@ -38,6 +38,8 @@ const byName = (name: string) => {
 };
 
 const VISIT = '2026-11-14';
+/** A price with its own short end (London Zoo's variable tickets, 30 days) is judged on a visit inside it. */
+const visitFor = (p: { source: { validUntil?: string } }) => (p.source.validUntil && p.source.validUntil < VISIT ? p.source.validUntil : VISIT);
 const ELIGIBLE_SCOPES = new Set(['venue_own_subtree', 'venue_named_page']);
 const money = (pence: number) => `£${(pence / 100).toFixed(pence % 100 === 0 ? 0 : 2)}`;
 const norm = (s: string) => s.replace(/\s+/g, ' ').toLowerCase();
@@ -90,7 +92,7 @@ describe('reviewed admission claims: the file', () => {
       const ageDays = (prepared - Date.parse(c.pricing!.source.checkedAt)) / 86_400_000;
       expect(ageDays, c.venueName).toBeGreaterThanOrEqual(0);
       expect(ageDays, c.venueName).toBeLessThanOrEqual(priceFreshnessDays(c.pricing!.status));
-      expect(priceIsCurrent(c.pricing!.source, VISIT, c.pricing!.status), c.venueName).toBe(true);
+      expect(priceIsCurrent(c.pricing!.source, visitFor(c.pricing!), c.pricing!.status), c.venueName).toBe(true);
     }
   });
 });
@@ -162,14 +164,14 @@ describe('reviewed admission claims: paid figures are the page\'s own', () => {
     expect(p.tiers!.map((t) => t.bands.find((b) => b.kind === 'child')!.amountPence)).toEqual([1940, 2220, 2350, 2410]);
     for (const t of p.tiers!) expect(t.bands.find((b) => b.kind === 'under')).toMatchObject({ free: true, amountPence: 0, maxAgeMonthsExclusive: 36 });
     // Two adults, a 4-year-old and a 1-year-old: the range is across the tables; the baby adds nothing; no single total is claimed.
-    const est = estimateFamilyAdmission(p, [adult('a1'), adult('a2'), child('Ava', 4), child('Ben', 1)], VISIT);
+    const est = estimateFamilyAdmission(p, [adult('a1'), adult('a2'), child('Ava', 4), child('Ben', 1)], visitFor(p));
     expect(est.state).toBe('range');
     if (est.state === 'range') {
       expect(est.lowPence).toBe(2 * 2770 + 1940);
       expect(est.highPence).toBe(2 * 3450 + 2410);
     }
     // A 16-year-old is in no stated child band and is not an adult band: unknown, never guessed.
-    expect(estimateFamilyAdmission(p, [adult('a1'), child('Eli', 16)], VISIT).state).toBe('unknown');
+    expect(estimateFamilyAdmission(p, [adult('a1'), child('Eli', 16)], visitFor(p)).state).toBe('unknown');
   });
 
   it('Science Museum: free general admission, with the condition that a ticket can be booked', () => {
@@ -246,7 +248,7 @@ describe('reviewed admission claims: what three families are told', () => {
   });
 
   it('every published claim gives a card label, and none is "Price not confirmed" for next month', () => {
-    for (const c of published) expect(priceBadge(c.pricing, VISIT).kind, c.venueName).not.toBe('unknown');
+    for (const c of published) expect(priceBadge(c.pricing, visitFor(c.pricing!)).kind, c.venueName).not.toBe('unknown');
   });
 });
 

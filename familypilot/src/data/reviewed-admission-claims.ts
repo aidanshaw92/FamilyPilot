@@ -795,7 +795,8 @@ export const REVIEWED_ADMISSION: ReviewedAdmissionFile = {
         ],
         "source": {
           "url": "https://www.londonzoo.org/plan-your-visit/london-zoo-tickets",
-          "checkedAt": "2026-10-08"
+          "checkedAt": "2026-10-08",
+          "validUntil": "2026-11-07"
         },
         "conditions": [
           "Online advance prices without donation, booked before 10am on the day. Tickets bought at the entrance, or online from 10am on the day, cost more.",
@@ -809,7 +810,7 @@ export const REVIEWED_ADMISSION: ReviewedAdmissionFile = {
         "subjectScope": "venue_own_subtree",
         "excerpt": "Online advance ticket prices without donation Off Peak Weekday Standard Standard Weekend Peak Adult (age 16-64) £ 27.70 £ 31.80 £ 33.60 £ 34.50 Child (age 3-15) £ 19.40 £ 22.20 £ 23.50 £ 24.10 Concession* £ 25.90 £ 30.00 £ 31.80 £ 32.70 Under 3 FREE FREE FREE FREE"
       },
-      "reviewNotes": "Owner-reviewed 9 Oct 2026 (card 11, edited to add free entry for under-3s). Four rate tables by day type; the page does not tie dates to tiers, so the answer is a range across the venue's own tables, never one of them. The site blocks our crawler, so this reading cannot be refreshed automatically: it needs a person to re-read it before the claim's freshness window ends."
+      "reviewNotes": "Variable ticket prices: valid 30 days from the reading (source.validUntil 7 Nov 2026), then shown only as last known and possibly changed; the site blocks our crawler so renewal is a manual re-read. Owner-reviewed 9 Oct 2026 (card 11, edited to add free entry for under-3s). Four rate tables by day type; the page does not tie dates to tiers, so the answer is a range across the venue's own tables, never one of them. The site blocks our crawler, so this reading cannot be refreshed automatically: it needs a person to re-read it before the claim's freshness window ends."
     },
     {
       "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",

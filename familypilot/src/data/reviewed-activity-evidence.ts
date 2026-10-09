@@ -213,7 +213,7 @@ export const REVIEWED_ACTIVITY_EVIDENCE: readonly ReviewedActivityEvidence[] = [
     venueId: 'fp-google-ChIJV_iXMtcadkgRqBI84CY_crE',
     venueName: 'London Zoo',
     kind: 'provision',
-    minMonths: 0,
+    minMonths: 12,
     maxMonthsExclusive: 108,
     label: 'ZooTown: indoor role-play adventure, best suited to children up to 8',
     evidence: {
