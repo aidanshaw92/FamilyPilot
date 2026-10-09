@@ -23,11 +23,11 @@ Leaving anything undecided leaves it **unknown**, which the app already handles 
 
 | Wave | Items | Why | Who |
 |---|---:|---|---|
-| **1. Safety** | **8** | The five on `DECISION_SHEET_FIVE.md`, plus the three places where the venue's own hours differ from Google's and a plan could be wrong: London Zoo (4pm from 24 Oct, Google says 5pm), Mudchute (Google says closed Mondays, the farm is open), Gunnersbury (Google says open 24 hours; park 7am to dusk) | You or a named delegate (5); an expert (3) |
+| **1. Safety** | **9** | The five on `DECISION_SHEET_FIVE.md`, plus Discover's own pushchair exception (it softens decision 5 and must be decided with it), plus the three places where the venue's own hours differ from Google's and a plan could be wrong: London Zoo (4pm from 24 Oct, Google says 5pm), Mudchute (Google says closed Mondays, the farm is open), Gunnersbury (Google says open 24 hours; park 7am to dusk) | You or a named delegate (5, with the exception card); an expert (3) |
 | **2. Useful** | **23** | The other expert cards: prices and free entry (so a family sees what it costs; unknown prices stay "not confirmed", never free), the remaining hours that agree with Google, "no" on access, one held item | A named expert |
-| **3. Later** | **65** | The 50 reviewer items and 15 low-risk items: ages and activities, "For children". These make recommendations sharper, none is needed to be safe | A trained reviewer, with the hidden controls and the second-reader sample |
+| **3. Later** | **64** | The other 49 reviewer items and the 15 low-risk items: ages and activities, "For children". These make recommendations sharper, none is needed to be safe | A trained reviewer, with the hidden controls and the second-reader sample |
 
-**Wave 1 is eight cards.** It is the only wave that must be finished before the first family is invited. Waves 2 and 3 can follow while the first ten families are using the app, in separate publishing batches, each approved and each with a rollback.
+**Wave 1 is nine cards.** It is the only wave that must be finished before the first family is invited. Waves 2 and 3 can follow while the first ten families are using the app, in separate publishing batches, each approved and each with a rollback.
 
 ## Where each item is, by venue
 

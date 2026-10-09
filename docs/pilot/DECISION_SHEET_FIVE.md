@@ -51,23 +51,24 @@ I could not open the live pages from this environment (the network blocks the ve
 | Recommendation | **Approve.** Confidence **high (about 90%)**. The only inference is the year, which cannot be anything else for a notice read in October |
 | If you say Unknown | A New Year's Eve plan would be built for a closed centre |
 
-## 5. Discover Children's Story Centre: no buggies or pushchairs in storytelling or play areas
+## 5. Discover Children's Story Centre: no buggies or pushchairs in storytelling or play areas (decide together with its exception)
 
 | | |
 |---|---|
-| Source | https://discover.org.uk/getting-here/, read 8 Oct |
-| The page says | "There is buggy parking available on our Ground Floor. We do not allow buggies and pushchairs in any of our storytelling or play areas. If you have a smaller baby we recommend bringing a sling." |
+| Source | https://discover.org.uk/getting-here/ (the rule) and https://discover.org.uk/your-visit/faqs/ (its exception), read 8 Oct |
+| The rule says | "There is buggy parking available on our Ground Floor. We do not allow buggies and pushchairs in any of our storytelling or play areas. If you have a smaller baby we recommend bringing a sling." |
+| **Its exception says** | "If a pushchair is needed (twins, a sleeping child), ask front of house; they will advise and accommodate where needed." This is a separate card in the queue (`pushchair.twins`, reviewer tier). **I have moved it up so the two are decided together**: approving the rule without the venue's own exception would be harsher than the venue is |
 | Date or condition | Always. Applies to the storytelling and play areas, which are the paid "Story Worlds"; the café and bookshop are open to everyone |
-| Consequence for a family | A household that says buggy access is a **must-have** is told, in the venue's words, that Discover does not fit them (**no plan**; the date and venue stay discoverable). A household that merely brings a buggy gets a prominent warning and still gets a plan |
-| Recommendation | **Approve as a restriction on the core visit.** Confidence **medium-high (about 75%)**. It is the venue's own flat statement and the play areas are what the ticket is for. This is the most consequential of the five because it removes a venue from a family's options; the alternative is **Approve as a warning only**, which never refuses anyone but lets a buggy-dependent family build a plan they cannot fully do |
+| Consequence for a family | *As a restriction on the core visit:* a household that says buggy access is a **must-have** is told Discover does not fit them (no plan), and the message now quotes the venue's exception. *As a warning only:* nobody is refused; a household that brings a buggy gets a prominent warning and the front-of-house note, and still gets a plan |
+| Recommendation | **Approve both the rule and the exception, as a warning only.** Confidence **about 80%**. The venue's own words say a family that needs a pushchair should ask and will be accommodated, so refusing them (the restriction setting) would contradict the venue, and a wrong refusal is worse than a prominent warning. The alternative, **restriction on the core visit**, is defensible if you want a buggy-dependent family never to be sent there without checking; I rate it lower because of the exception |
 | If you say Unknown | No warning at all: a family with a pram will not hear about the rule until they arrive |
 
 ---
 
 ### How a decision is recorded
 
-You can answer in chat ("1 approve, 2 approve, 3 warning only, 4 approve, 5 approve as restriction") or in the expert review page (`review-expert-all.html`, these five are cards in it). I write each as a line in the tamper-evident audit trail with your name and the time. **Approving does not publish anything**: a separate publishing step (a batch of `rules.*` claims with a `human:` approver, its own rollback written first, run only when you say so) is the only thing that reaches families. Approved rules also expire after 30 days unless re-read.
+You can answer in chat ("1 approve, 2 approve, 3 warning only, 4 approve, 5 warning only with its exception") or in the expert review page (`review-expert-all.html`, these five are cards in it). I write each as a line in the tamper-evident audit trail with your name and the time. **Approving does not publish anything**: a separate publishing step (a batch of `rules.*` claims with a `human:` approver, its own rollback written first, run only when you say so) is the only thing that reaches families. Approved rules also expire after 30 days unless re-read.
 
 ### What I would not decide for you
 
-None of the five is a close call on the facts. Item 5 is a judgment about consequences, which is why it has the lowest confidence.
+None of the five is a close call on the facts. Item 5 is a judgment about consequences, which is why it has the lowest confidence, and it carries a second card (the venue's own exception) that I found while preparing this sheet and moved into the same decision.
