@@ -1,3 +1,5 @@
+> **Correction, 9 October (afternoon):** the "8 of 10 after review" below counted facts that currently have nowhere to be published (stations, activity descriptions). Counting only cards that *can* be published, it is **6 of 10** (RAF, Discover, Horniman, Mudchute, Zoo, Science Museum), and wave 1 alone changes none. See `NINE_CARD_SHEET.md`.
+
 # The ten pilot venues: what a family gets, and what is still missing
 
 Built from `docs/pilot/readiness.json` and `SCENARIO_RESULTS.md` (journeys driven at 360 and 393 px, both passing, including save and reopen). 9 October 2026.

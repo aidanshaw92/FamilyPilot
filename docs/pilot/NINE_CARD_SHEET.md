@@ -87,15 +87,15 @@ How to answer: reply "1 approve, 2 approve, 3 warning only, …" (or Unknown / E
 
 **Wave 1 is about safety, not readiness.** It stops the app sending a family to a closed place or running past closing, and warns about buggies. **It does not by itself make any venue newly "recommendation-ready"** (my internal rating: opening hours, cost, a way there, something for children, a toilet). Today only the Royal Air Force Museum meets it.
 
-The app does not hide venues below that rating; they appear with gaps named as "to check". The rating shows what a *genuinely useful* beta needs on top of wave 1. Of the other 87 cards, **these 14 lift five more venues to ready or better** (counted only on cards that can actually be published; I previously counted some that have nowhere to be published, so my earlier "8 of 10" was too high; the true figure is 6 of 10):
+The app does not hide venues below that rating; they appear with gaps named as "to check". The rating shows what a *genuinely useful* beta needs on top of wave 1. Of the other 87 cards, **these 14 lift five more venues to ready or better** (counted only on cards that can actually be published; I previously counted some that have nowhere to be published, so my earlier "8 of 10" was too high; the true figure is 6 of 10; with every publishable card approved the Zoo and Science Museum reach "highly personalised" too):
 
 | Venue | Cards still needed (wave) | Result |
 |---|---|---|
 | Horniman | parking (3) | recommendation-ready |
 | Mudchute | parking, playground (3) | recommendation-ready |
 | Discover | price (2), parking, toilets (3) | recommendation-ready |
-| London Zoo | price (2), parking, Zootown activity, toilets (3) | highly personalised |
-| Science Museum | price (2), parking, Garden or Wonderlab activity, toilets (3) | highly personalised |
+| London Zoo | price (2), parking, Zootown activity, toilets (3) | recommendation-ready |
+| Science Museum | price (2), parking, Garden or Wonderlab activity, toilets (3) | recommendation-ready |
 | Royal Air Force Museum | none | already ready |
 
 That is 3 expert cards (the prices) and 11 reviewer cards: **wave 1 plus these 14 = 23 of the 96 decisions** for a six-venue useful beta.
