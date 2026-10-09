@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
  */
 const req = createRequire(import.meta.url);
 const { betaFiveReadiness } = req('../../scripts/pilot/beta-five-readiness.cjs') as {
-  betaFiveReadiness: () => {
+  betaFiveReadiness: (dir?: string, opts?: { exclude?: string[] }) => {
     decisions: string[]; wave1: string[]; named: string[]; notLoadBearing: string[];
     venues: { name: string; ready: boolean; level: string; required: string[]; missing: string[] }[];
   };
@@ -64,5 +64,13 @@ describe('beta five readiness', () => {
     for (const name of ['Babylon Park London', 'Battersea Park', 'Gunnersbury Park', 'Mudchute Park and Farm', 'Natural History Museum']) {
       expect(venue(name).ready).toBe(false);
     }
+  });
+
+  it("with Discover's price left Unknown, Discover is not ready and the other four are", () => {
+    const r = betaFiveReadiness(undefined, { exclude: ['ChIJJ2CD1mEddkgRAuOi9iSzBrk:pricing.paid'] });
+    expect(r.venues.filter((v) => v.ready).map((v) => v.name)).toEqual([
+      'Horniman Museum and Gardens', 'London Zoo', 'Royal Air Force Museum London', 'Science Museum',
+    ]);
+    expect(r.venues.find((v) => v.name === "Discover Children's Story Centre")!.missing).toEqual(['cost']);
   });
 });

@@ -1,6 +1,6 @@
 # Packs A and B: proposed decisions awaiting your final sign-off
 
-**Status: PROPOSED. Nothing here is approved for publication.** These are your proposals of 9 October, recorded in `packAB-proposed.jsonl` in the review page's export format so they can be imported into the audit trail only when you give final sign-off. The wording in the "Parents would see" column is exactly what would be published if you sign off.
+**Status: FINAL SIGN-OFF RECORDED 9 Oct 2026 (audit trail `audit-packAB.jsonl`, chain verified, head `3ab90b9beccd43e4`). This is NOT authorisation to publish: publication needs the owner's separate approval of the exact manifest.** These are your proposals of 9 October, recorded in `packAB-proposed.jsonl` in the review page's export format so they can be imported into the audit trail only when you give final sign-off. The wording in the "Parents would see" column is exactly what would be published if you sign off.
 
 | # | Venue | Fact | Decision | Parents would see | Source |
 |---|---|---|---|---|---|
