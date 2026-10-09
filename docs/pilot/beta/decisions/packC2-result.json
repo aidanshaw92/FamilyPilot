@@ -1,0 +1,15 @@
+{
+ "round": 2,
+ "reviewer": "Aidan",
+ "reviewBasis": "founder-reviewed, not independent",
+ "decisions": 13,
+ "realApproved": 9,
+ "controlsPlanted": 4,
+ "controlsCaught": 0,
+ "barRequired": 3,
+ "barMet": false,
+ "keyCommitmentVerified": "47417ab8d4ea60e1…",
+ "secondsPerCard": "median 1; first card 241 (page open time)",
+ "allDecisionsWithin": "33 seconds of the first click after the first card",
+ "outcome": "Bar not met. No decisions imported into the audit trail; no manifest built. No further pack created pending the owner's decision."
+}
