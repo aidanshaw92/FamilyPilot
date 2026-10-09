@@ -12,7 +12,7 @@ const byKey = (venue: VenueDetail) => Object.fromEntries(familyEssentialRows(ven
 describe('family essentials rows', () => {
   it('says Not confirmed for everything when nothing has been established', () => {
     const rows = familyEssentialRows(base);
-    expect(rows.map((r) => r.label)).toEqual(['Baby changing', 'Buggy access', 'Wheelchair access', 'Toilets', 'Accessible toilet', 'Parking', 'Food', 'Playground', 'Best for ages', 'Terrain', 'Opening hours']);
+    expect(rows.map((r) => r.label)).toEqual(['Baby changing', 'Buggy access', 'Wheelchair access', 'Toilets', 'Step-free access', 'Accessible toilet', 'Parking', 'Blue Badge parking', 'Step-free station', 'Public transport', 'Food', 'Playground', 'Best for ages', 'Terrain', 'Opening hours']);
     expect(rows.every((r) => r.value === NOT_CONFIRMED && r.confirmed === false)).toBe(true);
   });
 

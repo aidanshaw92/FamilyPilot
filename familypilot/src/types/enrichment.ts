@@ -67,6 +67,19 @@ export interface AccessibilityInfo {
   notes?: string;
 }
 
+/**
+ * How a family reaches the venue other than by car. Its own concept: nothing here is read from parking, and parking is not
+ * read from here. Only what the venue's own pages state.
+ */
+export interface TransportInfo {
+  /** The venue's nearest station has step-free access. */
+  stepFreeStation?: TriState;
+  /** The venue is reachable by public transport. */
+  publicTransport?: TriState;
+  nearestStation?: string;
+  notes?: string;
+}
+
 export interface SendInfo {
   sensoryFriendlySessions?: TriState;
   quietSessions?: TriState;
@@ -126,6 +139,7 @@ export interface EnrichmentSavePayload {
   terrain?: 'flat' | 'hilly' | 'mixed';
   terrainNotes?: string;
   accessibility?: AccessibilityInfo;
+  transport?: TransportInfo;
   sendInfo?: SendInfo;
   whyFamiliesLike?: string[];
   goodToKnow?: string[];

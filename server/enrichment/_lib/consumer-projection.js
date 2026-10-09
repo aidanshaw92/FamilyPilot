@@ -13,6 +13,8 @@ const {
   metadataRowFromPayload,
 } = require('./claims-store');
 const { toStaleFact } = require('./claim-freshness');
+const { PROJECTED_RULES } = require('./venue-rules');
+const { PROJECTED_OFFICIAL_HOURS } = require('./official-hours');
 
 const CONSUMER_TRUST_FIELDS = ['lastChecked', 'checkedBy', 'enrichmentProvenance'];
 
@@ -43,6 +45,17 @@ async function disputedFieldKeys(familypilotPlaceId, claims) {
   );
 }
 
+/** The consumer metadata with the venue's reviewed rules attached, read from the claim projection and nowhere else. */
+function withRules(metadata, payload) {
+  const rules = payload[PROJECTED_RULES];
+  const officialHours = payload[PROJECTED_OFFICIAL_HOURS];
+  return {
+    ...metadata,
+    ...(rules && rules.length ? { rules } : {}),
+    ...(officialHours && officialHours.length ? { officialHours } : {}),
+  };
+}
+
 /**
  * Build metadata safe for consumer places APIs.
  * Returns null when no active claims back family suitability (incl. ai_draft rows).
@@ -66,7 +79,7 @@ async function getConsumerMetadata(familypilotPlaceId) {
   const status = resolveEnrichmentStatus(payload, raw);
   const row = metadataRowFromPayload(familypilotPlaceId, payload, raw ?? { enrichmentStatus: status });
   row.enrichment_status = status === 'verified' ? 'verified' : 'enriched';
-  return rowToMetadata(row);
+  return withRules(rowToMetadata(row), payload);
 }
 
 /**
@@ -110,7 +123,7 @@ async function getConsumerMetadataBatch(familypilotPlaceIds) {
     const status = resolveEnrichmentStatus(payload, raw);
     const row = metadataRowFromPayload(id, payload, raw ?? { enrichmentStatus: status });
     row.enrichment_status = status === 'verified' ? 'verified' : 'enriched';
-    out.set(id, rowToMetadata(row));
+    out.set(id, withRules(rowToMetadata(row), payload));
   }
   return out;
 }

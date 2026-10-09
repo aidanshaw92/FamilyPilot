@@ -24,7 +24,7 @@ import {
   EatNearbyRecommendation,
 } from '@/src/types';
 import { withCompletion } from '@/src/utils/profile-defaults';
-import { compareTravelMinutes } from '@/src/utils/travel-time';
+import { compareVenuesForFamily } from '@/src/services/places/fit-order';
 import { BetweenHome } from '@/src/services/places/between-client';
 import { buildHomeRecommendations, personaliseVenue, personaliseVenues } from '@/src/utils/personalise-venues';
 import type { ParentObservations } from '@/src/services/matching/parent-observations';
@@ -104,7 +104,7 @@ export const venueService = {
     return venues
       .filter((venue) => isListableVenue(venue))
       .map((venue) => personaliseVenue(venue, profile))
-      .sort((a, b) => b.familyScore.score - a.familyScore.score || compareTravelMinutes(a.driveMinutes, b.driveMinutes));
+      .sort((a, b) => compareVenuesForFamily(a, b));
   },
 
   /**

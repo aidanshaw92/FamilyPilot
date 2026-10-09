@@ -2,12 +2,18 @@ import { mockVenueDetails, mockVenues } from '@/src/data/mock-data';
 import { driveLimitMinutes } from '@/src/utils/preferences';
 import { calculateFamilyScore } from '@/src/services/scoring/family-score';
 import { evaluateFamilyMatch } from '@/src/services/matching/family-match';
+import { hardConflictsFor } from '@/src/services/matching/hard-conflicts';
 import type { ParentObservations } from '@/src/services/matching/parent-observations';
 import { EnrichmentStatus, FamilyProfile, RecommendationSection, Venue, VenueDetail } from '@/src/types';
 
+import { compareVenuesForFamily } from '@/src/services/places/fit-order';
 import { getChildNames } from './profile-defaults';
-import { buildFacilityMissingCaution } from './facility-match';
+import { buildConfirmedMissingCaution, buildFacilityMissingCaution } from './facility-match';
+import { activeFitPolicy, type FitPolicy } from '@/src/services/scoring/fit-policy';
+import type { FacilityType } from '@/src/types';
 import { familyNeedsStepFree } from './family-mobility';
+import { stepFreeOutcome, venueAccess } from '@/src/services/access/access-concepts';
+import type { MatchableVenueFacts } from '@/src/types/day-request';
 
 /**
  * The drive is longer than the limit in use. That limit starts as a default (onboarding no longer asks
@@ -28,15 +34,32 @@ export function buildDriveCaution(profile: FamilyProfile, driveMinutes: number):
 }
 
 /**
- * A child who uses a mobility aid makes step-free and wheelchair access matter, and the app holds no such
- * evidence to show a parent (it is collected internally and is not part of the facts a venue is matched
- * on). So the honest statement is that it is unknown, shown only to families it matters to. It is worded
- * about wheelchairs and mobility aids on purpose: Venue Detail's "Mostly step-free" row is a reading of
- * pushchair access, and a caution that said only "step-free isn't confirmed" would contradict it. Never a
- * score and never a "yes": wheelchair evidence must not be read as buggy-suitable, or the reverse.
+ * Three states for a family that needs step-free access (a child uses a wheelchair or mobility aid), and only three:
+ *   confirmed suitable     the venue's own claims say so: nothing to warn about
+ *   confirmed incompatible the venue's own claims say not: said as a breach (Family Fit, "Probably not"), not as a caution here
+ *   unknown                nobody has confirmed it: a prominent warning, because a stated non-negotiable that nobody has checked must
+ *                          never read as a verified suitable recommendation
+ * Worded about wheelchairs and mobility aids on purpose: Venue Detail's "Mostly step-free" row is a reading of pushchair access, and
+ * a caution that said only "step-free isn't confirmed" would contradict it. Never a score and never a "yes". The warning used to be
+ * shown for every venue, including ones that had confirmed access, which contradicted the card beneath it.
  */
-export function buildStepFreeCaution(profile: FamilyProfile): string | null {
-  return familyNeedsStepFree(profile) ? 'Wheelchair and mobility-aid access isn’t confirmed here' : null;
+export function buildStepFreeCaution(profile: FamilyProfile, facts?: Partial<MatchableVenueFacts> | null, policy: FitPolicy = activeFitPolicy()): string | null {
+  if (!familyNeedsStepFree(profile)) return null;
+  // The current policy keeps its original behaviour exactly (the warning for every venue). The three-state reading ships behind the
+  // same switch as the other access rules, so that merging it changes nothing a family sees until it is approved.
+  if (!policy.conflictsLast) return 'Wheelchair and mobility-aid access isn’t confirmed here';
+  return stepFreeOutcome(venueAccess(facts)) === 'unknown' ? 'Wheelchair and mobility-aid access isn’t confirmed here' : null;
+}
+
+/** The facilities the venue is CONFIRMED not to have (a claim says no), as opposed to the ones nobody has confirmed. */
+function confirmedAbsentFacilities(venue: Venue): FacilityType[] {
+  const f = venue.trustedFacts;
+  const absent: FacilityType[] = [];
+  if (f?.toilets === 'no') absent.push('toilets');
+  if (f?.babyChanging === 'no') absent.push('baby_changing');
+  if (f?.parking === 'no') absent.push('parking');
+  if (f?.blueBadgeParking === 'no') absent.push('blue_badge_parking');
+  return absent;
 }
 
 function toVenueDetail(venue: Venue): VenueDetail {
@@ -65,10 +88,10 @@ function toVenueDetail(venue: Venue): VenueDetail {
   };
 }
 
-export function personaliseVenue(venue: Venue, profile: FamilyProfile, parentObservations?: ParentObservations): Venue {
+export function personaliseVenue(venue: Venue, profile: FamilyProfile, parentObservations?: ParentObservations, policy?: FitPolicy): Venue {
   const detail = toVenueDetail(venue);
   const enrichmentStatus: EnrichmentStatus = venue.enrichmentStatus ?? 'provider_only';
-  const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus });
+  const familyScore = calculateFamilyScore(detail, profile, { enrichmentStatus, ...(policy ? { policy } : {}) });
   // Everything that counts AGAINST this family lives on the score, in one list: profile-derived
   // cautions first, then the reviewed facts that
   // count against them. The venue's own notes stay in `goodToKnow` and render as notes, not
@@ -77,8 +100,10 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, parentObs
     ...new Set(
       [
         buildDriveCaution(profile, venue.driveMinutes),
-        buildFacilityMissingCaution(profile, detail.facilities),
-        buildStepFreeCaution(profile),
+        (policy ?? activeFitPolicy()).evidenceAware
+          ? buildConfirmedMissingCaution(profile, confirmedAbsentFacilities(venue))
+          : buildFacilityMissingCaution(profile, detail.facilities),
+        buildStepFreeCaution(profile, venue.trustedFacts, policy ?? activeFitPolicy()),
         ...(familyScore.cautions ?? []),
       ].filter((caution): caution is string => Boolean(caution)),
     ),
@@ -93,6 +118,7 @@ export function personaliseVenue(venue: Venue, profile: FamilyProfile, parentObs
     ...venue,
     familyScore: { ...familyScore, cautions },
     familyMatch,
+    fitConflicts: hardConflictsFor(venue.trustedFacts, profile),
     goodToKnow: detail.goodToKnow,
     facilities: detail.facilities,
   };
@@ -103,7 +129,7 @@ export function personaliseVenues(venues: Venue[], profile: FamilyProfile): Venu
     .map((venue) => personaliseVenue(venue, profile))
     // A stated limit (with ten minutes' leeway) narrows the list; no stated limit narrows nothing.
     .filter((venue) => driveLimitMinutes(profile) === null || venue.driveMinutes <= (driveLimitMinutes(profile) as number) + 10)
-    .sort((a, b) => b.familyScore.score - a.familyScore.score);
+    .sort((a, b) => compareVenuesForFamily(a, b));
 }
 
 export function buildHomeRecommendations(profile: FamilyProfile): RecommendationSection[] {

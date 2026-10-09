@@ -18,10 +18,11 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { colors } from '@/src/design-system/tokens';
 import { useDocumentTitle } from '@/src/hooks/use-document-title';
+import { installClientErrorReporting } from '@/src/services/monitoring/client-errors';
 import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
 import { useFamilyStore } from '@/src/stores/family-store';
 
-export { ErrorBoundary } from 'expo-router';
+export { AppErrorBoundary as ErrorBoundary } from '@/src/components/AppErrorBoundary';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -57,6 +58,11 @@ function useAccountGuard() {
   const routerRef = useRef(router);
   routerRef.current = router;
   const sentBack = useRef<string | null>(null);
+  // A reset or invitation link signs the person in; they go straight to choosing a password, from wherever the link landed.
+  const recovering = useAuthStore((s) => s.recovering);
+  useEffect(() => {
+    if (navigatorReady && recovering && first !== '(onboarding)') routerRef.current.replace('/(onboarding)/account' as never);
+  }, [recovering, first, navigatorReady]);
   useEffect(() => {
     if (!navigatorReady || !accountRequired() || status !== 'signed_out') {
       if (status !== 'signed_out') sentBack.current = null;
@@ -79,6 +85,7 @@ function useAccountGuard() {
 export default function RootLayout() {
   useDocumentTitle();
   useAccountGuard();
+  useEffect(() => installClientErrorReporting(), []);
   const [loaded, error] = useFonts({
     Inter_400Regular,
     Inter_500Medium,

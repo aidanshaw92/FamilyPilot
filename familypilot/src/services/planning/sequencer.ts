@@ -20,6 +20,7 @@ import {
   StopRequest,
 } from '@/src/types/day-sequence';
 import { isOpenOn } from '@/src/utils/opening-hours';
+import { evaluateVenueRules } from '@/src/services/matching/venue-rules';
 import { formatDateLabel } from '@/src/utils/date-time-labels';
 
 import { PlanningFamily, PlanningOptions, familyRequest } from './planner';
@@ -132,6 +133,28 @@ function evaluateOpening(
   depart: number,
   options: SequenceOptions,
 ): OpeningOutcome {
+  // A reviewed whole-venue closure on this date outranks any hours: the provider's weekly pattern does not know about an
+  // exceptional or seasonal closure, which is exactly what a venue rule records.
+  const closure = evaluateVenueRules(request.facts.rules, {
+    date: options.date,
+    usesPushchair: false,
+    requiresPushchair: false,
+    needsStepFree: false,
+  }).closedAllDay;
+  if (closure) {
+    return {
+      ok: false,
+      failure: {
+        reason: 'venue-closed',
+        message: closure.text,
+        stopIndex: index,
+        placeId: request.placeId,
+        date: options.date,
+        why: 'closed-that-day',
+      },
+    };
+  }
+
   const verdict = isOpenOn(options.date, hhmm(arrive), hhmm(depart), request.openingHours, options.timezone);
 
   if (verdict.status === 'closed') {
@@ -477,7 +500,7 @@ function tryOrder(
         const driveMinutes = i === 0 ? outbound[family.id].minutes : transfers[i - 1].minutes;
         const match = matchVenueToDayRequest(
           { ...request.facts, driveMinutes },
-          familyRequest(family, options.environment),
+          familyRequest(family, options.environment, options.date),
         );
         // Only the evidence that bears on what this stop is for (stop-evidence.ts): a lunch stop is never asked about
         // recommended ages or an admission price. Outcomes are untouched, so a must-have confirmed missing at lunch is still
@@ -494,7 +517,11 @@ function tryOrder(
             placeId: request.placeId,
             familyId: family.id,
             familyLabel: family.label,
-            unmet: failed.map((evaluation) => ({ field: evaluation.field, outcome: 'unsuitable' as const })),
+            unmet: failed.map((evaluation) => ({
+              field: evaluation.field,
+              outcome: 'unsuitable' as const,
+              ...(evaluation.detail ? { detail: evaluation.detail } : {}),
+            })),
           };
           break;
         }
