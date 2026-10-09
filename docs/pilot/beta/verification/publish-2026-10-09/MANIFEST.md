@@ -46,7 +46,7 @@ apply.sql sha256 `7d5a39aff422743b6bf91c06bc0805881293b574ea603487a9b3b948570442
 
 ## 2. Code changes (a pull request you approve and merge; nothing ships until then)
 
-- **Pricing** (founder-reviewed, Pack A/B), branch `data/beta-pricing-zoo-science` (not merged): London Zoo, four day-type price tables with under-3s free, shown as a range because the page does not say which dates are which; Science Museum, general admission free. Price evidence expires 6 Apr 2027 (paid, 180 days) and 8 Oct 2027 (free, 365 days).
+- **Pricing** (founder-reviewed, Pack A/B), branch `data/beta-pricing-zoo-science` (head 5018712, no PR opened, not merged; the two activity entries below are already on it): London Zoo, four day-type price tables with under-3s free, shown as a range because the page does not say which dates are which; Science Museum, general admission free. Price evidence expires 6 Apr 2027 (paid, 180 days) and 8 Oct 2027 (free, 365 days).
 - **Activities**, `code/activity-evidence.snippet.ts` for `src/data/reviewed-activity-evidence.ts` (AI-assisted source-verified, awaiting your approval); valid 90 days from the reading, to 6 Jan 2027:
   - Science Museum `activities.the-garden`: "The Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6"
   - London Zoo `activities.zootown`: "ZooTown: indoor role-play adventure, best suited to children up to 8"
