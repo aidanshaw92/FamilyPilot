@@ -73,7 +73,7 @@ const check = (ok, label, detail) => {
   if (ok) console.log(`  [ok] ${label}${detail ? `: ${detail}` : ''}`);
   else {
     console.log(`  [FAIL] ${label}${detail ? `: ${detail}` : ''}`);
-    failures.push(label);
+    failures.push(detail ? `${label} [${detail}]` : label);
   }
 };
 
