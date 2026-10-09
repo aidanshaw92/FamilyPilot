@@ -1,5 +1,7 @@
 # Route to a 20–30 family beta: execution plan
 
+> **Updated 9 October (afternoon):** see the checklist at the very end, which supersedes the tables below where they differ. New since the first version: invitation links required a password (found and fixed, 40-check browser test against real Supabase Auth); the Step 1 package is now 17 venues with a guarded rollback; wave 1 of the review is nine cards; publishing batches are built and rehearsed; the likely real blocker is **email delivery** (custom SMTP).
+
 9 October 2026. Nothing below has been executed in production. Draft PRs #189, #190, #191 stay draft; nothing is merged or deployed.
 
 ## 1. Already complete (built, tested, pushed)
@@ -62,3 +64,32 @@ Done or doable now: refresh #191 after any change (done today), monitoring and d
 ## 7. Expanding from 10 to 50 destinations
 
 All of: (a) at least three timed review sessions with at least two reviewers, tier mix and control results recorded, so time per decision is measured before it is forecast; (b) reviewers catch at least 3 of 4 hidden controls and the second-reader sample agrees; (c) the five-decision refusal route has been used once end to end with a delegate; (d) no unresolved wrong-fact report from the ten; (e) Step 1 and at least one publication batch have been rolled back once in rehearsal; (f) seven consecutive days of zero paid photo calls; (g) 8 of the 10 pilot venues stay recommendation-ready as their evidence expires (rules lapse in 30 days; the daily check shows this). Not before.
+
+
+---
+
+## Checklist: what still prevents inviting the first family (9 October, afternoon)
+
+**Needs you (decisions or dashboard actions)**
+1. [ ] Authorise Step 1: Run A, then Run B (`step1/APPROVAL_PACKAGE.md`). Deadline 10 Oct 00:36 UTC.
+2. [ ] Set `GOOGLE_PLACES_PHOTOS_ENABLED=false` in Vercel Production and Preview, redeploy, tell me. (I cannot read or set Vercel from here: 403.)
+3. [ ] Decide the five (`DECISION_SHEET_FIVE.md`) or nominate a delegate; they are decided together with Discover's pushchair exception.
+4. [ ] Approve merging and deploying #191 at `77431e2` (`beta/MERGE_READINESS_191.md`).
+5. [ ] **Check Supabase → Authentication → SMTP Settings: is custom SMTP enabled?** If not, invitations to families will not arrive (built-in email only reaches your own organisation's members). Then the settings in `beta/AUTH_VERIFICATION.md`: sign-ups off, Site URL, redirect URL, OTP expiry 24h. **Do these after the deploy in item 4**, not before: the old app cannot handle an invitation link.
+6. [ ] Name a person for the real-device pass (iPhone and Android) and for the expert cards.
+
+**Needs a person, not you**
+7. [ ] Real-device pass (`beta/BETA_OPERATIONS.md`). I have no devices.
+8. [ ] Wave 1: the nine cards (`RECONCILIATION_171.md`): your five plus Discover's exception plus the three hours conflicts (an expert).
+
+**I do after your go-ahead**
+9. After item 2: run `live-canaries` (`assert_fail_closed=true`, `posture_profile=production`, `expect_off=photos`, `verify_client_config=true`) and check the usage ledger.
+10. After item 1: `post-run-checks.sql` ~30 minutes after Run A.
+11. After item 8: build the wave-1 batch (`publish-batch.cjs`), show you `manifest.json`, and run it only on your authorisation; verify; rollback ready.
+12. After items 4 and 5: send **one** real invitation to an address you control and walk the whole path on a phone before inviting any family.
+
+**Already done and verified**: items in `beta/MERGE_READINESS_191.md`, `beta/AUTH_VERIFICATION.md`, `PUBLISHING_PROCESS.md`, `RECONCILIATION_171.md`.
+
+**Not blockers** (can follow the first families): review waves 2 and 3, Family Fit v2, more venues, custom invitation emails.
+
+**Ongoing cost to plan for**: rules lapse after 30 days; the pilot's rules need a re-read and re-approval about monthly while the beta runs.
