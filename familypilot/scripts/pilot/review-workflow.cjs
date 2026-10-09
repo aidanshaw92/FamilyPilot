@@ -174,9 +174,17 @@ function sessionPack(rows, fullPack, role, seed = '7') {
     return out;
   };
   const manifest = { role, seed, tierOf: {}, controls: {} };
+  const whole = role.endsWith('-all'); // the complete queue for a role, not a timed session
+  const base = role.replace(/-all$/, '');
   let chosen = [];
   let batchGroups = [];
-  if (role === 'expert') {
+  if (whole && base === 'expert') {
+    chosen = rows.filter((r) => r.tier === 'expert');
+  } else if (whole) {
+    const { groups, alone } = groupsOf(rows);
+    batchGroups = groups;
+    chosen = [...rows.filter((r) => r.tier === 'reviewer'), ...groups.flatMap((g) => g.sample.map((id) => rows.find((r) => r.id === id))), ...alone];
+  } else if (role === 'expert') {
     const expert = rows.filter((r) => r.tier === 'expert');
     // One of each kind of expert reason first, then fill.
     const kinds = new Map();
@@ -204,9 +212,11 @@ function sessionPack(rows, fullPack, role, seed = '7') {
     });
     manifest.tierOf[it.id] = it.tier;
   }
-  if (role !== 'expert') {
+  if (base !== 'expert') {
     // Hidden controls: real items with one error in the proposal, indistinguishable on the card. They measure whether the reading catches errors.
-    const pool = rows.filter((r) => r.tier === 'reviewer' && !queue.some((q) => q.id === r.id));
+    // Real sentences from items that are not otherwise in the pack (deferred or merged ones, or reviewer items left out of a session), so a
+    // reviewer never sees a control next to its own original.
+    const pool = rows.filter((r) => (r.tier === 'reviewer' || r.tier === 'deferred' || r.tier === 'merged') && !queue.some((q) => q.id === r.id));
     let n = 0;
     for (const err of CONTROL_ERRORS) {
       const base = pick(pool.filter((r) => byId.has(r.id) && err.make(byId.get(r.id)) && !manifest.controls[`ctl:${r.id}`]), 1)[0];
@@ -222,7 +232,7 @@ function sessionPack(rows, fullPack, role, seed = '7') {
   }
   // Shuffle with a fixed seed so controls are not last, then number the cards.
   queue.sort((a, b) => sha(a.id + seed + 'order').localeCompare(sha(b.id + seed + 'order')));
-  return { pack: { summary: fullPack.summary, batchGroups: batchGroups.map((g) => ({ key: g.key, field: g.key.split('|')[0], value: g.key.split('|')[1], size: g.size, sample: g.sample, members: g.members })), queue }, manifest };
+  return { pack: { role, summary: fullPack.summary, batchGroups: batchGroups.map((g) => ({ key: g.key, field: g.key.split('|')[0], value: g.key.split('|')[1], size: g.size, sample: g.sample, members: g.members })), queue }, manifest };
 }
 
 module.exports = { classify, expertReasons, reviewerReasons, build, groupsOf, summarise, sessionPack, CONTROL_ERRORS };
@@ -232,7 +242,7 @@ if (require.main === module) {
   const flag = (n) => (args.includes(n) ? args[args.indexOf(n) + 1] : null);
   const rows = build();
   if (flag('--pack-in')) {
-    const role = flag('--role') === 'expert' ? 'expert' : 'reviewer';
+    const role = ['expert', 'reviewer', 'expert-all', 'reviewer-all'].includes(flag('--role')) ? flag('--role') : 'reviewer';
     const { pack, manifest } = sessionPack(rows, JSON.parse(fs.readFileSync(flag('--pack-in'), 'utf8')), role, flag('--seed') ?? '7');
     fs.writeFileSync(flag('--out'), JSON.stringify(pack, null, 1));
     fs.writeFileSync(flag('--manifest'), JSON.stringify(manifest, null, 1));

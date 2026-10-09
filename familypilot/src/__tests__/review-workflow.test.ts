@@ -145,6 +145,40 @@ describe('the session kit measures a reviewer without contaminating the record',
   });
 });
 
+describe('full role packs and the second reader', () => {
+  const full = { summary: {}, batchGroups: [], queue: rows.filter((r) => ['expert', 'reviewer', 'grouped', 'deferred', 'merged'].includes(r.tier)).map((r) => ({ ...(r as object), quote: 'q', proposed: `Toilets are available. ${r.id}`, url: 'https://example.org', impact: r.impact, findings: r.findings, reasons: [] })) };
+
+  it('the expert pack holds every expert item exactly once, and the reviewer pack every reviewer and grouped item that is read', () => {
+    const e = wf.sessionPack(rows, full, 'expert-all');
+    expect(e.pack.queue.map((q: { id: string }) => q.id).sort()).toEqual(rows.filter((r) => r.tier === 'expert').map((r) => r.id).sort());
+    const r = wf.sessionPack(rows, full, 'reviewer-all');
+    const real = r.pack.queue.filter((q: { id: string }) => !q.id.startsWith('ctl:')).map((q: { id: string }) => q.id);
+    expect(new Set(real).size).toBe(real.length);
+    const { groups, alone } = wf.groupsOf(rows);
+    expect(real.length).toBe(rows.filter((x) => x.tier === 'reviewer').length + groups.reduce((n: number, g: { sample: unknown[] }) => n + g.sample.length, 0) + alone.length);
+    expect(Object.keys(r.manifest.controls).length).toBe(4);
+    expect(r.pack.role).toBe('reviewer-all');
+  });
+
+  it('a control is never next to its own original', () => {
+    const r = wf.sessionPack(rows, full, 'reviewer-all');
+    const ids = new Set(r.pack.queue.map((q: { id: string }) => q.id));
+    for (const c of Object.values(r.manifest.controls) as Array<{ realItem: string }>) expect(ids.has(c.realItem)).toBe(false);
+  });
+
+  it('the second reader gets every edit and a fixed one in five of the approvals, at least three', () => {
+    const r = wf.sessionPack(rows, full, 'reviewer-all');
+    const ids = r.pack.queue.map((q: { id: string }) => q.id);
+    const lines = ids.map((id: string, i: number) => ({ n: i + 1, at: new Date(2026, 9, 9, 10, 0, i).toISOString(), reviewer: 't', itemId: id, decision: i === 0 ? 'edit' : 'approve', ...(i === 0 ? { editedText: 'A narrower statement.' } : {}), secondsOnItem: 10 }));
+    const a = score(lines, r.manifest).auditSample;
+    const b = score(lines, r.manifest).auditSample;
+    expect(a).toEqual(b);
+    expect(a).toContain(ids[0]);
+    const approvals = ids.filter((id: string, i: number) => i > 0 && !r.manifest.controls[id]).length;
+    expect(a.length - 1).toBe(Math.max(3, Math.ceil(approvals / 5)));
+  });
+});
+
 describe('the review page keeps the source in view and shows what a check cannot', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'scripts', 'pilot', 'review-pack.cjs'), 'utf8');
   it('shows the quote in its page context, the page link and the words that are not in the quote', () => {
@@ -155,6 +189,14 @@ describe('the review page keeps the source in view and shows what a check cannot
   it('highlights a negation the quote does not carry and warns when the quote has one the proposal drops', () => {
     expect(html).toContain('const NEG=');
     expect(html).toContain('The quote contains a negation');
+  });
+  it('opens with a plain-language guide that needs no knowledge of the app', () => {
+    expect(html).toContain('How to review');
+    expect(html).toContain('If you are unsure, choose Mark unknown, not Approve');
+    expect(html).toContain('not an AI tool');
+  });
+  it('keeps each role\'s decisions apart in the browser', () => {
+    expect(html).toContain("'pilot-review-v1-'+(P.role");
   });
   it('never labels anything accepted by the gate: every card needs a person', () => {
     expect(html).not.toContain("'accepted by the gate'");

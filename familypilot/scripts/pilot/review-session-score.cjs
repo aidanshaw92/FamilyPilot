@@ -18,7 +18,7 @@
  *     sessions, two reviewers, and the mix of tiers in each.
  */
 const fs = require('node:fs');
-const { makeEntry, verifyChain, liveEntries, currentState } = require('./review-audit.cjs');
+const { makeEntry, verifyChain, liveEntries, currentState, sha } = require('./review-audit.cjs');
 
 const args = process.argv.slice(2);
 const flag = (n) => (args.includes(n) ? args[args.indexOf(n) + 1] : null);
@@ -74,8 +74,17 @@ function score(raw, manifest) {
   const all = secs(realLive).concat(secs(controls.filter((c) => c.seconds != null).map((c) => ({ secondsOnItem: c.seconds }))));
   all.sort((a, b) => a - b);
   const stamps = raw.map((r) => Date.parse(r.at)).filter(Number.isFinite);
+  // The second reader's list: every edit, and one in five of the approvals (at least three), chosen by a fixed seed so the reviewer cannot
+  // know which. A reviewer who approves something the second reader would not widens the sample to everything they approved.
+  const decided = [...currentState(chain).values()];
+  const approvals = decided.filter((e) => e.decision === 'approve' && !e.batchId).map((e) => e.itemId).sort((a, b) => sha(a + (manifest.seed ?? '7')).localeCompare(sha(b + (manifest.seed ?? '7'))));
+  const auditSample = [
+    ...decided.filter((e) => e.decision === 'edit').map((e) => e.itemId),
+    ...approvals.slice(0, Math.min(approvals.length, Math.max(3, Math.ceil(approvals.length / 5)))),
+  ];
   return {
     role: manifest.role,
+    auditSample,
     realDecisions: currentState(chain).size,
     decisions,
     undone: chain.length - liveEntries(chain).length,
