@@ -118,6 +118,7 @@ export function extractMatchableFacts(
     // Each of these answers ONE question from ITS OWN claim. None is derived from another: not Blue Badge from general parking,
     // not step-free from a wheelchair claim or a buggy rating, not a station from the car park. Unknown stays unknown.
     blueBadgeParking: blueBadgeFrom(metadata.accessibility),
+    blueBadgeNote: blueBadgeFrom(metadata.accessibility) === 'yes' && typeof metadata.accessibility?.blueBadgeNote === 'string' && metadata.accessibility.blueBadgeNote.trim() ? metadata.accessibility.blueBadgeNote.trim() : null,
     stepFreeAccess: triStateOrUnknown(metadata.accessibility?.stepFreeEntrance),
     stepFreeStation: triStateOrUnknown(metadata.transport?.stepFreeStation),
     publicTransport: triStateOrUnknown(metadata.transport?.publicTransport),

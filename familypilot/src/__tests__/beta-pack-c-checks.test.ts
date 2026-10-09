@@ -5,6 +5,8 @@ import { REVIEWED_ADMISSION } from '@/src/data/reviewed-admission-claims';
 import { activityEvidenceFor, evidenceCovers } from '@/src/services/matching/activity-evidence';
 import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
 import { evaluateVenueRules, ruleAppliesOn } from '@/src/services/matching/venue-rules';
+import { reconcileHours } from '@/src/services/places/hours-reconcile';
+import { isOpenOn } from '@/src/utils/opening-hours';
 import { priceFreshness } from '@/src/services/pricing/admission';
 import { childProvisionRows } from '@/src/utils/venue-practical';
 import { NOT_CONFIRMED, familyEssentialRows } from '@/src/utils/family-essentials';
@@ -56,18 +58,28 @@ describe('facility distinctions survive to what a parent sees', () => {
     return Object.fromEntries(familyEssentialRows({ id: venue, name: 'V', category: 'museum', openingHours: '', facilities: [], trustedFacts: facts } as unknown as VenueDetail).map((r) => [r.key, r]));
   };
   it('Science Museum: accessible toilets are not toilets; "no parking" sits beside a separate Blue Badge row', () => {
-    const r = rowsFor(SCI, [['familyFacilities.parking', 'no'], ['accessibility.accessibleParking', 'yes'], ['accessibility.accessibleToilet', 'yes']]);
+    const r = rowsFor(SCI, [['familyFacilities.parking', 'no'], ['accessibility.accessibleParking', 'yes'], ['accessibility.blueBadgeNote', 'A few spaces on Exhibition Road; 4 hours, 08.30 to 18.30'], ['accessibility.accessibleToilet', 'yes']]);
     expect(r.toilets).toMatchObject({ value: NOT_CONFIRMED, confirmed: false });
     expect(r['accessible-toilet']).toMatchObject({ value: 'On site', confirmed: true });
     expect(r.parking).toMatchObject({ value: 'None on site', confirmed: true });
-    expect(r['blue-badge']).toMatchObject({ value: 'Available', confirmed: true });
+    expect(r['blue-badge']).toMatchObject({ value: 'A few spaces on Exhibition Road; 4 hours, 08.30 to 18.30', confirmed: true });
   });
-  it('Horniman and Discover: general parking "no" with a Blue Badge row', () => {
-    for (const venue of [HOR, DIS]) {
-      const r = rowsFor(venue, [['familyFacilities.parking', 'no'], ['accessibility.accessibleParking', 'yes']]);
+  it('Blue Badge location is never reduced to a bare "Available": on site, nearby and on a named street read differently', () => {
+    const notes: Array<[string, string, RegExp]> = [
+      [HOR, 'Limited bays on site', /on site/],
+      [DIS, 'Bays nearby, not on site: Bridge Terrace, off Bridge Road', /not on site.*Bridge Terrace/],
+      [SCI, 'A few spaces on Exhibition Road; 4 hours, 08.30 to 18.30', /Exhibition Road/],
+    ];
+    for (const [venue, note, pattern] of notes) {
+      const r = rowsFor(venue, [['familyFacilities.parking', 'no'], ['accessibility.accessibleParking', 'yes'], ['accessibility.blueBadgeNote', note]]);
       expect(r.parking.value).toBe('None on site');
-      expect(r['blue-badge'].value).toBe('Available');
+      expect(r['blue-badge'].value).toMatch(pattern);
+      expect(r['blue-badge'].value).not.toBe('Available');
     }
+    const bare = rowsFor(HOR, [['familyFacilities.parking', 'no'], ['accessibility.accessibleParking', 'yes']]);
+    expect(bare['blue-badge'].value).toBe('Available'); // no location stated: the plain fact, not an invented place
+    const orphan = rowsFor(HOR, [['accessibility.blueBadgeNote', 'Limited bays on site']]);
+    expect(orphan['blue-badge']).toMatchObject({ value: NOT_CONFIRMED, confirmed: false }); // a note never outlives its claim
   });
   it('Discover: ordinary toilets do not fill the accessible-toilet row; London Zoo: the reverse', () => {
     const d = rowsFor(DIS, [['familyFacilities.toilets', 'yes']]);
@@ -91,5 +103,22 @@ describe('date-specific closures apply only on their dates, and lapse visibly', 
     const c = { fieldKey: 'rules.closed-christmas', status: 'active', approvedBy: 'human:aidan', validUntil: '2026-11-07' };
     expect(isClaimActive(c, '2026-11-07')).toBe(true);
     expect(isClaimActive(c, '2026-11-08')).toBe(false);
+  });
+});
+
+describe('a lapsed Christmas closure cannot leave a festive date looking like an ordinary open day', () => {
+  const weekly = { timezone: 'Europe/London', periods: [1, 2, 3, 4, 5, 6, 0].map((day) => ({ open: { day, time: '1000' }, close: { day, time: '1800' } })) } as never;
+  const official = [{ id: 'hours.daily', scope: 'venue', days: [0, 1, 2, 3, 4, 5, 6], open: '10:00', close: '18:00', checkedAt: '2026-10-08' }] as never;
+  it('withholds the schedule (unknown, not closed, not open) and tells the parent to check, on each festive date', () => {
+    for (const date of ['2026-12-24', '2026-12-25', '2026-12-26', '2026-12-31', '2027-01-01', '2027-12-25']) {
+      const r = reconcileHours(weekly, official, date, '2026-12-01');
+      expect(r.schedule, date).toBeUndefined();
+      expect(r.note?.severity, date).toBe('important');
+      expect(r.note?.text, date).toMatch(/Check with the venue before you go/);
+      expect(isOpenOn(date, '11:00', '13:00', r.schedule).status, date).toBe('unknown');
+    }
+  });
+  it('leaves ordinary days exactly as before', () => {
+    for (const date of ['2026-12-23', '2026-12-27', '2026-12-30', '2027-01-02']) expect(reconcileHours(weekly, official, date, '2026-12-01').schedule, date).toBe(weekly);
   });
 });
