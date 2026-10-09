@@ -58,6 +58,11 @@ function useAccountGuard() {
   const routerRef = useRef(router);
   routerRef.current = router;
   const sentBack = useRef<string | null>(null);
+  // A reset or invitation link signs the person in; they go straight to choosing a password, from wherever the link landed.
+  const recovering = useAuthStore((s) => s.recovering);
+  useEffect(() => {
+    if (navigatorReady && recovering && first !== '(onboarding)') routerRef.current.replace('/(onboarding)/account' as never);
+  }, [recovering, first, navigatorReady]);
   useEffect(() => {
     if (!navigatorReady || !accountRequired() || status !== 'signed_out') {
       if (status !== 'signed_out') sentBack.current = null;

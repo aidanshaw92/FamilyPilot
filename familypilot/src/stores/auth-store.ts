@@ -22,7 +22,13 @@ interface AuthState {
   /** True once Supabase Auth reports the address as confirmed. */
   emailConfirmed: boolean;
   initialised: boolean;
+  /**
+   * True from the moment a password-reset link signs the person in until they have chosen a new password. The link creates a
+   * session, so without this a family invited by "Forgot password" would be signed in with no password of their own.
+   */
+  recovering: boolean;
   init: () => void;
+  clearRecovery: () => void;
 }
 
 let subscribed = false;
@@ -33,6 +39,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   email: null,
   emailConfirmed: false,
   initialised: false,
+  recovering: false,
+  clearRecovery: () => set({ recovering: false }),
   init: () => {
     if (subscribed) return;
     if (!supabase) {
@@ -48,7 +56,11 @@ export const useAuthStore = create<AuthState>((set) => ({
           : { status: 'signed_out', userId: null, email: null, emailConfirmed: false, initialised: true },
       );
     void supabase.auth.getSession().then(({ data }) => apply(data.session));
-    supabase.auth.onAuthStateChange((_event, session) => apply(session));
+    supabase.auth.onAuthStateChange((event, session) => {
+      apply(session);
+      if (event === 'PASSWORD_RECOVERY') set({ recovering: true });
+      else if (!session) set({ recovering: false });
+    });
   },
 }));
 
