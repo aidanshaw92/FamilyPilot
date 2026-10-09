@@ -164,7 +164,7 @@ Nine claims and two companion decisions (the companions replace two general-toil
 - **Source:** https://www.horniman.ac.uk/plan-your-visit/ (read 2026-10-08; page sha256 prefix `07c4f7f88813cd83`; quotation checked against stored page text; venue's own domain: yes)
 - **Exact quotation:** “We have no onsite parking, other than limited parking for Blue Badge holders.”
 - **Expiry:** facility claim, 30 days from the reading, to 2026-11-07
-- **Outcome:** Added so the parent-facing app shows Blue Badge parking as its own row and general parking is not read as "nothing for Blue Badge holders".
+- **Outcome:** Added so the parent-facing app shows Blue Badge parking as its own row with its location ("Limited bays on site"), and general parking is not read as "nothing for Blue Badge holders".
 
 ## 13. Discover Children's Story Centre `transport.blueBadge` (companion decision)
 

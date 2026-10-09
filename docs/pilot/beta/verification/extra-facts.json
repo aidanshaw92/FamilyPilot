@@ -1,5 +1,5 @@
 {
- "note": "Facts added after the review queue was built, read only by publish-batch.cjs. Each is AI-assisted source verification awaiting founder approval.",
+ "note": "Facts and parent-facing location notes added after the review queue was built, read only by publish-batch.cjs. Each is AI-assisted source verification awaiting founder approval; the note is shown to parents beside the Blue Badge row so that on-site, nearby and on-street provision are not all read as 'Available'.",
  "facts": {
   "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI": [
    {
@@ -41,5 +41,10 @@
     }
    }
   ]
+ },
+ "locationNotes": {
+  "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI": "Limited bays on site",
+  "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk": "Bays nearby, not on site: Bridge Terrace, off Bridge Road",
+  "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE": "A few spaces on Exhibition Road; 4 hours, 08.30 to 18.30"
  }
 }

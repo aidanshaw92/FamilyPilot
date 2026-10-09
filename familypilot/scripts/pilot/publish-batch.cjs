@@ -43,6 +43,11 @@ function build({ items, approver, warnOnly = [], asOf, label = 'batch', textEdit
   if (fs.existsSync(extraFile)) {
     const extra = JSON.parse(fs.readFileSync(extraFile, 'utf8')).facts ?? {};
     for (const [venueId, facts] of Object.entries(extra)) if (profiles.has(venueId)) profiles.set(venueId, { ...profiles.get(venueId), facts: [...profiles.get(venueId).facts, ...facts] });
+    // Where the Blue Badge bays are, in short words a parent reads beside "Blue Badge parking" (on site, nearby, or on a named street).
+    for (const [venueId, note] of Object.entries(JSON.parse(fs.readFileSync(extraFile, 'utf8')).locationNotes ?? {})) {
+      const p = profiles.get(venueId); const f = p?.facts.find((x) => x.sec === 'transport' && x.key === 'blueBadge');
+      if (f) f.locationNote = note;
+    }
   }
   const claims = [];
   for (const item of items) {
@@ -76,6 +81,8 @@ function build({ items, approver, warnOnly = [], asOf, label = 'batch', textEdit
       const mapped = field === 'transport.parking' ? ['familyFacilities.parking', fact?.value === 'no' ? 'no' : 'yes'] : CLAIM_MAP[field];
       if (fact && mapped && fact.value !== 'adjacent' && (fact.status === 'verified' || fact.status === 'review') && !fact.held && fact.evidence) {
         found.push({ fieldKey: mapped[0], value: mapped[1], evidence: fact.evidence, days: 30 });
+        // Blue Badge bays carry their location as a second, separate claim, so the app never says a bare "Available" for bays that are nearby or on a street.
+        if (field === 'transport.blueBadge' && fact.locationNote) found.push({ fieldKey: 'accessibility.blueBadgeNote', value: fact.locationNote, evidence: fact.evidence, days: 30 });
       }
     }
     if (!found.length) throw new Error(`item ${item} yields no rule, hours reading or publishable fact (prices and activities ship as reviewed data in a code change, not as claims)`);
@@ -95,7 +102,12 @@ function sqlFor(claims, approver, label, basis = null) {
   const actors = [...new Set(claims.map((c) => c.approvedBy ?? approver))];
   const actorList = actors.map(lit).join(', ');
   const rows = claims.map((c) => `  (${lit(c.id)}, ${lit(c.venueId)}, ${lit(c.fieldKey)}, ${lit(JSON.stringify(c.value))}::jsonb, 'high', ${lit(c.evidence.url)}, ${lit(c.evidence.quote)}, ${lit(c.sourceType ?? 'human_reviewed_official_page')}, ${lit(c.evidence.readAt)}, ${lit(c.validUntil)}, ${lit(c.approvedBy ?? approver)}, 'active')`);
-  const apply = `-- Publishing batch ${label}: ${claims.length} rule/hours claims at ${venues.length} venues, approved by ${approver}. Paste as ONE run.${basis ? `\n-- Review basis: ${basis}` : ''}
+  const aiN = claims.filter((c) => c.approvedBy && c.approvedBy !== approver).length;
+  const provenance = aiN
+    ? `-- Provenance: ${claims.length - aiN} claims approved by ${approver} (founder-reviewed, not independent verification); ${aiN} claims are AI-assisted source verification awaiting the founder's approval to publish,\n-- written as approved_by '${[...new Set(claims.filter((c) => c.approvedBy && c.approvedBy !== approver).map((c) => c.approvedBy))].join("', '")}' and source_type '${[...new Set(claims.filter((c) => c.sourceType).map((c) => c.sourceType))].join("', '")}'. They are NOT human-reviewed evidence and NOT a passed control check.`
+    : `-- Provenance: all ${claims.length} claims approved by ${approver}.`;
+  const apply = `-- Publishing batch ${label}: ${claims.length} claims at ${venues.length} venues. Paste as ONE run.
+${provenance}${basis ? `\n-- Review basis: ${basis}` : ''}
 -- Guards abort the whole transaction (nothing is kept) unless: every venue exists, none of these claims is already active, and
 -- the batch is the only change. Expected result printed last: ${claims.length} active rows.
 begin;

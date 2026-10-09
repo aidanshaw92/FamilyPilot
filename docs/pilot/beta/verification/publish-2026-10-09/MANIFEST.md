@@ -26,7 +26,7 @@ Built 2026-10-09. **Nothing here has been published, merged or changed in produc
 | Gunnersbury Park | `hours.park` | every day 07:00 to dusk | www.visitgunnersbury.org/plan-your-visit | 2026-10-08 | 2026-11-22 |
 | Gunnersbury Park | `hours.museum` | Museum: Tue, Wed, Thu, Fri, Sat, Sun 10:00 to 16:30 | www.visitgunnersbury.org/plan-your-visit | 2026-10-08 | 2026-11-22 |
 
-## 1b. AI-assisted source-verified claims, Pack C, awaiting your approval (10)
+## 1b. AI-assisted source-verified claims, Pack C, awaiting your approval (13)
 
 Each was re-checked against the stored official-page text (quotation found, page hash matched, domain is the venue's own). Wording is the supported wording only; what was removed and why is in `docs/pilot/beta/verification/PACK_C_AI_VERIFICATION.md`.
 
@@ -40,16 +40,19 @@ Each was re-checked against the stored official-page text (quotation found, page
 | Discover Children's Story Centre | `familyFacilities.parking` | No parking on the Discover site. The closest car park is Stratford multi-storey, a 5 minute walk. Blue Badge holder bays are close to Discover, on Bridge Terrace off Bridge Road. | discover.org.uk/getting-here/ | 2026-10-08 | 2026-11-07 |
 | Science Museum | `accessibility.accessibleToilet` | Accessible toilets are available on all levels of the museum. | www.sciencemuseum.org.uk/visit/accessibility | 2026-10-08 | 2026-11-07 |
 | Horniman Museum and Gardens | `accessibility.accessibleParking` | Limited parking for Blue Badge holders. | www.horniman.ac.uk/plan-your-visit/ | 2026-10-08 | 2026-11-07 |
+| Horniman Museum and Gardens | `accessibility.blueBadgeNote` | Shown beside Blue Badge parking: "Limited bays on site" | www.horniman.ac.uk/plan-your-visit/ | 2026-10-08 | 2026-11-07 |
 | Discover Children's Story Centre | `accessibility.accessibleParking` | Blue Badge holder bays close to Discover, on Bridge Terrace off Bridge Road. | discover.org.uk/getting-here/ | 2026-10-08 | 2026-11-07 |
+| Discover Children's Story Centre | `accessibility.blueBadgeNote` | Shown beside Blue Badge parking: "Bays nearby, not on site: Bridge Terrace, off Bridge Road" | discover.org.uk/getting-here/ | 2026-10-08 | 2026-11-07 |
 | Science Museum | `accessibility.accessibleParking` | A small number of disabled spaces on Exhibition Road; Blue Badge holders may park there for four hours between 08.30 and 18.30. | www.sciencemuseum.org.uk/visit/getting-here | 2026-10-08 | 2026-11-07 |
+| Science Museum | `accessibility.blueBadgeNote` | Shown beside Blue Badge parking: "A few spaces on Exhibition Road; 4 hours, 08.30 to 18.30" | www.sciencemuseum.org.uk/visit/getting-here | 2026-10-08 | 2026-11-07 |
 
 A facility claim records only yes or no, with the venue's own quotation attached; general parking, Blue Badge parking, toilets and accessible toilets are separate claims and separate rows in the app, and a nearby car park or road name lives in the quotation, not in the yes/no value. Claims for Natural History Museum, Mudchute and Gunnersbury are outside the five beta venues but are part of the signed-off cards.
 
-apply.sql sha256 `23659e6c6d2983817df3c9143bfcc66a846c057dd8c27a2a2a46b3660b937c18`; rollback.sql sha256 `ffc6d7207f17bebc597d6c641fe82b5fd44175703e52b5956f8385f628201c7e`. A claim that is later wrong is withdrawn (status disputed), never deleted. Expiry: facility claims 30 days from the reading, official hours 45, rules 30; nothing is extended without a new reading.
+apply.sql sha256 `68853d9c044f9cb628e41e47695fc857853ae9121c6b08882d4d2f17ef269a2f`; rollback.sql sha256 `84f9723fad0816cc6363d2dc9fb22427319827fcb3cb6a0fa53f500e4d8849ae`. A claim that is later wrong is withdrawn (status disputed), never deleted. Expiry: facility claims 30 days from the reading, official hours 45, rules 30; nothing is extended without a new reading.
 
 ## 2. Code changes (a pull request you approve and merge; nothing ships until then)
 
-- **Pricing** (founder-reviewed, Pack A/B), branch `data/beta-pricing-zoo-science` (head 5018712, no PR opened, not merged; the two activity entries below are already on it): London Zoo, four day-type price tables with under-3s free, shown as a range because the page does not say which dates are which; Science Museum, general admission free. Price evidence expires 6 Apr 2027 (paid, 180 days) and 8 Oct 2027 (free, 365 days).
+- **Code branch `data/beta-pricing-zoo-science`, head `697763e`, no PR opened, not merged.** It carries: London Zoo pricing (four day-type tables, under-3s free, shown as a range; founder-reviewed, Pack A/B) with a **30-day** validity to 7 Nov 2026 because the tickets are variable, then shown only as last known; Science Museum free admission (valid to 8 Oct 2027); the two activity entries below; and three small app changes: the Blue Badge location note shown beside the Blue Badge row, ZooTown counted only from 12 months, and festive dates (24-26 Dec, 31 Dec, 1 Jan) treated as Unknown unless a current rule says otherwise.
 - **Activities**, `code/activity-evidence.snippet.ts` for `src/data/reviewed-activity-evidence.ts` (AI-assisted source-verified, awaiting your approval); valid 90 days from the reading, to 6 Jan 2027:
   - Science Museum `activities.the-garden`: "The Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6"
   - London Zoo `activities.zootown`: "ZooTown: indoor role-play adventure, best suited to children up to 8"
@@ -89,13 +92,13 @@ These are projections from the decisions above; the live check (`live-readiness.
 
 **Closures apply only on their dates.** Each closure rule carries explicit year dates (Christmas 24 to 26 Dec 2026, New Year 31 Dec 2026 to 1 Jan 2027, NHM 9 Oct 2026), is evaluated against the visit date, and does nothing on any other day, including 25 Dec 2027.
 
-**What happens to Christmas when the evidence expires on 7 Nov, if nobody renews it.** An expired rule claim stops being served, so the planner would fall back to the venue's regular weekly hours and could plan a visit on 25 Dec as an ordinary day. That is a real gap, not a hypothetical one. It is closed by renewal, not by weakening the 30-day standard: (1) in the week of 2 Nov, re-read the Science Museum and Discover opening pages and publish a renewal batch for the closure rules and hours (30 days from that reading, to early Dec); (2) in the week of 30 Nov to 4 Dec, do it again, which carries the closure rules past 1 Jan 2027 and covers both Christmas and New Year. I can set both as dated reminders if you approve; nothing renews itself.
+**What happens to Christmas when the evidence expires on 7 Nov, if nobody renews it.** The closure claims stop being served. With the code branch merged, the app no longer falls back to the regular weekly hours on 24, 25 and 26 December, 31 December and 1 January: the day's opening becomes Unknown, a plan shows an important "check with the venue before you go" note, and the venue is never shown as confidently open on those dates (it is also never shown as closed on that basis alone). Without the code branch merged that safeguard does not exist, so merge it before 7 Nov. The proper cure is still renewal, not weakening the 30-day standard: (1) in the week of 2 Nov re-read the Science Museum and Discover opening pages and publish a renewal batch (30 days, to early Dec); (2) in the week of 30 Nov to 4 Dec do it again, which carries the closure rules past 1 Jan 2027. I can set both as dated reminders if you approve; nothing renews itself. Easter and other bank holidays are not covered by this safeguard.
 
 **Science Museum direct check.** Science Museum parking and Blue Badge spaces are recorded-source only. Before the first renewal, a person should open https://www.sciencemuseum.org.uk/visit/getting-here and confirm the three sentences quoted in `PACK_C_AI_VERIFICATION.md`.
 
 ## 5b. What a parent sees, checked through the real app code
 
-Parking, Blue Badge parking, toilets and accessible toilets are four separate rows, each read from its own claim (tests in `facility-distinctions.test.ts`). An accessible-toilet claim never fills the Toilets row; a general-parking "no" is shown beside a separate Blue Badge row, which is why Blue Badge claims were added for Horniman, Discover and the Science Museum (the source states them in the same passage). ZooTown is counted for children from 12 months to under 9 years only; a newborn or a 6-month-old is not shown as suited to it.
+Parking, Blue Badge parking, toilets and accessible toilets are four separate rows, each read from its own claim (tests in `facility-distinctions.test.ts`). An accessible-toilet claim never fills the Toilets row; a general-parking "no" is shown beside a separate Blue Badge row carrying its location (Horniman: "Limited bays on site"; Discover: "Bays nearby, not on site: Bridge Terrace, off Bridge Road"; Science Museum: "A few spaces on Exhibition Road; 4 hours, 08.30 to 18.30"), which is why Blue Badge claims and location notes were added for those three venues (the source states them in the same passage). ZooTown is counted for children from 12 months to under 9 years only; a newborn or a 6-month-old is not shown as suited to it.
 
 ## 6. What needs your approval, in order
 

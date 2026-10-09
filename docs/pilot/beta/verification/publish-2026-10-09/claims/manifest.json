@@ -408,6 +408,16 @@
    "value": "yes"
   },
   {
+   "id": "6035f2fe-2b3e-55df-b412-b51bcd1f7e85",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "fieldKey": "accessibility.blueBadgeNote",
+   "validUntil": "2026-11-07",
+   "item": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.blueBadge",
+   "source": "https://www.horniman.ac.uk/plan-your-visit/",
+   "quote": "We have no onsite parking, other than limited parking for Blue Badge holders.",
+   "value": "Limited bays on site"
+  },
+  {
    "id": "45efac75-f930-5a46-8fba-8319b02dac39",
    "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
    "fieldKey": "accessibility.accessibleParking",
@@ -418,6 +428,16 @@
    "value": "yes"
   },
   {
+   "id": "e01bdb95-ff89-5032-bf40-be727f6e4710",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "fieldKey": "accessibility.blueBadgeNote",
+   "validUntil": "2026-11-07",
+   "item": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.blueBadge",
+   "source": "https://discover.org.uk/getting-here/",
+   "quote": "There are blue badge holder bays in the immediate vicinity of Discover, on Bridge Terrace, off Bridge Road, which are clearly marked.",
+   "value": "Bays nearby, not on site: Bridge Terrace, off Bridge Road"
+  },
+  {
    "id": "f469a7a6-2149-54e7-9171-f2dc63da8233",
    "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
    "fieldKey": "accessibility.accessibleParking",
@@ -426,8 +446,18 @@
    "source": "https://www.sciencemuseum.org.uk/visit/getting-here",
    "quote": "A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30.",
    "value": "yes"
+  },
+  {
+   "id": "f906fbac-351f-5de0-b0bf-eb7e5767d953",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "fieldKey": "accessibility.blueBadgeNote",
+   "validUntil": "2026-11-07",
+   "item": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.blueBadge",
+   "source": "https://www.sciencemuseum.org.uk/visit/getting-here",
+   "quote": "A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30.",
+   "value": "A few spaces on Exhibition Road; 4 hours, 08.30 to 18.30"
   }
  ],
- "applySha256": "23659e6c6d2983817df3c9143bfcc66a846c057dd8c27a2a2a46b3660b937c18",
- "rollbackSha256": "ffc6d7207f17bebc597d6c641fe82b5fd44175703e52b5956f8385f628201c7e"
+ "applySha256": "68853d9c044f9cb628e41e47695fc857853ae9121c6b08882d4d2f17ef269a2f",
+ "rollbackSha256": "84f9723fad0816cc6363d2dc9fb22427319827fcb3cb6a0fa53f500e4d8849ae"
 }

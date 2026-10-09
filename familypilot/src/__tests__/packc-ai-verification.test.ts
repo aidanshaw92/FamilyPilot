@@ -44,17 +44,23 @@ describe('Pack C AI-assisted source verification', () => {
 
   it('builds a draft manifest that labels Pack C separately, writes no human: approver for it, and projects four ready venues', () => {
     const out = join(mkdtempSync(join(tmpdir(), 'ai-')), 'draft');
-    const r = spawnSync('node', [join(root, 'scripts/pilot/build-final-manifest.cjs'), '--ab', join(root, '..', 'docs/pilot/beta/decisions/audit-packAB.jsonl'), '--ai-verified', join(V, 'audit-packC-ai.jsonl'), '--approver', 'human:founder-test', '--review-basis', 'test basis', '--out-dir', out, '--as-of', '2026-10-09'], { encoding: 'utf8' });
+    const r = spawnSync('node', [join(root, 'scripts/pilot/build-final-manifest.cjs'), '--ab', join(root, '..', 'docs/pilot/beta/decisions/audit-packAB.jsonl'), '--ai-verified', join(V, 'audit-packC-ai.jsonl'), '--approver', 'human:founder-test', '--review-basis', 'test basis', '--out-dir', out, '--as-of', '2026-10-09', '--code-head', 'abc1234'], { encoding: 'utf8' });
     expect(r.status, r.stderr).toBe(0);
     const md = readFileSync(join(out, 'MANIFEST.md'), 'utf8');
     expect(md).toMatch(/## 1a\. Founder-reviewed claims, Packs A and B \(15\)/);
-    expect(md).toMatch(/## 1b\. AI-assisted source-verified claims, Pack C, awaiting your approval \(10\)/);
+    expect(md).toMatch(/## 1b\. AI-assisted source-verified claims, Pack C, awaiting your approval \(13\)/);
     expect(md).toMatch(/NOT a passed Pack C control check/);
     for (const v of ['Royal Air Force Museum London', 'Horniman Museum and Gardens', 'London Zoo', 'Science Museum']) expect(md).toContain(`| ${v} | **recommendation-ready**`);
     expect(md).toMatch(/Discover Children's Story Centre \| not ready \| cost/);
     const sql = readFileSync(join(out, 'claims/apply.sql'), 'utf8');
-    expect(sql.match(/'source_verified_ai_v1'/g)!.length).toBeGreaterThanOrEqual(10);
-    expect(sql.match(/'ai_assisted_source_verification'/g)!.length).toBe(10);
+    expect(sql.split('\n').filter((l) => l.startsWith('  (\'') && l.includes("'source_verified_ai_v1'")).length).toBe(13);
+    expect(sql.split('\n').filter((l) => l.startsWith('  (\'') && l.includes("'ai_assisted_source_verification'")).length).toBe(13);
+    expect(sql).toMatch(/Provenance: 15 claims approved by human:founder-test \(founder-reviewed, not independent verification\); 13 claims are AI-assisted source verification awaiting the founder's approval/);
+    expect(sql).toMatch(/NOT human-reviewed evidence and NOT a passed control check/);
+    expect(sql).not.toMatch(/rule\/hours claims/);
+    expect(md).toMatch(/30-day|\*\*30-day\*\*/);
+    expect(md).not.toMatch(/180 days|5018712/);
+    expect(md).toMatch(/festive dates|24, 25 and 26 December, 31 December and 1 January/);
     expect(existsSync(join(out, 'claims/rollback.sql'))).toBe(true);
   });
 });

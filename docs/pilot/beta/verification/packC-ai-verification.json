@@ -405,12 +405,13 @@
     "kind": "claim",
     "field": "accessibility.accessibleParking",
     "value": "yes",
-    "wording": "Limited parking for Blue Badge holders."
+    "wording": "Limited parking for Blue Badge holders.",
+    "locationNote": "Limited bays on site"
    },
    "establishes": "\"other than limited parking for Blue Badge holders\": the same sentence that supports \"no on-site parking\" for general visitors.",
    "notEstablished": "Where the bays are or how many.",
    "removed": [],
-   "outcome": "Added so the parent-facing app shows Blue Badge parking as its own row and general parking is not read as \"nothing for Blue Badge holders\".",
+   "outcome": "Added so the parent-facing app shows Blue Badge parking as its own row with its location (\"Limited bays on site\"), and general parking is not read as \"nothing for Blue Badge holders\".",
    "venue": "Horniman Museum and Gardens",
    "field": "transport.blueBadge",
    "source": {
@@ -441,7 +442,8 @@
     "kind": "claim",
     "field": "accessibility.accessibleParking",
     "value": "yes",
-    "wording": "Blue Badge holder bays close to Discover, on Bridge Terrace off Bridge Road."
+    "wording": "Blue Badge holder bays close to Discover, on Bridge Terrace off Bridge Road.",
+    "locationNote": "Bays nearby, not on site: Bridge Terrace, off Bridge Road"
    },
    "establishes": "\"There are blue badge holder bays in the immediate vicinity of Discover, on Bridge Terrace, off Bridge Road, which are clearly marked.\" The page adds that Blue Badge holders can use shared-use/permit bays in nearby streets without a time limit.",
    "notEstablished": "The nearby-streets permission is not published (detail kept in the quotation page).",
@@ -477,7 +479,8 @@
     "kind": "claim",
     "field": "accessibility.accessibleParking",
     "value": "yes",
-    "wording": "A small number of disabled spaces on Exhibition Road; Blue Badge holders may park there for four hours between 08.30 and 18.30."
+    "wording": "A small number of disabled spaces on Exhibition Road; Blue Badge holders may park there for four hours between 08.30 and 18.30.",
+    "locationNote": "A few spaces on Exhibition Road; 4 hours, 08.30 to 18.30"
    },
    "establishes": "\"A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30.\"",
    "notEstablished": "LIMITATION (as for Science Museum parking): the page text is not held locally; the first part of this sentence is confirmed in the recorded context kept with the parking card, the rest (the four-hour limit and times) rests on the recorded evidence quote and page hash 751a89c00ea27a0f. It has NOT been re-read from the live page.",
