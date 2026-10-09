@@ -4,6 +4,7 @@ const {getActiveClaims}=require('../../server/enrichment/_lib/claims-store');
 const {resolvePrimaryPlaceId}=require('../../server/places/lib/canonical-venues');
 const {venueFeedback}=require('../../server/feedback/_lib/store');
 const {validateReport,selectQuestions}=require('../../server/feedback/_lib/rules');
+const {sanitiseClientError,allowReport}=require('../../server/feedback/_lib/client-error');
 module.exports=async function handler(req,res) {
  res.setHeader('Cache-Control','no-store');
  if(!['GET','POST','DELETE'].includes(req.method))return res.status(405).json({error:'Method not allowed'});
@@ -28,6 +29,12 @@ module.exports=async function handler(req,res) {
   if(req.method==='DELETE'){
    if(typeof req.body?.id!=='string'||!/^[a-f0-9-]{36}$/i.test(req.body.id))return res.status(400).json({error:'Invalid report'});
    const {error}=await admin.from('venue_visit_reports').delete().eq('id',req.body.id).eq('user_id',auth.user.id);if(error)throw error;
+   return res.json({ok:true});
+  }
+  // A crash report from the app (same account check, no new function): logged without the account, never stored.
+  if(req.body?.kind==='client-error'){
+   let report;try{report=sanitiseClientError(req.body);}catch(e){return res.status(400).json({error:e.message});}
+   if(allowReport(auth.user.id))console.warn('client-error '+JSON.stringify(report));
    return res.json({ok:true});
   }
   let input;try{input=validateReport(req.body);}catch(e){return res.status(400).json({error:e.message});}

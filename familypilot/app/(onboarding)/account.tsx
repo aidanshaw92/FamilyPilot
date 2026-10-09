@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BrandMark } from '@/src/components/ui/BrandMark';
 import { Button, Field, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
-import { createAccount, requestPasswordReset, resendVerification, signIn } from '@/src/services/account/auth-service';
+import { createAccount, requestPasswordReset, resendVerification, setNewPassword, signIn } from '@/src/services/account/auth-service';
 import {
   AUTH_FAILURE_COPY,
   emailProblem,
@@ -24,7 +24,7 @@ import { useFamilyStore } from '@/src/stores/family-store';
  * email to be confirmed (the recommended setting), creating the account ends in a "Check your email" state with a
  * resend and an "I've verified" button; following the link in the same browser signs the person in by itself.
  */
-type Mode = 'create' | 'signin' | 'verify' | 'forgot';
+type Mode = 'create' | 'signin' | 'verify' | 'forgot' | 'newpassword';
 const RESEND_COOLDOWN_S = 30;
 
 export default function AccountScreen() {
@@ -33,8 +33,9 @@ export default function AccountScreen() {
   const params = useLocalSearchParams<{ mode?: string }>();
   const status = useAuthStore((s) => s.status);
   const hasCompletedOnboarding = useFamilyStore((s) => s.hasCompletedOnboarding);
+  const recovering = useAuthStore((s) => s.recovering);
 
-  const [mode, setMode] = useState<Mode>(params.mode === 'signin' ? 'signin' : 'create');
+  const [mode, setMode] = useState<Mode>(recovering ? 'newpassword' : params.mode === 'signin' ? 'signin' : 'create');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -50,8 +51,13 @@ export default function AccountScreen() {
 
   // The verification link, followed in this browser, signs the person in without a button press.
   useEffect(() => {
-    if (status === 'signed_in') proceed();
-  }, [status, proceed]);
+    if (status === 'signed_in' && !recovering) proceed();
+  }, [status, proceed, recovering, mode]);
+
+  // A reset or invitation link signs the person in; before anything else they choose their own password.
+  useEffect(() => {
+    if (recovering) setMode('newpassword');
+  }, [recovering]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -142,10 +148,26 @@ export default function AccountScreen() {
     else setError(AUTH_FAILURE_COPY[result.failure ?? 'other']);
   };
 
+  const submitNewPassword = async () => {
+    setInfo('');
+    const problem = passwordProblem(password);
+    setError(problem ?? '');
+    if (problem || busy) return;
+    setBusy(true);
+    const result = await setNewPassword(password);
+    setBusy(false);
+    if (!result.ok) return setError(AUTH_FAILURE_COPY[result.failure ?? 'other']);
+    setPassword('');
+    useAuthStore.getState().clearRecovery();
+    proceed();
+  };
+
   const heading =
-    mode === 'verify' ? 'Check your email' : mode === 'signin' ? 'Welcome back' : mode === 'forgot' ? 'Reset your password' : 'Create your account';
+    mode === 'newpassword' ? 'Choose your password' : mode === 'verify' ? 'Check your email' : mode === 'signin' ? 'Welcome back' : mode === 'forgot' ? 'Reset your password' : 'Create your account';
   const sub =
-    mode === 'verify'
+    mode === 'newpassword'
+      ? 'This is the password you will use to sign in from now on.'
+      : mode === 'verify'
       ? `We sent a link to ${maskEmail(email)}. Open it to verify your address, then come back here.`
       : mode === 'signin'
         ? 'Sign in to pick up where you left off.'
@@ -213,6 +235,7 @@ export default function AccountScreen() {
           </View>
         ) : (
           <View style={styles.form}>
+            {mode !== 'newpassword' ? (
             <Field
               label="Email"
               value={email}
@@ -223,25 +246,28 @@ export default function AccountScreen() {
               placeholder="you@example.com"
               testID="account-email"
             />
+            ) : null}
             {mode !== 'forgot' ? (
               <Field
-                label={mode === 'create' ? 'Choose a password' : 'Password'}
+                label={mode === 'create' || mode === 'newpassword' ? 'Choose a password' : 'Password'}
                 value={password}
                 onChange={setPassword}
                 secure
-                autoComplete={mode === 'create' ? 'new-password' : 'current-password'}
-                textContentType={mode === 'create' ? 'newPassword' : 'password'}
-                onSubmit={() => void (mode === 'create' ? submitCreate() : submitSignIn())}
+                autoComplete={mode === 'create' || mode === 'newpassword' ? 'new-password' : 'current-password'}
+                textContentType={mode === 'create' || mode === 'newpassword' ? 'newPassword' : 'password'}
+                onSubmit={() => void (mode === 'newpassword' ? submitNewPassword() : mode === 'create' ? submitCreate() : submitSignIn())}
                 testID="account-password"
               />
             ) : null}
-            {mode === 'create' ? (
+            {mode === 'create' || mode === 'newpassword' ? (
               <Text variant="caption" color={colors.text.tertiary}>
                 At least 10 characters.
               </Text>
             ) : null}
 
-            {mode === 'create' ? (
+            {mode === 'newpassword' ? (
+              <Button label={busy ? 'Saving…' : 'Save password'} fullWidth disabled={busy} onPress={() => void submitNewPassword()} testID="account-new-password" />
+            ) : mode === 'create' ? (
               <Button label={busy ? 'Creating…' : 'Create account'} fullWidth disabled={busy} onPress={() => void submitCreate()} testID="account-create" />
             ) : mode === 'signin' ? (
               <Button label={busy ? 'Signing in…' : 'Sign in'} fullWidth disabled={busy} onPress={() => void submitSignIn()} testID="account-signin" />
@@ -249,6 +275,7 @@ export default function AccountScreen() {
               <Button label={busy ? 'Sending…' : 'Send reset link'} fullWidth disabled={busy} onPress={() => void submitForgot()} />
             )}
 
+            {mode !== 'newpassword' ? (
             <View style={styles.switchRow}>
               {mode === 'create' ? (
                 <Button label="I already have an account" variant="ghost" onPress={() => { setMode('signin'); setError(''); setInfo(''); }} testID="account-to-signin" />
@@ -259,6 +286,7 @@ export default function AccountScreen() {
                 <Button label="Forgot password?" variant="ghost" onPress={() => { setMode('forgot'); setError(''); setInfo(''); }} />
               ) : null}
             </View>
+            ) : null}
           </View>
         )}
 
