@@ -53,14 +53,14 @@ Nine claims and two companion decisions (the companions replace two general-toil
 
 - **Decision:** EDIT (AI-assisted, awaiting founder approval)
 - **Original proposal:** ZooTown is an indoor role-play adventure aimed at children aged up to 8; tickets must be booked online in advance; Silver members and non-members pay £1 per child.
-- **Published wording:** ZooTown: indoor role-play adventure, best suited to children up to 8 (activity, ages 0 to under 108 months)
+- **Published wording:** ZooTown: indoor role-play adventure, best suited to children up to 8 (activity, ages 12 to under 108 months)
 - **What the source establishes:** ZooTown is an indoor role-play adventure inside London Zoo, aimed at children up to 8; every child is welcome; babes in arms have a separate ticket category; a valid zoo admission ticket or membership is needed; sessions are 45 minutes and subject to availability.
 - **What it does not establish:** That tickets must be booked in advance. The same FAQ contradicts itself: "ZooTown tickets must be purchased online in advance and is not available to buy in the zoo" (last online sales 9am on the day), yet elsewhere "There may be some availability on the day (bookable at the kiosk near the ZooTown entrance), but this cannot be guaranteed". The booking rule is therefore ambiguous and is left out. The £1 fee is a ticket price for non-members and Silver members; it is not an activity fact and has no field here, so it is not published.
 - **Removed:** "tickets must be booked online in advance" (source contradicts itself); "Silver members and non-members pay £1 per child" (price, not activity evidence; not published)
 - **Source:** https://www.londonzoo.org/plan-your-visit/frequently-asked-questions (read 2026-10-08; page sha256 prefix `2eb390649a853e57`; quotation checked against stored page text; venue's own domain: yes)
 - **Exact quotation:** “ZooTown is a brand new indoor role play adventure for kids in the heart of London Zoo aimed at children aged up to 8. … Silver members and non-members pay £1 per child”
 - **Expiry:** activity evidence, 90 days from the reading, to 2027-01-06
-- **Outcome:** Edited. Booking requirement and session fee are Unknown. (An admission ticket or membership is also needed per the page; kept in the review notes, not the label.) Counts as a provision for ages 0 to 8 inclusive (months 0 to under 108): the FAQ asks "my child is aged over 8, can they attend?", which treats 8 as inside the stated range.
+- **Outcome:** Edited. Booking requirement and session fee are Unknown. (An admission ticket or membership is also needed per the page; kept in the review notes, not the label.) Counts as a provision for months 12 to under 108. The upper end reads 8 as inside the range: the FAQ asks "my child is aged over 8, can they attend?", which treats 8 as inside the stated range. The lower bound of 12 months is a conservative floor, NOT a statement from the source (it gives no lower age and sells babes in arms a separate ticket); it exists so that a newborn or young baby is never counted as covered.
 
 ## 5. London Zoo `transport.parking`
 
@@ -152,6 +152,45 @@ Nine claims and two companion decisions (the companions replace two general-toil
 - **Exact quotation:** “Accessible toilets are available on all levels of the museum.”
 - **Expiry:** facility claim, 30 days from the reading, to 2026-11-07
 - **Outcome:** Published as accessibility.accessibleToilet = yes. Replaces the general-toilets claim above.
+
+## 12. Horniman Museum and Gardens `transport.blueBadge` (companion decision)
+
+- **Decision:** APPROVE (AI-assisted, awaiting founder approval)
+- **Original proposal:** (new) Limited parking for Blue Badge holders.
+- **Published wording:** Limited parking for Blue Badge holders. (`accessibility.accessibleParking = yes`)
+- **What the source establishes:** "other than limited parking for Blue Badge holders": the same sentence that supports "no on-site parking" for general visitors.
+- **What it does not establish:** Where the bays are or how many.
+- **Removed:** nothing
+- **Source:** https://www.horniman.ac.uk/plan-your-visit/ (read 2026-10-08; page sha256 prefix `07c4f7f88813cd83`; quotation checked against stored page text; venue's own domain: yes)
+- **Exact quotation:** “We have no onsite parking, other than limited parking for Blue Badge holders.”
+- **Expiry:** facility claim, 30 days from the reading, to 2026-11-07
+- **Outcome:** Added so the parent-facing app shows Blue Badge parking as its own row and general parking is not read as "nothing for Blue Badge holders".
+
+## 13. Discover Children's Story Centre `transport.blueBadge` (companion decision)
+
+- **Decision:** APPROVE (AI-assisted, awaiting founder approval)
+- **Original proposal:** (new) Blue Badge holder bays close to Discover, on Bridge Terrace off Bridge Road.
+- **Published wording:** Blue Badge holder bays close to Discover, on Bridge Terrace off Bridge Road. (`accessibility.accessibleParking = yes`)
+- **What the source establishes:** "There are blue badge holder bays in the immediate vicinity of Discover, on Bridge Terrace, off Bridge Road, which are clearly marked." The page adds that Blue Badge holders can use shared-use/permit bays in nearby streets without a time limit.
+- **What it does not establish:** The nearby-streets permission is not published (detail kept in the quotation page).
+- **Removed:** nothing
+- **Source:** https://discover.org.uk/getting-here/ (read 2026-10-08; page sha256 prefix `9d230072cea688a5`; quotation checked against stored page text; venue's own domain: yes)
+- **Exact quotation:** “There are blue badge holder bays in the immediate vicinity of Discover, on Bridge Terrace, off Bridge Road, which are clearly marked.”
+- **Expiry:** facility claim, 30 days from the reading, to 2026-11-07
+- **Outcome:** Added so general parking "no" does not hide the Blue Badge bays.
+
+## 14. Science Museum `transport.blueBadge` (companion decision)
+
+- **Decision:** APPROVE (AI-assisted, awaiting founder approval)
+- **Original proposal:** (new) A small number of disabled spaces on Exhibition Road; Blue Badge holders may park there for four hours between 08.30 and 18.30.
+- **Published wording:** A small number of disabled spaces on Exhibition Road; Blue Badge holders may park there for four hours between 08.30 and 18.30. (`accessibility.accessibleParking = yes`)
+- **What the source establishes:** "A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30."
+- **What it does not establish:** LIMITATION (as for Science Museum parking): the page text is not held locally; the first part of this sentence is confirmed in the recorded context kept with the parking card, the rest (the four-hour limit and times) rests on the recorded evidence quote and page hash 751a89c00ea27a0f. It has NOT been re-read from the live page.
+- **Removed:** nothing
+- **Source:** https://www.sciencemuseum.org.uk/visit/getting-here (read 2026-10-08; page sha256 prefix `751a89c00ea27a0f`; quotation checked against first part in recorded page context; remainder from recorded evidence quote only (page text not held locally); venue's own domain: yes)
+- **Exact quotation:** “A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30.”
+- **Expiry:** facility claim, 30 days from the reading, to 2026-11-07
+- **Outcome:** Added so general parking "no" does not hide the Blue Badge spaces. Needs a direct read of the live page by a person before it expires, like Science Museum parking.
 
 ## Does any claim genuinely need independent human verification?
 

@@ -24,7 +24,7 @@
         }
       },
       "kind": "provision",
-      "minMonths": 0,
+      "minMonths": 12,
       "maxMonthsExclusive": 108,
       "label": "ZooTown: indoor role-play adventure, best for up to 8",
       "evidence": {
@@ -44,7 +44,8 @@
       "semantic": {
         "A": "supports",
         "B": "supports"
-      }
+      },
+      "note": "Lower bound 12 months is a conservative floor, not a statement from the source: the FAQ gives only 'aimed at children aged up to 8' and sells babes in arms a separate ticket, so a newborn must not be counted as covered."
     },
     {
       "sec": "activities",

@@ -141,7 +141,7 @@ if (aiMode) {
     L.push(`| ${venueName(c.venueId + ':')} | \`${c.fieldKey}\` | ${w.replace(/\|/g, '/')} | ${c.evidence.url.replace(/^https?:\/\//, '')} | ${c.evidence.readAt} | ${c.validUntil} |`);
   }
 }
-L.push('', 'A parking or toilets claim records only yes or no, with the venue\'s own quotation attached; detail such as Blue Badge bays or a nearby car park lives in that quotation, not in the yes/no value. Claims for Natural History Museum, Mudchute and Gunnersbury are outside the five beta venues but are part of the signed-off cards.', '');
+L.push('', 'A facility claim records only yes or no, with the venue\'s own quotation attached; general parking, Blue Badge parking, toilets and accessible toilets are separate claims and separate rows in the app, and a nearby car park or road name lives in the quotation, not in the yes/no value. Claims for Natural History Museum, Mudchute and Gunnersbury are outside the five beta venues but are part of the signed-off cards.', '');
 L.push(`apply.sql sha256 \`${sha(apply)}\`; rollback.sql sha256 \`${sha(rollback)}\`. A claim that is later wrong is withdrawn (status disputed), never deleted. Expiry: facility claims 30 days from the reading, official hours 45, rules 30; nothing is extended without a new reading.`, '');
 L.push('## 2. Code changes (a pull request you approve and merge; nothing ships until then)', '');
 L.push('- **Pricing** (founder-reviewed, Pack A/B), branch `data/beta-pricing-zoo-science` (head 5018712, no PR opened, not merged; the two activity entries below are already on it): London Zoo, four day-type price tables with under-3s free, shown as a range because the page does not say which dates are which; Science Museum, general admission free. Price evidence expires 6 Apr 2027 (paid, 180 days) and 8 Oct 2027 (free, 365 days).');
@@ -157,22 +157,27 @@ else for (const u of unresolved) {
 }
 if (aiMode) {
   L.push('- London Zoo `activities.zootown`, the booking rule and the £1 session fee: **Unknown / not published**. The zoo\'s own FAQ contradicts itself on advance booking, and the fee is a ticket price with no field here.');
-  L.push('- Limitation: Science Museum `transport.parking` is verified from the recorded read (page hash `751a89c00ea27a0f`) and its recorded surrounding text, not a fresh fetch; the site blocks the crawler.');
+  L.push('- **Recorded-source limitation, NOT upgraded:** Science Museum `familyFacilities.parking` and `accessibility.accessibleParking` rest on the recorded read of 8 Oct (page hash `751a89c00ea27a0f`) and its recorded surrounding text, not a fresh fetch; the site blocks our crawler and this sandbox cannot reach it. The status of both stays "verified from recorded source". A direct current-page check by a person (https://www.sciencemuseum.org.uk/visit/getting-here, about 10 seconds) is the only thing that would upgrade it, and it is required before these two claims are renewed on 7 Nov.');
 }
 L.push('', '## 4. Expected live readiness once sections 1 and 2 are published', '', '| Venue | Expected | Still missing |', '|---|---|---|');
 for (const v of expected.venues.filter((x) => ['Royal Air Force Museum London', 'Horniman Museum and Gardens', "Discover Children's Story Centre", 'London Zoo', 'Science Museum'].includes(x.name))) L.push(`| ${v.name} | ${v.ready ? '**recommendation-ready**' : 'not ready'} | ${v.missing.join(', ') || 'none'} |`);
 if (aiMode) L.push('', 'What each depends on: London Zoo and Science Museum cost depends on the pricing PR in section 2 (not yet merged); their activity evidence depends on the two activity entries; their family essentials rest on the accessible-toilet claims only (general toilets stay Unknown in the app; Science Museum also states baby changing, which is not decided in this batch). Discover stays held back by its price, which cannot be verified.');
 L.push('', 'These are projections from the decisions above; the live check (`live-readiness.cjs`) proves them against production after publication. If you decline any Pack C item, the affected venue drops as the table in section 3 states.', '');
 if (aiMode) {
-  L.push('## 5. Expiry and refresh', '', '| What | Expires | Refresh |', '|---|---|---|',
+  L.push('## 5. Expiry, refresh and the Christmas closures', '', '| What | Expires | Refresh |', '|---|---|---|',
     '| London Zoo and Science Museum facility claims (Pack C) | 7 Nov 2026 | Manual re-read: both sites block the crawler, so these cannot refresh automatically |',
-    '| Discover and Horniman facility claims | 7 Nov 2026 | Automatic refetch can renew the quotation; a person re-confirms any change |',
-    '| Pack A/B rules and hours | 7 Nov (rules), 22 Nov (hours) | London Zoo and Science Museum: manual |',
+    '| Discover and Horniman facility claims | 7 Nov 2026 | Refetch can renew the quotation; a person re-confirms any change |',
+    '| Pack A/B rules (including Christmas and New Year closures) and hours | 7 Nov (rules), 22 Nov (hours) | London Zoo and Science Museum: manual |',
     '| Activity entries (The Garden, ZooTown) | 6 Jan 2027 | Manual re-read |',
-    '| Prices | 6 Apr 2027 (London Zoo, paid), 8 Oct 2027 (Science Museum, free) | Manual |', '');
+    '| London Zoo ticket prices (variable) | **7 Nov 2026** (30 days), then shown only as "last known, may have changed" | Manual re-read of the ticket page |',
+    '| Science Museum free admission | 8 Oct 2027 | Manual |', '');
+  L.push('**Closures apply only on their dates.** Each closure rule carries explicit year dates (Christmas 24 to 26 Dec 2026, New Year 31 Dec 2026 to 1 Jan 2027, NHM 9 Oct 2026), is evaluated against the visit date, and does nothing on any other day, including 25 Dec 2027.', '');
+  L.push('**What happens to Christmas when the evidence expires on 7 Nov, if nobody renews it.** An expired rule claim stops being served, so the planner would fall back to the venue\'s regular weekly hours and could plan a visit on 25 Dec as an ordinary day. That is a real gap, not a hypothetical one. It is closed by renewal, not by weakening the 30-day standard: (1) in the week of 2 Nov, re-read the Science Museum and Discover opening pages and publish a renewal batch for the closure rules and hours (30 days from that reading, to early Dec); (2) in the week of 30 Nov to 4 Dec, do it again, which carries the closure rules past 1 Jan 2027 and covers both Christmas and New Year. I can set both as dated reminders if you approve; nothing renews itself.', '');
+  L.push('**Science Museum direct check.** Science Museum parking and Blue Badge spaces are recorded-source only. Before the first renewal, a person should open https://www.sciencemuseum.org.uk/visit/getting-here and confirm the three sentences quoted in `PACK_C_AI_VERIFICATION.md`.', '');
+  L.push('## 5b. What a parent sees, checked through the real app code', '', 'Parking, Blue Badge parking, toilets and accessible toilets are four separate rows, each read from its own claim (tests in `facility-distinctions.test.ts`). An accessible-toilet claim never fills the Toilets row; a general-parking "no" is shown beside a separate Blue Badge row, which is why Blue Badge claims were added for Horniman, Discover and the Science Museum (the source states them in the same passage). ZooTown is counted for children from 12 months to under 9 years only; a newborn or a 6-month-old is not shown as suited to it.', '');
   L.push('## 6. What needs your approval, in order', '',
     '1. **Accept the Pack C classification**: AI-assisted source verification, not human review, not a passed control check.',
-    '2. **Approve (or strike) each Pack C claim in 1b and each activity entry in section 2.** Anything you strike is dropped and the venue table above is recomputed.',
+    '2. **Approve (or strike) each Pack C claim in 1b, including the three Blue Badge claims added this round, and each activity entry in section 2.** Anything you strike is dropped and the venue table above is recomputed.',
     '3. **Approve applying the claims batch** (`claims/apply.sql`, one guarded transaction; `claims/rollback.sql` withdraws exactly those rows).',
     '4. **Approve merging the code PR** (pricing + activity entries) so London Zoo and Science Museum pricing and ZooTown/The Garden ship.',
     '5. After publication I run `live-readiness.cjs` against production and the parent journey (Home, Venue Detail, Create a Plan, Saved Plan), and report.', '');

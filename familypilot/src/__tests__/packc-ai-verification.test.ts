@@ -21,9 +21,9 @@ describe('Pack C AI-assisted source verification', () => {
     for (const e of chain) { expect(e.reviewer).toMatch(/^ai-assisted-source-verification/); expect(e.reviewer).not.toMatch(/^human:/); }
   });
 
-  it('has an intact tamper-evident chain covering the nine claims and two companion decisions', () => {
+  it('has an intact tamper-evident chain covering the nine claims and five companion decisions', () => {
     expect(verifyChain(chain).ok).toBe(true);
-    expect(chain).toHaveLength(11);
+    expect(chain).toHaveLength(14);
     expect(record.claims.filter((c) => !c.companion)).toHaveLength(9);
   });
 
@@ -48,13 +48,13 @@ describe('Pack C AI-assisted source verification', () => {
     expect(r.status, r.stderr).toBe(0);
     const md = readFileSync(join(out, 'MANIFEST.md'), 'utf8');
     expect(md).toMatch(/## 1a\. Founder-reviewed claims, Packs A and B \(15\)/);
-    expect(md).toMatch(/## 1b\. AI-assisted source-verified claims, Pack C, awaiting your approval \(7\)/);
+    expect(md).toMatch(/## 1b\. AI-assisted source-verified claims, Pack C, awaiting your approval \(10\)/);
     expect(md).toMatch(/NOT a passed Pack C control check/);
     for (const v of ['Royal Air Force Museum London', 'Horniman Museum and Gardens', 'London Zoo', 'Science Museum']) expect(md).toContain(`| ${v} | **recommendation-ready**`);
     expect(md).toMatch(/Discover Children's Story Centre \| not ready \| cost/);
     const sql = readFileSync(join(out, 'claims/apply.sql'), 'utf8');
-    expect(sql.match(/'source_verified_ai_v1'/g)!.length).toBeGreaterThanOrEqual(7);
-    expect(sql.match(/'ai_assisted_source_verification'/g)!.length).toBe(7);
+    expect(sql.match(/'source_verified_ai_v1'/g)!.length).toBeGreaterThanOrEqual(10);
+    expect(sql.match(/'ai_assisted_source_verification'/g)!.length).toBe(10);
     expect(existsSync(join(out, 'claims/rollback.sql'))).toBe(true);
   });
 });

@@ -1,0 +1,45 @@
+{
+ "note": "Facts added after the review queue was built, read only by publish-batch.cjs. Each is AI-assisted source verification awaiting founder approval.",
+ "facts": {
+  "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI": [
+   {
+    "sec": "transport",
+    "key": "blueBadge",
+    "value": "yes",
+    "text": "Limited parking for Blue Badge holders.",
+    "evidence": {
+     "url": "https://www.horniman.ac.uk/plan-your-visit/",
+     "readAt": "2026-10-08",
+     "quote": "We have no onsite parking, other than limited parking for Blue Badge holders.",
+     "pageSha256": "07c4f7f88813cd83"
+    },
+    "status": "review",
+    "note": "Added 9 Oct 2026 by the Pack C AI-assisted verification so a general-parking 'no' does not hide this exception. Kept in this overlay, not in the ten pilot profiles, so the committed review queue and its arithmetic are unchanged.",
+    "semantic": {
+     "A": "supports",
+     "B": "supports"
+    }
+   }
+  ],
+  "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk": [
+   {
+    "sec": "transport",
+    "key": "blueBadge",
+    "value": "yes",
+    "text": "Blue Badge holder bays close to Discover, on Bridge Terrace off Bridge Road.",
+    "evidence": {
+     "url": "https://discover.org.uk/getting-here/",
+     "readAt": "2026-10-08",
+     "quote": "There are blue badge holder bays in the immediate vicinity of Discover, on Bridge Terrace, off Bridge Road, which are clearly marked.",
+     "pageSha256": "9d230072cea688a5"
+    },
+    "status": "review",
+    "note": "Added 9 Oct 2026 by the Pack C AI-assisted verification so a general-parking 'no' does not hide this exception. Kept in this overlay, not in the ten pilot profiles, so the committed review queue and its arithmetic are unchanged.",
+    "semantic": {
+     "A": "supports",
+     "B": "supports"
+    }
+   }
+  ]
+ }
+}

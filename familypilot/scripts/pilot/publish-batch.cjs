@@ -38,6 +38,12 @@ function uuid(seed) {
 function build({ items, approver, warnOnly = [], asOf, label = 'batch', textEdits = {}, dropRules = [], provenance = {} }) {
   if (!/^human:[a-z0-9._-]{2,}$/i.test(approver ?? '') || /assum|auto|pilot/i.test(approver)) throw new Error('approver must be a named person, e.g. human:aidan (nothing automatic or assumed can publish a rule)');
   const profiles = new Map(fs.readdirSync(PROFILES).filter((f) => f.endsWith('.json')).map((f) => { const p = JSON.parse(fs.readFileSync(path.join(PROFILES, f), 'utf8')); return [p.id, p]; }));
+  // Facts added after the review queue was built (the Pack C AI-assisted verification), kept apart from the ten pilot profiles.
+  const extraFile = path.join(PROFILES, '..', 'beta', 'verification', 'extra-facts.json');
+  if (fs.existsSync(extraFile)) {
+    const extra = JSON.parse(fs.readFileSync(extraFile, 'utf8')).facts ?? {};
+    for (const [venueId, facts] of Object.entries(extra)) if (profiles.has(venueId)) profiles.set(venueId, { ...profiles.get(venueId), facts: [...profiles.get(venueId).facts, ...facts] });
+  }
   const claims = [];
   for (const item of items) {
     const [placeKey, field] = item.split(/:(.+)/);

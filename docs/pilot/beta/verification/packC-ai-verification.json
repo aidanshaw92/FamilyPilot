@@ -117,7 +117,7 @@
    "original": "ZooTown is an indoor role-play adventure aimed at children aged up to 8; tickets must be booked online in advance; Silver members and non-members pay £1 per child.",
    "publish": {
     "kind": "activity",
-    "minMonths": 0,
+    "minMonths": 12,
     "maxMonthsExclusive": 108,
     "label": "ZooTown: indoor role-play adventure, best suited to children up to 8",
     "wording": "ZooTown: indoor role-play adventure, best suited to children up to 8",
@@ -130,7 +130,7 @@
     "\"tickets must be booked online in advance\" (source contradicts itself)",
     "\"Silver members and non-members pay £1 per child\" (price, not activity evidence; not published)"
    ],
-   "outcome": "Edited. Booking requirement and session fee are Unknown. (An admission ticket or membership is also needed per the page; kept in the review notes, not the label.) Counts as a provision for ages 0 to 8 inclusive (months 0 to under 108): the FAQ asks \"my child is aged over 8, can they attend?\", which treats 8 as inside the stated range.",
+   "outcome": "Edited. Booking requirement and session fee are Unknown. (An admission ticket or membership is also needed per the page; kept in the review notes, not the label.) Counts as a provision for months 12 to under 108. The upper end reads 8 as inside the range: the FAQ asks \"my child is aged over 8, can they attend?\", which treats 8 as inside the stated range. The lower bound of 12 months is a conservative floor, NOT a statement from the source (it gives no lower age and sells babes in arms a separate ticket); it exists so that a newborn or young baby is never counted as covered.",
    "venue": "London Zoo",
    "field": "activities.zootown",
    "source": {
@@ -385,6 +385,115 @@
     "quoteCheckedAgainst": "stored page text",
     "officialVenueDomain": true,
     "surrounding": "h hoist, changing bench and centrally located toilet. The toilet is accessible with a RADAR key. If you have forgotten your key please ask a member of staff for access. Full details can be found on the Changing Places Toilet Map . Accessible toilets Accessible toilets are available on all levels of the museum. Please refer to the museum map or ask a member of staff for locations. Accessible baby changing facilities Accessible baby changing facilities are available in the following areas: Level -1: access via Lift A and Lift D Level 0: Near Lift F Level 1: access via Staircase D and Lift F Level 2: access lift B, Lift D and Lift F Level 3: access via lif"
+   },
+   "currency": {
+    "readOn": "2026-10-08",
+    "ageAtVerificationDays": 1,
+    "sufficientlyCurrent": true
+   },
+   "expiry": {
+    "rule": "facility claim, 30 days from the reading",
+    "validUntil": "2026-11-07"
+   }
+  },
+  {
+   "itemId": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.blueBadge",
+   "companion": true,
+   "decision": "approve",
+   "original": "(new) Limited parking for Blue Badge holders.",
+   "publish": {
+    "kind": "claim",
+    "field": "accessibility.accessibleParking",
+    "value": "yes",
+    "wording": "Limited parking for Blue Badge holders."
+   },
+   "establishes": "\"other than limited parking for Blue Badge holders\": the same sentence that supports \"no on-site parking\" for general visitors.",
+   "notEstablished": "Where the bays are or how many.",
+   "removed": [],
+   "outcome": "Added so the parent-facing app shows Blue Badge parking as its own row and general parking is not read as \"nothing for Blue Badge holders\".",
+   "venue": "Horniman Museum and Gardens",
+   "field": "transport.blueBadge",
+   "source": {
+    "url": "https://www.horniman.ac.uk/plan-your-visit/",
+    "readOn": "2026-10-08",
+    "pageSha256": "07c4f7f88813cd83",
+    "exactQuote": "We have no onsite parking, other than limited parking for Blue Badge holders.",
+    "quoteCheckedAgainst": "stored page text",
+    "officialVenueDomain": true,
+    "surrounding": "r, please dismount and walk your bike or scooter through, for the safety of our visitors. By Car We encourage the use of public transport or active travel (walking or cycling) to come to the Horniman, to reduce emissions and benefit the environment. We have no onsite parking, other than limited parking for Blue Badge holders. A pay-and-display car park is available locally behind Sainsbury’s, and there are two pay-and-display car parks at Forest Hill station (one at the front, one at the back). Please avoid parking on private roads. For coaches, there is a drop off point outside the Museum near to the Clocktower. If you are looking for the closest electric charging poi"
+   },
+   "currency": {
+    "readOn": "2026-10-08",
+    "ageAtVerificationDays": 1,
+    "sufficientlyCurrent": true
+   },
+   "expiry": {
+    "rule": "facility claim, 30 days from the reading",
+    "validUntil": "2026-11-07"
+   }
+  },
+  {
+   "itemId": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.blueBadge",
+   "companion": true,
+   "decision": "approve",
+   "original": "(new) Blue Badge holder bays close to Discover, on Bridge Terrace off Bridge Road.",
+   "publish": {
+    "kind": "claim",
+    "field": "accessibility.accessibleParking",
+    "value": "yes",
+    "wording": "Blue Badge holder bays close to Discover, on Bridge Terrace off Bridge Road."
+   },
+   "establishes": "\"There are blue badge holder bays in the immediate vicinity of Discover, on Bridge Terrace, off Bridge Road, which are clearly marked.\" The page adds that Blue Badge holders can use shared-use/permit bays in nearby streets without a time limit.",
+   "notEstablished": "The nearby-streets permission is not published (detail kept in the quotation page).",
+   "removed": [],
+   "outcome": "Added so general parking \"no\" does not hide the Blue Badge bays.",
+   "venue": "Discover Children's Story Centre",
+   "field": "transport.blueBadge",
+   "source": {
+    "url": "https://discover.org.uk/getting-here/",
+    "readOn": "2026-10-08",
+    "pageSha256": "9d230072cea688a5",
+    "exactQuote": "There are blue badge holder bays in the immediate vicinity of Discover, on Bridge Terrace, off Bridge Road, which are clearly marked.",
+    "quoteCheckedAgainst": "stored page text",
+    "officialVenueDomain": true,
+    "surrounding": "tratford High Street. Car Parking There is no parking available on the Discover site. The closest car parks are: Stratford multi-story car park. (5 min walk). About parking here. Stratford Westfield Shopping Centre (10 min walk). About parking here. There are blue badge holder bays in the immediate vicinity of Discover, on Bridge Terrace, off Bridge Road, which are clearly marked. All blue badge holders can park in the shared use/permit parking bays in the surrounding streets (Bridge Road, Dawn Crescent, Bryant Street, Widdin Street, Pitchford Street) without time limit providing the blue badge is displayed. Find out more about access requirements and Discover. Buggies There is buggy parking available on our Ground Floor. W"
+   },
+   "currency": {
+    "readOn": "2026-10-08",
+    "ageAtVerificationDays": 1,
+    "sufficientlyCurrent": true
+   },
+   "expiry": {
+    "rule": "facility claim, 30 days from the reading",
+    "validUntil": "2026-11-07"
+   }
+  },
+  {
+   "itemId": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.blueBadge",
+   "companion": true,
+   "decision": "approve",
+   "original": "(new) A small number of disabled spaces on Exhibition Road; Blue Badge holders may park there for four hours between 08.30 and 18.30.",
+   "publish": {
+    "kind": "claim",
+    "field": "accessibility.accessibleParking",
+    "value": "yes",
+    "wording": "A small number of disabled spaces on Exhibition Road; Blue Badge holders may park there for four hours between 08.30 and 18.30."
+   },
+   "establishes": "\"A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30.\"",
+   "notEstablished": "LIMITATION (as for Science Museum parking): the page text is not held locally; the first part of this sentence is confirmed in the recorded context kept with the parking card, the rest (the four-hour limit and times) rests on the recorded evidence quote and page hash 751a89c00ea27a0f. It has NOT been re-read from the live page.",
+   "removed": [],
+   "outcome": "Added so general parking \"no\" does not hide the Blue Badge spaces. Needs a direct read of the live page by a person before it expires, like Science Museum parking.",
+   "recordedOnly": true,
+   "venue": "Science Museum",
+   "field": "transport.blueBadge",
+   "source": {
+    "url": "https://www.sciencemuseum.org.uk/visit/getting-here",
+    "readOn": "2026-10-08",
+    "pageSha256": "751a89c00ea27a0f",
+    "exactQuote": "A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30.",
+    "quoteCheckedAgainst": "first part in recorded page context; remainder from recorded evidence quote only (page text not held locally)",
+    "officialVenueDomain": true,
+    "surrounding": ""
    },
    "currency": {
     "readOn": "2026-10-08",

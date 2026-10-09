@@ -19,7 +19,10 @@
   "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.parking",
   "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.parking",
   "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.parking",
-  "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.accessibleToilet"
+  "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.accessibleToilet",
+  "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.blueBadge",
+  "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.blueBadge",
+  "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.blueBadge"
  ],
  "edits": {
   "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.restriction": "Pushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.",
@@ -393,8 +396,38 @@
    "source": "https://www.sciencemuseum.org.uk/visit/accessibility",
    "quote": "Accessible toilets are available on all levels of the museum.",
    "value": "yes"
+  },
+  {
+   "id": "b0d8c173-5323-520c-9eb1-d46740f20bae",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "fieldKey": "accessibility.accessibleParking",
+   "validUntil": "2026-11-07",
+   "item": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.blueBadge",
+   "source": "https://www.horniman.ac.uk/plan-your-visit/",
+   "quote": "We have no onsite parking, other than limited parking for Blue Badge holders.",
+   "value": "yes"
+  },
+  {
+   "id": "45efac75-f930-5a46-8fba-8319b02dac39",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "fieldKey": "accessibility.accessibleParking",
+   "validUntil": "2026-11-07",
+   "item": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.blueBadge",
+   "source": "https://discover.org.uk/getting-here/",
+   "quote": "There are blue badge holder bays in the immediate vicinity of Discover, on Bridge Terrace, off Bridge Road, which are clearly marked.",
+   "value": "yes"
+  },
+  {
+   "id": "f469a7a6-2149-54e7-9171-f2dc63da8233",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "fieldKey": "accessibility.accessibleParking",
+   "validUntil": "2026-11-07",
+   "item": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.blueBadge",
+   "source": "https://www.sciencemuseum.org.uk/visit/getting-here",
+   "quote": "A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30.",
+   "value": "yes"
   }
  ],
- "applySha256": "7d5a39aff422743b6bf91c06bc0805881293b574ea603487a9b3b94857044217",
- "rollbackSha256": "1ab95bca0f685084a2344201093382199f2f4574b63e1b07122412aa060ed931"
+ "applySha256": "23659e6c6d2983817df3c9143bfcc66a846c057dd8c27a2a2a46b3660b937c18",
+ "rollbackSha256": "ffc6d7207f17bebc597d6c641fe82b5fd44175703e52b5956f8385f628201c7e"
 }
