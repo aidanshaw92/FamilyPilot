@@ -1,3 +1,5 @@
+import { hasFitConflict } from '@/src/services/places/fit-order';
+import { activeFitPolicy } from '@/src/services/scoring/fit-policy';
 import { Venue, VenueCategory } from '@/src/types';
 import { ExploreBudgetFilter } from '@/src/stores/filters-store';
 import { categoriesWithInventory, environmentOf, matchesTaxonomy, TAXONOMY } from '@/src/utils/venue-taxonomy';
@@ -186,7 +188,10 @@ export function filterVenues(
   // better fit. Without one, ranking is the family score alone.
   const foodOn = advancedIds.some((id) => FOOD_FILTER_IDS.includes(id));
   const rank = (v: Venue) => v.familyScore.score + (foodOn ? foodRankBonus(v) : 0);
-  return result.sort((a, b) => rank(b) - rank(a));
+  // The same rule as Home's order: under the proposed policy a confirmed conflict with this household's non-negotiables is listed
+  // after the venues without one (see services/places/fit-order.ts).
+  const conflictsLast = activeFitPolicy().conflictsLast;
+  return result.sort((a, b) => (conflictsLast ? Number(hasFitConflict(a)) - Number(hasFitConflict(b)) : 0) || rank(b) - rank(a));
 }
 
 /** @deprecated use EXPLORE_CATEGORIES */
