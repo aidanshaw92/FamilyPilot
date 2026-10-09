@@ -4,6 +4,7 @@ vi.mock('@/src/services/supabase/client', () => ({ supabase: null }));
 vi.mock('@/src/services/planning/recommendations', () => ({ planningApiUrl: () => '' }));
 vi.mock('react-native', () => ({ Platform: { OS: 'web' } }));
 vi.mock('@/src/stores/auth-store', () => ({ useAuthStore: { getState: () => ({ email: 'ida.parent@example.com' }) } }));
+vi.mock('@/src/stores/planning-store', () => ({ usePlanningStore: { getState: () => ({ families: [{ label: 'Priya' }, { label: 'Marguerite' }] }) } }));
 vi.mock('@/src/stores/family-store', () => ({ useFamilyStore: { getState: () => ({ profile: { parentName: 'Priya', familyName: 'Shaw', homeLocation: 'Mill Hill NW7 2AB', members: [{ name: 'Ida' }, { name: 'Cal' }] } }) } }));
 import { personalTerms, scrubPersonal } from '@/src/services/monitoring/scrub-personal';
 import { buildClientErrorPayload, installClientErrorReporting, reportClientError, resetClientErrorsForTests, shouldSend } from '@/src/services/monitoring/client-errors';
@@ -101,5 +102,10 @@ describe('what a crash report can never carry', () => {
     });
     for (const leak of ['15/06/2024', '2024-06-15', 'June 2024', 'Mar 2023', 'fakekey_']) expect(JSON.stringify(clean)).not.toContain(leak);
     expect(clean.route).toBe('/invite/[id]/accept');
+  });
+
+  it('also hides the labels of the families in the plans (a connected family first name)', () => {
+    const out = scrubPersonal('Cannot plan for Marguerite and Ida: undefined', personalTerms(profile, null, ['Marguerite']));
+    expect(out).not.toMatch(/Marguerite|Ida/);
   });
 });
