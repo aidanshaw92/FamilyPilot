@@ -11,7 +11,7 @@
       subjectScope: 'venue_own_subtree',
       excerpt: 'ZooTown is a brand new indoor role play adventure for kids in the heart of London Zoo aimed at children aged up to 8.',
     },
-    reviewNotes: 'AI-assisted source verification awaiting founder approval (docs/pilot/beta/verification), not independent human review. Age band is the FAQ\'s \'aimed at children aged up to 8\' (every child is welcome); 8 is read as inside the range. The booking rule is left out because the FAQ contradicts itself; the session fee is not activity evidence.',
+    reviewNotes: 'AI-assisted source verification awaiting founder approval (docs/pilot/beta/verification), not independent human review. Age band is the FAQ\'s \'aimed at children aged up to 8\' (every child is welcome); 8 is read as inside the range. The lower bound of 12 months is a conservative floor, not from the source (which sells babes in arms a separate ticket), so a newborn is never counted as covered. The booking rule is left out because the FAQ contradicts itself; the session fee is not activity evidence.',
   },
   {
     venueId: 'fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE',
