@@ -22,7 +22,7 @@ Status: 9 October 2026. Everything here is either already in code on the draft P
 3. Tell the family to open the app, choose **Sign in → Forgot password?**, and use the link in the email. **This path had a hole, now fixed in code:** the reset link signed the person in but nothing asked them to choose a password, so they could never sign in again later. The app now stops on a *Choose your password* screen after any reset or invitation link (`password-recovery.test.ts`). This fix must be merged and deployed *before* the first invitation is sent, or step 3 must be replaced by you setting a password and sharing it out of band.
 4. Check *Authentication → URL Configuration*: the Site URL is the production address and `https://<production host>/` is in the redirect allow-list (the reset link redirects to `/`).
 
-To remove a family: delete the user. Their plans and reports are owner-only rows and are removed or orphaned by the account delete (the schema cascades from `auth.users`; confirm once with the first test account).
+To remove a family: delete the user. Their data goes with them: every user table (`plan_invites`, `planning_connections`, `planning_workspaces`, `saved_places_backups`, `venue_visit_reports`) has `ON DELETE CASCADE` to `auth.users` (checked in production).
 
 What this is **not**: a waiting list, invitation codes, or a way for a family to invite another family into the app. Connections between invited families work as they do today.
 
