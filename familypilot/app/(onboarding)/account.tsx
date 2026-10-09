@@ -13,6 +13,7 @@ import {
   maskEmail,
   passwordProblem,
 } from '@/src/services/account/credentials';
+import { initialAuthLinkError } from '@/src/services/supabase/client';
 import { useAuthStore } from '@/src/stores/auth-store';
 import { useFamilyStore } from '@/src/stores/family-store';
 
@@ -39,7 +40,7 @@ export default function AccountScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(initialAuthLinkError ? AUTH_FAILURE_COPY[initialAuthLinkError] : '');
   const [info, setInfo] = useState('');
   const [cooldown, setCooldown] = useState(0);
   // The password is kept only in this screen's memory, for the "I've verified" check, and never stored.
@@ -187,6 +188,9 @@ export default function AccountScreen() {
         testID="account-screen"
       >
         <View style={styles.top}>
+          {mode === 'newpassword' ? (
+            <View style={styles.back} />
+          ) : (
           <Pressable
             onPress={() => (router.canGoBack() ? router.back() : router.replace('/(onboarding)/welcome' as never))}
             accessibilityRole="button"
@@ -196,6 +200,7 @@ export default function AccountScreen() {
           >
             <Text variant="link">Back</Text>
           </Pressable>
+          )}
           <BrandMark tone="light" size={36} />
         </View>
 

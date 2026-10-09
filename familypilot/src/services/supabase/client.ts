@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
+import { parseAuthLinkError } from '@/src/services/account/credentials';
+
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
@@ -28,6 +30,12 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey) && !
 // there, regardless of `window`), and a real browser has `window` once the page
 // hydrates, which is when this module re-evaluates and creates a real client.
 const isPrerenderingWeb = Platform.OS === 'web' && typeof window === 'undefined';
+
+/**
+ * A reset or invitation link that could not be used comes back to the app with the reason in the address. It is read here,
+ * before the client below looks at (and removes) the address, so the sign-in screen can say what happened.
+ */
+export const initialAuthLinkError = typeof window !== 'undefined' ? parseAuthLinkError(window.location?.hash) : null;
 
 export const supabase = isSupabaseConfigured && !isPrerenderingWeb
   ? createClient(supabaseUrl, supabaseAnonKey, { auth: { storage: AsyncStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: typeof window !== 'undefined' } })
