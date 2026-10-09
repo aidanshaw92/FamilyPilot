@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { mustChoosePassword } from '@/src/services/account/credentials';
 import { isSupabaseConfigured, supabase } from '@/src/services/supabase/client';
 
 /**
@@ -23,8 +24,9 @@ interface AuthState {
   emailConfirmed: boolean;
   initialised: boolean;
   /**
-   * True from the moment a password-reset link signs the person in until they have chosen a new password. The link creates a
-   * session, so without this a family invited by "Forgot password" would be signed in with no password of their own.
+   * True from the moment an invitation or password-reset link signs the person in until they have chosen their password. The
+   * link creates a session, so without this an invited family would be signed in with no password of their own and could
+   * never sign in again. Survives a reload: it is recorded on the account (`password_set`), not only in memory.
    */
   recovering: boolean;
   init: () => void;
@@ -32,6 +34,8 @@ interface AuthState {
 }
 
 let subscribed = false;
+/** Set by a password-reset link and kept until the password is chosen, whatever else the session reports meanwhile. */
+let recoveryPending = false;
 
 export const useAuthStore = create<AuthState>((set) => ({
   status: isSupabaseConfigured ? 'loading' : 'disabled',
@@ -40,7 +44,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   emailConfirmed: false,
   initialised: false,
   recovering: false,
-  clearRecovery: () => set({ recovering: false }),
+  clearRecovery: () => {
+    recoveryPending = false;
+    set({ recovering: false });
+  },
   init: () => {
     if (subscribed) return;
     if (!supabase) {
@@ -49,17 +56,23 @@ export const useAuthStore = create<AuthState>((set) => ({
       return;
     }
     subscribed = true;
-    const apply = (session: { user: { id: string; email?: string | null; email_confirmed_at?: string | null } } | null) =>
+    type SessionUser = { id: string; email?: string | null; email_confirmed_at?: string | null; invited_at?: string | null; user_metadata?: Record<string, unknown> | null };
+    const apply = (session: { user: SessionUser } | null) =>
       set(
         session
-          ? { status: 'signed_in', userId: session.user.id, email: session.user.email ?? null, emailConfirmed: Boolean(session.user.email_confirmed_at), initialised: true }
-          : { status: 'signed_out', userId: null, email: null, emailConfirmed: false, initialised: true },
+          ? { status: 'signed_in', userId: session.user.id, email: session.user.email ?? null, emailConfirmed: Boolean(session.user.email_confirmed_at), initialised: true, recovering: mustChoosePassword(session.user) || (recoveryPending && session.user.user_metadata?.password_set !== true) }
+          : { status: 'signed_out', userId: null, email: null, emailConfirmed: false, initialised: true, recovering: (recoveryPending = false) },
       );
     void supabase.auth.getSession().then(({ data }) => apply(data.session));
     supabase.auth.onAuthStateChange((event, session) => {
       apply(session);
-      if (event === 'PASSWORD_RECOVERY') set({ recovering: true });
-      else if (!session) set({ recovering: false });
+      if (event === 'PASSWORD_RECOVERY' && session) {
+        recoveryPending = true;
+        set({ recovering: true });
+        // Record it on the account so a reload before the password is chosen does not skip the step. Deferred: calling the auth
+        // client from inside its own state callback can deadlock it.
+        setTimeout(() => void supabase?.auth.updateUser({ data: { password_set: false } }).catch(() => {}), 0);
+      }
     });
   },
 }));

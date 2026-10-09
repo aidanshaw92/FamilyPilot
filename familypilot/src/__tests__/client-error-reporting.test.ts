@@ -3,6 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/src/services/supabase/client', () => ({ supabase: null }));
 vi.mock('@/src/services/planning/recommendations', () => ({ planningApiUrl: () => '' }));
 vi.mock('react-native', () => ({ Platform: { OS: 'web' } }));
+vi.mock('@/src/stores/auth-store', () => ({ useAuthStore: { getState: () => ({ email: 'ida.parent@example.com' }) } }));
+vi.mock('@/src/stores/family-store', () => ({ useFamilyStore: { getState: () => ({ profile: { parentName: 'Priya', familyName: 'Shaw', homeLocation: 'Mill Hill NW7 2AB', members: [{ name: 'Ida' }, { name: 'Cal' }] } }) } }));
+import { personalTerms, scrubPersonal } from '@/src/services/monitoring/scrub-personal';
 import { buildClientErrorPayload, installClientErrorReporting, reportClientError, resetClientErrorsForTests, shouldSend } from '@/src/services/monitoring/client-errors';
 const { sanitiseClientError, allowReport } = require('../../../server/feedback/_lib/client-error');
 
@@ -66,5 +69,37 @@ describe('what the server keeps', () => {
     expect(results.filter(Boolean)).toHaveLength(10);
     expect(allowReport('user-b', t)).toBe(true);
     expect(allowReport('user-a', t + 61_000)).toBe(true);
+  });
+});
+
+describe('what a crash report can never carry', () => {
+  const profile = { parentName: 'Priya', familyName: 'Shaw', homeLocation: 'Mill Hill NW7 2AB', members: [{ name: 'Ida' }, { name: 'Cal' }, { name: 'Sam Lee' }] };
+  const terms = personalTerms(profile, 'ida.parent@example.com');
+
+  it('hides every name in the profile, the home area and the email, however the error words them', () => {
+    const text = "TypeError: Cannot read properties of undefined (reading 'Ida') at Plan for Cal and sam lee, Shaw family, Mill Hill (priya) ida.parent@example.com";
+    const out = scrubPersonal(text, terms);
+    for (const leak of ['Ida', 'Cal', 'sam lee', 'Shaw', 'Mill Hill', 'priya', 'ida.parent', 'NW7']) expect(out.toLowerCase()).not.toContain(leak.toLowerCase());
+    expect(out).toContain('TypeError');
+  });
+
+  it('does not mangle ordinary words that merely contain a name', () => {
+    expect(scrubPersonal('Callback failed in Calendar', personalTerms({ members: [{ name: 'Cal' }] }, null))).toBe('Callback failed in Calendar');
+  });
+
+  it('the payload built on the device is already clean, before the server scrubs it again', () => {
+    const payload = buildClientErrorPayload('render', new Error("no venue for Ida born 15/06/2024 near NW7 2AB"), '/plan/Ida', terms);
+    const text = JSON.stringify(payload);
+    for (const leak of ['Ida', 'NW7', '2AB']) expect(text).not.toContain(leak);
+  });
+
+  it('the server removes dates of birth, invitation codes in the route and lookalike secrets', () => {
+    const clean = sanitiseClientError({
+      errorKind: 'render',
+      message: 'born 15/06/2024, 2024-06-15, 15 June 2024, 3rd Mar 2023; key fakekey_abcdefghijklmnopqrstuvwxyz0123456789',
+      route: '/invite/8f3k2j5h6g7d9s1a/accept?x=1',
+    });
+    for (const leak of ['15/06/2024', '2024-06-15', 'June 2024', 'Mar 2023', 'fakekey_']) expect(JSON.stringify(clean)).not.toContain(leak);
+    expect(clean.route).toBe('/invite/[id]/accept');
   });
 });

@@ -2,6 +2,9 @@ import { Platform } from 'react-native';
 
 import { supabase } from '@/src/services/supabase/client';
 import { planningApiUrl } from '@/src/services/planning/recommendations';
+import { personalTerms, scrubPersonal } from '@/src/services/monitoring/scrub-personal';
+import { useAuthStore } from '@/src/stores/auth-store';
+import { useFamilyStore } from '@/src/stores/family-store';
 
 /**
  * Basic crash reporting for the invitation-only beta. Off unless the build sets EXPO_PUBLIC_CLIENT_ERRORS=on.
@@ -19,7 +22,8 @@ const MAX_PER_SESSION = 5;
 const sent = new Set<string>();
 
 /** Pure: the payload for one error, capped. The server scrubs it again. */
-export function buildClientErrorPayload(kind: ClientErrorKind, error: unknown, route = ''): Record<string, string> {
+export function buildClientErrorPayload(kind: ClientErrorKind, error: unknown, route = '', terms: string[] = []): Record<string, string> {
+  const clean = (text: string, max: number) => scrubPersonal(text, terms).slice(0, max);
   const e = error as { message?: unknown; name?: unknown; stack?: unknown } | null | undefined;
   const message = typeof error === 'string' ? error : typeof e?.message === 'string' ? e.message : 'Unknown error';
   const viewport =
@@ -27,10 +31,10 @@ export function buildClientErrorPayload(kind: ClientErrorKind, error: unknown, r
   return {
     kind: 'client-error',
     errorKind: kind,
-    message: message.slice(0, 300),
-    name: typeof e?.name === 'string' ? e.name.slice(0, 60) : '',
-    stack: typeof e?.stack === 'string' ? e.stack.slice(0, 900) : '',
-    route: route.split(/[?#]/)[0].slice(0, 200),
+    message: clean(message, 300),
+    name: typeof e?.name === 'string' ? clean(e.name, 60) : '',
+    stack: typeof e?.stack === 'string' ? clean(e.stack, 900) : '',
+    route: clean(route.split(/[?#]/)[0], 200),
     build: (process.env.EXPO_PUBLIC_BUILD_ID || '').slice(0, 40),
     platform: Platform.OS,
     viewport,
@@ -52,7 +56,8 @@ export function resetClientErrorsForTests() {
 
 export async function reportClientError(kind: ClientErrorKind, error: unknown, route = ''): Promise<void> {
   try {
-    const payload = buildClientErrorPayload(kind, error, route);
+    const terms = personalTerms(useFamilyStore.getState().profile, useAuthStore.getState().email);
+    const payload = buildClientErrorPayload(kind, error, route, terms);
     if (!shouldSend(payload) || !supabase) return;
     const { data } = await supabase.auth.getSession();
     if (!data.session) return;

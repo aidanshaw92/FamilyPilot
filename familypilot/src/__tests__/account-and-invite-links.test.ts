@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { AUTH_FAILURE_COPY, classifyAuthError, emailProblem, maskEmail, normaliseEmail, passwordProblem } from '@/src/services/account/credentials';
+import { AUTH_FAILURE_COPY, classifyAuthError, emailProblem, maskEmail, mustChoosePassword, normaliseEmail, parseAuthLinkError, passwordProblem } from '@/src/services/account/credentials';
 import { buildInviteUrl, inviteShareMessage, isInviteCode, parseInviteCode } from '@/src/services/planning/invite-links';
 import { coarseArea, snapshotForSharing } from '@/src/services/planning/connection-snapshot';
 import { FamilyProfile } from '@/src/types';
@@ -115,5 +115,25 @@ describe('what a connection shares', () => {
 
   it('refuses to share a household that has not said where it is', () => {
     expect(() => snapshotForSharing({ ...profile, homeLatitude: null, homeLongitude: null, homeLocation: '' } as FamilyProfile)).toThrow(/family details/);
+  });
+});
+
+describe('links that cannot be used', () => {
+  it('reads the reason Supabase puts in the address, and nothing else', () => {
+    expect(parseAuthLinkError('#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired')).toBe('link-expired');
+    expect(parseAuthLinkError('#error=access_denied&error_description=Email+link+has+already+been+used')).toBe('link-expired');
+    expect(parseAuthLinkError('#error=server_error&error_code=unexpected_failure')).toBe('link-invalid');
+    expect(parseAuthLinkError('#access_token=abc&type=recovery')).toBeNull();
+    expect(parseAuthLinkError('')).toBeNull();
+    expect(parseAuthLinkError(undefined)).toBeNull();
+    expect(AUTH_FAILURE_COPY['link-expired']).toMatch(/Forgot password/);
+    expect(AUTH_FAILURE_COPY['link-invalid']).toMatch(/Forgot password/);
+  });
+  it('who must choose a password', () => {
+    expect(mustChoosePassword(null)).toBe(false);
+    expect(mustChoosePassword({ invited_at: '2026-10-09' })).toBe(true);
+    expect(mustChoosePassword({ invited_at: '2026-10-09', user_metadata: { password_set: true } })).toBe(false);
+    expect(mustChoosePassword({ user_metadata: { password_set: false } })).toBe(true);
+    expect(mustChoosePassword({})).toBe(false);
   });
 });
