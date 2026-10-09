@@ -1,0 +1,33 @@
+name: One controlled read of Discover's website
+
+# One-off, owner-authorised on 9 Oct 2026. Free: reads one venue's own public website with the production fetcher's bounds. No Google call,
+# no database access, no claim touched. The result is committed to its own branch for a person to read; nothing is published from it.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Read the page once
+        run: node familypilot/scripts/pilot/refetch-one.mjs --page https://discover.org.uk/your-visit --out /tmp/discover-refetch.json
+      - name: Commit the result to its own branch
+        run: |
+          set -euo pipefail
+          stamp=$(date -u +%Y-%m-%d-%H%M)
+          git config user.name "refetch-bot"
+          git config user.email "refetch-bot@users.noreply.github.com"
+          git checkout --orphan "evidence/discover-refetch-${stamp}"
+          git rm -rf --quiet . || true
+          mkdir -p evidence
+          cp /tmp/discover-refetch.json evidence/discover-refetch.json
+          git add evidence
+          git commit -m "Discover website, one controlled read (${stamp} UTC); evidence only, nothing published"
+          git push origin "evidence/discover-refetch-${stamp}"
