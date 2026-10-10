@@ -1,0 +1,32 @@
+{
+ "note": "SCORING KEY for Pack C. Do not send to the reviewer. 'idMap' turns the reviewer's opaque ids back into item ids; 'controls' are the 4 planted errors. Decisions on controls are never written to the audit trail.",
+ "idMap": {
+  "kc24cd1c8": "ctl:ChIJSzwgydoDdkgRndnXVYQGXBI:toilets.accessibleToilet",
+  "k47494c22": "ctl:ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.babyChanging",
+  "k86a30bc4": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:activities.the-garden",
+  "kf72c104b": "ctl:ChIJrcFVE-YNdkgRJQPxAxaTnMY:transport.parking",
+  "k64ffa7c0": "ChIJV_iXMtcadkgRqBI84CY_crE:activities.zootown",
+  "ke9941f1c": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.parking",
+  "k2fc33313": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.parking",
+  "k12f91ba0": "ChIJV_iXMtcadkgRqBI84CY_crE:transport.parking",
+  "k9f39c723": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.parking",
+  "k6f5ca131": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.toilets",
+  "k58632561": "ChIJV_iXMtcadkgRqBI84CY_crE:toilets.toilets",
+  "keb621026": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.toilets",
+  "kb5092be1": "ctl:ChIJrcFVE-YNdkgRJQPxAxaTnMY:food.cafe"
+ },
+ "controls": {
+  "ctl:ChIJSzwgydoDdkgRndnXVYQGXBI:toilets.accessibleToilet": {
+   "realItem": "ChIJSzwgydoDdkgRndnXVYQGXBI:toilets.accessibleToilet"
+  },
+  "ctl:ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.babyChanging": {
+   "realItem": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:toilets.babyChanging"
+  },
+  "ctl:ChIJrcFVE-YNdkgRJQPxAxaTnMY:food.cafe": {
+   "realItem": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:food.cafe"
+  },
+  "ctl:ChIJrcFVE-YNdkgRJQPxAxaTnMY:transport.parking": {
+   "realItem": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:transport.parking"
+  }
+ }
+}

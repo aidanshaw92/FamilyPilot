@@ -33,8 +33,16 @@ export function FamilyEssentials({ venue, profile = null, onHelpCheck }: { venue
       case 'baby-changing':
         return relevanceFor('babyChanging', profile) === 0;
       case 'wheelchair':
+      case 'step-free':
       case 'accessible-toilet':
         return !familyNeedsStepFree(profile);
+      // Each is asked about only if the family SAID it needs it; a mobility aid or a car does not make it a worry.
+      case 'blue-badge':
+        return !(profile?.mustHaveFacilities ?? []).includes('blue_badge_parking');
+      case 'step-free-station':
+        return !profile?.transportNeeds?.stepFreeStation;
+      case 'public-transport':
+        return !profile?.transportNeeds?.publicTransport;
       case 'playground':
         return !(profile?.mustHaveFacilities ?? []).includes('playground');
       default:

@@ -1,5 +1,12 @@
 module.exports = {
   id: 'fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4', name: 'Battersea Park', category: 'park', site: 'wandsworth.gov.uk',
+  // Sources that could NOT be read, kept as a fact about the venue's evidence rather than forgotten. A refusal is never retried and
+  // never worked around; the venue is marked as having no readable operator source until an alternative permitted source is read.
+  sources: [
+    { host: 'enablelc.org', role: 'operator', status: 'refused', http: 403, observedOn: '2026-10-08', retry: 'never automatically',
+      note: 'The park operator\'s site answered HTTP 403 to the bounded reader.',
+      alternatives: ['The council\'s own pages (read)', 'OpenStreetMap features for the park (toilets, cafés, playgrounds), read on a runner under its open licence', 'A person who has visited, through the parent-observation path'] },
+  ],
   facts: [
     { sec: 'activities', key: 'playground', kind: 'provision', ages: [48, 180], label: 'Playground for children 4 to 14',
       t: 'A playground for 4 to 14 year olds (swings, slides, exercise stations, trapeze bars, an activity rocker). The page is titled "toddlers and juniors" but gives 4 to 14.',
@@ -12,7 +19,7 @@ module.exports = {
     { sec: 'pushchair', key: 'terrain', st: 'unknown', t: 'Paths and pushchair suitability: not stated on the pages read.', n: 'A 200-acre park; the council page says nothing about surfaces.', gap: { venue: 'Battersea Park', anchor: 'Enable' } },
     { sec: 'toilets', key: 'toilets', st: 'unknown', t: 'Toilets and baby changing: not stated on the council pages.', n: 'The park is run by Enable on behalf of the council; its own pages may say.', gap: { venue: 'Battersea Park', anchor: 'Enable' } },
     { sec: 'transport', key: 'entrances', v: 'yes', t: 'Pedestrian gates at Albert Bridge Road, Prince of Wales Drive and Queenstown Road.', u: '/batterseapark',
-      q: 'Pedestrian access at Albert Bridge Road, Prince of Wales Drive and Queenstown Road (SW11 4NJ).' },
+      q: 'main gate pedestrian access at Albert Bridge Road, Prince of Wales Drive and Queenstown Road (SW11 4NJ)' },
     { sec: 'transport', key: 'parking', st: 'hypothesis', n: 'The page is titled "Battersea Park area parking zones" and mixes the park\'s car park charges with controlled-parking-zone rules; it is not established that these are the park\'s own charges. Not shown as a fact.', v: 'yes', t: 'Car park charges: up to one hour £3.40, rising to £31.40 for more than six hours on weekdays 9am to 5pm; weekends £3.40 up to three hours, £6.80 over.', u: '/parking/parking-zones/battersea-park-area-parking-zones',
       q: 'Off-street car park charges: Cars and private vehicles (maximum 16 passenger seats and not exceeding 6.5 metres in length)',
       conflict: 'the page title, which reads as the controlled parking zone around the park rather than the park\'s own car park' },

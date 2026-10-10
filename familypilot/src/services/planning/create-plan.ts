@@ -12,6 +12,8 @@ import { VisitLength, resolveVisit } from './visit-duration';
 import { buggyFamilyIds } from './routine-subjects';
 import { mustHaveLabel } from './must-have-labels';
 import { TravelLeg } from '@/src/types/travel';
+import { evaluateVenueRules } from '@/src/services/matching/venue-rules';
+import { reconcileHours } from '@/src/services/places/hours-reconcile';
 import { travelSourceOf } from '@/src/utils/travel-time';
 
 /**
@@ -175,6 +177,13 @@ export function createPlanSteps(input: { venueName: string; meal?: MealCandidate
  * claim that stops a family going somewhere perfectly suitable.
  */
 function requirementLine(requirement: UnmetRequirement, venueName: string): string | null {
+  if (requirement.field === 'venueRules') {
+    // The venue's own reviewed sentence, so a parent reads what the venue says rather than our paraphrase of it.
+    if (!requirement.detail) return `${venueName} has a rule that doesn’t work for what your family needs.`;
+    const [rule, ...exceptions] = requirement.detail.split('\n');
+    const refused = `${rule.replace(/[.\s]+$/, '')}. That doesn’t work for what your family needs.`;
+    return exceptions.length ? `${refused} The venue also says: ${exceptions.join(' ')}` : refused;
+  }
   if (requirement.field === 'pushchairSuitability') {
     return requirement.outcome === 'unsuitable'
       ? `${venueName} is recorded as difficult with a pushchair, and your family needs it to work.`
@@ -375,7 +384,7 @@ export async function createPlan(
   input: CreatePlanInput,
   deps: CreatePlanDeps = {},
 ): Promise<CreatePlanOutcome> {
-  const { venue, draft, families, meal } = input;
+  const { venue: supplied, draft, families, meal } = input;
   const step = deps.onStep ?? (() => {});
 
   step('venue');
@@ -385,7 +394,15 @@ export async function createPlan(
 
   // The venue's own facts, through the same extractor the sequencer matches on, so the length FamilyPilot assumes, the
   // Travel & parking section and the day cannot disagree about the place.
-  const anchorFacts = stopFacts(venue);
+  const anchorFacts = stopFacts(supplied);
+  // The hours the plan is checked against: the provider's weekly pattern, or the venue's own reviewed hours for THIS date where
+  // the two disagree (a zoo that closes an hour earlier from late October). Never silent: the disagreement becomes a prominent
+  // note on the plan, below.
+  const nowForHours = deps.now ?? new Date();
+  const londonToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(nowForHours);
+  const hours = reconcileHours(supplied.openingHours, anchorFacts.officialHours, draft.date, londonToday);
+  // A copy, never the caller's object: the hours below are for this date only.
+  const venue = hours.schedule !== supplied.openingHours ? { ...supplied, openingHours: hours.schedule } : supplied;
   // How long at the venue: a chosen length, or one FamilyPilot works out and will say it assumed.
   const visit = resolveVisit({
     length: draft.visit,
@@ -435,6 +452,17 @@ export async function createPlan(
   step('timing');
   if (!result.ok) return describeGenerationFailure(result.failure, venue.name, draft.startAt);
 
+  // What the venue itself says that bears on THIS party and THIS date: kept on the saved source so the warning that was true
+  // when the plan was made is still on the plan when it is opened again. A venue with no recorded rules adds nothing,
+  // which is not a statement that none apply.
+  const venueNotes = [...(hours.note ? [hours.note] : []), ...evaluateVenueRules(anchorFacts.rules, {
+    date: draft.date,
+    usesPushchair: families.some((family) => family.pushchair),
+    requiresPushchair: families.some((family) => family.required.includes('pushchair')),
+    requiredFacilities: [...new Set(families.flatMap((family) => family.required.filter((r): r is 'toilets' | 'babyChanging' | 'parking' => r !== 'pushchair')))],
+    needsStepFree: families.some((family) => family.stepFree),
+  }).notes];
+
   const source: PlanViewModelInput = {
     itinerary: result.plan.itinerary,
     travel: result.plan.travel,
@@ -466,6 +494,7 @@ export async function createPlan(
     lunchAvailable: Boolean(input.lunchAvailable ?? meal) && draft.visit !== 'all-day',
     hasRoutines: families.some((family) => family.routines.length > 0),
     anchorCategory: venue.category,
+    ...(venueNotes.length ? { venueNotes } : {}),
   };
 
   return { ok: true, view: toPlanViewModel(source, input.viewContext), source };

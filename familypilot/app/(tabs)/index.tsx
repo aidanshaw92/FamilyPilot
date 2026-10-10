@@ -2,6 +2,7 @@ import { FamiliesAction } from '@/src/components/navigation/FamiliesAction';
 import { COMPACT_FAMILIES_ROW } from '@/src/utils/home-vertical-layout';
 import { useIsFocused, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
+import { compareVenuesForFamily } from '@/src/services/places/fit-order';
 import {
   Pressable,
   RefreshControl,
@@ -101,7 +102,7 @@ export default function HomeScreen() {
   const pickedFor = `Picked for ${pickedForNames}`;
 
   const ranked = useMemo(
-    () => [...(venues ?? [])].sort((a, b) => b.familyScore.score - a.familyScore.score),
+    () => [...(venues ?? [])].sort((a, b) => compareVenuesForFamily(a, b)),
     [venues],
   );
   // One taxonomy for Home and Explore, and a category is offered only if the venues in hand can fill it: a chip

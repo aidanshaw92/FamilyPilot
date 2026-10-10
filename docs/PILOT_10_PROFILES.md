@@ -1,5 +1,7 @@
 # Ten-venue pilot: evidence-backed family profiles, shown in the real app
 
+> **Figures superseded.** The counts in this document (194 items, 84 accepted without a person, 85 proposed, 46 and 73 claims) are the first report's. Independent evidence checks run afterwards corrected them to 195 / 71 / 99 / 38 / 73. See `docs/pilot/RECONCILIATION.md` and `docs/pilot/REVIEW_PROCESS.md`. The method described below is otherwise unchanged.
+
 Date: 2026-10-08. Branch `pilot/profiles-demo`, draft PR #189. Nothing here has been written to production, no Google call was made, and no model ran in the app or the pipeline. Method, gate rules, review queue and the parent-confirmation design are in `docs/pilot/METHOD_AND_REVIEW.md`. The ten profiles, with every sentence and source, are in `docs/pilot/PROFILES.md`.
 
 ## 1. The ten venues, and why

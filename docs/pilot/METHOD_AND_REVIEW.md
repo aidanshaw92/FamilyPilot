@@ -1,5 +1,7 @@
 # Pilot method, exception review and parent confirmation
 
+> **Figures superseded.** The counts in this document (194 items, 84 accepted without a person, 85 proposed, 46 and 73 claims) are the first report's. Independent evidence checks run afterwards corrected them to 195 / 71 / 99 / 38 / 73. See `docs/pilot/RECONCILIATION.md` and `docs/pilot/REVIEW_PROCESS.md`. The method described below is otherwise unchanged.
+
 Status: pilot, 2026-10-08. Nothing here writes to production. Companion to `docs/PILOT_10_PROFILES.md`.
 
 ## How a profile is built

@@ -10,6 +10,8 @@ export const FAMILIES = {
   'A-preschooler-and-baby': profile('fam-a', [adult('p1', 'Sarah', '1990-03-15'), adult('p2', 'Alex', '1991-02-02'), child('c1', 'Mia', '2022-06-10', 4), child('c2', 'Leo', '2026-02-12', 0)]),
   'B-baby-only': profile('fam-b', [adult('p1', 'Priya', '1992-05-05'), adult('p2', 'Sam', '1991-08-08'), child('c1', 'Noah', '2026-06-10', 0)]),
   'C-school-age': profile('fam-c', [adult('p1', 'Dana', '1985-01-01'), adult('p2', 'Chris', '1984-04-04'), child('c1', 'Cal', '2019-05-05', 7), child('c2', 'Dee', '2016-03-03', 10)], { pushchair: null }),
+  // A buggy is the only way round and buggy access is a stated must-have; home is near Stratford.
+  'H-buggy-required': profile('fam-h', [adult('p1', 'Hana', '1990-01-01'), child('c1', 'Hal', '2023-06-10', 3, { mobility: ['buggy'] })], { homeLocation: 'Stratford, London', homeLatitude: 51.541, homeLongitude: 0.003, mustHaveFacilities: ['pushchair_friendly'] }),
   'D-toddler-mobility-aid': profile('fam-d', [adult('p1', 'Jo', '1988-09-09'), child('c1', 'Ivy', '2024-04-10', 2, { mobility: ['mobility-aid'] })], { mustHaveFacilities: ['toilets'], pushchair: null }),
 };
 

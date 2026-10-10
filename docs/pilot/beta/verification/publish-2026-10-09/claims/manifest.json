@@ -1,0 +1,463 @@
+{
+ "label": "publish-2026-10-09",
+ "approver": "human:aidan",
+ "reviewBasis": "Packs A and B founder-reviewed (not independent); Pack C AI-assisted source verification awaiting founder approval (not human review, not a passed control check)",
+ "builtAsOf": "2026-10-09",
+ "items": [
+  "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:opening.closure",
+  "ChIJP9oAE0MFdkgR3iKGFKZO1SE:opening.hours",
+  "ChIJP9oAE0MFdkgR3iKGFKZO1SE:pushchair.allowed",
+  "ChIJJ2CD1mEddkgRAuOi9iSzBrk:opening.hours",
+  "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.restriction",
+  "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.twins",
+  "ChIJV_iXMtcadkgRqBI84CY_crE:opening.hours",
+  "ChIJp8y37pgCdkgRBeRSa2iabyI:opening.hours",
+  "ChIJrcFVE-YNdkgRJQPxAxaTnMY:opening.hours",
+  "ChIJV_iXMtcadkgRqBI84CY_crE:toilets.accessibleToilet",
+  "ChIJV_iXMtcadkgRqBI84CY_crE:transport.parking",
+  "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.toilets",
+  "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.parking",
+  "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.parking",
+  "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.parking",
+  "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.accessibleToilet",
+  "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.blueBadge",
+  "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.blueBadge",
+  "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.blueBadge"
+ ],
+ "edits": {
+  "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.restriction": "Pushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.",
+  "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.twins": "If you have a particular reason to need a buggy (for example twin babies or a sleeping child), speak to the front of house team, who can advise and may be able to accommodate it.",
+  "ChIJrcFVE-YNdkgRJQPxAxaTnMY:opening.hours": "Park open daily from 7am until dusk; museum Tuesday to Sunday 10am to 4.30pm.",
+  "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.parking": "No parking on the Discover site. The closest car park is Stratford multi-storey, a 5 minute walk. Blue Badge holder bays are close to Discover, on Bridge Terrace off Bridge Road.",
+  "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.accessibleToilet": "Accessible toilets are available on all levels of the museum."
+ },
+ "dropRules": [
+  "museum-closed-mondays"
+ ],
+ "claims": [
+  {
+   "id": "639254d0-4693-5d6c-b30a-e9a68852b793",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "fieldKey": "rules.closed-2026-10-09",
+   "validUntil": "2026-11-07",
+   "item": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:opening.closure",
+   "source": "https://www.nhm.ac.uk/visit.html",
+   "quote": "Closed 9 October and 24–26 December … Our South Kensington site will be closed on Friday 9 October 2026, as we’re hosting a charity gala.",
+   "value": {
+    "kind": "closure",
+    "scope": "venue",
+    "from": "2026-10-09",
+    "until": "2026-10-09",
+    "text": "The South Kensington museum is closed on Friday 9 October 2026 for a charity gala."
+   }
+  },
+  {
+   "id": "d7b402a1-d8af-5d84-b508-125877179767",
+   "venueId": "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s",
+   "fieldKey": "rules.closed-christmas",
+   "validUntil": "2026-11-07",
+   "item": "ChIJPy8Y5kIFdkgRxGSXw4Xjt3s:opening.closure",
+   "source": "https://www.nhm.ac.uk/visit.html",
+   "quote": "Closed 9 October and 24–26 December … Our South Kensington site will be closed on Friday 9 October 2026, as we’re hosting a charity gala.",
+   "value": {
+    "kind": "closure",
+    "scope": "venue",
+    "from": "2026-12-24",
+    "until": "2026-12-26",
+    "text": "Closed 24, 25 and 26 December."
+   }
+  },
+  {
+   "id": "b363ac60-d977-5475-8596-5e1c714bbcce",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "fieldKey": "rules.closed-christmas",
+   "validUntil": "2026-11-07",
+   "item": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:opening.hours",
+   "source": "https://www.sciencemuseum.org.uk/visit",
+   "quote": "The museum is open daily from 10.00–18.00 (except for 24–26 December when the museum is closed).",
+   "value": {
+    "kind": "closure",
+    "scope": "venue",
+    "from": "2026-12-24",
+    "until": "2026-12-26",
+    "text": "Closed 24, 25 and 26 December."
+   }
+  },
+  {
+   "id": "738fa88c-a6d2-5801-afce-72c9bcd95a55",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "fieldKey": "hours.daily",
+   "validUntil": "2026-11-22",
+   "item": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:opening.hours",
+   "source": "https://www.sciencemuseum.org.uk/visit",
+   "quote": "The museum is open daily from 10.00–18.00 (except for 24–26 December when the museum is closed).",
+   "value": {
+    "scope": "venue",
+    "days": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "open": "10:00",
+    "close": "18:00"
+   }
+  },
+  {
+   "id": "f819011d-df27-513a-9f99-84ef150335cf",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "fieldKey": "rules.bulky-buggies-parked",
+   "validUntil": "2026-11-07",
+   "item": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:pushchair.allowed",
+   "source": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
+   "quote": "Buggies are allowed in the museum and galleries. However, in certain areas, you may be asked to leave your pram in a buggy park",
+   "value": {
+    "kind": "pushchair",
+    "scope": "venue",
+    "text": "Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas."
+   }
+  },
+  {
+   "id": "4c403046-9f79-5c54-a77a-f6beb95cf1fd",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "fieldKey": "rules.closed-christmas",
+   "validUntil": "2026-11-07",
+   "item": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:opening.hours",
+   "source": "https://discover.org.uk/your-visit/",
+   "quote": "Discover is open every day, 10am - 5pm … We're closed on 24, 25, 26, 31 December and 1 January over the festive period.",
+   "value": {
+    "kind": "closure",
+    "scope": "venue",
+    "from": "2026-12-24",
+    "until": "2026-12-26",
+    "text": "Closed 24, 25 and 26 December."
+   }
+  },
+  {
+   "id": "ec3470f4-926a-5aef-bbcd-c42c90d218ca",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "fieldKey": "rules.closed-new-year",
+   "validUntil": "2026-11-07",
+   "item": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:opening.hours",
+   "source": "https://discover.org.uk/your-visit/",
+   "quote": "Discover is open every day, 10am - 5pm … We're closed on 24, 25, 26, 31 December and 1 January over the festive period.",
+   "value": {
+    "kind": "closure",
+    "scope": "venue",
+    "from": "2026-12-31",
+    "until": "2027-01-01",
+    "text": "Closed 31 December and 1 January."
+   }
+  },
+  {
+   "id": "acf5d119-7a41-5fe4-b13f-360966fbdcc1",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "fieldKey": "hours.daily",
+   "validUntil": "2026-11-22",
+   "item": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:opening.hours",
+   "source": "https://discover.org.uk/your-visit/",
+   "quote": "Discover is open every day, 10am - 5pm … We're closed on 24, 25, 26, 31 December and 1 January over the festive period.",
+   "value": {
+    "scope": "venue",
+    "days": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "open": "10:00",
+    "close": "17:00"
+   }
+  },
+  {
+   "id": "c24c0952-84b8-52e1-973f-436c766b9751",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "fieldKey": "rules.pushchair-play-areas",
+   "validUntil": "2026-11-07",
+   "item": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.restriction",
+   "source": "https://discover.org.uk/getting-here/",
+   "quote": "There is buggy parking available on our Ground Floor. We do not allow buggies and pushchairs in any of our s torytelling or play areas . If you have a smaller baby we recommend bringing a sling.",
+   "value": {
+    "kind": "pushchair",
+    "scope": "area",
+    "area": "Storytelling and play areas",
+    "coversCoreVisit": true,
+    "text": "Pushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby."
+   }
+  },
+  {
+   "id": "e8b5f786-3ca6-5348-9f49-c28c1550baec",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "fieldKey": "rules.pushchair-exception",
+   "validUntil": "2026-11-07",
+   "item": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:pushchair.twins",
+   "source": "https://discover.org.uk/your-visit/faqs/",
+   "quote": "If you have a particular reason why you need a buggy with you – eg twin babies or a sleeping child – do speak to our front of house team who will be able to advise and accommodate your buggy where needed.",
+   "value": {
+    "kind": "caution",
+    "scope": "venue",
+    "exceptionOf": "pushchair-play-areas",
+    "text": "If you have a particular reason to need a buggy (for example twin babies or a sleeping child), speak to the front of house team, who can advise and may be able to accommodate it."
+   }
+  },
+  {
+   "id": "d199c510-a8aa-5e54-afca-342ef368a94b",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "fieldKey": "hours.until-23-oct",
+   "validUntil": "2026-11-22",
+   "item": "ChIJV_iXMtcadkgRqBI84CY_crE:opening.hours",
+   "source": "https://www.londonzoo.org/plan-your-visit/opening-times",
+   "quote": "Dates Opening Last Entry Closing 3 September - 23 October 2026 10am 4pm 5pm 24 October 2026 - 12 February 2027 10am 3pm 4pm",
+   "value": {
+    "scope": "venue",
+    "days": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "until": "2026-10-23",
+    "open": "10:00",
+    "close": "17:00",
+    "lastEntry": "16:00"
+   }
+  },
+  {
+   "id": "796d5a2d-5ca3-5b03-8e4a-01318448a5e2",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "fieldKey": "hours.from-24-oct",
+   "validUntil": "2026-11-22",
+   "item": "ChIJV_iXMtcadkgRqBI84CY_crE:opening.hours",
+   "source": "https://www.londonzoo.org/plan-your-visit/opening-times",
+   "quote": "Dates Opening Last Entry Closing 3 September - 23 October 2026 10am 4pm 5pm 24 October 2026 - 12 February 2027 10am 3pm 4pm",
+   "value": {
+    "scope": "venue",
+    "days": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "from": "2026-10-24",
+    "until": "2027-02-12",
+    "open": "10:00",
+    "close": "16:00",
+    "lastEntry": "15:00"
+   }
+  },
+  {
+   "id": "086d7b26-7ed1-5210-b5e9-5b0638cc9402",
+   "venueId": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "fieldKey": "hours.farm",
+   "validUntil": "2026-11-22",
+   "item": "ChIJp8y37pgCdkgRBeRSa2iabyI:opening.hours",
+   "source": "https://www.mudchute.org/plan-your-visit/opening-times",
+   "quote": "Farm: Every day 9am–4pm (animals go in from 3pm) Park: Every day dawn–dusk",
+   "value": {
+    "scope": "venue",
+    "days": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "open": "09:00",
+    "close": "16:00"
+   }
+  },
+  {
+   "id": "e026ab30-0fb3-5c9f-9875-8035985e3804",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "fieldKey": "hours.park",
+   "validUntil": "2026-11-22",
+   "item": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:opening.hours",
+   "source": "https://www.visitgunnersbury.org/plan-your-visit",
+   "quote": "Opening Hours Museum Tuesday-Sunday 10am to 4:30pm Park Daily between 7am until dusk",
+   "value": {
+    "scope": "venue",
+    "days": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "open": "07:00",
+    "close": null,
+    "closeText": "dusk"
+   }
+  },
+  {
+   "id": "d6fd943e-beec-5058-ac3d-31fcd54f9177",
+   "venueId": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "fieldKey": "hours.museum",
+   "validUntil": "2026-11-22",
+   "item": "ChIJrcFVE-YNdkgRJQPxAxaTnMY:opening.hours",
+   "source": "https://www.visitgunnersbury.org/plan-your-visit",
+   "quote": "Opening Hours Museum Tuesday-Sunday 10am to 4:30pm Park Daily between 7am until dusk",
+   "value": {
+    "scope": "area",
+    "area": "Museum",
+    "days": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     0
+    ],
+    "open": "10:00",
+    "close": "16:30"
+   }
+  },
+  {
+   "id": "dac1339c-49ec-591f-a24b-895cb720c9e5",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "fieldKey": "accessibility.accessibleToilet",
+   "validUntil": "2026-11-07",
+   "item": "ChIJV_iXMtcadkgRqBI84CY_crE:toilets.accessibleToilet",
+   "source": "https://www.londonzoo.org/plan-your-visit/accessibility",
+   "quote": "As well as our changing place toilet, we also have a number of accessible toilets around the Zoo.",
+   "value": "yes"
+  },
+  {
+   "id": "a9111c34-310e-506a-ba24-392eeb613980",
+   "venueId": "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE",
+   "fieldKey": "familyFacilities.parking",
+   "validUntil": "2026-11-07",
+   "item": "ChIJV_iXMtcadkgRqBI84CY_crE:transport.parking",
+   "source": "https://www.londonzoo.org/plan-your-visit/frequently-asked-questions",
+   "quote": "Parking is available in the Zoo’s car park at a cost of £16 in term time or £17.50 on weekends and bank or school holidays, payable on the day.",
+   "value": "yes"
+  },
+  {
+   "id": "e2f7a862-18e3-56ee-8f38-beb03b88ee2b",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "fieldKey": "familyFacilities.toilets",
+   "validUntil": "2026-11-07",
+   "item": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.toilets",
+   "source": "https://discover.org.uk/your-visit/faqs/",
+   "quote": "We have toilets with baby changing facilities on all of our main floors.",
+   "value": "yes"
+  },
+  {
+   "id": "b105c36e-b099-52e3-a5ab-7e5c56134385",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "fieldKey": "familyFacilities.parking",
+   "validUntil": "2026-11-07",
+   "item": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.parking",
+   "source": "https://www.sciencemuseum.org.uk/visit/getting-here",
+   "quote": "We do not have car parking facilities and local parking is very limited.",
+   "value": "no"
+  },
+  {
+   "id": "c546847c-5e4a-5da3-abb0-11b03c07bb9a",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "fieldKey": "familyFacilities.parking",
+   "validUntil": "2026-11-07",
+   "item": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.parking",
+   "source": "https://www.horniman.ac.uk/plan-your-visit/",
+   "quote": "We have no onsite parking, other than limited parking for Blue Badge holders.",
+   "value": "no"
+  },
+  {
+   "id": "60d8c565-2d77-5d1c-9fb7-c2977b697ef5",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "fieldKey": "familyFacilities.parking",
+   "validUntil": "2026-11-07",
+   "item": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.parking",
+   "source": "https://discover.org.uk/getting-here/",
+   "quote": "There is no parking available on the Discover site. The closest car parks are: Stratford multi-story car park. (5 min walk).",
+   "value": "no"
+  },
+  {
+   "id": "92446595-82f0-5d20-9415-0283f7795efb",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "fieldKey": "accessibility.accessibleToilet",
+   "validUntil": "2026-11-07",
+   "item": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.accessibleToilet",
+   "source": "https://www.sciencemuseum.org.uk/visit/accessibility",
+   "quote": "Accessible toilets are available on all levels of the museum.",
+   "value": "yes"
+  },
+  {
+   "id": "b0d8c173-5323-520c-9eb1-d46740f20bae",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "fieldKey": "accessibility.accessibleParking",
+   "validUntil": "2026-11-07",
+   "item": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.blueBadge",
+   "source": "https://www.horniman.ac.uk/plan-your-visit/",
+   "quote": "We have no onsite parking, other than limited parking for Blue Badge holders.",
+   "value": "yes"
+  },
+  {
+   "id": "6035f2fe-2b3e-55df-b412-b51bcd1f7e85",
+   "venueId": "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI",
+   "fieldKey": "accessibility.blueBadgeNote",
+   "validUntil": "2026-11-07",
+   "item": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.blueBadge",
+   "source": "https://www.horniman.ac.uk/plan-your-visit/",
+   "quote": "We have no onsite parking, other than limited parking for Blue Badge holders.",
+   "value": "Limited bays on site"
+  },
+  {
+   "id": "45efac75-f930-5a46-8fba-8319b02dac39",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "fieldKey": "accessibility.accessibleParking",
+   "validUntil": "2026-11-07",
+   "item": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.blueBadge",
+   "source": "https://discover.org.uk/getting-here/",
+   "quote": "There are blue badge holder bays in the immediate vicinity of Discover, on Bridge Terrace, off Bridge Road, which are clearly marked.",
+   "value": "yes"
+  },
+  {
+   "id": "e01bdb95-ff89-5032-bf40-be727f6e4710",
+   "venueId": "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk",
+   "fieldKey": "accessibility.blueBadgeNote",
+   "validUntil": "2026-11-07",
+   "item": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.blueBadge",
+   "source": "https://discover.org.uk/getting-here/",
+   "quote": "There are blue badge holder bays in the immediate vicinity of Discover, on Bridge Terrace, off Bridge Road, which are clearly marked.",
+   "value": "Bays nearby, not on site: Bridge Terrace, off Bridge Road"
+  },
+  {
+   "id": "f469a7a6-2149-54e7-9171-f2dc63da8233",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "fieldKey": "accessibility.accessibleParking",
+   "validUntil": "2026-11-07",
+   "item": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.blueBadge",
+   "source": "https://www.sciencemuseum.org.uk/visit/getting-here",
+   "quote": "A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30.",
+   "value": "yes"
+  },
+  {
+   "id": "f906fbac-351f-5de0-b0bf-eb7e5767d953",
+   "venueId": "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE",
+   "fieldKey": "accessibility.blueBadgeNote",
+   "validUntil": "2026-11-07",
+   "item": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.blueBadge",
+   "source": "https://www.sciencemuseum.org.uk/visit/getting-here",
+   "quote": "A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30.",
+   "value": "A few spaces on Exhibition Road; 4 hours, 08.30 to 18.30"
+  }
+ ],
+ "applySha256": "68853d9c044f9cb628e41e47695fc857853ae9121c6b08882d4d2f17ef269a2f",
+ "rollbackSha256": "84f9723fad0816cc6363d2dc9fb22427319827fcb3cb6a0fa53f500e4d8849ae"
+}

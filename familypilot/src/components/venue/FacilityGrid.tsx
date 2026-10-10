@@ -14,6 +14,7 @@ const FACILITY_CONFIG: Record<
   baby_changing: { icon: 'happy-outline', label: 'Baby changing' },
   playground: { icon: 'game-controller-outline', label: 'Playground' },
   parking: { icon: 'car-outline', label: 'Parking' },
+  blue_badge_parking: { icon: 'accessibility-outline', label: 'Blue Badge parking' },
   shade: { icon: 'partly-sunny-outline', label: 'Shade' },
   splash_pad: { icon: 'water-outline', label: 'Splash pad' },
   picnic: { icon: 'restaurant-outline', label: 'Picnic' },

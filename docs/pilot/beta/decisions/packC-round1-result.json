@@ -1,0 +1,17 @@
+{
+ "round": 1,
+ "returnedAt": "2026-10-09",
+ "reviewerFieldOnExport": "unnamed",
+ "decisions": 13,
+ "approve": 12,
+ "edit": 1,
+ "controlsPlanted": 4,
+ "controlsCaught": 1,
+ "barRequired": 3,
+ "barMet": false,
+ "secondsPerCard": {
+  "min": 0,
+  "max": 41
+ },
+ "outcome": "Bar not met and reviewer name blank: no decisions from this round were imported into the audit trail or used for a manifest. Superseded by round 2 (packC2)."
+}

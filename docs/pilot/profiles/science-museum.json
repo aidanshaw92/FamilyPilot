@@ -5,9 +5,9 @@
   "category": "museum",
   "builtOn": "2026-10-08",
   "counts": {
-    "review": 11,
+    "review": 14,
     "hypothesis": 1,
-    "verified": 12,
+    "verified": 9,
     "unknown": 1
   },
   "facts": [
@@ -29,7 +29,11 @@
       "status": "review",
       "reviewReasons": [
         "says who a place is for (drives suitability)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -43,13 +47,21 @@
       "evidence": {
         "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
         "readAt": "2026-10-08",
-        "quote": "Perfect for children aged 7 and under, Bubble Explorer s takes place on weekends and every day during school holidays.",
+        "quote": "Perfect for children aged 7 and under, Bubble Explorer s takes place on weekends and every day during school holidays. … Tickets are £4.50 per person with free entry for children aged 2 and under",
+        "quotes": [
+          "Perfect for children aged 7 and under, Bubble Explorer s takes place on weekends and every day during school holidays.",
+          "Tickets are £4.50 per person with free entry for children aged 2 and under"
+        ],
         "pageSha256": "519ad9faf34b5181"
       },
       "status": "review",
       "reviewReasons": [
         "says who a place is for (drives suitability)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -69,7 +81,11 @@
       "status": "review",
       "reviewReasons": [
         "says who a place is for (drives suitability)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -89,15 +105,30 @@
       "sec": "pushchair",
       "key": "storage",
       "value": "yes",
-      "text": "Free buggy parking in the Spare Room (level -1, opposite The Garden); a small free buggy park by Pattern Pod.",
+      "text": "Free buggy parking in the Spare Room (level -1, opposite The Garden; pushchairs must be empty), and a small free buggy park by Pattern Pod on level 0 for use while you visit that area.",
+      "amended": {
+        "from": "Free buggy parking in the Spare Room (level -1, opposite The Garden); a small free buggy park by Pattern Pod.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "supports"
+        }
+      },
       "goodToKnow": true,
       "evidence": {
         "url": "https://www.sciencemuseum.org.uk/visit/space-lovers-guide-science-museum",
         "readAt": "2026-10-08",
-        "quote": "Buggy parking is available free of charge in the Spare Room, located opposite The Garden gallery on level -1.",
+        "quote": "Buggy parking is available free of charge in the Spare Room, located opposite The Garden gallery on level -1. … We have a small free buggy parking area next to Pattern Pod on level 0 for the duration of your visit in that area.",
+        "quotes": [
+          "Buggy parking is available free of charge in the Spare Room, located opposite The Garden gallery on level -1.",
+          "We have a small free buggy parking area next to Pattern Pod on level 0 for the duration of your visit in that area."
+        ],
         "pageSha256": "2f9979e34b3d7056"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "pushchair",
@@ -115,7 +146,11 @@
       "reviewReasons": [
         "not a fact type that may be accepted without a person",
         "conditional, temporary or dated wording"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -128,7 +163,14 @@
         "quote": "Accessible toilets are available on all levels of the museum.",
         "pageSha256": "6f7f7ce4b8756f29"
       },
-      "status": "verified",
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says every; the quote does not"
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "note": "Derived: accessible toilets are toilets. General toilet blocks are not described separately."
     },
     {
@@ -142,7 +184,14 @@
         "quote": "Baby changing facilities are located throughout all floors of the museum.",
         "pageSha256": "519ad9faf34b5181"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says every; the quote does not"
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -155,20 +204,32 @@
         "quote": "Accessible toilets are available on all levels of the museum.",
         "pageSha256": "6f7f7ce4b8756f29"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says every; the quote does not"
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
       "key": "changingPlaces",
       "value": "yes",
-      "text": "A Changing Places toilet on level 0 next to the Hans Rausing Lecture Theatre. (The page also carries a notice about works on 14 to 25 September, already past.)",
+      "text": "A Changing Places toilet on level 0 next to the Hans Rausing Lecture Theatre.",
       "evidence": {
         "url": "https://www.sciencemuseum.org.uk/visit/accessibility",
         "readAt": "2026-10-08",
         "quote": "Changing Places Toilet on L0 next to the Hans Rausing Lecture Theatre.",
         "pageSha256": "6f7f7ce4b8756f29"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
+      "note": "The page also carries a notice about works on 14 to 25 September, already past at the reading; not part of this fact."
     },
     {
       "sec": "transport",
@@ -181,7 +242,11 @@
         "quote": "A small number of disabled parking spaces are available on Exhibition Road. Blue Badge holders may park here for four hours between 08.30 and 18.30.",
         "pageSha256": "751a89c00ea27a0f"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -191,10 +256,18 @@
       "evidence": {
         "url": "https://www.sciencemuseum.org.uk/visit/getting-here",
         "readAt": "2026-10-08",
-        "quote": "The nearest tube station is South Kensington. This is on the District, Circle and Piccadilly lines and is a 5-minute walk from the museum.",
+        "quote": "The nearest tube station is South Kensington. This is on the District, Circle and Piccadilly lines and is a 5-minute walk from the museum. … The nearest underground station with step-free access is Knightsbridge. This is a 15-20-minute walk to the museum.",
+        "quotes": [
+          "The nearest tube station is South Kensington. This is on the District, Circle and Piccadilly lines and is a 5-minute walk from the museum.",
+          "The nearest underground station with step-free access is Knightsbridge. This is a 15-20-minute walk to the museum."
+        ],
         "pageSha256": "751a89c00ea27a0f"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -210,7 +283,11 @@
       "status": "review",
       "reviewReasons": [
         "a negative claim (can exclude a venue)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "food",
@@ -223,7 +300,11 @@
         "quote": "There are lots of food and drink options at the Science Museum: We have three cafés, a milkshake/ice cream bar and picnic areas.",
         "pageSha256": "9592f42f34105652"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "food",
@@ -233,10 +314,20 @@
       "evidence": {
         "url": "https://www.sciencemuseum.org.uk/visit/food-and-drink",
         "readAt": "2026-10-08",
-        "quote": "You are welcome to bring your own food and drink, which you can enjoy in one of our dedicated picnic areas",
+        "quote": "You are welcome to bring your own food and drink, which you can enjoy in one of our dedicated picnic areas … the picnic terrace on level -1 … the seating area on level 2 near Galley Café … the seating area on level 3 located next to Shake Bar",
+        "quotes": [
+          "You are welcome to bring your own food and drink, which you can enjoy in one of our dedicated picnic areas",
+          "the picnic terrace on level -1",
+          "the seating area on level 2 near Galley Café",
+          "the seating area on level 3 located next to Shake Bar"
+        ],
         "pageSha256": "9592f42f34105652"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "play",
@@ -250,23 +341,46 @@
       "sec": "access",
       "key": "stepFreeRoute",
       "value": "yes",
-      "text": "A step-free route for families with under-7s links the toddler galleries.",
+      "text": "A free guide for families with children under seven follows a step-free route through the museum, with five experiences for toddlers and young explorers.",
+      "amended": {
+        "from": "A step-free route for families with under-7s links the toddler galleries.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.sciencemuseum.org.uk/visit/young-explorers-guide-science-museum",
         "readAt": "2026-10-08",
-        "quote": "this free guide can be enjoyed at your own pace and follows a step-free route through the museum",
+        "quote": "discover five favourite experiences for toddlers and young explorers at the Science Museum … this free guide can be enjoyed at your own pace and follows a step-free route through the museum … perfect for families with children under seven",
+        "quotes": [
+          "discover five favourite experiences for toddlers and young explorers at the Science Museum",
+          "this free guide can be enjoyed at your own pace and follows a step-free route through the museum",
+          "perfect for families with children under seven"
+        ],
         "pageSha256": "519ad9faf34b5181"
       },
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
       "key": "mezzanine",
       "value": "no",
-      "text": "No step-free access to the mezzanine in Making the Modern World and Flight.",
+      "text": "Currently there is no step-free access to the mezzanine level in the Making the Modern World and Flight galleries.",
+      "amended": {
+        "from": "No step-free access to the mezzanine in Making the Modern World and Flight.",
+        "verdicts": {
+          "A": "supports",
+          "B": "narrower"
+        }
+      },
       "scope": "area",
       "goodToKnow": true,
       "evidence": {
@@ -281,7 +395,11 @@
         "a negative claim (can exclude a venue)",
         "conditional, temporary or dated wording",
         "applies to part of the venue"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
@@ -297,7 +415,11 @@
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "opening",
@@ -310,13 +432,24 @@
         "quote": "The museum is open daily from 10.00–18.00 (except for 24–26 December when the museum is closed).",
         "pageSha256": "fda0be0a14a8efc3"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "pricing",
       "key": "free",
       "value": "free",
-      "text": "Free admission with a pre-booked ticket. Wonderlab, Power Up, IMAX and the Bubble Explorers show are charged.",
+      "text": "Admission is free: a free admission ticket can be booked; donations are welcome.",
+      "amended": {
+        "from": "Free admission with a pre-booked ticket. Wonderlab, Power Up, IMAX and the Bubble Explorers show are charged.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "unsupported"
+        }
+      },
       "evidence": {
         "url": "https://www.sciencemuseum.org.uk/",
         "readAt": "2026-10-08",
@@ -326,7 +459,11 @@
       "status": "review",
       "reviewReasons": [
         "a price or a free-entry claim (drives cost)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "pricing",
@@ -342,7 +479,11 @@
       "status": "review",
       "reviewReasons": [
         "a price or a free-entry claim (drives cost)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "considerations",
@@ -355,7 +496,11 @@
         "quote": "You are welcome to stay in the museum as long as you like, but an average visit lasts around two hours.",
         "pageSha256": "fda0be0a14a8efc3"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "considerations",
@@ -368,7 +513,11 @@
         "quote": "Children under 12 must be accompanied by an adult (aged 18+).",
         "pageSha256": "fda0be0a14a8efc3"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "considerations",
@@ -385,7 +534,11 @@
       "reviewReasons": [
         "not a fact type that may be accepted without a person",
         "conditional, temporary or dated wording"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     }
   ]
 }

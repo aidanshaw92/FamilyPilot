@@ -164,8 +164,10 @@
     "gettingThere",
     "childActivity"
    ],
-   "afterAuto": "recommendation-ready",
-   "autoMissing": [],
+   "afterAuto": "discoverable",
+   "autoMissing": [
+    "childActivity"
+   ],
    "afterApproved": "recommendation-ready",
    "approvedMissing": [],
    "personalisation": {
@@ -189,7 +191,8 @@
    ],
    "afterAuto": "discoverable",
    "autoMissing": [
-    "cost"
+    "cost",
+    "gettingThere"
    ],
    "afterApproved": "recommendation-ready",
    "approvedMissing": [],
@@ -235,7 +238,8 @@
    "afterAuto": "discoverable",
    "autoMissing": [
     "cost",
-    "childActivity"
+    "childActivity",
+    "familyEssentials"
    ],
    "afterApproved": "highly-personalised",
    "approvedMissing": [],

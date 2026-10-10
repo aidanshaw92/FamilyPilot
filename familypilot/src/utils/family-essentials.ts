@@ -89,8 +89,13 @@ export function familyEssentialRows(venue: VenueDetail): FamilyEssentialRow[] {
     maybe('buggy', 'Buggy access', pushchairValue(facts, facilities)),
     maybe('wheelchair', 'Wheelchair access', triStateValue(facts?.wheelchairAccessible, 'Accessible', 'Not accessible', false)),
     maybe('toilets', 'Toilets', triStateValue(facts?.toilets, 'On site', 'None on site', facilities.includes('toilets'))),
+    maybe('step-free', 'Step-free access', triStateValue(facts?.stepFreeAccess, 'Step-free', 'Not step-free', false)),
     maybe('accessible-toilet', 'Accessible toilet', triStateValue(facts?.accessibleToilet, 'On site', 'None on site', false)),
     maybe('parking', 'Parking', parkingValue(venue, facts, facilities)),
+    // Blue Badge bays are their own row, from their own claim. "None on site" for parking says nothing about them.
+    maybe('blue-badge', 'Blue Badge parking', triStateValue(facts?.blueBadgeParking, 'Available', 'None reviewed', false)),
+    maybe('step-free-station', 'Step-free station', triStateValue(facts?.stepFreeStation, 'Yes', 'No', false)),
+    maybe('public-transport', 'Public transport', triStateValue(facts?.publicTransport, 'Available', 'Not available', false)),
     maybe('food', 'Food', foodValue(facilities)),
     maybe('playground', 'Playground', playgroundValue(venue, facts, facilities)),
     maybe('ages', 'Best for ages', agesValue(venue, facts)),

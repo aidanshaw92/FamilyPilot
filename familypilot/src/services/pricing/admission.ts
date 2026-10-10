@@ -55,11 +55,28 @@ export interface PricingSource {
   validUntil?: string;
 }
 
+/**
+ * One rate table of several the venue charges on different kinds of day ("Off Peak", "Weekday Standard", "Weekend",
+ * "Peak"). London Zoo publishes four, with a calendar that says which date is which; a ticket is a different price on each.
+ */
+export interface PriceTier {
+  /** The venue's own name for the day type. */
+  label: string;
+  bands: TicketBand[];
+  familyTickets?: FamilyTicket[];
+}
+
 export interface AdmissionPricing {
   /** `free` is a confirmed statement of free entry. A missing price is NOT `free`; it is no `AdmissionPricing` at all. */
   status: 'free' | 'paid';
   bands?: TicketBand[];
   familyTickets?: FamilyTicket[];
+  /**
+   * Rate tables for different kinds of day, where the price varies by day. When present, `bands` and `familyTickets` are
+   * ignored. Which tier applies on which date is NOT inferred: unless the calendar is recorded, the answer is a RANGE across
+   * the tiers, never one of them chosen as if it were the price.
+   */
+  tiers?: PriceTier[];
   source: PricingSource;
   /** Plain-words conditions that change what is paid ("peak days", "booking required", "with Gift Aid"). */
   conditions?: string[];
@@ -94,6 +111,18 @@ export interface AdmissionLine {
 
 export type AdmissionEstimate =
   | { state: 'free'; totalPence: 0; source: PricingSource }
+  | {
+      /**
+       * The price depends on the day and the day's type is not known: the lowest and highest the party could pay across
+       * the venue's own rate tables, and each table's total. There is no single total, and none is implied.
+       */
+      state: 'range';
+      lowPence: number;
+      highPence: number;
+      tiers: Array<{ label: string; totalPence: number }>;
+      conditions: string[];
+      source: PricingSource;
+    }
   | {
       state: 'known';
       totalPence: number;
@@ -170,6 +199,9 @@ export function priceIsCurrent(source: PricingSource, visitDate: string, status:
 export function lastKnownLines(pricing: AdmissionPricing): string[] {
   if (pricing.status === 'free') return ['Free entry'];
   const bandName = (b: TicketBand): string => b.label ?? { adult: 'Adult', child: 'Child', concession: 'Concession', under: 'Youngest children' }[b.kind];
+  if (pricing.tiers?.length) {
+    return pricing.tiers.map((t) => `${t.label}: ${t.bands.map((b) => `${bandName(b)} ${b.free || b.amountPence === 0 ? 'free' : money(b.amountPence)}`).join(', ')}`);
+  }
   const bands = (pricing.bands ?? []).map((b) => `${bandName(b)} ${b.free || b.amountPence === 0 ? 'free' : money(b.amountPence)}`);
   const family = (pricing.familyTickets ?? []).map((t) => `${t.label ?? 'Family ticket'} ${money(t.amountPence)}`);
   return [...bands, ...family];
@@ -205,6 +237,23 @@ export function estimateFamilyAdmission(
     };
   }
   if (pricing.status === 'free') return { state: 'free', totalPence: 0, source: pricing.source };
+
+  // A venue that charges by the kind of day: work out the party under each rate table. All known and equal is one price; all
+  // known and different is a range; any table that cannot be worked out makes the whole answer unknown (a range with a missing
+  // end would be a minimum dressed as a price).
+  if (pricing.tiers?.length) {
+    const results = pricing.tiers.map((tier) => ({
+      tier,
+      estimate: estimateFamilyAdmission({ ...pricing, tiers: undefined, bands: tier.bands, familyTickets: tier.familyTickets }, attendees, visitDate),
+    }));
+    const unknown = results.find((r) => r.estimate.state === 'unknown');
+    if (unknown && unknown.estimate.state === 'unknown') return unknown.estimate;
+    const totals = results.map((r) => ({ label: r.tier.label, totalPence: r.estimate.state === 'known' ? r.estimate.totalPence : 0 }));
+    const low = Math.min(...totals.map((t) => t.totalPence));
+    const high = Math.max(...totals.map((t) => t.totalPence));
+    if (low === high) return results[0].estimate;
+    return { state: 'range', lowPence: low, highPence: high, tiers: totals, conditions: pricing.conditions ?? [], source: pricing.source };
+  }
 
   const bands = pricing.bands ?? [];
   const lines: AdmissionLine[] = [];
@@ -291,6 +340,11 @@ export interface PartyAdmission {
 
 export interface OutingAdmission {
   parties: PartyAdmission[];
+  /**
+   * Set when every party is known or free or a range, and at least one is a range: the lowest and highest the outing could
+   * cost in admission. `combinedPence` stays null, because there is no single figure.
+   */
+  combinedRangePence?: { lowPence: number; highPence: number } | null;
   /** The sum, only when EVERY party is known (free counts as known). Otherwise null: there is no combined total. */
   combinedPence: number | null;
   /** What is known so far, for saying "£X so far". Null when nothing is known. */
@@ -302,13 +356,20 @@ export interface OutingAdmission {
 export function combineAdmission(parties: readonly PartyAdmission[]): OutingAdmission {
   let known = 0;
   let knownCount = 0;
+  let rangeLow = 0;
+  let rangeHigh = 0;
+  let rangeCount = 0;
   for (const p of parties) {
     if (p.estimate.state === 'free') knownCount += 1;
     else if (p.estimate.state === 'known') { known += p.estimate.totalPence; knownCount += 1; }
+    else if (p.estimate.state === 'range') { rangeLow += p.estimate.lowPence; rangeHigh += p.estimate.highPence; rangeCount += 1; }
   }
+  // A ranged party is not a known one: it has no single figure, so it is counted as unknown for the single total.
   const unknownParties = parties.length - knownCount;
+  const allPriced = parties.length > 0 && unknownParties - rangeCount === 0;
   return {
     parties: [...parties],
+    combinedRangePence: allPriced && rangeCount > 0 ? { lowPence: known + rangeLow, highPence: known + rangeHigh } : null,
     combinedPence: unknownParties === 0 && parties.length > 0 ? known : null,
     knownSubtotalPence: knownCount > 0 ? known : null,
     unknownParties,
@@ -362,8 +423,10 @@ export function priceBadge(pricing: AdmissionPricing | null | undefined, visitDa
   if (!pricing || priceFreshness(pricing, visitDate) !== 'current') return { kind: 'unknown', text: 'Price not confirmed' };
   if (pricing.status === 'free') return { kind: 'free', text: 'Free entry' };
   // Individual tickets only for "From": a family ticket is not a per-person price, so it is the fallback and no more.
-  const individual = (pricing.bands ?? []).filter((b) => !b.free && b.amountPence > 0).map((b) => b.amountPence);
-  const family = (pricing.familyTickets ?? []).filter((t) => t.amountPence > 0).map((t) => t.amountPence);
+  const allBands = pricing.tiers?.length ? pricing.tiers.flatMap((t) => t.bands) : pricing.bands ?? [];
+  const allFamily = pricing.tiers?.length ? pricing.tiers.flatMap((t) => t.familyTickets ?? []) : pricing.familyTickets ?? [];
+  const individual = allBands.filter((b) => !b.free && b.amountPence > 0).map((b) => b.amountPence);
+  const family = allFamily.filter((t) => t.amountPence > 0).map((t) => t.amountPence);
   const cheapest = individual.length ? Math.min(...individual) : family.length ? Math.min(...family) : null;
   return cheapest === null ? { kind: 'unknown', text: 'Price not confirmed' } : { kind: 'from', text: `From ${money(cheapest)}` };
 }
@@ -391,6 +454,20 @@ export function admissionView(estimate: AdmissionEstimate, pricing: AdmissionPri
   const booking = { bookingRequired: Boolean(pricing?.bookingRequired), bookingUrl: pricing?.bookingUrl ?? null };
   if (estimate.state === 'free') {
     return { headline: 'Free entry', breakdown: [], conditions: pricing?.conditions ?? [], provenance: `Checked ${fmtDate(estimate.source.checkedAt)}`, isEstimate: false, ...booking };
+  }
+  if (estimate.state === 'range') {
+    // Never a single total: the venue's price depends on the kind of day, and which day this is has not been established.
+    return {
+      headline: `About ${money(estimate.lowPence)} to ${money(estimate.highPence)} to get in, depending on the day`,
+      breakdown: [
+        ...estimate.tiers.map((t) => `${t.label}: ${money(t.totalPence)}`),
+        'The venue sets the price by the day. Check which kind of day yours is when you book.',
+      ],
+      conditions: estimate.conditions,
+      provenance: `Checked ${fmtDate(estimate.source.checkedAt)}`,
+      isEstimate: true,
+      ...booking,
+    };
   }
   if (estimate.state === 'unknown') {
     // A current price that does not cover this party (a 3-year-old where tickets start at 7) is not a stale price: say whom
@@ -460,6 +537,11 @@ export function admissionView(estimate: AdmissionEstimate, pricing: AdmissionPri
 
 /** The line for a plan: admission and what is missing, never a partial figure called a total. */
 export function outingLine(totals: OutingTotals): string {
+  const range = totals.admission.combinedRangePence;
+  if (range && totals.extras.filter((e) => !e.optional).every((e) => e.amountPence !== null)) {
+    const extras = totals.extras.filter((e) => !e.optional).reduce((s, e) => s + (e.amountPence as number), 0);
+    return `About ${money(range.lowPence + extras)} to ${money(range.highPence + extras)} in all, depending on the day`;
+  }
   if (totals.knownPence === null) return 'Price not confirmed';
   if (totals.complete) return `About ${money(totals.knownPence)} in all`;
   const n = totals.unknownItems;

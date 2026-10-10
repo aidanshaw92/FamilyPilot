@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { colors } from '@/src/design-system/tokens';
+import { initialAuthLinkError } from '@/src/services/supabase/client';
 import { useAuthStore, accountRequired } from '@/src/stores/auth-store';
 import { useFamilyStore } from '@/src/stores/family-store';
 import { usePendingInviteStore } from '@/src/stores/pending-invite-store';
@@ -44,7 +45,8 @@ export default function Index() {
   // Every user has an account. Signed out, a first-time visitor goes through Welcome to create one; someone who has
   // already set their family up goes straight to signing back in. Signed in and not yet set up, on to the family.
   if (needsAccount && authStatus === 'signed_out') {
-    if (hasCompletedOnboarding) return <Redirect href={{ pathname: '/(onboarding)/account', params: { mode: 'signin' } } as never} />;
+    // A link that could not be used (expired, already used, tampered with) explains itself on the sign-in screen.
+    if (hasCompletedOnboarding || initialAuthLinkError) return <Redirect href={{ pathname: '/(onboarding)/account', params: { mode: 'signin' } } as never} />;
     return <Redirect href={hasSeenSplash ? '/(onboarding)/welcome' : '/(onboarding)/splash'} />;
   }
 

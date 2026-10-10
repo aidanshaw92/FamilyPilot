@@ -9,6 +9,10 @@
 const path = require('node:path');
 const root = path.join(__dirname, '..', '..', '..');
 const { projectActiveClaimsToPayload } = require(path.join(root, 'server/enrichment/_lib/claims-store.js'));
+const { PROJECTED_RULES } = require(path.join(root, 'server/enrichment/_lib/venue-rules.js'));
+const { PROJECTED_OFFICIAL_HOURS } = require(path.join(root, 'server/enrichment/_lib/official-hours.js'));
+const { rulesFor } = require('./rules.cjs');
+const { hoursFor } = require('./hours.cjs');
 
 /** profile fact (section.key) -> claim field key and the value the claim carries. */
 const CLAIM_MAP = {
@@ -58,6 +62,28 @@ function claimsFor(profile, view) {
   const restrictive = facts.some((f) => ['terrain', 'steep-paths', 'steep-slopes'].includes(f.key) && f.sec !== 'transport');
   // Only a statement that pushchairs may be used (or suit the site) is positive; storage or hire existing says nothing about access.
   const positive = facts.find((f) => f.sec === 'pushchair' && ['access', 'allowed'].includes(f.key) && f.value !== 'no');
+  // Venue rules (closures, restrictions, cautions) are a reviewer's structured reading of a page, and a rule can refuse a date or a
+  // household, so it is applied only under the 'approved' view, as a person-approved claim. The approver below is a stated
+  // assumption for this demonstration; production accepts a rule only from a `human:` approver who actually decided it.
+  if (view === 'approved') {
+    for (const { rule, evidence } of rulesFor(profile)) {
+      const { id, text, ...rest } = rule;
+      claims.push({
+        fieldKey: `rules.${id}`, valueJson: { ...rest, text }, status: 'active', confidence: 'high', approvedBy: 'human:pilot-review-assumed',
+        sourceUrl: evidence.url, evidenceExcerpt: evidence.quote, checkedAt: evidence.readAt, validUntil: addDays(evidence.readAt, 30),
+      });
+    }
+  }
+  // Official opening hours: a structured reading that can contradict the provider's hours, so the same rule applies as for venue rules.
+  if (view === 'approved') {
+    for (const { rule, evidence } of hoursFor(profile)) {
+      const { id, ...rest } = rule;
+      claims.push({
+        fieldKey: `hours.${id}`, valueJson: rest, status: 'active', confidence: 'high', approvedBy: 'human:pilot-review-assumed',
+        sourceUrl: evidence.url, evidenceExcerpt: evidence.quote, checkedAt: evidence.readAt, validUntil: addDays(evidence.readAt, 45),
+      });
+    }
+  }
   if (restrictive) push('pushchairSuitability', 'mixed', facts.find((f) => ['terrain', 'steep-paths', 'steep-slopes'].includes(f.key)));
   else if (positive) push('pushchairSuitability', 'good', positive);
   return claims;

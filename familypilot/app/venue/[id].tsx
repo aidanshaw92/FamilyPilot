@@ -22,6 +22,9 @@ import { fitIsBeingChecked } from '@/src/utils/fit-checking';
 import { TodayCard } from '@/src/components/venue/TodayCard';
 import { AdmissionCard } from '@/src/components/venue/AdmissionCard';
 import { FamilyEssentials } from '@/src/components/venue/FamilyEssentials';
+import { VenuePractical } from '@/src/components/venue/VenuePractical';
+import { reconcileHoursOn } from '@/src/services/places/hours-reconcile';
+import { closureToday } from '@/src/services/matching/venue-rules';
 import { PhotoGallery } from '@/src/components/venue/PhotoGallery';
 import { RestaurantsCloseBy } from '@/src/components/venue/RestaurantsCloseBy';
 import { WeatherAlternativeSection } from '@/src/components/venue/WeatherAlternativeSection';
@@ -93,6 +96,15 @@ export default function VenueScreen() {
   const venue = useMemo(
     () => (baseVenue && !pending ? venueService.withParentObservations(baseVenue, parentReports.data) : baseVenue),
     [baseVenue, pending, parentReports.data],
+  );
+  // Today's hours: the venue's own reviewed hours where they disagree with the provider's, with a note saying so.
+  const todayHours = useMemo(
+    () => reconcileHoursOn(venue?.structuredOpeningHours, venue?.trustedFacts?.officialHours, new Date()),
+    [venue?.structuredOpeningHours, venue?.trustedFacts?.officialHours],
+  );
+  const closedToday = useMemo(
+    () => closureToday(venue?.trustedFacts?.rules, new Date(), venue?.structuredOpeningHours?.timezone),
+    [venue?.trustedFacts?.rules, venue?.structuredOpeningHours?.timezone],
   );
   // A venue the server says has recent parent reports shows Family Fit as "checking" until they are read (three seconds at
   // most), instead of a verdict that a report may take back. A venue without recent reports never waits.
@@ -379,7 +391,7 @@ export default function VenueScreen() {
 
             {/* 2. Will it work TODAY: the opening state from the schedule and the clock, then the routine check. */}
             <View style={styles.block}>
-              <TodayCard hours={venue.structuredOpeningHours} weather={weather} environment={venue.trustedFacts?.environment} />
+              <TodayCard hours={todayHours.schedule} sourceNote={todayHours.note?.text ?? null} closedBy={closedToday?.text ?? null} weather={weather} environment={venue.trustedFacts?.environment} />
             </View>
 
             {/* 2b. What it costs to get in: a sourced estimate for this household, or "Price not confirmed". */}
@@ -409,6 +421,10 @@ export default function VenueScreen() {
                 setEvidenceOpen(true);
               }}
             />
+
+            {/* 4b. The venue's own reviewed rules and what its pages say children of an age can do there. Absent when neither is
+                recorded: a missing section never means "no restrictions". */}
+            <VenuePractical venue={venue} profile={profile ?? null} />
 
             {/* 4. Food nearby, from OpenStreetMap: zero Google calls, one Overpass request per anchor shared across
                 every parent who opens it. The section renders its own pending, outage and nothing-mapped states. */}

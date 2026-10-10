@@ -5,8 +5,8 @@
   "category": "museum",
   "builtOn": "2026-10-08",
   "counts": {
-    "verified": 8,
-    "review": 11,
+    "verified": 6,
+    "review": 13,
     "unknown": 3
   },
   "facts": [
@@ -14,7 +14,14 @@
       "sec": "activities",
       "key": "dinosaurs",
       "value": null,
-      "text": "The Dinosaurs Gallery (Roaring T. rex) and the other star attractions are permanent and free. No age is given.",
+      "text": "Roaring T. rex (in the Dinosaurs Gallery) and the museum's other star attractions are permanently on display and always free to visit. No age is given.",
+      "amended": {
+        "from": "The Dinosaurs Gallery (Roaring T. rex) and the other star attractions are permanent and free. No age is given.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "supports"
+        }
+      },
       "kind": "provision",
       "label": "Dinosaurs Gallery with the Roaring T. rex",
       "evidence": {
@@ -23,7 +30,11 @@
         "quote": "Check out our star attractions, they’re permanently on display and always free to visit Roaring T.rex Location: Dinosaurs Gallery",
         "pageSha256": "5b232d42837cbbd2"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -41,7 +52,11 @@
       "status": "review",
       "reviewReasons": [
         "conditional, temporary or dated wording"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -78,6 +93,10 @@
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
       ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "note": "It is not clear whether this is storage for a pushchair or a charge for something else; a person must read it in context."
     },
     {
@@ -91,7 +110,11 @@
         "quote": "We have many toilets, these are all marked on our Museum map , including wheelchair-accessible toilets and baby-changing facilities.",
         "pageSha256": "04a44327a35f4294"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -104,7 +127,11 @@
         "quote": "We have many toilets, these are all marked on our Museum map , including wheelchair-accessible toilets and baby-changing facilities.",
         "pageSha256": "04a44327a35f4294"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -117,7 +144,14 @@
         "quote": "We also have a Changing Places toilet on the Ground Floor of our North Wing.",
         "pageSha256": "04a44327a35f4294"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says accessible, wheelchair; the quote does not"
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -130,13 +164,27 @@
         "quote": "The nearest Tube station is South Kensington.",
         "pageSha256": "a7d2c3677d8bccc9"
       },
-      "status": "verified"
+      "status": "review",
+      "reviewReasons": [
+        "independent check (no-over-reach): the proposal says free, step-free; the quote does not"
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
       "key": "parking",
       "value": "no",
-      "text": "No parking on site, and parking around the museum is limited.",
+      "text": "No general parking facilities on site and parking around the museum is limited; a very limited number of on-site spaces are available for Blue Badge holders, booked in advance.",
+      "amended": {
+        "from": "No parking on site, and parking around the museum is limited.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.nhm.ac.uk/visit/getting-here.html",
         "readAt": "2026-10-08",
@@ -146,7 +194,11 @@
       "status": "review",
       "reviewReasons": [
         "a negative claim (can exclude a venue)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -156,10 +208,18 @@
       "evidence": {
         "url": "https://www.nhm.ac.uk/visit/getting-here.html",
         "readAt": "2026-10-08",
-        "quote": "We have a very limited number of parking spaces on site for Blue Badge holders.",
+        "quote": "We have a very limited number of parking spaces on site for Blue Badge holders. … there are also twelve Blue Badge parking spaces on Exhibition Road",
+        "quotes": [
+          "We have a very limited number of parking spaces on site for Blue Badge holders.",
+          "there are also twelve Blue Badge parking spaces on Exhibition Road"
+        ],
         "pageSha256": "a7d2c3677d8bccc9"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "food",
@@ -172,7 +232,11 @@
         "quote": "Grab a bite to eat at our family-friendly cafes and restaurants or pick up a souvenir of your visit from our shops.",
         "pageSha256": "04a44327a35f4294"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "play",
@@ -196,13 +260,17 @@
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
       "key": "lifts-out",
       "value": "no",
-      "text": "Lifts in the Darwin Centre and the Mammals Hall were out of order on 6 October.",
+      "text": "Lifts in the Darwin Centre and the Mammals Hall are listed as currently out of order. The page does not date the notice, so it is shown as of the reading.",
       "scope": "area",
       "evidence": {
         "url": "https://www.nhm.ac.uk/visit/galleries-and-museum-map.html",
@@ -216,7 +284,11 @@
         "a negative claim (can exclude a venue)",
         "conditional, temporary or dated wording",
         "applies to part of the venue"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
@@ -235,45 +307,75 @@
         "an accessibility claim (high impact)",
         "a negative claim (can exclude a venue)",
         "applies to part of the venue"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "opening",
       "key": "hours",
       "value": "10:00-17:50 daily",
-      "text": "Open daily 10:00 to 17:50 (last entry 17:30).",
+      "text": "Open daily 10:00 to 17:50 (last entry 17:30). The page also lists closures on 9 October and 24 to 26 December.",
+      "amended": {
+        "from": "Open daily 10:00 to 17:50 (last entry 17:30).",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.nhm.ac.uk/visit.html",
         "readAt": "2026-10-08",
-        "quote": "Opening times Open daily 10:00–17:50 (last entry 17:30)",
+        "quote": "Opening times Open daily 10:00–17:50 (last entry 17:30) Closed 9 October and 24–26 December",
         "pageSha256": "a6b93d6d6f7b0125"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "opening",
       "key": "closure",
       "value": "2026-10-09 closed",
-      "text": "Closed on 9 October (tomorrow) and 24 to 26 December.",
+      "text": "The South Kensington site is closed on Friday 9 October 2026 for a charity gala, and on 24 to 26 December.",
       "goodToKnow": true,
       "evidence": {
         "url": "https://www.nhm.ac.uk/visit.html",
         "readAt": "2026-10-08",
-        "quote": "Closed 9 October and 24–26 December",
+        "quote": "Closed 9 October and 24–26 December … Our South Kensington site will be closed on Friday 9 October 2026, as we’re hosting a charity gala.",
+        "quotes": [
+          "Closed 9 October and 24–26 December",
+          "Our South Kensington site will be closed on Friday 9 October 2026, as we’re hosting a charity gala."
+        ],
         "pageSha256": "a6b93d6d6f7b0125"
       },
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person",
-        "conflicts with the homepage, which says \"Open every day\""
+        "conflicts with the homepage and the footer, which say \"Open every day\" and list only 24–26 December. They are standing text; the dedicated, dated notice on the visit page is the more specific statement, and no page says the museum is open on 9 October"
       ],
-      "conflict": "the homepage, which says \"Open every day\""
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
+      "conflict": "the homepage and the footer, which say \"Open every day\" and list only 24–26 December. They are standing text; the dedicated, dated notice on the visit page is the more specific statement, and no page says the museum is open on 9 October"
     },
     {
       "sec": "pricing",
       "key": "free",
       "value": "free",
-      "text": "The galleries are free to explore; a free entry ticket is recommended to guarantee entry. Paid exhibitions are charged.",
+      "text": "A free entry ticket can be booked to skip the queue on arrival; some exhibitions are paid.",
+      "amended": {
+        "from": "The galleries are free to explore; a free entry ticket is recommended to guarantee entry. Paid exhibitions are charged.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.nhm.ac.uk/visit/access-at-south-kensington.html",
         "readAt": "2026-10-08",
@@ -283,7 +385,11 @@
       "status": "review",
       "reviewReasons": [
         "a price or a free-entry claim (drives cost)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "considerations",
@@ -301,7 +407,11 @@
       "reviewReasons": [
         "not a fact type that may be accepted without a person",
         "conditional, temporary or dated wording"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "considerations",
@@ -318,7 +428,11 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "considerations",
@@ -335,7 +449,11 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     }
   ]
 }

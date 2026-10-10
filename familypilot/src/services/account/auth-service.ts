@@ -80,6 +80,17 @@ export async function requestPasswordReset(email: string): Promise<{ ok: boolean
   }
 }
 
+/** Sets the password for the signed-in session: the last step of a reset or invitation link. */
+export async function setNewPassword(password: string): Promise<{ ok: boolean; failure?: AuthFailure }> {
+  if (!supabase) return { ok: false, failure: 'other' };
+  try {
+    const { error } = await supabase.auth.updateUser({ password, data: { password_set: true } });
+    return error ? { ok: false, failure: classifyAuthError(error) } : { ok: true };
+  } catch {
+    return { ok: false, failure: 'network' };
+  }
+}
+
 export async function signOut(): Promise<void> {
   if (!supabase) return;
   await supabase.auth.signOut();

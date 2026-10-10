@@ -1,0 +1,75 @@
+[
+ {
+  "name": "Royal Air Force Museum London",
+  "level": "recommendation-ready",
+  "ready": true,
+  "missing": [],
+  "used": [
+   "familyFacilities.toilets=yes [auto-accepted]",
+   "familyFacilities.babyChanging=yes [auto-accepted]",
+   "familyFacilities.cafe=yes [auto-accepted]",
+   "pushchairSuitability=good [auto-accepted]",
+   "familyFacilities.parking=yes [auto-accepted]",
+   "familyFacilities.playground=yes [auto-accepted]",
+   "accessibility.accessibleToilet=yes [auto-accepted]",
+   "pricing:free"
+  ]
+ },
+ {
+  "name": "Horniman Museum and Gardens",
+  "level": "recommendation-ready",
+  "ready": true,
+  "missing": [],
+  "used": [
+   "familyFacilities.babyChanging=yes [auto-accepted]",
+   "familyFacilities.playground=yes [auto-accepted]",
+   "familyFacilities.toilets=yes [auto-accepted]",
+   "accessibility.accessibleToilet=yes [auto-accepted]",
+   "familyFacilities.cafe=yes [auto-accepted]",
+   "familyFacilities.parking=no [human-approved]",
+   "pricing:free"
+  ]
+ },
+ {
+  "name": "Discover Children's Story Centre",
+  "level": "discoverable",
+  "ready": false,
+  "missing": [
+   "cost"
+  ],
+  "used": [
+   "familyFacilities.cafe=yes [auto-accepted]",
+   "hours.daily",
+   "familyFacilities.toilets=yes [human-approved]",
+   "familyFacilities.parking=no [human-approved]",
+   "activity:Baby and toddler sensory space (ages 0 to 2)"
+  ]
+ },
+ {
+  "name": "London Zoo",
+  "level": "recommendation-ready",
+  "ready": true,
+  "missing": [],
+  "used": [
+   "hours.until-23-oct",
+   "hours.from-24-oct",
+   "accessibility.accessibleToilet=yes [human-approved]",
+   "familyFacilities.parking=yes [human-approved]",
+   "pricing:paid (tiers)",
+   "activity:ZooTown: indoor role-play adventure, best suited to children up to 8"
+  ]
+ },
+ {
+  "name": "Science Museum",
+  "level": "recommendation-ready",
+  "ready": true,
+  "missing": [],
+  "used": [
+   "hours.daily",
+   "familyFacilities.parking=no [human-approved]",
+   "accessibility.accessibleToilet=yes [human-approved]",
+   "pricing:free",
+   "activity:The Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6"
+  ]
+ }
+]

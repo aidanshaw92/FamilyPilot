@@ -1,0 +1,842 @@
+{
+ "A-preschooler-and-baby": {
+  "family": "A-preschooler-and-baby",
+  "account": {
+   "signup": 200,
+   "confirm": 302
+  },
+  "errors": [],
+  "external": [],
+  "signIn": {
+   "landed": "/account?mode=signin",
+   "after": "/",
+   "error": null
+  },
+  "home": {
+   "url": "/",
+   "top": "Royal Air Force Museum London, see more",
+   "text": "Good morning, Sarah\nPicked for Mia and Leo\nS\nSearch places and activities\nBest for your family\n\nFamilies\nFor you\nIndoor\nRainy day\nUnder 1 hour\nMUSEUM\nRoyal Air Force Museum London\nGood fit · check Mia\nabout 18 min · Baby changing confirmed, handy for Leo\nSee more\n\nFARM\nMudchute Park and Farm\nPossible fit\nabout 20 min · Baby changing confirmed, handy for Leo · Buggy access still to be checked for your buggy\nSee more\n\nMUSEUM\nGunnersbury Park\nPossible fit\nabout 21 min · Toilets confirmed on site · Buggy access still to be checked for your buggy\nSee more\n\nMUSEUM\nHorniman Museum and Gardens\nPossible fit\nabout 23 min · Baby changing confirmed, handy for Leo · No parking on site\nSee more\n\nGoogle Maps"
+  },
+  "explore": [
+   "Royal Air Force Museum London, Good fit, view details",
+   "Mudchute Park and Farm, Possible fit, view details",
+   "Gunnersbury Park, Possible fit, view details",
+   "Horniman Museum and Gardens, Possible fit, view details"
+  ],
+  "venues": {
+   "science": {
+    "text": "\n\nScience Museum\nPossible fit\n\n\nMuseum · about 10 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nBuggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.\n\nNo parking on site\n\nThe Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6, for Mia’s age\n\n10 min away\n\nBuggy access still to be checked for your buggy\n\nBaby changing still to be checked for Leo\n\nToilets still to be checked\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nGeneral admission is free; a free ticket can be booked. Donations are welcome.\nChecked 8 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nAccessible toilet\nOn site\nParking\nNone on site\nBlue Badge parking\nA few spaces on Exhibition Road; 4 hours, 08.30 to 18.30\nStill to be confirmed: baby changing, buggy access, toilets, food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nThe Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6\nCovers Mia’s age\nBEFORE YOU GO\n\nBuggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.\nMatters for your family\nChecked 8 Oct 2026\n\nClosed 24, 25 and 26 December.\nChecked 8 Oct 2026\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nExhibition Rd, South Kensington, London SW7 2DD, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Buggy access still to be checked for your buggy",
+     "Baby changing still to be checked for Leo",
+     "Toilets still to be checked",
+     "Accessible toilet",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: baby changing, buggy access, toilets, food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [
+     "The Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6, for Mia’s age",
+     "The Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6"
+    ],
+    "beforeYouGo": [
+     "Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.",
+     "Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.",
+     "Closed 24, 25 and 26 December."
+    ],
+    "ctaVisible": true
+   },
+   "discover": {
+    "text": "\n\nDiscover Children's Story Centre\nPossible fit\n\n\nMuseum · about 18 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nPushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.\n\nNo parking on site\n\nToilets confirmed on site\n\n18 min away\n\nBuggy access still to be checked for your buggy\n\nBaby changing still to be checked for Leo\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nPrice not confirmed\nCheck prices on the official website\nCreate a plan\nWhat to know\nToilets\nOn site\nParking\nNone on site\nBlue Badge parking\nBays nearby, not on site: Bridge Terrace, off Bridge Road\nStill to be confirmed: baby changing, buggy access, food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nBaby and toddler sensory space (ages 0 to 2)\nCovers Leo’s age\nBEFORE YOU GO\n\nPushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.\nMatters for your family\nChecked 8 Oct 2026\n\nClosed 24, 25 and 26 December.\nChecked 8 Oct 2026\n\nClosed 31 December and 1 January.\nChecked 8 Oct 2026\n\nIf you have a particular reason to need a buggy (for example twin babies or a sleeping child), speak to the front of house team, who can advise and may be able to accommodate it.\nChecked 8 Oct 2026\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\n383-387 High St, London E15 4QZ, UK\nDirections\nWebsite\nPhone 020 8536 5555\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Toilets confirmed on site",
+     "Buggy access still to be checked for your buggy",
+     "Baby changing still to be checked for Leo",
+     "Toilets",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: baby changing, buggy access, food, best for ages, terrain."
+    ],
+    "price": [
+     "Price not confirmed",
+     "Check prices on the official website"
+    ],
+    "children": [],
+    "beforeYouGo": [
+     "Pushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.",
+     "Pushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.",
+     "Closed 24, 25 and 26 December.",
+     "Closed 31 December and 1 January."
+    ],
+    "ctaVisible": true
+   },
+   "zoo": {
+    "text": "\n\nLondon Zoo\nPossible fit\n\n\nZoo · about 2 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nZooTown: indoor role-play adventure, best suited to children up to 8, for Mia’s age\n\nParking confirmed on site\n\n2 min away\n\nBuggy access still to be checked for your buggy\n\nBaby changing still to be checked for Leo\n\nToilets still to be checked\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nPrice not confirmed for your party\nWe do not know Mia's age on the day, so their ticket cannot be priced.\nOnline advance prices without donation, booked before 10am on the day. Tickets bought at the entrance, or online from 10am on the day, cost more.\nThe page does not say which dates are Off Peak, Standard or Peak, so the price shown is a range.\nConcession tickets (65+, students with ID, disabled adults) are cheaper and are not included here.\nPrices checked 8 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nAccessible toilet\nOn site\nParking\nOn site\nStill to be confirmed: baby changing, buggy access, toilets, food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nZooTown: indoor role-play adventure, best suited to children up to 8\nCovers Mia’s age\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nOuter Cir, London NW1 4RY, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Parking confirmed on site",
+     "Buggy access still to be checked for your buggy",
+     "Baby changing still to be checked for Leo",
+     "Toilets still to be checked",
+     "Accessible toilet",
+     "Parking",
+     "Still to be confirmed: baby changing, buggy access, toilets, food, best for ages, terrain."
+    ],
+    "price": [
+     "Price not confirmed for your party",
+     "We do not know Mia's age on the day, so their ticket cannot be priced.",
+     "Online advance prices without donation, booked before 10am on the day. Tickets bought at the entrance, or online from 10am on the day, cost more.",
+     "The page does not say which dates are Off Peak, Standard or Peak, so the price shown is a range."
+    ],
+    "children": [
+     "ZooTown: indoor role-play adventure, best suited to children up to 8, for Mia’s age",
+     "ZooTown: indoor role-play adventure, best suited to children up to 8"
+    ],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   },
+   "horniman": {
+    "text": "\n\nHorniman Museum and Gardens\nPossible fit\n\n\nMuseum · about 23 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nNo parking on site\n\nBaby changing confirmed, handy for Leo\n\nToilets confirmed on site\n\n23 min away\n\nBuggy access still to be checked for your buggy\n\nWe haven’t yet confirmed whether this activity suits Mia\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nThere is a charge for the Aquarium, the Butterfly House and some events and exhibitions.\nChecked 1 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nBaby changing\nAvailable\nToilets\nOn site\nAccessible toilet\nOn site\nParking\nNone on site\nBlue Badge parking\nLimited bays on site\nPlayground\nOn site, ages not stated\nStill to be confirmed: buggy access, food, best for ages, terrain.\nBeen here? Help check\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\n100 London Rd, London SE23 3PQ, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Baby changing confirmed, handy for Leo",
+     "Toilets confirmed on site",
+     "Buggy access still to be checked for your buggy",
+     "Baby changing",
+     "Toilets",
+     "Accessible toilet",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: buggy access, food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [
+     "We haven’t yet confirmed whether this activity suits Mia"
+    ],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   },
+   "raf": {
+    "text": "\n\nRoyal Air Force Museum London\nGood fit · check Mia\n\n\nMuseum · about 18 min\nWhy this fit\nFAMILY FIT\nEasy to visit with Leo, but we haven’t yet confirmed whether this activity suits Mia\n\nGood buggy access for your buggy\n\nBaby changing confirmed, handy for Leo\n\nToilets confirmed on site\n\nParking confirmed on site\n\n18 min away\n\nWe haven’t yet confirmed whether this activity suits Mia\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nBook a free entry ticket.\nChildren under 11 must be accompanied by an adult.\nBooking is required.\nChecked 2 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nBaby changing\nAvailable\nBuggy access\nMostly step-free\nWheelchair access\nAccessible\nToilets\nOn site\nAccessible toilet\nOn site\nParking\nOn site\nPlayground\nOn site, ages not stated\nStill to be confirmed: food, best for ages, terrain.\nBeen here? Help check\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nGrahame Park Way, London NW9 5LL, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Baby changing confirmed, handy for Leo",
+     "Toilets confirmed on site",
+     "Parking confirmed on site",
+     "Baby changing",
+     "Buggy access",
+     "Wheelchair access",
+     "Toilets",
+     "Accessible toilet",
+     "Parking",
+     "Still to be confirmed: food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [
+     "Easy to visit with Leo, but we haven’t yet confirmed whether this activity suits Mia",
+     "We haven’t yet confirmed whether this activity suits Mia"
+    ],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   }
+  },
+  "journey": {
+   "topName": "Royal Air Force Museum London",
+   "detailUrl": "/venue/fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "ctaVisible": true,
+   "sheetText": "Plan your day Around Royal Air Force Museum London WHEN Today Sat 17 Oct Other date START 10:00  When you want to arrive at Royal Air Force Museum London. We’ll work out when to leave. WHO’S COMING Add another family YOUR FAMILY Sarah Alex Mia Leo HOW LONG Not sure 1 hour 2 hours 3 hours Half day All day Custom We’ll use what we know about the place and your routines, and tell you what we assumed",
+   "planText": "\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:27–12:33\n\nDay plan\nWho’s coming\nTravel\nYour Wednesday plan\nWe’ve allowed 2 hr — you can change this.\nStop 1\n10:00\nRoyal Air Force Museum London\n\nARRIVE\n10:00\nTIME THERE\n2 hours\nLEAVE\n12:00\nOPENING\nOpen\n12:33\nHead home\nCHECK BEFORE YOU GO\nRecommended ages are not published for Royal Air Force Museum London\nWORTH KNOWING\n2 journeys are estimated from distance rather than measured.\nWe could not check what is nearby, so this day has no lunch stop. This is about our lookup, not about the area.\nSave this plan",
+   "planOk": true,
+   "heading": "Your Wednesday plan",
+   "stops": 1,
+   "headHome": true,
+   "travelText": [
+    "Parking"
+   ],
+   "savedConfirmation": "Plan savedView planAdd to calendar",
+   "stored": {
+    "familypilot-planning-v1": 1
+   },
+   "savedUrl": "/saved-plan?id=day-1791963000000&from=save",
+   "savedOk": true,
+   "savedText": "\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:27–12:33\n\nDay plan\nWho’s coming\nTravel\nYour Wednesday plan\nWe’ve allowed 2 hr.\nStop 1\n10:00\nRoyal Air Force Museum London\n\nARRIVE\n10:00\nTIME THERE\n2 hours\nLEAVE\n12:00\nOPENING\nOpen\n12:33\nHead home\nCHECK BEFORE YOU GO\nRecommended ages are not published for Royal Air Force Museum London\nWORTH KNOWING\n2 journeys are estimated from distance rather than measured.\nWe could not check what is nearby, so this day has no lunch stop. This is about our lookup, not about the area.\nAdd to calendar\nSee all your plans\n",
+   "plansTab": {
+    "url": "/trips",
+    "text": "Plans\nDays that work for everyone involved.\nPlans\nSaved plans\nFamilies & routines\nStart a plan\nA plan begins with a place. Choose somewhere that suits your family, then tap Create a plan.\nBest for us today\nExplore London\nSaved places\nPlaces you save with the heart appear here.\nOpen saved places →\nYour plans\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:27–12:33"
+   }
+  }
+ },
+ "B-baby-only": {
+  "family": "B-baby-only",
+  "account": {
+   "signup": 200,
+   "confirm": 302
+  },
+  "errors": [],
+  "external": [],
+  "signIn": {
+   "landed": "/account?mode=signin",
+   "after": "/",
+   "error": null
+  },
+  "home": {
+   "url": "/",
+   "top": "Royal Air Force Museum London, see more",
+   "text": "Good morning, Priya\nPicked for Noah\nP\nSearch places and activities\nBest for your family\n\nFamilies\nFor you\nIndoor\nRainy day\nUnder 1 hour\nMUSEUM\nRoyal Air Force Museum London\nEasy visit\nabout 18 min · Baby changing confirmed, handy for Noah\nSee more\n\nFARM\nMudchute Park and Farm\nPossible fit\nabout 20 min · Baby changing confirmed, handy for Noah · Buggy access still to be checked for your buggy\nSee more\n\nMUSEUM\nGunnersbury Park\nPossible fit\nabout 21 min · Toilets confirmed on site · Buggy access still to be checked for your buggy\nSee more\n\nMUSEUM\nHorniman Museum and Gardens\nPossible fit\nabout 23 min · Baby changing confirmed, handy for Noah · No parking on site\nSee more\n\nGoogle Maps"
+  },
+  "explore": [
+   "Royal Air Force Museum London, Easy visit, view details",
+   "Mudchute Park and Farm, Possible fit, view details",
+   "Gunnersbury Park, Possible fit, view details",
+   "Horniman Museum and Gardens, Possible fit, view details"
+  ],
+  "venues": {
+   "science": {
+    "text": "\n\nScience Museum\nPossible fit\n\n\nMuseum · about 10 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nBuggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.\n\nNo parking on site\n\n10 min away\n\nBuggy access still to be checked for your buggy\n\nBaby changing still to be checked for Noah\n\nToilets still to be checked\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nGeneral admission is free; a free ticket can be booked. Donations are welcome.\nChecked 8 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nAccessible toilet\nOn site\nParking\nNone on site\nBlue Badge parking\nA few spaces on Exhibition Road; 4 hours, 08.30 to 18.30\nStill to be confirmed: baby changing, buggy access, toilets, food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nThe Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6\nBEFORE YOU GO\n\nBuggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.\nMatters for your family\nChecked 8 Oct 2026\n\nClosed 24, 25 and 26 December.\nChecked 8 Oct 2026\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nExhibition Rd, South Kensington, London SW7 2DD, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Buggy access still to be checked for your buggy",
+     "Baby changing still to be checked for Noah",
+     "Toilets still to be checked",
+     "Accessible toilet",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: baby changing, buggy access, toilets, food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [
+     "The Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6"
+    ],
+    "beforeYouGo": [
+     "Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.",
+     "Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.",
+     "Closed 24, 25 and 26 December."
+    ],
+    "ctaVisible": true
+   },
+   "discover": {
+    "text": "\n\nDiscover Children's Story Centre\nPossible fit\n\n\nMuseum · about 18 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nPushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.\n\nNo parking on site\n\nToilets confirmed on site\n\n18 min away\n\nBuggy access still to be checked for your buggy\n\nBaby changing still to be checked for Noah\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nPrice not confirmed\nCheck prices on the official website\nCreate a plan\nWhat to know\nToilets\nOn site\nParking\nNone on site\nBlue Badge parking\nBays nearby, not on site: Bridge Terrace, off Bridge Road\nStill to be confirmed: baby changing, buggy access, food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nBaby and toddler sensory space (ages 0 to 2)\nCovers Noah’s age\nBEFORE YOU GO\n\nPushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.\nMatters for your family\nChecked 8 Oct 2026\n\nClosed 24, 25 and 26 December.\nChecked 8 Oct 2026\n\nClosed 31 December and 1 January.\nChecked 8 Oct 2026\n\nIf you have a particular reason to need a buggy (for example twin babies or a sleeping child), speak to the front of house team, who can advise and may be able to accommodate it.\nChecked 8 Oct 2026\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\n383-387 High St, London E15 4QZ, UK\nDirections\nWebsite\nPhone 020 8536 5555\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Toilets confirmed on site",
+     "Buggy access still to be checked for your buggy",
+     "Baby changing still to be checked for Noah",
+     "Toilets",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: baby changing, buggy access, food, best for ages, terrain."
+    ],
+    "price": [
+     "Price not confirmed",
+     "Check prices on the official website"
+    ],
+    "children": [],
+    "beforeYouGo": [
+     "Pushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.",
+     "Pushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.",
+     "Closed 24, 25 and 26 December.",
+     "Closed 31 December and 1 January."
+    ],
+    "ctaVisible": true
+   },
+   "zoo": {
+    "text": "\n\nLondon Zoo\nPossible fit\n\n\nZoo · about 2 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nParking confirmed on site\n\n2 min away\n\nBuggy access still to be checked for your buggy\n\nBaby changing still to be checked for Noah\n\nToilets still to be checked\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nPrice not confirmed for your party\nWe do not know Noah's age on the day, so their ticket cannot be priced.\nOnline advance prices without donation, booked before 10am on the day. Tickets bought at the entrance, or online from 10am on the day, cost more.\nThe page does not say which dates are Off Peak, Standard or Peak, so the price shown is a range.\nConcession tickets (65+, students with ID, disabled adults) are cheaper and are not included here.\nPrices checked 8 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nAccessible toilet\nOn site\nParking\nOn site\nStill to be confirmed: baby changing, buggy access, toilets, food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nZooTown: indoor role-play adventure, best suited to children up to 8\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nOuter Cir, London NW1 4RY, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Parking confirmed on site",
+     "Buggy access still to be checked for your buggy",
+     "Baby changing still to be checked for Noah",
+     "Toilets still to be checked",
+     "Accessible toilet",
+     "Parking",
+     "Still to be confirmed: baby changing, buggy access, toilets, food, best for ages, terrain."
+    ],
+    "price": [
+     "Price not confirmed for your party",
+     "We do not know Noah's age on the day, so their ticket cannot be priced.",
+     "Online advance prices without donation, booked before 10am on the day. Tickets bought at the entrance, or online from 10am on the day, cost more.",
+     "The page does not say which dates are Off Peak, Standard or Peak, so the price shown is a range."
+    ],
+    "children": [
+     "ZooTown: indoor role-play adventure, best suited to children up to 8"
+    ],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   },
+   "horniman": {
+    "text": "\n\nHorniman Museum and Gardens\nPossible fit\n\n\nMuseum · about 23 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nNo parking on site\n\nBaby changing confirmed, handy for Noah\n\nToilets confirmed on site\n\n23 min away\n\nBuggy access still to be checked for your buggy\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nThere is a charge for the Aquarium, the Butterfly House and some events and exhibitions.\nChecked 1 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nBaby changing\nAvailable\nToilets\nOn site\nAccessible toilet\nOn site\nParking\nNone on site\nBlue Badge parking\nLimited bays on site\nPlayground\nOn site, ages not stated\nStill to be confirmed: buggy access, food, best for ages, terrain.\nBeen here? Help check\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\n100 London Rd, London SE23 3PQ, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Baby changing confirmed, handy for Noah",
+     "Toilets confirmed on site",
+     "Buggy access still to be checked for your buggy",
+     "Baby changing",
+     "Toilets",
+     "Accessible toilet",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: buggy access, food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   },
+   "raf": {
+    "text": "\n\nRoyal Air Force Museum London\nEasy visit\n\n\nMuseum · about 18 min\nWhy this fit\nFAMILY FIT\nEasy to visit with Noah\n\nGood buggy access for your buggy\n\nBaby changing confirmed, handy for Noah\n\nToilets confirmed on site\n\nParking confirmed on site\n\n18 min away\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nBook a free entry ticket.\nChildren under 11 must be accompanied by an adult.\nBooking is required.\nChecked 2 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nBaby changing\nAvailable\nBuggy access\nMostly step-free\nWheelchair access\nAccessible\nToilets\nOn site\nAccessible toilet\nOn site\nParking\nOn site\nPlayground\nOn site, ages not stated\nStill to be confirmed: food, best for ages, terrain.\nBeen here? Help check\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nGrahame Park Way, London NW9 5LL, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Baby changing confirmed, handy for Noah",
+     "Toilets confirmed on site",
+     "Parking confirmed on site",
+     "Baby changing",
+     "Buggy access",
+     "Wheelchair access",
+     "Toilets",
+     "Accessible toilet",
+     "Parking",
+     "Still to be confirmed: food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   }
+  },
+  "journey": {
+   "topName": "Royal Air Force Museum London",
+   "detailUrl": "/venue/fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "ctaVisible": true,
+   "sheetText": "Plan your day Around Royal Air Force Museum London WHEN Today Sat 17 Oct Other date START 10:00  When you want to arrive at Royal Air Force Museum London. We’ll work out when to leave. WHO’S COMING Add another family YOUR FAMILY Priya Sam Noah HOW LONG Not sure 1 hour 2 hours 3 hours Half day All day Custom We’ll use what we know about the place and your routines, and tell you what we assumed. Mo",
+   "planText": "\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:27–12:33\n\nDay plan\nWho’s coming\nTravel\nYour Wednesday plan\nWe’ve allowed 2 hr — you can change this.\nStop 1\n10:00\nRoyal Air Force Museum London\n\nARRIVE\n10:00\nTIME THERE\n2 hours\nLEAVE\n12:00\nOPENING\nOpen\n12:33\nHead home\nCHECK BEFORE YOU GO\nRecommended ages are not published for Royal Air Force Museum London\nWORTH KNOWING\n2 journeys are estimated from distance rather than measured.\nWe could not check what is nearby, so this day has no lunch stop. This is about our lookup, not about the area.\nSave this plan",
+   "planOk": true,
+   "heading": "Your Wednesday plan",
+   "stops": 1,
+   "headHome": true,
+   "travelText": [
+    "Parking"
+   ],
+   "savedConfirmation": "Plan savedView planAdd to calendar",
+   "stored": {
+    "familypilot-planning-v1": 1
+   },
+   "savedUrl": "/saved-plan?id=day-1791963000000&from=save",
+   "savedOk": true,
+   "savedText": "\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:27–12:33\n\nDay plan\nWho’s coming\nTravel\nYour Wednesday plan\nWe’ve allowed 2 hr.\nStop 1\n10:00\nRoyal Air Force Museum London\n\nARRIVE\n10:00\nTIME THERE\n2 hours\nLEAVE\n12:00\nOPENING\nOpen\n12:33\nHead home\nCHECK BEFORE YOU GO\nRecommended ages are not published for Royal Air Force Museum London\nWORTH KNOWING\n2 journeys are estimated from distance rather than measured.\nWe could not check what is nearby, so this day has no lunch stop. This is about our lookup, not about the area.\nAdd to calendar\nSee all your plans\n",
+   "plansTab": {
+    "url": "/trips",
+    "text": "Plans\nDays that work for everyone involved.\nPlans\nSaved plans\nFamilies & routines\nStart a plan\nA plan begins with a place. Choose somewhere that suits your family, then tap Create a plan.\nBest for us today\nExplore London\nSaved places\nPlaces you save with the heart appear here.\nOpen saved places →\nYour plans\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:27–12:33"
+   }
+  }
+ },
+ "C-school-age": {
+  "family": "C-school-age",
+  "account": {
+   "signup": 200,
+   "confirm": 302
+  },
+  "errors": [],
+  "external": [],
+  "signIn": {
+   "landed": "/account?mode=signin",
+   "after": "/",
+   "error": null
+  },
+  "home": {
+   "url": "/",
+   "top": "Royal Air Force Museum London, see more",
+   "text": "Good morning, Dana\nPicked for Cal and Dee\nD\nSearch places and activities\nBest for your family\n\nFamilies\nFor you\nIndoor\nRainy day\nUnder 1 hour\nMUSEUM\nRoyal Air Force Museum London\nGood fit\nabout 18 min · Toilets confirmed on site\nSee more\n\nMUSEUM\nGunnersbury Park\nGood fit\nabout 21 min · Toilets confirmed on site\nSee more\n\nFARM\nMudchute Park and Farm\nGood fit\nabout 20 min · Toilets confirmed on site\nSee more\n\nMUSEUM\nDiscover Children's Story Centre\nPossible fit\nabout 18 min · Toilets confirmed on site · No parking on site\nSee more\n\nGoogle Maps"
+  },
+  "explore": [
+   "Royal Air Force Museum London, Good fit, view details",
+   "Gunnersbury Park, Good fit, view details",
+   "Mudchute Park and Farm, Good fit, view details",
+   "Discover Children's Story Centre, Possible fit, view details",
+   "Horniman Museum and Gardens, Possible fit, view details"
+  ],
+  "venues": {
+   "science": {
+    "text": "\n\nScience Museum\nPossible fit\n\n\nMuseum · about 10 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nNo parking on site\n\n10 min away\n\nToilets still to be checked\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nGeneral admission is free; a free ticket can be booked. Donations are welcome.\nChecked 8 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nAccessible toilet\nOn site\nParking\nNone on site\nBlue Badge parking\nA few spaces on Exhibition Road; 4 hours, 08.30 to 18.30\nStill to be confirmed: toilets, food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nThe Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6\nBEFORE YOU GO\n\nClosed 24, 25 and 26 December.\nChecked 8 Oct 2026\n\nBuggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.\nChecked 8 Oct 2026\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nExhibition Rd, South Kensington, London SW7 2DD, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Toilets still to be checked",
+     "Accessible toilet",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: toilets, food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [
+     "The Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6"
+    ],
+    "beforeYouGo": [
+     "Closed 24, 25 and 26 December.",
+     "Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas."
+    ],
+    "ctaVisible": true
+   },
+   "discover": {
+    "text": "\n\nDiscover Children's Story Centre\nPossible fit\n\n\nMuseum · about 18 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nNo parking on site\n\nToilets confirmed on site\n\n18 min away\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nPrice not confirmed\nCheck prices on the official website\nCreate a plan\nWhat to know\nToilets\nOn site\nParking\nNone on site\nBlue Badge parking\nBays nearby, not on site: Bridge Terrace, off Bridge Road\nStill to be confirmed: food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nBaby and toddler sensory space (ages 0 to 2)\nBEFORE YOU GO\n\nClosed 24, 25 and 26 December.\nChecked 8 Oct 2026\n\nClosed 31 December and 1 January.\nChecked 8 Oct 2026\n\nPushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.\nChecked 8 Oct 2026\n\nIf you have a particular reason to need a buggy (for example twin babies or a sleeping child), speak to the front of house team, who can advise and may be able to accommodate it.\nChecked 8 Oct 2026\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\n383-387 High St, London E15 4QZ, UK\nDirections\nWebsite\nPhone 020 8536 5555\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Toilets confirmed on site",
+     "Toilets",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: food, best for ages, terrain."
+    ],
+    "price": [
+     "Price not confirmed",
+     "Check prices on the official website"
+    ],
+    "children": [],
+    "beforeYouGo": [
+     "Closed 24, 25 and 26 December.",
+     "Closed 31 December and 1 January.",
+     "Pushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby."
+    ],
+    "ctaVisible": true
+   },
+   "zoo": {
+    "text": "\n\nLondon Zoo\nGood fit · check Dee\n\n\nZoo · about 2 min\nWhy this fit\nFAMILY FIT\nGood for Cal, but we haven’t yet confirmed whether this activity suits Dee\n\nZooTown: indoor role-play adventure, best suited to children up to 8, for Cal’s age\n\nParking confirmed on site\n\n2 min away\n\nToilets still to be checked\n\nWe haven’t yet confirmed whether this activity suits Dee\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nPrice not confirmed for your party\nWe do not know Cal's age on the day, so their ticket cannot be priced.\nOnline advance prices without donation, booked before 10am on the day. Tickets bought at the entrance, or online from 10am on the day, cost more.\nThe page does not say which dates are Off Peak, Standard or Peak, so the price shown is a range.\nConcession tickets (65+, students with ID, disabled adults) are cheaper and are not included here.\nPrices checked 8 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nAccessible toilet\nOn site\nParking\nOn site\nStill to be confirmed: toilets, food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nZooTown: indoor role-play adventure, best suited to children up to 8\nCovers Cal’s age\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nOuter Cir, London NW1 4RY, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Parking confirmed on site",
+     "Toilets still to be checked",
+     "Accessible toilet",
+     "Parking",
+     "Still to be confirmed: toilets, food, best for ages, terrain."
+    ],
+    "price": [
+     "Price not confirmed for your party",
+     "We do not know Cal's age on the day, so their ticket cannot be priced.",
+     "Online advance prices without donation, booked before 10am on the day. Tickets bought at the entrance, or online from 10am on the day, cost more.",
+     "The page does not say which dates are Off Peak, Standard or Peak, so the price shown is a range."
+    ],
+    "children": [
+     "Good for Cal, but we haven’t yet confirmed whether this activity suits Dee",
+     "ZooTown: indoor role-play adventure, best suited to children up to 8, for Cal’s age",
+     "We haven’t yet confirmed whether this activity suits Dee",
+     "ZooTown: indoor role-play adventure, best suited to children up to 8"
+    ],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   },
+   "horniman": {
+    "text": "\n\nHorniman Museum and Gardens\nPossible fit\n\n\nMuseum · about 23 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nNo parking on site\n\nToilets confirmed on site\n\n23 min away\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nThere is a charge for the Aquarium, the Butterfly House and some events and exhibitions.\nChecked 1 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nBaby changing\nAvailable\nToilets\nOn site\nAccessible toilet\nOn site\nParking\nNone on site\nBlue Badge parking\nLimited bays on site\nPlayground\nOn site, ages not stated\nStill to be confirmed: food, best for ages, terrain.\nBeen here? Help check\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\n100 London Rd, London SE23 3PQ, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Toilets confirmed on site",
+     "Baby changing",
+     "Toilets",
+     "Accessible toilet",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   },
+   "raf": {
+    "text": "\n\nRoyal Air Force Museum London\nGood fit\n\n\nMuseum · about 18 min\nWhy this fit\nFAMILY FIT\nLooks practical, but we haven’t yet confirmed whether this activity suits Cal and Dee\n\nToilets confirmed on site\n\nParking confirmed on site\n\n18 min away\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nBook a free entry ticket.\nChildren under 11 must be accompanied by an adult.\nBooking is required.\nChecked 2 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nBaby changing\nAvailable\nBuggy access\nMostly step-free\nWheelchair access\nAccessible\nToilets\nOn site\nAccessible toilet\nOn site\nParking\nOn site\nPlayground\nOn site, ages not stated\nStill to be confirmed: food, best for ages, terrain.\nBeen here? Help check\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nGrahame Park Way, London NW9 5LL, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Toilets confirmed on site",
+     "Parking confirmed on site",
+     "Baby changing",
+     "Buggy access",
+     "Wheelchair access",
+     "Toilets",
+     "Accessible toilet",
+     "Parking",
+     "Still to be confirmed: food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [
+     "Looks practical, but we haven’t yet confirmed whether this activity suits Cal and Dee"
+    ],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   }
+  },
+  "journey": {
+   "topName": "Royal Air Force Museum London",
+   "detailUrl": "/venue/fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "ctaVisible": true,
+   "sheetText": "Plan your day Around Royal Air Force Museum London WHEN Today Sat 17 Oct Other date START 10:00  When you want to arrive at Royal Air Force Museum London. We’ll work out when to leave. WHO’S COMING Add another family YOUR FAMILY Dana Chris Cal Dee HOW LONG Not sure 1 hour 2 hours 3 hours Half day All day Custom We’ll use what we know about the place and your routines, and tell you what we assumed",
+   "planText": "\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:27–12:33\n\nDay plan\nWho’s coming\nTravel\nYour Wednesday plan\nWe’ve allowed 2 hr — you can change this.\nStop 1\n10:00\nRoyal Air Force Museum London\n\nARRIVE\n10:00\nTIME THERE\n2 hours\nLEAVE\n12:00\nOPENING\nOpen\n12:33\nHead home\nCHECK BEFORE YOU GO\nRecommended ages are not published for Royal Air Force Museum London\nWORTH KNOWING\n2 journeys are estimated from distance rather than measured.\nWe could not check what is nearby, so this day has no lunch stop. This is about our lookup, not about the area.\nSave this plan",
+   "planOk": true,
+   "heading": "Your Wednesday plan",
+   "stops": 1,
+   "headHome": true,
+   "travelText": [
+    "Parking"
+   ],
+   "savedConfirmation": "Plan savedView planAdd to calendar",
+   "stored": {
+    "familypilot-planning-v1": 1
+   },
+   "savedUrl": "/saved-plan?id=day-1791963000000&from=save",
+   "savedOk": true,
+   "savedText": "\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:27–12:33\n\nDay plan\nWho’s coming\nTravel\nYour Wednesday plan\nWe’ve allowed 2 hr.\nStop 1\n10:00\nRoyal Air Force Museum London\n\nARRIVE\n10:00\nTIME THERE\n2 hours\nLEAVE\n12:00\nOPENING\nOpen\n12:33\nHead home\nCHECK BEFORE YOU GO\nRecommended ages are not published for Royal Air Force Museum London\nWORTH KNOWING\n2 journeys are estimated from distance rather than measured.\nWe could not check what is nearby, so this day has no lunch stop. This is about our lookup, not about the area.\nAdd to calendar\nSee all your plans\n",
+   "plansTab": {
+    "url": "/trips",
+    "text": "Plans\nDays that work for everyone involved.\nPlans\nSaved plans\nFamilies & routines\nStart a plan\nA plan begins with a place. Choose somewhere that suits your family, then tap Create a plan.\nBest for us today\nExplore London\nSaved places\nPlaces you save with the heart appear here.\nOpen saved places →\nYour plans\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:27–12:33"
+   }
+  }
+ },
+ "H-buggy-required": {
+  "family": "H-buggy-required",
+  "account": {
+   "signup": 200,
+   "confirm": 302
+  },
+  "errors": [],
+  "external": [],
+  "signIn": {
+   "landed": "/account?mode=signin",
+   "after": "/",
+   "error": null
+  },
+  "home": {
+   "url": "/",
+   "top": "Royal Air Force Museum London, see more",
+   "text": "Good morning, Hana\nPicked for Hal\nH\nSearch places and activities\nBest for your family\n\nFamilies\nFor you\nIndoor\nRainy day\nUnder 1 hour\nMUSEUM\nRoyal Air Force Museum London\nGood fit\nabout 33 min · Good buggy access for Hal’s buggy\nSee more\n\nFARM\nMudchute Park and Farm\nPossible fit\nabout 10 min · Toilets confirmed on site · Buggy access still to be checked for Hal’s buggy\nSee more\n\nMUSEUM\nHorniman Museum and Gardens\nPossible fit\nabout 22 min · Toilets confirmed on site · No parking on site\nSee more\n\nMUSEUM\nGunnersbury Park\nPossible fit\nabout 39 min · Toilets confirmed on site · Buggy access still to be checked for Hal’s buggy\nSee more\n\nGoogle Maps"
+  },
+  "explore": [
+   "Royal Air Force Museum London, Good fit, view details",
+   "Mudchute Park and Farm, Possible fit, view details",
+   "Horniman Museum and Gardens, Possible fit, view details",
+   "Gunnersbury Park, Possible fit, view details",
+   "Discover Children's Story Centre, Poor fit, view details"
+  ],
+  "venues": {
+   "science": {
+    "text": "\n\nScience Museum\nPossible fit\n\n\nMuseum · about 25 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nBuggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.\n\nNo parking on site\n\nThe Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6, for Hal’s age\n\n25 min away\n\nBuggy access still to be checked for Hal’s buggy\n\nToilets still to be checked\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nGeneral admission is free; a free ticket can be booked. Donations are welcome.\nChecked 8 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nAccessible toilet\nOn site\nParking\nNone on site\nBlue Badge parking\nA few spaces on Exhibition Road; 4 hours, 08.30 to 18.30\nStill to be confirmed: baby changing, buggy access, toilets, food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nThe Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6\nCovers Hal’s age\nBEFORE YOU GO\n\nBuggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.\nMatters for your family\nChecked 8 Oct 2026\n\nClosed 24, 25 and 26 December.\nChecked 8 Oct 2026\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nExhibition Rd, South Kensington, London SW7 2DD, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Buggy access still to be checked for Hal’s buggy",
+     "Toilets still to be checked",
+     "Accessible toilet",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: baby changing, buggy access, toilets, food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [
+     "The Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6, for Hal’s age",
+     "The Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6"
+    ],
+    "beforeYouGo": [
+     "Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.",
+     "Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.",
+     "Closed 24, 25 and 26 December."
+    ],
+    "ctaVisible": true
+   },
+   "discover": {
+    "text": "\n\nDiscover Children's Story Centre\nPoor fit\n\n\nMuseum · about 1 min\nWhy this fit\nFAMILY FIT\nProbably not for your family\n\nPushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.\n\nNo parking on site\n\nToilets confirmed on site\n\n1 min away\n\nBuggy access still to be checked for Hal’s buggy\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nPrice not confirmed\nCheck prices on the official website\nCreate a plan\nWhat to know\nToilets\nOn site\nParking\nNone on site\nBlue Badge parking\nBays nearby, not on site: Bridge Terrace, off Bridge Road\nStill to be confirmed: baby changing, buggy access, food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nBaby and toddler sensory space (ages 0 to 2)\nBEFORE YOU GO\n\nClosed 24, 25 and 26 December.\nChecked 8 Oct 2026\n\nClosed 31 December and 1 January.\nChecked 8 Oct 2026\n\nPushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.\nChecked 8 Oct 2026\n\nIf you have a particular reason to need a buggy (for example twin babies or a sleeping child), speak to the front of house team, who can advise and may be able to accommodate it.\nChecked 8 Oct 2026\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\n383-387 High St, London E15 4QZ, UK\nDirections\nWebsite\nPhone 020 8536 5555\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Toilets confirmed on site",
+     "Buggy access still to be checked for Hal’s buggy",
+     "Toilets",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: baby changing, buggy access, food, best for ages, terrain."
+    ],
+    "price": [
+     "Price not confirmed",
+     "Check prices on the official website"
+    ],
+    "children": [],
+    "beforeYouGo": [
+     "Pushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.",
+     "Closed 24, 25 and 26 December.",
+     "Closed 31 December and 1 January.",
+     "Pushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby."
+    ],
+    "ctaVisible": true
+   },
+   "zoo": {
+    "text": "\n\nLondon Zoo\nPossible fit\n\n\nZoo · about 20 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nZooTown: indoor role-play adventure, best suited to children up to 8, for Hal’s age\n\nParking confirmed on site\n\n20 min away\n\nBuggy access still to be checked for Hal’s buggy\n\nToilets still to be checked\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nPrice not confirmed for your party\nWe do not know Hal's age on the day, so their ticket cannot be priced.\nOnline advance prices without donation, booked before 10am on the day. Tickets bought at the entrance, or online from 10am on the day, cost more.\nThe page does not say which dates are Off Peak, Standard or Peak, so the price shown is a range.\nConcession tickets (65+, students with ID, disabled adults) are cheaper and are not included here.\nPrices checked 8 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nAccessible toilet\nOn site\nParking\nOn site\nStill to be confirmed: baby changing, buggy access, toilets, food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nZooTown: indoor role-play adventure, best suited to children up to 8\nCovers Hal’s age\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nOuter Cir, London NW1 4RY, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Parking confirmed on site",
+     "Buggy access still to be checked for Hal’s buggy",
+     "Toilets still to be checked",
+     "Accessible toilet",
+     "Parking",
+     "Still to be confirmed: baby changing, buggy access, toilets, food, best for ages, terrain."
+    ],
+    "price": [
+     "Price not confirmed for your party",
+     "We do not know Hal's age on the day, so their ticket cannot be priced.",
+     "Online advance prices without donation, booked before 10am on the day. Tickets bought at the entrance, or online from 10am on the day, cost more.",
+     "The page does not say which dates are Off Peak, Standard or Peak, so the price shown is a range."
+    ],
+    "children": [
+     "ZooTown: indoor role-play adventure, best suited to children up to 8, for Hal’s age",
+     "ZooTown: indoor role-play adventure, best suited to children up to 8"
+    ],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   },
+   "horniman": {
+    "text": "\n\nHorniman Museum and Gardens\nPossible fit\n\n\nMuseum · about 22 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nNo parking on site\n\nToilets confirmed on site\n\n22 min away\n\nBuggy access still to be checked for Hal’s buggy\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nThere is a charge for the Aquarium, the Butterfly House and some events and exhibitions.\nChecked 1 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nBaby changing\nAvailable\nToilets\nOn site\nAccessible toilet\nOn site\nParking\nNone on site\nBlue Badge parking\nLimited bays on site\nPlayground\nOn site, ages not stated\nStill to be confirmed: buggy access, food, best for ages, terrain.\nBeen here? Help check\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\n100 London Rd, London SE23 3PQ, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Toilets confirmed on site",
+     "Buggy access still to be checked for Hal’s buggy",
+     "Baby changing",
+     "Toilets",
+     "Accessible toilet",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: buggy access, food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   },
+   "raf": {
+    "text": "\n\nRoyal Air Force Museum London\nGood fit\n\n\nMuseum · about 33 min\nWhy this fit\nFAMILY FIT\nEasy to visit with Hal\n\nGood buggy access for Hal’s buggy\n\nToilets confirmed on site\n\nParking confirmed on site\n\n33 min away\n\nWe haven’t yet confirmed whether this activity suits Hal\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nBook a free entry ticket.\nChildren under 11 must be accompanied by an adult.\nBooking is required.\nChecked 2 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nBaby changing\nAvailable\nBuggy access\nMostly step-free\nWheelchair access\nAccessible\nToilets\nOn site\nAccessible toilet\nOn site\nParking\nOn site\nPlayground\nOn site, ages not stated\nStill to be confirmed: food, best for ages, terrain.\nBeen here? Help check\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nGrahame Park Way, London NW9 5LL, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Toilets confirmed on site",
+     "Parking confirmed on site",
+     "Baby changing",
+     "Buggy access",
+     "Wheelchair access",
+     "Toilets",
+     "Accessible toilet",
+     "Parking",
+     "Still to be confirmed: food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [
+     "We haven’t yet confirmed whether this activity suits Hal"
+    ],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   }
+  },
+  "journey": {
+   "topName": "Royal Air Force Museum London",
+   "detailUrl": "/venue/fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "ctaVisible": true,
+   "sheetText": "Plan your day Around Royal Air Force Museum London WHEN Today Sat 17 Oct Other date START 10:00  When you want to arrive at Royal Air Force Museum London. We’ll work out when to leave. WHO’S COMING Add another family YOUR FAMILY Hana Hal HOW LONG Not sure 1 hour 2 hours 3 hours Half day All day Custom We’ll use what we know about the place and your routines, and tell you what we assumed. More opt",
+   "planText": "\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:12–12:48\n\nDay plan\nWho’s coming\nTravel\nYour Wednesday plan\nWe’ve allowed 2 hr — you can change this.\nStop 1\n10:00\nRoyal Air Force Museum London\n\nARRIVE\n10:00\nTIME THERE\n2 hours\nLEAVE\n12:00\nOPENING\nOpen\n12:48\nHead home\nCHECK BEFORE YOU GO\nRecommended ages are not published for Royal Air Force Museum London\nWORTH KNOWING\n2 journeys are estimated from distance rather than measured.\nWe could not check what is nearby, so this day has no lunch stop. This is about our lookup, not about the area.\nSave this plan",
+   "planOk": true,
+   "heading": "Your Wednesday plan",
+   "stops": 1,
+   "headHome": true,
+   "travelText": [
+    "Parking"
+   ],
+   "savedConfirmation": "Plan savedView planAdd to calendar",
+   "stored": {
+    "familypilot-planning-v1": 1
+   },
+   "savedUrl": "/saved-plan?id=day-1791963000000&from=save",
+   "savedOk": true,
+   "savedText": "\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:12–12:48\n\nDay plan\nWho’s coming\nTravel\nYour Wednesday plan\nWe’ve allowed 2 hr.\nStop 1\n10:00\nRoyal Air Force Museum London\n\nARRIVE\n10:00\nTIME THERE\n2 hours\nLEAVE\n12:00\nOPENING\nOpen\n12:48\nHead home\nCHECK BEFORE YOU GO\nRecommended ages are not published for Royal Air Force Museum London\nWORTH KNOWING\n2 journeys are estimated from distance rather than measured.\nWe could not check what is nearby, so this day has no lunch stop. This is about our lookup, not about the area.\nAdd to calendar\nSee all your plans\n",
+   "plansTab": {
+    "url": "/trips",
+    "text": "Plans\nDays that work for everyone involved.\nPlans\nSaved plans\nFamilies & routines\nStart a plan\nA plan begins with a place. Choose somewhere that suits your family, then tap Create a plan.\nBest for us today\nExplore London\nSaved places\nPlaces you save with the heart appear here.\nOpen saved places →\nYour plans\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:12–12:48"
+   }
+  }
+ },
+ "D-toddler-mobility-aid": {
+  "family": "D-toddler-mobility-aid",
+  "account": {
+   "signup": 200,
+   "confirm": 302
+  },
+  "errors": [],
+  "external": [],
+  "signIn": {
+   "landed": "/account?mode=signin",
+   "after": "/",
+   "error": null
+  },
+  "home": {
+   "url": "/",
+   "top": "Royal Air Force Museum London, see more",
+   "text": "Good morning, Jo\nPicked for Ivy\nJ\nSearch places and activities\nBest for your family\n\nFamilies\nFor you\nIndoor\nRainy day\nUnder 1 hour\nMUSEUM\nRoyal Air Force Museum London\nGood fit\nabout 18 min · Wheelchair accessible, the venue says, for Ivy\nSee more\n\nFARM\nMudchute Park and Farm\nPossible fit\nabout 20 min · Baby changing confirmed, handy for Ivy · Step-free and wheelchair access still to be checked\nSee more\n\nMUSEUM\nGunnersbury Park\nGood fit\nabout 21 min · Wheelchair accessible, the venue says, for Ivy\nSee more\n\nMUSEUM\nHorniman Museum and Gardens\nPossible fit\nabout 23 min · Baby changing confirmed, handy for Ivy · No parking on site\nSee more\n\nGoogle Maps"
+  },
+  "explore": [
+   "Royal Air Force Museum London, Good fit, view details",
+   "Mudchute Park and Farm, Possible fit, view details",
+   "Gunnersbury Park, Good fit, view details",
+   "Horniman Museum and Gardens, Possible fit, view details"
+  ],
+  "venues": {
+   "science": {
+    "text": "\n\nScience Museum\nPossible fit\n\n\nMuseum · about 10 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nNo parking on site\n\n10 min away\n\nStep-free and wheelchair access still to be checked\n\nToilets, which you said you need, still to be checked\n\nBaby changing still to be checked for Ivy\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nGeneral admission is free; a free ticket can be booked. Donations are welcome.\nChecked 8 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nAccessible toilet\nOn site\nParking\nNone on site\nBlue Badge parking\nA few spaces on Exhibition Road; 4 hours, 08.30 to 18.30\nStill to be confirmed: baby changing, wheelchair access, toilets, step-free access, food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nThe Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6\nBEFORE YOU GO\n\nClosed 24, 25 and 26 December.\nChecked 8 Oct 2026\n\nBuggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas.\nChecked 8 Oct 2026\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nExhibition Rd, South Kensington, London SW7 2DD, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Step-free and wheelchair access still to be checked",
+     "Toilets, which you said you need, still to be checked",
+     "Baby changing still to be checked for Ivy",
+     "Accessible toilet",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: baby changing, wheelchair access, toilets, step-free access, food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [
+     "The Garden: play-based science in four interactive areas (construction, water, light and sound), recommended for 3 to 6"
+    ],
+    "beforeYouGo": [
+     "Closed 24, 25 and 26 December.",
+     "Buggies are allowed in the galleries, but bulky ones may be sent to a buggy park in some areas."
+    ],
+    "ctaVisible": true
+   },
+   "discover": {
+    "text": "\n\nDiscover Children's Story Centre\nPossible fit\n\n\nMuseum · about 18 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nNo parking on site\n\nBaby and toddler sensory space (ages 0 to 2), for Ivy’s age\n\nToilets confirmed, which you said you need\n\n18 min away\n\nStep-free and wheelchair access still to be checked\n\nBaby changing still to be checked for Ivy\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nPrice not confirmed\nCheck prices on the official website\nCreate a plan\nWhat to know\nToilets\nOn site\nParking\nNone on site\nBlue Badge parking\nBays nearby, not on site: Bridge Terrace, off Bridge Road\nStill to be confirmed: baby changing, wheelchair access, step-free access, accessible toilet, food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nBaby and toddler sensory space (ages 0 to 2)\nCovers Ivy’s age\nBEFORE YOU GO\n\nClosed 24, 25 and 26 December.\nChecked 8 Oct 2026\n\nClosed 31 December and 1 January.\nChecked 8 Oct 2026\n\nPushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby.\nChecked 8 Oct 2026\n\nIf you have a particular reason to need a buggy (for example twin babies or a sleeping child), speak to the front of house team, who can advise and may be able to accommodate it.\nChecked 8 Oct 2026\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\n383-387 High St, London E15 4QZ, UK\nDirections\nWebsite\nPhone 020 8536 5555\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Toilets confirmed, which you said you need",
+     "Step-free and wheelchair access still to be checked",
+     "Baby changing still to be checked for Ivy",
+     "Toilets",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: baby changing, wheelchair access, step-free access, accessible toilet, food, best for ages, terrain."
+    ],
+    "price": [
+     "Price not confirmed",
+     "Check prices on the official website"
+    ],
+    "children": [],
+    "beforeYouGo": [
+     "Closed 24, 25 and 26 December.",
+     "Closed 31 December and 1 January.",
+     "Pushchairs and buggies are not allowed in any storytelling or play areas. Buggy storage is available on site; bring a sling for a smaller baby."
+    ],
+    "ctaVisible": true
+   },
+   "zoo": {
+    "text": "\n\nLondon Zoo\nPossible fit\n\n\nZoo · about 2 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nZooTown: indoor role-play adventure, best suited to children up to 8, for Ivy’s age\n\nParking confirmed on site\n\n2 min away\n\nStep-free and wheelchair access still to be checked\n\nToilets, which you said you need, still to be checked\n\nBaby changing still to be checked for Ivy\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nPrice not confirmed for your party\nWe do not know Ivy's age on the day, so their ticket cannot be priced.\nOnline advance prices without donation, booked before 10am on the day. Tickets bought at the entrance, or online from 10am on the day, cost more.\nThe page does not say which dates are Off Peak, Standard or Peak, so the price shown is a range.\nConcession tickets (65+, students with ID, disabled adults) are cheaper and are not included here.\nPrices checked 8 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nAccessible toilet\nOn site\nParking\nOn site\nStill to be confirmed: baby changing, wheelchair access, toilets, step-free access, food, best for ages, terrain.\nBeen here? Help check\nFOR CHILDREN\n\nZooTown: indoor role-play adventure, best suited to children up to 8\nCovers Ivy’s age\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nOuter Cir, London NW1 4RY, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Parking confirmed on site",
+     "Step-free and wheelchair access still to be checked",
+     "Toilets, which you said you need, still to be checked",
+     "Baby changing still to be checked for Ivy",
+     "Accessible toilet",
+     "Parking",
+     "Still to be confirmed: baby changing, wheelchair access, toilets, step-free access, food, best for ages, terrain."
+    ],
+    "price": [
+     "Price not confirmed for your party",
+     "We do not know Ivy's age on the day, so their ticket cannot be priced.",
+     "Online advance prices without donation, booked before 10am on the day. Tickets bought at the entrance, or online from 10am on the day, cost more.",
+     "The page does not say which dates are Off Peak, Standard or Peak, so the price shown is a range."
+    ],
+    "children": [
+     "ZooTown: indoor role-play adventure, best suited to children up to 8, for Ivy’s age",
+     "ZooTown: indoor role-play adventure, best suited to children up to 8"
+    ],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   },
+   "horniman": {
+    "text": "\n\nHorniman Museum and Gardens\nPossible fit\n\n\nMuseum · about 23 min\nWhy this fit\nFAMILY FIT\nPossible for your family\n\nNo parking on site\n\nToilets confirmed, which you said you need\n\nBaby changing confirmed, handy for Ivy\n\n23 min away\n\nStep-free and wheelchair access still to be checked\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nThere is a charge for the Aquarium, the Butterfly House and some events and exhibitions.\nChecked 1 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nBaby changing\nAvailable\nToilets\nOn site\nAccessible toilet\nOn site\nParking\nNone on site\nBlue Badge parking\nLimited bays on site\nPlayground\nOn site, ages not stated\nStill to be confirmed: wheelchair access, step-free access, food, best for ages, terrain.\nBeen here? Help check\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\n100 London Rd, London SE23 3PQ, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Toilets confirmed, which you said you need",
+     "Baby changing confirmed, handy for Ivy",
+     "Step-free and wheelchair access still to be checked",
+     "Baby changing",
+     "Toilets",
+     "Accessible toilet",
+     "Parking",
+     "Blue Badge parking",
+     "Still to be confirmed: wheelchair access, step-free access, food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   },
+   "raf": {
+    "text": "\n\nRoyal Air Force Museum London\nGood fit\n\n\nMuseum · about 18 min\nWhy this fit\nFAMILY FIT\nEasy to visit with Ivy\n\nWheelchair accessible, the venue says, for Ivy\n\nAccessible toilet on site\n\nToilets confirmed, which you said you need\n\nBaby changing confirmed, handy for Ivy\n\nParking confirmed on site\n\nWe haven’t yet confirmed whether this activity suits Ivy\nWorked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.\n\nTODAY\nOpens at 10am today\nSee week\nSynthetic fixture weather today\n\nTO GET IN\nFree entry\nBook a free entry ticket.\nChildren under 11 must be accompanied by an adult.\nBooking is required.\nChecked 2 Oct 2026\nCheck prices on the official website\nCreate a plan\nWhat to know\nBaby changing\nAvailable\nBuggy access\nMostly step-free\nWheelchair access\nAccessible\nToilets\nOn site\nAccessible toilet\nOn site\nParking\nOn site\nPlayground\nOn site, ages not stated\nStill to be confirmed: step-free access, food, best for ages, terrain.\nBeen here? Help check\nRestaurants close by\nWe could not check what is nearby just now. This is about our lookup, not about the area.\nGetting there\nGrahame Park Way, London NW9 5LL, UK\nDirections\nWebsite\nMore about this place\nDescription, photos and parents’ tips\n\nHow we know this\nSources, when each fact was checked, and what parents have reported.\n",
+    "essentials": [
+     "Wheelchair accessible, the venue says, for Ivy",
+     "Accessible toilet on site",
+     "Toilets confirmed, which you said you need",
+     "Baby changing confirmed, handy for Ivy",
+     "Parking confirmed on site",
+     "Baby changing",
+     "Buggy access",
+     "Wheelchair access",
+     "Toilets",
+     "Accessible toilet",
+     "Parking",
+     "Still to be confirmed: step-free access, food, best for ages, terrain."
+    ],
+    "price": [
+     "Free entry",
+     "Check prices on the official website"
+    ],
+    "children": [
+     "We haven’t yet confirmed whether this activity suits Ivy"
+    ],
+    "beforeYouGo": [],
+    "ctaVisible": true
+   }
+  },
+  "journey": {
+   "topName": "Royal Air Force Museum London",
+   "detailUrl": "/venue/fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "ctaVisible": true,
+   "sheetText": "Plan your day Around Royal Air Force Museum London WHEN Today Sat 17 Oct Other date START 10:00  When you want to arrive at Royal Air Force Museum London. We’ll work out when to leave. WHO’S COMING Add another family YOUR FAMILY Jo Ivy HOW LONG Not sure 1 hour 2 hours 3 hours Half day All day Custom We’ll use what we know about the place and your routines, and tell you what we assumed. More optio",
+   "planText": "\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:27–12:33\n\nDay plan\nWho’s coming\nTravel\nYour Wednesday plan\nWe’ve allowed 2 hr — you can change this.\nStop 1\n10:00\nRoyal Air Force Museum London\n\nARRIVE\n10:00\nTIME THERE\n2 hours\nLEAVE\n12:00\nOPENING\nOpen\n12:33\nHead home\nCHECK BEFORE YOU GO\nRecommended ages are not published for Royal Air Force Museum London\nWORTH KNOWING\n2 journeys are estimated from distance rather than measured.\nWe could not check what is nearby, so this day has no lunch stop. This is about our lookup, not about the area.\nSave this plan",
+   "planOk": true,
+   "heading": "Your Wednesday plan",
+   "stops": 1,
+   "headHome": true,
+   "travelText": [
+    "Parking"
+   ],
+   "savedConfirmation": "Plan savedView planAdd to calendar",
+   "stored": {
+    "familypilot-planning-v1": 1
+   },
+   "savedUrl": "/saved-plan?id=day-1791963000000&from=save",
+   "savedOk": true,
+   "savedText": "\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:27–12:33\n\nDay plan\nWho’s coming\nTravel\nYour Wednesday plan\nWe’ve allowed 2 hr.\nStop 1\n10:00\nRoyal Air Force Museum London\n\nARRIVE\n10:00\nTIME THERE\n2 hours\nLEAVE\n12:00\nOPENING\nOpen\n12:33\nHead home\nCHECK BEFORE YOU GO\nRecommended ages are not published for Royal Air Force Museum London\nWORTH KNOWING\n2 journeys are estimated from distance rather than measured.\nWe could not check what is nearby, so this day has no lunch stop. This is about our lookup, not about the area.\nAdd to calendar\nSee all your plans\n",
+   "plansTab": {
+    "url": "/trips",
+    "text": "Plans\nDays that work for everyone involved.\nPlans\nSaved plans\nFamilies & routines\nStart a plan\nA plan begins with a place. Choose somewhere that suits your family, then tap Create a plan.\nBest for us today\nExplore London\nSaved places\nPlaces you save with the heart appear here.\nOpen saved places →\nYour plans\nA day at Royal Air Force Museum London\nWed 14 Oct · 09:27–12:33"
+   }
+  }
+ }
+}

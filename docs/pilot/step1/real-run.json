@@ -1,0 +1,1211 @@
+{
+ "added": [
+  {
+   "venue": "Gunnersbury Park",
+   "id": "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY",
+   "key": "accessibility.wheelchairAccessible",
+   "value": "yes",
+   "src": "https://www.visitgunnersbury.org/museum/accessibility",
+   "quote": "Step-free access is available throughout the museum, with some ramps and slopes",
+   "checkedAt": "2026-10-02",
+   "validUntil": "2026-11-01"
+  },
+  {
+   "venue": "Museum of the Home",
+   "id": "fp-google-ChIJKUrjG7wcdkgRbfTuKDBgWXI",
+   "key": "accessibility.wheelchairAccessible",
+   "value": "yes",
+   "src": "https://museumofthehome.org.uk/plan-your-visit/",
+   "quote": "\\n\" } Your visit Accessibility There is step-free access to all our galleries.",
+   "checkedAt": "2026-09-27",
+   "validUntil": "2026-10-27"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "id": "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc",
+   "key": "accessibility.wheelchairAccessible",
+   "value": "yes",
+   "src": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+   "quote": "Wheelchairs and walking aids We have step free access around our site and lifts to upper levels.",
+   "checkedAt": "2026-10-02",
+   "validUntil": "2026-11-01"
+  },
+  {
+   "venue": "Queen's House",
+   "id": "fp-google-ChIJs_wmr0cWa0gRZpEqERRReXQ",
+   "key": "accessibility.wheelchairAccessible",
+   "value": "yes",
+   "src": "https://www.rmg.co.uk/plan-your-visit/accessibility-queens-house",
+   "quote": "Wheelchair users and physically disabled visitors All floors of the Queen’s House have lift access.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31"
+  },
+  {
+   "venue": "National Maritime Museum",
+   "id": "fp-google-ChIJs_wmr0cWa0gRHr60qjwn1Mo",
+   "key": "accessibility.wheelchairAccessible",
+   "value": "yes",
+   "src": "https://www.rmg.co.uk/plan-your-visit/accessibility-national-maritime-museum",
+   "quote": "Getting around the National Maritime Museum Lifts The building has accessible lifts to every floor.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31"
+  },
+  {
+   "venue": "Saatchi Gallery",
+   "id": "fp-google-ChIJ97pX3M0EdkgR8YFd4G1GZJ8",
+   "key": "accessibility.wheelchairAccessible",
+   "value": "yes",
+   "src": "https://www.saatchigallery.com/contact",
+   "quote": "All floors have lifts and there is level access between the galleries on each floor.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31"
+  },
+  {
+   "venue": "The Wallace Collection",
+   "id": "fp-google-ChIJczuZfc0adkgRc8X-u3ZiHcE",
+   "key": "accessibility.wheelchairAccessible",
+   "value": "yes",
+   "src": "https://www.wallacecollection.org/visit/family-visits/",
+   "quote": "Lift access is available to all floors.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31"
+  },
+  {
+   "venue": "William Morris Gallery",
+   "id": "fp-google-ChIJf9LtmOcddkgRRv6MezIdvSM",
+   "key": "accessibility.wheelchairAccessible",
+   "value": "yes",
+   "src": "https://www.wmgallery.org.uk/?gmb",
+   "quote": "Close Video Close Open Video Accessibility William Morris Gallery has an entrance with a ramp, accessible toilets and lift access to all floors.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31"
+  },
+  {
+   "venue": "London Eye",
+   "id": "fp-google-ChIJc2nSALkEdkgRkuoJJBfzkUI",
+   "key": "accessibility.wheelchairAccessible",
+   "value": "yes",
+   "src": "https://www.londoneye.com/plan-your-visit/before-you-visit/accessibility-information/",
+   "quote": "The London Eye is a wheelchair-friendly attraction with full accessibility throughout.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31"
+  },
+  {
+   "venue": "Cutty Sark",
+   "id": "fp-google-ChIJAVlhMIUCdkgRCJEgHVbITq4",
+   "key": "familyFacilities.cafe",
+   "value": "yes",
+   "src": "https://www.rmg.co.uk/plan-your-visit/accessibility-cutty-sark",
+   "quote": "Toilets The main toilets are next to the cafe in the Dry Berth at level –1, underneath the ship.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31"
+  },
+  {
+   "venue": "Cutty Sark",
+   "id": "fp-google-ChIJAVlhMIUCdkgRCJEgHVbITq4",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://www.rmg.co.uk/plan-your-visit/accessibility-cutty-sark",
+   "quote": "There are accessible cubicles in both the men’s and the women’s toilets.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31"
+  },
+  {
+   "venue": "Mudchute Park and Farm",
+   "id": "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://www.mudchute.org/plan-your-visit/facilities",
+   "quote": "Toilets Toilets, including a disabled toilet, are available in the courtyard and extensive hand washing facilities are available throughout the farm.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31"
+  },
+  {
+   "venue": "Chiswick House",
+   "id": "fp-osm-679119297",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://chiswickhouseandgardens.org.uk/plan-your-visit/family-activities/",
+   "quote": "Buy tickets Baby changing Baby changing is available in the toilets by the Café and pushchairs are welcome throughout the grounds.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31"
+  },
+  {
+   "venue": "Hackney City Farm",
+   "id": "fp-google-ChIJvS60MMEcdkgRSMlH5VxD51Y",
+   "key": "familyFacilities.cafe",
+   "value": "yes",
+   "src": "https://hackneycityfarm.co.uk/contact/",
+   "quote": "Yes, one outside near the cafe entrance and there are two inside the cafe (one of these has disabled access).",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31"
+  },
+  {
+   "venue": "Hackney City Farm",
+   "id": "fp-google-ChIJvS60MMEcdkgRSMlH5VxD51Y",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://hackneycityfarm.co.uk/visit/",
+   "quote": "Toilets and baby changing There is an accessible toilet and baby changing facilities in the cafe.",
+   "checkedAt": "2026-09-27",
+   "validUntil": "2026-10-27"
+  },
+  {
+   "venue": "Tate Modern",
+   "id": "fp-google-ChIJlRl2MakEdkgR55tr4CNv_B8",
+   "key": "familyFacilities.cafe",
+   "value": "yes",
+   "src": "https://www.tate.org.uk/visit/tate-modern/corner",
+   "quote": "Tate Modern Tate Modern Corner Cafe, Bar, Venue Opening times Sunday to Monday 10.00–18.00 Tuesday to Saturday 10.00–23.00 Tate Modern, Bankside, London SE1 9TG What's on Group bookings Eat Shop Corner is Tate Modern's late night bar - the place where art, music, food and drink meet.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31"
+  },
+  {
+   "venue": "Victoria and Albert Museum",
+   "id": "fp-google-ChIJw1d-sUMFdkgRH2XN_U0Jt54",
+   "key": "familyFacilities.cafe",
+   "value": "yes",
+   "src": "https://www.vam.ac.uk/south-kensington/visit",
+   "quote": "Main Café – 10.00 – 17.00 (Friday 10.00 – 21.00) Patisserie – 10.00 – 17.00 (Friday 10.00 – 19.00) Garden Café – 11:00 – 15:30 Friday Late Views Main Café – last orders for hot meals 15:00 Friday Late Contemporary Views (Held on selected Fridays, usually towards the end of the month – please check with staff for confirmation) M",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31"
+  },
+  {
+   "venue": "Northala Fields",
+   "id": "fp-google-ChIJN3hATcsSdkgRPscumUj6FqU",
+   "key": "familyFacilities.parking",
+   "value": "yes",
+   "src": "https://www.ealing.gov.uk/info/201136/parks_in_the_borough/663/greenford_parks/2",
+   "quote": "car parks are locked in accordance with park locking times number of bicycle locking stands located throughout the park Facilities disabled access/facilities - mixture of tarmac and crushed brick and gravel path surfaces with some steep slopes, gently sloping spiral path to the panoramic viewpoint at the top of mound three.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31"
+  }
+ ],
+ "corrected": [
+  {
+   "venue": "Colne Valley Regional Park",
+   "id": "fp-google-ChIJq-jJARlxdkgRNLTE490EqVU",
+   "key": "familyFacilities.parking",
+   "value": "yes",
+   "src": "https://www.colnevalleypark.org.uk/visitor-centre/",
+   "quote": "Sat Nav: UB9 5PG Parking There are two carparks run by Bucks County Council .",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "replaces": "eabed57d-f4e9-45a7-a8b6-f2746451cb89",
+   "was": "no"
+  }
+ ],
+ "withdrawn": [
+  {
+   "venue": "Sydenham Hill Wood",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "claim": "24a699e3-1e99-46ac-8f45-b50e8d4e536a",
+   "replacedByCorrection": false,
+   "quote": "Changing Places Toilet The nearest Changing Places Toilet can be found in Dulwich Park, College Road (College Gate Entrance).",
+   "src": "https://www.wildlondon.org.uk/nature-reserves/sydenham-hill-wood-and-coxs-walk"
+  },
+  {
+   "venue": "Colne Valley Regional Park",
+   "key": "familyFacilities.parking",
+   "value": "no",
+   "claim": "eabed57d-f4e9-45a7-a8b6-f2746451cb89",
+   "replacedByCorrection": true,
+   "quote": "Parking is not permitted on Denham Court Drive.",
+   "src": "https://www.colnevalleypark.org.uk/visitor-centre/"
+  },
+  {
+   "venue": "Queen Elizabeth Olympic Park",
+   "key": "familyFacilities.freeParking",
+   "value": "no",
+   "claim": "be6f2b75-2265-4e2a-ae87-1e7021c5eb9b",
+   "replacedByCorrection": false,
+   "quote": "Timber Lodge Cafe The nearby Olympic Park Avenue has on-street pay and display spaces and Blue Badge spaces with easy access to the Park.",
+   "src": "https://www.queenelizabetholympicpark.co.uk/plan-your-visit/getting-here"
+  },
+  {
+   "venue": "Queen Elizabeth Olympic Park",
+   "key": "familyFacilities.parking",
+   "value": "yes",
+   "claim": "37cf3fa6-7b0f-4905-b2e8-9b3dbd85cead",
+   "replacedByCorrection": false,
+   "quote": "Lee Valley VeloPark Venue car parking is available for up to 3 hours for facility users and is payable online or by phone, following the instructions on the signs throughout the car park.",
+   "src": "https://www.queenelizabetholympicpark.co.uk/plan-your-visit/getting-here"
+  },
+  {
+   "venue": "Whitechapel Gallery",
+   "key": "familyFacilities.freeParking",
+   "value": "no",
+   "claim": "e7f221fa-9e6f-406e-8645-d7557cdc00a9",
+   "replacedByCorrection": false,
+   "quote": "T: 0845 050 7080 Buckle Street Multistorey Car Park, Buckle Street, London, E1 8EH Free parking for Blue Badge holders is available at the top of Osborn Street in the pay and display booths for an unlimited period.",
+   "src": "https://www.whitechapelgallery.org/visit-2/"
+  }
+ ],
+ "requoted": [
+  {
+   "venue": "London Eye",
+   "id": "589ed520-6f9e-4ffd-9fd0-9c2988ac5356",
+   "key": "pushchairSuitability",
+   "value": "mixed",
+   "src": "https://www.londoneye.com/plan-your-visit/information-and-support/faqs/",
+   "quote": "Alternatively, you will be asked to carry your child and fold your pushchair, buggy or pram. If you would like to keep your baby or child in the pushchair, buggy or pram, please ask a member of staff to direct you to the lift when visiting the Eye Lounge. Pushchairs, buggies and prams can be used throughout other areas of the attraction however, babies and children must not be carried up and down ",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Alternatively, you will be asked to carry your child and fold your pushchair, buggy or pram. If you would like to keep your baby or child in the pushchair, buggy or pram, please ask a member of staff to direct you to the lift when visiting the Eye Lounge. Pushchairs, buggies and prams can be used throughout other areas of the attraction however, babies and children must not be carried up and down",
+   "oldSrc": "https://www.londoneye.com/plan-your-visit/information-and-support/faqs/"
+  },
+  {
+   "venue": "Frameless",
+   "id": "13b70300-6e47-4bd9-a51a-7b7df87677bc",
+   "key": "accessibility.wheelchairAccessible",
+   "value": "yes",
+   "src": "https://frameless.com/accessibility/chilled-sessions/",
+   "quote": "There is a large chill out area with sensory lighting and a dark tent, and lifts to every floor including our disabled toilets.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "The whole building is wheelchair accessible, including our toilets and Café Bar.",
+   "oldSrc": "https://frameless.com/accessibility/"
+  },
+  {
+   "venue": "Chiswick House",
+   "id": "893aa743-0603-4638-b83e-a0c6231669fc",
+   "key": "familyFacilities.cafe",
+   "value": "yes",
+   "src": "https://chiswickhouseandgardens.org.uk/plan-your-visit/family-activities/",
+   "quote": "Buy tickets Baby changing Baby changing is available in the toilets by the Café and pushchairs are welcome throughout the grounds.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Don’t forget to visit our Café Colicci, next to the playground, which has a great kids’ menu .",
+   "oldSrc": "https://chiswickhouseandgardens.org.uk/plan-your-visit/family-activities/"
+  },
+  {
+   "venue": "Chiswick House",
+   "id": "37289a2e-6573-4d31-b9a1-c22543a8254f",
+   "key": "pushchairSuitability",
+   "value": "mixed",
+   "src": "https://chiswickhouseandgardens.org.uk/plan-your-visit/family-activities/",
+   "quote": "There are a limited number of spaces and you will need to collapse your buggy when you leave it in the park. Buy tickets Baby changing Baby changing is available in the toilets by the Café and pushchairs are welcome throughout the grounds. Buggy Park We have a buggy park at the entrance for House visitors. Please do not leave bags with the buggy – we cannot be held responsible for your belongings ",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "There are a limited number of spaces and you will need to collapse your buggy when you leave it in the park. Buy tickets Baby changing Baby changing is available in the toilets by the Café and pushchairs are welcome throughout the grounds. Buggy Park We have a buggy park at the entrance for House visitors. Please do not leave bags with the buggy – we cannot be held responsible for your belongings",
+   "oldSrc": "https://chiswickhouseandgardens.org.uk/plan-your-visit/family-activities/"
+  }
+ ],
+ "unchanged": [
+  {
+   "venue": "Gunnersbury Park",
+   "id": "e04d23fe-b310-4034-821b-bd889b32cc4c",
+   "key": "familyFacilities.parking",
+   "value": "yes",
+   "src": "https://www.visitgunnersbury.org/museum/accessibility",
+   "quote": "Accessibility Visitor Information Parking Parking is available on-site.",
+   "checkedAt": "2026-10-02",
+   "validUntil": "2026-11-01",
+   "old": "Accessibility Visitor Information Parking Parking is available on-site.",
+   "oldSrc": "https://www.visitgunnersbury.org/museum/accessibility"
+  },
+  {
+   "venue": "Gunnersbury Park",
+   "id": "b2ab6b49-0cca-49b2-9244-c1bf08d0ec9e",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://www.visitgunnersbury.org/plan-your-visit",
+   "quote": "Facilities at Gunnersbury There is an accessible toilet in the museum.",
+   "checkedAt": "2026-10-02",
+   "validUntil": "2026-11-01",
+   "old": "Facilities at Gunnersbury There is an accessible toilet in the museum.",
+   "oldSrc": "https://www.visitgunnersbury.org/plan-your-visit"
+  },
+  {
+   "venue": "Gunnersbury Park",
+   "id": "84cb0eb6-0b51-4e30-a71d-71f834c1d1a1",
+   "key": "familyFacilities.cafe",
+   "value": "yes",
+   "src": "https://www.visitgunnersbury.org/plan-your-visit",
+   "quote": "Facilities Museum Car Park Car parking charges at Gunnersbury Opening Hours Museum Tuesday-Sunday 10am to 4:30pm Park Daily between 7am until dusk Café Monday to Friday: 7am to 5pm Weekends: 7am to 6pm Getting Here Gunnersbury is accessible whether you are walking, drivi",
+   "checkedAt": "2026-10-02",
+   "validUntil": "2026-11-01",
+   "old": "Facilities Museum Car Park Car parking charges at Gunnersbury Opening Hours Museum Tuesday-Sunday 10am to 4:30pm Park Daily between 7am until dusk Café Monday to Friday: 7am to 5pm Weekends: 7am to 6pm Getting Here Gunnersbury is accessible whether you are walking, drivi",
+   "oldSrc": "https://www.visitgunnersbury.org/plan-your-visit"
+  },
+  {
+   "venue": "Gunnersbury Park",
+   "id": "01dd7977-f778-4bfd-af73-8e9f26307c70",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "src": "https://www.visitgunnersbury.org/plan-your-visit",
+   "quote": "Facilities at Gunnersbury There is an accessible toilet in the museum.",
+   "checkedAt": "2026-10-02",
+   "validUntil": "2026-11-01",
+   "old": "Facilities at Gunnersbury There is an accessible toilet in the museum.",
+   "oldSrc": "https://www.visitgunnersbury.org/plan-your-visit"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "id": "ddd8f574-2af0-4433-a1c5-78389a66cafc",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "src": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+   "quote": "Here’s what’s available during your visit: Hangar 2 includes a Changing Places Toilet.",
+   "checkedAt": "2026-10-02",
+   "validUntil": "2026-11-01",
+   "old": "Here’s what’s available during your visit: Hangar 2 includes a Changing Places Toilet.",
+   "oldSrc": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "id": "578db36b-3d00-42ee-b7c5-097aec599412",
+   "key": "familyFacilities.playground",
+   "value": "yes",
+   "src": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/",
+   "quote": "OUR PLAYGROUND Exciting interactive experiences Discover hands-on activities and family-friendly exhibits in every hangar.",
+   "checkedAt": "2026-10-02",
+   "validUntil": "2026-11-01",
+   "old": "OUR PLAYGROUND Exciting interactive experiences Discover hands-on activities and family-friendly exhibits in every hangar.",
+   "oldSrc": "https://www.rafmuseum.org.uk/london/things-to-see-and-do/family-activities/"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "id": "e8cdc5db-9eb7-4c51-9746-2cae892001de",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+   "quote": "Facilities All our hangars have accessible toilets.",
+   "checkedAt": "2026-10-02",
+   "validUntil": "2026-11-01",
+   "old": "Facilities All our hangars have accessible toilets.",
+   "oldSrc": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "id": "6ad84e5b-c6f4-4cfd-aa3c-c8b0bb44b50e",
+   "key": "familyFacilities.babyChanging",
+   "value": "yes",
+   "src": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+   "quote": "All have baby changing facilities and in Hangar 2 you will find a Changing Places Toilet.",
+   "checkedAt": "2026-10-02",
+   "validUntil": "2026-11-01",
+   "old": "All have baby changing facilities and in Hangar 2 you will find a Changing Places Toilet.",
+   "oldSrc": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "id": "6415a2ef-d5f1-46e2-98e2-ef7a3fd7fd18",
+   "key": "familyFacilities.freeParking",
+   "value": "no",
+   "src": "https://www.rafmuseum.org.uk/london/plan-your-day/",
+   "quote": "All opening time information Getting Here ADDRESS Grahame Park Way, London, NW9 5LL SAT NAV: NW9 5QW View on a map Getting here information Car Parking PARKING CHARGES Cars up to 3 hours £8.50 per vehicle Cars 3-6 hours £11.00 per vehicle Motorcycles all day £8.50 per vehicle Coaches all day FREE if booked in advance Book your parking All car parking information Access and Accessibility We aim for",
+   "checkedAt": "2026-10-02",
+   "validUntil": "2026-11-01",
+   "old": "All opening time information Getting Here ADDRESS Grahame Park Way, London, NW9 5LL SAT NAV: NW9 5QW View on a map Getting here information Car Parking PARKING CHARGES Cars up to 3 hours £8.50 per vehicle Cars 3-6 hours £11.00 per vehicle Motorcycles all day £8.50 per vehicle Coaches all day FREE if booked in advance Book your parking All car parking information Access and Accessibility We aim for",
+   "oldSrc": "https://www.rafmuseum.org.uk/london/plan-your-day/"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "id": "74ef4f11-576e-48d0-8351-26e5eab828cf",
+   "key": "familyFacilities.parking",
+   "value": "yes",
+   "src": "https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/",
+   "quote": "Parking On Site There is on-site parking available — see parking charges .",
+   "checkedAt": "2026-10-02",
+   "validUntil": "2026-11-01",
+   "old": "Parking On Site There is on-site parking available — see parking charges .",
+   "oldSrc": "https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "id": "95c719e9-d056-4d29-943f-dc779b43702e",
+   "key": "familyFacilities.cafe",
+   "value": "yes",
+   "src": "https://www.rafmuseum.org.uk/london/",
+   "quote": "car parking information Eat and Drink Whether you prefer a quick bite from our cafés or a packed lunch, we have something to suit your needs.",
+   "checkedAt": "2026-10-02",
+   "validUntil": "2026-11-01",
+   "old": "car parking information Eat and Drink Whether you prefer a quick bite from our cafés or a packed lunch, we have something to suit your needs.",
+   "oldSrc": "https://www.rafmuseum.org.uk/london/"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "id": "934f2de1-f425-441b-a21d-33451c970c01",
+   "key": "pushchairSuitability",
+   "value": "good",
+   "src": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/",
+   "quote": "All of our hangars offer the following: Wide aisles, enabling access for wheelchairs and pushchairs Lifts to upper levels Seating for breaks during your visit Free Wi-Fi is available Useful Resources These resources may be useful in planning your visit. Wheelchairs and walking aids We have step free access around our site and lifts to upper levels. General Access Around the Museum We have step-fre",
+   "checkedAt": "2026-10-02",
+   "validUntil": "2026-11-01",
+   "old": "All of our hangars offer the following: Wide aisles, enabling access for wheelchairs and pushchairs Lifts to upper levels Seating for breaks during your visit Free Wi-Fi is available Useful Resources These resources may be useful in planning your visit. Wheelchairs and walking aids We have step free access around our site and lifts to upper levels. General Access Around the Museum We have step-fre",
+   "oldSrc": "https://www.rafmuseum.org.uk/london/plan-your-day/access-and-accessibility/"
+  },
+  {
+   "venue": "Queen's House",
+   "id": "1eecc3ea-fe03-424b-baae-2fc41e14c494",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://www.rmg.co.uk/plan-your-visit/accessibility-queens-house",
+   "quote": "We have several other accessible toilets available at the Museum, and inside Queen's House.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "We have several other accessible toilets available at the Museum, and inside Queen's House.",
+   "oldSrc": "https://www.rmg.co.uk/plan-your-visit/accessibility-queens-house"
+  },
+  {
+   "venue": "Queen's House",
+   "id": "baf5ffbd-08c7-435e-986c-08e911889d63",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "src": "https://www.rmg.co.uk/plan-your-visit/accessibility-queens-house",
+   "quote": "First aid room / Quiet room There is a small First aid room opposite the accessible toilets in the Undercroft.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "First aid room / Quiet room There is a small First aid room opposite the accessible toilets in the Undercroft.",
+   "oldSrc": "https://www.rmg.co.uk/plan-your-visit/accessibility-queens-house"
+  },
+  {
+   "venue": "National Maritime Museum",
+   "id": "83364de2-9fbb-4600-bb01-1309e20f8b28",
+   "key": "familyFacilities.babyChanging",
+   "value": "yes",
+   "src": "https://www.rmg.co.uk/plan-your-visit/accessibility-national-maritime-museum",
+   "quote": "Toilets Toilets, baby-changing facilities and an accessible toilet are located near the Romney Road entrance on Level 0.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Toilets Toilets, baby-changing facilities and an accessible toilet are located near the Romney Road entrance on Level 0.",
+   "oldSrc": "https://www.rmg.co.uk/plan-your-visit/accessibility-national-maritime-museum"
+  },
+  {
+   "venue": "National Maritime Museum",
+   "id": "948ed517-a172-486c-8929-3aca39f82f9f",
+   "key": "familyFacilities.cafe",
+   "value": "yes",
+   "src": "https://www.rmg.co.uk/plan-your-visit/accessibility-national-maritime-museum",
+   "quote": "All our cafés are wheelchair accessible and welcome Guide Dogs, Hearing Dogs and Assistance Dogs.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "All our cafés are wheelchair accessible and welcome Guide Dogs, Hearing Dogs and Assistance Dogs.",
+   "oldSrc": "https://www.rmg.co.uk/plan-your-visit/accessibility-national-maritime-museum"
+  },
+  {
+   "venue": "National Maritime Museum",
+   "id": "e063d047-88c0-460b-abe2-75c01c22b853",
+   "key": "familyFacilities.playground",
+   "value": "yes",
+   "src": "https://www.rmg.co.uk/national-maritime-museum",
+   "quote": "e show, and answer some big questions about the Universe along the way The Cove playground Climb, play and explore at The Cove, a fabulous sea-themed playground at the National Maritime Museum Pasifika Now Young photographers from across the Pacific reveal contemporary life, heritage and identity through their own eyes Join a guided tour Uncover the wonders of our collection during these daily eve",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "e show, and answer some big questions about the Universe along the way The Cove playground Climb, play and explore at The Cove, a fabulous sea-themed playground at the National Maritime Museum Pasifika Now Young photographers from across the Pacific reveal contemporary life, heritage and identity through their own eyes Join a guided tour Uncover the wonders of our collection during these daily eve",
+   "oldSrc": "https://www.rmg.co.uk/national-maritime-museum"
+  },
+  {
+   "venue": "National Maritime Museum",
+   "id": "d759006a-e6d3-488f-b381-2d05b5dd6eed",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://www.rmg.co.uk/plan-your-visit/accessibility-national-maritime-museum",
+   "quote": "Toilets Toilets, baby-changing facilities and an accessible toilet are located near the Romney Road entrance on Level 0.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Toilets Toilets, baby-changing facilities and an accessible toilet are located near the Romney Road entrance on Level 0.",
+   "oldSrc": "https://www.rmg.co.uk/plan-your-visit/accessibility-national-maritime-museum"
+  },
+  {
+   "venue": "National Maritime Museum",
+   "id": "e230861d-8651-452e-baed-1e9df4309fc6",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "src": "https://www.rmg.co.uk/plan-your-visit/accessibility-national-maritime-museum",
+   "quote": "Toilets Toilets, baby-changing facilities and an accessible toilet are located near the Romney Road entrance on Level 0.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Toilets Toilets, baby-changing facilities and an accessible toilet are located near the Romney Road entrance on Level 0.",
+   "oldSrc": "https://www.rmg.co.uk/plan-your-visit/accessibility-national-maritime-museum"
+  },
+  {
+   "venue": "Saatchi Gallery",
+   "id": "a45902a5-d1d5-41ca-816d-d0dd7421214d",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://www.saatchigallery.com/contact",
+   "quote": "Accessible toilets are situated on the Lower Ground Floor and Mezzanine.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Accessible toilets are situated on the Lower Ground Floor and Mezzanine.",
+   "oldSrc": "https://www.saatchigallery.com/contact"
+  },
+  {
+   "venue": "Saatchi Gallery",
+   "id": "af2d239e-11aa-4f7b-832b-ed0c54182e9e",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "src": "https://www.saatchigallery.com/contact",
+   "quote": "Accessible toilets are situated on the Lower Ground Floor and Mezzanine.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Accessible toilets are situated on the Lower Ground Floor and Mezzanine.",
+   "oldSrc": "https://www.saatchigallery.com/contact"
+  },
+  {
+   "venue": "Saatchi Gallery",
+   "id": "a95618aa-106c-461f-87f6-214d25704674",
+   "key": "pushchairSuitability",
+   "value": "mixed",
+   "src": "https://www.saatchigallery.com/visit",
+   "quote": "At these times, we may ask that some buggies are left in a buggy park within the Gallery. To reserve a disabled parking bay or a wheelchair please email [email protected] or telephone 0207 811 3070 Buggies and Pushchairs: We allow regular-sized buggies and pushchairs in our Galleries wherever possible. Access: Assisted or ramp access is available at the Gallery’s main entrance. For the vast majori",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "At these times, we may ask that some buggies are left in a buggy park within the Gallery. To reserve a disabled parking bay or a wheelchair please email [email protected] or telephone 0207 811 3070 Buggies and Pushchairs: We allow regular-sized buggies and pushchairs in our Galleries wherever possible. Access: Assisted or ramp access is available at the Gallery’s main entrance. For the vast majori",
+   "oldSrc": "https://www.saatchigallery.com/visit"
+  },
+  {
+   "venue": "The Wallace Collection",
+   "id": "d2f7d231-c253-41b3-81db-0a7ff03582d4",
+   "key": "familyFacilities.parking",
+   "value": "no",
+   "src": "https://www.wallacecollection.org/visit/visitor-guidance/",
+   "quote": "Access and parking Parking is not permitted in our entrance courtyard.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Access and parking Parking is not permitted in our entrance courtyard.",
+   "oldSrc": "https://www.wallacecollection.org/visit/visitor-guidance/"
+  },
+  {
+   "venue": "The Wallace Collection",
+   "id": "9951ea69-62a8-4e55-86cf-4a07611bef2c",
+   "key": "familyFacilities.cafe",
+   "value": "yes",
+   "src": "https://www.wallacecollection.org/visit/visitor-guidance/",
+   "quote": "Food and drink Food and drink can be purchased in our Courtyard Restaurant and Café and must only be consumed there.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Food and drink Food and drink can be purchased in our Courtyard Restaurant and Café and must only be consumed there.",
+   "oldSrc": "https://www.wallacecollection.org/visit/visitor-guidance/"
+  },
+  {
+   "venue": "The Wallace Collection",
+   "id": "e8abfcec-efb6-4b5d-83ea-f98cd4ae1b96",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://www.wallacecollection.org/visit/family-visits/",
+   "quote": "Toilets and Baby Change Facilities Public toilets, including an accessible toilet with a baby changing station, are located on the lower ground floor.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Toilets and Baby Change Facilities Public toilets, including an accessible toilet with a baby changing station, are located on the lower ground floor.",
+   "oldSrc": "https://www.wallacecollection.org/visit/family-visits/"
+  },
+  {
+   "venue": "The Wallace Collection",
+   "id": "236ac3e9-b9d7-47e6-a3d6-dcb2ece43407",
+   "key": "familyFacilities.babyChanging",
+   "value": "yes",
+   "src": "https://www.wallacecollection.org/visit/family-visits/",
+   "quote": "Toilets and Baby Change Facilities Public toilets, including an accessible toilet with a baby changing station, are located on the lower ground floor.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Toilets and Baby Change Facilities Public toilets, including an accessible toilet with a baby changing station, are located on the lower ground floor.",
+   "oldSrc": "https://www.wallacecollection.org/visit/family-visits/"
+  },
+  {
+   "venue": "The Wallace Collection",
+   "id": "d8162015-e3ec-41f3-bee3-9d0e2db62d96",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "src": "https://www.wallacecollection.org/visit/family-visits/",
+   "quote": "Toilets and Baby Change Facilities Public toilets, including an accessible toilet with a baby changing station, are located on the lower ground floor.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Toilets and Baby Change Facilities Public toilets, including an accessible toilet with a baby changing station, are located on the lower ground floor.",
+   "oldSrc": "https://www.wallacecollection.org/visit/family-visits/"
+  },
+  {
+   "venue": "William Morris Gallery",
+   "id": "7eb641cd-dc87-4f40-a788-4e22d7e14bfc",
+   "key": "familyFacilities.cafe",
+   "value": "yes",
+   "src": "https://www.wmgallery.org.uk/visit/",
+   "quote": "Deeney’s Cafe at WMG Relax at Deeney’s Cafe, located on the ground floor with gorgeous sunlit views overlooking Lloyd Park.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Deeney’s Cafe at WMG Relax at Deeney’s Cafe, located on the ground floor with gorgeous sunlit views overlooking Lloyd Park.",
+   "oldSrc": "https://www.wmgallery.org.uk/visit/"
+  },
+  {
+   "venue": "William Morris Gallery",
+   "id": "e887da5b-a574-4583-bf6f-f9d4d83704a7",
+   "key": "familyFacilities.babyChanging",
+   "value": "yes",
+   "src": "https://www.wmgallery.org.uk/visit/facilities/",
+   "quote": "Other facilities Baby changing facilities are available.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Other facilities Baby changing facilities are available.",
+   "oldSrc": "https://www.wmgallery.org.uk/visit/facilities/"
+  },
+  {
+   "venue": "William Morris Gallery",
+   "id": "ee9ae10c-8cba-47bd-afc9-ddf0a6a68904",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "src": "https://www.wmgallery.org.uk/?gmb",
+   "quote": "se Open Video Accessibility William Morris Gallery has an entrance with a ramp, accessible toilets and lift access to all floors.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "se Open Video Accessibility William Morris Gallery has an entrance with a ramp, accessible toilets and lift access to all floors.",
+   "oldSrc": "https://www.wmgallery.org.uk/?gmb"
+  },
+  {
+   "venue": "London Eye",
+   "id": "dd79f3bd-87a9-4d86-8ebd-83812bc07813",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://www.londoneye.com/plan-your-visit/information-and-support/faqs/",
+   "quote": "Our pods provide comfortable seating, and toilet facilities are conveniently located near the ticket office.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Our pods provide comfortable seating, and toilet facilities are conveniently located near the ticket office.",
+   "oldSrc": "https://www.londoneye.com/plan-your-visit/information-and-support/faqs/"
+  },
+  {
+   "venue": "London Eye",
+   "id": "b976f758-b866-4ace-a280-22a83512e5e1",
+   "key": "familyFacilities.babyChanging",
+   "value": "yes",
+   "src": "https://www.londoneye.com/plan-your-visit/information-and-support/faqs/",
+   "quote": "Customers will find male, female toilets downstairs, and accessible toilet, and baby changing facilities at ground level.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Customers will find male, female toilets downstairs, and accessible toilet, and baby changing facilities at ground level.",
+   "oldSrc": "https://www.londoneye.com/plan-your-visit/information-and-support/faqs/"
+  },
+  {
+   "venue": "London Eye",
+   "id": "78db46d7-e07a-49d0-82b9-6f340bf2f53a",
+   "key": "familyFacilities.parking",
+   "value": "no",
+   "src": "https://www.londoneye.com/plan-your-visit/information-and-support/faqs/",
+   "quote": "The London Eye does not have its own car park or parking facilities.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "The London Eye does not have its own car park or parking facilities.",
+   "oldSrc": "https://www.londoneye.com/plan-your-visit/information-and-support/faqs/"
+  },
+  {
+   "venue": "London Eye",
+   "id": "dea03729-5e00-484d-a365-d820a67f3829",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "src": "https://www.londoneye.com/plan-your-visit/information-and-support/faqs/",
+   "quote": "Customers will find male, female toilets downstairs, and accessible toilet, and baby changing facilities at ground level.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Customers will find male, female toilets downstairs, and accessible toilet, and baby changing facilities at ground level.",
+   "oldSrc": "https://www.londoneye.com/plan-your-visit/information-and-support/faqs/"
+  },
+  {
+   "venue": "Frameless",
+   "id": "112b0b77-ce21-4e48-9ea9-7879529dc2ea",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "src": "https://frameless.com/accessibility/chilled-sessions/",
+   "quote": "a with sensory lighting and a dark tent, and lifts to every floor including our disabled toilets.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "a with sensory lighting and a dark tent, and lifts to every floor including our disabled toilets.",
+   "oldSrc": "https://frameless.com/accessibility/chilled-sessions/"
+  },
+  {
+   "venue": "Frameless",
+   "id": "a399ebae-11d9-4632-b3f2-8e29c354afba",
+   "key": "familyFacilities.cafe",
+   "value": "yes",
+   "src": "https://frameless.com/accessibility/",
+   "quote": "The whole building is wheelchair accessible, including our toilets and Café Bar.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "The whole building is wheelchair accessible, including our toilets and Café Bar.",
+   "oldSrc": "https://frameless.com/accessibility/"
+  },
+  {
+   "venue": "Cutty Sark",
+   "id": "c3fa6bfb-f37e-4ded-9969-031c1e3b43ea",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "src": "https://www.rmg.co.uk/plan-your-visit/accessibility-cutty-sark",
+   "quote": "There’s also a larger accessible toilet here too.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "There’s also a larger accessible toilet here too.",
+   "oldSrc": "https://www.rmg.co.uk/plan-your-visit/accessibility-cutty-sark"
+  },
+  {
+   "venue": "Mudchute Park and Farm",
+   "id": "ed03f595-39b7-44d4-bde3-cb261478ce24",
+   "key": "familyFacilities.babyChanging",
+   "value": "yes",
+   "src": "https://www.mudchute.org/plan-your-visit/facilities",
+   "quote": "Baby changing Baby changing facilities are available in the ladies public toilet within the courtyard.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Baby changing Baby changing facilities are available in the ladies public toilet within the courtyard.",
+   "oldSrc": "https://www.mudchute.org/plan-your-visit/facilities"
+  },
+  {
+   "venue": "Mudchute Park and Farm",
+   "id": "6b501c50-83af-4439-abc3-64d629f5cdae",
+   "key": "familyFacilities.cafe",
+   "value": "yes",
+   "src": "https://www.mudchute.org/plan-your-visit/faq",
+   "quote": "The cafe is dog friendly so they are allowed in the courtyard and in the pets corner as long as they are on leads.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "The cafe is dog friendly so they are allowed in the courtyard and in the pets corner as long as they are on leads.",
+   "oldSrc": "https://www.mudchute.org/plan-your-visit/faq"
+  },
+  {
+   "venue": "Mudchute Park and Farm",
+   "id": "86de2203-3d02-452b-8da7-de374c7f1297",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "src": "https://www.mudchute.org/plan-your-visit/facilities",
+   "quote": "Toilets Toilets, including a disabled toilet, are available in the courtyard and extensive hand washing facilities are available throughout the farm.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Toilets Toilets, including a disabled toilet, are available in the courtyard and extensive hand washing facilities are available throughout the farm.",
+   "oldSrc": "https://www.mudchute.org/plan-your-visit/facilities"
+  },
+  {
+   "venue": "Chiswick House",
+   "id": "479faaf5-00fb-4671-9535-7123c36ac37b",
+   "key": "familyFacilities.freeParking",
+   "value": "no",
+   "src": "https://chiswickhouseandgardens.org.uk/plan-your-visit/getting-to-chiswick-house/",
+   "quote": "Income from the parking charges pay for the upkeep of the car park and the care and preservation of the gardens.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Income from the parking charges pay for the upkeep of the car park and the care and preservation of the gardens.",
+   "oldSrc": "https://chiswickhouseandgardens.org.uk/plan-your-visit/getting-to-chiswick-house/"
+  },
+  {
+   "venue": "Chiswick House",
+   "id": "202107f0-507b-4496-bdac-cda528bc029f",
+   "key": "familyFacilities.babyChanging",
+   "value": "yes",
+   "src": "https://chiswickhouseandgardens.org.uk/plan-your-visit/family-activities/",
+   "quote": "Buy tickets Baby changing Baby changing is available in the toilets by the Café and pushchairs are welcome throughout the grounds.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Buy tickets Baby changing Baby changing is available in the toilets by the Café and pushchairs are welcome throughout the grounds.",
+   "oldSrc": "https://chiswickhouseandgardens.org.uk/plan-your-visit/family-activities/"
+  },
+  {
+   "venue": "Chiswick House",
+   "id": "45ffc153-6f18-4d9f-99d5-d23894d789fc",
+   "key": "familyFacilities.playground",
+   "value": "yes",
+   "src": "https://chiswickhouseandgardens.org.uk/plan-your-visit/family-activities/",
+   "quote": "Don’t forget to visit our Café Colicci, next to the playground, which has a great kids’ menu .",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Don’t forget to visit our Café Colicci, next to the playground, which has a great kids’ menu .",
+   "oldSrc": "https://chiswickhouseandgardens.org.uk/plan-your-visit/family-activities/"
+  },
+  {
+   "venue": "Hackney City Farm",
+   "id": "54fdf73e-a7a4-44da-8d79-59179a5a8125",
+   "key": "familyFacilities.parking",
+   "value": "no",
+   "src": "https://hackneycityfarm.co.uk/contact/",
+   "quote": "There is on street parking locally but no parking on site.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "There is on street parking locally but no parking on site.",
+   "oldSrc": "https://hackneycityfarm.co.uk/contact/"
+  },
+  {
+   "venue": "Hackney City Farm",
+   "id": "095c1df1-8e6f-4181-a455-db3551d2b43e",
+   "key": "familyFacilities.babyChanging",
+   "value": "yes",
+   "src": "https://hackneycityfarm.co.uk/visit/",
+   "quote": "Toilets and baby changing There is an accessible toilet and baby changing facilities in the cafe.",
+   "checkedAt": "2026-09-27",
+   "validUntil": "2026-10-27",
+   "old": "Toilets and baby changing There is an accessible toilet and baby changing facilities in the cafe.",
+   "oldSrc": "https://hackneycityfarm.co.uk/visit/"
+  },
+  {
+   "venue": "Hackney City Farm",
+   "id": "658b275d-bd9f-4c32-931d-3792fbdb7386",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "src": "https://hackneycityfarm.co.uk/visit/",
+   "quote": "Toilets and baby changing There is an accessible toilet and baby changing facilities in the cafe.",
+   "checkedAt": "2026-09-27",
+   "validUntil": "2026-10-27",
+   "old": "Toilets and baby changing There is an accessible toilet and baby changing facilities in the cafe.",
+   "oldSrc": "https://hackneycityfarm.co.uk/visit/"
+  },
+  {
+   "venue": "Tate Modern",
+   "id": "a19f456a-176f-461b-98bc-06ef3f1f9879",
+   "key": "familyFacilities.babyChanging",
+   "value": "yes",
+   "src": "https://www.tate.org.uk/visit/tate-modern/visit-tate-modern-family",
+   "quote": "You can breastfeed wherever you feel comfortable, for privacy head to the baby-changing facilities which are located on the Level 0, Natalie Bell Building.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "You can breastfeed wherever you feel comfortable, for privacy head to the baby-changing facilities which are located on the Level 0, Natalie Bell Building.",
+   "oldSrc": "https://www.tate.org.uk/visit/tate-modern/visit-tate-modern-family"
+  },
+  {
+   "venue": "Tate Modern",
+   "id": "facab607-e44d-4dc7-8861-4d05c34f578e",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://www.tate.org.uk/visit/tate-modern",
+   "quote": "te and time of visit are required to make the booking Facilities at Tate Modern Toilets Fully accessible toilets are located on every floor on the concourses.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "te and time of visit are required to make the booking Facilities at Tate Modern Toilets Fully accessible toilets are located on every floor on the concourses.",
+   "oldSrc": "https://www.tate.org.uk/visit/tate-modern"
+  },
+  {
+   "venue": "Tate Modern",
+   "id": "bfbede2d-9deb-4ab0-95c8-02feffa7f1ad",
+   "key": "familyFacilities.parking",
+   "value": "no",
+   "src": "https://www.tate.org.uk/visit/tate-modern",
+   "quote": "BY CAR There are no parking facilities at Tate Modern or in the surrounding streets.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "BY CAR There are no parking facilities at Tate Modern or in the surrounding streets.",
+   "oldSrc": "https://www.tate.org.uk/visit/tate-modern"
+  },
+  {
+   "venue": "Tate Modern",
+   "id": "40f538e7-6056-48b1-840f-0c7e6aa33fdf",
+   "key": "pushchairSuitability",
+   "value": "good",
+   "src": "https://www.tate.org.uk/visit/tate-modern/visit-tate-modern-family",
+   "quote": "All entrances are accessible with a buggy. Yes, we welcome visitors with young children and buggies to come and enjoy the galleries.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "All entrances are accessible with a buggy. Yes, we welcome visitors with young children and buggies to come and enjoy the galleries.",
+   "oldSrc": "https://www.tate.org.uk/visit/tate-modern/visit-tate-modern-family"
+  },
+  {
+   "venue": "Tate Modern",
+   "id": "d3bce2df-c949-4d9d-9f73-6a95ba48e72a",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "src": "https://www.tate.org.uk/visit/tate-modern",
+   "quote": "visit are required to make the booking Facilities at Tate Modern Toilets Fully accessible toilets are located on every floor on the concourses.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "visit are required to make the booking Facilities at Tate Modern Toilets Fully accessible toilets are located on every floor on the concourses.",
+   "oldSrc": "https://www.tate.org.uk/visit/tate-modern"
+  },
+  {
+   "venue": "Victoria and Albert Museum",
+   "id": "871d4a66-efac-4fd2-a834-bab0a18ea7fb",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://www.vam.ac.uk/south-kensington/visit",
+   "quote": "Facilities Toilets Our toilets are across the building.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Facilities Toilets Our toilets are across the building.",
+   "oldSrc": "https://www.vam.ac.uk/south-kensington/visit"
+  },
+  {
+   "venue": "Victoria and Albert Museum",
+   "id": "5165ca49-5504-4773-8bd0-eb1345f91c7f",
+   "key": "accessibility.wheelchairAccessible",
+   "value": "yes",
+   "src": "https://www.vam.ac.uk/south-kensington/visit",
+   "quote": "The Cromwell Road and Exhibition Road entrances are step-free and wheelchair accessible.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "The Cromwell Road and Exhibition Road entrances are step-free and wheelchair accessible.",
+   "oldSrc": "https://www.vam.ac.uk/south-kensington/visit"
+  },
+  {
+   "venue": "Victoria and Albert Museum",
+   "id": "a339a074-4de3-49cc-aea9-b2a27cef8e54",
+   "key": "accessibility.accessibleToilet",
+   "value": "yes",
+   "src": "https://www.vam.ac.uk/south-kensington/visit",
+   "quote": "We have 13 accessible toilets.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "We have 13 accessible toilets.",
+   "oldSrc": "https://www.vam.ac.uk/south-kensington/visit"
+  },
+  {
+   "venue": "Northala Fields",
+   "id": "4f92269d-66d4-42e8-9749-155098741ce9",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://www.ealing.gov.uk/info/201136/parks_in_the_borough/663/greenford_parks/2",
+   "quote": "ded Schools Project and Ealing Council visitor's centre which includes; a café, public toilets, classrooms and a fishing office About the park Northala Fields was opened in 2008 and covers 27.5 hectares.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "ded Schools Project and Ealing Council visitor's centre which includes; a café, public toilets, classrooms and a fishing office About the park Northala Fields was opened in 2008 and covers 27.5 hectares.",
+   "oldSrc": "https://www.ealing.gov.uk/info/201136/parks_in_the_borough/663/greenford_parks/2"
+  },
+  {
+   "venue": "Northala Fields",
+   "id": "dbe7a767-4176-47e3-9002-844a423ba455",
+   "key": "familyFacilities.playground",
+   "value": "yes",
+   "src": "https://www.ealing.gov.uk/info/201136/parks_in_the_borough/663/greenford_parks/2",
+   "quote": "There are a number of benches throughout the park playgrounds – 2 well equipped playgrounds for the under-14s, one at Dolphin Road and 1 with wooden style play equipment and large slide in the centre of the park model boating lake, 6 fishing lakes, and 3wildlife ponds colourful mosaic celebrating learning in Northolt in 2008 which was designed by students from West London Acade",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "There are a number of benches throughout the park playgrounds – 2 well equipped playgrounds for the under-14s, one at Dolphin Road and 1 with wooden style play equipment and large slide in the centre of the park model boating lake, 6 fishing lakes, and 3wildlife ponds colourful mosaic celebrating learning in Northolt in 2008 which was designed by students from West London Acade",
+   "oldSrc": "https://www.ealing.gov.uk/info/201136/parks_in_the_borough/663/greenford_parks/2"
+  },
+  {
+   "venue": "Sydenham Hill Wood",
+   "id": "a2f5c806-335a-4b92-bc73-6cac96b8da31",
+   "key": "familyFacilities.freeParking",
+   "value": "yes",
+   "src": "https://www.wildlondon.org.uk/nature-reserves/sydenham-hill-wood-and-coxs-walk",
+   "quote": "The two entrances into Dulwich Wood (on Low Cross Wood and Grange Lane) are wheelchair accessible and free parking is available at the latter.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "The two entrances into Dulwich Wood (on Low Cross Wood and Grange Lane) are wheelchair accessible and free parking is available at the latter.",
+   "oldSrc": "https://www.wildlondon.org.uk/nature-reserves/sydenham-hill-wood-and-coxs-walk"
+  },
+  {
+   "venue": "Sydenham Hill Wood",
+   "id": "9e3c24c6-9a3b-408c-b363-863e6e134bca",
+   "key": "familyFacilities.parking",
+   "value": "yes",
+   "src": "https://www.wildlondon.org.uk/nature-reserves/sydenham-hill-wood-and-coxs-walk",
+   "quote": "ich Wood (on Low Cross Wood and Grange Lane) are wheelchair accessible and free parking is available at the latter.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "ich Wood (on Low Cross Wood and Grange Lane) are wheelchair accessible and free parking is available at the latter.",
+   "oldSrc": "https://www.wildlondon.org.uk/nature-reserves/sydenham-hill-wood-and-coxs-walk"
+  },
+  {
+   "venue": "Colne Valley Regional Park",
+   "id": "03705c1a-7376-42d8-aa31-c4a3ed6503d2",
+   "key": "familyFacilities.playground",
+   "value": "yes",
+   "src": "https://www.colnevalleypark.org.uk/visitor-centre/birthday-parties/",
+   "quote": "Undercover picnic space and playtime in our natural play area or mud kitchen.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Undercover picnic space and playtime in our natural play area or mud kitchen.",
+   "oldSrc": "https://www.colnevalleypark.org.uk/visitor-centre/birthday-parties/"
+  },
+  {
+   "venue": "Colne Valley Regional Park",
+   "id": "737abaaf-4044-49c5-9f98-49339f895c0b",
+   "key": "familyFacilities.toilets",
+   "value": "yes",
+   "src": "https://www.colnevalleypark.org.uk/visitor-centre/",
+   "quote": "Toilets, including disabled and baby changing facilities, are available on site.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Toilets, including disabled and baby changing facilities, are available on site.",
+   "oldSrc": "https://www.colnevalleypark.org.uk/visitor-centre/"
+  },
+  {
+   "venue": "Colne Valley Regional Park",
+   "id": "572d88a7-f0e2-49af-89c3-9fd0849d50be",
+   "key": "familyFacilities.babyChanging",
+   "value": "yes",
+   "src": "https://www.colnevalleypark.org.uk/visitor-centre/",
+   "quote": "Toilets, including disabled and baby changing facilities, are available on site.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Toilets, including disabled and baby changing facilities, are available on site.",
+   "oldSrc": "https://www.colnevalleypark.org.uk/visitor-centre/"
+  },
+  {
+   "venue": "Colne Valley Regional Park",
+   "id": "edc18669-8938-4575-be32-6274c971eebb",
+   "key": "familyFacilities.freeParking",
+   "value": "no",
+   "src": "https://www.colnevalleypark.org.uk/visitor-centre/",
+   "quote": "Parking charges apply year round.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Parking charges apply year round.",
+   "oldSrc": "https://www.colnevalleypark.org.uk/visitor-centre/"
+  },
+  {
+   "venue": "Colne Valley Regional Park",
+   "id": "e96b04e6-ca08-4830-b4f2-3010fdafc334",
+   "key": "environment",
+   "value": "outdoor",
+   "src": "https://www.colnevalleypark.org.uk/visit-colne-valley/",
+   "quote": "ing for places to visit, stay, eat, get outdoor active or just relax and enjoy the view, you will find a great selection here",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-12-30",
+   "old": "ing for places to visit, stay, eat, get outdoor active or just relax and enjoy the view, you will find a great selection here",
+   "oldSrc": "https://www.colnevalleypark.org.uk/visit-colne-valley/"
+  },
+  {
+   "venue": "Queen Elizabeth Olympic Park",
+   "id": "9576b5fb-1505-4b22-b953-b9b70a688013",
+   "key": "familyFacilities.cafe",
+   "value": "yes",
+   "src": "https://www.queenelizabetholympicpark.co.uk/plan-your-visit/where-stay",
+   "quote": "tel Snoozebox Explore the Park See all plan your visit Explore our options Bars Cafés Grab and Go Restaurants We recommend Must-Visit Cafes Your guide to the best bars Experience al fresco dining Top restaurant picks Riverside dining and cafes at Aquatics Walk Riverside East Ginger and Mint Draughts See all eat and drink About us Who we are How we work Work with us Contact us Board and committees",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "tel Snoozebox Explore the Park See all plan your visit Explore our options Bars Cafés Grab and Go Restaurants We recommend Must-Visit Cafes Your guide to the best bars Experience al fresco dining Top restaurant picks Riverside dining and cafes at Aquatics Walk Riverside East Ginger and Mint Draughts See all eat and drink About us Who we are How we work Work with us Contact us Board and committees",
+   "oldSrc": "https://www.queenelizabetholympicpark.co.uk/plan-your-visit/where-stay"
+  },
+  {
+   "venue": "Queen Elizabeth Olympic Park",
+   "id": "1924e503-3f69-437f-a512-b79c8b5adc81",
+   "key": "familyFacilities.playground",
+   "value": "yes",
+   "src": "https://www.queenelizabetholympicpark.co.uk/plan-your-visit/where-stay",
+   "quote": "ign up now What's on Popular We Recommend Explore the Park Venues Parklands and playgrounds See and do Visitor guides Plan your visit Access and safety Getting here Visitor information Where to stay Eat and Drink Explore our options We recommend About us Who we are How we work Work with us Contact us Board and committees Environmental sustainability Community Residents Information Housing Developm",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "ign up now What's on Popular We Recommend Explore the Park Venues Parklands and playgrounds See and do Visitor guides Plan your visit Access and safety Getting here Visitor information Where to stay Eat and Drink Explore our options We recommend About us Who we are How we work Work with us Contact us Board and committees Environmental sustainability Community Residents Information Housing Developm",
+   "oldSrc": "https://www.queenelizabetholympicpark.co.uk/plan-your-visit/where-stay"
+  },
+  {
+   "venue": "Whitechapel Gallery",
+   "id": "7453ecdc-b9d3-49d4-a489-eadd570b5167",
+   "key": "familyFacilities.babyChanging",
+   "value": "yes",
+   "src": "https://www.whitechapelgallery.org/visit/",
+   "quote": "Children & Families Baby changing facilities are on the ground floor, near Alba Caffe.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "Children & Families Baby changing facilities are on the ground floor, near Alba Caffe.",
+   "oldSrc": "https://www.whitechapelgallery.org/visit/"
+  },
+  {
+   "venue": "Whitechapel Gallery",
+   "id": "1485503b-81f6-47a1-90f0-ca06a476ab0a",
+   "key": "familyFacilities.cafe",
+   "value": "yes",
+   "src": "https://www.whitechapelgallery.org/visit/",
+   "quote": "ers a range of benefits from free entry to discounts on artist editions, in our cafe, and at our bookshop.",
+   "checkedAt": "2026-10-01",
+   "validUntil": "2026-10-31",
+   "old": "ers a range of benefits from free entry to discounts on artist editions, in our cafe, and at our bookshop.",
+   "oldSrc": "https://www.whitechapelgallery.org/visit/"
+  }
+ ],
+ "perVenue": {
+  "Gunnersbury Park": {
+   "pagesUsed": 6,
+   "eligibleFields": 5,
+   "withdrawn": 0
+  },
+  "Museum of the Home": {
+   "pagesUsed": 2,
+   "eligibleFields": 1,
+   "withdrawn": 0
+  },
+  "Royal Air Force Museum London": {
+   "pagesUsed": 7,
+   "eligibleFields": 9,
+   "withdrawn": 0
+  },
+  "Queen's House": {
+   "pagesUsed": 7,
+   "eligibleFields": 3,
+   "withdrawn": 0
+  },
+  "National Maritime Museum": {
+   "pagesUsed": 6,
+   "eligibleFields": 6,
+   "withdrawn": 0
+  },
+  "Saatchi Gallery": {
+   "pagesUsed": 4,
+   "eligibleFields": 4,
+   "withdrawn": 0
+  },
+  "The Wallace Collection": {
+   "pagesUsed": 6,
+   "eligibleFields": 6,
+   "withdrawn": 0
+  },
+  "William Morris Gallery": {
+   "pagesUsed": 6,
+   "eligibleFields": 4,
+   "withdrawn": 0
+  },
+  "London Eye": {
+   "pagesUsed": 6,
+   "eligibleFields": 6,
+   "withdrawn": 0
+  },
+  "Frameless": {
+   "pagesUsed": 6,
+   "eligibleFields": 3,
+   "withdrawn": 0
+  },
+  "Cutty Sark": {
+   "pagesUsed": 7,
+   "eligibleFields": 3,
+   "withdrawn": 0
+  },
+  "Mudchute Park and Farm": {
+   "pagesUsed": 5,
+   "eligibleFields": 4,
+   "withdrawn": 0
+  },
+  "Chiswick House": {
+   "pagesUsed": 5,
+   "eligibleFields": 6,
+   "withdrawn": 0
+  },
+  "Hackney City Farm": {
+   "pagesUsed": 3,
+   "eligibleFields": 5,
+   "withdrawn": 0
+  },
+  "Tate Modern": {
+   "pagesUsed": 8,
+   "eligibleFields": 6,
+   "withdrawn": 0
+  },
+  "Victoria and Albert Museum": {
+   "pagesUsed": 8,
+   "eligibleFields": 4,
+   "withdrawn": 0
+  },
+  "Northala Fields": {
+   "pagesUsed": 5,
+   "eligibleFields": 3,
+   "withdrawn": 0
+  },
+  "Sydenham Hill Wood": {
+   "pagesUsed": 6,
+   "eligibleFields": 2,
+   "withdrawn": 1
+  },
+  "Colne Valley Regional Park": {
+   "pagesUsed": 6,
+   "eligibleFields": 6,
+   "withdrawn": 1
+  },
+  "Queen Elizabeth Olympic Park": {
+   "pagesUsed": 6,
+   "eligibleFields": 2,
+   "withdrawn": 2
+  },
+  "Whitechapel Gallery": {
+   "pagesUsed": 5,
+   "eligibleFields": 2,
+   "withdrawn": 1
+  }
+ },
+ "untouched": 0,
+ "networkAttempts": 0,
+ "metadataRebuilds": 4
+}

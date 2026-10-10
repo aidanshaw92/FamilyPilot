@@ -1,0 +1,37 @@
+{
+ "note": "Round 2 of Pack C: the same nine real cards, four new hidden controls (seed c2-2026-10-09). DO NOT SHARE with the reviewer. Opaque card ids map back to real or ctl: ids.",
+ "round": 2,
+ "idMap": {
+  "k4f71f89b": "ctl:ChIJV_iXMtcadkgRqBI84CY_crE:access.wheelchair",
+  "kaea15015": "ChIJV_iXMtcadkgRqBI84CY_crE:toilets.toilets",
+  "k182e1067": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:activities.the-garden",
+  "ka5dd9f32": "ChIJV_iXMtcadkgRqBI84CY_crE:activities.zootown",
+  "k8fc46d0c": "ChIJV_iXMtcadkgRqBI84CY_crE:transport.parking",
+  "k0aa4d3e2": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:toilets.toilets",
+  "kef77e7a6": "ctl:ChIJSzwgydoDdkgRndnXVYQGXBI:access.wheelchair",
+  "k1e0593fd": "ctl:ChIJOWBQvA4FdkgRQf5iYYFF1v4:play.playground",
+  "ke832974e": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:transport.parking",
+  "kdaedaf26": "ChIJSzwgydoDdkgRndnXVYQGXBI:transport.parking",
+  "kbea04d45": "ChIJJ2CD1mEddkgRAuOi9iSzBrk:transport.parking",
+  "k857c0834": "ChIJP9oAE0MFdkgR3iKGFKZO1SE:toilets.toilets",
+  "k7f9fe1fe": "ctl:ChIJse1x6SoRdkgR83yrIhNV5gc:toilets.babyChanging"
+ },
+ "controls": {
+  "ctl:ChIJOWBQvA4FdkgRQf5iYYFF1v4:play.playground": {
+   "kind": "adds a claim in ordinary words",
+   "realItem": "ChIJOWBQvA4FdkgRQf5iYYFF1v4:play.playground"
+  },
+  "ctl:ChIJV_iXMtcadkgRqBI84CY_crE:access.wheelchair": {
+   "kind": "adds a claim in ordinary words",
+   "realItem": "ChIJV_iXMtcadkgRqBI84CY_crE:access.wheelchair"
+  },
+  "ctl:ChIJSzwgydoDdkgRndnXVYQGXBI:access.wheelchair": {
+   "kind": "yes became no",
+   "realItem": "ChIJSzwgydoDdkgRndnXVYQGXBI:access.wheelchair"
+  },
+  "ctl:ChIJse1x6SoRdkgR83yrIhNV5gc:toilets.babyChanging": {
+   "kind": "a figure changed",
+   "realItem": "ChIJse1x6SoRdkgR83yrIhNV5gc:toilets.babyChanging"
+  }
+ }
+}

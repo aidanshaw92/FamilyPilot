@@ -19,6 +19,8 @@ import {
 } from './age-suitability';
 import { compareTravelMinutes } from '@/src/utils/travel-time';
 import { evaluateAgeAdmission } from './age-admission';
+import { evaluateVenueRules } from './venue-rules';
+import { stepFreeOutcome, venueAccess, type NeedOutcome } from '@/src/services/access/access-concepts';
 import {
   hasTrustedMatchSignals,
   scoreTrustedAccessibility,
@@ -150,6 +152,10 @@ function evaluateJourney(driveMinutes: number, maxMinutes: number): FactMatchOut
   if (!Number.isFinite(driveMinutes)) return 'unknown';
   if (driveMinutes <= maxMinutes) return 'suitable';
   return 'unsuitable';
+}
+
+function needToOutcome(outcome: NeedOutcome): FactMatchOutcome {
+  return outcome === 'met' ? 'suitable' : outcome === 'unmet' ? 'unsuitable' : 'unknown';
 }
 
 function applyConstraint(
@@ -303,6 +309,39 @@ export function matchVenueToDayRequest(
     }
   }
 
+  // Step-free access for a party with a wheelchair or mobility-aid user: a confirmed "no" from the venue refuses the day, an
+  // unconfirmed one is carried as something to check (the sequencer's rule for every required fact), and a "yes" is met. Read
+  // from the venue's own step-free and wheelchair-access claims only (access-concepts.ts): a buggy rating, general parking and
+  // the category are not evidence either way, and nothing here is scored.
+  if (request.needsStepFree) {
+    const outcome = needToOutcome(stepFreeOutcome(venueAccess(facts)));
+    evaluations.push({ field: 'accessibility.wheelchairAccessible', strength: 'required', outcome });
+    // Unknown is "needs checking": not a confirmed no (so the venue stays), and not a confirmed yes (so it is named as unconfirmed
+    // and the fit is never "Best fit"). Only a confirmed "no" refuses. Other required facilities still fail closed.
+    if (outcome === 'unsuitable') eligible = false;
+  }
+
+  // A recorded venue rule the household cannot work around (a buggy-dependent family where pushchairs are not allowed in the
+  // core experience; a step-free-dependent one where the reviewer marked a gap as covering the visit). Only a confirmed,
+  // reviewed rule produces this; a venue with none recorded is not touched, and nothing here changes a score.
+  if (facts.rules?.length) {
+    const verdict = evaluateVenueRules(facts.rules, {
+      date: request.visitDate ?? '',
+      usesPushchair: request.hasPushchair,
+      requiresPushchair: request.constraints.pushchair?.strength === 'required' && request.hasPushchair,
+      needsStepFree: Boolean(request.needsStepFree),
+    });
+    if (verdict.blocksHousehold) {
+      evaluations.push({ field: 'venueRules', strength: 'required', outcome: 'unsuitable', detail: [verdict.blocksHousehold.text, ...verdict.exceptions.map((e) => e.text)].join('\n') });
+      eligible = false;
+    } else if (verdict.closedAllDay) {
+      // A reviewed closure on the chosen date. The sequencer says it first and in its own words; the matcher says it too so that
+      // every caller that asks "does this suit the household that day" (Meet Halfway, the single-venue planner) gets the same answer.
+      evaluations.push({ field: 'venueRules', strength: 'required', outcome: 'unsuitable', detail: verdict.closedAllDay.text });
+      eligible = false;
+    }
+  }
+
   if (request.constraints.toilets && request.constraints.toilets.strength !== 'context') {
     if (
       !applyConstraint(
@@ -341,6 +380,20 @@ export function matchVenueToDayRequest(
         tally,
       )
     ) {
+      eligible = false;
+    }
+  }
+
+  // Blue Badge parking and the two transport needs: each answered from its OWN claim, none from general parking or from each
+  // other. A family states these; nothing is inferred from a mobility aid, a vehicle or a buggy.
+  const access = venueAccess(facts);
+  for (const [constraint, field, concept] of [
+    [request.constraints.blueBadgeParking, 'accessibility.accessibleParking', 'blue_badge_parking'],
+    [request.constraints.stepFreeStation, 'transport.stepFreeStation', 'step_free_station'],
+    [request.constraints.publicTransport, 'transport.publicTransport', 'public_transport'],
+  ] as const) {
+    if (!constraint || constraint.strength === 'context') continue;
+    if (!applyConstraint(evaluations, field, constraint.strength, needToOutcome(access[concept] === 'yes' ? 'met' : access[concept] === 'no' ? 'unmet' : 'unknown'), tally)) {
       eligible = false;
     }
   }

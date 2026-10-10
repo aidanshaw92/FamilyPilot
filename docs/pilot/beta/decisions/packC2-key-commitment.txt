@@ -1,0 +1,2 @@
+Pack C round 2: the scoring key is withheld until the reviewer's export is returned, so the planted controls cannot be read in advance.
+SHA-256 of the key file (published now, key committed after scoring): 47417ab8d4ea60e10464cf03c87e63b95328567276fcb9fdfc5f5b5bd4285eff

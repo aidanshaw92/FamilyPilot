@@ -1,0 +1,370 @@
+{
+ "babylon-park-london:considerations.duration": {
+  "text": "Duration varies depending on the ticket purchased; the venue recommends allowing 2 hours.",
+  "was": "A visit takes about two hours.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "battersea-park:activities.childrens-zoo": {
+  "text": "A children's zoo is listed among the park's features.",
+  "was": "A children's zoo is listed among the park's features. Nothing else is said about it on the council pages.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "discover-childrens-story-centre:activities.baby-toddler-space": {
+  "text": "A Baby and Toddler Sensory Story Space dedicated to 0-2 year olds, free with your Entry ticket; timed 45-minute sessions should be booked.",
+  "was": "A play space for 0 to 2 year olds only (free with an Entry ticket; book a 45 minute session). Older siblings have a small craft area.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "discover-childrens-story-centre:activities.exhibition-0-8": {
+  "text": "Luna Loves London immersive exhibition, open now, age guide 0-8, duration 50 mins, every day at various times.",
+  "was": "Luna Loves London immersive exhibition, age guide 0 to 8, 50 minutes (add-on ticket).",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "discover-childrens-story-centre:pushchair.storage": {
+  "text": "Buggy storage is available in the basement and/or garden; many spaces cannot have buggies in.",
+  "was": "Buggy storage on the ground floor, and in the basement or garden.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "discover-childrens-story-centre:pricing.under1": {
+  "text": "The Annual Entry tickets page says 0-1 year olds receive free tickets.",
+  "was": "Babies under 1: one page says \"0-1 year olds ... receive free tickets\", the FAQ says under-1 tickets are \"discounted\".",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "gunnersbury-park:access.stepFree": {
+  "text": "Step-free access throughout the museum (some ramps and slopes); lift access to the first and second floors (all museum levels); a wheelchair to borrow on request.",
+  "was": "Step-free access throughout the museum (some ramps and slopes); a lift to all levels; a manual wheelchair to borrow.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "gunnersbury-park:pricing.free": {
+  "text": "The museum and park are free to enter; the car park has usage fees, though parking for blue badge holders in the designated disabled bays is free.",
+  "was": "The museum and park are free to enter; car parking is charged.",
+  "verdicts": {
+   "A": "supports",
+   "B": "narrower"
+  }
+ },
+ "horniman-museum-and-gardens:toilets.accessibleToilet": {
+  "text": "There are inclusive toilets in the Museum, Gardens and Café; the Museum does not provide hoists or adult changing facilities.",
+  "was": "Accessible toilets in the museum, the gardens and the café; no hoists or adult changing.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "horniman-museum-and-gardens:opening.closure": {
+  "text": "The Nature Gallery and Nature Discovery Den will be closed until 5 February 2027 for the Nature + Love project.",
+  "was": "The Natural History Gallery is closed for refurbishment; the Nature Gallery and Nature Discovery Den are closed until 5 February 2027.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "horniman-museum-and-gardens:pricing.paidAttractions": {
+  "text": "Aquarium £2 to £16.80 and Butterfly House £2 to £28.60; children under 3 may visit free of charge but must book into a timeslot.",
+  "was": "Aquarium £2 to £16.80 and Butterfly House £2 to £28.60 (the low end is the Universal Credit price); children under 3 may visit free but must book a timeslot.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "london-zoo:activities.zootown": {
+  "text": "ZooTown is an indoor role-play adventure aimed at children aged up to 8; tickets must be booked online in advance; Silver members and non-members pay £1 per child.",
+  "was": "ZooTown is an indoor role-play adventure aimed at children up to 8; every child is welcome. Book online; £1 per child for non-members.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "london-zoo:food.cafe": {
+  "text": "A Barista Bar next to The Terrace Restaurant serves coffees and hot drinks from 10am until the Zoo closes; The Terrace Restaurant is open 11.30am-2.30pm year round.",
+  "was": "The Terrace Restaurant, Peckish Parrot Café, a Barista Bar and kiosks.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "london-zoo:access.steep-slopes": {
+  "text": "The slopes leading to the two tunnels in the Zoo are steep.",
+  "was": "The slopes to the two tunnels are steep (relevant to pushchairs).",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "mudchute-park-and-farm:access.wheelchair": {
+  "text": "Most areas of the farm are accessible by wheelchair, though not all paths are tarmac; some ground can become muddy during and after heavy rain.",
+  "was": "Most areas wheelchair accessible; muddy after heavy rain.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "supports"
+  }
+ },
+ "mudchute-park-and-farm:opening.hours": {
+  "text": "Farm open every day 9am to 4pm (animals go in from 3pm); park open every day dawn to dusk.",
+  "was": "Farm open every day 9am to 4pm (animals go in from 3pm); park dawn to dusk. Pets corner and courtyard are closed on Mondays outside school holidays.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "mudchute-park-and-farm:considerations.monday-courtyard": {
+  "text": "The Main Courtyard is closed on Mondays except during school holidays, and there is no access to the Mudchute toilets when the courtyard is closed.",
+  "was": "The main courtyard (with the toilets and baby changing) is closed on Mondays outside school holidays, so there is no toilet access.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "mudchute-park-and-farm:considerations.hygiene": {
+  "text": "Visitors are encouraged to wash their hands thoroughly after touching any animals (and are asked not to touch young lambs during lambing).",
+  "was": "Wash hands after touching animals; pregnant visitors are advised not to touch pregnant ewes, goats, lambs or kids.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "natural-history-museum:transport.parking": {
+  "text": "No general parking facilities on site and parking around the museum is limited; a very limited number of on-site spaces are available for Blue Badge holders, booked in advance.",
+  "was": "No parking on site, and parking around the museum is limited.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "natural-history-museum:pricing.free": {
+  "text": "A free entry ticket can be booked to skip the queue on arrival; some exhibitions are paid.",
+  "was": "The galleries are free to explore; a free entry ticket is recommended to guarantee entry. Paid exhibitions are charged.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "raf-museum-london:access.wheelchair": {
+  "text": "Wide aisles throughout the hangars make access easy for wheelchairs and pushchairs; a limited number of manual wheelchairs and mobility scooters can be borrowed free, weather permitting, on a first-come, first-served basis.",
+  "was": "Wide aisles in the hangars suit wheelchairs; manual wheelchairs and mobility scooters can be borrowed free.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "raf-museum-london:opening.theatre": {
+  "text": "The 4D Theatre is temporarily closed for refurbishment.",
+  "was": "The 4D Theatre is temporarily closed for refurbishment until 31 December 2026.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "raf-museum-london:pricing.free": {
+  "text": "Admission to all areas of the Museum is free, and donations are welcome.",
+  "was": "Admission to all areas is free; donations welcome. Parking is charged.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "science-museum:access.stepFreeRoute": {
+  "text": "A free guide for families with children under seven follows a step-free route through the museum, with five experiences for toddlers and young explorers.",
+  "was": "A step-free route for families with under-7s links the toddler galleries.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "science-museum:access.mezzanine": {
+  "text": "Currently there is no step-free access to the mezzanine level in the Making the Modern World and Flight galleries.",
+  "was": "No step-free access to the mezzanine in Making the Modern World and Flight.",
+  "verdicts": {
+   "A": "supports",
+   "B": "narrower"
+  }
+ },
+ "science-museum:pricing.free": {
+  "text": "Admission is free: a free admission ticket can be booked; donations are welcome.",
+  "was": "Free admission with a pre-booked ticket. Wonderlab, Power Up, IMAX and the Bubble Explorers show are charged.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "unsupported"
+  }
+ },
+ "discover-childrens-story-centre:toilets.babyChanging": {
+  "text": "Toilets with baby changing facilities on all main floors.",
+  "was": "Toilets with baby changing on all main floors. No facility to heat baby food or milk.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "gunnersbury-park:toilets.accessibleToilet": {
+  "text": "There is an accessible toilet in the museum and another in the park toilet block, which is near the museum.",
+  "was": "Accessible toilets in the museum (ground floor, no RADAR key) and the park toilet block.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "london-zoo:food.picnic": {
+  "text": "Outdoor picnic benches are available at the Peckish Parrot Café in the Animal Adventure area.",
+  "was": "Outdoor picnic benches.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "science-museum:pushchair.storage": {
+  "text": "Free buggy parking in the Spare Room (level -1, opposite The Garden; pushchairs must be empty), and a small free buggy park by Pattern Pod on level 0 for use while you visit that area.",
+  "was": "Free buggy parking in the Spare Room (level -1, opposite The Garden); a small free buggy park by Pattern Pod.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "supports"
+  }
+ },
+ "babylon-park-london:activities.rides-arcade": {
+  "text": "Indoor rides including bumper cars, a carousel and a kiddie wheel, plus hundreds of games and VR experiences. No minimum age; the rollercoaster and drop tower have a minimum height of 105cm.",
+  "was": "Indoor rides including bumper cars, a carousel and a kiddie wheel, plus hundreds of arcade games and VR. No minimum age; the rollercoaster and drop tower have a 105cm height limit.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "babylon-park-london:transport.station": {
+  "text": "Babylon Park is an 8 minute walk from Camden Road station.",
+  "was": "An 8 minute walk from Camden Road station; Camden Town (Northern line) is a short walk.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "babylon-park-london:food.cafe": {
+  "text": "The Ovo & Neta restaurant on the Mezzanine floor serves a variety of food and drinks; vending machines are available throughout the park; outside food and drinks are not permitted.",
+  "was": "Ovo & Neta restaurant on the mezzanine (pizza, hot dogs, ice cream, waffles); vending machines. No outside food or drink.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "discover-childrens-story-centre:food.cafe": {
+  "text": "A café on the ground floor; on busier days a coffee-and-snack shack in the garden is open.",
+  "was": "A café and bookshop on the ground floor; a snack shack in the garden on busier days.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "gunnersbury-park:activities.park-museum-lake": {
+  "text": "A park with a museum and boating on the lake.",
+  "was": "A park with a museum and a boating lake, and events for children and families. No age is given.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "gunnersbury-park:transport.parking": {
+  "text": "Two car parks. Up to 30 minutes free if you register on the RingGo app or the machine (you cannot register for another free half hour for 2 hours after leaving); 30 minutes to 1 hour £1; longer than an hour £1 per hour. Charges apply at all times, including bank holidays. Blue Badge parking is free.",
+  "was": "Two car parks. The first 30 minutes are free; then £1 for 30 minutes to 1 hour and £1 an hour after. Charges apply at all times, including bank holidays. Blue Badge parking is free.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "supports"
+  }
+ },
+ "gunnersbury-park:food.cafe": {
+  "text": "The park café: weekdays 7am to 5pm, weekends 7am to 6pm.",
+  "was": "The Pure in the Park café: weekdays 7am to 5pm, weekends 7am to 6pm.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "horniman-museum-and-gardens:activities.kusuma-nature-play": {
+  "text": "The Gardens Cafe is located next to the Kusuma Nature Play Area at the bottom of the Meadow Field.",
+  "was": "Kusuma Nature Play Area, in the gardens, with its own toilets with baby changing, café and picnic tables. No age is given.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "horniman-museum-and-gardens:food.cafe": {
+  "text": "The Horniman Cafe is open 9am to 5pm daily.",
+  "was": "The Horniman Cafe (9am to 5pm daily) and the Gardens Cafe by the nature play area.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "london-zoo:activities.animal-talks": {
+  "text": "Daily animal talks, plus a schedule of upcoming events (no age given).",
+  "was": "Daily animal talks and events (no age given).",
+  "verdicts": {
+   "A": "narrower",
+   "B": "supports"
+  }
+ },
+ "london-zoo:toilets.accessibleToilet": {
+  "text": "The zoo has a Changing Places toilet and a number of accessible toilets around the Zoo.",
+  "was": "Accessible toilets around the zoo and a Changing Places toilet at Animal Adventure.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "mudchute-park-and-farm:toilets.toilets": {
+  "text": "Toilets, including a disabled toilet, are available in the courtyard.",
+  "was": "Toilets in the courtyard, including a disabled toilet. No access when the courtyard is closed (Mondays outside school holidays).",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "natural-history-museum:activities.dinosaurs": {
+  "text": "Roaring T. rex (in the Dinosaurs Gallery) and the museum's other star attractions are permanently on display and always free to visit. No age is given.",
+  "was": "The Dinosaurs Gallery (Roaring T. rex) and the other star attractions are permanent and free. No age is given.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "supports"
+  }
+ },
+ "natural-history-museum:opening.hours": {
+  "text": "Open daily 10:00 to 17:50 (last entry 17:30). The page also lists closures on 9 October and 24 to 26 December.",
+  "was": "Open daily 10:00 to 17:50 (last entry 17:30).",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "raf-museum-london:activities.aeroplay": {
+  "text": "AeroPlay! is the museum's soft play area, next to the café in Hangar 4. No age is given.",
+  "was": "AeroPlay is the museum's soft play area, in Hangar 4 next to the café. No age is given.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ },
+ "raf-museum-london:play.softplay": {
+  "text": "AeroPlay! soft play is next to the café, which is in Hangar 4.",
+  "was": "AeroPlay soft play in Hangar 4.",
+  "verdicts": {
+   "A": "narrower",
+   "B": "narrower"
+  }
+ }
+}

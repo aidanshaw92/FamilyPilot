@@ -1,0 +1,20 @@
+{
+ "purpose": "one controlled read of one venue website; no Google, no database",
+ "requests": 1,
+ "pages": [
+  {
+   "url": "https://discover.org.uk/your-visit",
+   "finalUrl": "https://discover.org.uk/your-visit",
+   "status": "ok",
+   "httpStatus": null,
+   "error": null,
+   "retrievedAt": "2026-10-09T13:11:21.820Z",
+   "contentSha256": "3552250741a5adb4facf424abbe0df91ba25f147ebaf1327451f4bc9360e57fd",
+   "textLength": 2132,
+   "priceLines": [
+    "Annual Entry to Discover Add-on Storytelling, Immersive Exhibitions and other tickets cost between £3-£5.50 Day Entry - Adult or Child Day Entry - Newham Adult or Child or concession Annual Entry - Adu"
+   ],
+   "text": "Plan your visit - Discover Children’s Story Centre Book now Book my tickets Exhibition Luna Loves London Discover is back open now Plan your visit Discover is open every day, 10am - 5pm Visit us for play, stories, books and imagination. Our cafe and bookshop is open to everyone - our Story Worlds, Garden and add-on events and exhibition all require a Day or Annual Entry ticket to access. Advance booking is recommended. * We're closed on 24, 25, 26, 31 December and 1 January over the festive period. More information Map data ©2026 Google Discover Children's Story Centre 383-387 High Street Stratford London E15 4QZ 020 8536 5555 bookings@discover.org.uk More information Prices for Day or Annual Entry to Discover Add-on Storytelling, Immersive Exhibitions and other tickets cost between £3-£5.50 Day Entry - Adult or Child Day Entry - Newham Adult or Child or concession Annual Entry - Adult or Child All-year Entry to Discover's Story Worlds and Garden. Annual Entry - Newham Adult or Child or concessions All-year Entry to Discover's Story Worlds and Garden. Learn about Annual Entry! Start building my visit Discover is back open now About Annual Entry tickets Find out more about our new 'Annual Entry' tickets - what they are, how to buy them, and how to use them. Read More Find out more Gift vouchers Give the gift of imagination with Discover Gift Vouchers. Read More Find out more FAQs Frequently asked questions. Read More Find out more Story Centre 383-387 High Street Stratford London E15 4QZ 020 8536 5555 bookings@discover.org.uk JOIN OUR EMAIL LIST! Support us Discover Children’s Story Centre is a UK registered charity, number 1070468. Sponsorship, donations and grants are essential to enable us to transform lives through stories, creativity and imagination Donate to us FAQs Access Privacy Policy Terms and conditions Cookies policy Safeguarding © Discover Children’s Story Centre 2016 Registered Charity Number 1070468 To begin building your day, first select a date. If you want to see what’s on and when visit the Things to See and Do page. Choose a date to see events and availability. build my visit!"
+  }
+ ]
+}

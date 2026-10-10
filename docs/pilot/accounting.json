@@ -1,0 +1,449 @@
+{
+ "builtOn": "2026-10-08",
+ "funnel": {
+  "total": 196,
+  "verified": 72,
+  "review": 99,
+  "unknown": 21,
+  "hypothesis": 4,
+  "held": 1
+ },
+ "byDisposition": {
+  "verified": {
+   "NO HOME: a plain activity description has no claim type": 12,
+   "claim": 36,
+   "NO HOME: stations, buses, fees and entrances have no claim type": 8,
+   "NO HOME: facility detail beyond the mapped facts has no claim type": 4,
+   "venue rule or official-hours claim (structured; a person must approve it)": 5,
+   "NO HOME: practical rules and closures have no claim type": 5,
+   "note only (good to know); no structured home": 2
+  },
+  "review": {
+   "ships as reviewed activity data (code, by pull request)": 10,
+   "NO HOME: pushchair rules and storage have no claim type (only a terrain rating)": 4,
+   "claim": 28,
+   "note only (good to know); no structured home": 4,
+   "venue rule or official-hours claim (structured; a person must approve it)": 28,
+   "NO HOME: practical rules and closures have no claim type": 1,
+   "NO HOME: accessibility detail beyond wheelchair and sensory has no claim type": 5,
+   "price: reviewed admission data or held (no claim type)": 7,
+   "ships as reviewed admission data (code, by pull request)": 6,
+   "NO HOME: a plain activity description has no claim type": 3,
+   "NO HOME: stations, buses, fees and entrances have no claim type": 3
+  }
+ },
+ "claims": {
+  "noPersonUnderPilotGate": 38,
+  "ifApprovedUnderPilotGate": 73,
+  "noPersonAndProductionAutoField": 29,
+  "ifApprovedAndProductionAutoField": 64,
+  "venueRulesProposedAllNeedAPerson": 28,
+  "officialHoursProposedAllNeedAPerson": 16
+ },
+ "productionAutoFields": [
+  "toilets",
+  "babyChanging",
+  "parking",
+  "freeParking",
+  "cafe",
+  "playground",
+  "wheelchairAccessible",
+  "accessibleToilet",
+  "sensoryFriendlySessions",
+  "pushchairSuitability",
+  "environment"
+ ],
+ "crossCheck": {
+  "agree": 44,
+  "conflict": 2,
+  "extractorMissed": 11,
+  "profileFactsWithNoProductionField": 116
+ },
+ "rows": [
+  {
+   "venue": "Babylon Park London",
+   "fact": "toilets.toilets",
+   "profile": "yes",
+   "extractor": "-",
+   "result": "extractor-missed"
+  },
+  {
+   "venue": "Babylon Park London",
+   "fact": "transport.parking",
+   "profile": "no",
+   "extractor": "no",
+   "result": "agree"
+  },
+  {
+   "venue": "Babylon Park London",
+   "fact": "food.cafe",
+   "profile": "yes",
+   "extractor": "-",
+   "result": "extractor-missed"
+  },
+  {
+   "venue": "Babylon Park London",
+   "fact": "access.wheelchair",
+   "profile": "yes",
+   "extractor": "-",
+   "result": "extractor-missed"
+  },
+  {
+   "venue": "Battersea Park",
+   "fact": "play.playground",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Discover Children's Story Centre",
+   "fact": "toilets.toilets",
+   "profile": "yes",
+   "extractor": "-",
+   "result": "extractor-missed"
+  },
+  {
+   "venue": "Discover Children's Story Centre",
+   "fact": "toilets.babyChanging",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Discover Children's Story Centre",
+   "fact": "toilets.accessibleToilet",
+   "profile": "yes",
+   "extractor": "-",
+   "result": "extractor-missed"
+  },
+  {
+   "venue": "Discover Children's Story Centre",
+   "fact": "transport.parking",
+   "profile": "no",
+   "extractor": "no",
+   "result": "agree"
+  },
+  {
+   "venue": "Discover Children's Story Centre",
+   "fact": "food.cafe",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Discover Children's Story Centre",
+   "fact": "access.wheelchair",
+   "profile": "yes",
+   "extractor": "-",
+   "result": "extractor-missed"
+  },
+  {
+   "venue": "Discover Children's Story Centre",
+   "fact": "access.sensory",
+   "profile": "yes",
+   "extractor": "-",
+   "result": "extractor-missed"
+  },
+  {
+   "venue": "Gunnersbury Park",
+   "fact": "toilets.toilets",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Gunnersbury Park",
+   "fact": "toilets.accessibleToilet",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Gunnersbury Park",
+   "fact": "transport.parking",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Gunnersbury Park",
+   "fact": "food.cafe",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Gunnersbury Park",
+   "fact": "access.wheelchair",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Gunnersbury Park",
+   "fact": "access.relaxed",
+   "profile": "yes",
+   "extractor": "-",
+   "result": "extractor-missed"
+  },
+  {
+   "venue": "Horniman Museum and Gardens",
+   "fact": "toilets.babyChanging",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Horniman Museum and Gardens",
+   "fact": "toilets.toilets",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Horniman Museum and Gardens",
+   "fact": "toilets.accessibleToilet",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Horniman Museum and Gardens",
+   "fact": "transport.parking",
+   "profile": "no",
+   "extractor": "no/yes",
+   "result": "agree-but-extractor-also-says-opposite"
+  },
+  {
+   "venue": "Horniman Museum and Gardens",
+   "fact": "food.cafe",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Horniman Museum and Gardens",
+   "fact": "play.natureplay",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Horniman Museum and Gardens",
+   "fact": "access.wheelchair",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "London Zoo",
+   "fact": "toilets.accessibleToilet",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "London Zoo",
+   "fact": "toilets.toilets",
+   "profile": "yes",
+   "extractor": "-",
+   "result": "extractor-missed"
+  },
+  {
+   "venue": "London Zoo",
+   "fact": "transport.parking",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "London Zoo",
+   "fact": "food.cafe",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "London Zoo",
+   "fact": "access.wheelchair",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Mudchute Park and Farm",
+   "fact": "toilets.toilets",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Mudchute Park and Farm",
+   "fact": "toilets.babyChanging",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Mudchute Park and Farm",
+   "fact": "toilets.accessibleToilet",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Mudchute Park and Farm",
+   "fact": "transport.parking",
+   "profile": "no",
+   "extractor": "yes/no",
+   "result": "agree-but-extractor-also-says-opposite"
+  },
+  {
+   "venue": "Mudchute Park and Farm",
+   "fact": "food.cafe",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Mudchute Park and Farm",
+   "fact": "play.playground",
+   "profile": "adjacent",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Mudchute Park and Farm",
+   "fact": "access.wheelchair",
+   "profile": "yes",
+   "extractor": "-",
+   "result": "extractor-missed"
+  },
+  {
+   "venue": "Natural History Museum",
+   "fact": "toilets.toilets",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Natural History Museum",
+   "fact": "toilets.babyChanging",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Natural History Museum",
+   "fact": "toilets.accessibleToilet",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Natural History Museum",
+   "fact": "transport.parking",
+   "profile": "no",
+   "extractor": "no",
+   "result": "agree"
+  },
+  {
+   "venue": "Natural History Museum",
+   "fact": "food.cafe",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Natural History Museum",
+   "fact": "access.wheelchair",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "fact": "toilets.babyChanging",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "fact": "toilets.toilets",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "fact": "transport.parking",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "fact": "food.cafe",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "fact": "play.playground",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "fact": "access.wheelchair",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Royal Air Force Museum London",
+   "fact": "access.sensory",
+   "profile": "yes",
+   "extractor": "-",
+   "result": "extractor-missed"
+  },
+  {
+   "venue": "Science Museum",
+   "fact": "toilets.toilets",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Science Museum",
+   "fact": "toilets.babyChanging",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Science Museum",
+   "fact": "toilets.accessibleToilet",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  },
+  {
+   "venue": "Science Museum",
+   "fact": "transport.parking",
+   "profile": "no",
+   "extractor": "no",
+   "result": "agree"
+  },
+  {
+   "venue": "Science Museum",
+   "fact": "food.cafe",
+   "profile": "yes",
+   "extractor": "yes",
+   "result": "agree"
+  }
+ ]
+}

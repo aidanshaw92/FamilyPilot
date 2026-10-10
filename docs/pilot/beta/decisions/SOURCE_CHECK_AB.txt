@@ -1,0 +1,12 @@
+ 1 Natural History Museum   opening.closure        read 2026-10-08  ALL QUOTED PARTS FOUND
+ 2 Science Museum           opening.hours          read 2026-10-08  ALL QUOTED PARTS FOUND
+ 3 Science Museum           pushchair.allowed      read 2026-10-08  ALL QUOTED PARTS FOUND
+ 4 Discover Children's Stor opening.hours          read 2026-10-08  ALL QUOTED PARTS FOUND
+ 5 Discover Children's Stor pushchair.restriction  read 2026-10-08  ALL QUOTED PARTS FOUND
+ 6 Discover Children's Stor pushchair.twins        read 2026-10-08  ALL QUOTED PARTS FOUND
+ 7 London Zoo               opening.hours          read 2026-10-08  ALL QUOTED PARTS FOUND
+ 8 Mudchute Park and Farm   opening.hours          read 2026-10-08  ALL QUOTED PARTS FOUND
+ 9 Gunnersbury Park         opening.hours          read 2026-10-08  ALL QUOTED PARTS FOUND
+10 Discover Children's Stor pricing.paid           read 2026-10-08  NOT FOUND in the stored page: [False]
+11 London Zoo               pricing.variable       read 2026-10-08  ALL QUOTED PARTS FOUND
+12 Science Museum           pricing.free           read 2026-10-08  ALL QUOTED PARTS FOUND

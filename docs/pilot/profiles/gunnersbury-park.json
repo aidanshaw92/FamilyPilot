@@ -9,12 +9,34 @@
     "unknown": 3,
     "review": 7
   },
+  "sources": [
+    {
+      "host": "visitgunnersbury.org",
+      "role": "own site",
+      "status": "dead",
+      "http": 404,
+      "observedOn": "2026-10-08",
+      "retry": "never automatically",
+      "note": "The link from the venue's own site to its park page leads to a page that no longer exists.",
+      "alternatives": [
+        "The museum's accessibility and visit pages (read)",
+        "A person who has visited"
+      ]
+    }
+  ],
   "facts": [
     {
       "sec": "activities",
       "key": "park-museum-lake",
       "value": null,
-      "text": "A park with a museum and a boating lake, and events for children and families. No age is given.",
+      "text": "A park with a museum and boating on the lake.",
+      "amended": {
+        "from": "A park with a museum and a boating lake, and events for children and families. No age is given.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "kind": "provision",
       "label": "Park, museum and boating lake",
       "evidence": {
@@ -23,7 +45,11 @@
         "quote": "wandering around the museum or boating on the lake - there's plenty to enjoy at Gunnersbury.",
         "pageSha256": "04e0038397ae709e"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -49,7 +75,11 @@
       "reviewReasons": [
         "not a fact type that may be accepted without a person",
         "conditional, temporary or dated wording"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -62,20 +92,35 @@
         "quote": "There is also an accessible toilet in the park toilet block, which is located near the museum.",
         "pageSha256": "80e5273c99d6548a"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
       "key": "accessibleToilet",
       "value": "yes",
-      "text": "Accessible toilets in the museum (ground floor, no RADAR key) and the park toilet block.",
+      "text": "There is an accessible toilet in the museum and another in the park toilet block, which is near the museum.",
+      "amended": {
+        "from": "Accessible toilets in the museum (ground floor, no RADAR key) and the park toilet block.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.visitgunnersbury.org/plan-your-visit",
         "readAt": "2026-10-08",
         "quote": "There is an accessible toilet in the museum. There is also an accessible toilet in the park toilet block, which is located near the museum.",
         "pageSha256": "80e5273c99d6548a"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "toilets",
@@ -93,23 +138,52 @@
       "evidence": {
         "url": "https://www.visitgunnersbury.org/plan-your-visit",
         "readAt": "2026-10-08",
-        "quote": "Acton Town Tube Station Piccadilly and District lines Turn left when you leave the station and walk along Gunnersbury Lane for about ten minutes",
+        "quote": "Acton Town Tube Station Piccadilly and District lines Turn left when you leave the station and walk along Gunnersbury Lane for about ten minutes … you can catch the E3 bus travelling towards Acton Town which will drop you outside the Popes Lane entrance … the 65 route goes along South Ealing Road … take the H91 towards West Hounslow",
+        "quotes": [
+          "Acton Town Tube Station Piccadilly and District lines Turn left when you leave the station and walk along Gunnersbury Lane for about ten minutes",
+          "you can catch the E3 bus travelling towards Acton Town which will drop you outside the Popes Lane entrance",
+          "the 65 route goes along South Ealing Road",
+          "take the H91 towards West Hounslow"
+        ],
         "pageSha256": "80e5273c99d6548a"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
       "key": "parking",
       "value": "yes",
-      "text": "Two car parks, charged at all times: £1 for 30 minutes to 1 hour, £1 an hour after; Blue Badge holders free.",
+      "text": "Two car parks. Up to 30 minutes free if you register on the RingGo app or the machine (you cannot register for another free half hour for 2 hours after leaving); 30 minutes to 1 hour £1; longer than an hour £1 per hour. Charges apply at all times, including bank holidays. Blue Badge parking is free.",
+      "amended": {
+        "from": "Two car parks. The first 30 minutes are free; then £1 for 30 minutes to 1 hour and £1 an hour after. Charges apply at all times, including bank holidays. Blue Badge parking is free.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "supports"
+        }
+      },
       "evidence": {
         "url": "https://www.visitgunnersbury.org/plan-your-visit",
         "readAt": "2026-10-08",
-        "quote": "There are two car parks available at Gunnersbury.",
+        "quote": "There are two car parks available at Gunnersbury. … 30 minutes - 1 hour £1 … longer than an hour £1 per hour … charges apply at all times, including bank holidays … 30 minutes of free parking … parking is free",
+        "quotes": [
+          "There are two car parks available at Gunnersbury.",
+          "30 minutes - 1 hour £1",
+          "longer than an hour £1 per hour",
+          "charges apply at all times, including bank holidays",
+          "30 minutes of free parking",
+          "parking is free"
+        ],
         "pageSha256": "80e5273c99d6548a"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -122,20 +196,35 @@
         "quote": "Designated disabled parking for blue badge holders can be found in both car parks and parking is free.",
         "pageSha256": "80e5273c99d6548a"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "food",
       "key": "cafe",
       "value": "yes",
-      "text": "The Pure in the Park café: weekdays 7am to 5pm, weekends 7am to 6pm.",
+      "text": "The park café: weekdays 7am to 5pm, weekends 7am to 6pm.",
+      "amended": {
+        "from": "The Pure in the Park café: weekdays 7am to 5pm, weekends 7am to 6pm.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.visitgunnersbury.org/plan-your-visit",
         "readAt": "2026-10-08",
         "quote": "Café Monday to Friday: 7am to 5pm Weekends: 7am to 6pm",
         "pageSha256": "80e5273c99d6548a"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "play",
@@ -159,13 +248,24 @@
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
       "key": "stepFree",
       "value": "yes",
-      "text": "Step-free access throughout the museum (some ramps and slopes); a lift to all levels; a manual wheelchair to borrow.",
+      "text": "Step-free access throughout the museum (some ramps and slopes); lift access to the first and second floors (all museum levels); a wheelchair to borrow on request.",
+      "amended": {
+        "from": "Step-free access throughout the museum (some ramps and slopes); a lift to all levels; a manual wheelchair to borrow.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.visitgunnersbury.org/museum/accessibility",
         "readAt": "2026-10-08",
@@ -175,24 +275,37 @@
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "access",
       "key": "relaxed",
       "value": "yes",
-      "text": "Relaxed sessions every half term; quieter times are weekdays 2 to 4pm, weekend mornings 10 to 12.",
+      "text": "Relaxed sessions every half term; quieter times are typically weekdays 2pm to 4pm and weekends 10am to 12pm.",
       "goodToKnow": true,
       "evidence": {
         "url": "https://www.visitgunnersbury.org/museum/accessibility",
         "readAt": "2026-10-08",
-        "quote": "We offer Relaxed Sessions every half term.",
+        "quote": "We offer Relaxed Sessions every half term. … quieter times are typically: weekdays: 2:00pm-4:00pm … weekends: 10:00am-12:00pm",
+        "quotes": [
+          "We offer Relaxed Sessions every half term.",
+          "quieter times are typically: weekdays: 2:00pm-4:00pm",
+          "weekends: 10:00am-12:00pm"
+        ],
         "pageSha256": "ec86c9322aee8ef7"
       },
       "status": "review",
       "reviewReasons": [
         "an accessibility claim (high impact)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "opening",
@@ -210,13 +323,24 @@
         "conditional, temporary or dated wording",
         "conflicts with the provider (Google) hours, which show the park as open 24 hours"
       ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "conflict": "the provider (Google) hours, which show the park as open 24 hours"
     },
     {
       "sec": "pricing",
       "key": "free",
       "value": "free",
-      "text": "The museum and park are free to enter; car parking is charged.",
+      "text": "The museum and park are free to enter; the car park has usage fees, though parking for blue badge holders in the designated disabled bays is free.",
+      "amended": {
+        "from": "The museum and park are free to enter; car parking is charged.",
+        "verdicts": {
+          "A": "supports",
+          "B": "narrower"
+        }
+      },
       "evidence": {
         "url": "https://www.visitgunnersbury.org/plan-your-visit",
         "readAt": "2026-10-08",
@@ -226,7 +350,11 @@
       "status": "review",
       "reviewReasons": [
         "a price or a free-entry claim (drives cost)"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "considerations",
@@ -242,7 +370,11 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     }
   ]
 }

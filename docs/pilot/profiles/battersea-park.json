@@ -10,6 +10,22 @@
     "unknown": 6,
     "hypothesis": 2
   },
+  "sources": [
+    {
+      "host": "enablelc.org",
+      "role": "operator",
+      "status": "refused",
+      "http": 403,
+      "observedOn": "2026-10-08",
+      "retry": "never automatically",
+      "note": "The park operator's site answered HTTP 403 to the bounded reader.",
+      "alternatives": [
+        "The council's own pages (read)",
+        "OpenStreetMap features for the park (toilets, cafés, playgrounds), read on a runner under its open licence",
+        "A person who has visited, through the parent-observation path"
+      ]
+    }
+  ],
   "facts": [
     {
       "sec": "activities",
@@ -31,13 +47,24 @@
         "says who a place is for (drives suitability)",
         "conflicts with the page's own title (\"for toddlers and juniors\"), which suggests younger children than the stated 4 to 14"
       ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "conflict": "the page's own title (\"for toddlers and juniors\"), which suggests younger children than the stated 4 to 14"
     },
     {
       "sec": "activities",
       "key": "childrens-zoo",
       "value": null,
-      "text": "A children's zoo is listed among the park's features. Nothing else is said about it on the council pages.",
+      "text": "A children's zoo is listed among the park's features.",
+      "amended": {
+        "from": "A children's zoo is listed among the park's features. Nothing else is said about it on the council pages.",
+        "verdicts": {
+          "A": "narrower",
+          "B": "narrower"
+        }
+      },
       "kind": "provision",
       "label": "Children's zoo",
       "evidence": {
@@ -46,7 +73,11 @@
         "quote": "It has a riverside promenade, a large lake, many notable trees and ecological areas, children's play areas, a children's zoo, the Pump House gallery, ceremony venue and sports facilities.",
         "pageSha256": "dfaac2e1e3436ec1"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "activities",
@@ -88,10 +119,14 @@
       "evidence": {
         "url": "https://www.wandsworth.gov.uk/batterseapark",
         "readAt": "2026-10-08",
-        "quote": "Pedestrian access at Albert Bridge Road, Prince of Wales Drive and Queenstown Road (SW11 4NJ).",
+        "quote": "main gate pedestrian access at Albert Bridge Road, Prince of Wales Drive and Queenstown Road (SW11 4NJ)",
         "pageSha256": "dfaac2e1e3436ec1"
       },
-      "status": "verified"
+      "status": "verified",
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     },
     {
       "sec": "transport",
@@ -142,6 +177,10 @@
       "reviewReasons": [
         "conflicts with the age shown (4 to 14), against the \"toddlers\" in the title"
       ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "conflict": "the age shown (4 to 14), against the \"toddlers\" in the title"
     },
     {
@@ -167,6 +206,10 @@
         "conditional, temporary or dated wording",
         "conflicts with itself: two different opening statements on one page"
       ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      },
       "conflict": "itself: two different opening statements on one page"
     },
     {
@@ -191,7 +234,11 @@
       "status": "review",
       "reviewReasons": [
         "not a fact type that may be accepted without a person"
-      ]
+      ],
+      "semantic": {
+        "A": "supports",
+        "B": "supports"
+      }
     }
   ]
 }

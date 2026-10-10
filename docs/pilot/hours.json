@@ -1,0 +1,458 @@
+{
+ "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo": {
+  "name": "Babylon Park London",
+  "rules": [
+   {
+    "rule": {
+     "id": "weekdays",
+     "scope": "venue",
+     "days": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "fact": "opening.hours",
+    "status": "verified",
+    "evidence": {
+     "url": "https://babylonpark.com/london/",
+     "readAt": "2026-10-08",
+     "quote": "Opening hours: Monday – Friday: 10:00 a.m. – 9:00 p.m. Saturday: 10:00 a.m. – 10:00 p.m. Sunday: 10:00 a.m. – 9:00 p.m.",
+     "pageSha256": "91e5b74efd6d579f"
+    }
+   },
+   {
+    "rule": {
+     "id": "saturday",
+     "scope": "venue",
+     "days": [
+      6
+     ],
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "fact": "opening.hours",
+    "status": "verified",
+    "evidence": {
+     "url": "https://babylonpark.com/london/",
+     "readAt": "2026-10-08",
+     "quote": "Opening hours: Monday – Friday: 10:00 a.m. – 9:00 p.m. Saturday: 10:00 a.m. – 10:00 p.m. Sunday: 10:00 a.m. – 9:00 p.m.",
+     "pageSha256": "91e5b74efd6d579f"
+    }
+   },
+   {
+    "rule": {
+     "id": "sunday",
+     "scope": "venue",
+     "days": [
+      0
+     ],
+     "open": "10:00",
+     "close": "21:00"
+    },
+    "fact": "opening.hours",
+    "status": "verified",
+    "evidence": {
+     "url": "https://babylonpark.com/london/",
+     "readAt": "2026-10-08",
+     "quote": "Opening hours: Monday – Friday: 10:00 a.m. – 9:00 p.m. Saturday: 10:00 a.m. – 10:00 p.m. Sunday: 10:00 a.m. – 9:00 p.m.",
+     "pageSha256": "91e5b74efd6d579f"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJOWBQvA4FdkgRQf5iYYFF1v4": {
+  "name": "Battersea Park",
+  "rules": [
+   {
+    "rule": {
+     "id": "park-gates",
+     "scope": "venue",
+     "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "open": "08:00",
+     "close": null,
+     "closeText": "dusk"
+    },
+    "fact": "opening.hours",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.wandsworth.gov.uk/batterseapark",
+     "readAt": "2026-10-08",
+     "quote": "Opening times: 8am until dusk Access to park facilities: park gates open 6.30am to 10.30pm",
+     "pageSha256": "dfaac2e1e3436ec1"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJJ2CD1mEddkgRAuOi9iSzBrk": {
+  "name": "Discover Children's Story Centre",
+  "rules": [
+   {
+    "rule": {
+     "id": "daily",
+     "scope": "venue",
+     "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "open": "10:00",
+     "close": "17:00"
+    },
+    "fact": "opening.hours",
+    "status": "verified",
+    "evidence": {
+     "url": "https://discover.org.uk/your-visit/",
+     "readAt": "2026-10-08",
+     "quote": "Discover is open every day, 10am - 5pm … We're closed on 24, 25, 26, 31 December and 1 January over the festive period.",
+     "quotes": [
+      "Discover is open every day, 10am - 5pm",
+      "We're closed on 24, 25, 26, 31 December and 1 January over the festive period."
+     ],
+     "pageSha256": "6c7bf457e9d6cdee"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY": {
+  "name": "Gunnersbury Park",
+  "rules": [
+   {
+    "rule": {
+     "id": "park",
+     "scope": "venue",
+     "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "open": "07:00",
+     "close": null,
+     "closeText": "dusk"
+    },
+    "fact": "opening.hours",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.visitgunnersbury.org/plan-your-visit",
+     "readAt": "2026-10-08",
+     "quote": "Opening Hours Museum Tuesday-Sunday 10am to 4:30pm Park Daily between 7am until dusk",
+     "pageSha256": "80e5273c99d6548a"
+    }
+   },
+   {
+    "rule": {
+     "id": "museum",
+     "scope": "area",
+     "area": "Museum",
+     "days": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      0
+     ],
+     "open": "10:00",
+     "close": "16:30"
+    },
+    "fact": "opening.hours",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.visitgunnersbury.org/plan-your-visit",
+     "readAt": "2026-10-08",
+     "quote": "Opening Hours Museum Tuesday-Sunday 10am to 4:30pm Park Daily between 7am until dusk",
+     "pageSha256": "80e5273c99d6548a"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJSzwgydoDdkgRndnXVYQGXBI": {
+  "name": "Horniman Museum and Gardens",
+  "rules": [
+   {
+    "rule": {
+     "id": "museum",
+     "scope": "venue",
+     "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "open": "10:00",
+     "close": "17:30"
+    },
+    "fact": "opening.hours",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.horniman.ac.uk/plan-your-visit/",
+     "readAt": "2026-10-08",
+     "quote": "The Museum is open daily, from 10am - 5.30pm … the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm",
+     "quotes": [
+      "The Museum is open daily, from 10am - 5.30pm",
+      "the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm"
+     ],
+     "pageSha256": "07c4f7f88813cd83"
+    }
+   },
+   {
+    "rule": {
+     "id": "gardens",
+     "scope": "area",
+     "area": "Gardens",
+     "days": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "open": "07:15",
+     "close": "18:30"
+    },
+    "fact": "opening.hours",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.horniman.ac.uk/plan-your-visit/",
+     "readAt": "2026-10-08",
+     "quote": "The Museum is open daily, from 10am - 5.30pm … the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm",
+     "quotes": [
+      "The Museum is open daily, from 10am - 5.30pm",
+      "the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm"
+     ],
+     "pageSha256": "07c4f7f88813cd83"
+    }
+   },
+   {
+    "rule": {
+     "id": "gardens-sunday",
+     "scope": "area",
+     "area": "Gardens",
+     "days": [
+      0
+     ],
+     "open": "08:00",
+     "close": "18:30"
+    },
+    "fact": "opening.hours",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.horniman.ac.uk/plan-your-visit/",
+     "readAt": "2026-10-08",
+     "quote": "The Museum is open daily, from 10am - 5.30pm … the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm",
+     "quotes": [
+      "The Museum is open daily, from 10am - 5.30pm",
+      "the gardens are open daily, from 7.15am (or 8am Sunday and bank holidays) until 6.30pm"
+     ],
+     "pageSha256": "07c4f7f88813cd83"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJV_iXMtcadkgRqBI84CY_crE": {
+  "name": "London Zoo",
+  "rules": [
+   {
+    "rule": {
+     "id": "until-23-oct",
+     "scope": "venue",
+     "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "until": "2026-10-23",
+     "open": "10:00",
+     "close": "17:00",
+     "lastEntry": "16:00"
+    },
+    "fact": "opening.hours",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.londonzoo.org/plan-your-visit/opening-times",
+     "readAt": "2026-10-08",
+     "quote": "Dates Opening Last Entry Closing 3 September - 23 October 2026 10am 4pm 5pm 24 October 2026 - 12 February 2027 10am 3pm 4pm",
+     "pageSha256": "7b3c4a016742d1ab"
+    }
+   },
+   {
+    "rule": {
+     "id": "from-24-oct",
+     "scope": "venue",
+     "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "from": "2026-10-24",
+     "until": "2027-02-12",
+     "open": "10:00",
+     "close": "16:00",
+     "lastEntry": "15:00"
+    },
+    "fact": "opening.hours",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.londonzoo.org/plan-your-visit/opening-times",
+     "readAt": "2026-10-08",
+     "quote": "Dates Opening Last Entry Closing 3 September - 23 October 2026 10am 4pm 5pm 24 October 2026 - 12 February 2027 10am 3pm 4pm",
+     "pageSha256": "7b3c4a016742d1ab"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJp8y37pgCdkgRBeRSa2iabyI": {
+  "name": "Mudchute Park and Farm",
+  "rules": [
+   {
+    "rule": {
+     "id": "farm",
+     "scope": "venue",
+     "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "open": "09:00",
+     "close": "16:00"
+    },
+    "fact": "opening.hours",
+    "status": "review",
+    "evidence": {
+     "url": "https://www.mudchute.org/plan-your-visit/opening-times",
+     "readAt": "2026-10-08",
+     "quote": "Farm: Every day 9am–4pm (animals go in from 3pm) Park: Every day dawn–dusk",
+     "pageSha256": "88c3ac5f087332c7"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s": {
+  "name": "Natural History Museum",
+  "rules": [
+   {
+    "rule": {
+     "id": "daily",
+     "scope": "venue",
+     "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "open": "10:00",
+     "close": "17:50",
+     "lastEntry": "17:30"
+    },
+    "fact": "opening.hours",
+    "status": "verified",
+    "evidence": {
+     "url": "https://www.nhm.ac.uk/visit.html",
+     "readAt": "2026-10-08",
+     "quote": "Opening times Open daily 10:00–17:50 (last entry 17:30) Closed 9 October and 24–26 December",
+     "pageSha256": "a6b93d6d6f7b0125"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJse1x6SoRdkgR83yrIhNV5gc": {
+  "name": "Royal Air Force Museum London",
+  "rules": [
+   {
+    "rule": {
+     "id": "daily",
+     "scope": "venue",
+     "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "open": "10:00",
+     "close": "17:00",
+     "lastEntry": "16:30"
+    },
+    "fact": "opening.hours",
+    "status": "verified",
+    "evidence": {
+     "url": "https://www.rafmuseum.org.uk/london/plan-your-day/getting-here/",
+     "readAt": "2026-10-08",
+     "quote": "We are open daily 10.00am - 5.00pm Last entry is 4.30pm.",
+     "pageSha256": "9a70f401649e6f40"
+    }
+   }
+  ]
+ },
+ "fp-google-ChIJP9oAE0MFdkgR3iKGFKZO1SE": {
+  "name": "Science Museum",
+  "rules": [
+   {
+    "rule": {
+     "id": "daily",
+     "scope": "venue",
+     "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "fact": "opening.hours",
+    "status": "verified",
+    "evidence": {
+     "url": "https://www.sciencemuseum.org.uk/visit",
+     "readAt": "2026-10-08",
+     "quote": "The museum is open daily from 10.00–18.00 (except for 24–26 December when the museum is closed).",
+     "pageSha256": "fda0be0a14a8efc3"
+    }
+   }
+  ]
+ }
+}
