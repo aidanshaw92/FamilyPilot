@@ -1,0 +1,34 @@
+  ok   three invitations are three different links
+  ok   the owner reaches Home
+  ok   signing out returns to Welcome or sign-in
+  ok   a signed-out deep link to Explore goes to Welcome or sign-in, not the app
+  ok   a device that already has a family goes straight to sign-in
+  ok   a wrong password is refused without saying which half was wrong (“That email and password don’t match. Check them, or choose “”)
+  ok   the right password returns to Home with the family still there (nothing re-asked)
+  ok   the partner link is valid before it ages
+  ok   once expired, the preview says only "not valid" and names nobody
+  ok   the landing screen says the invitation cannot be used and shows no family
+  ok   expired invitations say "expired" (not "waiting")
+  ok   and offer Remove rather than Cancel
+  ok   a fresh invitation is valid
+  ok   the live invitation is listed with a Cancel button
+  ok   cancelling makes the link stop working at once
+  ok   the recipient sees who invited them
+  ok   accepting connects the two families
+  ok   the same link cannot be used a second time
+  ok   a third person opening the used link learns nothing about either family
+  ok   the invitee sees only the inviter’s first name before deciding
+  ok   declining ("Not now") does not use the invitation up
+  ok   Add another family lists the connected person
+  ok   and nothing else about them: no full postcode, child name or email
+  ok   tapping adds them to the plan as a chip with only their shared snapshot
+  ok   the postcode was sent only to the stateless location lookup
+  ok   inspected 14 request bodies sent to the backend
+  ok   no child’s name was uploaded
+  ok   no date of birth was uploaded
+  ok   no full postcode was stored or shared (only the outward part, as the sharing area)
+  ok   the device-only family profile was not uploaded
+  ok   the invitation request that was sent can be inspected
+  ok   the shared snapshot carries only: ages, area, label, latitude, longitude, preferencesStated, pushchair, relationship, required, shareAvailability
+  ok   children appear only as ages
+all passed

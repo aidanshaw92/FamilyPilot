@@ -1,0 +1,1 @@
+Applied to production on 2026-10-09 (~16:30 UTC) after founder GO: one guarded transaction, printed 28 active batch rows; per-field digest of the 28 stored rows matched the approved apply.sql (md5 6bcd2458e41cfdbb3852f1324c19eb30). Code merged as bc19ba5 (PR #193, head 697763e). Rollback remains claims/rollback.sql (disputes exactly these 28 rows) plus reverting the merge commit.
