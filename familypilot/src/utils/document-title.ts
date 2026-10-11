@@ -6,6 +6,7 @@ const TITLES: Array<[RegExp, string]> = [
   [/^\/trips(\/|$)/, 'Plans'],
   [/^\/saved(\/|$)/, 'Saved places'],
   [/^\/halfway(\/|$)/, 'Meet halfway'],
+  [/^\/families(\/|$)/, 'Families'],
   [/^\/profile(\/|$)/, 'Your family'],
   [/^\/venue\//, 'Place details'],
   [/^\/restaurant\//, 'Restaurant details'],

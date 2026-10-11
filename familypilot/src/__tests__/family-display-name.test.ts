@@ -77,7 +77,7 @@ describe('every screen that shows another family by name goes through the helper
   const read = (path: string) => readFileSync(join(root, path), 'utf8');
 
   it('Meet halfway shows chips and journeys by family name, not the raw label', () => {
-    const source = read('app/(tabs)/halfway.tsx');
+    const source = read('app/halfway.tsx');
     expect(source).toContain('label={familyDisplayName(candidate.label)}');
     expect(source).toContain("journey.role === 'mine' ? 'Your family' : familyDisplayName(journey.label)");
     expect(source).not.toMatch(/label=\{candidate\.label\}/);
@@ -87,7 +87,9 @@ describe('every screen that shows another family by name goes through the helper
     expect(read('src/components/profile/FamilySections.tsx')).not.toMatch(/<Text variant="heading3">\{family\.label\}<\/Text>/);
     expect(read('src/components/planning/ConnectedFamiliesPicker.tsx')).toContain('familyDisplayName(family.label)');
     expect(read('src/components/planning/PlanningAccount.tsx')).toContain('familyDisplayName(c.family?.label)');
-    expect(read('app/(tabs)/trips.tsx')).toContain('familyDisplayName(f.label)');
+    // The Plans tab names the other family on a saved plan's timings and on invitations; family rows moved to Families.
+    expect(read('app/(tabs)/trips.tsx')).toContain('familyDisplayName(t.label)');
+    expect(read('app/(tabs)/trips.tsx')).toContain('familyDisplayName(c.family?.label)');
   });
 
   it('adding a family by postcode asks for their first name and says how it will be shown', () => {

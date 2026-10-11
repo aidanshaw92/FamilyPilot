@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import { PageHeader } from '@/src/components/navigation/PageHeader';
 
 import { AddFamilyByPostcode } from '@/src/components/planning/AddFamilyByPostcode';
@@ -44,7 +43,6 @@ import { familyDisplayName } from '@/src/utils/family-title';
 export default function MeetHalfwayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const tabBarClearance = useTabBarClearance();
   const params = useLocalSearchParams();
   const preselected = firstValue(params.family);
 
@@ -63,8 +61,8 @@ export default function MeetHalfwayScreen() {
   // Choosing a place lower down the list brings the map back into view, so the choice and the map are seen together.
   const scrollRef = useRef<ScrollView>(null);
   const [resultsTop, setResultsTop] = useState(0);
-  // As a tab the screen stays mounted, so a later link that names a family ("Meet halfway" on a connected family in
-  // Profile) has to select them here rather than only on first open.
+  // A later link that names a family ("Meet halfway" on a connected family in Families) selects them here, even when the
+  // screen is already open, rather than only on first open.
   useEffect(() => {
     if (preselected) setChosen(preselected);
   }, [preselected]);
@@ -137,17 +135,18 @@ export default function MeetHalfwayScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      {/* A tab of its own now (Home · Explore · Halfway · Plans · Profile), so no back button, and the content clears the
-          floating navigation like every other tab. */}
+      {/* A planning feature inside Families (and a shortcut on Plans), so it is a stack screen with a way back, and there
+          is no floating navigation to clear: only the device's own bottom edge. */}
       <ScrollView
         ref={scrollRef}
-        contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <PageHeader
           title="Meet halfway"
           subtitle="A place that works for both families: fair journeys, what you each need, and both your routines."
+          onBack={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/families' as never))}
           flush
           testID="halfway-header"
         />
@@ -167,7 +166,7 @@ export default function MeetHalfwayScreen() {
           </View>
           {candidates.length === 0 && !adding ? (
             <Text variant="caption" color={colors.text.secondary}>
-              Connect a family from your Profile, or add one by postcode.
+              Connect a family under Families, or add one by postcode.
             </Text>
           ) : null}
           {adding ? (

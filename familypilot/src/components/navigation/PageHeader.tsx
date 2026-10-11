@@ -7,9 +7,10 @@ import { Text } from '@/src/components/ui/Text';
 import { colors, spacing } from '@/src/design-system/tokens';
 
 /**
- * The one header for FamilyPilot's section pages: Halfway, Plans, Profile, Families, Saved.
+ * The one header for FamilyPilot's section pages: Families, Plans, Profile, Halfway, Saved.
  *
- * Home and Explore keep the approved frames' own headers (the greeting; "Explore London"), which are locked geometry.
+ * Home and Explore keep the approved frames' own headers (the greeting; "Explore London"), with the same brand row
+ * (`BrandLockup`) above them, so the mark and the wordmark sit in the same place on every main screen.
  * Every other main page had grown a header of its own (a centred chevron here, a heading with a subtitle in a different
  * size there), which is a large part of why the app read as several apps. This gives them one: the brand lockup (the
  * approved mark beside the wordmark, small), an optional back control and an optional action on the right, then the
@@ -38,20 +39,7 @@ export function PageHeader({
 }) {
   return (
     <View style={[styles.header, flush && styles.flush]} testID={testID}>
-      <View style={styles.lockupRow}>
-        {onBack ? (
-          <View style={styles.back}>
-            <BackButton onPress={onBack} />
-          </View>
-        ) : null}
-        <View style={styles.lockup} accessible={false} importantForAccessibility="no-hide-descendants" testID="page-header-brand">
-          <BrandMark size={22} tone="light" decorative />
-          <Text style={styles.wordmark} accessibilityElementsHidden>
-            FamilyPilot
-          </Text>
-        </View>
-        <View style={styles.action}>{action}</View>
-      </View>
+      <BrandLockup onBack={onBack} action={action} flush />
       <Text variant="heading1" style={styles.title} numberOfLines={2} testID={testID ? `${testID}-title` : undefined}>
         {title}
       </Text>
@@ -64,10 +52,48 @@ export function PageHeader({
   );
 }
 
+/** The brand row's height, so a screen that places it above locked geometry (Home, Explore) can account for it exactly. */
+export const BRAND_ROW_HEIGHT = 44;
+
+/**
+ * The brand row on its own: the approved mark beside the wordmark, an optional back control on the left and one optional
+ * control on the right. PageHeader draws it above a title; Home and Explore draw it above their approved headers.
+ */
+export function BrandLockup({
+  onBack,
+  action,
+  flush,
+  testID,
+}: {
+  onBack?: () => void;
+  action?: ReactNode;
+  /** True when the parent already pads the screen edges. */
+  flush?: boolean;
+  testID?: string;
+}) {
+  return (
+    <View style={[styles.lockupRow, !flush && styles.lockupRowPadded]} testID={testID}>
+      {onBack ? (
+        <View style={styles.back}>
+          <BackButton onPress={onBack} />
+        </View>
+      ) : null}
+      <View style={styles.lockup} accessible={false} importantForAccessibility="no-hide-descendants" testID="page-header-brand">
+        <BrandMark size={22} tone="light" decorative />
+        <Text style={styles.wordmark} accessibilityElementsHidden>
+          FamilyPilot
+        </Text>
+      </View>
+      {action ? <View style={styles.action}>{action}</View> : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing.screenPadding, paddingTop: 2 },
   flush: { paddingHorizontal: 0 },
-  lockupRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  lockupRow: { height: BRAND_ROW_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  lockupRowPadded: { paddingHorizontal: spacing.screenPadding },
   back: { marginLeft: -12 },
   lockup: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
   wordmark: { fontFamily: 'Inter_700Bold', fontSize: 15, lineHeight: 18, letterSpacing: -0.2, color: colors.ink },
