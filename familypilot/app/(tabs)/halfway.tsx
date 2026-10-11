@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
+import { PageHeader } from '@/src/components/navigation/PageHeader';
 
 import { AddFamilyByPostcode } from '@/src/components/planning/AddFamilyByPostcode';
 import { PlanFormRow } from '@/src/components/planning/PlanDraftForm';
@@ -59,6 +60,9 @@ export default function MeetHalfwayScreen() {
   const [startAt, setStartAt] = useState(DEFAULT_START_AT);
   const [adding, setAdding] = useState(false);
   const [chosen, setChosen] = useState<string | null>(preselected ?? null);
+  // Choosing a place lower down the list brings the map back into view, so the choice and the map are seen together.
+  const scrollRef = useRef<ScrollView>(null);
+  const [resultsTop, setResultsTop] = useState(0);
   // As a tab the screen stays mounted, so a later link that names a family ("Meet halfway" on a connected family in
   // Profile) has to select them here rather than only on first open.
   useEffect(() => {
@@ -132,18 +136,21 @@ export default function MeetHalfwayScreen() {
   };
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + spacing.lg }]}>
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
       {/* A tab of its own now (Home · Explore · Halfway · Plans · Profile), so no back button, and the content clears the
           floating navigation like every other tab. */}
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text variant="heading1">Meet halfway</Text>
-        <Text variant="body" color={colors.text.secondary}>
-          Find a place that works for both families: fair journeys, what you each need, and both your routines.
-        </Text>
+        <PageHeader
+          title="Meet halfway"
+          subtitle="A place that works for both families: fair journeys, what you each need, and both your routines."
+          flush
+          testID="halfway-header"
+        />
 
         <PlanFormRow label="Who are you meeting?">
           <View style={styles.chips}>
@@ -223,6 +230,8 @@ export default function MeetHalfwayScreen() {
           <EmptyState icon="cloud-offline-outline" title="We couldn’t load places" message="Check your connection and try again." actionLabel="Try again" onAction={() => void refetch()} />
         ) : result ? (
           <Results
+            onLayoutTop={setResultsTop}
+            onFocusMap={() => scrollRef.current?.scrollTo({ y: Math.max(0, resultsTop - spacing.md), animated: true })}
             result={result}
             other={other.label}
             areas={typeof mine === 'string' ? null : { mine: { latitude: mine.latitude, longitude: mine.longitude }, other: { latitude: other.latitude, longitude: other.longitude } }}
@@ -248,8 +257,13 @@ function Results({
   onPlan,
   onOpen,
   onStartAt,
+  onLayoutTop,
+  onFocusMap,
 }: {
   result: ReturnType<typeof meetHalfway>;
+  /** Where the results start on the page, so choosing a place can scroll the map back into view. */
+  onLayoutTop?: (y: number) => void;
+  onFocusMap?: () => void;
   other: string;
   /** Where each family sets off from. Drawn only as approximate areas (halfway-map.ts); never shown as a point. */
   areas: { mine: { latitude: number; longitude: number }; other: { latitude: number; longitude: number } } | null;
@@ -260,6 +274,10 @@ function Results({
 }) {
   const [mappedId, setMappedId] = useState<string | null>(null);
   const mapped = result.options.find((option) => option.venue.id === mappedId) ?? result.options[0];
+  const focus = (id: string) => {
+    setMappedId(id);
+    onFocusMap?.();
+  };
   const notes = (
     <>
       {usingHomeFallback ? (
@@ -322,8 +340,13 @@ function Results({
     );
   }
   return (
-    <View style={styles.results} testID="halfway-results">
+    <View style={styles.results} testID="halfway-results" onLayout={(e) => onLayoutTop?.(e.nativeEvent.layout.y)}>
       <Text variant="heading2">Places that work for both</Text>
+      {/* "Halfway" is the name, not the method: nothing here is the midpoint between two homes. */}
+      <Text variant="bodySmall" color={colors.text.secondary} testID="halfway-ranking-note">
+        Ranked by how fair the two journeys are and what each family needs, not by the midpoint between your homes. Tap a
+        place to see it on the map.
+      </Text>
       {notes}
       {!result.otherKnown.children && !result.otherKnown.routines ? (
         <Text variant="caption" color={colors.text.secondary}>
@@ -340,7 +363,15 @@ function Results({
       ) : null}
       {result.options.map((option, index) => (
         <View key={option.venue.id} style={[styles.card, option.venue.id === mapped?.venue.id && areas ? styles.cardMapped : null]} testID="halfway-option">
-          <View style={styles.cardHead}>
+          {/* The card's head is the way to put this place on the map; the buttons below keep their own jobs. */}
+          <Pressable
+            style={styles.cardHead}
+            onPress={areas ? () => focus(option.venue.id) : undefined}
+            accessibilityRole={areas ? 'button' : undefined}
+            accessibilityLabel={areas ? `Show ${option.venue.name} on the map` : undefined}
+            accessibilityState={areas ? { selected: option.venue.id === mapped?.venue.id } : undefined}
+            testID="halfway-option-head"
+          >
             <VenueImage
               uri={option.venue.imageUrl}
               category={option.venue.category}
@@ -355,9 +386,17 @@ function Results({
               <Text variant="heading3" numberOfLines={2}>
                 {option.venue.name}
               </Text>
+              {areas && option.venue.id === mapped?.venue.id ? (
+                <Text variant="caption" color={colors.action} testID="halfway-on-map">
+                  On the map
+                </Text>
+              ) : null}
             </View>
-          </View>
+          </Pressable>
           <View style={styles.journeys}>
+            <Text variant="caption" color={colors.text.secondary}>
+              Each family’s journey, estimated from distance
+            </Text>
             {option.journeys.map((journey) => (
               <View key={journey.familyId} style={styles.journeyRow}>
                 <Text variant="bodySmall" color={colors.text.secondary} style={styles.journeyWho}>
@@ -397,7 +436,7 @@ function Results({
             <Button label="Plan this day" size="sm" onPress={() => onPlan(option)} testID="halfway-plan" />
             <Button label="See the place" size="sm" variant="ghost" onPress={() => onOpen(option)} />
             {areas && option.venue.id !== mapped?.venue.id ? (
-              <Button label="Show on map" size="sm" variant="ghost" onPress={() => setMappedId(option.venue.id)} testID="halfway-show-on-map" />
+              <Button label="Show on map" size="sm" variant="ghost" onPress={() => focus(option.venue.id)} testID="halfway-show-on-map" />
             ) : null}
           </View>
         </View>

@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, Share, View } from 'react-native';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
+import { PageHeader } from '@/src/components/navigation/PageHeader';
 import { Button, Card, Text } from '@/src/components/ui';
 import { Chip } from '@/src/components/ui/Chip';
 import { colors, spacing } from '@/src/design-system/tokens';
@@ -140,9 +141,9 @@ export default function TripsScreen() {
    setSharingMessage(`Added "${invite.plan.name}" to your saved plans.`);
  }
  if(!state.hydrated)return <ScreenContainer><Text>Loading your plans…</Text></ScreenContainer>;
- return <ScreenContainer><ScrollView contentContainerStyle={{padding:spacing.screenPadding,paddingBottom:tabBarClearance,gap:spacing.md}} keyboardShouldPersistTaps="handled">
+ return <ScreenContainer><ScrollView contentContainerStyle={{paddingHorizontal:spacing.screenPadding,paddingTop:spacing.sm,paddingBottom:tabBarClearance,gap:spacing.md}} keyboardShouldPersistTaps="handled">
   <PostVisitInbox/>
-  <Text variant="heading1">Plans</Text><Text color={colors.text.secondary}>Days that work for everyone involved.</Text>
+  <PageHeader title="Plans" subtitle="Days that work for everyone involved." flush testID="plans-header"/>
   <View style={s.row}>{(['plan','saved','families'] as const).map(t=><Chip key={t} label={{plan:'Plans',saved:'Saved plans',families:'Families & routines'}[t]} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
   {editor?<FamilyEditor key={editor.id} initial={editor} onCancel={()=>setEditor(null)} onSave={f=>{state.setFamily(f);setEditor(null);}}/>:null}
   {tab==='families'?<>

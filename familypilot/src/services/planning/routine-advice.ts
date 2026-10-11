@@ -3,6 +3,7 @@ import { DayItinerary, RoutineInsight, RoutinePhase } from '@/src/types/day-sequ
 import { PlanAlternative } from '@/src/types/day-plan';
 
 import { spokenMinutes } from './visit-duration';
+import { TIGHT_HOME_EARLIER_MINUTES, homeMargins } from './home-margin';
 import { familyDisplayName } from '@/src/utils/family-title';
 
 /**
@@ -73,10 +74,26 @@ export interface RoutineAdvice {
   options: AdviceOption[];
 }
 
+/**
+ * A routine at home the day gets home for, but only just (home-margin.ts): said as tight, never as good news, with the
+ * one verified change that would give it room when the planner found one.
+ */
+export interface TightHomeAdvice {
+  id: string;
+  familyId: string;
+  routineId: string;
+  kind: 'nap' | 'feed';
+  /** "Tight for Ozzie’s nap: home around 12:56, and the nap is at 13:00. …" */
+  text: string;
+  options: AdviceOption[];
+}
+
 export interface RoutineReasoning {
   advice: RoutineAdvice[];
-  /** Good news worth saying: "Home around 13:10, before Ozzie’s nap at 13:30." */
+  /** Good news worth saying: "Home around 13:10, before Ozzie’s nap at 13:30." Only with real room to spare. */
   homeBefore: string[];
+  /** Routines at home the day is home for with too little room to spare. Never in `homeBefore`. */
+  tight: TightHomeAdvice[];
   /** Reasoning across more than one family. Empty for a single family. */
   together: string[];
   /** True when at least one routine overlaps the outing. */
@@ -102,6 +119,8 @@ const hm = (minutes: number): string => {
 };
 
 const possessive = (name: string): string => `${name}’s`;
+
+const clockMinutesOf = (value: string): number => Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5));
 
 /** "Ozzie’s nap", "your nap", "the feed for Hannah’s family". */
 export function subjectPhrase(subject: RoutineSubject, kind: 'nap' | 'feed'): string {
@@ -296,11 +315,55 @@ export function reasonAboutRoutines(context: RoutineAdviceContext): RoutineReaso
   });
 
   const homeBefore: string[] = [];
+  const tight: TightHomeAdvice[] = [];
+  const margins = homeMargins(itinerary);
+  const firstArrive = itinerary.stops[0]?.arrive;
   for (const after of itinerary.homeAfter ?? []) {
     const family = itinerary.families.find((f) => f.familyId === after.familyId);
     if (!family) continue;
     const subject = resolveSubject(after.familyId, after.routineId, after.kind);
     const phrase = subjectPhrase(subject, after.kind);
+    const margin = margins.find((m) => m.familyId === after.familyId && m.routineId === after.routineId);
+    if (margin?.tight) {
+      // Home 12:56 for a 13:00 nap is not good news. The sentence says the two times, why the gap may not hold (the
+      // journey is an estimate, or just short), and the change to consider; the option is offered only where a re-run
+      // proved it builds (day-plan.ts). Nothing claims the child will or will not make it.
+      const familyName = familyDisplayName(subject.familyLabel);
+      const whose = subject.yours ? phrase : `the ${after.kind} for ${familyName}`;
+      const home = subject.yours ? `you’re home around ${hm(family.home)}` : `${familyName} is home around ${hm(family.home)}`;
+      const why = margin.source === 'estimated'
+        ? 'That journey time is an estimate, so the gap may not hold.'
+        : 'That leaves very little room if the journey runs long.';
+      // The one verified change, if the planner found one (day-plan.ts): start earlier where the place is open, else leave
+      // the place earlier. The sentence's advice matches the chip; with no verified change it is advice alone.
+      const options: AdviceOption[] = [];
+      let advice = `Consider leaving ${TIGHT_HOME_EARLIER_MINUTES} minutes earlier.`;
+      for (const alternative of alternatives) {
+        if (alternative.kind === 'later') continue;
+        if (!alternative.resolves.some((r) => r.familyId === after.familyId && r.routineId === after.routineId)) continue;
+        if (alternative.kind === 'earlier') {
+          const earlierBy = firstArrive !== undefined ? firstArrive - clockMinutesOf(alternative.arriveAt) : TIGHT_HOME_EARLIER_MINUTES;
+          advice = `Consider starting ${earlierBy} minutes earlier.`;
+          options.push({ kind: 'alternative', label: `Arrive at ${alternative.arriveAt}`, alternative });
+        } else {
+          const anchor = itinerary.stops.find((stop) => stop.anchor) ?? itinerary.stops[0];
+          const shorterBy = anchor ? anchor.dwellMinutes - alternative.visitMinutes : TIGHT_HOME_EARLIER_MINUTES;
+          const leaveAt = anchor ? hm(anchor.depart - shorterBy) : null;
+          advice = `Consider leaving ${shorterBy} minutes earlier.`;
+          options.push({ kind: 'alternative', label: leaveAt ? `Leave at ${leaveAt}` : `Leave ${shorterBy} min earlier`, alternative });
+        }
+        break;
+      }
+      tight.push({
+        id: `${after.familyId}:${after.routineId}:tight`,
+        familyId: after.familyId,
+        routineId: after.routineId,
+        kind: after.kind,
+        text: `Tight for ${whose}: ${home}, and the ${after.kind} is at ${hm(after.start)}. ${why} ${advice}`,
+        options,
+      });
+      continue;
+    }
     homeBefore.push(
       subject.yours
         ? `You’re home around ${hm(family.home)}, before ${phrase} at ${hm(after.start)}.`
@@ -311,6 +374,7 @@ export function reasonAboutRoutines(context: RoutineAdviceContext): RoutineReaso
   return {
     advice,
     homeBefore,
+    tight,
     together: reasonAcrossFamilies(itinerary, advice, resolveSubject),
     hasOverlap: advice.length > 0,
   };

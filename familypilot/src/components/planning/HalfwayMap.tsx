@@ -74,6 +74,30 @@ export function HalfwayMap(props: HalfwayMapInput) {
                 strokeWidth={2}
               />
               <Circle cx={model.venue.x} cy={model.venue.y - 19} r={4} fill={colors.surface} />
+              {/* The place's name, so the pin needs no key to read. */}
+              {/* A halo of the land colour under the ink, so the name reads over roads and water. */}
+              <SvgText
+                x={model.venueLabel.x}
+                y={model.venueLabel.y}
+                fill={LAND}
+                stroke={LAND}
+                strokeWidth={3}
+                fontSize={12}
+                fontFamily={fontFamily.semiBold}
+                textAnchor={model.venueLabel.anchor}
+              >
+                {model.venue.label.length > 28 ? `${model.venue.label.slice(0, 27)}…` : model.venue.label}
+              </SvgText>
+              <SvgText
+                x={model.venueLabel.x}
+                y={model.venueLabel.y}
+                fill={colors.ink}
+                fontSize={12}
+                fontFamily={fontFamily.semiBold}
+                textAnchor={model.venueLabel.anchor}
+              >
+                {model.venue.label.length > 28 ? `${model.venue.label.slice(0, 27)}…` : model.venue.label}
+              </SvgText>
             </G>
             {/* Scale bar, bottom left. */}
             <G>
@@ -87,9 +111,30 @@ export function HalfwayMap(props: HalfwayMapInput) {
           <View style={{ height: HEIGHT }} />
         )}
       </View>
-      <Text variant="caption" color={colors.text.secondary}>
-        Shaded circles are rough areas, never a home address. No routes are drawn: journey times are estimates. Map:{' '}
-        {BASEMAP_SOURCE}.
+      {/* What the map shows, in plain words: two rough areas and one real place. Nothing on it is a route or an address. */}
+      <View style={styles.legend} testID="halfway-map-legend">
+        <View style={styles.legendItem}>
+          <View style={[styles.legendArea, { borderColor: colors.action, backgroundColor: `${colors.action}29` }]} />
+          <Text variant="caption" color={colors.text.secondary}>
+            Roughly where you set off from
+          </Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendArea, { borderColor: OTHER, backgroundColor: `${OTHER}29` }]} />
+          <Text variant="caption" color={colors.text.secondary}>
+            Roughly where {props.other.label} sets off from
+          </Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={styles.legendPin} />
+          <Text variant="caption" color={colors.text.secondary}>
+            {props.venue.name}, where it is
+          </Text>
+        </View>
+      </View>
+      <Text variant="caption" color={colors.text.tertiary}>
+        Each shaded circle is about 1.5 km across, never a home address. No routes are drawn, because journey times are
+        estimated from distance rather than measured. Map: {BASEMAP_SOURCE}.
       </Text>
     </View>
   );
@@ -97,6 +142,10 @@ export function HalfwayMap(props: HalfwayMapInput) {
 
 const styles = StyleSheet.create({
   wrap: { gap: spacing.xs },
+  legend: { gap: 2, paddingTop: 2 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  legendArea: { width: 14, height: 14, borderRadius: 7, borderWidth: 1.5, borderStyle: 'dashed' },
+  legendPin: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.action, marginHorizontal: 2 },
   frame: {
     height: HEIGHT,
     borderRadius: radius.xl,

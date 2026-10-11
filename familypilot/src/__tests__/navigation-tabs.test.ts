@@ -66,7 +66,9 @@ describe('Halfway as a tab', () => {
 describe('Saved places, from Plans', () => {
   it('is a screen of its own at /saved, with a way back', () => {
     const saved = read('app/saved.tsx');
-    expect(saved).toContain('<BackButton');
+    // The shared section header carries the back control (PageHeader's `onBack` renders BackButton).
+    expect(saved).toContain('<PageHeader');
+    expect(saved).toContain('onBack=');
     expect(saved).toContain('Saved places');
     expect(saved).not.toContain('tabBarClearance');
   });

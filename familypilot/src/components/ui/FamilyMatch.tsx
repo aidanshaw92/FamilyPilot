@@ -34,7 +34,7 @@ interface FamilyMatchProps {
    * What FamilyPilot works out for THIS family (family-match.ts). When given it decides the words, the star and
    * the colour, and the number is not shown: a good match says who it is good for, a possible one says possible.
    */
-  match?: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[]; easyVisit?: boolean };
+  match?: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[]; easyVisit?: boolean; suitedNames?: string[]; easyNames?: string[] };
   style?: ViewStyle;
 }
 
@@ -63,7 +63,9 @@ export function FamilyMatch({
         unreviewed: !matchEarnsStar(verdictMatch.verdict),
         number: matchEarnsStar(verdictMatch.verdict) ? '★' : null,
         badgeLabel: matchBadgeText(verdictMatch, size === 'compact' ? 12 : 18),
-        spoken: `${matchBadgeText(verdictMatch, 40)}. ${matchClassification(verdictMatch)}`,
+        // With a child still to check, the badge's own words are the whole claim: adding "Good fit" after them would say
+        // out loud the very thing the badge stopped saying.
+        spoken: verdictMatch.gapNames?.length ? matchBadgeText(verdictMatch, 40) : `${matchBadgeText(verdictMatch, 40)}. ${matchClassification(verdictMatch)}`,
       }
     : legacy;
   // Unknown is unknown: a badge with no number and no status would be a verdict in disguise.

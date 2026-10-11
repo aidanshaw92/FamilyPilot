@@ -104,6 +104,10 @@ export interface FamilyMatchResult {
    * say the place is good for the family or for "Sloane" alone: the gap is said beside it. Empty for one child.
    */
   gapNames: string[];
+  /** Children the place's own recommended ages are confirmed to include (activity evidence). */
+  suitedNames: string[];
+  /** Children for whom only the practical facts are confirmed (buggy, changing): the visit is easy, the activity unjudged. */
+  easyNames: string[];
   /** Confirmed reasons it works. Each is a fact, never an inference. */
   reasons: MatchLine[];
   /** Things that count against it for this family. Confirmed breaches first. */
@@ -743,6 +747,8 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
     forNames,
     children: lens,
     gapNames,
+    suitedNames: lens.filter((l) => l.state === 'works' && l.basis === 'activity' && l.name).map((l) => l.name),
+    easyNames: lens.filter((l) => l.state === 'works' && l.basis === 'logistics' && l.name).map((l) => l.name),
     reasons,
     cautions,
     toCheck,
@@ -759,7 +765,10 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
  * ("Good for Sloane"); every other verdict is just its word, because a badge with a name on it is a claim and
  * `possible` and `poor` are not claims worth naming anyone for.
  */
-export function matchBadgeText(match: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[]; easyVisit?: boolean }, maxNameChars = 18): string {
+export function matchBadgeText(
+  match: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[]; easyVisit?: boolean; suitedNames?: string[]; easyNames?: string[] },
+  maxNameChars = 18,
+): string {
   // A household of babies only: what is confirmed is how easy the visit is, and the badge says exactly that. It never says
   // Excellent or Good, which would claim an activity was judged for them. A baby the place is not confirmed for is said.
   if (isEasyVisit(match)) {
@@ -772,11 +781,19 @@ export function matchBadgeText(match: Pick<FamilyMatchResult, 'verdict' | 'forNa
   }
   if (match.verdict === 'good' || match.verdict === 'excellent') {
     const word = match.verdict === 'excellent' ? 'Excellent' : 'Good';
-    // A child the place is not confirmed for is said on the badge too: "Good for Sloane" alone would read as the family.
     const gap = joinNames(match.gapNames ?? []);
     if (gap) {
-      const text = `${word} fit · check ${gap}`;
-      return gap.length <= maxNameChars - 6 ? text : `${word} fit · check kids`;
+      // A child the place is not confirmed for is said on the badge, and so is what IS confirmed and for whom. "Good fit ·
+      // check Sloane" read as a verdict on the family with a footnote; it was "Good" only for the child the facts were about,
+      // and where those facts were practical ones (changing, buggy) it was not "good" for anyone, only easy. The badge now
+      // matches the headline: "Good for Ozzie · check Sloane", or "Easy with Ozzie · check Sloane".
+      const suited = joinNames(match.suitedNames ?? []);
+      const easy = joinNames(match.easyNames ?? []);
+      const lead = suited ? `${word} for ${suited}` : easy ? `Easy with ${easy}` : EASY_VISIT_LABEL;
+      const budget = maxNameChars + 13; // "Easy with Ozzie · check Sloane" at the default 18: a name each side of the dot
+      const short = suited ? `${word} for some` : EASY_VISIT_LABEL;
+      const candidates = [`${lead} · check ${gap}`, `${short} · check ${gap}`, `${lead} · check kids`, `${short} · check kids`];
+      return candidates.find((text) => text.length <= budget) ?? candidates[candidates.length - 1];
     }
     const who = joinNames(match.forNames);
     if (who && who.length <= maxNameChars) return `${word} for ${who}`;

@@ -9,6 +9,7 @@ import type { VenueRuleNote } from '@/src/types/venue-rules';
 import { TravelMode } from '@/src/types/travel';
 import { travelTimeWithMode } from '@/src/utils/travel-time';
 import { familyDisplayName } from '@/src/utils/family-title';
+import { homeMargins, returnJourneySource } from './home-margin';
 
 /**
  * The boundary between the planner and the approved Plan screen.
@@ -62,6 +63,8 @@ export interface PlanPartyView {
   label: string;
   departLabel: string;
   homeLabel: string;
+  /** How the journey home was timed, for the terminus line: "journey estimated from distance" or null when measured. */
+  homeNote: string | null;
   latestDepartureLabel: string;
   notes: string[];
 }
@@ -124,6 +127,12 @@ export interface PlanRecommendationView {
   option: PlanAdviceOptionView;
 }
 
+export interface PlanTightHomeView {
+  id: string;
+  text: string;
+  options: PlanAdviceOptionView[];
+}
+
 export interface PlanRoutinesView {
   headline: string;
   /** Leads the section when a change would clear a clash. */
@@ -131,7 +140,10 @@ export interface PlanRoutinesView {
   /** The other verified changes, under the recommendation. */
   otherOptions: PlanAdviceOptionView[];
   advice: PlanAdviceView[];
+  /** Routines at home the day is home before, with real room to spare. */
   homeBefore: string[];
+  /** Routines at home the day is home before, but only just: said as tight, with the verified change if there is one. */
+  tight: PlanTightHomeView[];
   together: string[];
   /** How long was allowed and why, when FamilyPilot chose the length. */
   visitNote: string | null;
@@ -154,6 +166,8 @@ export interface PlanViewModel {
    * routine the day is home before; never invented from the time alone.
    */
   insight: string | null;
+  /** `ok` is the quiet tick; `tight` is the same line said as a warning, when the margin before the routine is slim. */
+  insightTone: 'ok' | 'tight';
   /**
    * Must-haves a family named that nobody has confirmed at a stop: the plan is built, and this says plainly what to check
    * before going. Prominent, and never worded as a fact either way. A must-have confirmed MISSING stops the plan instead.
@@ -520,6 +534,11 @@ function joinPhrases(items: string[]): string {
   return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
 
+/** Whether the planner's own "Home before" note for this family is a tight one (home-margin.ts), without the routines view. */
+function tightFromNotes(itinerary: DayItinerary, familyId: string): boolean {
+  return homeMargins(itinerary).some((margin) => margin.familyId === familyId && margin.tight);
+}
+
 function routinesView(input: PlanViewModelInput, context: PlanViewContext | undefined): PlanRoutinesView | null {
   const { itinerary } = input;
   const insights = itinerary.routineInsights ?? [];
@@ -546,7 +565,7 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
   }
   const note = visitNote(input.visit, input.anchorCategory, routineSentence);
   if (!input.hasRoutines && insights.length === 0 && homeAfter.length === 0) {
-    return note ? { headline: '', recommendation: null, otherOptions: [], advice: [], homeBefore: [], together: [], visitNote: note, clear: false } : null;
+    return note ? { headline: '', recommendation: null, otherOptions: [], advice: [], homeBefore: [], tight: [], together: [], visitNote: note, clear: false } : null;
   }
   const adviceContext: RoutineAdviceContext = {
     itinerary,
@@ -570,10 +589,17 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
   const recommendation = soft > 0 ? recommend(reasoning.advice, advice, resolveSubject, itinerary.stops[0]?.arrive) : null;
   // The answer first. A day with nothing to act on "should work well"; a clash that one verified change clears leads with
   // that change; a clash nothing clears says so plainly, and the details follow.
+  const tight: PlanTightHomeView[] = reasoning.tight.map((item) => ({
+    id: item.id,
+    text: item.text,
+    options: item.options.map((option, index) => ({ key: `${item.id}#${index}`, kind: option.kind, label: option.label, alternative: option.alternative })),
+  }));
   const headline = recommendation
     ? recommendation.title
     : soft === 0
-      ? 'This plan should work well'
+      ? tight.length > 0
+        ? 'This plan works, but one timing is tight'
+        : 'This plan should work well'
       : soft === 1
         ? 'This plan works, with one routine to plan around'
         : `This plan works, with ${soft} routines to plan around`;
@@ -595,9 +621,10 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
     // With the recommendation leading, the options sit above the details, so a detail that points at them says so.
     advice: recommendation ? advice.map((item) => ({ ...item, detail: item.detail.replace(/([Tt])he options below/g, '$1he options above'), options: [] })) : advice,
     homeBefore: reasoning.homeBefore,
+    tight,
     together: reasoning.together,
     visitNote: note,
-    clear: !reasoning.hasOverlap && Boolean(input.hasRoutines),
+    clear: !reasoning.hasOverlap && tight.length === 0 && Boolean(input.hasRoutines),
   };
 }
 
@@ -647,6 +674,7 @@ export function toPlanViewModel(input: PlanViewModelInput, context?: PlanViewCon
     label: family.familyId === 'mine' ? (context?.householdTitle || family.label) : familyDisplayName(family.label),
     departLabel: planClock(family.depart),
     homeLabel: planClock(family.home),
+    homeNote: returnJourneySource(itinerary, family.familyId) === 'estimated' ? 'journey estimated from distance' : null,
     latestDepartureLabel: planClock(family.latestDeparture),
     notes: family.notes.filter((note) => !noteIsCovered(note)),
   }));
@@ -671,13 +699,18 @@ export function toPlanViewModel(input: PlanViewModelInput, context?: PlanViewCon
   const homeBefore = primary?.notes
     .map((note) => /^Home before (.+) at (\d{2}:\d{2})\.$/.exec(note))
     .find((match): match is RegExpExecArray => Boolean(match));
-  const insight = routines?.homeBefore[0]
-    ?? (primary && homeBefore ? `Home around ${planClock(primary.home)}, before ${homeBefore[1]}` : null);
+  // A tight margin is said as tight, in the same place the tick would have gone: the line is a warning, never a tick.
+  const tightInsight = routines?.tight[0]?.text ?? null;
+  const insight = tightInsight
+    ?? routines?.homeBefore[0]
+    ?? (primary && homeBefore && !tightFromNotes(itinerary, primary.familyId) ? `Home around ${planClock(primary.home)}, before ${homeBefore[1]}` : null);
+  const insightTone: PlanViewModel['insightTone'] = tightInsight ? 'tight' : 'ok';
 
   return {
     title: `A day at ${anchorName}`,
     dayName: date ? date.long : null,
     insight,
+    insightTone,
     needsChecking: [...needsCheckingLines(itinerary), ...(input.venueNotes ?? []).filter((n) => n.severity === 'important').map((n) => n.text)],
     routines,
     lunch: {

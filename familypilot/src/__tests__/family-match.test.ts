@@ -314,15 +314,30 @@ describe('Family Fit never says "good for the family" from a subset of the child
   });
 
   describe('the badge', () => {
-    it('says the gap rather than "Good for Ozzie" alone', () => {
+    it('says the gap rather than "Good for Ozzie" alone, and says what IS confirmed rather than "Good fit"', () => {
+      // Ozzie's confirmed facts are practical ones (changing, buggy): the visit is easy for him, the activity was never
+      // judged for anyone, and nothing is known for Sloane. "Good fit · check Sloane" read as a verdict on the family.
       const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
-      expect(matchBadgeText(r)).toBe('Good fit · check Sloane');
+      expect(matchBadgeText(r)).toBe('Easy with Ozzie · check Sloane');
       expect(matchBadgeText(r)).not.toBe('Good for Ozzie');
+      expect(matchBadgeText(r)).not.toMatch(/good fit/i);
+    });
+
+    it('says "Good for" only the child the recommended ages cover, with the other still to check', () => {
+      const r = { verdict: 'good' as const, forNames: ['Ozzie'], gapNames: ['Sloane'], suitedNames: ['Ozzie'], easyNames: [] };
+      expect(matchBadgeText(r, 40)).toBe('Good for Ozzie · check Sloane');
+      expect(matchBadgeText(r, 8)).toBe('Good for some · check kids');
+    });
+
+    it('reports which children the activity evidence covers and which only the practical facts do', () => {
+      const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
+      expect(r.suitedNames).toEqual([]);
+      expect(r.easyNames).toEqual(['Ozzie']);
     });
 
     it('falls back to a short form when the names will not fit, never to a name alone', () => {
       const r = run(venue({}, { ...practical, babyChanging: 'yes', pushchairSuitability: 'good' }), two(), 85);
-      expect(matchBadgeText(r, 8)).toBe('Good fit · check kids');
+      expect(matchBadgeText(r, 8)).toBe('Easy visit · check kids');
     });
 
     it('still names both children when both are confirmed', () => {

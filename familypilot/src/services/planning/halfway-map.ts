@@ -36,6 +36,8 @@ export interface ProjectedMarker {
 export interface HalfwayMapModel {
   width: number;
   height: number;
+  /** Where the venue's name sits beside its pin, kept inside the frame. */
+  venueLabel: { x: number; y: number; anchor: 'start' | 'middle' | 'end' };
   /** Approximate family areas: centre (on the ~1 km grid) and radius in pixels. */
   areas: (ProjectedMarker & { r: number; role: 'mine' | 'other'; labelX: number; labelY: number; labelAnchor: 'start' | 'middle' | 'end' })[];
   venue: ProjectedMarker;
@@ -64,6 +66,24 @@ export function areaLabel(familyName: string): string {
   if (/[’']s family$/i.test(name)) return name.replace(/family$/i, 'area');
   if (!name) return 'Their area';
   return `${name}${/s$/i.test(name) ? '’' : '’s'} area`;
+}
+
+/**
+ * The venue's name under its pin, centred, pulled in from the edges where it would run off; above the frame's foot. Under
+ * rather than beside, because the family areas carry their labels above their circles, so the two kinds of label sit in
+ * different bands and rarely collide.
+ */
+export function venueLabelAt(x: number, y: number, name: string, size: { width: number; height: number }): HalfwayMapModel['venueLabel'] {
+  const EDGE = 8;
+  const CHAR_PX = 6.6;
+  const half = (Math.min(name.length, 28) * CHAR_PX) / 2;
+  let anchor: 'start' | 'middle' | 'end' = 'middle';
+  let labelX = x;
+  if (x - half < EDGE) { labelX = EDGE; anchor = 'start'; }
+  else if (x + half > size.width - EDGE) { labelX = size.width - EDGE; anchor = 'end'; }
+  const below = y + 16;
+  const labelY = below > size.height - 28 ? y - 34 : below;
+  return { x: labelX, y: Math.max(14, labelY), anchor };
 }
 
 export function halfwayMapModel(input: HalfwayMapInput, size: { width: number; height: number }): HalfwayMapModel | null {
@@ -158,6 +178,7 @@ export function halfwayMapModel(input: HalfwayMapInput, size: { width: number; h
       area(other.longitude, other.latitude, otherLabel, 'other'),
     ],
     venue: { x: toX(venue.longitude), y: toY(venue.latitude), label: input.venue.name },
+    venueLabel: venueLabelAt(toX(venue.longitude), toY(venue.latitude), input.venue.name, size),
     basemap,
     scale: { km, px: km * pxPerKm },
     summary: `Map: ${input.venue.name}, with ${mineLabel.toLowerCase()} and ${otherLabel} shown as approximate areas, not addresses.`,

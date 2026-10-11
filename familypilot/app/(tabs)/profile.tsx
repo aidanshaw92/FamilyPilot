@@ -8,6 +8,7 @@ import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 
 import { FadeInView } from '@/src/components/ui/FadeInView';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
+import { PageHeader } from '@/src/components/navigation/PageHeader';
 import { Button, Card, EmptyState, Skeleton, Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
@@ -76,12 +77,7 @@ export default function ProfileScreen() {
 
   return (
     <ScreenContainer>
-      <View style={styles.header}>
-        <Text variant="heading1">Profile</Text>
-        <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
-          The people you plan for, and the families you plan with
-        </Text>
-      </View>
+      <PageHeader title="Profile" subtitle="The people you plan for, and the families you plan with." testID="profile-header" />
 
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]}
@@ -324,13 +320,6 @@ const styles = StyleSheet.create({
   signOutRow: { gap: spacing.sm },
   loading: {
     padding: spacing.screenPadding,
-  },
-  header: {
-    paddingHorizontal: spacing.screenPadding,
-    paddingTop: spacing.lg,
-  },
-  subtitle: {
-    marginTop: spacing.xs,
   },
   content: {
     padding: spacing.screenPadding,

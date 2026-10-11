@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SavedBackupPanel } from '@/src/components/saved/SavedBackupPanel';
-import { BackButton } from '@/src/components/ui/BackButton';
+import { PageHeader } from '@/src/components/navigation/PageHeader';
 import { SavedPlaceRow } from '@/src/components/shared/SavedPlaceRow';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Chip, EmptyState, SkeletonCard, Text, CHIP_GAP } from '@/src/components/ui';
@@ -118,16 +118,13 @@ export default function SavedScreen() {
 
   return (
     <ScreenContainer>
-      <View style={styles.header}>
-        {/* Opened from Plans now (Saved places is no longer a tab), so it has a way back. */}
-        <View style={styles.back}>
-          <BackButton onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/trips' as never))} />
-        </View>
-        <Text variant="heading1" style={styles.title}>Saved places</Text>
-        <Text variant="bodySmall" color={colors.text.secondary} style={styles.subtitle}>
-          Places your family wants to remember
-        </Text>
-      </View>
+      {/* Opened from Plans now (Saved places is no longer a tab), so it has a way back. */}
+      <PageHeader
+        title="Saved places"
+        subtitle="Places your family wants to remember."
+        onBack={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/trips' as never))}
+        testID="saved-header"
+      />
 
       <View style={styles.searchRow}>
         <TextInput
@@ -230,19 +227,6 @@ export default function SavedScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: spacing.screenPadding,
-    paddingTop: spacing.lg,
-  },
-  back: {
-    alignSelf: 'flex-start',
-  },
-  subtitle: {
-    marginTop: spacing.xs,
-  },
-  title: {
-    marginTop: spacing.md,
-  },
   searchRow: {
     paddingHorizontal: spacing.screenPadding,
     marginTop: spacing.lg,
