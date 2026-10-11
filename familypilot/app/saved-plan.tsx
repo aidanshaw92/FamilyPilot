@@ -6,6 +6,7 @@ import { PlanScreenView } from '@/src/components/planning/PlanScreenView';
 import { EmptyState } from '@/src/components/ui';
 import { useFamilyProfile } from '@/src/hooks/use-queries';
 import { firstValue } from '@/src/services/planning/plan-draft';
+import { planTimeline, timelineChildren } from '@/src/services/planning/plan-timeline';
 import { toPlanViewModel } from '@/src/services/planning/plan-view-model';
 import { makeSubjectResolver } from '@/src/services/planning/routine-subjects';
 import { usePlanningStore } from '@/src/stores/planning-store';
@@ -43,6 +44,14 @@ export default function SavedPlanScreen() {
     [day, profile, families],
   );
 
+  // The same timeline the day was planned with, from the saved answer; names from this device's profile.
+  const timeline = useMemo(
+    () => (day ? planTimeline(day.source, { resolveSubject: makeSubjectResolver(profile, families), children: timelineChildren(profile) }) : []),
+    [day, profile, families],
+  );
+  // Editing a saved day: the Plan screen rebuilds it from the answers it was saved with, and saving replaces this day.
+  const edit = day?.draft ? () => router.push({ pathname: '/plan', params: { venue: day.draft!.venueId, ...day.draft!.params, savedId: day.id } } as never) : undefined;
+
   const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/trips' as never));
   // Reached through "View plan" straight after saving: offer the way on to Plans, where the row is marked as just saved.
   const fromSave = firstValue(params.from) === 'save';
@@ -73,6 +82,8 @@ export default function SavedPlanScreen() {
       onBack={back}
       onSave={() => {}}
       saved
+      timeline={timeline}
+      onEditPlan={edit}
       onAddToCalendar={() => void addPlanToCalendar()}
       onSeeAllPlans={fromSave ? seeAllPlans : undefined}
       calendarMessage={calendarMessage}

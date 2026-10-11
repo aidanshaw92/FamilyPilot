@@ -135,3 +135,39 @@ describe('the plan screen around it', () => {
     expect(plans).toContain("testID={fresh?'plans-just-saved':undefined}");
   });
 });
+
+describe('editing a saved day', () => {
+  it('replaces the day in place: same id, same created time, the new answer and the answers it was built from', async () => {
+    const h = harness();
+    const first = await savePlanDurably(source('RAF Museum'), { ...h.deps(), newId: ids, now: () => '2026-10-10T09:00:00.000Z', draft: { venueId: 'fp-raf', params: { start: '10:00' } } });
+    expect(first.status).toBe('saved');
+    const id = (first as { id: string }).id;
+    const edited = { ...source('RAF Museum'), anchorName: 'RAF Museum (edited)' };
+    const second = await savePlanDurably(edited, { ...h.deps(), newId: ids, replaceId: id, draft: { venueId: 'fp-raf', params: { start: '10:30' } } });
+    expect(second).toEqual({ status: 'saved', id });
+    expect(h.days).toHaveLength(1);
+    expect(h.days[0]).toMatchObject({ id, createdAt: '2026-10-10T09:00:00.000Z', draft: { params: { start: '10:30' } } });
+    expect(h.days[0].source.anchorName).toBe('RAF Museum (edited)');
+  });
+
+  it('an edit that storage refuses puts the old day back, unchanged', async () => {
+    const h = harness();
+    const first = await savePlanDurably(source('RAF Museum'), { ...h.deps(), newId: ids });
+    const id = (first as { id: string }).id;
+    // Storage stops taking writes after the first save: what it holds is frozen at the old day.
+    const frozen = await h.deps().readStored();
+    const edited = { ...source('RAF Museum'), anchorName: 'RAF Museum (edited)' };
+    const outcome = await savePlanDurably(edited, { ...h.deps(), readStored: async () => frozen, replaceId: id, attempts: 2, newId: ids });
+    expect(outcome.status).toBe('failed');
+    expect(h.days.map((d) => d.source.anchorName)).toEqual(['RAF Museum']);
+    expect(h.days[0].id).toBe(id);
+  });
+
+  it('the same content saved again, edited or not, is recognised rather than duplicated', async () => {
+    const h = harness();
+    const first = await savePlanDurably(source('RAF Museum'), { ...h.deps(), newId: ids });
+    const id = (first as { id: string }).id;
+    expect(await savePlanDurably(source('RAF Museum'), { ...h.deps(), newId: ids, replaceId: id })).toEqual({ status: 'already', id });
+    expect(h.days).toHaveLength(1);
+  });
+});

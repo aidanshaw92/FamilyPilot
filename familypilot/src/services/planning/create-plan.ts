@@ -7,7 +7,7 @@ import { PlanStopSource, generateDayPlan, resolvedStop, stopFacts } from './day-
 import { sequenceDay } from './sequencer';
 import { PlanningFamily } from './planner';
 import { PlanDraft } from './plan-draft';
-import { PlanViewContext, PlanViewModel, PlanViewModelInput, toPlanViewModel } from './plan-view-model';
+import { PlanLunchFacts, PlanViewContext, PlanViewModel, PlanViewModelInput, toPlanViewModel } from './plan-view-model';
 import { VisitLength, resolveVisit } from './visit-duration';
 import { buggyFamilyIds } from './routine-subjects';
 import { mustHaveLabel } from './must-have-labels';
@@ -74,6 +74,8 @@ export interface CreatePlanInput {
   lunchAvailable?: boolean;
   /** Names and the household title, added only when a screen draws the day. Never saved. */
   viewContext?: PlanViewContext;
+  /** What is on record about the lunch stop (tags, the walk), for the timeline. Kept with the plan when the meal is in it. */
+  mealFacts?: PlanLunchFacts;
   /**
    * Whether the absent meal is an absent meal or a broken lookup.
    *
@@ -495,6 +497,14 @@ export async function createPlan(
     hasRoutines: families.some((family) => family.routines.length > 0),
     anchorCategory: venue.category,
     ...(venueNotes.length ? { venueNotes } : {}),
+    // For the timeline: the venue's own facts about changing and ages, and what is on record about the lunch stop.
+    anchorFacts: {
+      babyChanging: anchorFacts.babyChanging,
+      toilets: anchorFacts.toilets,
+      minRecommendedAge: anchorFacts.minRecommendedAge,
+      maxRecommendedAge: anchorFacts.maxRecommendedAge,
+    },
+    ...(withMeal && input.mealFacts ? { lunchFacts: input.mealFacts } : {}),
   };
 
   return { ok: true, view: toPlanViewModel(source, input.viewContext), source };

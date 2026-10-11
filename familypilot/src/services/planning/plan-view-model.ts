@@ -342,6 +342,29 @@ export interface PlanParkingInput {
   info?: string;
 }
 
+/** The anchor's own facts that the timeline explains the arrival with. Venue facts: nothing about a child is in here. */
+export interface PlanAnchorFacts {
+  babyChanging?: MatchableVenueFacts['babyChanging'];
+  toilets?: MatchableVenueFacts['toilets'];
+  minRecommendedAge?: number | null;
+  maxRecommendedAge?: number | null;
+}
+
+/**
+ * What is on record about the lunch stop, from the OpenStreetMap discovery that found it, so the timeline can say why
+ * that place suits and how far it is. Tags are what the mappers listed, never a check made by FamilyPilot.
+ */
+export interface PlanLunchFacts {
+  provider: 'osm';
+  highchair?: boolean;
+  changingTable?: boolean;
+  outdoorSeating?: boolean;
+  cuisine?: string | null;
+  /** The walk from the venue, when the discovery worked one out, and whether it was routed or estimated. */
+  walkMinutes?: number;
+  walkSource?: 'measured' | 'estimated';
+}
+
 export interface PlanViewModelInput {
   itinerary: DayItinerary;
   travel: TravelDiagnostics;
@@ -372,6 +395,9 @@ export interface PlanViewModelInput {
    * "Worth knowing". Absent on a day saved before rules existed, or at a venue with none recorded.
    */
   venueNotes?: VenueRuleNote[];
+  /** Facts the timeline explains the day with (plan-timeline.ts). Absent on a day saved before the timeline existed. */
+  anchorFacts?: PlanAnchorFacts;
+  lunchFacts?: PlanLunchFacts;
 }
 
 /** What only the device knows at render time. Names live here, not in the saved plan. */

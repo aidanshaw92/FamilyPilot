@@ -22,7 +22,13 @@ export interface SavedPlan { feedback?:VisitFeedbackState; id: string; date: str
  * Separate from `saved`, which holds the older single-venue `PlanMatch`. Squeezing a three-stop day
  * into that shape would lose the stops it has.
  */
-export interface SavedDay { id: string; createdAt: string; source: PlanViewModelInput }
+/**
+ * The answers a saved day was built from (the venue id and the plan's own URL parameters: date, start, visit length,
+ * who is coming, lunch on or off and which place), so a saved day can be opened for editing and rebuilt by the real
+ * planner from where it left off. Nothing private: ids and choices only.
+ */
+export interface SavedDayDraft { venueId: string; params: Record<string, string> }
+export interface SavedDay { id: string; createdAt: string; source: PlanViewModelInput; draft?: SavedDayDraft }
 /**
  * `planningWith` is the family chosen with "Plan together" on Families: the id of a connected (or postcode) family that
  * the next plan sheet opens with already selected under Who's coming, so nobody re-enters them. Cleared with Done, or

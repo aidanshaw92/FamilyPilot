@@ -16,6 +16,8 @@ import {
 } from '@/src/services/planning/plan-view-model';
 
 import { PlanStopCard } from './PlanStopCard';
+import { PlanTimeline } from './PlanTimeline';
+import { TimelineEdit, TimelineRow } from '@/src/services/planning/plan-timeline';
 
 /**
  * The approved Plan screen, rendering a `PlanViewModel` and nothing else.
@@ -45,6 +47,12 @@ export interface PlanScreenViewProps {
   onChangePlan?: () => void;
   /** Adds lunch to the day, or takes it out, and builds the plan again. */
   onToggleLunch?: () => void;
+  /** The day as a timeline (plan-timeline.ts). Absent, the stop cards alone describe the day. */
+  timeline?: TimelineRow[];
+  /** A row's change (arrival, visit length, lunch, the earlier departure): the screen re-plans. */
+  onEditRow?: (edit: TimelineEdit, row: TimelineRow) => void;
+  /** On a saved day: open it for editing, from its saved answers. */
+  onEditPlan?: () => void;
   /** A saved plan opened again (from Plans): there is nothing to save, and the action is Add to calendar. */
   saved?: boolean;
   /**
@@ -74,6 +82,9 @@ export function PlanScreenView({
   onApplyOption,
   onChangePlan,
   onToggleLunch,
+  timeline,
+  onEditRow,
+  onEditPlan,
   saved = false,
   saveState = 'idle',
   saveError,
@@ -305,6 +316,18 @@ export function PlanScreenView({
                     {line}
                   </Text>
                 ))}
+              </Block>
+            ) : null}
+            {/* The day as it unfolds, with each timing's source; the stop cards below hold the places' details. */}
+            {timeline && timeline.length ? (
+              <Block title="Your day" testID="plan-day">
+                {onEditPlan ? (
+                  <Pressable onPress={onEditPlan} accessibilityRole="button" accessibilityLabel="Edit this plan" style={styles.lunchLink} hitSlop={8} testID="plan-edit">
+                    <Ionicons name="create-outline" size={18} color={colors.action} />
+                    <Text style={styles.lunchLinkText}>Edit this plan: times, how long, lunch</Text>
+                  </Pressable>
+                ) : null}
+                <PlanTimeline rows={timeline} onEdit={onEditRow} />
               </Block>
             ) : null}
             {view.stops.map((stop) => (
