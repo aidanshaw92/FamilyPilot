@@ -109,6 +109,8 @@ export interface PlanDraftSources {
   planningFamilies?: PlanningFamily[];
   /** Last used planning options, so a returning parent sees what they chose before. */
   options?: Pick<PlanningOptions, 'date' | 'leaveAt'> | null;
+  /** The family chosen with "Plan together" on Families: selected under Who's coming when they are known and ready. */
+  planningWith?: string | null;
   /** `YYYY-MM-DD` for today, passed in rather than read, so the result is deterministic. */
   today: string;
   /**
@@ -235,11 +237,14 @@ export function planDraftDefaults(sources: PlanDraftSources): PlanDraftDefaults 
     }
   }
 
+  // "Plan together" on Families: that family comes along by default, so nobody re-enters who is coming.
+  const together = sources.planningWith ? parties.find((p) => p.id === sources.planningWith && p.id !== parties[0].id && p.ready) : undefined;
+
   return {
     draft: {
       date,
       startAt,
-      partyIds: [parties[0].id],
+      partyIds: together ? [parties[0].id, together.id] : [parties[0].id],
       // Everyone, unless the parent takes somebody out.
       attendeeIds: null,
       visit: DEFAULT_VISIT_LENGTH,

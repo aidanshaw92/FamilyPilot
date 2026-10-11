@@ -58,7 +58,7 @@ describe('Families as a tab', () => {
   });
 
   it('is the existing Connected Families section, not a copy of it, so invitations keep their consent defaults', () => {
-    expect(families).toMatch(/<ConnectedFamiliesSection accountsAvailable=\{accountsAvailable\} variant="screen"/);
+    expect(families).toMatch(/<ConnectedFamiliesSection\s+accountsAvailable=\{accountsAvailable\}\s+variant="screen"/);
     expect(families).not.toMatch(/createInvite|listConnections|connection-invites|homeLatitude|homeLongitude/);
     const section = read('src/components/profile/FamilySections.tsx');
     expect(section).toMatch(/const \[shareRoutines, setShareRoutines\] = useState\(false\)/);
@@ -107,7 +107,7 @@ describe('the brand row on every main screen', () => {
     expect(home).toContain('windowHeight - (insets.top + BRAND_ROW_HEIGHT)');
     const explore = read('app/(tabs)/explore.tsx');
     expect(explore).toContain('<BrandLockup testID="explore-brand-row" />');
-    expect(explore).toContain('style={{ top: BRAND_ROW_HEIGHT }}');
+    expect(explore).toContain('style={{ top: BRAND_ROW_SHIFT }}');
   });
 
   it('the section pages use the one PageHeader, which draws the same lockup', () => {

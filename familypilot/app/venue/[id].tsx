@@ -140,6 +140,7 @@ export default function VenueScreen() {
   const { data: profile } = useFamilyProfile();
   const planningFamilies = usePlanningStore((state) => state.families);
   const planningOptions = usePlanningStore((state) => state.options);
+  const planningWith = usePlanningStore((state) => state.planningWith ?? null);
   const setPlanningOptions = usePlanningStore((state) => state.setOptions);
   const [planSheetOpen, setPlanSheetOpen] = useState(false);
   const [draftOverride, setDraftOverride] = useState<PlanDraft | null>(null);
@@ -150,6 +151,7 @@ export default function VenueScreen() {
         profile,
         planningFamilies,
         options: planningOptions,
+        planningWith,
         today: localDate(),
         nowTime: localTime(),
         // Shut today: the sheet opens on the day it next opens, so planning stays one tap away.
@@ -157,7 +159,7 @@ export default function VenueScreen() {
       }),
     // `planSheetOpen` is a dependency so the date and time are read again each time the sheet opens: a
     // screen left open past the day's start must not offer a day that has already begun.
-    [profile, planningFamilies, planningOptions, planSheetOpen, venue],
+    [profile, planningFamilies, planningOptions, planningWith, planSheetOpen, venue],
   );
   const draft = draftOverride ?? planDefaults.draft;
 

@@ -24,13 +24,27 @@ export interface MapPoint {
 export interface HalfwayMapInput {
   mine: MapPoint & { label: string };
   other: MapPoint & { label: string };
+  /** The place in focus: named on the map, and the one the frame is fitted to with the two areas. */
   venue: MapPoint & { name: string };
+  /**
+   * Every recommended place, in the order of the cards, so each is a numbered pin that matches its card. The venue in
+   * focus is one of them (`selectedId`); given none, only the venue is drawn.
+   */
+  venues?: (MapPoint & { id: string; name: string })[];
+  selectedId?: string;
 }
 
 export interface ProjectedMarker {
   x: number;
   y: number;
   label: string;
+}
+
+/** A recommended place on the map: numbered as its card is, the one in focus marked. */
+export interface MapPin extends ProjectedMarker {
+  id: string;
+  number: number;
+  selected: boolean;
 }
 
 export interface HalfwayMapModel {
@@ -41,6 +55,8 @@ export interface HalfwayMapModel {
   /** Approximate family areas: centre (on the ~1 km grid) and radius in pixels. */
   areas: (ProjectedMarker & { r: number; role: 'mine' | 'other'; labelX: number; labelY: number; labelAnchor: 'start' | 'middle' | 'end' })[];
   venue: ProjectedMarker;
+  /** The numbered pins, in card order, the selected one last so it is drawn on top where pins crowd. */
+  pins: MapPin[];
   /** Background: borough and county outlines, the Thames, main roads, as SVG path data in pixels. */
   basemap: { areas: string[]; river: string[]; motorways: string[]; roads: string[] };
   /** A scale bar a round number of kilometres long. */
@@ -170,6 +186,20 @@ export function halfwayMapModel(input: HalfwayMapInput, size: { width: number; h
     const labelY = above < 14 ? y + r + 14 : above;
     return { x, y, r, label, role, labelX, labelY, labelAnchor };
   };
+  // Every recommended place, numbered in card order. One with no usable position is left off the map (its card still
+  // says where it is); one off the frame is drawn anyway, clipped, rather than moving the frame away from the venue in
+  // focus and the two areas.
+  const listed = (input.venues ?? []).filter(finite);
+  const pins: MapPin[] = listed.map((place, index) => ({
+    id: place.id,
+    number: index + 1,
+    x: toX(place.longitude),
+    y: toY(place.latitude),
+    label: place.name,
+    selected: place.id === input.selectedId,
+  }));
+  pins.sort((a, b) => Number(a.selected) - Number(b.selected));
+
   return {
     width: size.width,
     height: size.height,
@@ -178,9 +208,12 @@ export function halfwayMapModel(input: HalfwayMapInput, size: { width: number; h
       area(other.longitude, other.latitude, otherLabel, 'other'),
     ],
     venue: { x: toX(venue.longitude), y: toY(venue.latitude), label: input.venue.name },
+    pins,
     venueLabel: venueLabelAt(toX(venue.longitude), toY(venue.latitude), input.venue.name, size),
     basemap,
     scale: { km, px: km * pxPerKm },
-    summary: `Map: ${input.venue.name}, with ${mineLabel.toLowerCase()} and ${otherLabel} shown as approximate areas, not addresses.`,
+    summary: pins.length > 1
+      ? `Map: ${pins.length} places numbered as the list below, ${input.venue.name} selected, with ${mineLabel.toLowerCase()} and ${otherLabel} shown as approximate areas, not addresses.`
+      : `Map: ${input.venue.name}, with ${mineLabel.toLowerCase()} and ${otherLabel} shown as approximate areas, not addresses.`,
   };
 }

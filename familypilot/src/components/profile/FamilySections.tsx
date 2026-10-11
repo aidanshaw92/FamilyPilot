@@ -12,10 +12,12 @@ import { INVITE_RELATIONSHIPS, InviteRelationship } from '@/src/services/plannin
 import { MySharing } from '@/src/services/planning/connection-invites';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { usePlanningStore } from '@/src/stores/planning-store';
-import { FamilyProfile } from '@/src/types';
-import { MOBILITY_LABELS } from '@/src/utils/family-mobility';
+import { FacilityType, FamilyProfile } from '@/src/types';
+import { formatClock } from '@/src/utils/clock-format';
+import { MOBILITY_LABELS, familyUsesBuggy } from '@/src/utils/family-mobility';
 import { householdPeople } from '@/src/utils/household';
 import { formatChildAge } from '@/src/utils/profile-defaults';
+import { resolveRoutines } from '@/src/utils/routine-schedule';
 import { familyDisplayName } from '@/src/utils/family-title';
 
 /**
@@ -30,14 +32,17 @@ import { familyDisplayName } from '@/src/utils/family-title';
  */
 const RELATIONSHIP_LABEL: Record<InviteRelationship, string> = { partner: 'Partner', family: 'Family', friend: 'Friend' };
 
-export function YourFamilySection({ profile }: { profile: FamilyProfile }) {
+export function YourFamilySection({ profile, onEdit }: { profile: FamilyProfile; onEdit?: () => void }) {
   const people = householdPeople(profile);
   const byId = new Map(profile.members.map((m) => [m.id, m]));
   return (
     <View testID="profile-your-family">
-      <Text variant="heading2" style={styles.title}>
-        Your family
-      </Text>
+      <View style={styles.titleRow}>
+        <Text variant="heading2" style={styles.title}>
+          Your family
+        </Text>
+        {onEdit ? <Button label="Edit" size="sm" variant="ghost" onPress={onEdit} testID="your-family-edit" /> : null}
+      </View>
       <Card style={styles.card}>
         {people.length === 0 ? (
           <Row icon="person-add-outline" label="Nobody yet" value="Add in Edit" />
@@ -66,6 +71,59 @@ export function YourFamilySection({ profile }: { profile: FamilyProfile }) {
   );
 }
 
+const MUST_HAVE_LABELS: Partial<Record<FacilityType, string>> = {
+  toilets: 'Toilets',
+  baby_changing: 'Baby changing',
+  parking: 'Parking',
+  blue_badge_parking: 'Blue Badge parking',
+  pushchair_friendly: 'Pushchair access',
+};
+
+function routineTime(time: string): string {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(time);
+  return match ? formatClock(Number(match[1]) * 60 + Number(match[2])) : time;
+}
+
+/**
+ * NAPS, FEEDS AND MUST-HAVES: what a day has to work around, as the planner reads it. Private by default: none of it
+ * reaches a connected family unless the parent turns sharing on for that connection (and then only the times, never
+ * a child's name). The line under the card says so, because that is the question a parent has when they see it here.
+ */
+export function RoutinesSection({ profile, onEdit }: { profile: FamilyProfile; onEdit?: () => void }) {
+  const routines = resolveRoutines(profile);
+  const mustHaves = (profile.mustHaveFacilities ?? []).map((f) => MUST_HAVE_LABELS[f] ?? f);
+  const buggy = familyUsesBuggy(profile);
+  return (
+    <View testID="families-routines">
+      <View style={styles.titleRow}>
+        <Text variant="heading2" style={styles.title}>
+          Naps, feeds and must-haves
+        </Text>
+        {onEdit ? <Button label="Edit" size="sm" variant="ghost" onPress={onEdit} testID="families-routines-edit" /> : null}
+      </View>
+      <Card style={styles.card}>
+        {routines.length === 0 ? (
+          <Row icon="moon-outline" label="Naps and feeds" value="Not set" />
+        ) : (
+          routines.map((routine) => (
+            <Row
+              key={routine.id}
+              icon={routine.kind === 'nap' ? 'moon-outline' : 'restaurant-outline'}
+              label={routine.label?.trim() || (routine.kind === 'nap' ? 'Nap' : 'Feed')}
+              value={`${routineTime(routine.time)}${routine.atHome ? ' · at home' : ''}`}
+            />
+          ))
+        )}
+        <Row icon="checkmark-done-outline" label="Must-haves" value={mustHaves.length ? mustHaves.join(', ') : 'None set'} />
+        <Row icon="walk-outline" label="Getting about" value={buggy ? 'With a pushchair' : 'No pushchair'} />
+        <Text variant="caption" color={colors.text.tertiary}>
+          Plans are built around these. They stay private: a connected family sees the times only if you choose to share them, and never a name.
+        </Text>
+      </Card>
+    </View>
+  );
+}
+
 /**
  * `profile` is the section as it sits on the Profile tab (its own heading, the invite tools always open). `screen` is the
  * same section on the Families screen, which has its own heading: the invite tools open when the parent asks to add a
@@ -73,7 +131,22 @@ export function YourFamilySection({ profile }: { profile: FamilyProfile }) {
  * says what a connection is for and offers "Add a family". Same data, same hook, same invitation flow: nothing here is a
  * second copy of any of it.
  */
-export function ConnectedFamiliesSection({ accountsAvailable, variant = 'profile' }: { accountsAvailable: boolean; variant?: 'profile' | 'screen' }) {
+export function ConnectedFamiliesSection({
+  accountsAvailable,
+  variant = 'profile',
+  onPlanTogether,
+  onEditLocal,
+  planningWith,
+}: {
+  accountsAvailable: boolean;
+  variant?: 'profile' | 'screen';
+  /** "Plan together" on a family's card: the Families screen keeps them selected for the next plan. */
+  onPlanTogether?: (family: PlanningFamily) => void;
+  /** Edit a family that is only on this phone (ages, area, routines typed in by the parent). */
+  onEditLocal?: (family: PlanningFamily) => void;
+  /** The family currently chosen with "Plan together", so its card says so. */
+  planningWith?: string | null;
+}) {
   const router = useRouter();
   const families = useConnectedFamilies(accountsAvailable);
   // Selected whole and filtered here: a selector that returns a new array every time re-renders without end.
@@ -163,6 +236,9 @@ export function ConnectedFamiliesSection({ accountsAvailable, variant = 'profile
               <Ionicons name="people-outline" size={20} color={colors.text.secondary} />
               <View style={styles.familyText}>
                 <Text variant="heading3">{familyDisplayName(family.label)}</Text>
+                <Text variant="caption" color={colors.action} testID="connected-family-status">
+                  {planningWith === family.id ? 'Connected · planning together' : 'Connected'}
+                </Text>
                 <Text variant="bodySmall" color={colors.text.secondary}>
                   {sharedSummary(family)}
                 </Text>
@@ -180,6 +256,9 @@ export function ConnectedFamiliesSection({ accountsAvailable, variant = 'profile
               </Text>
             ) : null}
             <View style={styles.actions}>
+              {onPlanTogether ? (
+                <Button label="Plan together" size="sm" onPress={() => onPlanTogether(family)} testID="family-plan-together" />
+              ) : null}
               <Button label="Meet halfway" size="sm" variant="outline" onPress={() => meet(family.id)} />
               <Button
                 label="What I share"
@@ -246,13 +325,20 @@ export function ConnectedFamiliesSection({ accountsAvailable, variant = 'profile
               <Ionicons name="pin-outline" size={20} color={colors.text.secondary} />
               <View style={styles.familyText}>
                 <Text variant="heading3">{familyDisplayName(family.label)}</Text>
+                <Text variant="caption" color={colors.text.secondary} testID="local-family-status">
+                  {planningWith === family.id ? 'On this phone only · planning together' : 'On this phone only · not connected'}
+                </Text>
                 <Text variant="bodySmall" color={colors.text.secondary}>
-                  {family.area} · starting point only, on this phone
+                  {localSummary(family)}
                 </Text>
               </View>
             </View>
             <View style={styles.actions}>
+              {onPlanTogether ? (
+                <Button label="Plan together" size="sm" onPress={() => onPlanTogether(family)} testID="family-plan-together" />
+              ) : null}
               <Button label="Meet halfway" size="sm" variant="outline" onPress={() => meet(family.id)} />
+              {onEditLocal ? <Button label="Edit" size="sm" variant="ghost" onPress={() => onEditLocal(family)} testID="local-family-edit" /> : null}
               <Button label="Remove" size="sm" variant="ghost" onPress={() => removeFamily(family.id)} />
             </View>
           </View>
@@ -338,6 +424,16 @@ function mySharingLine(sharing: MySharing): string {
   return 'You don’t share your routines with them.';
 }
 
+/** A family typed in on this phone: what the parent entered, said as what is on record. */
+function localSummary(family: PlanningFamily): string {
+  const parts = [
+    family.area,
+    family.ages.length ? `${family.ages.length === 1 ? 'a child' : `${family.ages.length} children`} aged ${family.ages.join(', ')}` : 'no children added',
+    family.routines.length ? `${family.routines.length} ${family.routines.length === 1 ? 'routine' : 'routines'}` : null,
+  ];
+  return parts.filter(Boolean).join(' · ');
+}
+
 /** What this connection has actually shared, in a line: only what the snapshot holds. */
 function sharedSummary(family: PlanningFamily): string {
   const parts = [family.area, family.ages.length ? `${family.ages.length} ${family.ages.length === 1 ? 'child' : 'children'}` : null];
@@ -362,6 +458,7 @@ function Row({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; lab
 }
 
 const styles = StyleSheet.create({
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   title: { marginTop: spacing.lg, marginBottom: spacing.lg },
   card: { gap: spacing.md, marginBottom: spacing.md },
   row: {

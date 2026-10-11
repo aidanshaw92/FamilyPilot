@@ -188,7 +188,7 @@ export default function HomeScreen() {
           a taller phone. Behind the scroll view, so content and navigation sit above them. */}
       <ScreenArt art={HOME_ART} from={1700} to={1846} anchor="bottom" />
       {/* The brand row, where every main screen has it; the approved header follows beneath it. */}
-      <View style={{ paddingTop: insets.top }} testID="home-brand-row">
+      <View style={{ paddingTop: insets.top + spacing.sm }} testID="home-brand-row">
         <BrandLockup />
       </View>
       <ScrollView
