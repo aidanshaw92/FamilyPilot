@@ -89,15 +89,24 @@ describe('Venue Detail: Family essentials rows', () => {
   });
 });
 
-describe('Family Fit: provision is not suitability', () => {
-  it('a playground adds no reason, no named child and no change of verdict for a family that did not ask for one', () => {
+describe('Family Fit: a confirmed playground is a child-specific provision, read as an inference', () => {
+  it('a playground replaces the park’s generic inference with a venue-specific one for the child of playground age, still marked as an inference and never a confirmed fit', () => {
     const base = { toilets: 'yes', babyChanging: 'yes', pushchairSuitability: 'good' } as const;
     const without = run(venue(base), profile(), 90);
     const withPlayground = run(venue({ ...base, playground: 'yes' }, { facilities: ['playground'] }), profile(), 90);
-    expect(withPlayground.verdict).toBe(without.verdict);
-    expect(withPlayground.reasons.map((l) => l.text)).toEqual(without.reasons.map((l) => l.text));
-    expect(withPlayground.forNames).toEqual(without.forNames);
-    expect(withPlayground.reasons.some((l) => l.aspect === 'activity')).toBe(false);
+    // A park is likely good for a 7-year-old either way; the playground makes the reason about THIS place.
+    expect(without.verdict).toBe('good');
+    expect(withPlayground.verdict).toBe('good');
+    expect(without.reasons.find((l) => l.inferred)?.text).toMatch(/^A park usually gives a 7-year-old like Sloane space to run around/);
+    expect(withPlayground.reasons.find((l) => l.inferred)?.text).toBe('A children’s playground is confirmed here, which usually suits a 7-year-old like Sloane');
+    expect(withPlayground.children.map((c) => c.basis)).toEqual(['likely']);
+    expect(withPlayground.suitedNames).toEqual([]);
+    // At a museum the same playground lifts a Possible to Good, and the exhibits stay a thing to check.
+    const museum = (f: Partial<MatchableVenueFacts>) => run(venue({ ...f, category: 'museum' }, { category: 'museum' } as Partial<Venue>), profile(), 90);
+    expect(museum(base).verdict).toBe('possible');
+    const lifted = museum({ ...base, playground: 'yes' });
+    expect(lifted.verdict).toBe('good');
+    expect(lifted.toCheck.map((l) => l.text)).toContain('We haven’t yet confirmed whether the exhibits suit Sloane');
   });
 
   it('a playground must-have is answered by the claim: yes, no, unknown', () => {

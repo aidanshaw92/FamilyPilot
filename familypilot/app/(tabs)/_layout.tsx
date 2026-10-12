@@ -11,10 +11,12 @@ const TAB_CONFIG: {
 }[] = [
   { name: 'index', title: 'Home' },
   { name: 'explore', title: 'Explore' },
-  // Families is the hub for who a parent plans with (their own household, the families they are connected to, and the
-  // ways to plan together). It sits in the middle of the five. Meet halfway is one of the things a parent does from
-  // there (app/halfway.tsx, a stack screen), not a tab of its own. Saved places open from Plans (app/saved.tsx).
+  // Families is the hub for who a parent plans with: the families they are connected to, invitations, what they share, and
+  // Plan together. Halfway is the other half of that job and a destination of its own, one tap from anywhere: a map of
+  // places that work for two families. A connected family's card in Families still offers it, pre-selected. Saved places
+  // open from Plans (app/saved.tsx).
   { name: 'families', title: 'Families' },
+  { name: 'halfway', title: 'Halfway' },
   {
     name: 'trips',
     title: 'Plans',

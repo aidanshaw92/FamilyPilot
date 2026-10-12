@@ -15,6 +15,8 @@ Family Match is not merely a UI badge. It combines **family context**, **situati
 
 **Never simply display a percentage. Always explain why.**
 
+> **How the grade is decided today** (Excellent / Good / Possible / Not recommended, suitability kept apart from evidence completeness, category-aware inference said as inference): see [FAMILY_FIT_GRADING.md](./FAMILY_FIT_GRADING.md).
+
 ---
 
 ## Context layers

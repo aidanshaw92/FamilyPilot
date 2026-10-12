@@ -337,6 +337,7 @@ export default function VenueScreen() {
                   enrichmentStatus={venue.enrichmentStatus}
                   match={venue.familyMatch}
                   size="compact"
+                  maxLabel={40}
                   onPress={scrollToFit}
                 />
               )}
@@ -642,12 +643,16 @@ const styles = StyleSheet.create({
   },
   nameRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: spacing.md,
   },
+  // Takes what the badge leaves; a badge with words too long to sit beside the name drops under it instead of past the edge.
   name: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 150,
   },
   locationRow: {
     flexDirection: 'row',

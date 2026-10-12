@@ -33,6 +33,12 @@ export type Provenance = 'confirmed' | 'estimated' | 'inferred' | 'reported' | '
 export interface TimelineLine {
   text: string;
   provenance?: Provenance;
+  /**
+   * Supporting evidence rather than the timing itself: how a journey was worked out, a facility that is confirmed, a sentence a
+   * row above already said. Drawn only when the parent opens "How these times were worked out"; everything that changes what
+   * they do (a time, a warning, something not confirmed) is never a detail.
+   */
+  detail?: boolean;
 }
 
 export type TimelineEdit = 'arrival' | 'visit' | 'lunch' | 'leave-earlier';
@@ -84,16 +90,19 @@ const isUnderThree = (child: TimelineChild): boolean => (typeof child.ageMonths 
 
 const defaultResolver: SubjectResolver = (_familyId, _routineId, kind) => ({ name: null, noun: kind, familyLabel: 'Your family', yours: true });
 
-function journeyLine(leg: Pick<SequenceLeg, 'travelMinutes' | 'bufferMinutes' | 'source'>, to: string | null): TimelineLine {
+function journeyLines(leg: Pick<SequenceLeg, 'travelMinutes' | 'bufferMinutes' | 'source'>, to: string | null, options: { detailOnly?: boolean } = {}): TimelineLine[] {
   const travel = Math.max(1, Math.round(leg.travelMinutes));
   const buffer = Math.round(leg.bufferMinutes);
-  const settle = buffer > 0 ? ` plus ${buffer} min to settle` : '';
   const where = to ? ` to ${to}` : '';
+  const live = leg.source === 'live';
   // The sequencer times every leg as a drive (a measured route, or an estimate from distance), so that is what is said;
-  // a walk the discovery found is offered on the lunch row as the alternative it is.
-  return leg.source === 'live'
-    ? { text: `${travel} min drive${settle}, measured${where}.`, provenance: 'confirmed' }
-    : { text: `About ${travel} min drive${settle}, estimated from distance${where}.`, provenance: 'estimated' };
+  // a walk the discovery found is offered on the lunch row as the alternative it is. The drive is the timing and stays in
+  // view; how it was worked out (the settling allowance, measured or estimated) is the detail, said once per journey.
+  const how = `${buffer > 0 ? `Includes ${buffer} min to settle. ` : ''}${live ? 'Measured.' : 'Estimated from distance, not measured.'}`;
+  return [
+    { text: `${live ? '' : 'About '}${travel} min drive${where}.`, provenance: live ? 'confirmed' : 'estimated', detail: options.detailOnly },
+    { text: how, provenance: live ? 'confirmed' : 'estimated', detail: true },
+  ];
 }
 
 function ageLine(facts: PlanAnchorFacts | undefined, children: TimelineChild[]): TimelineLine | null {
@@ -115,7 +124,8 @@ function ageLine(facts: PlanAnchorFacts | undefined, children: TimelineChild[]):
     younger.length ? `${younger.join(' and ')} ${younger.length === 1 ? 'is' : 'are'} younger` : null,
     older.length ? `${older.join(' and ')} ${older.length === 1 ? 'is' : 'are'} older` : null,
   ].filter(Boolean);
-  return { text: `Recommended for ${range}: ${parts.join('; ')}.`, provenance: 'inferred' };
+  // Kept in view when a child is outside the range: that is a warning, not background.
+  return { text: `Recommended for ${range}: ${parts.join('; ')}.`, provenance: 'inferred', detail: younger.length + older.length === 0 };
 }
 
 function facilityLines(input: PlanViewModelInput, children: TimelineChild[], buggy: boolean): TimelineLine[] {
@@ -123,15 +133,15 @@ function facilityLines(input: PlanViewModelInput, children: TimelineChild[], bug
   const parking = input.parking;
   if (parking?.parking === 'yes') {
     const cost = parking.freeParking === 'yes' ? ', free' : parking.freeParking === 'no' ? ', paid' : '';
-    lines.push({ text: `Parking on site${cost}.`, provenance: 'confirmed' });
-  } else if (parking?.parking === 'no') lines.push({ text: 'No parking on site.', provenance: 'confirmed' });
+    lines.push({ text: `Parking on site${cost}.`, provenance: 'confirmed', detail: true });
+  } else if (parking?.parking === 'no') lines.push({ text: 'No parking on site.', provenance: 'confirmed', detail: true });
   else lines.push({ text: 'Parking not confirmed.', provenance: 'unknown' });
 
   if (buggy) {
     const p = input.pushchair;
-    if (p === 'excellent' || p === 'good') lines.push({ text: 'Pushchair friendly.', provenance: 'confirmed' });
-    else if (p === 'mixed') lines.push({ text: 'Pushchair access is mixed.', provenance: 'confirmed' });
-    else if (p === 'difficult') lines.push({ text: 'Difficult with a pushchair.', provenance: 'confirmed' });
+    if (p === 'excellent' || p === 'good') lines.push({ text: 'Pushchair friendly.', provenance: 'confirmed', detail: true });
+    else if (p === 'mixed') lines.push({ text: 'Pushchair access is mixed.', provenance: 'confirmed', detail: true });
+    else if (p === 'difficult') lines.push({ text: 'Difficult with a pushchair.', provenance: 'confirmed', detail: true });
     else lines.push({ text: 'Pushchair access not confirmed.', provenance: 'unknown' });
   }
 
@@ -139,8 +149,8 @@ function facilityLines(input: PlanViewModelInput, children: TimelineChild[], bug
   if (littleOnes.length && input.anchorFacts) {
     const bc = input.anchorFacts.babyChanging;
     const who = littleOnes.map((c) => c.name).join(' and ');
-    if (bc === 'yes') lines.push({ text: `Baby changing confirmed, for ${who}.`, provenance: 'confirmed' });
-    else if (bc === 'no') lines.push({ text: 'No baby changing recorded here.', provenance: 'confirmed' });
+    if (bc === 'yes') lines.push({ text: `Baby changing confirmed, for ${who}.`, provenance: 'confirmed', detail: true });
+    else if (bc === 'no') lines.push({ text: 'No baby changing recorded here.', provenance: 'confirmed', detail: true });
     else lines.push({ text: 'Baby changing not confirmed.', provenance: 'unknown' });
   }
   return lines;
@@ -179,8 +189,8 @@ function lunchLines(stop: SequenceStop, input: PlanViewModelInput, children: Tim
     const n = Math.max(1, Math.round(facts.walkMinutes));
     lines.push(
       facts.walkSource === 'measured'
-        ? { text: `Or a ${n}-minute walk from ${from}, measured.`, provenance: 'confirmed' }
-        : { text: `Or about a ${n}-minute walk from ${from}, estimated from distance.`, provenance: 'estimated' },
+        ? { text: `Or a ${n}-minute walk from ${from}, measured.`, provenance: 'confirmed', detail: true }
+        : { text: `Or about a ${n}-minute walk from ${from}, estimated from distance.`, provenance: 'estimated', detail: true },
     );
   }
   if (facts) {
@@ -188,14 +198,14 @@ function lunchLines(stop: SequenceStop, input: PlanViewModelInput, children: Tim
     const littleOnes = children.filter(isUnderThree);
     if (listed.length) {
       const why = littleOnes.length && (facts.highchair || facts.changingTable) ? `, which matters with ${littleOnes.map((c) => c.name).join(' and ')}` : '';
-      lines.push({ text: `${upperFirst(listed.join(', '))} listed on OpenStreetMap${why}.`, provenance: 'reported' });
+      lines.push({ text: `${upperFirst(listed.join(', '))} listed on OpenStreetMap${why}.`, provenance: 'reported', detail: true });
     } else {
       lines.push({ text: 'No high chair or baby changing listed on OpenStreetMap; worth asking.', provenance: 'unknown' });
     }
-    if (facts.cuisine) lines.push({ text: `${upperFirst(facts.cuisine)}, as listed.`, provenance: 'reported' });
+    if (facts.cuisine) lines.push({ text: `${upperFirst(facts.cuisine)}, as listed.`, provenance: 'reported', detail: true });
   }
   lines.push({ text: `${spanLabel(stop.dwellMinutes)} at the table.`, provenance: 'inferred' });
-  if (stop.opening.status === 'open') lines.push({ text: stop.opening.closesAt ? `Open until ${stop.opening.closesAt}.` : 'Open at this time.', provenance: 'confirmed' });
+  if (stop.opening.status === 'open') lines.push({ text: stop.opening.closesAt ? `Open until ${stop.opening.closesAt}.` : 'Open at this time.', provenance: 'confirmed', detail: true });
   else lines.push({ text: 'Opening hours not confirmed for this day.', provenance: 'unknown' });
   return lines;
 }
@@ -233,7 +243,7 @@ export function planTimeline(input: PlanViewModelInput, context: TimelineContext
     title: 'Leave home',
     tone: 'quiet',
     lines: [
-      ...(out ? [journeyLine(out, first.name)] : []),
+      ...(out ? journeyLines(out, first.name) : []),
       ...others.map((family): TimelineLine => {
         const leg = legFromHome(family.familyId);
         return {
@@ -263,7 +273,7 @@ export function planTimeline(input: PlanViewModelInput, context: TimelineContext
       });
     } else {
       const arriveLines: TimelineLine[] = [];
-      if (stop.opening.status === 'open') arriveLines.push({ text: stop.opening.closesAt ? `Open until ${stop.opening.closesAt}.` : 'Open when you arrive.', provenance: 'confirmed' });
+      if (stop.opening.status === 'open') arriveLines.push({ text: stop.opening.closesAt ? `Open until ${stop.opening.closesAt}.` : 'Open when you arrive.', provenance: 'confirmed', detail: true });
       else arriveLines.push({ text: 'Opening hours not confirmed for this day.', provenance: 'unknown' });
       if (stop.anchor) {
         arriveLines.push(...facilityLines(input, children, buggy));
@@ -312,7 +322,7 @@ export function planTimeline(input: PlanViewModelInput, context: TimelineContext
           until: stop.depart,
           title: during.length ? `Carry on at ${stop.name}` : `Explore ${stop.name}`,
           tone: 'ok',
-          lines: [{ text: `${spanLabel(stop.depart - cursor)} ${during.length ? 'more ' : ''}at ${stop.name}.`, provenance: 'inferred' }, ...(basis ? [basis] : [])],
+          lines: [{ text: `${spanLabel(stop.depart - cursor)} ${during.length ? 'more ' : ''}at ${stop.name}.`, provenance: 'inferred' }, ...(basis ? [{ ...basis, detail: true }] : [])],
           edit: stop.anchor && !visitEditGiven ? 'visit' : undefined,
           stopIndex: stop.index,
         });
@@ -322,7 +332,7 @@ export function planTimeline(input: PlanViewModelInput, context: TimelineContext
 
     // Leave this stop.
     const legOut = legAfter(stop.index);
-    const leaveLines: TimelineLine[] = legOut ? [journeyLine(legOut, next ? next.name : null)] : [];
+    const leaveLines: TimelineLine[] = legOut ? journeyLines(legOut, next ? next.name : null) : [];
     let tone: TimelineRow['tone'] = 'quiet';
     let edit: TimelineEdit | undefined;
     if (!next) {
@@ -334,7 +344,7 @@ export function planTimeline(input: PlanViewModelInput, context: TimelineContext
           tone = 'tight';
           if (context.leaveEarlier) edit = 'leave-earlier';
         } else {
-          leaveLines.push({ text: `Leaving now gets you home ${spanLabel(margin.marginMinutes)} before ${name}.`, provenance: margin.source === 'live' ? 'confirmed' : 'estimated' });
+          leaveLines.push({ text: `Leaving now gets you home ${spanLabel(margin.marginMinutes)} before ${name}.`, provenance: margin.source === 'live' ? 'confirmed' : 'estimated', detail: true });
         }
       }
     }
@@ -372,7 +382,8 @@ export function planTimeline(input: PlanViewModelInput, context: TimelineContext
 
   // Home.
   const back = legHome(primary.familyId);
-  const homeLines: TimelineLine[] = back ? [journeyLine(back, null)] : [];
+  // The drive home is on the "Leave for home" row; here it is only supporting detail.
+  const homeLines: TimelineLine[] = back ? journeyLines(back, null, { detailOnly: true }) : [];
   let homeTone: TimelineRow['tone'] = 'ok';
   let homeEdit: TimelineEdit | undefined;
   for (const margin of margins) {
@@ -399,7 +410,7 @@ export function planTimeline(input: PlanViewModelInput, context: TimelineContext
       lines: [
         margin.tight
           ? { text: `You’re home ${spanLabel(margin.marginMinutes)} before it, and the journey is ${margin.source === 'live' ? 'measured' : 'estimated'}, so that may not hold.`, provenance: 'reported' }
-          : { text: `You’re home ${spanLabel(margin.marginMinutes)} before it.`, provenance: 'reported' },
+          : { text: `You’re home ${spanLabel(margin.marginMinutes)} before it.`, provenance: 'reported', detail: true },
       ],
     });
   }

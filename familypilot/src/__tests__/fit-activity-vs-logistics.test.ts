@@ -8,11 +8,14 @@ import { OpeningHoursSchedule } from '@/src/types/opening-hours';
 /**
  * THE SEMANTIC CONTRACT: activity fit and visit logistics are different claims.
  *
- *   Activity fit    evidence the PLACE suits a child. Today only the venue's own recommended ages including them.
+ *   Activity fit    evidence the PLACE suits a child: the venue's own recommended ages, a reviewed provision for the age,
+ *                   or (docs/FAMILY_FIT_GRADING.md) an inference from a confirmed playground or the kind of place, which is
+ *                   said as "likely" and marked as an inference, never as a confirmed "Good for".
  *   Visit logistics evidence taking a child is PRACTICAL: buggy access, baby changing, toilets, parking, a café.
  *
  * Logistics may say "Easy to visit with Ozzie". It may never say "Good for Ozzie". These tests try to break that from every
- * side: every combination of practical facts, every household shape, and age-adjacent data that must not count.
+ * side: every combination of practical facts, every household shape, and age-adjacent data that must not count. The venue
+ * is a museum, where no category inference applies, so the only route to "Good for" would be a fact about the child.
  */
 const NOW = new Date(2026, 9, 6, 11, 0, 0);
 
@@ -87,16 +90,16 @@ describe('logistics can never become activity fit', () => {
 
   it('a verdict word is never used as a claim about a child without a recommended age range behind it', () => {
     const r = run(venue({ babyChanging: 'yes', toilets: 'yes', parking: 'yes', pushchairSuitability: 'excellent' }), households[2][1], 95);
-    // Logistics alone no longer earn Excellent for a child of a year or more (EXCELLENT_RULE_V2): Sloane is 3.
-    expect(r.verdict).toBe('good');
-    expect(r.headline).toMatch(/^Easy to visit with Sloane and Ozzie/);
-    expect(r.headline).not.toMatch(/Excellent for/);
+    // Logistics alone say nothing about whether the exhibits suit a 3-year-old: Possible, with the uncertainty named.
+    expect(r.verdict).toBe('possible');
+    expect(r.headline).toBe('Easy to visit with Sloane and Ozzie, but we haven’t yet confirmed whether the exhibits suit Sloane');
+    expect(r.headline).not.toMatch(/Excellent for|Good for/);
   });
 
   it('a baby with baby changing and a buggy is "easy to visit with", and the other child is said to be uncertain', () => {
     const r = run(venue({ babyChanging: 'yes', pushchairSuitability: 'good', toilets: 'yes' }), households[3][1]);
     expect(r.children.map((c) => [c.name, c.basis])).toEqual([['Maya', null], ['Ozzie', 'logistics']]);
-    expect(r.headline).toBe('Easy to visit with Ozzie, but we haven’t yet confirmed whether this activity suits Maya');
+    expect(r.headline).toBe('Easy to visit with Ozzie, but we haven’t yet confirmed whether the exhibits suit Maya');
   });
 
   it('only a recommended age range that includes the child makes the place "good for" them', () => {
@@ -133,17 +136,26 @@ describe('logistics can never become activity fit', () => {
 });
 
 describe('Sloane stays uncertain without age evidence', () => {
-  it('a toddler with only practical facts is not claimed as suited, and the uncertainty is on the venue page', () => {
+  it('a toddler with only practical facts is not claimed as suited, and the uncertainty is in the headline and on the venue page', () => {
     const r = run(venue({ pushchairSuitability: 'good', toilets: 'yes' }), households[1][1]);
-    expect(r.headline).toBe('Easy to visit with Sloane');
-    expect(r.toCheck.map((l) => l.text)).toContain('We haven’t yet confirmed whether this activity suits Sloane');
+    expect(r.verdict).toBe('possible');
+    expect(r.headline).toBe('Easy to visit with Sloane, but we haven’t yet confirmed whether the exhibits suit Sloane');
+    expect(r.toCheck.map((l) => l.text)).toContain('We haven’t yet confirmed whether the exhibits suit Sloane');
   });
 
-  it('the uncertainty is not invented from the child’s age or the kind of place', () => {
-    for (const category of ['park', 'museum', 'soft_play', 'farm', 'zoo'] as const) {
+  it('the kind of place is read as an inference, marked as one, and never as a confirmed activity fit or an Excellent', () => {
+    // A museum says nothing about a toddler by being a museum. A park, soft play, a farm or a zoo usually does, and the line
+    // says "usually", is flagged `inferred`, gives the child the basis `likely` (not `activity`), and stops at Good.
+    const museum = run(venue({ category: 'museum', pushchairSuitability: 'good', toilets: 'yes' }), households[1][1]);
+    expect(museum.forNames).toEqual([]);
+    expect(museum.children[0].basis).toBe('logistics');
+    for (const category of ['park', 'soft_play', 'farm', 'zoo'] as const) {
       const r = run(venue({ category, pushchairSuitability: 'good', toilets: 'yes' }, { category } as Partial<Venue>), households[1][1]);
-      expect(r.forNames, category).toEqual([]);
-      expect(r.children[0].basis, category).toBe('logistics');
+      expect(r.children[0].basis, category).toBe('likely');
+      expect(r.reasons.filter((l) => l.aspect === 'activity').every((l) => l.inferred), category).toBe(true);
+      expect(r.reasons.find((l) => l.inferred)?.text, category).toMatch(/usually/);
+      expect(r.verdict, category).toBe('good');
+      expect(r.headline, category).toMatch(/^Likely good for Sloane/);
     }
   });
 
@@ -155,36 +167,38 @@ describe('Sloane stays uncertain without age evidence', () => {
 
   it('a child a year old or more is not treated as logistics-led', () => {
     const r = run(venue({ babyChanging: 'yes', pushchairSuitability: 'good' }), profile([child('c9', 'Isla', 1, { mobility: ['buggy'] })]));
-    expect(r.toCheck.map((l) => l.text).join(' ')).toMatch(/activity suits Isla/);
+    expect(r.toCheck.map((l) => l.text).join(' ')).toMatch(/exhibits suit Isla/);
   });
 
   it('never raises the uncertainty for a place nobody has reviewed', () => {
     const r = run(venue({}, { enrichmentStatus: 'provider_only', trustedFacts: undefined } as Partial<Venue>), households[1][1]);
     expect(r.verdict).toBe('not_reviewed');
-    expect(r.toCheck.map((l) => l.text).join(' ')).not.toMatch(/activity suits/);
+    expect(r.toCheck.map((l) => l.text).join(' ')).not.toMatch(/activity suits|exhibits suit/);
+    expect(r.reasons.some((l) => l.inferred)).toBe(false);
   });
 });
 
 describe('what the change does NOT touch', () => {
-  it('leaves the verdict exactly as it was: only the words changed', () => {
+  it('the grade comes from the facts, not from the blended score: the score ranks and never decides', () => {
     const f = { babyChanging: 'yes', toilets: 'yes', parking: 'yes', pushchairSuitability: 'good' } as const;
-    // Excellent now also needs activity evidence for every child of a year or more, so logistics alone stop at Good.
-    expect(run(venue(f), households[1][1], 85).verdict).toBe('good');
-    expect(run(venue(f), households[0][1], 85).verdict).toBe('excellent');
-    expect(run(venue(f), households[1][1], 75).verdict).toBe('good');
-    expect(run(venue(f), households[1][1], 40).verdict).toBe('poor');
+    // A museum confirmed for no child who can take part is Possible whatever the score; a household of babies is Excellent
+    // on logistics (the visit is the activity); a confirmed obstacle is Not recommended whatever the score.
+    for (const score of [95, 85, 75, 40]) {
+      expect(run(venue(f), households[1][1], score).verdict, String(score)).toBe('possible');
+      expect(run(venue(f), households[0][1], score).verdict, String(score)).toBe('excellent');
+    }
     expect(run(venue({ ...f, pushchairSuitability: 'difficult' }), households[1][1], 90).verdict).toBe('poor');
   });
 
-  it('never puts the uncertainty line on a card', () => {
+  it('the card says why a Possible is possible: the lead fact, then the uncertainty', () => {
     const r = run(venue({ toilets: 'yes', pushchairSuitability: 'good', babyChanging: 'yes', parking: 'yes' }), households[1][1], 65);
     expect(r.verdict).toBe('possible');
-    expect(matchCardReason(r)).not.toMatch(/activity suits/);
+    expect(matchCardReason(r)).toBe('Good buggy access for Sloane’s buggy · We haven’t yet confirmed whether the exhibits suit Sloane');
   });
 
-  it('a badge for logistics alone carries no child’s name', () => {
+  it('a badge for logistics alone carries no child’s name and no Good', () => {
     const r = run(venue({ toilets: 'yes', pushchairSuitability: 'good', babyChanging: 'yes', parking: 'yes' }), households[1][1], 85);
-    expect(['good', 'excellent']).toContain(r.verdict);
-    expect(matchBadgeText(r)).toMatch(/^(Good|Excellent) fit$/);
+    expect(r.verdict).toBe('possible');
+    expect(matchBadgeText(r)).toBe('Possible fit');
   });
 });

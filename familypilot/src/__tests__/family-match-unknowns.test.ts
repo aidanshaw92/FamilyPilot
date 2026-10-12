@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { evaluateFamilyMatch } from '@/src/services/matching/family-match';
+import { evaluateFamilyMatch, matchBadgeText } from '@/src/services/matching/family-match';
 import { FamilyMember, FamilyProfile, Venue } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { OpeningHoursSchedule } from '@/src/types/opening-hours';
@@ -30,20 +30,25 @@ const read = (p: FamilyProfile, v = venue()) => evaluateFamilyMatch({ venue: v, 
 const text = (lines: Array<{ text: string }>) => lines.map((l) => l.text).join(' | ');
 
 describe('Family Fit and unknown facts', () => {
-  it('a buggy toddler family is told buggy access still needs checking, and is not told it is a fit', () => {
+  it('a buggy toddler family is told buggy access still needs checking; the park is likely good for Theo, never Excellent', () => {
     const r = read(family([child('Theo', 2, { mobility: ['buggy'] })]));
     expect(text(r.toCheck)).toMatch(/Buggy access still to be checked for Theo’s buggy/);
     expect(text(r.reasons)).not.toMatch(/buggy/i);
-    expect(r.verdict).toBe('possible'); // an unknown hard requirement caps the verdict, it does not sink it
-    expect(r.verdict).not.toBe('poor');
+    expect(r.verdict).toBe('good'); // a secondary unknown holds a place below Excellent; it does not sink it
+    expect(r.verdict).not.toBe('excellent');
   });
 
-  it('a family that walks, with older children, hears nothing about buggies or baby changing, and still gets a good verdict', () => {
+  it('a family that walks, with older children, hears nothing about buggies or baby changing, and is told the park is likely good, as an inference', () => {
     const r = read(family([child('Sloane', 7), child('Mia', 9)]));
     const everything = `${text(r.toCheck)} ${text(r.cautions)} ${r.cardNote ?? ''}`;
     expect(everything).not.toMatch(/buggy|baby changing|pushchair/i);
-    expect(r.toCheck).toEqual([]);
-    expect(['good', 'excellent']).toContain(r.verdict);
+    // A park with toilets and a café confirmed and no playground on record: likely good for a 7- and a 9-year-old, said as
+    // what a park usually is, never as a confirmed fit, and never Excellent.
+    expect(r.verdict).toBe('good');
+    expect(r.practicalOnly).toBe(false);
+    expect(r.likelyNames).toEqual(['Sloane', 'Mia']);
+    expect(text(r.reasons)).toMatch(/nothing child-specific is confirmed here yet/);
+    expect(matchBadgeText(r)).toBe('Likely good for Sloane and Mia');
   });
 
   it('a family carrying a baby (no buggy) is asked about baby changing, softly, and about nothing buggy', () => {

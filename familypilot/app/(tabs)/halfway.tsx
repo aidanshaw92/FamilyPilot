@@ -13,6 +13,7 @@ import { VenueImage } from '@/src/components/ui/VenueImage';
 import { HalfwayMap } from '@/src/components/planning/HalfwayMap';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { useConnectedFamilies } from '@/src/hooks/use-connected-families';
+import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import { useBetweenVenues, useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
 import { HalfwayOption, familyPhrase, meetHalfway, topCardLabel } from '@/src/services/planning/meet-halfway';
 import { DEFAULT_START_AT, firstValue, planDraftToParams } from '@/src/services/planning/plan-draft';
@@ -27,7 +28,7 @@ import { travelTimeLabel } from '@/src/utils/travel-time';
 import { familyDisplayName } from '@/src/utils/family-title';
 
 /**
- * MEET HALFWAY: a place that works for two families.
+ * MEET HALFWAY: a place that works for two families. Its own tab (Home, Explore, Families, Halfway, Plans, Profile).
  *
  * One screen, one question: who are you meeting, and when. Everything after that is the engine's answer
  * (`meetHalfway`): places ranked by fair journeys for BOTH families, the planner's own idea of suitability applied to each,
@@ -43,6 +44,7 @@ import { familyDisplayName } from '@/src/utils/family-title';
 export default function MeetHalfwayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const tabBarClearance = useTabBarClearance();
   const params = useLocalSearchParams();
   const preselected = firstValue(params.family);
 
@@ -57,6 +59,8 @@ export default function MeetHalfwayScreen() {
   const [dateOpen, setDateOpen] = useState(false);
   const [startAt, setStartAt] = useState(DEFAULT_START_AT);
   const [adding, setAdding] = useState(false);
+  // When and Start are folded into one line once a family is chosen, so the map is the first thing seen; "Change" opens them.
+  const [whenOpen, setWhenOpen] = useState(false);
   const [chosen, setChosen] = useState<string | null>(preselected ?? null);
   // Map first: the map (with the Map / List control) stays at the top of the screen while the cards scroll under it, so
   // the selected place and its pin are always seen together. Tapping a pin scrolls its card into view.
@@ -83,6 +87,15 @@ export default function MeetHalfwayScreen() {
     for (const { family } of connected.accepted) byId.set(family.id, { id: family.id, label: family.label, family });
     return [...byId.values()];
   }, [connected.accepted, stored]);
+
+  // Opens directly on an answer where there is only one family it could be about; with none, on the way to add one.
+  useEffect(() => {
+    if (!chosen && candidates.length === 1) setChosen(candidates[0].id);
+  }, [candidates, chosen]);
+
+  // With nobody to choose yet, the way to add a starting point is already open (once the account's connections have loaded,
+  // so it does not flash up for someone who is about to see theirs).
+  const showAdd = adding || (candidates.length === 0 && (connected.loaded || !signedIn));
 
   const mine = useMemo(() => (profile ? planningFamilyFromProfile(profile) : 'not-described'), [profile]);
   const other = candidates.find((c) => c.id === chosen)?.family ?? null;
@@ -156,20 +169,18 @@ export default function MeetHalfwayScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      {/* A planning feature inside Families (and a shortcut on Plans), so it is a stack screen with a way back, and there
-          is no floating navigation to clear: only the device's own bottom edge. The third child (the Map / List control
-          and the map) is sticky once there are results, so the map is never more than a glance away. */}
+      {/* A tab of its own, so it clears the floating navigation. Map first: once a family is chosen the form folds into one
+          line, and the Map / List control with the map (the third child) stays pinned while the cards scroll under it. */}
       <ScrollView
         ref={scrollRef}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]}
+        contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={hasMap ? [2] : undefined}
       >
         <PageHeader
           title="Meet halfway"
-          subtitle="A place that works for both families: fair journeys, what you each need, and both your routines."
-          onBack={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/families' as never))}
+          subtitle="Places that work for two families: fair journeys, what you each need, both routines."
           flush
           testID="halfway-header"
         />
@@ -188,12 +199,12 @@ export default function MeetHalfwayScreen() {
               ))}
               <Chip size="small" label="+ Add by postcode" active={adding} onPress={() => setAdding((open) => !open)} />
             </View>
-            {candidates.length === 0 && !adding ? (
-              <Text variant="caption" color={colors.text.secondary}>
-                Connect a family under Families, or add one by postcode.
+            {showAdd && candidates.length === 0 ? (
+              <Text variant="caption" color={colors.text.secondary} testID="halfway-no-families">
+                You don’t need a connected family. Add where the other family sets off from, with a first name and a postcode. Connect families under Families to use their real details.
               </Text>
             ) : null}
-            {adding ? (
+            {showAdd ? (
               <AddFamilyByPostcode
                 onAdded={(family) => {
                   setChosen(family.id);
@@ -204,36 +215,47 @@ export default function MeetHalfwayScreen() {
             ) : null}
           </PlanFormRow>
 
-          <PlanFormRow label="When">
-            <View style={styles.chips}>
-              {dateChoices.map((choice) => (
-                <Chip
-                  key={choice.value}
-                  size="small"
-                  label={choice.label}
-                  active={date === choice.value}
-                  onPress={() => {
-                    setDateOpen(false);
-                    setDate(choice.value);
-                  }}
-                />
-              ))}
-              <Chip
-                size="small"
-                label={!dateIsQuick ? shortDateLabel(date) : 'Other date'}
-                active={!dateIsQuick || dateOpen}
-                onPress={() => setDateOpen(true)}
-              />
+          {other && !whenOpen && !showAdd ? (
+            <View style={styles.whenSummary} testID="halfway-when-summary">
+              <Text variant="bodySmall" style={styles.whenSummaryText} numberOfLines={2}>
+                {dateIsQuick ? (dateChoices.find((c) => c.value === date)?.label ?? shortDateLabel(date)) : shortDateLabel(date)} · arrive {startAt}
+              </Text>
+              <Chip size="small" label="Change" onPress={() => setWhenOpen(true)} testID="halfway-when-change" />
             </View>
-            {dateOpen || !dateIsQuick ? <DateField label="" a11yLabel="Date of the meeting" value={date} onChange={setDate} /> : null}
-          </PlanFormRow>
+          ) : (
+            <>
+          <PlanFormRow label="When">
+                <View style={styles.chips}>
+                  {dateChoices.map((choice) => (
+                    <Chip
+                      key={choice.value}
+                      size="small"
+                      label={choice.label}
+                      active={date === choice.value}
+                      onPress={() => {
+                        setDateOpen(false);
+                        setDate(choice.value);
+                      }}
+                    />
+                  ))}
+                  <Chip
+                    size="small"
+                    label={!dateIsQuick ? shortDateLabel(date) : 'Other date'}
+                    active={!dateIsQuick || dateOpen}
+                    onPress={() => setDateOpen(true)}
+                  />
+                </View>
+                {dateOpen || !dateIsQuick ? <DateField label="" a11yLabel="Date of the meeting" value={date} onChange={setDate} /> : null}
+              </PlanFormRow>
 
-          <PlanFormRow label="Start">
-            <TimeField label="" a11yLabel="Arrival time" value={startAt} onChange={setStartAt} />
-            <Text variant="caption" color={colors.text.secondary}>
-              When you’d both like to arrive. Each family’s leaving time is worked out from its own journey.
-            </Text>
-          </PlanFormRow>
+              <PlanFormRow label="Start">
+                <TimeField label="" a11yLabel="Arrival time" value={startAt} onChange={setStartAt} />
+                <Text variant="caption" color={colors.text.secondary}>
+                  When you’d both like to arrive. Each family’s leaving time is worked out from its own journey.
+                </Text>
+              </PlanFormRow>
+            </>
+          )}
         </View>
 
         {hasMap && result && selected && areas && other ? (
@@ -519,6 +541,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: spacing.screenPadding, gap: spacing.lg },
   form: { gap: spacing.lg },
+  whenSummary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, minHeight: 44 },
+  whenSummaryText: { flex: 1 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   // The sticky band: the canvas colour behind it, so the cards scrolling under it never show through.
   sticky: { backgroundColor: colors.background, paddingVertical: spacing.sm, gap: spacing.sm },

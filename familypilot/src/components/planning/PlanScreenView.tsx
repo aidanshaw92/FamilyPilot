@@ -43,6 +43,13 @@ export interface PlanScreenViewProps {
   onSave: () => void;
   /** Applies one of the options under a piece of routine advice: the plan builds again with that change. */
   onApplyOption?: (option: PlanAdviceOptionView) => void;
+  /**
+   * "Keep it as planned": the parent has seen the plan runs into a routine and chooses it anyway (signature), or takes that
+   * back (null). Absent on a saved plan, which can only be changed by editing it.
+   */
+  onKeepConflict?: (signature: string | null) => void;
+  /** Stay a particular length: the full visit back after FamilyPilot shortened it for a routine. */
+  onChooseVisit?: (minutes: number) => void;
   /** Reopens Create a plan on this plan's answers, so the length (or anything else) can be changed. Absent on a saved plan. */
   onChangePlan?: () => void;
   /** Adds lunch to the day, or takes it out, and builds the plan again. */
@@ -80,6 +87,8 @@ export function PlanScreenView({
   onBack,
   onSave,
   onApplyOption,
+  onKeepConflict,
+  onChooseVisit,
   onChangePlan,
   onToggleLunch,
   timeline,
@@ -234,12 +243,62 @@ export function PlanScreenView({
                 )}
               </Text>
             ) : null}
+            {view.routines?.restoreVisit && onChooseVisit ? (
+              <View style={styles.adviceOptions} testID="plan-restore-visit">
+                <Chip size="small" label={`${view.routines.restoreVisit.label} instead`} onPress={() => onChooseVisit(view.routines!.restoreVisit!.minutes)} />
+              </View>
+            ) : null}
             {routinesVisible && view.routines ? (
               <Block title="Around your routines" testID="plan-routines">
+                {view.routines.conflict ? (
+                  // The day runs into a routine kept at home. It stays here, in warning colours, until the plan changes or the
+                  // parent says they are keeping it: a tick elsewhere on the screen never stands in for this.
+                  <View style={[styles.conflict, view.routines.conflict.accepted && styles.conflictAccepted]} testID={view.routines.conflict.accepted ? 'plan-conflict-accepted' : 'plan-conflict'}>
+                    <View style={styles.tightRow}>
+                      <Ionicons name={view.routines.conflict.accepted ? 'information-circle-outline' : 'alert-circle'} size={18} color={colors.warning[600]} />
+                      <View style={styles.conflictBody}>
+                        <Text style={styles.checkFirstTitle}>
+                          {view.routines.conflict.accepted ? 'You’re keeping this plan as it is' : 'This plan doesn’t fit a routine yet'}
+                        </Text>
+                        {view.routines.conflict.lines.map((line) => (
+                          <Text key={line} variant="bodySmall">
+                            {line}
+                          </Text>
+                        ))}
+                        {view.routines.conflict.hint && !view.routines.conflict.accepted ? (
+                          <Text variant="bodySmall" color={colors.text.secondary}>
+                            {view.routines.conflict.hint}
+                          </Text>
+                        ) : null}
+                      </View>
+                    </View>
+                    {onKeepConflict ? (
+                      <View style={styles.adviceOptions}>
+                        <Chip
+                          size="small"
+                          label={view.routines.conflict.accepted ? 'Look at the options again' : 'Keep it as planned'}
+                          onPress={() => onKeepConflict(view.routines!.conflict!.accepted ? null : view.routines!.conflict!.signature)}
+                          testID="plan-conflict-keep"
+                        />
+                      </View>
+                    ) : onEditPlan && !view.routines.conflict.accepted ? (
+                      <View style={styles.adviceOptions}>
+                        <Chip size="small" label="Edit this plan" onPress={onEditPlan} />
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
+                {view.routines.conflict?.accepted && !onApplyOption ? null : view.routines.conflict?.accepted ? (
+                  // The banner above already says the plan is being kept; the options stay for a parent who changes their mind.
+                  <Text variant="caption" color={colors.text.secondary} testID="plan-routines-headline">
+                    If you change your mind
+                  </Text>
+                ) : (
                 <Text variant="label" style={view.routines.recommendation ? styles.recommendationTitle : undefined} testID="plan-routines-headline">
-                  {view.routines.headline}
-                </Text>
-                {view.routines.recommendation ? (
+                    {view.routines.headline}
+                  </Text>
+                )}
+                {view.routines.recommendation && !(view.routines.conflict?.accepted && !onApplyOption) ? (
                   // FamilyPilot's answer first: the change, what it does, one tap to use it. Then the other options, then the
                   // details for anyone who wants them.
                   <View style={styles.recommendation} testID="plan-recommendation">
@@ -272,7 +331,10 @@ export function PlanScreenView({
                     ) : null}
                   </View>
                 ) : null}
-                {view.routines.advice.map((item) => (
+                {view.routines.advice
+                  // The banner above already says each nap that is run into; its entry returns only if it carries options of its own.
+                  .filter((item) => !view.routines!.conflict?.adviceIds.includes(item.id) || item.options.length > 0)
+                  .map((item) => (
                   <AdviceItem key={item.id} item={item} onApply={onApplyOption} />
                 ))}
                 {/* Home only just before a routine: a warning with the two times, never a tick (home-margin.ts). The
@@ -296,7 +358,12 @@ export function PlanScreenView({
                 ))}
                 {view.routines.homeBefore.map((line) => (
                   <View key={line} style={styles.goodNews}>
-                    <Ionicons name="checkmark" size={14} color={colors.secondary[500]} />
+                    {/* A tick only when nothing else in this section is unsettled; beside a clash it is a plain fact. */}
+                    <Ionicons
+                      name={view.routines!.conflict || view.routines!.advice.some((item) => item.severity === 'soft') ? 'time-outline' : 'checkmark'}
+                      size={14}
+                      color={view.routines!.conflict || view.routines!.advice.some((item) => item.severity === 'soft') ? colors.text.tertiary : colors.secondary[500]}
+                    />
                     <Text variant="bodySmall" style={styles.goodNewsText}>
                       {line}
                     </Text>
@@ -634,6 +701,9 @@ const styles = StyleSheet.create({
   adviceText: { flex: 1, gap: 2 },
   adviceTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 15, lineHeight: 20, color: colors.ink },
   adviceOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: spacing.xs },
+  conflict: { gap: spacing.sm, backgroundColor: colors.warning[50], borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.warning[100], marginBottom: spacing.sm },
+  conflictAccepted: { backgroundColor: colors.fill, borderColor: colors.borderLight },
+  conflictBody: { flex: 1, gap: 4 },
   goodNews: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   goodNewsText: { flex: 1 },
   lunchLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 44, paddingVertical: spacing.sm },

@@ -187,7 +187,7 @@ describe('wiring', () => {
   it('every card that opens a place hands it over first; a saved row, which may be unscored, does not', () => {
     expect(read('src/components/shared/DecisionCard.tsx')).toMatch(/seedVenueDetail\(venue\);\s*if \(onViewDetails\)/);
     expect(read('app/(tabs)/index.tsx')).toMatch(/seedVenueDetail\(venue\);\s*router\.push/);
-    expect(read('app/halfway.tsx')).toMatch(/seedVenueDetail\(option\.venue\)/);
+    expect(read('app/(tabs)/halfway.tsx')).toMatch(/seedVenueDetail\(option\.venue\)/);
     expect(read('src/components/shared/SavedPlaceRow.tsx')).not.toMatch(/seedVenueDetail/);
   });
 

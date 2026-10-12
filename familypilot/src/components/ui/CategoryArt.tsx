@@ -1,4 +1,6 @@
 import { ReactNode, useId } from 'react';
+
+import { artVariant } from '@/src/utils/art-variant';
 import { StyleSheet, View } from 'react-native';
 import Svg, {
   Circle,
@@ -256,9 +258,26 @@ function motif(category: string, p: Palette): ReactNode {
 
 export interface CategoryArtProps {
   category?: string;
+  /**
+   * Anything stable about the place (its name). Cards for the same kind of place no longer look like one picture repeated:
+   * the sun, clouds and sparkles move and the scene may be mirrored. The same seed always draws the same scene, and the
+   * motif and palette still say only the CATEGORY, never anything about this place.
+   */
+  seed?: string;
 }
 
-export function CategoryArt({ category }: CategoryArtProps) {
+// Sun, then the two clouds and two sparkles, for each of four arrangements. All stay clear of the central band.
+const SKY: { sun: [number, number]; clouds: [number, number, number][]; sparkles: [number, number][] }[] = [
+  { sun: [226, 96], clouds: [[62, 104, 1], [238, 176, 0.7]], sparkles: [[52, 156], [262, 128]] },
+  { sun: [72, 88], clouds: [[220, 112, 0.9], [66, 180, 0.6]], sparkles: [[258, 150], [40, 128]] },
+  { sun: [236, 70], clouds: [[96, 92, 1.1], [250, 168, 0.6]], sparkles: [[34, 178], [200, 52]] },
+  { sun: [60, 120], clouds: [[190, 80, 1], [242, 190, 0.75]], sparkles: [[262, 112], [96, 56]] },
+];
+
+export function CategoryArt({ category, seed }: CategoryArtProps) {
+  const variant = artVariant(seed);
+  const sky = SKY[variant % 4];
+  const mirrored = variant >= 4;
   const key = category && category in PALETTES ? category : 'fallback';
   const p = PALETTES[key];
   // Two instances on a page share definitions that are identical per category, so a shared id is harmless; the
@@ -275,16 +294,21 @@ export function CategoryArt({ category }: CategoryArtProps) {
           </LinearGradient>
         </Defs>
         <Rect x={0} y={0} width={300} height={400} fill={`url(#${gid})`} />
-        <Circle cx={226} cy={96} r={54} fill={SUN} opacity={0.22} />
-        <Circle cx={226} cy={96} r={34} fill={SUN} opacity={0.95} />
-        <Cloud x={62} y={104} s={1} />
-        <Cloud x={238} y={176} s={0.7} />
-        <Sparkle x={52} y={156} s={0.9} />
-        <Sparkle x={262} y={128} s={0.7} fill={CREAM} />
-        <Path d="M0 238 C60 208 128 232 186 216 S270 208 300 226 V400 H0 Z" fill={p.far} />
+        <G transform={mirrored ? 'translate(300 0) scale(-1 1)' : undefined}>
+          <Circle cx={sky.sun[0]} cy={sky.sun[1]} r={54} fill={SUN} opacity={0.22} />
+          <Circle cx={sky.sun[0]} cy={sky.sun[1]} r={34} fill={SUN} opacity={0.95} />
+          {sky.clouds.map(([x, y, scale]) => (
+            <Cloud key={`${x}-${y}`} x={x} y={y} s={scale} />
+          ))}
+          <Sparkle x={sky.sparkles[0][0]} y={sky.sparkles[0][1]} s={0.9} />
+          <Sparkle x={sky.sparkles[1][0]} y={sky.sparkles[1][1]} s={0.7} fill={CREAM} />
+          <Path d="M0 238 C60 208 128 232 186 216 S270 208 300 226 V400 H0 Z" fill={p.far} />
+        </G>
         {motif(key, p)}
-        <Path d="M0 262 C70 236 150 268 230 246 S288 244 300 252 V400 H0 Z" fill={p.mid} />
-        <Path d="M0 318 C90 292 200 326 300 300 V400 H0 Z" fill={p.near} />
+        <G transform={mirrored ? 'translate(300 0) scale(-1 1)' : undefined}>
+          <Path d="M0 262 C70 236 150 268 230 246 S288 244 300 252 V400 H0 Z" fill={p.mid} />
+          <Path d="M0 318 C90 292 200 326 300 300 V400 H0 Z" fill={p.near} />
+        </G>
       </Svg>
     </View>
   );

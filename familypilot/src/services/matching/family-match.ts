@@ -13,6 +13,7 @@ import { venueLocalDate } from '@/src/utils/opening-hours';
 import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 import { driveLimitMinutes } from '@/src/utils/preferences';
 import { observationLine, ParentObservations } from '@/src/services/matching/parent-observations';
+import { ChildSuitability, EvidenceCompleteness, childSuitability, evidenceCompleteness, uncertainClause } from '@/src/services/matching/suitability-signals';
 
 /**
  * Family Match: whether a place suits THIS family, and why, derived from the household and the venue's evidence.
@@ -69,6 +70,16 @@ export interface MatchLine {
    * `activity` line can make a child "good for" a place.
    */
   aspect?: 'activity' | 'logistics';
+  /**
+   * True when the line rests on an inference (what this kind of place usually offers, or a common-sense age band for a
+   * confirmed playground) rather than only on a venue-specific checked fact. Drawn differently, so a parent can tell.
+   */
+  inferred?: boolean;
+  /**
+   * True for a confirmed fact worth knowing that is not a reason against the place for THIS household (no parking on site
+   * for a family that never said it drives). Shown, never counted in the grade.
+   */
+  note?: boolean;
 }
 
 /**
@@ -85,7 +96,7 @@ export interface ChildLens {
    * What `works` rests on: `activity` when the venue's own recommended ages include the child, `logistics` when only the
    * practical facts (buggy, baby changing) are confirmed. Null unless `state` is `works`.
    */
-  basis: 'activity' | 'logistics' | null;
+  basis: 'activity' | 'likely' | 'logistics' | null;
   works: string[];
   check: string[];
 }
@@ -106,6 +117,8 @@ export interface FamilyMatchResult {
   gapNames: string[];
   /** Children the place's own recommended ages are confirmed to include (activity evidence). */
   suitedNames: string[];
+  /** Children covered by an inference about the kind of place or a confirmed playground's usual ages (suitability-signals.ts). */
+  likelyNames: string[];
   /** Children for whom only the practical facts are confirmed (buggy, changing): the visit is easy, the activity unjudged. */
   easyNames: string[];
   /** Confirmed reasons it works. Each is a fact, never an inference. */
@@ -128,6 +141,19 @@ export interface FamilyMatchResult {
    * is, and the badge says so ("Excellent · easy visit") rather than implying the place was judged for an activity.
    */
   easyVisit: boolean;
+  /**
+   * True when the household has children old enough to take part and the place is confirmed for NONE of them: the verdict
+   * rests on the place's practical facilities (toilets, parking, a café) and on nothing about the activity. The badge then
+   * says "Looks practical · check ..." rather than a bare "Good fit", which would claim a suitability nobody confirmed.
+   */
+  practicalOnly: boolean;
+  /**
+   * How much of what matters to this household at this kind of place has been checked (suitability-signals.ts). Shown
+   * beside the grade; never part of it. A well-evidenced place can be a Possible fit and a little-evidenced farm a Good one.
+   */
+  evidenceCompleteness: EvidenceCompleteness;
+  /** Each child of a year or more, and what the grade rests on for them (suitability-signals.ts). */
+  suitability: ChildSuitability[];
 }
 
 export interface FamilyMatchInput {
@@ -147,7 +173,7 @@ const VERDICT_WORD: Record<Exclude<MatchVerdict, 'not_reviewed'>, string> = {
   excellent: 'Excellent',
   good: 'Good',
   possible: 'Possible',
-  poor: 'Not a great match',
+  poor: 'Not recommended',
 };
 
 /** What each verdict is called on a badge. Good and excellent keep the number; the others are words alone. */
@@ -155,7 +181,7 @@ export const VERDICT_BADGE: Record<MatchVerdict, string> = {
   excellent: 'Excellent fit',
   good: 'Good fit',
   possible: 'Possible fit',
-  poor: 'Poor fit',
+  poor: 'Not recommended',
   not_reviewed: 'Not yet reviewed',
 };
 
@@ -171,6 +197,9 @@ const LOGISTICS_LED_BELOW_MONTHS = 12;
  * a different claim from "Good fit" or "Excellent fit", so it has a different name and never borrows the word Excellent.
  */
 export const EASY_VISIT_LABEL = 'Easy visit';
+
+/** What the badge leads with when the practical facts look fine and the activity is unconfirmed for every child. */
+export const PRACTICAL_LABEL = 'Looks practical';
 
 /** The generic classification under a name: the verdict word, or "Easy visit" for a household of babies only. */
 export function matchClassification(match: Pick<FamilyMatchResult, 'verdict'> & { easyVisit?: boolean }): string {
@@ -274,11 +303,17 @@ function headlineFor(input: {
   verdict: MatchVerdict;
   /** Every child is under a year: the claim can only be about how easy the visit is. */
   easyVisit?: boolean;
+  /** Nothing about the activity is confirmed for any child who can take part (see `practicalOnly` on the result). */
+  practicalOnly?: boolean;
   lens: ChildLens[];
   children: readonly FamilyMember[];
   lines: { breaches: MatchLine[]; softCautions: MatchLine[]; hardUnknowns: MatchLine[]; softUnknowns: MatchLine[] };
+  /** What is unconfirmed for a child nothing is known about, in this kind of place's terms (suitability-signals.ts). */
+  gapKind?: ChildSuitability['gap'];
+  /** Children of a year or more the place is not confirmed or inferred to suit, whatever else is known about them. */
+  uncertainNames?: string[];
 }): string {
-  const { verdict, easyVisit, lens, children, lines } = input;
+  const { verdict, easyVisit, practicalOnly, lens, children, lines, gapKind = 'activity', uncertainNames = [] } = input;
   // A judgement about the family and the place, never about leaving now: nothing about today's date, hours or weather is
   // in it, so the same sentence is true on every day the screen is read.
   if (verdict === 'not_reviewed') return 'Family suitability not yet reviewed';
@@ -287,22 +322,32 @@ function headlineFor(input: {
   // include her. "Easy to visit with Ozzie" is about the VISIT: his buggy or his changing is confirmed. A child whose only
   // confirmed facts are practical is in the second group however many of them there are.
   const suitedNames = lens.filter((l) => l.state === 'works' && l.basis === 'activity' && l.name).map((l) => l.name);
+  const likelyNames = lens.filter((l) => l.state === 'works' && l.basis === 'likely' && l.name).map((l) => l.name);
   const easyNames = lens.filter((l) => l.state === 'works' && l.basis === 'logistics' && l.name).map((l) => l.name);
   const multi = children.length > 1;
-  const gap = multi ? gapPhrase(lens, lines) : null;
+  // A single child is named too when the place is confirmed for nobody: "Looks promising" would claim what nobody has checked.
+  const uncertain = uncertainNames.length > 0 && joinNames(uncertainNames) ? uncertainClause(gapKind, joinNames(uncertainNames)) : null;
+  const gap = (multi || practicalOnly ? gapPhrase(lens, lines, gapKind) : null) ?? uncertain;
 
   if (verdict === 'poor') {
     // Who the confirmed breach is about, where it is about particular children; otherwise the family.
     const breachKids = lens.filter((l) => l.state === 'concern' && l.name);
     const everyone = breachKids.length === 0 || breachKids.length === children.length;
     const breachWho = !everyone && joinNames(breachKids.map((l) => l.name)) ? joinNames(breachKids.map((l) => l.name)) : 'your family';
-    return `Probably not for ${breachWho}`;
+    return `Not recommended for ${breachWho}`;
   }
 
   // For several children where the evidence is about some of them only, the sentence keeps them apart and says what is
   // open for the rest. `possible` says "Could work for" so a caution is never dressed as a recommendation.
   const word = multi && gap && verdict === 'possible' ? 'Could work' : VERDICT_WORD[verdict];
-  const suited = suitedNames.length > 0 ? `${word} for ${joinNames(suitedNames)}` : null;
+  // The venue's own words earn "Good for Sloane"; an inference earns "likely good for Sloane", so the hedge is in the
+  // sentence a parent reads first. Excellent is never claimed on an inference alone (the verdict already requires more).
+  // An Excellent rests on a strong signal for every child (the verdict says so), so it is said as Excellent for all of them.
+  const strongNames = verdict === 'excellent' ? [...suitedNames, ...likelyNames] : suitedNames;
+  const hedgedNames = verdict === 'excellent' ? [] : likelyNames;
+  const confirmedPart = strongNames.length > 0 ? `${word} for ${joinNames(strongNames)}` : null;
+  const likelyPart = hedgedNames.length > 0 ? `${verdict === 'possible' ? 'could work' : 'likely good'} for ${joinNames(hedgedNames)}` : null;
+  const suited = confirmedPart && likelyPart ? `${confirmedPart}, ${likelyPart}` : confirmedPart ?? (likelyPart ? cap(likelyPart) : null);
   const easy = easyNames.length > 0 ? `easy to visit with ${joinNames(easyNames)}` : null;
   const lead = suited ? (easy ? `${suited}, and ${easy}` : suited) : easy ? cap(easy) : null;
 
@@ -313,8 +358,11 @@ function headlineFor(input: {
     if (verdict !== 'possible' || !familyLevel) return `${lead}, but ${gap}`;
   }
 
+  // One child, easy to visit with, and nothing says the place suits them: both halves are said.
+  if (practicalOnly && gap && lead && verdict === 'possible') return `${lead}, but ${gap}`;
+
   // Several children, nothing confirmed for any of them: the practical facts are good, and the headline says that is all.
-  if (multi && gap && !lead && (verdict === 'good' || verdict === 'excellent')) {
+  if ((multi || practicalOnly) && gap && !lead && (verdict === 'good' || verdict === 'excellent' || (verdict === 'possible' && practicalOnly))) {
     return `Looks practical, but ${gap}`;
   }
 
@@ -335,7 +383,7 @@ function headlineFor(input: {
  * What is open for the children the place is not confirmed to work for, as the end of a sentence:
  * "check buggy access for Ozzie", "we haven't yet confirmed whether this activity suits Ozzie", or both. Null when every child is covered.
  */
-function gapPhrase(lens: ChildLens[], lines: { hardUnknowns: MatchLine[]; softCautions: MatchLine[]; softUnknowns: MatchLine[] }): string | null {
+function gapPhrase(lens: ChildLens[], lines: { hardUnknowns: MatchLine[]; softCautions: MatchLine[]; softUnknowns: MatchLine[] }, gapKind: ChildSuitability['gap']): string | null {
   const checkKids = lens.filter((l) => l.state === 'check' && l.name);
   const unknownKids = lens.filter((l) => l.state === 'unknown' && l.name);
   const parts: string[] = [];
@@ -348,7 +396,7 @@ function gapPhrase(lens: ChildLens[], lines: { hardUnknowns: MatchLine[]; softCa
     parts.push(`check ${what} for ${joinNames(checkKids.map((k) => k.name))}`);
   }
   if (unknownKids.length > 0) {
-    parts.push(unconfirmedSuitsClause(unknownKids.map((k) => k.name)));
+    parts.push(uncertainClause(gapKind, joinNames(unknownKids.map((k) => k.name))));
   }
   return parts.length ? parts.join(', and ') : null;
 }
@@ -429,6 +477,10 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
   const rangeIds = new Set<string>();
   /** Children a permanent, age-specific provision on the venue's own pages covers (a playground for under-7s). */
   const provisionIds = new Set<string>();
+  /** Children covered by an inference (a confirmed playground's usual ages, the kind of place), and which of those are strong. */
+  const inferredIds = new Set<string>();
+  const strongIds = new Set<string>();
+  const suitability: ChildSuitability[] = [];
   if (facts) {
     // Door policy: the one age fact that can exclude.
     const months = children.map(childAgeMonths);
@@ -482,6 +534,25 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
       if (!programme) {
         venueFacts += 1;
         covered.forEach((c) => provisionIds.add(c.id));
+      } else {
+        // Named for the child, and enough for Good (something for their age is on the venue's own pages); never for
+        // Excellent, because the family may not visit on the day it runs.
+        covered.forEach((c) => inferredIds.add(c.id));
+      }
+    }
+
+    // What this KIND of place, and what is confirmed at it, usually mean for a child of this age (suitability-signals.ts):
+    // a confirmed playground at a park, a farm for a toddler. Each line says it is an inference; the venue's own words
+    // above always come first and can exclude. Babies are led by logistics and are not read here.
+    // Never for a place nobody has reviewed: an inference needs a reviewed place to stand on.
+    for (const signal of unreviewed ? [] : childSuitability({ venueId: venue.id, category: facts.category || venue.category, facts, children, now, coveredIds: new Set([...rangeIds, ...provisionIds]) })) {
+      suitability.push(signal);
+      if (signal.state === 'provision' || signal.state === 'likely') {
+        if (signal.text) reasons.push({ key: `suits-${signal.id}`, text: signal.text, childIds: [signal.id], topic: 'activity', aspect: 'activity', inferred: true });
+        forIds.add(signal.id);
+        inferredIds.add(signal.id);
+        if (signal.strong) strongIds.add(signal.id);
+        if (signal.state === 'provision') venueFacts += 1;
       }
     }
 
@@ -510,7 +581,9 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
           }
           break;
         default:
-          hardUnknowns.push({ key: 'buggy-unknown', text: unknownText('pushchair', `Buggy access still to be checked for ${who}`), childIds: buggyKids.map((c) => c.id), topic: 'buggy access', aspect: 'logistics' });
+          // Not yet checked is not a problem: it is a secondary detail to confirm, said as one. It keeps the grade from
+          // Excellent and never from Good, unless the household stated pushchair access as something it cannot do without.
+          ((profile.mustHaveFacilities ?? []).includes('pushchair_friendly') ? hardUnknowns : softUnknowns).push({ key: 'buggy-unknown', text: unknownText('pushchair', `Buggy access still to be checked for ${who}`), childIds: buggyKids.map((c) => c.id), topic: 'buggy access', aspect: 'logistics' });
       }
     }
     if (carrier) softCautions.push(carrier);
@@ -626,7 +699,8 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
       reasons.push({ key: 'parking', text: facts.freeParking === 'yes' ? 'Free parking confirmed' : 'Parking confirmed on site' });
       venueFacts += 1;
     } else if (facts.parking === 'no' && !stated.has('parking')) {
-      softCautions.push({ key: 'parking-no', text: 'No parking on site' });
+      // Worth knowing, not a mark against: the household never said it needs to park. A stated need is handled above.
+      softCautions.push({ key: 'parking-no', text: 'No parking on site', note: true });
     }
     if (venue.facilities?.includes('cafe') && !recheck('cafe')) {
       reasons.push({ key: 'cafe', text: 'Café on site' });
@@ -650,7 +724,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
   // Lead with what is about THIS family (their children, their needs), then the venue's facilities, and the plain
   // logistics (how far) last: the first lines a parent reads should be the ones only they would get.
   const rank = (key: string): number => {
-    const order = ['age', 'activity', 'buggy', 'stepfree', 'must-', 'baby-changing', 'toilets', 'parking', 'cafe', 'drive-ok'];
+    const order = ['age', 'activity', 'suits-', 'buggy', 'stepfree', 'must-', 'baby-changing', 'toilets', 'parking', 'cafe', 'drive-ok'];
     const index = order.findIndex((prefix) => key === prefix || key.startsWith(prefix));
     return index === -1 ? order.length : index;
   };
@@ -660,16 +734,32 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
   // Positives are the confirmed things about this family and this place. Nothing about the day is among them, so the verdict
   // cannot move with the clock or the forecast.
   const positives = reasons.length;
+  // SUITABILITY first, EVIDENCE COMPLETENESS never (docs/FAMILY_FIT_GRADING.md). The blended score ranks and takes no
+  // part in the grade: it fills every unchecked fact with a neutral number, so reading it here turned "little is known"
+  // into "not a fit". What decides the grade is what is confirmed about this family and this place, and what this kind
+  // of place usually offers a child of this age, each said for what it is.
+  const activityKids = children.filter((c) => childAgeMonths(c) >= LOGISTICS_LED_BELOW_MONTHS);
+  const covered = (c: FamilyMember) => rangeIds.has(c.id) || provisionIds.has(c.id) || inferredIds.has(c.id);
+  const strongFor = (c: FamilyMember) => rangeIds.has(c.id) || provisionIds.has(c.id) || strongIds.has(c.id);
+  const uncertainKids = activityKids.filter((c) => !covered(c));
+  const relevantCautions = softCautions.filter((line) => !line.note);
   let verdict: MatchVerdict;
   if (unreviewed) {
     verdict = breaches.length > 0 ? 'poor' : 'not_reviewed';
-  } else if (breaches.length > 0 || (Number.isFinite(score) && score < 50)) {
+  } else if (breaches.length > 0) {
+    // Not recommended: a known, significant incompatibility (a must-have confirmed absent, a door policy, every child
+    // outside the venue's own ages, buggy access difficult for a child who has no other way round, far over the limit).
     verdict = 'poor';
-  } else if (softCautions.length > 0 || hardUnknowns.length > 0 || positives < 2 || (Number.isFinite(score) && score < 70)) {
+  } else if (relevantCautions.length > 0 || hardUnknowns.length > 0 || uncertainKids.length > 0 || positives < 2 || venueFacts === 0) {
+    // Possible: a relevant practical concern, something the household said it needs that nobody has checked, real
+    // uncertainty about whether the activity suits one of the children, or nothing at all confirmed about the place.
     verdict = 'possible';
-  } else if (score >= 85 && positives >= 4 && venueFacts >= 2 && softUnknowns.length === 0) {
+  } else if (activityKids.every(strongFor) && softUnknowns.length === 0 && venueFacts >= 3) {
+    // Excellent: a particularly strong match for every child who can take part, nothing against, and nothing the
+    // household would want to know still open (buggy access for a buggy, baby changing for a baby, toilets).
     verdict = 'excellent';
   } else {
+    // Good: likely to be enjoyable and practical; secondary details may still be unknown and are listed as such.
     verdict = 'good';
   }
 
@@ -692,22 +782,35 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
     // What the confirmed facts about this child rest on: the place's own recommended ages (activity), or only the practical
     // facts (logistics). A practical fact never makes a child "suited".
     const basis: ChildLens['basis'] =
-      state !== 'works' ? null : reasons.some((l) => mine(l) && l.aspect === 'activity') ? 'activity' : 'logistics';
+      state !== 'works'
+        ? null
+        : reasons.some((l) => mine(l) && l.aspect === 'activity' && !l.inferred)
+          ? 'activity'
+          : reasons.some((l) => mine(l) && l.aspect === 'activity' && l.inferred)
+            ? 'likely'
+            : 'logistics';
     return { id: child.id, name: child.name.trim(), state, basis, works, check: checkLines.map((l) => l.text) };
   });
 
   // Several children and the place is confirmed for some of them but not all: whoever is left over is a gap in what is
   // known, so it can never be "excellent" (nothing left to check), and it is listed with the things to check.
   const confirmedKids = lens.filter((l) => l.state === 'works');
-  const gapKids = children.length > 1 && confirmedKids.length > 0 ? lens.filter((l) => l.state === 'check' || l.state === 'unknown') : [];
+  let gapKids = children.length > 1 && confirmedKids.length > 0 ? lens.filter((l) => l.state === 'check' || l.state === 'unknown') : [];
   if (verdict === 'excellent' && gapKids.length > 0) verdict = 'good';
   // Excellent says the place suits the children, so every child of a year or more must be covered by activity evidence that
   // holds on any day: the venue's own recommended ages, or a permanent provision for their age. Logistics (toilets, parking,
   // access) never cover a child, and a programme on set days covers no ordinary visit. Under a year the visit is the
   // activity, as everywhere else in Family Fit. Rankings are untouched: the verdict is a label, ordering is by score.
   const activityAge = children.filter((c) => !(childAgeMonths(c) < LOGISTICS_LED_BELOW_MONTHS));
-  if (verdict === 'excellent' && !activityAge.every((c) => rangeIds.has(c.id) || provisionIds.has(c.id))) verdict = 'good';
+  if (verdict === 'excellent' && !activityAge.every((c) => rangeIds.has(c.id) || provisionIds.has(c.id) || strongIds.has(c.id))) verdict = 'good';
   const easyVisit = children.length > 0 && activityAge.length === 0;
+  // A place confirmed for nobody: the facilities are positives, but nothing says the activity suits any child who can take part
+  // (one child, or several). It was left as a plain "good" with no gap to name, so the badge read "Good fit" beside a headline
+  // that said the opposite. The children are all in the gap now; the verdict word, score and ranking are unchanged.
+  // Confirmed for nobody and inferred for nobody: the facilities may be fine, and nothing says the place suits any child
+  // who can take part. That is a Possible fit (verdict above), and the headline says what is and is not known.
+  const practicalOnly = !easyVisit && activityKids.length > 0 && uncertainKids.length === activityKids.length && breaches.length === 0 && venueFacts > 0;
+  if (practicalOnly) gapKids = lens.filter((l) => l.state === 'check' || l.state === 'unknown');
   const gapNames = gapKids.map((l) => l.name).filter(Boolean);
   // Whom the place is NOT confirmed to suit: children nothing is known about (in a household where it is known for another),
   // and children for whom only practical facts are confirmed. Practical facts say the visit is easy, not that the place
@@ -720,26 +823,47 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
   };
   const uncovered = [
     ...gapKids.filter((l) => l.state === 'unknown' && l.name),
-    ...(unreviewed ? [] : lens.filter((l) => l.state === 'works' && l.basis === 'logistics' && l.name && !ledByLogistics(l.id))),
+    ...(unreviewed ? [] : lens.filter((l) => l.state === 'works' && l.basis === 'logistics' && l.name && !ledByLogistics(l.id) && !inferredIds.has(l.id))),
   ];
+  // A museum whose only child-specific fact is its playground: the playground earns the grade, and the exhibits are still
+  // said to be unreviewed for the child, so nobody reads "Likely good" as a verdict on the galleries.
+  const playgroundOnlyAtMuseum = (facts?.category || venue.category) === 'museum'
+    ? suitability.filter((sig) => sig.via === 'playground' && sig.name)
+    : [];
+  if (playgroundOnlyAtMuseum.length > 0) {
+    softUnknowns.push({
+      key: 'exhibits-unconfirmed',
+      text: cap(uncertainClause('exhibits', joinNames(playgroundOnlyAtMuseum.map((sig) => sig.name)))),
+      childIds: playgroundOnlyAtMuseum.map((sig) => sig.id),
+      topic: 'the exhibits',
+    });
+  }
   if (uncovered.length > 0) {
+    const gap = suitability.find((sig) => uncovered.some((l) => l.id === sig.id))?.gap ?? 'activity';
     softUnknowns.push({
       key: 'child-nothing-confirmed',
-      text: cap(unconfirmedSuitsClause(uncovered.map((l) => l.name))),
+      text: cap(uncertainClause(gap, joinNames(uncovered.map((l) => l.name)))),
       childIds: uncovered.map((l) => l.id),
       topic: 'whether it suits them',
     });
   }
 
-  const headline = headlineFor({ verdict, easyVisit, lens, children, lines: { breaches, softCautions, hardUnknowns, softUnknowns } });
+  const headline = headlineFor({
+    verdict, easyVisit, practicalOnly, lens, children,
+    lines: { breaches, softCautions, hardUnknowns, softUnknowns },
+    gapKind: suitability.find((sig) => sig.state === 'uncertain')?.gap,
+    uncertainNames: uncertainKids.map((c) => c.name.trim()),
+  });
 
   const cautions = [...breaches, ...softCautions];
   const toCheck = [...hardUnknowns, ...softUnknowns];
   // A card carries only what changes a decision: a breach, a requirement still unchecked, or a caution. The softer
   // "still to be checked" lines are for the venue's own page, where they have room and context. Today's opening state is
   // not among them (a card says "Closed today" separately, as a fact: see withClosedLine).
-  const firstIssue = breaches[0] ?? hardUnknowns[0] ?? softCautions[0];
-  const cardNote = firstIssue?.text ?? reasons[0]?.text ?? null;
+  // A place nobody has reviewed has nothing confirmed to lead with, so the one thing worth saying is what is still to be
+  // checked. The journey time is never the note: the card already shows it beside the note.
+  const firstIssue = breaches[0] ?? hardUnknowns[0] ?? softCautions[0] ?? (unreviewed ? softUnknowns[0] : undefined);
+  const cardNote = firstIssue?.text ?? reasons.find((line) => line.key !== 'drive-ok')?.text ?? null;
 
   return {
     verdict,
@@ -748,6 +872,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
     children: lens,
     gapNames,
     suitedNames: lens.filter((l) => l.state === 'works' && l.basis === 'activity' && l.name).map((l) => l.name),
+    likelyNames: lens.filter((l) => l.state === 'works' && l.basis === 'likely' && l.name).map((l) => l.name),
     easyNames: lens.filter((l) => l.state === 'works' && l.basis === 'logistics' && l.name).map((l) => l.name),
     reasons,
     cautions,
@@ -757,6 +882,9 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
     cardNote,
     evidence: { positives, venueFacts, breaches: breaches.length, hardUnknowns: hardUnknowns.length, parentReported },
     easyVisit,
+    practicalOnly,
+    evidenceCompleteness: evidenceCompleteness({ category: facts?.category || venue.category, facts, children, usesBuggy, needsStepFree: familyNeedsStepFree(profile), venueId: venue.id, now, cafeListed: Boolean(venue.facilities?.includes('cafe')) }),
+    suitability,
   };
 }
 
@@ -766,7 +894,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
  * `possible` and `poor` are not claims worth naming anyone for.
  */
 export function matchBadgeText(
-  match: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[]; easyVisit?: boolean; suitedNames?: string[]; easyNames?: string[] },
+  match: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[]; easyVisit?: boolean; suitedNames?: string[]; likelyNames?: string[]; easyNames?: string[]; practicalOnly?: boolean },
   maxNameChars = 18,
 ): string {
   // A household of babies only: what is confirmed is how easy the visit is, and the badge says exactly that. It never says
@@ -788,16 +916,21 @@ export function matchBadgeText(
       // and where those facts were practical ones (changing, buggy) it was not "good" for anyone, only easy. The badge now
       // matches the headline: "Good for Ozzie · check Sloane", or "Easy with Ozzie · check Sloane".
       const suited = joinNames(match.suitedNames ?? []);
+      const likely = joinNames(match.likelyNames ?? []);
       const easy = joinNames(match.easyNames ?? []);
-      const lead = suited ? `${word} for ${suited}` : easy ? `Easy with ${easy}` : EASY_VISIT_LABEL;
+      // Nobody confirmed (practicalOnly): the facilities look fine and nothing about the activity is known for any child.
+      const unconfirmedLead = match.practicalOnly ? PRACTICAL_LABEL : EASY_VISIT_LABEL;
+      const lead = suited ? `${word} for ${suited}` : likely ? `Likely good for ${likely}` : easy ? `Easy with ${easy}` : unconfirmedLead;
       const budget = maxNameChars + 13; // "Easy with Ozzie · check Sloane" at the default 18: a name each side of the dot
-      const short = suited ? `${word} for some` : EASY_VISIT_LABEL;
+      const short = suited ? `${word} for some` : likely ? 'Likely good' : unconfirmedLead;
       const candidates = [`${lead} · check ${gap}`, `${short} · check ${gap}`, `${lead} · check kids`, `${short} · check kids`];
       return candidates.find((text) => text.length <= budget) ?? candidates[candidates.length - 1];
     }
     const who = joinNames(match.forNames);
-    if (who && who.length <= maxNameChars) return `${word} for ${who}`;
-    return VERDICT_BADGE[match.verdict];
+    // A Good that rests on an inference about the kind of place (likelyNames) keeps its hedge on the badge too.
+    const likelyOnly = match.verdict === 'good' && (match.suitedNames ?? []).length === 0 && (match.likelyNames ?? []).length > 0;
+    if (who && who.length <= maxNameChars) return likelyOnly ? `Likely good for ${who}` : `${word} for ${who}`;
+    return likelyOnly ? 'Likely a good fit' : VERDICT_BADGE[match.verdict];
   }
   return VERDICT_BADGE[match.verdict];
 }
@@ -843,7 +976,7 @@ export function matchCardReason(match: FamilyMatchResult): string {
   if (match.verdict === 'possible' && lead) {
     // A place that could work still says why it is here, then the one thing to check, so the card is never only a worry.
     // The "we haven't yet confirmed whether this activity suits" line is for the venue page: a card carries only what changes a decision.
-    const issue = match.cautions[0] ?? match.toCheck.find((line) => line.key !== 'child-nothing-confirmed');
+    const issue = match.cautions.find((line) => !line.note) ?? match.toCheck[0] ?? match.cautions[0];
     return [lead.text, issue?.text].filter(Boolean).join(' · ');
   }
   return match.cardNote ?? '';

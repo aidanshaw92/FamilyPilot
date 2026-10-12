@@ -11,6 +11,7 @@ import { isUnreviewedEnrichmentStatus } from '@/src/utils/enrichment-rules';
 import { buildFacilityMissingCaution } from '@/src/utils/facility-match';
 
 import { childAgesInMonths } from '@/src/services/matching/age-suitability';
+import { suitabilityAgeScore } from '@/src/services/matching/suitability-signals';
 import {
   buildTrustedExplanation,
   hasTrustedMatchSignals,
@@ -205,8 +206,13 @@ export function calculateFamilyScore(
     : null;
 
   const factors: FamilyScoreFactors = aware?.factors ?? {
+    // The venue's own range first; failing that, the same category-aware reading Family Fit grades on (a confirmed
+    // playground at a park, a farm for a toddler: suitability-signals.ts); failing that, the neutral value. A confirmed
+    // playground used to count for nothing here, so a park with one ranked below a park without one on toilets alone.
     ageSuitability:
-      (useTrusted ? scoreTrustedAgeSuitability(facts, childMonths) : null) ?? UNKNOWN_AGE_SCORE,
+      (useTrusted ? scoreTrustedAgeSuitability(facts, childMonths) : null) ??
+      (!isProviderOnly && facts ? suitabilityAgeScore({ venueId: venue.id, category: facts.category || venue.category, facts, children: profile.members, now: options.now }) : null) ??
+      UNKNOWN_AGE_SCORE,
     accessibility:
       (useTrusted ? scoreTrustedAccessibility(facts, profile) : null) ??
       (venue.facilities?.includes('pushchair_friendly') ? 92 : isProviderOnly ? 55 : 70),

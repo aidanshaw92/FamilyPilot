@@ -183,6 +183,11 @@ export function FilterSheet({ visible, onClose, scope = 'explore', priceFiltersA
               <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
                 {group.label}
               </Text>
+              {group.id === 'general' ? (
+                <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint} testID="evidence-filters-note">
+                  These show only places where it is confirmed. A place we haven’t been able to check is left out, not counted as a no.
+                </Text>
+              ) : null}
               <View style={styles.chipWrap}>
                 {group.options.map((filter) => (
                   <Chip

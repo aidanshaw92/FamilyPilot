@@ -127,7 +127,6 @@ export default function RootLayout() {
             <Stack.Screen name="invite/[code]" options={{ animation: 'fade' }} />
             <Stack.Screen name="profile/edit" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="about" options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name="halfway" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen
               name="venue/[id]"
               options={{ animation: 'slide_from_bottom' }}

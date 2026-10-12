@@ -162,11 +162,21 @@ describe('the plan leads with what to do, then the details', () => {
     expect(named.routines!.recommendation!.lines[0]).toBe('That keeps the day clear of Ozzie’s nap.');
   });
 
-  it('when no change clears it, says the plan still works and gives the details', async () => {
-    // A nap at home from 11:30 falls inside the visit whichever nearby time or length is tried.
+  it('a nap that one change cannot clear can still be cleared by starting earlier and staying less, offered as a choice', async () => {
+    // A nap at home from 11:30 falls inside the visit whichever single time or length is tried; together they clear it.
     const routines = (await build([family({ routines: [nap({ time: '11:30' })] })], { date: '2026-10-11' })).view.routines!;
+    expect(routines.recommendation!.option.alternative!.kind).toBe('combined');
+    expect(routines.conflict).toMatchObject({ accepted: false });
+    expect(routines.conflict!.hint).toBeNull();
+    expect(routines.headline).toBe(routines.recommendation!.title);
+  });
+
+  it('when no change clears it, says the plan runs into the routine, keeps it visible and leaves the choice to the parent', async () => {
+    const routines = (await build([family({ routines: [nap({ time: '10:15' })] })], { date: '2026-10-11' })).view.routines!;
     expect(routines.recommendation).toBeNull();
-    expect(routines.headline).toBe('This plan works, with one routine to plan around');
+    expect(routines.headline).toBe('This plan runs into your nap');
+    expect(routines.conflict).toMatchObject({ accepted: false });
+    expect(routines.conflict!.hint).toMatch(/keep the plan as it is/);
     expect(routines.advice.some((a) => a.severity === 'soft')).toBe(true);
   });
 
@@ -279,11 +289,13 @@ describe('the length FamilyPilot chooses when the parent is not sure', () => {
   });
 
   it('shortens the visit so everyone is home before a nap that has to happen at home', async () => {
-    // Typical 120 would get home at 12:35, twenty minutes into a 12:15 nap. 90 minutes does not.
+    // Typical 120 would get home at 12:35, twenty minutes into a 12:15 nap. 90 minutes would get home with ten minutes
+    // to spare, which is tight on an estimated journey (home-margin.ts), so the visit is cut to the length that leaves room.
     const outcome = await build([family({ routines: [nap({ time: '12:15' })] })], { visit: 'not-sure' });
-    expect(outcome.source.visit).toMatchObject({ basis: 'routine-limited', minutes: 90, unshortenedMinutes: 120 });
+    expect(outcome.source.visit).toMatchObject({ basis: 'routine-limited', minutes: 75, unshortenedMinutes: 120 });
     expect(outcome.source.itinerary.routineInsights).toEqual([]);
-    expect(outcome.view.routines!.visitNote).toBe('We’ve allowed 1 hr 30 min, which gets you home before your nap at 12:15');
+    expect(outcome.view.routines!.restoreVisit).toEqual({ minutes: 120, label: 'Stay 2 hr' });
+    expect(outcome.view.routines!.visitNote).toBe('We’ve allowed 1 hr 15 min, which gets you home before your nap at 12:15');
   });
 
   it('never shortens a length the parent chose', async () => {

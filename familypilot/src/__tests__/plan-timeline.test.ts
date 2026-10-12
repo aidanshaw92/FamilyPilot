@@ -102,7 +102,9 @@ describe('a day with a feed during the visit, lunch nearby and a nap at home aft
     const [leave, arrive] = planTimeline(source, context());
     expect(leave.title).toBe('Leave home');
     expect(leave.time).toBe(9 * 60 + 25);
-    expect(leave.lines[0]).toEqual({ text: 'About 20 min drive plus 15 min to settle, estimated from distance to Horniman Museum and Gardens.', provenance: 'estimated' });
+    expect(leave.lines[0]).toEqual({ text: 'About 20 min drive to Horniman Museum and Gardens.', provenance: 'estimated' });
+    // How it was worked out is detail: said once, one tap away.
+    expect(leave.lines[1]).toEqual({ text: 'Includes 15 min to settle. Estimated from distance, not measured.', provenance: 'estimated', detail: true });
     expect(arrive.title).toBe('Arrive at Horniman Museum and Gardens');
     expect(arrive.time).toBe(10 * 60);
     expect(arrive.edit).toBe('arrival');
@@ -113,10 +115,10 @@ describe('a day with a feed during the visit, lunch nearby and a nap at home aft
     const arrive = planTimeline(source, context())[1];
     expect(arrive.lines).toEqual([
       { text: 'Opening hours not confirmed for this day.', provenance: 'unknown' },
-      { text: 'No parking on site.', provenance: 'confirmed' },
-      { text: 'Pushchair friendly.', provenance: 'confirmed' },
-      { text: 'Baby changing confirmed, for Ozzie.', provenance: 'confirmed' },
-      { text: 'Recommended for ages 1–12: suits Sloane; Ozzie is younger.', provenance: 'inferred' },
+      { text: 'No parking on site.', provenance: 'confirmed', detail: true },
+      { text: 'Pushchair friendly.', provenance: 'confirmed', detail: true },
+      { text: 'Baby changing confirmed, for Ozzie.', provenance: 'confirmed', detail: true },
+      { text: 'Recommended for ages 1–12: suits Sloane; Ozzie is younger.', provenance: 'inferred', detail: false },
     ]);
   });
 
@@ -142,11 +144,11 @@ describe('a day with a feed during the visit, lunch nearby and a nap at home aft
     const lunch = rows.find((r) => r.kind === 'lunch')!;
     expect(lunch.title).toBe('Lunch at Forest Hill Kitchen');
     expect(lunch.edit).toBe('lunch');
-    expect(rows[5].lines[0]).toEqual({ text: 'About 5 min drive plus 15 min to settle, estimated from distance to Forest Hill Kitchen.', provenance: 'estimated' });
+    expect(rows[5].lines[0]).toEqual({ text: 'About 5 min drive to Forest Hill Kitchen.', provenance: 'estimated' });
     expect(lunch.lines).toEqual([
-      { text: 'Or about a 6-minute walk from Horniman Museum and Gardens, estimated from distance.', provenance: 'estimated' },
-      { text: 'High chairs, baby changing listed on OpenStreetMap, which matters with Ozzie.', provenance: 'reported' },
-      { text: 'British, as listed.', provenance: 'reported' },
+      { text: 'Or about a 6-minute walk from Horniman Museum and Gardens, estimated from distance.', provenance: 'estimated', detail: true },
+      { text: 'High chairs, baby changing listed on OpenStreetMap, which matters with Ozzie.', provenance: 'reported', detail: true },
+      { text: 'British, as listed.', provenance: 'reported', detail: true },
       { text: '45 min at the table.', provenance: 'inferred' },
       { text: 'Opening hours not confirmed for this day.', provenance: 'unknown' },
     ]);
@@ -159,8 +161,8 @@ describe('a day with a feed during the visit, lunch nearby and a nap at home aft
     const rows = planTimeline(source, context());
     const home = rows.find((r) => r.kind === 'home')!;
     expect(home.tone).toBe('ok');
-    expect(home.lines[0]).toEqual({ text: 'About 22 min drive plus 15 min to settle, estimated from distance.', provenance: 'estimated' });
-    expect(home.lines[1].text).toMatch(/^\d+ min before Ozzie’s nap at 14:30\.$/);
+    expect(home.lines[0]).toEqual({ text: 'About 22 min drive.', provenance: 'estimated', detail: true });
+    expect(home.lines[2].text).toMatch(/^\d+ min before Ozzie’s nap at 14:30\.$/);
     const napRow = rows.find((r) => r.kind === 'routine-home')!;
     expect(napRow.title).toBe('Ozzie’s nap, at home');
     expect(napRow.time).toBe(14 * 60 + 30);
@@ -175,10 +177,10 @@ describe('a tight margin is said as tight on the leave, home and nap rows, and o
     const rows = planTimeline(source, { ...context(), leaveEarlier });
     const leave = rows.find((r) => r.kind === 'leave')!;
     expect(leave.tone).toBe('tight');
-    expect(leave.lines[1]).toEqual({ text: 'Leaving now gets you home only 4 min before Ozzie’s nap.', provenance: 'estimated' });
+    expect(leave.lines[2]).toEqual({ text: 'Leaving now gets you home only 4 min before Ozzie’s nap.', provenance: 'estimated' });
     const home = rows.find((r) => r.kind === 'home')!;
     expect(home.tone).toBe('tight');
-    expect(home.lines[1]).toEqual({ text: 'Tight for Ozzie’s nap: 4 min to spare, and the journey is an estimate.', provenance: 'estimated' });
+    expect(home.lines[2]).toEqual({ text: 'Tight for Ozzie’s nap: 4 min to spare, and the journey is an estimate.', provenance: 'estimated' });
     expect(home.edit).toBe('leave-earlier');
     expect(rows.find((r) => r.kind === 'routine-home')!.tone).toBe('tight');
   });

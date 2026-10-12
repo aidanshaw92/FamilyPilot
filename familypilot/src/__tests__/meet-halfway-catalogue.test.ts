@@ -216,7 +216,7 @@ describe('older connections: routines shared as only "Home time" are treated con
 });
 
 describe('the screen asks the catalogue between the homes, not Home', () => {
-  const source = readFileSync(resolve(process.cwd(), 'app/halfway.tsx'), 'utf8');
+  const source = readFileSync(resolve(process.cwd(), 'app/(tabs)/halfway.tsx'), 'utf8');
 
   it('feeds the engine from the between query, with Home only as a labelled fallback', () => {
     expect(source).toContain('useBetweenVenues(');

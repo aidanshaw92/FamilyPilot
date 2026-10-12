@@ -11,6 +11,7 @@ import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { Venue, VenueCategory } from '@/src/types';
 import { getMatchClassification } from '@/src/utils/family-match-classification';
+import { matchBadgeText } from '@/src/services/matching/family-match';
 import { isTravelTimeKnown, travelTimeLabel, travelTimeSpoken } from '@/src/utils/travel-time';
 
 const CATEGORY_LABELS: Record<VenueCategory, string> = {
@@ -61,7 +62,9 @@ export function SavedPlaceRow({ venue, itemType, onRemoved, index = 0 }: SavedPl
    */
   const isScored = Number.isFinite(venue.familyScore?.score);
   const classification = isScored
-    ? getMatchClassification(venue.familyScore.score, venue.enrichmentStatus)
+    ? venue.familyMatch
+      ? matchBadgeText(venue.familyMatch, 40)
+      : getMatchClassification(venue.familyScore.score, venue.enrichmentStatus)
     : 'Match not worked out on this device yet';
   const hasTravelTime = isTravelTimeKnown(venue.driveMinutes);
   const categoryLabel = isRestaurant ? 'Restaurant' : CATEGORY_LABELS[venue.category];
@@ -96,7 +99,7 @@ export function SavedPlaceRow({ venue, itemType, onRemoved, index = 0 }: SavedPl
             {/* Omitted rather than shown at zero. A 0% badge on a place nobody has scored reads as a
                 verdict, and this product does not render a fact it does not have. */}
             {isScored ? (
-              <FamilyMatch score={venue.familyScore.score} enrichmentStatus={venue.enrichmentStatus} />
+              <FamilyMatch score={venue.familyScore.score} enrichmentStatus={venue.enrichmentStatus} match={venue.familyMatch} />
             ) : null}
             <Text variant="caption" color={colors.text.secondary}>
               {hasTravelTime ? travelTimeLabel(venue.driveMinutes, 'estimated') : 'Open to see the journey'}

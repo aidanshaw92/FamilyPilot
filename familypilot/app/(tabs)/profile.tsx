@@ -22,7 +22,8 @@ import { formatClock } from '@/src/utils/clock-format';
 import { familyTitle } from '@/src/utils/family-title';
 import { FacilityType } from '@/src/types';
 import { signOut } from '@/src/services/account/auth-service';
-import { ConnectedFamiliesSection, YourFamilySection } from '@/src/components/profile/FamilySections';
+import { YourFamilySection } from '@/src/components/profile/FamilySections';
+import { PlanningAccount } from '@/src/components/planning/PlanningAccount';
 import { householdTitle } from '@/src/utils/household';
 import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
 
@@ -132,7 +133,21 @@ export default function ProfileScreen() {
         </FadeInView>
 
         <YourFamilySection profile={profile} />
-        <ConnectedFamiliesSection accountsAvailable={accountRequired() && authStatus === 'signed_in'} />
+
+        {/* Connections, invitations and what each family sees are managed in Families, in one place. */}
+        <Pressable
+          style={styles.aboutRow}
+          onPress={() => router.push('/(tabs)/families' as never)}
+          accessibilityRole="button"
+          accessibilityLabel="Connected families and invitations are in Families"
+          testID="profile-families-link"
+        >
+          <Ionicons name="people-outline" size={20} color={colors.text.secondary} />
+          <Text variant="bodySmall" color={colors.text.secondary} style={styles.aboutText}>
+            Connected families and invitations are in Families
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />
+        </Pressable>
 
         <Text variant="heading2" style={styles.sectionTitle}>
           Naps, feeds & must-haves
@@ -257,6 +272,28 @@ export default function ProfileScreen() {
           </>
         ) : null}
 
+        <Text variant="heading2" style={styles.sectionTitle}>
+          Your data
+        </Text>
+        <Card style={styles.prefCard} testID="profile-data-locations">
+          {[
+            { icon: 'phone-portrait-outline', title: 'On this phone', body: 'Your family details, children’s names and birthdays, routines, saved plans and places.' },
+            { icon: 'person-circle-outline', title: 'In your account', body: 'Your email, and the families you connect with. A connected family sees only what you agreed to share: never names or an address, and routines only if you switch that on.' },
+            { icon: 'cloud-upload-outline', title: 'Cloud backup (optional)', body: 'Only when you tap Back up. A private copy of plans and routines, without children’s names. You can delete it any time.' },
+          ].map((row) => (
+            <View key={row.title} style={styles.dataRow}>
+              <Ionicons name={row.icon as keyof typeof Ionicons.glyphMap} size={20} color={colors.text.secondary} style={styles.dataIcon} />
+              <View style={styles.dataText}>
+                <Text variant="label">{row.title}</Text>
+                <Text variant="bodySmall" color={colors.text.secondary}>
+                  {row.body}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </Card>
+        <PlanningAccount dataOnly />
+
         <Pressable
           style={styles.aboutRow}
           onPress={() => router.push('/about' as never)}
@@ -375,6 +412,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
+  dataRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start', paddingVertical: spacing.xs },
+  dataIcon: { marginTop: 2 },
+  dataText: { flex: 1, gap: 2 },
   prefRow: {
     flexDirection: 'row',
     alignItems: 'center',

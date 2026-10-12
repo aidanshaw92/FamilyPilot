@@ -70,22 +70,26 @@ function categoryNoun(category?: string): string {
  * upgrades to the real photo the moment one exists, with no layout change.
  */
 export function VenueImage({uri,category,alt,style,borderRadius=radius.md,showCredit=true,pointerEvents='auto',loading='lazy'}:VenueImageProps){
- const [pending,setPending]=useState(Boolean(uri));const [failed,setFailed]=useState(false);
+ const [pending,setPending]=useState(Boolean(uri));const [failed,setFailed]=useState(false);const [width,setWidth]=useState(0);
  useEffect(()=>{setPending(Boolean(uri));setFailed(false);},[uri]);
  const credit=showCredit&&!failed?photoCredit(uri):null;
- return <View pointerEvents={pointerEvents} style={[styles.wrap,{borderRadius},style]}>
+ const unavailable=!uri||failed;
+ return <View pointerEvents={pointerEvents} style={[styles.wrap,{borderRadius},style]} onLayout={(e)=>setWidth(e.nativeEvent.layout.width)}>
   {!uri||failed?
    <View style={styles.empty} accessible accessibilityRole="image" accessibilityLabel={`${alt ? `${alt}, ` : 'Place '}photo not available. Illustration of ${withIndefiniteArticle(categoryNoun(category))}`}>
-    <CategoryArt category={category} />
+    <CategoryArt category={category} seed={alt} />
    </View>
   :<>
    {/* While the photograph loads, the same category illustration the no-photo case draws sits underneath and the photo
        fades in over it: a designed placeholder, not a grey block (it used to be a 120pt pulse strip on grey, which on a
        Home card read as blank). Hidden from assistive tech, because it is not what the place looks like and the photo's
        own label is what is read. */}
-   {pending?<View style={StyleSheet.absoluteFill} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" testID="venue-image-placeholder"><CategoryArt category={category} /></View>:null}
+   {pending?<View style={StyleSheet.absoluteFill} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" testID="venue-image-placeholder"><CategoryArt category={category} seed={alt} /></View>:null}
    <Image source={{uri}} style={styles.image} contentFit="cover" transition={200} loading={loading} accessibilityLabel={alt} onLoad={()=>setPending(false)} onError={()=>{setFailed(true);setPending(false);}}/>
   </>}
+  {/* Said once the picture is big enough to carry a line, so a drawing is never taken for the place. Hidden from assistive tech: the
+      image's own label already says it. */}
+  {unavailable&&width>=170?<View style={styles.note} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" testID="venue-image-note"><Text variant="caption" color="#FFFFFF" numberOfLines={1} style={styles.creditText}>Illustration · no photo yet</Text></View>:null}
   {credit ? <View style={styles.credit} pointerEvents="none"><Text variant="caption" color="#FFFFFF" numberOfLines={3} style={styles.creditText}>Photo: {credit}</Text></View> : null}
  </View>;
 }
@@ -98,6 +102,7 @@ const styles=StyleSheet.create({
   // Up to three lines, so a long two-part name ("Photo:" / "Christopher" / "Montgomery") is shown whole at the
   // narrowest thumbnail rather than cut. A single word wider than the chip would still be ellipsised; the venue
   // screen names the photographer in full, which is where the provider's terms are met.
+  note:{position:'absolute',left:6,bottom:6,maxWidth:'88%',paddingHorizontal:8,paddingVertical:3,borderRadius:11,backgroundColor:'rgba(13,23,51,0.5)'},
   creditText:{fontSize:10,lineHeight:13,fontFamily:'Inter_500Medium'},
   image:{width:'100%',height:'100%'},
   empty:{flex:1,alignItems:'center',justifyContent:'center',minHeight:100},

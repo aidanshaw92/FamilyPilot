@@ -114,6 +114,8 @@ export default function PlanScreen() {
   const lunchPlaceParam = firstValue(params.lunchPlace) ?? '';
   // Opened from a saved day's Edit: saving replaces that day rather than adding another.
   const savedIdParam = firstValue(params.savedId) ?? '';
+  // The overlap the parent chose to keep ("Keep it as planned"). It applies only to that overlap, and is saved with the day.
+  const keepParam = firstValue(params.keep) ?? '';
   const { data: venue, isPending: venuePending, isError: venueError } = useVenue(venueId);
   const { data: profile } = useFamilyProfile();
   const planningFamilies = usePlanningStore((state) => state.families);
@@ -322,7 +324,10 @@ export default function PlanScreen() {
     else router.replace(venueId ? (`/venue/${venueId}` as never) : ('/(tabs)' as never));
   }, [router, venueId]);
 
-  const readySource = phase.status === 'ready' ? phase.source : null;
+  const readySource = useMemo(
+    () => (phase.status === 'ready' ? (keepParam ? { ...phase.source, acceptedConflict: keepParam } : phase.source) : null),
+    [phase, keepParam],
+  );
   // Saved is said only once the day is confirmed in the phone's storage (save-plan.ts). The state is tied to the content
   // it was saved for, so a day rebuilt by an advice option or "Add lunch" is a new, unsaved day.
   const [saveFor, setSaveFor] = useState<{ key: string; status: 'saving' | 'saved' | 'already' | 'failed'; message?: string } | null>(null);
@@ -351,6 +356,7 @@ export default function PlanScreen() {
           ...planDraftToParams(draft),
           ...(lunchOff ? { lunch: 'off' } : {}),
           ...(chosenCandidate && !lunchOff ? { lunchPlace: chosenCandidate.familypilotId } : {}),
+          ...(keepParam ? { keep: keepParam } : {}),
         },
       },
       replaceId: savedIdParam || null,
@@ -362,7 +368,7 @@ export default function PlanScreen() {
     }
     setSavedId(outcome.id);
     setSaveFor({ key: readyKey, status: outcome.status });
-  }, [saveDay, deleteDay, readySource, readyKey, venueId, draft, lunchOff, chosenCandidate, savedIdParam]);
+  }, [saveDay, deleteDay, readySource, readyKey, venueId, draft, lunchOff, chosenCandidate, savedIdParam, keepParam]);
 
   // "View plan": the saved plan itself, as Plans shows it. A plain push, so the phone's own Back (Safari's swipe included)
   // and the screen's Back agree: both return here, which now reads "Already in your plans". From there, "See all your
@@ -401,7 +407,14 @@ export default function PlanScreen() {
       const alternative = option.alternative;
       if (!alternative) return;
       if (alternative.kind === 'shorter') router.setParams({ visit: visitLengthToParam(alternative.visitMinutes) } as never);
+      else if (alternative.kind === 'combined') router.setParams({ start: alternative.arriveAt, visit: visitLengthToParam(alternative.visitMinutes) } as never);
       else router.setParams({ start: alternative.arriveAt } as never);
+    },
+    [router],
+  );
+  const keepConflict = useCallback(
+    (signature: string | null) => {
+      router.setParams({ keep: signature ?? '' } as never);
     },
     [router],
   );
@@ -593,6 +606,8 @@ export default function PlanScreen() {
       view={view}
       notices={partyNotices}
       onApplyOption={applyOption}
+      onKeepConflict={keepConflict}
+      onChooseVisit={chooseVisit}
       onChangePlan={handleChangePlan}
       onToggleLunch={toggleLunch}
       timeline={timeline}

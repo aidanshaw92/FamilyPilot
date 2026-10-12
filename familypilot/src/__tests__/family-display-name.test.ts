@@ -77,7 +77,7 @@ describe('every screen that shows another family by name goes through the helper
   const read = (path: string) => readFileSync(join(root, path), 'utf8');
 
   it('Meet halfway shows chips and journeys by family name, not the raw label', () => {
-    const source = read('app/halfway.tsx');
+    const source = read('app/(tabs)/halfway.tsx');
     expect(source).toContain('label={familyDisplayName(candidate.label)}');
     expect(source).toContain("journey.role === 'mine' ? 'Your family' : familyDisplayName(journey.label)");
     expect(source).not.toMatch(/label=\{candidate\.label\}/);

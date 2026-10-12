@@ -138,7 +138,8 @@ export interface TravelDiagnostics {
  * tap that changes the plan's start or length.
  */
 export interface PlanAlternative {
-  kind: 'earlier' | 'later' | 'shorter';
+  /** `combined` starts earlier AND stays a shorter time: the day neither single change could fix. */
+  kind: 'earlier' | 'later' | 'shorter' | 'combined';
   /** When the family would arrive at the first stop, `HH:MM`. */
   arriveAt: string;
   /** Time at the main venue. */
