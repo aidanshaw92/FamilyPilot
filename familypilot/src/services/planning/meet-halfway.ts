@@ -1,5 +1,6 @@
 import { matchVenueToDayRequest } from '@/src/services/matching/day-request-matcher';
-import { evaluateFamilyMatch, FamilyMatchResult } from '@/src/services/matching/family-match';
+import { evaluateFamilyMatch, FamilyMatchResult, MatchVerdict, PRACTICAL_LABEL, VERDICT_BADGE } from '@/src/services/matching/family-match';
+import { EvidenceCompleteness } from '@/src/services/matching/suitability-signals';
 import { evaluateAgeRecommendation, yearsToMonths } from '@/src/services/matching/age-suitability';
 import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
 import { estimateDriveMinutes } from '@/src/services/places/geo-utils';
@@ -87,8 +88,31 @@ export interface HalfwayJourney {
   home: number;
 }
 
+/**
+ * One family's Family Fit for one place, as the Meet Halfway screen may show it.
+ *
+ * PRIVACY. The other family's fit is computed only from what their connection shared (ages, must-haves, pushchair), and what
+ * leaves this module for them is the grade and a generic label: no child, no age, no need, no routine, no "not yet checked"
+ * list (which would reveal whether they have a baby or use a pushchair), no easy-visit or per-child wording. A viewer never
+ * learns more about the other family from this than the word "Good fit". Where they have shared nothing it is `not_assessed`.
+ */
+export interface HalfwayFit {
+  verdict: MatchVerdict | 'not_assessed';
+  /** The words on the chip: "Good fit", "Possible fit", "Not recommended", "Not yet reviewed", "Not assessed". */
+  label: string;
+  /**
+   * True when the grade rests on practical facts alone, or a child in the household is still to be checked: the chip says so
+   * ("Looks practical") instead of a plain "Good fit" the evidence does not support.
+   */
+  qualified: boolean;
+  /** How much has been checked, beside the grade. Your own family only: for the other family it is always absent. */
+  evidence?: Pick<EvidenceCompleteness, 'known' | 'total' | 'level' | 'missing'>;
+}
+
 export interface HalfwayOption {
   venue: Venue;
+  /** Each family's own Family Fit. Informational: the ranking is unchanged and never reads this object. */
+  fits: { mine: HalfwayFit; other: HalfwayFit };
   journeys: [HalfwayJourney, HalfwayJourney];
   /** The difference between the two one-way journeys. */
   gap: number;
@@ -229,6 +253,21 @@ const hasChildGap = (fit: Pick<FamilyMatchResult, 'children'> | undefined): bool
   const kids = fit?.children ?? [];
   return kids.length > 1 && kids.some((kid) => kid.state === 'works') && kids.some((kid) => kid.state === 'check' || kid.state === 'unknown');
 };
+
+/**
+ * The fit a family's chip shows. Yours may carry its evidence beside the grade. Theirs never does: see `HalfwayFit`.
+ * A grade that rests on practical facts alone, or leaves a child unchecked, is worded as such for both families.
+ */
+function fitFor(role: FamilyRole, result: FamilyMatchResult | undefined): HalfwayFit {
+  if (!result) return { verdict: 'not_assessed', label: 'Not assessed', qualified: false };
+  const qualified = (result.verdict === 'good' || result.verdict === 'excellent') && (Boolean(result.practicalOnly) || hasChildGap(result));
+  const label = qualified ? PRACTICAL_LABEL : VERDICT_BADGE[result.verdict];
+  if (role === 'other') return { verdict: result.verdict, label, qualified };
+  const completeness = result.evidenceCompleteness;
+  if (!completeness) return { verdict: result.verdict, label, qualified };
+  const { known, total, level, missing } = completeness;
+  return { verdict: result.verdict, label, qualified, evidence: { known, total, level, missing: [...missing] } };
+}
 
 export function meetHalfway(input: HalfwayInput): HalfwayResult {
   const { mine, other, date, arriveAt, today, nowMinutes } = input;
@@ -477,7 +516,7 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
     const checks = toCheck.length - (onlyJourneyKnown ? 1 : 0);
     const supported = checks === 0 && !onlyJourneyKnown && gap <= CLOSE_GAP_MINUTES;
 
-    options.push({ venue, journeys, gap, longerFor, fairness, reasons, toCheck, checks, supported, hoursConfirmed, unresolved, needsChecking, score });
+    options.push({ venue, fits: { mine: fitFor('mine', fits[0][1]), other: fitFor('other', fits[1][1]) }, journeys, gap, longerFor, fairness, reasons, toCheck, checks, supported, hoursConfirmed, unresolved, needsChecking, score });
   }
 
   options.sort((a, b) => b.score - a.score || a.venue.name.localeCompare(b.venue.name));
