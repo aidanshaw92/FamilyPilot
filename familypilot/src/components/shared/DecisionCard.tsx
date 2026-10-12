@@ -20,7 +20,7 @@ import {
   exploreCardCtaLabel,
 } from '@/src/utils/explore-card-layout';
 import { getMatchClassification } from '@/src/utils/family-match-classification';
-import { matchCardReason, matchClassification, withClosedLine } from '@/src/services/matching/family-match';
+import { matchBadgeText, matchCardReason, withClosedLine } from '@/src/services/matching/family-match';
 
 import { RecommendationPattern } from './RecommendationPattern';
 import { travelTimeLabel } from '@/src/utils/travel-time';
@@ -53,7 +53,8 @@ function DecisionCardComponent({
 
   if (variant === 'list') {
     const match = venue.familyMatch;
-    const classification = match ? matchClassification(match) : getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
+    // The words the badge says, so the spoken name and the badge never differ ("Looks practical · check kids", never a bare "Good fit").
+    const classification = match ? matchBadgeText(match, 40) : getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
     const unreviewed = venue.enrichmentStatus === 'provider_only';
     // Two concrete facts read as bespoke; one alone can look like a generic template repeated
     // across every card, so combine the two most relevant reasons where there's a second one.
@@ -152,6 +153,7 @@ function DecisionCardComponent({
             <FamilyMatch
               score={venue.familyScore.score}
               enrichmentStatus={venue.enrichmentStatus}
+              match={venue.familyMatch}
               tone="onImage"
             />
           </View>

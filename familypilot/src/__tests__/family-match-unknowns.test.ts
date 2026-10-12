@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { evaluateFamilyMatch } from '@/src/services/matching/family-match';
+import { evaluateFamilyMatch, matchBadgeText } from '@/src/services/matching/family-match';
 import { FamilyMember, FamilyProfile, Venue } from '@/src/types';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { OpeningHoursSchedule } from '@/src/types/opening-hours';
@@ -38,12 +38,16 @@ describe('Family Fit and unknown facts', () => {
     expect(r.verdict).not.toBe('poor');
   });
 
-  it('a family that walks, with older children, hears nothing about buggies or baby changing, and still gets a good verdict', () => {
+  it('a family that walks, with older children, hears nothing about buggies or baby changing, and is told the activity is unconfirmed rather than given a bare Good fit', () => {
     const r = read(family([child('Sloane', 7), child('Mia', 9)]));
     const everything = `${text(r.toCheck)} ${text(r.cautions)} ${r.cardNote ?? ''}`;
     expect(everything).not.toMatch(/buggy|baby changing|pushchair/i);
-    expect(r.toCheck).toEqual([]);
+    // The verdict (a label; the ordering is by score) is unchanged, but nothing says the place suits these children: the
+    // facilities are practical and no recommended age covers either of them, so the check is named and the badge says so.
     expect(['good', 'excellent']).toContain(r.verdict);
+    expect(r.practicalOnly).toBe(true);
+    expect(text(r.toCheck)).toMatch(/haven’t yet confirmed whether this activity suits Sloane and Mia/);
+    expect(matchBadgeText(r)).toBe('Looks practical · check kids');
   });
 
   it('a family carrying a baby (no buggy) is asked about baby changing, softly, and about nothing buggy', () => {

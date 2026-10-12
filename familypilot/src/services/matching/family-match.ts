@@ -128,6 +128,12 @@ export interface FamilyMatchResult {
    * is, and the badge says so ("Excellent · easy visit") rather than implying the place was judged for an activity.
    */
   easyVisit: boolean;
+  /**
+   * True when the household has children old enough to take part and the place is confirmed for NONE of them: the verdict
+   * rests on the place's practical facilities (toilets, parking, a café) and on nothing about the activity. The badge then
+   * says "Looks practical · check ..." rather than a bare "Good fit", which would claim a suitability nobody confirmed.
+   */
+  practicalOnly: boolean;
 }
 
 export interface FamilyMatchInput {
@@ -171,6 +177,9 @@ const LOGISTICS_LED_BELOW_MONTHS = 12;
  * a different claim from "Good fit" or "Excellent fit", so it has a different name and never borrows the word Excellent.
  */
 export const EASY_VISIT_LABEL = 'Easy visit';
+
+/** What the badge leads with when the practical facts look fine and the activity is unconfirmed for every child. */
+export const PRACTICAL_LABEL = 'Looks practical';
 
 /** The generic classification under a name: the verdict word, or "Easy visit" for a household of babies only. */
 export function matchClassification(match: Pick<FamilyMatchResult, 'verdict'> & { easyVisit?: boolean }): string {
@@ -699,7 +708,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
   // Several children and the place is confirmed for some of them but not all: whoever is left over is a gap in what is
   // known, so it can never be "excellent" (nothing left to check), and it is listed with the things to check.
   const confirmedKids = lens.filter((l) => l.state === 'works');
-  const gapKids = children.length > 1 && confirmedKids.length > 0 ? lens.filter((l) => l.state === 'check' || l.state === 'unknown') : [];
+  let gapKids = children.length > 1 && confirmedKids.length > 0 ? lens.filter((l) => l.state === 'check' || l.state === 'unknown') : [];
   if (verdict === 'excellent' && gapKids.length > 0) verdict = 'good';
   // Excellent says the place suits the children, so every child of a year or more must be covered by activity evidence that
   // holds on any day: the venue's own recommended ages, or a permanent provision for their age. Logistics (toilets, parking,
@@ -708,6 +717,16 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
   const activityAge = children.filter((c) => !(childAgeMonths(c) < LOGISTICS_LED_BELOW_MONTHS));
   if (verdict === 'excellent' && !activityAge.every((c) => rangeIds.has(c.id) || provisionIds.has(c.id))) verdict = 'good';
   const easyVisit = children.length > 0 && activityAge.length === 0;
+  // A place confirmed for nobody: the facilities are positives, but nothing says the activity suits any child who can take part
+  // (one child, or several). It was left as a plain "good" with no gap to name, so the badge read "Good fit" beside a headline
+  // that said the opposite. The children are all in the gap now; the verdict word, score and ranking are unchanged.
+  const anyActivityEvidence = children.some((c) => rangeIds.has(c.id) || provisionIds.has(c.id));
+  const practicalOnly =
+    !easyVisit && children.length > 0 && confirmedKids.length === 0 && !anyActivityEvidence && (verdict === 'good' || verdict === 'excellent');
+  if (practicalOnly) {
+    if (verdict === 'excellent') verdict = 'good';
+    gapKids = lens.filter((l) => l.state === 'check' || l.state === 'unknown');
+  }
   const gapNames = gapKids.map((l) => l.name).filter(Boolean);
   // Whom the place is NOT confirmed to suit: children nothing is known about (in a household where it is known for another),
   // and children for whom only practical facts are confirmed. Practical facts say the visit is easy, not that the place
@@ -757,6 +776,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
     cardNote,
     evidence: { positives, venueFacts, breaches: breaches.length, hardUnknowns: hardUnknowns.length, parentReported },
     easyVisit,
+    practicalOnly,
   };
 }
 
@@ -766,7 +786,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
  * `possible` and `poor` are not claims worth naming anyone for.
  */
 export function matchBadgeText(
-  match: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[]; easyVisit?: boolean; suitedNames?: string[]; easyNames?: string[] },
+  match: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[]; easyVisit?: boolean; suitedNames?: string[]; easyNames?: string[]; practicalOnly?: boolean },
   maxNameChars = 18,
 ): string {
   // A household of babies only: what is confirmed is how easy the visit is, and the badge says exactly that. It never says
@@ -789,9 +809,11 @@ export function matchBadgeText(
       // matches the headline: "Good for Ozzie · check Sloane", or "Easy with Ozzie · check Sloane".
       const suited = joinNames(match.suitedNames ?? []);
       const easy = joinNames(match.easyNames ?? []);
-      const lead = suited ? `${word} for ${suited}` : easy ? `Easy with ${easy}` : EASY_VISIT_LABEL;
+      // Nobody confirmed (practicalOnly): the facilities look fine and nothing about the activity is known for any child.
+      const unconfirmedLead = match.practicalOnly ? PRACTICAL_LABEL : EASY_VISIT_LABEL;
+      const lead = suited ? `${word} for ${suited}` : easy ? `Easy with ${easy}` : unconfirmedLead;
       const budget = maxNameChars + 13; // "Easy with Ozzie · check Sloane" at the default 18: a name each side of the dot
-      const short = suited ? `${word} for some` : EASY_VISIT_LABEL;
+      const short = suited ? `${word} for some` : unconfirmedLead;
       const candidates = [`${lead} · check ${gap}`, `${short} · check ${gap}`, `${lead} · check kids`, `${short} · check kids`];
       return candidates.find((text) => text.length <= budget) ?? candidates[candidates.length - 1];
     }

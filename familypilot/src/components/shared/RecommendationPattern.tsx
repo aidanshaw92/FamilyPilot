@@ -10,6 +10,7 @@ import { getEnrichmentDetailTrustCopy, getEnrichmentTrustCopy, getMatchClassific
 import { formatArrivalTime } from '@/src/utils/clock-format';
 
 import { describeFamilyMatch } from '@/src/utils/family-match-scale';
+import { matchBadgeText } from '@/src/services/matching/family-match';
 import { TrustBadgeInput, trustBadgesFor } from '@/src/utils/trust-badges';
 import { isTravelTimeKnown, travelTimeWithMode } from '@/src/utils/travel-time';
 
@@ -62,9 +63,13 @@ export function RecommendationPattern({
   style,
 }: RecommendationPatternProps) {
   const isFocused = Boolean(focusedFitLabel);
+  // When this family's own match has been worked out, its words lead (the same ones as the badge); the score's vocabulary is
+  // only for a place with no family match, so a card can never say "Good fit" beside a badge that says "check Sloane".
   const classification = isFocused
     ? focusedFitLabel!
-    : getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
+    : venue.familyMatch
+      ? matchBadgeText(venue.familyMatch, 40)
+      : getMatchClassification(venue.familyScore.score, venue.enrichmentStatus);
   const reasons = isFocused
     ? (focusedReasons ?? []).slice(0, REASON_LIMIT[variant])
     : venue.familyScore.explanation.slice(0, REASON_LIMIT[variant]);
