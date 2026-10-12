@@ -11,9 +11,10 @@ const TAB_CONFIG: {
 }[] = [
   { name: 'index', title: 'Home' },
   { name: 'explore', title: 'Explore' },
-  // Meet halfway is one of the three jobs FamilyPilot does, so it is a destination of its own rather than a card inside
-  // Plans. Saved places moved the other way: they are a list a parent keeps, opened from Plans (app/saved.tsx).
-  { name: 'halfway', title: 'Halfway' },
+  // Families is the hub for who a parent plans with (their own household, the families they are connected to, and the
+  // ways to plan together). It sits in the middle of the five. Meet halfway is one of the things a parent does from
+  // there (app/halfway.tsx, a stack screen), not a tab of its own. Saved places open from Plans (app/saved.tsx).
+  { name: 'families', title: 'Families' },
   {
     name: 'trips',
     title: 'Plans',

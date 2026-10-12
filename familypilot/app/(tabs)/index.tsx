@@ -1,5 +1,4 @@
-import { FamiliesAction } from '@/src/components/navigation/FamiliesAction';
-import { COMPACT_FAMILIES_ROW } from '@/src/utils/home-vertical-layout';
+import { BRAND_ROW_HEIGHT, BRAND_ROW_TOP, BrandLockup } from '@/src/components/navigation/PageHeader';
 import { useIsFocused, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { compareVenuesForFamily } from '@/src/services/places/fit-order';
@@ -64,6 +63,16 @@ const HEADER_ART_END = 605;
 const SEARCH_ART_END = 345;
 /** The avatar's strokes end well above this and the search marks start well below it (frame y 172 / 274). */
 const AVATAR_ART_END = 225;
+/** Where the frame puts the greeting: y=58, where a phone's status bar ends. */
+const GREETING_FRAME_Y = 58;
+/**
+ * The brand row (the mark and the wordmark, as on every other main screen) sits above the approved header, in the
+ * status-bar band and 44 points below it. The greeting then starts this far below the brand row rather than at the
+ * frame's y=58, and the marks drawn beside the header move up by the same amount (`ART_LIFT`), so the approved header
+ * keeps its own geometry beneath the brand row.
+ */
+const HOME_CONTENT_TOP = 0;
+const ART_LIFT = GREETING_FRAME_Y - HOME_CONTENT_TOP;
 
 function getTimeGreeting(): string {
   const hour = new Date().getHours();
@@ -130,8 +139,10 @@ export default function HomeScreen() {
     setHeaderFit(null);
   }, [width, windowHeight]);
 
+  // The scroll view starts below the brand row, so the room for the deck is measured from there.
+  const scrollHeight = windowHeight - (insets.top + BRAND_ROW_TOP + BRAND_ROW_HEIGHT);
   const room = headerFit
-    ? deckRoom({ windowHeight, headerBottom: headerFit.bottom, mode: headerFit.mode, navClearance: tabBarClearance })
+    ? deckRoom({ windowHeight: scrollHeight, headerBottom: headerFit.bottom, mode: headerFit.mode, navClearance: tabBarClearance })
     : undefined;
   useEffect(() => {
     if (!headerFit || headerFit.mode !== mode || room === undefined) return;
@@ -176,13 +187,16 @@ export default function HomeScreen() {
           the frame's own vectors, anchored to the bottom edge so they stay beside the navigation on
           a taller phone. Behind the scroll view, so content and navigation sit above them. */}
       <ScreenArt art={HOME_ART} from={1700} to={1846} anchor="bottom" />
+      {/* The brand row, where every main screen has it; the approved header follows beneath it. */}
+      <View style={{ paddingTop: insets.top + BRAND_ROW_TOP }} testID="home-brand-row">
+        <BrandLockup gap={0} />
+      </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.content,
           {
-            // The frame puts the greeting at y=58, which is where a phone's status bar ends.
-            paddingTop: Math.max(insets.top, spacing.lg),
+            paddingTop: HOME_CONTENT_TOP,
             paddingBottom: tabBarClearance,
           },
         ]}
@@ -198,13 +212,13 @@ export default function HomeScreen() {
             and dashes beside the search, the plan heading's strokes, and the blobs and leaves around
             the deck), drawn from its own vectors, anchored to the top edge like the deck they frame,
             and behind everything that is content. */}
-        <ScreenArt art={HOME_ART} from={0} to={AVATAR_ART_END} anchor="top" />
+        <ScreenArt art={HOME_ART} from={0} to={AVATAR_ART_END} anchor="top" style={{ top: -ART_LIFT }} />
         <ScreenArt
           art={HOME_ART}
           from={AVATAR_ART_END}
           to={SEARCH_ART_END}
           anchor="top"
-          style={{ top: AVATAR_ART_END * artScale + extraHeight - headerShift(mode, 'beforeTitle') }}
+          style={{ top: AVATAR_ART_END * artScale + extraHeight - headerShift(mode, 'beforeTitle') - ART_LIFT }}
         />
         <ScreenArt
           art={HOME_ART}
@@ -212,14 +226,14 @@ export default function HomeScreen() {
           from={SEARCH_ART_END}
           to={HEADER_ART_END}
           anchor="top"
-          style={{ top: SEARCH_ART_END * (REFERENCE_WIDTH / HOME_ART.width) + extraHeight - headerShift(mode, 'afterTitle') }}
+          style={{ top: SEARCH_ART_END * (REFERENCE_WIDTH / HOME_ART.width) + extraHeight - headerShift(mode, 'afterTitle') - ART_LIFT }}
         />
         <ScreenArt
           art={HOME_ART}
           from={HEADER_ART_END}
           to={1700}
           anchor="top"
-          style={{ top: HEADER_ART_END * (REFERENCE_WIDTH / HOME_ART.width) + extraHeight - headerShift(mode, 'all') }}
+          style={{ top: HEADER_ART_END * (REFERENCE_WIDTH / HOME_ART.width) + extraHeight - headerShift(mode, 'all') - ART_LIFT }}
         />
         <View
           onLayout={(e) =>
@@ -270,18 +284,12 @@ export default function HomeScreen() {
           </View>
 
           {savings.title === 0 ? (
-            <View style={styles.sectionTitleRow}>
-              <Text variant="heading2" style={styles.sectionTitle}>
-                Best for your family
-              </Text>
-              {/* The way into Families, on the heading row's free right-hand side: same height as the row, so nothing moves. */}
-              <FamiliesAction style={styles.familiesAction} />
-            </View>
+            <Text variant="heading2" style={styles.sectionTitle}>
+              Best for your family
+            </Text>
           ) : (
-            // On a short screen the heading is dropped; the action keeps a slim row of its own rather than disappearing.
-            <View style={styles.compactFamiliesRow}>
-              <FamiliesAction />
-            </View>
+            // On a short screen the heading is dropped; a slim gap keeps the chips clear of the search field.
+            <View style={styles.compactChipsGap} />
           )}
         </View>
 
@@ -407,14 +415,6 @@ const styles = StyleSheet.create({
     left: -17,
     top: -12,
   },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-  },
-  // The heading row is 16 + 26 + 9 = 51 tall; the 44 point pill sits inside it (4 + 44 = 48).
-  familiesAction: { marginTop: 4 },
   sectionTitle: {
     marginTop: 16,
     marginBottom: 9,
@@ -429,13 +429,6 @@ const styles = StyleSheet.create({
   // Stands in for the plan heading's own margins in the compact header, so the chips keep clear of the search field.
   compactChipsGap: {
     height: 14,
-  },
-  // Short screens only: the pill's own row (44), in place of the 14 point gap.
-  compactFamiliesRow: {
-    height: COMPACT_FAMILIES_ROW,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
   },
   attribution: {
     marginTop: spacing.xs,

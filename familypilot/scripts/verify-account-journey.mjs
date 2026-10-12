@@ -245,24 +245,30 @@ console.log('owner: Create a plan > Add another family');
 
 
 // ---------------------------------------------------------------- 3b. Families, reached from Home
-console.log('owner: the Families action opens connected families, invitations and the ways to add one');
+console.log('owner: the Families tab opens connected families, invitations and the ways to add one');
 {
   const { page } = owner;
   await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
   await settle(page, 3500);
-  check(await page.getByTestId('families-action').count() === 1, 'Home has the labelled Families action');
-  await page.getByTestId('families-action').click();
+  check(await page.getByRole('tab', { name: 'Families' }).count() === 1, 'the bottom navigation has a Families tab');
+  await page.getByRole('tab', { name: 'Families' }).click();
   await settle(page, 2500);
   const t = await text(page);
   check(new URL(page.url()).pathname === '/families', 'tapping it opens the Families screen');
   check(/Connected/.test(t) && /Alex/.test(t), 'accepted families are listed under "Connected", by label');
   check(await page.getByTestId('families-connected-heading').count() === 1, 'and the group is named');
+  check(await page.getByTestId('connected-family-status').count() >= 1 && /Connected\b/.test(await page.getByTestId('connected-family-status').first().innerText()), 'a connected family card says it is connected');
+  check(await page.getByTestId('family-plan-together').count() >= 1, 'and offers Plan together');
   check(await page.getByTestId('families-pending-heading').count() === 1 && /Waiting for a reply/.test(t), 'an invitation that has not been accepted is told apart: "Waiting for a reply"');
   check(/Family invitation . waiting|Partner invitation . waiting|Friend invitation . waiting/.test(t), 'and says which kind of invitation it is, and that it is waiting');
   check(/Meet halfway/.test(t) && /What I share/.test(t) && /Disconnect/.test(t), 'a connected family can be planned with, managed and disconnected from here');
   const body = await page.evaluate(() => document.body.innerText);
-  // The area word (an outward code) is shared by design; a full postcode, an email or a child's name never is.
-  check(!/[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}|example\.com|Theo/.test(body), 'the screen shows no full postcode, email or child name');
+  // The area word (an outward code) is shared by design; a full postcode or an email never is. The owner's own child is
+  // named in the hub's "Your family" section (their own household, on their own phone), never on a connected family's card.
+  check(!/[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}|example\.com/.test(body), 'the screen shows no full postcode or email');
+  const connectedCards = await page.getByTestId('profile-connected-families').innerText();
+  check(!/Theo/.test(connectedCards), 'the connected families\' cards carry no child name');
+  check(/Theo/.test(await page.getByTestId('profile-your-family').innerText()), 'the owner\'s own household is shown to the owner, under Your family');
   check(await page.getByTestId('families-add').count() === 1 && /Add another family/.test(await page.getByTestId('families-add').innerText()), 'with connections, the add action reads "Add another family"');
   check(await page.getByText('+ Invite another family', { exact: true }).count() === 0, 'and the invitation tools stay closed until asked for');
   await shot(page, '12b-families-screen');
@@ -279,15 +285,10 @@ console.log('owner: the Families action opens connected families, invitations an
   check(after === pendingBefore + 1, 'creating a link uses the existing invitation system (one more pending invitation, no second system)');
   await shot(page, '12c-families-invite');
 
-  // Back returns to Home.
-  await page.getByRole('button', { name: 'Go back' }).first().click();
+  // A tab: the Home tab is one tap away, and Families is one tap back.
+  await page.getByRole('tab', { name: 'Home' }).click();
   await settle(page, 1500);
-  check(new URL(page.url()).pathname === '/', 'Back returns to Home');
-
-  // Explore has the same way in.
-  await page.goto(`${BASE}/explore`, { waitUntil: 'domcontentloaded' });
-  await settle(page, 3000);
-  check(await page.getByTestId('families-action').count() === 1, 'Explore has the labelled Families action too');
+  check(new URL(page.url()).pathname === '/', 'the Home tab returns to Home');
 
   // The recipient sees Sam under Connected on their own Families screen.
   const other = guest.page;

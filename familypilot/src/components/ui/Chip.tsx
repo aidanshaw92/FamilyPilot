@@ -55,6 +55,7 @@ interface ChipProps {
    */
   tint?: ChipTint;
   style?: ViewStyle;
+  testID?: string;
 }
 
 export type ChipTint = 'none' | 'mint' | 'blush' | 'lilac';
@@ -85,7 +86,7 @@ export const SMALL_CHIP_GAP = 8;
 export const HOME_CHIP = { height: 44, paddingX: 16, fontSize: 14, lineHeight: 17, gap: 10 } as const;
 export const EXPLORE_CHIP = { height: 42, paddingX: 22, fontSize: 13.4, lineHeight: 16, gap: 6 } as const;
 
-export function Chip({ label, active = false, onPress, appearance = 'outlined', size = 'default', tint = 'none', style }: ChipProps) {
+export function Chip({ label, active = false, onPress, appearance = 'outlined', size = 'default', tint = 'none', style, testID }: ChipProps) {
   const reducedMotion = useReducedMotion();
   const activeProgress = useSharedValue(active ? 1 : 0);
   const pressed = useSharedValue(1);
@@ -122,6 +123,7 @@ export function Chip({ label, active = false, onPress, appearance = 'outlined', 
 
   return (
     <Pressable
+      testID={testID}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       // react-native-web does not turn accessibilityState into ARIA, so without this the selected chip is

@@ -60,6 +60,15 @@ describe('Home vertical fit', () => {
     }
   });
 
+  it('keeps every header line on a standard iPhone with the brand row above the greeting', () => {
+    // 393 x 852 with real insets (59 / 34): the brand row's 46 points come out of the deck, not out of the header.
+    const clearance = floatingTabBarLayout(5, 34).contentClearance;
+    const HEADER_BOTTOM = 220;
+    const room = deckRoom({ windowHeight: 852 - (59 + 46), headerBottom: HEADER_BOTTOM, mode: 'full', navClearance: clearance });
+    expect(nextHeaderMode('full', room, 393)).toBe('full');
+    expect(deckMetrics(393, room).scale).toBeGreaterThanOrEqual(0.74 * (393 / 393));
+  });
+
   it('only ever removes optional lines, in the order subtitle, search gap, then the plan heading', () => {
     expect(HEADER_SAVINGS.full.subtitle).toBe(0);
     expect(HEADER_SAVINGS.tight.title).toBe(0);

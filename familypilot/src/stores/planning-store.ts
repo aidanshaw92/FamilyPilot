@@ -22,11 +22,22 @@ export interface SavedPlan { feedback?:VisitFeedbackState; id: string; date: str
  * Separate from `saved`, which holds the older single-venue `PlanMatch`. Squeezing a three-stop day
  * into that shape would lose the stops it has.
  */
-export interface SavedDay { id: string; createdAt: string; source: PlanViewModelInput }
-export interface PlanningData { families: PlanningFamily[]; options: PlanningOptions; saved: SavedPlan[]; savedDays: SavedDay[] }
+/**
+ * The answers a saved day was built from (the venue id and the plan's own URL parameters: date, start, visit length,
+ * who is coming, lunch on or off and which place), so a saved day can be opened for editing and rebuilt by the real
+ * planner from where it left off. Nothing private: ids and choices only.
+ */
+export interface SavedDayDraft { venueId: string; params: Record<string, string> }
+export interface SavedDay { id: string; createdAt: string; source: PlanViewModelInput; draft?: SavedDayDraft }
+/**
+ * `planningWith` is the family chosen with "Plan together" on Families: the id of a connected (or postcode) family that
+ * the next plan sheet opens with already selected under Who's coming, so nobody re-enters them. Cleared with Done, or
+ * when that family is removed. Only an id: nothing about the family is copied here.
+ */
+export interface PlanningData { families: PlanningFamily[]; options: PlanningOptions; saved: SavedPlan[]; savedDays: SavedDay[]; planningWith?: string | null }
 /** What a restored backup may look like: one taken before multi-stop days carries no `savedDays`. */
 export type PlanningBackup = Omit<PlanningData, 'savedDays'> & { savedDays?: SavedDay[] };
-const defaults = (): PlanningData => ({ families: [], options: { date: localDate(), leaveAt:'',returnBy:'',visitMinutes:90,bufferMinutes:15,environment:'either' }, saved:[], savedDays:[] });
+const defaults = (): PlanningData => ({ families: [], options: { date: localDate(), leaveAt:'',returnBy:'',visitMinutes:90,bufferMinutes:15,environment:'either' }, saved:[], savedDays:[], planningWith: null });
 export function localTime() { const d=new Date(); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
 export function localDate() { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 interface PlanningState extends PlanningData {
@@ -34,6 +45,7 @@ interface PlanningState extends PlanningData {
   hydrated: boolean; setFamily:(f:PlanningFamily)=>void; removeFamily:(id:string)=>void;
   setOptions:(o:Partial<PlanningOptions>)=>void; savePlan:(p:SavedPlan)=>void; deletePlan:(id:string)=>void;
   saveDay:(d:SavedDay)=>void; deleteDay:(id:string)=>void;
+  setPlanningWith:(id:string|null)=>void;
   togglePacked:(id:string,item:string)=>void; replace:(data:PlanningBackup)=>void; clear:()=>void;
 }
 /** Where the planning state is persisted (AsyncStorage key), so a save can be confirmed by reading it back. */
@@ -42,7 +54,8 @@ export const usePlanningStore=create<PlanningState>()(persist((set)=>({
   ...defaults(),hydrated:false,
   setFeedback:(id,feedback)=>set(s=>({saved:s.saved.map(p=>p.id===id?{...p,feedback}:p)})),
   setFamily:f=>set(s=>({families:[...s.families.filter(x=>x.id!==f.id),f]})),
-  removeFamily:id=>set(s=>({families:s.families.filter(f=>f.id!==id)})),
+  removeFamily:id=>set(s=>({families:s.families.filter(f=>f.id!==id),planningWith:s.planningWith===id?null:s.planningWith})),
+  setPlanningWith:id=>set({planningWith:id}),
   setOptions:o=>set(s=>({options:{...s.options,...o}})),
   savePlan:p=>set(s=>({saved:[{...p,feedback:s.saved.find(x=>x.id===p.id)?.feedback},...s.saved.filter(x=>x.id!==p.id)]})),
   deletePlan:id=>set(s=>({saved:s.saved.filter(p=>p.id!==id)})),
@@ -56,4 +69,4 @@ export const usePlanningStore=create<PlanningState>()(persist((set)=>({
 }),{name:PLANNING_STORAGE_KEY,
   version:PLANNING_STATE_VERSION,
   migrate:(persisted,fromVersion)=>migratePlanningState<PlanningState>(persisted,fromVersion),
-  skipHydration:Platform.OS==='web'&&typeof window==='undefined',storage:createJSONStorage(()=>AsyncStorage),partialize:({families,options,saved,savedDays})=>({families,options,saved,savedDays}),onRehydrateStorage:()=>()=>usePlanningStore.setState({hydrated:true})}));
+  skipHydration:Platform.OS==='web'&&typeof window==='undefined',storage:createJSONStorage(()=>AsyncStorage),partialize:({families,options,saved,savedDays,planningWith})=>({families,options,saved,savedDays,planningWith:planningWith??null}),onRehydrateStorage:()=>()=>usePlanningStore.setState({hydrated:true})}));

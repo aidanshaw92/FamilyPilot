@@ -16,6 +16,8 @@ import {
 } from '@/src/services/planning/plan-view-model';
 
 import { PlanStopCard } from './PlanStopCard';
+import { PlanTimeline } from './PlanTimeline';
+import { TimelineEdit, TimelineRow } from '@/src/services/planning/plan-timeline';
 
 /**
  * The approved Plan screen, rendering a `PlanViewModel` and nothing else.
@@ -45,6 +47,12 @@ export interface PlanScreenViewProps {
   onChangePlan?: () => void;
   /** Adds lunch to the day, or takes it out, and builds the plan again. */
   onToggleLunch?: () => void;
+  /** The day as a timeline (plan-timeline.ts). Absent, the stop cards alone describe the day. */
+  timeline?: TimelineRow[];
+  /** A row's change (arrival, visit length, lunch, the earlier departure): the screen re-plans. */
+  onEditRow?: (edit: TimelineEdit, row: TimelineRow) => void;
+  /** On a saved day: open it for editing, from its saved answers. */
+  onEditPlan?: () => void;
   /** A saved plan opened again (from Plans): there is nothing to save, and the action is Add to calendar. */
   saved?: boolean;
   /**
@@ -74,6 +82,9 @@ export function PlanScreenView({
   onApplyOption,
   onChangePlan,
   onToggleLunch,
+  timeline,
+  onEditRow,
+  onEditPlan,
   saved = false,
   saveState = 'idle',
   saveError,
@@ -174,9 +185,13 @@ export function PlanScreenView({
             {/* Node 74:3: one quiet line, only when the planner recorded a routine the day is home
                 before. Never an alert, never invented from the clock alone. */}
             {view.insight && !routinesVisible ? (
-              <View style={styles.insight} testID="plan-insight">
-                <Ionicons name="checkmark" size={14} color={colors.secondary[500]} />
-                <Text style={styles.insightText} numberOfLines={1}>
+              <View style={[styles.insight, view.insightTone === 'tight' && styles.insightTight]} testID="plan-insight">
+                <Ionicons
+                  name={view.insightTone === 'tight' ? 'time-outline' : 'checkmark'}
+                  size={14}
+                  color={view.insightTone === 'tight' ? colors.warning[600] : colors.secondary[500]}
+                />
+                <Text style={[styles.insightText, view.insightTone === 'tight' && styles.insightTextTight]} numberOfLines={view.insightTone === 'tight' ? 3 : 1}>
                   {view.insight}
                 </Text>
               </View>
@@ -260,6 +275,25 @@ export function PlanScreenView({
                 {view.routines.advice.map((item) => (
                   <AdviceItem key={item.id} item={item} onApply={onApplyOption} />
                 ))}
+                {/* Home only just before a routine: a warning with the two times, never a tick (home-margin.ts). The
+                    chip is a verified re-run, offered only when the planner found one that builds. */}
+                {view.routines.tight.map((item) => (
+                  <View key={item.id} style={styles.tight} testID="plan-tight-home">
+                    <View style={styles.tightRow}>
+                      <Ionicons name="time-outline" size={16} color={colors.warning[600]} />
+                      <Text variant="bodySmall" style={styles.tightText}>
+                        {item.text}
+                      </Text>
+                    </View>
+                    {onApplyOption && item.options.length ? (
+                      <View style={styles.adviceOptions} testID="plan-tight-home-options">
+                        {item.options.map((option) => (
+                          <Chip key={option.key} size="small" label={option.label} onPress={() => onApplyOption(option)} />
+                        ))}
+                      </View>
+                    ) : null}
+                  </View>
+                ))}
                 {view.routines.homeBefore.map((line) => (
                   <View key={line} style={styles.goodNews}>
                     <Ionicons name="checkmark" size={14} color={colors.secondary[500]} />
@@ -282,6 +316,18 @@ export function PlanScreenView({
                     {line}
                   </Text>
                 ))}
+              </Block>
+            ) : null}
+            {/* The day as it unfolds, with each timing's source; the stop cards below hold the places' details. */}
+            {timeline && timeline.length ? (
+              <Block title="Your day" testID="plan-day">
+                {onEditPlan ? (
+                  <Pressable onPress={onEditPlan} accessibilityRole="button" accessibilityLabel="Edit this plan" style={styles.lunchLink} hitSlop={8} testID="plan-edit">
+                    <Ionicons name="create-outline" size={18} color={colors.action} />
+                    <Text style={styles.lunchLinkText}>Edit this plan: times, how long, lunch</Text>
+                  </Pressable>
+                ) : null}
+                <PlanTimeline rows={timeline} onEdit={onEditRow} />
               </Block>
             ) : null}
             {view.stops.map((stop) => (
@@ -312,7 +358,10 @@ export function PlanScreenView({
               <View style={styles.headHome} testID="plan-head-home">
                 <View style={styles.terminus} />
                 <Text style={styles.headHomeTime}>{view.party[0].homeLabel}</Text>
-                <Text style={styles.headHomeLabel}>Head home</Text>
+                <Text style={styles.headHomeLabel} numberOfLines={1}>
+                  Home
+                  {view.party[0].homeNote ? <Text style={styles.headHomeNote}>{` · ${view.party[0].homeNote}`}</Text> : null}
+                </Text>
               </View>
             ) : null}
 
@@ -556,6 +605,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   insightText: { flex: 1, fontFamily: 'Inter_500Medium', fontSize: 13, lineHeight: 16, color: colors.text.secondary },
+  insightTight: { backgroundColor: colors.warning[50], borderWidth: 1, borderColor: colors.warning[100], alignItems: 'flex-start' },
+  insightTextTight: { color: colors.warning[600] },
+  tight: { gap: spacing.sm, backgroundColor: colors.warning[50], borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.warning[100] },
+  tightRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  tightText: { flex: 1, color: colors.warning[600] },
   visitNote: { marginBottom: spacing.md },
   visitChange: { textDecorationLine: 'underline' },
   recommendationTitle: { fontFamily: 'Inter_700Bold', fontSize: 17, lineHeight: 22, color: colors.ink },
@@ -587,7 +641,8 @@ const styles = StyleSheet.create({
   headHome: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, height: 44, paddingLeft: 42 - spacing.screenPadding },
   terminus: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.action },
   headHomeTime: { fontFamily: 'Inter_600SemiBold', fontSize: 13, lineHeight: 16, color: colors.ink },
-  headHomeLabel: { fontFamily: 'Inter_500Medium', fontSize: 15, lineHeight: 18, color: colors.text.secondary },
+  headHomeLabel: { flex: 1, fontFamily: 'Inter_500Medium', fontSize: 15, lineHeight: 18, color: colors.text.secondary },
+  headHomeNote: { fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.text.tertiary },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: spacing.screenPadding },
   summary: { marginBottom: spacing.md },

@@ -21,6 +21,8 @@ export interface SavedDayLike {
   id: string;
   createdAt: string;
   source: PlanViewModelInput;
+  /** The answers the day was built from, so it can be edited later. */
+  draft?: { venueId: string; params: Record<string, string> };
 }
 
 export interface SavePlanDeps {
@@ -34,6 +36,13 @@ export interface SavePlanDeps {
   /** How many times to look for the write before calling it failed (the store writes asynchronously). */
   attempts?: number;
   wait?: (ms: number) => Promise<void>;
+  /** The answers to keep with the day, so it can be edited again. */
+  draft?: SavedDayLike['draft'];
+  /**
+   * An edited saved day: the day with this id is replaced (same id, same place in the list, same created time) rather
+   * than a second one being added. Unknown ids save a new day.
+   */
+  replaceId?: string | null;
 }
 
 /** A stable key for a day's content, so the same day is recognised however it was reached. */
@@ -48,22 +57,39 @@ export function alreadySavedId(source: PlanViewModelInput, existing: readonly Sa
 
 export const SAVE_FAILED_MESSAGE = 'We couldn’t save this plan on this phone. Please try again.';
 
+/** Whether storage holds a day with this id AND this content: an edited day replacing an old one needs both. */
+function storedHolds(stored: string | null, id: string, key: string): boolean {
+  if (!stored || !stored.includes(`"id":"${id}"`)) return false;
+  try {
+    const parsed = JSON.parse(stored) as { state?: { savedDays?: SavedDayLike[] } };
+    const day = parsed.state?.savedDays?.find((d) => d.id === id);
+    return Boolean(day && planContentKey(day.source) === key);
+  } catch {
+    return false;
+  }
+}
+
 export async function savePlanDurably(source: PlanViewModelInput, deps: SavePlanDeps): Promise<SaveOutcome> {
   const already = alreadySavedId(source, deps.existing);
   if (already) return { status: 'already', id: already };
 
-  const id = (deps.newId ?? (() => `day-${Date.now()}`))();
+  const replacing = deps.replaceId ? deps.existing.find((day) => day.id === deps.replaceId) : undefined;
+  const id = replacing ? replacing.id : (deps.newId ?? (() => `day-${Date.now()}`))();
+  const createdAt = replacing ? replacing.createdAt : (deps.now ?? (() => new Date().toISOString()))();
+  const key = planContentKey(source);
   const wait = deps.wait ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   try {
-    deps.saveDay({ id, createdAt: (deps.now ?? (() => new Date().toISOString()))(), source });
+    deps.saveDay({ id, createdAt, source, ...(deps.draft ? { draft: deps.draft } : {}) });
     for (let attempt = 0; attempt < (deps.attempts ?? 10); attempt += 1) {
       const stored = await deps.readStored();
-      if (stored && stored.includes(`"id":"${id}"`)) return { status: 'saved', id };
+      if (storedHolds(stored, id, key)) return { status: 'saved', id };
       await wait(50);
     }
   } catch {
     // Storage refused (full, unavailable, private browsing): fall through to the rollback.
   }
-  deps.deleteDay(id);
+  // Roll back: a new day is removed; an edited day gets its old answer back.
+  if (replacing) deps.saveDay(replacing);
+  else deps.deleteDay(id);
   return { status: 'failed', message: SAVE_FAILED_MESSAGE };
 }

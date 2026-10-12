@@ -1,22 +1,20 @@
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import { PostVisitInbox } from '@/src/components/planning/VisitFeedback';
 import { familyUsesBuggy } from '@/src/utils/family-mobility';
-import { routinesForPlanner } from '@/src/utils/routine-schedule';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, Share, View } from 'react-native';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
+import { PageHeader } from '@/src/components/navigation/PageHeader';
 import { Button, Card, Text } from '@/src/components/ui';
 import { Chip } from '@/src/components/ui/Chip';
 import { colors, spacing } from '@/src/design-system/tokens';
-import { FamilyEditor } from '@/src/components/planning/FamilyEditor';
 import { formStyles as s } from '@/src/components/ui';
-import { PlanningAccount } from '@/src/components/planning/PlanningAccount';
 import { accountRequired } from '@/src/stores/auth-store';
 import { useFamilyStore } from '@/src/stores/family-store';
-import { localDate, localTime, usePlanningStore } from '@/src/stores/planning-store';
+import { usePlanningStore } from '@/src/stores/planning-store';
 import { resolveHomeCoordinates } from '@/src/services/places/geo-utils';
-import { PlanningFamily, clockLabel, sharePlanText } from '@/src/services/planning/planner';
+import { clockLabel, sharePlanText } from '@/src/services/planning/planner';
 import { makeSubjectResolver } from '@/src/services/planning/routine-subjects';
 import { toPlanViewModel } from '@/src/services/planning/plan-view-model';
 import { householdTitle } from '@/src/utils/household';
@@ -33,9 +31,8 @@ export default function TripsScreen() {
  const savedPlaces=useSavedStore(x=>x.items.length);
  const router=useRouter();
  const tabBarClearance=useTabBarClearance();const state=usePlanningStore();const profile=useFamilyStore(x=>x.profile);
- const [editor,setEditor]=useState<PlanningFamily|null>(null);
  const [message,setMessage]=useState('');
- const [tab,setTab]=useState<'plan'|'saved'|'families'>('plan');
+ const [tab,setTab]=useState<'plan'|'saved'>('plan');
  // "See all your plans", from a plan just saved, lands here with its id: the list opens on Plans with that row marked,
  // so the parent sees where it went.
  const params=useLocalSearchParams();
@@ -65,7 +62,6 @@ export default function TripsScreen() {
    }
    // eslint-disable-next-line react-hooks/exhaustive-deps
  },[state.hydrated,profile.homeLocation,profile.homeLatitude,profile.homeLongitude,profile.pushchair,profile.members]);
- const blank=(mine:boolean):PlanningFamily=>{const home=mine?resolveHomeCoordinates(profile):null;return {id:mine?'mine':`guest-${Date.now()}`,label:mine?'Our family':'',area:mine?profile.homeLocation:'',latitude:home?.latitude??NaN,longitude:home?.longitude??NaN,ages:mine?profile.members.filter(m=>m.role==='child').map(m=>m.age):[],...(mine&&typeof profile.maxDriveMinutes==='number'?{maxDriveMinutes:profile.maxDriveMinutes}:{}),...(mine&&profile.budgetTier?{budgetTier:profile.budgetTier}:{}),pushchair:mine?familyUsesBuggy(profile):false,required:[],routines:mine?routinesForPlanner(profile):[]};};
  async function share(text:string){try{await Share.share({message:text});}catch{setMessage('Sharing is unavailable on this device.');}}
 
  // Sharing a specific saved plan with a connected family, and tracking whether they've
@@ -140,18 +136,11 @@ export default function TripsScreen() {
    setSharingMessage(`Added "${invite.plan.name}" to your saved plans.`);
  }
  if(!state.hydrated)return <ScreenContainer><Text>Loading your plans…</Text></ScreenContainer>;
- return <ScreenContainer><ScrollView contentContainerStyle={{padding:spacing.screenPadding,paddingBottom:tabBarClearance,gap:spacing.md}} keyboardShouldPersistTaps="handled">
+ return <ScreenContainer><ScrollView contentContainerStyle={{paddingHorizontal:spacing.screenPadding,paddingTop:spacing.sm,paddingBottom:tabBarClearance,gap:spacing.md}} keyboardShouldPersistTaps="handled">
   <PostVisitInbox/>
-  <Text variant="heading1">Plans</Text><Text color={colors.text.secondary}>Days that work for everyone involved.</Text>
-  <View style={s.row}>{(['plan','saved','families'] as const).map(t=><Chip key={t} label={{plan:'Plans',saved:'Saved plans',families:'Families & routines'}[t]} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
-  {editor?<FamilyEditor key={editor.id} initial={editor} onCancel={()=>setEditor(null)} onSave={f=>{state.setFamily(f);setEditor(null);}}/>:null}
-  {tab==='families'?<>
-    <Text variant="bodySmall">Family details and saved plans stay on this device unless you choose to back them up. Friend connections share only the details you explicitly approve.</Text>
-    {state.families.map(f=><Card key={f.id} style={s.panel}><Text variant="heading3">{familyDisplayName(f.label)}</Text><Text>{f.area} · {f.ages.length?`Ages ${f.ages.join(', ')}`:'Adults only'} · {f.routines.length} routines</Text><Button label="Edit family and routines" variant="outline" onPress={()=>setEditor(f)}/><Button label="Remove from this device" variant="ghost" onPress={()=>state.removeFamily(f.id)}/></Card>)}
-    {!state.families.some(f=>f.id==='mine')?<Button label="Add your family" onPress={()=>setEditor(blank(true))}/>:null}
-    <Button label="Add a family together on this phone" variant="outline" onPress={()=>setEditor(blank(false))}/>
-    <PlanningAccount/>
-  </>:null}
+  <PageHeader title="Plans" subtitle="Days that work for everyone involved." flush testID="plans-header"/>
+  {/* Families and routines are the Families tab's job now; Plans keeps the days. */}
+  <View style={s.row}>{(['plan','saved'] as const).map(t=><Chip key={t} label={{plan:'Plans',saved:'Saved plans'}[t]} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
   {tab==='plan'?<>
    {/* The Plans tab is where plans are kept and where a plan begins from a person, not a second place to build one.
        A day is created from a place (Create a plan on any venue), so there is one way to build it, with one set of
@@ -163,6 +152,9 @@ export default function TripsScreen() {
      <Button label="Best for us today" onPress={()=>router.push('/(tabs)' as never)} testID="plans-go-home"/>
      <Button label="Explore London" variant="outline" onPress={()=>router.push('/(tabs)/explore' as never)} testID="plans-go-explore"/>
     </View>
+    {/* The shortcut to Meet halfway, which lives under Families: a day with another family begins with a place that suits both. */}
+    <Text color={colors.text.secondary}>Meeting another family? Find a place that works for both of you.</Text>
+    <Button label="Meet halfway" variant="outline" onPress={()=>router.push('/halfway' as never)} testID="plans-go-halfway"/>
    </Card>
    {/* Saved places live here now: the bottom navigation's Saved tab became Halfway, and the places a family keeps are part
        of what they plan from. */}
@@ -229,7 +221,7 @@ export default function TripsScreen() {
       <View style={s.row}>{connections.filter(c=>!sent.some(i=>i.status!=='declined'&&i.connectionId===c.id)).map(c=><Chip key={c.id} label={familyDisplayName(c.family?.label)} onPress={()=>void sendInvite(c.id,saved)}/>)}</View>
       <Button label="Cancel" variant="ghost" size="sm" onPress={()=>setInviteTargetPlanId(null)}/>
      </>:<Button label="Invite a family to this plan" variant="outline" disabled={sharingBusy} onPress={()=>setInviteTargetPlanId(saved.id)}/>}
-    </>:<Text variant="bodySmall" color={colors.text.secondary}>Connect a family under Families &amp; routines to invite them here.</Text>}
+    </>:<Text variant="bodySmall" color={colors.text.secondary}>Connect a family under Families to invite them here.</Text>}
 
     <Button label="Share plan" onPress={()=>void share(sharePlanText(saved.plan,saved.date))}/><Button label="Plan another day" variant="outline" onPress={()=>setTab('plan')}/><Button label="Delete saved plan" variant="ghost" onPress={()=>state.deletePlan(saved.id)}/>
    </Card>;})}

@@ -24,7 +24,14 @@ export interface MapPoint {
 export interface HalfwayMapInput {
   mine: MapPoint & { label: string };
   other: MapPoint & { label: string };
+  /** The place in focus: named on the map, and the one the frame is fitted to with the two areas. */
   venue: MapPoint & { name: string };
+  /**
+   * Every recommended place, in the order of the cards, so each is a numbered pin that matches its card. The venue in
+   * focus is one of them (`selectedId`); given none, only the venue is drawn.
+   */
+  venues?: (MapPoint & { id: string; name: string })[];
+  selectedId?: string;
 }
 
 export interface ProjectedMarker {
@@ -33,12 +40,33 @@ export interface ProjectedMarker {
   label: string;
 }
 
+/** A recommended place on the map: numbered as its card is, the one in focus marked. */
+export interface MapPin extends ProjectedMarker {
+  id: string;
+  number: number;
+  selected: boolean;
+  /**
+   * The diameter of the tap target centred on this pin, in pixels. 44 (the app's minimum target) where the pin has room, and
+   * never more than the distance to the nearest other pin, so two close places cannot cover each other's centre: a tap on a
+   * pin always selects that pin. Real stored places do sit this close (two galleries on the same stretch of the Thames).
+   */
+  hit: number;
+}
+
+/** The app's minimum drawn target, and the smallest tap target a crowded pin is given (the cards below are the other way in). */
+export const PIN_HIT_MAX = 44;
+export const PIN_HIT_MIN = 16;
+
 export interface HalfwayMapModel {
   width: number;
   height: number;
+  /** Where the venue's name sits beside its pin, kept inside the frame. */
+  venueLabel: { x: number; y: number; anchor: 'start' | 'middle' | 'end' };
   /** Approximate family areas: centre (on the ~1 km grid) and radius in pixels. */
   areas: (ProjectedMarker & { r: number; role: 'mine' | 'other'; labelX: number; labelY: number; labelAnchor: 'start' | 'middle' | 'end' })[];
   venue: ProjectedMarker;
+  /** The numbered pins, in card order, the selected one last so it is drawn on top where pins crowd. */
+  pins: MapPin[];
   /** Background: borough and county outlines, the Thames, main roads, as SVG path data in pixels. */
   basemap: { areas: string[]; river: string[]; motorways: string[]; roads: string[] };
   /** A scale bar a round number of kilometres long. */
@@ -64,6 +92,24 @@ export function areaLabel(familyName: string): string {
   if (/[’']s family$/i.test(name)) return name.replace(/family$/i, 'area');
   if (!name) return 'Their area';
   return `${name}${/s$/i.test(name) ? '’' : '’s'} area`;
+}
+
+/**
+ * The venue's name under its pin, centred, pulled in from the edges where it would run off; above the frame's foot. Under
+ * rather than beside, because the family areas carry their labels above their circles, so the two kinds of label sit in
+ * different bands and rarely collide.
+ */
+export function venueLabelAt(x: number, y: number, name: string, size: { width: number; height: number }): HalfwayMapModel['venueLabel'] {
+  const EDGE = 8;
+  const CHAR_PX = 6.6;
+  const half = (Math.min(name.length, 28) * CHAR_PX) / 2;
+  let anchor: 'start' | 'middle' | 'end' = 'middle';
+  let labelX = x;
+  if (x - half < EDGE) { labelX = EDGE; anchor = 'start'; }
+  else if (x + half > size.width - EDGE) { labelX = size.width - EDGE; anchor = 'end'; }
+  const below = y + 16;
+  const labelY = below > size.height - 28 ? y - 34 : below;
+  return { x: labelX, y: Math.max(14, labelY), anchor };
 }
 
 export function halfwayMapModel(input: HalfwayMapInput, size: { width: number; height: number }): HalfwayMapModel | null {
@@ -150,6 +196,25 @@ export function halfwayMapModel(input: HalfwayMapInput, size: { width: number; h
     const labelY = above < 14 ? y + r + 14 : above;
     return { x, y, r, label, role, labelX, labelY, labelAnchor };
   };
+  // Every recommended place, numbered in card order. One with no usable position is left off the map (its card still
+  // says where it is); one off the frame is drawn anyway, clipped, rather than moving the frame away from the venue in
+  // focus and the two areas.
+  const listed = (input.venues ?? []).filter(finite);
+  const pins: MapPin[] = listed.map((place, index) => ({
+    id: place.id,
+    number: index + 1,
+    x: toX(place.longitude),
+    y: toY(place.latitude),
+    label: place.name,
+    selected: place.id === input.selectedId,
+    hit: PIN_HIT_MAX,
+  }));
+  for (const pin of pins) {
+    const nearest = Math.min(...pins.filter((other) => other !== pin).map((other) => Math.hypot(other.x - pin.x, other.y - pin.y)));
+    if (Number.isFinite(nearest)) pin.hit = Math.max(PIN_HIT_MIN, Math.min(PIN_HIT_MAX, Math.floor(nearest)));
+  }
+  pins.sort((a, b) => Number(a.selected) - Number(b.selected));
+
   return {
     width: size.width,
     height: size.height,
@@ -158,8 +223,12 @@ export function halfwayMapModel(input: HalfwayMapInput, size: { width: number; h
       area(other.longitude, other.latitude, otherLabel, 'other'),
     ],
     venue: { x: toX(venue.longitude), y: toY(venue.latitude), label: input.venue.name },
+    pins,
+    venueLabel: venueLabelAt(toX(venue.longitude), toY(venue.latitude), input.venue.name, size),
     basemap,
     scale: { km, px: km * pxPerKm },
-    summary: `Map: ${input.venue.name}, with ${mineLabel.toLowerCase()} and ${otherLabel} shown as approximate areas, not addresses.`,
+    summary: pins.length > 1
+      ? `Map: ${pins.length} places numbered as the list below, ${input.venue.name} selected, with ${mineLabel.toLowerCase()} and ${otherLabel} shown as approximate areas, not addresses.`
+      : `Map: ${input.venue.name}, with ${mineLabel.toLowerCase()} and ${otherLabel} shown as approximate areas, not addresses.`,
   };
 }

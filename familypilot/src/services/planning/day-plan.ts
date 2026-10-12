@@ -32,6 +32,7 @@ import { parseClockTime, venueLocalDate, venueLocalTime } from '@/src/utils/open
 import { buildJourneyMatrix } from './journey-matrix';
 import { homeKey, sequenceDay, stopKey } from './sequencer';
 import { MIN_USEFUL_VISIT_MINUTES, VisitResolution } from './visit-duration';
+import { TIGHT_HOME_EARLIER_MINUTES, homeMargins } from './home-margin';
 import { FoodCandidate } from '@/src/types/nearby-food';
 import { TravelLeg } from '@/src/types/travel';
 
@@ -479,6 +480,55 @@ function findAlternatives(
   return found;
 }
 
+const TIGHT_EARLIER_OFFSETS_MINUTES = [TIGHT_HOME_EARLIER_MINUTES, TIGHT_HOME_EARLIER_MINUTES * 2];
+
+/**
+ * A verified earlier start for a day that gets home only just before a routine at home (home-margin.ts).
+ *
+ * Not a clash, so `findAlternatives` has nothing to clear; this is the one change the screen's "Consider leaving
+ * 15 minutes earlier" can offer in one tap, and it is offered only when the re-run really builds, creates no routine
+ * overlap the day did not already have, and leaves the routine no longer tight. Nearest offset first, one at most.
+ */
+function findEarlierForTightHome(
+  base: DayItinerary,
+  requests: StopRequest[],
+  visitMinutes: number,
+  run: RunSequence,
+): PlanAlternative[] {
+  const tight = homeMargins(base).filter((margin) => margin.tight);
+  if (tight.length === 0) return [];
+  const arrive = base.stops[0]?.arrive;
+  if (arrive === undefined) return [];
+  const baseClashes = new Set(base.routineInsights.map(clashKey));
+  const key = (m: { familyId: string; routineId: string }) => `${m.familyId}\u0000${m.routineId}`;
+
+  const consider = (kind: PlanAlternative['kind'], arriveMinutes: number, minutes: number): PlanAlternative | null => {
+    if (arriveMinutes < 0 || minutes < MIN_USEFUL_VISIT_MINUTES) return null;
+    const attempt = run(withAnchorDwell(requests, minutes), clockOf(arriveMinutes));
+    if (!attempt.ok) return null;
+    const remaining = new Set(attempt.itinerary.routineInsights.map(clashKey));
+    if ([...remaining].some((k) => !baseClashes.has(k)) || remaining.size > baseClashes.size) return null;
+    const after = new Map(homeMargins(attempt.itinerary).map((m) => [key(m), m]));
+    const resolves = tight.filter((m) => {
+      const now = after.get(key(m));
+      return now !== undefined && !now.tight;
+    });
+    if (resolves.length === 0) return null;
+    return { kind, arriveAt: clockOf(arriveMinutes), visitMinutes: minutes, resolves: resolves.map((m) => ({ familyId: m.familyId, routineId: m.routineId })) };
+  };
+  // Starting earlier keeps the whole visit, so it is tried first; a place that does not open earlier (Horniman at
+  // 10:00) refuses it, and then leaving the place earlier is the change that can be verified.
+  for (const offset of TIGHT_EARLIER_OFFSETS_MINUTES) {
+    const hit = consider('earlier', arrive - offset, visitMinutes);
+    if (hit) return [hit];
+  }
+  for (const offset of TIGHT_EARLIER_OFFSETS_MINUTES) {
+    const hit = consider('shorter', arrive, visitMinutes - offset);
+    if (hit) return [hit];
+  }
+  return [];
+}
+
 export async function generateDayPlan(
   request: DayPlanRequest,
   deps: GenerateDayPlanDeps,
@@ -561,7 +611,11 @@ export async function generateDayPlan(
     };
   }
 
-  const alternatives = findAlternatives(sequenced.itinerary, stopRequests, visit.minutes, run);
+  const alternatives = [
+    ...findAlternatives(sequenced.itinerary, stopRequests, visit.minutes, run),
+    // A day that is home only just before a routine: the verified 'leave earlier', if one builds.
+    ...findEarlierForTightHome(sequenced.itinerary, stopRequests, visit.minutes, run),
+  ];
 
   const caveats: PlanCaveat[] = [
     // Read off the structured verdict rather than the prose in `unknowns`, so the screen never

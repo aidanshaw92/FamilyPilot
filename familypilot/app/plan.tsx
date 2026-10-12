@@ -1,11 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GeneratingPlan } from '@/src/components/planning/GeneratingPlan';
 import { PlanScreenView } from '@/src/components/planning/PlanScreenView';
-import { Button, EmptyState, Text } from '@/src/components/ui';
+import { BottomSheet, Button, Chip, EmptyState, Text } from '@/src/components/ui';
+import { TimeField } from '@/src/components/ui/DateTimeField';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { profileReceipt } from '@/src/utils/profile-receipt';
 import { BackButton } from '@/src/components/ui/BackButton';
@@ -20,9 +21,12 @@ import {
 import { mealFromFoodCandidate, planStopFromVenueDetail } from '@/src/services/planning/day-plan';
 import { firstValue, planDraftFromParams, planDraftToParams } from '@/src/services/planning/plan-draft';
 import { resolvePlanParties } from '@/src/services/planning/plan-parties';
-import { PlanAdviceOptionView, PlanViewModelInput, toPlanViewModel } from '@/src/services/planning/plan-view-model';
+import { PlanAdviceOptionView, PlanLunchFacts, PlanViewModelInput, toPlanViewModel } from '@/src/services/planning/plan-view-model';
+import { TimelineEdit, planTimeline, timelineChildren } from '@/src/services/planning/plan-timeline';
 import { makeSubjectResolver } from '@/src/services/planning/routine-subjects';
-import { visitLengthToParam } from '@/src/services/planning/visit-duration';
+import { VISIT_CHOICES, VisitLength, visitLengthToParam } from '@/src/services/planning/visit-duration';
+import { FoodCandidate } from '@/src/types/nearby-food';
+import { isRouted } from '@/src/types/travel';
 import { householdTitle } from '@/src/utils/household';
 import { PLANNING_STORAGE_KEY, usePlanningStore } from '@/src/stores/planning-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -106,6 +110,10 @@ export default function PlanScreen() {
   const settingParam = firstValue(params.setting) ?? '';
   // `off`: the parent took lunch out of the day. Anything else keeps the lunch that is already known.
   const lunchParam = firstValue(params.lunch) ?? '';
+  // Which of the real places nearby is lunch: one the parent chose, else the best the discovery ranked.
+  const lunchPlaceParam = firstValue(params.lunchPlace) ?? '';
+  // Opened from a saved day's Edit: saving replaces that day rather than adding another.
+  const savedIdParam = firstValue(params.savedId) ?? '';
   const { data: venue, isPending: venuePending, isError: venueError } = useVenue(venueId);
   const { data: profile } = useFamilyProfile();
   const planningFamilies = usePlanningStore((state) => state.families);
@@ -137,10 +145,25 @@ export default function PlanScreen() {
     longitude: venue?.longitude,
     placeId: venue?.id,
   });
-  const knownLunch = useMemo(() => {
-    const best = nearbyFood.data?.candidates?.[0];
-    return best ? mealFromFoodCandidate(best) : undefined;
-  }, [nearbyFood.data]);
+  const lunchCandidates: FoodCandidate[] = useMemo(() => nearbyFood.data?.candidates ?? [], [nearbyFood.data]);
+  const chosenCandidate = useMemo(
+    () => (lunchPlaceParam ? lunchCandidates.find((c) => c.familypilotId === lunchPlaceParam) : undefined) ?? lunchCandidates[0],
+    [lunchCandidates, lunchPlaceParam],
+  );
+  const knownLunch = useMemo(() => (chosenCandidate ? mealFromFoodCandidate(chosenCandidate) : undefined), [chosenCandidate]);
+  // What is on record about that place, for the timeline: the mappers' tags and the walk the discovery worked out.
+  const mealFacts: PlanLunchFacts | undefined = useMemo(() => {
+    if (!chosenCandidate) return undefined;
+    const walk = chosenCandidate.travel.find((leg) => leg.mode === 'walk');
+    return {
+      provider: 'osm',
+      highchair: chosenCandidate.tagged.highchair,
+      changingTable: chosenCandidate.tagged.changingTable,
+      outdoorSeating: chosenCandidate.tagged.outdoorSeating,
+      cuisine: chosenCandidate.cuisine,
+      ...(walk ? { walkMinutes: walk.durationMinutes, walkSource: isRouted(walk) ? ('measured' as const) : ('estimated' as const) } : {}),
+    };
+  }, [chosenCandidate]);
   // Taking lunch out of the day is the parent's choice; the lunch that is known stays available to add back.
   const lunch = lunchOff ? undefined : knownLunch;
   /** Primitives for the generation effect's dependency list, never the objects. */
@@ -242,6 +265,7 @@ export default function PlanScreen() {
           parkingInfo: venue.parkingInfo,
           anchorImageUrl: venue.photos?.[0],
           meal: lunch,
+          mealFacts,
           lunchAvailable: Boolean(knownLunch),
           mealLookupFailed: foodLookupFailed,
         },
@@ -269,7 +293,7 @@ export default function PlanScreen() {
     // Deps are the venue object and primitives only. `parties.families` is deliberately absent: it is
     // a fresh array every time the resolver runs, and `familyIds` carries the same information
     // without the identity churn.
-  }, [venue, venueId, draft, familyIds, partiesParam, whoParam, foodPending, foodLookupFailed, lunchKey, lunch, knownLunch]);
+  }, [venue, venueId, draft, familyIds, partiesParam, whoParam, foodPending, foodLookupFailed, lunchKey, lunch, knownLunch, mealFacts]);
 
   /**
    * Households that were chosen and could not be planned for.
@@ -320,6 +344,16 @@ export default function PlanScreen() {
       saveDay,
       deleteDay,
       readStored: () => AsyncStorage.getItem(PLANNING_STORAGE_KEY),
+      // The answers this day was built from, so it can be edited later; an edit of a saved day replaces that day.
+      draft: {
+        venueId,
+        params: {
+          ...planDraftToParams(draft),
+          ...(lunchOff ? { lunch: 'off' } : {}),
+          ...(chosenCandidate && !lunchOff ? { lunchPlace: chosenCandidate.familypilotId } : {}),
+        },
+      },
+      replaceId: savedIdParam || null,
     });
     saving.current = false;
     if (outcome.status === 'failed') {
@@ -328,7 +362,7 @@ export default function PlanScreen() {
     }
     setSavedId(outcome.id);
     setSaveFor({ key: readyKey, status: outcome.status });
-  }, [saveDay, deleteDay, readySource, readyKey]);
+  }, [saveDay, deleteDay, readySource, readyKey, venueId, draft, lunchOff, chosenCandidate, savedIdParam]);
 
   // "View plan": the saved plan itself, as Plans shows it. A plain push, so the phone's own Back (Safari's swipe included)
   // and the screen's Back agree: both return here, which now reads "Already in your plans". From there, "See all your
@@ -374,6 +408,19 @@ export default function PlanScreen() {
   const toggleLunch = useCallback(() => {
     router.setParams({ lunch: lunchOff ? 'on' : 'off' } as never);
   }, [router, lunchOff]);
+
+  /**
+   * The timeline's edits. Each one changes this screen's own answers (the URL parameters), so the plan builds again
+   * through the real planner: nothing on the timeline is moved by hand.
+   */
+  const [editing, setEditing] = useState<'arrival' | 'visit' | 'lunch' | null>(null);
+  const chooseArrival = useCallback((time: string) => { setEditing(null); router.setParams({ start: time } as never); }, [router]);
+  const chooseVisit = useCallback((length: VisitLength) => { setEditing(null); router.setParams({ visit: visitLengthToParam(length) } as never); }, [router]);
+  const chooseLunch = useCallback((candidate: FoodCandidate | null) => {
+    setEditing(null);
+    if (!candidate) router.setParams({ lunch: 'off' } as never);
+    else router.setParams({ lunch: 'on', lunchPlace: candidate.familypilotId } as never);
+  }, [router]);
   const applyFailureAction = useCallback(
     (action: NonNullable<CreatePlanFailure['actions']>[number]) => {
       if (action.kind === 'start' && action.startAt) router.setParams({ start: action.startAt } as never);
@@ -395,6 +442,29 @@ export default function PlanScreen() {
           })
         : null,
     [readySource, profile, parties.families],
+  );
+
+  const tightOption = view?.routines?.tight[0]?.options[0];
+  const timeline = useMemo(
+    () =>
+      readySource
+        ? planTimeline(readySource, {
+            resolveSubject: makeSubjectResolver(profile, parties.families),
+            children: timelineChildren(profile),
+            leaveEarlier: Boolean(tightOption),
+          })
+        : [],
+    [readySource, profile, parties.families, tightOption],
+  );
+  const editRow = useCallback(
+    (edit: TimelineEdit) => {
+      if (edit === 'leave-earlier') {
+        if (tightOption) applyOption(tightOption);
+        return;
+      }
+      setEditing(edit);
+    },
+    [tightOption, applyOption],
   );
 
   if (!venueId) {
@@ -518,12 +588,15 @@ export default function PlanScreen() {
 
   if (!view) return null;
   return (
+    <>
     <PlanScreenView
       view={view}
       notices={partyNotices}
       onApplyOption={applyOption}
       onChangePlan={handleChangePlan}
       onToggleLunch={toggleLunch}
+      timeline={timeline}
+      onEditRow={editRow}
       onBack={handleBack}
       onSave={() => void handleSave()}
       saveState={saveState}
@@ -534,6 +607,133 @@ export default function PlanScreen() {
       topInset={insets.top}
       bottomInset={insets.bottom}
     />
+    <PlanEditSheet
+      editing={editing}
+      onClose={() => setEditing(null)}
+      startAt={draft.startAt}
+      visit={draft.visit}
+      lunchOff={lunchOff}
+      candidates={lunchCandidates}
+      chosenLunchId={chosenCandidate?.familypilotId ?? null}
+      anchorName={venue.name}
+      onArrival={chooseArrival}
+      onVisit={chooseVisit}
+      onLunch={chooseLunch}
+    />
+    </>
+  );
+}
+
+/** Half-hour arrival times around the one chosen, so the common change is one tap; any time is one more. */
+function shiftedTimes(startAt: string): string[] {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(startAt);
+  if (!m) return ['09:00', '09:30', '10:00', '10:30', '11:00'];
+  const base = Number(m[1]) * 60 + Number(m[2]);
+  return [-60, -30, 30, 60]
+    .map((delta) => base + delta)
+    .filter((t) => t >= 6 * 60 && t <= 20 * 60)
+    .map((t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`);
+}
+
+/**
+ * The timeline's edit sheet: the arrival time, how long at the place, or which real place lunch is (or none). Every
+ * choice re-plans the day; nothing here moves a time by hand.
+ */
+function PlanEditSheet({
+  editing,
+  onClose,
+  startAt,
+  visit,
+  lunchOff,
+  candidates,
+  chosenLunchId,
+  anchorName,
+  onArrival,
+  onVisit,
+  onLunch,
+}: {
+  editing: 'arrival' | 'visit' | 'lunch' | null;
+  onClose: () => void;
+  startAt: string;
+  visit: VisitLength;
+  lunchOff: boolean;
+  candidates: FoodCandidate[];
+  chosenLunchId: string | null;
+  anchorName: string;
+  onArrival: (time: string) => void;
+  onVisit: (length: VisitLength) => void;
+  onLunch: (candidate: FoodCandidate | null) => void;
+}) {
+  const [time, setTime] = useState(startAt);
+  useEffect(() => setTime(startAt), [startAt, editing]);
+  const title = editing === 'arrival' ? 'Change your arrival' : editing === 'visit' ? 'Change how long you stay' : 'Change lunch';
+  return (
+    <BottomSheet visible={editing !== null} onClose={onClose} accessibilityLabel={title} testID="plan-edit-sheet">
+      <ScrollView contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
+        <Text variant="heading2">{title}</Text>
+        {editing === 'arrival' ? (
+          <>
+            <Text variant="bodySmall" color={colors.text.secondary}>
+              When you want to arrive at {anchorName}. Leaving time, the routines and the time home are all worked out again.
+            </Text>
+            <View style={styles.sheetChips}>
+              {shiftedTimes(startAt).map((t) => (
+                <Chip key={t} size="small" label={t} active={t === time} onPress={() => onArrival(t)} testID={`plan-edit-arrival-${t}`} />
+              ))}
+            </View>
+            <TimeField label="Any time" a11yLabel="Arrival time" value={time} onChange={setTime} />
+            <Button label={`Arrive at ${time}`} onPress={() => onArrival(time)} disabled={!/^\d{1,2}:\d{2}$/.test(time)} testID="plan-edit-arrival-apply" />
+          </>
+        ) : null}
+        {editing === 'visit' ? (
+          <>
+            <Text variant="bodySmall" color={colors.text.secondary}>
+              How long at {anchorName}. Lunch, leaving and the time home move with it.
+            </Text>
+            <View style={styles.sheetChips}>
+              {VISIT_CHOICES.map((choice) => (
+                <Chip key={String(choice.value)} size="small" label={choice.label} active={choice.value === visit} onPress={() => onVisit(choice.value)} testID={`plan-edit-visit-${String(choice.value)}`} />
+              ))}
+            </View>
+          </>
+        ) : null}
+        {editing === 'lunch' ? (
+          <>
+            <Text variant="bodySmall" color={colors.text.secondary}>
+              {candidates.length
+                ? `Places to eat near ${anchorName}, from OpenStreetMap, nearest first. What is listed is what the mappers recorded, not something we checked.`
+                : `We found no places to eat near ${anchorName} on OpenStreetMap, so there is nothing to swap lunch for.`}
+            </Text>
+            {candidates.map((candidate) => {
+              const chosen = !lunchOff && candidate.familypilotId === chosenLunchId;
+              const walk = candidate.travel.find((leg) => leg.mode === 'walk');
+              const listed = [candidate.tagged.highchair ? 'high chairs' : null, candidate.tagged.changingTable ? 'baby changing' : null, candidate.tagged.outdoorSeating ? 'outdoor seating' : null].filter(Boolean).join(', ');
+              return (
+                <Pressable
+                  key={candidate.familypilotId}
+                  onPress={() => onLunch(candidate)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: chosen }}
+                  accessibilityLabel={`${candidate.name}${chosen ? ', chosen' : ''}`}
+                  style={[styles.lunchOption, chosen ? styles.lunchOptionChosen : null]}
+                  testID="plan-edit-lunch-option"
+                >
+                  <View style={styles.lunchOptionText}>
+                    <Text variant="heading3" numberOfLines={1}>{candidate.name}</Text>
+                    <Text variant="caption" color={colors.text.secondary}>
+                      {[candidate.cuisine ? candidate.cuisine : candidate.category.replace('_', ' '), walk ? `${isRouted(walk) ? '' : 'about '}${Math.round(walk.durationMinutes)} min walk` : `${candidate.distanceKm.toFixed(1)} km away`, listed || 'no family facilities listed'].join(' · ')}
+                    </Text>
+                  </View>
+                  {chosen ? <Text variant="caption" color={colors.action}>Chosen</Text> : null}
+                </Pressable>
+              );
+            })}
+            {!lunchOff ? <Button label="Take lunch out of the day" variant="outline" onPress={() => onLunch(null)} testID="plan-edit-lunch-off" /> : null}
+          </>
+        ) : null}
+        <Button label="Cancel" variant="ghost" onPress={onClose} />
+      </ScrollView>
+    </BottomSheet>
   );
 }
 
@@ -647,4 +847,9 @@ const styles = StyleSheet.create({
   suggestionsTitle: { marginBottom: spacing.xs },
   failureAction: { marginTop: spacing.md },
   actions: { gap: spacing.xs },
+  sheet: { paddingHorizontal: spacing.screenPadding, paddingVertical: spacing.lg, gap: spacing.md },
+  sheetChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  lunchOption: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface },
+  lunchOptionChosen: { borderColor: colors.action },
+  lunchOptionText: { flex: 1, gap: 2 },
 });
