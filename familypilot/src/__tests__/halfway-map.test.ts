@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { BASEMAP_AREAS, BASEMAP_SOURCE } from '@/src/data/london-basemap';
-import { AREA_RADIUS_M, areaLabel, coarse, halfwayMapModel } from '@/src/services/planning/halfway-map';
+import { AREA_RADIUS_M, PIN_HIT_MIN, PIN_MAX_NUDGE, PIN_SEPARATION, areaLabel, coarse, declutterPins, halfwayMapModel } from '@/src/services/planning/halfway-map';
 
 /**
  * Meet halfway's map: where your area, their area and the venue are, so a parent can SEE why a place is fair.
@@ -129,8 +129,12 @@ describe('honest and free', () => {
   it('Meet halfway shows it for the place being looked at, top recommendation first', () => {
     const screen = read('app/(tabs)/halfway.tsx');
     expect(screen).toContain('<HalfwayMap');
-    expect(screen).toContain('?? result.options[0]');
-    expect(screen).toContain('testID="halfway-show-on-map"');
+    expect(screen).toContain('?? null');
+    expect(screen).toContain('options[selectedIndex]');
+    expect(screen).toContain('<HalfwayMap');
+    // v2: the frame is fitted to every place and both areas, so selecting a pin never moves the map.
+    expect(screen).toContain('venues={mapBlocked ? undefined : options.map(');
+    expect(screen).toContain('inset={{ top: 62, bottom: sheetHeight }}');
   });
 });
 
@@ -179,5 +183,67 @@ describe('v2: the frame is stable, fits every place, and can show the two areas 
   it('the frame is no different for the same pins when no inset is given (the earlier behaviour)', () => {
     const plain = halfwayMapModel({ mine, other, venue: places[0], venues: places, selectedId: 'a' }, { width: 393, height: 220 })!;
     for (const p of [...plain.areas, ...plain.pins]) expect(p.y).toBeGreaterThan(0);
+  });
+});
+
+describe('v2: places that sit on top of each other are nudged apart, never far from where they are', () => {
+  const mine = { latitude: 51.55, longitude: -0.18, label: 'Our family' };
+  const other = { latitude: 51.54, longitude: -0.05, label: 'Hannah’s family' };
+  // The real catalogue case: stored places in one neighbourhood, a few hundred metres apart.
+  const cluster = [
+    { id: 'a', name: 'Russell Square', latitude: 51.5213, longitude: -0.1260 },
+    { id: 'b', name: 'The British Museum', latitude: 51.5194, longitude: -0.1270 },
+    { id: 'c', name: 'The Postal Museum', latitude: 51.5230, longitude: -0.1180 },
+    { id: 'd', name: 'The National Gallery', latitude: 51.5089, longitude: -0.1283 },
+    { id: 'e', name: 'Somerset House', latitude: 51.5110, longitude: -0.1170 },
+  ];
+  const model = halfwayMapModel({ mine, other, venue: cluster[0], venues: cluster, selectedId: 'a' }, { width: 393, height: 600, inset: { top: 60, bottom: 260 } })!;
+
+  it('no two pins overlap, so every pin can be tapped', () => {
+    for (const a of model.pins) for (const b of model.pins) {
+      if (a === b) continue;
+      expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(PIN_SEPARATION - 2);
+      expect(a.hit / 2 + b.hit / 2).toBeLessThanOrEqual(Math.hypot(a.x - b.x, a.y - b.y) + 1e-6);
+    }
+    for (const pin of model.pins) expect(pin.hit).toBeGreaterThanOrEqual(PIN_HIT_MIN);
+  });
+
+  it('each pin stays within the nudge of its true position', () => {
+    const exact = halfwayMapModel({ mine, other, venue: cluster[0], venues: cluster.map((p) => ({ ...p })), selectedId: 'a' }, { width: 393, height: 600, inset: { top: 60, bottom: 260 } })!;
+    // The same frame without the nudge: pins that were already apart do not move at all.
+    const alone = declutterPins([{ x: 10, y: 10 }, { x: 200, y: 300 }]);
+    expect(alone).toEqual([{ x: 10, y: 10 }, { x: 200, y: 300 }]);
+    expect(exact.pins).toHaveLength(5);
+    const pile = declutterPins(Array.from({ length: 5 }, () => ({ x: 100, y: 100 })));
+    for (const p of pile) expect(Math.hypot(p.x - 100, p.y - 100)).toBeLessThanOrEqual(PIN_MAX_NUDGE + 1e-6);
+  });
+
+  it('the selected place’s name sits above its pin, clear of the pins that cluster below it', () => {
+    const label = model.venueLabel!;
+    const selected = model.pins.find((p) => p.selected)!;
+    expect(label.y).toBeLessThan(selected.y);
+  });
+});
+
+describe('v2: two areas close together keep their labels apart', () => {
+  const near = halfwayMapModel(
+    { mine: { latitude: 51.55, longitude: -0.1, label: 'Our family' }, other: { latitude: 51.55, longitude: -0.07, label: 'Hannah’s family' } },
+    { width: 393, height: 600, inset: { top: 60, bottom: 260 } },
+  )!;
+  it('no label sits on another, and every label is inside the frame', () => {
+    const span = (a: (typeof near.areas)[number]): [number, number] => {
+      const w = a.label.length * 6.6;
+      return a.labelAnchor === 'start' ? [a.labelX, a.labelX + w] : a.labelAnchor === 'end' ? [a.labelX - w, a.labelX] : [a.labelX - w / 2, a.labelX + w / 2];
+    };
+    const [a, b] = near.areas;
+    const [al, ar] = span(a);
+    const [bl, br] = span(b);
+    const sameRow = Math.abs(a.labelY - b.labelY) < 16;
+    expect(!sameRow || ar <= bl || br <= al).toBe(true);
+    for (const [l, r] of [[al, ar], [bl, br]]) {
+      expect(l).toBeGreaterThanOrEqual(0);
+      expect(r).toBeLessThanOrEqual(393);
+    }
+    expect(near.areas.map((x) => x.role)).toEqual(['mine', 'other']);
   });
 });

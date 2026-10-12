@@ -62,6 +62,57 @@ export interface MapPin extends ProjectedMarker {
 /** The app's minimum drawn target, and the smallest tap target a crowded pin is given (the cards below are the other way in). */
 export const PIN_HIT_MAX = 44;
 export const PIN_HIT_MIN = 16;
+/**
+ * Places that sit almost on top of each other (stored places in one neighbourhood are often a few hundred metres apart,
+ * which is a few pixels on a map that holds both families) would draw as one pin with the rest hidden beneath it. Pins closer
+ * than `PIN_SEPARATION` px are therefore nudged apart, never by more than `PIN_MAX_NUDGE` px from where the place is. At the
+ * scale of these maps that is a few hundred metres: the number beside the pin and its card say which place it is, and the
+ * card's own details say exactly where.
+ */
+export const PIN_SEPARATION = 26;
+export const PIN_MAX_NUDGE = 24;
+
+/** Spreads overlapping pins apart (see PIN_SEPARATION), deterministically, keeping each within PIN_MAX_NUDGE px of its true position. */
+export function declutterPins<T extends { x: number; y: number }>(pins: readonly T[]): T[] {
+  const origin = pins.map((pin) => ({ x: pin.x, y: pin.y }));
+  const out = pins.map((pin) => ({ ...pin }));
+  for (let pass = 0; pass < 40; pass += 1) {
+    let moved = false;
+    for (let i = 0; i < out.length; i += 1) {
+      for (let j = i + 1; j < out.length; j += 1) {
+        let dx = out[j].x - out[i].x;
+        let dy = out[j].y - out[i].y;
+        let d = Math.hypot(dx, dy);
+        if (d >= PIN_SEPARATION) continue;
+        if (d < 1e-6) {
+          // Exactly on top of each other: split along a direction that depends on the pair, so it is stable.
+          const angle = ((i * 7 + j * 13) % 12) * (Math.PI / 6);
+          dx = Math.cos(angle);
+          dy = Math.sin(angle);
+          d = 1;
+        }
+        const push = (PIN_SEPARATION - d) / 2;
+        const ux = dx / d;
+        const uy = dy / d;
+        out[i].x -= ux * push;
+        out[i].y -= uy * push;
+        out[j].x += ux * push;
+        out[j].y += uy * push;
+        moved = true;
+      }
+      // Never further from the true place than the nudge allows.
+      const offX = out[i].x - origin[i].x;
+      const offY = out[i].y - origin[i].y;
+      const off = Math.hypot(offX, offY);
+      if (off > PIN_MAX_NUDGE) {
+        out[i].x = origin[i].x + (offX / off) * PIN_MAX_NUDGE;
+        out[i].y = origin[i].y + (offY / off) * PIN_MAX_NUDGE;
+      }
+    }
+    if (!moved) break;
+  }
+  return out;
+}
 
 export interface HalfwayMapModel {
   width: number;
@@ -113,8 +164,10 @@ export function venueLabelAt(x: number, y: number, name: string, size: { width: 
   let labelX = x;
   if (x - half < EDGE) { labelX = EDGE; anchor = 'start'; }
   else if (x + half > size.width - EDGE) { labelX = size.width - EDGE; anchor = 'end'; }
-  const below = y + 16;
-  const labelY = below > size.height - 28 ? y - 34 : below;
+  // Above the pin by default (the areas' own labels sit above their circles, so the two bands rarely meet, and a cluster of
+  // pins sits below its label rather than under it); under it only where there is no room above.
+  const above = y - 26;
+  const labelY = above < 40 ? y + 16 : above;
   return { x: labelX, y: Math.max(14, labelY), anchor };
 }
 
@@ -126,6 +179,35 @@ export interface HalfwayMapSize {
   width: number;
   height: number;
   inset?: { top?: number; bottom?: number };
+}
+
+type AreaLabelled = HalfwayMapModel['areas'][number];
+const textWidth = (label: string) => label.length * 6.6;
+const labelSpan = (a: AreaLabelled): [number, number] => {
+  const w = textWidth(a.label);
+  return a.labelAnchor === 'start' ? [a.labelX, a.labelX + w] : a.labelAnchor === 'end' ? [a.labelX - w, a.labelX] : [a.labelX - w / 2, a.labelX + w / 2];
+};
+
+/**
+ * Two areas close together (two families in neighbouring districts, with the map held at its minimum span) would print their
+ * labels on top of each other. The left one's label then hangs to the left of its circle and the right one's to the right; if
+ * they still meet (the circles are almost on top of each other) the right one's goes below its circle.
+ */
+export function separateAreaLabels(a: AreaLabelled, b: AreaLabelled, width: number): AreaLabelled[] {
+  const GAP = 8;
+  const overlaps = (x: AreaLabelled, y: AreaLabelled) => {
+    const [xl, xr] = labelSpan(x);
+    const [yl, yr] = labelSpan(y);
+    return xl < yr + GAP && yl < xr + GAP && Math.abs(x.labelY - y.labelY) < 16;
+  };
+  if (!overlaps(a, b)) return [a, b];
+  const [left, right] = a.x <= b.x ? [a, b] : [b, a];
+  const L: AreaLabelled = { ...left, labelAnchor: 'end', labelX: Math.max(textWidth(left.label) + 8, left.x + left.r) };
+  const R: AreaLabelled = { ...right, labelAnchor: 'start', labelX: Math.min(width - 8 - textWidth(right.label), right.x - right.r) };
+  const fixed: [AreaLabelled, AreaLabelled] = overlaps(L, R)
+    ? [L, { ...right, labelAnchor: 'middle', labelX: Math.min(width - 8 - textWidth(right.label) / 2, Math.max(8 + textWidth(right.label) / 2, right.x)), labelY: right.y + right.r + 14 }]
+    : [L, R];
+  return a === left ? fixed : [fixed[1], fixed[0]];
 }
 
 export function halfwayMapModel(input: HalfwayMapInput, size: HalfwayMapSize): HalfwayMapModel | null {
@@ -218,28 +300,28 @@ export function halfwayMapModel(input: HalfwayMapInput, size: HalfwayMapSize): H
   };
   // Every recommended place, numbered in card order. One with no usable position is left off the map (its card still
   // says where it is).
-  const pins: MapPin[] = listed.map((place, index) => ({
-    id: place.id,
-    number: index + 1,
-    x: toX(place.longitude),
-    y: toY(place.latitude),
-    label: place.name,
-    selected: place.id === input.selectedId,
-    hit: PIN_HIT_MAX,
-  }));
+  const pins: MapPin[] = declutterPins(
+    listed.map((place, index) => ({
+      id: place.id,
+      number: index + 1,
+      x: toX(place.longitude),
+      y: toY(place.latitude),
+      label: place.name,
+      selected: place.id === input.selectedId,
+      hit: PIN_HIT_MAX,
+    })),
+  );
   for (const pin of pins) {
     const nearest = Math.min(...pins.filter((other) => other !== pin).map((other) => Math.hypot(other.x - pin.x, other.y - pin.y)));
     if (Number.isFinite(nearest)) pin.hit = Math.max(PIN_HIT_MIN, Math.min(PIN_HIT_MAX, Math.floor(nearest)));
   }
   pins.sort((a, b) => Number(a.selected) - Number(b.selected));
 
+  const areas = separateAreaLabels(area(mine.longitude, mine.latitude, mineLabel, 'mine'), area(other.longitude, other.latitude, otherLabel, 'other'), size.width);
   return {
     width: size.width,
     height: size.height,
-    areas: [
-      area(mine.longitude, mine.latitude, mineLabel, 'mine'),
-      area(other.longitude, other.latitude, otherLabel, 'other'),
-    ],
+    areas,
     venue: venue && input.venue ? { x: toX(venue.longitude), y: toY(venue.latitude), label: input.venue.name } : null,
     pins,
     venueLabel: venue && input.venue ? venueLabelAt(toX(venue.longitude), toY(venue.latitude), input.venue.name, { ...size, height: size.height - insetBottom }) : null,

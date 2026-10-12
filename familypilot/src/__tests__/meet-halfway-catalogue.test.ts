@@ -222,7 +222,9 @@ describe('the screen asks the catalogue between the homes, not Home', () => {
     expect(source).toContain('useBetweenVenues(');
     expect(source).toMatch(/useNearbyVenues\(\{ enabled: between\.isError \}\)/);
     expect(source).toContain('const venues = between.data ??');
-    expect(source).toContain('halfway-fallback');
+    expect(source).toContain('usingHomeFallback');
+    expect(source).toContain('<FallbackBanner');
+    expect(readFileSync(resolve(process.cwd(), 'src/components/halfway/States.tsx'), 'utf8')).toContain('testID="halfway-fallback"');
   });
 });
 

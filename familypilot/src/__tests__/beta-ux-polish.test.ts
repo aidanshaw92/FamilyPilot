@@ -164,7 +164,7 @@ describe('home only just before a nap is said as tight, never as a tick', () => 
 });
 
 describe('the Meet halfway map names the place beside its pin', () => {
-  it('places the label inside the frame, under the pin, pulled in from an edge where it would run off', () => {
+  it('places the label inside the frame, above the pin, pulled in from an edge where it would run off', () => {
     const model = halfwayMapModel(
       { mine: { latitude: 51.54, longitude: -0.14, label: 'Our family' }, other: { latitude: 51.44, longitude: -0.06, label: 'Hannah’s family' }, venue: { latitude: 51.49, longitude: -0.1, name: 'Horniman Museum and Gardens' } },
       { width: 345, height: 220 },
@@ -174,7 +174,7 @@ describe('the Meet halfway map names the place beside its pin', () => {
     expect(model.venueLabel!.y).toBeGreaterThanOrEqual(14);
     expect(model.venueLabel!.y).toBeLessThanOrEqual(220 - 30);
     expect(model.venueLabel!.anchor).toBe('middle');
-    expect(model.venueLabel!.y).toBe(model.venue!.y + 16);
+    expect(model.venueLabel!.y).toBe(model.venue!.y - 26);
     // Against the right edge the label hangs inwards rather than running off the map.
     const edge = halfwayMapModel(
       { mine: { latitude: 51.54, longitude: -0.3, label: 'Our family' }, other: { latitude: 51.44, longitude: -0.25, label: 'Hannah’s family' }, venue: { latitude: 51.49, longitude: -0.02, name: 'Discover Children’s Story Centre' } },
@@ -189,8 +189,11 @@ describe('one header for the section pages', () => {
   const root = join(__dirname, '..', '..');
   const read = (path: string) => readFileSync(join(root, path), 'utf8');
 
-  it('Halfway, Plans, Profile, Families and Saved all render PageHeader; Home and Explore keep their approved headers', () => {
-    for (const screen of ['app/(tabs)/halfway.tsx', 'app/(tabs)/trips.tsx', 'app/(tabs)/profile.tsx', 'app/(tabs)/families.tsx', 'app/saved.tsx']) {
+  it('Plans, Profile, Families and Saved all render PageHeader; Home and Explore keep their approved headers; Meet halfway draws the approved v2 header', () => {
+    // Meet halfway's approved v2 frames have no brand row: the title sits straight under the status bar, above the selector.
+    expect(read('app/(tabs)/halfway.tsx')).toContain('<HalfwayHeader');
+    expect(read('src/components/halfway/chrome.tsx')).toContain('Meet halfway');
+    for (const screen of ['app/(tabs)/trips.tsx', 'app/(tabs)/profile.tsx', 'app/(tabs)/families.tsx', 'app/saved.tsx']) {
       expect(read(screen), screen).toContain('<PageHeader');
     }
     for (const screen of ['app/(tabs)/index.tsx', 'app/(tabs)/explore.tsx']) {
@@ -204,7 +207,7 @@ describe('one header for the section pages', () => {
   it('Meet halfway says what it ranks by and lets a card focus the map', () => {
     const screen = read('app/(tabs)/halfway.tsx');
     expect(screen).toContain('not by the midpoint between your homes');
-    expect(screen).toContain('testID="halfway-option-head"');
+    expect(read('src/components/halfway/ListCard.tsx')).toContain('testID="halfway-option-head"');
     expect(screen).toContain('testID="halfway-ranking-note"');
     const map = read('src/components/planning/HalfwayMap.tsx');
     expect(map).toContain('testID="halfway-map-legend"');

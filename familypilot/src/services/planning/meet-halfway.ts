@@ -52,7 +52,7 @@ export const MAX_OPTIONS = 5;
 /** A gap this small is "about the same": not worth a sentence about who has further to go. */
 const EVEN_GAP_MINUTES = 3;
 /** Up to this, the split is "within N minutes of each other"; beyond it the gap is stated plainly. */
-const CLOSE_GAP_MINUTES = 10;
+export const CLOSE_GAP_MINUTES = 10;
 
 /** How even the journeys are, in fairness words. Never says who travels less. */
 export function fairnessLine(gap: number): string {

@@ -169,16 +169,20 @@ describe('Meet halfway, map first', () => {
 
   it('the screen keeps the map at the top with a Map / List control, and syncs cards and pins both ways', () => {
     const screen = read('app/(tabs)/halfway.tsx');
-    expect(screen).toContain('stickyHeaderIndices={hasMap ? [2] : undefined}');
-    expect(screen).toContain('testID="halfway-mode-map"');
-    expect(screen).toContain('testID="halfway-mode-list"');
-    expect(screen).toContain('testID="halfway-selected-name"');
-    expect(screen).toContain("onSelectPin={(id) => choose(id, 'pin')}");
-    expect(screen).toContain("onSelect={(id) => choose(id, 'card')}");
+    const chrome = read('src/components/halfway/chrome.tsx');
+    const sheet = read('src/components/halfway/Sheet.tsx');
+    // v2: the map fills the screen behind a collapsible sheet; the Map / List control sits over it.
+    expect(screen).toContain('<MapListToggle');
+    expect(chrome).toContain('testID={`halfway-mode-${key}`}');
+    expect(sheet).toContain('testID="halfway-selected-name"');
+    expect(screen).toContain('onSelectPin={(id) => setSelectedId(id)}');
+    expect(screen).toContain('onSelect={() => choose(option.venue.id)}');
     // Each family's journey is said separately, estimated; the ranking is explained; no score is printed.
-    expect(screen).toContain("travelTimeLabel(journey.minutes, 'estimated')");
+    expect(read('src/services/planning/halfway-view.ts')).toContain("travelTimeLabel(journey.minutes, 'estimated')");
     expect(screen).toContain('not by the midpoint between your homes');
-    expect(screen).not.toMatch(/option\.score|\{score\}|points/);
+    for (const file of [screen, sheet, read('src/components/halfway/ListCard.tsx'), read('src/components/halfway/parts.tsx')]) {
+      expect(file).not.toMatch(/option\.score|\{score\}|points/);
+    }
     const map = read('src/components/planning/HalfwayMap.tsx');
     expect(map).toContain('testID={pin.selected ? \'halfway-map-venue\' : `halfway-map-pin-${pin.number}`}');
     // The pins are plain pressables over the SVG: a pressable inside the SVG does not render on the web build.

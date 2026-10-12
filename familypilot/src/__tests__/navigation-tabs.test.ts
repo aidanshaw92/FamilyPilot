@@ -135,9 +135,11 @@ describe('Meet halfway, its own tab', () => {
     expect(halfway).toContain('testID="halfway-no-families"');
   });
 
-  it('folds When and Start into one line once a family is chosen, so the map comes first', () => {
-    expect(halfway).toContain('testID="halfway-when-summary"');
-    expect(halfway).toContain('testID="halfway-when-change"');
+  it('shows who and when on one selector that opens the edit sheet, so the map comes first', () => {
+    const chrome = read('src/components/halfway/chrome.tsx');
+    expect(chrome).toContain('testID="halfway-selector"');
+    expect(chrome).toContain('testID="halfway-edit"');
+    expect(halfway).toContain('<HalfwayEditSheet');
   });
 
   it('a link naming a family still selects them, even when the screen is already open', () => {
@@ -166,7 +168,8 @@ describe('the brand row on every main screen', () => {
   });
 
   it('the section pages use the one PageHeader, which draws the same lockup', () => {
-    for (const file of ['app/(tabs)/families.tsx', 'app/(tabs)/trips.tsx', 'app/(tabs)/profile.tsx', 'app/(tabs)/halfway.tsx', 'app/saved.tsx']) {
+    // Meet halfway is the exception: its approved v2 frames carry the title straight under the status bar (HalfwayHeader).
+    for (const file of ['app/(tabs)/families.tsx', 'app/(tabs)/trips.tsx', 'app/(tabs)/profile.tsx', 'app/saved.tsx']) {
       expect(read(file), file).toContain('<PageHeader');
     }
     expect(read('src/components/navigation/PageHeader.tsx')).toContain('<BrandLockup onBack={onBack} action={action} flush />');
