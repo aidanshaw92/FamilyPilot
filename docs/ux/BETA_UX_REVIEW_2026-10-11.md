@@ -262,3 +262,42 @@ provider, no request.
 - Restaurant alternatives exist only where the venue's nearby-food discovery found candidates; where it found none the
   sheet says so and offers nothing invented.
 - Demonstrated against the fixture build (synthetic venues, in-memory accounts); nothing here was run against production.
+
+## 9. Pre-merge verification (12 October 2026)
+
+**CI capture failure: a real regression, fixed, baselines not weakened.** The visual-regression `capture` job failed at
+393×852 with iPhone insets. The brand row pushed Home's greeting down about 70 points, and Home's fit logic recovered the
+room by dropping "Picked for ..." and the "Best for your family" heading (measured: both absent at 393×852 and 390×844 with
+insets). The frame checks were left strict. The brand row is now 36 points (46 with the air above it), Home and Explore
+place it identically to the section pages, and `FIT_THRESHOLD` is 0.8 (was 0.9) so the deck, about 11 per cent shorter on
+that phone, gives up the room instead of the header. Every step of the workflow passes locally (frame geometry 89/89,
+element diff, deck gestures 11/11, plan screens 56/56, journey audit 301/301, onboarding, provider credits 13/13) and the
+job is green on the PR. The phase 2 audit's committed captures were regenerated; they show the five tabs and the brand row.
+
+**Editable timeline against persisted storage** (`scripts/verify-timeline-persistence.mjs`, 21 checks): arrival, length and
+restaurant edits re-plan; the saved day holds the answers it was built from; a hard refresh and a new browser context seeded
+only from the saved storage state both reopen it with the edited restaurant; an unsaved edit leaves the stored day untouched;
+saving after another edit updates the same id and created time in place (one day, never two); re-saving unchanged adds
+nothing; no child or parent name is in the stored plan; zero Google requests.
+
+**Meet halfway on real stored data** (`scripts/verify-halfway-real-catalogue.mjs`): 24 real `place_records` rows, read-only,
+through the real first pass, two synthetic households. Pins match cards; card selects pin and pin selects card; each family's
+journey is its own estimated line; no score; areas only; choosing the other family changes the answer; a place the stored
+hours say is shut on the chosen day is not offered (Hackney City Farm and Museum of the Home appear on a Saturday and not on a
+Monday); zero Google requests. This found a real bug the synthetic data hid: two close places (Imperial War Museum and Tate
+Modern) drew pins 22 px apart and their 44 pt tap targets overlapped, so tapping pin 3 selected pin 4. Each pin's tap target
+is now never larger than the gap to its nearest neighbour (`halfway-map.ts`, tested).
+
+**Isolation and deployment.** `main` is still `bc19ba5`; the PR is seven commits on it, none from the stale photography
+branch; no workflow, `vercel.json`, API, server, package, migration or environment file is touched. Every GitHub deployment
+from the branch is environment Preview; production's last deployment is main's `bc19ba5` (9 October). Vercel's API refused
+this session (403) and the preview URL answers 403 behind Vercel's own protection, so this is read from GitHub, not Vercel.
+
+**Not verified: the Families journey with two real hosted accounts.** The only Supabase project is production; by the owner's
+recorded decision previews never have accounts (the API answers 503 on Preview) and "Confirm email" stays on; this sandbox
+cannot reach the production or preview hosts (network policy) and, rightly, holds no service-role key. A hosted journey
+would create real rows in production. What was checked instead: the 72-check account and invitation journey against the
+real connection handlers with an in-memory database; and, read-only on the hosted project, that `planning_connections` and
+`plan_invites` hold 0 rows, have RLS on and no client policy (server-only through the API), and that the security advisors
+report no error on them (the only warning is leaked-password protection being off, already noted in
+`docs/ACCOUNTS_AND_CONNECTIONS.md`). Options for the owner are in the PR conversation.
