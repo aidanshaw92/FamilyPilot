@@ -171,11 +171,18 @@ interface NavGlyphProps {
   focused: boolean;
   /** What a filled shape is filled with (the colour of the disc behind the active tab). */
   fill: string;
+  /**
+   * The side of the box to draw in, in points. By default the frame's whole 120px box (about 55pt, mostly empty margin); a
+   * smaller box shows the same icon at the same size, cropped to its middle, so the drawing never overhangs the tab.
+   */
+  size?: number;
 }
 
-export function NavGlyph({ tab, variant, color, focused, fill }: NavGlyphProps) {
+export function NavGlyph({ tab, variant, color, focused, fill, size }: NavGlyphProps) {
   const { cx, cy } = NAV_CENTRE[variant];
   const centre = cx[tab];
+  // The part of the frame's 120px box that `size` points show, at the frame's scale.
+  const view = size ? (NAV_BOX_PX * size) / NAV_GLYPH_BOX[variant] : NAV_BOX_PX;
   const common = { stroke: color, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
   const sw = variant === 'home' ? 4 : 4.5;
 
@@ -184,9 +191,9 @@ export function NavGlyph({ tab, variant, color, focused, fill }: NavGlyphProps) 
   return (
     <View pointerEvents="none">
       <Svg
-        width={NAV_GLYPH_BOX[variant]}
-        height={NAV_GLYPH_BOX[variant]}
-        viewBox={`${centre - NAV_BOX_PX / 2} ${cy - NAV_BOX_PX / 2} ${NAV_BOX_PX} ${NAV_BOX_PX}`}
+        width={size ?? NAV_GLYPH_BOX[variant]}
+        height={size ?? NAV_GLYPH_BOX[variant]}
+        viewBox={`${centre - view / 2} ${cy - view / 2} ${view} ${view}`}
         fill="none"
         {...HIDDEN}
       >

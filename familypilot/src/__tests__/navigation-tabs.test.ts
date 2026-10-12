@@ -53,8 +53,25 @@ describe('the bottom navigation', () => {
     expect(floatingTabBarLayout(5, 34, 'explore').width).toBeCloseTo(310.1, 1);
   });
 
+  it('carries each tab’s title as a visible label, still a 51 x 66 touch target and still inside every phone width', () => {
+    for (const width of [360, 375, 390, 393, 402, 414, 430, 440]) {
+      for (const variant of ['home', 'explore'] as const) {
+        const pill = floatingTabBarLayout(6, 34, variant, true);
+        expect(pill.height).toBe(66);
+        expect(pill.tabWidth).toBeGreaterThanOrEqual(44);
+        expect(pill.width + 16).toBeLessThanOrEqual(width);
+        // The disc sits behind the icon alone, leaving room for a 10pt word (12pt line) under it, inside the capsule.
+        expect(pill.indicator + 2 + 12).toBeLessThanOrEqual(pill.height - 8);
+      }
+    }
+    const bar = read('src/components/navigation/FloatingTabBar.tsx');
+    expect(bar).toContain('testID={`tab-label-${route.name}`}');
+    expect(bar).toContain('numberOfLines={1}');
+    expect(bar).toContain('floatingTabBarLayout(routes.length, insets.bottom, variant, true)');
+  });
+
   it('the screens clear the six-tab bar', () => {
-    expect(read('src/hooks/use-tab-bar-clearance.ts')).toContain('floatingTabBarLayout(6, insets.bottom)');
+    expect(read('src/hooks/use-tab-bar-clearance.ts')).toContain("floatingTabBarLayout(6, insets.bottom, 'home', true)");
   });
 
   it('every tab exposes its title as an accessibility label and as a tab with a selected state', () => {

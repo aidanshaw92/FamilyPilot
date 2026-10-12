@@ -50,6 +50,15 @@ export const NAV_VARIANTS: Record<NavVariant, NavVariantMetrics> = {
 export const FRAME_TAB_COUNT = 5;
 export const SIX_TAB_METRICS = { tabWidth: 51, padX: 6, indicator: 45 } as const;
 
+/**
+ * LABELLED. The frames draw icons alone, which is fine for five familiar tabs and not for six that a new parent has never
+ * seen (Families and Profile are both "people", Halfway is a pin on a dotted line). The bar therefore carries a short word
+ * under each icon. The pill keeps its shape, colour, glyphs and mint disc; it is 66pt tall instead of 60 to hold the word,
+ * the disc shrinks to sit behind the icon alone, and the icon is lifted to make room. Pitch, padding and the 44pt touch
+ * minimum are unchanged (51 x 66 per tab at six tabs).
+ */
+export const LABELLED_METRICS = { height: 66, indicator: { home: 34, explore: 38 } as Record<NavVariant, number>, labelSize: 10 } as const;
+
 /** Which variant a route draws. Explore has its own frame; everything else uses Home's. */
 export function navVariantForRoute(routeName: string | undefined): NavVariant {
   return routeName === 'explore' ? 'explore' : 'home';
@@ -98,6 +107,7 @@ export function floatingTabBarLayout(
   tabCount: number,
   bottomInset: number,
   variant: NavVariant = 'home',
+  labelled = false,
 ): FloatingTabBarLayout {
   const tabs = Math.max(1, tabCount);
   const frame = NAV_VARIANTS[variant];
@@ -105,17 +115,18 @@ export function floatingTabBarLayout(
     ? { ...frame, tabWidth: Math.min(frame.tabWidth, SIX_TAB_METRICS.tabWidth), padX: Math.min(frame.padX, SIX_TAB_METRICS.padX), indicator: Math.min(frame.indicator, SIX_TAB_METRICS.indicator) }
     : frame;
   const bottomFor = (v: NavVariant) => Math.max(MIN_BOTTOM_OFFSET, bottomInset + NAV_VARIANTS[v].lift);
+  const heightOf = (v: NavVariant) => (labelled ? LABELLED_METRICS.height : NAV_VARIANTS[v].height);
   const clearance = Math.max(
-    ...(Object.keys(NAV_VARIANTS) as NavVariant[]).map((v) => bottomFor(v) + NAV_VARIANTS[v].height + CONTENT_GAP),
+    ...(Object.keys(NAV_VARIANTS) as NavVariant[]).map((v) => bottomFor(v) + heightOf(v) + CONTENT_GAP),
   );
 
   return {
     variant,
     width: m.padX * 2 + tabs * m.tabWidth,
-    height: m.height,
+    height: heightOf(variant),
     tabWidth: m.tabWidth,
     padX: m.padX,
-    indicator: m.indicator,
+    indicator: labelled ? LABELLED_METRICS.indicator[variant] : m.indicator,
     icon: m.icon,
     bottom: bottomFor(variant),
     contentClearance: clearance,

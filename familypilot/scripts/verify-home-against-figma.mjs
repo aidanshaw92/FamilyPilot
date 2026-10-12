@@ -204,6 +204,11 @@ for (const run of RUNS) {
       // Everything drawn inside a tab, whatever element type the icon font renders as. The bug
       // this replaced put the label's line box below the bar, so the assertion is deliberately
       // "nothing a tab draws escapes the pill" rather than "the icon is in the right place".
+      // The word under each icon: its box, its natural text width against the tab, and its size.
+      tabLabels: tabs.map((t) => {
+        const el = t.querySelector('[data-testid^="tab-label-"]');
+        return el ? { text: el.textContent, ...box(el), natural: +naturalWidth(el).toFixed(2), fontSize: parseFloat(getComputedStyle(el).fontSize), tabLeft: t.getBoundingClientRect().left, tabRight: t.getBoundingClientRect().right } : null;
+      }),
       tabContents: tabs.flatMap((t) =>
         [...t.querySelectorAll('*')]
           .map(box)
@@ -240,10 +245,12 @@ for (const run of RUNS) {
   // SIX TABS (Home, Explore, Families, Halfway, Plans, Profile) are wider than the frame's pitch allows on a 360pt phone, so
   // above five tabs the pitch is 51pt with 6pt padding (SIX_TAB_METRICS): the same 60pt capsule, the same glyphs, the
   // same disc. Five tabs still match the frame exactly. Documented in floating-tab-bar-layout.ts.
+  // LABELLED: each tab carries its title under the icon (a new parent cannot be expected to know six icons), so the capsule is
+  // 66pt tall instead of the frame's 60. Width, pitch and the glyphs are unchanged. See LABELLED_METRICS.
   const tabCount = m.tabs.length;
   const expectedPillWidth = tabCount > 5 ? 6 * 2 + tabCount * 51 : 7.35 * 2 + tabCount * 55;
-  check(run.name, 'pill matches the frame size', near(m.pill.width, expectedPillWidth, 1) && near(m.pill.height, 60, 1),
-    `${m.pill.width}x${m.pill.height}, expected ${expectedPillWidth}x60 for ${tabCount} tabs`);
+  check(run.name, 'pill matches the frame width, with room for a label (66 tall)', near(m.pill.width, expectedPillWidth, 1) && near(m.pill.height, 66, 1),
+    `${m.pill.width}x${m.pill.height}, expected ${expectedPillWidth}x66 for ${tabCount} tabs`);
   check(run.name, 'pill is centred', near((m.pill.left + m.pill.right) / 2, run.width / 2),
     `centre ${((m.pill.left + m.pill.right) / 2).toFixed(1)} of ${run.width}`);
   check(run.name, 'whole pill is on screen', m.pill.bottom <= m.viewport.height && m.pill.top >= 0 && m.pill.left >= 0 && m.pill.right <= run.width,
@@ -253,6 +260,11 @@ for (const run of RUNS) {
   check(run.name, 'every tab sits inside the pill',
     m.tabs.every((t) => t.top >= m.pill.top - 0.5 && t.bottom <= m.pill.bottom + 0.5 && t.left >= m.pill.left - 0.5 && t.right <= m.pill.right + 0.5),
     m.tabs.map((t) => `${t.label} ${t.height}`).join(', '));
+  check(run.name, 'every tab carries its title as a visible label', m.tabLabels.every(Boolean) && m.tabLabels.length === tabCount,
+    m.tabLabels.map((l) => l?.text).join(' · '));
+  check(run.name, 'every label is whole inside its own tab, at 10pt or more, with a gap to its neighbour',
+    m.tabLabels.every((l, i) => l && l.natural <= l.width + 0.5 && l.left >= l.tabLeft - 0.5 && l.right <= l.tabRight + 0.5 && l.fontSize >= 10 && (i === 0 || m.tabLabels[i - 1].right <= l.left)),
+    m.tabLabels.map((l) => `${l?.text} ${l?.natural}/${l?.width}`).join(', '));
   const escaping = m.tabContents.filter(
     (r) => r.top < m.pill.top - 0.5 || r.bottom > m.pill.bottom + 0.5 || r.left < m.pill.left - 0.5 || r.right > m.pill.right + 0.5,
   );

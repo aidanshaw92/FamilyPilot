@@ -2,7 +2,7 @@
 // re-exports its types, so this is the supported path to the tab-bar prop shape.
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import * as Haptics from 'expo-haptics';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius } from '@/src/design-system/tokens';
 import { NavGlyph, type NavTab } from '@/src/components/ui/icons';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
-import { floatingTabBarLayout, navVariantForRoute } from '@/src/utils/floating-tab-bar-layout';
+import { LABELLED_METRICS, floatingTabBarLayout, navVariantForRoute } from '@/src/utils/floating-tab-bar-layout';
 import { feedbackDue } from '@/src/services/planning/feedback';
 import { usePlanningStore } from '@/src/stores/planning-store';
 
@@ -23,8 +23,8 @@ import { usePlanningStore } from '@/src/stores/planning-store';
  * those left the labels rendering into a 4px line box below the pill. Owning the layout means the
  * pill is exactly as tall as the frame says and nothing can be pushed outside it.
  *
- * The frame carries no text labels, so neither does this. Each tab still exposes its title as an
- * accessibility label, so the destination is announced even though it is drawn as an icon.
+ * The frames carry icons alone; with six tabs a short word under each (its title) keeps them understandable to a parent seeing
+ * them for the first time (see LABELLED in floating-tab-bar-layout). Each tab also exposes its title as its accessibility label.
  */
 export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -37,7 +37,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
   // Home and Explore are drawn differently in their approved frames (see floating-tab-bar-layout),
   // so the pill takes the focused tab's variant and eases between them.
   const variant = navVariantForRoute(routes[state.index]?.name);
-  const layout = floatingTabBarLayout(routes.length, insets.bottom, variant);
+  const layout = floatingTabBarLayout(routes.length, insets.bottom, variant, true);
 
   const width = useSharedValue(layout.width);
   const height = useSharedValue(layout.height);
@@ -66,6 +66,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
     height: indicator.value,
     borderRadius: indicator.value / 2,
   }));
+  const indicatorBox = useAnimatedStyle(() => ({ width: indicator.value, height: indicator.value }));
 
   // A quiet dot on Plans when a visit is waiting to be checked ("Did you go to...?"). Nothing is added to Home itself.
   const visitCheckWaiting = usePlanningStore(
@@ -105,14 +106,28 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
               style={styles.tabPressable}
             >
               <Animated.View style={[styles.tab, tabStyle]}>
-                {focused ? <Animated.View style={[styles.indicator, indicatorStyle]} /> : null}
-                <NavGlyph
-                  tab={route.name as NavTab}
-                  variant={variant}
-                  color={focused ? colors.action : INACTIVE_ICON}
-                  focused={focused}
-                  fill={colors.surface}
-                />
+                {/* The icon is drawn in a box as big as the mint disc, so nothing it draws reaches past the tab or the capsule. */}
+                <Animated.View style={[styles.iconBox, indicatorBox]}>
+                  {focused ? <Animated.View style={[styles.indicator, indicatorStyle]} /> : null}
+                  <NavGlyph
+                    tab={route.name as NavTab}
+                    variant={variant}
+                    color={focused ? colors.action : INACTIVE_ICON}
+                    focused={focused}
+                    fill={colors.surface}
+                    size={layout.indicator}
+                  />
+                </Animated.View>
+                {/* Said by the tab's accessibility label already, so not announced a second time. */}
+                <Text
+                  numberOfLines={1}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                  style={[styles.label, focused && styles.labelFocused]}
+                  testID={`tab-label-${route.name}`}
+                >
+                  {baseLabel}
+                </Text>
                 {waiting ? <View style={styles.waitingDot} testID="visit-check-dot" /> : null}
               </Animated.View>
             </Pressable>
@@ -165,7 +180,18 @@ const styles = StyleSheet.create({
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 2,
   },
+  iconBox: { alignItems: 'center', justifyContent: 'center' },
+  label: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: LABELLED_METRICS.labelSize,
+    lineHeight: 12,
+    letterSpacing: 0.1,
+    color: INACTIVE_ICON,
+    textAlign: 'center',
+  },
+  labelFocused: { fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
   indicator: {
     position: 'absolute',
     backgroundColor: colors.nav.active,

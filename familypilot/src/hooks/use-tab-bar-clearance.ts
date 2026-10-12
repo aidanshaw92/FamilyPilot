@@ -11,5 +11,5 @@ export function useTabBarClearance(): number {
   const insets = useSafeAreaInsets();
   // The pill is at its tallest with the full tab set; sizing to that keeps the clearance right
   // whether or not a pilot-gated tab is showing.
-  return floatingTabBarLayout(6, insets.bottom).contentClearance;
+  return floatingTabBarLayout(6, insets.bottom, 'home', true).contentClearance;
 }
