@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { artVariant } from '@/src/components/ui/CategoryArt';
+import { artVariant } from '@/src/utils/art-variant';
 
 const read = (path: string) => readFileSync(join(__dirname, '..', '..', path), 'utf8');
 
