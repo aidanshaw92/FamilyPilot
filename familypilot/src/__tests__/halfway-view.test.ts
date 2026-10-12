@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { HalfwayFit, HalfwayJourney, HalfwayOption } from '@/src/services/planning/meet-halfway';
-import { chipName, journeyBars, journeysKnown, journeysUneven, listCardMeta, missingJourneyNotice, outwardCode, optionLabel, otherFitProvenance, positionLine, shortFamilyName } from '@/src/services/planning/halfway-view';
+import { chipName, journeyBars, journeysKnown, journeysUneven, listCardMeta, missingJourneyNotice, startingPointLabel, optionLabel, otherFitProvenance, positionLine, shortFamilyName } from '@/src/services/planning/halfway-view';
 
 const journey = (role: 'mine' | 'other', minutes: number, label = role === 'mine' ? 'Our family' : 'Kevin’s family'): HalfwayJourney => ({ role, familyId: role, label, minutes, leave: 0, home: 0 });
 const fit = (over: Partial<HalfwayFit> = {}): HalfwayFit => ({ verdict: 'good', label: 'Good fit', qualified: false, ...over });
@@ -73,13 +73,13 @@ describe('Meet halfway v2: what the screen says', () => {
     expect(otherFitProvenance(fit({ verdict: 'good', qualified: true }), 'Kevin’s family').headline).toBe('Looks practical for Kevin’s family');
   });
 
-  it('shows a starting point only as a postcode district or an area name', () => {
-    expect(outwardCode('NW5 2AB')).toBe('NW5');
-    expect(outwardCode('nw52ab')).toBe('NW5');
-    expect(outwardCode('E8 3PN')).toBe('E8');
-    expect(outwardCode('E8')).toBe('E8');
-    expect(outwardCode('SW1A 1AA')).toBe('SW1A');
-    expect(outwardCode('Camden, London')).toBe('Camden');
-    expect(outwardCode('')).toBe('');
+  it('shows a starting point only as a postcode district or an area name, the same word a connection is shown', () => {
+    expect(startingPointLabel('NW5 2AB')).toBe('NW5');
+    expect(startingPointLabel('nw52ab')).toBe('NW5');
+    expect(startingPointLabel('E8 3PN')).toBe('E8');
+    expect(startingPointLabel('SW1A 1AA')).toBe('SW1A');
+    expect(startingPointLabel('Camden, London')).toBe('Camden');
+    expect(startingPointLabel('12 High St, Bushey')).toBe('Bushey');
+    expect(startingPointLabel('')).toBe('Nearby');
   });
 });

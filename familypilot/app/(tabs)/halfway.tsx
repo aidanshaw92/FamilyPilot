@@ -315,7 +315,7 @@ export default function MeetHalfwayScreen() {
             <MapListToggle mode={mode} onChange={setMode} disabled={isLoading} />
           </View>
           {usingHomeFallback ? (
-            <Text variant="caption" color={colors.text.secondary} style={styles.centreText} testID="halfway-source">
+            <Text variant="caption" color={colors.text.secondary} style={styles.centreText} testID="halfway-from-home">
               {`Showing ${options.length} ${options.length === 1 ? 'place' : 'places'} from Home`}
             </Text>
           ) : options.length > 0 ? (
@@ -343,14 +343,14 @@ export default function MeetHalfwayScreen() {
                   onPlan={() => plan(option)}
                 />
               ))}
+              {result && result.considered > 0 && !usingHomeFallback ? (
+                <Text variant="caption" color={colors.text.secondary} testID="halfway-source">
+                  We looked at {result.considered} {result.considered === 1 ? 'place' : 'places'} between your two homes, not just the ones on Home.
+                </Text>
+              ) : null}
               {result && result.options.length > 0 && !result.otherKnown.children && !result.otherKnown.routines ? (
                 <Text variant="caption" color={colors.text.secondary}>
                   We only know where {otherName} sets off from, so we’ve checked journeys, opening hours and what you need.
-                </Text>
-              ) : null}
-              {result?.otherKnown.routinesLegacy ? (
-                <Text variant="caption" color={colors.text.secondary} testID="halfway-legacy-routines">
-                  {otherName} shared when they’re home but not what for, so we treat those times as fixed. They can update what they share for better advice.
                 </Text>
               ) : null}
               <Text variant="caption" color={colors.text.tertiary}>
@@ -359,6 +359,12 @@ export default function MeetHalfwayScreen() {
               <PlaceCredits places={options.map((option) => option.venue)} />
             </>
           )}
+          {/* Said whether or not there are places: it is about how the other family's share is read, not about a place. */}
+          {result?.otherKnown.routinesLegacy ? (
+            <Text variant="caption" color={colors.text.secondary} testID="halfway-legacy-routines">
+              {otherName} shared when they’re home but not what for, so we treat those times as fixed. They can update what they share for better advice.
+            </Text>
+          ) : null}
         </ScrollView>
       )}
 

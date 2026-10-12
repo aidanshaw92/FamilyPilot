@@ -124,6 +124,11 @@ export interface HalfwayOption {
   reasons: string[];
   /** What nobody has confirmed, or a routine to plan around. Stated, never counted as a fit. */
   toCheck: string[];
+  /**
+   * The sentences in `toCheck` that are about what the OTHER family shared: their Family Fit, and their routines. A screen
+   * that shows their grade alone, and nothing of what sits behind it, leaves these out. The Plan screen still says them.
+   */
+  otherNotes: string[];
   /** How many things need checking. Excludes the note that only a postcode-only family's journey was checked. */
   checks: number;
   /**
@@ -366,6 +371,8 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
     const routineLines: string[] = [];
     const facilityLines: string[] = [];
     const toCheck: string[] = [];
+    // The sentences about what THEY shared (Family Fit, routines), kept apart so a screen that shows their grade alone can leave them out.
+    const otherNotes: string[] = [];
     let bonus = 0;
 
     // Journey fairness: about how even the split is, never about which family travels less.
@@ -402,11 +409,13 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
         bonus -= 12;
         // Said as it is, never softened. Yours carries its own sentence; theirs is worded without a second person.
         toCheck.push(role === 'mine' ? sentence : `Family Fit says this probably isn’t right for ${who}`);
+        if (role === 'other') otherNotes.push(toCheck[toCheck.length - 1]);
         saidFit.add(role);
       } else if (result.verdict === 'excellent' || result.verdict === 'good') {
         if (hasChildGap(result)) {
           // Confirmed for some of the children only: the gap is what the parent reads, and it earns half the credit.
           toCheck.push(role === 'mine' ? sentence : `We haven’t yet confirmed whether this activity suits every child in ${who}`);
+          if (role === 'other') otherNotes.push(toCheck[toCheck.length - 1]);
           saidFit.add(role);
           bonus += result.verdict === 'excellent' ? 6 : 3;
         } else if (result.practicalOnly) {
@@ -414,6 +423,7 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
           // a fit. The credit is what it always was, so the order Meet halfway offers places in does not move (see
           // ranking-golden.test.ts); only the words do.
           toCheck.push(role === 'mine' ? sentence : `We haven’t yet confirmed whether this activity suits the children in ${who}`);
+          if (role === 'other') otherNotes.push(toCheck[toCheck.length - 1]);
           saidFit.add(role);
           bonus += result.verdict === 'excellent' ? 12 : 7;
         } else {
@@ -429,6 +439,7 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
         // Not a fit and not a failure: it could work, with something to look at. Said, so "for both" is never claimed over it.
         // Not said again where an unconfirmed must-have already explains it: that is one thing to check, not two.
         toCheck.push(role === 'mine' ? sentence : `Family Fit is only a possible match for ${who}`);
+        if (role === 'other') otherNotes.push(toCheck[toCheck.length - 1]);
         saidFit.add(role);
       }
     }
@@ -470,6 +481,7 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
       toCheck.push(
         `${role === 'mine' ? 'A nap or feed of yours falls' : `A routine for ${familyPhrase(role, other.label)} falls`} during the outing. The plan will suggest options`,
       );
+      if (role === 'other') otherNotes.push(toCheck[toCheck.length - 1]);
       bonus -= 3;
     }
     if (!otherKnown.children && !otherKnown.routines) {
@@ -516,7 +528,7 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
     const checks = toCheck.length - (onlyJourneyKnown ? 1 : 0);
     const supported = checks === 0 && !onlyJourneyKnown && gap <= CLOSE_GAP_MINUTES;
 
-    options.push({ venue, fits: { mine: fitFor('mine', fits[0][1]), other: fitFor('other', fits[1][1]) }, journeys, gap, longerFor, fairness, reasons, toCheck, checks, supported, hoursConfirmed, unresolved, needsChecking, score });
+    options.push({ venue, otherNotes, fits: { mine: fitFor('mine', fits[0][1]), other: fitFor('other', fits[1][1]) }, journeys, gap, longerFor, fairness, reasons, toCheck, checks, supported, hoursConfirmed, unresolved, needsChecking, score });
   }
 
   options.sort((a, b) => b.score - a.score || a.venue.name.localeCompare(b.venue.name));

@@ -131,11 +131,11 @@ describe('Meet halfway, map first', () => {
     expect(model.summary).toContain('3 places numbered as the list below');
   });
 
-  it('the selected pin is drawn last, so it sits on top, and keeps the place’s position', () => {
+  it('the selected pin is drawn last, so it sits on top, and stays where the place is (within the nudge that keeps crowded pins apart)', () => {
     const model = halfwayMapModel({ mine, other, venue: places[0], venues: places, selectedId: 'a' }, SIZE)!;
-    expect(model.pins[model.pins.length - 1].id).toBe('a');
-    expect(model.pins[model.pins.length - 1].x).toBeCloseTo(model.venue!.x, 6);
-    expect(model.pins[model.pins.length - 1].y).toBeCloseTo(model.venue!.y, 6);
+    const last = model.pins[model.pins.length - 1];
+    expect(last.id).toBe('a');
+    expect(Math.hypot(last.x - model.venue!.x, last.y - model.venue!.y)).toBeLessThanOrEqual(30 + 1e-6);
   });
 
   it('a place with no usable position is left off the map, not invented', () => {

@@ -8,17 +8,17 @@ import { Button, Chip, Text } from '@/src/components/ui';
 import { DateField, TimeField } from '@/src/components/ui/DateTimeField';
 import { colors, fontFamily, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
-import { outwardCode } from '@/src/services/planning/halfway-view';
+import { startingPointLabel } from '@/src/services/planning/halfway-view';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { familyDisplayName } from '@/src/utils/family-title';
 import { dateQuickChoices, shortDateLabel } from '@/src/utils/plan-quick-choices';
 
 export type MeetingEnvironment = 'either' | 'indoor' | 'outdoor';
 
-function Row({ icon, title, detail, onPress, testID }: { icon: keyof typeof Ionicons.glyphMap; title: string; detail: string; onPress?: () => void; testID?: string }) {
+function Row({ icon, title, detail, onPress, testID, flush = false }: { icon: keyof typeof Ionicons.glyphMap; title: string; detail: string; onPress?: () => void; testID?: string; flush?: boolean }) {
   return (
     <Pressable
-      style={styles.row}
+      style={[styles.row, flush && styles.rowFlush]}
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : 'text'}
@@ -104,7 +104,7 @@ export function HalfwayEditSheet({
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
       </Animated.View>
       <Animated.View entering={reduced ? undefined : SlideInDown.duration(240)} style={[styles.sheet, { top }]} accessibilityViewIsModal accessibilityLabel="Edit meeting details">
-        <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
           <View style={styles.grabber} />
           <View style={styles.header}>
             <Text variant="heading2" accessibilityRole="header">Edit meeting details</Text>
@@ -125,9 +125,10 @@ export function HalfwayEditSheet({
               <Row
                 icon="location-outline"
                 title="Starting points"
-                detail={`You: ${outwardCode(mine.area) || 'set'} · ${familyDisplayName(other.label)}: ${outwardCode(other.area) || 'set'}`}
+                detail={`You: ${startingPointLabel(mine.area)} · ${familyDisplayName(other.label)}: ${startingPointLabel(other.area)}`}
                 onPress={onEditProfile}
                 testID="halfway-starting-points"
+                flush
               />
             ) : null}
           </Section>
@@ -183,15 +184,17 @@ export function HalfwayEditSheet({
 const styles = StyleSheet.create({
   scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.sheetScrim },
   sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.background, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, overflow: 'hidden', ...shadows.bottomSheet },
-  content: { paddingHorizontal: spacing.screenPadding, paddingTop: 8, gap: 22 },
+  scroll: { flex: 1 },
+  content: { paddingHorizontal: spacing.screenPadding, paddingTop: 8, gap: 16 },
   grabber: { alignSelf: 'flex-start', width: 40, height: 5, borderRadius: 3, backgroundColor: colors.border },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: -6 },
   close: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.fill, alignItems: 'center', justifyContent: 'center' },
-  section: { gap: 12 },
+  section: { gap: 10 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   fieldLabel: { fontFamily: fontFamily.semiBold, fontSize: 13, lineHeight: 18, color: colors.text.secondary },
   group: { backgroundColor: colors.surface, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.borderLight },
   divider: { height: 1, backgroundColor: colors.borderLight, marginHorizontal: 16 },
+  rowFlush: { paddingHorizontal: 0 },
   row: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 8 },
   rowIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.actionSoft, alignItems: 'center', justifyContent: 'center' },
   rowTitle: { fontFamily: fontFamily.semiBold, fontSize: 15, lineHeight: 20, color: colors.ink },

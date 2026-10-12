@@ -99,12 +99,14 @@ async function run(label, today) {
   check(!/toilets|baby changing|pushchair|buggy|aged 3|aged 1|3-year-old|1-year-old|toddler|nap/i.test((await page.getByTestId('halfway-fit-other-card').innerText())), 'the other family’s card names no child, age, need or pushchair');
   check((await page.getByTestId('halfway-fit-other-card').count()) === 1 && (await page.getByTestId('halfway-fit-mine-card').count()) === 1, 'there is a card for each family');
   const scroller = page.getByTestId('halfway-sheet-scroll');
-  const scrolled = await scroller.evaluate((el) => { el.scrollTo(0, el.scrollHeight); return el.scrollTop; });
+  await scroller.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+  await page.waitForTimeout(400);
+  const scrolled = await scroller.evaluate((el) => el.scrollTop);
   const scrollable = await scroller.evaluate((el) => el.scrollHeight > el.clientHeight + 1);
   check(!scrollable || scrolled > 0, 'the sheet scrolls when its content is longer than the screen', scrollable ? `${Math.round(scrolled)}px` : 'content fits');
   // The actions stay above the floating navigation
   const planBox = await page.getByTestId('halfway-plan').last().boundingBox();
-  const navBox = await page.getByRole('tablist').last().boundingBox().catch(() => null);
+  const navBox = await page.getByRole('tab', { name: 'Halfway' }).first().boundingBox().catch(() => null);
   check(Boolean(planBox) && (!navBox || planBox.y + planBox.height <= navBox.y + 1), 'the actions are not hidden behind the navigation', planBox ? `bottom ${Math.round(planBox.y + planBox.height)}` : 'none');
   await page.getByTestId('halfway-sheet-close').click(); await page.waitForTimeout(500);
   check(!(await page.getByTestId('halfway-sheet-expanded').isVisible().catch(() => false)), 'closing returns to the map');

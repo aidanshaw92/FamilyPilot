@@ -69,8 +69,8 @@ export const PIN_HIT_MIN = 16;
  * scale of these maps that is a few hundred metres: the number beside the pin and its card say which place it is, and the
  * card's own details say exactly where.
  */
-export const PIN_SEPARATION = 26;
-export const PIN_MAX_NUDGE = 24;
+export const PIN_SEPARATION = 32;
+export const PIN_MAX_NUDGE = 30;
 
 /** Spreads overlapping pins apart (see PIN_SEPARATION), deterministically, keeping each within PIN_MAX_NUDGE px of its true position. */
 export function declutterPins<T extends { x: number; y: number }>(pins: readonly T[]): T[] {
@@ -231,7 +231,7 @@ export function halfwayMapModel(input: HalfwayMapInput, size: HalfwayMapSize): H
   // Fitted to the part of the drawing that is visible (`inset`), centred in it; the rest is more of the same map.
   const insetTop = Math.max(0, size.inset?.top ?? 0);
   const insetBottom = Math.max(0, size.inset?.bottom ?? 0);
-  const visibleHeight = Math.max(size.height - insetTop - insetBottom, size.height * 0.3);
+  const visibleHeight = Math.max(size.height - insetTop - insetBottom, 80);
   const rawX = Math.max(...xs) - Math.min(...xs);
   const rawY = Math.max(...ys) - Math.min(...ys);
   const padX = Math.max(2.2, rawX * 0.2);
@@ -324,7 +324,8 @@ export function halfwayMapModel(input: HalfwayMapInput, size: HalfwayMapSize): H
     areas,
     venue: venue && input.venue ? { x: toX(venue.longitude), y: toY(venue.latitude), label: input.venue.name } : null,
     pins,
-    venueLabel: venue && input.venue ? venueLabelAt(toX(venue.longitude), toY(venue.latitude), input.venue.name, { ...size, height: size.height - insetBottom }) : null,
+    // Named at the pin as drawn (which may have been nudged off a crowd), not at the place's exact position.
+    venueLabel: venue && input.venue ? (() => { const at = pins.find((pin) => pin.selected) ?? { x: toX(venue.longitude), y: toY(venue.latitude) }; return venueLabelAt(at.x, at.y, input.venue.name, { ...size, height: size.height - insetBottom }); })() : null,
     basemap,
     scale: { km, px: km * pxPerKm },
     summary: !input.venue

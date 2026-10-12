@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRef } from 'react';
-import { PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
 import { Button, Text } from '@/src/components/ui';
@@ -8,7 +8,7 @@ import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, fontFamily, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { HalfwayOption, topCardLabel } from '@/src/services/planning/meet-halfway';
-import { missingJourneyNotice, journeysKnown, positionLine } from '@/src/services/planning/halfway-view';
+import { checksToShow, missingJourneyNotice, journeysKnown, positionLine } from '@/src/services/planning/halfway-view';
 import { formatCategory } from '@/src/utils/format-category';
 
 import { SheetSurface } from './chrome';
@@ -26,6 +26,9 @@ function useSwipe(onUp?: () => void, onDown?: () => void) {
     }),
   ).current;
 }
+
+/** Below this window height the collapsed card is dense (smaller photo, journeys on a line) so the map keeps room to be a map. */
+export const DENSE_SHEET_BELOW = 820;
 
 /**
  * The recommendation under the map, collapsed: the engine's own label, the place, each family's Family Fit, the journeys and the
@@ -52,6 +55,8 @@ export function CollapsedRecommendation({
   onLayoutHeight?: (height: number) => void;
 }) {
   const swipe = useSwipe(onExpand);
+  const { height: windowHeight } = useWindowDimensions();
+  const dense = windowHeight < DENSE_SHEET_BELOW;
   const notice = journeysKnown(option) ? null : missingJourneyNotice(option);
   return (
     <View style={styles.dock} onLayout={(e) => onLayoutHeight?.(e.nativeEvent.layout.height)} testID="halfway-sheet-collapsed" {...swipe.panHandlers}>
@@ -61,9 +66,9 @@ export function CollapsedRecommendation({
           <Text style={styles.position} testID="halfway-position">{`${index + 1} of ${total}`}</Text>
         </View>
         <View style={styles.venueRow}>
-          <VenueImage uri={option.venue.imageUrl} category={option.venue.category} alt={option.venue.name} style={styles.thumb} borderRadius={radius.lg} />
+          <VenueImage uri={option.venue.imageUrl} category={option.venue.category} alt={option.venue.name} style={dense ? styles.thumbDense : styles.thumb} borderRadius={radius.lg} />
           <View style={styles.venueText}>
-            <Text style={styles.name} numberOfLines={2} testID="halfway-selected-name">{option.venue.name}</Text>
+            <Text style={[styles.name, dense && styles.nameDense]} numberOfLines={dense ? 1 : 2} testID="halfway-selected-name">{option.venue.name}</Text>
             <Text style={styles.category}>{formatCategory(option.venue.category)}</Text>
             <View style={styles.chips}>
               <FitChip role="mine" label="" fit={option.fits.mine} />
@@ -71,7 +76,7 @@ export function CollapsedRecommendation({
             </View>
           </View>
         </View>
-        <JourneyComparison option={option} />
+        <JourneyComparison option={option} dense={dense} />
         {notice ? <Text variant="caption" color={colors.text.secondary}>{notice.title}. {notice.body}</Text> : null}
         <View style={styles.actions}>
           <Button label="Plan this day" onPress={onPlan} style={styles.plan} testID="halfway-plan" />
@@ -112,6 +117,7 @@ export function ExpandedRecommendation({
   const reduced = useReducedMotion();
   const swipe = useSwipe(undefined, onCollapse);
   const notice = journeysKnown(option) ? null : missingJourneyNotice(option);
+  const { needs, others } = checksToShow(option);
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none" testID="halfway-sheet-expanded">
       <Animated.View entering={reduced ? undefined : FadeIn.duration(160)} style={styles.scrim}>
@@ -119,6 +125,7 @@ export function ExpandedRecommendation({
       </Animated.View>
       <Animated.View entering={reduced ? undefined : SlideInDown.duration(240)} style={[styles.expanded, { top }]} accessibilityViewIsModal accessibilityLabel={`${option.venue.name}, recommendation details`}>
         <ScrollView
+          style={styles.scroll}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: bottomClearance + 92 }}
           testID="halfway-sheet-scroll"
@@ -159,6 +166,28 @@ export function ExpandedRecommendation({
               <FamilyFitMine option={option} />
               <FamilyFitOther option={option} label={otherLabel} />
             </View>
+            {needs.length + others.length > 0 ? (
+              <View style={styles.section} testID="halfway-before-you-go">
+                <Text variant="heading3" accessibilityRole="header">Before you go</Text>
+                {needs.length > 0 ? (
+                  <View style={styles.needs} testID="halfway-needs-checking">
+                    <Ionicons name="alert-circle-outline" size={18} color={colors.warning[600]} style={{ marginTop: 1 }} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.needsTitle}>Needs checking before you go</Text>
+                      {needs.map((line) => (
+                        <Text key={line} style={styles.needsBody}>{line}.</Text>
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
+                {others.map((line) => (
+                  <View key={line} style={styles.checkRow}>
+                    <Ionicons name="help-circle-outline" size={18} color={colors.text.tertiary} style={{ marginTop: 1 }} />
+                    <Text style={styles.checkText}>{line}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
           </View>
         </ScrollView>
         <View style={[styles.pinned, { paddingBottom: bottomClearance - 10, paddingTop: 12 }]} pointerEvents="box-none">
@@ -179,8 +208,10 @@ const styles = StyleSheet.create({
   position: { fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 17, color: colors.text.secondary },
   venueRow: { flexDirection: 'row', gap: 12, marginBottom: 10 },
   thumb: { width: 80, height: 80 },
+  thumbDense: { width: 64, height: 64 },
   venueText: { flex: 1, gap: 2 },
   name: { fontFamily: fontFamily.bold, fontSize: 22, lineHeight: 27, letterSpacing: -0.4, color: colors.ink },
+  nameDense: { fontSize: 19, lineHeight: 23 },
   category: { fontFamily: fontFamily.regular, fontSize: 14, lineHeight: 18, color: colors.text.secondary },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
   actions: { flexDirection: 'row', gap: 10, marginTop: 12 },
@@ -188,6 +219,7 @@ const styles = StyleSheet.create({
   details: { flex: 1 },
   scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.sheetScrim },
   expanded: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.surface, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, overflow: 'hidden', ...shadows.bottomSheet },
+  scroll: { flex: 1 },
   hero: { height: 126, backgroundColor: colors.fill },
   heroGrab: { position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center', paddingTop: 8, paddingBottom: 10 },
   heroGrabber: { width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.85)' },
@@ -198,6 +230,11 @@ const styles = StyleSheet.create({
   section: { gap: 10 },
   pinned: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.screenPadding },
   pinnedFade: { position: 'absolute', left: 0, right: 0, bottom: 0, top: -2, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.borderLight },
+  needs: { flexDirection: 'row', gap: 8, backgroundColor: colors.warning[50], borderColor: colors.warning[100], borderWidth: 1, borderRadius: radius.lg, padding: 12 },
+  needsTitle: { fontFamily: fontFamily.bold, fontSize: 13, lineHeight: 18, color: colors.warning[600] },
+  needsBody: { fontFamily: fontFamily.regular, fontSize: 14, lineHeight: 19, color: colors.ink },
+  checkRow: { flexDirection: 'row', gap: 10 },
+  checkText: { flex: 1, fontFamily: fontFamily.regular, fontSize: 14, lineHeight: 20, color: colors.text.secondary },
   notice: { flexDirection: 'row', gap: 8, backgroundColor: colors.fill, borderRadius: radius.lg, padding: 12 },
   noticeTitle: { fontFamily: fontFamily.bold, fontSize: 13, lineHeight: 18, color: colors.text.secondary },
   noticeBody: { fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 18, color: colors.ink },

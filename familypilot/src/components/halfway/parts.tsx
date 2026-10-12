@@ -5,7 +5,7 @@ import { Text } from '@/src/components/ui';
 import { colors, fontFamily, radius, spacing } from '@/src/design-system/tokens';
 import { MatchLine } from '@/src/services/matching/family-match';
 import { HalfwayFit, HalfwayOption } from '@/src/services/planning/meet-halfway';
-import { chipName, journeyBars, journeysKnown, journeysUneven, otherFitProvenance } from '@/src/services/planning/halfway-view';
+import { chipName, journeyBars, shortFamilyName, journeysKnown, journeysUneven, otherFitProvenance } from '@/src/services/planning/halfway-view';
 
 /** The other family's colour on the map and everywhere it is named: the rose of the design system's other-family areas. */
 export const OTHER_TONE = '#B0507E';
@@ -55,14 +55,24 @@ export function LabelPill({ text, supported }: { text: string; supported: boolea
  * Each family's estimated one-way journey as bars proportional to each other, then the engine's fairness sentence. The time
  * is "about N min" because it is an estimate from distance; there is no route, so no line and no road is implied.
  */
-export function JourneyComparison({ option, heading = false }: { option: HalfwayOption; heading?: boolean }) {
+export function JourneyComparison({ option, heading = false, dense = false }: { option: HalfwayOption; heading?: boolean; dense?: boolean }) {
   const bars = journeyBars(option.journeys);
   const uneven = journeysUneven(option);
   const known = journeysKnown(option);
   return (
     <View style={styles.journeys} testID="halfway-journeys">
       {heading ? <Text variant="heading3" accessibilityRole="header">Journeys</Text> : null}
-      {bars.map(({ journey, share, time, who, missing }) => (
+      {dense ? (
+        // A short phone has no room for the bars under the map: the same two estimates on one line each pair, same words.
+        <View style={styles.denseRow}>
+          {bars.map(({ journey, time, who, missing }) => (
+            <View key={journey.familyId} style={styles.denseItem} accessible accessibilityLabel={`${who}: ${time}`}>
+              <View style={[styles.dot, { backgroundColor: journey.role === 'mine' ? colors.action : OTHER_TONE }]} />
+              <Text style={[styles.denseText, missing && styles.journeyTimeMissing]} numberOfLines={1}>{`${journey.role === 'mine' ? 'You' : shortFamilyName(journey.label)} ${time}`}</Text>
+            </View>
+          ))}
+        </View>
+      ) : bars.map(({ journey, share, time, who, missing }) => (
         <View key={journey.familyId} style={styles.journeyRow} accessible accessibilityLabel={`${who}: ${time}`}>
           <Text style={styles.journeyWho} numberOfLines={1}>{who}</Text>
           <View style={[styles.track, missing && styles.trackMissing]}>
@@ -178,6 +188,9 @@ const styles = StyleSheet.create({
   pill: { height: 24, borderRadius: radius.full, paddingHorizontal: 10, justifyContent: 'center', alignSelf: 'flex-start', flexShrink: 1 },
   pillText: { fontFamily: fontFamily.semiBold, fontSize: 12, lineHeight: 15 },
   journeys: { gap: 8 },
+  denseRow: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 2 },
+  denseItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  denseText: { fontFamily: fontFamily.bold, fontSize: 13, lineHeight: 17, color: colors.ink },
   journeyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 20 },
   journeyWho: { width: 88, fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 16, color: colors.text.secondary },
   track: { flex: 1, height: 10, borderRadius: 5, backgroundColor: colors.fill, overflow: 'hidden' },

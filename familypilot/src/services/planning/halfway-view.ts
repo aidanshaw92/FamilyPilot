@@ -1,5 +1,6 @@
 import { HalfwayFit, HalfwayJourney, HalfwayOption, CLOSE_GAP_MINUTES, topCardLabel } from './meet-halfway';
 import { familyDisplayName } from '@/src/utils/family-title';
+import { coarseArea } from './connection-snapshot';
 import { formatCategory } from '@/src/utils/format-category';
 import { travelTimeLabel } from '@/src/utils/travel-time';
 
@@ -103,17 +104,21 @@ export function otherFitProvenance(fit: HalfwayFit, label: string): { headline: 
   }
 }
 
-const POSTCODE = /^([A-Z]{1,2}\d[A-Z\d]?)\s*(\d[A-Z]{2})?$/i;
+/**
+ * What a starting point is called on this screen: exactly the area word a connection is shown (`coarseArea`): the outward part
+ * of a postcode ("WD23 4AB" is "WD23"), or the place name before the first comma. Never the inward part of a postcode, a
+ * street number or an address, for the other family or for yours.
+ */
+export const startingPointLabel = (area: string): string => coarseArea(area);
 
 /**
- * What a starting point is called on this screen: the outward part of a postcode ("NW5 2AB" and "NW52AB" are both "NW5"),
- * or a place name as given ("Camden, London" is "Camden"). Never the inward part of a postcode, which narrows it to a street.
+ * What is left to check at a place, for the card and the sheet: the must-haves nobody has confirmed (said first, with the
+ * engine's own "check before you go" sentence) and the other things to check. Sentences about what the other family shared
+ * (their Family Fit and routines) are left out: their grade stands alone, and the Plan screen still plans around their day.
  */
-export function outwardCode(area: string): string {
-  const text = area.trim();
-  if (!text) return '';
-  const postcode = POSTCODE.exec(text);
-  if (postcode) return postcode[1].toUpperCase();
-  return text.split(',')[0].trim();
+export function checksToShow(option: Pick<HalfwayOption, 'needsChecking' | 'toCheck' | 'otherNotes'>): { needs: string[]; others: string[] } {
+  const hidden = new Set(option.otherNotes);
+  const needs = option.needsChecking.filter((line) => !hidden.has(line));
+  const others = option.toCheck.filter((line) => !hidden.has(line) && !option.needsChecking.includes(line));
+  return { needs, others };
 }
-

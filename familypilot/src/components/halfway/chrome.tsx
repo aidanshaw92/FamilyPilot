@@ -87,7 +87,7 @@ export function HalfwayTitle() {
 /** Map | List, one control. Both segments keep a 44pt target; the chosen one is the action green. */
 export function MapListToggle({ mode, onChange, disabled = false }: { mode: 'map' | 'list'; onChange: (mode: 'map' | 'list') => void; disabled?: boolean }) {
   return (
-    <View style={[styles.toggle, disabled && styles.toggleDisabled]} accessibilityRole="tablist" testID="halfway-toggle">
+    <View style={[styles.toggle, disabled && styles.toggleDisabled]} accessibilityRole="radiogroup" accessibilityLabel="Show places on" testID="halfway-toggle">
       {(['map', 'list'] as const).map((key) => {
         const active = mode === key;
         return (
@@ -95,8 +95,9 @@ export function MapListToggle({ mode, onChange, disabled = false }: { mode: 'map
             key={key}
             style={[styles.segment, active && styles.segmentActive]}
             onPress={() => !disabled && onChange(key)}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: active, disabled }}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: active, disabled }}
+            aria-checked={active}
             accessibilityLabel={key === 'map' ? 'Map' : 'List'}
             testID={`halfway-mode-${key}`}
           >
@@ -132,7 +133,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing.screenPadding, backgroundColor: colors.background, paddingBottom: 6 },
   title: { marginBottom: 0 },
   subtitle: { marginTop: 2, fontSize: 14, lineHeight: 20 },
-  selectorRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  selectorRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 7 },
   selector: { flex: 1, minHeight: 56, borderRadius: radius.xl, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, ...shadows.card },
   pressed: { opacity: 0.85 },
   selectorText: { flex: 1, gap: 1 },

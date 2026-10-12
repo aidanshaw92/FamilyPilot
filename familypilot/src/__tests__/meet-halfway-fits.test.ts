@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { checksToShow, otherFitProvenance } from '@/src/services/planning/halfway-view';
 import { meetHalfway } from '@/src/services/planning/meet-halfway';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { Venue } from '@/src/types';
@@ -40,7 +41,7 @@ const mine: PlanningFamily = {
 const other = (over: Partial<PlanningFamily> = {}): PlanningFamily => ({
   id: 'connected-1', label: 'Hannah’s family', area: 'E17', latitude: 51.59, longitude: -0.02, ages: [2],
   maxDriveMinutes: 45, budgetTier: 'moderate', pushchair: true, required: ['toilets'],
-  routines: [{ label: 'Nap', start: '12:30', end: '14:00', kind: 'nap' }] as never, ...over,
+  routines: [{ id: 'nap-1', label: 'Nap', kind: 'nap', time: '12:20', durationMinutes: 90, atHome: true }], ...over,
 });
 const run = (o: PlanningFamily) =>
   meetHalfway({ venues: [venue('Fair Fields', 51.57, -0.08)], mine, other: o, date: '2026-10-10', arriveAt: '10:30', today: '2026-10-06', nowMinutes: 540 });
@@ -74,5 +75,30 @@ describe('per-family Family Fit on an option', () => {
     const base = run(other());
     const again = run(other());
     expect(base.options.map((o) => [o.venue.id, o.score])).toEqual(again.options.map((o) => [o.venue.id, o.score]));
+  });
+
+  it('keeps sentences about what the other family shared out of what the screen lists as things to check', () => {
+    // Their routine (a nap at 12:30) clashes with the outing: the engine still says so for the Plan screen...
+    const [option] = run(other()).options;
+    expect(option.toCheck.some((line) => /routine for Hannah’s family falls/.test(line))).toBe(true);
+    expect(option.otherNotes.some((line) => /routine for Hannah’s family falls/.test(line))).toBe(true);
+    // ...and the Meet halfway card and sheet do not repeat it.
+    const shown = checksToShow(option);
+    expect([...shown.needs, ...shown.others].join(' ')).not.toMatch(/routine|nap|Hannah/i);
+    // Every line about their Family Fit is also withheld: their grade stands alone.
+    for (const line of option.otherNotes) expect([...shown.needs, ...shown.others]).not.toContain(line);
+  });
+
+  it('everything the screen shows about the other family comes down to a grade and one generic sentence', () => {
+    const [option] = run(other()).options;
+    const words = otherFitProvenance(option.fits.other, 'Hannah’s family');
+    const text = JSON.stringify([option.fits.other, words]);
+    for (const forbidden of ['toilets', 'pushchair', 'nap', 'age', 'child', '12:30', 'E17']) expect(text).not.toContain(forbidden);
+  });
+
+  it('what is left to check for your own family is still said, first', () => {
+    const lacking = { ...venue('Needs Loos', 51.57, -0.08), trustedFacts: { ...facts('Needs Loos'), toilets: 'unknown' } } as Venue;
+    const [option] = meetHalfway({ venues: [lacking], mine, other: other(), date: '2026-10-10', arriveAt: '10:30', today: '2026-10-06', nowMinutes: 540 }).options;
+    expect(checksToShow(option).needs.join(' ')).toMatch(/Toilets isn’t confirmed at Needs Loos/);
   });
 });

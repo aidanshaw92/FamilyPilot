@@ -15,6 +15,10 @@ const MOTORWAY = '#E8C98A';
 const ROAD = '#E4DCCB';
 const OTHER = '#B0507E';
 
+/** The selected place's name sits in a white pill: its width from its characters (the same 6.6 px estimate the geometry uses), plus padding. */
+const pillWidth = (text: string) => Math.min(text.length, 28) * 6.6 + 20;
+const pillX = (x: number, anchor: 'start' | 'middle' | 'end', text: string) => (anchor === 'middle' ? x - pillWidth(text) / 2 : anchor === 'start' ? x : x - pillWidth(text));
+
 /**
  * Where the two families and the places are, on a map of London drawn on the device (see halfway-map.ts for the
  * privacy and no-route rules). Families are approximate AREAS; the places are numbered pins, each number matching its
@@ -87,11 +91,11 @@ export function HalfwayMap({
                     The selected pin is drawn last so it sits on top where pins crowd. */}
                 {model.pins.length > 0 ? (
                   model.pins.map((pin) => {
-                    const r = pin.selected ? 14 : 11;
+                    const r = pin.selected ? 19 : 14;
                     return (
                       <G key={pin.id}>
                         <Circle cx={pin.x} cy={pin.y} r={r} fill={pin.selected ? colors.action : colors.surface} stroke={pin.selected ? colors.surface : colors.action} strokeWidth={2} />
-                        <SvgText x={pin.x} y={pin.y + (pin.selected ? 5 : 4)} fill={pin.selected ? colors.text.inverse : colors.action} fontSize={pin.selected ? 13 : 11} fontFamily={fontFamily.bold} textAnchor="middle">
+                        <SvgText x={pin.x} y={pin.y + (pin.selected ? 6 : 5)} fill={pin.selected ? colors.text.inverse : colors.action} fontSize={pin.selected ? 17 : 13} fontFamily={fontFamily.bold} textAnchor="middle">
                           {String(pin.number)}
                         </SvgText>
                       </G>
@@ -110,21 +114,31 @@ export function HalfwayMap({
                   </G>
                 ) : null}
                 {/* The selected place's name, with a halo of the land colour under the ink so it reads over roads and water. */}
-                {model.venue && model.venueLabel ? [LAND, colors.ink].map((fill, index) => (
-                  <SvgText
-                    key={fill}
-                    x={model.venueLabel!.x}
-                    y={model.venueLabel!.y + (model.pins.length > 0 ? 6 : 0)}
-                    fill={fill}
-                    stroke={index === 0 ? LAND : undefined}
-                    strokeWidth={index === 0 ? 3 : undefined}
-                    fontSize={12}
-                    fontFamily={fontFamily.semiBold}
-                    textAnchor={model.venueLabel!.anchor}
-                  >
-                    {name(model.venue!.label)}
-                  </SvgText>
-                )) : null}
+                {model.venue && model.venueLabel ? (
+                  <G>
+                    {/* A white pill, as in the frame, so the name reads over roads, water and neighbouring pins. */}
+                    <Rect
+                      x={pillX(model.venueLabel.x, model.venueLabel.anchor, name(model.venue.label))}
+                      y={model.venueLabel.y + (model.pins.length > 0 ? 6 : 0) - 17}
+                      width={pillWidth(name(model.venue.label))}
+                      height={26}
+                      rx={13}
+                      fill={colors.surface}
+                      stroke={BOUNDARY}
+                      strokeWidth={1}
+                    />
+                    <SvgText
+                      x={pillX(model.venueLabel.x, model.venueLabel.anchor, name(model.venue.label)) + pillWidth(name(model.venue.label)) / 2}
+                      y={model.venueLabel.y + (model.pins.length > 0 ? 6 : 0)}
+                      fill={colors.ink}
+                      fontSize={12}
+                      fontFamily={fontFamily.semiBold}
+                      textAnchor="middle"
+                    >
+                      {name(model.venue.label)}
+                    </SvgText>
+                  </G>
+                ) : null}
                 {/* Scale bar, bottom left of the visible part of the map. */}
                 <G>
                   <Rect x={10} y={model.height - (inset?.bottom ?? 0) - 16} width={model.scale.px} height={3} fill={colors.text.secondary} rx={1.5} />

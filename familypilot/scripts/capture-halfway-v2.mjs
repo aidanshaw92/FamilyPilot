@@ -11,7 +11,13 @@ import { existsSync, mkdirSync } from 'node:fs';
 
 const BASE = process.argv[2] ?? 'http://localhost:4175';
 const OUT = process.argv[3] ?? '/tmp/halfway-v2';
-const SIZES = (process.argv.slice(4).length ? process.argv.slice(4) : ['393x852']).map((s) => s.split('x').map(Number));
+// "393x852" uses the iPhone Pro insets (47 / 34); "375x667@20,0" names them (an iPhone SE has a 20pt status bar and no home bar).
+const SIZES = (process.argv.slice(4).length ? process.argv.slice(4) : ['393x852']).map((s) => {
+  const [dims, insets] = s.split('@');
+  const [w, h] = dims.split('x').map(Number);
+  const [top, bottom] = insets ? insets.split(',').map(Number) : [47, 34];
+  return [w, h, { top, bottom }];
+});
 mkdirSync(OUT, { recursive: true });
 
 const PROFILE = {
@@ -23,7 +29,7 @@ const guest = (id, label, area, latitude, longitude, extra = {}) => ({ id: `gues
 const FAMILIES = [guest('kevin', 'Kevin', 'E8', 51.5450, -0.0600)];
 const planning = (families) => JSON.stringify({ state: { families, options: { date: '2026-10-17', leaveAt: '', returnBy: '', visitMinutes: 90, bufferMinutes: 15, environment: 'either' }, saved: [], savedDays: [], planningWith: null }, version: 1 });
 
-const INSETS = { top: 47, bottom: 34 };
+let INSETS = { top: 47, bottom: 34 };
 const browser = await chromium.launch({ headless: true, ...(existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {}) });
 
 async function open(width, height, { families = FAMILIES, profile = PROFILE, block } = {}) {
@@ -43,7 +49,8 @@ async function open(width, height, { families = FAMILIES, profile = PROFILE, blo
   return { ctx, page };
 }
 
-for (const [width, height] of SIZES) {
+for (const [width, height, insets] of SIZES) {
+  INSETS = insets;
   const tag = `${width}`;
   const { ctx, page } = await open(width, height);
   await page.goto(`${BASE}/halfway`, { waitUntil: 'networkidle' });
@@ -54,7 +61,7 @@ for (const [width, height] of SIZES) {
   await page.screenshot({ path: `${OUT}/${tag}-1b-map-pin2.png` });
   await page.getByTestId('halfway-details').click(); await page.waitForTimeout(700);
   await page.screenshot({ path: `${OUT}/${tag}-2-expanded.png` });
-  await page.getByTestId('halfway-sheet-scroll').evaluate((el) => el.scrollTo(0, el.scrollHeight)); await page.waitForTimeout(400);
+  await page.getByTestId('halfway-sheet-scroll').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await page.waitForTimeout(500);
   await page.screenshot({ path: `${OUT}/${tag}-2c-expanded-scrolled.png` });
   await page.getByTestId('halfway-sheet-close').click(); await page.waitForTimeout(500);
   await page.getByTestId('halfway-mode-list').click(); await page.waitForTimeout(800);
@@ -67,7 +74,7 @@ for (const [width, height] of SIZES) {
 
 // ---- the real-world states (393x852) --------------------------------------------------------------------------------
 if (process.env.STATES) {
-  const [w, h] = SIZES[0];
+  const [w, h, firstInsets] = SIZES[0]; INSETS = firstInsets;
   const shot = (page, name) => page.screenshot({ path: `${OUT}/state-${name}.png` });
   const isBetween = (url) => /intent=between/.test(url);
   const isPlaces = (url) => /\/api\/places\//.test(url) && !/nearby-food/.test(url);
@@ -97,6 +104,33 @@ if (process.env.STATES) {
   await run('s5-error', { block: (u) => isPlaces(u.toString()) }, async (page) => {
     await page.goto(`${BASE}/halfway`, { waitUntil: 'networkidle' }); await page.getByTestId('halfway-error').waitFor({ timeout: 25000 }).catch(() => console.log('  (no error state reached: Home list has its own offline fallback)')); await page.waitForTimeout(500);
   });
+  // A family that shares ages, a must-have and a pushchair: the other family's chip becomes a grade, and a must-have nobody has
+  // confirmed at a place is said on its card.
+  const sharing = [guest('kevin', 'Kevin', 'E8', 51.5450, -0.0600, { ages: [3], pushchair: true, required: ['toilets'] })];
+  await run('s7-cards-list', { families: sharing }, async (page) => {
+    await page.goto(`${BASE}/halfway`, { waitUntil: 'networkidle' });
+    await page.getByTestId('halfway-mode-list').click({ timeout: 40000 }); await page.waitForTimeout(1200);
+  });
+  await run('s7b-expanded', { families: sharing }, async (page) => {
+    await page.goto(`${BASE}/halfway`, { waitUntil: 'networkidle' });
+    await page.getByTestId('halfway-details').click({ timeout: 40000 }); await page.waitForTimeout(800);
+    await page.getByTestId('halfway-sheet-scroll').evaluate((el) => { el.scrollTop = el.scrollHeight; }); await page.waitForTimeout(500);
+  });
+  // A long name, with the stored place's name replaced in the lookup's answer (the fixture's data, not the app's).
+  {
+    const { ctx, page } = await open(w, h, { families: sharing });
+    await page.route((u) => isBetween(u.toString()), async (route) => {
+      const response = await route.fetch();
+      const body = await response.json();
+      if (body.places?.[0]) { body.places[0].name = 'The Royal Air Force Museum London, Grahame Park Way'; body.places[0].category = 'museum'; }
+      await route.fulfill({ response, json: body });
+    });
+    await page.goto(`${BASE}/halfway`, { waitUntil: 'networkidle' });
+    await page.getByTestId('halfway-sheet-collapsed').waitFor({ timeout: 40000 }); await page.waitForTimeout(1000);
+    await shot(page, 's8-long-name-map');
+    await page.getByTestId('halfway-mode-list').click(); await page.waitForTimeout(900);
+    await shot(page, 's8-long-name-list'); await ctx.close(); console.log('state s8');
+  }
   await run('s6-fallback-list', { block: (u) => isBetween(u.toString()) }, async (page) => {
     await page.goto(`${BASE}/halfway`, { waitUntil: 'networkidle' });
     await page.getByTestId('halfway-mode-list').click({ timeout: 40000 }); await page.waitForTimeout(1500);
