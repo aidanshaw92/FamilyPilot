@@ -142,8 +142,8 @@ describe('a day with a feed during the visit, lunch nearby and a nap at home aft
     const lunch = rows.find((r) => r.kind === 'lunch')!;
     expect(lunch.title).toBe('Lunch at Forest Hill Kitchen');
     expect(lunch.edit).toBe('lunch');
+    expect(rows[5].lines[0]).toEqual({ text: 'About 5 min drive plus 15 min to settle, estimated from distance to Forest Hill Kitchen.', provenance: 'estimated' });
     expect(lunch.lines).toEqual([
-      { text: 'About 5 min drive plus 15 min to settle, estimated from distance.', provenance: 'estimated' },
       { text: 'Or about a 6-minute walk from Horniman Museum and Gardens, estimated from distance.', provenance: 'estimated' },
       { text: 'High chairs, baby changing listed on OpenStreetMap, which matters with Ozzie.', provenance: 'reported' },
       { text: 'British, as listed.', provenance: 'reported' },

@@ -49,7 +49,9 @@ const check = (name, pass, detail) => {
 };
 
 async function scrollToEnd(page, width, height) {
-  await page.mouse.move(width / 2, height / 2);
+  // Over the lower part of the screen: on the shortest phones the centre lands on a page's fixed header (the brand row,
+  // the heading, the search field), which is not the list, and a wheel there scrolls nothing.
+  await page.mouse.move(width / 2, height * 0.72);
   let last = -1;
   let stable = 0;
   // A long list renders in batches, so "no movement" must hold for several checks before it is the end.
@@ -127,8 +129,8 @@ for (const [width, height] of SIZES) {
     );
   }
 
-  // The Plans tab's other two views are long: its families list (with the account panel) and the saved plans.
-  for (const view of ['Families & routines', 'Saved plans']) {
+  // The Plans tab's other view is long: the saved plans. (Families and routines are the Families tab, covered above.)
+  for (const view of ['Saved plans']) {
     await page.goto(`${BASE}/trips`, { waitUntil: 'networkidle', timeout: 60000 }).catch(() => {});
     await page.waitForTimeout(1800);
     await page.getByRole('button', { name: view, exact: true }).first().click().catch(() => {});

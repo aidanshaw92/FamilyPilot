@@ -1,8 +1,8 @@
 # FamilyPilot beta UX review — 11 October 2026
 
-Branch: `ux/beta-polish` (from `main` bc19ba5). Nothing here is merged or deployed. Status of each item is marked
-**Implemented** (on the branch, tested, screenshots in `docs/ux/screens/`), **Decision needed** (a product choice for the
-founder) or **Later** (after beta).
+Branch: `ux/beta-polish` (from `main` bc19ba5). Nothing here is merged or deployed. Sections 1 to 7 are the review and
+the proposals as they were put to the founder; section 8 records the decisions taken and what the branch now holds.
+Screenshots: `docs/ux/screens/before/` (production bundle at bc19ba5) and `docs/ux/screens/after/` (this branch).
 
 ## 1. What was inspected
 
@@ -177,3 +177,88 @@ branch ships D1; D2 is a one-line change in each screen plus the art offsets.
   halfway-second-on-map, plan-tight, plan-earlier.
 - Interactions claimed to work were driven in the browser: tapping a Halfway card puts it on the map and scrolls it into
   view; the "Leave at 11:45" chip rebuilds the plan and the warning gives way to the tick.
+
+## 8. Decisions taken and what the branch holds
+
+The founder approved: five tabs **Home · Explore · Families · Plans · Profile** with Families as a dedicated hub (not
+the Halfway screen); the editable timeline, step 1; Meet halfway map-first with numbered pins; the brand lockup on Home
+and Explore (D2); and the four corrections in §4. All of it is on this branch.
+
+### Navigation and branding
+
+- Tabs are Home · Explore · Families · Plans · Profile (`app/(tabs)/_layout.tsx`); the pill keeps the approved geometry
+  and a Families glyph is drawn in both approved stroke languages (`icons.tsx`). No sixth tab.
+- Meet halfway is a stack screen at the same `/halfway` URL (`app/halfway.tsx`), reached from every family's card on
+  Families, from the hub's own "Meet halfway" action, and from a shortcut on Plans. Plans keeps plans and saved plans
+  only; its "Families & routines" chip (the duplicate families model) is gone.
+- The brand row (`BrandLockup`, 44 pt) sits above the approved Home and Explore headers. Home's greeting and the marks
+  drawn beside it move up together (`ART_LIFT`), Explore's header marks move down by the row, so the approved geometry
+  holds beneath the lockup. The same row heads every section page through `PageHeader`.
+
+### Families hub (`app/(tabs)/families.tsx`)
+
+Top to bottom: **Plan a day out together** (Plan together keeps the chosen family's id, `planningWith`, so the next plan
+sheet opens with them under Who's coming and Explore shows "Planning with Hannah's family · Done"; Meet halfway one tap
+away); **Your family** (people and ages, Edit); **Naps, feeds and must-haves** (the routines the planner uses, Edit, and
+the line that they stay private: a connected family sees the times only if sharing is turned on, never a name);
+**Connected families** as cards with a status caption ("Connected", "Connected · planning together", "On this phone only
+· not connected"), the shared summary, and Plan together / Meet halfway / What I share / Edit / Disconnect.
+
+What is genuinely functional: connections are the existing Supabase invitation system (create a link, accept, what I
+share, disconnect) with the same consent defaults (routine sharing starts off), exercised end to end by
+`scripts/verify-account-journey.mjs` (72 checks). A family added by postcode is on this phone only and its card says so.
+Nothing new is read from or written to a connection: the hub stores one id. Deferred: a shared plan that both families
+edit (plan invites remain the existing one-way "invite a family to this plan").
+
+### Editable timeline (`plan-timeline.ts`, `PlanTimeline.tsx`, `app/plan.tsx`, `app/saved-plan.tsx`)
+
+Rows: leave home, arrive (hours, parking, pushchair, baby changing for under-threes, recommended ages against the
+children), explore until the next feed or nap, the routine itself with the facility that matters, carry on, leave for
+lunch, lunch (the walk, what the mappers listed and why it matters, how long, hours), leave for home, home (the margin
+before the next routine at home), the routine at home. Every line carries **confirmed / estimated / suggested / reported
+/ unknown**. A routine that falls during a drive is a row where it falls; one that starts in the visit and carries on into
+the move is one row, extended.
+
+Edits: Change arrival (half-hour chips or any time), Change how long (the plan sheet's lengths), Change lunch (the
+OpenStreetMap candidates already fetched for the venue, nearest first, with what the mappers listed; or take lunch out),
+Leave earlier (the tight-margin advice's verified option). Each edit changes the plan's URL parameters, so the real
+scheduler re-runs with the same journey matrix: no new journey request, no Google call. Saving keeps the answers the day
+was built from (`SavedDay.draft`); a saved day shows the same timeline with "Edit this plan", which reopens the Plan
+screen from those answers, and saving again replaces that day (same id, same place in Plans). Saving is confirmed by
+reading the day back from storage by id and content; a refused edit restores the old day. Stops cannot be added, removed
+or reordered (after beta, as agreed).
+
+### Meet halfway, map first
+
+The Map / List control and the map stay at the top of the screen (`stickyHeaderIndices`) while the cards scroll under
+it. Every recommended place is a numbered pin matching its card; the place in focus is the filled green pin and badge,
+the others outlined; tapping a card selects its pin, tapping a pin scrolls to its card; the selected name is shown beside
+the control. Each family's journey is its own line, labelled estimated; the ranking note says the numbers are the cards'
+order and the midpoint is not the method; no score is printed. The map is still the device-drawn basemap: no tiles, no
+provider, no request.
+
+### Verification
+
+- `tsc --noEmit` clean. `vitest run`: 205 files, 3478 passed (the `remediation` web static-route tests need a web build first and
+  pass under `npm run test:routes`). New tests: `navigation-tabs` (16), `families-hub` (13), `plan-timeline`
+  (12, driven through the real planner), `save-plan-flow` (+3 for replacing an edited day).
+- Browser, fixture build, iPhone 390×844 and 360×780: five tabs reachable; the hub, Plan together → Explore banner →
+  plan sheet with the family preselected → Done; Meet halfway with two families and four numbered pins, card → pin and
+  pin → card, the map still on screen after scrolling, List mode; the timeline built, arrival changed to 10:30, visit
+  to 1 hour (the nap margin went from 6 min, tight, to 36 min), lunch changed to a second real candidate, saved, reopened
+  from Plans with the same rows, edited again from the saved day and saved again as the same day (one row in Plans).
+  Zero requests to Google in every run.
+- `scripts/verify-account-journey.mjs`: 72/72 (sign-up, verification, invitation link, acceptance, what each side sees,
+  the Families tab, sharing update, disconnect). `scripts/verify-nav-clearance.mjs`: every tab at seven sizes.
+- Private data: the hub reads no connection data beyond the existing section; the bundle carries no profile data (the
+  one fixture name in it is the long-standing mock venue copy); routines are shown only to their own household.
+
+### Known limitations
+
+- "Find activities for both families" is Plan together (the next plan is built for both households by the multi-family
+  planner) rather than a separate filtered list; Explore's ranking itself is unchanged.
+- The journey legs the timeline reports are the planner's own (driving, measured or estimated from distance); the walk
+  to lunch from the discovery is offered on the lunch row as an alternative, not used for timing.
+- Restaurant alternatives exist only where the venue's nearby-food discovery found candidates; where it found none the
+  sheet says so and offers nothing invented.
+- Demonstrated against the fixture build (synthetic venues, in-memory accounts); nothing here was run against production.

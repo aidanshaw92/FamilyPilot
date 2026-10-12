@@ -170,11 +170,11 @@ function visitBasisLine(input: PlanViewModelInput, phrase: (familyId: string, ro
   }
 }
 
-function lunchLines(stop: SequenceStop, input: PlanViewModelInput, legIn: SequenceLeg | undefined, children: TimelineChild[]): TimelineLine[] {
+function lunchLines(stop: SequenceStop, input: PlanViewModelInput, children: TimelineChild[]): TimelineLine[] {
   const lines: TimelineLine[] = [];
   const facts = input.lunchFacts;
   const from = input.anchorName;
-  if (legIn) lines.push(journeyLine(legIn, null));
+  // The drive the day was timed with is on the "Leave for lunch" row; a walk the discovery found is the alternative.
   if (facts?.walkMinutes !== undefined) {
     const n = Math.max(1, Math.round(facts.walkMinutes));
     lines.push(
@@ -257,7 +257,7 @@ export function planTimeline(input: PlanViewModelInput, context: TimelineContext
         until: stop.depart,
         title: `Lunch at ${stop.name}`,
         tone: 'quiet',
-        lines: lunchLines(stop, input, legIn, children),
+        lines: lunchLines(stop, input, children),
         edit: 'lunch',
         stopIndex: stop.index,
       });
