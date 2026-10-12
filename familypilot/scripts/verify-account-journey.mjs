@@ -224,20 +224,28 @@ console.log('owner: Create a plan > Add another family');
   check(!/WD23|example\.com/.test(t), 'no address or email is shown for the connected family');
   await shot(page, '11-add-another-family');
 
-  // The same connected family is first-class on the Profile (one shared model with Who's coming and Meet halfway).
+  // The Profile no longer lists connections (they are managed in Families, once); it says where they are and owns the account.
   await page.goto(`${BASE}/profile`, { waitUntil: 'domcontentloaded' });
   await settle(page, 2500);
+  check(await page.getByTestId('profile-families-link').count() === 1, 'the Profile points to Families for connected families and invitations');
+  check(await page.getByTestId('profile-connected-families').count() === 0, 'and does not list them a second time');
+  check(await page.getByTestId('profile-data-locations').count() === 1, 'and says where data lives: this phone, the account, the optional backup');
+  await shot(page, '12-profile-data-locations');
+
+  // The same connected family is first-class on Families (one shared model with Who's coming and Meet halfway).
+  await page.goto(`${BASE}/families`, { waitUntil: 'domcontentloaded' });
+  await settle(page, 2500);
   const profileText = await text(page);
-  check(/Connected families/.test(profileText) && /Alex/.test(profileText), 'the Profile lists the connected family under Connected families');
-  check(await page.getByText('+ Invite another family', { exact: true }).count() > 0, 'and offers + Invite another family');
-  check(/Meet halfway/.test(profileText) && /Disconnect/.test(profileText), 'with Meet halfway and Disconnect on each connected family');
+  check(/Connected families/.test(profileText) && /Alex/.test(profileText), 'Families lists the connected family under Connected families');
   const connectedText = await page.getByTestId('profile-connected-families').innerText();
   // The area word (an outward code) is shared by design; a full postcode, an email or a child's name never is.
   check(!/[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}|example\.com|Theo/.test(connectedText), 'and shows nothing the connection did not share (no full postcode, email or child name)');
   await shot(page, '12-profile-connected-families');
-  // Meet halfway with the connected family reads its routines as "not shared" unless they opted in.
+  // Meet halfway from the family's card opens the Halfway tab with that family chosen.
   await page.getByRole('button', { name: 'Meet halfway', exact: true }).first().click();
   await settle(page, 3500);
+  check(new URL(page.url()).pathname === '/halfway', 'Meet halfway on the card opens the Halfway tab');
+  check(await page.getByRole('tab', { name: 'Halfway', selected: true }).count() === 1, 'with the Halfway tab selected in the bottom navigation');
   const halfway = await text(page);
   check(/Meet halfway/.test(halfway) && /Places that work for both|No place works for both/.test(halfway), 'Meet halfway opens with the connected family chosen');
   await shot(page, '13-meet-halfway-connected');
@@ -268,7 +276,7 @@ console.log('owner: the Families tab opens connected families, invitations and t
   check(!/[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}|example\.com/.test(body), 'the screen shows no full postcode or email');
   const connectedCards = await page.getByTestId('profile-connected-families').innerText();
   check(!/Theo/.test(connectedCards), 'the connected families\' cards carry no child name');
-  check(/Theo/.test(await page.getByTestId('profile-your-family').innerText()), 'the owner\'s own household is shown to the owner, under Your family');
+  check(/Theo/.test(await page.getByTestId('families-household-summary').innerText()), 'the owner\'s own household is shown to the owner, in the household summary');
   check(await page.getByTestId('families-add').count() === 1 && /Add another family/.test(await page.getByTestId('families-add').innerText()), 'with connections, the add action reads "Add another family"');
   check(await page.getByText('+ Invite another family', { exact: true }).count() === 0, 'and the invitation tools stay closed until asked for');
   await shot(page, '12b-families-screen');
@@ -314,7 +322,7 @@ console.log('owner: an older connection shares richer routines without reconnect
     stored.state.profile.routines = [{ id: 'nap-a', label: 'Nap', kind: 'nap', time: '12:30', durationMinutes: 90, atHome: true, childId: child?.id }];
     localStorage.setItem(key, JSON.stringify(stored));
   });
-  await page.goto(`${BASE}/profile`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/families`, { waitUntil: 'domcontentloaded' });
   await settle(page, 3000);
   const row = page.getByTestId('connected-family-row').first();
   const legacyText = await row.innerText();

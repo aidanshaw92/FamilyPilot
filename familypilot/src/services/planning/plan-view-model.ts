@@ -145,6 +145,8 @@ export interface PlanConflictView {
   accepted: boolean;
   /** "Your nap · 13:00–14:30 begins during lunch and runs into the drive home" */
   lines: string[];
+  /** The routine-advice entries these lines already say, so the screen does not draw each nap twice. */
+  adviceIds: string[];
   /** Said when no verified change clears it, so the parent knows the choice is theirs: change the plan, or keep it. */
   hint: string | null;
 }
@@ -664,7 +666,7 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
   const napClashes = reasoning.advice.filter((a) => a.severity === 'soft' && a.kind === 'nap');
   const signature = napClashes.length ? conflictSignature(napClashes) : null;
   const conflict: PlanConflictView | null = signature
-    ? { signature, accepted: input.acceptedConflict === signature, lines: napClashes.map((a) => `${a.title} ${a.where}`), hint: recommendation ? null : 'No single change clears it. Change when you arrive or how long you stay, or keep the plan as it is.' }
+    ? { signature, accepted: input.acceptedConflict === signature, lines: napClashes.map((a) => `${a.title} ${a.where}`), adviceIds: napClashes.map((a) => a.id), hint: recommendation ? null : 'No single change clears it. Change when you arrive or how long you stay, or keep the plan as it is.' }
     : null;
   const conflictPhrase = napClashes.length === 1 ? napClashes[0].phrase : `${napClashes.length} routines`;
   const restoreVisit = input.visit?.basis === 'routine-limited' && input.visit.unshortenedMinutes && input.visit.unshortenedMinutes > input.visit.minutes

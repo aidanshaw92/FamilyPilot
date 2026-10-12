@@ -276,13 +276,21 @@ export default function ProfileScreen() {
           Your data
         </Text>
         <Card style={styles.prefCard} testID="profile-data-locations">
-          <ProfileRow icon="phone-portrait-outline" label="On this phone" value="Family details, routines, saved plans and places" />
-          <ProfileRow icon="person-circle-outline" label="In your account" value="Your email and the families you connect with" />
-          <ProfileRow icon="cloud-upload-outline" label="Cloud backup" value="Only if you tap Back up. Private to you" />
-          <Text variant="caption" color={colors.text.tertiary}>
-            Your children’s names, birthdays and routines stay on this phone unless you choose to back them up. A connected family sees
-            only what you agreed to share with them: never names or an address, and routines only if you switch that on.
-          </Text>
+          {[
+            { icon: 'phone-portrait-outline', title: 'On this phone', body: 'Your family details, children’s names and birthdays, routines, saved plans and places.' },
+            { icon: 'person-circle-outline', title: 'In your account', body: 'Your email, and the families you connect with. A connected family sees only what you agreed to share: never names or an address, and routines only if you switch that on.' },
+            { icon: 'cloud-upload-outline', title: 'Cloud backup (optional)', body: 'Only when you tap Back up. A private copy of plans and routines, without children’s names. You can delete it any time.' },
+          ].map((row) => (
+            <View key={row.title} style={styles.dataRow}>
+              <Ionicons name={row.icon as keyof typeof Ionicons.glyphMap} size={20} color={colors.text.secondary} style={styles.dataIcon} />
+              <View style={styles.dataText}>
+                <Text variant="label">{row.title}</Text>
+                <Text variant="bodySmall" color={colors.text.secondary}>
+                  {row.body}
+                </Text>
+              </View>
+            </View>
+          ))}
         </Card>
         <PlanningAccount dataOnly />
 
@@ -404,6 +412,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
+  dataRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start', paddingVertical: spacing.xs },
+  dataIcon: { marginTop: 2 },
+  dataText: { flex: 1, gap: 2 },
   prefRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -324,7 +324,10 @@ export function PlanScreenView({
                     ) : null}
                   </View>
                 ) : null}
-                {view.routines.advice.map((item) => (
+                {view.routines.advice
+                  // The banner above already says each nap that is run into; its entry returns only if it carries options of its own.
+                  .filter((item) => !view.routines!.conflict?.adviceIds.includes(item.id) || item.options.length > 0)
+                  .map((item) => (
                   <AdviceItem key={item.id} item={item} onApply={onApplyOption} />
                 ))}
                 {/* Home only just before a routine: a warning with the two times, never a tick (home-margin.ts). The
