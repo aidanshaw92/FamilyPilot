@@ -67,6 +67,8 @@ export interface RoutineAdvice {
   kind: 'nap' | 'feed';
   /** "Ozzie’s nap · 12:30–14:00" */
   title: string;
+  /** The routine as a sentence names it: "Ozzie’s nap", "your nap", "the nap for Hannah’s family". */
+  phrase: string;
   /** Where it falls: "falls on the drive home". */
   where: string;
   /** What the parent might want to know or do, one or two sentences. */
@@ -234,6 +236,7 @@ function pushchairLine(venue: AdviceVenue): string {
 
 function describeAlternative(alternative: PlanAlternative, originalArrive: number | undefined): string {
   if (alternative.kind === 'shorter') return `Stay ${spokenMinutes(alternative.visitMinutes)} instead`;
+  if (alternative.kind === 'combined') return `Arrive at ${alternative.arriveAt} and stay ${spokenMinutes(alternative.visitMinutes)}`;
   const arrive = alternative.arriveAt;
   if (originalArrive === undefined) return `Arrive at ${arrive} instead`;
   const [h, m] = arrive.split(':').map(Number);
@@ -308,6 +311,7 @@ export function reasonAboutRoutines(context: RoutineAdviceContext): RoutineReaso
       routineId: group.routineId,
       kind: group.kind,
       title: `${upper(phrase)} · ${hm(group.start)}–${hm(group.end)}`,
+      phrase,
       where: whereLine(group, itinerary, venue.name),
       detail: lines.join(' '),
       options,
@@ -339,7 +343,8 @@ export function reasonAboutRoutines(context: RoutineAdviceContext): RoutineReaso
       const options: AdviceOption[] = [];
       let advice = `Consider leaving ${TIGHT_HOME_EARLIER_MINUTES} minutes earlier.`;
       for (const alternative of alternatives) {
-        if (alternative.kind === 'later') continue;
+        // A combined change moves the arrival AND cuts the visit: a bigger ask than "leave a little earlier", so never the tight-home chip.
+        if (alternative.kind === 'later' || alternative.kind === 'combined') continue;
         if (!alternative.resolves.some((r) => r.familyId === after.familyId && r.routineId === after.routineId)) continue;
         if (alternative.kind === 'earlier') {
           const earlierBy = firstArrive !== undefined ? firstArrive - clockMinutesOf(alternative.arriveAt) : TIGHT_HOME_EARLIER_MINUTES;

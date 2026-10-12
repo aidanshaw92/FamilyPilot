@@ -133,14 +133,34 @@ export interface PlanTightHomeView {
   options: PlanAdviceOptionView[];
 }
 
+/**
+ * A routine the family keeps at home that the day, as it stands, runs into. It stays on screen until the parent changes
+ * the plan or says they are keeping it ("accepted"); acceptance belongs to THIS overlap, so a plan edited into a
+ * different overlap asks again. Only naps count: a feed that falls on the outing is something to plan for, not a day
+ * that does not work.
+ */
+export interface PlanConflictView {
+  /** Identifies this overlap (which routines, when, where in the day). The accepted signature is compared with it. */
+  signature: string;
+  accepted: boolean;
+  /** "Your nap · 13:00–14:30 begins during lunch and runs into the drive home" */
+  lines: string[];
+  /** Said when no verified change clears it, so the parent knows the choice is theirs: change the plan, or keep it. */
+  hint: string | null;
+}
+
 export interface PlanRoutinesView {
   headline: string;
+  /** Non-null while a routine kept at home is run into, whether or not the parent has chosen to keep it that way. */
+  conflict: PlanConflictView | null;
+  /** The visit was shortened by FamilyPilot for a routine: the parent can have the full length back. */
+  restoreVisit: { minutes: number; label: string } | null;
   /** Leads the section when a change would clear a clash. */
   recommendation: PlanRecommendationView | null;
   /** The other verified changes, under the recommendation. */
   otherOptions: PlanAdviceOptionView[];
   advice: PlanAdviceView[];
-  /** Routines at home the day is home before, with real room to spare. */
+  /** Routines at home the day is home before, with real room to spare. Shown plainly, not as a tick, while a `conflict` stands. */
   homeBefore: string[];
   /** Routines at home the day is home before, but only just: said as tight, with the verified change if there is one. */
   tight: PlanTightHomeView[];
@@ -379,6 +399,8 @@ export interface PlanViewModelInput {
   visit?: VisitResolution;
   /** Verified ways to clear a routine overlap, from the planner. */
   alternatives?: PlanAlternative[];
+  /** The overlap signature the parent chose to keep ("Keep it as planned"), saved with the day. Applies only to that overlap. */
+  acceptedConflict?: string;
   /** The anchor's recorded pushchair suitability. A venue fact, so it may be saved; absent reads as unknown. */
   pushchair?: PushchairSuitability;
   /** Planner families that use a pushchair (ids only). */
@@ -512,6 +534,7 @@ function recommend(
   advice: PlanAdviceView[],
   resolveSubject: SubjectResolver,
   originalArrive: number | undefined,
+  visit: { name: string; minutes: number } | undefined,
 ): PlanRecommendationView | null {
   const softKeys = new Set(reasoning.filter((a) => a.severity === 'soft').map((a) => `${a.familyId}\u0000${a.routineId}`));
   const candidates = new Map<string, PlanAdviceOptionView>();
@@ -524,7 +547,7 @@ function recommend(
     const [h, m] = a.arriveAt.split(':').map(Number);
     return Math.abs(h * 60 + m - originalArrive);
   };
-  const kindRank = (option: PlanAdviceOptionView) => ({ earlier: 0, later: 1, shorter: 2 })[option.alternative!.kind];
+  const kindRank = (option: PlanAdviceOptionView) => ({ earlier: 0, later: 1, shorter: 2, combined: 3 })[option.alternative!.kind];
   const best = [...candidates.values()]
     .filter((option) => clears(option) > 0)
     .sort((x, y) => clears(y) - clears(x) || Number(x.alternative!.kind === 'shorter') - Number(y.alternative!.kind === 'shorter') || shift(x) - shift(y) || kindRank(x) - kindRank(y))[0];
@@ -539,6 +562,10 @@ function recommend(
   const distinct = [...new Set(cleared)];
   const what = distinct.length === cleared.length ? joinPhrases(cleared) : `${cleared.length} of your routines`;
   const lines = [`That keeps the day clear of ${what}.`];
+  // What it costs, said plainly: the parent is choosing to give up time, or to start earlier, and nothing is changed until they do.
+  if (visit && (alternative.kind === 'shorter' || alternative.kind === 'combined') && alternative.visitMinutes < visit.minutes) {
+    lines.push(`You’d have ${allowedLabel(alternative.visitMinutes)} at ${visit.name} instead of ${allowedLabel(visit.minutes)}.`);
+  }
   for (const item of left) {
     // Still overlapping after the change (the re-run never adds one). Where it would fall is not known for the new
     // times, so the sentence says only that it does.
@@ -551,8 +578,24 @@ function recommend(
   const title =
     alternative.kind === 'shorter'
       ? `Best option: stay ${allowedLabel(alternative.visitMinutes)} instead`
-      : `Best option: arrive around ${alternative.arriveAt}`;
-  return { title, lines, option: { ...best, label: alternative.kind === 'shorter' ? `Stay ${allowedLabel(alternative.visitMinutes)}` : `Arrive at ${alternative.arriveAt}` } };
+      : alternative.kind === 'combined'
+        ? `Best option: arrive around ${alternative.arriveAt} and stay ${allowedLabel(alternative.visitMinutes)}`
+        : `Best option: arrive around ${alternative.arriveAt}`;
+  const label =
+    alternative.kind === 'shorter'
+      ? `Stay ${allowedLabel(alternative.visitMinutes)}`
+      : alternative.kind === 'combined'
+        ? `Arrive at ${alternative.arriveAt}, stay ${allowedLabel(alternative.visitMinutes)}`
+        : `Arrive at ${alternative.arriveAt}`;
+  return { title, lines, option: { ...best, label } };
+}
+
+/** A short, stable identity for an overlap: the same routines meeting the same parts of the day at the same times. */
+function conflictSignature(clashes: { id: string; title: string; where: string }[]): string {
+  const text = clashes.map((c) => `${c.id}|${c.title}|${c.where}`).sort().join(';');
+  let hash = 5381;
+  for (let i = 0; i < text.length; i += 1) hash = ((hash * 33) ^ text.charCodeAt(i)) >>> 0;
+  return hash.toString(36);
 }
 
 function joinPhrases(items: string[]): string {
@@ -591,7 +634,7 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
   }
   const note = visitNote(input.visit, input.anchorCategory, routineSentence);
   if (!input.hasRoutines && insights.length === 0 && homeAfter.length === 0) {
-    return note ? { headline: '', recommendation: null, otherOptions: [], advice: [], homeBefore: [], tight: [], together: [], visitNote: note, clear: false } : null;
+    return note ? { headline: '', conflict: null, restoreVisit: null, recommendation: null, otherOptions: [], advice: [], homeBefore: [], tight: [], together: [], visitNote: note, clear: false } : null;
   }
   const adviceContext: RoutineAdviceContext = {
     itinerary,
@@ -612,7 +655,21 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
     detail: a.detail,
     options: a.options.map((option, index) => ({ key: `${a.id}#${index}`, kind: option.kind, label: option.label, alternative: option.alternative })),
   }));
-  const recommendation = soft > 0 ? recommend(reasoning.advice, advice, resolveSubject, itinerary.stops[0]?.arrive) : null;
+  const anchorStop = itinerary.stops.find((stop) => stop.anchor);
+  const recommendation = soft > 0
+    ? recommend(reasoning.advice, advice, resolveSubject, itinerary.stops[0]?.arrive, anchorStop ? { name: anchorStop.name, minutes: anchorStop.dwellMinutes } : undefined)
+    : null;
+  // A nap at home that the day runs into is not "a routine to plan around": it is a day that, as it stands, does not fit.
+  // It stays visible until the parent changes the plan or says they are keeping it (and that choice is only for this overlap).
+  const napClashes = reasoning.advice.filter((a) => a.severity === 'soft' && a.kind === 'nap');
+  const signature = napClashes.length ? conflictSignature(napClashes) : null;
+  const conflict: PlanConflictView | null = signature
+    ? { signature, accepted: input.acceptedConflict === signature, lines: napClashes.map((a) => `${a.title} ${a.where}`), hint: recommendation ? null : 'No single change clears it. Change when you arrive or how long you stay, or keep the plan as it is.' }
+    : null;
+  const conflictPhrase = napClashes.length === 1 ? napClashes[0].phrase : `${napClashes.length} routines`;
+  const restoreVisit = input.visit?.basis === 'routine-limited' && input.visit.unshortenedMinutes && input.visit.unshortenedMinutes > input.visit.minutes
+    ? { minutes: input.visit.unshortenedMinutes, label: `Stay ${allowedLabel(input.visit.unshortenedMinutes)}` }
+    : null;
   // The answer first. A day with nothing to act on "should work well"; a clash that one verified change clears leads with
   // that change; a clash nothing clears says so plainly, and the details follow.
   const tight: PlanTightHomeView[] = reasoning.tight.map((item) => ({
@@ -620,8 +677,12 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
     text: item.text,
     options: item.options.map((option, index) => ({ key: `${item.id}#${index}`, kind: option.kind, label: option.label, alternative: option.alternative })),
   }));
-  const headline = recommendation
+  const headline = conflict?.accepted
+    ? `You’re keeping this plan, with ${conflictPhrase} during the day`
+    : recommendation
     ? recommendation.title
+    : conflict
+      ? `This plan runs into ${conflictPhrase}`
     : soft === 0
       ? tight.length > 0
         ? 'This plan works, but one timing is tight'
@@ -642,6 +703,8 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
   }
   return {
     headline,
+    conflict,
+    restoreVisit,
     recommendation,
     otherOptions: recommendation ? otherOptions : [],
     // With the recommendation leading, the options sit above the details, so a detail that points at them says so.
@@ -727,9 +790,11 @@ export function toPlanViewModel(input: PlanViewModelInput, context?: PlanViewCon
     .find((match): match is RegExpExecArray => Boolean(match));
   // A tight margin is said as tight, in the same place the tick would have gone: the line is a warning, never a tick.
   const tightInsight = routines?.tight[0]?.text ?? null;
+  // "Home before your feed" is true, and is still not the whole story while the day runs into a nap: no reassuring line then.
+  const standingConflict = Boolean(routines?.conflict) || Boolean(routines?.advice.some((item) => item.severity === 'soft'));
   const insight = tightInsight
-    ?? routines?.homeBefore[0]
-    ?? (primary && homeBefore && !tightFromNotes(itinerary, primary.familyId) ? `Home around ${planClock(primary.home)}, before ${homeBefore[1]}` : null);
+    ?? (standingConflict ? null : routines?.homeBefore[0])
+    ?? (!standingConflict && primary && homeBefore && !tightFromNotes(itinerary, primary.familyId) ? `Home around ${planClock(primary.home)}, before ${homeBefore[1]}` : null);
   const insightTone: PlanViewModel['insightTone'] = tightInsight ? 'tight' : 'ok';
 
   return {

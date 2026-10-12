@@ -32,7 +32,7 @@ import { parseClockTime, venueLocalDate, venueLocalTime } from '@/src/utils/open
 import { buildJourneyMatrix } from './journey-matrix';
 import { homeKey, sequenceDay, stopKey } from './sequencer';
 import { MIN_USEFUL_VISIT_MINUTES, VisitResolution } from './visit-duration';
-import { TIGHT_HOME_EARLIER_MINUTES, homeMargins } from './home-margin';
+import { TIGHT_HOME_EARLIER_MINUTES, TIGHT_HOME_MARGIN_MINUTES, homeMargins } from './home-margin';
 import { FoodCandidate } from '@/src/types/nearby-food';
 import { TravelLeg } from '@/src/types/travel';
 
@@ -398,7 +398,9 @@ function fitVisitToRoutine(
     if (!insight.atHome || insight.start <= anchorStop.arrive) continue;
     const home = homeOf.get(insight.familyId);
     if (home === undefined) continue;
-    const overrun = home - insight.start;
+    // Home with room to spare, not home with a minute to spare: the visit is cut so the family is back at least the
+    // estimated-journey margin before the routine (home-margin.ts), or "home 12:59 for a 13:00 nap" would be the answer.
+    const overrun = home + TIGHT_HOME_MARGIN_MINUTES.estimated - insight.start;
     if (overrun > 0 && (!worst || overrun > worst.overrun)) {
       worst = { overrun, routineId: insight.routineId, familyId: insight.familyId };
     }
@@ -419,6 +421,9 @@ function fitVisitToRoutine(
 
 const OFFSETS_MINUTES = [30, 60];
 const SHORTER_BY_MINUTES = [30, 60];
+const COMBINED_SHORTER_BY_MINUTES = [30, 60, 90];
+
+const marginKey = (m: { familyId: string; routineId: string }) => `${m.familyId}\u0000${m.routineId}`;
 
 /**
  * Ways to run the same day that clear a routine overlap, each one verified by sequencing it for real.
@@ -426,6 +431,14 @@ const SHORTER_BY_MINUTES = [30, 60];
  * One alternative per kind at most (the nearest earlier start, the nearest later start, the shortest visit
  * change that helps), so the screen offers a few clear choices rather than a table. Never offered if it would
  * create a new overlap or fail on opening hours or a limit: a suggestion that then refuses to build is worse than none.
+ *
+ * Within a kind, a change that gets the family home with room to spare is preferred to one that clears the overlap
+ * but leaves the routine tight (home-margin.ts); the tight one is still offered when nothing else clears it.
+ *
+ * When no single change clears everything a change can (an 10:30 arrival at a museum that opens at 10:00, a nap at
+ * 13:00 and a 45-minute lunch), one COMBINED alternative is looked for: start earlier and stay a shorter time. It is
+ * offered only if it clears more than any single change does, and only as a choice: it moves the parent's arrival
+ * and shortens their visit, so it is never applied on their behalf.
  */
 function findAlternatives(
   base: DayItinerary,
@@ -437,9 +450,13 @@ function findAlternatives(
   if (baseClashes.size === 0) return [];
   const arrive = base.stops[0]?.arrive;
   if (arrive === undefined) return [];
+  const baseTight = new Set(homeMargins(base).filter((m) => m.tight).map(marginKey));
 
-  const found: PlanAlternative[] = [];
-  const consider = (kind: PlanAlternative['kind'], arriveMinutes: number, minutes: number): PlanAlternative | null => {
+  const consider = (
+    kind: PlanAlternative['kind'],
+    arriveMinutes: number,
+    minutes: number,
+  ): { alternative: PlanAlternative; tight: boolean } | null => {
     if (arriveMinutes < 0 || arriveMinutes >= 1440) return null;
     const attempt = run(withAnchorDwell(requests, minutes), clockOf(arriveMinutes));
     if (!attempt.ok) return null;
@@ -448,35 +465,42 @@ function findAlternatives(
     // Better means fewer overlaps, and none of them new.
     if (!resolves.length || remaining.size >= baseClashes.size) return null;
     if ([...remaining].some((key) => !baseClashes.has(key))) return null;
+    const tight = homeMargins(attempt.itinerary).some((m) => m.tight && !baseTight.has(marginKey(m)));
     return {
-      kind,
-      arriveAt: clockOf(arriveMinutes),
-      visitMinutes: minutes,
-      resolves: resolves.map((key) => {
-        const [familyId, routineId] = key.split('\u0000');
-        return { familyId, routineId };
-      }),
+      tight,
+      alternative: {
+        kind,
+        arriveAt: clockOf(arriveMinutes),
+        visitMinutes: minutes,
+        resolves: resolves.map((key) => {
+          const [familyId, routineId] = key.split('\u0000');
+          return { familyId, routineId };
+        }),
+      },
     };
   };
+  /** The first hit with room to spare, else the first hit at all. */
+  const firstOf = (hits: ({ alternative: PlanAlternative; tight: boolean } | null)[]): PlanAlternative | null => {
+    const real = hits.filter((hit): hit is { alternative: PlanAlternative; tight: boolean } => hit !== null);
+    return (real.find((hit) => !hit.tight) ?? real[0])?.alternative ?? null;
+  };
 
+  const found: PlanAlternative[] = [];
   for (const kind of ['earlier', 'later'] as const) {
-    for (const offset of OFFSETS_MINUTES) {
-      const hit = consider(kind, kind === 'earlier' ? arrive - offset : arrive + offset, visitMinutes);
-      if (hit) {
-        found.push(hit);
-        break;
-      }
-    }
+    const hit = firstOf(OFFSETS_MINUTES.map((offset) => consider(kind, kind === 'earlier' ? arrive - offset : arrive + offset, visitMinutes)));
+    if (hit) found.push(hit);
   }
-  for (const shorter of SHORTER_BY_MINUTES) {
-    const minutes = visitMinutes - shorter;
-    if (minutes < MIN_USEFUL_VISIT_MINUTES) break;
-    const hit = consider('shorter', arrive, minutes);
-    if (hit) {
-      found.push(hit);
-      break;
-    }
-  }
+  const shorter = firstOf(
+    SHORTER_BY_MINUTES.map((by) => (visitMinutes - by < MIN_USEFUL_VISIT_MINUTES ? null : consider('shorter', arrive, visitMinutes - by))),
+  );
+  if (shorter) found.push(shorter);
+
+  const best = Math.max(0, ...found.map((alternative) => alternative.resolves.length));
+  const pairs = OFFSETS_MINUTES.flatMap((offset) => COMBINED_SHORTER_BY_MINUTES.map((by) => ({ offset, by })))
+    .filter(({ by }) => visitMinutes - by >= MIN_USEFUL_VISIT_MINUTES)
+    .sort((a, b) => a.offset + a.by - (b.offset + b.by) || a.by - b.by);
+  const combined = firstOf(pairs.map(({ offset, by }) => consider('combined', arrive - offset, visitMinutes - by)));
+  if (combined && combined.resolves.length > best) found.push(combined);
   return found;
 }
 
