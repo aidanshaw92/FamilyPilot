@@ -84,3 +84,13 @@ describe('Family Fit never says a bare "Good fit" where no child is confirmed', 
     expect(r.verdict).toBe('good');
   });
 });
+
+describe('a single child nobody has confirmed the place for', () => {
+  it('the badge, the headline and the check line all say the same thing, and none says "promising"', () => {
+    const r = read([child('c1', 'Sloane', 5)]);
+    expect(r.practicalOnly).toBe(true);
+    expect(matchBadgeText(r)).toBe('Looks practical · check Sloane');
+    expect(r.headline).toBe('Looks practical, but we haven’t yet confirmed whether this activity suits Sloane');
+    expect(r.toCheck.map((c) => c.text).join(' ')).toMatch(/activity suits Sloane/);
+  });
+});

@@ -130,10 +130,11 @@ describe('Family Match: the honest verdict', () => {
   });
 
   it('uses "your family" when no confirmed fact is about a particular child, and does not say "Good for" it', () => {
-    // Toilets are about the place and the visit, not about whether the activity suits the family: it is promising, not "good for".
+    // Toilets are about the place and the visit, not about whether the activity suits the family: not "good for", and not
+    // "promising" either while nothing about the activity is confirmed for the child (see family-fit-credibility.test.ts).
     const p = profile({ members: [parent, child('c1', 'Sloane', 7)] });
     const r = run(venue({}, { toilets: 'yes' }), p);
-    expect(r.headline).toBe('Looks promising for your family');
+    expect(r.headline).toBe('Looks practical, but we haven’t yet confirmed whether this activity suits Sloane');
     expect(r.headline).not.toMatch(/^(Good|Excellent) for/);
   });
 

@@ -370,6 +370,13 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
           toCheck.push(role === 'mine' ? sentence : `We haven’t yet confirmed whether this activity suits every child in ${who}`);
           saidFit.add(role);
           bonus += result.verdict === 'excellent' ? 6 : 3;
+        } else if (result.practicalOnly) {
+          // The facilities look fine and nothing about the activity is confirmed for any child: said as a thing to check, not as
+          // a fit. The credit is what it always was, so the order Meet halfway offers places in does not move (see
+          // ranking-golden.test.ts); only the words do.
+          toCheck.push(role === 'mine' ? sentence : `We haven’t yet confirmed whether this activity suits the children in ${who}`);
+          saidFit.add(role);
+          bonus += result.verdict === 'excellent' ? 12 : 7;
         } else {
           fit.push(role === 'mine' ? sentence : `Family Fit is ${result.verdict} for ${who}`);
           bonus += result.verdict === 'excellent' ? 12 : 7;

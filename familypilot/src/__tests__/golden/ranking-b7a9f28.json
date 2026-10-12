@@ -1,0 +1,78 @@
+{
+  "order:4yo+baby": [
+    "confirmed-ages-park:93",
+    "practical-only-museum:88",
+    "practical-only-farm:88",
+    "older-kids-only:76",
+    "unknown-everything:75",
+    "venue-1:65",
+    "venue-2:65",
+    "venue-3:65",
+    "venue-4:65"
+  ],
+  "order:6yo+2yo": [
+    "confirmed-ages-park:93",
+    "practical-only-museum:88",
+    "practical-only-farm:88",
+    "older-kids-only:76",
+    "unknown-everything:75",
+    "venue-1:65",
+    "venue-2:65",
+    "venue-3:65",
+    "venue-4:65"
+  ],
+  "order:one 3yo": [
+    "confirmed-ages-park:93",
+    "practical-only-museum:88",
+    "practical-only-farm:88",
+    "older-kids-only:76",
+    "unknown-everything:75",
+    "venue-1:65",
+    "venue-2:65",
+    "venue-3:65",
+    "venue-4:65"
+  ],
+  "order:baby only": [
+    "confirmed-ages-park:93",
+    "practical-only-museum:88",
+    "practical-only-farm:88",
+    "older-kids-only:76",
+    "unknown-everything:75",
+    "venue-1:65",
+    "venue-2:65",
+    "venue-3:65",
+    "venue-4:65"
+  ],
+  "order:three kids": [
+    "confirmed-ages-park:93",
+    "practical-only-museum:88",
+    "practical-only-farm:88",
+    "older-kids-only:81",
+    "unknown-everything:75",
+    "venue-1:65",
+    "venue-2:65",
+    "venue-3:65",
+    "venue-4:65"
+  ],
+  "halfway:4yo+baby": [
+    "confirmed-ages-park:83.5",
+    "venue-4:64.65",
+    "practical-only-farm:57.45",
+    "practical-only-museum:45.1",
+    "unknown-everything:44.2"
+  ],
+  "halfway:6yo+2yo": [
+    "confirmed-ages-park:83.5",
+    "venue-4:64.65",
+    "practical-only-farm:57.45",
+    "practical-only-museum:45.1",
+    "unknown-everything:44.2"
+  ],
+  "halfway:one 3yo": [
+    "confirmed-ages-park:83.5",
+    "venue-4:64.65",
+    "practical-only-farm:61.45",
+    "practical-only-museum:49.1",
+    "unknown-everything:44.2"
+  ]
+}

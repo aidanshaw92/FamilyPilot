@@ -283,11 +283,13 @@ function headlineFor(input: {
   verdict: MatchVerdict;
   /** Every child is under a year: the claim can only be about how easy the visit is. */
   easyVisit?: boolean;
+  /** Nothing about the activity is confirmed for any child who can take part (see `practicalOnly` on the result). */
+  practicalOnly?: boolean;
   lens: ChildLens[];
   children: readonly FamilyMember[];
   lines: { breaches: MatchLine[]; softCautions: MatchLine[]; hardUnknowns: MatchLine[]; softUnknowns: MatchLine[] };
 }): string {
-  const { verdict, easyVisit, lens, children, lines } = input;
+  const { verdict, easyVisit, practicalOnly, lens, children, lines } = input;
   // A judgement about the family and the place, never about leaving now: nothing about today's date, hours or weather is
   // in it, so the same sentence is true on every day the screen is read.
   if (verdict === 'not_reviewed') return 'Family suitability not yet reviewed';
@@ -298,7 +300,8 @@ function headlineFor(input: {
   const suitedNames = lens.filter((l) => l.state === 'works' && l.basis === 'activity' && l.name).map((l) => l.name);
   const easyNames = lens.filter((l) => l.state === 'works' && l.basis === 'logistics' && l.name).map((l) => l.name);
   const multi = children.length > 1;
-  const gap = multi ? gapPhrase(lens, lines) : null;
+  // A single child is named too when the place is confirmed for nobody: "Looks promising" would claim what nobody has checked.
+  const gap = multi || practicalOnly ? gapPhrase(lens, lines) : null;
 
   if (verdict === 'poor') {
     // Who the confirmed breach is about, where it is about particular children; otherwise the family.
@@ -323,7 +326,7 @@ function headlineFor(input: {
   }
 
   // Several children, nothing confirmed for any of them: the practical facts are good, and the headline says that is all.
-  if (multi && gap && !lead && (verdict === 'good' || verdict === 'excellent')) {
+  if ((multi || practicalOnly) && gap && !lead && (verdict === 'good' || verdict === 'excellent')) {
     return `Looks practical, but ${gap}`;
   }
 
@@ -750,7 +753,7 @@ export function evaluateFamilyMatch({ venue, profile, score, now = new Date(), p
     });
   }
 
-  const headline = headlineFor({ verdict, easyVisit, lens, children, lines: { breaches, softCautions, hardUnknowns, softUnknowns } });
+  const headline = headlineFor({ verdict, easyVisit, practicalOnly, lens, children, lines: { breaches, softCautions, hardUnknowns, softUnknowns } });
 
   const cautions = [...breaches, ...softCautions];
   const toCheck = [...hardUnknowns, ...softUnknowns];

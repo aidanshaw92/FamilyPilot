@@ -157,6 +157,8 @@ export interface PlanRoutinesView {
   conflict: PlanConflictView | null;
   /** The visit was shortened by FamilyPilot for a routine: the parent can have the full length back. */
   restoreVisit: { minutes: number; label: string } | null;
+  /** A routine at home overlaps the day in some way (a nap on the drive home counts, though it is not a conflict to decide). No reassuring tick while true. */
+  napOverlap: boolean;
   /** Leads the section when a change would clear a clash. */
   recommendation: PlanRecommendationView | null;
   /** The other verified changes, under the recommendation. */
@@ -636,7 +638,7 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
   }
   const note = visitNote(input.visit, input.anchorCategory, routineSentence);
   if (!input.hasRoutines && insights.length === 0 && homeAfter.length === 0) {
-    return note ? { headline: '', conflict: null, restoreVisit: null, recommendation: null, otherOptions: [], advice: [], homeBefore: [], tight: [], together: [], visitNote: note, clear: false } : null;
+    return note ? { headline: '', conflict: null, restoreVisit: null, napOverlap: false, recommendation: null, otherOptions: [], advice: [], homeBefore: [], tight: [], together: [], visitNote: note, clear: false } : null;
   }
   const adviceContext: RoutineAdviceContext = {
     itinerary,
@@ -707,6 +709,7 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
     headline,
     conflict,
     restoreVisit,
+    napOverlap: reasoning.advice.some((a) => a.kind === 'nap' && insights.some((i) => i.familyId === a.familyId && i.routineId === a.routineId && i.atHome)),
     recommendation,
     otherOptions: recommendation ? otherOptions : [],
     // With the recommendation leading, the options sit above the details, so a detail that points at them says so.
@@ -793,7 +796,7 @@ export function toPlanViewModel(input: PlanViewModelInput, context?: PlanViewCon
   // A tight margin is said as tight, in the same place the tick would have gone: the line is a warning, never a tick.
   const tightInsight = routines?.tight[0]?.text ?? null;
   // "Home before your feed" is true, and is still not the whole story while the day runs into a nap: no reassuring line then.
-  const standingConflict = Boolean(routines?.conflict) || Boolean(routines?.advice.some((item) => item.severity === 'soft'));
+  const standingConflict = Boolean(routines?.conflict) || Boolean(routines?.napOverlap) || Boolean(routines?.advice.some((item) => item.severity === 'soft'));
   const insight = tightInsight
     ?? (standingConflict ? null : routines?.homeBefore[0])
     ?? (!standingConflict && primary && homeBefore && !tightFromNotes(itinerary, primary.familyId) ? `Home around ${planClock(primary.home)}, before ${homeBefore[1]}` : null);

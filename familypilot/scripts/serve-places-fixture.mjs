@@ -158,6 +158,13 @@ const SCENARIO = process.env.FIXTURE_SCENARIO === 'realistic' ? 'realistic' : 's
 
 const FULL_FACILITIES = { toilets: 'yes', babyChanging: 'yes', parking: 'yes', freeParking: 'yes' };
 
+/**
+ * FIXTURE_PRACTICAL_ONLY=1: every reviewed venue keeps its practical facts (toilets, changing, parking, cafe, playground, pushchair
+ * access) but states NO recommended age, which is how the hosted catalogue holds the Royal Air Force Museum. Used to look at what
+ * Family Fit says on every surface when nothing about the activity is confirmed for any child. Off by default: CI is unaffected.
+ */
+const PRACTICAL_ONLY = process.env.FIXTURE_PRACTICAL_ONLY === '1';
+
 function scenarioMetadata(id, over = {}) {
   return {
     familypilotPlaceId: id,
@@ -179,6 +186,7 @@ function scenarioMetadata(id, over = {}) {
     lastChecked: '2026-09-28',
     checkedBy: 'fixture',
     updatedAt: '2026-09-28',
+    ...(PRACTICAL_ONLY ? { bestAges: undefined, minRecommendedAge: undefined, maxRecommendedAge: undefined } : {}),
     ...over,
   };
 }

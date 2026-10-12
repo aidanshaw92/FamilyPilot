@@ -35,6 +35,11 @@ interface FamilyMatchProps {
    * the colour, and the number is not shown: a good match says who it is good for, a possible one says possible.
    */
   match?: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[]; easyVisit?: boolean; suitedNames?: string[]; easyNames?: string[]; practicalOnly?: boolean };
+  /**
+   * How many characters the badge's words may take before it falls back to a shorter form. The pills on cards are narrow (18, or
+   * 12 beside a name); a screen with room to say the same words in full (Venue Detail) passes 40, so every surface reads the same.
+   */
+  maxLabel?: number;
   style?: ViewStyle;
 }
 
@@ -53,6 +58,7 @@ export function FamilyMatch({
   onPress,
   size = 'default',
   match: verdictMatch,
+  maxLabel,
   style,
 }: FamilyMatchProps) {
   const legacy = describeFamilyMatch(score, enrichmentStatus);
@@ -60,9 +66,10 @@ export function FamilyMatch({
   const match = verdictMatch
     ? {
         ...legacy,
-        unreviewed: !matchEarnsStar(verdictMatch.verdict),
-        number: matchEarnsStar(verdictMatch.verdict) ? '★' : null,
-        badgeLabel: matchBadgeText(verdictMatch, size === 'compact' ? 12 : 18),
+        // A place confirmed for no child earns no star: "Looks practical" is a neutral pill, never the green one that says a fit.
+        unreviewed: !matchEarnsStar(verdictMatch.verdict) || Boolean(verdictMatch.practicalOnly),
+        number: matchEarnsStar(verdictMatch.verdict) && !verdictMatch.practicalOnly ? '★' : null,
+        badgeLabel: matchBadgeText(verdictMatch, maxLabel ?? (size === 'compact' ? 12 : 18)),
         // With a child still to check, the badge's own words are the whole claim: adding "Good fit" after them would say
         // out loud the very thing the badge stopped saying.
         spoken: verdictMatch.gapNames?.length ? matchBadgeText(verdictMatch, 40) : `${matchBadgeText(verdictMatch, 40)}. ${matchClassification(verdictMatch)}`,

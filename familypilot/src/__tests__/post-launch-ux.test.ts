@@ -29,3 +29,30 @@ describe('Explore filters and evidence', () => {
     expect(sheet).toContain('left out, not counted as a no');
   });
 });
+
+describe('Family Fit reads the same on every surface', () => {
+  const must40 = (file: string) => expect(read(file), file).toMatch(/matchBadgeText\([^)]*,\s*40\)|maxLabel=\{40\}/);
+  it('Home, Explore, Saved, Venue Detail and the recommendation list all draw the badge’s words from the one function at the same length', () => {
+    for (const file of [
+      'src/components/shared/DecisionCard.tsx',
+      'src/components/shared/SavedPlaceRow.tsx',
+      'src/components/shared/RecommendationPattern.tsx',
+      'app/venue/[id].tsx',
+    ]) must40(file);
+  });
+
+  it('nothing but the wording moved: the ranking inputs are untouched files', () => {
+    // The order is pinned against the pre-change code in ranking-golden.test.ts; this guards the badge from becoming a sort key.
+    for (const file of ['src/utils/filter-venues.ts', 'src/services/places/fit-order.ts']) {
+      expect(read(file), file).not.toMatch(/practicalOnly|matchBadgeText/);
+    }
+  });
+});
+
+describe('"Looks practical" is never drawn as a fit', () => {
+  it('no star and the neutral pill when the place is confirmed for no child', () => {
+    const badge = read('src/components/ui/FamilyMatch.tsx');
+    expect(badge).toContain('|| Boolean(verdictMatch.practicalOnly)');
+    expect(badge).toContain('&& !verdictMatch.practicalOnly ? ');
+  });
+});
