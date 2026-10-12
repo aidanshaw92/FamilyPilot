@@ -12,10 +12,11 @@ import { OpeningHoursSchedule } from '@/src/types/opening-hours';
  * Excellent, second rule (docs/EXCELLENT_RULE_V2.md): what a venue's own pages say children of an age can do there.
  *
  *   permanent provision for an age  names the child and can support Excellent
- *   programme on set days           names the child, never supports Excellent
+ *   programme on set days           names the child, supports Good, never Excellent
  *   logistics                       never cover a child
  *   every child of a year or more   must be covered (venue-wide range or provision) for Excellent
- *   ranking                         unchanged: nothing here reaches the score
+ *   a museum with nothing for the child  is a Possible fit (docs/FAMILY_FIT_GRADING.md): no category inference applies
+ *   ranking                         reads a reviewed provision as the age factor (88 against the neutral 75)
  */
 const NOW = new Date(2026, 9, 8, 11, 0, 0);
 
@@ -77,22 +78,24 @@ describe('permanent provision for an age', () => {
   it('a provision for younger children says nothing against an older one, and is never their activity line', () => {
     const r = run(CHISWICK, [maya()]);
     expect(r.reasons.some((l) => /under-7s/i.test(l.text))).toBe(false);
-    expect([...r.cautions, ...r.toCheck].some((l) => /under-7s|playground/i.test(l.text))).toBe(false);
-    expect(r.verdict).toBe('good');
+    expect([...r.cautions].some((l) => /under-7s|playground/i.test(l.text))).toBe(false);
+    // Nothing says the museum suits a 7-year-old, so it is Possible, with the exhibits named as the check.
+    expect(r.verdict).toBe('possible');
+    expect(r.toCheck.map((l) => l.text)).toContain('We haven’t yet confirmed whether the exhibits suit Maya');
   });
 
-  it('covering one child of two keeps the other as the gap, and the place at Good', () => {
+  it('covering one child of two keeps the other as the gap, and the place at Possible', () => {
     const r = run(CHISWICK, [kit(), maya()]);
     expect(r.reasons.find((l) => l.key.startsWith('activity'))?.text).toBe('Under-7s playground, for Kit’s age');
     expect(r.forNames).toEqual(['Kit']);
-    expect(r.verdict).toBe('good');
+    expect(r.verdict).toBe('possible');
     expect(r.gapNames).toEqual(['Maya']);
   });
 
   it('a baby-and-toddler space covers no 7-year-old', () => {
     const r = run(DISCOVER, [maya()]);
     expect(r.forNames).toEqual([]);
-    expect(r.verdict).toBe('good');
+    expect(r.verdict).toBe('possible');
   });
 });
 
@@ -106,9 +109,9 @@ describe('a programme on set days', () => {
 });
 
 describe('logistics never cover a child', () => {
-  it('a place with every practical fact confirmed and no activity evidence stops at Good for a child of a year or more', () => {
+  it('a museum with every practical fact confirmed and no activity evidence is Possible for a child of a year or more', () => {
     const r = run('fp-no-evidence', [kit()]);
-    expect(r.verdict).toBe('good');
+    expect(r.verdict).toBe('possible');
     expect(r.forNames).toEqual([]);
   });
 
@@ -153,7 +156,7 @@ describe('logistics never cover a child', () => {
   });
 
   it('a toddler with a baby needs the toddler covered; the baby needs nothing', () => {
-    expect(run('fp-no-evidence', [child('s', 'Sloane', 3), ozzie()]).verdict).toBe('good');
+    expect(run('fp-no-evidence', [child('s', 'Sloane', 3), ozzie()]).verdict).toBe('possible');
     const r = run(BURGESS, [child('s', 'Sloane', 3), ozzie()]);
     expect(r.verdict).toBe('excellent');
     expect(r.easyVisit).toBe(false);
@@ -170,18 +173,20 @@ describe('freshness: reviewed evidence is never extended', () => {
     // Burgess Park was read on 1 October 2026.
     expect(activityEvidenceFor(BURGESS, new Date('2026-12-30T12:00:00Z'))).toHaveLength(1);
     expect(activityEvidenceFor(BURGESS, new Date('2026-12-31T12:00:00Z'))).toHaveLength(0);
-    expect(run(BURGESS, [maya()], new Date('2027-01-15T12:00:00Z')).verdict).toBe('good');
+    expect(run(BURGESS, [maya()], new Date('2027-01-15T12:00:00Z')).verdict).toBe('possible');
   });
 });
 
-describe('ranking is unchanged', () => {
-  it('the score does not read activity evidence', () => {
+describe('ranking reads the same suitability signals', () => {
+  it('a reviewed provision lifts the age factor from the neutral 75 to 88; nothing else in the score moves', () => {
     const p = profile([kit(), maya()]);
     const detail = (id: string) => ({ ...venue(id), photos: [], openingHours: [], description: '' }) as unknown as VenueDetail;
     const withEvidence = calculateFamilyScore(detail(BURGESS), p);
     const without = calculateFamilyScore(detail('fp-no-evidence'), p);
-    expect(withEvidence.score).toBe(without.score);
-    expect(withEvidence.factors).toEqual(without.factors);
+    expect(without.factors.ageSuitability).toBe(75);
+    expect(withEvidence.factors.ageSuitability).toBe(88);
+    expect({ ...withEvidence.factors, ageSuitability: 0 }).toEqual({ ...without.factors, ageSuitability: 0 });
+    expect(withEvidence.score).toBeGreaterThan(without.score);
   });
 });
 
@@ -190,17 +195,17 @@ describe('headings, whole-venue copy and ageless audiences are not activity evid
     expect(activityEvidenceFor(RAF, NOW)).toEqual([]);
     const r = run(RAF, [kit(), maya()]);
     expect(r.forNames).toEqual([]);
-    expect(r.verdict).toBe('good');
+    expect(r.verdict).toBe('possible');
   });
 
   it('copy about the whole venue covers no child (Hobbledown Heath)', () => {
     expect(activityEvidenceFor(HOBBLEDOWN, NOW)).toEqual([]);
-    expect(run(HOBBLEDOWN, [kit()]).verdict).toBe('good');
+    expect(run(HOBBLEDOWN, [kit()]).verdict).toBe('possible');
   });
 
   it('"older children" with no age covers no child (Swanley Park)', () => {
     expect(activityEvidenceFor(SWANLEY, NOW)).toEqual([]);
-    expect(run(SWANLEY, [maya()]).verdict).toBe('good');
+    expect(run(SWANLEY, [maya()]).verdict).toBe('possible');
   });
 });
 

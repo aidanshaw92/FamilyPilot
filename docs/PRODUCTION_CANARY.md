@@ -154,4 +154,8 @@ account, and judge the real experience. Invitations to outside families stay on 
 * **Families** shows connected families and "Waiting for a reply" first, then (only while you are planning with a family) the Plan together card, then a compact household summary. Account, backup and device data are in **Profile** (section "Your data").
 * **Plans** shows saved plans first; "Plan another day" is below them.
 * **Plan with a nap.** In section 3 step 2, give A's profile a nap at 13:00 and build a day that is still out then: the plan should say "This plan doesn't fit a routine yet" with "Keep it as planned", never a green "home before…" line on its own.
+* **Family Fit grades** (docs/FAMILY_FIT_GRADING.md): with a 3-year-old and a baby on the profile, Golders Hill Park should read
+  "Likely good for Sloane…" (Good) or Excellent, with the playground named as an inference (bulb) and "We've confirmed N of M
+  details" under it; a museum with nothing child-specific on record should read "Possible fit" with the exhibits named as the
+  check; a place with a confirmed obstacle for your family should read "Not recommended" with the reason.
 * Section 8 is unchanged: this release touches no `api/`, `server/`, workflow, `vercel.json`, package or migration file.

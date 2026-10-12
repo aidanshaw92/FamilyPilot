@@ -8,8 +8,10 @@ import { MatchableVenueFacts } from '@/src/types/day-request';
  * The Royal Air Force Museum London, as the hosted catalogue holds it: nine approved claims, ALL practical (baby changing,
  * toilets, parking, a café, a playground, wheelchair access, good pushchair access), and no recommended-age claim at all.
  * A parent saw "Good fit" on its cards and detail screen while the same screen's headline said the activity was not
- * confirmed for the older child. These pin that the badge, the headline and the to-check line now say the same thing,
- * whichever household is looking, and that nothing about scoring or ranking moved.
+ * confirmed for the older child. These pin that the badge, the headline and the to-check line say the same thing, whichever
+ * household is looking. Under docs/FAMILY_FIT_GRADING.md the museum's CONFIRMED playground makes it "likely good" for a child
+ * of playground age, said as an inference with the exhibits still to check; a museum with no child-specific fact at all is a
+ * Possible fit.
  */
 const NOW = new Date(2026, 9, 14, 10, 0, 0);
 const child = (id: string, name: string, age: number, extra: Partial<FamilyMember> = {}): FamilyMember => ({
@@ -36,41 +38,47 @@ const household = (kids: FamilyMember[]) => ({ id: 'f', parentName: 'Aidan', mem
 const read = (kids: FamilyMember[], v = venue()) => evaluateFamilyMatch({ venue: v, profile: household(kids), score: 82, now: NOW });
 
 describe('Family Fit never says a bare "Good fit" where no child is confirmed', () => {
-  it('a four-year-old and a baby with a buggy: the baby is easy, the older child is the check', () => {
+  it('a four-year-old and a baby with a buggy: the playground makes it likely good for the older child, the baby is easy, the exhibits are the check', () => {
     const r = read([child('c1', 'Sloane', 4), child('c2', 'Ozzie', 0, { mobility: ['buggy'] })]);
-    expect(matchBadgeText(r)).toBe('Easy with Ozzie · check Sloane');
-    expect(r.headline).toBe('Easy to visit with Ozzie, but we haven’t yet confirmed whether this activity suits Sloane');
+    expect(r.verdict).toBe('good');
+    expect(matchBadgeText(r)).toBe('Likely good for Sloane');
+    expect(r.headline).toBe('Likely good for Sloane, and easy to visit with Ozzie');
+    expect(r.reasons.find((l) => l.inferred)?.text).toBe('A children’s playground is confirmed here, which usually suits a 4-year-old like Sloane');
+    expect(r.toCheck.map((l) => l.text)).toContain('We haven’t yet confirmed whether the exhibits suit Sloane');
+    expect(r.verdict).not.toBe('excellent');
   });
 
   it.each([
     ['a four-year-old and a baby who is carried', [child('c1', 'Sloane', 4), child('c2', 'Ozzie', 0, { mobility: ['carrier'] })]],
     ['a six-year-old and a two-year-old', [child('c1', 'Sloane', 6), child('c2', 'Ozzie', 2)]],
-  ])('%s: nobody is confirmed, so the badge, the headline and the check line agree', (_label, kids) => {
-    const r = read(kids);
+  ])('%s: with no playground on record nobody is confirmed, so the badge, the headline and the check line agree at Possible', (_label, kids) => {
+    const r = read(kids, venue({ playground: 'unknown' }));
     expect(r.practicalOnly).toBe(true);
-    expect(matchBadgeText(r, 18)).toBe('Looks practical · check kids');
-    expect(matchBadgeText(r, 12)).toBe('Looks practical · check kids');
-    expect(matchBadgeText(r, 40)).not.toMatch(/^Good fit$/);
-    expect(r.headline).toBe('Looks practical, but we haven’t yet confirmed whether this activity suits Sloane and Ozzie');
-    expect(r.toCheck.map((l) => l.text)).toEqual(['We haven’t yet confirmed whether this activity suits Sloane and Ozzie']);
+    expect(r.verdict).toBe('possible');
+    for (const width of [18, 12, 40]) expect(matchBadgeText(r, width)).toBe('Possible fit');
+    expect(r.headline).toBe('Looks practical, but we haven’t yet confirmed whether the exhibits suit Sloane and Ozzie');
+    expect(r.toCheck.map((l) => l.text)).toEqual(['We haven’t yet confirmed whether the exhibits suit Sloane and Ozzie']);
   });
 
-  it('one child with nothing confirmed is named, not left as a bare Good fit', () => {
+  it('one child with only the playground confirmed is likely good, with the exhibits named as the check, never a bare Good fit', () => {
     const r = read([child('c1', 'Sloane', 6)]);
-    expect(matchBadgeText(r)).toBe('Looks practical · check Sloane');
-    expect(r.toCheck.map((l) => l.text)).toEqual(['We haven’t yet confirmed whether this activity suits Sloane']);
+    expect(matchBadgeText(r)).toBe('Likely good for Sloane');
+    expect(r.headline).toBe('Likely good for Sloane');
+    expect(r.toCheck.map((l) => l.text)).toEqual(['We haven’t yet confirmed whether the exhibits suit Sloane']);
   });
 
-  it('confirmed recommended ages still earn the plain wording, and a child they exclude is still the gap', () => {
+  it('confirmed recommended ages earn the plain wording (Excellent with everything practical confirmed), and a child they exclude is still the gap', () => {
     const suited = read([child('c1', 'Sloane', 6)], venue({ minRecommendedAge: 3, maxRecommendedAge: 12 }));
     expect(suited.practicalOnly).toBe(false);
-    expect(matchBadgeText(suited)).toBe('Good for Sloane');
+    expect(suited.verdict).toBe('excellent');
+    expect(matchBadgeText(suited)).toBe('Excellent for Sloane');
     // Ages 3 to 12 exclude a seven-month-old: that is a real caution, so the verdict is Possible, not Good.
     const excluded = read([child('c1', 'Sloane', 6), child('c2', 'Ozzie', 0, { mobility: ['buggy'] })], venue({ minRecommendedAge: 3, maxRecommendedAge: 12 }));
+    expect(excluded.verdict).toBe('possible');
     expect(matchBadgeText(excluded)).toBe('Possible fit');
-    // Ages 0 to 12 cover both, so it is plainly good for both.
+    // Ages 0 to 12 cover both, so it is plainly for both.
     const both = read([child('c1', 'Sloane', 6), child('c2', 'Ozzie', 0, { mobility: ['buggy'] })], venue({ minRecommendedAge: 0, maxRecommendedAge: 12 }));
-    expect(matchBadgeText(both)).toBe('Good for Sloane and Ozzie');
+    expect(matchBadgeText(both)).toBe('Excellent for Sloane and Ozzie');
   });
 
   it('a household of babies is still "Easy visit": the visit is the activity', () => {
@@ -79,18 +87,20 @@ describe('Family Fit never says a bare "Good fit" where no child is confirmed', 
     expect(r.practicalOnly).toBe(false);
   });
 
-  it('moves no score, no ranking and no verdict: the label alone changed', () => {
+  it('a museum’s playground never makes it Excellent: the exhibits are unjudged, so a six- and a two-year-old stop at Good', () => {
     const r = read([child('c1', 'Sloane', 6), child('c2', 'Ozzie', 2)]);
     expect(r.verdict).toBe('good');
+    expect(r.likelyNames).toEqual(['Sloane', 'Ozzie']);
   });
 });
 
 describe('a single child nobody has confirmed the place for', () => {
-  it('the badge, the headline and the check line all say the same thing, and none says "promising"', () => {
-    const r = read([child('c1', 'Sloane', 5)]);
+  it('the badge, the headline and the check line all say the same thing, and none says "promising" or "good"', () => {
+    const r = read([child('c1', 'Sloane', 5)], venue({ playground: 'unknown' }));
     expect(r.practicalOnly).toBe(true);
-    expect(matchBadgeText(r)).toBe('Looks practical · check Sloane');
-    expect(r.headline).toBe('Looks practical, but we haven’t yet confirmed whether this activity suits Sloane');
-    expect(r.toCheck.map((c) => c.text).join(' ')).toMatch(/activity suits Sloane/);
+    expect(r.verdict).toBe('possible');
+    expect(matchBadgeText(r)).toBe('Possible fit');
+    expect(r.headline).toBe('Looks practical, but we haven’t yet confirmed whether the exhibits suit Sloane');
+    expect(r.toCheck.map((c) => c.text).join(' ')).toMatch(/exhibits suit Sloane/);
   });
 });

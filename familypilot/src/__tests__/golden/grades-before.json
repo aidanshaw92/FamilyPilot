@@ -1,0 +1,310 @@
+{
+  "3-year-old and a baby in a buggy": {
+    "Golders Hill Park": {
+      "verdict": "possible",
+      "score": 83,
+      "headline": "Possible for your family"
+    },
+    "Hampstead Heath": {
+      "verdict": "possible",
+      "score": 81,
+      "headline": "Possible for your family"
+    },
+    "Primrose Hill": {
+      "verdict": "possible",
+      "score": 66,
+      "headline": "Possible for your family"
+    },
+    "Battersea Park": {
+      "verdict": "possible",
+      "score": 68,
+      "headline": "Possible for your family"
+    },
+    "Hackney City Farm": {
+      "verdict": "possible",
+      "score": 81,
+      "headline": "Possible for your family"
+    },
+    "Kentish Town City Farm": {
+      "verdict": "possible",
+      "score": 80,
+      "headline": "Possible for your family"
+    },
+    "Woodside Animal Farm": {
+      "verdict": "possible",
+      "score": 70,
+      "headline": "Possible for your family"
+    },
+    "Hobbledown Heath": {
+      "verdict": "possible",
+      "score": 75,
+      "headline": "Possible for your family"
+    },
+    "Royal Air Force Museum London": {
+      "verdict": "good",
+      "score": 87,
+      "headline": "Easy to visit with Ozzie, but we haven’t yet confirmed whether this activity suits Sloane"
+    },
+    "Horniman Museum and Gardens": {
+      "verdict": "possible",
+      "score": 83,
+      "headline": "Possible for your family"
+    },
+    "Young V&A": {
+      "verdict": "possible",
+      "score": 83,
+      "headline": "Possible for your family"
+    },
+    "Discover Children's Story Centre": {
+      "verdict": "possible",
+      "score": 68,
+      "headline": "Possible for your family"
+    },
+    "Flip Out Watford": {
+      "verdict": "good",
+      "score": 79,
+      "headline": "Good for Sloane, and easy to visit with Ozzie"
+    },
+    "Babylon Park London": {
+      "verdict": "possible",
+      "score": 74,
+      "headline": "Possible for your family"
+    },
+    "Thorpe Park": {
+      "verdict": "possible",
+      "score": 73,
+      "headline": "Possible for your family"
+    }
+  },
+  "3-year-old and a baby who is carried": {
+    "Golders Hill Park": {
+      "verdict": "good",
+      "score": 83,
+      "headline": "Easy to visit with Ozzie, but we haven’t yet confirmed whether this activity suits Sloane"
+    },
+    "Hampstead Heath": {
+      "verdict": "good",
+      "score": 81,
+      "headline": "Easy to visit with Ozzie, but we haven’t yet confirmed whether this activity suits Sloane"
+    },
+    "Primrose Hill": {
+      "verdict": "possible",
+      "score": 66,
+      "headline": "Possible for your family"
+    },
+    "Battersea Park": {
+      "verdict": "possible",
+      "score": 68,
+      "headline": "Possible for your family"
+    },
+    "Hackney City Farm": {
+      "verdict": "possible",
+      "score": 81,
+      "headline": "Possible for your family"
+    },
+    "Kentish Town City Farm": {
+      "verdict": "possible",
+      "score": 80,
+      "headline": "Possible for your family"
+    },
+    "Woodside Animal Farm": {
+      "verdict": "possible",
+      "score": 71,
+      "headline": "Possible for your family"
+    },
+    "Hobbledown Heath": {
+      "verdict": "good",
+      "score": 75,
+      "headline": "Looks practical, but check baby changing for Ozzie, and we haven’t yet confirmed whether this activity suits Sloane"
+    },
+    "Royal Air Force Museum London": {
+      "verdict": "good",
+      "score": 87,
+      "headline": "Easy to visit with Ozzie, but we haven’t yet confirmed whether this activity suits Sloane"
+    },
+    "Horniman Museum and Gardens": {
+      "verdict": "good",
+      "score": 83,
+      "headline": "Easy to visit with Ozzie, but we haven’t yet confirmed whether this activity suits Sloane"
+    },
+    "Young V&A": {
+      "verdict": "good",
+      "score": 83,
+      "headline": "Easy to visit with Ozzie, but we haven’t yet confirmed whether this activity suits Sloane"
+    },
+    "Discover Children's Story Centre": {
+      "verdict": "possible",
+      "score": 68,
+      "headline": "Possible for your family"
+    },
+    "Flip Out Watford": {
+      "verdict": "good",
+      "score": 79,
+      "headline": "Good for Sloane, and easy to visit with Ozzie"
+    },
+    "Babylon Park London": {
+      "verdict": "possible",
+      "score": 74,
+      "headline": "Possible for your family"
+    },
+    "Thorpe Park": {
+      "verdict": "good",
+      "score": 73,
+      "headline": "Looks practical, but check baby changing for Ozzie, and we haven’t yet confirmed whether this activity suits Sloane"
+    }
+  },
+  "one 5-year-old": {
+    "Golders Hill Park": {
+      "verdict": "good",
+      "score": 82,
+      "headline": "Looks practical, but we haven’t yet confirmed whether this activity suits Sloane"
+    },
+    "Hampstead Heath": {
+      "verdict": "good",
+      "score": 79,
+      "headline": "Looks practical, but we haven’t yet confirmed whether this activity suits Sloane"
+    },
+    "Primrose Hill": {
+      "verdict": "possible",
+      "score": 66,
+      "headline": "Possible for your family"
+    },
+    "Battersea Park": {
+      "verdict": "possible",
+      "score": 68,
+      "headline": "Possible for Sloane"
+    },
+    "Hackney City Farm": {
+      "verdict": "possible",
+      "score": 80,
+      "headline": "Possible for your family"
+    },
+    "Kentish Town City Farm": {
+      "verdict": "possible",
+      "score": 81,
+      "headline": "Possible for your family"
+    },
+    "Woodside Animal Farm": {
+      "verdict": "possible",
+      "score": 70,
+      "headline": "Possible for your family"
+    },
+    "Hobbledown Heath": {
+      "verdict": "good",
+      "score": 76,
+      "headline": "Looks practical, but we haven’t yet confirmed whether this activity suits Sloane"
+    },
+    "Royal Air Force Museum London": {
+      "verdict": "good",
+      "score": 87,
+      "headline": "Looks practical, but we haven’t yet confirmed whether this activity suits Sloane"
+    },
+    "Horniman Museum and Gardens": {
+      "verdict": "good",
+      "score": 82,
+      "headline": "Looks practical, but we haven’t yet confirmed whether this activity suits Sloane"
+    },
+    "Young V&A": {
+      "verdict": "good",
+      "score": 82,
+      "headline": "Looks practical, but we haven’t yet confirmed whether this activity suits Sloane"
+    },
+    "Discover Children's Story Centre": {
+      "verdict": "possible",
+      "score": 68,
+      "headline": "Possible for your family"
+    },
+    "Flip Out Watford": {
+      "verdict": "possible",
+      "score": 76,
+      "headline": "Possible for your family"
+    },
+    "Babylon Park London": {
+      "verdict": "possible",
+      "score": 73,
+      "headline": "Possible for your family"
+    },
+    "Thorpe Park": {
+      "verdict": "good",
+      "score": 74,
+      "headline": "Looks practical, but we haven’t yet confirmed whether this activity suits Sloane"
+    }
+  },
+  "8- and 10-year-old": {
+    "Golders Hill Park": {
+      "verdict": "good",
+      "score": 82,
+      "headline": "Looks practical, but we haven’t yet confirmed whether this activity suits Alfie and Bea"
+    },
+    "Hampstead Heath": {
+      "verdict": "good",
+      "score": 79,
+      "headline": "Looks practical, but we haven’t yet confirmed whether this activity suits Alfie and Bea"
+    },
+    "Primrose Hill": {
+      "verdict": "possible",
+      "score": 66,
+      "headline": "Possible for your family"
+    },
+    "Battersea Park": {
+      "verdict": "possible",
+      "score": 68,
+      "headline": "Possible for Alfie and Bea"
+    },
+    "Hackney City Farm": {
+      "verdict": "possible",
+      "score": 80,
+      "headline": "Possible for your family"
+    },
+    "Kentish Town City Farm": {
+      "verdict": "possible",
+      "score": 81,
+      "headline": "Possible for your family"
+    },
+    "Woodside Animal Farm": {
+      "verdict": "possible",
+      "score": 70,
+      "headline": "Possible for your family"
+    },
+    "Hobbledown Heath": {
+      "verdict": "good",
+      "score": 76,
+      "headline": "Looks practical, but we haven’t yet confirmed whether this activity suits Alfie and Bea"
+    },
+    "Royal Air Force Museum London": {
+      "verdict": "good",
+      "score": 87,
+      "headline": "Looks practical, but we haven’t yet confirmed whether this activity suits Alfie and Bea"
+    },
+    "Horniman Museum and Gardens": {
+      "verdict": "good",
+      "score": 82,
+      "headline": "Looks practical, but we haven’t yet confirmed whether this activity suits Alfie and Bea"
+    },
+    "Young V&A": {
+      "verdict": "good",
+      "score": 82,
+      "headline": "Looks practical, but we haven’t yet confirmed whether this activity suits Alfie and Bea"
+    },
+    "Discover Children's Story Centre": {
+      "verdict": "possible",
+      "score": 68,
+      "headline": "Possible for your family"
+    },
+    "Flip Out Watford": {
+      "verdict": "possible",
+      "score": 76,
+      "headline": "Possible for your family"
+    },
+    "Babylon Park London": {
+      "verdict": "possible",
+      "score": 73,
+      "headline": "Possible for your family"
+    },
+    "Thorpe Park": {
+      "verdict": "good",
+      "score": 74,
+      "headline": "Looks practical, but we haven’t yet confirmed whether this activity suits Alfie and Bea"
+    }
+  }
+}

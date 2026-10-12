@@ -34,7 +34,7 @@ interface FamilyMatchProps {
    * What FamilyPilot works out for THIS family (family-match.ts). When given it decides the words, the star and
    * the colour, and the number is not shown: a good match says who it is good for, a possible one says possible.
    */
-  match?: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[]; easyVisit?: boolean; suitedNames?: string[]; easyNames?: string[]; practicalOnly?: boolean };
+  match?: Pick<FamilyMatchResult, 'verdict' | 'forNames'> & { gapNames?: string[]; easyVisit?: boolean; suitedNames?: string[]; likelyNames?: string[]; easyNames?: string[]; practicalOnly?: boolean };
   /**
    * How many characters the badge's words may take before it falls back to a shorter form. The pills on cards are narrow (18, or
    * 12 beside a name); a screen with room to say the same words in full (Venue Detail) passes 40, so every surface reads the same.

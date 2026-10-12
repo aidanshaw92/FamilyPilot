@@ -128,7 +128,7 @@ describe('closed today is a fact beside the fit, not part of it', () => {
     expect(r.today.label).toBe('Closed today · opens tomorrow 10am');
     expect(matchClosedLine(r)).toBe('Closed today · opens tomorrow 10am');
     expect(r.verdict).not.toBe('poor');
-    expect(r.headline).not.toMatch(/^Probably not/);
+    expect(r.headline).not.toMatch(/^Not recommended/);
   });
 
   it('an open place adds nothing to its card: the closed line exists only when it is closed', () => {
@@ -149,7 +149,7 @@ describe('closed today is a fact beside the fit, not part of it', () => {
   it('a confirmed breach still makes it poor, whatever the opening state', () => {
     const shutAndTooFar = evaluateFamilyMatch({ venue: { ...venue(SCHEDULES['closed all day today'].hours), driveMinutes: 120 } as Venue, profile: PROFILE, score: 88, now: NOW });
     expect(shutAndTooFar.verdict).toBe('poor');
-    expect(shutAndTooFar.headline).toBe('Probably not for your family');
+    expect(shutAndTooFar.headline).toBe('Not recommended for your family');
   });
 
   it('a place never open to visitors is not a "today" question: it stays a breach', () => {

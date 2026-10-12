@@ -24,11 +24,14 @@ export function FamilyMatchCard({ match }: { match: FamilyMatchResult }) {
 
   // When the place is not a fit, what is wrong leads: nobody should read four ticks before the one line that matters.
   const problemsFirst = match.verdict === 'poor' || match.verdict === 'possible';
+  // A checked fact gets a tick; an inference (what this kind of place usually offers a child of this age) gets its own mark,
+  // so the two are never read as the same kind of claim. A note is a confirmed fact that is not a mark against this family.
+  const inferred = reasons.some((line) => line.inferred);
   const reasonsBlock =
     reasons.length > 0 ? (
       <View style={styles.group}>
         {reasons.map((line) => (
-          <Row key={line.key} icon="checkmark-circle" tint={colors.secondary[500]} line={line} />
+          <Row key={line.key} icon={line.inferred ? 'bulb-outline' : 'checkmark-circle'} tint={line.inferred ? colors.action : colors.secondary[500]} line={line} testID={line.inferred ? 'family-match-inferred' : 'family-match-confirmed'} />
         ))}
       </View>
     ) : null;
@@ -36,10 +39,11 @@ export function FamilyMatchCard({ match }: { match: FamilyMatchResult }) {
     cautions.length > 0 ? (
       <View style={styles.group}>
         {cautions.map((line) => (
-          <Row key={line.key} icon="alert-circle" tint={colors.warning[600]} line={line} />
+          <Row key={line.key} icon={line.note ? 'information-circle-outline' : 'alert-circle'} tint={line.note ? colors.text.tertiary : colors.warning[600]} line={line} quiet={Boolean(line.note)} />
         ))}
       </View>
     ) : null;
+  const completeness = match.evidenceCompleteness;
 
   return (
     <View style={styles.card} testID="family-match-card">
@@ -59,9 +63,16 @@ export function FamilyMatchCard({ match }: { match: FamilyMatchResult }) {
         </View>
       ) : null}
 
+      {completeness && completeness.total > 0 ? (
+        // How much has been checked, kept apart from how well it fits: the grade is about the family and the place, this is about us.
+        <Text variant="caption" color={colors.text.tertiary} style={styles.footnote} testID="family-match-evidence">
+          {`We’ve confirmed ${completeness.known} of ${completeness.total} details that matter for your family${completeness.missing.length ? ` · not yet: ${completeness.missing.join(', ')}` : ''}.`}
+        </Text>
+      ) : null}
       <Text variant="caption" color={colors.text.tertiary} style={styles.footnote}>
-        Worked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is
-        never counted as a fit.
+        {inferred
+          ? 'A tick is a checked fact about this place. A bulb is what this kind of place, or a facility it is confirmed to have, usually means for a child of that age. Nothing unconfirmed is counted as a fit.'
+          : 'Worked out from what is confirmed about this place and what you have told us. Anything not yet confirmed is never counted as a fit.'}
       </Text>
     </View>
   );
@@ -72,14 +83,16 @@ function Row({
   tint,
   line,
   quiet = false,
+  testID,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   tint: string;
   line: MatchLine;
   quiet?: boolean;
+  testID?: string;
 }) {
   return (
-    <View style={styles.row}>
+    <View style={styles.row} testID={testID}>
       <Ionicons name={icon} size={18} color={tint} style={styles.icon} />
       <Text variant="body" color={quiet ? colors.text.secondary : colors.ink} style={styles.rowText}>
         {line.text}
