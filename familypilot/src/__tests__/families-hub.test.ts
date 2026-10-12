@@ -126,6 +126,25 @@ describe('Meet halfway, map first', () => {
     expect(model.pins.map((p) => p.id).sort()).toEqual(['a', 'b', 'c']);
   });
 
+  it('a pin never has a tap target that covers a neighbour: 44 where there is room, shrunk to the gap where places are close', () => {
+    const far = halfwayMapModel({ mine, other, venue: places[0], venues: places, selectedId: 'a' }, SIZE)!;
+    for (const pin of far.pins) expect(pin.hit).toBeLessThanOrEqual(44);
+    // Two real galleries about a kilometre apart, with a third far away: the close pair share the gap, the far one keeps 44.
+    const crowded = [
+      { id: 'iwm', latitude: 51.4958, longitude: -0.1087, name: 'Imperial War Museum' },
+      { id: 'tate', latitude: 51.5076, longitude: -0.0994, name: 'Tate Modern' },
+      { id: 'dulwich', latitude: 51.4472, longitude: -0.0831, name: 'Dulwich Park' },
+    ];
+    const model = halfwayMapModel({ mine, other, venue: crowded[0], venues: crowded, selectedId: 'iwm' }, SIZE)!;
+    for (const a of model.pins) {
+      for (const b of model.pins) {
+        if (a === b) continue;
+        expect(a.hit / 2 + b.hit / 2, `${a.id} and ${b.id} tap targets do not overlap`).toBeLessThanOrEqual(Math.hypot(a.x - b.x, a.y - b.y) + 1e-6);
+      }
+    }
+    expect(model.pins.find((p) => p.id === 'dulwich')!.hit).toBeGreaterThan(model.pins.find((p) => p.id === 'iwm')!.hit - 1);
+  });
+
   it('with no list there are no pins, and the venue alone is drawn', () => {
     const model = halfwayMapModel({ mine, other, venue: places[0] }, SIZE)!;
     expect(model.pins).toEqual([]);

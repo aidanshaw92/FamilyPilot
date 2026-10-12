@@ -14,8 +14,6 @@ const WATER = '#B9D3E4';
 const MOTORWAY = '#E8C98A';
 const ROAD = '#E4DCCB';
 const OTHER = '#B0507E';
-/** The tappable area over a pin: the app's minimum target, centred on the pin. */
-const HIT = 44;
 
 /**
  * Where the two families and the places are, on a map of London drawn on the device (see halfway-map.ts for the
@@ -138,7 +136,7 @@ export function HalfwayMap({
                 accessibilityLabel={`${pin.number}. ${pin.label}${pin.selected ? ', selected' : ''}`}
                 accessibilityState={{ selected: pin.selected }}
                 onPress={onSelectPin ? () => onSelectPin(pin.id) : undefined}
-                style={[styles.hit, { left: pin.x - HIT / 2, top: pin.y - HIT / 2 }]}
+                style={[styles.hit, { left: pin.x - pin.hit / 2, top: pin.y - pin.hit / 2, width: pin.hit, height: pin.hit, borderRadius: pin.hit / 2 }]}
                 testID={pin.selected ? 'halfway-map-venue' : `halfway-map-pin-${pin.number}`}
               />
             ))}
@@ -189,7 +187,7 @@ const styles = StyleSheet.create({
   legendArea: { width: 14, height: 14, borderRadius: 7, borderWidth: 1.5, borderStyle: 'dashed' },
   legendPin: { width: 16, height: 16, borderRadius: 8, backgroundColor: colors.action, alignItems: 'center', justifyContent: 'center' },
   legendPinText: { color: colors.text.inverse, fontFamily: 'Inter_700Bold', fontSize: 9, lineHeight: 11 },
-  hit: { position: 'absolute', width: HIT, height: HIT, borderRadius: HIT / 2 },
+  hit: { position: 'absolute' },
   frame: {
     borderRadius: radius.xl,
     overflow: 'hidden',

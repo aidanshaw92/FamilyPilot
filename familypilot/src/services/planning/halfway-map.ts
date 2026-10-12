@@ -45,7 +45,17 @@ export interface MapPin extends ProjectedMarker {
   id: string;
   number: number;
   selected: boolean;
+  /**
+   * The diameter of the tap target centred on this pin, in pixels. 44 (the app's minimum target) where the pin has room, and
+   * never more than the distance to the nearest other pin, so two close places cannot cover each other's centre: a tap on a
+   * pin always selects that pin. Real stored places do sit this close (two galleries on the same stretch of the Thames).
+   */
+  hit: number;
 }
+
+/** The app's minimum drawn target, and the smallest tap target a crowded pin is given (the cards below are the other way in). */
+export const PIN_HIT_MAX = 44;
+export const PIN_HIT_MIN = 16;
 
 export interface HalfwayMapModel {
   width: number;
@@ -197,7 +207,12 @@ export function halfwayMapModel(input: HalfwayMapInput, size: { width: number; h
     y: toY(place.latitude),
     label: place.name,
     selected: place.id === input.selectedId,
+    hit: PIN_HIT_MAX,
   }));
+  for (const pin of pins) {
+    const nearest = Math.min(...pins.filter((other) => other !== pin).map((other) => Math.hypot(other.x - pin.x, other.y - pin.y)));
+    if (Number.isFinite(nearest)) pin.hit = Math.max(PIN_HIT_MIN, Math.min(PIN_HIT_MAX, Math.floor(nearest)));
+  }
   pins.sort((a, b) => Number(a.selected) - Number(b.selected));
 
   return {

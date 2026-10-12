@@ -547,7 +547,18 @@ const CATALOGUE_ONLY = [
   }
   return place;
 });
-const STORED_CATALOGUE = [...PLACES, ...CATALOGUE_ONLY];
+/**
+ * REAL STORED ROWS (optional): `FIXTURE_CATALOGUE_ROWS=<file>` replaces the synthetic stored catalogue with `place_records`
+ * rows (the columns `server/places/lib/catalogue.js` selects), mapped by the same `rowToPlace` the deployed endpoint uses.
+ * Meet halfway's candidates then come from real stored places through the real first pass, with nothing fetched from a
+ * provider. The file is read-only data from a database read; it is never committed (see scripts/verify-halfway-real-catalogue.mjs).
+ */
+const REAL_ROWS = process.env.FIXTURE_CATALOGUE_ROWS
+  ? JSON.parse(readFileSync(process.env.FIXTURE_CATALOGUE_ROWS, 'utf8'))
+  : null;
+const STORED_CATALOGUE = REAL_ROWS
+  ? REAL_ROWS.map(createRequire(import.meta.url)('../../server/places/lib/catalogue.js').rowToPlace)
+  : [...PLACES, ...CATALOGUE_ONLY];
 const betweenModule = createRequire(import.meta.url)('../../server/places/lib/between.js');
 
 const SEARCH_PLACES =
