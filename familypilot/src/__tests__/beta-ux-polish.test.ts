@@ -169,19 +169,19 @@ describe('the Meet halfway map names the place beside its pin', () => {
       { mine: { latitude: 51.54, longitude: -0.14, label: 'Our family' }, other: { latitude: 51.44, longitude: -0.06, label: 'Hannah’s family' }, venue: { latitude: 51.49, longitude: -0.1, name: 'Horniman Museum and Gardens' } },
       { width: 345, height: 220 },
     )!;
-    expect(model.venueLabel.x).toBeGreaterThanOrEqual(8);
-    expect(model.venueLabel.x).toBeLessThanOrEqual(345 - 8);
-    expect(model.venueLabel.y).toBeGreaterThanOrEqual(14);
-    expect(model.venueLabel.y).toBeLessThanOrEqual(220 - 30);
-    expect(model.venueLabel.anchor).toBe('middle');
-    expect(model.venueLabel.y).toBe(model.venue.y + 16);
+    expect(model.venueLabel!.x).toBeGreaterThanOrEqual(8);
+    expect(model.venueLabel!.x).toBeLessThanOrEqual(345 - 8);
+    expect(model.venueLabel!.y).toBeGreaterThanOrEqual(14);
+    expect(model.venueLabel!.y).toBeLessThanOrEqual(220 - 30);
+    expect(model.venueLabel!.anchor).toBe('middle');
+    expect(model.venueLabel!.y).toBe(model.venue!.y + 16);
     // Against the right edge the label hangs inwards rather than running off the map.
     const edge = halfwayMapModel(
       { mine: { latitude: 51.54, longitude: -0.3, label: 'Our family' }, other: { latitude: 51.44, longitude: -0.25, label: 'Hannah’s family' }, venue: { latitude: 51.49, longitude: -0.02, name: 'Discover Children’s Story Centre' } },
       { width: 345, height: 220 },
     )!;
-    expect(edge.venueLabel.anchor).toBe('end');
-    expect(edge.venueLabel.x).toBe(345 - 8);
+    expect(edge.venueLabel!.anchor).toBe('end');
+    expect(edge.venueLabel!.x).toBe(345 - 8);
   });
 });
 

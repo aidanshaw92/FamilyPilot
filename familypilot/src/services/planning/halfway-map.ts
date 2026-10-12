@@ -24,11 +24,17 @@ export interface MapPoint {
 export interface HalfwayMapInput {
   mine: MapPoint & { label: string };
   other: MapPoint & { label: string };
-  /** The place in focus: named on the map, and the one the frame is fitted to with the two areas. */
-  venue: MapPoint & { name: string };
+  /**
+   * The place in focus: named on the map. Absent while there is nothing to recommend yet (loading, an error, no suitable
+   * place): the map then shows the two areas alone.
+   */
+  venue?: MapPoint & { name: string };
   /**
    * Every recommended place, in the order of the cards, so each is a numbered pin that matches its card. The venue in
    * focus is one of them (`selectedId`); given none, only the venue is drawn.
+   *
+   * THE FRAME IS FITTED TO ALL OF THEM and to both areas, never to the one in focus. Selecting a place therefore moves a
+   * highlight, not the map: the frame is the same for every selection.
    */
   venues?: (MapPoint & { id: string; name: string })[];
   selectedId?: string;
@@ -61,10 +67,10 @@ export interface HalfwayMapModel {
   width: number;
   height: number;
   /** Where the venue's name sits beside its pin, kept inside the frame. */
-  venueLabel: { x: number; y: number; anchor: 'start' | 'middle' | 'end' };
+  venueLabel: { x: number; y: number; anchor: 'start' | 'middle' | 'end' } | null;
   /** Approximate family areas: centre (on the ~1 km grid) and radius in pixels. */
   areas: (ProjectedMarker & { r: number; role: 'mine' | 'other'; labelX: number; labelY: number; labelAnchor: 'start' | 'middle' | 'end' })[];
-  venue: ProjectedMarker;
+  venue: ProjectedMarker | null;
   /** The numbered pins, in card order, the selected one last so it is drawn on top where pins crowd. */
   pins: MapPin[];
   /** Background: borough and county outlines, the Thames, main roads, as SVG path data in pixels. */
@@ -112,43 +118,57 @@ export function venueLabelAt(x: number, y: number, name: string, size: { width: 
   return { x: labelX, y: Math.max(14, labelY), anchor };
 }
 
-export function halfwayMapModel(input: HalfwayMapInput, size: { width: number; height: number }): HalfwayMapModel | null {
-  if (!finite(input.mine) || !finite(input.other) || !finite(input.venue)) return null;
+/**
+ * The drawing is `width` x `height`, but part of it can sit under other things (the screen's header above, the
+ * recommendation sheet below). `inset` is that covered part: the places and areas are fitted to what remains visible.
+ */
+export interface HalfwayMapSize {
+  width: number;
+  height: number;
+  inset?: { top?: number; bottom?: number };
+}
+
+export function halfwayMapModel(input: HalfwayMapInput, size: HalfwayMapSize): HalfwayMapModel | null {
+  if (!finite(input.mine) || !finite(input.other) || (input.venue && !finite(input.venue))) return null;
   if (!(size.width > 0) || !(size.height > 0)) return null;
 
   const mine = { latitude: coarse(input.mine.latitude), longitude: coarse(input.mine.longitude) };
   const other = { latitude: coarse(input.other.latitude), longitude: coarse(input.other.longitude) };
-  const venue = { latitude: input.venue.latitude, longitude: input.venue.longitude };
-
+  // Every place that can be drawn, and the one in focus. The frame is fitted to ALL of them (see HalfwayMapInput.venues).
+  const listed = (input.venues ?? []).filter(finite);
+  const venue = input.venue ? { latitude: input.venue.latitude, longitude: input.venue.longitude } : null;
+  const points: MapPoint[] = [mine, other, ...listed, ...(venue && !listed.length ? [venue] : [])];
   // Equirectangular at the middle latitude: exact enough across a city, and the same projection for every layer.
-  const points = [mine, other, venue];
   const midLat = (Math.min(...points.map((p) => p.latitude)) + Math.max(...points.map((p) => p.latitude))) / 2;
   const kmPerDegLon = KM_PER_DEG_LAT * Math.cos((midLat * Math.PI) / 180);
   const xs = points.map((p) => p.longitude * kmPerDegLon);
   const ys = points.map((p) => p.latitude * KM_PER_DEG_LAT);
 
-  // Fit the three, with room for the area circles and labels, never closer than MIN_SPAN_KM. The margin grows with the
+  // Fit them all, with room for the area circles and labels, never closer than MIN_SPAN_KM. The margin grows with the
   // distance between them, so the outermost area keeps its label inside the frame however far apart the families are.
+  // Fitted to the part of the drawing that is visible (`inset`), centred in it; the rest is more of the same map.
+  const insetTop = Math.max(0, size.inset?.top ?? 0);
+  const insetBottom = Math.max(0, size.inset?.bottom ?? 0);
+  const visibleHeight = Math.max(size.height - insetTop - insetBottom, size.height * 0.3);
   const rawX = Math.max(...xs) - Math.min(...xs);
   const rawY = Math.max(...ys) - Math.min(...ys);
   const padX = Math.max(2.2, rawX * 0.2);
   const padY = Math.max(2.2, rawY * 0.3);
-  let minX = Math.min(...xs) - padX;
-  let maxX = Math.max(...xs) + padX;
-  let minY = Math.min(...ys) - padY;
-  let maxY = Math.max(...ys) + padY;
-  const aspect = size.width / size.height;
-  let spanX = Math.max(maxX - minX, MIN_SPAN_KM);
-  let spanY = Math.max(maxY - minY, MIN_SPAN_KM / aspect);
+  const minX0 = Math.min(...xs) - padX;
+  const maxX0 = Math.max(...xs) + padX;
+  const minY0 = Math.min(...ys) - padY;
+  const maxY0 = Math.max(...ys) + padY;
+  const aspect = size.width / visibleHeight;
+  let spanX = Math.max(maxX0 - minX0, MIN_SPAN_KM);
+  let spanY = Math.max(maxY0 - minY0, MIN_SPAN_KM / aspect);
   if (spanX / spanY > aspect) spanY = spanX / aspect;
   else spanX = spanY * aspect;
-  const cx = (minX + maxX) / 2;
-  const cy = (minY + maxY) / 2;
-  minX = cx - spanX / 2;
-  maxX = cx + spanX / 2;
-  minY = cy - spanY / 2;
-  maxY = cy + spanY / 2;
   const pxPerKm = size.width / spanX;
+  const cx = (minX0 + maxX0) / 2;
+  const cy = (minY0 + maxY0) / 2;
+  const minX = cx - spanX / 2;
+  // The visible band's top edge, then the covered strip above it.
+  const maxY = cy + spanY / 2 + insetTop / pxPerKm;
 
   const toX = (lon: number) => (lon * kmPerDegLon - minX) * pxPerKm;
   const toY = (lat: number) => (maxY - lat * KM_PER_DEG_LAT) * pxPerKm;
@@ -197,9 +217,7 @@ export function halfwayMapModel(input: HalfwayMapInput, size: { width: number; h
     return { x, y, r, label, role, labelX, labelY, labelAnchor };
   };
   // Every recommended place, numbered in card order. One with no usable position is left off the map (its card still
-  // says where it is); one off the frame is drawn anyway, clipped, rather than moving the frame away from the venue in
-  // focus and the two areas.
-  const listed = (input.venues ?? []).filter(finite);
+  // says where it is).
   const pins: MapPin[] = listed.map((place, index) => ({
     id: place.id,
     number: index + 1,
@@ -222,13 +240,15 @@ export function halfwayMapModel(input: HalfwayMapInput, size: { width: number; h
       area(mine.longitude, mine.latitude, mineLabel, 'mine'),
       area(other.longitude, other.latitude, otherLabel, 'other'),
     ],
-    venue: { x: toX(venue.longitude), y: toY(venue.latitude), label: input.venue.name },
+    venue: venue && input.venue ? { x: toX(venue.longitude), y: toY(venue.latitude), label: input.venue.name } : null,
     pins,
-    venueLabel: venueLabelAt(toX(venue.longitude), toY(venue.latitude), input.venue.name, size),
+    venueLabel: venue && input.venue ? venueLabelAt(toX(venue.longitude), toY(venue.latitude), input.venue.name, { ...size, height: size.height - insetBottom }) : null,
     basemap,
     scale: { km, px: km * pxPerKm },
-    summary: pins.length > 1
-      ? `Map: ${pins.length} places numbered as the list below, ${input.venue.name} selected, with ${mineLabel.toLowerCase()} and ${otherLabel} shown as approximate areas, not addresses.`
-      : `Map: ${input.venue.name}, with ${mineLabel.toLowerCase()} and ${otherLabel} shown as approximate areas, not addresses.`,
+    summary: !input.venue
+      ? `Map: ${mineLabel.toLowerCase()} and ${otherLabel} shown as approximate areas, not addresses. No places to show yet.`
+      : pins.length > 1
+        ? `Map: ${pins.length} places numbered as the list below, ${input.venue.name} selected, with ${mineLabel.toLowerCase()} and ${otherLabel} shown as approximate areas, not addresses.`
+        : `Map: ${input.venue.name}, with ${mineLabel.toLowerCase()} and ${otherLabel} shown as approximate areas, not addresses.`,
   };
 }

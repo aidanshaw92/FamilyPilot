@@ -49,11 +49,11 @@ describe('families are areas, on the grid a connection already shares', () => {
   });
 
   it('the venue is the one real point, where it is', () => {
-    expect(model.venue.label).toBe('Hendon Fixture Yard');
+    expect(model.venue!.label).toBe('Hendon Fixture Yard');
     // Between the two areas on the map, as it is on the ground.
     const [mine, other] = model.areas;
-    expect(model.venue.x).toBeGreaterThan(Math.min(mine.x, other.x));
-    expect(model.venue.x).toBeLessThan(Math.max(mine.x, other.x));
+    expect(model.venue!.x).toBeGreaterThan(Math.min(mine.x, other.x));
+    expect(model.venue!.x).toBeLessThan(Math.max(mine.x, other.x));
   });
 
   it('a screen reader hears what it shows, and that the areas are not addresses', () => {
@@ -69,7 +69,7 @@ describe('it never looks like a street plan, and it fits every result', () => {
 
   it('far apart: everything is inside the frame', () => {
     const far = halfwayMapModel({ mine: BUSHEY, other: { latitude: 51.37, longitude: 0.1, label: 'Hannah’s family' }, venue: VENUE }, SIZE)!;
-    for (const p of [...far.areas, far.venue]) {
+    for (const p of [...far.areas, far.venue!]) {
       expect(p.x).toBeGreaterThan(0);
       expect(p.x).toBeLessThan(SIZE.width);
       expect(p.y).toBeGreaterThan(0);
@@ -131,5 +131,53 @@ describe('honest and free', () => {
     expect(screen).toContain('<HalfwayMap');
     expect(screen).toContain('?? result.options[0]');
     expect(screen).toContain('testID="halfway-show-on-map"');
+  });
+});
+
+describe('v2: the frame is stable, fits every place, and can show the two areas alone', () => {
+  const places = [
+    { id: 'a', name: 'Kentish Town City Farm', latitude: 51.5497, longitude: -0.1416 },
+    { id: 'b', name: 'Hackney City Farm', latitude: 51.5326, longitude: -0.0652 },
+    { id: 'c', name: 'Hampstead Heath', latitude: 51.5608, longitude: -0.1657 },
+    { id: 'd', name: 'Golders Hill Park', latitude: 51.5726, longitude: -0.1948 },
+  ];
+  const mine = { latitude: 51.55, longitude: -0.18, label: 'Our family' };
+  const other = { latitude: 51.54, longitude: -0.05, label: 'Hannah’s family' };
+  const at = (selectedId: string) =>
+    halfwayMapModel({ mine, other, venue: places.find((p) => p.id === selectedId)!, venues: places, selectedId }, { width: 393, height: 600, inset: { top: 100, bottom: 260 } })!;
+
+  it('selecting a place moves the highlight, not the map: every place and both areas stay put', () => {
+    const [first, ...rest] = ['a', 'b', 'c', 'd'].map(at);
+    const positions = (m: typeof first) => [...m.areas.map((x) => [x.x, x.y]), ...[...m.pins].sort((p, q) => p.number - q.number).map((x) => [x.x, x.y])];
+    for (const m of rest) {
+      expect(positions(m)).toEqual(positions(first));
+      expect(m.scale).toEqual(first.scale);
+      expect(m.basemap.river).toEqual(first.basemap.river);
+    }
+  });
+
+  it('every place and both areas sit inside the visible band, clear of the header and the sheet', () => {
+    const m = at('a');
+    for (const p of [...m.areas, ...m.pins]) {
+      expect(p.x).toBeGreaterThan(0);
+      expect(p.x).toBeLessThan(393);
+      expect(p.y).toBeGreaterThan(100);
+      expect(p.y).toBeLessThan(600 - 260);
+    }
+  });
+
+  it('with nothing to recommend yet it draws the two areas alone, with no venue and no pins', () => {
+    const m = halfwayMapModel({ mine, other }, { width: 393, height: 600, inset: { bottom: 260 } })!;
+    expect(m.venue).toBeNull();
+    expect(m.venueLabel).toBeNull();
+    expect(m.pins).toEqual([]);
+    expect(m.areas).toHaveLength(2);
+    expect(m.summary).toMatch(/approximate areas, not addresses/);
+    for (const a of m.areas) expect(a.y).toBeLessThan(600 - 260);
+  });
+
+  it('the frame is no different for the same pins when no inset is given (the earlier behaviour)', () => {
+    const plain = halfwayMapModel({ mine, other, venue: places[0], venues: places, selectedId: 'a' }, { width: 393, height: 220 })!;
+    for (const p of [...plain.areas, ...plain.pins]) expect(p.y).toBeGreaterThan(0);
   });
 });
