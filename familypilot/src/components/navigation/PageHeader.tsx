@@ -52,8 +52,14 @@ export function PageHeader({
   );
 }
 
-/** The brand row's height, so a screen that places it above locked geometry (Home, Explore) can account for it exactly. */
-export const BRAND_ROW_HEIGHT = 44;
+/**
+ * The brand row's height and the air above it, so a screen that places it above locked geometry (Home, Explore) can account
+ * for it exactly. Thirty-six, not forty-four: on a standard iPhone Home has no spare room, and every point the row takes
+ * comes out of the deck (see home-vertical-layout). The 44 point back control is centred in the row and overflows it, so
+ * its tap target is unchanged. The mark sits at the same height on every main screen: 10 points down, 36 tall.
+ */
+export const BRAND_ROW_HEIGHT = 36;
+export const BRAND_ROW_TOP = 10;
 
 /**
  * The brand row on its own: the approved mark beside the wordmark, an optional back control on the left and one optional
@@ -64,15 +70,18 @@ export function BrandLockup({
   action,
   flush,
   testID,
+  gap = spacing.sm,
 }: {
   onBack?: () => void;
   action?: ReactNode;
   /** True when the parent already pads the screen edges. */
   flush?: boolean;
   testID?: string;
+  /** Space under the row: a title follows it on section pages; Home and Explore sit it directly above their own header. */
+  gap?: number;
 }) {
   return (
-    <View style={[styles.lockupRow, !flush && styles.lockupRowPadded]} testID={testID}>
+    <View style={[styles.lockupRow, !flush && styles.lockupRowPadded, { marginBottom: gap }]} testID={testID}>
       {onBack ? (
         <View style={styles.back}>
           <BackButton onPress={onBack} />
@@ -92,7 +101,7 @@ export function BrandLockup({
 const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing.screenPadding, paddingTop: 2 },
   flush: { paddingHorizontal: 0 },
-  lockupRow: { height: BRAND_ROW_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  lockupRow: { height: BRAND_ROW_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   lockupRowPadded: { paddingHorizontal: spacing.screenPadding },
   back: { marginLeft: -12 },
   lockup: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },

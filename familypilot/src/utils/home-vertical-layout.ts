@@ -67,8 +67,17 @@ export function deckRoom({ windowHeight, headerBottom, mode, navClearance }: Dec
   return windowHeight - (headerBottom + deckTopGap(mode)) - navClearance - DECK_CREDITS_ALLOWANCE;
 }
 
-/** The card is left at the frame's own proportions while it keeps at least this share of its natural height. */
-export const FIT_THRESHOLD = 0.9;
+/**
+ * The card is left at the frame's own proportions while it keeps at least this share of its natural height; below it the
+ * header gives up an optional line.
+ *
+ * 0.8, was 0.9. The brand row (the mark and the wordmark, 46 points with the air above it) now sits above the greeting on
+ * every main screen, and on a standard iPhone (393 x 852 with real insets) Home has no spare room: at 0.9 that row cost a
+ * parent the "Picked for ..." line and the "Best for your family" heading, which are the frame's own hierarchy. The deck
+ * gives up the room instead (about 11 per cent of its height on that phone, and never below `MIN_DECK_SCALE`), so every
+ * line of the approved header stays wherever the card still keeps four fifths of its natural height.
+ */
+export const FIT_THRESHOLD = 0.8;
 
 /** The next, more compact mode if the card would be squeezed below the threshold, otherwise the same one. */
 export function nextHeaderMode(mode: HomeHeaderMode, room: number, viewportWidth: number): HomeHeaderMode {

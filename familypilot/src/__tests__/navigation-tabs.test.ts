@@ -102,11 +102,11 @@ describe('Meet halfway, inside Families', () => {
 describe('the brand row on every main screen', () => {
   it('Home and Explore draw the same lockup above their approved headers, and account for its height', () => {
     const home = read('app/(tabs)/index.tsx');
-    expect(home).toContain('<BrandLockup />');
+    expect(home).toContain('<BrandLockup gap={0} />');
     expect(home).toMatch(/ART_LIFT = GREETING_FRAME_Y - HOME_CONTENT_TOP/);
-    expect(home).toContain('windowHeight - (insets.top + BRAND_ROW_HEIGHT)');
+    expect(home).toContain('windowHeight - (insets.top + BRAND_ROW_TOP + BRAND_ROW_HEIGHT)');
     const explore = read('app/(tabs)/explore.tsx');
-    expect(explore).toContain('<BrandLockup testID="explore-brand-row" />');
+    expect(explore).toContain('<BrandLockup testID="explore-brand-row" gap={0} />');
     expect(explore).toContain('style={{ top: BRAND_ROW_SHIFT }}');
   });
 

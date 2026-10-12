@@ -4,7 +4,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good morning, Sarah Picked for Mia and Leo S Search places nearby Best for your family For"
+    "message": "FamilyPilot Good morning, Sarah Picked for Mia and Leo S Search places nearby Best for you"
   },
   {
     "viewport": "360x800",
@@ -272,7 +272,7 @@
     "screen": "Plan",
     "step": "hedges that hop rather than stating it as a routed journey",
     "ok": true,
-    "message": "out 1 min drive"
+    "message": "out 40 min drive"
   },
   {
     "viewport": "360x800",
@@ -372,7 +372,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good morning, Sarah Picked for Mia and Leo S Search places and activities Best for your fa"
+    "message": "FamilyPilot Good morning, Sarah Picked for Mia and Leo S Search places and activities Best"
   },
   {
     "viewport": "390x844",
@@ -640,7 +640,7 @@
     "screen": "Plan",
     "step": "hedges that hop rather than stating it as a routed journey",
     "ok": true,
-    "message": "out 1 min drive"
+    "message": "out 40 min drive"
   },
   {
     "viewport": "390x844",
@@ -740,7 +740,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good morning, Sarah Picked for Mia and Leo S Search places and activities Best for your fa"
+    "message": "FamilyPilot Good morning, Sarah Picked for Mia and Leo S Search places and activities Best"
   },
   {
     "viewport": "393x852",
@@ -1008,7 +1008,7 @@
     "screen": "Plan",
     "step": "hedges that hop rather than stating it as a routed journey",
     "ok": true,
-    "message": "out 1 min drive"
+    "message": "out 40 min drive"
   },
   {
     "viewport": "393x852",
@@ -1108,7 +1108,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good morning, Sarah Picked for Mia and Leo S Search places and activities Best for your fa"
+    "message": "FamilyPilot Good morning, Sarah Picked for Mia and Leo S Search places and activities Best"
   },
   {
     "viewport": "430x932",
@@ -1376,7 +1376,7 @@
     "screen": "Plan",
     "step": "hedges that hop rather than stating it as a routed journey",
     "ok": true,
-    "message": "out 1 min drive"
+    "message": "out 40 min drive"
   },
   {
     "viewport": "430x932",
@@ -1476,7 +1476,7 @@
     "screen": "Home",
     "step": "renders its deck rather than an empty shell",
     "ok": true,
-    "message": "Good morning, Sarah Picked for Mia and Leo S Search places and activities Best for your fa"
+    "message": "FamilyPilot Good morning, Sarah Picked for Mia and Leo S Search places and activities Best"
   },
   {
     "viewport": "393x852-insets",
@@ -1744,7 +1744,7 @@
     "screen": "Plan",
     "step": "hedges that hop rather than stating it as a routed journey",
     "ok": true,
-    "message": "out 1 min drive"
+    "message": "out 40 min drive"
   },
   {
     "viewport": "393x852-insets",
@@ -1940,7 +1940,7 @@
     "screen": "/plan link",
     "step": "a reload rebuilds the day rather than stranding it",
     "ok": true,
-    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 08:35–12:56  Day plan Who’s coming Travel Your Saturday plan Photo: A. Fixture Stop 1 09:30 Confirmed Facts Gard"
+    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 08:35–12:56  Day plan Who’s coming Travel Your Saturday plan YOUR DAY Times are from your routines, the place’s "
   },
   {
     "viewport": "lunch",
@@ -1953,7 +1953,7 @@
     "screen": "Plan",
     "step": "candidates found: the day contains the restaurant",
     "ok": true,
-    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 08:35–12:56  Day plan Who’s coming Travel Your Saturday plan Photo: A. Fixture Stop 1 09:30 Confirmed Facts Gardens  ARRIVE 09:30 TIME THERE 1h 30m LEA"
+    "message": " A day at Confirmed Facts Gardens Sat 3 Oct · 08:35–12:56  Day plan Who’s coming Travel Your Saturday plan YOUR DAY Times are from your routines, the place’s hours and the journeys. Each line says w"
   },
   {
     "viewport": "lunch",
@@ -1972,7 +1972,7 @@
     "screen": "Plan",
     "step": "nothing mapped nearby: the day omits lunch and says nothing about our lookup",
     "ok": true,
-    "message": " A day at No Photograph Park Sat 3 Oct · 08:35–11:55  Day plan Who’s coming Travel Your Saturday plan Stop 1 09:30 No Photograph Park  ARRIVE 09:30 TIME THERE 1h 30m LEAVE 11:00 OPENING Open 11:55 "
+    "message": " A day at No Photograph Park Sat 3 Oct · 08:35–11:55  Day plan Who’s coming Travel Your Saturday plan YOUR DAY Times are from your routines, the place’s hours and the journeys. Each line says whethe"
   },
   {
     "viewport": "lunch",
@@ -1991,7 +1991,7 @@
     "screen": "Plan",
     "step": "lookup failed: the day omits lunch and says the failure is ours",
     "ok": true,
-    "message": " A day at The Royal Borough Of Something Extremely Long Memorial Gardens And Family Activity Centre Sat 3 Oct · 08:35–11:55  Day plan Who’s coming Travel Your Saturday plan Photo: A. Fixture Stop 1 "
+    "message": " A day at The Royal Borough Of Something Extremely Long Memorial Gardens And Family Activity Centre Sat 3 Oct · 08:35–11:55  Day plan Who’s coming Travel Your Saturday plan YOUR DAY Times are from y"
   },
   {
     "viewport": "lunch",

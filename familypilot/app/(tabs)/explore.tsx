@@ -1,4 +1,4 @@
-import { BRAND_ROW_HEIGHT, BrandLockup } from '@/src/components/navigation/PageHeader';
+import { BRAND_ROW_HEIGHT, BRAND_ROW_TOP, BrandLockup } from '@/src/components/navigation/PageHeader';
 import { useMemo, useState, useEffect } from 'react';
 import { useIsFocused } from 'expo-router';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -28,7 +28,7 @@ import { UncheckedFoodGroup } from '@/src/components/explore/UncheckedFoodGroup'
 import { SAVED_EXAMPLES_NOTICE, showingSavedExamples } from '@/src/utils/saved-examples-notice';
 
 /** The brand row above the approved header: its height plus the air above it, which the header's marks move down by. */
-const BRAND_ROW_SHIFT = BRAND_ROW_HEIGHT + spacing.sm;
+const BRAND_ROW_SHIFT = BRAND_ROW_TOP + BRAND_ROW_HEIGHT;
 /** The "Planning with" row under the subtitle, when a family was chosen on Families: a 36 point pill plus air above it. */
 const PLANNING_WITH_ROW = 44;
 
@@ -238,7 +238,7 @@ export default function ExploreScreen() {
       <ScreenArt art={EXPLORE_ART_BEHIND} from={0} to={760} anchor="top" clipX={[EDGE_ART_X, EXPLORE_ART_BEHIND.width]} align="right" style={{ top: BRAND_ROW_SHIFT }} />
       <ScreenArt art={EXPLORE_ART_BEHIND} from={1500} to={1844} anchor="bottom" />
       <View style={styles.brandRow}>
-        <BrandLockup testID="explore-brand-row" />
+        <BrandLockup testID="explore-brand-row" gap={0} />
       </View>
       <View style={styles.header}>
         {/* A fixed-height row (the heading's own 34.5), so nothing below it moves. */}
@@ -477,7 +477,7 @@ const RESTAURANT_SUBTITLE = 'Family-friendly places to eat';
 const styles = StyleSheet.create({
   // Frame 294:133 at pt = px / 2.17: the title Bold 28.4 on a 34.6 line, the subtitle 13.6 on 16.6,
   // the search field 51.6 tall 15 below the subtitle, the chips 15 below the field.
-  brandRow: { paddingTop: spacing.sm },
+  brandRow: { paddingTop: BRAND_ROW_TOP },
   planningWithRow: { height: PLANNING_WITH_ROW, flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
   planningWithPill: { flexShrink: 1, height: 36, justifyContent: 'center', backgroundColor: colors.actionSoft, borderRadius: radius.full, paddingHorizontal: spacing.md },
   planningWithText: { color: colors.action, fontFamily: 'Inter_600SemiBold' },

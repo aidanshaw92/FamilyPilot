@@ -1,4 +1,4 @@
-import { BRAND_ROW_HEIGHT, BrandLockup } from '@/src/components/navigation/PageHeader';
+import { BRAND_ROW_HEIGHT, BRAND_ROW_TOP, BrandLockup } from '@/src/components/navigation/PageHeader';
 import { useIsFocused, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { compareVenuesForFamily } from '@/src/services/places/fit-order';
@@ -71,7 +71,7 @@ const GREETING_FRAME_Y = 58;
  * frame's y=58, and the marks drawn beside the header move up by the same amount (`ART_LIFT`), so the approved header
  * keeps its own geometry beneath the brand row.
  */
-const HOME_CONTENT_TOP = 10;
+const HOME_CONTENT_TOP = 0;
 const ART_LIFT = GREETING_FRAME_Y - HOME_CONTENT_TOP;
 
 function getTimeGreeting(): string {
@@ -140,7 +140,7 @@ export default function HomeScreen() {
   }, [width, windowHeight]);
 
   // The scroll view starts below the brand row, so the room for the deck is measured from there.
-  const scrollHeight = windowHeight - (insets.top + BRAND_ROW_HEIGHT);
+  const scrollHeight = windowHeight - (insets.top + BRAND_ROW_TOP + BRAND_ROW_HEIGHT);
   const room = headerFit
     ? deckRoom({ windowHeight: scrollHeight, headerBottom: headerFit.bottom, mode: headerFit.mode, navClearance: tabBarClearance })
     : undefined;
@@ -188,8 +188,8 @@ export default function HomeScreen() {
           a taller phone. Behind the scroll view, so content and navigation sit above them. */}
       <ScreenArt art={HOME_ART} from={1700} to={1846} anchor="bottom" />
       {/* The brand row, where every main screen has it; the approved header follows beneath it. */}
-      <View style={{ paddingTop: insets.top + spacing.sm }} testID="home-brand-row">
-        <BrandLockup />
+      <View style={{ paddingTop: insets.top + BRAND_ROW_TOP }} testID="home-brand-row">
+        <BrandLockup gap={0} />
       </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
