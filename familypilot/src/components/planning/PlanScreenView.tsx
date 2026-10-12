@@ -288,9 +288,16 @@ export function PlanScreenView({
                     ) : null}
                   </View>
                 ) : null}
+                {view.routines.conflict?.accepted ? (
+                  // The banner above already says the plan is being kept; the options stay for a parent who changes their mind.
+                  <Text variant="caption" color={colors.text.secondary} testID="plan-routines-headline">
+                    If you change your mind
+                  </Text>
+                ) : (
                 <Text variant="label" style={view.routines.recommendation ? styles.recommendationTitle : undefined} testID="plan-routines-headline">
-                  {view.routines.headline}
-                </Text>
+                    {view.routines.headline}
+                  </Text>
+                )}
                 {view.routines.recommendation ? (
                   // FamilyPilot's answer first: the change, what it does, one tap to use it. Then the other options, then the
                   // details for anyone who wants them.
