@@ -142,29 +142,6 @@ export default function TripsScreen() {
   {/* Families and routines are the Families tab's job now; Plans keeps the days. */}
   <View style={s.row}>{(['plan','saved'] as const).map(t=><Chip key={t} label={{plan:'Plans',saved:'Saved plans'}[t]} active={tab===t} onPress={()=>setTab(t)}/>)}</View>
   {tab==='plan'?<>
-   {/* The Plans tab is where plans are kept and where a plan begins from a person, not a second place to build one.
-       A day is created from a place (Create a plan on any venue), so there is one way to build it, with one set of
-       questions; this tab shows what has been made and offers the two other beginnings. */}
-   <Card style={s.panel}>
-    <Text variant="heading2">Start a plan</Text>
-    <Text color={colors.text.secondary}>A plan begins with a place. Choose somewhere that suits your family, then tap Create a plan.</Text>
-    <View style={s.row}>
-     <Button label="Best for us today" onPress={()=>router.push('/(tabs)' as never)} testID="plans-go-home"/>
-     <Button label="Explore London" variant="outline" onPress={()=>router.push('/(tabs)/explore' as never)} testID="plans-go-explore"/>
-    </View>
-    {/* The shortcut to Meet halfway, which lives under Families: a day with another family begins with a place that suits both. */}
-    <Text color={colors.text.secondary}>Meeting another family? Find a place that works for both of you.</Text>
-    <Button label="Meet halfway" variant="outline" onPress={()=>router.push('/halfway' as never)} testID="plans-go-halfway"/>
-   </Card>
-   {/* Saved places live here now: the bottom navigation's Saved tab became Halfway, and the places a family keeps are part
-       of what they plan from. */}
-   <Pressable onPress={()=>router.push('/saved' as never)} accessibilityRole="button" accessibilityLabel={`Saved places, ${savedPlaces} ${savedPlaces===1?'place':'places'}`} testID="plans-saved-places">
-    <Card style={s.panel}>
-     <Text variant="heading2">Saved places</Text>
-     <Text color={colors.text.secondary}>{savedPlaces?`${savedPlaces} ${savedPlaces===1?'place':'places'} your family wants to remember.`:'Places you save with the heart appear here.'}</Text>
-     <Text variant="link">Open saved places →</Text>
-    </Card>
-   </Pressable>
    {state.savedDays.length?<Card style={s.panel} testID="plans-saved-days">
     <Text variant="heading2">Your plans</Text>
     {state.savedDays.map((day,i)=>{
@@ -175,7 +152,26 @@ export default function TripsScreen() {
       <Text variant="heading3">{view.title}</Text>
       <Text variant="bodySmall" color={colors.text.secondary}>{view.dateSummary}</Text>
      </Pressable>;})}
-   </Card>:<Card style={s.panel}><Text variant="bodySmall" color={colors.text.secondary}>Plans you save appear here.</Text></Card>}
+   </Card>:null}
+   {/* Plans come first: what has been made, then the way to make another. A plan still begins with a place, so there is one
+       way to build it with one set of questions. Meet halfway is its own tab now; it is not repeated here. */}
+   <Card style={s.panel} testID="plans-start">
+    <Text variant="heading2">{state.savedDays.length?'Plan another day':'Start a plan'}</Text>
+    <Text color={colors.text.secondary}>A plan begins with a place. Choose somewhere that suits your family, then tap Create a plan.</Text>
+    <View style={s.row}>
+     <Button label="Best for us today" onPress={()=>router.push('/(tabs)' as never)} testID="plans-go-home"/>
+     <Button label="Explore London" variant="outline" onPress={()=>router.push('/(tabs)/explore' as never)} testID="plans-go-explore"/>
+    </View>
+   </Card>
+   {/* Saved places live here now: the bottom navigation's Saved tab became Halfway, and the places a family keeps are part
+       of what they plan from. */}
+   <Pressable onPress={()=>router.push('/saved' as never)} accessibilityRole="button" accessibilityLabel={`Saved places, ${savedPlaces} ${savedPlaces===1?'place':'places'}`} testID="plans-saved-places">
+    <Card style={s.panel}>
+     <Text variant="heading2">Saved places</Text>
+     <Text color={colors.text.secondary}>{savedPlaces?`${savedPlaces} ${savedPlaces===1?'place':'places'} your family wants to remember.`:'Places you save with the heart appear here.'}</Text>
+     <Text variant="link">Open saved places →</Text>
+    </Card>
+   </Pressable>
    {message?<Text accessibilityRole="alert" color={colors.warning[600]}>{message}</Text>:null}
   </>:null}
   {tab==='saved'?<>

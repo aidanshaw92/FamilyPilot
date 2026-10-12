@@ -6,12 +6,12 @@ import { describe, expect, it } from 'vitest';
 import { floatingTabBarLayout } from '@/src/utils/floating-tab-bar-layout';
 
 /**
- * Home · Explore · Families · Plans · Profile.
+ * Home · Explore · Families · Halfway · Plans · Profile.
  *
- * Families, in the middle, is the hub for who a parent plans with: their own household, the families they are connected
- * to, and the ways to plan together. Meet halfway is one of those ways (a stack screen reached from Families, and from a
- * shortcut on Plans), not a tab. Still five tabs, so the approved pill keeps its geometry. Saved places open from Plans.
- * The URLs /halfway and /saved are unchanged, so every existing link still lands.
+ * Families is the hub for who a parent plans with: the families they are connected to, invitations, what they share and
+ * Plan together. Halfway is a tab of its own (it was folded into Families in the first beta overhaul, which hid a main job
+ * behind a second tap): a map of places that work for two families, one tap from anywhere. A connected family's card in
+ * Families still offers it, pre-selected. Saved places open from Plans. The URLs /halfway and /saved are unchanged.
  */
 const root = join(__dirname, '..', '..');
 const read = (path: string) => readFileSync(join(root, path), 'utf8');
@@ -20,22 +20,48 @@ describe('the bottom navigation', () => {
   const layout = read('app/(tabs)/_layout.tsx');
   const names = [...layout.matchAll(/\{ name: '([a-z]+)', title: '([A-Za-z ]+)'|name: '([a-z]+)',\s*\n\s*title: '([A-Za-z ]+)'/g)].map((m) => [m[1] ?? m[3], m[2] ?? m[4]]);
 
-  it('is Home · Explore · Families · Plans · Profile, in that order, and five tabs', () => {
-    expect(names).toEqual([['index', 'Home'], ['explore', 'Explore'], ['families', 'Families'], ['trips', 'Plans'], ['profile', 'Profile']]);
+  it('is Home · Explore · Families · Halfway · Plans · Profile, in that order: six distinct tabs', () => {
+    expect(names).toEqual([['index', 'Home'], ['explore', 'Explore'], ['families', 'Families'], ['halfway', 'Halfway'], ['trips', 'Plans'], ['profile', 'Profile']]);
+    expect(new Set(names.map((n) => n[0])).size).toBe(6);
   });
 
-  it('has no Saved tab and no Halfway tab', () => {
+  it('has no Saved tab, and Halfway is a tab screen at /halfway, not a stack screen', () => {
     expect(layout).not.toMatch(/name: 'saved'/);
-    expect(layout).not.toMatch(/name: 'halfway'/);
     expect(existsSync(join(root, 'app/(tabs)/saved.tsx'))).toBe(false);
-    expect(existsSync(join(root, 'app/(tabs)/halfway.tsx'))).toBe(false);
+    expect(existsSync(join(root, 'app/(tabs)/halfway.tsx'))).toBe(true);
+    expect(existsSync(join(root, 'app/halfway.tsx'))).toBe(false);
+    expect(read('app/_layout.tsx')).not.toMatch(/<Stack\.Screen name="halfway"/);
   });
 
-  it('keeps the approved pill: five tabs fit at every phone width', () => {
-    for (const width of [360, 390, 393, 430]) {
-      const pill = floatingTabBarLayout(5, 34, 'home');
-      expect(pill.width).toBeLessThanOrEqual(width - 16);
+  it('keeps the approved pill shape and fits six tabs at every phone width, in both frames, with room either side', () => {
+    for (const width of [360, 375, 390, 393, 402, 414, 430, 440]) {
+      for (const variant of ['home', 'explore'] as const) {
+        const pill = floatingTabBarLayout(6, 34, variant);
+        expect(pill.width + 16, `${variant} at ${width}`).toBeLessThanOrEqual(width);
+        // Touch targets: the whole tab cell is pressable, at least 44 x 44 and in practice 51 x 59.
+        expect(pill.tabWidth).toBeGreaterThanOrEqual(44);
+        expect(pill.height).toBeGreaterThanOrEqual(44);
+        expect(pill.indicator).toBeLessThanOrEqual(pill.tabWidth);
+      }
     }
+  });
+
+  it('five tabs (Plans hidden by a pilot flag) still draw exactly as the approved frames do', () => {
+    const pill = floatingTabBarLayout(5, 34, 'home');
+    expect(pill.width).toBeCloseTo(289.7, 1);
+    expect(pill.tabWidth).toBe(55);
+    expect(floatingTabBarLayout(5, 34, 'explore').width).toBeCloseTo(310.1, 1);
+  });
+
+  it('the screens clear the six-tab bar', () => {
+    expect(read('src/hooks/use-tab-bar-clearance.ts')).toContain('floatingTabBarLayout(6, insets.bottom)');
+  });
+
+  it('every tab exposes its title as an accessibility label and as a tab with a selected state', () => {
+    const bar = read('src/components/navigation/FloatingTabBar.tsx');
+    expect(bar).toContain('accessibilityRole="tab"');
+    expect(bar).toContain('accessibilityLabel={label}');
+    expect(bar).toContain('accessibilityState={{ selected: focused }}');
   });
 
   it('draws a Families icon in both approved frames, in their stroke language', () => {
@@ -44,7 +70,14 @@ describe('the bottom navigation', () => {
     expect((icons.match(/case 'families':/g) ?? []).length).toBe(2);
     expect(icons).toMatch(/families: 810/);
     expect(icons).toMatch(/families: 890/);
-    expect(icons).not.toMatch(/case 'halfway':/);
+  });
+
+  it('draws a Halfway icon in both approved frames, a pin over a dashed line between two dots, distinct from Families and Explore', () => {
+    const icons = read('src/components/ui/icons.tsx');
+    expect(icons).toMatch(/export type NavTab = [^;]*'halfway'/);
+    expect((icons.match(/case 'halfway':/g) ?? []).length).toBe(2);
+    expect(icons).toMatch(/halfway: 690/);
+    expect(icons).toMatch(/halfway: 758\.2/);
   });
 });
 
@@ -71,26 +104,31 @@ describe('Families as a tab', () => {
   });
 });
 
-describe('Meet halfway, inside Families', () => {
-  const halfway = read('app/halfway.tsx');
+describe('Meet halfway, its own tab', () => {
+  const halfway = read('app/(tabs)/halfway.tsx');
 
-  it('is a stack screen at the same /halfway URL, with a way back to Families', () => {
-    expect(existsSync(join(root, 'app/halfway.tsx'))).toBe(true);
-    expect(read('app/_layout.tsx')).toMatch(/<Stack\.Screen name="halfway"/);
-    expect(halfway).toContain('onBack=');
-    expect(halfway).toContain("router.replace('/(tabs)/families' as never)");
-    expect(halfway).not.toContain('tabBarClearance');
+  it('is a tab at the same /halfway URL: no back button, and it clears the floating navigation', () => {
+    expect(halfway).not.toContain('onBack=');
+    expect(halfway).toContain('paddingBottom: tabBarClearance');
+  });
+
+  it('opens directly on an answer with one family to meet, and on adding a starting point with none (no connection needed)', () => {
+    expect(halfway).toContain('if (!chosen && candidates.length === 1) setChosen(candidates[0].id);');
+    expect(halfway).toContain('const showAdd = adding || (candidates.length === 0 && (connected.loaded || !signedIn));');
+    expect(halfway).toContain('testID="halfway-no-families"');
+  });
+
+  it('folds When and Start into one line once a family is chosen, so the map comes first', () => {
+    expect(halfway).toContain('testID="halfway-when-summary"');
+    expect(halfway).toContain('testID="halfway-when-change"');
   });
 
   it('a link naming a family still selects them, even when the screen is already open', () => {
     expect(halfway).toContain('if (preselected) setChosen(preselected);');
   });
 
-  it('is reached from a connected family and from a shortcut on Plans', () => {
+  it('is also reached from a connected family’s card, with that family chosen', () => {
     expect(read('src/components/profile/FamilySections.tsx')).toMatch(/pathname: '\/halfway', params: \{ family: familyId \}/);
-    const plans = read('app/(tabs)/trips.tsx');
-    expect(plans).toContain("router.push('/halfway' as never)");
-    expect(plans).toContain('testID="plans-go-halfway"');
   });
 
   it('is behind the account guard like every other screen', () => {
@@ -111,7 +149,7 @@ describe('the brand row on every main screen', () => {
   });
 
   it('the section pages use the one PageHeader, which draws the same lockup', () => {
-    for (const file of ['app/(tabs)/families.tsx', 'app/(tabs)/trips.tsx', 'app/(tabs)/profile.tsx', 'app/halfway.tsx', 'app/saved.tsx']) {
+    for (const file of ['app/(tabs)/families.tsx', 'app/(tabs)/trips.tsx', 'app/(tabs)/profile.tsx', 'app/(tabs)/halfway.tsx', 'app/saved.tsx']) {
       expect(read(file), file).toContain('<PageHeader');
     }
     expect(read('src/components/navigation/PageHeader.tsx')).toContain('<BrandLockup onBack={onBack} action={action} flush />');

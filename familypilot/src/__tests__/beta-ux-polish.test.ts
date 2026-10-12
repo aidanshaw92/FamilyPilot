@@ -190,7 +190,7 @@ describe('one header for the section pages', () => {
   const read = (path: string) => readFileSync(join(root, path), 'utf8');
 
   it('Halfway, Plans, Profile, Families and Saved all render PageHeader; Home and Explore keep their approved headers', () => {
-    for (const screen of ['app/halfway.tsx', 'app/(tabs)/trips.tsx', 'app/(tabs)/profile.tsx', 'app/(tabs)/families.tsx', 'app/saved.tsx']) {
+    for (const screen of ['app/(tabs)/halfway.tsx', 'app/(tabs)/trips.tsx', 'app/(tabs)/profile.tsx', 'app/(tabs)/families.tsx', 'app/saved.tsx']) {
       expect(read(screen), screen).toContain('<PageHeader');
     }
     for (const screen of ['app/(tabs)/index.tsx', 'app/(tabs)/explore.tsx']) {
@@ -202,7 +202,7 @@ describe('one header for the section pages', () => {
   });
 
   it('Meet halfway says what it ranks by and lets a card focus the map', () => {
-    const screen = read('app/halfway.tsx');
+    const screen = read('app/(tabs)/halfway.tsx');
     expect(screen).toContain('not by the midpoint between your homes');
     expect(screen).toContain('testID="halfway-option-head"');
     expect(screen).toContain('testID="halfway-ranking-note"');

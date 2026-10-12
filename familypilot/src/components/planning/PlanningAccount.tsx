@@ -15,7 +15,11 @@ import { Field, formStyles as s } from '@/src/components/ui';
 import { familyDisplayName } from '@/src/utils/family-title';
 
 type Connection={id:string;pending:boolean;expiresAt:string;family:PlanningFamily|null};
-export function PlanningAccount(){
+/**
+ * Sign-in, the private cloud backup and this device's planning data. `dataOnly` (the Profile) leaves out the older invitation
+ * and connection tools: those live in Families (ConnectedFamiliesSection), and one place should manage them.
+ */
+export function PlanningAccount({dataOnly=false}:{dataOnly?:boolean}={}){
  const state=usePlanningStore();const [email,setEmail]=useState('');const [password,setPassword]=useState('');const [user,setUser]=useState<string|null>(null);
  const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);const [code,setCode]=useState('');const [invite,setInvite]=useState('');const [connections,setConnections]=useState<Connection[]>([]);
  const [restore,setRestore]=useState<PlanningBackup|null>(null);const mine=state.families.find(f=>f.id==='mine');
@@ -28,13 +32,13 @@ export function PlanningAccount(){
  // Load existing connections as soon as we know who's signed in, so returning users
  // see their friends immediately instead of an empty list until they tap Refresh.
  useEffect(()=>{if(user)void run(refresh);},[user]);
- if(!supabase)return <Card style={styles.card}><Text variant="heading3">Connect with friends</Text><Text color={colors.text.secondary}>Account connections need to be enabled by the app owner. You can already plan together on one phone.</Text></Card>;
+ if(!supabase)return dataOnly?null:<Card style={styles.card}><Text variant="heading3">Connect with friends</Text><Text color={colors.text.secondary}>Account connections need to be enabled by the app owner. You can already plan together on one phone.</Text></Card>;
  return <View style={styles.stack}>
-  <Card style={[styles.card,styles.introCard]}>
+  {dataOnly?null:<Card style={[styles.card,styles.introCard]}>
    <View style={styles.introIcon}><Ionicons name="people-circle-outline" size={28} color={colors.action}/></View>
    <Text variant="heading2">Plan days out with friends</Text>
    <Text color={colors.text.secondary}>Connect with another family to share routines, plan a day that works for both of you, and see who’s coming.</Text>
-  </Card>
+  </Card>}
 
   {!user?<Card style={styles.card}>
    <Text variant="heading3">{authMode==='signin'?'Sign in':'Create your account'}</Text>
@@ -57,6 +61,7 @@ export function PlanningAccount(){
 
    <MyVisitReports key={user}/>
 
+   {dataOnly?null:<>
    <Card style={styles.card}>
     <Text variant="heading3">Connect a friend’s family</Text>
     <Text variant="bodySmall" color={colors.text.secondary}>Creating or accepting an invitation shares your family label, approximate area (rounded to about 1km), children’s ages and venue preferences with that family. It does not share children’s names or addresses. Invitation links expire after seven days and can be used once.</Text>
@@ -87,10 +92,12 @@ export function PlanningAccount(){
      </View>)}
    </Card>
 
+   </>}
+
    <Card style={styles.card}>
     <Text variant="heading3">Account actions</Text>
     <Button label="Delete my cloud planning backup" variant="ghost" disabled={busy} onPress={()=>void run(async()=>{const {error}=await supabase!.from('planning_workspaces').delete().eq('user_id',user);if(error)throw error;setMessage('Cloud backup deleted. Device plans are unchanged.');})}/>
-    <Button label="Sign out" variant="outline" disabled={busy} onPress={()=>void run(async()=>{const {error}=await supabase!.auth.signOut();if(error)throw error;setMessage('Signed out. Device plans remain here; clear them before sharing this device.');})}/>
+{dataOnly?null:<Button label="Sign out" variant="outline" disabled={busy} onPress={()=>void run(async()=>{const {error}=await supabase!.auth.signOut();if(error)throw error;setMessage('Signed out. Device plans remain here; clear them before sharing this device.');})}/>}
    </Card>
   </>}
 

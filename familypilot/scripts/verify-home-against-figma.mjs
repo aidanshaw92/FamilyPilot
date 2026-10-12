@@ -237,8 +237,11 @@ for (const run of RUNS) {
   // --- Bottom navigation (frame node 9:2) ------------------------------------------------------
   // Approved Home frame 229:133 (node 267:165): 289.7 x 60 centred on a 393 artboard, five 55pt tab cells, a 46pt
   // active disc. (Explore draws its own, larger pill; see floating-tab-bar-layout.)
+  // SIX TABS (Home, Explore, Families, Halfway, Plans, Profile) are wider than the frame's pitch allows on a 360pt phone, so
+  // above five tabs the pitch is 51pt with 6pt padding (SIX_TAB_METRICS): the same 60pt capsule, the same glyphs, the
+  // same disc. Five tabs still match the frame exactly. Documented in floating-tab-bar-layout.ts.
   const tabCount = m.tabs.length;
-  const expectedPillWidth = 7.35 * 2 + tabCount * 55;
+  const expectedPillWidth = tabCount > 5 ? 6 * 2 + tabCount * 51 : 7.35 * 2 + tabCount * 55;
   check(run.name, 'pill matches the frame size', near(m.pill.width, expectedPillWidth, 1) && near(m.pill.height, 60, 1),
     `${m.pill.width}x${m.pill.height}, expected ${expectedPillWidth}x60 for ${tabCount} tabs`);
   check(run.name, 'pill is centred', near((m.pill.left + m.pill.right) / 2, run.width / 2),

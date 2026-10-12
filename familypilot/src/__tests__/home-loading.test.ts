@@ -264,7 +264,7 @@ describe('slow photo and no-photo paths', () => {
   it('slow photo: the category illustration sits underneath while it loads, not a grey block', () => {
     expect(image).not.toContain('<Skeleton height={120}');
     const pending = image.slice(image.indexOf('{pending?'), image.indexOf('<Image source'));
-    expect(pending).toContain('<CategoryArt category={category} />');
+    expect(pending).toContain('<CategoryArt category={category} seed={alt} />');
     // Not announced: it is not what the place looks like, and the photo's own label is what is read.
     expect(pending).toContain('accessibilityElementsHidden');
     expect(pending).toContain('importantForAccessibility="no-hide-descendants"');

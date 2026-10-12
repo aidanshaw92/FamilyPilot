@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/src/components/ui';
@@ -29,15 +30,35 @@ const EDIT_LABEL: Record<TimelineEdit, string> = {
 };
 
 export function PlanTimeline({ rows, onEdit }: { rows: TimelineRow[]; onEdit?: (edit: TimelineEdit, row: TimelineRow) => void }) {
+  // The times and anything that needs a decision are always in view. How each was worked out (the settling allowance, what is
+  // confirmed, where it came from) is one tap away, for the whole day at once.
+  const [detail, setDetail] = useState(false);
   if (!rows.length) return null;
+  const hiddenCount = rows.reduce((n, row) => n + row.lines.filter((line) => line.detail).length, 0);
   return (
     <View style={styles.wrap} testID="plan-timeline">
-      <View style={styles.legend}>
-        <Text variant="caption" color={colors.text.tertiary}>
-          Times are from your routines, the place’s hours and the journeys. Each line says whether it is confirmed, estimated, suggested by
-          FamilyPilot, reported by you or the mappers, or not yet known.
-        </Text>
-      </View>
+      {hiddenCount > 0 || detail ? (
+        <Pressable
+          onPress={() => setDetail((open) => !open)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: detail }}
+          accessibilityLabel={detail ? 'Hide how these times were worked out' : 'Show how these times were worked out'}
+          hitSlop={8}
+          style={styles.detailToggle}
+          testID="plan-timeline-detail-toggle"
+        >
+          <Ionicons name={detail ? 'chevron-up' : 'chevron-down'} size={16} color={colors.action} />
+          <Text style={styles.editText}>{detail ? 'Hide how these times were worked out' : 'How these times were worked out'}</Text>
+        </Pressable>
+      ) : null}
+      {detail ? (
+        <View style={styles.legend}>
+          <Text variant="caption" color={colors.text.tertiary}>
+            Times are from your routines, the place’s hours and the journeys. Each line says whether it is confirmed, estimated, suggested by
+            FamilyPilot, reported by you or the mappers, or not yet known.
+          </Text>
+        </View>
+      ) : null}
       {rows.map((row, index) => {
         const last = index === rows.length - 1;
         const dot = row.tone === 'tight' ? colors.warning[600] : row.tone === 'warn' ? colors.warning[600] : row.kind === 'home' || row.kind === 'leave-home' ? colors.ink : colors.action;
@@ -53,12 +74,12 @@ export function PlanTimeline({ rows, onEdit }: { rows: TimelineRow[]; onEdit?: (
             </View>
             <View style={[styles.body, row.tone === 'tight' || row.tone === 'warn' ? styles.bodyWarn : null, last ? styles.bodyLast : null]}>
               <Text style={[styles.title, row.tone === 'tight' || row.tone === 'warn' ? styles.titleWarn : null]}>{row.title}</Text>
-              {row.lines.map((line, i) => (
+              {row.lines.filter((line) => detail || !line.detail).map((line, i) => (
                 <View key={`${row.id}-${i}`} style={styles.lineRow}>
                   <Text variant="bodySmall" color={row.tone === 'tight' && i > 0 ? colors.warning[600] : colors.text.secondary} style={styles.lineText}>
                     {line.text}
                   </Text>
-                  {line.provenance ? (
+                  {line.provenance && (detail || line.provenance === 'unknown') ? (
                     <View style={[styles.tag, line.provenance === 'confirmed' ? styles.tagConfirmed : line.provenance === 'unknown' ? styles.tagUnknown : null]} testID={`plan-provenance-${line.provenance}`}>
                       <Text style={[styles.tagText, line.provenance === 'confirmed' ? styles.tagTextConfirmed : null]}>{PROVENANCE_LABEL[line.provenance]}</Text>
                     </View>
@@ -89,6 +110,7 @@ export function PlanTimeline({ rows, onEdit }: { rows: TimelineRow[]; onEdit?: (
 const styles = StyleSheet.create({
   wrap: { marginBottom: spacing.lg },
   legend: { marginBottom: spacing.md },
+  detailToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, alignSelf: 'flex-start' },
   row: { flexDirection: 'row', alignItems: 'stretch' },
   timeColumn: { width: 56, paddingTop: 2, alignItems: 'flex-end', paddingRight: spacing.sm },
   time: { fontFamily: 'Inter_700Bold', fontSize: 14, lineHeight: 18, color: colors.ink },

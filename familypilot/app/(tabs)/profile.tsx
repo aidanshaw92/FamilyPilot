@@ -22,7 +22,8 @@ import { formatClock } from '@/src/utils/clock-format';
 import { familyTitle } from '@/src/utils/family-title';
 import { FacilityType } from '@/src/types';
 import { signOut } from '@/src/services/account/auth-service';
-import { ConnectedFamiliesSection, YourFamilySection } from '@/src/components/profile/FamilySections';
+import { YourFamilySection } from '@/src/components/profile/FamilySections';
+import { PlanningAccount } from '@/src/components/planning/PlanningAccount';
 import { householdTitle } from '@/src/utils/household';
 import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
 
@@ -132,7 +133,21 @@ export default function ProfileScreen() {
         </FadeInView>
 
         <YourFamilySection profile={profile} />
-        <ConnectedFamiliesSection accountsAvailable={accountRequired() && authStatus === 'signed_in'} />
+
+        {/* Connections, invitations and what each family sees are managed in Families, in one place. */}
+        <Pressable
+          style={styles.aboutRow}
+          onPress={() => router.push('/(tabs)/families' as never)}
+          accessibilityRole="button"
+          accessibilityLabel="Connected families and invitations are in Families"
+          testID="profile-families-link"
+        >
+          <Ionicons name="people-outline" size={20} color={colors.text.secondary} />
+          <Text variant="bodySmall" color={colors.text.secondary} style={styles.aboutText}>
+            Connected families and invitations are in Families
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />
+        </Pressable>
 
         <Text variant="heading2" style={styles.sectionTitle}>
           Naps, feeds & must-haves
@@ -256,6 +271,20 @@ export default function ProfileScreen() {
             </Card>
           </>
         ) : null}
+
+        <Text variant="heading2" style={styles.sectionTitle}>
+          Your data
+        </Text>
+        <Card style={styles.prefCard} testID="profile-data-locations">
+          <ProfileRow icon="phone-portrait-outline" label="On this phone" value="Family details, routines, saved plans and places" />
+          <ProfileRow icon="person-circle-outline" label="In your account" value="Your email and the families you connect with" />
+          <ProfileRow icon="cloud-upload-outline" label="Cloud backup" value="Only if you tap Back up. Private to you" />
+          <Text variant="caption" color={colors.text.tertiary}>
+            Your children’s names, birthdays and routines stay on this phone unless you choose to back them up. A connected family sees
+            only what you agreed to share with them: never names or an address, and routines only if you switch that on.
+          </Text>
+        </Card>
+        <PlanningAccount dataOnly />
 
         <Pressable
           style={styles.aboutRow}

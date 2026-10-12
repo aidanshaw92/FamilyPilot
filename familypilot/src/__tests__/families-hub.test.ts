@@ -69,12 +69,27 @@ describe('the Families hub', () => {
   const families = read('app/(tabs)/families.tsx');
   const sections = read('src/components/profile/FamilySections.tsx');
 
-  it('shows the household, its naps, feeds and must-haves, and the connected families, with Meet halfway one tap away', () => {
-    expect(families).toContain('<YourFamilySection');
-    expect(families).toContain('<RoutinesSection');
-    expect(families).toContain('<ConnectedFamiliesSection');
-    expect(families).toContain('testID="families-go-halfway"');
+  it('puts the connected families and invitations first, then a compact household summary, and Plan together only while chosen', () => {
+    expect(families.indexOf('<ConnectedFamiliesSection')).toBeGreaterThan(-1);
+    expect(families.indexOf('<ConnectedFamiliesSection')).toBeLessThan(families.indexOf('<HouseholdSummary'));
+    expect(families).not.toContain('<YourFamilySection');
+    expect(families).not.toContain('<RoutinesSection');
+    expect(families).toContain('{together ? (');
     expect(families).toContain('testID="families-plan-together-card"');
+  });
+
+  it('Meet halfway is the Halfway tab; each family card still offers it with that family chosen', () => {
+    expect(families).not.toContain('families-go-halfway');
+    expect(sections).toContain('label="Meet halfway"');
+  });
+
+  it('account, backup and device data are managed in Profile, not here', () => {
+    expect(families).not.toContain('<PlanningAccount');
+    expect(families).toContain('testID="families-account-link"');
+    const profile = read('app/(tabs)/profile.tsx');
+    expect(profile).toContain('<PlanningAccount dataOnly />');
+    expect(profile).not.toContain('<ConnectedFamiliesSection');
+    expect(profile).toContain('testID="profile-data-locations"');
   });
 
   it('says what each family is: connected, or on this phone only', () => {
@@ -90,11 +105,13 @@ describe('the Families hub', () => {
     expect(families).not.toMatch(/createInvite|listConnections|connection-invites|updateSharing/);
   });
 
-  it('the Plans tab no longer carries a families view, and offers the Meet halfway shortcut', () => {
+  it('the Plans tab shows the plans first, keeps the way to start another, and does not repeat the Halfway tab', () => {
     const plans = read('app/(tabs)/trips.tsx');
     expect(plans).not.toContain("'families'");
     expect(plans).not.toContain('FamilyEditor');
-    expect(plans).toContain('testID="plans-go-halfway"');
+    expect(plans).not.toContain('plans-go-halfway');
+    expect(plans.indexOf('testID="plans-saved-days"')).toBeLessThan(plans.indexOf('testID="plans-start"'));
+    expect(plans).toContain("state.savedDays.length?'Plan another day':'Start a plan'");
   });
 });
 
@@ -151,7 +168,7 @@ describe('Meet halfway, map first', () => {
   });
 
   it('the screen keeps the map at the top with a Map / List control, and syncs cards and pins both ways', () => {
-    const screen = read('app/halfway.tsx');
+    const screen = read('app/(tabs)/halfway.tsx');
     expect(screen).toContain('stickyHeaderIndices={hasMap ? [2] : undefined}');
     expect(screen).toContain('testID="halfway-mode-map"');
     expect(screen).toContain('testID="halfway-mode-list"');

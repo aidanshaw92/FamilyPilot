@@ -71,6 +71,39 @@ export function YourFamilySection({ profile, onEdit }: { profile: FamilyProfile;
   );
 }
 
+/**
+ * YOUR HOUSEHOLD, in a line: who the planner plans for and whether it knows their naps and feeds, with one way in to change
+ * any of it. The full detail lives in the Profile; this is what a parent planning with another family needs to glance at.
+ */
+export function HouseholdSummary({ profile, onEdit }: { profile: FamilyProfile; onEdit: () => void }) {
+  const people = householdPeople(profile);
+  const byId = new Map(profile.members.map((m) => [m.id, m]));
+  const who = people.map((person) => {
+    if (person.kind === 'adult') return person.isYou ? 'You' : person.name;
+    const member = byId.get(person.id);
+    return `${person.name} (${member ? formatChildAge(member) : person.ageLabel})`;
+  });
+  const routines = resolveRoutines(profile);
+  return (
+    <Card style={styles.summary} testID="families-household-summary">
+      <View style={styles.titleRow}>
+        <View style={styles.familyText}>
+          <Text variant="heading3">Your household</Text>
+          <Text variant="bodySmall" color={colors.text.secondary}>
+            {who.length ? who.join(', ') : 'Nobody added yet'}
+          </Text>
+          <Text variant="caption" color={colors.text.secondary}>
+            {routines.length === 0
+              ? 'Naps and feeds not set'
+              : `${routines.length} nap${routines.length === 1 ? '' : 's'} and feed${routines.length === 1 ? '' : 's'} set · private unless you share them`}
+          </Text>
+        </View>
+        <Button label="Edit" size="sm" variant="outline" onPress={onEdit} testID="families-household-edit" />
+      </View>
+    </Card>
+  );
+}
+
 const MUST_HAVE_LABELS: Partial<Record<FacilityType, string>> = {
   toilets: 'Toilets',
   baby_changing: 'Baby changing',
@@ -461,6 +494,7 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   title: { marginTop: spacing.lg, marginBottom: spacing.lg },
   card: { gap: spacing.md, marginBottom: spacing.md },
+  summary: { gap: spacing.sm },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
