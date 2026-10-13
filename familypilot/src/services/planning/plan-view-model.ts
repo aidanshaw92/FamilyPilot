@@ -489,7 +489,11 @@ const upperFirst = (text: string): string => text.charAt(0).toUpperCase() + text
  * rather than shown as a key. Neither a yes nor a no: only what nobody has checked.
  */
 function needsCheckingLines(itinerary: DayItinerary): string[] {
-  const groups = new Map<string, { familyId: string; familyLabel: string; label: string; field: string; stops: string[] }>();
+  const groups = new Map<string, { label: string; field: string; stops: string[] }>();
+  // Another family's unconfirmed must-haves are kept apart and never named: they shared them so the plan can use them, not so
+  // this family can read them (and a wheelchair or mobility need least of all). One line per family: that something is
+  // unconfirmed at these stops, not what.
+  const others = new Map<string, { familyLabel: string; stops: string[] }>();
   // The day's indoor/outdoor choice is the plan's, not one family's, so it is said once per stop. It is an explicit request, so an
   // unconfirmed setting is a prominent warning like any other must-have, never silently dropped.
   const settingStops: string[] = [];
@@ -498,28 +502,33 @@ function needsCheckingLines(itinerary: DayItinerary): string[] {
       if (!settingStops.includes(item.stopName)) settingStops.push(item.stopName);
       continue;
     }
+    if (item.familyId !== 'mine') {
+      // Counted only if it is a requirement the app would have named (a field with no parent-facing name was left out before too).
+      if (!mustHaveLabel(item.field)) continue;
+      const group = others.get(item.familyId) ?? { familyLabel: item.familyLabel, stops: [] };
+      if (!group.stops.includes(item.stopName)) group.stops.push(item.stopName);
+      others.set(item.familyId, group);
+      continue;
+    }
     const label = mustHaveLabel(item.field);
     if (!label) continue;
-    const key = `${item.familyId}|${label}`;
-    const group = groups.get(key) ?? { familyId: item.familyId, familyLabel: item.familyLabel, label, field: item.field, stops: [] };
+    const group = groups.get(label) ?? { label, field: item.field, stops: [] };
     if (!group.stops.includes(item.stopName)) group.stops.push(item.stopName);
-    groups.set(key, group);
+    groups.set(label, group);
   }
+  const where = (stops: string[]) => (stops.length === 1 ? stops[0] : `${stops.slice(0, -1).join(', ')} and ${stops[stops.length - 1]}`);
   const settingLines = settingStops.map((stop) => `Whether ${stop} is indoors or outdoors isn’t confirmed, and you asked for a particular setting today. Check before you go.`);
-  return [...settingLines, ...[...groups.values()].map((group) => {
-    const where = group.stops.length === 1 ? group.stops[0] : `${group.stops.slice(0, -1).join(', ')} and ${group.stops[group.stops.length - 1]}`;
+  const mineLines = [...groups.values()].map((group) => {
     // "Toilets aren't", not "Toilets isn't".
     const plural = /s$/.test(group.label) && !/ss$/.test(group.label);
     const verb = plural ? 'aren’t' : 'isn’t';
     const it = plural ? 'them' : 'it';
     // Step-free access is needed because someone uses a wheelchair or mobility aid, not because it was ticked as a must-have.
     const stepFree = group.field === 'accessibility.wheelchairAccessible';
-    if (group.familyId === 'mine') {
-      return `${upperFirst(group.label)} ${verb} confirmed at ${where}, and ${stepFree ? 'someone in your family uses a wheelchair or mobility aid' : `you said you need ${it}`}. Check before you go.`;
-    }
-    const who = familyDisplayName(group.familyLabel);
-    return `${upperFirst(group.label)} ${verb} confirmed at ${where}, and ${stepFree ? `someone in ${who} uses a wheelchair or mobility aid` : `${who} needs ${it}`}. Check before you go.`;
-  })];
+    return `${upperFirst(group.label)} ${verb} confirmed at ${where(group.stops)}, and ${stepFree ? 'someone in your family uses a wheelchair or mobility aid' : `you said you need ${it}`}. Check before you go.`;
+  });
+  const otherLines = [...others.values()].map((group) => `Something ${familyDisplayName(group.familyLabel)} needs isn’t confirmed at ${where(group.stops)}. Check before you go.`);
+  return [...settingLines, ...mineLines, ...otherLines];
 }
 
 /** Two options are the same change when they would re-run the day the same way. */

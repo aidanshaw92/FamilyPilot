@@ -364,7 +364,7 @@ for (const [width, height] of VIEWPORTS) {
   await showList(needy.page);
   const needText = await text(needy.page);
   check(`${label}: an unconfirmed must-have keeps the place on the list, with a prominent "needs checking" block`, needText.includes(FINCHLEY) && (await needy.page.getByTestId('halfway-needs-checking').count()) > 0 && /Needs checking before you go/i.test(needText));
-  check(`${label}: it says exactly what to check, for the family that needs it`, /Baby changing isn’t confirmed at Finchley Fixture Play Barn, and Hannah’s family needs it/.test(needText));
+  check(`${label}: it says that something the other family needs is unconfirmed, without saying what`, /Something Hannah’s family needs isn’t confirmed at Finchley Fixture Play Barn\. Check before you go/.test(needText) && !/baby changing/i.test(needText.replace(/A place confirmed to LACK/i, '')));
   check(`${label}: a place confirmed to LACK the must-have is ruled out`, !needText.includes(HENDON));
   check(`${label}: a place with an unconfirmed must-have is never labelled "Best for both"`, await bestForBothIsHonest(needy.page) && !/Best for both/.test(await needy.page.getByTestId('halfway-option').filter({ hasText: FINCHLEY }).first().innerText()));
   check(`${label}: and an unconfirmed one is never worded as missing`, !/No baby changing|does not have baby changing/i.test(needText));
@@ -378,7 +378,7 @@ for (const [width, height] of VIEWPORTS) {
   await needy.page.getByTestId('halfway-plan').click();
   await settle(needy.page, 4200);
   const jointPlan = await text(needy.page);
-  check(`${label}: Plan this day still builds the plan, with what needs checking said on it`, (await needy.page.getByTestId('plan-save').isVisible().catch(() => false)) && /Needs checking before you go/i.test(jointPlan) && /Baby changing isn’t confirmed at Finchley Fixture Play Barn/.test(jointPlan), jointPlan.replace(/\s+/g, ' ').slice(0, 200));
+  check(`${label}: Plan this day still builds the plan, with what needs checking said on it`, (await needy.page.getByTestId('plan-save').isVisible().catch(() => false)) && /Needs checking before you go/i.test(jointPlan) && /Something Hannah’s family needs isn’t confirmed at Finchley Fixture Play Barn/.test(jointPlan) && !/baby changing/i.test(jointPlan), jointPlan.replace(/\s+/g, ' ').slice(0, 200));
   await needy.context.close();
 
   // "Best for both" is still available when it is supported: a household of one child, a family that shared their child's age.

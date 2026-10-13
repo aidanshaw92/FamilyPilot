@@ -94,7 +94,7 @@ export function otherFitProvenance(fit: HalfwayFit, label: string): { headline: 
   switch (fit.verdict) {
     case 'excellent':
     case 'good':
-      return { headline: fit.qualified ? `Looks practical for ${who}` : `Family Fit is ${fit.verdict} for ${who}`, note };
+      return { headline: `Family Fit is ${fit.verdict} for ${who}`, note };
     case 'possible':
       return { headline: `Family Fit is only a possible match for ${who}`, note };
     case 'poor':

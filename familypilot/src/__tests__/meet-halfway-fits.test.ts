@@ -68,7 +68,7 @@ describe('per-family Family Fit on an option', () => {
       expect(shown).not.toContain(forbidden);
     }
     expect(Object.keys(option.fits.other).sort()).toEqual(['label', 'qualified', 'verdict']);
-    expect(['Excellent fit', 'Good fit', 'Possible fit', 'Not recommended', 'Not yet reviewed', 'Looks practical']).toContain(option.fits.other.label);
+    expect(['Excellent fit', 'Good fit', 'Possible fit', 'Not recommended', 'Not yet reviewed']).toContain(option.fits.other.label);
   });
 
   it('does not change the order or scores: the same input with different shared detail ranks identically to before', () => {
@@ -80,8 +80,8 @@ describe('per-family Family Fit on an option', () => {
   it('keeps sentences about what the other family shared out of what the screen lists as things to check', () => {
     // Their routine (a nap at 12:30) clashes with the outing: the engine still says so for the Plan screen...
     const [option] = run(other()).options;
-    expect(option.toCheck.some((line) => /routine for Hannah’s family falls/.test(line))).toBe(true);
-    expect(option.otherNotes.some((line) => /routine for Hannah’s family falls/.test(line))).toBe(true);
+    expect(option.toCheck.some((line) => /timing may need adjusting for Hannah’s family/.test(line))).toBe(true);
+    expect(option.otherNotes.some((line) => /timing may need adjusting for Hannah’s family/.test(line))).toBe(true);
     // ...and the Meet halfway card and sheet do not repeat it.
     const shown = checksToShow(option);
     expect([...shown.needs, ...shown.others].join(' ')).not.toMatch(/routine|nap|Hannah/i);
@@ -99,6 +99,20 @@ describe('per-family Family Fit on an option', () => {
   it('what is left to check for your own family is still said, first', () => {
     const lacking = { ...venue('Needs Loos', 51.57, -0.08), trustedFacts: { ...facts('Needs Loos'), toilets: 'unknown' } } as Venue;
     const [option] = meetHalfway({ venues: [lacking], mine, other: other(), date: '2026-10-10', arriveAt: '10:30', today: '2026-10-06', nowMinutes: 540 }).options;
-    expect(checksToShow(option).needs.join(' ')).toMatch(/Toilets isn’t confirmed at Needs Loos/);
+    // Yours is specific: it is your own requirement. (Theirs, the same place and the same gap, is covered in meet-halfway-privacy.)
+    const own = meetHalfway({ venues: [lacking], mine: { ...mine, required: ['toilets'] }, other: other({ required: [], ages: [], pushchair: false, routines: [] }), date: '2026-10-10', arriveAt: '10:30', today: '2026-10-06', nowMinutes: 540 }).options[0];
+    expect(checksToShow(own).needs.join(' ')).toMatch(/Toilets isn’t confirmed at Needs Loos, and your family needs it/);
+  });
+});
+
+describe('a partly supported grade for the other family says nothing about why', () => {
+  it('is shown as "Possible fit", not as "Looks practical" or a good grade with a child to check', () => {
+    // A venue confirmed for none of their activity evidence but fine practically: for them the engine's verdict is a qualified
+    // good. What is shown is one step down, in a generic word.
+    const two = other({ ages: [2, 0], required: [] });
+    for (const o of run(two).options) {
+      expect(o.fits.other.qualified).toBe(false);
+      expect(JSON.stringify(o.fits.other)).not.toMatch(/practical|check|child|baby/i);
+    }
   });
 });

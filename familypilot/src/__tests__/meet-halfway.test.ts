@@ -126,8 +126,10 @@ describe('only places a plan could be built for', () => {
     expect(result.options.map((o) => o.venue.id)).toEqual(['Confirmed', 'Unchecked']);
     expect(result.excluded.requirements).toBe(1);
     const unchecked = result.options.find((o) => o.venue.id === 'Unchecked')!;
-    expect(unchecked.unresolved).toEqual([{ role: 'other', field: 'familyFacilities.babyChanging', label: 'baby changing' }]);
-    expect(unchecked.toCheck[0]).toBe('Baby changing isn’t confirmed at Unchecked, and Hannah’s family needs it. Check before you go');
+    // The engine used their must-have to decide this; what leaves it says only that something they need is unconfirmed.
+    expect(unchecked.unresolved).toEqual([{ role: 'other', field: 'requirement', label: 'a requirement' }]);
+    expect(unchecked.toCheck[0]).toBe('Something Hannah’s family needs isn’t confirmed at Unchecked. Check before you go');
+    expect(JSON.stringify({ ...unchecked, venue: undefined })).not.toMatch(/baby changing|babyChanging/i);
     expect(result.options.find((o) => o.venue.id === 'Confirmed')!.unresolved).toEqual([]);
   });
 
@@ -165,19 +167,21 @@ describe('routines and ages, where they are known', () => {
   it('says it works around both families’ naps when neither falls in the outing', () => {
     // Out from about 09:30 to about 13:30: a 15:00 nap is clear for both.
     const result = run([FAIR], { mine: { ...mine, routines: [nap('15:00')] }, other: other({ routines: [nap('15:00')] }) });
-    expect(result.options[0].reasons).toContain('Works around both families’ naps');
+    expect(result.options[0].reasons).toContain('The timing works for both families');
+    // Their routines are used, never described.
+    expect(result.options[0].reasons.join(' ')).not.toMatch(/nap|feed/i);
   });
 
   it('flags the family whose nap falls in the outing, as something the plan will help with, not a refusal', () => {
     const result = run([FAIR], { mine: { ...mine, routines: [nap('12:00')] }, other: other({ routines: [nap('15:00')] }) });
     const option = result.options[0];
     expect(option.toCheck.join(' ')).toMatch(/A nap or feed of yours falls during the outing\. The plan will suggest options/);
-    expect(option.reasons.join(' ')).not.toMatch(/both families’ naps/);
+    expect(option.reasons.join(' ')).not.toMatch(/timing works for both/);
   });
 
   it('names the children’s ages only where they are known for both', () => {
     const both = run([FAIR]).options[0];
-    expect(both.reasons).toContain('Suits the ages of both families’ children');
+    expect(both.reasons).toContain('The recommended ages work for both families');
     const narrow = venue('Big Kids', 51.57, -0.08, {}, { minRecommendedAge: 6, maxRecommendedAge: 12 });
     const check = run([narrow]).options[0];
     expect(check.toCheck.join(' ')).toMatch(/may not suit all the children in your family/);
@@ -277,7 +281,7 @@ describe('each card reads in one order', () => {
     const place = venue('Fair Fields', 51.57, -0.08, { familyMatch: fit, facilities: ['cafe'] });
     const [option] = run([place], { mine: { ...mine, routines: [nap] }, other: other({ routines: [{ ...nap, id: 'o' }] }) }).options;
     const at = (pattern: RegExp) => option.reasons.findIndex((line) => pattern.test(line));
-    const order = [at(/journeys/i), at(/Good for Sloane and Ozzie/), at(/Suits the ages/), at(/Works around/), at(/Baby changing confirmed|Café|parking/i), at(/Open when/)];
+    const order = [at(/journeys/i), at(/Good for Sloane and Ozzie/), at(/recommended ages work/), at(/timing works/), at(/Baby changing confirmed|Café|parking/i), at(/Open when/)];
     expect(order.every((index) => index >= 0)).toBe(true);
     expect(order).toEqual([...order].sort((a, b) => a - b));
     // What needs checking is not mixed into the confirmed lines.

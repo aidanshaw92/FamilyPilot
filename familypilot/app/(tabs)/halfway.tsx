@@ -366,12 +366,6 @@ export default function MeetHalfwayScreen() {
               <PlaceCredits places={options.map((option) => option.venue)} />
             </>
           )}
-          {/* Said whether or not there are places: it is about how the other family's share is read, not about a place. */}
-          {result?.otherKnown.routinesLegacy ? (
-            <Text variant="caption" color={colors.text.secondary} testID="halfway-legacy-routines">
-              {otherName} shared when they’re home but not what for, so we treat those times as fixed. They can update what they share for better advice.
-            </Text>
-          ) : null}
         </ScrollView>
       )}
 

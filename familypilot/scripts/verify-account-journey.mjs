@@ -340,7 +340,7 @@ console.log('owner: an older connection shares richer routines without reconnect
     await other.getByTestId('halfway-mode-list').click({ timeout: 20000 }).catch(() => {});
     await other.waitForTimeout(900);
     const seen = await text(other);
-    check(await other.getByTestId('halfway-legacy-routines').count() > 0 && /shared when they.?re home but not what for/.test(seen), 'Meet halfway says an older share is home time only, and that it is treated as fixed');
+    check(await other.getByTestId('halfway-legacy-routines').count() === 0 && !/shared when they.?re home|home time|when they.?re home/i.test(seen), 'Meet halfway does not describe how the other family’s routines were shared (the older share is still treated as fixed, quietly)');
     check(!/\bnaps\b|\bfeeds\b/.test(seen.replace(/Share when naps and feeds/g, '')), 'and never calls it a nap or a feed');
     await shot(other, '14b-halfway-legacy');
   }

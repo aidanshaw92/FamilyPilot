@@ -70,7 +70,6 @@ describe('Meet halfway v2: what the screen says', () => {
       }
     }
     expect(otherFitProvenance(fit({ verdict: 'poor' }), 'Kevin’s family').headline).toBe('Family Fit says this probably isn’t right for Kevin’s family');
-    expect(otherFitProvenance(fit({ verdict: 'good', qualified: true }), 'Kevin’s family').headline).toBe('Looks practical for Kevin’s family');
   });
 
   it('shows a starting point only as a postcode district or an area name, the same word a connection is shown', () => {

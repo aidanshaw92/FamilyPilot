@@ -1,5 +1,5 @@
 import { matchVenueToDayRequest } from '@/src/services/matching/day-request-matcher';
-import { evaluateFamilyMatch, FamilyMatchResult, MatchVerdict, PRACTICAL_LABEL, VERDICT_BADGE, matchBadgeText } from '@/src/services/matching/family-match';
+import { evaluateFamilyMatch, FamilyMatchResult, MatchVerdict, VERDICT_BADGE, matchBadgeText } from '@/src/services/matching/family-match';
 import { EvidenceCompleteness } from '@/src/services/matching/suitability-signals';
 import { evaluateAgeRecommendation, yearsToMonths } from '@/src/services/matching/age-suitability';
 import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
@@ -141,7 +141,8 @@ export interface HalfwayOption {
   /**
    * Must-haves nobody has confirmed at this place, per family. NOT a blocker: the place is offered, ranked below one where
    * they are confirmed, and the screen says what to check. A must-have confirmed MISSING never reaches here: the place is
-   * excluded.
+   * excluded. The other family's entries carry no field and no name ("a requirement"): which requirement it is stays inside
+   * the engine.
    */
   unresolved: { role: FamilyRole; field: string; label: string }[];
   /** The "check before you go" sentences for `unresolved`, one per family. Also first in `toCheck`; the screen shows them prominently. */
@@ -260,16 +261,29 @@ const hasChildGap = (fit: Pick<FamilyMatchResult, 'children'> | undefined): bool
 };
 
 /**
+ * An unconfirmed must-have as it leaves the engine. Yours keeps its field and name. The other family's is reduced to "a
+ * requirement": the engine needed the specific one to rank and rule out, and that is where it stays.
+ */
+const viewerSafe = (item: { role: FamilyRole; field: string; label: string }): { role: FamilyRole; field: string; label: string } =>
+  item.role === 'mine' ? item : { role: 'other', field: 'requirement', label: 'a requirement' };
+
+/**
  * The fit a family's chip shows. Yours may carry its evidence beside the grade. Theirs never does: see `HalfwayFit`.
  * A grade that rests on practical facts alone, or leaves a child unchecked, is worded as such for both families.
  */
 function fitFor(role: FamilyRole, result: FamilyMatchResult | undefined): HalfwayFit {
   if (!result) return { verdict: 'not_assessed', label: 'Not assessed', qualified: false };
   const qualified = (result.verdict === 'good' || result.verdict === 'excellent') && (Boolean(result.practicalOnly) || hasChildGap(result));
-  // Yours may say which child is still to check, in the engine's own short badge words ("Likely good · check Ozzie"). Theirs
-  // never does: a generic "Looks practical", which says nothing about their children.
-  const label = !qualified ? VERDICT_BADGE[result.verdict] : role === 'mine' ? matchBadgeText(result, 18) : PRACTICAL_LABEL;
-  if (role === 'other') return { verdict: result.verdict, label, qualified };
+  // Theirs: a grade that is only partly supported is shown one step down, as "Possible fit", and never says why. "Looks
+  // practical" or "check a child" would tell you that they have a child old enough to join in, or more than one. Where the
+  // grade is fully supported it is the plain verdict word. (The engine's own verdict, and the score, are unchanged.)
+  if (role === 'other') {
+    return qualified
+      ? { verdict: 'possible', label: VERDICT_BADGE.possible, qualified: false }
+      : { verdict: result.verdict, label: VERDICT_BADGE[result.verdict], qualified: false };
+  }
+  // Yours may say which child is still to check, in the engine's own short badge words ("Likely good · check Ozzie").
+  const label = !qualified ? VERDICT_BADGE[result.verdict] : matchBadgeText(result, 18);
   const completeness = result.evidenceCompleteness;
   if (!completeness) return { verdict: result.verdict, label, qualified };
   const { known, total, level, missing } = completeness;
@@ -416,7 +430,7 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
       } else if (result.verdict === 'excellent' || result.verdict === 'good') {
         if (hasChildGap(result)) {
           // Confirmed for some of the children only: the gap is what the parent reads, and it earns half the credit.
-          toCheck.push(role === 'mine' ? sentence : `We haven’t yet confirmed whether this activity suits every child in ${who}`);
+          toCheck.push(role === 'mine' ? sentence : `We haven’t yet confirmed this activity suits ${who}`);
           if (role === 'other') otherNotes.push(toCheck[toCheck.length - 1]);
           saidFit.add(role);
           bonus += result.verdict === 'excellent' ? 6 : 3;
@@ -424,7 +438,7 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
           // The facilities look fine and nothing about the activity is confirmed for any child: said as a thing to check, not as
           // a fit. The credit is what it always was, so the order Meet halfway offers places in does not move (see
           // ranking-golden.test.ts); only the words do.
-          toCheck.push(role === 'mine' ? sentence : `We haven’t yet confirmed whether this activity suits the children in ${who}`);
+          toCheck.push(role === 'mine' ? sentence : `We haven’t yet confirmed this activity suits ${who}`);
           if (role === 'other') otherNotes.push(toCheck[toCheck.length - 1]);
           saidFit.add(role);
           bonus += result.verdict === 'excellent' ? 12 : 7;
@@ -449,16 +463,21 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
     if (fits.some(([, result]) => result?.verdict === 'not_reviewed')) toCheck.push('We haven’t reviewed this place for families yet');
 
     // Ages (declared above the Family Fit loop; the lines are added here).
+    // What is said about the OTHER family never mentions their children or their ages: only that the place suits them or needs
+    // a look. Their ages are used to work this out (they were shared for that); they are not repeated in a sentence.
     if (ageFits.length === 2 && ageFits.every((entry) => entry.fit === 'all')) {
-      fit.push('Suits the ages of both families’ children');
+      fit.push('The recommended ages work for both families');
       bonus += 6;
     } else if (ageFits.length > 0 && ageFits.every((entry) => entry.fit === 'all')) {
-      fit.push(`Suits the ages of the children in ${familyPhrase(ageFits[0].role, ageFits[0].family.label)}`);
+      fit.push(ageFits[0].role === 'mine' ? 'Suits the ages of the children in your family' : `The recommended ages work for ${familyPhrase('other', ageFits[0].family.label)}`);
     } else {
       for (const entry of ageFits) {
         if (entry.fit === 'none' || entry.fit === 'some') {
           // Your own Family Fit sentence already names the children and the reason; saying it twice would be two things to check.
-          if (!saidFit.has(entry.role)) toCheck.push(`Recommended ages may not suit all the children in ${familyPhrase(entry.role, entry.family.label)}`);
+          if (!saidFit.has(entry.role)) {
+            toCheck.push(entry.role === 'mine' ? 'Recommended ages may not suit all the children in your family' : `Check this place suits ${familyPhrase('other', entry.family.label)}`);
+            if (entry.role === 'other') otherNotes.push(toCheck[toCheck.length - 1]);
+          }
           bonus -= 4;
         }
       }
@@ -472,38 +491,51 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
       const overlapping = windows[role].some((w) => overlapMinutes(w, journey.leave, journey.home) > 0);
       if (overlapping) clash.push(role);
     }
+    // Their routines are used (they were shared so plans can work around them) but never described: no nap, feed, time or kind.
     if (withRoutines.length === 2 && clash.length === 0) {
-      routineLines.push(`Works around both families’ ${routineKinds([...windows.mine, ...windows.other])}`);
+      routineLines.push('The timing works for both families');
       bonus += 10;
     } else if (withRoutines.length === 1 && clash.length === 0) {
-      routineLines.push(`Works around the ${routineKinds(windows[withRoutines[0][0]])} for ${familyPhrase(withRoutines[0][0], withRoutines[0][1].label)}`);
+      routineLines.push(
+        withRoutines[0][0] === 'mine'
+          ? `Works around the ${routineKinds(windows.mine)} for your family`
+          : `The timing works for ${familyPhrase('other', withRoutines[0][1].label)}`,
+      );
       bonus += 5;
     }
     for (const role of clash) {
       toCheck.push(
-        `${role === 'mine' ? 'A nap or feed of yours falls' : `A routine for ${familyPhrase(role, other.label)} falls`} during the outing. The plan will suggest options`,
+        role === 'mine'
+          ? 'A nap or feed of yours falls during the outing. The plan will suggest options'
+          : `The timing may need adjusting for ${familyPhrase('other', other.label)}. The plan will suggest options`,
       );
       if (role === 'other') otherNotes.push(toCheck[toCheck.length - 1]);
       bonus -= 3;
     }
     if (!otherKnown.children && !otherKnown.routines) {
       toCheck.push(`We only know where ${familyPhrase('other', other.label)} sets off from, so only the journey is checked for them`);
+      otherNotes.push(toCheck[toCheck.length - 1]);
     }
 
     // Must-haves nobody has confirmed here: first among the things to check, one line per family.
-    const needing = new Map<string, string[]>();
-    for (const item of unresolved) {
-      const who = familyPhrase(item.role, (item.role === 'mine' ? mine : other).label);
-      needing.set(who, [...(needing.get(who) ?? []), item.label]);
+    //   Yours is specific ("Toilets isn’t confirmed at X, and your family needs it"): it is your own requirement.
+    //   Theirs is NOT. The other family shared their must-haves so the engine can use them (a place that lacks one is ruled out,
+    //   one nobody has confirmed is ranked lower), not so this family can read them: the line says only that something they
+    //   need is unconfirmed, never what. Nothing here is a label, a field or a count of their requirements.
+    const needsChecking: string[] = [];
+    const mineLabels = unresolved.filter((item) => item.role === 'mine').map((item) => item.label);
+    if (mineLabels.length > 0) {
+      needsChecking.push(`${upperFirst([...new Set(mineLabels)].join(' and '))} isn’t confirmed at ${venue.name}, and your family needs it. Check before you go`);
     }
-    const needsChecking = [...needing.entries()].map(
-      ([who, labels]) => `${upperFirst([...new Set(labels)].join(' and '))} isn’t confirmed at ${venue.name}, and ${who} needs it. Check before you go`,
-    );
+    if (unresolved.some((item) => item.role === 'other')) {
+      needsChecking.push(`Something ${familyPhrase('other', other.label)} needs isn’t confirmed at ${venue.name}. Check before you go`);
+    }
     toCheck.unshift(...needsChecking);
     bonus -= 8 * unresolved.length;
 
     // The venue's own confirmed facilities that matter to a family day.
-    const youngest = Math.min(...[...mine.ages, ...other.ages, 99]);
+    // Judged from your own children only: a line about what the OTHER family has would tell you about their children.
+    const youngest = Math.min(...[...mine.ages, 99]);
     if (facts.babyChanging === 'yes' && youngest < 3) facilityLines.push('Baby changing confirmed');
     if (venue.facilities?.includes('cafe')) {
       facilityLines.push('Café on site');
@@ -530,7 +562,7 @@ export function meetHalfway(input: HalfwayInput): HalfwayResult {
     const checks = toCheck.length - (onlyJourneyKnown ? 1 : 0);
     const supported = checks === 0 && !onlyJourneyKnown && gap <= CLOSE_GAP_MINUTES;
 
-    options.push({ venue, otherNotes, fits: { mine: fitFor('mine', fits[0][1]), other: fitFor('other', fits[1][1]) }, journeys, gap, longerFor, fairness, reasons, toCheck, checks, supported, hoursConfirmed, unresolved, needsChecking, score });
+    options.push({ venue, otherNotes, fits: { mine: fitFor('mine', fits[0][1]), other: fitFor('other', fits[1][1]) }, journeys, gap, longerFor, fairness, reasons, toCheck, checks, supported, hoursConfirmed, unresolved: unresolved.map(viewerSafe), needsChecking, score });
   }
 
   options.sort((a, b) => b.score - a.score || a.venue.name.localeCompare(b.venue.name));
