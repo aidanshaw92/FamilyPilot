@@ -303,6 +303,21 @@ export function planDraftFromParams(params: PlanRouteParams): PlanDraft {
   };
 }
 
+/**
+ * The day a parent has already chosen on another screen, read from the route that carried them to this one.
+ *
+ * Meet halfway works out a date, an arrival and who is coming; when it sends the parent on to a place (rather than straight
+ * into a plan) those answers travel with them as the same route parameters a plan uses, so the Create a plan sheet opens on
+ * the day they were looking at, not on a default or a day remembered from last week. Null when the route carries no date: the
+ * sheet then works its own defaults out, as it always did. Nothing is invented: a malformed or missing part stays missing.
+ */
+export function outingDraftFromParams(params: PlanRouteParams): PlanDraft | null {
+  const date = firstValue(params.date) ?? '';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const draft = planDraftFromParams(params);
+  return draft.startAt ? draft : null;
+}
+
 /** The route parameters a draft travels as: the inverse of `planDraftFromParams`. */
 export function planDraftToParams(draft: PlanDraft): Record<string, string> {
   return {

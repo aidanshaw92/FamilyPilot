@@ -10,6 +10,7 @@ import { colors, spacing } from '@/src/design-system/tokens';
 import { useConnectedFamilies } from '@/src/hooks/use-connected-families';
 import { INVITE_RELATIONSHIPS, InviteRelationship } from '@/src/services/planning/invite-links';
 import { MySharing } from '@/src/services/planning/connection-invites';
+import { plannableFamilies } from '@/src/services/planning/family-visibility';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { usePlanningStore } from '@/src/stores/planning-store';
 import { FacilityType, FamilyProfile } from '@/src/types';
@@ -184,7 +185,9 @@ export function ConnectedFamiliesSection({
   const families = useConnectedFamilies(accountsAvailable);
   // Selected whole and filtered here: a selector that returns a new array every time re-renders without end.
   const storedFamilies = usePlanningStore((s) => s.families);
-  const local = useMemo(() => storedFamilies.filter((f) => f.id.startsWith('guest-')), [storedFamilies]);
+  // The families on this phone that are not a loaded connection: typed in by the parent (`local`), or a connection's copy that
+  // the account cannot confirm right now (`unchecked`: signed out, still loading). The same rule Meet halfway uses, so the two
+  // screens can never disagree about who the parent plans with (family-visibility.ts).
   const removeFamily = usePlanningStore((s) => s.removeFamily);
   const [shareRoutines, setShareRoutines] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -196,10 +199,16 @@ export function ConnectedFamiliesSection({
   const [saving, setSaving] = useState(false);
   const [updated, setUpdated] = useState<string | null>(null);
   const { accepted, pending, loaded, error, busy, invite } = families;
+  const onPhone = useMemo(
+    () => plannableFamilies({ stored: storedFamilies, accepted, verified: accountsAvailable && loaded }).filter((f) => f.kind !== 'connected'),
+    [storedFamilies, accepted, accountsAvailable, loaded],
+  );
+  const local = useMemo(() => onPhone.filter((f) => f.kind === 'local').map((f) => f.family), [onPhone]);
+  const unchecked = useMemo(() => onPhone.filter((f) => f.kind === 'unverified').map((f) => f.family), [onPhone]);
   const onScreen = variant === 'screen';
   // On the Profile the invite tools are always there; on the Families screen they open when asked for.
   const showAdd = !onScreen || addOpen;
-  const nobody = loaded && accepted.length === 0 && local.length === 0 && pending.length === 0;
+  const nobody = loaded && accepted.length === 0 && local.length + unchecked.length === 0 && pending.length === 0;
 
   const openSharing = (connectionId: string, mine: MySharing | null | undefined) => {
     // The switch opens on what is shared today, so an update is only ever a change the person makes.
@@ -244,10 +253,12 @@ export function ConnectedFamiliesSection({
             <Text variant="bodySmall" color={colors.text.secondary}>
               Loading…
             </Text>
-          ) : accepted.length === 0 && local.length === 0 ? (
+          ) : accepted.length === 0 ? (
             <Text variant="bodySmall" color={colors.text.secondary} testID="profile-no-connections">
               {onScreen
-                ? 'No families connected yet. Connect a family to choose them under Who’s coming and to find a place that works for both of you.'
+                ? local.length + unchecked.length > 0
+                  ? 'No families are connected yet. The families below are on this phone only: you entered where they set off from, so they can’t see or receive anything. Invite a family to connect with them.'
+                  : 'No families connected yet. Connect a family to choose them under Who’s coming and to find a place that works for both of you.'
                 : 'Nobody is connected yet.'}
             </Text>
           ) : null
@@ -346,7 +357,7 @@ export function ConnectedFamiliesSection({
           </View>
         ))}
 
-        {onScreen && local.length > 0 ? (
+        {onScreen && local.length + unchecked.length > 0 ? (
           <Text variant="label" testID="families-local-heading">
             On this phone only
           </Text>
@@ -372,6 +383,27 @@ export function ConnectedFamiliesSection({
               ) : null}
               <Button label="Meet halfway" size="sm" variant="outline" onPress={() => meet(family.id)} />
               {onEditLocal ? <Button label="Edit" size="sm" variant="ghost" onPress={() => onEditLocal(family)} testID="local-family-edit" /> : null}
+              <Button label="Remove" size="sm" variant="ghost" onPress={() => removeFamily(family.id)} />
+            </View>
+          </View>
+        ))}
+
+        {unchecked.map((family) => (
+          <View key={family.id} style={styles.family} testID="unchecked-family-row">
+            <View style={styles.familyHead}>
+              <Ionicons name="cloud-offline-outline" size={20} color={colors.text.secondary} />
+              <View style={styles.familyText}>
+                <Text variant="heading3">{familyDisplayName(family.label)}</Text>
+                <Text variant="caption" color={colors.text.secondary} testID="unchecked-family-status">
+                  From a connection · can’t be checked right now
+                </Text>
+                <Text variant="bodySmall" color={colors.text.secondary}>
+                  {localSummary(family)}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.actions}>
+              <Button label="Meet halfway" size="sm" variant="outline" onPress={() => meet(family.id)} />
               <Button label="Remove" size="sm" variant="ghost" onPress={() => removeFamily(family.id)} />
             </View>
           </View>
@@ -424,7 +456,7 @@ export function ConnectedFamiliesSection({
 
         {onScreen && !addOpen ? (
           <Button
-            label={nobody || (accepted.length === 0 && local.length === 0) ? 'Add a family' : 'Add another family'}
+            label={nobody || (accepted.length === 0 && local.length + unchecked.length === 0) ? 'Add a family' : 'Add another family'}
             variant={nobody ? 'primary' : 'outline'}
             fullWidth
             onPress={() => setAddOpen(true)}

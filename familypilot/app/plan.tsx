@@ -19,6 +19,7 @@ import {
   createPlanSteps,
 } from '@/src/services/planning/create-plan';
 import { mealFromFoodCandidate, planStopFromVenueDetail } from '@/src/services/planning/day-plan';
+import { arrivesAfterLunchtime } from '@/src/services/planning/meal-window';
 import { firstValue, planDraftFromParams, planDraftToParams } from '@/src/services/planning/plan-draft';
 import { resolvePlanParties } from '@/src/services/planning/plan-parties';
 import { PlanAdviceOptionView, PlanLunchFacts, PlanViewModelInput, toPlanViewModel } from '@/src/services/planning/plan-view-model';
@@ -131,6 +132,9 @@ export default function PlanScreen() {
     [dateParam, startParam, visitParam, partiesParam, whoParam, homeParam, bufferParam, settingParam],
   );
   const lunchOff = lunchParam === 'off';
+  // `on`: the parent added this lunch themselves, so it stays whatever the hour. Otherwise the lunch is a default and is only
+  // in the day where it can start inside a family lunch window (meal-window.ts).
+  const mealMode = lunchParam === 'on' ? 'chosen' : 'auto';
 
   /**
    * The lunch stop, from the OpenStreetMap discovery this venue's detail screen already ran.
@@ -215,11 +219,11 @@ export default function PlanScreen() {
   const saving = useRef(false);
 
   const steps = useMemo(
-    () => createPlanSteps({ venueName: venue?.name ?? 'this place', meal: lunch }),
+    () => createPlanSteps({ venueName: venue?.name ?? 'this place', meal: mealMode === 'auto' && arrivesAfterLunchtime(draft.startAt) ? undefined : lunch }),
     // `lunch?.place.placeId` rather than the object: a primitive, for the same reason the generation
     // effect below takes primitives. An object identity in a dependency list is what restarted
     // generation 3,094 times once already.
-    [venue?.name, lunch],
+    [venue?.name, lunch, mealMode, draft.startAt],
   );
 
   const parties = useMemo(
@@ -247,7 +251,7 @@ export default function PlanScreen() {
     // venue are two separate queries: if the venue lands first, the day would be built for nobody,
     // and without this the arriving profile would never trigger a rebuild -- a cold load would
     // intermittently end on "Nobody is coming yet".
-    const key = [venueId, draft.date, draft.startAt, String(draft.visit), partiesParam, whoParam, homeParam, bufferParam, settingParam, familyIds, lunchKey, foodLookupFailed ? 'food-failed' : 'food-ok'].join('|');
+    const key = [venueId, draft.date, draft.startAt, String(draft.visit), mealMode, partiesParam, whoParam, homeParam, bufferParam, settingParam, familyIds, lunchKey, foodLookupFailed ? 'food-failed' : 'food-ok'].join('|');
     if (requested.current === key) return;
     if (attempts.current.key !== key) attempts.current = { key, count: 0 };
     if (attempts.current.count >= MAX_GENERATION_ATTEMPTS) return;
@@ -268,6 +272,7 @@ export default function PlanScreen() {
           parkingInfo: venue.parkingInfo,
           anchorImageUrl: venue.photos?.[0],
           meal: lunch,
+          mealMode,
           mealFacts,
           lunchAvailable: Boolean(knownLunch),
           mealLookupFailed: foodLookupFailed,
@@ -296,7 +301,7 @@ export default function PlanScreen() {
     // Deps are the venue object and primitives only. `parties.families` is deliberately absent: it is
     // a fresh array every time the resolver runs, and `familyIds` carries the same information
     // without the identity churn.
-  }, [venue, venueId, draft, familyIds, partiesParam, whoParam, foodPending, foodLookupFailed, lunchKey, lunch, knownLunch, mealFacts]);
+  }, [venue, venueId, draft, familyIds, partiesParam, whoParam, foodPending, foodLookupFailed, lunchKey, lunch, knownLunch, mealFacts, mealMode]);
 
   /**
    * Households that were chosen and could not be planned for.
@@ -355,7 +360,7 @@ export default function PlanScreen() {
         venueId,
         params: {
           ...planDraftToParams(draft),
-          ...(lunchOff ? { lunch: 'off' } : {}),
+          ...(lunchOff ? { lunch: 'off' } : mealMode === 'chosen' ? { lunch: 'on' } : {}),
           ...(chosenCandidate && !lunchOff ? { lunchPlace: chosenCandidate.familypilotId } : {}),
           ...(keepParam ? { keep: keepParam } : {}),
         },
