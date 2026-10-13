@@ -248,7 +248,7 @@ export default function AccountScreen() {
               keyboardType="email-address"
               autoComplete="email"
               textContentType="emailAddress"
-              placeholder="you@example.com"
+              placeholder="e.g. you@example.com"
               testID="account-email"
             />
             ) : null}

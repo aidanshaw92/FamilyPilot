@@ -44,6 +44,9 @@ export function Field({
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
+        // An example is never mistaken for an answer: it is drawn in the muted ink the other form fields use (still above the 4.5:1
+        // contrast for text on white), and the callers word it "e.g. …".
+        placeholderTextColor={colors.text.tertiary}
         secureTextEntry={secure}
         autoCapitalize="none"
         autoCorrect={false}
