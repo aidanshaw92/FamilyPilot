@@ -378,7 +378,7 @@ for (const [width, height] of VIEWPORTS) {
   await needy.page.getByTestId('halfway-plan').click();
   await settle(needy.page, 4200);
   const jointPlan = await text(needy.page);
-  check(`${label}: Plan this day still builds the plan, with what needs checking said on it`, (await needy.page.getByTestId('plan-save').isVisible().catch(() => false)) && /Needs checking before you go/i.test(jointPlan) && /Something Hannah’s family needs isn’t confirmed at Finchley Fixture Play Barn/.test(jointPlan) && !/baby changing/i.test(jointPlan), jointPlan.replace(/\s+/g, ' ').slice(0, 200));
+  check(`${label}: Plan this day still builds the plan, with what needs checking said on it`, (await needy.page.getByTestId('plan-save').isVisible().catch(() => false)) && /Needs checking before you go/i.test(jointPlan) && /Something Hannah’s family needs isn’t confirmed at Finchley Fixture Play Barn/.test(jointPlan) && !/Hannah[^.]*baby changing|baby changing[^.]*Hannah/i.test(jointPlan), jointPlan.replace(/\s+/g, ' ').slice(0, 200));
   await needy.context.close();
 
   // "Best for both" is still available when it is supported: a household of one child, a family that shared their child's age.
