@@ -77,8 +77,8 @@ export function AddFamilyByPostcode({
       <Text variant="caption" color={colors.text.secondary}>
         Just their first name and where they set off from. They’ll show as “Hannah’s family”. We won’t guess anything else about them.
       </Text>
-      <Field label="Their first name" value={name} onChange={setName} placeholder="Hannah" testID="add-family-name" />
-      <Field label="Postcode or town" value={area} onChange={setArea} placeholder="NW5 1TL" testID="add-family-area" />
+      <Field label="Their first name" value={name} onChange={setName} placeholder="e.g. Hannah" testID="add-family-name" />
+      <Field label="Postcode or town" value={area} onChange={setArea} placeholder="e.g. NW5 1TL" testID="add-family-area" />
       {error ? (
         <Text variant="caption" color={colors.error[600]} accessibilityRole="alert">
           {error}
