@@ -11,6 +11,7 @@ import {
   updateSharing,
 } from '@/src/services/planning/connection-invites';
 import { InviteRelationship } from '@/src/services/planning/invite-links';
+import { connectedFamilyId } from '@/src/services/planning/shared-day';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { sharedFamilyPreferences } from '@/src/utils/preferences';
 import { usePlanningStore } from '@/src/stores/planning-store';
@@ -50,7 +51,7 @@ export interface ConnectedFamilies {
   refresh: () => Promise<void>;
 }
 
-export const connectedFamilyId = (connectionId: string): string => `connected-${connectionId}`;
+export { connectedFamilyId };
 
 export function useConnectedFamilies(enabled = true): ConnectedFamilies {
   const { data: profile } = useFamilyProfile();

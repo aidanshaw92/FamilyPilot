@@ -129,21 +129,8 @@ for (const [width, height] of SIZES) {
     );
   }
 
-  // The Plans tab's other view is long: the saved plans. (Families and routines are the Families tab, covered above.)
-  for (const view of ['Saved plans']) {
-    await page.goto(`${BASE}/trips`, { waitUntil: 'networkidle', timeout: 60000 }).catch(() => {});
-    await page.waitForTimeout(1800);
-    await page.getByRole('button', { name: view, exact: true }).first().click().catch(() => {});
-    await page.waitForTimeout(900);
-    const scrolled = await scrollToEnd(page, width, height);
-    const m = await measure(page);
-    const ok = m.navTop !== null && m.textBottom <= m.navTop - 4 && m.controlBottom <= m.navTop - 4 && m.reachable;
-    check(
-      `${label}: Plans > ${view} to the end clears the navigation`,
-      ok,
-      `scrolled ${Math.round(scrolled)}px; text "${m.textLabel}" ends ${Math.round(m.textBottom)}, control "${m.controlLabel}" ends ${Math.round(m.controlBottom)}, nav starts ${m.navTop === null ? 'n/a' : Math.round(m.navTop)}${m.reachable ? '' : ', control covered'}`,
-    );
-  }
+  // Plans is one list now (invitations, coming up, past, earlier plans), padded by the same tab-bar clearance as the screens above;
+  // the populated list is exercised by verify-shared-outing.mjs.
 
   // The filter sheet's own action must be on top at its centre, not under the bar.
   await page.goto(`${BASE}/explore`, { waitUntil: 'networkidle', timeout: 60000 }).catch(() => {});

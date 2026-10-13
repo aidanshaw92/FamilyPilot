@@ -3,7 +3,7 @@ import { PlanAlternative, PlanCaveat, TravelDiagnostics } from '@/src/types/day-
 import { PushchairSuitability } from '@/src/types/enrichment';
 import { RoutineAdviceContext, SubjectResolver, reasonAboutRoutines, subjectPhrase } from './routine-advice';
 import { VisitResolution, allowedLabel, visitNote } from './visit-duration';
-import { mustHaveLabel } from './must-have-labels';
+import { UNDISCLOSED_FIELD, mustHaveLabel } from './must-have-labels';
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import type { VenueRuleNote } from '@/src/types/venue-rules';
 import { TravelMode } from '@/src/types/travel';
@@ -504,7 +504,7 @@ function needsCheckingLines(itinerary: DayItinerary): string[] {
     }
     if (item.familyId !== 'mine') {
       // Counted only if it is a requirement the app would have named (a field with no parent-facing name was left out before too).
-      if (!mustHaveLabel(item.field)) continue;
+      if (!mustHaveLabel(item.field) && item.field !== UNDISCLOSED_FIELD) continue;
       const group = others.get(item.familyId) ?? { familyLabel: item.familyLabel, stops: [] };
       if (!group.stops.includes(item.stopName)) group.stops.push(item.stopName);
       others.set(item.familyId, group);

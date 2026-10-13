@@ -13,6 +13,8 @@ import { usePlanningStore } from '@/src/stores/planning-store';
 import { buildCalendarEvent } from '@/src/services/planning/calendar-event';
 import { addToCalendar } from '@/src/services/planning/add-to-calendar';
 import { householdTitle } from '@/src/utils/household';
+import { usePlanShare } from '@/src/hooks/use-plan-share';
+import { familyDisplayName } from '@/src/utils/family-title';
 
 /**
  * A saved day, opened again.
@@ -67,6 +69,11 @@ export default function SavedPlanScreen() {
     if (result === 'shared') setCalendarMessage('Shared the plan’s details. Adding it straight to your calendar works in the FamilyPilot web app.');
   };
 
+  // Sending it (or seeing how a sent one is getting on) lives with the plan, wherever it is opened from. A day someone else sent,
+  // and this family accepted, is theirs to keep, not to send on.
+  const { share } = usePlanShare({ source: day?.source ?? null, dayId: day?.id ?? null, title: view?.title ?? '', dateLabel: view?.dateSummary ?? '', received: Boolean(day?.shared) });
+  const notices = day?.shared ? [`${familyDisplayName(day.shared.fromLabel)} invited you to this day, and you said yes.`] : [];
+
   if (!view) {
     return (
       <EmptyState
@@ -82,6 +89,8 @@ export default function SavedPlanScreen() {
       onBack={back}
       onSave={() => {}}
       saved
+      share={share}
+      notices={notices}
       timeline={timeline}
       onEditPlan={edit}
       onAddToCalendar={() => void addPlanToCalendar()}

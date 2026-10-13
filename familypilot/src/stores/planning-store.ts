@@ -28,7 +28,13 @@ export interface SavedPlan { feedback?:VisitFeedbackState; id: string; date: str
  * planner from where it left off. Nothing private: ids and choices only.
  */
 export interface SavedDayDraft { venueId: string; params: Record<string, string> }
-export interface SavedDay { id: string; createdAt: string; source: PlanViewModelInput; draft?: SavedDayDraft }
+/**
+ * A day another family sent and this family accepted. It is kept as a saved day in this family's own perspective (they are
+ * "Our family", the sender is the connected family), so it sits in the same Plans list, opens on the same screen and goes to
+ * the calendar like any other, even offline. It carries no `draft`, so it cannot be rebuilt: it is their plan, not ours.
+ */
+export interface SharedDayMeta { inviteId: string; connectionId: string; fromLabel: string; acceptedAt: string }
+export interface SavedDay { id: string; createdAt: string; source: PlanViewModelInput; draft?: SavedDayDraft; shared?: SharedDayMeta }
 /**
  * `planningWith` is the family chosen with "Plan together" on Families: the id of a connected (or postcode) family that
  * the next plan sheet opens with already selected under Who's coming, so nobody re-enters them. Cleared with Done, or

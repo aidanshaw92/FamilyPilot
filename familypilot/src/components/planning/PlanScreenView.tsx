@@ -6,6 +6,7 @@ import { BackButton } from '@/src/components/ui/BackButton';
 import { Chip, Text } from '@/src/components/ui';
 import { ArrowCta } from '@/src/components/ui/ArrowCta';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { familyDisplayName } from '@/src/utils/family-title';
 import { PLAN_SECTION_CONTROL_PADDING, planSectionLabels } from '@/src/utils/plan-section-labels';
 import { safeFooterPadding } from '@/src/utils/safe-area';
 import {
@@ -76,6 +77,30 @@ export interface PlanScreenViewProps {
   onAddToCalendar?: () => void;
   /** What happened after Add to calendar, when there is something to say. */
   calendarMessage?: string;
+  /**
+   * Sending or sharing this day. `to` is the connected family (or families) it can be sent to in the app, as one phrase;
+   * absent when the day was planned with nobody connected. `status` says where a sent day has got to ("Kevin’s family
+   * accepted"), from the invitation itself.
+   */
+  share?: {
+    to?: string;
+    state: 'idle' | 'sending' | 'sent' | 'failed';
+    message?: string;
+    status?: { text: string; tone: 'waiting' | 'accepted' | 'declined' };
+    /** Saves (when not yet saved) and sends. */
+    onSend?: () => void;
+    /** The phone's share sheet, with the day in a few lines: for a family without an account, or anyone else. */
+    onShareText?: () => void;
+  };
+  /** This day is an invitation from a connected family: the reader answers it here instead of saving it. */
+  invite?: {
+    fromLabel: string;
+    status: 'pending' | 'accepted' | 'declined';
+    busy: boolean;
+    error?: string;
+    onAccept: () => void;
+    onDecline: () => void;
+  };
   /** Insets, so the saved-plan action clears the home indicator on every device. */
   bottomInset?: number;
   topInset?: number;
@@ -101,6 +126,8 @@ export function PlanScreenView({
   onSeeAllPlans,
   onAddToCalendar,
   calendarMessage,
+  share,
+  invite,
   bottomInset = 0,
   topInset = 0,
 }: PlanScreenViewProps) {
@@ -136,21 +163,25 @@ export function PlanScreenView({
         {/* The same action as the persistent button below, where a parent who has read to the end of
             a long day does not have to scroll back to find it. One handler, so the two cannot
             disagree about whether the day is saved. */}
-        <Pressable
-          onPress={onSave}
-          disabled={done || saveState === 'saving'}
-          accessibilityRole="button"
-          accessibilityLabel={done ? 'Plan saved' : 'Save this plan'}
-          accessibilityState={{ disabled: done || saveState === 'saving' }}
-          style={styles.headerCircle}
-          testID="plan-save-header"
-        >
-          <Ionicons
-            name={done ? 'bookmark' : 'bookmark-outline'}
-            size={20}
-            color={colors.action}
-          />
-        </Pressable>
+        {invite ? (
+          <View style={styles.headerSpacer} />
+        ) : (
+          <Pressable
+            onPress={onSave}
+            disabled={done || saveState === 'saving'}
+            accessibilityRole="button"
+            accessibilityLabel={done ? 'Plan saved' : 'Save this plan'}
+            accessibilityState={{ disabled: done || saveState === 'saving' }}
+            style={styles.headerCircle}
+            testID="plan-save-header"
+          >
+            <Ionicons
+              name={done ? 'bookmark' : 'bookmark-outline'}
+              size={20}
+              color={colors.action}
+            />
+          </Pressable>
+        )}
       </View>
 
       {/* Primary navigation, so all three controls are visible at once: where the full labels would
@@ -515,11 +546,48 @@ export function PlanScreenView({
       {/* Node 71:30: the CTA bar. Save this plan is this product's action here; the frame's invite
           CTA belongs to the pilot-gated Plans tab. */}
       <View style={[styles.footer, { paddingBottom: safeFooterPadding(bottomInset) }]}>
-        {saved ? (
+        {invite ? (
+          <View style={styles.savedFooter} testID="plan-invite-footer">
+            {invite.status === 'pending' ? (
+              <>
+                <Text style={styles.inviteLine} testID="plan-invite-from">{`${familyDisplayName(invite.fromLabel)} invited you to this day`}</Text>
+                {invite.error ? (
+                  <Text variant="bodySmall" color={colors.error[600]} accessibilityRole="alert" style={styles.saveError} testID="plan-invite-error">
+                    {invite.error}
+                  </Text>
+                ) : null}
+                <ArrowCta label={invite.busy ? 'One moment…' : 'Accept'} onPress={invite.onAccept} disabled={invite.busy} testID="plan-invite-accept" />
+                <Pressable onPress={invite.onDecline} disabled={invite.busy} accessibilityRole="button" style={styles.secondaryAction} hitSlop={8} testID="plan-invite-decline">
+                  <Text style={styles.secondaryActionText}>Decline</Text>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <View style={styles.savedLine} accessibilityRole="alert" accessibilityLiveRegion="polite" testID="plan-invite-answered">
+                  <Ionicons name={invite.status === 'accepted' ? 'checkmark-circle' : 'close-circle'} size={20} color={invite.status === 'accepted' ? colors.secondary[500] : colors.text.secondary} />
+                  <Text style={styles.savedText}>{invite.status === 'accepted' ? 'You’re going. It’s in your plans' : 'You declined this invitation'}</Text>
+                </View>
+                {invite.status === 'accepted' && onAddToCalendar ? <ArrowCta label="Add to calendar" onPress={onAddToCalendar} testID="plan-add-to-calendar" /> : null}
+                {onSeeAllPlans ? (
+                  <Pressable onPress={onSeeAllPlans} accessibilityRole="link" style={styles.secondaryAction} hitSlop={8} testID="plan-see-all-plans">
+                    <Text style={styles.secondaryActionText}>See all your plans</Text>
+                    <Ionicons name="arrow-forward" size={16} color={colors.action} />
+                  </Pressable>
+                ) : null}
+              </>
+            )}
+          </View>
+        ) : saved ? (
           // A saved plan, opened again: the one thing left to do with it here is put it in the calendar (and, straight after
           // saving, find it among the family's other plans).
           <View style={styles.savedFooter}>
-            {onAddToCalendar ? <ArrowCta label="Add to calendar" onPress={onAddToCalendar} testID="plan-add-to-calendar" /> : null}
+            <ShareBlock share={share} />
+            {onAddToCalendar ? (share?.to ? (
+              <Pressable onPress={onAddToCalendar} accessibilityRole="button" style={styles.secondaryAction} hitSlop={8} testID="plan-add-to-calendar">
+                <Ionicons name="calendar-outline" size={18} color={colors.action} />
+                <Text style={styles.secondaryActionText}>Add to calendar</Text>
+              </Pressable>
+            ) : <ArrowCta label="Add to calendar" onPress={onAddToCalendar} testID="plan-add-to-calendar" />) : null}
             {onSeeAllPlans ? (
               <Pressable onPress={onSeeAllPlans} accessibilityRole="link" style={styles.secondaryAction} hitSlop={8} testID="plan-see-all-plans">
                 <Text style={styles.secondaryActionText}>See all your plans</Text>
@@ -533,6 +601,7 @@ export function PlanScreenView({
               <Ionicons name="checkmark-circle" size={20} color={colors.secondary[500]} />
               <Text style={styles.savedText}>{saveState === 'already' ? 'Already in your plans' : 'Plan saved'}</Text>
             </View>
+            <ShareBlock share={share} />
             <ArrowCta label="View plan" onPress={onViewPlan ?? (() => {})} testID="plan-view-saved" />
             {onAddToCalendar ? (
               <Pressable onPress={onAddToCalendar} accessibilityRole="button" style={styles.secondaryAction} hitSlop={8} testID="plan-add-to-calendar">
@@ -548,12 +617,26 @@ export function PlanScreenView({
                 {saveError}
               </Text>
             ) : null}
-            <ArrowCta
-              label={saveState === 'saving' ? 'Saving…' : saveState === 'failed' ? 'Try again' : 'Save this plan'}
-              onPress={onSave}
-              disabled={saveState === 'saving'}
-              testID="plan-save"
-            />
+            {share?.to && share.onSend && saveState !== 'failed' ? (
+              <>
+                <ArrowCta
+                  label={saveState === 'saving' ? 'Saving…' : `Save & send to ${share.to}`}
+                  onPress={share.onSend}
+                  disabled={saveState === 'saving'}
+                  testID="plan-save-and-send"
+                />
+                <Pressable onPress={onSave} disabled={saveState === 'saving'} accessibilityRole="button" style={styles.secondaryAction} hitSlop={8} testID="plan-save">
+                  <Text style={styles.secondaryActionText}>Save only</Text>
+                </Pressable>
+              </>
+            ) : (
+              <ArrowCta
+                label={saveState === 'saving' ? 'Saving…' : saveState === 'failed' ? 'Try again' : 'Save this plan'}
+                onPress={onSave}
+                disabled={saveState === 'saving'}
+                testID="plan-save"
+              />
+            )}
           </>
         )}
         {calendarMessage ? (
@@ -562,6 +645,49 @@ export function PlanScreenView({
           </Text>
         ) : null}
       </View>
+    </View>
+  );
+}
+
+/**
+ * What can be done with a saved day for the people it is for: send it to the connected family it was planned with, see where
+ * a sent one has got to, or put it in the phone's share sheet. Nothing here is shown for a day with nobody else on it.
+ */
+function ShareBlock({ share }: { share: PlanScreenViewProps['share'] }) {
+  if (!share) return null;
+  const { to, state, message, status, onSend, onShareText } = share;
+  const sendable = Boolean(to && onSend && !status && state !== 'sent');
+  return (
+    <View style={styles.shareBlock} testID="plan-share">
+      {status ? (
+        <View style={styles.savedLine} accessibilityRole="alert" accessibilityLiveRegion="polite" testID="plan-share-status">
+          <Ionicons
+            name={status.tone === 'accepted' ? 'checkmark-circle' : status.tone === 'declined' ? 'close-circle' : 'paper-plane-outline'}
+            size={20}
+            color={status.tone === 'accepted' ? colors.secondary[500] : colors.text.secondary}
+          />
+          <Text style={styles.savedText}>{status.text}</Text>
+        </View>
+      ) : state === 'sent' ? (
+        <View style={styles.savedLine} accessibilityRole="alert" accessibilityLiveRegion="polite" testID="plan-share-status">
+          <Ionicons name="paper-plane-outline" size={20} color={colors.text.secondary} />
+          <Text style={styles.savedText}>{`Sent to ${to}`}</Text>
+        </View>
+      ) : null}
+      {state === 'failed' && message ? (
+        <Text variant="bodySmall" color={colors.error[600]} accessibilityRole="alert" style={styles.saveError} testID="plan-share-error">
+          {message}
+        </Text>
+      ) : null}
+      {sendable ? (
+        <ArrowCta label={state === 'sending' ? 'Sending…' : state === 'failed' ? 'Try sending again' : `Send to ${to}`} onPress={onSend!} disabled={state === 'sending'} testID="plan-send" />
+      ) : null}
+      {onShareText ? (
+        <Pressable onPress={onShareText} accessibilityRole="button" style={styles.secondaryAction} hitSlop={8} testID="plan-share-text">
+          <Ionicons name="share-outline" size={18} color={colors.action} />
+          <Text style={styles.secondaryActionText}>Share the plan</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -631,6 +757,8 @@ const styles = StyleSheet.create({
   // Node 70:22: SemiBold 17, -0.255; node 70:23: 13 secondary.
   headerTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 17, lineHeight: 21, letterSpacing: -0.255, color: colors.ink, textAlign: 'center' },
   headerDates: { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 16, color: colors.text.secondary, textAlign: 'center' },
+  // Keeps the title centred where an invitation has no save button.
+  headerSpacer: { width: 44, height: 44 },
   headerCircle: {
     width: 44,
     height: 44,
@@ -745,5 +873,7 @@ const styles = StyleSheet.create({
   secondaryAction: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, minHeight: 44 },
   secondaryActionText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, lineHeight: 20, color: colors.action },
   saveError: { textAlign: 'center', marginBottom: spacing.sm },
+  shareBlock: { gap: spacing.sm },
+  inviteLine: { fontFamily: 'Inter_600SemiBold', fontSize: 16, lineHeight: 22, color: colors.ink, textAlign: 'center' },
   calendarMessage: { textAlign: 'center', marginTop: spacing.xs },
 });

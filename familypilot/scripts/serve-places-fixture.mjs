@@ -988,7 +988,18 @@ const server = createServer(async (req, res) => {
   // captures offline and deterministic; nothing about the input is looked up.
   if (url.pathname === '/api/planning/location') {
     if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' });
-    return sendJson(res, 200, { area: 'Bushey, Hertfordshire', latitude: 51.643, longitude: -0.36 });
+    // A few named districts, so a test with two families can put them apart; anything else is Bushey, as before.
+    const known = [
+      [/^nw1\b/i, { area: 'Camden, London', latitude: 51.539, longitude: -0.142 }],
+      [/^se13\b/i, { area: 'Lewisham, London', latitude: 51.46, longitude: -0.01 }],
+      [/^e17\b/i, { area: 'Walthamstow, London', latitude: 51.585, longitude: -0.02 }],
+    ];
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    let asked = {};
+    try { asked = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'); } catch { asked = {}; }
+    const hit = known.find(([pattern]) => pattern.test(String(asked?.area ?? '').trim()));
+    return sendJson(res, 200, hit ? hit[1] : { area: 'Bushey, Hertfordshire', latitude: 51.643, longitude: -0.36 });
   }
 
   if (url.pathname === '/api/places/status') {
