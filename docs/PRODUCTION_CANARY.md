@@ -189,3 +189,21 @@ account, and judge the real experience. Invitations to outside families stay on 
   details" under it; a museum with nothing child-specific on record should read "Possible fit" with the exhibits named as the
   check; a place with a confirmed obstacle for your family should read "Not recommended" with the reason.
 * Section 8 is unchanged: this release touches no `api/`, `server/`, workflow, `vercel.json`, package or migration file.
+
+## 10. If the five-tab navigation (Together) ships: how the steps above change
+
+Not part of the canary you are running on the deployed six-tab build; read this only when `feat/five-tab-together` is released. The
+steps above are unchanged in what they prove; only where you tap changes, and four things are new to check.
+
+| Above | After the five-tab release |
+|---|---|
+| "Families tab" | **Together** tab, then **Your families** at the top of the screen |
+| "Halfway tab" / "Meet halfway on B's card in Families" | **Together** opens on **Meet halfway** when a family is connected; or **Your families** > B's card > **Meet halfway** (same screen, same tab) |
+| "the Halfway tab selected in the bottom bar" | the **Together** tab selected, with **Meet halfway** chosen in the switch |
+| "Six tabs in this order" (section 12 list) | Five: Home, Explore, Together, Plans, Profile |
+
+New to check with two real accounts (the in-memory fixture cannot prove production Supabase):
+1. **Opens on the right view.** With B connected, tapping Together shows Meet halfway with Canary B's family chosen. After B disconnects (step 11), it shows Your families.
+2. **A family card's Meet halfway stays in Together**: the tab does not change, and the switch moves to Meet halfway.
+3. **Old links.** Open `/halfway` and `/families` on the production host: they land on Together, on Meet halfway and Your families.
+4. **A family only on this phone is never shown as connected**: add a family by postcode on A; it is under "On this phone only · not connected", Meet halfway says "this phone only", and **Save & send** is not offered for it.

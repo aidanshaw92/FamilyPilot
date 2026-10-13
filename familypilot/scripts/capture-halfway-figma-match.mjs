@@ -83,14 +83,14 @@ for (const size of SIZES) {
   await snap(page, tag, '3c-list-scrolled');
   await page.getByTestId('halfway-edit').click(); await page.waitForTimeout(800);
   await snap(page, tag, '4-edit');
-  const navHidden = (await page.getByRole('tab', { name: 'Halfway' }).count()) === 0;
+  const navHidden = (await page.getByRole('tab', { name: 'Together' }).count()) === 0;
   await scrollTo(page, 'halfway-edit-scroll', 'end');
   await snap(page, tag, '4c-edit-scrolled-longest-journey');
   const row = await page.getByTestId('halfway-row-limit').boundingBox().catch(() => null);
   const done = await page.getByTestId('halfway-edit-done').boundingBox().catch(() => null);
   console.log(`${tag}: tab bar hidden while editing: ${navHidden}; Longest journey row ${row ? `y ${Math.round(row.y)}–${Math.round(row.y + row.height)}` : 'missing'}; Done ${done ? `y ${Math.round(done.y)}–${Math.round(done.y + done.height)}` : 'missing'}; viewport ${size.height}`);
   await page.getByTestId('halfway-edit-close').click(); await page.waitForTimeout(500);
-  console.log(`${tag}: tab bar back after closing: ${(await page.getByRole('tab', { name: 'Halfway' }).count()) > 0}`);
+  console.log(`${tag}: tab bar back after closing: ${(await page.getByRole('tab', { name: 'Together' }).count()) > 0}`);
   await context.close();
 }
 await browser.close();

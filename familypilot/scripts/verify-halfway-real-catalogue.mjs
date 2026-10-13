@@ -119,7 +119,7 @@ async function run(label, today) {
   check(!scrollable || scrolled > 0, 'the sheet scrolls when its content is longer than the screen', scrollable ? `${Math.round(scrolled)}px` : 'content fits');
   // The actions stay above the floating navigation
   const planBox = await page.getByTestId('halfway-plan').last().boundingBox();
-  const navBox = await page.getByRole('tab', { name: 'Halfway' }).first().boundingBox().catch(() => null);
+  const navBox = await page.getByRole('tab', { name: 'Together' }).first().boundingBox().catch(() => null);
   check(Boolean(planBox) && (!navBox || planBox.y + planBox.height <= navBox.y + 1), 'the actions are not hidden behind the navigation', planBox ? `bottom ${Math.round(planBox.y + planBox.height)}` : 'none');
   await page.getByTestId('halfway-sheet-close').click(); await page.waitForTimeout(500);
   check(!(await page.getByTestId('halfway-sheet-expanded').isVisible().catch(() => false)), 'closing returns to the map');
@@ -148,7 +148,7 @@ async function run(label, today) {
   check(!/travel mode|public transport|walking|cycling/i.test(editText), 'it offers no travel mode, which the engine does not take');
   check(/You: Camden · Hannah’s family: Lewisham/.test(editText.replace(/\n+/g, ' ')), 'the starting points are shown only as an area name or a postcode district', editText.match(/You: [^\n]*/)?.[0] ?? '');
   // A focused modal: the floating navigation is out of the way while it is open, and its Longest journey row can be reached.
-  check((await page.getByRole('tab', { name: 'Halfway' }).count()) === 0, 'the navigation is not drawn under the edit sheet');
+  check((await page.getByRole('tab', { name: 'Together' }).count()) === 0, 'the navigation is not drawn under the edit sheet');
   const viewportHeight = page.viewportSize().height;
   const scrollEdit = page.getByTestId('halfway-edit-scroll');
   await scrollEdit.evaluate((el) => { el.scrollTop = el.scrollHeight; }); await page.waitForTimeout(400);
@@ -163,11 +163,11 @@ async function run(label, today) {
   check(Boolean(closeBox) && closeBox.y >= 0 && closeBox.y + closeBox.height <= viewportHeight && closeBox.width >= 44 && closeBox.height >= 44, 'the close button is still on screen, 44 pt, however far the content has scrolled', closeBox ? `y ${Math.round(closeBox.y)}, ${Math.round(closeBox.width)}x${Math.round(closeBox.height)}` : 'missing');
   await scrollEdit.evaluate((el) => { el.scrollTop = 0; }); await page.waitForTimeout(200);
   await page.getByTestId('halfway-edit-close').click(); await page.waitForTimeout(500);
-  check(!(await page.getByTestId('halfway-edit-sheet').isVisible().catch(() => false)) && (await page.getByRole('tab', { name: 'Halfway' }).count()) === 1, 'the close button closes it and the navigation is back');
+  check(!(await page.getByTestId('halfway-edit-sheet').isVisible().catch(() => false)) && (await page.getByRole('tab', { name: 'Together' }).count()) === 1, 'the close button closes it and the navigation is back');
   await page.getByTestId('halfway-edit').click(); await page.waitForTimeout(600);
   await page.getByTestId('halfway-env-indoor').click(); await page.waitForTimeout(900);
   await page.getByTestId('halfway-edit-done').click(); await page.waitForTimeout(600);
-  check((await page.getByRole('tab', { name: 'Halfway' }).count()) === 1, 'Done closes it and the navigation is back');
+  check((await page.getByRole('tab', { name: 'Together' }).count()) === 1, 'Done closes it and the navigation is back');
   const indoorNames = await page.getByTestId('halfway-selected-name').innerText().catch(() => '');
   console.log(`  indoor: ${indoorNames}`);
   check(!(await page.getByTestId('halfway-edit-sheet').isVisible().catch(() => false)), 'Done closes the edit sheet');

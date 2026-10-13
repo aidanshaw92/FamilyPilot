@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/src/components/ui';
 import { MIN_TARGET } from '@/src/components/ui/touch';
@@ -22,8 +21,8 @@ function Avatars({ other }: { other: string | null }) {
 }
 
 /**
- * The page's header: the title, the one line saying what the page is for, then who you are meeting and when on one card
- * that opens the edit sheet, with the controls button beside it. Both open the same sheet.
+ * Who you are meeting and when, on one card that opens the edit sheet, with the controls button beside it. Both open the
+ * same sheet. The page's title ("Together") and the switch to Your families are drawn by the tab above this.
  */
 export function HalfwayHeader({
   who,
@@ -38,11 +37,8 @@ export function HalfwayHeader({
   otherName: string | null;
   onEdit: () => void;
 }) {
-  const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.header, { paddingTop: insets.top + 9 }]} testID="halfway-header">
-      <Text variant="heading1" style={styles.title} accessibilityRole="header" testID="halfway-header-title">Meet halfway</Text>
-      <Text variant="body" color={colors.text.secondary} style={styles.subtitle}>Places that work for two families</Text>
+    <View style={styles.header} testID="halfway-header">
       {/* The selector is the way into the edit sheet; it is not shown while there is nobody to meet and nothing to edit yet. */}
       <View style={styles.selectorRow}>
         <Pressable
@@ -69,17 +65,6 @@ export function HalfwayHeader({
           <Ionicons name="options-outline" size={22} color={colors.ink} />
         </Pressable>
       </View>
-    </View>
-  );
-}
-
-/** The header without the selector: for the states that have no meeting yet (your starting point missing, nobody chosen). */
-export function HalfwayTitle() {
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={[styles.header, { paddingTop: insets.top + 9 }]} testID="halfway-header">
-      <Text variant="heading1" style={styles.title} accessibilityRole="header" testID="halfway-header-title">Meet halfway</Text>
-      <Text variant="body" color={colors.text.secondary} style={styles.subtitle}>Places that work for two families</Text>
     </View>
   );
 }
@@ -131,9 +116,7 @@ export function SheetSurface({ children, onGrab, grabLabel, bottomPadding, testI
 
 const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing.screenPadding, backgroundColor: colors.background, paddingBottom: 6 },
-  title: { marginBottom: 0 },
-  subtitle: { marginTop: 2, fontSize: 14, lineHeight: 20 },
-  selectorRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 7 },
+  selectorRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   selector: { flex: 1, minHeight: 56, borderRadius: radius.xl, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, ...shadows.card },
   pressed: { opacity: 0.85 },
   selectorText: { flex: 1, gap: 1 },

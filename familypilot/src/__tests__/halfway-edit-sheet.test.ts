@@ -38,7 +38,7 @@ describe('the navigation steps aside for the edit sheet, and comes back', () => 
   });
 
   it('Meet halfway hides it only while the sheet is open, and always restores it (also if the screen goes away)', () => {
-    const screen = read('app/(tabs)/halfway.tsx');
+    const screen = read('src/components/together/MeetHalfwayView.tsx');
     expect(screen).toContain('setTabBarHidden(editOpen);');
     expect(screen).toMatch(/return \(\) => setTabBarHidden\(false\);/);
     // The only thing that hides it is the edit sheet's open state: not the expanded recommendation, not Map or List.
@@ -46,7 +46,7 @@ describe('the navigation steps aside for the edit sheet, and comes back', () => 
   });
 
   it('no other screen touches it', () => {
-    for (const file of ['app/(tabs)/index.tsx', 'app/(tabs)/explore.tsx', 'app/(tabs)/families.tsx', 'app/(tabs)/trips.tsx', 'app/(tabs)/profile.tsx']) {
+    for (const file of ['app/(tabs)/index.tsx', 'app/(tabs)/explore.tsx', 'src/components/together/YourFamiliesView.tsx', 'app/(tabs)/trips.tsx', 'app/(tabs)/profile.tsx']) {
       expect(read(file), file).not.toContain('chrome-store');
     }
   });
@@ -100,6 +100,8 @@ describe('the edit sheet is built to scroll, anchor Done and keep clear of the k
 
   it('the sheet is modal for assistive technology and starts below the status bar', () => {
     expect(sheet).toContain('accessibilityViewIsModal');
-    expect(read('app/(tabs)/halfway.tsx')).toContain('const sheetTop = Math.max(64, insets.top + 17);');
+    // The view sits under Together's own title and switch, which already clear the status bar, so the sheet rises from just below them.
+    expect(read('src/components/together/MeetHalfwayView.tsx')).toContain('const sheetTop = 8;');
+    expect(read('app/(tabs)/together.tsx')).toContain('paddingTop: insets.top + 9');
   });
 });

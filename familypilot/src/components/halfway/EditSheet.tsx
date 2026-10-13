@@ -72,7 +72,7 @@ export function HalfwayEditSheet({
   onClose,
 }: {
   top: number;
-  candidates: { id: string; label: string }[];
+  candidates: { id: string; label: string; kind?: 'connected' | 'local' | 'unverified' }[];
   chosen: string | null;
   onChoose: (id: string) => void;
   adding: boolean;
@@ -127,6 +127,11 @@ export function HalfwayEditSheet({
               <Chip size="small" label="+ Add by postcode" active={adding} onPress={onToggleAdding} testID="halfway-add-by-postcode" />
             </View>
             {adding ? <AddFamilyByPostcode onAdded={onAdded} onCancel={onToggleAdding} /> : null}
+            {other && candidates.find((c) => c.id === chosen)?.kind === 'local' ? (
+              <Text variant="caption" color={colors.text.secondary} testID="halfway-local-note">
+                {familyDisplayName(other.label)} is on this phone only: you entered where they set off from. They can’t see or receive a plan until you connect, under Your families.
+              </Text>
+            ) : null}
             {mine && other ? (
               <Row
                 icon="location-outline"

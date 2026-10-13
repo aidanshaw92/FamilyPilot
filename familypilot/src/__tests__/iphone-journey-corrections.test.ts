@@ -51,7 +51,7 @@ describe('1. the day Meet halfway chose is the day the next screen opens on', ()
   });
 
   it('both ways on from a place carry it, and the venue never remembers the outing as a habit', () => {
-    const screen = read('app/(tabs)/halfway.tsx');
+    const screen = read('src/components/together/MeetHalfwayView.tsx');
     // One function builds the parameters; Plan this day and See the place both use it.
     expect(screen).toMatch(/const outingParams = \(\)/);
     expect(screen).toMatch(/pathname: '\/plan', params: \{ venue: option\.venue\.id, \.\.\.outingParams\(\) \}/);
@@ -170,7 +170,7 @@ describe('3. Meet halfway and Families agree on who the parent plans with', () =
   });
 
   it('both screens use that one rule, and Families says plainly that nobody is connected when only local families exist', () => {
-    expect(read('app/(tabs)/halfway.tsx')).toContain('plannableFamilies({ stored, accepted: connected.accepted');
+    expect(read('src/components/together/MeetHalfwayView.tsx')).toContain('plannableFamilies({ stored, accepted: connected.accepted');
     const families = read('src/components/profile/FamilySections.tsx');
     expect(families).toContain('plannableFamilies({ stored: storedFamilies, accepted');
     expect(families).toContain('No families are connected yet. The families below are on this phone only');

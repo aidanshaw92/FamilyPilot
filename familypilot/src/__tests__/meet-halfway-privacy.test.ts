@@ -247,7 +247,7 @@ describe('the plan it hands off to does not read the other family’s requiremen
 describe('the Meet halfway screen reads only the viewer-safe projections of an option', () => {
   const { readFileSync } = require('node:fs') as typeof import('node:fs');
   const { join } = require('node:path') as typeof import('node:path');
-  const files = ['app/(tabs)/halfway.tsx', 'src/components/halfway/ListCard.tsx', 'src/components/halfway/Sheet.tsx', 'src/components/halfway/parts.tsx', 'src/components/halfway/States.tsx', 'src/components/halfway/EditSheet.tsx', 'src/components/halfway/chrome.tsx'];
+  const files = ['src/components/together/MeetHalfwayView.tsx', 'src/components/halfway/ListCard.tsx', 'src/components/halfway/Sheet.tsx', 'src/components/halfway/parts.tsx', 'src/components/halfway/States.tsx', 'src/components/halfway/EditSheet.tsx', 'src/components/halfway/chrome.tsx'];
   const code = (file: string) => readFileSync(join(__dirname, '..', '..', file), 'utf8').replace(/\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}|\/\/.*$/gm, '');
 
   it('never reads the engine’s free-text or structured lists directly (toCheck, needsChecking, reasons, otherNotes, unresolved)', () => {

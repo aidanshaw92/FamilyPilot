@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { AddFamilyByPostcode } from '@/src/components/planning/AddFamilyByPostcode';
 import { InviteLinkCard } from '@/src/components/planning/InviteLinkCard';
 import { Button, Card, Chip, Text } from '@/src/components/ui';
+import { MIN_TARGET } from '@/src/components/ui/touch';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { useConnectedFamilies } from '@/src/hooks/use-connected-families';
 import { INVITE_RELATIONSHIPS, InviteRelationship } from '@/src/services/planning/invite-links';
@@ -42,7 +43,7 @@ export function YourFamilySection({ profile, onEdit }: { profile: FamilyProfile;
         <Text variant="heading2" style={styles.title}>
           Your family
         </Text>
-        {onEdit ? <Button label="Edit" size="sm" variant="ghost" onPress={onEdit} testID="your-family-edit" /> : null}
+        {onEdit ? <Button label="Edit" size="sm" style={styles.target} variant="ghost" onPress={onEdit} testID="your-family-edit" /> : null}
       </View>
       <Card style={styles.card}>
         {people.length === 0 ? (
@@ -99,7 +100,7 @@ export function HouseholdSummary({ profile, onEdit }: { profile: FamilyProfile; 
               : `${routines.length} nap${routines.length === 1 ? '' : 's'} and feed${routines.length === 1 ? '' : 's'} set · private unless you share them`}
           </Text>
         </View>
-        <Button label="Edit" size="sm" variant="outline" onPress={onEdit} testID="families-household-edit" />
+        <Button label="Edit" size="sm" style={styles.target} variant="outline" onPress={onEdit} testID="families-household-edit" />
       </View>
     </Card>
   );
@@ -133,7 +134,7 @@ export function RoutinesSection({ profile, onEdit }: { profile: FamilyProfile; o
         <Text variant="heading2" style={styles.title}>
           Naps, feeds and must-haves
         </Text>
-        {onEdit ? <Button label="Edit" size="sm" variant="ghost" onPress={onEdit} testID="families-routines-edit" /> : null}
+        {onEdit ? <Button label="Edit" size="sm" style={styles.target} variant="ghost" onPress={onEdit} testID="families-routines-edit" /> : null}
       </View>
       <Card style={styles.card}>
         {routines.length === 0 ? (
@@ -170,6 +171,7 @@ export function ConnectedFamiliesSection({
   variant = 'profile',
   onPlanTogether,
   onEditLocal,
+  onMeetHalfway,
   planningWith,
 }: {
   accountsAvailable: boolean;
@@ -180,6 +182,8 @@ export function ConnectedFamiliesSection({
   onEditLocal?: (family: PlanningFamily) => void;
   /** The family currently chosen with "Plan together", so its card says so. */
   planningWith?: string | null;
+  /** "Meet halfway" on a family's card: Together switches to that view with this family chosen. */
+  onMeetHalfway?: (familyId: string) => void;
 }) {
   const router = useRouter();
   const families = useConnectedFamilies(accountsAvailable);
@@ -211,6 +215,9 @@ export function ConnectedFamiliesSection({
   // On the Profile the invite tools are always there; on the Families screen they open when asked for.
   const showAdd = !onScreen || addOpen;
   const nobody = loaded && accepted.length === 0 && local.length + unchecked.length === 0 && pending.length === 0;
+  // A first visit to Your families: nothing connected, nothing on this phone, nothing waiting. It says what the tab is for and
+  // offers the two ways in, side by side (approved Figma page 09, "Together · first visit").
+  const firstVisit = onScreen && accepted.length === 0 && local.length + unchecked.length === 0 && pending.length === 0 && (!accountsAvailable || loaded);
 
   const openSharing = (connectionId: string, mine: MySharing | null | undefined) => {
     // The switch opens on what is shared today, so an update is only ever a change the person makes.
@@ -235,7 +242,7 @@ export function ConnectedFamiliesSection({
     }
   };
 
-  const meet = (familyId: string) => router.push({ pathname: '/halfway', params: { family: familyId } } as never);
+  const meet = (familyId: string) => (onMeetHalfway ? onMeetHalfway(familyId) : router.push({ pathname: '/together', params: { view: 'halfway', family: familyId } } as never));
 
   return (
     <View testID="profile-connected-families">
@@ -245,12 +252,36 @@ export function ConnectedFamiliesSection({
         </Text>
       )}
       <Card style={styles.card}>
+        {firstVisit ? (
+          <View style={styles.firstVisit} testID="families-first-visit">
+            <Text variant="heading3">Plan days out with friends</Text>
+            <Text color={colors.text.secondary}>Add a family to find places that work for both of you, then make one plan and send it.</Text>
+            {accountsAvailable && !addOpen ? (
+              <Button label="Invite a family" fullWidth onPress={() => setAddOpen(true)} testID="families-add" />
+            ) : null}
+            {!adding ? (
+              <Button
+                label="Add a family by postcode"
+                variant={accountsAvailable ? 'outline' : 'primary'}
+                fullWidth
+                onPress={() => setAdding(true)}
+                testID="families-add-postcode"
+              />
+            ) : null}
+            <Text variant="caption" color={colors.text.secondary}>
+              {accountsAvailable
+                ? 'Inviting needs an account: a family you invite sees only what they agree to share. A family added by postcode stays on this phone only.'
+                : 'Inviting needs an account. A family added by postcode stays on this phone only.'}
+            </Text>
+          </View>
+        ) : (
         <Text variant="bodySmall" color={colors.text.secondary}>
           Families you plan with. They see only what they agreed to share: a first name, a rough area, the children’s ages
           and the drive they’re happy with. Never names or an address.
         </Text>
+        )}
 
-        {accountsAvailable ? (
+        {firstVisit ? null : accountsAvailable ? (
           !loaded ? (
             <Text variant="bodySmall" color={colors.text.secondary}>
               Loading…
@@ -303,23 +334,23 @@ export function ConnectedFamiliesSection({
             ) : null}
             <View style={styles.actions}>
               {onPlanTogether ? (
-                <Button label="Plan together" size="sm" onPress={() => onPlanTogether(family)} testID="family-plan-together" />
+                <Button label="Plan together" size="sm" style={styles.target} onPress={() => onPlanTogether(family)} testID="family-plan-together" />
               ) : null}
-              <Button label="Meet halfway" size="sm" variant="outline" onPress={() => meet(family.id)} />
+              <Button label="Meet halfway" size="sm" style={styles.target} variant="outline" onPress={() => meet(family.id)} />
               <Button
                 label="What I share"
-                size="sm"
+                size="sm" style={styles.target}
                 variant="ghost"
                 onPress={() => openSharing(connection.id, connection.mySharing)}
                 testID="connection-what-i-share"
               />
               {confirm === connection.id ? (
                 <>
-                  <Button label="Disconnect now" size="sm" onPress={() => { void families.disconnect(connection.id); setConfirm(null); }} />
-                  <Button label="Keep" size="sm" variant="ghost" onPress={() => setConfirm(null)} />
+                  <Button label="Disconnect now" size="sm" style={styles.target} onPress={() => { void families.disconnect(connection.id); setConfirm(null); }} />
+                  <Button label="Keep" size="sm" style={styles.target} variant="ghost" onPress={() => setConfirm(null)} />
                 </>
               ) : (
-                <Button label="Disconnect" size="sm" variant="ghost" onPress={() => setConfirm(connection.id)} />
+                <Button label="Disconnect" size="sm" style={styles.target} variant="ghost" onPress={() => setConfirm(connection.id)} />
               )}
             </View>
             {sharingOpen === connection.id ? (
@@ -341,8 +372,8 @@ export function ConnectedFamiliesSection({
                   </Text>
                 </View>
                 <View style={styles.actions}>
-                  <Button label={saving ? 'Updating…' : 'Update what I share'} size="sm" onPress={() => void saveSharing(connection.id, family.label)} testID="connection-update-sharing" />
-                  <Button label="Cancel" size="sm" variant="ghost" onPress={() => setSharingOpen(null)} />
+                  <Button label={saving ? 'Updating…' : 'Update what I share'} size="sm" style={styles.target} onPress={() => void saveSharing(connection.id, family.label)} testID="connection-update-sharing" />
+                  <Button label="Cancel" size="sm" style={styles.target} variant="ghost" onPress={() => setSharingOpen(null)} />
                 </View>
               </View>
             ) : null}
@@ -381,11 +412,11 @@ export function ConnectedFamiliesSection({
             </View>
             <View style={styles.actions}>
               {onPlanTogether ? (
-                <Button label="Plan together" size="sm" onPress={() => onPlanTogether(family)} testID="family-plan-together" />
+                <Button label="Plan together" size="sm" style={styles.target} onPress={() => onPlanTogether(family)} testID="family-plan-together" />
               ) : null}
-              <Button label="Meet halfway" size="sm" variant="outline" onPress={() => meet(family.id)} />
-              {onEditLocal ? <Button label="Edit" size="sm" variant="ghost" onPress={() => onEditLocal(family)} testID="local-family-edit" /> : null}
-              <Button label="Remove" size="sm" variant="ghost" onPress={() => removeFamily(family.id)} />
+              <Button label="Meet halfway" size="sm" style={styles.target} variant="outline" onPress={() => meet(family.id)} />
+              {onEditLocal ? <Button label="Edit" size="sm" style={styles.target} variant="ghost" onPress={() => onEditLocal(family)} testID="local-family-edit" /> : null}
+              <Button label="Remove" size="sm" style={styles.target} variant="ghost" onPress={() => removeFamily(family.id)} />
             </View>
             {/* A family only on this phone can be invited to connect: the same single-use link, the same consent (routines are not
                 shared unless the person switches that on in the invitation panel, and it is off here). Nothing is sent or shared
@@ -394,7 +425,7 @@ export function ConnectedFamiliesSection({
               <View style={styles.inviteLocal}>
                 <Button
                   label={busy === 'friend' && inviteFor === family.id ? 'Creating…' : 'Invite to connect'}
-                  size="sm"
+                  size="sm" style={styles.target}
                   variant="outline"
                   disabled={busy !== null}
                   onPress={() => {
@@ -427,8 +458,8 @@ export function ConnectedFamiliesSection({
               </View>
             </View>
             <View style={styles.actions}>
-              <Button label="Meet halfway" size="sm" variant="outline" onPress={() => meet(family.id)} />
-              <Button label="Remove" size="sm" variant="ghost" onPress={() => removeFamily(family.id)} />
+              <Button label="Meet halfway" size="sm" style={styles.target} variant="outline" onPress={() => meet(family.id)} />
+              <Button label="Remove" size="sm" style={styles.target} variant="ghost" onPress={() => removeFamily(family.id)} />
             </View>
           </View>
         ))}
@@ -446,7 +477,7 @@ export function ConnectedFamiliesSection({
               <Text variant="bodySmall" style={styles.familyText}>
                 {RELATIONSHIP_LABEL[connection.relationship ?? 'friend']} invitation · {expired ? 'expired' : 'waiting'}
               </Text>
-              <Button label={expired ? 'Remove' : 'Cancel'} size="sm" variant="ghost" onPress={() => void families.cancel(connection.id)} />
+              <Button label={expired ? 'Remove' : 'Cancel'} size="sm" style={styles.target} variant="ghost" onPress={() => void families.cancel(connection.id)} />
             </View>
           );
         })}
@@ -478,7 +509,7 @@ export function ConnectedFamiliesSection({
           </View>
         ) : null}
 
-        {onScreen && !addOpen ? (
+        {onScreen && !addOpen && !firstVisit ? (
           <Button
             label={nobody || (accepted.length === 0 && local.length + unchecked.length === 0) ? 'Add a family' : 'Add another family'}
             variant={nobody ? 'primary' : 'outline'}
@@ -488,11 +519,11 @@ export function ConnectedFamiliesSection({
           />
         ) : null}
 
-        {showAdd ? (
+        {showAdd || adding ? (
           adding ? (
             <AddFamilyByPostcode onAdded={() => setAdding(false)} onCancel={() => setAdding(false)} />
-          ) : (
-            <Button label="Add a family by postcode" variant="ghost" size="sm" onPress={() => setAdding(true)} testID="profile-add-by-postcode" />
+          ) : firstVisit ? null : (
+            <Button label="Add a family by postcode" variant="ghost" size="sm" style={styles.target} onPress={() => setAdding(true)} testID="profile-add-by-postcode" />
           )
         ) : null}
 
@@ -547,6 +578,9 @@ function Row({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; lab
 }
 
 const styles = StyleSheet.create({
+  // The small button draws 40 to 42pt tall around its text; the action on a family's card is a 44pt target.
+  target: { minHeight: MIN_TARGET },
+  firstVisit: { gap: spacing.md },
   inviteLocal: { gap: spacing.sm, alignItems: 'flex-start' },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   title: { marginTop: spacing.lg, marginBottom: spacing.lg },

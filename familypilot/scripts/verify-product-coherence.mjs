@@ -304,7 +304,8 @@ for (const [width, height] of VIEWPORTS) {
   await settle(page, 2000);
   await page.screenshot({ path: join(dir, '07b-families.jpg'), type: 'jpeg', quality: 82 });
   const familiesTab = await text(page);
-  check(`${label}: Families has Connected families as its own section`, /Connected families/.test(familiesTab) && /Add (another )?family/i.test(familiesTab));
+  // Together's Your families (approved Figma page 09) groups what it holds under "Connected" and "On this phone only".
+  check(`${label}: Your families is Together's second view, with a way to add a family`, /Together/.test(familiesTab) && /Your families/.test(familiesTab) && /Add (another )?family|Add a family by postcode/i.test(familiesTab));
   check(`${label}: a family added by postcode appears there, honestly`, /Hannah/.test(familiesTab) && /On this phone only · not connected/.test(familiesTab));
 
   // ---- MEET HALFWAY -----------------------------------------------------------------------------

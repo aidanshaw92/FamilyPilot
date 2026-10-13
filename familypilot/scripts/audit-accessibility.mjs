@@ -71,6 +71,7 @@ const HALFWAY_PLANNING = {
   },
   version: 1,
 };
+const NO_FAMILIES_PLANNING = { ...HALFWAY_PLANNING, state: { ...HALFWAY_PLANNING.state, families: [] } };
 const FRESH = { state: { hasCompletedOnboarding: false, hasSeenSplash: true }, version: 0 };
 
 const SCREENS = [
@@ -91,6 +92,9 @@ const SCREENS = [
   { key: 'halfway-details', route: '/halfway', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-sheet-collapsed').or(page.getByTestId('halfway-empty')).first().waitFor({ timeout: 30000 }); if (await page.getByTestId('halfway-details').count()) await page.getByTestId('halfway-details').click(); await page.waitForTimeout(900); } },
   { key: 'halfway-list', route: '/halfway', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-mode-list').click({ timeout: 30000 }); await page.waitForTimeout(1000); } },
   { key: 'halfway-edit', route: '/halfway', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-edit').click({ timeout: 30000 }); await page.waitForTimeout(900); } },
+  // Together's second view, with a family on this phone, and the first visit with nobody. (The halfway-* screens above are reached through the old /halfway address, which redirects here.)
+  { key: 'together-families', route: '/together?view=families', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('together-view-families').waitFor({ timeout: 30000 }); await page.waitForTimeout(900); } },
+  { key: 'together-first-visit', route: '/together', state: HALFWAY_PROFILE, planning: NO_FAMILIES_PLANNING, act: async (page) => { await page.getByTestId('families-first-visit').waitFor({ timeout: 30000 }); await page.waitForTimeout(900); } },
   {
     key: 'venue',
     route: '/explore',

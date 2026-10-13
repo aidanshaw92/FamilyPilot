@@ -110,7 +110,7 @@ export function analyse({ width, height, tabbar }) {
   // navigation
   if (tabbar) {
     const tabs = [...document.querySelectorAll('[role="tab"]')].filter(visible);
-    if (tabs.length !== 6) findings.push(`navigation shows ${tabs.length} tabs, not 6`);
+    if (tabs.length !== 5) findings.push(`navigation shows ${tabs.length} tabs, not 5`);
     for (const tab of tabs) {
       const r = tab.getBoundingClientRect();
       if (r.bottom > height + 1) findings.push(`tab below the screen edge: ${label(tab)}`);

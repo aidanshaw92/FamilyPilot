@@ -1,13 +1,12 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HalfwayEditSheet, MeetingEnvironment } from '@/src/components/halfway/EditSheet';
 import { HalfwayListCard } from '@/src/components/halfway/ListCard';
 import { CollapsedRecommendation, ExpandedRecommendation } from '@/src/components/halfway/Sheet';
 import { FallbackBanner, LoadFailed, LoadingRecommendations, NoSuitablePlaces } from '@/src/components/halfway/States';
-import { HalfwayHeader, HalfwayTitle, MapListToggle, SheetSurface } from '@/src/components/halfway/chrome';
+import { HalfwayHeader, MapListToggle, SheetSurface } from '@/src/components/halfway/chrome';
 import { AddFamilyByPostcode } from '@/src/components/planning/AddFamilyByPostcode';
 import { HalfwayMap } from '@/src/components/planning/HalfwayMap';
 import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
@@ -19,7 +18,7 @@ import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import { useBetweenVenues, useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
 import { HalfwayOption, meetHalfway } from '@/src/services/planning/meet-halfway';
 import { plannableFamilies } from '@/src/services/planning/family-visibility';
-import { DEFAULT_START_AT, firstValue, planDraftToParams } from '@/src/services/planning/plan-draft';
+import { DEFAULT_START_AT, planDraftToParams } from '@/src/services/planning/plan-draft';
 import { planningFamilyFromProfile } from '@/src/services/planning/plan-parties';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { seedVenueDetail } from '@/src/services/venue-detail-seed';
@@ -30,7 +29,9 @@ import { familyDisplayName } from '@/src/utils/family-title';
 import { shortDateLabel } from '@/src/utils/plan-quick-choices';
 
 /**
- * MEET HALFWAY: a place that works for two families. Its own tab (Home, Explore, Families, Halfway, Plans, Profile).
+ * MEET HALFWAY: a place that works for two families. One of the two views of the Together tab (Home, Explore, Together,
+ * Plans, Profile); the other is Your families. The tab's title and the switch between the two sit above this view
+ * (app/(tabs)/together.tsx), so the view starts at the outing card.
  *
  * The map is the screen. It is drawn on the device (no tiles, no provider, no spend) and shows the two families as rough
  * AREAS and the recommended places as numbered pins; a collapsible sheet under it carries the selected place: the engine's
@@ -46,12 +47,9 @@ import { shortDateLabel } from '@/src/utils/plan-quick-choices';
  * spend), and the engine then applies both families' needs. Home's places are used only if that lookup fails, and the
  * screen says so. Opening this makes no paid route request and no paid image request beyond what a card already shows.
  */
-export default function MeetHalfwayScreen() {
+export function MeetHalfwayView({ preselected }: { preselected?: string | null }) {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const tabBarClearance = useTabBarClearance();
-  const params = useLocalSearchParams();
-  const preselected = firstValue(params.family);
 
   const { data: profile } = useFamilyProfile();
   const authStatus = useAuthStore((s) => s.status);
@@ -188,7 +186,8 @@ export default function MeetHalfwayScreen() {
     setAdding(false);
   };
 
-  const sheetTop = Math.max(64, insets.top + 17);
+  // The sheets rise from just under the Together title and switch, which belong to the tab and are not redrawn here.
+  const sheetTop = 8;
   const editSheet = editOpen ? (
     <HalfwayEditSheet
       top={sheetTop}
@@ -218,7 +217,6 @@ export default function MeetHalfwayScreen() {
   if (typeof mine === 'string') {
     return (
       <View style={styles.screen}>
-        <HalfwayTitle />
         <View style={styles.centre}>
           <EmptyState
             icon="search-outline"
@@ -234,7 +232,6 @@ export default function MeetHalfwayScreen() {
   if (!other) {
     return (
       <View style={styles.screen}>
-        <HalfwayTitle />
         <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <Text variant="heading3" accessibilityRole="header">Who are you meeting?</Text>
           <View style={styles.chips}>
@@ -260,7 +257,9 @@ export default function MeetHalfwayScreen() {
   }
 
   const otherName = familyDisplayName(other.label);
-  const when = `${shortDateLabel(date)} · arrive ${startAt}`;
+  // A family entered on this phone is said so beside the day: it is a starting point, not a connection, so nothing is shared with it.
+  const otherIsLocal = candidates.find((c) => c.id === chosen)?.kind === 'local';
+  const when = `${shortDateLabel(date)} · arrive ${startAt}${otherIsLocal ? ' · this phone only' : ''}`;
   const mapBlocked = isLoading || isError || options.length === 0;
   const retry = () => void refetch();
 
