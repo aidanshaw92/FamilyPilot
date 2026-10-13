@@ -89,8 +89,8 @@ export function VenueImage({uri,category,alt,style,borderRadius=radius.md,showCr
   </>}
   {/* Said once the picture is big enough to carry a line, so a drawing is never taken for the place. Hidden from assistive tech: the
       image's own label already says it. */}
-  {unavailable&&width>=170?<View style={styles.note} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" testID="venue-image-note"><Text variant="caption" color="#FFFFFF" numberOfLines={1} style={styles.creditText}>Illustration · no photo yet</Text></View>:null}
-  {credit ? <View style={styles.credit} pointerEvents="none"><Text variant="caption" color="#FFFFFF" numberOfLines={3} style={styles.creditText}>Photo: {credit}</Text></View> : null}
+  {unavailable&&width>=170?<View style={styles.note} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" testID="venue-image-note"><Text variant="caption" color="#FFFFFF" numberOfLines={1} maxFontSizeMultiplier={1} style={styles.creditText}>Illustration · no photo yet</Text></View>:null}
+  {credit ? <View style={styles.credit} pointerEvents="none"><Text variant="caption" color="#FFFFFF" numberOfLines={3} maxFontSizeMultiplier={1} style={styles.creditText} testID="venue-image-credit">Photo: {credit}</Text></View> : null}
  </View>;
 }
 const styles=StyleSheet.create({

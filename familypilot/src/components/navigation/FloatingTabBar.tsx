@@ -27,6 +27,9 @@ import { usePlanningStore } from '@/src/stores/planning-store';
  * The frames carry icons alone; with six tabs a short word under each (its title) keeps them understandable to a parent seeing
  * them for the first time (see LABELLED in floating-tab-bar-layout). Each tab also exposes its title as its accessibility label.
  */
+/** How far the tab labels grow with the system text size. */
+export const TAB_LABEL_MAX_SCALE = 1.2;
+
 export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
@@ -125,8 +128,11 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
                   />
                 </Animated.View>
                 {/* Said by the tab's accessibility label already, so not announced a second time. */}
+                {/* The six labels share one capsule, so they follow the system text size only up to a point (as the system's own tab bar does):
+                    past it, six words cannot sit side by side. The icon, the tab's accessibility label and its 44 pt target do not change. */}
                 <Text
                   numberOfLines={1}
+                  maxFontSizeMultiplier={TAB_LABEL_MAX_SCALE}
                   accessibilityElementsHidden
                   importantForAccessibility="no-hide-descendants"
                   style={[styles.label, focused && styles.labelFocused]}

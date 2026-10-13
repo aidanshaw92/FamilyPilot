@@ -33,9 +33,28 @@ The approved Figma v2 (file `LNpbdnuAWcfWf9spvB7jBz`, sections "v2 · Screens", 
 
 Tests: `meet-halfway-fits.test.ts` (grade-only shape, "Not assessed", forbidden words, `otherNotes`), `halfway-view.test.ts` (every verdict's words contain no age, need, routine, number or child), plus the browser check `verify-halfway-real-catalogue.mjs` (other family shares ages, toilets and a pushchair; none of it appears on the Family Fit card).
 
-### Known, deliberate residue (needs a decision, not changed)
+### What the viewer is allowed to read back about the other family (PR #196, third round)
 
-The existing "needs checking" sentence ("Toilets isn’t confirmed at X, and Kevin’s family needs it. Check before you go") names a must-have that the other family chose to share. It is the pre-existing, shipped wording, built from a field the connection already receives, and it is what makes the warning actionable, so it was kept. If a must-have such as Blue Badge parking is judged too sensitive to name, the engine's `needsChecking` sentence is the one place to change.
+The earlier "known, deliberate residue" is closed. The "needs checking" sentence used to read "Toilets isn’t confirmed at X, and Kevin’s family needs it", and the Plan screen's equivalent could say that a place was not step-free for a wheelchair or that a nap would clash with Kevin’s family’s routine. Each is a must-have, an age or a routine that the other family shared **so the engine can use it**, read back to the person it was not shared **with**.
+
+**Root cause.** One value served two purposes. The other family's shared requirements legitimately feed the *calculation* (they rank a place, rule it out, move the start time, grade the other family's fit). But the same value was also used to *word the explanation* shown to the viewer: the label of the requirement, the child's age, the routine, the mobility need.
+
+**The boundary now.** Two roles, kept apart in `meet-halfway.ts`:
+
+| | May influence the result | May be shown to the viewer |
+|---|---|---|
+| The viewer's own requirements, children, routines | yes | yes, specifically |
+| The other family's must-haves, ages, routines, pushchair, drive limit | **yes** (ranking, exclusion, the other family's grade, the start time) | **no**: only that something they need is unconfirmed, or that a time had to be planned around, and never what |
+
+- `viewerSafe` rewrites everything unresolved about the other family before it leaves the engine: the requirement's label becomes "a requirement". The sentence is "Something Kevin’s family needs isn’t confirmed at X. Check before you go".
+- Ages, routines and the other family's fit sentences are neutral for the viewer, and the specific sentences are collected in `otherNotes` (never rendered).
+- The other family's grade is `{ verdict, label, qualified }`; a "qualified" grade ("Likely good · check Ozzie") is shown to the viewer as the plain "Possible fit", since the qualifier would name a child.
+- When what they shared is not enough to grade, the chip says "Not assessed".
+- Plan (`plan-view-model.ts`, `create-plan.ts`): one neutral line per other family ("Some of what Kevin’s family needs isn’t confirmed…"), no label, no wheelchair or mobility sentence; a place that fails one of their needs says "{place} doesn’t meet something Kevin’s family needs".
+- The legacy-routines note on the Meet halfway page is gone; the page no longer says whether they shared routines.
+- **No consent change.** What a connection shares, and the consent text, are unchanged. Scoring, ranking and the Family Fit grading rules are unchanged (`ranking-golden.test.ts` passes unmodified).
+
+**Surfaces covered.** Card and expanded sheet text, the chip, accessibility labels (`accessibilityLabel` of the chip, the journey rows, the needs block), the list card, the edit sheet, the Plan handoff and the Plan screen's checks. `src/__tests__/meet-halfway-privacy.test.ts` renders two households against the same five places, each seeing the other under three different sharing permissions (nothing shared; ages only; ages, must-haves, pushchair and routines), asserts that for the same place the viewer sees the same neutral words whichever the sharing, that none of the shared terms (the requirement names, ages, "wheelchair", "nap", the routine) appear in any string the engine hands the UI or the Plan view model, and that the UI sources never read `otherNotes`, the other family's `required` or `ages` for display.
 
 ## The map
 

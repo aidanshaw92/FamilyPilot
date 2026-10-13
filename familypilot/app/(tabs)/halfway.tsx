@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HalfwayEditSheet, MeetingEnvironment } from '@/src/components/halfway/EditSheet';
@@ -14,6 +14,7 @@ import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
 import { Chip, EmptyState, Text } from '@/src/components/ui';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { useConnectedFamilies } from '@/src/hooks/use-connected-families';
+import { isLargeText, useFontScale } from '@/src/hooks/use-font-scale';
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import { useBetweenVenues, useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
 import { HalfwayOption, meetHalfway } from '@/src/services/planning/meet-halfway';
@@ -65,7 +66,11 @@ export default function MeetHalfwayScreen() {
   const [adding, setAdding] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [chosen, setChosen] = useState<string | null>(preselected ?? null);
-  const [mode, setMode] = useState<'map' | 'list'>('map');
+  // At the larger text sizes the list is the way in (the map would be a few inches of a small screen under a tall card); the
+  // map is still one tap away. Chosen once, when the screen opens: a later change of text size does not move you.
+  const largeText = isLargeText(useFontScale());
+  const { height: windowHeight } = useWindowDimensions();
+  const [mode, setMode] = useState<'map' | 'list'>(largeText ? 'list' : 'map');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [bodyHeight, setBodyHeight] = useState(0);
@@ -262,14 +267,15 @@ export default function MeetHalfwayScreen() {
       index={selectedIndex}
       total={options.length}
       otherLabel={other.label}
-      bottomClearance={tabBarClearance}
+      bottomClearance={largeText ? spacing.lg + 8 : tabBarClearance}
       onExpand={() => setDetailOpen(true)}
       onPlan={() => plan(selected)}
       onLayoutHeight={setSheetHeight}
+      inline={largeText}
     />
   ) : (
-    <View style={styles.dock} onLayout={(e) => setSheetHeight(e.nativeEvent.layout.height)}>
-      <SheetSurface bottomPadding={tabBarClearance}>
+    <View style={largeText ? undefined : styles.dock} onLayout={(e) => setSheetHeight(e.nativeEvent.layout.height)}>
+      <SheetSurface bottomPadding={largeText ? spacing.lg : tabBarClearance}>
         {isLoading ? (
           <LoadingRecommendations />
         ) : isError ? (
@@ -281,34 +287,56 @@ export default function MeetHalfwayScreen() {
     </View>
   );
 
+  const header = <HalfwayHeader who={`You + ${otherName}`} when={when} otherName={otherName} onEdit={() => setEditOpen(true)} />;
+  // At larger text the header alone can fill a small phone: it then scrolls away with the page instead of staying pinned above it.
+  const scrollingHeader = largeText ? header : null;
+  const bigMapHeight = Math.max(240, Math.round(windowHeight * 0.38));
+  const mapToggle = (
+    <View style={styles.toggleOverlay} pointerEvents="box-none">
+      <MapListToggle mode={mode} onChange={setMode} disabled={isLoading} />
+      {usingHomeFallback ? <View style={styles.bannerOverlay}><FallbackBanner compact /></View> : null}
+    </View>
+  );
+  const mapAndToggle = (height: number, coveredBelow: number) => (
+    <>
+      <View style={StyleSheet.absoluteFill}>
+        <HalfwayMap
+          mine={{ latitude: mine.latitude, longitude: mine.longitude, label: 'Your family' }}
+          other={{ latitude: other.latitude, longitude: other.longitude, label: otherName }}
+          venue={selected && !mapBlocked ? { latitude: selected.venue.latitude, longitude: selected.venue.longitude, name: selected.venue.name } : undefined}
+          venues={mapBlocked ? undefined : options.map((option) => ({ id: option.venue.id, latitude: option.venue.latitude, longitude: option.venue.longitude, name: option.venue.name }))}
+          selectedId={selected?.venue.id}
+          onSelectPin={(id) => setSelectedId(id)}
+          height={height}
+          inset={{ top: 62, bottom: coveredBelow }}
+          legend={false}
+          bare
+        />
+      </View>
+      {largeText ? mapToggle : null}
+    </>
+  );
+
   return (
     <View style={styles.screen}>
-      <HalfwayHeader who={`You + ${otherName}`} when={when} otherName={otherName} onEdit={() => setEditOpen(true)} />
+      {largeText ? null : header}
 
-      {mode === 'map' ? (
+      {mode === 'map' && largeText ? (
+        // At larger text the card cannot sit over the map and still leave a map: the screen scrolls instead. The map is a block
+        // of its own, and the recommendation follows it as an ordinary card, whole, with room below it for the navigation.
+        <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: tabBarClearance + spacing.lg }} showsVerticalScrollIndicator={false} testID="halfway-map-scroll">
+          {scrollingHeader}
+          <View style={{ height: bigMapHeight }} testID="halfway-map-body">
+            {mapAndToggle(bigMapHeight, 0)}
+          </View>
+          {dock}
+        </ScrollView>
+      ) : mode === 'map' ? (
         <View style={styles.body} onLayout={(e) => setBodyHeight(Math.round(e.nativeEvent.layout.height))} testID="halfway-map-body">
           {/* The map fills the screen under the header and the sheet: the places and both areas are fitted to the part left
               visible, so the frame is the same for every selection and nothing is hidden behind the card. */}
-          {bodyHeight > 0 ? (
-            <View style={StyleSheet.absoluteFill}>
-              <HalfwayMap
-                mine={{ latitude: mine.latitude, longitude: mine.longitude, label: 'Your family' }}
-                other={{ latitude: other.latitude, longitude: other.longitude, label: otherName }}
-                venue={selected && !mapBlocked ? { latitude: selected.venue.latitude, longitude: selected.venue.longitude, name: selected.venue.name } : undefined}
-                venues={mapBlocked ? undefined : options.map((option) => ({ id: option.venue.id, latitude: option.venue.latitude, longitude: option.venue.longitude, name: option.venue.name }))}
-                selectedId={selected?.venue.id}
-                onSelectPin={(id) => setSelectedId(id)}
-                height={bodyHeight}
-                inset={{ top: 62, bottom: sheetHeight }}
-                legend={false}
-                bare
-              />
-            </View>
-          ) : null}
-          <View style={styles.toggleOverlay} pointerEvents="box-none">
-            <MapListToggle mode={mode} onChange={setMode} disabled={isLoading} />
-            {usingHomeFallback ? <View style={styles.bannerOverlay}><FallbackBanner compact /></View> : null}
-          </View>
+          {bodyHeight > 0 ? mapAndToggle(bodyHeight, sheetHeight) : null}
+          {mapToggle}
           {dock}
         </View>
       ) : (
@@ -318,6 +346,7 @@ export default function MeetHalfwayScreen() {
           showsVerticalScrollIndicator={false}
           testID="halfway-list"
         >
+          {largeText ? <View style={styles.headerBleed}>{header}</View> : null}
           <View style={styles.toggleRow}>
             <MapListToggle mode={mode} onChange={setMode} disabled={isLoading} />
           </View>
@@ -399,4 +428,6 @@ const styles = StyleSheet.create({
   centreText: { textAlign: 'center' },
   listContent: { paddingHorizontal: spacing.screenPadding, gap: spacing.md, paddingTop: 6 },
   dock: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  // The list's content has side padding of its own; the header brings its own.
+  headerBleed: { marginHorizontal: -spacing.screenPadding },
 });

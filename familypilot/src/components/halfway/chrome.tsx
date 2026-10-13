@@ -54,8 +54,8 @@ export function HalfwayHeader({
         >
           <Avatars other={otherName} />
           <View style={styles.selectorText}>
-            <Text style={styles.selectorWho} numberOfLines={1}>{who}</Text>
-            {when ? <Text style={styles.selectorWhen} numberOfLines={1}>{when}</Text> : null}
+            <Text style={styles.selectorWho}>{who}</Text>
+            {when ? <Text style={styles.selectorWhen}>{when}</Text> : null}
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.text.tertiary} />
         </Pressable>
@@ -139,14 +139,14 @@ const styles = StyleSheet.create({
   selectorText: { flex: 1, gap: 1 },
   selectorWho: { fontFamily: fontFamily.semiBold, fontSize: 15, lineHeight: 20, color: colors.ink },
   selectorWhen: { fontFamily: fontFamily.regular, fontSize: 12, lineHeight: 16, color: colors.text.secondary },
-  editButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', ...shadows.card },
+  editButton: { width: 48, height: 48, flexShrink: 0, borderRadius: 24, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', ...shadows.card },
   avatars: { flexDirection: 'row' },
   avatar: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.surface },
   avatarOther: { marginLeft: -8 },
   avatarText: { fontFamily: fontFamily.bold, fontSize: 12, lineHeight: 15 },
-  toggle: { width: 163, height: MIN_TARGET, borderRadius: 22, backgroundColor: colors.surface, flexDirection: 'row', padding: 0, alignItems: 'center', ...shadows.card },
+  toggle: { minWidth: 163, minHeight: MIN_TARGET, borderRadius: 22, backgroundColor: colors.surface, flexDirection: 'row', padding: 0, alignItems: 'center', ...shadows.card },
   toggleDisabled: { opacity: 0.55 },
-  segment: { flex: 1, height: MIN_TARGET, borderRadius: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  segment: { flex: 1, minHeight: MIN_TARGET, paddingHorizontal: 8, borderRadius: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   segmentActive: { backgroundColor: colors.action },
   segmentText: { fontFamily: fontFamily.semiBold, fontSize: 14, lineHeight: 18 },
   sheet: { backgroundColor: colors.surface, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, paddingHorizontal: spacing.screenPadding, ...shadows.bottomSheet },

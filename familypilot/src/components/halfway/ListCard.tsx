@@ -1,17 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/src/components/ui';
 import { Button } from '@/src/components/ui';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, fontFamily, radius, shadows, spacing } from '@/src/design-system/tokens';
+import { isLargeText, useFontScale } from '@/src/hooks/use-font-scale';
 import { HalfwayOption } from '@/src/services/planning/meet-halfway';
 import { checksToShow, journeyBars, journeysKnown, listCardMeta, missingJourneyNotice, shortFamilyName } from '@/src/services/planning/halfway-view';
 
 import { FitChip, OTHER_TONE } from './parts';
 
-/** From this system font scale up, the card reflows to one column: a wide photo, the lines stacked, the action inside it. */
-export const LARGE_TEXT_SCALE = 1.35;
 
 /**
  * One place in the list: a number that is its pin, its photo (or the labelled illustration), its name, what is left to check,
@@ -32,8 +31,8 @@ export function HalfwayListCard({
   onSelect: () => void;
   onPlan: () => void;
 }) {
-  const { fontScale } = useWindowDimensions();
-  const large = fontScale >= LARGE_TEXT_SCALE;
+  // From the third-largest text size up, the card reflows to one column: a wide photo, the lines stacked, the action inside it.
+  const large = isLargeText(useFontScale());
   const bars = journeyBars(option.journeys);
   const notice = journeysKnown(option) ? null : missingJourneyNotice(option);
   const { needs } = checksToShow(option);

@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
 import { Button, Text } from '@/src/components/ui';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, fontFamily, radius, shadows, spacing } from '@/src/design-system/tokens';
+import { isLargeText, useFontScale } from '@/src/hooks/use-font-scale';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { HalfwayOption, topCardLabel } from '@/src/services/planning/meet-halfway';
 import { checksToShow, chipName, chipsFitBeside, missingJourneyNotice, journeysKnown, positionLine } from '@/src/services/planning/halfway-view';
@@ -44,6 +45,7 @@ export function CollapsedRecommendation({
   onExpand,
   onPlan,
   onLayoutHeight,
+  inline = false,
 }: {
   option: HalfwayOption;
   index: number;
@@ -53,16 +55,20 @@ export function CollapsedRecommendation({
   onExpand: () => void;
   onPlan: () => void;
   onLayoutHeight?: (height: number) => void;
+  /** In the page's scroll (larger text) rather than standing on the screen's bottom edge over the map. */
+  inline?: boolean;
 }) {
   const swipe = useSwipe(onExpand);
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const dense = windowHeight < DENSE_SHEET_BELOW;
+  // At larger text the card is tall: it is then an ordinary block in the screen's scroll (`inline`) rather than a card over the map.
+  const big = isLargeText(useFontScale());
   // The frame's 80 pt photo, with the chips beside it, where they fit; a smaller photo with the chips under it where not.
   const pair = [
     { name: chipName('mine', ''), grade: option.fits.mine.label },
     { name: chipName('other', otherLabel), grade: option.fits.other.label },
   ];
-  const beside = !dense && chipsFitBeside(pair, windowWidth - 40 - 80 - 12);
+  const beside = !dense && !big && chipsFitBeside(pair, windowWidth - 40 - 80 - 12);
   const thumb = beside ? 80 : dense ? 56 : 64;
   const chips = (
     <View style={beside ? styles.chipsBeside : styles.chips} testID="halfway-fit-chips">
@@ -71,29 +77,34 @@ export function CollapsedRecommendation({
     </View>
   );
   const notice = journeysKnown(option) ? null : missingJourneyNotice(option);
+  const place = (
+    <>
+      <View style={styles.venueRow}>
+        <VenueImage uri={option.venue.imageUrl} category={option.venue.category} alt={option.venue.name} style={{ width: thumb, height: thumb }} borderRadius={radius.lg} />
+        <View style={styles.venueText}>
+          <Text style={[styles.name, dense && styles.nameDense]} numberOfLines={big ? undefined : dense ? 1 : 2} testID="halfway-selected-name">{option.venue.name}</Text>
+          <Text style={styles.category}>{formatCategory(option.venue.category)}</Text>
+          {beside ? chips : null}
+        </View>
+      </View>
+      {/* Long grades ("Not yet reviewed") do not fit beside the photo: they go under it, across the card, side by side,
+          instead of stacking and making the sheet tall. */}
+      {beside ? null : chips}
+      <JourneyComparison option={option} dense={dense} />
+      {notice ? <Text variant="caption" color={colors.text.secondary}>{notice.title}. {notice.body}</Text> : null}
+    </>
+  );
   return (
-    <View style={styles.dock} onLayout={(e) => onLayoutHeight?.(e.nativeEvent.layout.height)} testID="halfway-sheet-collapsed" {...swipe.panHandlers}>
+    <View style={inline ? undefined : styles.dock} onLayout={(e) => onLayoutHeight?.(e.nativeEvent.layout.height)} testID="halfway-sheet-collapsed" {...swipe.panHandlers}>
       <SheetSurface bottomPadding={Math.max(bottomClearance - 8, 0)} onGrab={onExpand} grabLabel="Show details">
         <View style={styles.topRow}>
           <LabelPill text={topCardLabel(option)} supported={option.supported} />
           <Text style={styles.position} testID="halfway-position">{`${index + 1} of ${total}`}</Text>
         </View>
-        <View style={styles.venueRow}>
-          <VenueImage uri={option.venue.imageUrl} category={option.venue.category} alt={option.venue.name} style={{ width: thumb, height: thumb }} borderRadius={radius.lg} />
-          <View style={styles.venueText}>
-            <Text style={[styles.name, dense && styles.nameDense]} numberOfLines={dense ? 1 : 2} testID="halfway-selected-name">{option.venue.name}</Text>
-            <Text style={styles.category}>{formatCategory(option.venue.category)}</Text>
-            {beside ? chips : null}
-          </View>
-        </View>
-        {/* Long grades ("Not yet reviewed") do not fit beside the photo: they go under it, across the card, side by side,
-            instead of stacking and making the sheet tall. */}
-        {beside ? null : chips}
-        <JourneyComparison option={option} dense={dense} />
-        {notice ? <Text variant="caption" color={colors.text.secondary}>{notice.title}. {notice.body}</Text> : null}
-        <View style={styles.actions}>
-          <Button label="Plan this day" onPress={onPlan} style={styles.plan} testID="halfway-plan" />
-          <Button label="Details" variant="outline" onPress={onExpand} style={styles.details} testID="halfway-details" />
+        {place}
+        <View style={[styles.actions, big && styles.actionsBig]}>
+          <Button label="Plan this day" onPress={onPlan} style={big ? styles.planBig : styles.plan} testID="halfway-plan" />
+          <Button label="Details" variant="outline" onPress={onExpand} style={big ? styles.planBig : styles.details} testID="halfway-details" />
         </View>
       </SheetSurface>
     </View>
@@ -131,6 +142,10 @@ export function ExpandedRecommendation({
   const swipe = useSwipe(undefined, onCollapse);
   const notice = journeysKnown(option) ? null : missingJourneyNotice(option);
   const { needs, others } = checksToShow(option);
+  // The pinned actions are taller at larger text (the labels wrap, the buttons stack): the scrolling content makes room for what they measure.
+  const big = isLargeText(useFontScale());
+  const [pinnedHeight, setPinnedHeight] = useState(0);
+  const roomForActions = Math.max(bottomClearance + 92, pinnedHeight + 16);
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none" testID="halfway-sheet-expanded">
       <Animated.View entering={reduced ? undefined : FadeIn.duration(160)} style={styles.scrim}>
@@ -140,7 +155,7 @@ export function ExpandedRecommendation({
         <ScrollView
           style={styles.scroll}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: bottomClearance + 92 }}
+          contentContainerStyle={{ paddingBottom: roomForActions }}
           testID="halfway-sheet-scroll"
         >
           <View style={styles.hero}>
@@ -203,11 +218,11 @@ export function ExpandedRecommendation({
             ) : null}
           </View>
         </ScrollView>
-        <View style={[styles.pinned, { paddingBottom: bottomClearance - 10, paddingTop: 12 }]} pointerEvents="box-none">
+        <View style={[styles.pinned, { paddingBottom: bottomClearance - 10, paddingTop: 12 }]} pointerEvents="box-none" onLayout={(e) => setPinnedHeight(e.nativeEvent.layout.height)}>
           <View style={styles.pinnedFade} pointerEvents="none" />
-          <View style={styles.actions}>
-            <Button label="Plan this day" onPress={onPlan} style={styles.plan} testID="halfway-plan" />
-            <Button label="See the place" variant="outline" onPress={onOpenPlace} style={styles.details} testID="halfway-see-place" />
+          <View style={[styles.actions, big && styles.actionsBig]}>
+            <Button label="Plan this day" onPress={onPlan} style={big ? styles.planBig : styles.plan} testID="halfway-plan" />
+            <Button label="See the place" variant="outline" onPress={onOpenPlace} style={big ? styles.planBig : styles.details} testID="halfway-see-place" />
           </View>
         </View>
       </Animated.View>
@@ -218,7 +233,7 @@ export function ExpandedRecommendation({
 const styles = StyleSheet.create({
   dock: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 },
-  position: { fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 17, color: colors.text.secondary },
+  position: { fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 17, color: colors.text.secondary, flexShrink: 0 },
   venueRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
   thumb: { width: 72, height: 72 },
   thumbDense: { width: 60, height: 60 },
@@ -229,6 +244,8 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
   chipsBeside: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
   actions: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  actionsBig: { flexWrap: 'wrap' },
+  planBig: { flexGrow: 1, flexBasis: 150 },
   plan: { flex: 1.45 },
   details: { flex: 1 },
   scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.sheetScrim },

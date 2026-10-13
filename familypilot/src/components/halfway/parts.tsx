@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Text } from '@/src/components/ui';
 import { colors, fontFamily, radius, spacing } from '@/src/design-system/tokens';
+import { isLargeText, useFontScale } from '@/src/hooks/use-font-scale';
 import { MatchLine } from '@/src/services/matching/family-match';
 import { HalfwayFit, HalfwayOption } from '@/src/services/planning/meet-halfway';
 import { chipName, journeyBars, shortFamilyName, journeysKnown, journeysUneven, otherFitProvenance } from '@/src/services/planning/halfway-view';
@@ -14,16 +15,19 @@ export const OTHER_TONE = '#B0507E';
 export function FitChip({ role, label, fit, size = 'default' }: { role: 'mine' | 'other'; label: string; fit: HalfwayFit; size?: 'default' | 'small' }) {
   const tone = tones(fit);
   const name = chipName(role, label);
+  // At larger text the words wrap inside the chip, which grows to hold them, instead of being cut off.
+  const big = isLargeText(useFontScale());
+  const lines = big ? undefined : 1;
   return (
     <View
-      style={[styles.chip, size === 'small' && styles.chipSmall, { backgroundColor: tone.bg }]}
+      style={[styles.chip, size === 'small' && styles.chipSmall, big && styles.chipBig, { backgroundColor: tone.bg }]}
       accessible
       accessibilityLabel={`${role === 'mine' ? 'Your family' : name}: ${fit.label}`}
       testID={`halfway-fit-${role}`}
     >
       <View style={[styles.dot, { backgroundColor: role === 'mine' ? colors.action : OTHER_TONE }]} />
-      <Text style={[styles.chipName, { color: colors.ink }]} numberOfLines={1}>{name}</Text>
-      <Text style={[styles.chipGrade, { color: tone.fg }]} numberOfLines={1}>{fit.label}</Text>
+      <Text style={[styles.chipName, { color: colors.ink }]} numberOfLines={lines}>{name}</Text>
+      <Text style={[styles.chipGrade, { color: tone.fg }]} numberOfLines={lines}>{fit.label}</Text>
     </View>
   );
 }
@@ -44,9 +48,10 @@ function tones(fit: HalfwayFit): { bg: string; fg: string } {
 
 /** The engine's own label as a soft amber pill ("Promising option · 2 things to check"), or mint where it is a supported claim. */
 export function LabelPill({ text, supported }: { text: string; supported: boolean }) {
+  const big = isLargeText(useFontScale());
   return (
-    <View style={[styles.pill, supported ? { backgroundColor: colors.actionSoft } : { backgroundColor: colors.warning[50] }]} testID="halfway-option-label">
-      <Text style={[styles.pillText, { color: supported ? colors.action : colors.warning[600] }]} numberOfLines={1}>{text}</Text>
+    <View style={[styles.pill, big && styles.pillBig, supported ? { backgroundColor: colors.actionSoft } : { backgroundColor: colors.warning[50] }]} testID="halfway-option-label">
+      <Text style={[styles.pillText, { color: supported ? colors.action : colors.warning[600] }]} numberOfLines={big ? undefined : 1}>{text}</Text>
     </View>
   );
 }
@@ -59,10 +64,12 @@ export function JourneyComparison({ option, heading = false, dense = false }: { 
   const bars = journeyBars(option.journeys);
   const uneven = journeysUneven(option);
   const known = journeysKnown(option);
+  // At larger text a name, a bar and a time no longer fit on one line: each journey becomes the name and time above its bar.
+  const big = isLargeText(useFontScale());
   return (
     <View style={styles.journeys} testID="halfway-journeys">
       {heading ? <Text variant="heading3" accessibilityRole="header">Journeys</Text> : null}
-      {dense ? (
+      {dense && !big ? (
         // A short phone has no room for the bars under the map: the same two estimates on one line each pair, same words.
         <View style={styles.denseRow}>
           {bars.map(({ journey, time, who, missing }) => (
@@ -73,12 +80,19 @@ export function JourneyComparison({ option, heading = false, dense = false }: { 
           ))}
         </View>
       ) : bars.map(({ journey, share, time, who, missing }) => (
-        <View key={journey.familyId} style={styles.journeyRow} accessible accessibilityLabel={`${who}: ${time}`}>
-          <Text style={styles.journeyWho} numberOfLines={1}>{who}</Text>
-          <View style={[styles.track, missing && styles.trackMissing]}>
+        <View key={journey.familyId} style={big ? styles.journeyStack : styles.journeyRow} accessible accessibilityLabel={`${who}: ${time}`}>
+          {big ? (
+            <View style={styles.journeyHead}>
+              <Text style={[styles.journeyWho, styles.journeyWhoBig]}>{who}</Text>
+              <Text style={[styles.journeyTime, styles.journeyTimeBig, missing && styles.journeyTimeMissing]}>{time}</Text>
+            </View>
+          ) : (
+            <Text style={styles.journeyWho} numberOfLines={1}>{who}</Text>
+          )}
+          <View style={[styles.track, big && styles.trackBig, missing && styles.trackMissing]}>
             {missing ? null : <View style={[styles.fill, { width: `${share * 100}%`, backgroundColor: journey.role === 'mine' ? colors.action : OTHER_TONE }]} />}
           </View>
-          <Text style={[styles.journeyTime, missing && styles.journeyTimeMissing]}>{time}</Text>
+          {big ? null : <Text style={[styles.journeyTime, missing && styles.journeyTimeMissing]}>{time}</Text>}
         </View>
       ))}
       <View style={styles.fairness} testID="halfway-fairness">
@@ -180,18 +194,25 @@ export function FamilyFitOther({ option, label }: { option: HalfwayOption; label
 }
 
 const styles = StyleSheet.create({
-  chip: { height: 28, borderRadius: radius.full, flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 6, paddingHorizontal: 10 },
-  chipSmall: { height: 28, paddingHorizontal: 9 },
+  chip: { minHeight: 28, borderRadius: radius.full, flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 6, paddingHorizontal: 10 },
+  chipSmall: { minHeight: 28, paddingHorizontal: 9 },
+  chipBig: { paddingVertical: 4, maxWidth: '100%' },
   dot: { width: 8, height: 8, borderRadius: 4 },
   chipName: { fontFamily: fontFamily.bold, fontSize: 12, lineHeight: 16 },
   chipGrade: { fontFamily: fontFamily.medium, fontSize: 12, lineHeight: 16, flexShrink: 1 },
-  pill: { height: 24, borderRadius: radius.full, paddingHorizontal: 10, justifyContent: 'center', alignSelf: 'flex-start', flexShrink: 1 },
+  pill: { minHeight: 24, borderRadius: radius.full, paddingHorizontal: 10, justifyContent: 'center', alignSelf: 'flex-start', flexShrink: 1 },
+  pillBig: { paddingVertical: 3 },
   pillText: { fontFamily: fontFamily.semiBold, fontSize: 12, lineHeight: 15 },
   journeys: { gap: 6 },
   denseRow: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 2 },
   denseItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   denseText: { fontFamily: fontFamily.bold, fontSize: 13, lineHeight: 17, color: colors.ink },
   journeyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 20 },
+  journeyStack: { gap: 4 },
+  journeyHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 },
+  journeyWhoBig: { width: undefined, flexShrink: 1 },
+  journeyTimeBig: { width: undefined, flexShrink: 0 },
+  trackBig: { flex: undefined, alignSelf: 'stretch' },
   journeyWho: { width: 88, fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 16, color: colors.text.secondary },
   track: { flex: 1, height: 10, borderRadius: 5, backgroundColor: colors.fill, overflow: 'hidden' },
   trackMissing: { backgroundColor: 'transparent', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border },
