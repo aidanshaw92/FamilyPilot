@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GeneratingPlan } from '@/src/components/planning/GeneratingPlan';
 import { PlanScreenView } from '@/src/components/planning/PlanScreenView';
-import { BottomSheet, Button, Chip, EmptyState, Text } from '@/src/components/ui';
+import { BottomSheet, Button, Chip, EmptyState, Field, Text } from '@/src/components/ui';
 import { TimeField } from '@/src/components/ui/DateTimeField';
 import { VenueImage } from '@/src/components/ui/VenueImage';
 import { profileReceipt } from '@/src/utils/profile-receipt';
@@ -19,13 +19,13 @@ import {
   createPlanSteps,
 } from '@/src/services/planning/create-plan';
 import { mealFromFoodCandidate, planStopFromVenueDetail } from '@/src/services/planning/day-plan';
-import { arrivesAfterLunchtime } from '@/src/services/planning/meal-window';
 import { firstValue, planDraftFromParams, planDraftToParams } from '@/src/services/planning/plan-draft';
 import { resolvePlanParties } from '@/src/services/planning/plan-parties';
 import { PlanAdviceOptionView, PlanLunchFacts, PlanViewModelInput, toPlanViewModel } from '@/src/services/planning/plan-view-model';
 import { TimelineEdit, planTimeline, timelineChildren } from '@/src/services/planning/plan-timeline';
 import { makeSubjectResolver } from '@/src/services/planning/routine-subjects';
 import { VISIT_CHOICES, VisitLength, visitLengthToParam } from '@/src/services/planning/visit-duration';
+import { lunchEvidence, lunchNeeds, rankLunchCandidates } from '@/src/services/planning/lunch-evidence';
 import { FoodCandidate } from '@/src/types/nearby-food';
 import { isRouted } from '@/src/types/travel';
 import { householdTitle } from '@/src/utils/household';
@@ -110,10 +110,13 @@ export default function PlanScreen() {
   const homeParam = firstValue(params.home) ?? '';
   const bufferParam = firstValue(params.buffer) ?? '';
   const settingParam = firstValue(params.setting) ?? '';
-  // `off`: the parent took lunch out of the day. Anything else keeps the lunch that is already known.
+  // Lunch is the parent's call: `on` (they chose a place, or named their own), `off` (they said no thanks), or nothing yet.
   const lunchParam = firstValue(params.lunch) ?? '';
-  // Which of the real places nearby is lunch: one the parent chose, else the best the discovery ranked.
+  // Which of the real places nearby is lunch: the one the parent confirmed in the picker.
   const lunchPlaceParam = firstValue(params.lunchPlace) ?? '';
+  // A place the parent named themselves, and the time they gave it, if any.
+  const lunchOwnParam = firstValue(params.lunchOwn) ?? '';
+  const lunchOwnAtParam = firstValue(params.lunchOwnAt) ?? '';
   // Opened from a saved day's Edit: saving replaces that day rather than adding another.
   const savedIdParam = firstValue(params.savedId) ?? '';
   // The overlap the parent chose to keep ("Keep it as planned"). It applies only to that overlap, and is saved with the day.
@@ -132,9 +135,20 @@ export default function PlanScreen() {
     [dateParam, startParam, visitParam, partiesParam, whoParam, homeParam, bufferParam, settingParam],
   );
   const lunchOff = lunchParam === 'off';
-  // `on`: the parent added this lunch themselves, so it stays whatever the hour. Otherwise the lunch is a default and is only
-  // in the day where it can start inside a family lunch window (meal-window.ts).
-  const mealMode = lunchParam === 'on' ? 'chosen' : 'auto';
+  /**
+   * Nothing is added unless the parent says so. A lunch is in the day only when they chose one (`lunch=on`), or when the day
+   * was saved before lunch was optional and carries the place it was saved with (`lunchPlace` without a decision): that lunch
+   * is kept, never taken out of a saved day. A lunch that is in the day is theirs and stays whatever the hour (`chosen`): the
+   * window arithmetic in meal-window.ts is advice in the picker, not a rule.
+   */
+  const legacyLunch = lunchParam === '' && lunchPlaceParam !== '';
+  const lunchDecided = lunchParam === 'on' || lunchOff || legacyLunch;
+  const ownLunch = useMemo(
+    () => (lunchParam === 'on' && lunchOwnParam ? { name: lunchOwnParam, ...(lunchOwnAtParam ? { startAt: lunchOwnAtParam } : {}) } : undefined),
+    [lunchParam, lunchOwnParam, lunchOwnAtParam],
+  );
+  const lunchIncluded = (lunchParam === 'on' || legacyLunch) && !ownLunch;
+  const mealMode = 'chosen' as const;
 
   /**
    * The lunch stop, from the OpenStreetMap discovery this venue's detail screen already ran.
@@ -153,8 +167,9 @@ export default function PlanScreen() {
     placeId: venue?.id,
   });
   const lunchCandidates: FoodCandidate[] = useMemo(() => nearbyFood.data?.candidates ?? [], [nearbyFood.data]);
+  // The place the parent confirmed. With none confirmed there is no lunch; the discovery's first is never taken on their behalf.
   const chosenCandidate = useMemo(
-    () => (lunchPlaceParam ? lunchCandidates.find((c) => c.familypilotId === lunchPlaceParam) : undefined) ?? lunchCandidates[0],
+    () => (lunchPlaceParam ? lunchCandidates.find((c) => c.familypilotId === lunchPlaceParam) : undefined),
     [lunchCandidates, lunchPlaceParam],
   );
   const knownLunch = useMemo(() => (chosenCandidate ? mealFromFoodCandidate(chosenCandidate) : undefined), [chosenCandidate]);
@@ -171,10 +186,10 @@ export default function PlanScreen() {
       ...(walk ? { walkMinutes: walk.durationMinutes, walkSource: isRouted(walk) ? ('measured' as const) : ('estimated' as const) } : {}),
     };
   }, [chosenCandidate]);
-  // Taking lunch out of the day is the parent's choice; the lunch that is known stays available to add back.
-  const lunch = lunchOff ? undefined : knownLunch;
+  // In the day only once the parent put it there.
+  const lunch = lunchIncluded ? knownLunch : undefined;
   /** Primitives for the generation effect's dependency list, never the objects. */
-  const lunchKey = `${lunch?.place.placeId ?? 'no-lunch'}${knownLunch && lunchOff ? '|off' : ''}`;
+  const lunchKey = `${lunch?.place.placeId ?? 'no-lunch'}|${lunchOff ? 'off' : lunchDecided ? 'on' : 'undecided'}|${ownLunch ? `${ownLunch.name}@${ownLunch.startAt ?? ''}` : ''}`;
   /**
    * Whether a lunch answer is still coming. NOT simply `isPending`.
    *
@@ -219,11 +234,11 @@ export default function PlanScreen() {
   const saving = useRef(false);
 
   const steps = useMemo(
-    () => createPlanSteps({ venueName: venue?.name ?? 'this place', meal: mealMode === 'auto' && arrivesAfterLunchtime(draft.startAt) ? undefined : lunch }),
+    () => createPlanSteps({ venueName: venue?.name ?? 'this place', meal: lunch }),
     // `lunch?.place.placeId` rather than the object: a primitive, for the same reason the generation
     // effect below takes primitives. An object identity in a dependency list is what restarted
     // generation 3,094 times once already.
-    [venue?.name, lunch, mealMode, draft.startAt],
+    [venue?.name, lunch],
   );
 
   const parties = useMemo(
@@ -276,6 +291,7 @@ export default function PlanScreen() {
           mealFacts,
           lunchAvailable: Boolean(knownLunch),
           mealLookupFailed: foodLookupFailed,
+          ownLunch,
         },
         {
           onStep: (id) => {
@@ -301,7 +317,7 @@ export default function PlanScreen() {
     // Deps are the venue object and primitives only. `parties.families` is deliberately absent: it is
     // a fresh array every time the resolver runs, and `familyIds` carries the same information
     // without the identity churn.
-  }, [venue, venueId, draft, familyIds, partiesParam, whoParam, foodPending, foodLookupFailed, lunchKey, lunch, knownLunch, mealFacts, mealMode]);
+  }, [venue, venueId, draft, familyIds, partiesParam, whoParam, foodPending, foodLookupFailed, lunchKey, lunch, knownLunch, mealFacts, mealMode, ownLunch]);
 
   /**
    * Households that were chosen and could not be planned for.
@@ -360,8 +376,11 @@ export default function PlanScreen() {
         venueId,
         params: {
           ...planDraftToParams(draft),
-          ...(lunchOff ? { lunch: 'off' } : mealMode === 'chosen' ? { lunch: 'on' } : {}),
-          ...(chosenCandidate && !lunchOff ? { lunchPlace: chosenCandidate.familypilotId } : {}),
+          // The decision travels with the day: a chosen place or an own one as `on`, "no thanks" as `off`, nothing until decided.
+          // A day saved before lunch was optional keeps its lunch (`legacyLunch`), now said as chosen.
+          ...(lunchOff ? { lunch: 'off' } : lunchIncluded || ownLunch ? { lunch: 'on' } : {}),
+          ...(lunchIncluded && chosenCandidate ? { lunchPlace: chosenCandidate.familypilotId } : {}),
+          ...(ownLunch ? { lunchOwn: ownLunch.name, ...(ownLunch.startAt ? { lunchOwnAt: ownLunch.startAt } : {}) } : {}),
           ...(keepParam ? { keep: keepParam } : {}),
         },
       },
@@ -375,7 +394,7 @@ export default function PlanScreen() {
     setSavedId(outcome.id);
     setSaveFor({ key: readyKey, status: outcome.status });
     return outcome.id;
-  }, [saveDay, deleteDay, readySource, readyKey, venueId, draft, lunchOff, chosenCandidate, savedIdParam, keepParam]);
+  }, [saveDay, deleteDay, readySource, readyKey, venueId, draft, lunchOff, lunchIncluded, ownLunch, chosenCandidate, savedIdParam, keepParam]);
 
   // "View plan": the saved plan itself, as Plans shows it. A plain push, so the phone's own Back (Safari's swipe included)
   // and the screen's Back agree: both return here, which now reads "Already in your plans". From there, "See all your
@@ -402,14 +421,21 @@ export default function PlanScreen() {
   const handleChangePlan = useCallback(() => {
     if (!venueId) return handleBack();
     // The lunch the parent chose travels too, so changing the day or who is coming does not undo it.
-    router.replace({ pathname: '/venue/[id]', params: { id: venueId, plan: 'open', ...planDraftToParams(draft), ...(lunchParam ? { lunch: lunchParam } : {}), ...(lunchPlaceParam ? { lunchPlace: lunchPlaceParam } : {}) } } as never);
-  }, [router, venueId, draft, handleBack, lunchParam, lunchPlaceParam]);
+    router.replace({ pathname: '/venue/[id]', params: { id: venueId, plan: 'open', ...planDraftToParams(draft), ...(lunchParam ? { lunch: lunchParam } : {}), ...(lunchPlaceParam ? { lunchPlace: lunchPlaceParam } : {}), ...(lunchOwnParam ? { lunchOwn: lunchOwnParam } : {}), ...(lunchOwnAtParam ? { lunchOwnAt: lunchOwnAtParam } : {}) } } as never);
+  }, [router, venueId, draft, handleBack, lunchParam, lunchPlaceParam, lunchOwnParam, lunchOwnAtParam]);
+
+  /**
+   * The timeline's edits. Each one changes this screen's own answers (the URL parameters), so the plan builds again
+   * through the real planner: nothing on the timeline is moved by hand.
+   */
+  const [editing, setEditing] = useState<'arrival' | 'visit' | 'lunch' | null>(null);
 
   /** Applies a verified option straight onto this screen's own answers: the plan builds again, nothing else changes. */
   const applyOption = useCallback(
     (option: PlanAdviceOptionView) => {
       if (option.kind === 'add-lunch') {
-        router.setParams({ lunch: 'on' } as never);
+        // Adding lunch is a choice made in the picker, with the evidence in front of the parent; never applied unseen.
+        setEditing('lunch');
         return;
       }
       const alternative = option.alternative;
@@ -426,21 +452,26 @@ export default function PlanScreen() {
     },
     [router],
   );
+  /** Takes lunch out: the parent's "no", remembered for this plan. A lunch is only ever put in through the picker. */
   const toggleLunch = useCallback(() => {
-    router.setParams({ lunch: lunchOff ? 'on' : 'off' } as never);
-  }, [router, lunchOff]);
-
-  /**
-   * The timeline's edits. Each one changes this screen's own answers (the URL parameters), so the plan builds again
-   * through the real planner: nothing on the timeline is moved by hand.
-   */
-  const [editing, setEditing] = useState<'arrival' | 'visit' | 'lunch' | null>(null);
+    router.setParams({ lunch: 'off', lunchPlace: undefined, lunchOwn: undefined, lunchOwnAt: undefined } as never);
+  }, [router]);
+  const declineLunch = useCallback(() => {
+    router.setParams({ lunch: 'off' } as never);
+  }, [router]);
+  // What the picker needs to say when each lunch would start, and which places list what this family needs.
+  const lunchContext = useMemo(() => lunchNeeds(parties.families), [parties.families]);
+  const rankedCandidates = useMemo(() => rankLunchCandidates(lunchCandidates, lunchContext), [lunchCandidates, lunchContext]);
   const chooseArrival = useCallback((time: string) => { setEditing(null); router.setParams({ start: time } as never); }, [router]);
   const chooseVisit = useCallback((length: VisitLength) => { setEditing(null); router.setParams({ visit: visitLengthToParam(length) } as never); }, [router]);
   const chooseLunch = useCallback((candidate: FoodCandidate | null) => {
     setEditing(null);
-    if (!candidate) router.setParams({ lunch: 'off' } as never);
-    else router.setParams({ lunch: 'on', lunchPlace: candidate.familypilotId } as never);
+    if (!candidate) router.setParams({ lunch: 'off', lunchPlace: undefined, lunchOwn: undefined, lunchOwnAt: undefined } as never);
+    else router.setParams({ lunch: 'on', lunchPlace: candidate.familypilotId, lunchOwn: undefined, lunchOwnAt: undefined } as never);
+  }, [router]);
+  const chooseOwnLunch = useCallback((own: { name: string; startAt?: string }) => {
+    setEditing(null);
+    router.setParams({ lunch: 'on', lunchOwn: own.name, lunchOwnAt: own.startAt ?? undefined, lunchPlace: undefined } as never);
   }, [router]);
   const applyFailureAction = useCallback(
     (action: NonNullable<CreatePlanFailure['actions']>[number]) => {
@@ -626,6 +657,9 @@ export default function PlanScreen() {
       onChooseVisit={chooseVisit}
       onChangePlan={handleChangePlan}
       onToggleLunch={toggleLunch}
+      lunchDecision={lunchOff ? 'declined' : lunchIncluded || ownLunch ? 'included' : 'undecided'}
+      onChooseLunch={() => setEditing('lunch')}
+      onDeclineLunch={declineLunch}
       timeline={timeline}
       onEditRow={editRow}
       onBack={handleBack}
@@ -644,13 +678,16 @@ export default function PlanScreen() {
       onClose={() => setEditing(null)}
       startAt={draft.startAt}
       visit={draft.visit}
-      lunchOff={lunchOff}
-      candidates={lunchCandidates}
-      chosenLunchId={chosenCandidate?.familypilotId ?? null}
+      lunchIncluded={lunchIncluded || Boolean(ownLunch)}
+      candidates={rankedCandidates}
+      chosenLunchId={lunchIncluded ? chosenCandidate?.familypilotId ?? null : null}
+      ownLunch={ownLunch}
+      evidence={(candidate) => lunchEvidence(candidate, { arriveAt: draft.startAt, visitMinutes: readySource?.visit?.minutes ?? 90, needs: lunchContext })}
       anchorName={venue.name}
       onArrival={chooseArrival}
       onVisit={chooseVisit}
       onLunch={chooseLunch}
+      onOwnLunch={chooseOwnLunch}
     />
     </>
   );
@@ -676,29 +713,43 @@ function PlanEditSheet({
   onClose,
   startAt,
   visit,
-  lunchOff,
+  lunchIncluded,
   candidates,
   chosenLunchId,
+  ownLunch,
+  evidence,
   anchorName,
   onArrival,
   onVisit,
   onLunch,
+  onOwnLunch,
 }: {
   editing: 'arrival' | 'visit' | 'lunch' | null;
   onClose: () => void;
   startAt: string;
   visit: VisitLength;
-  lunchOff: boolean;
+  lunchIncluded: boolean;
+  /** Recommended order: the places listing what this family needs first, then the shortest walk. */
   candidates: FoodCandidate[];
   chosenLunchId: string | null;
+  ownLunch?: { name: string; startAt?: string };
+  /** What can honestly be said about a place before choosing it (lunch-evidence.ts). */
+  evidence: (candidate: FoodCandidate) => { text: string; provenance: string; warn?: boolean }[];
   anchorName: string;
   onArrival: (time: string) => void;
   onVisit: (length: VisitLength) => void;
   onLunch: (candidate: FoodCandidate | null) => void;
+  onOwnLunch: (own: { name: string; startAt?: string }) => void;
 }) {
   const [time, setTime] = useState(startAt);
   useEffect(() => setTime(startAt), [startAt, editing]);
-  const title = editing === 'arrival' ? 'Change your arrival' : editing === 'visit' ? 'Change how long you stay' : 'Change lunch';
+  // Lunch is chosen in two steps: a place is picked, then confirmed. Nothing enters the day on the first tap.
+  const [pending, setPending] = useState<string | null>(null);
+  const [ownForm, setOwnForm] = useState(false);
+  const [ownName, setOwnName] = useState('');
+  const [ownTime, setOwnTime] = useState('');
+  useEffect(() => { setPending(chosenLunchId); setOwnForm(false); setOwnName(ownLunch?.name ?? ''); setOwnTime(ownLunch?.startAt ?? ''); }, [editing, chosenLunchId, ownLunch]);
+  const title = editing === 'arrival' ? 'Change your arrival' : editing === 'visit' ? 'Change how long you stay' : lunchIncluded ? 'Change lunch' : 'Add lunch to your day';
   return (
     <BottomSheet visible={editing !== null} onClose={onClose} accessibilityLabel={title} testID="plan-edit-sheet">
       <ScrollView contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
@@ -729,38 +780,64 @@ function PlanEditSheet({
             </View>
           </>
         ) : null}
-        {editing === 'lunch' ? (
+        {editing === 'lunch' && !ownForm ? (
           <>
-            <Text variant="bodySmall" color={colors.text.secondary}>
+            <Text variant="bodySmall" color={colors.text.secondary} testID="plan-lunch-intro">
               {candidates.length
-                ? `Places to eat near ${anchorName}, from OpenStreetMap, nearest first. What is listed is what the mappers recorded, not something we checked.`
-                : `We found no places to eat near ${anchorName} on OpenStreetMap, so there is nothing to swap lunch for.`}
+                ? `Places to eat near ${anchorName}, from OpenStreetMap. Listed first: places with the facilities your family needs on record, then the shortest walk. What is listed is what the mappers recorded, not something we checked, and “not listed” doesn’t mean “not there”.`
+                : `We found no places to eat near ${anchorName} on OpenStreetMap. You can still add a place of your own.`}
             </Text>
             {candidates.map((candidate) => {
-              const chosen = !lunchOff && candidate.familypilotId === chosenLunchId;
-              const walk = candidate.travel.find((leg) => leg.mode === 'walk');
-              const listed = [candidate.tagged.highchair ? 'high chairs' : null, candidate.tagged.changingTable ? 'baby changing' : null, candidate.tagged.outdoorSeating ? 'outdoor seating' : null].filter(Boolean).join(', ');
+              const selected = candidate.familypilotId === pending;
               return (
                 <Pressable
                   key={candidate.familypilotId}
-                  onPress={() => onLunch(candidate)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: chosen }}
-                  accessibilityLabel={`${candidate.name}${chosen ? ', chosen' : ''}`}
-                  style={[styles.lunchOption, chosen ? styles.lunchOptionChosen : null]}
+                  onPress={() => setPending(candidate.familypilotId)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected }}
+                  accessibilityLabel={`${candidate.name}${selected ? ', selected' : ''}`}
+                  style={[styles.lunchOption, selected ? styles.lunchOptionChosen : null]}
                   testID="plan-edit-lunch-option"
                 >
                   <View style={styles.lunchOptionText}>
                     <Text variant="heading3" numberOfLines={1}>{candidate.name}</Text>
-                    <Text variant="caption" color={colors.text.secondary}>
-                      {[candidate.cuisine ? candidate.cuisine : candidate.category.replace('_', ' '), walk ? `${isRouted(walk) ? '' : 'about '}${Math.round(walk.durationMinutes)} min walk` : `${candidate.distanceKm.toFixed(1)} km away`, listed || 'no family facilities listed'].join(' · ')}
-                    </Text>
+                    {evidence(candidate).map((line) => (
+                      <Text key={line.text} variant="caption" color={line.warn ? colors.warning[600] : line.provenance === 'unknown' ? colors.text.tertiary : colors.text.secondary}>
+                        {line.text}
+                      </Text>
+                    ))}
                   </View>
-                  {chosen ? <Text variant="caption" color={colors.action}>Chosen</Text> : null}
+                  <View style={[styles.lunchRadio, selected ? styles.lunchRadioOn : null]} />
                 </Pressable>
               );
             })}
-            {!lunchOff ? <Button label="Take lunch out of the day" variant="outline" onPress={() => onLunch(null)} testID="plan-edit-lunch-off" /> : null}
+            {candidates.length ? (
+              <Button
+                label={lunchIncluded && pending === chosenLunchId ? 'Keep this lunch' : 'Add lunch to my day'}
+                disabled={!pending}
+                onPress={() => { const chosen = candidates.find((c) => c.familypilotId === pending); if (chosen) onLunch(chosen); }}
+                testID="plan-lunch-confirm"
+              />
+            ) : null}
+            <Button label="Add a place of your own" variant="ghost" onPress={() => setOwnForm(true)} testID="plan-lunch-own" />
+            {lunchIncluded ? <Button label="Take lunch out of the day" variant="outline" onPress={() => onLunch(null)} testID="plan-edit-lunch-off" /> : null}
+          </>
+        ) : null}
+        {editing === 'lunch' && ownForm ? (
+          <>
+            <Text variant="bodySmall" color={colors.text.secondary}>
+              A place you know. We add nothing about it: no hours, facilities, journey or availability, and your time home isn’t adjusted.
+            </Text>
+            <Field label="Place name" value={ownName} onChange={setOwnName} placeholder="e.g. Sam’s Kitchen" testID="plan-lunch-own-name" />
+            <TimeField label="Time (optional)" a11yLabel="Lunch time" value={ownTime} onChange={setOwnTime} optional />
+            <Text variant="caption" color={colors.text.secondary}>Leave the time empty and lunch is shown straight after your visit.</Text>
+            <Button
+              label="Add lunch to my day"
+              disabled={!ownName.trim() || (ownTime.trim() !== '' && !/^\d{1,2}:\d{2}$/.test(ownTime.trim()))}
+              onPress={() => onOwnLunch({ name: ownName.trim(), ...(ownTime.trim() ? { startAt: ownTime.trim() } : {}) })}
+              testID="plan-lunch-own-confirm"
+            />
+            <Button label="Back to places nearby" variant="ghost" onPress={() => setOwnForm(false)} />
           </>
         ) : null}
         <Button label="Cancel" variant="ghost" onPress={onClose} />
@@ -882,6 +959,8 @@ const styles = StyleSheet.create({
   sheet: { paddingHorizontal: spacing.screenPadding, paddingVertical: spacing.lg, gap: spacing.md },
   sheetChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   lunchOption: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface },
-  lunchOptionChosen: { borderColor: colors.action },
+  lunchOptionChosen: { borderColor: colors.action, borderWidth: 2 },
+  lunchRadio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.border },
+  lunchRadioOn: { borderColor: colors.action, backgroundColor: colors.action },
   lunchOptionText: { flex: 1, gap: 2 },
 });

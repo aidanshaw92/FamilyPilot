@@ -123,7 +123,12 @@ export type PlanCaveat =
    *
    * Not derivable from the itinerary, so it is passed in by the screen that ran the lookup.
    */
-  | { kind: 'meal-lookup-failed' };
+  | { kind: 'meal-lookup-failed' }
+  /**
+   * A lunch the parent added by name alone. It is in the day as they entered it; FamilyPilot does not know where it is, so no
+   * journey to it is estimated and the time home is not adjusted. Said on the plan rather than silently left out.
+   */
+  | { kind: 'own-lunch'; name: string };
 
 export interface TravelDiagnostics {
   provenance: { live: number; estimated: number };

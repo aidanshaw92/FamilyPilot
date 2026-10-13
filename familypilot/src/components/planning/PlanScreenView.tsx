@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { BackButton } from '@/src/components/ui/BackButton';
-import { Chip, Text } from '@/src/components/ui';
+import { Button, Chip, Text } from '@/src/components/ui';
 import { ArrowCta } from '@/src/components/ui/ArrowCta';
 import { colors, radius, spacing } from '@/src/design-system/tokens';
 import { familyDisplayName } from '@/src/utils/family-title';
@@ -53,8 +53,17 @@ export interface PlanScreenViewProps {
   onChooseVisit?: (minutes: number) => void;
   /** Reopens Create a plan on this plan's answers, so the length (or anything else) can be changed. Absent on a saved plan. */
   onChangePlan?: () => void;
-  /** Adds lunch to the day, or takes it out, and builds the plan again. */
+  /** Takes lunch out of the day and builds the plan again. */
   onToggleLunch?: () => void;
+  /**
+   * Where the parent is with lunch: nothing is added until they choose. `undecided` shows the question; `declined` keeps a
+   * quiet way back; `included` offers to take it out. Decided on the screen, never by the plan.
+   */
+  lunchDecision?: 'undecided' | 'declined' | 'included';
+  /** Opens the places to eat nearby, with the evidence for each; nothing is added until confirmed there. */
+  onChooseLunch?: () => void;
+  /** "No thanks": no lunch stop, remembered for this plan. */
+  onDeclineLunch?: () => void;
   /** The day as a timeline (plan-timeline.ts). Absent, the stop cards alone describe the day. */
   timeline?: TimelineRow[];
   /** A row's change (arrival, visit length, lunch, the earlier departure): the screen re-plans. */
@@ -116,6 +125,9 @@ export function PlanScreenView({
   onChooseVisit,
   onChangePlan,
   onToggleLunch,
+  lunchDecision,
+  onChooseLunch,
+  onDeclineLunch,
   timeline,
   onEditRow,
   onEditPlan,
@@ -440,20 +452,39 @@ export function PlanScreenView({
               </View>
             ))}
 
-            {/* Food belongs to the plan: add a lunch (and the timings are rechecked) or take it out. */}
-            {onToggleLunch && view.lunch.available ? (
+            {/* Lunch is the parent's call. The day is built without one; this asks once, and the answer is kept with the plan. */}
+            {lunchDecision === 'undecided' && onChooseLunch && onDeclineLunch ? (
+              <View style={styles.lunchAsk} testID="plan-lunch-ask">
+                <Text variant="heading3">Add lunch to your day?</Text>
+                <Text variant="bodySmall" color={colors.text.secondary}>
+                  We can suggest somewhere near your activity, or you can add your own place.
+                </Text>
+                <View style={styles.lunchAskActions}>
+                  <Button label="Choose a place" onPress={onChooseLunch} testID="plan-lunch-choose" />
+                  <Button label="No thanks" variant="outline" onPress={onDeclineLunch} testID="plan-lunch-decline" />
+                </View>
+              </View>
+            ) : null}
+            {lunchDecision === 'declined' && onChooseLunch ? (
+              <View style={styles.lunchDeclined} testID="plan-lunch-declined">
+                <Text variant="bodySmall" color={colors.text.secondary}>No lunch in this day.</Text>
+                <Pressable onPress={onChooseLunch} accessibilityRole="button" accessibilityLabel="Add lunch" style={styles.lunchLink} hitSlop={8} testID="plan-lunch-add">
+                  <Ionicons name="add-circle-outline" size={18} color={colors.action} />
+                  <Text style={styles.lunchLinkText}>Add lunch</Text>
+                </Pressable>
+              </View>
+            ) : null}
+            {onToggleLunch && view.lunch.included ? (
               <Pressable
                 onPress={onToggleLunch}
                 accessibilityRole="button"
-                accessibilityLabel={view.lunch.included ? 'Take lunch out of the plan' : 'Add a 45-minute lunch and recheck the timings'}
+                accessibilityLabel="Take lunch out of the plan"
                 style={styles.lunchLink}
                 hitSlop={8}
                 testID="plan-toggle-lunch"
               >
-                <Ionicons name={view.lunch.included ? 'remove-circle-outline' : 'add-circle-outline'} size={18} color={colors.action} />
-                <Text style={styles.lunchLinkText}>
-                  {view.lunch.included ? 'Take lunch out' : 'Add a 45-minute lunch and recheck the timings'}
-                </Text>
+                <Ionicons name="remove-circle-outline" size={18} color={colors.action} />
+                <Text style={styles.lunchLinkText}>Take lunch out</Text>
               </Pressable>
             ) : null}
 
@@ -841,6 +872,9 @@ const styles = StyleSheet.create({
   goodNews: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   goodNewsText: { flex: 1 },
   lunchLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 44, paddingVertical: spacing.sm },
+  lunchAsk: { gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
+  lunchAskActions: { gap: spacing.sm, marginTop: spacing.xs },
+  lunchDeclined: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flexWrap: 'wrap' },
   lunchLinkText: { flex: 1, fontFamily: 'Inter_600SemiBold', fontSize: 14, lineHeight: 18, color: colors.action },
   headHome: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, height: 44, paddingLeft: 42 - spacing.screenPadding },
   terminus: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.action },

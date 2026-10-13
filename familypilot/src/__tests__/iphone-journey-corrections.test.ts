@@ -137,10 +137,13 @@ describe('2. lunch only where it can be lunch', () => {
     expect(outcome.source.caveats.some((caveat) => caveat.kind === 'lunch-outside-window')).toBe(false);
   });
 
-  it('the plan screen treats only an added lunch as chosen, and saves it as chosen so editing keeps it', () => {
+  it('the plan screen adds no lunch on its own: a lunch is in the day only once the parent chose it, and is saved as chosen so editing keeps it', () => {
+    // The window arithmetic above stays as advice in the lunch picker; the plan itself never adds or drops a lunch by the hour.
     const plan = read('app/plan.tsx');
-    expect(plan).toContain("const mealMode = lunchParam === 'on' ? 'chosen' : 'auto';");
-    expect(plan).toContain("mealMode === 'chosen' ? { lunch: 'on' } : {}");
+    expect(plan).toContain("const mealMode = 'chosen' as const;");
+    expect(plan).toContain("const lunch = lunchIncluded ? knownLunch : undefined;");
+    expect(plan).toContain("lunchIncluded || ownLunch ? { lunch: 'on' } : {}");
+    expect(plan).not.toContain('arrivesAfterLunchtime');
   });
 });
 
