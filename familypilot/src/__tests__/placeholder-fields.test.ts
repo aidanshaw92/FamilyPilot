@@ -18,7 +18,7 @@ function files(dir: string): string[] {
 }
 
 /** Not examples of an answer: formats, instructions and the internal tools' vocabularies. */
-const NOT_AN_EXAMPLE = new Set(['YYYY-MM-DD', 'HH:MM', 'DD', 'MM', 'YYYY', 'Optional', 'Not set', 'Choose a date', 'Choose a time', 'Search saved places', 'Area or postcode', 'What felt confusing or broken?', 'Anything else you\'d like us to know', 'Admin token', 'Lat', 'Lng', 'km']);
+const NOT_AN_EXAMPLE = new Set(['YYYY-MM-DD', 'HH:MM', 'DD', 'MM', 'YYYY', 'Optional', 'Not set', 'Choose a date', 'Choose a time', 'Search saved places', 'Area or postcode', 'Search places, or try “soft play”', 'What felt confusing or broken?', 'Anything else you\'d like us to know', 'Admin token', 'Lat', 'Lng', 'km']);
 
 describe('example text in form fields', () => {
   it('the shared Field draws its placeholder in the muted ink, so it reads as an example', () => {

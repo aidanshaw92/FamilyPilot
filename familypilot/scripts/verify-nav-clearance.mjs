@@ -135,7 +135,7 @@ for (const [width, height] of SIZES) {
   // The filter sheet's own action must be on top at its centre, not under the bar.
   await page.goto(`${BASE}/explore`, { waitUntil: 'networkidle', timeout: 60000 }).catch(() => {});
   await page.waitForTimeout(1800);
-  await page.getByText(/^Filters/).first().click().catch(() => {});
+  await page.getByTestId('explore-more').click().catch(() => {});
   await page.waitForTimeout(700);
   const sheetAction = await page.evaluate(() => {
     const button = [...document.querySelectorAll('[role="button"]')].find((el) => /show results/i.test(el.textContent ?? '') || /show results/i.test(el.getAttribute('aria-label') ?? ''));

@@ -74,7 +74,7 @@ for (const width of [360, 430]) {
   check(`${width}: and keeps what is charged inside separate`, /charge for the Aquarium, the Butterfly House/.test(free));
   await page.goto(`${BASE}/explore`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(2500);
-  await page.getByRole('button', { name: /filters/i }).first().click().catch(() => {});
+  await page.getByTestId('explore-more').click().catch(() => {});
   await page.waitForTimeout(800);
   const sheet = await page.evaluate(() => document.body.innerText);
   check(`${width}: Explore's filter sheet has no Budget group`, !/\bBudget\b/.test(sheet) && !/Under £25/.test(sheet));
