@@ -18,7 +18,7 @@ The release is two squash merges in this order: **#196** (Meet halfway v2) into 
 | Item | Value |
 |---|---|
 | `main` today | `d836e7c` (#195, 12 Oct). **Rollback target for #196 = whatever Production is serving just before the #196 merge** (record its Vercel deployment id and commit from the dashboard; Claude has no Vercel access to read it). The older `bc19ba5` / deployment 6965864685 in earlier drafts of this document predate #194 and #195 and are not the rollback point |
-| #196 head | `38adde1`, CI green: capture, build-and-test, privilege-model, Vercel Preview |
+| #196 | squash-merged to `main` as `3c8d75b` (13 Oct); head was `38adde1`, CI green. Rollback target: the production deployment that preceded it (record its id from Vercel) |
 | #197 head | `8ff3084`, CI green on the same four checks |
 | Rollback target for #197 | the production deployment created by the #196 merge (record its id after the #196 canary passes) |
 | Release is production-config neutral | neither PR changes `vercel.json`, `api/`, `server/`, packages, migrations or env files. #196 adds one CI-only step to `.github/workflows/home-visual-regression.yml` (the larger-text emulation); it runs in GitHub Actions, never in production. #197 adds a new shape of JSON inside the existing `plan_invites.plan_snapshot` column (no schema change) |

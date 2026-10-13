@@ -1,6 +1,6 @@
 # Release readiness: PR #196 and PR #197
 
-Checked 13 Oct 2026. Nothing was merged or deployed, and nothing was created or changed in production.
+Checked 13 Oct 2026. **Update, 13 Oct, after you chose Option A and authorised the merge: #196 was squash-merged into `main` as `3c8d75b` (expected head `38adde1`, CI green). Vercel will deploy it to Production; the canary (you) is next. #197 now carries a merge of `main` and is waiting for the canary result. Nothing else was merged, and nothing was created or changed in production by me.** The rest of this report is as written before the merge.
 
 ## 1. Repository state
 
