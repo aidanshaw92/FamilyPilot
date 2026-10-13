@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { BASEMAP_AREAS, BASEMAP_SOURCE } from '@/src/data/london-basemap';
-import { AREA_RADIUS_M, PIN_HIT_MIN, PIN_MAX_NUDGE, PIN_SEPARATION, areaLabel, coarse, declutterPins, halfwayMapModel } from '@/src/services/planning/halfway-map';
+import { AREA_RADIUS_M, PIN_HIT_MIN, PIN_TRUE_MARK_FROM, PIN_MAX_NUDGE, PIN_SEPARATION, areaLabel, coarse, declutterPins, halfwayMapModel } from '@/src/services/planning/halfway-map';
 
 /**
  * Meet halfway's map: where your area, their area and the venue are, so a parent can SEE why a place is fair.
@@ -218,6 +218,23 @@ describe('v2: places that sit on top of each other are nudged apart, never far f
     for (const p of pile) expect(Math.hypot(p.x - 100, p.y - 100)).toBeLessThanOrEqual(PIN_MAX_NUDGE + 1e-6);
   });
 
+  it('a pin moved off a crowd keeps the place’s real position beside it: the pin moves, never the place', () => {
+    const exact = halfwayMapModel({ mine, other, venue: cluster[0], venues: cluster, selectedId: 'a' }, { width: 393, height: 600, inset: { top: 60, bottom: 260 } })!;
+    const alone = halfwayMapModel({ mine, other, venue: cluster[0], venues: [cluster[0]], selectedId: 'a' }, { width: 393, height: 600, inset: { top: 60, bottom: 260 } })!;
+    // `at` is where the place is, whatever the crowd: the same projection as the venue itself (`venue` is never nudged).
+    const crowded = exact.pins.find((p) => p.id === 'a')!;
+    expect(crowded.at.x).toBeCloseTo(exact.venue!.x, 6);
+    expect(crowded.at.y).toBeCloseTo(exact.venue!.y, 6);
+    for (const pin of exact.pins) {
+      expect(pin.nudged).toBe(Math.hypot(pin.x - pin.at.x, pin.y - pin.at.y) > PIN_TRUE_MARK_FROM);
+      expect(Math.hypot(pin.x - pin.at.x, pin.y - pin.at.y)).toBeLessThanOrEqual(PIN_MAX_NUDGE + 1e-6);
+    }
+    expect(exact.pins.some((p) => p.nudged)).toBe(true);
+    // A pin that is not crowded is exactly where its place is, and gets no extra mark.
+    expect(alone.pins[0].nudged).toBe(false);
+    expect(alone.pins[0].x).toBeCloseTo(alone.pins[0].at.x, 9);
+  });
+
   it('the selected place’s name sits above its pin, clear of the pins that cluster below it', () => {
     const label = model.venueLabel!;
     const selected = model.pins.find((p) => p.selected)!;
@@ -245,5 +262,51 @@ describe('v2: two areas close together keep their labels apart', () => {
       expect(r).toBeLessThanOrEqual(393);
     }
     expect(near.areas.map((x) => x.role)).toEqual(['mine', 'other']);
+  });
+});
+
+describe('v2 corrections: labels keep clear of the pins', () => {
+  const mine = { latitude: 51.556, longitude: -0.178, label: 'Your family' };
+  const other = { latitude: 51.545, longitude: -0.06, label: 'Kevin’s family' };
+  // The five places behind the approved frames: three of them sit right beside "Your area".
+  const places = [
+    { id: 'k', name: 'Kentish Town City Farm', latitude: 51.5516, longitude: -0.1468 },
+    { id: 'h', name: 'Hackney City Farm', latitude: 51.5325, longitude: -0.0646 },
+    { id: 'p', name: 'Hampstead Heath', latitude: 51.5608, longitude: -0.1629 },
+    { id: 'g', name: 'Golders Hill Park', latitude: 51.567476, longitude: -0.1883365 },
+    { id: 'b', name: 'Babylon Park London', latitude: 51.5156, longitude: -0.1527 },
+  ];
+  const size = { width: 393, height: 700, inset: { top: 62, bottom: 300 } };
+  const model = halfwayMapModel({ mine, other, venue: places[0], venues: places, selectedId: 'k' }, size)!;
+  const pinBox = (p: { x: number; y: number }) => ({ left: p.x - 17, top: p.y - 17, right: p.x + 17, bottom: p.y + 17 });
+  const labelBox = (a: (typeof model.areas)[number]) => {
+    const w = a.label.length * 6.6;
+    const left = a.labelAnchor === 'start' ? a.labelX : a.labelAnchor === 'end' ? a.labelX - w : a.labelX - w / 2;
+    return { left, top: a.labelY - 12, right: left + w, bottom: a.labelY + 4 };
+  };
+  const overlaps = (a: ReturnType<typeof pinBox>, b: ReturnType<typeof pinBox>) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
+  it('an area label is not printed under a pin where a free side of its circle exists', () => {
+    for (const area of model.areas) {
+      const box = labelBox(area);
+      const covered = model.pins.filter((p) => overlaps(box, pinBox(p))).length;
+      expect(covered, `${area.label} covered by ${covered} pins`).toBe(0);
+    }
+  });
+
+  it('the selected place’s name is not printed over another pin', () => {
+    const label = model.venueLabel!;
+    const width = Math.min(places[0].name.length, 28) * 6.6 + 20;
+    const left = label.anchor === 'middle' ? label.x - width / 2 : label.anchor === 'start' ? label.x : label.x - width;
+    const box = { left, top: label.y + 6 - 17, right: left + width, bottom: label.y + 6 + 9 };
+    const hit = model.pins.filter((p) => !p.selected && overlaps(box, pinBox(p)));
+    expect(hit.map((p) => p.id)).toEqual([]);
+  });
+
+  it('on a band too short to hold a name pill without covering the map, the pill is not drawn (the sheet names the place)', () => {
+    const short = halfwayMapModel({ mine, other, venue: places[0], venues: places, selectedId: 'k' }, { width: 375, height: 489, inset: { top: 62, bottom: 300 } })!;
+    expect(short.venueLabel).toBeNull();
+    expect(short.pins.some((p) => p.selected)).toBe(true);
+    expect(model.venueLabel).not.toBeNull();
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { HalfwayFit, HalfwayJourney, HalfwayOption } from '@/src/services/planning/meet-halfway';
-import { chipName, journeyBars, journeysKnown, journeysUneven, listCardMeta, missingJourneyNotice, startingPointLabel, optionLabel, otherFitProvenance, positionLine, shortFamilyName } from '@/src/services/planning/halfway-view';
+import { chipName, chipsFitBeside, journeyBars, journeysKnown, journeysUneven, listCardMeta, missingJourneyNotice, startingPointLabel, optionLabel, otherFitProvenance, positionLine, shortFamilyName } from '@/src/services/planning/halfway-view';
 
 const journey = (role: 'mine' | 'other', minutes: number, label = role === 'mine' ? 'Our family' : 'Kevin’s family'): HalfwayJourney => ({ role, familyId: role, label, minutes, leave: 0, home: 0 });
 const fit = (over: Partial<HalfwayFit> = {}): HalfwayFit => ({ verdict: 'good', label: 'Good fit', qualified: false, ...over });
@@ -81,5 +81,14 @@ describe('Meet halfway v2: what the screen says', () => {
     expect(startingPointLabel('Camden, London')).toBe('Camden');
     expect(startingPointLabel('12 High St, Bushey')).toBe('Bushey');
     expect(startingPointLabel('')).toBe('Nearby');
+  });
+});
+
+describe('Meet halfway v2: where the Family Fit chips sit on the card', () => {
+  it('short grades sit side by side beside the photo, long ones go under it', () => {
+    // 393 wide: 393 - 40 margins - 80 photo - 12 gap = 261 for the column.
+    expect(chipsFitBeside([{ name: 'You', grade: 'Good fit' }, { name: 'Kevin’s', grade: 'Good fit' }], 261)).toBe(true);
+    expect(chipsFitBeside([{ name: 'You', grade: 'Not yet reviewed' }, { name: 'Kevin’s', grade: 'Not assessed' }], 261)).toBe(false);
+    expect(chipsFitBeside([{ name: 'You', grade: 'Looks practical' }, { name: 'Kevin’s', grade: 'Good fit' }], 261)).toBe(false);
   });
 });

@@ -57,6 +57,10 @@ export interface MapPin extends ProjectedMarker {
    * pin always selects that pin. Real stored places do sit this close (two galleries on the same stretch of the Thames).
    */
   hit: number;
+  /** Where the place really is on this map. Equal to x,y unless the pin was nudged off a crowd. */
+  at: { x: number; y: number };
+  /** True when the pin sits far enough from the place that the map shows the place's real position beside it. */
+  nudged: boolean;
 }
 
 /** The app's minimum drawn target, and the smallest tap target a crowded pin is given (the cards below are the other way in). */
@@ -69,8 +73,10 @@ export const PIN_HIT_MIN = 16;
  * scale of these maps that is a few hundred metres: the number beside the pin and its card say which place it is, and the
  * card's own details say exactly where.
  */
-export const PIN_SEPARATION = 32;
-export const PIN_MAX_NUDGE = 30;
+export const PIN_SEPARATION = 34;
+export const PIN_MAX_NUDGE = 40;
+/** A pin nudged further than this from its place gets a small dot where the place really is, joined to the pin by a hairline. */
+export const PIN_TRUE_MARK_FROM = 8;
 
 /** Spreads overlapping pins apart (see PIN_SEPARATION), deterministically, keeping each within PIN_MAX_NUDGE px of its true position. */
 export function declutterPins<T extends { x: number; y: number }>(pins: readonly T[]): T[] {
@@ -181,6 +187,46 @@ export interface HalfwayMapSize {
   inset?: { top?: number; bottom?: number };
 }
 
+type Box = { left: number; top: number; right: number; bottom: number };
+const overlapArea = (a: Box, b: Box) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+
+/**
+ * Where the selected place's name goes. Two candidates, above the pin and below it; the one whose white pill covers less of
+ * the other pins, the two areas and their labels wins (above on a tie, and always above where below would run off the frame).
+ */
+export function chooseVenueLabel(
+  at: { x: number; y: number },
+  name: string,
+  size: { width: number; height: number },
+  otherPins: readonly { x: number; y: number }[],
+  areas: readonly { x: number; y: number; r: number; label: string; labelX: number; labelY: number; labelAnchor: 'start' | 'middle' | 'end' }[],
+  hasPins: boolean,
+): NonNullable<HalfwayMapModel['venueLabel']> {
+  const above = venueLabelAt(at.x, at.y, name, size)!;
+  const width = Math.min(name.length, 28) * 6.6 + 20;
+  const lift = hasPins ? 6 : 0;
+  const boxFor = (label: { x: number; y: number; anchor: 'start' | 'middle' | 'end' }): Box => {
+    const left = label.anchor === 'middle' ? label.x - width / 2 : label.anchor === 'start' ? label.x : label.x - width;
+    const top = label.y + lift - 17;
+    return { left, top, right: left + width, bottom: top + 26 };
+  };
+  const below = { ...above, y: Math.min(at.y + 30, size.height - 20) };
+  const cost = (label: typeof above) => {
+    const box = boxFor(label);
+    let total = 0;
+    for (const pin of otherPins) total += overlapArea(box, { left: pin.x - 17, top: pin.y - 17, right: pin.x + 17, bottom: pin.y + 17 }) * 2;
+    for (const area of areas) {
+      total += overlapArea(box, { left: area.x - area.r, top: area.y - area.r, right: area.x + area.r, bottom: area.y + area.r });
+      const w = area.label.length * 6.6;
+      const left = area.labelAnchor === 'start' ? area.labelX : area.labelAnchor === 'end' ? area.labelX - w : area.labelX - w / 2;
+      total += overlapArea(box, { left, top: area.labelY - 12, right: left + w, bottom: area.labelY + 4 }) * 3;
+    }
+    if (box.top < 0 || box.bottom > size.height) total += 1e6;
+    return total;
+  };
+  return cost(below) < cost(above) ? below : above;
+}
+
 type AreaLabelled = HalfwayMapModel['areas'][number];
 const textWidth = (label: string) => label.length * 6.6;
 const labelSpan = (a: AreaLabelled): [number, number] => {
@@ -208,6 +254,47 @@ export function separateAreaLabels(a: AreaLabelled, b: AreaLabelled, width: numb
     ? [L, { ...right, labelAnchor: 'middle', labelX: Math.min(width - 8 - textWidth(right.label) / 2, Math.max(8 + textWidth(right.label) / 2, right.x)), labelY: right.y + right.r + 14 }]
     : [L, R];
   return a === left ? fixed : [fixed[1], fixed[0]];
+}
+
+/**
+ * A family area's label normally sits above its circle. Where the recommended places crowd that spot (your own area is
+ * often right beside the parks it is near) the label moves to whichever side of its circle is least covered by pins, the other
+ * label and the frame's edge: above, below, to the left or to the right. Never moves the circle.
+ */
+export function clearAreaLabelsOfPins(areas: AreaLabelled[], pins: readonly { x: number; y: number }[], frame: { width: number; height: number; top: number }): AreaLabelled[] {
+  const EDGE = 8;
+  const boxOf = (a: AreaLabelled): Box => {
+    const [left, right] = labelSpan(a);
+    return { left, top: a.labelY - 12, right, bottom: a.labelY + 4 };
+  };
+  const costOf = (candidate: AreaLabelled, other: AreaLabelled): number => {
+    const box = boxOf(candidate);
+    let total = 0;
+    for (const pin of pins) total += overlapArea(box, { left: pin.x - 17, top: pin.y - 17, right: pin.x + 17, bottom: pin.y + 17 }) * 2;
+    total += overlapArea(box, boxOf(other)) * 3;
+    if (box.left < EDGE || box.right > frame.width - EDGE || box.top < frame.top || box.bottom > frame.height) total += 1e6;
+    return total;
+  };
+  const out = areas.map((a) => ({ ...a }));
+  for (let i = 0; i < out.length; i += 1) {
+    const a = out[i];
+    const other = out[1 - i];
+    const w = textWidth(a.label);
+    const candidates: AreaLabelled[] = [
+      a,
+      { ...a, labelAnchor: 'middle', labelX: Math.min(frame.width - EDGE - w / 2, Math.max(EDGE + w / 2, a.x)), labelY: a.y + a.r + 14 },
+      { ...a, labelAnchor: 'end', labelX: a.x - a.r - 6, labelY: a.y + 4 },
+      { ...a, labelAnchor: 'start', labelX: a.x + a.r + 6, labelY: a.y + 4 },
+    ];
+    let best = candidates[0];
+    let bestCost = costOf(best, other);
+    for (const candidate of candidates.slice(1)) {
+      const c = costOf(candidate, other);
+      if (c < bestCost) { best = candidate; bestCost = c; }
+    }
+    out[i] = best;
+  }
+  return out;
 }
 
 export function halfwayMapModel(input: HalfwayMapInput, size: HalfwayMapSize): HalfwayMapModel | null {
@@ -301,31 +388,37 @@ export function halfwayMapModel(input: HalfwayMapInput, size: HalfwayMapSize): H
   // Every recommended place, numbered in card order. One with no usable position is left off the map (its card still
   // says where it is).
   const pins: MapPin[] = declutterPins(
-    listed.map((place, index) => ({
-      id: place.id,
-      number: index + 1,
-      x: toX(place.longitude),
-      y: toY(place.latitude),
-      label: place.name,
-      selected: place.id === input.selectedId,
-      hit: PIN_HIT_MAX,
-    })),
+    listed.map((place, index) => {
+      const x = toX(place.longitude);
+      const y = toY(place.latitude);
+      return { id: place.id, number: index + 1, x, y, label: place.name, selected: place.id === input.selectedId, hit: PIN_HIT_MAX, at: { x, y }, nudged: false };
+    }),
   );
+  for (const pin of pins) pin.nudged = Math.hypot(pin.x - pin.at.x, pin.y - pin.at.y) > PIN_TRUE_MARK_FROM;
   for (const pin of pins) {
     const nearest = Math.min(...pins.filter((other) => other !== pin).map((other) => Math.hypot(other.x - pin.x, other.y - pin.y)));
     if (Number.isFinite(nearest)) pin.hit = Math.max(PIN_HIT_MIN, Math.min(PIN_HIT_MAX, Math.floor(nearest)));
   }
   pins.sort((a, b) => Number(a.selected) - Number(b.selected));
 
-  const areas = separateAreaLabels(area(mine.longitude, mine.latitude, mineLabel, 'mine'), area(other.longitude, other.latitude, otherLabel, 'other'), size.width);
+  const areas = clearAreaLabelsOfPins(
+    separateAreaLabels(area(mine.longitude, mine.latitude, mineLabel, 'mine'), area(other.longitude, other.latitude, otherLabel, 'other'), size.width),
+    pins,
+    { width: size.width, height: size.height - insetBottom, top: insetTop },
+  );
   return {
     width: size.width,
     height: size.height,
     areas,
     venue: venue && input.venue ? { x: toX(venue.longitude), y: toY(venue.latitude), label: input.venue.name } : null,
     pins,
-    // Named at the pin as drawn (which may have been nudged off a crowd), not at the place's exact position.
-    venueLabel: venue && input.venue ? (() => { const at = pins.find((pin) => pin.selected) ?? { x: toX(venue.longitude), y: toY(venue.latitude) }; return venueLabelAt(at.x, at.y, input.venue.name, { ...size, height: size.height - insetBottom }); })() : null,
+    // Named at the pin as drawn (which may have been nudged off a crowd), not at the place's exact position, and above or
+    // below it, whichever covers less of the other pins and the areas' labels.
+    venueLabel: venue && input.venue && visibleHeight >= 150 ? (() => {
+      const selected = pins.find((pin) => pin.selected);
+      const at = selected ?? { x: toX(venue.longitude), y: toY(venue.latitude) };
+      return chooseVenueLabel(at, input.venue.name, { ...size, height: size.height - insetBottom }, pins.filter((pin) => pin !== selected), areas, pins.length > 0);
+    })() : null,
     basemap,
     scale: { km, px: km * pxPerKm },
     summary: !input.venue

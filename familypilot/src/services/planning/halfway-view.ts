@@ -122,3 +122,17 @@ export function checksToShow(option: Pick<HalfwayOption, 'needsChecking' | 'toCh
   const others = option.toCheck.filter((line) => !hidden.has(line) && !option.needsChecking.includes(line));
   return { needs, others };
 }
+
+/**
+ * Whether the two Family Fit chips fit side by side in a column `columnWidth` wide. A rough width from the characters (the
+ * chip is a dot, the family's name in bold and the grade in regular, with padding), generous so that a pair this says fits
+ * really fits. Where they do (short grades such as "Good fit") the chips sit under the place's name beside its photo, as in
+ * the frame; where they do not (long ones such as "Not yet reviewed") they sit under the photo, across the card.
+ */
+export function chipWidth(name: string, grade: string): number {
+  return 10 + 8 + 6 + name.length * 7.2 + 6 + grade.length * 6.4 + 10;
+}
+export function chipsFitBeside(chips: readonly { name: string; grade: string }[], columnWidth: number, gap = 6): boolean {
+  const total = chips.reduce((sum, chip) => sum + chipWidth(chip.name, chip.grade), 0) + gap * Math.max(0, chips.length - 1);
+  return total <= columnWidth;
+}

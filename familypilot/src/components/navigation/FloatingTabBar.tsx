@@ -12,6 +12,7 @@ import { NavGlyph, type NavTab } from '@/src/components/ui/icons';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { LABELLED_METRICS, floatingTabBarLayout, navVariantForRoute } from '@/src/utils/floating-tab-bar-layout';
 import { feedbackDue } from '@/src/services/planning/feedback';
+import { useChromeStore } from '@/src/stores/chrome-store';
 import { usePlanningStore } from '@/src/stores/planning-store';
 
 /**
@@ -29,6 +30,9 @@ import { usePlanningStore } from '@/src/stores/planning-store';
 export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
+  // A focused modal (Meet halfway's edit sheet) takes the whole screen: the bar is not drawn while it is open and returns,
+  // unchanged, when it closes. The hooks below still run so the bar's state is intact when it comes back.
+  const hidden = useChromeStore((s) => s.tabBarHidden);
 
   // A tab hidden behind a pilot flag is declared with href: null, which takes it out of the
   // navigator entirely — so state.routes is already the set that should be drawn, and the pill
@@ -72,6 +76,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
   const visitCheckWaiting = usePlanningStore(
     (s) => s.hydrated && s.saved.some((plan) => feedbackDue(plan)),
   );
+
+  if (hidden) return null;
 
   return (
     <Animated.View pointerEvents="box-none" style={[styles.dock, dockStyle]}>

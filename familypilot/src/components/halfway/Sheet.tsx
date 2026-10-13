@@ -8,7 +8,7 @@ import { VenueImage } from '@/src/components/ui/VenueImage';
 import { colors, fontFamily, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { HalfwayOption, topCardLabel } from '@/src/services/planning/meet-halfway';
-import { checksToShow, missingJourneyNotice, journeysKnown, positionLine } from '@/src/services/planning/halfway-view';
+import { checksToShow, chipName, chipsFitBeside, missingJourneyNotice, journeysKnown, positionLine } from '@/src/services/planning/halfway-view';
 import { formatCategory } from '@/src/utils/format-category';
 
 import { SheetSurface } from './chrome';
@@ -55,27 +55,40 @@ export function CollapsedRecommendation({
   onLayoutHeight?: (height: number) => void;
 }) {
   const swipe = useSwipe(onExpand);
-  const { height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const dense = windowHeight < DENSE_SHEET_BELOW;
+  // The frame's 80 pt photo, with the chips beside it, where they fit; a smaller photo with the chips under it where not.
+  const pair = [
+    { name: chipName('mine', ''), grade: option.fits.mine.label },
+    { name: chipName('other', otherLabel), grade: option.fits.other.label },
+  ];
+  const beside = !dense && chipsFitBeside(pair, windowWidth - 40 - 80 - 12);
+  const thumb = beside ? 80 : dense ? 56 : 64;
+  const chips = (
+    <View style={beside ? styles.chipsBeside : styles.chips} testID="halfway-fit-chips">
+      <FitChip role="mine" label="" fit={option.fits.mine} />
+      <FitChip role="other" label={otherLabel} fit={option.fits.other} />
+    </View>
+  );
   const notice = journeysKnown(option) ? null : missingJourneyNotice(option);
   return (
     <View style={styles.dock} onLayout={(e) => onLayoutHeight?.(e.nativeEvent.layout.height)} testID="halfway-sheet-collapsed" {...swipe.panHandlers}>
-      <SheetSurface bottomPadding={bottomClearance} onGrab={onExpand} grabLabel="Show details">
+      <SheetSurface bottomPadding={Math.max(bottomClearance - 8, 0)} onGrab={onExpand} grabLabel="Show details">
         <View style={styles.topRow}>
           <LabelPill text={topCardLabel(option)} supported={option.supported} />
           <Text style={styles.position} testID="halfway-position">{`${index + 1} of ${total}`}</Text>
         </View>
         <View style={styles.venueRow}>
-          <VenueImage uri={option.venue.imageUrl} category={option.venue.category} alt={option.venue.name} style={dense ? styles.thumbDense : styles.thumb} borderRadius={radius.lg} />
+          <VenueImage uri={option.venue.imageUrl} category={option.venue.category} alt={option.venue.name} style={{ width: thumb, height: thumb }} borderRadius={radius.lg} />
           <View style={styles.venueText}>
             <Text style={[styles.name, dense && styles.nameDense]} numberOfLines={dense ? 1 : 2} testID="halfway-selected-name">{option.venue.name}</Text>
             <Text style={styles.category}>{formatCategory(option.venue.category)}</Text>
-            <View style={styles.chips}>
-              <FitChip role="mine" label="" fit={option.fits.mine} />
-              <FitChip role="other" label={otherLabel} fit={option.fits.other} />
-            </View>
+            {beside ? chips : null}
           </View>
         </View>
+        {/* Long grades ("Not yet reviewed") do not fit beside the photo: they go under it, across the card, side by side,
+            instead of stacking and making the sheet tall. */}
+        {beside ? null : chips}
         <JourneyComparison option={option} dense={dense} />
         {notice ? <Text variant="caption" color={colors.text.secondary}>{notice.title}. {notice.body}</Text> : null}
         <View style={styles.actions}>
@@ -204,17 +217,18 @@ export function ExpandedRecommendation({
 
 const styles = StyleSheet.create({
   dock: { position: 'absolute', left: 0, right: 0, bottom: 0 },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 },
   position: { fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 17, color: colors.text.secondary },
-  venueRow: { flexDirection: 'row', gap: 12, marginBottom: 10 },
-  thumb: { width: 80, height: 80 },
-  thumbDense: { width: 64, height: 64 },
-  venueText: { flex: 1, gap: 2 },
+  venueRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
+  thumb: { width: 72, height: 72 },
+  thumbDense: { width: 60, height: 60 },
+  venueText: { flex: 1, gap: 2, justifyContent: 'center' },
   name: { fontFamily: fontFamily.bold, fontSize: 22, lineHeight: 27, letterSpacing: -0.4, color: colors.ink },
   nameDense: { fontSize: 19, lineHeight: 23 },
   category: { fontFamily: fontFamily.regular, fontSize: 14, lineHeight: 18, color: colors.text.secondary },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
-  actions: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
+  chipsBeside: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  actions: { flexDirection: 'row', gap: 10, marginTop: 10 },
   plan: { flex: 1.45 },
   details: { flex: 1 },
   scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.sheetScrim },

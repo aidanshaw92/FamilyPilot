@@ -1,5 +1,5 @@
 import { matchVenueToDayRequest } from '@/src/services/matching/day-request-matcher';
-import { evaluateFamilyMatch, FamilyMatchResult, MatchVerdict, PRACTICAL_LABEL, VERDICT_BADGE } from '@/src/services/matching/family-match';
+import { evaluateFamilyMatch, FamilyMatchResult, MatchVerdict, PRACTICAL_LABEL, VERDICT_BADGE, matchBadgeText } from '@/src/services/matching/family-match';
 import { EvidenceCompleteness } from '@/src/services/matching/suitability-signals';
 import { evaluateAgeRecommendation, yearsToMonths } from '@/src/services/matching/age-suitability';
 import { extractMatchableFacts } from '@/src/services/matching/venue-facts';
@@ -266,7 +266,9 @@ const hasChildGap = (fit: Pick<FamilyMatchResult, 'children'> | undefined): bool
 function fitFor(role: FamilyRole, result: FamilyMatchResult | undefined): HalfwayFit {
   if (!result) return { verdict: 'not_assessed', label: 'Not assessed', qualified: false };
   const qualified = (result.verdict === 'good' || result.verdict === 'excellent') && (Boolean(result.practicalOnly) || hasChildGap(result));
-  const label = qualified ? PRACTICAL_LABEL : VERDICT_BADGE[result.verdict];
+  // Yours may say which child is still to check, in the engine's own short badge words ("Likely good · check Ozzie"). Theirs
+  // never does: a generic "Looks practical", which says nothing about their children.
+  const label = !qualified ? VERDICT_BADGE[result.verdict] : role === 'mine' ? matchBadgeText(result, 18) : PRACTICAL_LABEL;
   if (role === 'other') return { verdict: result.verdict, label, qualified };
   const completeness = result.evidenceCompleteness;
   if (!completeness) return { verdict: result.verdict, label, qualified };

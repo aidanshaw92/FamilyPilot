@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   chipGrade: { fontFamily: fontFamily.medium, fontSize: 12, lineHeight: 16, flexShrink: 1 },
   pill: { height: 24, borderRadius: radius.full, paddingHorizontal: 10, justifyContent: 'center', alignSelf: 'flex-start', flexShrink: 1 },
   pillText: { fontFamily: fontFamily.semiBold, fontSize: 12, lineHeight: 15 },
-  journeys: { gap: 8 },
+  journeys: { gap: 6 },
   denseRow: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 2 },
   denseItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   denseText: { fontFamily: fontFamily.bold, fontSize: 13, lineHeight: 17, color: colors.ink },

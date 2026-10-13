@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { planDraftDefaults } from '@/src/services/planning/plan-draft';
-import { halfwayMapModel } from '@/src/services/planning/halfway-map';
+import { PIN_MAX_NUDGE, halfwayMapModel } from '@/src/services/planning/halfway-map';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { FamilyProfile } from '@/src/types';
 
@@ -135,7 +135,7 @@ describe('Meet halfway, map first', () => {
     const model = halfwayMapModel({ mine, other, venue: places[0], venues: places, selectedId: 'a' }, SIZE)!;
     const last = model.pins[model.pins.length - 1];
     expect(last.id).toBe('a');
-    expect(Math.hypot(last.x - model.venue!.x, last.y - model.venue!.y)).toBeLessThanOrEqual(30 + 1e-6);
+    expect(Math.hypot(last.x - model.venue!.x, last.y - model.venue!.y)).toBeLessThanOrEqual(PIN_MAX_NUDGE + 1e-6);
   });
 
   it('a place with no usable position is left off the map, not invented', () => {

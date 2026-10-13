@@ -87,6 +87,14 @@ export function HalfwayMap({
                     </G>
                   );
                 })}
+                {/* Where a crowd of places had to be spread so each pin can be seen and tapped, the place's real position is
+                    marked by a small dot beside its pin, joined by a hairline: the pin is moved, never the place. Not a route. */}
+                {model.pins.filter((pin) => pin.nudged).map((pin) => (
+                  <G key={`at-${pin.id}`} testID={`halfway-map-true-${pin.number}`}>
+                    <Path d={`M${pin.at.x} ${pin.at.y}L${pin.x} ${pin.y}`} stroke={colors.action} strokeOpacity={0.45} strokeWidth={1} />
+                    <Circle cx={pin.at.x} cy={pin.at.y} r={3} fill={colors.action} stroke={colors.surface} strokeWidth={1} />
+                  </G>
+                ))}
                 {/* The places: numbered as the cards are, the selected one larger, filled and named; the others outlined.
                     The selected pin is drawn last so it sits on top where pins crowd. */}
                 {model.pins.length > 0 ? (

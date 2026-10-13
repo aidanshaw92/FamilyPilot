@@ -22,6 +22,7 @@ import { planningFamilyFromProfile } from '@/src/services/planning/plan-parties'
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { seedVenueDetail } from '@/src/services/venue-detail-seed';
 import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
+import { useChromeStore } from '@/src/stores/chrome-store';
 import { localDate, localTime, usePlanningStore } from '@/src/stores/planning-store';
 import { familyDisplayName } from '@/src/utils/family-title';
 import { shortDateLabel } from '@/src/utils/plan-quick-choices';
@@ -68,7 +69,14 @@ export default function MeetHalfwayScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [bodyHeight, setBodyHeight] = useState(0);
+  // The edit sheet is a focused modal: it has the whole screen, so the floating navigation steps aside while it is open and
+  // is restored when it closes, and also if this screen goes away with the sheet still open.
+  const setTabBarHidden = useChromeStore((s) => s.setTabBarHidden);
   const [sheetHeight, setSheetHeight] = useState(380);
+  useEffect(() => {
+    setTabBarHidden(editOpen);
+    return () => setTabBarHidden(false);
+  }, [editOpen, setTabBarHidden]);
   // A later link that names a family ("Meet halfway" on a connected family in Families) selects them here, even when the
   // screen is already open, rather than only on first open.
   useEffect(() => {
@@ -175,7 +183,6 @@ export default function MeetHalfwayScreen() {
   const editSheet = editOpen ? (
     <HalfwayEditSheet
       top={sheetTop}
-      bottomClearance={tabBarClearance}
       candidates={candidates}
       chosen={chosen}
       onChoose={setChosen}

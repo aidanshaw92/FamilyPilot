@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AddFamilyByPostcode } from '@/src/components/planning/AddFamilyByPostcode';
 import { Button, Chip, Text } from '@/src/components/ui';
@@ -50,7 +51,6 @@ const Section = ({ title, children }: { title: string; children: ReactNode }) =>
  */
 export function HalfwayEditSheet({
   top,
-  bottomClearance,
   candidates,
   chosen,
   onChoose,
@@ -72,7 +72,6 @@ export function HalfwayEditSheet({
   onClose,
 }: {
   top: number;
-  bottomClearance: number;
   candidates: { id: string; label: string }[];
   chosen: string | null;
   onChoose: (id: string) => void;
@@ -94,6 +93,7 @@ export function HalfwayEditSheet({
   onClose: () => void;
 }) {
   const reduced = useReducedMotion();
+  const insets = useSafeAreaInsets();
   const choices = dateQuickChoices(today);
   const quick = choices.some((choice) => choice.value === date);
   const limit = mine && typeof mine.maxDriveMinutes === 'number' ? `Your limit: ${mine.maxDriveMinutes} min` : 'No limit set';
@@ -104,7 +104,11 @@ export function HalfwayEditSheet({
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
       </Animated.View>
       <Animated.View entering={reduced ? undefined : SlideInDown.duration(240)} style={[styles.sheet, { top }]} accessibilityViewIsModal accessibilityLabel="Edit meeting details">
-        <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        {/* The sheet is a column: the content scrolls on its own, and Done is a normal child beneath it. With the keyboard up (the
+            postcode fields) the column shrinks above the keyboard, so Done and the field being typed in are never under it. */}
+        <KeyboardAvoidingView style={styles.column} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {/* The grabber, the title and the close button stay put; only what is below them scrolls. */}
+        <View style={styles.top} testID="halfway-edit-header">
           <View style={styles.grabber} />
           <View style={styles.header}>
             <Text variant="heading2" accessibilityRole="header">Edit meeting details</Text>
@@ -112,6 +116,8 @@ export function HalfwayEditSheet({
               <Ionicons name="close" size={22} color={colors.ink} />
             </Pressable>
           </View>
+        </View>
+        <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} testID="halfway-edit-scroll">
 
           <Section title="Who are you meeting?">
             <View style={styles.chips}>
@@ -170,12 +176,13 @@ export function HalfwayEditSheet({
               <Row icon="heart-outline" title="What each family needs" detail={`${needs} · the other family’s come from what they share`} onPress={onEditProfile} testID="halfway-row-needs" />
             </View>
           </Section>
-          <View style={{ height: bottomClearance + 96 }} />
+          <View style={{ height: spacing.lg }} />
         </ScrollView>
-        <View style={[styles.pinned, { paddingBottom: bottomClearance - 10 }]}>
+        <View style={[styles.pinned, { paddingBottom: Math.max(insets.bottom, 12) + 4 }]} testID="halfway-edit-actions">
           <Button label="Done" size="lg" fullWidth onPress={onClose} testID="halfway-edit-done" />
           <Text variant="caption" color={colors.text.secondary}>Places update as you change these.</Text>
         </View>
+        </KeyboardAvoidingView>
       </Animated.View>
     </View>
   );
@@ -184,10 +191,12 @@ export function HalfwayEditSheet({
 const styles = StyleSheet.create({
   scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.sheetScrim },
   sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.background, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, overflow: 'hidden', ...shadows.bottomSheet },
+  column: { flex: 1 },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: spacing.screenPadding, paddingTop: 8, gap: 16 },
-  grabber: { alignSelf: 'flex-start', width: 40, height: 5, borderRadius: 3, backgroundColor: colors.border },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: -6 },
+  top: { paddingHorizontal: spacing.screenPadding, paddingTop: 8, gap: 6, backgroundColor: colors.background },
+  content: { paddingHorizontal: spacing.screenPadding, paddingTop: 10, gap: 16 },
+  grabber: { alignSelf: 'flex-start', marginBottom: 2, width: 40, height: 5, borderRadius: 3, backgroundColor: colors.border },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   close: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.fill, alignItems: 'center', justifyContent: 'center' },
   section: { gap: 10 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -199,5 +208,5 @@ const styles = StyleSheet.create({
   rowIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.actionSoft, alignItems: 'center', justifyContent: 'center' },
   rowTitle: { fontFamily: fontFamily.semiBold, fontSize: 15, lineHeight: 20, color: colors.ink },
   rowDetail: { fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 17, color: colors.text.secondary },
-  pinned: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.screenPadding, paddingTop: 12, gap: 6, backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.borderLight },
+  pinned: { paddingHorizontal: spacing.screenPadding, paddingTop: 12, gap: 6, backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.borderLight },
 });

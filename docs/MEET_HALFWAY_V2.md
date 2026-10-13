@@ -54,6 +54,16 @@ The existing "needs checking" sentence ("Toilets isn’t confirmed at X, and Kev
 - **The edit sheet sits above the navigation** (its *Done* is pinned above the tab bar) rather than replacing it as in the frame, so nothing is hidden behind the tab bar.
 - **The header** follows the approved v2 frame (title under the status bar, then the who/when selector) and so omits the brand row the other section pages draw.
 
+## Review corrections (PR #196, second round)
+
+1. **Edit meeting details is a focused modal.** The floating navigation is not drawn while the sheet is open (`chrome-store`, read by `FloatingTabBar`, set only by the edit sheet's open state, always cleared on close or unmount) and returns unchanged. The sheet is a column: a fixed header (grabber, title, 44 pt close), a content area that scrolls on its own, and *Done* with its helper text as a normal child beneath it, anchored above the home indicator. Nothing overlaps; the Longest journey row is reachable by scrolling. It lifts above the keyboard (`KeyboardAvoidingView`, iOS) so the postcode fields and *Done* are never under it.
+2. **Map and sheet proportions.** The collapsed card is shorter: the Family Fit chips sit beside the photo (80 pt, as in the frame) when they fit, and under it, side by side, when their words are long; the photo, spacing and bottom padding are tightened. Everything stays: label, place, a chip per family, journeys, fairness, *Plan this day*, *Details*. The map gets the room.
+3. **Pins.** Selecting never refits the map (unchanged). The selected place is a 40 pt filled pin, the others 30 pt outlined. Where several places sit on top of each other, the pins are spread apart (never by more than 40 px) and the place's real position is marked by a small dot joined to its pin by a hairline: the pin moves, never the place. Area labels and the selected place's name move to the side of their circle or pin that covers least; on a band too short to hold the name pill without hiding the map, the pill is left off and the sheet names the place.
+4. **Card.** Chip words come from the engine; for your own family a grade that leaves a child to check says so in the engine's own short badge words ("Likely good · check Ozzie"); the other family's is never more than a generic word.
+5. **Comparison method.** `scripts/capture-halfway-figma-match.mjs` renders the app with the inputs the approved frames were drawn from: 393x852, Saturday 17 Oct 10:00, you at NW3 with Sloane (3) and Ozzie (a baby in a buggy), Kevin's family at E8 (a child aged 2, toilets, a pushchair), and the five stored catalogue rows behind the frames (`scripts/fixtures/halfway-figma-places.json`, answered to the `between` lookup). The engine, grades and wording are the app's own. Before-and-after pairs with the Figma frame are in `docs/meet-halfway-v2/matched-fixtures/`, including 375x667 and 360x780 and the scrolled edit sheet showing the Longest journey row with no navigation.
+
+Remaining data-driven differences from the frames (not layout): the engine grades the first place "Likely good · check Ozzie" for you where the frame says "Good fit" (it is honest about the baby); the fixture photo is a stock image where the frame has a grey placeholder; the clock fixture makes "Today" Saturday 17 Oct.
+
 ## Verification
 
 Run locally against the fixture server (stored catalogue rows, no Google, no accounts) and the in-memory account fixture:
@@ -69,7 +79,7 @@ Run locally against the fixture server (stored catalogue rows, no Google, no acc
 | `audit-journey-phase2.mjs`, `verify-nav-clearance.mjs`, Home/Plan/onboarding/place-credit batteries | pass |
 | `verify-product-coherence.mjs` | its Meet halfway checks pass; nine other checks fail identically on `main` (Profile no longer lists connected families; a Create a plan scroll-length check at 360x800), so they are not from this change |
 
-Screenshots, taken at iPhone sizes with real safe-area insets and compared to the Figma frames, are in `docs/meet-halfway-v2/` (`figma-vs-implementation/` side by side; `iphone-sizes/` at 360, 375, 393 and 430). `scripts/capture-halfway-v2.mjs` regenerates them (`STATES=1` for the state boards).
+Screenshots, taken at iPhone sizes with real safe-area insets and compared to the Figma frames, are in `docs/meet-halfway-v2/matched-fixtures/` (see the review corrections above). `scripts/capture-halfway-figma-match.mjs` regenerates them; `scripts/capture-halfway-v2.mjs` (`STATES=1`) renders the state boards.
 
 Known visible differences from the frames, all deliberate and listed above: no status bar in a browser capture; the other family's card is a grade and one generic sentence; no "Tomorrow" chip; place names and green spaces are not drawn; the edit sheet's *Done* sits above the navigation; the stored real data gives "Not yet reviewed" where the frame shows "Good fit".
 

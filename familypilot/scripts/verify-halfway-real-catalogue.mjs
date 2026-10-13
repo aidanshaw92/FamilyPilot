@@ -134,8 +134,27 @@ async function run(label, today) {
   check(/Who are you meeting/.test(editText) && /When/.test(editText) && /Indoor or outdoor/.test(editText) && /Starting points/.test(editText), 'it offers who, when, indoor or outdoor and the starting points');
   check(!/travel mode|public transport|walking|cycling/i.test(editText), 'it offers no travel mode, which the engine does not take');
   check(/You: Camden · Hannah’s family: Lewisham/.test(editText.replace(/\n+/g, ' ')), 'the starting points are shown only as an area name or a postcode district', editText.match(/You: [^\n]*/)?.[0] ?? '');
+  // A focused modal: the floating navigation is out of the way while it is open, and its Longest journey row can be reached.
+  check((await page.getByRole('tab', { name: 'Halfway' }).count()) === 0, 'the navigation is not drawn under the edit sheet');
+  const viewportHeight = page.viewportSize().height;
+  const scrollEdit = page.getByTestId('halfway-edit-scroll');
+  await scrollEdit.evaluate((el) => { el.scrollTop = el.scrollHeight; }); await page.waitForTimeout(400);
+  const limitRow = await page.getByTestId('halfway-row-limit').boundingBox();
+  const doneBox = await page.getByTestId('halfway-edit-done').boundingBox();
+  check(Boolean(limitRow) && limitRow.y >= 0 && limitRow.y + limitRow.height <= doneBox.y, 'scrolled to the end, the Longest journey row is fully visible, above Done', limitRow ? `row ${Math.round(limitRow.y)}–${Math.round(limitRow.y + limitRow.height)}, Done from ${Math.round(doneBox.y)}` : 'missing');
+  check(doneBox.y + doneBox.height <= viewportHeight && viewportHeight - (doneBox.y + doneBox.height) >= 12, 'Done is anchored near the bottom of the screen and fully on it', `bottom ${Math.round(doneBox.y + doneBox.height)} of ${viewportHeight}`);
+  const actionsBox = await page.getByTestId('halfway-edit-actions').boundingBox();
+  const scrollBox = await scrollEdit.boundingBox();
+  check(scrollBox.y + scrollBox.height <= actionsBox.y + 1, 'the scrolling content ends where Done begins: nothing overlaps', `content to ${Math.round(scrollBox.y + scrollBox.height)}, Done area from ${Math.round(actionsBox.y)}`);
+  const closeBox = await page.getByTestId('halfway-edit-close').boundingBox();
+  check(Boolean(closeBox) && closeBox.y >= 0 && closeBox.y + closeBox.height <= viewportHeight && closeBox.width >= 44 && closeBox.height >= 44, 'the close button is still on screen, 44 pt, however far the content has scrolled', closeBox ? `y ${Math.round(closeBox.y)}, ${Math.round(closeBox.width)}x${Math.round(closeBox.height)}` : 'missing');
+  await scrollEdit.evaluate((el) => { el.scrollTop = 0; }); await page.waitForTimeout(200);
+  await page.getByTestId('halfway-edit-close').click(); await page.waitForTimeout(500);
+  check(!(await page.getByTestId('halfway-edit-sheet').isVisible().catch(() => false)) && (await page.getByRole('tab', { name: 'Halfway' }).count()) === 1, 'the close button closes it and the navigation is back');
+  await page.getByTestId('halfway-edit').click(); await page.waitForTimeout(600);
   await page.getByTestId('halfway-env-indoor').click(); await page.waitForTimeout(900);
   await page.getByTestId('halfway-edit-done').click(); await page.waitForTimeout(600);
+  check((await page.getByRole('tab', { name: 'Halfway' }).count()) === 1, 'Done closes it and the navigation is back');
   const indoorNames = await page.getByTestId('halfway-selected-name').innerText().catch(() => '');
   console.log(`  indoor: ${indoorNames}`);
   check(!(await page.getByTestId('halfway-edit-sheet').isVisible().catch(() => false)), 'Done closes the edit sheet');
