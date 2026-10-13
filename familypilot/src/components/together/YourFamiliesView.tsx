@@ -3,8 +3,6 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
-import { PageHeader } from '@/src/components/navigation/PageHeader';
 import { FamilyEditor } from '@/src/components/planning/FamilyEditor';
 import { ConnectedFamiliesSection, HouseholdSummary } from '@/src/components/profile/FamilySections';
 import { Button, Card, Text } from '@/src/components/ui';
@@ -17,13 +15,14 @@ import { usePlanningStore } from '@/src/stores/planning-store';
 import { familyDisplayName } from '@/src/utils/family-title';
 
 /**
- * FAMILIES: who you plan days out with, in the middle of the bottom navigation.
+ * YOUR FAMILIES: who you plan days out with. One of the two views of the Together tab (the other is Meet halfway); the tab's
+ * title and the switch between them are drawn above this (app/(tabs)/together.tsx).
  *
  * The families come first, because that is what this tab is for: invitations waiting for a reply, the families you are
  * connected to (each card with Plan together first, Meet halfway and what you share beside it), and, with nobody yet,
  * "Add a family" as the one primary action. Then, only while a family is chosen with Plan together, the card that says so.
  * Your own household is a compact, editable summary (the full detail, sign-in, backup and device data are in Profile).
- * Meet halfway is the Halfway tab; a family's card still offers it with that family chosen.
+ * Meet halfway is the other view of this tab; a family's card switches to it with that family chosen.
  *
  * Nothing here is a second system. The connected families are the Profile's Connected Families section
  * (`ConnectedFamiliesSection`, variant `screen`), so invitations, acceptance, what each family sees and disconnecting are
@@ -32,7 +31,7 @@ import { familyDisplayName } from '@/src/utils/family-title';
  * and its card says so. "Plan together" stores only the family's id (`planningWith`): the next plan sheet opens with
  * them under Who's coming, so nobody re-enters them, and Done clears it.
  */
-export default function FamiliesScreen() {
+export function YourFamiliesView({ onMeetHalfway }: { onMeetHalfway: (familyId: string) => void }) {
   const router = useRouter();
   const authStatus = useAuthStore((s) => s.status);
   const tabBarClearance = useTabBarClearance();
@@ -52,18 +51,8 @@ export default function FamiliesScreen() {
   };
 
   return (
-    <ScreenContainer>
+    <View style={styles.screen}>
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]} keyboardShouldPersistTaps="handled">
-        <PageHeader
-          title="Families"
-          subtitle="The families you plan with: invitations, what you share, and planning a day together."
-          flush
-          testID="families"
-        />
-
-        <Text variant="heading2" style={styles.sectionTitle}>
-          Connected families
-        </Text>
         {editing ? (
           <FamilyEditor
             key={editing.id}
@@ -79,6 +68,7 @@ export default function FamiliesScreen() {
           accountsAvailable={accountsAvailable}
           variant="screen"
           planningWith={planningWith}
+          onMeetHalfway={onMeetHalfway}
           onPlanTogether={planTogether}
           onEditLocal={setEditing}
         />
@@ -122,18 +112,18 @@ export default function FamiliesScreen() {
           <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />
         </Pressable>
       </ScrollView>
-    </ScreenContainer>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   content: { paddingHorizontal: spacing.screenPadding, paddingTop: spacing.sm, gap: spacing.md },
   together: { gap: spacing.md },
   withRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   withPill: { flexShrink: 1, backgroundColor: colors.actionSoft, borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: 6 },
   withText: { color: colors.action, fontFamily: 'Inter_600SemiBold' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  sectionTitle: { marginTop: spacing.sm },
   accountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 48, paddingVertical: spacing.sm },
   accountText: { flex: 1 },
 });

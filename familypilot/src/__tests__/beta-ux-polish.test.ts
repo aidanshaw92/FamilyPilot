@@ -189,11 +189,15 @@ describe('one header for the section pages', () => {
   const root = join(__dirname, '..', '..');
   const read = (path: string) => readFileSync(join(root, path), 'utf8');
 
-  it('Plans, Profile, Families and Saved all render PageHeader; Home and Explore keep their approved headers; Meet halfway draws the approved v2 header', () => {
-    // Meet halfway's approved v2 frames have no brand row: the title sits straight under the status bar, above the selector.
-    expect(read('app/(tabs)/halfway.tsx')).toContain('<HalfwayHeader');
-    expect(read('src/components/halfway/chrome.tsx')).toContain('Meet halfway');
-    for (const screen of ['app/(tabs)/trips.tsx', 'app/(tabs)/profile.tsx', 'app/(tabs)/families.tsx', 'app/saved.tsx']) {
+  it('Plans, Profile and Saved render PageHeader; Home and Explore keep their approved headers; Together draws its own title and switch above both views', () => {
+    // Together's approved frames (Figma page 09) have no brand row: the title sits straight under the status bar, above the
+    // switch, and Meet halfway's outing card follows it directly.
+    expect(read('src/components/together/MeetHalfwayView.tsx')).toContain('<HalfwayHeader');
+    const together = read('app/(tabs)/together.tsx');
+    expect(together).toContain('testID="together-title"');
+    expect(together).toContain('<TogetherSwitch');
+    expect(together).not.toContain('<PageHeader');
+    for (const screen of ['app/(tabs)/trips.tsx', 'app/(tabs)/profile.tsx', 'app/saved.tsx']) {
       expect(read(screen), screen).toContain('<PageHeader');
     }
     for (const screen of ['app/(tabs)/index.tsx', 'app/(tabs)/explore.tsx']) {
@@ -205,7 +209,7 @@ describe('one header for the section pages', () => {
   });
 
   it('Meet halfway says what it ranks by and lets a card focus the map', () => {
-    const screen = read('app/(tabs)/halfway.tsx');
+    const screen = read('src/components/together/MeetHalfwayView.tsx');
     expect(screen).toContain('not by the midpoint between your homes');
     expect(read('src/components/halfway/ListCard.tsx')).toContain('testID="halfway-option-head"');
     expect(screen).toContain('testID="halfway-ranking-note"');

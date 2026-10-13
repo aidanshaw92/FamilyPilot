@@ -170,6 +170,7 @@ export function ConnectedFamiliesSection({
   variant = 'profile',
   onPlanTogether,
   onEditLocal,
+  onMeetHalfway,
   planningWith,
 }: {
   accountsAvailable: boolean;
@@ -180,6 +181,8 @@ export function ConnectedFamiliesSection({
   onEditLocal?: (family: PlanningFamily) => void;
   /** The family currently chosen with "Plan together", so its card says so. */
   planningWith?: string | null;
+  /** "Meet halfway" on a family's card: Together switches to that view with this family chosen. */
+  onMeetHalfway?: (familyId: string) => void;
 }) {
   const router = useRouter();
   const families = useConnectedFamilies(accountsAvailable);
@@ -211,6 +214,9 @@ export function ConnectedFamiliesSection({
   // On the Profile the invite tools are always there; on the Families screen they open when asked for.
   const showAdd = !onScreen || addOpen;
   const nobody = loaded && accepted.length === 0 && local.length + unchecked.length === 0 && pending.length === 0;
+  // A first visit to Your families: nothing connected, nothing on this phone, nothing waiting. It says what the tab is for and
+  // offers the two ways in, side by side (approved Figma page 09, "Together · first visit").
+  const firstVisit = onScreen && accepted.length === 0 && local.length + unchecked.length === 0 && pending.length === 0 && (!accountsAvailable || loaded);
 
   const openSharing = (connectionId: string, mine: MySharing | null | undefined) => {
     // The switch opens on what is shared today, so an update is only ever a change the person makes.
@@ -235,7 +241,7 @@ export function ConnectedFamiliesSection({
     }
   };
 
-  const meet = (familyId: string) => router.push({ pathname: '/halfway', params: { family: familyId } } as never);
+  const meet = (familyId: string) => (onMeetHalfway ? onMeetHalfway(familyId) : router.push({ pathname: '/together', params: { view: 'halfway', family: familyId } } as never));
 
   return (
     <View testID="profile-connected-families">
@@ -245,12 +251,36 @@ export function ConnectedFamiliesSection({
         </Text>
       )}
       <Card style={styles.card}>
+        {firstVisit ? (
+          <View style={styles.firstVisit} testID="families-first-visit">
+            <Text variant="heading3">Plan days out with friends</Text>
+            <Text color={colors.text.secondary}>Add a family to find places that work for both of you, then make one plan and send it.</Text>
+            {accountsAvailable && !addOpen ? (
+              <Button label="Invite a family" fullWidth onPress={() => setAddOpen(true)} testID="families-add" />
+            ) : null}
+            {!adding ? (
+              <Button
+                label="Add a family by postcode"
+                variant={accountsAvailable ? 'outline' : 'primary'}
+                fullWidth
+                onPress={() => setAdding(true)}
+                testID="families-add-postcode"
+              />
+            ) : null}
+            <Text variant="caption" color={colors.text.secondary}>
+              {accountsAvailable
+                ? 'Inviting needs an account: a family you invite sees only what they agree to share. A family added by postcode stays on this phone only.'
+                : 'Inviting needs an account. A family added by postcode stays on this phone only.'}
+            </Text>
+          </View>
+        ) : (
         <Text variant="bodySmall" color={colors.text.secondary}>
           Families you plan with. They see only what they agreed to share: a first name, a rough area, the children’s ages
           and the drive they’re happy with. Never names or an address.
         </Text>
+        )}
 
-        {accountsAvailable ? (
+        {firstVisit ? null : accountsAvailable ? (
           !loaded ? (
             <Text variant="bodySmall" color={colors.text.secondary}>
               Loading…
@@ -478,7 +508,7 @@ export function ConnectedFamiliesSection({
           </View>
         ) : null}
 
-        {onScreen && !addOpen ? (
+        {onScreen && !addOpen && !firstVisit ? (
           <Button
             label={nobody || (accepted.length === 0 && local.length + unchecked.length === 0) ? 'Add a family' : 'Add another family'}
             variant={nobody ? 'primary' : 'outline'}
@@ -488,10 +518,10 @@ export function ConnectedFamiliesSection({
           />
         ) : null}
 
-        {showAdd ? (
+        {showAdd || adding ? (
           adding ? (
             <AddFamilyByPostcode onAdded={() => setAdding(false)} onCancel={() => setAdding(false)} />
-          ) : (
+          ) : firstVisit ? null : (
             <Button label="Add a family by postcode" variant="ghost" size="sm" onPress={() => setAdding(true)} testID="profile-add-by-postcode" />
           )
         ) : null}
@@ -547,6 +577,7 @@ function Row({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; lab
 }
 
 const styles = StyleSheet.create({
+  firstVisit: { gap: spacing.md },
   inviteLocal: { gap: spacing.sm, alignItems: 'flex-start' },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   title: { marginTop: spacing.lg, marginBottom: spacing.lg },

@@ -55,7 +55,7 @@ describe('Plan together: the chosen family comes along by default', () => {
 
   it('the venue’s plan sheet and Explore read it; Families and Explore both offer Done', () => {
     expect(read('app/venue/[id].tsx')).toContain('planningWith,');
-    const families = read('app/(tabs)/families.tsx');
+    const families = read('src/components/together/YourFamiliesView.tsx');
     expect(families).toContain('testID="families-planning-with"');
     expect(families).toContain('testID="families-planning-with-done"');
     expect(read('src/components/profile/FamilySections.tsx')).toContain('testID="family-plan-together"');
@@ -66,7 +66,7 @@ describe('Plan together: the chosen family comes along by default', () => {
 });
 
 describe('the Families hub', () => {
-  const families = read('app/(tabs)/families.tsx');
+  const families = read('src/components/together/YourFamiliesView.tsx');
   const sections = read('src/components/profile/FamilySections.tsx');
 
   it('puts the connected families and invitations first, then a compact household summary, and Plan together only while chosen', () => {
@@ -172,7 +172,7 @@ describe('Meet halfway, map first', () => {
   });
 
   it('the screen keeps the map at the top with a Map / List control, and syncs cards and pins both ways', () => {
-    const screen = read('app/(tabs)/halfway.tsx');
+    const screen = read('src/components/together/MeetHalfwayView.tsx');
     const chrome = read('src/components/halfway/chrome.tsx');
     const sheet = read('src/components/halfway/Sheet.tsx');
     // v2: the map fills the screen behind a collapsible sheet; the Map / List control sits over it.

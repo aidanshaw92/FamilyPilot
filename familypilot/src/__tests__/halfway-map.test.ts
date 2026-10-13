@@ -127,7 +127,7 @@ describe('honest and free', () => {
   });
 
   it('Meet halfway shows it for the place being looked at, top recommendation first', () => {
-    const screen = read('app/(tabs)/halfway.tsx');
+    const screen = read('src/components/together/MeetHalfwayView.tsx');
     expect(screen).toContain('<HalfwayMap');
     expect(screen).toContain('?? null');
     expect(screen).toContain('options[selectedIndex]');

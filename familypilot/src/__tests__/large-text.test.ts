@@ -60,7 +60,7 @@ describe('the Meet halfway layout keeps its larger-text behaviour', () => {
   });
 
   it('the screen opens on the list and puts the map and its card in one scroll at larger text', () => {
-    const screen = read('app/(tabs)/halfway.tsx');
+    const screen = read('src/components/together/MeetHalfwayView.tsx');
     expect(screen).toMatch(/useState<'map' \| 'list'>\(largeText \? 'list' : 'map'\)/);
     expect(screen).toMatch(/testID="halfway-map-scroll"/);
     expect(screen).toMatch(/inline=\{largeText\}/);

@@ -13,11 +13,10 @@
  * Home's variant also serves the tabs that have no frame of their own (Plans, Saved, Profile). The
  * pill resizes between variants as the focused tab changes.
  *
- * SIX TABS. Home, Explore, Families, Halfway, Plans, Profile do not fit at the frames' pitch on the narrowest supported iPhone
- * (six 55pt tabs and the pill's padding are 345pt, wider than the 344 that 360pt leaves with 8pt either side). With more than
- * five tabs the pitch tightens to `SIX_TAB_METRICS` (51pt, still above the 44pt minimum, with the same 60pt height), and
- * the pill stays the approved shape: the deep-green capsule, the mint disc, the frames' own glyphs. Five tabs (a pilot flag
- * hiding Plans) draw exactly as the frames do.
+ * FIVE TABS. Home, Explore, Together, Plans, Profile are the frames' five. Drawn as the frames do, they fit every supported
+ * iPhone. The bar's labelled form (below) is 314pt wide with 62pt tabs (`FIVE_TAB_LABELLED`). More than five tabs (the six
+ * the app had until Halfway and Families became Together) would not fit at the frames' pitch on the narrowest iPhone, so
+ * the pitch still tightens to `SIX_TAB_METRICS` (51pt) for any caller that asks for six.
  *
  * Sizes are fixed rather than scaled with the viewport: every tab is at least 55 x 59, which clears
  * the 44pt minimum touch target, and shrinking it on a narrow phone would make the bar harder to hit
@@ -49,15 +48,20 @@ export const NAV_VARIANTS: Record<NavVariant, NavVariantMetrics> = {
 /** What changes when the bar holds more tabs than the frames drew (see SIX TABS above). Nothing else moves. */
 export const FRAME_TAB_COUNT = 5;
 export const SIX_TAB_METRICS = { tabWidth: 51, padX: 6, indicator: 45 } as const;
+/**
+ * The labelled bar with its five tabs (Home, Explore, Together, Plans, Profile): the same 314pt pill the six-tab bar was, so
+ * each tab is 62pt wide instead of 51 (approved Figma page 09, "Option B: five tabs"). The extra width is what lets the label be
+ * 11pt, and still grow to 13pt at the largest text, without being cut.
+ */
+export const FIVE_TAB_LABELLED = { tabWidth: 62, padX: 2 } as const;
 
 /**
- * LABELLED. The frames draw icons alone, which is fine for five familiar tabs and not for six that a new parent has never
- * seen (Families and Profile are both "people", Halfway is a pin on a dotted line). The bar therefore carries a short word
- * under each icon. The pill keeps its shape, colour, glyphs and mint disc; it is 66pt tall instead of 60 to hold the word,
- * the disc shrinks to sit behind the icon alone, and the icon is lifted to make room. Pitch, padding and the 44pt touch
- * minimum are unchanged (51 x 66 per tab at six tabs).
+ * LABELLED. The frames draw icons alone, which is not enough for tabs a new parent has never seen (Together and Profile are
+ * both "people"). The bar therefore carries a short word under each icon. The pill keeps its shape, colour, glyphs and mint
+ * disc; it is 66pt tall instead of 60 to hold the word, the disc shrinks to sit behind the icon alone, and the icon is lifted
+ * to make room. Five tabs are 62 x 66 with an 11pt word; the 44pt touch minimum is cleared with room to spare.
  */
-export const LABELLED_METRICS = { height: 66, indicator: { home: 34, explore: 38 } as Record<NavVariant, number>, labelSize: 10 } as const;
+export const LABELLED_METRICS = { height: 66, indicator: { home: 34, explore: 38 } as Record<NavVariant, number>, labelSize: 11 } as const;
 
 /** Which variant a route draws. Explore has its own frame; everything else uses Home's. */
 export function navVariantForRoute(routeName: string | undefined): NavVariant {
@@ -111,7 +115,9 @@ export function floatingTabBarLayout(
 ): FloatingTabBarLayout {
   const tabs = Math.max(1, tabCount);
   const frame = NAV_VARIANTS[variant];
-  const m = tabCount > FRAME_TAB_COUNT
+  const m = labelled && tabCount <= FRAME_TAB_COUNT
+    ? { ...frame, tabWidth: FIVE_TAB_LABELLED.tabWidth, padX: FIVE_TAB_LABELLED.padX }
+    : tabCount > FRAME_TAB_COUNT
     ? { ...frame, tabWidth: Math.min(frame.tabWidth, SIX_TAB_METRICS.tabWidth), padX: Math.min(frame.padX, SIX_TAB_METRICS.padX), indicator: Math.min(frame.indicator, SIX_TAB_METRICS.indicator) }
     : frame;
   const bottomFor = (v: NavVariant) => Math.max(MIN_BOTTOM_OFFSET, bottomInset + NAV_VARIANTS[v].lift);
