@@ -221,13 +221,15 @@ for (const [width, height] of VIEWPORTS) {
   const venueUrl = page.url();
   const fitY = await y(page, 'FAMILY FIT');
   const todayY = await y(page, 'TODAY');
-  const ctaY = await page.getByTestId('venue-create-plan').evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
-  const knowY = await y(page, 'What to know');
+    const knowY = await y(page, 'What to know');
   const moreY = await y(page, 'More about this place');
   const howY = await y(page, 'How we know this');
-  check(`${label}: Venue Detail answers in order: Family Fit, today, then the action, then what to know`, fitY !== null && todayY !== null && fitY < todayY && todayY < ctaY && ctaY < knowY, `fit ${fitY} today ${todayY} cta ${Math.round(ctaY)} know ${knowY}`);
+  // The action is pinned under the page now, so it is on the first screen rather than somewhere in the order of the page.
+  const ctaBox = await page.getByTestId('venue-create-plan').boundingBox();
+  const viewportH = page.viewportSize()?.height ?? 0;
+  check(`${label}: Venue Detail answers in order: Family Fit, today, then what to know, with the action pinned in view`, fitY !== null && todayY !== null && fitY < todayY && todayY < knowY && Boolean(ctaBox) && ctaBox.y + ctaBox.height <= viewportH, `fit ${fitY} today ${todayY} know ${knowY} cta ${ctaBox ? Math.round(ctaBox.y) : 'none'} of ${viewportH}`);
   check(`${label}: the detail and the evidence come after, "How we know this" last`, moreY !== null && howY !== null && knowY < moreY && moreY < howY, `more ${moreY} how ${howY}`);
-  check(`${label}: Create a plan is within a screen and a half of the top`, ctaY < height * 1.5, `${Math.round(ctaY)}px of ${height}`);
+  check(`${label}: Create a plan is visible without scrolling`, Boolean(ctaBox) && ctaBox.y >= 0 && ctaBox.y + ctaBox.height <= viewportH, ctaBox ? `${Math.round(ctaBox.y)}px of ${viewportH}` : 'not found');
   const detail = await text(page);
   check(`${label}: Family Fit speaks about the children`, /(for|Sloane|Ozzie|your family)/i.test(detail) && /FAMILY FIT/.test(detail), (detail.match(/FAMILY FIT\n([^\n]+)/) ?? ['', ''])[1]);
   check(`${label}: Venue Detail says why it might work, never when to leave`, !PRE_PLAN_TIMING.test(detail), (detail.match(PRE_PLAN_TIMING) ?? [''])[0]);
@@ -243,6 +245,8 @@ for (const [width, height] of VIEWPORTS) {
   await page.waitForTimeout(900);
   await page.screenshot({ path: join(dir, '04-create-plan-sheet.jpg'), type: 'jpeg', quality: 82 });
   const sheet = page.getByTestId('create-plan-sheet');
+  await sheet.getByTestId('plan-length-change').click().catch(() => {});
+  await page.waitForTimeout(300);
   const sheetText = (await sheet.innerText()).toString();
   check(`${label}: the sheet names the household, everyone selected`, /SHAW FAMILY/.test(sheetText) && ['Aidan', 'Ellie', 'Sloane', 'Ozzie'].every((n) => sheetText.includes(n)));
   check(`${label}: Start is a real time picker, not presets`, (await sheet.locator('input[type="time"]').count()) === 1 && !/\b09:30\b/.test(sheetText.replace(/10:00/g, '')) , 'time inputs: ' + (await sheet.locator('input[type="time"]').count()));

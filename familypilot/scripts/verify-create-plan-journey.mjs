@@ -222,6 +222,13 @@ async function run(browser, viewport) {
       : 'no sheet',
   });
 
+  // How long opens as one line (FamilyPilot decides) with a Change link; the choices are behind it.
+  const collapsedText = (await sheet.innerText().catch(() => '')) || '';
+  note(viewport.label, 'How long opens as one line with Change, its choices behind it', {
+    ok: (await sheet.getByTestId('plan-length-change').count()) === 1 && !collapsedText.includes('All day') && /work it out/.test(collapsedText),
+  });
+  await sheet.getByTestId('plan-length-change').click().catch(() => {});
+  await page.waitForTimeout(300);
   const sheetText = (await sheet.innerText().catch(() => '')) || '';
   // The approved rows are set in caps, so the comparison is case-insensitive rather than asserting
   // the styling.

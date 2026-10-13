@@ -68,6 +68,27 @@ async function createAccount(page, email, password) {
   await settle(page, 3500);
 }
 
+
+/** Home leads with what is already in motion, and the recommendations stay on screen beneath it. */
+async function homeLeads(page, name, expect, why, short = false) {
+  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' }); await settle(page, 3500);
+  const card = page.getByTestId('home-up-next');
+  await card.waitFor({ timeout: 15000 }).catch(() => {});
+  const t = (await card.count()) ? (await card.innerText()).replace(/\s+/g, ' ') : '';
+  check(expect.test(t), `Home leads with ${why}`, t || 'no card');
+  const box = await card.boundingBox();
+  const nav = await page.evaluate(() => { const el = document.querySelector('[role="tablist"]'); return el ? el.getBoundingClientRect().top : null; });
+  check(Boolean(box) && box.y < 330, 'the card is in the first screen, under the search', box ? `y ${Math.round(box.y)}` : '');
+  if (short) {
+    // A short phone: the card is one line and the recommendation may sit a scroll lower, but it must be reachable and clear the navigation.
+    await page.mouse.move(180, 300); await page.mouse.wheel(0, 2000); await page.waitForTimeout(700);
+  }
+  const deck = await page.evaluate(() => [...document.querySelectorAll('[role="button"]')].filter((el) => /see more/i.test(el.textContent ?? '') || /see more/i.test(el.getAttribute('aria-label') ?? '')).map((el) => el.getBoundingClientRect().bottom));
+  check(deck.length > 0 && (nav === null || Math.min(...deck) <= nav), short ? 'and the recommendation is reachable above the navigation after one scroll' : 'and the recommendations are still on that screen, above the navigation', `deck bottoms ${deck.map(Math.round)} nav ${nav === null ? 'n/a' : Math.round(nav)}`);
+  await shot(page, name);
+  return card;
+}
+
 await fetch(`${BASE}/__fixture/reset`, { method: 'POST' });
 
 // ------------------------------------------------------------------ two connected families
@@ -147,6 +168,16 @@ console.log('Sam: Plans shows the plan and that it is waiting');
   await shot(page, '4-sam-plans-waiting');
 }
 
+console.log('Home: Sam sees the plan she sent, Alex sees the invitation');
+{
+  const card = await homeLeads(sam.page, 'h1-sam-home', /Up next.*Sent to Alex.*waiting for a reply/, 'her plan, saying it is waiting for Alex’s family');
+  await card.click(); await settle(sam.page, 2500);
+  check(/\/saved-plan/.test(sam.page.url()), 'tapping it opens the plan');
+  const card2 = await homeLeads(alex.page, 'h2-alex-home', /Sam.*invited you.*Review/, 'the invitation waiting for an answer');
+  await card2.click(); await settle(alex.page, 2500);
+  check(/\/shared-plan/.test(alex.page.url()), 'tapping it opens the invitation to read');
+}
+
 // ------------------------------------------------------------------ Alex: receive, review, accept
 console.log('Alex: the invitation arrives, is read, and is accepted');
 {
@@ -190,6 +221,16 @@ console.log('Alex: the invitation arrives, is read, and is accepted');
   check(await page.getByTestId('plan-add-to-calendar').count() === 1, 'with Add to calendar');
   for (const re of leaks) check(!re.test(t), `the saved copy does not show ${re}`);
   await shot(page, '9-alex-saved-copy');
+}
+
+{
+  const card = await homeLeads(alex.page, 'h3-alex-home-after', /Up next.*From Sam.*you’re going/, 'the day Alex accepted');
+  await card.click(); await settle(alex.page, 2500);
+  check(/\/saved-plan/.test(alex.page.url()), 'tapping it opens Alex’s plan');
+  // The smallest phone we support: the card must not push the recommendation (or its button) under the navigation.
+  await alex.page.setViewportSize({ width: 360, height: 640 });
+  await homeLeads(alex.page, 'h4-alex-home-360x640', /Today · A day at/, 'the day on a 360×640 phone', true);
+  await alex.page.setViewportSize({ width: 393, height: 852 });
 }
 
 // ------------------------------------------------------------------ Sam: sees it accepted
