@@ -1,6 +1,6 @@
 # Navigation review: six tabs or five?
 
-Proposal and recommendation only. **No navigation code has changed.** The six tabs work as before. Figma: page "09 — Navigation & App Flow Review" in the FamilyPilot design file (https://www.figma.com/design/LNpbdnuAWcfWf9spvB7jBz/?node-id=366-2).
+**Update: the five-tab navigation was approved and is implemented on its own branch, not merged (`docs/TOGETHER_NAVIGATION.md`; label test in `docs/TOGETHER_LABEL_TEST.md`, not yet run).** What follows is the review as written, a proposal and recommendation; it was written when no navigation code had changed. Figma: page "09 — Navigation & App Flow Review" in the FamilyPilot design file (https://www.figma.com/design/LNpbdnuAWcfWf9spvB7jBz/?node-id=366-2).
 
 Option A, today: Home · Explore · Families · Halfway · Plans · Profile.
 Option B: Home · Explore · **Together** · Plans · Profile, where Together holds **Meet halfway** and **Your families** behind a two-way switch.

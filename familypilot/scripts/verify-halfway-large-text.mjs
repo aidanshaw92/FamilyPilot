@@ -15,7 +15,7 @@
  *   controls                  every visible control is at least 44 x 44, and nothing else sits on top of its centre
  *   overlap                   two controls covering each other
  *   scroll                    long content scrolls on its own, and its last line ends clear of the pinned actions and the navigation
- *   navigation                the six tabs are all there, each with its label whole, and clear of the bottom edge
+ *   navigation                the five tabs are all there, each with its label whole, and clear of the bottom edge
  *
  * Serve first: node scripts/serve-places-fixture.mjs 4175 dist
  * Usage: node scripts/verify-halfway-large-text.mjs <baseUrl> <outDir> [scale ...]   (default 1.35 1.9 2.35)
@@ -139,7 +139,7 @@ async function scenario({ tag, width, height, insets }, scale) {
   check(closeEdit.y >= 0 && closeEdit.width >= 44 && closeEdit.height >= 44, `${name} · the edit sheet's close control stays on screen at 44 pt`, `${Math.round(closeEdit.width)}x${Math.round(closeEdit.height)} at y ${Math.round(closeEdit.y)}`);
   check((await page.getByRole('tab').count()) === 0, `${name} · the navigation steps aside for the edit sheet`);
   await page.getByTestId('halfway-edit-done').click(); await page.waitForTimeout(500);
-  check((await page.getByRole('tab').count()) === 6, `${name} · and is back, all six tabs, afterwards`);
+  check((await page.getByRole('tab').count()) === 5, `${name} · and is back, all five tabs, afterwards`);
   await context.close();
 }
 

@@ -127,7 +127,7 @@ let planPath = '';
   const { page } = sam;
   await page.goto(`${BASE}/families`, { waitUntil: 'domcontentloaded' }); await settle(page, 3000);
   await page.getByRole('button', { name: 'Meet halfway', exact: true }).first().click(); await settle(page, 4000);
-  check(new URL(page.url()).pathname === '/halfway', 'Meet halfway opens the Halfway tab with Alex chosen');
+  check(new URL(page.url()).pathname === '/together' && /You \+ Alex/.test(await flat(page)), 'Meet halfway opens inside Together with Alex chosen');
   await page.getByTestId('halfway-plan').first().waitFor({ timeout: 30000 }).catch(async (e) => { await shot(page, 'x-halfway-timeout'); console.log('  halfway text:', (await flat(page)).slice(0, 700)); throw e; });
   await shot(page, '1-sam-halfway');
   await page.getByTestId('halfway-plan').first().click();

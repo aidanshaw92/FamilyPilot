@@ -9,6 +9,7 @@ import { YourFamiliesView } from '@/src/components/together/YourFamiliesView';
 import { Text } from '@/src/components/ui';
 import { colors, spacing } from '@/src/design-system/tokens';
 import { useConnectedFamilies } from '@/src/hooks/use-connected-families';
+import { isLargeText, useFontScale } from '@/src/hooks/use-font-scale';
 import { plannableFamilies } from '@/src/services/planning/family-visibility';
 import { firstValue } from '@/src/services/planning/plan-draft';
 import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
@@ -37,6 +38,9 @@ export default function TogetherScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
+  // At the larger text sizes the title and switch stay pinned above a view that scrolls, so the title steps down a size to leave
+  // that view some of a small phone.
+  const largeText = isLargeText(useFontScale());
   const requested = asView(firstValue(params.view));
   const family = firstValue(params.family) ?? null;
 
@@ -72,7 +76,7 @@ export default function TogetherScreen() {
   return (
     <View style={styles.screen}>
       <View style={[styles.header, { paddingTop: insets.top + 9 }]}>
-        <Text variant="heading1" accessibilityRole="header" testID="together-title">Together</Text>
+        <Text variant={largeText ? 'heading2' : 'heading1'} accessibilityRole="header" testID="together-title">Together</Text>
         <TogetherSwitch view={view ?? requested ?? 'families'} onChange={(next) => choose(next)} />
       </View>
       {view === null ? (

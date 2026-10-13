@@ -175,6 +175,31 @@ describe('Together, one tab with two views', () => {
     const allowed = read('app/_layout.tsx').match(/SIGNED_OUT_ALLOWED = new Set\(\[([^\]]*)\]/)?.[1] ?? '';
     expect(allowed).not.toMatch(/together|halfway|families/);
   });
+
+  it('never implies a family on this phone can receive a plan: it is said so beside the day, in the edit sheet and on its card', () => {
+    expect(halfway).toContain("candidates.find((c) => c.id === chosen)?.kind === 'local'");
+    expect(halfway).toContain("' · this phone only'");
+    const sheet = read('src/components/halfway/EditSheet.tsx');
+    expect(sheet).toContain('testID="halfway-local-note"');
+    expect(sheet).toContain('can’t see or receive a plan until you connect');
+    const section = read('src/components/profile/FamilySections.tsx');
+    expect(section).toContain('On this phone only · not connected');
+    expect(section).toContain('can’t see or receive anything: plans stay on your phone');
+  });
+
+  it('a first visit to Your families says what the tab is for and offers both ways in; inviting is only offered with an account', () => {
+    const section = read('src/components/profile/FamilySections.tsx');
+    expect(section).toContain('testID="families-first-visit"');
+    expect(section).toContain('Plan days out with friends');
+    expect(section).toContain('{accountsAvailable && !addOpen ? (');
+    expect(section).toContain('Inviting needs an account');
+  });
+
+  it('every action on a family’s card is a 44pt target', () => {
+    const section = read('src/components/profile/FamilySections.tsx');
+    expect(section).toContain('target: { minHeight: MIN_TARGET }');
+    expect((section.match(/size="sm"(?! style=\{styles\.target\})/g) ?? []).length).toBe(0);
+  });
 });
 
 describe('the brand row on every main screen', () => {

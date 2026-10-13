@@ -3,7 +3,7 @@
  * the Create a plan sheet with "How long" on one line, the built plan, and Plans with a saved plan.
  *
  * METHOD, said plainly: a browser emulation of iOS content-size multipliers (scripts/lib/large-text.mjs), NOT Dynamic Type and NOT a
- * device. It measures horizontal overflow, clipped or truncated text, controls under 44 pt or covered, overlaps, the six tabs, and that
+ * device. It measures horizontal overflow, clipped or truncated text, controls under 44 pt or covered, overlaps, the five tabs, and that
  * the page's last control clears the navigation. The invitation screens need an account (the fixture build), so they are covered at
  * normal size by verify-shared-outing.mjs and are on the real-device list.
  *

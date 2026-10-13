@@ -236,16 +236,18 @@ console.log('owner: Create a plan > Add another family');
   await page.goto(`${BASE}/families`, { waitUntil: 'domcontentloaded' });
   await settle(page, 2500);
   const profileText = await text(page);
-  check(/Connected families/.test(profileText) && /Alex/.test(profileText), 'Families lists the connected family under Connected families');
+  // Together's Your families has no separate "Connected families" title (approved Figma page 09): the group is named "Connected".
+  check(await page.getByTestId('families-connected-heading').count() === 1 && /Alex/.test(profileText), 'Your families lists the connected family under Connected');
   const connectedText = await page.getByTestId('profile-connected-families').innerText();
   // The area word (an outward code) is shared by design; a full postcode, an email or a child's name never is.
   check(!/[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}|example\.com|Theo/.test(connectedText), 'and shows nothing the connection did not share (no full postcode, email or child name)');
   await shot(page, '12-profile-connected-families');
-  // Meet halfway from the family's card opens the Halfway tab with that family chosen.
+  // Meet halfway from the family's card switches Together to Meet halfway with that family chosen, and the tab does not change.
+  check(new URL(page.url()).pathname === '/together' && await page.getByTestId('together-view-families').getAttribute('aria-checked') === 'true', '/families lands on Together, Your families');
   await page.getByRole('button', { name: 'Meet halfway', exact: true }).first().click();
   await settle(page, 3500);
-  check(new URL(page.url()).pathname === '/halfway', 'Meet halfway on the card opens the Halfway tab');
-  check(await page.getByRole('tab', { name: 'Halfway', selected: true }).count() === 1, 'with the Halfway tab selected in the bottom navigation');
+  check(new URL(page.url()).pathname === '/together' && await page.getByTestId('together-view-halfway').getAttribute('aria-checked') === 'true', 'Meet halfway on the card switches Together to Meet halfway');
+  check(await page.getByRole('tab', { name: 'Together', selected: true }).count() === 1, 'with the Together tab still selected in the bottom navigation');
   const halfway = await text(page);
   check(/Meet halfway/.test(halfway) && /You \+ Alex/.test(halfway), 'Meet halfway opens with the connected family chosen');
   await shot(page, '13-meet-halfway-connected');
@@ -253,16 +255,19 @@ console.log('owner: Create a plan > Add another family');
 
 
 // ---------------------------------------------------------------- 3b. Families, reached from Home
-console.log('owner: the Families tab opens connected families, invitations and the ways to add one');
+console.log('owner: Together opens on Meet halfway with a connected family, and Your families holds connections, invitations and the ways to add one');
 {
   const { page } = owner;
   await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
   await settle(page, 3500);
-  check(await page.getByRole('tab', { name: 'Families' }).count() === 1, 'the bottom navigation has a Families tab');
-  await page.getByRole('tab', { name: 'Families' }).click();
+  check(await page.getByRole('tab', { name: 'Together' }).count() === 1 && await page.getByRole('tab', { name: 'Families' }).count() === 0, 'the bottom navigation has a Together tab and no Families tab');
+  await page.getByRole('tab', { name: 'Together' }).click();
+  await settle(page, 3500);
+  check(new URL(page.url()).pathname === '/together' && await page.getByTestId('together-view-halfway').getAttribute('aria-checked') === 'true', 'with a connected family it opens on Meet halfway');
+  await page.getByTestId('together-view-families').click();
   await settle(page, 2500);
   const t = await text(page);
-  check(new URL(page.url()).pathname === '/families', 'tapping it opens the Families screen');
+  check(await page.getByTestId('together-view-families').getAttribute('aria-checked') === 'true', 'the switch opens Your families');
   check(/Connected/.test(t) && /Alex/.test(t), 'accepted families are listed under "Connected", by label');
   check(await page.getByTestId('families-connected-heading').count() === 1, 'and the group is named');
   check(await page.getByTestId('connected-family-status').count() >= 1 && /Connected\b/.test(await page.getByTestId('connected-family-status').first().innerText()), 'a connected family card says it is connected');

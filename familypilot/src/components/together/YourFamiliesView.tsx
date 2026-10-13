@@ -83,7 +83,7 @@ export function YourFamiliesView({ onMeetHalfway }: { onMeetHalfway: (familyId: 
                   Planning with {familyDisplayName(together.label)}
                 </Text>
               </View>
-              <Button label="Done" size="sm" variant="ghost" onPress={() => setPlanningWith(null)} testID="families-planning-with-done" />
+              <Button label="Done" size="sm" variant="ghost" style={{ minHeight: 44 }} onPress={() => setPlanningWith(null)} testID="families-planning-with-done" />
             </View>
             <Text color={colors.text.secondary}>
               Create a plan from any place and {familyDisplayName(together.label)} are already under Who’s coming, with both families’
