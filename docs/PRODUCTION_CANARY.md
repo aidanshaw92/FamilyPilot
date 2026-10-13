@@ -21,7 +21,7 @@ The release is two squash merges in this order: **#196** (Meet halfway v2) into 
 | #196 head | `38adde1`, CI green: capture, build-and-test, privilege-model, Vercel Preview |
 | #197 head | `8ff3084`, CI green on the same four checks |
 | Rollback target for #197 | the production deployment created by the #196 merge (record its id after the #196 canary passes) |
-| Release is production-config neutral | neither PR changes workflows, `vercel.json`, `api/`, `server/`, packages, migrations or env files. #197 adds a new shape of JSON inside the existing `plan_invites.plan_snapshot` column (no schema change) |
+| Release is production-config neutral | neither PR changes `vercel.json`, `api/`, `server/`, packages, migrations or env files. #196 adds one CI-only step to `.github/workflows/home-visual-regression.yml` (the larger-text emulation); it runs in GitHub Actions, never in production. #197 adds a new shape of JSON inside the existing `plan_invites.plan_snapshot` column (no schema change) |
 | Merge method | squash, one commit per PR, each revertable in one step |
 
 **Baseline (read-only, taken 12 Oct 07:xx UTC).** `auth.users` 3 (genuine, never touched); `planning_connections` 0;
@@ -135,7 +135,7 @@ approve it). Connections made during the canary keep working under the old build
 
 ## 8. Google spending controls unchanged
 
-1. **No code path changed:** the diff against main touches nothing under `api/`, `server/`, workflows, `vercel.json`,
+1. **No code path changed:** the diff against main touches nothing under `api/`, `server/`, `vercel.json`,
    packages or env files, and the new screens add no Google call (Meet halfway is a database read; lunch uses the free
    OpenStreetMap lookup).
 2. **Posture:** after the run, open `/api/places/status` again and save as `status-after.json`. **Expect:** the
