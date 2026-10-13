@@ -446,7 +446,7 @@ const SANDBOX_CHROMIUM = '/opt/pw-browsers/chromium';
  * unmet-requirement screen more often than the plan. What it says is the difference between a dead
  * end and something they can act on, so it is checked rather than assumed.
  */
-async function runFailurePaths(browser, viewport, profileOverrides, label, expectations) {
+async function runFailurePaths(browser, viewport, profileOverrides, label, expectations, prepare) {
   const dir = join(OUT, 'failures');
   mkdirSync(dir, { recursive: true });
   const context = await browser.newContext({
@@ -476,6 +476,7 @@ async function runFailurePaths(browser, viewport, profileOverrides, label, expec
   await page.waitForTimeout(800);
   await page.getByTestId('create-plan-submit').click().catch(() => {});
   await page.waitForTimeout(5200);
+  if (prepare) await prepare(page);
   await page.screenshot({ path: join(dir, `${label}.png`) });
 
   const text = await page.evaluate(() => document.body.innerText);
@@ -552,15 +553,22 @@ try {
   const reference = VIEWPORTS[2];
   console.log('\n=== failure paths (393x852) ===');
 
-  // A must-have at a venue nobody has reviewed: the single likeliest situation in production. It is NOT a dead end: an
+  // A must-have at a stop nobody has reviewed: the single likeliest situation in production. It is NOT a dead end: an
   // unconfirmed must-have means "check this", never "you cannot go". The plan is built, and says plainly what needs checking.
+  // The fixture's first venue has baby changing confirmed; the unreviewed stop is the place to eat the parent chooses for
+  // lunch (OpenStreetMap, no confirmed facilities). Lunch is the parent's call, so the scenario chooses one before reading.
+  const chooseLunch = async (page) => {
+    await page.getByTestId('plan-lunch-choose').click(); await page.waitForTimeout(700);
+    await page.getByTestId('plan-edit-lunch-option').first().click(); await page.waitForTimeout(300);
+    await page.getByTestId('plan-lunch-confirm').click(); await page.waitForTimeout(5200);
+  };
   await runFailurePaths(browser, reference, { mustHaveFacilities: ['baby_changing'] }, 'must-have-unconfirmed', [
     ['still builds the plan', (text) => text.includes('Save this plan')],
     ['shows a prominent "Needs checking before you go" block', (text) => /needs checking before you go/i.test(text)],
     ['says which must-have is unconfirmed, and that the parent asked for it', (text) => /Baby changing isn’t confirmed at .*you said you need it/.test(text)],
     ['says nobody has confirmed it rather than that the venue lacks it', (text) => !/does not have baby changing|No baby changing here/.test(text)],
     ['is not presented as a failure', (text) => !/does not fit your family yet/.test(text)],
-  ]);
+  ], chooseLunch);
 
   // A day that succeeds for one household while another was dropped must say so.
   //
