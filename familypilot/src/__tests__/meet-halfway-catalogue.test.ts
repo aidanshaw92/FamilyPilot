@@ -183,8 +183,8 @@ describe('both families’ needs apply to the candidates, not just the first fam
     const result = meetHalfway({ venues: candidates, mine: bushey, other: needsChanging, date: SATURDAY, arriveAt: '10:30', today: TODAY, nowMinutes: 9 * 60 });
     const fair = result.options.find((o) => o.venue.id === 'barnet-common-farm');
     expect(fair).toBeDefined();
-    expect(fair!.unresolved).toEqual([{ role: 'other', field: 'familyFacilities.babyChanging', label: 'baby changing' }]);
-    expect(fair!.needsChecking).toEqual(['Baby changing isn’t confirmed at barnet-common-farm, and Hannah’s family needs it. Check before you go']);
+    expect(fair!.unresolved).toEqual([{ role: 'other', field: 'requirement', label: 'a requirement' }]);
+    expect(fair!.needsChecking).toEqual(['Something Hannah’s family needs isn’t confirmed at barnet-common-farm. Check before you go']);
   });
 
   it('their Family Fit comes only from what they shared, and never names a child', () => {
@@ -222,7 +222,9 @@ describe('the screen asks the catalogue between the homes, not Home', () => {
     expect(source).toContain('useBetweenVenues(');
     expect(source).toMatch(/useNearbyVenues\(\{ enabled: between\.isError \}\)/);
     expect(source).toContain('const venues = between.data ??');
-    expect(source).toContain('halfway-fallback');
+    expect(source).toContain('usingHomeFallback');
+    expect(source).toContain('<FallbackBanner');
+    expect(readFileSync(resolve(process.cwd(), 'src/components/halfway/States.tsx'), 'utf8')).toContain('testID="halfway-fallback"');
   });
 });
 

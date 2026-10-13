@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { planDraftDefaults } from '@/src/services/planning/plan-draft';
-import { halfwayMapModel } from '@/src/services/planning/halfway-map';
+import { PIN_MAX_NUDGE, halfwayMapModel } from '@/src/services/planning/halfway-map';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { FamilyProfile } from '@/src/types';
 
@@ -131,11 +131,11 @@ describe('Meet halfway, map first', () => {
     expect(model.summary).toContain('3 places numbered as the list below');
   });
 
-  it('the selected pin is drawn last, so it sits on top, and keeps the place’s position', () => {
+  it('the selected pin is drawn last, so it sits on top, and stays where the place is (within the nudge that keeps crowded pins apart)', () => {
     const model = halfwayMapModel({ mine, other, venue: places[0], venues: places, selectedId: 'a' }, SIZE)!;
-    expect(model.pins[model.pins.length - 1].id).toBe('a');
-    expect(model.pins[model.pins.length - 1].x).toBeCloseTo(model.venue.x, 6);
-    expect(model.pins[model.pins.length - 1].y).toBeCloseTo(model.venue.y, 6);
+    const last = model.pins[model.pins.length - 1];
+    expect(last.id).toBe('a');
+    expect(Math.hypot(last.x - model.venue!.x, last.y - model.venue!.y)).toBeLessThanOrEqual(PIN_MAX_NUDGE + 1e-6);
   });
 
   it('a place with no usable position is left off the map, not invented', () => {
@@ -169,16 +169,20 @@ describe('Meet halfway, map first', () => {
 
   it('the screen keeps the map at the top with a Map / List control, and syncs cards and pins both ways', () => {
     const screen = read('app/(tabs)/halfway.tsx');
-    expect(screen).toContain('stickyHeaderIndices={hasMap ? [2] : undefined}');
-    expect(screen).toContain('testID="halfway-mode-map"');
-    expect(screen).toContain('testID="halfway-mode-list"');
-    expect(screen).toContain('testID="halfway-selected-name"');
-    expect(screen).toContain("onSelectPin={(id) => choose(id, 'pin')}");
-    expect(screen).toContain("onSelect={(id) => choose(id, 'card')}");
+    const chrome = read('src/components/halfway/chrome.tsx');
+    const sheet = read('src/components/halfway/Sheet.tsx');
+    // v2: the map fills the screen behind a collapsible sheet; the Map / List control sits over it.
+    expect(screen).toContain('<MapListToggle');
+    expect(chrome).toContain('testID={`halfway-mode-${key}`}');
+    expect(sheet).toContain('testID="halfway-selected-name"');
+    expect(screen).toContain('onSelectPin={(id) => setSelectedId(id)}');
+    expect(screen).toContain('onSelect={() => choose(option.venue.id)}');
     // Each family's journey is said separately, estimated; the ranking is explained; no score is printed.
-    expect(screen).toContain("travelTimeLabel(journey.minutes, 'estimated')");
+    expect(read('src/services/planning/halfway-view.ts')).toContain("travelTimeLabel(journey.minutes, 'estimated')");
     expect(screen).toContain('not by the midpoint between your homes');
-    expect(screen).not.toMatch(/option\.score|\{score\}|points/);
+    for (const file of [screen, sheet, read('src/components/halfway/ListCard.tsx'), read('src/components/halfway/parts.tsx')]) {
+      expect(file).not.toMatch(/option\.score|\{score\}|points/);
+    }
     const map = read('src/components/planning/HalfwayMap.tsx');
     expect(map).toContain('testID={pin.selected ? \'halfway-map-venue\' : `halfway-map-pin-${pin.number}`}');
     // The pins are plain pressables over the SVG: a pressable inside the SVG does not render on the web build.

@@ -247,7 +247,7 @@ console.log('owner: Create a plan > Add another family');
   check(new URL(page.url()).pathname === '/halfway', 'Meet halfway on the card opens the Halfway tab');
   check(await page.getByRole('tab', { name: 'Halfway', selected: true }).count() === 1, 'with the Halfway tab selected in the bottom navigation');
   const halfway = await text(page);
-  check(/Meet halfway/.test(halfway) && /Places that work for both|No place works for both/.test(halfway), 'Meet halfway opens with the connected family chosen');
+  check(/Meet halfway/.test(halfway) && /You \+ Alex/.test(halfway), 'Meet halfway opens with the connected family chosen');
   await shot(page, '13-meet-halfway-connected');
 }
 
@@ -336,8 +336,11 @@ console.log('owner: an older connection shares richer routines without reconnect
     const other = guest.page;
     await other.goto(`${BASE}/halfway?family=connected-${idBefore}`, { waitUntil: 'domcontentloaded' });
     await settle(other, 4000);
+    // v2: the places, and the notes about what the other family shared, are in the List.
+    await other.getByTestId('halfway-mode-list').click({ timeout: 20000 }).catch(() => {});
+    await other.waitForTimeout(900);
     const seen = await text(other);
-    check(await other.getByTestId('halfway-legacy-routines').count() > 0 && /shared when they.?re home but not what for/.test(seen), 'Meet halfway says an older share is home time only, and that it is treated as fixed');
+    check(await other.getByTestId('halfway-legacy-routines').count() === 0 && !/shared when they.?re home|home time|when they.?re home/i.test(seen), 'Meet halfway does not describe how the other family’s routines were shared (the older share is still treated as fixed, quietly)');
     check(!/\bnaps\b|\bfeeds\b/.test(seen.replace(/Share when naps and feeds/g, '')), 'and never calls it a nap or a feed');
     await shot(other, '14b-halfway-legacy');
   }

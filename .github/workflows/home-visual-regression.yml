@@ -194,6 +194,13 @@ jobs:
         working-directory: familypilot
         run: node scripts/verify-onboarding-flow.mjs http://localhost:4173
 
+      # Meet halfway at larger iPhone text sizes (1.35, 1.9, 2.35 times), in a browser: nothing clipped, overlapping or sideways,
+      # every control whole, the card and the six tabs reachable. A browser emulation, not a device (see the script's header).
+      - name: Meet halfway at larger text
+        if: env.DATA_SOURCE != 'production'
+        working-directory: familypilot
+        run: node scripts/verify-halfway-large-text.mjs http://localhost:4173 ../docs/halfway-large-text-run 1.35 1.9 2.35
+
       # Attribution is a licence condition, so it is checked rather than assumed. This step starts
       # its OWN fixture on its own port, twice: once with a mixed Google + OpenStreetMap payload and
       # once with Google alone. The shared fixture above keeps the default payload, because an extra

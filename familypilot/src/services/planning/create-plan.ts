@@ -240,6 +240,17 @@ function minutesToClock(minutes: number): string {
 function describeSequenceFailure(failure: SequenceFailure, venueName: string, startAt?: string): CreatePlanFailure {
   switch (failure.reason) {
     case 'requirement-unmet': {
+      // Another family's requirement is theirs: they shared it so the plan can use it, not so this family can read it, and the
+      // line below would also say "your family needs it" of something that is not yours. Said without the requirement.
+      if (failure.familyId !== 'mine') {
+        const who = readableFamily(failure.familyLabel);
+        return {
+          ok: false,
+          title: `${venueName} does not fit ${who} yet`,
+          message: `${venueName} doesn’t meet something ${who} needs.`,
+          suggestions: ['Pick a different place'],
+        };
+      }
       const lines = failure.unmet
         .map((requirement) => requirementLine(requirement, venueName))
         .filter((line): line is string => line !== null);

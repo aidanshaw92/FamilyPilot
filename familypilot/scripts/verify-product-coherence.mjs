@@ -123,19 +123,29 @@ async function freshContext(width, height, guest, extraProfile = {}) {
   return { context, page };
 }
 
-/** No card may say "Best for both" while it also lists something to check. */
+/** The recommendation on show may not say "Best for both" while it also lists something to check (v2: the label is on the sheet). */
 async function bestForBothIsHonest(page) {
   return page.evaluate(() => {
-    const cards = [...document.querySelectorAll('[data-testid="halfway-option"]')];
-    return cards.every((card) => !/Best for both/.test(card.innerText) || !/Needs checking|thing to check|things to check|\n\? /.test(card.innerText));
+    const labels = [...document.querySelectorAll('[data-testid="halfway-option-label"]')];
+    return labels.every((label) => !/Best for both/.test(label.innerText) || !/thing to check|things to check/.test(label.innerText));
   });
 }
 
-/** The lines on a card, in the order a parent reads them: fairness, fit, routines, facilities, then what to check. */
+/** v2: the cards are in the List. Opens it. */
+async function showList(page) {
+  await page.getByTestId('halfway-mode-list').click();
+  await page.waitForTimeout(900);
+}
+async function showMap(page) {
+  await page.getByTestId('halfway-mode-map').click();
+  await page.waitForTimeout(700);
+}
+
+/** The lines on a list card, in the order a parent reads them: journeys, Family Fit chips, then what to check. */
 async function cardOrder(card) {
   const text = await card.innerText();
   const at = (pattern) => text.search(pattern);
-  return [at(/Almost equal journeys|Journeys are within|Journeys differ by/), at(/Family Fit|Suits the ages/), at(/Needs checking before you go|\n\? /)];
+  return [at(/about \d+ min/), at(/\nYou\n|You\s/), at(/Needs checking before you go/)];
 }
 
 const BARNET = 'Barnet Common Fixture Farm';
@@ -291,11 +301,14 @@ for (const [width, height] of VIEWPORTS) {
   await settle(page, 3000);
   await page.screenshot({ path: join(dir, '08-meet-halfway.jpg'), type: 'jpeg', quality: 82 });
   const halfway = await text(page);
-  check(`${label}: Meet halfway shows places for both families`, (await page.getByTestId('halfway-option').count()) > 0 || (await page.getByTestId('halfway-empty').isVisible().catch(() => false)), `${await page.getByTestId('halfway-option').count()} options`);
+  check(`${label}: Meet halfway shows places for both families`, (await page.getByTestId('halfway-sheet-collapsed').isVisible().catch(() => false)) || (await page.getByTestId('halfway-empty').isVisible().catch(() => false)), 'sheet or empty state');
+  await showList(page);
   const options = await page.getByTestId('halfway-option').count();
+  const listText = await text(page);
+  await showMap(page);
   if (options > 0) {
-    check(`${label}: each option gives both journeys`, /Your family/.test(halfway) && /Hannah/.test(halfway) && (halfway.match(/about \d+ min/g) ?? []).length >= 2);
-    check(`${label}: it does not pretend to know a family it has only a postcode for`, /only know where Hannah’s family sets off from/.test(halfway));
+    check(`${label}: each option gives both journeys`, (/Your family/.test(halfway) || /You about \d+ min/.test(halfway)) && /Hannah/.test(halfway) && (halfway.match(/about \d+ min/g) ?? []).length >= 2);
+    check(`${label}: it does not pretend to know a family it has only a postcode for`, /only know where Hannah’s family sets off from/.test(listText) || /hasn’t shared enough for a Family Fit/.test(halfway) || (await page.getByTestId('halfway-fit-other').innerText()).includes('Not assessed'));
     await page.getByTestId('halfway-plan').first().click();
     await settle(page, 4000);
     await page.screenshot({ path: join(dir, '09-halfway-plan.jpg'), type: 'jpeg', quality: 82 });
@@ -315,13 +328,20 @@ for (const [width, height] of VIEWPORTS) {
   await page.goto(`${BASE}/halfway?family=guest-hannah`, { waitUntil: 'domcontentloaded' });
   await settle(page, 3000);
   const between = await text(page);
-  check(`${label}: Meet halfway says it looked between the two homes, not only at Home`, /We looked at \d+ places? between your two homes/.test(between));
-  const topHeading = (between.match(/(Best for both|Best compromise|Promising option[^\n]*)\n[^\n]*/) ?? [''])[0].replace(/\n/g, ' | ');
-  check(`${label}: a place only the stored catalogue holds is offered first, under a heading that makes only the claim it can support`, between.includes(BARNET) && topHeading.includes(BARNET) && /^(Best compromise|Promising option · \d things? to check)/.test(topHeading), topHeading);
+  const topLabel = await page.getByTestId('halfway-option-label').first().innerText();
+  const topName = await page.getByTestId('halfway-selected-name').innerText();
+  const topHeading = `${topLabel} | ${topName}`;
+  await showList(page);
+  const betweenList = await text(page);
+  await showMap(page);
+  check(`${label}: Meet halfway says it looked between the two homes, not only at Home`, /We looked at \d+ places? between your two homes/.test(betweenList));
+  check(`${label}: a place only the stored catalogue holds is offered first, under a heading that makes only the claim it can support`, betweenList.includes(BARNET) && topName.includes(BARNET) && /^(Best compromise|Promising option · \d things? to check)/.test(topLabel), topHeading);
   check(`${label}: journeys are described as fairness, never as who travels less`, /Almost equal journeys|Journeys are within \d+ minutes of each other|Journeys differ by \d+ minutes/.test(between) && !/shorter journey|longer journey|has further to go/i.test(between));
   check(`${label}: estimated wording is kept ("about N min")`, (between.match(/about \d+ min/g) ?? []).length >= 2);
   check(`${label}: "Best for both" never appears over something still to check`, await bestForBothIsHonest(page));
-  check(`${label}: the card reads fairness, then fit, then what needs checking`, await (async () => { const [f, fit, chk] = await cardOrder(page.getByTestId('halfway-option').first()); return f >= 0 && (fit < 0 || f < fit) && (chk < 0 || (fit < 0 ? f : fit) < chk); })());
+  await showList(page);
+  check(`${label}: the card reads journeys, then fit, then what needs checking`, await (async () => { const [j, fit, chk] = await cardOrder(page.getByTestId('halfway-option').first()); return j >= 0 && (fit < 0 || j < fit) && (chk < 0 || (fit < 0 ? j : fit) < chk); })());
+  await showMap(page);
   check(`${label}: it is not the Home fallback`, (await page.getByTestId('halfway-fallback').count()) === 0);
   await page.screenshot({ path: join(dir, '10-halfway-between.jpg'), type: 'jpeg', quality: 82 });
 
@@ -329,6 +349,7 @@ for (const [width, height] of VIEWPORTS) {
   await page.route('**/api/places/search?*intent=between*', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'down', code: 'CATALOGUE_UNAVAILABLE' }) }));
   await page.goto(`${BASE}/halfway?family=guest-hannah`, { waitUntil: 'domcontentloaded' });
   await settle(page, 4500);
+  await showList(page);
   const fallback = await text(page);
   check(`${label}: an unreachable catalogue falls back to Home's places and says there may be better ones in between`, (await page.getByTestId('halfway-fallback').count()) > 0 && /There may be better ones in between/.test(fallback) && !fallback.includes(BARNET));
   await page.unroute('**/api/places/search?*intent=between*');
@@ -340,9 +361,10 @@ for (const [width, height] of VIEWPORTS) {
   const needy = await freshContext(width, height, { ...GUEST, ages: [1], required: ['babyChanging'] });
   await needy.page.goto(`${BASE}/halfway?family=guest-hannah`, { waitUntil: 'domcontentloaded' });
   await settle(needy.page, 3200);
+  await showList(needy.page);
   const needText = await text(needy.page);
   check(`${label}: an unconfirmed must-have keeps the place on the list, with a prominent "needs checking" block`, needText.includes(FINCHLEY) && (await needy.page.getByTestId('halfway-needs-checking').count()) > 0 && /Needs checking before you go/i.test(needText));
-  check(`${label}: it says exactly what to check, for the family that needs it`, /Baby changing isn’t confirmed at Finchley Fixture Play Barn, and Hannah’s family needs it/.test(needText));
+  check(`${label}: it says that something the other family needs is unconfirmed, without saying what`, /Something Hannah’s family needs isn’t confirmed at Finchley Fixture Play Barn\. Check before you go/.test(needText) && !/baby changing/i.test(needText.replace(/A place confirmed to LACK/i, '')));
   check(`${label}: a place confirmed to LACK the must-have is ruled out`, !needText.includes(HENDON));
   check(`${label}: a place with an unconfirmed must-have is never labelled "Best for both"`, await bestForBothIsHonest(needy.page) && !/Best for both/.test(await needy.page.getByTestId('halfway-option').filter({ hasText: FINCHLEY }).first().innerText()));
   check(`${label}: and an unconfirmed one is never worded as missing`, !/No baby changing|does not have baby changing/i.test(needText));
@@ -351,10 +373,12 @@ for (const [width, height] of VIEWPORTS) {
   await needy.page.screenshot({ path: join(dir, '11-halfway-needs-checking.jpg'), type: 'jpeg', quality: 82 });
   // Planning it still works: an unknown must-have never stops a plan.
   const finchleyCard = needy.page.getByTestId('halfway-option').filter({ hasText: FINCHLEY }).first();
-  await finchleyCard.getByTestId('halfway-plan').click();
+  await finchleyCard.getByTestId('halfway-option-head').click();
+  await needy.page.waitForTimeout(700);
+  await needy.page.getByTestId('halfway-plan').click();
   await settle(needy.page, 4200);
   const jointPlan = await text(needy.page);
-  check(`${label}: Plan this day still builds the plan, with what needs checking said on it`, (await needy.page.getByTestId('plan-save').isVisible().catch(() => false)) && /Needs checking before you go/i.test(jointPlan) && /Baby changing isn’t confirmed at Finchley Fixture Play Barn/.test(jointPlan), jointPlan.replace(/\s+/g, ' ').slice(0, 200));
+  check(`${label}: Plan this day still builds the plan, with what needs checking said on it`, (await needy.page.getByTestId('plan-save').isVisible().catch(() => false)) && /Needs checking before you go/i.test(jointPlan) && /Something Hannah’s family needs isn’t confirmed at Finchley Fixture Play Barn/.test(jointPlan) && !/Hannah[^.]*baby changing|baby changing[^.]*Hannah/i.test(jointPlan), jointPlan.replace(/\s+/g, ' ').slice(0, 200));
   await needy.context.close();
 
   // "Best for both" is still available when it is supported: a household of one child, a family that shared their child's age.

@@ -11,6 +11,7 @@ import Animated, {
 
 import { spring, timing } from '@/src/design-system/animations/presets';
 import { colors, radius } from '@/src/design-system/tokens';
+import { isLargeText, useFontScale } from '@/src/hooks/use-font-scale';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 
 import { Text } from './Text';
@@ -120,6 +121,8 @@ export function Chip({ label, active = false, onPress, appearance = 'outlined', 
   // where hitSlop is ignored.
   const drawnHeight = rail ? rail.height : small ? SMALL_CHIP_HEIGHT : CHIP_HEIGHT;
   const targetHeight = Math.max(MIN_TARGET, drawnHeight);
+  // At larger text the label wraps and the pill grows to hold it: the heights above become minimums.
+  const big = isLargeText(useFontScale());
 
   return (
     <Pressable
@@ -138,7 +141,7 @@ export function Chip({ label, active = false, onPress, appearance = 'outlined', 
         pressed.value = withSpring(1, spring.gentle);
       }}
       // The extra height is taken back out of the layout, so a 40 or 42pt chip occupies 40 or 42pt.
-      style={[styles.target, { height: targetHeight, marginVertical: -(targetHeight - drawnHeight) / 2 }, style]}
+      style={[styles.target, big ? { minHeight: targetHeight, maxWidth: '100%' } : { height: targetHeight, marginVertical: -(targetHeight - drawnHeight) / 2 }, style]}
     >
       <Animated.View
         style={[
@@ -146,6 +149,7 @@ export function Chip({ label, active = false, onPress, appearance = 'outlined', 
           (appearance === 'plain' || small || tintFill) && styles.plain,
           small && styles.small,
           rail && { height: rail.height, paddingHorizontal: rail.paddingX },
+          big && { height: 'auto', minHeight: drawnHeight, paddingVertical: 8 },
           animatedStyle,
         ]}
       >
@@ -159,7 +163,7 @@ export function Chip({ label, active = false, onPress, appearance = 'outlined', 
             rail && { fontSize: rail.fontSize, lineHeight: rail.lineHeight },
             rail && active && styles.smallLabelActive,
           ]}
-          numberOfLines={1}
+          numberOfLines={big ? undefined : 1}
         >
           {label}
         </Text>

@@ -1,45 +1,49 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PageHeader } from '@/src/components/navigation/PageHeader';
-
+import { HalfwayEditSheet, MeetingEnvironment } from '@/src/components/halfway/EditSheet';
+import { HalfwayListCard } from '@/src/components/halfway/ListCard';
+import { CollapsedRecommendation, ExpandedRecommendation } from '@/src/components/halfway/Sheet';
+import { FallbackBanner, LoadFailed, LoadingRecommendations, NoSuitablePlaces } from '@/src/components/halfway/States';
+import { HalfwayHeader, HalfwayTitle, MapListToggle, SheetSurface } from '@/src/components/halfway/chrome';
 import { AddFamilyByPostcode } from '@/src/components/planning/AddFamilyByPostcode';
-import { PlanFormRow } from '@/src/components/planning/PlanDraftForm';
-import { Button, Chip, EmptyState, Skeleton, Text } from '@/src/components/ui';
-import { DateField, TimeField } from '@/src/components/ui/DateTimeField';
-import { VenueImage } from '@/src/components/ui/VenueImage';
 import { HalfwayMap } from '@/src/components/planning/HalfwayMap';
-import { colors, radius, spacing } from '@/src/design-system/tokens';
+import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
+import { Chip, EmptyState, Text } from '@/src/components/ui';
+import { colors, spacing } from '@/src/design-system/tokens';
 import { useConnectedFamilies } from '@/src/hooks/use-connected-families';
+import { isLargeText, useFontScale } from '@/src/hooks/use-font-scale';
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import { useBetweenVenues, useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
-import { HalfwayOption, familyPhrase, meetHalfway, topCardLabel } from '@/src/services/planning/meet-halfway';
+import { HalfwayOption, meetHalfway } from '@/src/services/planning/meet-halfway';
 import { DEFAULT_START_AT, firstValue, planDraftToParams } from '@/src/services/planning/plan-draft';
 import { planningFamilyFromProfile } from '@/src/services/planning/plan-parties';
-import { seedVenueDetail } from '@/src/services/venue-detail-seed';
 import { PlanningFamily } from '@/src/services/planning/planner';
-import { localDate, localTime, usePlanningStore } from '@/src/stores/planning-store';
+import { seedVenueDetail } from '@/src/services/venue-detail-seed';
 import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
-import { formatCategory } from '@/src/utils/format-category';
-import { dateQuickChoices, shortDateLabel } from '@/src/utils/plan-quick-choices';
-import { travelTimeLabel } from '@/src/utils/travel-time';
+import { useChromeStore } from '@/src/stores/chrome-store';
+import { localDate, localTime, usePlanningStore } from '@/src/stores/planning-store';
 import { familyDisplayName } from '@/src/utils/family-title';
+import { shortDateLabel } from '@/src/utils/plan-quick-choices';
 
 /**
  * MEET HALFWAY: a place that works for two families. Its own tab (Home, Explore, Families, Halfway, Plans, Profile).
  *
- * One screen, one question: who are you meeting, and when. Everything after that is the engine's answer
- * (`meetHalfway`): places ranked by fair journeys for BOTH families, the planner's own idea of suitability applied to each,
- * and the reasons said in plain words ("about 28 min for your family, about 31 for Hannah's"). Tapping "Plan this day"
- * hands the place and both families to the same Plan screen every other plan uses, with lunch, routines and advice, so a
- * meeting is not a separate product.
+ * The map is the screen. It is drawn on the device (no tiles, no provider, no spend) and shows the two families as rough
+ * AREAS and the recommended places as numbered pins; a collapsible sheet under it carries the selected place: the engine's
+ * own label, each family's Family Fit and journey, and "Plan this day". The List is the same places as cards, and tapping
+ * one selects it on the map. "Edit meeting details" (who, when, indoor or outdoor) opens from the selector at the top.
+ *
+ * The engine (`meetHalfway`) is unchanged by any of this: places ranked by fair journeys for BOTH families, the planner's
+ * own idea of suitability applied to each. Nothing is invented for the screen: a journey is "about N min", estimated from
+ * distance; a Family Fit is the engine's grade for that family, and for the other family only what they chose to share.
  *
  * WHERE THE PLACES COME FROM. Not from Home, which is one family's recommendations and would bias the answer toward them.
  * `useBetweenVenues` reads the stored venue catalogue in the corridor between the two homes (a database read: no Google, no
  * spend), and the engine then applies both families' needs. Home's places are used only if that lookup fails, and the
- * screen says so. Journeys are the free distance estimate: opening this makes no paid route request.
+ * screen says so. Opening this makes no paid route request and no paid image request beyond what a card already shows.
  */
 export default function MeetHalfwayScreen() {
   const router = useRouter();
@@ -58,18 +62,26 @@ export default function MeetHalfwayScreen() {
   const [date, setDate] = useState(today);
   const [dateOpen, setDateOpen] = useState(false);
   const [startAt, setStartAt] = useState(DEFAULT_START_AT);
+  const [environment, setEnvironment] = useState<MeetingEnvironment>('either');
   const [adding, setAdding] = useState(false);
-  // When and Start are folded into one line once a family is chosen, so the map is the first thing seen; "Change" opens them.
-  const [whenOpen, setWhenOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [chosen, setChosen] = useState<string | null>(preselected ?? null);
-  // Map first: the map (with the Map / List control) stays at the top of the screen while the cards scroll under it, so
-  // the selected place and its pin are always seen together. Tapping a pin scrolls its card into view.
-  const scrollRef = useRef<ScrollView>(null);
-  const [mode, setMode] = useState<'map' | 'list'>('map');
+  // At the larger text sizes the list is the way in (the map would be a few inches of a small screen under a tall card); the
+  // map is still one tap away. Chosen once, when the screen opens: a later change of text size does not move you.
+  const largeText = isLargeText(useFontScale());
+  const { height: windowHeight } = useWindowDimensions();
+  const [mode, setMode] = useState<'map' | 'list'>(largeText ? 'list' : 'map');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [resultsTop, setResultsTop] = useState(0);
-  const [stickyHeight, setStickyHeight] = useState(0);
-  const cardTops = useRef<Record<string, number>>({});
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [bodyHeight, setBodyHeight] = useState(0);
+  // The edit sheet is a focused modal: it has the whole screen, so the floating navigation steps aside while it is open and
+  // is restored when it closes, and also if this screen goes away with the sheet still open.
+  const setTabBarHidden = useChromeStore((s) => s.setTabBarHidden);
+  const [sheetHeight, setSheetHeight] = useState(380);
+  useEffect(() => {
+    setTabBarHidden(editOpen);
+    return () => setTabBarHidden(false);
+  }, [editOpen, setTabBarHidden]);
   // A later link that names a family ("Meet halfway" on a connected family in Families) selects them here, even when the
   // screen is already open, rather than only on first open.
   useEffect(() => {
@@ -111,8 +123,6 @@ export default function MeetHalfwayScreen() {
   const isLoading = between.isLoading || (between.isError && homeFallback.isLoading);
   const isError = between.isError && homeFallback.isError;
   const refetch = () => (between.isError ? Promise.all([between.refetch(), homeFallback.refetch()]) : between.refetch());
-  const dateChoices = dateQuickChoices(today);
-  const dateIsQuick = dateChoices.some((c) => c.value === date);
 
   const result = useMemo(() => {
     if (typeof mine === 'string' || !other || !venues) return null;
@@ -124,25 +134,20 @@ export default function MeetHalfwayScreen() {
       arriveAt: startAt,
       today,
       nowMinutes: Number(localTime().slice(0, 2)) * 60 + Number(localTime().slice(3, 5)),
+      environment,
     });
-  }, [mine, other, venues, date, startAt, today]);
+  }, [mine, other, venues, date, startAt, today, environment]);
 
   // The place in focus: the one tapped, else the top recommendation. A new result (another family, another time) that no
   // longer holds the tapped place falls back to its own first.
-  const selected = result?.options.find((option) => option.venue.id === selectedId) ?? result?.options[0] ?? null;
-  const areas = typeof mine === 'string' || !other ? null : { mine: { latitude: mine.latitude, longitude: mine.longitude }, other: { latitude: other.latitude, longitude: other.longitude } };
-  const hasMap = Boolean(areas && result && result.options.length > 0);
-  const choose = (id: string, from: 'card' | 'pin') => {
-    setSelectedId(id);
-    if (from === 'pin') {
-      // Bring the card for this pin under the map.
-      const top = cardTops.current[id];
-      if (top !== undefined) scrollRef.current?.scrollTo({ y: Math.max(0, resultsTop + top - stickyHeight - spacing.sm), animated: true });
-    } else if (mode === 'list') {
-      setMode('map');
-    }
-  };
+  const options = result?.options ?? [];
+  const selectedIndex = Math.max(0, options.findIndex((option) => option.venue.id === selectedId));
+  const selected: HalfwayOption | null = options[selectedIndex] ?? null;
 
+  const choose = (id: string) => {
+    setSelectedId(id);
+    setMode('map');
+  };
 
   const plan = (option: HalfwayOption) => {
     if (!other) return;
@@ -161,410 +166,268 @@ export default function MeetHalfwayScreen() {
           visit: 'not-sure',
           returnBy: '',
           bufferMinutes: 15,
-          environment: 'either',
+          environment,
         }),
       },
     } as never);
   };
+  const openPlace = (option: HalfwayOption) => {
+    seedVenueDetail(option.venue);
+    router.push(`/venue/${option.venue.id}` as never);
+  };
+  const openProfile = () => {
+    setEditOpen(false);
+    router.push('/profile/edit' as never);
+  };
+  const onAdded = (family: PlanningFamily) => {
+    setChosen(family.id);
+    setAdding(false);
+  };
 
-  return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      {/* A tab of its own, so it clears the floating navigation. Map first: once a family is chosen the form folds into one
-          line, and the Map / List control with the map (the third child) stays pinned while the cards scroll under it. */}
-      <ScrollView
-        ref={scrollRef}
-        contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={hasMap ? [2] : undefined}
-      >
-        <PageHeader
-          title="Meet halfway"
-          subtitle="Places that work for two families: fair journeys, what you each need, both routines."
-          flush
-          testID="halfway-header"
-        />
+  const sheetTop = Math.max(64, insets.top + 17);
+  const editSheet = editOpen ? (
+    <HalfwayEditSheet
+      top={sheetTop}
+      candidates={candidates}
+      chosen={chosen}
+      onChoose={setChosen}
+      adding={adding}
+      onToggleAdding={() => setAdding((open) => !open)}
+      onAdded={onAdded}
+      mine={typeof mine === 'string' ? null : mine}
+      other={other}
+      date={date}
+      onDate={setDate}
+      startAt={startAt}
+      onStartAt={setStartAt}
+      dateOpen={dateOpen}
+      onDateOpen={setDateOpen}
+      today={today}
+      environment={environment}
+      onEnvironment={setEnvironment}
+      onEditProfile={openProfile}
+      onClose={() => setEditOpen(false)}
+    />
+  ) : null;
 
-        <View style={styles.form}>
-          <PlanFormRow label="Who are you meeting?">
-            <View style={styles.chips}>
-              {candidates.map((candidate) => (
-                <Chip
-                  key={candidate.id}
-                  size="small"
-                  label={familyDisplayName(candidate.label)}
-                  active={chosen === candidate.id}
-                  onPress={() => setChosen(candidate.id)}
-                />
-              ))}
-              <Chip size="small" label="+ Add by postcode" active={adding} onPress={() => setAdding((open) => !open)} />
-            </View>
-            {showAdd && candidates.length === 0 ? (
-              <Text variant="caption" color={colors.text.secondary} testID="halfway-no-families">
-                You don’t need a connected family. Add where the other family sets off from, with a first name and a postcode. Connect families under Families to use their real details.
-              </Text>
-            ) : null}
-            {showAdd ? (
-              <AddFamilyByPostcode
-                onAdded={(family) => {
-                  setChosen(family.id);
-                  setAdding(false);
-                }}
-                onCancel={() => setAdding(false)}
-              />
-            ) : null}
-          </PlanFormRow>
-
-          {other && !whenOpen && !showAdd ? (
-            <View style={styles.whenSummary} testID="halfway-when-summary">
-              <Text variant="bodySmall" style={styles.whenSummaryText} numberOfLines={2}>
-                {dateIsQuick ? (dateChoices.find((c) => c.value === date)?.label ?? shortDateLabel(date)) : shortDateLabel(date)} · arrive {startAt}
-              </Text>
-              <Chip size="small" label="Change" onPress={() => setWhenOpen(true)} testID="halfway-when-change" />
-            </View>
-          ) : (
-            <>
-          <PlanFormRow label="When">
-                <View style={styles.chips}>
-                  {dateChoices.map((choice) => (
-                    <Chip
-                      key={choice.value}
-                      size="small"
-                      label={choice.label}
-                      active={date === choice.value}
-                      onPress={() => {
-                        setDateOpen(false);
-                        setDate(choice.value);
-                      }}
-                    />
-                  ))}
-                  <Chip
-                    size="small"
-                    label={!dateIsQuick ? shortDateLabel(date) : 'Other date'}
-                    active={!dateIsQuick || dateOpen}
-                    onPress={() => setDateOpen(true)}
-                  />
-                </View>
-                {dateOpen || !dateIsQuick ? <DateField label="" a11yLabel="Date of the meeting" value={date} onChange={setDate} /> : null}
-              </PlanFormRow>
-
-              <PlanFormRow label="Start">
-                <TimeField label="" a11yLabel="Arrival time" value={startAt} onChange={setStartAt} />
-                <Text variant="caption" color={colors.text.secondary}>
-                  When you’d both like to arrive. Each family’s leaving time is worked out from its own journey.
-                </Text>
-              </PlanFormRow>
-            </>
-          )}
-        </View>
-
-        {hasMap && result && selected && areas && other ? (
-          <View style={styles.sticky} onLayout={(e) => setStickyHeight(e.nativeEvent.layout.height)} testID="halfway-sticky">
-            <View style={styles.modeRow}>
-              <View style={styles.modeChips}>
-                <Chip size="small" label="Map" active={mode === 'map'} onPress={() => setMode('map')} testID="halfway-mode-map" />
-                <Chip size="small" label="List" active={mode === 'list'} onPress={() => setMode('list')} testID="halfway-mode-list" />
-              </View>
-              <Text variant="bodySmall" numberOfLines={1} style={styles.modeSelected} testID="halfway-selected-name">
-                {result.options.findIndex((option) => option.venue.id === selected.venue.id) + 1} · {selected.venue.name}
-              </Text>
-            </View>
-            {mode === 'map' ? (
-              <HalfwayMap
-                mine={{ ...areas.mine, label: 'Your family' }}
-                other={{ ...areas.other, label: familyDisplayName(other.label) }}
-                venue={{ latitude: selected.venue.latitude, longitude: selected.venue.longitude, name: selected.venue.name }}
-                venues={result.options.map((option) => ({ id: option.venue.id, latitude: option.venue.latitude, longitude: option.venue.longitude, name: option.venue.name }))}
-                selectedId={selected.venue.id}
-                onSelectPin={(id) => choose(id, 'pin')}
-                height={200}
-                legend={false}
-              />
-            ) : null}
-          </View>
-        ) : null}
-
-        {typeof mine === 'string' ? (
+  // ---- states with no meeting yet: your starting point is missing, or nobody is chosen --------------------------------
+  if (typeof mine === 'string') {
+    return (
+      <View style={styles.screen}>
+        <HalfwayTitle />
+        <View style={styles.centre}>
           <EmptyState
-            icon="home-outline"
+            icon="search-outline"
             title="Add where you set off from"
             message="We need your home area to work out your journey."
             actionLabel="Edit your family"
             onAction={() => router.push('/profile/edit' as never)}
           />
-        ) : !other ? (
-          <Text variant="bodySmall" color={colors.text.secondary} testID="halfway-choose">
-            Choose who you’re meeting to see places that suit you both.
-          </Text>
-        ) : isLoading ? (
-          <Skeleton height={160} borderRadius={radius.lg} />
-        ) : isError ? (
-          <EmptyState icon="cloud-offline-outline" title="We couldn’t load places" message="Check your connection and try again." actionLabel="Try again" onAction={() => void refetch()} />
-        ) : result ? (
-          <Results
-            result={result}
-            other={other.label}
-            selectedId={selected?.venue.id ?? null}
-            hasMap={hasMap}
-            onLayoutTop={setResultsTop}
-            onLayoutCard={(id, y) => {
-              cardTops.current[id] = y;
-            }}
-            onSelect={(id) => choose(id, 'card')}
-            usingHomeFallback={usingHomeFallback}
-            onPlan={plan}
-            onOpen={(option) => {
-              seedVenueDetail(option.venue);
-              router.push(`/venue/${option.venue.id}` as never);
-            }}
-            onStartAt={setStartAt}
-          />
-        ) : null}
-      </ScrollView>
-    </View>
-  );
-}
-
-function Results({
-  result,
-  other,
-  selectedId,
-  hasMap,
-  usingHomeFallback,
-  onPlan,
-  onOpen,
-  onStartAt,
-  onLayoutTop,
-  onLayoutCard,
-  onSelect,
-}: {
-  result: ReturnType<typeof meetHalfway>;
-  other: string;
-  /** The place in focus on the map: its card is marked, and its pin is the filled one. */
-  selectedId: string | null;
-  /** False when there is nothing to draw (no usable positions): the cards then carry no map actions. */
-  hasMap: boolean;
-  /** Where the results start on the page, and where each card starts within them, so a pin can scroll to its card. */
-  onLayoutTop?: (y: number) => void;
-  onLayoutCard?: (id: string, y: number) => void;
-  onSelect: (id: string) => void;
-  usingHomeFallback: boolean;
-  onPlan: (option: HalfwayOption) => void;
-  onOpen: (option: HalfwayOption) => void;
-  onStartAt: (time: string) => void;
-}) {
-  const mapped = result.options.find((option) => option.venue.id === selectedId) ?? result.options[0];
-  const notes = (
-    <>
-      {usingHomeFallback ? (
-        <Text variant="caption" color={colors.warning[600]} testID="halfway-fallback">
-          We couldn’t search between your homes just now, so these are the places already on Home. There may be better ones in between.
-        </Text>
-      ) : result.considered > 0 ? (
-        <Text variant="caption" color={colors.text.secondary} testID="halfway-source">
-          We looked at {result.considered} {result.considered === 1 ? 'place' : 'places'} between your two homes, not just the ones on Home.
-        </Text>
-      ) : null}
-      {result.otherKnown.routinesLegacy ? (
-        <Text variant="caption" color={colors.text.secondary} testID="halfway-legacy-routines">
-          {familyPhrase('other', other)} shared when they’re home but not what for, so we treat those times as fixed. They can update what they share for better advice.
-        </Text>
-      ) : null}
-    </>
-  );
-  if (result.options.length === 0) {
-    const { excluded } = result;
-    return (
-      <View style={styles.empty} testID="halfway-empty">
-        <Text variant="heading3">No place works for both of you yet</Text>
-        {notes}
-        {result.considered === 0 ? (
-          <Text variant="bodySmall" color={colors.text.secondary}>
-            We don’t have any places on record between your two homes yet.
-          </Text>
-        ) : null}
-        {result.earliestArrival ? (
-          <>
-            <Text variant="bodySmall" color={colors.text.secondary}>
-              That start has already gone for one of you. The earliest you could both be there is {result.earliestArrival}.
-            </Text>
-            <Button label={`Start at ${result.earliestArrival}`} size="sm" onPress={() => onStartAt(result.earliestArrival!)} />
-          </>
-        ) : (
-          <>
-            {excluded.journey > 0 ? (
-              <Text variant="bodySmall" color={colors.text.secondary}>
-                {excluded.journey} places are further than one of you wants to drive.
-              </Text>
-            ) : null}
-            {excluded.closed > 0 ? (
-              <Text variant="bodySmall" color={colors.text.secondary}>
-                {excluded.closed} are shut at that time.
-              </Text>
-            ) : null}
-            {excluded.requirements > 0 ? (
-              <Text variant="bodySmall" color={colors.text.secondary}>
-                {excluded.requirements} are ruled out: they’re confirmed to lack something one of you needs, or their age policy doesn’t admit you.
-              </Text>
-            ) : null}
-            <Text variant="bodySmall" color={colors.text.secondary}>
-              Try another day or time.
-            </Text>
-          </>
-        )}
+        </View>
       </View>
     );
   }
-  return (
-    <View style={styles.results} testID="halfway-results" onLayout={(e) => onLayoutTop?.(e.nativeEvent.layout.y)}>
-      <Text variant="heading2">Places that work for both</Text>
-      {/* "Halfway" is the name, not the method: nothing here is the midpoint between two homes, and there is no score. */}
-      <Text variant="bodySmall" color={colors.text.secondary} testID="halfway-ranking-note">
-        Ranked by how fair the two journeys are and what each family needs, not by the midpoint between your homes.
-        {hasMap ? ' The numbers on the map are the places below, in the same order: tap a place to see where it is, or a pin to find its place.' : ''}
-      </Text>
-      {notes}
-      {!result.otherKnown.children && !result.otherKnown.routines ? (
-        <Text variant="caption" color={colors.text.secondary}>
-          We only know where {familyPhrase('other', other)} sets off from, so we’ve checked journeys, opening hours and what you need.
-        </Text>
-      ) : null}
-      {result.options.map((option, index) => {
-        const isSelected = option.venue.id === mapped?.venue.id;
-        return (
-          <View
-            key={option.venue.id}
-            style={[styles.card, isSelected && hasMap ? styles.cardMapped : null]}
-            testID="halfway-option"
-            onLayout={(e) => onLayoutCard?.(option.venue.id, e.nativeEvent.layout.y)}
-          >
-            {/* The card's head is the way to put this place on the map; the buttons below keep their own jobs. */}
-            <Pressable
-              style={styles.cardHead}
-              onPress={hasMap ? () => onSelect(option.venue.id) : undefined}
-              accessibilityRole={hasMap ? 'button' : undefined}
-              accessibilityLabel={hasMap ? `${index + 1}. Show ${option.venue.name} on the map` : undefined}
-              accessibilityState={hasMap ? { selected: isSelected } : undefined}
-              testID="halfway-option-head"
-            >
-              {/* On the map, the place in focus is the filled green badge (as its pin is); the others are outlined in the same green. */}
-              <View style={[styles.number, hasMap && !isSelected ? styles.numberQuiet : null]}>
-                <Text style={[styles.numberText, hasMap && !isSelected ? styles.numberTextQuiet : null]}>{String(index + 1)}</Text>
-              </View>
-              <VenueImage
-                uri={option.venue.imageUrl}
-                category={option.venue.category}
-                alt={option.venue.name}
-                style={styles.thumb}
-                borderRadius={radius.lg}
-              />
-              <View style={styles.cardTitle}>
-                <Text variant="caption" color={colors.text.secondary}>
-                  {index === 0 ? topCardLabel(option) : formatCategory(option.venue.category)}
-                </Text>
-                <Text variant="heading3" numberOfLines={2}>
-                  {option.venue.name}
-                </Text>
-                {hasMap && isSelected ? (
-                  <Text variant="caption" color={colors.action} testID="halfway-on-map">
-                    On the map
-                  </Text>
-                ) : null}
-              </View>
-            </Pressable>
-            <View style={styles.journeys}>
-              <Text variant="caption" color={colors.text.secondary}>
-                Each family’s journey, estimated from distance
-              </Text>
-              {option.journeys.map((journey) => (
-                <View key={journey.familyId} style={styles.journeyRow}>
-                  <Text variant="bodySmall" color={colors.text.secondary} style={styles.journeyWho}>
-                    {journey.role === 'mine' ? 'Your family' : familyDisplayName(journey.label)}
-                  </Text>
-                  <Text variant="bodySmall" style={styles.journeyTime}>
-                    {travelTimeLabel(journey.minutes, 'estimated')}
-                  </Text>
-                </View>
-              ))}
-            </View>
-            {option.reasons.map((line) => (
-              <Text key={line} variant="bodySmall">
-                ✓ {line}
-              </Text>
+  if (!other) {
+    return (
+      <View style={styles.screen}>
+        <HalfwayTitle />
+        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <Text variant="heading3" accessibilityRole="header">Who are you meeting?</Text>
+          <View style={styles.chips}>
+            {candidates.map((candidate) => (
+              <Chip key={candidate.id} size="small" label={familyDisplayName(candidate.label)} active={chosen === candidate.id} onPress={() => setChosen(candidate.id)} />
             ))}
-            {option.needsChecking.length > 0 ? (
-              <View style={styles.needsChecking} testID="halfway-needs-checking">
-                <Text variant="label" color={colors.warning[600]}>
-                  Needs checking before you go
-                </Text>
-                {option.needsChecking.map((line) => (
-                  <Text key={line} variant="bodySmall">
-                    {line}.
-                  </Text>
-                ))}
-              </View>
-            ) : null}
-            {option.toCheck
-              .filter((line) => !option.needsChecking.includes(line))
-              .map((line) => (
-                <Text key={line} variant="bodySmall" color={colors.text.secondary}>
-                  ? {line}
-                </Text>
-              ))}
-            <View style={styles.actions}>
-              <Button label="Plan this day" size="sm" onPress={() => onPlan(option)} testID="halfway-plan" />
-              <Button label="See the place" size="sm" variant="ghost" onPress={() => onOpen(option)} />
-              {hasMap && !isSelected ? (
-                <Button label="Show on map" size="sm" variant="ghost" onPress={() => onSelect(option.venue.id)} testID="halfway-show-on-map" />
-              ) : null}
-            </View>
+            <Chip size="small" label="+ Add by postcode" active={showAdd} onPress={() => setAdding((open) => !open)} />
           </View>
-        );
-      })}
-      {hasMap ? (
-        <View style={styles.legend} testID="halfway-map-legend-note">
-          <Text variant="caption" color={colors.text.tertiary}>
-            On the map, each shaded circle is roughly where a family sets off from, about 1.5 km across and never a home address. The
-            numbered pins are the places above, in the same order; the filled one is selected. No routes are drawn, because journey
-            times are estimated from distance rather than measured.
-          </Text>
+          {showAdd && candidates.length === 0 ? (
+            <Text variant="caption" color={colors.text.secondary} testID="halfway-no-families">
+              You don’t need a connected family. Add where the other family sets off from, with a first name and a postcode. Connect families under Families to use their real details.
+            </Text>
+          ) : null}
+          {showAdd ? <AddFamilyByPostcode onAdded={onAdded} onCancel={() => setAdding(false)} /> : null}
+          {!showAdd || candidates.length > 0 ? (
+            <Text variant="bodySmall" color={colors.text.secondary} testID="halfway-choose">
+              Choose who you’re meeting to see places that suit you both.
+            </Text>
+          ) : null}
+        </ScrollView>
+      </View>
+    );
+  }
+
+  const otherName = familyDisplayName(other.label);
+  const when = `${shortDateLabel(date)} · arrive ${startAt}`;
+  const mapBlocked = isLoading || isError || options.length === 0;
+  const retry = () => void refetch();
+
+  // The card at the foot of the map: the selected recommendation, or what is happening instead.
+  const dock = selected && !isLoading && !isError ? (
+    <CollapsedRecommendation
+      option={selected}
+      index={selectedIndex}
+      total={options.length}
+      otherLabel={other.label}
+      bottomClearance={largeText ? spacing.lg + 8 : tabBarClearance}
+      onExpand={() => setDetailOpen(true)}
+      onPlan={() => plan(selected)}
+      onLayoutHeight={setSheetHeight}
+      inline={largeText}
+    />
+  ) : (
+    <View style={largeText ? undefined : styles.dock} onLayout={(e) => setSheetHeight(e.nativeEvent.layout.height)}>
+      <SheetSurface bottomPadding={largeText ? spacing.lg : tabBarClearance}>
+        {isLoading ? (
+          <LoadingRecommendations />
+        ) : isError ? (
+          <LoadFailed onRetry={retry} />
+        ) : result ? (
+          <NoSuitablePlaces result={result} other={other.label} onChangeWhen={() => setEditOpen(true)} onStartAt={setStartAt} />
+        ) : null}
+      </SheetSurface>
+    </View>
+  );
+
+  const header = <HalfwayHeader who={`You + ${otherName}`} when={when} otherName={otherName} onEdit={() => setEditOpen(true)} />;
+  // At larger text the header alone can fill a small phone: it then scrolls away with the page instead of staying pinned above it.
+  const scrollingHeader = largeText ? header : null;
+  const bigMapHeight = Math.max(240, Math.round(windowHeight * 0.38));
+  const mapToggle = (
+    <View style={styles.toggleOverlay} pointerEvents="box-none">
+      <MapListToggle mode={mode} onChange={setMode} disabled={isLoading} />
+      {usingHomeFallback ? <View style={styles.bannerOverlay}><FallbackBanner compact /></View> : null}
+    </View>
+  );
+  const mapAndToggle = (height: number, coveredBelow: number) => (
+    <>
+      <View style={StyleSheet.absoluteFill}>
+        <HalfwayMap
+          mine={{ latitude: mine.latitude, longitude: mine.longitude, label: 'Your family' }}
+          other={{ latitude: other.latitude, longitude: other.longitude, label: otherName }}
+          venue={selected && !mapBlocked ? { latitude: selected.venue.latitude, longitude: selected.venue.longitude, name: selected.venue.name } : undefined}
+          venues={mapBlocked ? undefined : options.map((option) => ({ id: option.venue.id, latitude: option.venue.latitude, longitude: option.venue.longitude, name: option.venue.name }))}
+          selectedId={selected?.venue.id}
+          onSelectPin={(id) => setSelectedId(id)}
+          height={height}
+          inset={{ top: 62, bottom: coveredBelow }}
+          legend={false}
+          bare
+        />
+      </View>
+      {largeText ? mapToggle : null}
+    </>
+  );
+
+  return (
+    <View style={styles.screen}>
+      {largeText ? null : header}
+
+      {mode === 'map' && largeText ? (
+        // At larger text the card cannot sit over the map and still leave a map: the screen scrolls instead. The map is a block
+        // of its own, and the recommendation follows it as an ordinary card, whole, with room below it for the navigation.
+        <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: tabBarClearance + spacing.lg }} showsVerticalScrollIndicator={false} testID="halfway-map-scroll">
+          {scrollingHeader}
+          <View style={{ height: bigMapHeight }} testID="halfway-map-body">
+            {mapAndToggle(bigMapHeight, 0)}
+          </View>
+          {dock}
+        </ScrollView>
+      ) : mode === 'map' ? (
+        <View style={styles.body} onLayout={(e) => setBodyHeight(Math.round(e.nativeEvent.layout.height))} testID="halfway-map-body">
+          {/* The map fills the screen under the header and the sheet: the places and both areas are fitted to the part left
+              visible, so the frame is the same for every selection and nothing is hidden behind the card. */}
+          {bodyHeight > 0 ? mapAndToggle(bodyHeight, sheetHeight) : null}
+          {mapToggle}
+          {dock}
         </View>
+      ) : (
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={[styles.listContent, { paddingBottom: tabBarClearance + spacing.lg }]}
+          showsVerticalScrollIndicator={false}
+          testID="halfway-list"
+        >
+          {largeText ? <View style={styles.headerBleed}>{header}</View> : null}
+          <View style={styles.toggleRow}>
+            <MapListToggle mode={mode} onChange={setMode} disabled={isLoading} />
+          </View>
+          {usingHomeFallback ? (
+            <Text variant="caption" color={colors.text.secondary} style={styles.centreText} testID="halfway-from-home">
+              {`Showing ${options.length} ${options.length === 1 ? 'place' : 'places'} from Home`}
+            </Text>
+          ) : options.length > 0 ? (
+            <Text variant="caption" color={colors.text.secondary} style={styles.centreText} testID="halfway-ranking-note">
+              Ranked by fair journeys and what each family needs
+            </Text>
+          ) : null}
+          {usingHomeFallback ? <FallbackBanner /> : null}
+          {isLoading ? (
+            <LoadingRecommendations />
+          ) : isError ? (
+            <LoadFailed onRetry={retry} />
+          ) : result && options.length === 0 ? (
+            <NoSuitablePlaces result={result} other={other.label} onChangeWhen={() => setEditOpen(true)} onStartAt={setStartAt} />
+          ) : (
+            <>
+              {options.map((option, index) => (
+                <HalfwayListCard
+                  key={option.venue.id}
+                  option={option}
+                  index={index}
+                  otherLabel={other.label}
+                  selected={option.venue.id === selected?.venue.id}
+                  onSelect={() => choose(option.venue.id)}
+                  onPlan={() => plan(option)}
+                />
+              ))}
+              {result && result.considered > 0 && !usingHomeFallback ? (
+                <Text variant="caption" color={colors.text.secondary} testID="halfway-source">
+                  We looked at {result.considered} {result.considered === 1 ? 'place' : 'places'} between your two homes, not just the ones on Home.
+                </Text>
+              ) : null}
+              {result && result.options.length > 0 && !result.otherKnown.children && !result.otherKnown.routines ? (
+                <Text variant="caption" color={colors.text.secondary}>
+                  We only know where {otherName} sets off from, so we’ve checked journeys, opening hours and what you need.
+                </Text>
+              ) : null}
+              <Text variant="caption" color={colors.text.tertiary}>
+                Ranked by how fair the two journeys are and what each family needs, not by the midpoint between your homes. Journey times are estimated from distance, not routed. Hours and facilities are as recorded for each place. Each shaded circle on the map is about 1.5 km across, never a home address; no routes are drawn.
+              </Text>
+              <PlaceCredits places={options.map((option) => option.venue)} />
+            </>
+          )}
+        </ScrollView>
+      )}
+
+      {detailOpen && selected && mode === 'map' ? (
+        <ExpandedRecommendation
+          option={selected}
+          index={selectedIndex}
+          total={options.length}
+          otherLabel={other.label}
+          bottomClearance={tabBarClearance}
+          top={sheetTop}
+          onCollapse={() => setDetailOpen(false)}
+          onPlan={() => plan(selected)}
+          onOpenPlace={() => openPlace(selected)}
+        />
       ) : null}
-      <Text variant="caption" color={colors.text.tertiary}>
-        Journey times are estimated from distance, not routed. Hours and facilities are as recorded for each place.
-      </Text>
+      {editSheet}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: spacing.screenPadding, gap: spacing.lg },
-  form: { gap: spacing.lg },
-  whenSummary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, minHeight: 44 },
-  whenSummaryText: { flex: 1 },
+  centre: { flex: 1, justifyContent: 'center', paddingBottom: 120 },
+  content: { paddingHorizontal: spacing.screenPadding, paddingTop: spacing.lg, gap: spacing.md },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  // The sticky band: the canvas colour behind it, so the cards scrolling under it never show through.
-  sticky: { backgroundColor: colors.background, paddingVertical: spacing.sm, gap: spacing.sm },
-  modeRow: { height: 44, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  modeChips: { flexDirection: 'row', gap: 6 },
-  modeSelected: { flex: 1, textAlign: 'right' },
-  results: { gap: spacing.md },
-  empty: { gap: spacing.sm, backgroundColor: colors.surface, borderRadius: radius.xl, padding: spacing.lg, borderWidth: 1, borderColor: colors.borderLight },
-  card: { gap: spacing.sm, backgroundColor: colors.surface, borderRadius: radius.xl, padding: spacing.lg, borderWidth: 1, borderColor: colors.borderLight },
-  cardMapped: { borderColor: colors.action },
-  cardHead: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
-  number: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.action, alignItems: 'center', justifyContent: 'center' },
-  numberQuiet: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.action },
-  numberText: { color: colors.text.inverse, fontFamily: 'Inter_700Bold', fontSize: 13, lineHeight: 16 },
-  numberTextQuiet: { color: colors.action },
-  thumb: { width: 56, height: 56 },
-  cardTitle: { flex: 1, gap: 2 },
-  needsChecking: { gap: 2, backgroundColor: colors.warning[50], borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.warning[100] },
-  journeys: { gap: 2, paddingVertical: spacing.xs },
-  journeyRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },
-  journeyWho: { flex: 1 },
-  journeyTime: { fontFamily: 'Inter_600SemiBold' },
-  actions: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center', flexWrap: 'wrap', marginTop: spacing.xs },
-  legend: { paddingTop: spacing.xs },
+  body: { flex: 1, overflow: 'hidden' },
+  toggleOverlay: { position: 'absolute', top: 10, left: 0, right: 0, alignItems: 'center', gap: 8 },
+  bannerOverlay: { alignSelf: 'stretch', paddingHorizontal: spacing.screenPadding },
+  toggleRow: { alignItems: 'center', paddingTop: 6 },
+  centreText: { textAlign: 'center' },
+  listContent: { paddingHorizontal: spacing.screenPadding, gap: spacing.md, paddingTop: 6 },
+  dock: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  // The list's content has side padding of its own; the header brings its own.
+  headerBleed: { marginHorizontal: -spacing.screenPadding },
 });

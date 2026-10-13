@@ -61,6 +61,16 @@ const PROFILE = {
   },
   version: 0,
 };
+// Meet halfway needs a located home and one family to meet (added by postcode, on this phone).
+const HALFWAY_PROFILE = { ...PROFILE, state: { ...PROFILE.state, profile: { ...PROFILE.state.profile, homeLocation: 'NW3', homeLatitude: 51.554, homeLongitude: -0.178 } } };
+const HALFWAY_PLANNING = {
+  state: {
+    families: [{ id: 'guest-kevin', label: 'Kevin', area: 'E8', latitude: 51.545, longitude: -0.06, ages: [3], maxDriveMinutes: 60, pushchair: true, required: ['toilets'], routines: [] }],
+    options: { date: '2026-01-17', leaveAt: '', returnBy: '', visitMinutes: 90, bufferMinutes: 15, environment: 'either' },
+    saved: [], savedDays: [], planningWith: null,
+  },
+  version: 1,
+};
 const FRESH = { state: { hasCompletedOnboarding: false, hasSeenSplash: true }, version: 0 };
 
 const SCREENS = [
@@ -77,6 +87,10 @@ const SCREENS = [
     },
   },
   { key: 'saved', route: '/saved', state: PROFILE },
+  { key: 'halfway-map', route: '/halfway', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-sheet-collapsed').or(page.getByTestId('halfway-empty')).first().waitFor({ timeout: 30000 }); await page.waitForTimeout(800); } },
+  { key: 'halfway-details', route: '/halfway', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-sheet-collapsed').or(page.getByTestId('halfway-empty')).first().waitFor({ timeout: 30000 }); if (await page.getByTestId('halfway-details').count()) await page.getByTestId('halfway-details').click(); await page.waitForTimeout(900); } },
+  { key: 'halfway-list', route: '/halfway', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-mode-list').click({ timeout: 30000 }); await page.waitForTimeout(1000); } },
+  { key: 'halfway-edit', route: '/halfway', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-edit').click({ timeout: 30000 }); await page.waitForTimeout(900); } },
   {
     key: 'venue',
     route: '/explore',
@@ -219,6 +233,7 @@ for (const screen of SCREENS) {
     const page = await context.newPage();
     await page.clock.setFixedTime(new Date('2026-01-13T19:30:00'));
     await page.addInitScript(([seed]) => window.localStorage.setItem('familypilot-family-v1', JSON.stringify(seed)), [screen.state]);
+    if (screen.planning) await page.addInitScript(([seed]) => window.localStorage.setItem('familypilot-planning-v1', JSON.stringify(seed)), [screen.planning]);
     await page.addInitScript((insets) => {
       const style = document.createElement('style');
       style.textContent = `div[style*="safe-area-inset"]{padding-top:${insets.top}px !important;padding-bottom:${insets.bottom}px !important;}`;

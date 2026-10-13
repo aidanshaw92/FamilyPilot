@@ -1,0 +1,169 @@
+{
+ "places": [
+  {
+   "familypilotId": "fp-google-ChIJAdLvZfkadkgRjwFvlivSzpo",
+   "externalId": "google:ChIJAdLvZfkadkgRjwFvlivSzpo",
+   "provider": "google",
+   "name": "Kentish Town City Farm",
+   "latitude": 51.5516,
+   "longitude": -0.1468,
+   "category": "farm",
+   "photos": [
+    "/api/places/photo?id=FIXTUREnotArealPlaceId0001&index=0&credit=A.%20Fixture&authorUri=https%3A%2F%2Fexample.invalid%2Fcontributor&photoUri=https%3A%2F%2Fexample.invalid%2Fphoto"
+   ],
+   "provenance": {},
+   "fetchedAt": "2026-10-12T00:00:00.000Z",
+   "enrichmentStatus": "enriched",
+   "familyMetadata": {
+    "familypilotPlaceId": "fp-google-ChIJAdLvZfkadkgRjwFvlivSzpo",
+    "enrichmentStatus": "enriched",
+    "facilities": [
+     "toilets"
+    ],
+    "familyFacilities": {
+     "parking": "no",
+     "toilets": "yes",
+     "freeParking": "no"
+    },
+    "pushchairSuitability": "good",
+    "accessibility": {
+     "accessibleToilet": "yes",
+     "wheelchairAccessible": "yes"
+    },
+    "updatedAt": "2026-10-12T00:00:00.000Z",
+    "provenance": {}
+   }
+  },
+  {
+   "familypilotId": "fp-google-ChIJvS60MMEcdkgRSMlH5VxD51Y",
+   "externalId": "google:ChIJvS60MMEcdkgRSMlH5VxD51Y",
+   "provider": "google",
+   "name": "Hackney City Farm",
+   "latitude": 51.5325,
+   "longitude": -0.0646,
+   "category": "farm",
+   "photos": [],
+   "provenance": {},
+   "fetchedAt": "2026-10-12T00:00:00.000Z",
+   "enrichmentStatus": "enriched",
+   "familyMetadata": {
+    "familypilotPlaceId": "fp-google-ChIJvS60MMEcdkgRSMlH5VxD51Y",
+    "enrichmentStatus": "enriched",
+    "facilities": [
+     "toilets",
+     "baby_changing",
+     "cafe"
+    ],
+    "familyFacilities": {
+     "cafe": "yes",
+     "parking": "no",
+     "toilets": "yes",
+     "babyChanging": "yes"
+    },
+    "accessibility": {
+     "accessibleToilet": "yes"
+    },
+    "updatedAt": "2026-10-12T00:00:00.000Z",
+    "provenance": {}
+   }
+  },
+  {
+   "familypilotId": "fp-google-ChIJIzJDyggadkgROFAV19Ti070",
+   "externalId": "google:ChIJIzJDyggadkgROFAV19Ti070",
+   "provider": "google",
+   "name": "Hampstead Heath",
+   "latitude": 51.5608,
+   "longitude": -0.1629,
+   "category": "park",
+   "photos": [
+    "/api/places/photo?id=FIXTUREnotArealPlaceId0003&index=0&credit=A.%20Fixture&authorUri=https%3A%2F%2Fexample.invalid%2Fcontributor&photoUri=https%3A%2F%2Fexample.invalid%2Fphoto"
+   ],
+   "provenance": {},
+   "fetchedAt": "2026-10-12T00:00:00.000Z",
+   "enrichmentStatus": "enriched",
+   "familyMetadata": {
+    "familypilotPlaceId": "fp-google-ChIJIzJDyggadkgROFAV19Ti070",
+    "enrichmentStatus": "enriched",
+    "facilities": [
+     "toilets",
+     "baby_changing"
+    ],
+    "familyFacilities": {
+     "toilets": "yes",
+     "babyChanging": "yes"
+    },
+    "accessibility": {
+     "accessibleToilet": "yes"
+    },
+    "updatedAt": "2026-10-12T00:00:00.000Z",
+    "provenance": {}
+   }
+  },
+  {
+   "familypilotId": "fp-google-ChIJATb-mYIQdkgRH82PlPcn3cs",
+   "externalId": "google:ChIJATb-mYIQdkgRH82PlPcn3cs",
+   "provider": "google",
+   "name": "Golders Hill Park",
+   "latitude": 51.567476,
+   "longitude": -0.1883365,
+   "category": "park",
+   "photos": [],
+   "provenance": {},
+   "fetchedAt": "2026-10-12T00:00:00.000Z",
+   "enrichmentStatus": "enriched",
+   "familyMetadata": {
+    "familypilotPlaceId": "fp-google-ChIJATb-mYIQdkgRH82PlPcn3cs",
+    "enrichmentStatus": "enriched",
+    "facilities": [
+     "toilets",
+     "baby_changing",
+     "cafe",
+     "playground"
+    ],
+    "familyFacilities": {
+     "cafe": "yes",
+     "toilets": "yes",
+     "playground": "yes",
+     "babyChanging": "yes"
+    },
+    "accessibility": {
+     "accessibleToilet": "yes"
+    },
+    "updatedAt": "2026-10-12T00:00:00.000Z",
+    "provenance": {}
+   }
+  },
+  {
+   "familypilotId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+   "externalId": "google:ChIJ7_PV980bdkgROekbwOVWVfo",
+   "provider": "google",
+   "name": "Babylon Park London",
+   "latitude": 51.5156,
+   "longitude": -0.1527,
+   "category": "soft_play",
+   "photos": [],
+   "provenance": {},
+   "fetchedAt": "2026-10-12T00:00:00.000Z",
+   "enrichmentStatus": "enriched",
+   "familyMetadata": {
+    "familypilotPlaceId": "fp-google-ChIJ7_PV980bdkgROekbwOVWVfo",
+    "enrichmentStatus": "enriched",
+    "facilities": [],
+    "familyFacilities": {
+     "parking": "no"
+    },
+    "accessibility": {},
+    "environment": "indoor",
+    "updatedAt": "2026-10-12T00:00:00.000Z",
+    "provenance": {}
+   }
+  }
+ ],
+ "provider": "stored-catalogue",
+ "intent": "between",
+ "googleCalls": 0,
+ "considered": 15,
+ "shortlisted": 5,
+ "fetchedAt": "2026-10-12T00:00:00.000Z",
+ "_note": "Read-only snapshot of five stored catalogue rows (see src/__tests__/fixtures/stored-venues.ts), the places the approved Figma v2 frames were drawn from. Used only by scripts/capture-halfway-figma-match.mjs to answer the between lookup."
+}

@@ -15,6 +15,10 @@ const MOTORWAY = '#E8C98A';
 const ROAD = '#E4DCCB';
 const OTHER = '#B0507E';
 
+/** The selected place's name sits in a white pill: its width from its characters (the same 6.6 px estimate the geometry uses), plus padding. */
+const pillWidth = (text: string) => Math.min(text.length, 28) * 6.6 + 20;
+const pillX = (x: number, anchor: 'start' | 'middle' | 'end', text: string) => (anchor === 'middle' ? x - pillWidth(text) / 2 : anchor === 'start' ? x : x - pillWidth(text));
+
 /**
  * Where the two families and the places are, on a map of London drawn on the device (see halfway-map.ts for the
  * privacy and no-route rules). Families are approximate AREAS; the places are numbered pins, each number matching its
@@ -27,15 +31,21 @@ export function HalfwayMap({
   onSelectPin,
   height = DEFAULT_HEIGHT,
   legend = true,
+  inset,
+  bare = false,
   ...props
 }: HalfwayMapInput & {
   onSelectPin?: (id: string) => void;
   height?: number;
+  /** Parts of the drawing covered by the screen's header and sheet: the places are fitted to what is left visible. */
+  inset?: { top?: number; bottom?: number };
+  /** Full-bleed: no rounded frame or border, and the source line drawn on the map itself, above the covered strip. */
+  bare?: boolean;
   /** The legend and the source line under the frame; off when the screen says these once elsewhere. */
   legend?: boolean;
 }) {
   const [width, setWidth] = useState(0);
-  const model = width > 0 ? halfwayMapModel(props, { width, height }) : null;
+  const model = width > 0 ? halfwayMapModel(props, { width, height, inset }) : null;
   const onLayout = (e: LayoutChangeEvent) => setWidth(Math.round(e.nativeEvent.layout.width));
 
   // Without usable positions there is nothing honest to draw: the journeys below still say how far each family is.
@@ -45,7 +55,7 @@ export function HalfwayMap({
 
   return (
     <View style={styles.wrap} testID="halfway-map">
-      <View style={[styles.frame, { height }]} onLayout={onLayout}>
+      <View style={[styles.frame, bare && styles.bare, { height }]} onLayout={onLayout}>
         {model ? (
           <>
             <View accessible accessibilityRole="image" accessibilityLabel={model.summary}>
@@ -77,21 +87,29 @@ export function HalfwayMap({
                     </G>
                   );
                 })}
+                {/* Where a crowd of places had to be spread so each pin can be seen and tapped, the place's real position is
+                    marked by a small dot beside its pin, joined by a hairline: the pin is moved, never the place. Not a route. */}
+                {model.pins.filter((pin) => pin.nudged).map((pin) => (
+                  <G key={`at-${pin.id}`} testID={`halfway-map-true-${pin.number}`}>
+                    <Path d={`M${pin.at.x} ${pin.at.y}L${pin.x} ${pin.y}`} stroke={colors.action} strokeOpacity={0.45} strokeWidth={1} />
+                    <Circle cx={pin.at.x} cy={pin.at.y} r={3} fill={colors.action} stroke={colors.surface} strokeWidth={1} />
+                  </G>
+                ))}
                 {/* The places: numbered as the cards are, the selected one larger, filled and named; the others outlined.
                     The selected pin is drawn last so it sits on top where pins crowd. */}
                 {model.pins.length > 0 ? (
                   model.pins.map((pin) => {
-                    const r = pin.selected ? 14 : 11;
+                    const r = pin.selected ? 19 : 14;
                     return (
                       <G key={pin.id}>
                         <Circle cx={pin.x} cy={pin.y} r={r} fill={pin.selected ? colors.action : colors.surface} stroke={pin.selected ? colors.surface : colors.action} strokeWidth={2} />
-                        <SvgText x={pin.x} y={pin.y + (pin.selected ? 5 : 4)} fill={pin.selected ? colors.text.inverse : colors.action} fontSize={pin.selected ? 13 : 11} fontFamily={fontFamily.bold} textAnchor="middle">
+                        <SvgText x={pin.x} y={pin.y + (pin.selected ? 6 : 5)} fill={pin.selected ? colors.text.inverse : colors.action} fontSize={pin.selected ? 17 : 13} fontFamily={fontFamily.bold} textAnchor="middle">
                           {String(pin.number)}
                         </SvgText>
                       </G>
                     );
                   })
-                ) : (
+                ) : model.venue ? (
                   // One place only (no list to number): a pin, where it is.
                   <G>
                     <Path
@@ -102,29 +120,44 @@ export function HalfwayMap({
                     />
                     <Circle cx={model.venue.x} cy={model.venue.y - 19} r={4} fill={colors.surface} />
                   </G>
-                )}
+                ) : null}
                 {/* The selected place's name, with a halo of the land colour under the ink so it reads over roads and water. */}
-                {[LAND, colors.ink].map((fill, index) => (
-                  <SvgText
-                    key={fill}
-                    x={model.venueLabel.x}
-                    y={model.venueLabel.y + (model.pins.length > 0 ? 6 : 0)}
-                    fill={fill}
-                    stroke={index === 0 ? LAND : undefined}
-                    strokeWidth={index === 0 ? 3 : undefined}
-                    fontSize={12}
-                    fontFamily={fontFamily.semiBold}
-                    textAnchor={model.venueLabel.anchor}
-                  >
-                    {name(model.venue.label)}
-                  </SvgText>
-                ))}
-                {/* Scale bar, bottom left. */}
+                {model.venue && model.venueLabel ? (
+                  <G>
+                    {/* A white pill, as in the frame, so the name reads over roads, water and neighbouring pins. */}
+                    <Rect
+                      x={pillX(model.venueLabel.x, model.venueLabel.anchor, name(model.venue.label))}
+                      y={model.venueLabel.y + (model.pins.length > 0 ? 6 : 0) - 17}
+                      width={pillWidth(name(model.venue.label))}
+                      height={26}
+                      rx={13}
+                      fill={colors.surface}
+                      stroke={BOUNDARY}
+                      strokeWidth={1}
+                    />
+                    <SvgText
+                      x={pillX(model.venueLabel.x, model.venueLabel.anchor, name(model.venue.label)) + pillWidth(name(model.venue.label)) / 2}
+                      y={model.venueLabel.y + (model.pins.length > 0 ? 6 : 0)}
+                      fill={colors.ink}
+                      fontSize={12}
+                      fontFamily={fontFamily.semiBold}
+                      textAnchor="middle"
+                    >
+                      {name(model.venue.label)}
+                    </SvgText>
+                  </G>
+                ) : null}
+                {/* Scale bar, bottom left of the visible part of the map. */}
                 <G>
-                  <Rect x={10} y={model.height - 16} width={model.scale.px} height={3} fill={colors.text.secondary} rx={1.5} />
-                  <SvgText x={10} y={model.height - 22} fill={colors.text.secondary} fontSize={10} fontFamily={fontFamily.medium}>
+                  <Rect x={10} y={model.height - (inset?.bottom ?? 0) - 16} width={model.scale.px} height={3} fill={colors.text.secondary} rx={1.5} />
+                  <SvgText x={10} y={model.height - (inset?.bottom ?? 0) - 22} fill={colors.text.secondary} fontSize={10} fontFamily={fontFamily.medium}>
                     {`${model.scale.km} km`}
                   </SvgText>
+                  {bare ? (
+                    <SvgText x={model.width - 10} y={model.height - (inset?.bottom ?? 0) - 12} fill={colors.text.secondary} fontSize={9} fontFamily={fontFamily.medium} textAnchor="end">
+                      {`Map: ${BASEMAP_SOURCE}`}
+                    </SvgText>
+                  ) : null}
                 </G>
               </Svg>
             </View>
@@ -166,7 +199,7 @@ export function HalfwayMap({
                 <Text style={styles.legendPinText}>1</Text>
               </View>
               <Text variant="caption" color={colors.text.secondary}>
-                {props.venues && props.venues.length > 1 ? 'The places below, numbered in the same order; the filled one is selected' : `${props.venue.name}, where it is`}
+                {props.venues && props.venues.length > 1 ? 'The places below, numbered in the same order; the filled one is selected' : props.venue ? `${props.venue.name}, where it is` : 'Places appear here once found'}
               </Text>
             </View>
           </View>
@@ -188,6 +221,7 @@ const styles = StyleSheet.create({
   legendPin: { width: 16, height: 16, borderRadius: 8, backgroundColor: colors.action, alignItems: 'center', justifyContent: 'center' },
   legendPinText: { color: colors.text.inverse, fontFamily: 'Inter_700Bold', fontSize: 9, lineHeight: 11 },
   hit: { position: 'absolute' },
+  bare: { borderRadius: 0, borderWidth: 0 },
   frame: {
     borderRadius: radius.xl,
     overflow: 'hidden',
