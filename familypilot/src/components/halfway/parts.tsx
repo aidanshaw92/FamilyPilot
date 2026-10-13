@@ -6,7 +6,7 @@ import { colors, fontFamily, radius, spacing } from '@/src/design-system/tokens'
 import { isLargeText, useFontScale } from '@/src/hooks/use-font-scale';
 import { MatchLine } from '@/src/services/matching/family-match';
 import { HalfwayFit, HalfwayOption } from '@/src/services/planning/meet-halfway';
-import { chipName, journeyBars, shortFamilyName, journeysKnown, journeysUneven, otherFitProvenance } from '@/src/services/planning/halfway-view';
+import { chipName, placeUnreviewed, journeyBars, shortFamilyName, journeysKnown, journeysUneven, otherFitProvenance } from '@/src/services/planning/halfway-view';
 
 /** The other family's colour on the map and everywhere it is named: the rose of the design system's other-family areas. */
 export const OTHER_TONE = '#B0507E';
@@ -31,6 +31,41 @@ export function FitChip({ role, label, fit, size = 'default' }: { role: 'mine' |
     </View>
   );
 }
+
+/**
+ * Both families' grades as chips. Where the place has not been reviewed neither family can be graded, so ONE chip says so, once, with
+ * both families' dots; otherwise each family has its own grade, as before.
+ */
+export function FitChips({ option, otherLabel, size = 'default' }: { option: HalfwayOption; otherLabel: string; size?: 'default' | 'small' }) {
+  const big = isLargeText(useFontScale());
+  if (!placeUnreviewed(option)) {
+    return (
+      <>
+        <FitChip role="mine" label="" fit={option.fits.mine} size={size} />
+        <FitChip role="other" label={otherLabel} fit={option.fits.other} size={size} />
+      </>
+    );
+  }
+  const lines = big ? undefined : 1;
+  const tone = tones(option.fits.mine);
+  const names = bothChipName(otherLabel);
+  return (
+    <View
+      style={[styles.chip, size === 'small' && styles.chipSmall, big && styles.chipBig, { backgroundColor: tone.bg }]}
+      accessible
+      accessibilityLabel={`Your family and ${chipName('other', otherLabel)} family: ${option.fits.mine.label}`}
+      testID="halfway-fit-both"
+    >
+      <View style={[styles.dot, { backgroundColor: colors.action }]} />
+      <View style={[styles.dot, { backgroundColor: OTHER_TONE }]} />
+      <Text style={[styles.chipName, { color: colors.ink }]} numberOfLines={lines}>{names}</Text>
+      <Text style={[styles.chipGrade, { color: tone.fg }]} numberOfLines={lines}>{option.fits.mine.label}</Text>
+    </View>
+  );
+}
+
+/** "You & Emma’s": the two families a combined chip speaks for. */
+export const bothChipName = (otherLabel: string): string => `${chipName('mine', '')} & ${chipName('other', otherLabel)}`;
 
 function tones(fit: HalfwayFit): { bg: string; fg: string } {
   switch (fit.verdict) {
@@ -141,7 +176,7 @@ export function EvidenceLegend() {
 const MAX_LINES = 8;
 
 /** Your family's Family Fit in full: headline, then what is confirmed, what is only reasonable to expect and what is not checked yet. */
-export function FamilyFitMine({ option }: { option: HalfwayOption }) {
+export function FamilyFitMine({ option, bare = false }: { option: HalfwayOption; bare?: boolean }) {
   const fit = option.fits.mine;
   const match = option.venue.familyMatch;
   const lines: { key: string; line: MatchLine; kind: 'confirmed' | 'expected' | 'caution' | 'note' | 'unknown' }[] = [];
@@ -152,9 +187,13 @@ export function FamilyFitMine({ option }: { option: HalfwayOption }) {
   }
   const evidence = fit.evidence;
   return (
-    <View style={styles.fitCard} testID="halfway-fit-mine-card">
-      <FitChip role="mine" label="" fit={fit} />
-      <Text style={styles.fitHeadline}>{match ? match.headline.replace(/ today$/, '') : 'Not assessed'}</Text>
+    <View style={bare ? styles.fitBare : styles.fitCard} testID="halfway-fit-mine-card">
+      {bare ? null : (
+        <>
+          <FitChip role="mine" label="" fit={fit} />
+          <Text style={styles.fitHeadline}>{match ? match.headline.replace(/ today$/, '') : 'Not assessed'}</Text>
+        </>
+      )}
       {lines.slice(0, MAX_LINES).map(({ key, line, kind }) => (
         <EvidenceRow
           key={key}
@@ -189,6 +228,24 @@ export function FamilyFitOther({ option, label }: { option: HalfwayOption; label
       <FitChip role="other" label={label} fit={fit} />
       <Text style={styles.fitHeadline}>{words.headline}</Text>
       <Text variant="bodySmall" color={colors.text.secondary} testID="halfway-fit-other-provenance">{words.note}</Text>
+    </View>
+  );
+}
+
+/**
+ * The place has not been reviewed for families: one card for both families instead of a grade each. It says what that rests on
+ * (the journeys, and what your own family's details show), keeps your family's confirmed and unchecked lines, and says nothing
+ * about the other family except that nothing about them is graded.
+ */
+export function FamilyFitUnreviewed({ option, label }: { option: HalfwayOption; label: string }) {
+  return (
+    <View style={styles.fitCard} testID="halfway-fit-unreviewed-card">
+      <FitChips option={option} otherLabel={label} />
+      <Text style={styles.fitHeadline}>We haven’t reviewed this place for families yet</Text>
+      <Text variant="bodySmall" color={colors.text.secondary} testID="halfway-fit-unreviewed-note">
+        So neither family is graded. This pick rests on the journeys above and on what your own family’s details show here.
+      </Text>
+      <FamilyFitMine option={option} bare />
     </View>
   );
 }
@@ -234,5 +291,6 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendText: { fontFamily: fontFamily.regular, fontSize: 12, lineHeight: 16, color: colors.text.secondary },
   fitCard: { backgroundColor: colors.fill, borderRadius: radius.xl, padding: spacing.lg, gap: 10 },
+  fitBare: { gap: 10 },
   fitHeadline: { fontFamily: fontFamily.bold, fontSize: 16, lineHeight: 22, color: colors.ink },
 });

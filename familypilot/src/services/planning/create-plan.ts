@@ -1,4 +1,4 @@
-import { DayPlanRequest, PlanGenerationFailure, ResolvedStop } from '@/src/types/day-plan';
+import { DayPlanRequest, PlanCaveat, PlanGenerationFailure, ResolvedStop } from '@/src/types/day-plan';
 import { SequenceFailure, UnmetRequirement } from '@/src/types/day-sequence';
 
 import { buildJourneyMatrix } from './journey-matrix';
@@ -11,6 +11,7 @@ import { PlanLunchFacts, PlanViewContext, PlanViewModel, PlanViewModelInput, toP
 import { VisitLength, resolveVisit } from './visit-duration';
 import { buggyFamilyIds } from './routine-subjects';
 import { mustHaveLabel } from './must-have-labels';
+import { lunchFit } from './meal-window';
 import { TravelLeg } from '@/src/types/travel';
 import { evaluateVenueRules } from '@/src/services/matching/venue-rules';
 import { reconcileHours } from '@/src/services/places/hours-reconcile';
@@ -67,6 +68,11 @@ export interface CreatePlanInput {
    * a meal.
    */
   meal?: MealCandidate;
+  /**
+   * Whether the lunch was asked for. `auto` (the default) adds the known lunch only where it can start inside a family lunch
+   * window (meal-window.ts); `chosen` is a lunch the parent added themselves, which is kept whatever the hour.
+   */
+  mealMode?: 'auto' | 'chosen';
   /**
    * A place to eat is known near the venue, whether or not it is in this day. Lets the plan offer "Add a 45-minute
    * lunch and recheck the timings" when a feed falls in the middle of the visit.
@@ -429,7 +435,14 @@ export async function createPlan(
 
   // An all-day visit has no lunch bolted onto the end of it: food is part of the day there, and a stop after eight hours
   // would be a meal at teatime. A shorter day still gets the lunch that is already known.
-  const withMeal = meal && draft.visit !== 'all-day' ? meal : undefined;
+  const mealFit = meal && draft.visit !== 'all-day' && input.mealMode !== 'chosen'
+    ? lunchFit({ arriveAt: draft.startAt, visitMinutes: visit.minutes })
+    : null;
+  const withMeal = meal && draft.visit !== 'all-day' && (!mealFit || mealFit.fits) ? meal : undefined;
+  // A lunch that was available and left out for the hour is said so on the plan, with the way to add one.
+  const lunchLeftOut: PlanCaveat[] = meal && draft.visit !== 'all-day' && mealFit && !mealFit.fits
+    ? [{ kind: 'lunch-outside-window', reason: mealFit.reason, startsAt: mealFit.startsAt }]
+    : [];
 
   // Reported only when there is a meal to add, matching the steps `createPlanSteps` offered.
   if (withMeal) step('lunch');
@@ -481,10 +494,11 @@ export async function createPlan(
     travel: result.plan.travel,
     // Appended rather than produced by `generateDayPlan`: the sequencer never saw the food lookup, so
     // only the caller knows whether a missing meal was an empty neighbourhood or a failed request.
-    caveats:
-      input.mealLookupFailed && !meal
-        ? [...result.plan.caveats, { kind: 'meal-lookup-failed' as const }]
-        : result.plan.caveats,
+    caveats: [
+      ...result.plan.caveats,
+      ...(input.mealLookupFailed && !meal ? [{ kind: 'meal-lookup-failed' as const }] : []),
+      ...lunchLeftOut,
+    ],
     anchorName: venue.name,
     parking: {
       parking: anchorFacts.parking,

@@ -10,6 +10,7 @@ import { colors, spacing } from '@/src/design-system/tokens';
 import { useConnectedFamilies } from '@/src/hooks/use-connected-families';
 import { INVITE_RELATIONSHIPS, InviteRelationship } from '@/src/services/planning/invite-links';
 import { MySharing } from '@/src/services/planning/connection-invites';
+import { plannableFamilies } from '@/src/services/planning/family-visibility';
 import { PlanningFamily } from '@/src/services/planning/planner';
 import { usePlanningStore } from '@/src/stores/planning-store';
 import { FacilityType, FamilyProfile } from '@/src/types';
@@ -184,22 +185,32 @@ export function ConnectedFamiliesSection({
   const families = useConnectedFamilies(accountsAvailable);
   // Selected whole and filtered here: a selector that returns a new array every time re-renders without end.
   const storedFamilies = usePlanningStore((s) => s.families);
-  const local = useMemo(() => storedFamilies.filter((f) => f.id.startsWith('guest-')), [storedFamilies]);
+  // The families on this phone that are not a loaded connection: typed in by the parent (`local`), or a connection's copy that
+  // the account cannot confirm right now (`unchecked`: signed out, still loading). The same rule Meet halfway uses, so the two
+  // screens can never disagree about who the parent plans with (family-visibility.ts).
   const removeFamily = usePlanningStore((s) => s.removeFamily);
   const [shareRoutines, setShareRoutines] = useState(false);
   const [adding, setAdding] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [confirm, setConfirm] = useState<string | null>(null);
+  // The family on this phone an invitation link was just made for, so the link appears under that family's card.
+  const [inviteFor, setInviteFor] = useState<string | null>(null);
   // The "what I share" panel: which connection is open, what the switch says, and the line confirming a change.
   const [sharingOpen, setSharingOpen] = useState<string | null>(null);
   const [shareChoice, setShareChoice] = useState(false);
   const [saving, setSaving] = useState(false);
   const [updated, setUpdated] = useState<string | null>(null);
   const { accepted, pending, loaded, error, busy, invite } = families;
+  const onPhone = useMemo(
+    () => plannableFamilies({ stored: storedFamilies, accepted, verified: accountsAvailable && loaded }).filter((f) => f.kind !== 'connected'),
+    [storedFamilies, accepted, accountsAvailable, loaded],
+  );
+  const local = useMemo(() => onPhone.filter((f) => f.kind === 'local').map((f) => f.family), [onPhone]);
+  const unchecked = useMemo(() => onPhone.filter((f) => f.kind === 'unverified').map((f) => f.family), [onPhone]);
   const onScreen = variant === 'screen';
   // On the Profile the invite tools are always there; on the Families screen they open when asked for.
   const showAdd = !onScreen || addOpen;
-  const nobody = loaded && accepted.length === 0 && local.length === 0 && pending.length === 0;
+  const nobody = loaded && accepted.length === 0 && local.length + unchecked.length === 0 && pending.length === 0;
 
   const openSharing = (connectionId: string, mine: MySharing | null | undefined) => {
     // The switch opens on what is shared today, so an update is only ever a change the person makes.
@@ -244,10 +255,12 @@ export function ConnectedFamiliesSection({
             <Text variant="bodySmall" color={colors.text.secondary}>
               Loading…
             </Text>
-          ) : accepted.length === 0 && local.length === 0 ? (
+          ) : accepted.length === 0 ? (
             <Text variant="bodySmall" color={colors.text.secondary} testID="profile-no-connections">
               {onScreen
-                ? 'No families connected yet. Connect a family to choose them under Who’s coming and to find a place that works for both of you.'
+                ? local.length + unchecked.length > 0
+                  ? 'No families are connected yet. The families below are on this phone only: you entered where they set off from, so they can’t see or receive anything. Invite a family to connect with them.'
+                  : 'No families connected yet. Connect a family to choose them under Who’s coming and to find a place that works for both of you.'
                 : 'Nobody is connected yet.'}
             </Text>
           ) : null
@@ -346,7 +359,7 @@ export function ConnectedFamiliesSection({
           </View>
         ))}
 
-        {onScreen && local.length > 0 ? (
+        {onScreen && local.length + unchecked.length > 0 ? (
           <Text variant="label" testID="families-local-heading">
             On this phone only
           </Text>
@@ -358,7 +371,7 @@ export function ConnectedFamiliesSection({
               <Ionicons name="pin-outline" size={20} color={colors.text.secondary} />
               <View style={styles.familyText}>
                 <Text variant="heading3">{familyDisplayName(family.label)}</Text>
-                <Text variant="caption" color={colors.text.secondary} testID="local-family-status">
+                <Text variant="caption" color={colors.warning[600]} testID="local-family-status">
                   {planningWith === family.id ? 'On this phone only · planning together' : 'On this phone only · not connected'}
                 </Text>
                 <Text variant="bodySmall" color={colors.text.secondary}>
@@ -372,6 +385,49 @@ export function ConnectedFamiliesSection({
               ) : null}
               <Button label="Meet halfway" size="sm" variant="outline" onPress={() => meet(family.id)} />
               {onEditLocal ? <Button label="Edit" size="sm" variant="ghost" onPress={() => onEditLocal(family)} testID="local-family-edit" /> : null}
+              <Button label="Remove" size="sm" variant="ghost" onPress={() => removeFamily(family.id)} />
+            </View>
+            {/* A family only on this phone can be invited to connect: the same single-use link, the same consent (routines are not
+                shared unless the person switches that on in the invitation panel, and it is off here). Nothing is sent or shared
+                until they accept; this just makes the link. Needs an account, like every other invitation. */}
+            {accountsAvailable ? (
+              <View style={styles.inviteLocal}>
+                <Button
+                  label={busy === 'friend' && inviteFor === family.id ? 'Creating…' : 'Invite to connect'}
+                  size="sm"
+                  variant="outline"
+                  disabled={busy !== null}
+                  onPress={() => {
+                    setInviteFor(family.id);
+                    void families.create('friend', false);
+                  }}
+                  testID="local-family-invite"
+                />
+                <Text variant="caption" color={colors.text.secondary}>
+                  Until they accept, {familyDisplayName(family.label)} can’t see or receive anything: plans stay on your phone.
+                </Text>
+                {inviteFor === family.id && invite ? <InviteLinkCard url={invite.url} relationship={invite.relationship} /> : null}
+              </View>
+            ) : null}
+          </View>
+        ))}
+
+        {unchecked.map((family) => (
+          <View key={family.id} style={styles.family} testID="unchecked-family-row">
+            <View style={styles.familyHead}>
+              <Ionicons name="cloud-offline-outline" size={20} color={colors.text.secondary} />
+              <View style={styles.familyText}>
+                <Text variant="heading3">{familyDisplayName(family.label)}</Text>
+                <Text variant="caption" color={colors.text.secondary} testID="unchecked-family-status">
+                  From a connection · can’t be checked right now
+                </Text>
+                <Text variant="bodySmall" color={colors.text.secondary}>
+                  {localSummary(family)}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.actions}>
+              <Button label="Meet halfway" size="sm" variant="outline" onPress={() => meet(family.id)} />
               <Button label="Remove" size="sm" variant="ghost" onPress={() => removeFamily(family.id)} />
             </View>
           </View>
@@ -424,7 +480,7 @@ export function ConnectedFamiliesSection({
 
         {onScreen && !addOpen ? (
           <Button
-            label={nobody || (accepted.length === 0 && local.length === 0) ? 'Add a family' : 'Add another family'}
+            label={nobody || (accepted.length === 0 && local.length + unchecked.length === 0) ? 'Add a family' : 'Add another family'}
             variant={nobody ? 'primary' : 'outline'}
             fullWidth
             onPress={() => setAddOpen(true)}
@@ -491,6 +547,7 @@ function Row({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; lab
 }
 
 const styles = StyleSheet.create({
+  inviteLocal: { gap: spacing.sm, alignItems: 'flex-start' },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   title: { marginTop: spacing.lg, marginBottom: spacing.lg },
   card: { gap: spacing.md, marginBottom: spacing.md },

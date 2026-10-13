@@ -43,7 +43,8 @@ import {
 import { BackButton } from '@/src/components/ui/BackButton';
 import { ArrowCta } from '@/src/components/ui/ArrowCta';
 import { CreatePlanSheet } from '@/src/components/planning/CreatePlanSheet';
-import { PlanDraft, firstValue, optionsToRemember, planDraftDefaults, planDraftFromParams, planDraftToParams } from '@/src/services/planning/plan-draft';
+import { shortDateLabel } from '@/src/utils/plan-quick-choices';
+import { PlanDraft, firstValue, optionsToRemember, outingDraftFromParams, planDraftDefaults, planDraftFromParams, planDraftToParams } from '@/src/services/planning/plan-draft';
 import { profileReceipt } from '@/src/utils/profile-receipt';
 import { photoAttribution } from '@/src/services/places/place-photo-url';
 import { FadeInView } from '@/src/components/ui/FadeInView';
@@ -76,11 +77,21 @@ const SHEET_OVERLAP = 44;
 const DESCRIPTION_LINES = 2;
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 /** The pinned Create-a-plan bar: the pill (58) and its padding above (spacing.md); the bottom inset is added by the page. */
-const PLAN_BAR_HEIGHT = 58 + spacing.md;
+const PLAN_BAR_HEIGHT = 58 + spacing.md + 22;
 
 export function generateStaticParams() {
   return generateVenueStaticParams();
 }
+
+/** "Tue 13 Oct · arrive 14:35 · with Emma’s family": what Meet halfway handed over, in the parent's words. */
+function outingSummary(draft: PlanDraft, parties: { id: string; label: string }[]): string {
+  const others = draft.partyIds
+    .filter((partyId) => partyId !== 'mine')
+    .map((partyId) => parties.find((party) => party.id === partyId)?.label)
+    .filter(Boolean) as string[];
+  return [`${shortDateLabel(draft.date)} · arrive ${draft.startAt}`, others.length ? `with ${others.join(' and ')}` : null].filter(Boolean).join(' · ');
+}
+
 
 export default function VenueScreen() {
   const searchParams = useLocalSearchParams();
@@ -145,7 +156,23 @@ export default function VenueScreen() {
   const planningWith = usePlanningStore((state) => state.planningWith ?? null);
   const setPlanningOptions = usePlanningStore((state) => state.setOptions);
   const [planSheetOpen, setPlanSheetOpen] = useState(false);
-  const [draftOverride, setDraftOverride] = useState<PlanDraft | null>(null);
+  // The day the parent was already looking at (Meet halfway sends its date, arrival and who is coming along with the place): the
+  // sheet opens on that, not on a default or a day remembered from before. Not when the sheet is being reopened from a plan
+  // (that carries its own answers, below), and read once, from the link's own parameters.
+  const outing = useMemo(
+    () => (firstValue(searchParams.plan) === 'open' ? null : outingDraftFromParams(searchParams as Record<string, string | string[] | undefined>)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  // The answers of a plan being changed (the sheet reopened from it): what the parent leaves alone is not new, so it is not remembered.
+  const reopenedDraft = useMemo(
+    () => (firstValue(searchParams.plan) === 'open' ? planDraftFromParams(searchParams as Record<string, string | string[] | undefined>) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  const [draftOverride, setDraftOverride] = useState<PlanDraft | null>(outing);
+  // The pinned bar's real height (its context line wraps at larger text), so the page always scrolls clear of it.
+  const [planBarHeight, setPlanBarHeight] = useState(PLAN_BAR_HEIGHT);
 
   const planDefaults = useMemo(
     () =>
@@ -217,15 +244,19 @@ export default function VenueScreen() {
     (next: PlanDraft) => {
       // A date or start the parent CHANGED is remembered as a convenience; a suggestion they left alone is not (it is worked
       // out again each time, from the clock). Who is coming and how long are asked afresh each time.
-      const chosen = optionsToRemember(next, planDefaults.draft);
+      // The day Meet halfway handed over is that outing's, not a habit: it is never remembered as the next default.
+      const chosen = optionsToRemember(next, outing ?? reopenedDraft ?? planDefaults.draft);
       if (Object.keys(chosen).length > 0) setPlanningOptions(chosen);
       setPlanSheetOpen(false);
+      // A lunch the parent had chosen on the plan being changed comes back with it (only present when the sheet was reopened from a plan).
+      const lunch = firstValue(searchParams.lunch);
+      const lunchPlace = firstValue(searchParams.lunchPlace);
       router.push({
         pathname: '/plan',
-        params: { venue: id ?? '', ...planDraftToParams(next) },
+        params: { venue: id ?? '', ...planDraftToParams(next), ...(lunch ? { lunch } : {}), ...(lunchPlace ? { lunchPlace } : {}) },
       } as never);
     },
-    [id, router, setPlanningOptions, planDefaults],
+    [id, router, setPlanningOptions, planDefaults, outing, reopenedDraft, searchParams],
   );
 
   const handleDirections = useCallback(() => {
@@ -292,7 +323,7 @@ export default function VenueScreen() {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: safeFooterPadding(insets.bottom) + spacing['2xl'] + (pending ? 0 : PLAN_BAR_HEIGHT) }}
+        contentContainerStyle={{ paddingBottom: safeFooterPadding(insets.bottom) + spacing['2xl'] + (pending ? 0 : planBarHeight) }}
       >
         <View style={styles.heroContainer}>
           <Animated.View style={[styles.heroImageWrap, heroStyle]}>
@@ -547,8 +578,21 @@ export default function VenueScreen() {
           reachable on the first screen and from any point in the page. Tapping a venue never creates a plan; this does,
           through the sheet. Not drawn until the real detail is, like everything actionable here. */}
       {pending ? null : (
-        <View style={[styles.planBar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]} testID="venue-plan-bar">
-          <ArrowCta label="Create a plan" onPress={() => setPlanSheetOpen(true)} testID="venue-create-plan" />
+        <View style={[styles.planBar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]} onLayout={(event) => setPlanBarHeight(Math.ceil(event.nativeEvent.layout.height))} testID="venue-plan-bar">
+          {outing ? (
+            // The day carried over from Meet halfway, said where the button is, so it is plain it was not lost on the way.
+            <View style={styles.planBarContext}>
+              <Text variant="caption" color={colors.text.secondary} style={styles.planBarContextText} testID="venue-outing-context">
+                {outingSummary(outing, planDefaults.parties)}
+              </Text>
+              {/* Change the day, the arrival or who is coming without going back: the sheet opens on this outing, this place kept. */}
+              <Pressable onPress={() => setPlanSheetOpen(true)} accessibilityRole="button" accessibilityLabel="Change the day, arrival or who is coming" hitSlop={10} style={minTarget(16)} testID="venue-outing-change">
+                <Text variant="caption" color={colors.action} style={styles.planBarChange}>Change</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          {/* From an active Meet halfway outing the action continues that day; browsing a place on its own starts a plan. */}
+          <ArrowCta label={outing ? 'Plan this day' : 'Create a plan'} onPress={() => setPlanSheetOpen(true)} testID="venue-create-plan" />
         </View>
       )}
 
@@ -712,6 +756,9 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   // Pinned under the page; the page's own bottom padding clears it (PLAN_BAR_HEIGHT).
+  planBarContext: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', columnGap: spacing.sm, marginBottom: spacing.xs },
+  planBarContextText: { textAlign: 'center', flexShrink: 1 },
+  planBarChange: { fontFamily: 'Inter_600SemiBold', textDecorationLine: 'underline' },
   planBar: {
     position: 'absolute',
     left: 0,

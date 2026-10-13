@@ -18,6 +18,7 @@ import { isLargeText, useFontScale } from '@/src/hooks/use-font-scale';
 import { useTabBarClearance } from '@/src/hooks/use-tab-bar-clearance';
 import { useBetweenVenues, useFamilyProfile, useNearbyVenues } from '@/src/hooks/use-queries';
 import { HalfwayOption, meetHalfway } from '@/src/services/planning/meet-halfway';
+import { plannableFamilies } from '@/src/services/planning/family-visibility';
 import { DEFAULT_START_AT, firstValue, planDraftToParams } from '@/src/services/planning/plan-draft';
 import { planningFamilyFromProfile } from '@/src/services/planning/plan-parties';
 import { PlanningFamily } from '@/src/services/planning/planner';
@@ -89,16 +90,10 @@ export default function MeetHalfwayScreen() {
   }, [preselected]);
 
   // Everyone this person could meet, from one model: connected families (accepted) and families added by postcode.
-  const candidates = useMemo(() => {
-    const byId = new Map<string, { id: string; label: string; family: PlanningFamily }>();
-    // Families on this phone first (added by postcode, or a connection stored for a plan); a connection loaded from the
-    // account then replaces its stored copy, so a family that has since updated what they share is read as they are now.
-    for (const family of stored) {
-      if (family.id.startsWith('guest-') || family.id.startsWith('connected-')) byId.set(family.id, { id: family.id, label: family.label, family });
-    }
-    for (const { family } of connected.accepted) byId.set(family.id, { id: family.id, label: family.label, family });
-    return [...byId.values()];
-  }, [connected.accepted, stored]);
+  const candidates = useMemo(
+    () => plannableFamilies({ stored, accepted: connected.accepted, verified: signedIn && connected.loaded }),
+    [connected.accepted, connected.loaded, signedIn, stored],
+  );
 
   // Opens directly on an answer where there is only one family it could be about; with none, on the way to add one.
   useEffect(() => {
@@ -149,31 +144,40 @@ export default function MeetHalfwayScreen() {
     setMode('map');
   };
 
+  // What this screen has worked out with the chosen family, as the route parameters a plan reads: the date, the arrival and who
+  // is coming. Both ways on from a place (Plan this day, and See the place) carry the same answers, so the next screen opens on
+  // the day the parent was looking at rather than on a default of its own.
+  const outingParams = (): Record<string, string> => ({
+    ...planDraftToParams({
+      date,
+      startAt,
+      partyIds: ['mine', other?.id ?? ''],
+      attendeeIds: null,
+      visit: 'not-sure',
+      returnBy: '',
+      bufferMinutes: 15,
+      environment,
+    }),
+  });
+  // A connection that is not on this phone yet is stored now, so the next screen finds it by its id.
+  const keepConnection = () => {
+    const connection = connected.accepted.find((c) => c.family.id === other?.id)?.connection;
+    if (connection) connected.addToPlan(connection);
+  };
+
   const plan = (option: HalfwayOption) => {
     if (!other) return;
-    // A connection that is not on this phone yet is stored now, so the Plan screen finds it by its id.
-    const connection = connected.accepted.find((c) => c.family.id === other.id)?.connection;
-    if (connection) connected.addToPlan(connection);
-    router.push({
-      pathname: '/plan',
-      params: {
-        venue: option.venue.id,
-        ...planDraftToParams({
-          date,
-          startAt,
-          partyIds: ['mine', other.id],
-          attendeeIds: null,
-          visit: 'not-sure',
-          returnBy: '',
-          bufferMinutes: 15,
-          environment,
-        }),
-      },
-    } as never);
+    keepConnection();
+    router.push({ pathname: '/plan', params: { venue: option.venue.id, ...outingParams() } } as never);
   };
   const openPlace = (option: HalfwayOption) => {
     seedVenueDetail(option.venue);
-    router.push(`/venue/${option.venue.id}` as never);
+    if (!other) {
+      router.push(`/venue/${option.venue.id}` as never);
+      return;
+    }
+    keepConnection();
+    router.push({ pathname: '/venue/[id]', params: { id: option.venue.id, ...outingParams() } } as never);
   };
   const openProfile = () => {
     setEditOpen(false);

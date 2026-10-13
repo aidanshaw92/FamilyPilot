@@ -233,6 +233,33 @@ console.log('Alex: the invitation arrives, is read, and is accepted');
   await alex.page.setViewportSize({ width: 393, height: 852 });
 }
 
+// ------------------------------------------------------------------ Sam: a family only on this phone can be invited to connect
+console.log('Sam: Invite to connect on a family added on this phone');
+{
+  const { page } = sam;
+  await page.goto(`${BASE}/families`, { waitUntil: 'domcontentloaded' }); await settle(page, 2500);
+  // A family typed in on this phone (what adding by postcode stores), added the way the app stores it.
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('familypilot-planning-v1') ?? '{"state":{},"version":1}');
+    raw.state.families = [...(raw.state.families ?? []).filter((f) => f.id !== 'guest-emma'), { id: 'guest-emma', label: 'Emma', area: 'Walthamstow', latitude: 51.585, longitude: -0.02, ages: [3, 1], maxDriveMinutes: 60, pushchair: true, required: [], routines: [] }];
+    localStorage.setItem('familypilot-planning-v1', JSON.stringify(raw));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' }); await settle(page, 3500);
+  const row = page.getByTestId('local-family-row');
+  check(await row.count() === 1, 'Emma’s family is listed on Families as on this phone only');
+  check(/On this phone only · not connected/.test(await row.innerText()), 'and says it is not connected');
+  check(await page.getByTestId('connected-family-row').count() === 1 && await page.getByTestId('connected-family-row').getByTestId('local-family-invite').count() === 0, 'the connected family (Alex) has no Invite button: it is already connected');
+  check(/Until they accept, Emma’s family can’t see or receive anything/.test(await row.innerText()), 'the card says nothing is shared until they accept');
+  await row.getByTestId('local-family-invite').click();
+  await row.getByTestId('invite-link-card').waitFor({ timeout: 10000 });
+  const link = (await row.getByTestId('invite-link-text').innerText()).trim();
+  check(/\/invite/.test(link), 'Invite to connect makes the usual single-use invitation link, under that family’s card', link.slice(0, 60));
+  check(/Works once and expires in 7 days/.test(await row.innerText()) && /Never names, birthdays or your address/.test(await row.innerText()), 'with the usual terms of what accepting shares');
+  await shot(page, 'i-invite-to-connect');
+  const waiting = await flat(page);
+  check(/Waiting for a reply/.test(waiting), 'and it appears under “Waiting for a reply”');
+}
+
 // ------------------------------------------------------------------ Sam: sees it accepted
 console.log('Sam: the plan says Alex’s family accepted');
 {

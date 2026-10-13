@@ -109,6 +109,11 @@ export type PlanCaveat =
   /** The plan is for another day, so current traffic was not treated as predictive. */
   | { kind: 'traffic-not-predictive'; planDate: string }
   /**
+   * A default lunch was left out because it could not start inside a family lunch window (after the chosen arrival and the
+   * length of the visit). A lunch the parent adds themselves never carries this.
+   */
+  | { kind: 'lunch-outside-window'; reason: 'late' | 'early'; startsAt: string }
+  /**
    * The nearby-food lookup failed, so the day has no lunch stop for a reason that is ours.
    *
    * Without this, a broken lookup and a genuinely empty neighbourhood produce the same plan: a day
