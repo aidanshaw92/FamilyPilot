@@ -401,8 +401,9 @@ export default function PlanScreen() {
    */
   const handleChangePlan = useCallback(() => {
     if (!venueId) return handleBack();
-    router.replace({ pathname: '/venue/[id]', params: { id: venueId, plan: 'open', ...planDraftToParams(draft) } } as never);
-  }, [router, venueId, draft, handleBack]);
+    // The lunch the parent chose travels too, so changing the day or who is coming does not undo it.
+    router.replace({ pathname: '/venue/[id]', params: { id: venueId, plan: 'open', ...planDraftToParams(draft), ...(lunchParam ? { lunch: lunchParam } : {}), ...(lunchPlaceParam ? { lunchPlace: lunchPlaceParam } : {}) } } as never);
+  }, [router, venueId, draft, handleBack, lunchParam, lunchPlaceParam]);
 
   /** Applies a verified option straight onto this screen's own answers: the plan builds again, nothing else changes. */
   const applyOption = useCallback(

@@ -65,7 +65,11 @@ async function run(label, today) {
   // The sheet: the engine's label, a Family Fit chip for each family, each family's journey as its own estimated line
   const sheet = (await page.getByTestId('halfway-sheet-collapsed').innerText()).replace(/\n+/g, ' | ');
   check(/Your family \| about \d+ min/.test(sheet) && /Hannah’s family \| about \d+ min/.test(sheet), 'each family’s journey is its own estimated line', sheet.match(/Your family \| about \d+ min \| Hannah’s family \| about \d+ min/)?.[0] ?? '');
-  check((await page.getByTestId('halfway-fit-mine').count()) === 1 && (await page.getByTestId('halfway-fit-other').count()) === 1, 'there is one Family Fit chip per family');
+  // Where the place has not been reviewed for families (every stored row here) neither family can be graded, so ONE chip says so once;
+  // where it has, each family has its own.
+  const perFamily = (await page.getByTestId('halfway-fit-mine').count()) === 1 && (await page.getByTestId('halfway-fit-other').count()) === 1;
+  const combined = (await page.getByTestId('halfway-fit-both').count()) === 1 && (await page.getByTestId('halfway-fit-mine').count()) === 0;
+  check(perFamily || combined, 'there is one Family Fit chip per family, or one chip where the place is not reviewed for either', combined ? 'combined' : 'per family');
   check(/Promising option|Best for both|Best compromise/.test(sheet), 'the label is the engine’s own', sheet.slice(0, 60));
 
   // Privacy and honesty on the whole screen
@@ -95,9 +99,18 @@ async function run(label, today) {
   check(expanded, 'Details opens the full sheet');
   const text = (await page.getByTestId('halfway-sheet-expanded').innerText()).replace(/\n+/g, ' | ');
   check(/Journeys/.test(text) && /Family Fit/.test(text) && /Estimated drive time from distance/.test(text), 'it shows the journeys and both families’ Family Fit');
-  check(/Based only on what Hannah’s family chose to share|hasn’t shared enough/.test(text), 'and says the other family’s grade rests only on what they shared');
-  check(!/toilets|baby changing|pushchair|buggy|aged 3|aged 1|3-year-old|1-year-old|toddler|nap/i.test((await page.getByTestId('halfway-fit-other-card').innerText())), 'the other family’s card names no child, age, need or pushchair');
-  check((await page.getByTestId('halfway-fit-other-card').count()) === 1 && (await page.getByTestId('halfway-fit-mine-card').count()) === 1, 'there is a card for each family');
+  check(/Based only on what Hannah’s family chose to share|hasn’t shared enough|So neither family is graded/.test(text), 'and says the other family’s grade rests only on what they shared, or that neither family is graded where the place is not reviewed');
+  const unreviewedCard = await page.getByTestId('halfway-fit-unreviewed-card').count();
+  if (unreviewedCard) {
+    // One card for both: it says what is known once (the place is not reviewed), and nothing about the other family's children or needs.
+    const card = (await page.getByTestId('halfway-fit-unreviewed-card').innerText()).replace(/\s+/g, ' ');
+    check(!/Hannah[^.]*(toilets|baby changing|pushchair|buggy|aged|toddler|nap)/i.test(card), 'the combined card names no child, age, need or pushchair of the other family');
+    check((card.match(/not yet reviewed/gi) ?? []).length <= 1 && /haven’t reviewed this place for families yet/.test(card), '“Not yet reviewed” is said once in the card, and the place’s status is plain', (card.match(/not yet reviewed/gi) ?? []).length + ' mentions');
+    check(((text.match(/not yet reviewed/gi) ?? []).length) <= 1, 'and once on the whole details sheet', (text.match(/not yet reviewed/gi) ?? []).length + ' mentions');
+  } else {
+    check(!/toilets|baby changing|pushchair|buggy|aged 3|aged 1|3-year-old|1-year-old|toddler|nap/i.test((await page.getByTestId('halfway-fit-other-card').innerText())), 'the other family’s card names no child, age, need or pushchair');
+    check((await page.getByTestId('halfway-fit-other-card').count()) === 1 && (await page.getByTestId('halfway-fit-mine-card').count()) === 1, 'there is a card for each family');
+  }
   const scroller = page.getByTestId('halfway-sheet-scroll');
   await scroller.evaluate((el) => { el.scrollTop = el.scrollHeight; });
   await page.waitForTimeout(400);

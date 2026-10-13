@@ -59,7 +59,7 @@ describe('1. the day Meet halfway chose is the day the next screen opens on', ()
     const venue = read('app/venue/[id].tsx');
     expect(venue).toContain('outingDraftFromParams(');
     expect(venue).toMatch(/useState<PlanDraft \| null>\(outing\)/);
-    expect(venue).toContain('optionsToRemember(next, outing ?? planDefaults.draft)');
+    expect(venue).toContain('optionsToRemember(next, outing ?? reopenedDraft ?? planDefaults.draft)');
     expect(venue).toContain('testID="venue-outing-context"');
   });
 });

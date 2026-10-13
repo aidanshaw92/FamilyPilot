@@ -9,7 +9,7 @@ import { isLargeText, useFontScale } from '@/src/hooks/use-font-scale';
 import { HalfwayOption } from '@/src/services/planning/meet-halfway';
 import { checksToShow, journeyBars, journeysKnown, listCardMeta, missingJourneyNotice, shortFamilyName } from '@/src/services/planning/halfway-view';
 
-import { FitChip, OTHER_TONE } from './parts';
+import { FitChips, OTHER_TONE } from './parts';
 
 
 /**
@@ -64,8 +64,7 @@ export function HalfwayListCard({
   );
   const chips = (
     <View style={styles.chips}>
-      <FitChip role="mine" label="" fit={option.fits.mine} />
-      <FitChip role="other" label={otherLabel} fit={option.fits.other} />
+      <FitChips option={option} otherLabel={otherLabel} />
     </View>
   );
 

@@ -9,11 +9,11 @@ import { colors, fontFamily, radius, shadows, spacing } from '@/src/design-syste
 import { isLargeText, useFontScale } from '@/src/hooks/use-font-scale';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { HalfwayOption, topCardLabel } from '@/src/services/planning/meet-halfway';
-import { checksToShow, chipName, chipsFitBeside, missingJourneyNotice, journeysKnown, positionLine } from '@/src/services/planning/halfway-view';
+import { checksToShow, chipName, chipsFitBeside, missingJourneyNotice, placeUnreviewed, journeysKnown, positionLine } from '@/src/services/planning/halfway-view';
 import { formatCategory } from '@/src/utils/format-category';
 
 import { SheetSurface } from './chrome';
-import { EvidenceLegend, FamilyFitMine, FamilyFitOther, FitChip, JourneyComparison, LabelPill } from './parts';
+import { EvidenceLegend, FamilyFitMine, FamilyFitOther, FamilyFitUnreviewed, FitChips, JourneyComparison, LabelPill, bothChipName } from './parts';
 
 /** A swipe on the grabber: up opens, down closes. The grabber is also a button, so nothing depends on the gesture. */
 function useSwipe(onUp?: () => void, onDown?: () => void) {
@@ -64,16 +64,17 @@ export function CollapsedRecommendation({
   // At larger text the card is tall: it is then an ordinary block in the screen's scroll (`inline`) rather than a card over the map.
   const big = isLargeText(useFontScale());
   // The frame's 80 pt photo, with the chips beside it, where they fit; a smaller photo with the chips under it where not.
-  const pair = [
-    { name: chipName('mine', ''), grade: option.fits.mine.label },
-    { name: chipName('other', otherLabel), grade: option.fits.other.label },
-  ];
+  const pair = placeUnreviewed(option)
+    ? [{ name: bothChipName(otherLabel), grade: option.fits.mine.label }]
+    : [
+        { name: chipName('mine', ''), grade: option.fits.mine.label },
+        { name: chipName('other', otherLabel), grade: option.fits.other.label },
+      ];
   const beside = !dense && !big && chipsFitBeside(pair, windowWidth - 40 - 80 - 12);
   const thumb = beside ? 80 : dense ? 56 : 64;
   const chips = (
     <View style={beside ? styles.chipsBeside : styles.chips} testID="halfway-fit-chips">
-      <FitChip role="mine" label="" fit={option.fits.mine} />
-      <FitChip role="other" label={otherLabel} fit={option.fits.other} />
+      <FitChips option={option} otherLabel={otherLabel} />
     </View>
   );
   const notice = journeysKnown(option) ? null : missingJourneyNotice(option);
@@ -191,8 +192,14 @@ export function ExpandedRecommendation({
             <View style={styles.section}>
               <Text variant="heading3" accessibilityRole="header">Family Fit</Text>
               <EvidenceLegend />
-              <FamilyFitMine option={option} />
-              <FamilyFitOther option={option} label={otherLabel} />
+              {placeUnreviewed(option) ? (
+                <FamilyFitUnreviewed option={option} label={otherLabel} />
+              ) : (
+                <>
+                  <FamilyFitMine option={option} />
+                  <FamilyFitOther option={option} label={otherLabel} />
+                </>
+              )}
             </View>
             {needs.length + others.length > 0 ? (
               <View style={styles.section} testID="halfway-before-you-go">

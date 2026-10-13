@@ -83,7 +83,16 @@ console.log('Tuesday 13 Oct, 13:05, a Saturday remembered from an earlier plan')
   check(/\/venue\//.test(page.url()) && /date=2026-10-13/.test(decodeURIComponent(page.url())), 'See the place carries the day to the venue', page.url().replace(BASE, '').slice(0, 120));
   const context = await page.getByTestId('venue-outing-context').innerText().catch(() => '');
   check(/Tue 13 Oct · arrive \d\d:\d\d · with Emma’s family/.test(context), 'the venue says which day and family it is planning for', context);
-  await page.getByTestId('venue-create-plan').click(); await page.waitForTimeout(1200);
+  const ctaLabel = (await page.getByTestId('venue-create-plan').innerText()).trim();
+  check(/Plan this day/.test(ctaLabel), 'from an active outing the venue’s action reads “Plan this day”', ctaLabel);
+  check(await page.getByTestId('venue-outing-change').count() === 1, 'and the outing line has a Change action');
+  // Change opens the sheet on this outing, this place kept: no going back to Meet halfway.
+  await page.getByTestId('venue-outing-change').click(); await page.waitForTimeout(1200);
+  check(await page.getByTestId('create-plan-sheet').isVisible(), 'Change opens the Create a plan sheet in place');
+  await page.getByTestId('create-plan-sheet').getByText('Sat 17 Oct', { exact: true }).first().click(); await page.waitForTimeout(500);
+  const changed = (await page.getByTestId('create-plan-sheet').innerText()).replace(/\s+/g, ' ');
+  check(/START \d\d:\d\d/.test(changed) && /Emma’s family/.test(changed), 'the sheet kept the arrival and the family while the day is changed', changed.slice(0, 140));
+  await page.getByTestId('create-plan-sheet').getByText('Today', { exact: true }).first().click(); await page.waitForTimeout(400);
   const sheet = (await page.getByTestId('create-plan-sheet').innerText()).replace(/\s+/g, ' ');
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/b-sheet.png` });
   const chosen = await page.getByTestId('create-plan-sheet').locator('[role="button"][aria-pressed="true"], [aria-selected="true"], [aria-checked="true"]').allInnerTexts().catch(() => []);
@@ -93,6 +102,13 @@ console.log('Tuesday 13 Oct, 13:05, a Saturday remembered from an earlier plan')
   const planB = await planText(page);
   check(/Tue 13 Oct/.test(planB) && !/Sat 17 Oct/.test(planB), 'See the place: the plan is for Tuesday 13 October, not the remembered Saturday', planB.slice(0, 70));
   check(/parties=mine(%2C|,)guest-emma/.test(page.url()), 'and it is planned with Emma’s family', page.url().replace(BASE, '').slice(0, 150));
+  // Change from the plan itself: back to the sheet, same place, same answers.
+  await page.getByTestId('plan-change-outing').click(); await page.waitForTimeout(2500);
+  const reopened = (await page.getByTestId('create-plan-sheet').innerText().catch(() => '')).replace(/\s+/g, ' ');
+  check(/\/venue\//.test(page.url()) && /START /.test(reopened) && /Emma’s family/.test(reopened), 'Change on the plan reopens the sheet at the same place with the same answers', page.url().replace(BASE, '').slice(0, 80));
+  await page.getByTestId('create-plan-submit').click();
+  const planC = await planText(page);
+  check(/Tue 13 Oct/.test(planC) && /parties=mine(%2C|,)guest-emma/.test(page.url()), 'and the rebuilt plan is still Tuesday with Emma’s family', planC.slice(0, 60));
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('familypilot-planning-v1') ?? '{"state":{}}').state.options);
   check(stored?.date === '2026-10-17', 'the outing did not overwrite the remembered date', JSON.stringify(stored));
   check(errors.length === 0, 'no runtime errors', errors.join(' | '));
@@ -112,6 +128,39 @@ console.log('Monday morning: lunch stays');
   check(/Lunch at /.test(plan) && !/Lunch isn’t added/.test(plan), 'a 10:00 arrival keeps its lunch', plan.match(/\d\d:\d\d (?:to \d\d:\d\d )?Lunch at [^.]{0,30}/)?.[0] ?? '');
   const lunch = plan.match(/(\d\d):(\d\d) (?:to \d\d:\d\d )?Lunch at/);
   check(Boolean(lunch) && Number(lunch[1]) * 60 + Number(lunch[2]) <= 14 * 60, 'and it starts by 14:00', lunch ? `${lunch[1]}:${lunch[2]}` : 'none');
+  await ctx.close();
+}
+
+// ------------------------------------------------------------------ 5: ordinary browsing keeps "Create a plan"
+console.log('Ordinary venue browsing');
+{
+  const { ctx, page } = await open('2026-10-13T13:05:00');
+  // A place opened on its own (no outing on the route), as a link or from a list would.
+  await page.goto(`${BASE}/venue/fp-google-ChIJH7vcjOYddkgRQAmHYvUaK-U`, { waitUntil: 'networkidle' }); await page.waitForTimeout(2500);
+  const label = (await page.getByTestId('venue-create-plan').innerText()).trim();
+  check(/Create a plan/.test(label) && !/Plan this day/.test(label), 'a venue opened from Explore still says “Create a plan”', label);
+  check(await page.getByTestId('venue-outing-change').count() === 0, 'and has no outing line');
+  await ctx.close();
+}
+
+// ------------------------------------------------------------------ 6: Details says "not yet reviewed" once
+console.log('Meet halfway Details');
+{
+  const { ctx, page } = await open('2026-10-12T08:00:00');
+  await page.goto(`${BASE}/halfway`, { waitUntil: 'networkidle' }); await page.waitForTimeout(2000);
+  const chip = page.getByRole('button', { name: 'Emma’s family', exact: true }).first();
+  if (await chip.count()) { await chip.click(); await page.waitForTimeout(2500); }
+  await page.getByTestId('halfway-details').first().waitFor({ timeout: 20000 });
+  const collapsed = (await page.getByTestId('halfway-sheet-collapsed').innerText()).replace(/\s+/g, ' ');
+  check((collapsed.match(/Not yet reviewed/g) ?? []).length === 1 && await page.getByTestId('halfway-fit-both').count() === 1, 'the collapsed card says “Not yet reviewed” once, for both families', collapsed.slice(0, 120));
+  await page.getByTestId('halfway-details').first().click(); await page.waitForTimeout(1200);
+  const sheetText = (await page.getByTestId('halfway-sheet-expanded').innerText()).replace(/\s+/g, ' ');
+  check((sheetText.match(/Not yet reviewed/gi) ?? []).length <= 1, 'Details says “Not yet reviewed” once', String((sheetText.match(/Not yet reviewed/gi) ?? []).length));
+  check(/haven’t reviewed this place for families yet/.test(sheetText), 'and says plainly the place has not been reviewed for families, so neither family is graded');
+  check(/Journeys/.test(sheetText) && /Before you go|Not yet:|Baby changing|to be checked/i.test(sheetText), 'uncertainty stays visible: the journeys and what is still to check');
+  const unreviewedCard = (await page.getByTestId('halfway-fit-unreviewed-card').innerText()).replace(/\s+/g, ' ');
+  check((unreviewedCard.match(/Emma/g) ?? []).length <= 1, 'the other family is named once (in the chip) and nothing is said about them as confirmed or checked', unreviewedCard.slice(0, 160));
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/d-details.png` });
   await ctx.close();
 }
 

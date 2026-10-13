@@ -164,6 +164,12 @@ export default function VenueScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+  // The answers of a plan being changed (the sheet reopened from it): what the parent leaves alone is not new, so it is not remembered.
+  const reopenedDraft = useMemo(
+    () => (firstValue(searchParams.plan) === 'open' ? planDraftFromParams(searchParams as Record<string, string | string[] | undefined>) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
   const [draftOverride, setDraftOverride] = useState<PlanDraft | null>(outing);
   // The pinned bar's real height (its context line wraps at larger text), so the page always scrolls clear of it.
   const [planBarHeight, setPlanBarHeight] = useState(PLAN_BAR_HEIGHT);
@@ -239,15 +245,18 @@ export default function VenueScreen() {
       // A date or start the parent CHANGED is remembered as a convenience; a suggestion they left alone is not (it is worked
       // out again each time, from the clock). Who is coming and how long are asked afresh each time.
       // The day Meet halfway handed over is that outing's, not a habit: it is never remembered as the next default.
-      const chosen = optionsToRemember(next, outing ?? planDefaults.draft);
+      const chosen = optionsToRemember(next, outing ?? reopenedDraft ?? planDefaults.draft);
       if (Object.keys(chosen).length > 0) setPlanningOptions(chosen);
       setPlanSheetOpen(false);
+      // A lunch the parent had chosen on the plan being changed comes back with it (only present when the sheet was reopened from a plan).
+      const lunch = firstValue(searchParams.lunch);
+      const lunchPlace = firstValue(searchParams.lunchPlace);
       router.push({
         pathname: '/plan',
-        params: { venue: id ?? '', ...planDraftToParams(next) },
+        params: { venue: id ?? '', ...planDraftToParams(next), ...(lunch ? { lunch } : {}), ...(lunchPlace ? { lunchPlace } : {}) },
       } as never);
     },
-    [id, router, setPlanningOptions, planDefaults, outing],
+    [id, router, setPlanningOptions, planDefaults, outing, reopenedDraft, searchParams],
   );
 
   const handleDirections = useCallback(() => {
@@ -572,11 +581,18 @@ export default function VenueScreen() {
         <View style={[styles.planBar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]} onLayout={(event) => setPlanBarHeight(Math.ceil(event.nativeEvent.layout.height))} testID="venue-plan-bar">
           {outing ? (
             // The day carried over from Meet halfway, said where the button is, so it is plain it was not lost on the way.
-            <Text variant="caption" color={colors.text.secondary} style={styles.planBarContext} numberOfLines={2} testID="venue-outing-context">
-              {outingSummary(outing, planDefaults.parties)}
-            </Text>
+            <View style={styles.planBarContext}>
+              <Text variant="caption" color={colors.text.secondary} style={styles.planBarContextText} testID="venue-outing-context">
+                {outingSummary(outing, planDefaults.parties)}
+              </Text>
+              {/* Change the day, the arrival or who is coming without going back: the sheet opens on this outing, this place kept. */}
+              <Pressable onPress={() => setPlanSheetOpen(true)} accessibilityRole="button" accessibilityLabel="Change the day, arrival or who is coming" hitSlop={10} style={minTarget(16)} testID="venue-outing-change">
+                <Text variant="caption" color={colors.action} style={styles.planBarChange}>Change</Text>
+              </Pressable>
+            </View>
           ) : null}
-          <ArrowCta label="Create a plan" onPress={() => setPlanSheetOpen(true)} testID="venue-create-plan" />
+          {/* From an active Meet halfway outing the action continues that day; browsing a place on its own starts a plan. */}
+          <ArrowCta label={outing ? 'Plan this day' : 'Create a plan'} onPress={() => setPlanSheetOpen(true)} testID="venue-create-plan" />
         </View>
       )}
 
@@ -740,7 +756,9 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   // Pinned under the page; the page's own bottom padding clears it (PLAN_BAR_HEIGHT).
-  planBarContext: { textAlign: 'center', marginBottom: spacing.xs },
+  planBarContext: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', columnGap: spacing.sm, marginBottom: spacing.xs },
+  planBarContextText: { textAlign: 'center', flexShrink: 1 },
+  planBarChange: { fontFamily: 'Inter_600SemiBold', textDecorationLine: 'underline' },
   planBar: {
     position: 'absolute',
     left: 0,

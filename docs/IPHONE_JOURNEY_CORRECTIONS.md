@@ -27,3 +27,13 @@ Evidence: a real-iPhone review of Meet halfway → Create a plan. The recording 
 Unit suite, both `tsc` configs, and the browser journeys (release journeys A and B, timeline persistence, create-a-plan 157/157, product coherence, navigation clearance, accessibility audit, Halfway on real catalogue rows, the two-account shared outing and account journey) all pass on the final code. No Google call is made or added; ranking, scoring, privacy and Family Fit are untouched.
 
 Figma proposals for the broader journey: page "08 — iPhone journey corrections (proposals)" in the design file.
+
+## Approved refinements (after the iPhone review)
+
+- **"Not yet reviewed" once.** Where the *place* has not been reviewed for families, neither family can be graded, so the collapsed card and the list show one chip ("You & Emma's · Not yet reviewed") and Details shows one card ("We haven't reviewed this place for families yet … neither family is graded"), still listing your own family's confirmed facts and what is not checked yet. Nothing about the other family is shown as confirmed or checked. Reviewed places keep a grade per family, as before.
+- **Invite to connect** on a family stored only on this phone: the existing single-use invitation link and consent (routines are not shared; nothing is shared until they accept), shown under that family's card. Needs an account. Connected families do not have it. "On this phone only · not connected" is now amber.
+- **Change** on the outing line above the venue's action (opens the Create a plan sheet in place, this place kept) and on the plan ("Change the day, arrival or who's coming": back to the sheet at the same place with the same answers, and the chosen lunch kept). Changing the outing is not remembered as the next default; only what the parent changes is.
+- **"Plan this day"** is the venue's action when you arrive from an active Meet halfway outing; ordinary browsing keeps "Create a plan".
+- **Lunch-first planning:** deferred, as decided.
+
+Checks: `approved-refinements.test.ts` (12 tests); `verify-halfway-handoff.mjs` (CTA label, Change, plan Change, one "not yet reviewed", ordinary browsing); `verify-shared-outing.mjs` (Invite to connect on the real invitation handler); `verify-halfway-real-catalogue.mjs` updated for the combined chip and card.

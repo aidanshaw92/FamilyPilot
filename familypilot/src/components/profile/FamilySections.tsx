@@ -193,6 +193,8 @@ export function ConnectedFamiliesSection({
   const [adding, setAdding] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [confirm, setConfirm] = useState<string | null>(null);
+  // The family on this phone an invitation link was just made for, so the link appears under that family's card.
+  const [inviteFor, setInviteFor] = useState<string | null>(null);
   // The "what I share" panel: which connection is open, what the switch says, and the line confirming a change.
   const [sharingOpen, setSharingOpen] = useState<string | null>(null);
   const [shareChoice, setShareChoice] = useState(false);
@@ -369,7 +371,7 @@ export function ConnectedFamiliesSection({
               <Ionicons name="pin-outline" size={20} color={colors.text.secondary} />
               <View style={styles.familyText}>
                 <Text variant="heading3">{familyDisplayName(family.label)}</Text>
-                <Text variant="caption" color={colors.text.secondary} testID="local-family-status">
+                <Text variant="caption" color={colors.warning[600]} testID="local-family-status">
                   {planningWith === family.id ? 'On this phone only · planning together' : 'On this phone only · not connected'}
                 </Text>
                 <Text variant="bodySmall" color={colors.text.secondary}>
@@ -385,6 +387,28 @@ export function ConnectedFamiliesSection({
               {onEditLocal ? <Button label="Edit" size="sm" variant="ghost" onPress={() => onEditLocal(family)} testID="local-family-edit" /> : null}
               <Button label="Remove" size="sm" variant="ghost" onPress={() => removeFamily(family.id)} />
             </View>
+            {/* A family only on this phone can be invited to connect: the same single-use link, the same consent (routines are not
+                shared unless the person switches that on in the invitation panel, and it is off here). Nothing is sent or shared
+                until they accept; this just makes the link. Needs an account, like every other invitation. */}
+            {accountsAvailable ? (
+              <View style={styles.inviteLocal}>
+                <Button
+                  label={busy === 'friend' && inviteFor === family.id ? 'Creating…' : 'Invite to connect'}
+                  size="sm"
+                  variant="outline"
+                  disabled={busy !== null}
+                  onPress={() => {
+                    setInviteFor(family.id);
+                    void families.create('friend', false);
+                  }}
+                  testID="local-family-invite"
+                />
+                <Text variant="caption" color={colors.text.secondary}>
+                  Until they accept, {familyDisplayName(family.label)} can’t see or receive anything: plans stay on your phone.
+                </Text>
+                {inviteFor === family.id && invite ? <InviteLinkCard url={invite.url} relationship={invite.relationship} /> : null}
+              </View>
+            ) : null}
           </View>
         ))}
 
@@ -523,6 +547,7 @@ function Row({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; lab
 }
 
 const styles = StyleSheet.create({
+  inviteLocal: { gap: spacing.sm, alignItems: 'flex-start' },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   title: { marginTop: spacing.lg, marginBottom: spacing.lg },
   card: { gap: spacing.md, marginBottom: spacing.md },

@@ -82,6 +82,13 @@ export const positionLine = (option: Pick<HalfwayOption, 'venue'>, index: number
  * on what they chose to share. Whether they shared a child's age, a need or a pushchair is not said, and neither is what
  * they did not share.
  */
+/**
+ * Whether the PLACE has not been reviewed for families at all, so neither family can be graded. Then "Not yet reviewed" is one
+ * fact about the place, said once, rather than a grade repeated for each family (chips, headings and cards).
+ */
+export const placeUnreviewed = (option: { fits: { mine: { verdict: string }; other: { verdict: string } } }): boolean =>
+  option.fits.mine.verdict === 'not_reviewed' && option.fits.other.verdict === 'not_reviewed';
+
 export function otherFitProvenance(fit: HalfwayFit, label: string): { headline: string; note: string } {
   const who = familyDisplayName(label);
   if (fit.verdict === 'not_assessed') {

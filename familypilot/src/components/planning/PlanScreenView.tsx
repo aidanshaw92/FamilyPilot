@@ -419,6 +419,12 @@ export function PlanScreenView({
             {/* The day as it unfolds, with each timing's source; the stop cards below hold the places' details. */}
             {timeline && timeline.length ? (
               <Block title="Your day" testID="plan-day">
+                {onChangePlan ? (
+                  <Pressable onPress={onChangePlan} accessibilityRole="button" accessibilityLabel="Change the day, arrival or who is coming" style={styles.lunchLink} hitSlop={8} testID="plan-change-outing">
+                    <Ionicons name="calendar-outline" size={18} color={colors.action} />
+                    <Text style={styles.lunchLinkText}>Change the day, arrival or who’s coming</Text>
+                  </Pressable>
+                ) : null}
                 {onEditPlan ? (
                   <Pressable onPress={onEditPlan} accessibilityRole="button" accessibilityLabel="Edit this plan" style={styles.lunchLink} hitSlop={8} testID="plan-edit">
                     <Ionicons name="create-outline" size={18} color={colors.action} />
