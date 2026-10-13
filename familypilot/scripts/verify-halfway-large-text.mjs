@@ -219,6 +219,8 @@ async function scenario({ tag, width, height, insets }, scale) {
   await scrollEnd('halfway-map-scroll');
   await shot('1c-map-end');
   await report('map and recommendation (scrolled to the card)', { tabbar: true });
+  const tracks = await page.getByTestId('halfway-journey-track').evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return { w: r.width, h: r.height }; }));
+  check(tracks.length === 2 && tracks.every((t) => t.h >= 8 && t.w >= 100), `${name} · both journey bars are drawn, full width`, tracks.map((t) => `${Math.round(t.w)}x${Math.round(t.h)}`).join(', '));
   const plan = await page.getByTestId('halfway-plan').first().boundingBox();
   const detailsBtn = await page.getByTestId('halfway-details').first().boundingBox();
   const navBox = await page.getByRole('tab').first().boundingBox();

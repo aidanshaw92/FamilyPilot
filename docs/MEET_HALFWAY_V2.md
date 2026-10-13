@@ -8,7 +8,7 @@ The approved Figma v2 (file `LNpbdnuAWcfWf9spvB7jBz`, sections "v2 · Screens", 
 - **Collapsible recommendation sheet** (`src/components/halfway/Sheet.tsx`). Collapsed: the engine's own label ("Promising option · 2 things to check"), the place, a Family Fit chip per family, the journeys, *Plan this day* and *Details*. Expanded (Details, a swipe up, or the grabber): the photo or the labelled illustration, journeys, Family Fit for each family, what to check before you go, with the actions pinned above the navigation.
 - **List** (`ListCard.tsx`): the same places in the same order as the pins. Tapping a card selects it and shows it on the map.
 - **Edit meeting details** (`EditSheet.tsx`): who, when (the existing quick choices, a date picker, arrival time), indoor/outdoor, read-only starting points (to the district), and rows linking to the existing profile editors. Places update as you change them.
-- Nine states from the Figma board: missing starting point, nobody chosen (add by postcode), loading (areas on the map, skeleton sheet), no suitable places (the engine's own counts, "Start at HH:MM" / "Change day or time"), load failed with *Try again*, fallback to Home's places (amber banner), card states (not reviewed, needs checking, not recommended), long names and large text (list card reflows to one column from a 1.35 font scale), a journey estimate that is missing (defensive: dashed bar, "not worked out yet", no fairness claimed).
+- Nine states from the Figma board: missing starting point, nobody chosen (add by postcode), loading (areas on the map, skeleton sheet), no suitable places (the engine's own counts, "Start at HH:MM" / "Change day or time"), load failed with *Try again*, fallback to Home's places (amber banner), card states (not reviewed, needs checking, not recommended), long names and large text (larger text: see below), a journey estimate that is missing (defensive: dashed bar, "not worked out yet", no fairness claimed).
 
 ## What did not change
 
@@ -54,7 +54,7 @@ The earlier "known, deliberate residue" is closed. The "needs checking" sentence
 - The legacy-routines note on the Meet halfway page is gone; the page no longer says whether they shared routines.
 - **No consent change.** What a connection shares, and the consent text, are unchanged. Scoring, ranking and the Family Fit grading rules are unchanged (`ranking-golden.test.ts` passes unmodified).
 
-**Surfaces covered.** Card and expanded sheet text, the chip, accessibility labels (`accessibilityLabel` of the chip, the journey rows, the needs block), the list card, the edit sheet, the Plan handoff and the Plan screen's checks. `src/__tests__/meet-halfway-privacy.test.ts` renders two households against the same five places, each seeing the other under three different sharing permissions (nothing shared; ages only; ages, must-haves, pushchair and routines), asserts that for the same place the viewer sees the same neutral words whichever the sharing, that none of the shared terms (the requirement names, ages, "wheelchair", "nap", the routine) appear in any string the engine hands the UI or the Plan view model, and that the UI sources never read `otherNotes`, the other family's `required` or `ages` for display.
+**Surfaces covered.** Card and expanded-sheet text, the Family Fit chip (its visible words and its accessibility label are both built from the grade only), the list card, the edit sheet, the Plan handoff and the Plan screen's checks. `src/__tests__/meet-halfway-privacy.test.ts` renders two households against the same five places, each seeing the other under three different sharing permissions (nothing shared; ages only; ages, must-haves, pushchair and routines), asserts that for the same place the viewer sees the same neutral words whichever the sharing, that none of the shared terms (the requirement names, ages, "wheelchair", "nap", the routine) appear in any string the engine hands the UI or the Plan view model, and that the UI sources never read `otherNotes`, the other family's `required` or `ages` for display.
 
 ## The map
 
@@ -67,7 +67,7 @@ The earlier "known, deliberate residue" is closed. The "needs checking" sentence
 
 ## Honest limits
 
-- **Large text.** React Native Web does not model the system font scale (`Dimensions.fontScale` is always 1), so the one-column reflow for large text (from 1.35) is verified by code and types, not by a rendered web screenshot. It needs a pass on a device with larger text on.
+- **Large text** was verified in a browser emulation, not on a device: see "Larger text" below. It still needs a pass on a real iPhone with the text size raised before release.
 - **Map pins on a small phone** share a short band between the header and the sheet; below 820 pt tall the card is dense (smaller photo, journeys on a line) so the map keeps room, and tight clusters are nudged but still close.
 - **Quick dates.** The edit sheet offers the existing quick choices (Today, the coming weekend day, Other date); the design's "Tomorrow" chip is not offered because the shared quick-choice model does not have it.
 - **The edit sheet sits above the navigation** (its *Done* is pinned above the tab bar) rather than replacing it as in the frame, so nothing is hidden behind the tab bar.
@@ -82,6 +82,23 @@ The earlier "known, deliberate residue" is closed. The "needs checking" sentence
 5. **Comparison method.** `scripts/capture-halfway-figma-match.mjs` renders the app with the inputs the approved frames were drawn from: 393x852, Saturday 17 Oct 10:00, you at NW3 with Sloane (3) and Ozzie (a baby in a buggy), Kevin's family at E8 (a child aged 2, toilets, a pushchair), and the five stored catalogue rows behind the frames (`scripts/fixtures/halfway-figma-places.json`, answered to the `between` lookup). The engine, grades and wording are the app's own. Before-and-after pairs with the Figma frame are in `docs/meet-halfway-v2/matched-fixtures/`, including 375x667 and 360x780 and the scrolled edit sheet showing the Longest journey row with no navigation.
 
 Remaining data-driven differences from the frames (not layout): the engine grades the first place "Likely good · check Ozzie" for you where the frame says "Good fit" (it is honest about the baby); the fixture photo is a stock image where the frame has a grey placeholder; the clock fixture makes "Today" Saturday 17 Oct.
+
+## Larger text (PR #196, third round)
+
+**Method, stated plainly.** This is a *browser emulation* of larger iPhone text. **It is not Dynamic Type itself and it was not run on a physical device.** No physical-device pass has taken place. React Native Web does not model the system text size (`fontScale` is always 1), so `scripts/verify-halfway-large-text.mjs` does two things before the app starts: it raises the browser's root font size (which the app reads as the text scale, `src/hooks/use-font-scale.ts`), and it multiplies the font size and line height of every text node, as React Native does to `<Text>` on iOS, while fixed-size boxes stay fixed. Text the app deliberately caps (`maxFontSizeMultiplier`) grows only to its cap. Scales are iOS's own content-size multipliers: xxxLarge 1.35, AX2 1.9, AX3 2.35. It runs at 393x852 (safe areas top 47, bottom 34) and 375x667 (top 20), with the matched Figma inputs (see above), and for each screen *measures*: sideways overflow, text cut by a fixed box or an ellipsis, every control at least 44 pt and not covered at its centre, controls overlapping, that long content scrolls and its last line clears the pinned actions and the navigation, and six whole tab labels clear of the bottom edge. Screens: the opening screen, the list (top and end), the map and recommendation card (top and scrolled to the card), the expanded recommendation (top and end), Edit meeting details (top and end), and the navigation hiding for, and returning after, the edit sheet. **Result: all 120 checks pass at 1.35, 1.9 and 2.35 on both phone sizes.** The step runs in CI (`Visual regression`, "Meet halfway at larger text").
+
+**What changed because of it** (real faults the harness found at 1.35 and above):
+
+- *Opening view.* At 1.35 and up the screen opens on the **List** (a map with a card over it has no room left to be a map); the map is one tap away.
+- *Map view.* At larger text the card no longer stands over the map: the map is its own block and the recommendation follows it as an ordinary card in the page's scroll, whole, with its two actions and clear of the navigation. The header scrolls away with the page instead of filling a small phone (at 2.35 it alone was most of a 667 pt screen).
+- *Header.* The who/when selector wraps instead of truncating; the Map/List toggle grows to its words.
+- *Chips and pills.* The Family Fit chips, the engine's label pill and the shared selection chip are minimum heights that wrap and grow, never cut off.
+- *Journeys.* Name and time sit on one line above their bar, so neither wraps by letter or is clipped.
+- *Actions.* *Plan this day* and *Details* / *See the place* wrap onto two lines of buttons when they must; the expanded sheet measures its pinned actions so the last line of content always scrolls clear of them.
+- *Navigation.* The six labels grow to 1.2 times and no further (`TAB_LABEL_MAX_SCALE`), as the system's own tab bar does, because six words cannot share a 393 pt capsule at 2.35 times. The icon, the tab's accessibility label and its 44 pt target do not change. Photo credits drawn over a thumbnail do not scale (the credit is also given in full in the place credits).
+- *Small, deliberate exceptions to the 44 pt rule, unchanged by this round:* map pins (16 pt minimum, crowded places must not overlap; every place is also a full-size card in the List) and the sheet's grabber (a swipe handle with a 44 pt *Details* / *Close* button beside it).
+
+Tests: `large-text.test.ts` (the scale rules, and the layout decisions the harness depends on).
 
 ## Verification
 

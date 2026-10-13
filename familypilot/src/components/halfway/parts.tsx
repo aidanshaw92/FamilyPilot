@@ -89,7 +89,7 @@ export function JourneyComparison({ option, heading = false, dense = false }: { 
           ) : (
             <Text style={styles.journeyWho} numberOfLines={1}>{who}</Text>
           )}
-          <View style={[styles.track, big && styles.trackBig, missing && styles.trackMissing]}>
+          <View style={[styles.track, big ? styles.trackBig : styles.trackInline, missing && styles.trackMissing]} testID="halfway-journey-track">
             {missing ? null : <View style={[styles.fill, { width: `${share * 100}%`, backgroundColor: journey.role === 'mine' ? colors.action : OTHER_TONE }]} />}
           </View>
           {big ? null : <Text style={[styles.journeyTime, missing && styles.journeyTimeMissing]}>{time}</Text>}
@@ -210,11 +210,12 @@ const styles = StyleSheet.create({
   journeyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 20 },
   journeyStack: { gap: 4 },
   journeyHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 },
-  journeyWhoBig: { width: undefined, flexShrink: 1 },
-  journeyTimeBig: { width: undefined, flexShrink: 0 },
-  trackBig: { flex: undefined, alignSelf: 'stretch' },
+  journeyWhoBig: { width: 'auto', flexShrink: 1 },
+  journeyTimeBig: { width: 'auto', flexShrink: 0, textAlign: 'right' },
+  trackBig: { alignSelf: 'stretch' },
+  trackInline: { flex: 1 },
   journeyWho: { width: 88, fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 16, color: colors.text.secondary },
-  track: { flex: 1, height: 10, borderRadius: 5, backgroundColor: colors.fill, overflow: 'hidden' },
+  track: { height: 10, borderRadius: 5, backgroundColor: colors.fill, overflow: 'hidden' },
   trackMissing: { backgroundColor: 'transparent', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border },
   fill: { height: '100%', borderRadius: 5 },
   journeyTimeMissing: { fontFamily: fontFamily.regular, color: colors.text.secondary },

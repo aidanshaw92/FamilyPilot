@@ -134,7 +134,8 @@ describe('honest and free', () => {
     expect(screen).toContain('<HalfwayMap');
     // v2: the frame is fitted to every place and both areas, so selecting a pin never moves the map.
     expect(screen).toContain('venues={mapBlocked ? undefined : options.map(');
-    expect(screen).toContain('inset={{ top: 62, bottom: sheetHeight }}');
+    expect(screen).toContain('inset={{ top: 62, bottom: coveredBelow }}');
+    expect(screen).toContain('mapAndToggle(bodyHeight, sheetHeight)');
   });
 });
 

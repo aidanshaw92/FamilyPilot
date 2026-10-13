@@ -149,7 +149,7 @@ export function Chip({ label, active = false, onPress, appearance = 'outlined', 
           (appearance === 'plain' || small || tintFill) && styles.plain,
           small && styles.small,
           rail && { height: rail.height, paddingHorizontal: rail.paddingX },
-          big && { height: undefined, minHeight: drawnHeight, paddingVertical: 8 },
+          big && { height: 'auto', minHeight: drawnHeight, paddingVertical: 8 },
           animatedStyle,
         ]}
       >
