@@ -296,9 +296,16 @@ for (const [width, height] of VIEWPORTS) {
   await page.screenshot({ path: join(dir, '07-profile.jpg'), type: 'jpeg', quality: 82 });
   const profile = await text(page);
   check(`${label}: Profile lists the household, adults then children`, /Your family/.test(profile) && profile.indexOf('Aidan') < profile.indexOf('Sloane') && /Partner/.test(profile) && /Ozzie/.test(profile));
-  check(`${label}: Profile has Connected families as its own section`, /Connected families/.test(profile) && /Add a family by postcode/.test(profile));
-  check(`${label}: a family added by postcode appears there, honestly`, /Hannah/.test(profile) && /starting point only/.test(profile));
+  check(`${label}: Profile keeps the account and device data (families moved to the Families tab)`, /Your data/.test(profile) && !/Add a family by postcode/.test(profile));
   check(`${label}: Profile does not scroll sideways`, (await overflow(page)) <= 1);
+
+  // ---- FAMILIES: connected families, and a family added by postcode ------------------------------
+  await page.goto(`${BASE}/families`, { waitUntil: 'domcontentloaded' });
+  await settle(page, 2000);
+  await page.screenshot({ path: join(dir, '07b-families.jpg'), type: 'jpeg', quality: 82 });
+  const familiesTab = await text(page);
+  check(`${label}: Families has Connected families as its own section`, /Connected families/.test(familiesTab) && /Add (another )?family/i.test(familiesTab));
+  check(`${label}: a family added by postcode appears there, honestly`, /Hannah/.test(familiesTab) && /On this phone only · not connected/.test(familiesTab));
 
   // ---- MEET HALFWAY -----------------------------------------------------------------------------
   await page.goto(`${BASE}/halfway?family=guest-hannah`, { waitUntil: 'domcontentloaded' });

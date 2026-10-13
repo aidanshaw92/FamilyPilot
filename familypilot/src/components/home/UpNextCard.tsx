@@ -23,19 +23,19 @@ export function UpNextCard({ item, onPress, slim = false }: { item: UpNext; onPr
       testID="home-up-next"
     >
       {slim ? (
-        <Text variant="label" numberOfLines={1} style={styles.text}>
+        <Text variant="label" style={styles.text}>
           <Text variant="label" color={invitation ? colors.warning[600] : colors.action}>{invitation ? `${item.from} invited you · ` : `${item.when} · `}</Text>
           {item.title}
         </Text>
       ) : (
       <View style={styles.text}>
-        <Text variant="caption" color={invitation ? colors.warning[600] : colors.action} numberOfLines={1}>
+        <Text variant="caption" color={invitation ? colors.warning[600] : colors.action}>
           {eyebrow}
         </Text>
-        <Text variant="heading3" numberOfLines={1}>
+        <Text variant="heading3">
           {item.title}
         </Text>
-        <Text variant="caption" color={colors.text.secondary} numberOfLines={1}>
+        <Text variant="caption" color={colors.text.secondary}>
           {detail}
         </Text>
       </View>
