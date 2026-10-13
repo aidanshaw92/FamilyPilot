@@ -75,6 +75,8 @@ const SHEET_OVERLAP = 44;
 /** Two lines of 15/23 description before "Read more", as the frame shows (node 49:14). */
 const DESCRIPTION_LINES = 2;
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+/** The pinned Create-a-plan bar: the pill (58) and its padding above (spacing.md); the bottom inset is added by the page. */
+const PLAN_BAR_HEIGHT = 58 + spacing.md;
 
 export function generateStaticParams() {
   return generateVenueStaticParams();
@@ -290,7 +292,7 @@ export default function VenueScreen() {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: safeFooterPadding(insets.bottom) + spacing['2xl'] }}
+        contentContainerStyle={{ paddingBottom: safeFooterPadding(insets.bottom) + spacing['2xl'] + (pending ? 0 : PLAN_BAR_HEIGHT) }}
       >
         <View style={styles.heroContainer}>
           <Animated.View style={[styles.heroImageWrap, heroStyle]}>
@@ -402,15 +404,8 @@ export default function VenueScreen() {
               <AdmissionCard pricing={venue.admission} profile={profile} website={venue.website} />
             </View>
 
-            {/* 3. The action this screen exists for, straight after the answer to "is it good for us, and will it work today":
-                Create a plan, drawn as the frame's CTA (node 72:2). Tapping a venue never creates a plan; this does, through
-                the sheet. It sits here, not at the foot of a long page, so nobody scrolls past everything to find it. */}
-            <ArrowCta
-              label="Create a plan"
-              onPress={() => setPlanSheetOpen(true)}
-              testID="venue-create-plan"
-              style={styles.cta}
-            />
+            {/* 3. The action this screen exists for is the bar pinned under the page (see PlanBar below), so it is
+                reachable from the first screen and never scrolled past. */}
 
             {/* 4. What to know: the key family essentials: what is confirmed, and one line for what is not. */}
             <Text variant="heading2" style={styles.sectionTitle}>
@@ -547,6 +542,15 @@ export default function VenueScreen() {
           </FadeInView>
         </View>
       </AnimatedScrollView>
+
+      {/* The action this screen exists for: Create a plan, drawn as the frame's CTA (node 72:2), pinned under the page so it is
+          reachable on the first screen and from any point in the page. Tapping a venue never creates a plan; this does,
+          through the sheet. Not drawn until the real detail is, like everything actionable here. */}
+      {pending ? null : (
+        <View style={[styles.planBar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]} testID="venue-plan-bar">
+          <ArrowCta label="Create a plan" onPress={() => setPlanSheetOpen(true)} testID="venue-create-plan" />
+        </View>
+      )}
 
       <CreatePlanSheet
         visible={planSheetOpen}
@@ -707,8 +711,17 @@ const styles = StyleSheet.create({
     color: colors.ink,
     textDecorationLine: 'underline',
   },
-  cta: {
-    marginTop: spacing['2xl'],
+  // Pinned under the page; the page's own bottom padding clears it (PLAN_BAR_HEIGHT).
+  planBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.screenPadding,
+    backgroundColor: colors.background,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.borderLight,
   },
   sectionTitle: {
     marginTop: spacing['3xl'],

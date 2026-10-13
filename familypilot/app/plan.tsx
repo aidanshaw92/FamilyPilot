@@ -33,6 +33,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { alreadySavedId, planContentKey, savePlanDurably } from '@/src/services/planning/save-plan';
 import { buildCalendarEvent } from '@/src/services/planning/calendar-event';
 import { addToCalendar } from '@/src/services/planning/add-to-calendar';
+import { usePlanShare } from '@/src/hooks/use-plan-share';
 
 /**
  * GENERATING, then PLAN -- the last two screens of the approved journey.
@@ -341,7 +342,7 @@ export default function PlanScreen() {
   const handleSave = useCallback(async () => {
     // The ref, not the state, is the guard: a second tap can land before React re-renders, and each
     // press mints its own id, so state alone would store the same day twice.
-    if (!readySource || !readyKey || saving.current) return;
+    if (!readySource || !readyKey || saving.current) return null;
     saving.current = true;
     setSaveFor({ key: readyKey, status: 'saving' });
     const outcome = await savePlanDurably(readySource, {
@@ -364,10 +365,11 @@ export default function PlanScreen() {
     saving.current = false;
     if (outcome.status === 'failed') {
       setSaveFor({ key: readyKey, status: 'failed', message: outcome.message });
-      return;
+      return null;
     }
     setSavedId(outcome.id);
     setSaveFor({ key: readyKey, status: outcome.status });
+    return outcome.id;
   }, [saveDay, deleteDay, readySource, readyKey, venueId, draft, lunchOff, chosenCandidate, savedIdParam, keepParam]);
 
   // "View plan": the saved plan itself, as Plans shows it. A plain push, so the phone's own Back (Safari's swipe included)
@@ -456,6 +458,14 @@ export default function PlanScreen() {
         : null,
     [readySource, profile, parties.families],
   );
+
+  // Sending or sharing this day: to the connected family it was planned with, or as text. Saving is a step on the way.
+  const { share, sendDay } = usePlanShare({ source: readySource, dayId: keptId, title: view?.title ?? '', dateLabel: view?.dateSummary ?? '' });
+  const handleSaveAndSend = useCallback(async () => {
+    const id = await handleSave();
+    if (id) await sendDay(id);
+  }, [handleSave, sendDay]);
+  const planShare = share ? { ...share, onSend: share.to ? () => (keptId ? void sendDay(keptId) : void handleSaveAndSend()) : undefined } : undefined;
 
   const tightOption = view?.routines?.tight[0]?.options[0];
   const timeline = useMemo(
@@ -614,6 +624,7 @@ export default function PlanScreen() {
       onEditRow={editRow}
       onBack={handleBack}
       onSave={() => void handleSave()}
+      share={planShare}
       saveState={saveState}
       saveError={currentSave?.message}
       onViewPlan={handleViewPlan}

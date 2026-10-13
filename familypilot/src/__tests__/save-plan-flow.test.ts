@@ -105,7 +105,7 @@ describe('the plan screen around it', () => {
   const plans = readFileSync(join(root, 'app/(tabs)/trips.tsx'), 'utf8');
 
   it('double tap: one save in flight at a time (the ref guards, not state)', () => {
-    expect(plan).toContain('if (!readySource || !readyKey || saving.current) return;');
+    expect(plan).toContain('if (!readySource || !readyKey || saving.current) return null;');
     expect(plan).toContain('saving.current = true;');
   });
 
@@ -131,8 +131,8 @@ describe('the plan screen around it', () => {
     expect(saved).toContain("onSeeAllPlans={fromSave ? seeAllPlans : undefined}");
     expect(saved).toContain("params: { justSaved: id }");
     expect(screen).toContain('testID="plan-see-all-plans"');
-    expect(plans).toContain("const justSavedParam=typeof params.justSaved==='string'?params.justSaved:null;");
-    expect(plans).toContain("testID={fresh?'plans-just-saved':undefined}");
+    expect(plans).toContain("const justSavedParam = typeof params.justSaved === 'string' ? params.justSaved : null;");
+    expect(plans).toContain("testID={fresh ? 'plans-just-saved' : undefined}");
   });
 });
 

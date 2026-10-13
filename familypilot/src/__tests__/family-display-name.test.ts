@@ -88,9 +88,12 @@ describe('every screen that shows another family by name goes through the helper
     expect(read('src/components/profile/FamilySections.tsx')).not.toMatch(/<Text variant="heading3">\{family\.label\}<\/Text>/);
     expect(read('src/components/planning/ConnectedFamiliesPicker.tsx')).toContain('familyDisplayName(family.label)');
     expect(read('src/components/planning/PlanningAccount.tsx')).toContain('familyDisplayName(c.family?.label)');
-    // The Plans tab names the other family on a saved plan's timings and on invitations; family rows moved to Families.
-    expect(read('app/(tabs)/trips.tsx')).toContain('familyDisplayName(t.label)');
-    expect(read('app/(tabs)/trips.tsx')).toContain('familyDisplayName(c.family?.label)');
+    // The Plans tab names the other family on an invitation and on a plan's status; the older saved plans' timings and invite
+    // choices (kept in LegacyPlans) do too; family rows moved to Families.
+    expect(read('app/(tabs)/trips.tsx')).toContain('familyDisplayName(invite.otherLabel)');
+    expect(read('app/(tabs)/trips.tsx')).toContain('familyDisplayName(day.shared.fromLabel)');
+    expect(read('src/components/planning/LegacyPlans.tsx')).toContain('familyDisplayName(t.label)');
+    expect(read('src/components/planning/LegacyPlans.tsx')).toContain('familyDisplayName(c.family?.label)');
   });
 
   it('adding a family by postcode asks for their first name and says how it will be shown', () => {

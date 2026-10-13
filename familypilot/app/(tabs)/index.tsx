@@ -15,6 +15,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
 import { RecommendationDeck } from '@/src/components/home/RecommendationDeck';
 import { RecommendationDeckSkeleton } from '@/src/components/home/RecommendationDeckSkeleton';
+import { UpNextCard } from '@/src/components/home/UpNextCard';
+import { useUpNext } from '@/src/hooks/use-up-next';
 import { REFERENCE_WIDTH } from '@/src/utils/home-deck-geometry';
 import {
   deckRoom,
@@ -96,6 +98,8 @@ export default function HomeScreen() {
   const isFocused = useIsFocused();
 
   const { data: profile } = useFamilyProfile();
+  // A day already in motion (an invitation waiting, or the next plan) comes first; nothing is drawn without one.
+  const upNext = useUpNext();
   // The last list this device loaded is shown at once and refreshed in place; only a first run waits (useHomeVenues).
   const { venues, isLoading, isError, refetch } = useHomeVenues();
 
@@ -282,6 +286,18 @@ export default function HomeScreen() {
               filterActive={advancedFilters.length > 0}
             />
           </View>
+
+          {upNext ? (
+            <UpNextCard
+              item={upNext}
+              slim={mode !== 'full'}
+              onPress={() =>
+                router.push(
+                  (upNext.kind === 'invitation' ? { pathname: '/shared-plan', params: { invite: upNext.id } } : { pathname: '/saved-plan', params: { id: upNext.id } }) as never,
+                )
+              }
+            />
+          ) : null}
 
           {savings.title === 0 ? (
             <Text variant="heading2" style={styles.sectionTitle}>

@@ -26,7 +26,10 @@ function createFakeAdmin(resolveUser, tables = {}) {
           id: `00000000-0000-0000-0000-${String(++seq).padStart(12, '0')}`,
           created_at: new Date().toISOString(),
           expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
-          accepted_at: null, guest_id: null, guest_snapshot: null, ...row,
+          accepted_at: null, guest_id: null, guest_snapshot: null,
+          // The database's own default for a plan invitation (migration 20260913190000_plan_invites).
+          ...(name === 'plan_invites' ? { status: 'pending', responded_at: null } : {}),
+          ...row,
         };
         return api;
       },

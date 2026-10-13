@@ -17,3 +17,9 @@ const LABELS: Record<string, string> = {
 };
 
 export const mustHaveLabel = (field: string): string | null => LABELS[field] ?? null;
+
+/**
+ * What a sender's own unconfirmed requirement is called in a day sent to another family: it says THAT something is
+ * unconfirmed (so the recipient is told to check) and never WHAT. See shared-day.ts.
+ */
+export const UNDISCLOSED_FIELD = 'undisclosed';

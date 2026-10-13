@@ -82,6 +82,9 @@ export function PlanDraftForm({ draft, parties, onDraftChange, venueName, connec
   const [dateOpen, setDateOpen] = useState(!dateIsQuick);
   const [moreOpen, setMoreOpen] = useState(Boolean(draft.returnBy) || draft.environment !== 'either' || draft.bufferMinutes !== 15);
   const [customOpen, setCustomOpen] = useState(typeof draft.visit === 'number' && !isPresetLength(draft.visit));
+  // "How long" is FamilyPilot's decision unless the parent knows better: it opens as one line saying so, and the choices are one
+  // tap away. A length already chosen (a shared link, a plan being edited) opens showing them.
+  const [lengthOpen, setLengthOpen] = useState(draft.visit !== 'not-sure');
 
   const mine = parties.find((p) => p.people && p.people.length > 0);
   const others = parties.filter((p) => p !== mine);
@@ -209,34 +212,47 @@ export function PlanDraftForm({ draft, parties, onDraftChange, venueName, connec
         ) : null}
       </PlanFormRow>
 
-      <PlanFormRow label="How long">
-        <View style={styles.chips}>
-          {VISIT_CHOICES.map((choice) => (
-            <Chip
-              key={String(choice.value)}
-              size="small"
-              label={choice.label}
-              active={!visitIsCustom && draft.visit === choice.value}
-              onPress={() => {
-                setCustomOpen(false);
-                setVisit(choice.value);
-              }}
-            />
-          ))}
-          <Chip
-            size="small"
-            label={visitIsCustom ? `${draft.visit} min` : 'Custom'}
-            active={visitIsCustom || customOpen}
-            onPress={() => {
-              setCustomOpen(true);
-              if (!visitIsCustom) setVisit(75);
-            }}
-          />
-        </View>
-        {customOpen ? <CustomMinutes value={typeof draft.visit === 'number' ? draft.visit : 75} onChange={setVisit} /> : null}
+      <PlanFormRow
+        label="How long"
+        action={
+          lengthOpen ? undefined : (
+            <Pressable onPress={() => setLengthOpen(true)} accessibilityRole="button" accessibilityLabel="Change how long" hitSlop={10} testID="plan-length-change">
+              <Text style={styles.rowLink}>Change</Text>
+            </Pressable>
+          )
+        }
+      >
+        {lengthOpen ? (
+          <>
+            <View style={styles.chips}>
+              {VISIT_CHOICES.map((choice) => (
+                <Chip
+                  key={String(choice.value)}
+                  size="small"
+                  label={choice.label}
+                  active={!visitIsCustom && draft.visit === choice.value}
+                  onPress={() => {
+                    setCustomOpen(false);
+                    setVisit(choice.value);
+                  }}
+                />
+              ))}
+              <Chip
+                size="small"
+                label={visitIsCustom ? `${draft.visit} min` : 'Custom'}
+                active={visitIsCustom || customOpen}
+                onPress={() => {
+                  setCustomOpen(true);
+                  if (!visitIsCustom) setVisit(75);
+                }}
+              />
+            </View>
+            {customOpen ? <CustomMinutes value={typeof draft.visit === 'number' ? draft.visit : 75} onChange={setVisit} /> : null}
+          </>
+        ) : null}
         <Text variant="caption" color={colors.text.secondary}>
           {draft.visit === 'not-sure'
-            ? 'We’ll use what we know about the place and your routines, and tell you what we assumed.'
+            ? 'We’ll work it out from the place and your routines, and tell you what we assumed.'
             : draft.visit === 'all-day'
               ? 'Until it closes, or about 6 hours if we don’t know when that is.'
               : venueName

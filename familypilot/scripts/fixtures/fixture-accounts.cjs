@@ -99,7 +99,7 @@ function vercelRes(res) {
 async function handleAccountRoutes(req, res, url) {
   const p = url.pathname;
 
-  if (req.method === 'OPTIONS' && (p.startsWith('/auth/v1/') || p === '/api/planning/connections' || p === '/api/planning/feedback')) {
+  if (req.method === 'OPTIONS' && (p.startsWith('/auth/v1/') || p === '/api/planning/connections' || p === '/api/planning/plan-invites' || p === '/api/planning/feedback')) {
     res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS' });
     res.end();
     return true;
@@ -225,6 +225,17 @@ async function handleAccountRoutes(req, res, url) {
     const body = req.method === 'POST' || req.method === 'DELETE' ? await readBody(req) : undefined;
     const query = Object.fromEntries(url.searchParams.entries());
     await (handler.default || handler)({ method: req.method, headers: req.headers, body, query }, vercelRes(res));
+    return true;
+  }
+
+  if (p === '/api/planning/plan-invites') {
+    // The REAL handler (api/planning/plan-invites.js) over the same in-memory tables as the connections: a plan invitation
+    // is created, listed for both families, answered and cancelled by the code that runs in production.
+    ensureAdmin();
+    const handlerPath = req_.resolve(path.join(__dirname, '..', '..', '..', 'api', 'planning', 'plan-invites.js'));
+    const handler = req_(handlerPath);
+    const body = req.method === 'POST' || req.method === 'DELETE' ? await readBody(req) : undefined;
+    await (handler.default || handler)({ method: req.method, headers: req.headers, body, query: Object.fromEntries(url.searchParams.entries()) }, vercelRes(res));
     return true;
   }
 

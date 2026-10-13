@@ -1,0 +1,297 @@
+{
+ "id": "day-1792220400000",
+ "createdAt": "2026-10-17T07:00:00.000Z",
+ "source": {
+  "itinerary": {
+   "date": "2026-10-17",
+   "stops": [
+    {
+     "index": 0,
+     "placeId": "fp-google-ChIJvwCzCzEbdkgRSjIxswgKGdE",
+     "name": "Russell Square",
+     "role": "activity",
+     "anchor": true,
+     "arrive": 600,
+     "depart": 690,
+     "dwellMinutes": 90,
+     "opening": {
+      "status": "open",
+      "reason": "within-opening-period"
+     }
+    },
+    {
+     "index": 1,
+     "placeId": "fp-osm-node-9001",
+     "name": "The Mapped Kitchen",
+     "role": "meal",
+     "anchor": false,
+     "arrive": 706,
+     "depart": 751,
+     "dwellMinutes": 45,
+     "opening": {
+      "status": "unknown",
+      "reason": "no-structured-hours"
+     }
+    }
+   ],
+   "legs": [
+    {
+     "kind": "rendezvous",
+     "familyId": "mine",
+     "from": {
+      "kind": "home",
+      "familyId": "mine"
+     },
+     "to": {
+      "kind": "stop",
+      "index": 0,
+      "placeId": "fp-google-ChIJvwCzCzEbdkgRSjIxswgKGdE"
+     },
+     "depart": 575,
+     "arrive": 600,
+     "travelMinutes": 10,
+     "bufferMinutes": 15,
+     "source": "estimated"
+    },
+    {
+     "kind": "rendezvous",
+     "familyId": "connected-conn1",
+     "from": {
+      "kind": "home",
+      "familyId": "connected-conn1"
+     },
+     "to": {
+      "kind": "stop",
+      "index": 0,
+      "placeId": "fp-google-ChIJvwCzCzEbdkgRSjIxswgKGdE"
+     },
+     "depart": 575,
+     "arrive": 600,
+     "travelMinutes": 10,
+     "bufferMinutes": 15,
+     "source": "estimated"
+    },
+    {
+     "kind": "transfer",
+     "familyIds": [
+      "mine",
+      "connected-conn1"
+     ],
+     "from": {
+      "kind": "stop",
+      "index": 0,
+      "placeId": "fp-google-ChIJvwCzCzEbdkgRSjIxswgKGdE"
+     },
+     "to": {
+      "kind": "stop",
+      "index": 1,
+      "placeId": "fp-osm-node-9001"
+     },
+     "depart": 690,
+     "arrive": 706,
+     "travelMinutes": 1,
+     "bufferMinutes": 15,
+     "source": "estimated"
+    },
+    {
+     "kind": "return",
+     "familyId": "mine",
+     "from": {
+      "kind": "stop",
+      "index": 1,
+      "placeId": "fp-osm-node-9001"
+     },
+     "to": {
+      "kind": "home",
+      "familyId": "mine"
+     },
+     "depart": 751,
+     "arrive": 776,
+     "travelMinutes": 10,
+     "bufferMinutes": 15,
+     "source": "estimated"
+    },
+    {
+     "kind": "return",
+     "familyId": "connected-conn1",
+     "from": {
+      "kind": "stop",
+      "index": 1,
+      "placeId": "fp-osm-node-9001"
+     },
+     "to": {
+      "kind": "home",
+      "familyId": "connected-conn1"
+     },
+     "depart": 751,
+     "arrive": 776,
+     "travelMinutes": 10,
+     "bufferMinutes": 15,
+     "source": "estimated"
+    }
+   ],
+   "families": [
+    {
+     "familyId": "mine",
+     "label": "Our family",
+     "depart": 575,
+     "home": 776,
+     "latestDeparture": 1238,
+     "notes": [
+      "Home before Ozzie\u2019s nap at 12:15"
+     ]
+    },
+    {
+     "familyId": "connected-conn1",
+     "label": "Kevin\u2019s family",
+     "depart": 575,
+     "home": 776,
+     "latestDeparture": 1238,
+     "notes": []
+    }
+   ],
+   "unknowns": [
+    "Opening hours not confirmed at The Mapped Kitchen",
+    "Recommended ages are not published for Russell Square",
+    "Toilets are not confirmed at Russell Square",
+    "Toilets are not confirmed at The Mapped Kitchen",
+    "Wheelchair access is not confirmed at Russell Square"
+   ],
+   "openingConfidence": {
+    "confirmed": 1,
+    "unknown": 1
+   },
+   "reasons": [
+    "2 stops, built around Russell Square.",
+    "0 minute difference between outbound journeys.",
+    "Fits the routines you entered.",
+    "Fits the routines you entered."
+   ],
+   "routineInsights": [
+    {
+     "familyId": "mine",
+     "routineId": "nap-c2-1",
+     "kind": "nap",
+     "phase": "return",
+     "start": 735,
+     "end": 810
+    }
+   ],
+   "homeAfter": [
+    {
+     "familyId": "mine",
+     "routineId": "nap-c2-1",
+     "kind": "nap",
+     "start": 735
+    }
+   ],
+   "unresolvedMustHaves": [
+    {
+     "familyId": "connected-conn1",
+     "familyLabel": "Kevin\u2019s family",
+     "stopIndex": 0,
+     "placeId": "fp-google-ChIJvwCzCzEbdkgRSjIxswgKGdE",
+     "stopName": "Russell Square",
+     "field": "familyFacilities.toilets"
+    },
+    {
+     "familyId": "connected-conn1",
+     "familyLabel": "Kevin\u2019s family",
+     "stopIndex": 1,
+     "placeId": "fp-osm-node-9001",
+     "stopName": "The Mapped Kitchen",
+     "field": "familyFacilities.toilets"
+    },
+    {
+     "familyId": "mine",
+     "familyLabel": "Our family",
+     "stopIndex": 0,
+     "placeId": "fp-google-ChIJvwCzCzEbdkgRSjIxswgKGdE",
+     "stopName": "Russell Square",
+     "field": "familyFacilities.wheelchairAccess"
+    }
+   ],
+   "fairnessGap": 0,
+   "score": 991.5
+  },
+  "travel": {
+   "provenance": {
+    "live": 0,
+    "estimated": 8
+   },
+   "trafficDowngraded": false,
+   "missing": []
+  },
+  "caveats": [
+   {
+    "kind": "opening-hours-unknown",
+    "placeId": "fp-osm-node-9001",
+    "name": "The Mapped Kitchen"
+   },
+   {
+    "kind": "travel-estimated",
+    "legs": 5
+   }
+  ],
+  "anchorName": "Russell Square",
+  "parking": {
+   "parking": "unknown",
+   "freeParking": "unknown"
+  },
+  "media": {
+   "fp-google-ChIJvwCzCzEbdkgRSjIxswgKGdE": {
+    "category": "park",
+    "imageUrl": "https://example.test/photo/fp-google-ChIJvwCzCzEbdkgRSjIxswgKGdE"
+   },
+   "fp-osm-node-9001": {
+    "category": "restaurant",
+    "imageUrl": "https://example.test/photo/fp-osm-node-9001"
+   }
+  },
+  "visit": {
+   "minutes": 75,
+   "basis": "routine-limited",
+   "routineId": "nap-c2-1",
+   "familyId": "mine",
+   "unshortenedMinutes": 90
+  },
+  "alternatives": [
+   {
+    "id": "a1"
+   }
+  ],
+  "pushchair": "unknown",
+  "buggyFamilyIds": [
+   "mine",
+   "connected-conn1"
+  ],
+  "lunchAvailable": true,
+  "hasRoutines": true,
+  "anchorCategory": "park",
+  "anchorFacts": {
+   "babyChanging": "unknown",
+   "toilets": "unknown",
+   "minRecommendedAge": null,
+   "maxRecommendedAge": null
+  },
+  "lunchFacts": {
+   "provider": "osm",
+   "highchair": true,
+   "changingTable": true,
+   "cuisine": "italian",
+   "walkMinutes": 6,
+   "walkSource": "estimated"
+  },
+  "acceptedConflict": "nap-c2-1"
+ },
+ "draft": {
+  "venueId": "fp-google-ChIJvwCzCzEbdkgRSjIxswgKGdE",
+  "params": {
+   "date": "2026-10-17",
+   "start": "10:00",
+   "visit": "not-sure",
+   "parties": "mine,connected-conn1",
+   "lunchPlace": "fp-osm-node-9001"
+  }
+ }
+}

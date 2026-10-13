@@ -110,8 +110,12 @@ describe('the Families hub', () => {
     expect(plans).not.toContain("'families'");
     expect(plans).not.toContain('FamilyEditor');
     expect(plans).not.toContain('plans-go-halfway');
-    expect(plans.indexOf('testID="plans-saved-days"')).toBeLessThan(plans.indexOf('testID="plans-start"'));
-    expect(plans).toContain("state.savedDays.length?'Plan another day':'Start a plan'");
+    // Invitations first (the only thing waiting on the parent), then the plans, then the way to start another; the "no plans yet"
+    // start card appears only when there is nothing else to show.
+    expect(plans.indexOf('testID="plans-invitations"')).toBeLessThan(plans.indexOf('testID="plans-saved-days"'));
+    expect(plans.indexOf('testID="plans-saved-days"')).toBeLessThan(plans.indexOf('label="Plan another day"'));
+    expect(plans).toContain('No plans yet');
+    expect(plans).toContain('{empty ? (');
   });
 });
 

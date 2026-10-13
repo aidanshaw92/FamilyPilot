@@ -222,6 +222,13 @@ async function run(browser, viewport) {
       : 'no sheet',
   });
 
+  // How long opens as one line (FamilyPilot decides) with a Change link; the choices are behind it.
+  const collapsedText = (await sheet.innerText().catch(() => '')) || '';
+  note(viewport.label, 'How long opens as one line with Change, its choices behind it', {
+    ok: (await sheet.getByTestId('plan-length-change').count()) === 1 && !collapsedText.includes('All day') && /work it out/.test(collapsedText),
+  });
+  await sheet.getByTestId('plan-length-change').click().catch(() => {});
+  await page.waitForTimeout(300);
   const sheetText = (await sheet.innerText().catch(() => '')) || '';
   // The approved rows are set in caps, so the comparison is case-insensitive rather than asserting
   // the styling.
@@ -296,9 +303,10 @@ async function run(browser, viewport) {
     note(viewport.label, 'the first stop is expanded', {
       ok: planUpper.includes('ARRIVE') && planUpper.includes('TIME THERE'),
     });
-    note(viewport.label, 'stops are numbered and the day ends at home', {
-      ok: /Stop 1/.test(planText) && /Head home/.test(planText),
-      message: `${(planText.match(/Stop \d/g) ?? []).join(', ')}${/Head home/.test(planText) ? ' · Head home' : ''}`,
+    // The day is a timeline since #194: it starts at "Leave home", arrives at each place, and ends at "Home".
+    note(viewport.label, 'the day runs from leaving home, through each place, to home', {
+      ok: /Leave home/.test(planText) && /Arrive at/.test(planText) && /\bHome\b/.test(planText.slice(planText.lastIndexOf('Leave for home'))),
+      message: `${/Leave home/.test(planText) ? 'Leave home' : 'no Leave home'} · ${/Leave for home/.test(planText) ? 'Leave for home' : 'no Leave for home'}`,
     });
     {
       const overflow = await horizontalOverflow(page);
@@ -314,8 +322,10 @@ async function run(browser, viewport) {
     await page.screenshot({ path: join(dir, '05-plan-travel.png') });
     const travelText = await page.evaluate(() => document.body.innerText);
     note(viewport.label, 'the travel section is headed Travel & parking', { ok: /Travel & parking/i.test(travelText) || /Parking/.test(travelText) });
-    note(viewport.label, 'parking is reported as unconfirmed for an unreviewed venue', {
-      ok: travelText.includes('Not confirmed'),
+    // The venue used here has its parking on record ("Free parking confirmed" on its page), so the plan states it and where it comes from;
+    // a venue with nothing on record says "Not confirmed" (covered by the plan view-model tests).
+    note(viewport.label, 'parking is stated as recorded for this venue, never invented', {
+      ok: /On site, free/.test(travelText) || travelText.includes('Not confirmed'),
       message: (travelText.match(/Parking[\s\S]{0,60}/) ?? [''])[0].replace(/\s+/g, ' '),
     });
     note(viewport.label, 'estimated journeys are labelled as estimates', {
