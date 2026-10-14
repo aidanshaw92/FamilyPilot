@@ -1,0 +1,42 @@
+# One-off, pass 4. NOT scheduled, NOT dispatchable, NOT run on pull requests. Runs only when the throwaway branch `data/open-data-fetch` is pushed with a
+# change under legal-fetch3/. GET only, a descriptive User-Agent, no secret, no database, no Google API.
+#   os     prints the OS Open Greenspace documentation and licence pages to the job log
+#   wd     bounded Wikidata (CC0) queries with Wikipedia-link counts and websites; commits JSON to results/wikidata2/ on this throwaway branch
+name: Licence review fetch, pass 4 (one-off)
+
+on:
+  push:
+    branches: [data/open-data-fetch]
+    paths:
+      - .github/workflows/legal-fetch3.yml
+      - legal-fetch3/**
+
+permissions:
+  contents: read
+
+jobs:
+  os:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet requests beautifulsoup4 lxml
+      - run: python legal-fetch3/os_docs.py
+
+  wd:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write   # only to commit results/wikidata2/ to this throwaway branch
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet requests
+      - run: python legal-fetch3/wikidata_fetch2.py results/wikidata2
+      - name: Keep the CC0 results on the throwaway branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results/wikidata2
+          git commit -m "Wikidata (CC0) results, pass 2: Wikipedia-link counts and websites" || echo "nothing to commit"
+          git pull --rebase origin data/open-data-fetch
+          git push origin HEAD:data/open-data-fetch
