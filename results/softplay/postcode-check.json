@@ -1,0 +1,134 @@
+[
+ {
+  "fhrsId": 346104,
+  "name": "Gambado",
+  "postcode": "SW6 2PY",
+  "lat": 51.474468,
+  "lng": -0.183747,
+  "postcodeLat": 51.474723,
+  "postcodeLng": -0.183326,
+  "metres": 41,
+  "district": "Hammersmith and Fulham"
+ },
+ {
+  "fhrsId": 1691253,
+  "name": "Abuela Play Cafe",
+  "postcode": "CR5 2RA",
+  "lat": 51.3207546,
+  "lng": -0.1396142,
+  "postcodeLat": 51.320822,
+  "postcodeLng": -0.139339,
+  "metres": 21,
+  "district": "Croydon"
+ },
+ {
+  "fhrsId": 1367047,
+  "name": "HALO play cafe",
+  "postcode": "UB8 1GB",
+  "lat": 51.5455526,
+  "lng": -0.4761012,
+  "postcodeLat": 51.545531,
+  "postcodeLng": -0.477227,
+  "metres": 78,
+  "district": "Hillingdon"
+ },
+ {
+  "fhrsId": 1532159,
+  "name": "Little Peeps Soft Play Limited",
+  "postcode": "KT9 1NU",
+  "lat": 51.367245,
+  "lng": -0.3072945,
+  "postcodeLat": 51.367082,
+  "postcodeLng": -0.307186,
+  "metres": 20,
+  "district": "Kingston upon Thames"
+ },
+ {
+  "fhrsId": 1836741,
+  "name": "Moo Moo's Play Cafe",
+  "postcode": "KT11 3EB",
+  "lat": 51.3274132,
+  "lng": -0.4103402,
+  "postcodeLat": 51.327895,
+  "postcodeLng": -0.410697,
+  "metres": 59,
+  "district": "Elmbridge"
+ },
+ {
+  "fhrsId": 1935590,
+  "name": "The Jump Zone Beckton",
+  "postcode": "E6 6LA",
+  "lat": 51.5169784,
+  "lng": 0.0614395,
+  "postcodeLat": 51.516902,
+  "postcodeLng": 0.063238,
+  "metres": 125,
+  "district": "Newham"
+ },
+ {
+  "fhrsId": 1434379,
+  "name": "Flip Out",
+  "postcode": "NW2 6LW",
+  "lat": 51.570301,
+  "lng": -0.229727,
+  "postcodeLat": 51.569521,
+  "postcodeLng": -0.228494,
+  "metres": 122,
+  "district": "Barnet"
+ },
+ {
+  "fhrsId": 1857771,
+  "name": "Clip 'n Climb at The O2",
+  "postcode": "SE10 0DX",
+  "lat": 51.5016804,
+  "lng": 0.0040714,
+  "postcodeLat": 51.502194,
+  "postcodeLng": 0.002819,
+  "metres": 104,
+  "district": "Greenwich"
+ },
+ {
+  "fhrsId": 1937580,
+  "name": "Clip 'N Climb Croydon",
+  "postcode": "CR0 1NB",
+  "lat": 51.3779745,
+  "lng": -0.1017918,
+  "postcodeLat": 51.377929,
+  "postcodeLng": -0.101877,
+  "metres": 8,
+  "district": "Croydon"
+ },
+ {
+  "fhrsId": 1961932,
+  "name": "Cheeky Chops Play Caf\u00e9",
+  "postcode": "TW1 3LP",
+  "lat": 51.4478798,
+  "lng": -0.3265789,
+  "postcodeLat": 51.44808,
+  "postcodeLng": -0.326111,
+  "metres": 39,
+  "district": "Richmond upon Thames"
+ },
+ {
+  "fhrsId": 1677302,
+  "name": "Dreami Play Cafe",
+  "postcode": "E2 7SY",
+  "lat": 51.5315259,
+  "lng": -0.0617983,
+  "postcodeLat": 51.531526,
+  "postcodeLng": -0.061813,
+  "metres": 1,
+  "district": "Tower Hamlets"
+ },
+ {
+  "fhrsId": 1756533,
+  "name": "Raffys Play Cafe",
+  "postcode": "BR3 3HQ",
+  "lat": 51.3897216,
+  "lng": -0.0269624,
+  "postcodeLat": 51.389676,
+  "postcodeLng": -0.026921,
+  "metres": 6,
+  "district": "Bromley"
+ }
+]
