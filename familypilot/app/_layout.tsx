@@ -1,14 +1,6 @@
 import 'react-native-reanimated';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  Inter_800ExtraBold,
-  Inter_900Black,
-  useFonts,
-} from '@expo-google-fonts/inter';
+import { useFonts } from '@expo-google-fonts/inter';
 import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef } from 'react';
@@ -16,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { blocksFirstRender, fontSources } from '@/src/design-system/fonts';
 import { colors } from '@/src/design-system/tokens';
 import { useDocumentTitle } from '@/src/hooks/use-document-title';
 import { installClientErrorReporting } from '@/src/services/monitoring/client-errors';
@@ -86,17 +79,11 @@ export default function RootLayout() {
   useDocumentTitle();
   useAccountGuard();
   useEffect(() => installClientErrorReporting(), []);
-  const [loaded, error] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    Inter_900Black,
-  });
+  const [loaded, error] = useFonts(fontSources);
 
   useEffect(() => {
-    if (error) throw error;
+    // A font that will not load is fatal only where the first screen waits for it. Elsewhere (the web) the page is already drawn in the system font.
+    if (error && blocksFirstRender) throw error;
   }, [error]);
 
   useEffect(() => {
@@ -105,7 +92,7 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  if (!loaded) {
+  if (!loaded && blocksFirstRender) {
     return null;
   }
 
