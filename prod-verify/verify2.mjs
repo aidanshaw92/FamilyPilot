@@ -9,6 +9,10 @@ const LABEL = process.env.LABEL ?? 'check';
 const WAIT_FROM = process.env.WAIT_FOR_CHANGE_FROM ?? '';
 const say = (k, v) => console.log(`RESULT ${LABEL}.${k}: ${JSON.stringify(v)}`);
 const UA = 'FamilyPilot-prod-verify/2.0 (read-only)';
+// Nothing here may hang the job: every request has a timeout and the whole run has a watchdog.
+setTimeout(() => { console.log('RESULT watchdog: stopped after 9 minutes'); process.exit(0); }, 9 * 60 * 1000).unref?.();
+const _fetch = globalThis.fetch;
+globalThis.fetch = (u, o = {}) => _fetch(u, { ...o, signal: AbortSignal.timeout(30000) });
 
 const entryOf = (html) => [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => m[1]).find((s) => /entry-/.test(s)) ?? null;
 async function getHtml() { const r = await fetch(BASE + '/', { headers: { 'user-agent': UA, 'cache-control': 'no-cache' } }); return { text: await r.text(), headers: Object.fromEntries([...r.headers.entries()].filter(([k]) => /^x-vercel-id|^age$|^etag$|^cache-control$|^date$/i.test(k))) }; }
@@ -55,16 +59,17 @@ async function visit(context, tag) {
   page.on('request', (r) => { requests++; if (/googleapis|maps\.google|google\.com\/maps|gstatic/i.test(r.url())) google.push(r.url().slice(0, 100)); });
   cdp.on('Network.loadingFinished', (e) => { bytes += e.encodedDataLength; });
   const t0 = Date.now();
-  await page.goto(BASE + '/explore', { waitUntil: 'commit', timeout: 90000 });
-  const firstPaint = await page.waitForFunction(() => document.body && document.body.innerText.trim().length > 0, null, { timeout: 90000 }).then(() => Date.now() - t0).catch(() => null);
-  const card = await page.locator('[role="button"][aria-label$="view details"]').first().waitFor({ timeout: 90000 }).then(() => Date.now() - t0).catch(() => null);
+  await page.goto(BASE + '/explore', { waitUntil: 'commit', timeout: 60000 });
+  const firstPaint = await page.waitForFunction(() => document.body && document.body.innerText.trim().length > 0, null, { timeout: 60000 }).then(() => Date.now() - t0).catch(() => null);
+  const card = await page.locator('[role="button"][aria-label$="view details"]').first().waitFor({ timeout: 60000 }).then(() => Date.now() - t0).catch(() => null);
   const out = { firstThingMs: firstPaint, firstCardMs: card, kb: Math.round(bytes / 1024), requests, errors: errors.slice(0, 5), googleRequests: google.length };
   say(tag, out);
   await page.close();
 }
 const context = await browser.newContext({ viewport: { width: 393, height: 852 }, hasTouch: true, timezoneId: 'Europe/London' });
 await context.addInitScript(([seed]) => { if (!localStorage.getItem('pv-seeded')) { localStorage.setItem('pv-seeded', '1'); localStorage.setItem('familypilot-family-v1', JSON.stringify(seed)); } }, [PROFILE]);
-await visit(context, 'exploreFirstVisit');
+say('browser', 'starting'); await visit(context, 'exploreFirstVisit');
 await visit(context, 'exploreRepeatVisit');
 await browser.close();
 console.log('DONE');
+process.exit(0);
