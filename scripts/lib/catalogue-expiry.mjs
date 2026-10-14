@@ -49,17 +49,17 @@ export function standInClient(rows) {
 export const isPlottable = (place) => (place.provider === 'osm' || place.provider === 'mock') && Number.isFinite(place.latitude) && Number.isFinite(place.longitude);
 
 /**
- * @param {{ rows: any[], entries?: any[], dates: string[] }} input  `dates` are YYYY-MM-DD, evaluated at noon UTC.
+ * @param {{ rows: any[], entries?: any[], dates: string[], cutover?: string[] }} input  `dates` are YYYY-MM-DD, evaluated at noon UTC.
  * @returns one result per date: the served counts under today's gate alone, and with the independent list, by category.
  */
-export async function simulate({ rows, entries = [], dates }) {
+export async function simulate({ rows, entries = [], dates, cutover = [] }) {
   const client = standInClient(normaliseRows(rows));
   const valid = loadIdentities({ entries });
   const out = [];
   for (const date of dates) {
     const now = Date.parse(`${date}T12:00:00Z`);
-    const gate = await readCatalogue({ client, now, entries: [] });
-    const withIdentities = await readCatalogue({ client, now, entries: valid });
+    const gate = await readCatalogue({ client, now, entries: [], cutover: [] });
+    const withIdentities = await readCatalogue({ client, now, entries: valid, cutover });
     const independent = withIdentities.filter((place) => place.provider !== 'google');
     const byCategory = {};
     for (const place of withIdentities) byCategory[place.category] = (byCategory[place.category] ?? 0) + 1;

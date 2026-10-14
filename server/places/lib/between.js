@@ -1,5 +1,5 @@
 const { rowToPlace, EXPLORE_CATEGORIES, MAX_AGE_DAYS } = require('./catalogue');
-const { independentPlaces } = require('./independent-identities');
+const { independentPlaces, cutoverCategories } = require('./independent-identities');
 
 /**
  * Places that could suit TWO families, read from the stored venue catalogue (`place_records`) and nothing else.
@@ -134,7 +134,8 @@ async function readBetween(options) {
       .lte('lng', box.maxLng)
       .limit(STORED_ROW_CEILING);
     if (error || !Array.isArray(data)) return { available: false, places: [], considered: 0 };
-    const google = data.filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lng)).map(rowToPlace);
+    const cutover = cutoverCategories(options);
+    const google = data.filter((row) => !cutover.has(row.category) && Number.isFinite(row.lat) && Number.isFinite(row.lng)).map(rowToPlace);
     // Independently located venues inside the corridor that no fresh Google row covers. Only those with a position of their own can be placed.
     const independent = independentPlaces(google.map((place) => place.familypilotId), options).filter(
       (place) =>

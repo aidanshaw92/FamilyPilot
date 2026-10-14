@@ -231,6 +231,66 @@ describe('the catalogue with an independent list', () => {
   });
 });
 
+describe('switching a category over, so a list is not a blend of two sources', () => {
+  beforeEach(() => vi.resetModules());
+  const farmEntry = (over: Record<string, unknown> = {}) => entry({ familypilotId: 'fp-google-F', category: 'farm', ...over });
+  const rows = () => [
+    row({ familypilot_place_id: 'fp-google-F', external_id: 'google:F', category: 'farm' }),
+    row({ familypilot_place_id: 'fp-google-P', external_id: 'google:P', category: 'park', name: 'Park' }),
+  ];
+
+  it('with nothing switched over, fresh Google rows are served beside independent entries, as before', async () => {
+    const { readCatalogue } = require_(cataloguePath);
+    const places = await readCatalogue({ client: fakeClient(rows()), now: NOW, entries: [farmEntry()], cutover: [] });
+    expect(places.map((p: { familypilotId: string; provider: string }) => [p.familypilotId, p.provider])).toEqual([['fp-google-F', 'google'], ['fp-google-P', 'google']]);
+  });
+
+  it('a switched-over category is served from the independent files only; others are untouched', async () => {
+    const { readCatalogue } = require_(cataloguePath);
+    const places = await readCatalogue({ client: fakeClient(rows()), now: NOW, entries: [farmEntry()], cutover: ['farm'] });
+    expect(places.map((p: { familypilotId: string; provider: string }) => [p.familypilotId, p.provider])).toEqual([['fp-google-P', 'google'], ['fp-google-F', 'osm']]);
+  });
+
+  it('a Google row in a switched-over category with no independent entry is no longer served', async () => {
+    const { readCatalogue } = require_(cataloguePath);
+    const places = await readCatalogue({ client: fakeClient(rows()), now: NOW, entries: [], cutover: ['farm', 'park'] });
+    expect(places).toEqual([]);
+  });
+
+  it('only categories the catalogue serves can be switched over', () => {
+    const { cutoverCategories } = require_(identitiesPath);
+    expect([...cutoverCategories({ cutover: ['farm', 'restaurant', 'toString'] })]).toEqual(['farm']);
+    expect([...cutoverCategories({ cutover: [] })]).toEqual([]);
+  });
+
+  it('the file that ships switches nothing over', () => {
+    const shipped = JSON.parse(readFileSync(join(root, 'server/places/data/identities/cutover.json'), 'utf8'));
+    expect(shipped.categories).toEqual([]);
+  });
+
+  it('Meet halfway follows the same rule', async () => {
+    const { readBetween } = require_(betweenPath);
+    const A = { latitude: 51.556, longitude: -0.178 };
+    const B = { latitude: 51.545, longitude: -0.06 };
+    const result = await readBetween({ a: A, b: B, client: fakeClient(rows()), now: NOW, entries: [farmEntry()], cutover: ['farm', 'park'] });
+    expect(result.places.map((p: { familypilotId: string; provider: string }) => [p.familypilotId, p.provider])).toEqual([['fp-google-F', 'osm']]);
+  });
+
+  it('the simulation applies it', async () => {
+    const { simulate } = await import('../../../scripts/lib/catalogue-expiry.mjs');
+    const sim = [
+      { id: 'fp-google-F', category: 'farm', lat: 51.532, lng: -0.067, fetched: '2026-11-09', provider: 'google' },
+      { id: 'fp-google-P', category: 'park', lat: 51.54, lng: -0.14, fetched: '2026-11-09', provider: 'google' },
+    ];
+    const [blend, cut] = await Promise.all([
+      simulate({ rows: sim, entries: [farmEntry()], dates: ['2026-11-10'] }),
+      simulate({ rows: sim, entries: [farmEntry()], dates: ['2026-11-10'], cutover: ['farm', 'park'] }),
+    ]);
+    expect(blend[0].total).toBe(2);
+    expect(cut[0]).toMatchObject({ googleOnly: 2, total: 1, plottable: 1 });
+  });
+});
+
 describe('Meet halfway with an independent list', () => {
   const A = { latitude: 51.556, longitude: -0.178 };
   const B = { latitude: 51.545, longitude: -0.06 };
@@ -273,7 +333,7 @@ describe('the detail endpoint with an independent list', () => {
     return { r, out };
   }
 
-  async function open(id: string, { stored, entries }: { stored: unknown; entries: unknown[] }) {
+  async function open(id: string, { stored, entries, cutover = [] }: { stored: unknown; entries: unknown[]; cutover?: string[] }) {
     touched.length = 0;
     process.env.PLACES_PROVIDER = 'google';
     class PlacesDisabledError extends Error { code = 'DISABLED'; scope = 'details'; detail = 'off'; }
@@ -287,7 +347,7 @@ describe('the detail endpoint with an independent list', () => {
     });
     // The identity module reads its entries from the shipped file; the endpoint under test gets the entries given here.
     const real = require_(identitiesPath);
-    inject('server/places/lib/independent-identities.js', { ...real, independentPlaceFor: (x: string) => real.independentPlaceFor(x, { entries }) });
+    inject('server/places/lib/independent-identities.js', { ...real, independentPlaceFor: (x: string) => real.independentPlaceFor(x, { entries }), cutoverCategories: () => new Set(cutover) });
     delete require_.cache[require_.resolve(detailPath)];
     const handler = require_(detailPath);
     const { r, out } = res();
@@ -301,7 +361,7 @@ describe('the detail endpoint with an independent list', () => {
     delete process.env.PLACES_PROVIDER;
   });
 
-  const aged = { familypilotId: 'fp-google-A', provider: 'google', name: 'Hackney City Farm', address: 'Goldsmiths Row', fetchedAt: new Date(Date.now() - 45 * day).toISOString() };
+  const aged = { familypilotId: 'fp-google-A', provider: 'google', category: 'farm', name: 'Hackney City Farm', address: 'Goldsmiths Row', fetchedAt: new Date(Date.now() - 45 * day).toISOString() };
   const fresh = { ...aged, fetchedAt: new Date(Date.now() - 1 * day).toISOString() };
 
   it('serves an aged-out venue from the independent entry, without asking Google for anything', async () => {
@@ -318,6 +378,14 @@ describe('the detail endpoint with an independent list', () => {
     const out = await open('fp-google-A', { stored: fresh, entries: [entry()] });
     expect(out.status).toBe(200);
     expect((out.body as { provider: string }).provider).toBe('google');
+    expect(touched).toEqual([]);
+  });
+
+  it('a switched-over category is served from the independent entry even while a Google copy is fresh', async () => {
+    const out = await open('fp-google-A', { stored: fresh, entries: [entry()], cutover: ['farm'] });
+    expect(out.status).toBe(200);
+    expect((out.body as { provider: string }).provider).toBe('osm');
+    expect(JSON.stringify(out.body)).not.toMatch(/Goldsmiths/);
     expect(touched).toEqual([]);
   });
 

@@ -16,7 +16,7 @@
  * This is a UNION with the live search, not a replacement: a fresh search still contributes whatever is newer.
  */
 
-const { independentPlaces } = require('./independent-identities');
+const { independentPlaces, cutoverCategories } = require('./independent-identities');
 
 /** The same ceiling the detail endpoint applies to stored provider content. */
 const MAX_AGE_DAYS = 30;
@@ -79,7 +79,7 @@ function rowToPlace(row) {
  * The Google rows come first; then every independently sourced venue (independent-identities.js) whose id no fresh Google row covers, so a
  * venue whose Google copy has aged out stays listed with only what we hold independently, and a fresh Google row always wins.
  *
- * @param {{ client?: any, now?: number, entries?: any[] }} [options] `client` and `entries` (the independent list) are injectable for tests.
+ * @param {{ client?: any, now?: number, entries?: any[], cutover?: string[] }} [options] `client`, `entries` (the independent list) and `cutover` are injectable for tests.
  */
 async function readCatalogue(options = {}) {
   const client = options.client ?? db();
@@ -97,7 +97,10 @@ async function readCatalogue(options = {}) {
       .gte('fetched_at', since)
       .limit(400);
     if (error || !Array.isArray(data)) return [];
+    // A category that has been switched over is served from the independent files only, not beside Google rows.
+    const cutover = cutoverCategories(options);
     const google = data
+      .filter((row) => !cutover.has(row.category))
       .filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lng))
       .filter((row) => haversineKm(LONDON.lat, LONDON.lng, row.lat, row.lng) <= LONDON.radiusKm)
       .map(rowToPlace);

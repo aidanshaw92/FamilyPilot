@@ -2,7 +2,7 @@ const { getGooglePlace } = require('../../server/places/lib/google-places');
 const { MOCK_FALLBACK } = require('../../server/places/lib/fallback');
 const { getCanonicalIdentity, resolvePrimaryPlaceId } = require('../../server/places/lib/canonical-venues');
 const { getPlaceRecord } = require('../../server/enrichment/_lib/enrichment-store');
-const { independentPlaceFor } = require('../../server/places/lib/independent-identities');
+const { independentPlaceFor, cutoverCategories } = require('../../server/places/lib/independent-identities');
 const {
   isPlacesEnabled,
   describeScope,
@@ -122,7 +122,13 @@ module.exports = async function handler(req, res) {
     const storedIsServable = Boolean(stored) && storedAge < STORED_MAX_DAYS;
     const storedIsFresh = storedIsServable && storedAge < STORED_FRESH_DAYS;
 
-    if (storedIsFresh) {
+    // A category that has been switched over is served from the independent entry even while a Google copy is fresh.
+    const switchedOver = Boolean(independent && stored && cutoverCategories().has(stored.category));
+    if (switchedOver) {
+      detail = { place: independent, metadata: null };
+      provider = independent.provider;
+      servedFromStore = true;
+    } else if (storedIsFresh) {
       // The whole point of the change: no Google request on the common path.
       detail = { place: stored, metadata: null };
       provider = 'google';

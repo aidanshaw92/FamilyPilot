@@ -27,6 +27,7 @@
  * honour; they do not by themselves decide whether the combined served data is a Derivative or a Collective Database
  * (docs/OSM_LICENCE_REVIEW.md, open questions).
  */
+const CUTOVER = require('../data/identities/cutover.json');
 const FILES = {
   osm: require('../data/identities/osm.json'),
   'official-site': require('../data/identities/official-site.json'),
@@ -104,6 +105,19 @@ function problemWith(entry) {
     if (latitude < BOUNDS.minLat || latitude > BOUNDS.maxLat || longitude < BOUNDS.minLng || longitude > BOUNDS.maxLng) return 'location is outside Greater London';
   }
   return null;
+}
+
+/**
+ * The categories served from the independent files INSTEAD of Google. Every other category is served as before (fresh Google rows, plus
+ * independent entries for venues no fresh Google row covers). A category is switched over when its independent coverage is at least what
+ * Google's was, so a list is not a blend of the two sources within one data type.
+ *
+ * @param {{ cutover?: string[] }} [options] `cutover` is injectable for tests.
+ */
+function cutoverCategories(options = {}) {
+  const { EXPLORE_CATEGORIES } = require('./catalogue');
+  const list = options.cutover ?? (Array.isArray(CUTOVER.categories) ? CUTOVER.categories : []);
+  return new Set(list.filter((category) => EXPLORE_CATEGORIES.includes(category)));
 }
 
 /** Why an entry may not live in this file, or null. OpenStreetMap content is in `osm.json` and only there. */
@@ -200,6 +214,7 @@ function independentPlaceFor(id, options = {}) {
 
 module.exports = {
   loadIdentities,
+  cutoverCategories,
   shippedEntries,
   fileProblem,
   identityToPlace,
