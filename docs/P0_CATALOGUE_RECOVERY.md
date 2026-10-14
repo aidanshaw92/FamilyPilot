@@ -3,10 +3,15 @@
 2026-10-14. A proposal to decide on, not a research report. Every number below was produced by running the real code on the stored rows
 (`scripts/simulate-catalogue-expiry.mjs`, in the recovery pull request), except where the text says it was not measured.
 
-**What I could not verify, and how it changes the plan.** Google's terms: I could read only search summaries (the primary pages are not
-reachable from this environment). Open data: every host is refused, so nothing has been downloaded and the supply is unmeasured.
-Production: the deployment API returned 403, so I cannot say what is live. The plan is built so each of these is a decision for you or a
-file for me, not an assumption of mine.
+**Updated later on 14 October.** Open data is no longer a blocker: the first real extract was fetched (on GitHub's own runner, since this
+session's network refuses the hosts) and the recovery reader was run against it. Measured results are in
+[OPEN_DATA_FIRST_EXTRACT.md](OPEN_DATA_FIRST_EXTRACT.md): **3,374 candidate venues, 112 of the 147 we hold keep an independent identity, and on
+8 November the reader serves 3,374 instead of 0** (955 if only the first stage is reviewed in time). The sections below keep their original
+wording where it is still true and say where a number was replaced.
+
+**What I still could not verify.** Google's terms: I could read only search summaries (the primary pages are not reachable from this
+environment). Production: the deployment API returned 403, so I cannot say what is live. The primary ODbL, OSMF and OGL texts have not been
+read into the review. Each is a decision for you or a question for counsel, not an assumption of mine.
 
 ## Decisions I need from you
 
@@ -14,7 +19,7 @@ file for me, not an assumption of mine.
 |---|---|---|
 | 1 | Merge the Meet halfway map correction (#207) | The live Halfway map keeps plotting Google places |
 | 2 | Merge the recovery reader (inert until entries exist) | Nothing can be served after a Google copy expires |
-| 3 | Open the network for the five hosts in [OPEN_DATA_DOWNLOADS.md](OPEN_DATA_DOWNLOADS.md), or supply the files by the route there | No open-data identities and no first-ten sample |
+| 3 | ~~Open the network or supply files~~ **Done, nothing needed.** Instead: name a **reviewer for batch 1** (the 112 entries that continue venues we hold, plus the first-stage entries). I prepare the diff; they sign `reviewedBy` | No entry can be served |
 | 4 | Whether own-site identities may be kept (section 3, tier B) | Explore falls to 0 on 8 November |
 | 5 | Counsel on the ODbL questions ([OSM_LICENCE_REVIEW.md](OSM_LICENCE_REVIEW.md), sections 4A and 6) before any OSM entry is served. Separate tables do not settle it, and the OSMF guideline wants each data type to be entirely OSM or entirely non-OSM | No OSM entry is served |
 | 6 | By **1 November**: the emergency choice in section 4 (own-site only, a one-off Google refresh, or accept the fall) | I take no action and Explore falls to 0 |
@@ -81,7 +86,7 @@ Read this as my reading of summaries, to be confirmed against Google's primary t
 
 | Tier | Source of the venue's name and position | Venues now | Comes with |
 |---|---|---:|---|
-| **A. Open-data identity** | OSM, Wikidata or OS Open Greenspace, matched to the venue | **0 measured** (blocked on files) | A name and a position of its own, so it can appear in Nearby and on a map |
+| **A. Open-data identity** | OSM (measured 14 Oct); Wikidata and OS Open Greenspace retrieved, not yet used | **112 of 147** with a confident match (10 more need a person to compare). Soft play **0 of 6** | A name and a position of its own, so it can appear in Nearby and on a map |
 | **B. Own-site identity** | The venue's own page, where its page title carries exactly its name | **53 of 149** exact, 14 more partial | A name and a website, **no position**: Search all only, not Nearby, not the map |
 | **C. Neither** | Only Google | 82 of 149 (soft play: **6 of 6**) | Nothing, so they leave when their Google row does |
 
@@ -99,9 +104,9 @@ something I will turn on without your decision. I also found that "official" is 
 |---|---|---|
 | Now | Halfway map off for Google places (#207) | Your merge |
 | 16 Oct | Recovery reader merged, inert (no entries) | Your merge |
-| 17 Oct | The five open-data hosts allowed, or the files supplied | You ([OPEN_DATA_DOWNLOADS.md](OPEN_DATA_DOWNLOADS.md)) |
+| ~~17 Oct~~ Done 14 Oct | Open data fetched via GitHub's runner; dry run and reader run on it | Nothing ([OPEN_DATA_FIRST_EXTRACT.md](OPEN_DATA_FIRST_EXTRACT.md)) |
 | 20 Oct | First 7 Google rows leave (135 served) | |
-| 20 to 24 Oct | Dry run on the real extract: the first ten records and the gate report; I calibrate the tag rules | Files |
+| ~~20 to 24 Oct~~ Done 14 Oct | Dry run on the real extract: the first ten records and the gate report, tag rules calibrated | |
 | 24 to 29 Oct | Counsel on the ODbL; I prepare `osm.json` as a reviewed diff; Preview check | Counsel, your review |
 | **1 Nov** | **Decision point** (below). 131 served | You |
 | 4 and 7 Nov | 28 and 26 more rows leave | |
@@ -125,7 +130,8 @@ open data can supply.
 | Status quo (no recovery) | 135 | 131 | **0** |
 | + tier B exact (53) | 139 | 136 | **53** |
 | + tier B exact and partial (67) | 139 | 136 | **65** |
-| + tier A (open data) | not measured | not measured | not measured |
+| + tier A, all 3,374 entries, per-category cutover | 3,380 | 3,379 | **3,374** |
+| + tier A, first stage only (955), per-category cutover | 961 | 960 | **955** |
 
 The extra 4 and 5 on 20 Oct and 1 Nov are expired rows that tier B brings back. By category on 8 November, tier B exact is parks 25,
 museums 18, attractions 5, farms 3, zoo 1, activities 1 and **soft play 0**.
@@ -151,22 +157,28 @@ stays off the map until it has an independent position, and Nearby needs one too
    (`server/places/data/identities/cutover.json`, empty today), once its independent coverage is at least what Google's was. The part to
    take to counsel is the few weeks before a category is switched, while Google rows remain.
 
-Honest limits: soft play is the hard gap (OSM tags `leisure=trampoline_park` but toddler soft play is inconsistently tagged; the 6 we hold
-are all tier C). Open data names and places venues; it does not say whether a place suits a toddler. That stays with the evidence layer,
-and until it exists a place is shown as not checked, never as a match. I have not measured any supply, so I will not quote a target.
+Honest limits: soft play is the hard gap (OSM tags `leisure=trampoline_park` but toddler soft play is inconsistently tagged; of the 6 we
+hold, 4 have no open-data match and 2 only a possible one). Open data names and places venues; it does not say whether a place suits a
+toddler. That stays with the evidence layer, and until it exists a place is shown as not checked, never as a match. Measured supply from
+OpenStreetMap alone: 2,575 new parks against a goal of 230, 286 museums against 65, 26 farms and animals against 30, 53 play places
+against 70, 266 attractions against 85. The remaining gap is play (11).
 
-## 7. What is blocked by the network, exactly
+Two findings from running the reader on real entries: `mergeCatalogue` capped the list at 160 and counted independent entries against the
+cap, so a reviewed list of 3,000 would have been cut to 160 (fixed, with a test, in #208); and first paint grows with the entry count, about
++0.5 s at 1,631 entries and +2 to 3 s at 3,623 in a desktop-class headless browser, which argues for serving the first stage first.
 
-The five hosts and the exact files are in [OPEN_DATA_DOWNLOADS.md](OPEN_DATA_DOWNLOADS.md). Without them: no tier A, no first ten real
-records ([the dry-run tool](https://github.com/aidanshaw92/FamilyPilot/pull/206) has only met a synthetic extract), no reading of the primary ODbL, OGL and
-OSMF texts. Nothing else is blocked.
+## 7. What the network blocked, and how it was resolved
+
+This session cannot reach the open-data hosts, and I did not bypass that. GitHub's Actions runners can, so a one-off workflow fetched the
+files there. What was fetched, from where and under what licence: [OPEN_DATA_DOWNLOADS.md](OPEN_DATA_DOWNLOADS.md). Still blocked from here:
+reading the primary ODbL, OGL and OSMF texts (they are reachable from the runner but I have not read them into the review).
 
 ## 8. Validation and rollback, tested
 
 | What | How it is proven | How it is undone |
 |---|---|---|
 | Map correction | 14 unit tests, a source scan that fails if any screen draws a map without the rule, a real-browser check in CI | Revert one commit; no data |
-| Recovery reader | 39 tests: every refusal, no Google call when a copy has aged out, a fresh Google row always wins, an empty list and an empty cutover change nothing, OpenStreetMap content only in its own file | Remove entries or revert; no database change |
+| Recovery reader | 52 tests: every refusal, no Google call when a copy has aged out, a fresh Google row always wins, an empty list and an empty cutover change nothing, OpenStreetMap content only in its own file, independent places are not truncated by the 160 cap. Also run against the 3,374 real entries (`UNREVIEWED`, so never served) | Remove entries or revert; no database change |
 | The numbers | `scripts/simulate-catalogue-expiry.mjs` runs the real reader on a stand-in database; it reproduces the table in section 1 | n/a |
 | Before any entry goes live | simulate with the candidate file; read the Preview's Explore and a venue page; check no Google field appears in the response | Remove the entry |
 

@@ -1,0 +1,36 @@
+{
+  "entries": 3374,
+  "byCategory": {
+    "museum": 338,
+    "attraction": 214,
+    "park": 2666,
+    "zoo": 15,
+    "farm": 17,
+    "activity": 124
+  },
+  "linkedConfident": 112,
+  "linkedNeedsReview": 56,
+  "newOnly": 3206,
+  "storedPlaces": 149,
+  "storedPlacesWithAnIndependentEntry": 112,
+  "storedByCategory": {
+    "activity": 7,
+    "attraction": 12,
+    "farm": 8,
+    "museum": 40,
+    "park": 70,
+    "soft_play": 6,
+    "zoo": 6
+  },
+  "keptByCategory": {
+    "museum": 35,
+    "attraction": 7,
+    "park": 58,
+    "farm": 4,
+    "zoo": 4,
+    "activity": 4
+  },
+  "droppedNoCategory": 0,
+  "droppedOutsideScope": 0,
+  "droppedInvalid": 0
+}
