@@ -1,5 +1,7 @@
 # Wikidata (CC0) as a smaller recovery path that does not wait for the ODbL
 
+> **Update, later on 14 October: with OS Open Greenspace added and Wikidata's museum subclasses included, the open-licence path keeps 89 of the 149 stored venues (60%) with a confident match, and proposes about 170 new venues.** OpenStreetMap alone keeps 112; the two together keep 116 (78%). The measurement below was the first, narrower one (Wikidata direct classes only, 67 of 147). The current numbers, the selection method and the review pack are in `docs/recovery-batches/2026-10-14/REVIEW.md` and `docs/RECOVERY_TO_1_NOVEMBER.md` on `feat/open-licence-sources`.
+
 14 October 2026. Plan B in [ODBL_DECISION_MEMO.md](ODBL_DECISION_MEMO.md). Measured on three bounded queries run once on a GitHub runner (this session's network cannot reach Wikidata): museums and art museums, parks, urban parks, gardens, botanical gardens and nature reserves, and zoos, aquariums, theme parks, amusement parks, castles, palaces, windmills and tourist attractions, inside a box around London, excluding anything with a dissolution date. The counts below keep only items within the app's 40 km scope, with a real label, and in a category the app serves.
 
 ## What it can cover
