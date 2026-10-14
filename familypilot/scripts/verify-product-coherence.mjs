@@ -133,11 +133,12 @@ async function bestForBothIsHonest(page) {
 
 /** v2: the cards are in the List. Opens it. */
 async function showList(page) {
-  await page.getByTestId('halfway-mode-list').click();
+  // With Google places there is no toggle: the screen is already the list (the map is off, see src/utils/map-compliance.ts).
+  if (await page.getByTestId('halfway-mode-list').count()) await page.getByTestId('halfway-mode-list').click();
   await page.waitForTimeout(900);
 }
 async function showMap(page) {
-  await page.getByTestId('halfway-mode-map').click();
+  if (await page.getByTestId('halfway-mode-map').count()) await page.getByTestId('halfway-mode-map').click();
   await page.waitForTimeout(700);
 }
 
@@ -313,7 +314,7 @@ for (const [width, height] of VIEWPORTS) {
   await settle(page, 3000);
   await page.screenshot({ path: join(dir, '08-meet-halfway.jpg'), type: 'jpeg', quality: 82 });
   const halfway = await text(page);
-  check(`${label}: Meet halfway shows places for both families`, (await page.getByTestId('halfway-sheet-collapsed').isVisible().catch(() => false)) || (await page.getByTestId('halfway-empty').isVisible().catch(() => false)), 'sheet or empty state');
+  check(`${label}: Meet halfway shows places for both families`, (await page.getByTestId('halfway-sheet-collapsed').isVisible().catch(() => false)) || (await page.getByTestId('halfway-map-off').isVisible().catch(() => false)) || (await page.getByTestId('halfway-empty').isVisible().catch(() => false)), 'sheet, list (the map is off for Google places) or empty state');
   await showList(page);
   const options = await page.getByTestId('halfway-option').count();
   const listText = await text(page);

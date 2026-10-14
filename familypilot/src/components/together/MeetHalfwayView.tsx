@@ -26,6 +26,7 @@ import { accountRequired, useAuthStore } from '@/src/stores/auth-store';
 import { useChromeStore } from '@/src/stores/chrome-store';
 import { localDate, localTime, usePlanningStore } from '@/src/stores/planning-store';
 import { familyDisplayName } from '@/src/utils/family-title';
+import { MAP_OFF_MESSAGE, mapAllowedFor } from '@/src/utils/map-compliance';
 import { shortDateLabel } from '@/src/utils/plan-quick-choices';
 
 /**
@@ -137,9 +138,13 @@ export function MeetHalfwayView({ preselected }: { preselected?: string | null }
   const selectedIndex = Math.max(0, options.findIndex((option) => option.venue.id === selectedId));
   const selected: HalfwayOption | null = options[selectedIndex] ?? null;
 
+  // The map may be drawn only when no Google place would sit on it or beside it (see utils/map-compliance.ts). Otherwise this is a list.
+  const canMap = mapAllowedFor(options.map((option) => option.venue));
+  const shownMode: 'map' | 'list' = canMap ? mode : 'list';
+
   const choose = (id: string) => {
     setSelectedId(id);
-    setMode('map');
+    if (canMap) setMode('map');
   };
 
   // What this screen has worked out with the chosen family, as the route parameters a plan reads: the date, the arrival and who
@@ -324,7 +329,7 @@ export function MeetHalfwayView({ preselected }: { preselected?: string | null }
     <View style={styles.screen}>
       {largeText ? null : header}
 
-      {mode === 'map' && largeText ? (
+      {shownMode === 'map' && largeText ? (
         // At larger text the card cannot sit over the map and still leave a map: the screen scrolls instead. The map is a block
         // of its own, and the recommendation follows it as an ordinary card, whole, with room below it for the navigation.
         <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: tabBarClearance + spacing.lg }} showsVerticalScrollIndicator={false} testID="halfway-map-scroll">
@@ -334,7 +339,7 @@ export function MeetHalfwayView({ preselected }: { preselected?: string | null }
           </View>
           {dock}
         </ScrollView>
-      ) : mode === 'map' ? (
+      ) : shownMode === 'map' ? (
         <View style={styles.body} onLayout={(e) => setBodyHeight(Math.round(e.nativeEvent.layout.height))} testID="halfway-map-body">
           {/* The map fills the screen under the header and the sheet: the places and both areas are fitted to the part left
               visible, so the frame is the same for every selection and nothing is hidden behind the card. */}
@@ -350,9 +355,15 @@ export function MeetHalfwayView({ preselected }: { preselected?: string | null }
           testID="halfway-list"
         >
           {largeText ? <View style={styles.headerBleed}>{header}</View> : null}
-          <View style={styles.toggleRow}>
-            <MapListToggle mode={mode} onChange={setMode} disabled={isLoading} />
-          </View>
+          {canMap ? (
+            <View style={styles.toggleRow}>
+              <MapListToggle mode={mode} onChange={setMode} disabled={isLoading} />
+            </View>
+          ) : (
+            <Text variant="caption" color={colors.text.secondary} style={styles.centreText} testID="halfway-map-off">
+              {MAP_OFF_MESSAGE}
+            </Text>
+          )}
           {usingHomeFallback ? (
             <Text variant="caption" color={colors.text.secondary} style={styles.centreText} testID="halfway-from-home">
               {`Showing ${options.length} ${options.length === 1 ? 'place' : 'places'} from Home`}
@@ -378,8 +389,9 @@ export function MeetHalfwayView({ preselected }: { preselected?: string | null }
                   index={index}
                   otherLabel={other.label}
                   selected={option.venue.id === selected?.venue.id}
-                  onSelect={() => choose(option.venue.id)}
+                  onSelect={() => (canMap ? choose(option.venue.id) : openPlace(option))}
                   onPlan={() => plan(option)}
+                  mapOff={!canMap}
                 />
               ))}
               {result && result.considered > 0 && !usingHomeFallback ? (
@@ -393,7 +405,7 @@ export function MeetHalfwayView({ preselected }: { preselected?: string | null }
                 </Text>
               ) : null}
               <Text variant="caption" color={colors.text.tertiary}>
-                Ranked by how fair the two journeys are and what each family needs, not by the midpoint between your homes. Journey times are estimated from distance, not routed. Hours and facilities are as recorded for each place. Each shaded circle on the map is about 1.5 km across, never a home address; no routes are drawn.
+                Ranked by how fair the two journeys are and what each family needs, not by the midpoint between your homes. Journey times are estimated from distance, not routed. Hours and facilities are as recorded for each place.{canMap ? ' Each shaded circle on the map is about 1.5 km across, never a home address; no routes are drawn.' : ' No routes are drawn.'}
               </Text>
               <PlaceCredits places={options.map((option) => option.venue)} />
             </>
@@ -401,7 +413,7 @@ export function MeetHalfwayView({ preselected }: { preselected?: string | null }
         </ScrollView>
       )}
 
-      {detailOpen && selected && mode === 'map' ? (
+      {detailOpen && selected && shownMode === 'map' ? (
         <ExpandedRecommendation
           option={selected}
           index={selectedIndex}

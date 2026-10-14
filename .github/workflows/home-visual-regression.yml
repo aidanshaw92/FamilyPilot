@@ -201,6 +201,14 @@ jobs:
         working-directory: familypilot
         run: node scripts/verify-halfway-large-text.mjs http://localhost:4173 ../docs/halfway-large-text-run 1.35 1.9 2.35
 
+      # Google's Places terms do not allow Places content on a map that is not Google's. Meet halfway's map is drawn on the
+      # device, so it is offered only when every place is independently located (OpenStreetMap or mock); a Google place gets the
+      # list. This proves both sides in a browser: no map, toggle or Google request with Google places; the map with independent ones.
+      - name: Map only for independently located places
+        if: env.DATA_SOURCE != 'production'
+        working-directory: familypilot
+        run: node scripts/verify-map-compliance.mjs http://localhost:4173
+
       # Attribution is a licence condition, so it is checked rather than assumed. This step starts
       # its OWN fixture on its own port, twice: once with a mixed Google + OpenStreetMap payload and
       # once with Google alone. The shared fixture above keeps the default payload, because an extra
