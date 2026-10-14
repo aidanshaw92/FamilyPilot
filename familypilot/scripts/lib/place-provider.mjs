@@ -29,3 +29,8 @@ export async function routePlacesAs(page, provider, options) {
     await route.fulfill({ response, json: asProvider(body, provider, options) });
   });
 }
+
+/** Serve `payload` (a between response, such as the Figma places fixture) for every between request, as `provider`'s places. */
+export async function routeBetweenFixture(page, payload, provider) {
+  await page.route((url) => /intent=between/.test(url.toString()), (route) => route.fulfill({ json: asProvider(payload, provider) }));
+}

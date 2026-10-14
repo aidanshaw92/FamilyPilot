@@ -24,10 +24,12 @@
  * and by reflow at 320; they still deserve a manual pass on a device before launch.
  */
 import { chromium } from 'playwright';
-import { routeBetweenAs, routePlacesAs } from './lib/place-provider.mjs';
+import { readFileSync } from 'node:fs';
+import { routeBetweenAs, routeBetweenFixture, routePlacesAs } from './lib/place-provider.mjs';
 import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const axeSource = readAxe();
@@ -72,6 +74,15 @@ const HALFWAY_PLANNING = {
   },
   version: 1,
 };
+// A date with places open on it, so the results (not the empty state) are what is audited.
+const HALFWAY_RESULTS_PLANNING = {
+  ...HALFWAY_PLANNING,
+  state: {
+    ...HALFWAY_PLANNING.state,
+    families: [{ id: 'guest-k', label: 'Kevin’s family', area: 'E8', latitude: 51.545, longitude: -0.06, ages: [2], pushchair: true, required: ['toilets'], routines: [] }],
+    options: { ...HALFWAY_PLANNING.state.options, date: '2026-10-17' },
+  },
+};
 const NO_FAMILIES_PLANNING = { ...HALFWAY_PLANNING, state: { ...HALFWAY_PLANNING.state, families: [] } };
 const FRESH = { state: { hasCompletedOnboarding: false, hasSeenSplash: true }, version: 0 };
 
@@ -94,7 +105,7 @@ const SCREENS = [
   { key: 'halfway-list', route: '/halfway', between: 'osm', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-mode-list').click({ timeout: 30000 }); await page.waitForTimeout(1000); } },
   { key: 'halfway-edit', route: '/halfway', between: 'osm', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-edit').click({ timeout: 30000 }); await page.waitForTimeout(900); } },
   // Google places are never drawn on the app's own map (utils/map-compliance.ts): the same screen as a plain list, with the map switched off.
-  { key: 'halfway-map-off', route: '/halfway', between: 'google', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-map-off').waitFor({ timeout: 30000 }); await page.waitForTimeout(800); } },
+  { key: 'halfway-map-off', route: '/halfway', figma: 'google', state: HALFWAY_PROFILE, planning: HALFWAY_RESULTS_PLANNING, act: async (page) => { await page.getByTestId('halfway-map-off').waitFor({ timeout: 30000 }); await page.waitForTimeout(800); } },
   // Together's second view, with a family on this phone, and the first visit with nobody. (The halfway-* screens above are reached through the old /halfway address, which redirects here.)
   { key: 'together-families', route: '/together?view=families', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('together-view-families').waitFor({ timeout: 30000 }); await page.waitForTimeout(900); } },
   { key: 'together-first-visit', route: '/together', state: HALFWAY_PROFILE, planning: NO_FAMILIES_PLANNING, act: async (page) => { await page.getByTestId('families-first-visit').waitFor({ timeout: 30000 }); await page.waitForTimeout(900); } },
@@ -248,6 +259,11 @@ for (const screen of SCREENS) {
       if (document.head) attach();
       else document.addEventListener('DOMContentLoaded', attach);
     }, IPHONE_INSETS);
+    if (screen.figma) {
+      // The Figma places (scripts/fixtures/halfway-figma-places.json), as `screen.figma`'s places, on a day they are open: the results, not the empty state.
+      await page.clock.setFixedTime(new Date('2026-10-17T07:00:00'));
+      await routeBetweenFixture(page, JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'halfway-figma-places.json'), 'utf8')), screen.figma);
+    }
     if (screen.between) await routeBetweenAs(page, screen.between);
     if (screen.places) await routePlacesAs(page, screen.places);
     await page.goto(`${BASE}${screen.route}`, { waitUntil: 'networkidle', timeout: 60000 });
