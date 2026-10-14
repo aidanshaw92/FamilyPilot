@@ -106,13 +106,44 @@ describe('the independent list: what an entry may be', () => {
     expect(kept[0].name).toBe('Hackney City Farm');
   });
 
-  it('the file that ships validates, and ships empty until a reviewed set is approved', () => {
-    const shipped = JSON.parse(readFileSync(join(root, 'server/places/data/independent-identities.json'), 'utf8'));
-    const problems: string[] = [];
-    const kept = loadIdentities({ entries: shipped.entries, onProblem: (id: string, why: string) => problems.push(`${id}: ${why}`) });
-    expect(problems).toEqual([]);
-    expect(kept).toHaveLength(shipped.entries.length);
-    expect(shipped.entries).toEqual([]);
+  it('the files that ship validate, and ship empty until a reviewed set is approved', () => {
+    for (const file of ['osm', 'official-site', 'wikidata']) {
+      const shipped = JSON.parse(readFileSync(join(root, `server/places/data/identities/${file}.json`), 'utf8'));
+      const problems: string[] = [];
+      const kept = loadIdentities({ entries: shipped.entries, onProblem: (id: string, why: string) => problems.push(`${id}: ${why}`) });
+      expect(problems, file).toEqual([]);
+      expect(kept, file).toHaveLength(shipped.entries.length);
+      expect(shipped.entries, file).toEqual([]);
+      expect(shipped.source).toBe(file);
+    }
+  });
+});
+
+describe('OpenStreetMap content is in its own file, and only there', () => {
+  const { fileProblem } = require_(identitiesPath);
+  const official = entry({ location: null, identity: { source: 'official-site', url: 'https://www.hackneycityfarm.co.uk/about', retrievedAt: '2026-11-01', licence: 'venue-website' } });
+  const wikidata = entry({ location: null, identity: { source: 'wikidata', url: 'https://www.wikidata.org/wiki/Q1', retrievedAt: '2026-11-01', licence: 'CC0-1.0' } });
+
+  it('an entry with an OpenStreetMap name or position is accepted in osm.json', () => {
+    expect(fileProblem('osm', entry())).toBeNull();
+    // A name from the venue's own site with a position from OpenStreetMap is OpenStreetMap content too (its position).
+    expect(fileProblem('osm', entry({ identity: { ...official.identity } }))).toBeNull();
+  });
+
+  it('an entry with nothing from OpenStreetMap is refused in osm.json', () => {
+    expect(fileProblem('osm', official)).toMatch(/only entries whose identity or position is from OpenStreetMap/);
+  });
+
+  it('OpenStreetMap content is refused in every other file', () => {
+    expect(fileProblem('official-site', entry())).toMatch(/belongs in osm.json/);
+    expect(fileProblem('wikidata', entry({ identity: { ...wikidata.identity } }))).toMatch(/belongs in osm.json/);
+  });
+
+  it('each other file holds only its own source', () => {
+    expect(fileProblem('official-site', official)).toBeNull();
+    expect(fileProblem('wikidata', wikidata)).toBeNull();
+    expect(fileProblem('wikidata', official)).toMatch(/holds only identity.source wikidata/);
+    expect(fileProblem('official-site', wikidata)).toMatch(/holds only identity.source official-site/);
   });
 });
 

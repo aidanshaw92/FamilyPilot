@@ -21,7 +21,17 @@
  * adding an entry is a reviewed change to `data/independent-identities.json`, so every serving decision shows in a diff.
  */
 
-const REGISTRY = require('../data/independent-identities.json');
+/**
+ * One file per licence family, so what must be offered under the ODbL is a file, not a filter: `osm.json` holds every entry whose name or
+ * position came from OpenStreetMap, and nothing else may hold one. Separate files are a technical measure that makes the licence easy to
+ * honour; they do not by themselves decide whether the combined served data is a Derivative or a Collective Database
+ * (docs/OSM_LICENCE_REVIEW.md, open questions).
+ */
+const FILES = {
+  osm: require('../data/identities/osm.json'),
+  'official-site': require('../data/identities/official-site.json'),
+  wikidata: require('../data/identities/wikidata.json'),
+};
 
 /** Identity sources, and the licence each can carry. `venue-website` is the venue's own page, read for the facts on it. */
 const IDENTITY_SOURCES = {
@@ -96,6 +106,30 @@ function problemWith(entry) {
   return null;
 }
 
+/** Why an entry may not live in this file, or null. OpenStreetMap content is in `osm.json` and only there. */
+function fileProblem(file, entry) {
+  const fromOsm = entry?.identity?.source === 'osm' || entry?.location?.source === 'osm';
+  if (file === 'osm') return fromOsm ? null : 'osm.json holds only entries whose identity or position is from OpenStreetMap';
+  if (fromOsm) return `OpenStreetMap content belongs in osm.json, not ${file}.json`;
+  return entry?.identity?.source === file ? null : `${file}.json holds only identity.source ${file}`;
+}
+
+/** Every entry in the shipped files, each checked for the file it is in. `onProblem` reports the ones that may not be there. */
+function shippedEntries(onProblem) {
+  const entries = [];
+  for (const [file, content] of Object.entries(FILES)) {
+    for (const entry of Array.isArray(content.entries) ? content.entries : []) {
+      const problem = fileProblem(file, entry);
+      if (problem) {
+        if (onProblem) onProblem(entry && entry.familypilotId ? entry.familypilotId : '(no id)', problem);
+        continue;
+      }
+      entries.push(entry);
+    }
+  }
+  return entries;
+}
+
 /**
  * The entries that may be served, in file order. Duplicate ids keep the first. Invalid entries are dropped and reported through
  * `onProblem`, because a bad entry must never take the catalogue down or be served half-checked.
@@ -103,7 +137,7 @@ function problemWith(entry) {
  * @param {{ entries?: any[], onProblem?: (id: string, problem: string) => void }} [options] `entries` is injectable for tests.
  */
 function loadIdentities(options = {}) {
-  const entries = options.entries ?? (Array.isArray(REGISTRY.entries) ? REGISTRY.entries : []);
+  const entries = options.entries ?? shippedEntries(options.onProblem);
   const seen = new Set();
   const valid = [];
   for (const entry of entries) {
@@ -166,6 +200,8 @@ function independentPlaceFor(id, options = {}) {
 
 module.exports = {
   loadIdentities,
+  shippedEntries,
+  fileProblem,
   identityToPlace,
   independentPlaces,
   independentPlaceFor,

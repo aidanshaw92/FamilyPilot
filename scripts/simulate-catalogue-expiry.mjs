@@ -5,7 +5,7 @@
  *   node scripts/simulate-catalogue-expiry.mjs --rows rows.json [--registry entries.json] [--dates 2026-10-20,2026-11-01,2026-11-08] [--json]
  *
  * `rows.json` is an array of { id, category, lat, lng, fetched, provider } (the non-content columns of place_records).
- * `entries.json` is an array of independent entries (server/places/data/independent-identities.json `entries`); default: the shipped file.
+ * `entries.json` is an array of independent entries (the `entries` of server/places/data/identities/*.json); default: the shipped files.
  */
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -25,7 +25,7 @@ const rows = JSON.parse(readFileSync(rowsPath, 'utf8'));
 const registryPath = flag('registry');
 const entries = registryPath
   ? (() => { const parsed = JSON.parse(readFileSync(registryPath, 'utf8')); return Array.isArray(parsed) ? parsed : parsed.entries ?? []; })()
-  : require('../server/places/data/independent-identities.json').entries;
+  : require('../server/places/lib/independent-identities.js').shippedEntries();
 const dates = (flag('dates') ?? '2026-10-20,2026-11-01,2026-11-08').split(',');
 
 const results = await simulate({ rows, entries, dates });
