@@ -224,10 +224,11 @@ describe('the catalogue with an independent list', () => {
     expect(places.map((p: { familypilotId: string }) => p.familypilotId)).toEqual(['fp-google-U']);
   });
 
-  it('still returns nothing when the database is unreachable (the list is an addition, not a database)', async () => {
+  it('still serves the independently held venues when the database is unreachable: they are files, not rows, so a database problem does not empty them', async () => {
     const { readCatalogue } = require_(cataloguePath);
     const broken = { from: () => { throw new Error('down'); } };
-    expect(await readCatalogue({ client: broken, now: NOW, entries: [entry()] })).toEqual([]);
+    expect((await readCatalogue({ client: broken, now: NOW, entries: [entry()] })).map((p: { familypilotId: string }) => p.familypilotId)).toEqual(['fp-google-A']);
+    expect((await readCatalogue({ client: null, now: NOW, entries: [entry()] })).map((p: { familypilotId: string }) => p.familypilotId)).toEqual(['fp-google-A']);
   });
 });
 
