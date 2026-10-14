@@ -33,15 +33,19 @@ def allowed(url):
         time.sleep(1)
     return robots[root].can_fetch(UA, url)
 
-items = json.load(open('site-check/input.json'))
+import os, sys
+INPUT = sys.argv[1] if len(sys.argv) > 1 else 'site-check/input.json'
+OUTPUT = sys.argv[2] if len(sys.argv) > 2 else None
+items = json.load(open(INPUT))
+results = []
 print(f'checking {len(items)} venues', flush=True)
 for it in items:
     out = {'id': it['id'], 'name': it['name'], 'url': it['url']}
     host = urlparse(it['url']).netloc.lower()
     hosts[host] = hosts.get(host, 0) + 1
     try:
-        if hosts[host] > 3:
-            out.update(ok=False, reason='skipped: a fourth page on one host')
+        if hosts[host] > 5:
+            out.update(ok=False, reason='skipped: a sixth page on one host')
         elif not allowed(it['url']):
             out.update(ok=False, reason='robots.txt disallows')
         else:
@@ -59,5 +63,9 @@ for it in items:
     except Exception as e:  # noqa: BLE001
         out.update(ok=False, reason=f'{type(e).__name__}')
     print('RESULT ' + json.dumps(out, ensure_ascii=False), flush=True)
+    results.append(out)
     time.sleep(2)
+if OUTPUT:
+    os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
+    json.dump(results, open(OUTPUT, 'w'), ensure_ascii=False, indent=1)
 print('DONE', flush=True)
