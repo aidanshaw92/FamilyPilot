@@ -12,13 +12,13 @@ Nothing here is imported, served or reviewed. It is the first measurement of how
 |---|---:|
 | Candidates read | 49 |
 | Operator site found | 16 (13 name the venue **and** show its postcode; 3 name it only) |
-| **Defensible now** (identity, classification and position all supported) | **8** |
-| Held for a small check (a missing postcode or a second page) | 4 |
+| **Defensible now** (identity, classification and position all supported) | **9** |
+| Held for a small check (the site is built so that my reader cannot see its address, or shows none) | 3 |
 | Held for your classification decision (play cafés that never say "soft play") | 3 |
 | Held because the venue says it is closed | 1 |
 | **No website found** by guessing (most likely trade on Instagram or Facebook, which are not read) | 33 |
 
-## The 8 defensible now
+## The 9 defensible now
 
 The category is the operator's own wording, not the registration's. Ages are quoted only where the venue wrote them; everything else stays "not yet checked".
 
@@ -26,8 +26,9 @@ The category is the operator's own wording, not the registration's. Ages are quo
 |---:|---|---|---|---|
 | 346104 | Gambado, Chelsea | SW6 2PY | **soft play** | "London's Best SOFT play centre!"; "U4's Area: A safe soft play zone just for our tiniest visitors, including a baby area." (gambado.com, gambado.com/play: "Soft Play Fun for Ages 0–17") |
 | 1691253 | Abuela Play Café, Coulsdon | CR5 2RA | **soft play** | "...catch up with friends while your little ones enjoy the amazing soft play zone!" (abuelaplaycafe.co.uk/about); session "Ages 9 months to 6 years | Max 2 hrs" (/events) |
-| 1367047 | Halo Play Café, Uxbridge | UB8 1GB | **soft play** | Pages titled "Soft play & dining"; "What age is the soft play suitable for? The play equipment is suitable for ages 0 to approx." (haloplaycafe.co.uk/play-booking; **the number was cut off by my sentence splitter, so no age is recorded until re-read**) |
+| 1367047 | Halo Play Café, Uxbridge | UB8 1GB | **soft play** | Pages titled "Soft play & dining"; "What age is the soft play suitable for? The play equipment is suitable for ages 0 to approx." (haloplaycafe.co.uk/play-booking). Re-read in full: "The play equipment is suitable for ages 0 to approx. 9/10 years. With a height restriction of 148cm." Address on the site: "Upper Mall, The Chimes Uxbridge, High Street, UB8 1GB" |
 | 1532159 | Little Peeps Soft Play, Chessington | KT9 1NU | **soft play** | "Jungle-themed soft play, with play areas specifically designed for our 2-year-olds and under and a larger play area"; "We recommend our soft play for children up to 8 years old." Also bowling and gaming (littlepeepssoftplay.com) |
+| 1836741 | Moo Moo's Play Café, Cobham | KT11 3EB | **soft play** | Its page title: "Moo Moo's Play Café \| Soft Play in Cobham \| 38A High Street, Cobham KT11 3EB, UK" (moomoosplaycafe.co.uk). No age or hours read (the site shows little text to a plain reader), so those stay "not yet checked". Cobham is outside Greater London but inside the app's 40 km area |
 | 1935590 | The Jump Zone, Beckton | E6 6LA | **activity** (trampoline park) | "Toddler Takeover: Weekday term-time session for under-5s, 9am-12pm."; "Children under 4 must be supervised." (thejumpzone.com) |
 | 1434379 | Flip Out, Brent Cross / Staples Corner | NW2 6LW | **activity** (trampoline park) | "North London's Ultimate Indoor Trampoline & Adventure Park!"; also "a huge range of soft play options for all ages, plus trampolines" (flipout.co.uk/locations/brent-cross) |
 | 1857771 | Clip 'n Climb at The O2 | SE10 0DX | **activity** (climbing) | "Our standard sessions are suitable for ages 4 to 104 and we have Mini Mountaineer sessions for children aged 2 to 4" (theo2.clipnclimb.co.uk/facilities) |
@@ -38,13 +39,12 @@ The category is the operator's own wording, not the registration's. Ages are quo
 | Venue | Why held | What would release it |
 |---|---|---|
 | **Air Jump, Orpington** (963064) | Its own front page says "Our facility is temporarily closed until further notice" | Nothing; the registration alone would have listed a closed venue |
-| Wacky Kingdom, Kingston (1560271) | Small check. Operator says "fun soft play centres in Kingston and Redhill, suitable for all children aged 12 years and under" and has a "Baby Zone"; **its postcode is not on the pages read** (the footer was not in the first pass) | One more page read for the address |
-| Flip Out, Canary Wharf (1711686) | Small check. Operator says "soft play options for all ages", "Toddler Soft Play", Laser Quest, bumper cars, and "does not have any trampolines"; postcode not on the pages read | The address page; then it is a **soft play** candidate, or an exception (see below) |
-| Flip Out, Croydon (1764457) | Small check. Only one page answered | A second page |
-| Cheeky Chops Play Café, Richmond (1961932) | "play café ... for children aged 0-5 years"; the site read never says "soft play" | Your decision on play cafés (below) |
-| Dreami Play Café, Hackney (1677302) | "a play café where children aged 0–6 can explore, imagine and connect through open-ended play"; FAQ "designed for children aged 0-6 years"; no "soft play" wording | Same |
+| Wacky Kingdom, Kingston (1560271) | Small check. Operator says "fun soft play centres in Kingston and Redhill, suitable for all children aged 12 years and under" and has a "Baby Zone"; **its address page shows no text to a plain reader (built in script)**, so its postcode cannot be confirmed from its own site | An address from another permitted source (the FHRS record gives KT1 1TP; the operator's page would need to agree) |
+| Flip Out, Canary Wharf (1711686) | Small check. Operator says "soft play options for all ages", "Toddler Soft Play", Laser Quest, bumper cars, and "does not have any trampolines"; no postcode on the pages read (the address pages I tried answer 404) | The address from the operator; then it is a **soft play** candidate, or an exception (see below) |
+| Flip Out, Croydon (1764457) | Small check. Its soft-play page and prices were read: a "Strictly for ages 5 & under" toddler session, Tuesdays and Wednesdays in term time; **no postcode on the pages read** | The address from the operator |
+| Cheeky Chops Play Café, Twickenham (1961932) | Address on its site: "37-39 York Street, Twickenham, TW1 3LP". "play café ... for children aged 0-5 years"; the site never says "soft play" | Your decision on play cafés (below) |
+| Dreami Play Café, Hackney (1677302) | Address on its site: "Oakwood House, 422 Hackney Road, London E2 7SY". "a play café where children aged 0–6 can explore, imagine and connect through open-ended play"; FAQ "designed for children aged 0-6 years"; no "soft play" wording | Same |
 | Raffys Play Café, Bromley (1756533) | "a role play cafe for under 5's": role play, not soft play | Same |
-| Moo Moo's Play Café, Cobham (1836741) | Small check. Title "Soft Play in Cobham"; only the title was captured. Cobham is inside the app's 40 km area | A second page |
 
 ## Decisions this needs from you (none urgent; defaults shown)
 
@@ -54,7 +54,7 @@ The category is the operator's own wording, not the registration's. Ages are quo
 
 ## The estimate, corrected
 
-The plan said "roughly 12 to 20 genuine soft-play venues and 15 to 25 activity venues". Measured: **8 defensible now, about 12 after the four small checks, up to 15 if the three play cafés are included**: soft play about 4 to 7 and activity about 5 to 8, well short of that. The reason is not the register (it names 183 plausible play venues in scope) but **verification**: most independent play cafés have no website of their own that I can find by name, and I will not list a venue whose existence, position or opening I cannot check against the operator.
+The plan said "roughly 12 to 20 genuine soft-play venues and 15 to 25 activity venues". Measured: **9 defensible now, about 12 after the three address checks, up to 15 if the three play cafés are included**: soft play 5 now and up to 7, activity 4 now and up to 6, well short of that. The reason is not the register (it names 183 plausible play venues in scope) but **verification**: most independent play cafés have no website of their own that I can find by name, and I will not list a venue whose existence, position or opening I cannot check against the operator.
 
 What could widen it, each without relaxing the rule that the operator's own words classify:
 
