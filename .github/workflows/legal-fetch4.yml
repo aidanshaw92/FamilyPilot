@@ -1,0 +1,23 @@
+# One-off, pass 5. NOT scheduled, NOT dispatchable, NOT run on pull requests. Runs only when the throwaway branch `data/open-data-fetch` is pushed with a
+# change under legal-fetch4/. GET only, a descriptive User-Agent, no secret, no database, no Google API. Prints the OS Open Greenspace overview and technical
+# specification (licence and attribution wording) to the job log; nothing is stored.
+name: Licence review fetch, pass 5 (one-off)
+
+on:
+  push:
+    branches: [data/open-data-fetch]
+    paths:
+      - .github/workflows/legal-fetch4.yml
+      - legal-fetch4/**
+
+permissions:
+  contents: read
+
+jobs:
+  os:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet requests beautifulsoup4 lxml
+      - run: python legal-fetch4/os_docs2.py
