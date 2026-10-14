@@ -1,0 +1,1016 @@
+{
+ "https://www.openstreetmap.org/node/13589659030": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/way/23580556": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/28911088": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/536749186": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/node/6090716442": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/40110523": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/node/7043923922": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/7043923926": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/node/9254938561": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/9262250055": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/10043662544": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "0/1"
+ },
+ "https://www.openstreetmap.org/way/82135100": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/1422258355": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "4/4"
+ },
+ "https://www.openstreetmap.org/node/293221901": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 202,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/693728457": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/924029212": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/1120009215": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/1304809948": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/4"
+ },
+ "https://www.openstreetmap.org/node/1333615707": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/node/1934455440": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/2079674503": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/2250396691": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/node/2543183237": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/node/3060887211": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/node/3397886782": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 202,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/3453930443": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/4767656648": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/5210995811": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/5278307684": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/5656900425": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "0/2"
+ },
+ "https://www.openstreetmap.org/node/5657364621": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/5837200430": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/6080372406": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "0/2"
+ },
+ "https://www.openstreetmap.org/node/6208085687": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/7060182116": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "1/2"
+ },
+ "https://www.openstreetmap.org/node/7911128502": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/node/8907460445": {
+  "ok": false,
+  "namesVenue": false,
+  "status": null,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/9130361389": {
+  "ok": false,
+  "namesVenue": false,
+  "status": null,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/9522414836": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 404,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/9866083391": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/node/10082504773": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "1/2"
+ },
+ "https://www.openstreetmap.org/node/10268709240": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "0/2"
+ },
+ "https://www.openstreetmap.org/node/10587209796": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "0/1"
+ },
+ "https://www.openstreetmap.org/node/10745161059": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/10870122867": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/10969651217": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/11898794590": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/node/11926974245": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/12724103391": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/12917480564": {
+  "ok": false,
+  "namesVenue": false,
+  "status": null,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/12919358801": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/node/13040635454": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/node/13331914351": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/node/13721919293": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/13726300197": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "0/2"
+ },
+ "https://www.openstreetmap.org/node/13780832992": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/14005296507": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/14210162122": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/way/4680891": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/4959880": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/5006061": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/5987419": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/17110975": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/17369134": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/way/19830757": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/23140365": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/23248424": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/23716262": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/3"
+ },
+ "https://www.openstreetmap.org/way/24653374": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "1/2"
+ },
+ "https://www.openstreetmap.org/way/27820985": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/way/28410119": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/30210621": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/30476618": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 202,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/31110737": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/relation/78961": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/31248849": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/32825099": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/33721672": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/3"
+ },
+ "https://www.openstreetmap.org/way/43171287": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "4/4"
+ },
+ "https://www.openstreetmap.org/way/44055865": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/60693939": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/way/77755310": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/relation/1239793": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/104240016": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/3"
+ },
+ "https://www.openstreetmap.org/relation/1612806": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/118720812": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/3"
+ },
+ "https://www.openstreetmap.org/way/123444154": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/relation/3374550": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "1/3"
+ },
+ "https://www.openstreetmap.org/way/140470549": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/relation/1879842": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/way/148054007": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/3"
+ },
+ "https://www.openstreetmap.org/way/149637725": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/156819613": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/161268591": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/relation/1698905": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/166292136": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "0/1"
+ },
+ "https://www.openstreetmap.org/way/223926841": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/224007092": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/244626307": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "0/2"
+ },
+ "https://www.openstreetmap.org/way/285594238": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/way/314257065": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/relation/2023676": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/relation/5208404": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/370870741": {
+  "ok": false,
+  "namesVenue": false,
+  "status": null,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/371688658": {
+  "ok": false,
+  "namesVenue": false,
+  "status": null,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/372860405": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "0/3"
+ },
+ "https://www.openstreetmap.org/way/392722404": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "1/3"
+ },
+ "https://www.openstreetmap.org/way/396544249": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/3"
+ },
+ "https://www.openstreetmap.org/way/477045512": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/relation/1567699": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/511725187": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/539317283": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/way/545688215": {
+  "ok": false,
+  "namesVenue": false,
+  "status": null,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/633369346": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/relation/2354019": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/799383498": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/way/825382682": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/854498662": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/856992438": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/901555513": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/way/925095750": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/way/966309615": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "0/1"
+ },
+ "https://www.openstreetmap.org/way/1031150753": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/1032398454": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 404,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/1057120284": {
+  "ok": false,
+  "namesVenue": false,
+  "status": null,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/1240494106": {
+  "ok": false,
+  "namesVenue": false,
+  "status": null,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/1360397134": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/relation/553472": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/1446396619": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "0/2"
+ },
+ "https://www.openstreetmap.org/node/2318855779": {
+  "ok": false,
+  "namesVenue": false,
+  "status": null,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/3800680164": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/node/4935365603": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 403,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/6973763808": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/node/8820774372": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "0/4"
+ },
+ "https://www.openstreetmap.org/way/1254342590": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/1257186295": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/way/1286925932": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/256490027": {
+  "ok": false,
+  "namesVenue": false,
+  "status": null,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/12245045552": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "0/3"
+ },
+ "https://www.openstreetmap.org/node/13754021101": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/way/40581478": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/way/223752022": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/way/388850572": {
+  "ok": false,
+  "namesVenue": false,
+  "status": null,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/558592627": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "0/3"
+ },
+ "https://www.openstreetmap.org/way/770743966": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/3"
+ },
+ "https://www.openstreetmap.org/relation/12076030": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/974049182": {
+  "ok": false,
+  "namesVenue": false,
+  "status": null,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/relation/2020089": {
+  "ok": false,
+  "namesVenue": false,
+  "status": null,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/way/1502720887": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/26563318": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/node/369036552": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 404,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/1330268705": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "4/5"
+ },
+ "https://www.openstreetmap.org/node/1331290231": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/node/4657891552": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "5/5"
+ },
+ "https://www.openstreetmap.org/node/5399689350": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/node/6869239797": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 500,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/7885098721": {
+  "ok": true,
+  "namesVenue": false,
+  "status": 200,
+  "matched": "2/4"
+ },
+ "https://www.openstreetmap.org/node/11230929656": {
+  "ok": false,
+  "namesVenue": false,
+  "status": 202,
+  "matched": null
+ },
+ "https://www.openstreetmap.org/node/12068052593": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/way/41815510": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/way/161293661": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/way/165237077": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/296434326": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/377585341": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "1/1"
+ },
+ "https://www.openstreetmap.org/way/541403929": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "3/3"
+ },
+ "https://www.openstreetmap.org/way/609176735": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/3"
+ },
+ "https://www.openstreetmap.org/way/708301483": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/3"
+ },
+ "https://www.openstreetmap.org/way/1277797472": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "2/2"
+ },
+ "https://www.openstreetmap.org/way/1381324179": {
+  "ok": true,
+  "namesVenue": true,
+  "status": 200,
+  "matched": "4/4"
+ }
+}

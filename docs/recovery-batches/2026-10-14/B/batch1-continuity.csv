@@ -1,0 +1,30 @@
+entry_id,osm_record,osm_name,category,stored_category,osm_lat,osm_lng,area,name_similarity,distance_m,confidence,flags
+fp-osm-node-3357928873,https://www.openstreetmap.org/node/3357928873,Paradox Museum,museum,museum,51.499675,-0.163914,central,1,7,1,
+fp-osm-node-3916613190,https://www.openstreetmap.org/node/3916613190,Sherlock Holmes Museum,museum,museum,51.523763,-0.158474,central,1,10,1,
+fp-osm-node-4685111791,https://www.openstreetmap.org/node/4685111791,St. Katharine Docks,attraction,attraction,51.506541,-0.07165,central,1,19,1,
+fp-osm-node-10554955616,https://www.openstreetmap.org/node/10554955616,Frameless,museum,museum,51.513526,-0.160148,central,1,26,1,
+fp-osm-node-12278757767,https://www.openstreetmap.org/node/12278757767,V&A East Storehouse,museum,museum,51.546437,-0.021183,east,1,4,1,
+fp-osm-node-13256051041,https://www.openstreetmap.org/node/13256051041,Moco Museum,museum,museum,51.5135,-0.159238,central,1,11,1,
+fp-osm-way-3241371,https://www.openstreetmap.org/way/3241371,Russell Square,park,park,51.521697,-0.126068,central,1,16,1,
+fp-osm-way-5095245,https://www.openstreetmap.org/way/5095245,Horniman Museum and Gardens,museum,museum,51.44192,-0.061855,south,1,10,1,
+fp-osm-way-6134883,https://www.openstreetmap.org/way/6134883,Northwick Park,park,park,51.573833,-0.314341,west,1,137,1,
+fp-osm-way-23900327,https://www.openstreetmap.org/way/23900327,Sydenham Hill Wood,park,park,51.436576,-0.066964,south,1,110,1,
+fp-osm-way-30906720,https://www.openstreetmap.org/way/30906720,Rowans Tenpin Bowl,activity,activity,51.565328,-0.1052,north,1,26,1,
+fp-osm-relation-231792,https://www.openstreetmap.org/relation/231792,London Zoo,zoo,zoo,51.534822,-0.154059,central,1,70,1,
+fp-osm-way-49676331,https://www.openstreetmap.org/way/49676331,Stonebridge Recreation Ground,park,park,51.541299,-0.266569,west,1,43,1,
+fp-osm-way-132534502,https://www.openstreetmap.org/way/132534502,Alexandra Palace Ice Rink,activity,activity,51.594629,-0.130219,north,1,42,1,
+fp-osm-way-156510046,https://www.openstreetmap.org/way/156510046,Paddington Recreation Ground,park,activity,51.530384,-0.190902,central,1,22,1,"category differs (stored activity, source park)"
+fp-osm-way-218344453,https://www.openstreetmap.org/way/218344453,Platform 9¾,attraction,attraction,51.532187,-0.123921,central,1,16,1,
+fp-osm-relation-2200771,https://www.openstreetmap.org/relation/2200771,Queen Elizabeth Olympic Park,park,park,51.544261,-0.015513,east,1,36,1,
+fp-osm-way-402345096,https://www.openstreetmap.org/way/402345096,Museum of Brands,museum,museum,51.516274,-0.211005,central,1,3,1,
+fp-osm-way-482276804,https://www.openstreetmap.org/way/482276804,Highgate Wood,park,park,51.58267,-0.149887,north,1,48,1,
+fp-osm-way-536499671,https://www.openstreetmap.org/way/536499671,Hackney Marshes,park,park,51.556453,-0.028884,east,1,227,1,positions 227 m apart
+fp-osm-way-949698605,https://www.openstreetmap.org/way/949698605,Crossrail Place Roof Garden,park,park,51.506105,-0.017614,east,1,8,1,
+fp-osm-way-953818152,https://www.openstreetmap.org/way/953818152,The Rookery,park,park,51.421519,-0.118006,south,1,36,1,
+fp-osm-way-16947013,https://www.openstreetmap.org/way/16947013,Hertfordshire Zoo,zoo,zoo,51.744111,-0.062462,beyond 25 km,1,102,1,
+fp-osm-way-126777091,https://www.openstreetmap.org/way/126777091,Verulamium Park,park,park,51.749111,-0.353352,beyond 25 km,1,79,1,
+fp-osm-way-966857889,https://www.openstreetmap.org/way/966857889,Willows Activity Farm,attraction,farm,51.723812,-0.282704,beyond 25 km,1,215,1,"positions 215 m apart; category differs (stored farm, source attraction)"
+fp-osm-relation-14898112,https://www.openstreetmap.org/relation/14898112,Warner Bros. Studio Tour London,attraction,attraction,51.690939,-0.417777,beyond 25 km,1,77,1,
+fp-osm-relation-21460925,https://www.openstreetmap.org/relation/21460925,Gadebridge Park,park,park,51.760583,-0.475256,beyond 25 km,1,77,1,
+fp-osm-way-32765688,https://www.openstreetmap.org/way/32765688,Thorpe Park,attraction,activity,51.403881,-0.514231,beyond 25 km,1,186,1,"positions 186 m apart; category differs (stored activity, source attraction)"
+fp-osm-way-26791118,https://www.openstreetmap.org/way/26791118,Princess Diana Memorial Playground,park,park,51.509124,-0.188105,central,0.8,39,0.8,names differ (similarity 0.8)

@@ -6,6 +6,10 @@
  */
 const toRad = (d) => (d * Math.PI) / 180;
 
+/** The app's London scope (server/places/lib/catalogue.js): nothing farther than this from the centre is served, so nothing farther is proposed. */
+export const SCOPE_KM = 40;
+const CENTRE = { lat: 51.5074, lng: -0.1278 };
+
 export function haversineKm(aLat, aLng, bLat, bLng) {
   const h = Math.sin(toRad(bLat - aLat) / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(toRad(bLng - aLng) / 2) ** 2;
   return 6371 * 2 * Math.asin(Math.sqrt(h));
@@ -319,3 +323,6 @@ export function scoreCandidate(c, { wdMatch = null } = {}) {
   }
   return { score, signals };
 }
+
+/** True when a point is inside the app's 40 km scope. */
+export const inScope = (lat, lng) => haversineKm(CENTRE.lat, CENTRE.lng, lat, lng) <= SCOPE_KM;

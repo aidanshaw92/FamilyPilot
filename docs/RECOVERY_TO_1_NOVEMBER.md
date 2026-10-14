@@ -21,11 +21,30 @@ Every stored Google row is hidden from Explore and Meet halfway 30 days after it
 
 ## What the first batch gives
 
-{COVERAGE}
+| Category | Today | After tranche A | After A and B |
+|---|---:|---:|---:|
+| Parks and gardens | 69 | 137 | 174 |
+| Museums and galleries | 40 | 70 | 95 |
+| Attractions | 12 | 21 | 56 |
+| Zoos and aquariums | 6 | 5 | 12 |
+| Farms | 7 | 4 | 9 |
+| Activities | 7 | 0 | 37 |
+| Soft play | 6 | 0 | 0 |
+| **All** | **147** | **237** | **383** |
+
+Of the 147 venues we hold inside the app's 40 km scope, **117** continue from the two tranches; **30 have no independent candidate** (parks and gardens 8, soft play 6, attractions 5, museums and galleries 4, activities 3, farms 2, zoos and aquariums 2). Entries through the registry validator: tranche A 237 of 237 would be served; tranche B 146 of 146.
 
 ## What Explore would serve, day by day
 
-{SCENARIOS}
+| Scenario | Extra cost | 10-20 | 11-01 | 11-07 | 11-08 | 11-15 | 11-25 | 12-07 |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| **S0** Do nothing | 0 | 135 | 131 | 79 | 0 | 0 | 0 | 0 |
+| **S1** Tranche A (CC0 and OGL), categories switched where A is at least as large as Google's | 0 | 256 | 255 | 244 | 237 | 237 | 237 | 237 |
+| **S2** Tranches A and B (adds OpenStreetMap; needs the ODbL steps) | 0 | 389 | 388 | 385 | 383 | 383 | 383 | 383 |
+| **S3** One-off Google refresh on 2026-11-07 alone (149 requests) | US$2.98 to US$3.73 | 147 | 147 | 147 | 147 | 147 | 147 | 0 |
+| **S4** Tranche A plus the one-off refresh on 2026-11-07 | US$2.98 to US$3.73 | 257 | 257 | 257 | 257 | 257 | 257 | 237 |
+
+Venues served by date (Explore and Meet halfway), from 149 stored rows today. Counts are venues in the 40 km scope.
 
 Reading the table: **S0** is what happens if nothing is done. **S1** is tranche A alone, with each category switched to the independent files only where they have at least as many venues as Google had. **S2** adds the OpenStreetMap tranche. **S3** and **S4** add the one-off Google refresh (below). S3 and S4 drop on 7 December because a refresh buys 30 days once.
 
@@ -45,20 +64,20 @@ Reading the table: **S0** is what happens if nothing is done. **S1** is tranche 
 
 | Choice | Venues served on 8 Nov | Cost | What it is |
 |---|---:|---|---|
-| **Tranche A only** | {S1_1108} | Nothing | Compliant today: no ODbL, no Google. Loses soft play, farms and activities |
-| **Tranche A and B** | {S2_1108} | Nothing | Needs the ODbL steps done; the largest and most useful set |
+| **Tranche A only** | 237 | Nothing | Compliant today: no ODbL, no Google. Loses soft play, activities and three of seven farms |
+| **Tranche A and B** | 383 | Nothing | Needs the ODbL steps done; the largest and most useful set |
 | **One-off Google refresh, once, 7 November** | 147 until 6 December, then 0 | **US$2.98 to US$3.73** (149 Place Details requests, no photographs) | Buys 30 days. List-only (never on the map). **Not compliant on its own:** it stores Google names and addresses again, which the Maps terms do not allow even for 30 days ([GOOGLE_RETENTION_AUDIT.md](GOOGLE_RETENTION_AUDIT.md)). Needs your written approval, a restricted key, a quota of 160 and a US$5 budget alert |
-| **Tranche A plus the refresh** | 226 until 6 December | US$2.98 to US$3.73 | Keeps soft play, farms and activities for 30 more days while B is cleared |
+| **Tranche A plus the refresh** | 257 until 6 December | US$2.98 to US$3.73 | Keeps soft play, farms and activities for 30 more days while B is cleared (the refresh covers the venues A cannot) |
 | **Do nothing** | 0 | Nothing | The app shows no venues from 8 November |
 
-The cost is exact for the request count: 149 requests at the Enterprise Place Details rate. Google's price list gives US$20 per 1,000 and our cost notes use US$25, so US$2.98 to US$3.73; Google's monthly free allowance may make it US$0. I could not read the current price list from this environment, so budget the upper figure. September's bill was £104.11, caused by CI, not by this; the refresh is 149 requests.
+The cost is exact for the request count: 149 requests at the Enterprise Place Details rate. Google's price list gives US$20 per 1,000 and our cost notes use US$25, so US$2.98 to US$3.73; Google's monthly free allowance may make it US$0. I could not read the current price list from this environment, so budget the upper figure. September's bill was £104.11, which [GOOGLE_PLACES_COST_CONTROL.md](GOOGLE_PLACES_COST_CONTROL.md) attributes mainly to CI runs; this refresh is 149 requests.
 
 ## What I need from you, in order
 
 1. Review the sample and exceptions in `REVIEW.md` and tell me which tranche you approve, with any entries to drop.
 2. Say whether to open the pull requests (the speed fix, the registry code, the batch tooling, the paged read stacked on #203).
 3. By about 27 October: the OpenStreetMap tranche, go or no-go, after reading [ODBL_ASSESSMENT.md](ODBL_ASSESSMENT.md); and whether you want me to send the OSMF the one drafted message.
-4. Whether the 45 venues that continue only through OpenStreetMap are worth a private alias map, or should come back as new venues (saved ones re-saved).
+4. Whether the 29 venues that continue only through OpenStreetMap are worth a private alias map, or should come back as new venues (saved ones re-saved).
 5. Still open from before: approve Google retention step 1 (revoke public read of `place_records`); delete the four `data/open-data-inputs*` branches; the two-account production canary; your iPhone review of #201 and #203.
 
 ## Rollback

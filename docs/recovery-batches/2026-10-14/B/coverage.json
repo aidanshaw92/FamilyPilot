@@ -1,0 +1,90 @@
+{
+  "batch1ByCategory": {
+    "museum": 7,
+    "attraction": 5,
+    "park": 13,
+    "activity": 2,
+    "zoo": 2
+  },
+  "batch2ByCategory": {
+    "park": 24,
+    "attraction": 30,
+    "museum": 18,
+    "zoo": 5,
+    "activity": 35,
+    "farm": 5
+  },
+  "batch2ByArea": {
+    "east": 20,
+    "south": 19,
+    "west": 21,
+    "north": 16,
+    "central": 16,
+    "beyond 25 km": 25
+  },
+  "batch2Grid": {
+    "central": {
+      "park": 2,
+      "attraction": 5,
+      "zoo": 1,
+      "museum": 1,
+      "farm": 3,
+      "activity": 4
+    },
+    "north": {
+      "park": 5,
+      "museum": 5,
+      "attraction": 1,
+      "activity": 4,
+      "farm": 1
+    },
+    "east": {
+      "park": 5,
+      "attraction": 7,
+      "museum": 2,
+      "activity": 6
+    },
+    "south": {
+      "park": 5,
+      "attraction": 6,
+      "zoo": 1,
+      "museum": 5,
+      "activity": 2
+    },
+    "west": {
+      "park": 5,
+      "museum": 5,
+      "attraction": 4,
+      "activity": 7
+    },
+    "beyond 25 km": {
+      "park": 2,
+      "attraction": 7,
+      "zoo": 3,
+      "activity": 12,
+      "farm": 1
+    }
+  },
+  "batch1ByArea": {
+    "central": 11,
+    "east": 4,
+    "south": 3,
+    "west": 2,
+    "north": 3,
+    "beyond 25 km": 6
+  },
+  "storedByArea": {
+    "north": 22,
+    "central": 53,
+    "beyond 25 km": 16,
+    "east": 17,
+    "south": 18,
+    "west": 21
+  },
+  "eligibleForBatch2": 1040,
+  "flaggedForBatch2": 69,
+  "duplicatesOfOtherSource": 117,
+  "duplicatesWithinBatch": 1,
+  "continuedElsewhere": 83,
+  "newCandidates": 3141
+}

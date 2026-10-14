@@ -1,0 +1,9 @@
+entry_id,source,source_record,name,category,stored_category,lat,lng,area,name_similarity,distance_m,flags
+fp-wd-q1628487,wikidata,https://www.wikidata.org/wiki/Q1628487,Horniman Museum and Gardens,museum,museum,51.440555555,-0.060833333,south,1,170,positions 170 m apart
+fp-wd-q1990172,wikidata,https://www.wikidata.org/wiki/Q1990172,Sherlock Holmes Museum,museum,museum,51.523694444,-0.161,central,1,166,positions 166 m apart
+fp-wd-q60747956,wikidata,https://www.wikidata.org/wiki/Q60747956,Gadebridge Park,park,park,51.762,-0.478,beyond 25 km,1,170,positions 170 m apart
+fp-os-49e9c86e-2093-a491-e063-8ccaa00a0ef3,os-greenspace,https://www.ordnancesurvey.co.uk/products/os-open-greenspace,Queen Elizabeth Olympic Park,park,park,51.547796,-0.017817,east,1,459,positions 459 m apart
+fp-wd-q21061532,wikidata,https://www.wikidata.org/wiki/Q21061532,Rickmansworth Aquadrome,park,park,51.6331,-0.4785,beyond 25 km,1,359,positions 359 m apart
+fp-os-49e9c766-d7c7-a491-e063-8ccaa00a0ef3,os-greenspace,https://www.ordnancesurvey.co.uk/products/os-open-greenspace,Russell Square Gardens,park,park,51.521698,-0.126094,central,0.67,inside the polygon,names differ (similarity 0.67)
+fp-wd-q7922995,wikidata,https://www.wikidata.org/wiki/Q7922995,Verulamium Park,park,park,51.7486,-0.351389,beyond 25 km,1,178,positions 178 m apart
+fp-wd-q270263,wikidata,https://www.wikidata.org/wiki/Q270263,London Zoo,zoo,zoo,51.535555555,-0.155833333,central,1,171,positions 171 m apart

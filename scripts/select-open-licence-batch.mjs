@@ -20,7 +20,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { AREAS, areaOf, csv, selectBatch2 } from './lib/recovery-select.mjs';
-import { doubts, entryFromOs, entryFromWikidata, haversineKm, holdReason, judgeMatch, matchStored, osEntryId, osParks, pointInGeometry, scoreCandidate, wikidataCandidates, wikidataEntryId, OS_PRODUCT_URL } from './lib/open-licence.mjs';
+import { doubts, entryFromOs, entryFromWikidata, haversineKm, holdReason, inScope, judgeMatch, matchStored, osEntryId, osParks, pointInGeometry, scoreCandidate, wikidataCandidates, wikidataEntryId, OS_PRODUCT_URL } from './lib/open-licence.mjs';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { tokenOverlapScore } = require('../server/places/lib/venue-alias-detection.js');
@@ -31,7 +31,9 @@ const MIN_SCORE = { park: 3, museum: 3, default: 3 };
 export const sourceUrlOf = (c) => (c.source === 'os-greenspace' ? OS_PRODUCT_URL : `https://www.wikidata.org/wiki/${c.q}`);
 export const idOf = (c) => (c.source === 'os-greenspace' ? osEntryId(c.osId) : wikidataEntryId(c.q));
 
-export function buildOpenLicenceBatch({ parks, wikidata, stored, version, target = 160, siteChecks = {} }) {
+export function buildOpenLicenceBatch({ parks, wikidata: allWikidata, stored, version, target = 160, siteChecks = {} }) {
+  // Nothing beyond the app's 40 km scope would ever be served, so none is proposed.
+  const wikidata = allWikidata.filter((w) => inScope(w.lat, w.lng));
   // ---- continuing a venue we already hold
   const rows = []; const consumed = new Set(); const unmatched = []; const compare = [];
   for (const s of stored) {

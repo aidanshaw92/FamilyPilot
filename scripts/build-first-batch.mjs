@@ -18,7 +18,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { AREAS, areaOf, csv, greenspaceIndex, wikidataItems } from './lib/recovery-select.mjs';
-import { osParks, wikidataCandidates } from './lib/open-licence.mjs';
+import { inScope, osParks, wikidataCandidates } from './lib/open-licence.mjs';
 import { buildBatches, writeOutputs as writeOsm, osmUrl } from './select-recovery-batches.mjs';
 import { buildOpenLicenceBatch, writeOpenLicenceOutputs, idOf, sourceUrlOf } from './select-open-licence-batch.mjs';
 
@@ -87,7 +87,7 @@ export function buildFirstBatch({ osm, open, stored, version, seed = 7 }) {
   const lostByCategory = count(lost, (s) => s.category);
 
   return {
-    A, B, aCont, aNew, bCont, bNew, sample, version,
+    A, B, aCont, aNew, bCont, bNew, sample, version, lostVenues: lost,
     coverage: { today, afterA, afterAB, storedByArea, gridA: gridOf([...aCont, ...aNew]), gridAB: gridOf([...aCont, ...aNew, ...bCont, ...bNew]), lostByCategory, lost: lost.length, stored: stored.length, continued: continuedStoredIds.size },
   };
 }
@@ -113,11 +113,11 @@ export function renderReview(r) {
   L.push('An independent identity is a name, a category and a position from a source with a licence. It is **not** a statement that a place has toilets, a café, step-free access, opening hours, or suits a baby, a toddler or a ten-year-old. Those stay "not yet reviewed" until our own evidence says otherwise. OS describes its greenspaces as "likely to be accessible to the public" and generalises them automatically; that caveat applies to every park here.', '');
 
   L.push('## Expected coverage', '');
-  L.push('Today\'s catalogue is 149 Google rows that expire from about 8 November. This is what would replace it.', '');
+  L.push(`Today\'s catalogue is ${c.stored} Google rows inside the app\'s 40 km scope (two further out are not served today), and they expire from about 8 November. This is what would replace it.`, '');
   L.push(row(['Category', 'Today', 'After tranche A', 'After A and B']), row(['---', '---:', '---:', '---:']));
   for (const k of CATEGORIES) L.push(row([LABEL[k], c.today[k] ?? 0, c.afterA[k] ?? 0, c.afterAB[k] ?? 0]));
   L.push(row(['**All**', `**${c.stored}**`, `**${sum(c.afterA)}**`, `**${sum(c.afterAB)}**`]), '');
-  L.push(`Of the ${c.stored} venues we hold, **${r.aCont.length}** continue from tranche A and **${r.bCont.length}** more from B (${c.continued} in all, ${pct(c.continued, c.stored)}%). **${c.lost} have no independent candidate** and disappear when their Google row expires: ${Object.entries(c.lostByCategory).map(([k, v]) => `${(LABEL[k] ?? k).toLowerCase()} ${v}`).join(', ')}. These names are in the private review folder. The options for them: accept the loss; add them by hand from their own websites (each needs a position from a source we may use); or find them again once licensing is settled. I have not found a compliant source for them.`, '');
+  L.push(`Of the ${c.stored} venues we hold, **${r.aCont.length}** continue from tranche A and **${r.bCont.length}** more from B (${c.continued} in all, ${pct(c.continued, c.stored)}%). **${c.lost} have no independent candidate** and disappear when their Google row expires: ${Object.entries(c.lostByCategory).map(([k, v]) => `${(LABEL[k] ?? k).toLowerCase()} ${v}`).join(', ')}. These names are in the private review folder (PRIVATE-lost.csv). The options for them: accept the loss; add them by hand from their own websites (each needs a position from a source we may use); or find them again once licensing is settled. I have not found a compliant source for them.`, '');
   L.push('### By area and category: tranche A alone, then A and B', '');
   const catCols = CATEGORIES.filter((k) => (c.afterAB[k] ?? 0) > 0);
   L.push(row(['Area', ...catCols.map((k) => LABEL[k]), 'A', 'A+B', 'Held today']), row(['---', ...catCols.map(() => '---:'), '---:', '---:', '---:']));
@@ -148,11 +148,21 @@ export function renderReview(r) {
   L.push('### Continuing matches to look at', '');
   for (const x of flaggedCont) L.push(`- ${x.ref} **${x.name}** (${LABEL[x.category] ?? x.category}, tranche ${x.tranche}): ${x.flags.join('; ')}`);
   if (!flaggedCont.length) L.push('None.');
-  L.push('', '### New venues left out (tranche A)', '');
-  for (const s of flaggedA) L.push(`- **${s.c.name}** (${LABEL[s.category] ?? s.category}, ${AREA_LABEL[s.area]}): ${s.flags.join('; ')}`);
+  const grouped = (list) => {
+    const by = new Map();
+    for (const s of list) {
+      const first = (s.flags[0] ?? '(no reason recorded)').replace(/\s*\(which one is in the private review folder\)/, '');
+      const key = first.split(': ')[0].trim();
+      if (!by.has(key)) by.set(key, []);
+      by.get(key).push(`${s.c.name} (${(LABEL[s.category] ?? s.category).toLowerCase()}, ${s.area})`);
+    }
+    return [...by.entries()].sort((a, b) => b[1].length - a[1].length);
+  };
+  L.push('', '### New venues left out (tranche A), grouped by what is open', '');
+  for (const [reason, names] of grouped(flaggedA)) L.push(`- **${reason}** (${names.length}): ${names.join('; ')}`);
   if (!flaggedA.length) L.push('None.');
-  L.push('', '### New venues left out (tranche B)', '');
-  for (const s of flaggedB) L.push(`- **${s.c.name}** (${LABEL[s.category] ?? s.category}, ${AREA_LABEL[s.area]}): ${s.flags.join('; ')}`);
+  L.push('', '### New venues left out (tranche B), grouped by what is open', '');
+  for (const [reason, names] of grouped(flaggedB)) L.push(`- **${reason}** (${names.length}): ${names.join('; ')}`);
   if (!flaggedB.length) L.push('None.');
   L.push('', '### Duplicate risks', '');
   L.push(`- Possible duplicates of a place we hold, left out: A ${A.dupes.length}, B ${flaggedB.filter((s) => s.nearStored).length}; the pairs are in the private review folder.`);
@@ -187,6 +197,7 @@ export function writeFirstBatch(out, r, { privateOut }) {
       ...r.A.rows.map((x, i) => ({ ref: `A1-${String(i + 1).padStart(2, '0')}`, stored_place_id: x.stored.id, stored_name: x.stored.name, entry_id: idOf(x.candidate) })),
       ...r.B.batch1.map((x, i) => ({ ref: `B1-${String(i + 1).padStart(2, '0')}`, stored_place_id: x.storedId, stored_name: x.storedName, entry_id: x.candidate.familypilot_place_id })),
     ];
+    writeFileSync(join(privateOut, 'PRIVATE-lost.csv'), csv(r.lostVenues.map((s) => ({ stored_place_id: s.id, stored_name: s.name, stored_category: s.category })), ['stored_place_id', 'stored_name', 'stored_category']));
     writeFileSync(join(privateOut, 'PRIVATE-refs.csv'), csv(refs, ['ref', 'stored_place_id', 'stored_name', 'entry_id']));
   }
 }
@@ -198,7 +209,8 @@ function main() {
   if (need.length) { console.error(`missing ${need.join(', ')}`); process.exit(2); }
   const lines = (p) => readFileSync(p, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
   const json = (p) => JSON.parse(readFileSync(p, 'utf8'));
-  const stored = json(opt('--stored')).map((s) => ({ id: s.id ?? s.familypilot_place_id, name: s.name, category: s.category, lat: Number(s.lat), lng: Number(s.lng) }));
+  const allStored = json(opt('--stored')).map((s) => ({ id: s.id ?? s.familypilot_place_id, name: s.name, category: s.category, lat: Number(s.lat), lng: Number(s.lng) }));
+  const stored = allStored.filter((s) => inScope(s.lat, s.lng)); // the venues the app can serve at all
   const GROUP = { museum_all: 'museum', zoo_all: 'zoo', farm_all: 'farm', amusement_all: 'amusement park' };
   const wdFiles = opt('--wikidata').split(',').filter(Boolean).map((p) => {
     const j = json(p); const g = GROUP[p.split('/').pop().replace(/\.json$/, '')];

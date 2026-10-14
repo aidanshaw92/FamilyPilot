@@ -25,7 +25,7 @@ export function doubts(c, scoredRow) {
   if (/\b(cemetery|churchyard|burial)\b/i.test(c.name)) out.push('a burial ground');
   if (/\b(golf|cricket|bowling|tennis)\b/i.test(c.name) && c.group_id === 'parks') out.push('may be a club ground');
   if (/\b(square|gardens?)$/i.test(c.name) && (c.area_ha ?? 0) < 2 && c.group_id === 'parks' && c.playground_inside !== true) out.push('a small garden: may be for keyholders only');
-  if (/\b(estate|housing|flats)\b/i.test(c.name)) out.push('a housing estate name');
+  if (/\b(estate|housing)\b/i.test(c.name)) out.push('a housing estate name');
   if (c.group_id === 'attractions' && !c.website) out.push('an attraction with no website of its own');
   return out;
 }
