@@ -5,7 +5,7 @@
  * writes to the folder you name, and the registry files in the repository are never touched.
  *
  *   node scripts/build-identity-entries.mjs --candidates candidates.jsonl --links links.jsonl --batch batch.json --out ./entries \
- *        [--stored rows.json] [--reviewed-by "Name"] [--min-confidence 0.8]
+ *        [--stored rows.json] [--reviewed-by "Name"] [--min-confidence 0.8] [--scope-km 40]
  *
  * WITHOUT --reviewed-by every entry says `reviewedBy: "UNREVIEWED (simulation only)"`, and the registry loader refuses such an entry, so
  * the output can be counted and read but never served. A person who has read the entries passes their name, and the file is then
@@ -31,13 +31,23 @@ export const CATEGORY_RULES = {
   museums: { default: 'museum' },
   animals: { petting_zoo: 'farm', zoo: 'zoo', wildlife_park: 'zoo', aquarium: 'attraction', animal_attraction: 'attraction' },
   play: { trampoline_park: 'activity', indoor_play: 'activity' },
-  attractions: { theme_park: 'attraction', water_park: 'attraction', ice_rink: 'activity', miniature_golf: 'activity', bowling_alley: 'activity' },
+  attractions: { attraction: 'attraction', theme_park: 'attraction', water_park: 'attraction', ice_rink: 'activity', miniature_golf: 'activity', bowling_alley: 'activity' },
 };
 
 export function categoryFor(group, subtype) {
   const rule = CATEGORY_RULES[group];
   if (!rule) return null;
   return rule[subtype] ?? rule.default ?? null;
+}
+
+/** The app's London scope (server/places/lib/catalogue.js): the reader serves nothing outside it, so entries outside it are not counted. */
+const LONDON = { lat: 51.5074, lng: -0.1278 };
+export function kmFromCentre(lat, lng) {
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat - LONDON.lat);
+  const dLng = toRad(lng - LONDON.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(LONDON.lat)) * Math.cos(toRad(lat)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.sqrt(h));
 }
 
 const httpsOnly = (url) => (typeof url === 'string' && /^https:\/\//i.test(url) ? url : null);
@@ -68,16 +78,17 @@ export function entryFromCandidate(candidate, batch, { linkedTo = null, reviewed
   return entry;
 }
 
-export function buildEntries({ candidates, links, batch, stored = [], minConfidence = 0.8, reviewedBy = null }) {
+export function buildEntries({ candidates, links, batch, stored = [], minConfidence = 0.8, reviewedBy = null, scopeKm = 40 }) {
   const linkByCandidate = new Map(links.map((l) => [l.open_data_place, l]));
   const storedById = new Map(stored.map((s) => [s.id, s]));
   const entries = [];
-  const dropped = { noCategory: 0, invalid: [] };
+  const dropped = { noCategory: 0, outsideScope: 0, invalid: [] };
   const used = new Set();
   const report = { linkedConfident: 0, linkedNeedsReview: 0, newOnly: 0 };
   // Highest confidence first, so that if two candidates claim one stored place the better match keeps it.
   const ordered = [...candidates].sort((a, b) => (linkByCandidate.get(b.familypilot_place_id)?.match_confidence ?? 0) - (linkByCandidate.get(a.familypilot_place_id)?.match_confidence ?? 0));
   for (const candidate of ordered) {
+    if (Number.isFinite(scopeKm) && kmFromCentre(candidate.lat, candidate.lng) > scopeKm) { dropped.outsideScope += 1; continue; }
     const link = linkByCandidate.get(candidate.familypilot_place_id);
     const confident = link && link.match_confidence >= minConfidence && !link.needs_review;
     const linkedTo = confident && !used.has(link.google_place) ? link.google_place : null;
@@ -109,14 +120,14 @@ function main() {
   const links = lines(opt('--links'));
   const batch = JSON.parse(readFileSync(opt('--batch'), 'utf8'));
   const stored = opt('--stored') ? JSON.parse(readFileSync(opt('--stored'), 'utf8')).map((r) => ({ id: r.id ?? r.familypilot_place_id, category: r.category })) : [];
-  const out = buildEntries({ candidates, links, batch, stored, minConfidence: Number(opt('--min-confidence') ?? 0.8), reviewedBy: opt('--reviewed-by') ?? null });
+  const out = buildEntries({ candidates, links, batch, stored, minConfidence: Number(opt('--min-confidence') ?? 0.8), reviewedBy: opt('--reviewed-by') ?? null, scopeKm: Number(opt('--scope-km') ?? 40) });
   mkdirSync(opt('--out'), { recursive: true });
   const name = opt('--reviewed-by') ? 'osm.entries.json' : 'osm.entries.UNREVIEWED.simulation.json';
   writeFileSync(join(opt('--out'), name), JSON.stringify(out.entries, null, 1));
   const summary = {
     entries: out.entries.length, byCategory: out.byCategory, ...out.report,
     storedPlaces: stored.length, storedPlacesWithAnIndependentEntry: out.keptStoredIds.length, storedByCategory: out.storedByCategory, keptByCategory: out.keptByCategory,
-    droppedNoCategory: out.dropped.noCategory, droppedInvalid: out.dropped.invalid.length,
+    droppedNoCategory: out.dropped.noCategory, droppedOutsideScope: out.dropped.outsideScope, droppedInvalid: out.dropped.invalid.length,
   };
   writeFileSync(join(opt('--out'), 'entries-summary.json'), JSON.stringify(summary, null, 2));
   console.log(JSON.stringify(summary, null, 2));
