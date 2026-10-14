@@ -195,8 +195,9 @@ console.log('6c A saved place whose venue has a new listing');
   await shot(p3, '12-saved-row');
   await p3.getByText(/Regent.?s Park/).first().click(); await p3.waitForTimeout(2500);
   const opened = (await p3.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ');
-  check(/Could not load this place|Place not found/i.test(opened) && !seen3.errors.length, 'opening it today ends in "Could not load this place" with a Retry that cannot work, and no crash (the gap the reconnect offer closes)', opened.slice(0, 120));
-  await shot(p3, '13-saved-opens-not-found');
+  // With the reconnect screen (#220) in the build, opening it offers to reconnect rather than ending in a dead "Could not load this place".
+  check(/new listing/i.test(opened) && !/Could not load this place|Place not found/i.test(opened) && !seen3.errors.length, 'opening it offers to reconnect to the new listing, not a dead "Could not load this place", and no crash', opened.slice(0, 120));
+  await shot(p3, '13-saved-opens-reconnect-offer');
   check(seen3.google.length === 0, 'no Google request', String(seen3.google.length));
   await ctx3.close();
 }
