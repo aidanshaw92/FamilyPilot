@@ -9,6 +9,7 @@ const { filterPlacesToCanonicalPrimaries } = require('../../server/places/lib/ca
  */
 const nearbyFoodEndpoint = require('../../server/places/lib/nearby-food-endpoint');
 const betweenEndpoint = require('../../server/places/lib/between-endpoint');
+const catalogueEndpoint = require('../../server/places/lib/catalogue-endpoint');
 const {
   buildSearchCacheKey,
   readSearchCache,
@@ -154,6 +155,14 @@ module.exports = async function handler(req, res) {
    */
   if (req.query.intent === 'between') {
     return betweenEndpoint.handleBetweenRequest(req, res);
+  }
+
+  /**
+   * The stored catalogue a page at a time, nearest first, with the true total (`catalogue-endpoint.js`). A database read, handled here
+   * and returned before the budget, the provider choice and the search chain, like `between` above, so it cannot discover through Google or spend.
+   */
+  if (req.query.intent === 'catalogue') {
+    return catalogueEndpoint.handleCatalogueRequest(req, res);
   }
 
   // Where the time goes, per stage, on every response (`Server-Timing`, readable in a browser's network panel or with
