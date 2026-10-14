@@ -80,6 +80,6 @@ describe('caching', () => {
     const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
     const files = [...walk(join(dist, '_expo/static')), ...walk(join(dist, 'assets'))];
     expect(files.length).toBeGreaterThan(0);
-    for (const f of files) expect(f, 'an unhashed file under an immutable path').toMatch(/[.-][0-9a-f]{32}\.[A-Za-z0-9]+$/);
+    for (const f of files) expect(f, 'an unhashed file under an immutable path').toMatch(/[.-][0-9a-f]{32}(@\dx)?\.[A-Za-z0-9]+$/);
   });
 });
