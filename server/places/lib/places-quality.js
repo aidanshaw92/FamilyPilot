@@ -1,6 +1,12 @@
 /**
- * Server-side places quality layer (Vercel API mirror of places-quality.ts).
- * Keep in sync with familypilot/server/places/places-quality.ts
+ * Server-side places quality layer.
+ *
+ * HOW A GOOGLE PLACE IS ACCEPTED FOR EXPLORE (see docs/DISCOVERY_RULES.md):
+ *   1. The request asks Google only for places whose PRIMARY type is a family destination (EXPLORE_INCLUDED_PRIMARY_TYPES).
+ *   2. `shouldExcludePlace` then rejects a place that is mainly something else, judged by what the place IS (its primary type)
+ *      and not by every service it also offers. A museum that also has a cafe, a library or a university department is still
+ *      a museum; a hotel that Google also calls a tourist attraction is still a hotel.
+ *   3. `mapGoogleCategory` picks the group, preferring the primary type.
  */
 
 const EXPLORE_INCLUDED_PRIMARY_TYPES = [
@@ -27,6 +33,29 @@ const EXPLORE_EXCLUDED_PRIMARY_TYPES = [
   'performing_arts_theater',
 ];
 
+/**
+ * A place whose primary type is one of these is a family destination in its own right. What else Google also calls it (a cafe,
+ * a library, a hotel, a university) says what it offers, not what it is, so it never rejects the place on its own.
+ * `tourist_attraction`, `cultural_center`, `marina` and `campground` are deliberately NOT here: they are labels broad enough to
+ * sit on a hotel, a church hall or a holiday park, so for them the other types still count (see `shouldExcludePlace`).
+ */
+const FAMILY_DESTINATION_PRIMARY_TYPES = new Set([
+  'park', 'city_park', 'national_park', 'nature_preserve', 'wildlife_refuge', 'botanical_garden', 'garden', 'playground',
+  'museum', 'art_museum', 'history_museum', 'childrens_museum', 'art_gallery', 'planetarium',
+  'zoo', 'wildlife_park', 'petting_zoo', 'farm', 'aquarium',
+  'amusement_park', 'theme_park', 'water_park', 'indoor_playground', 'trampoline_park',
+  'bowling_alley', 'ice_skating_rink', 'hiking_area',
+]);
+
+/** On-site food is a facility a parent wants, never a reason to reject a place. */
+const ON_SITE_FOOD_TYPES = new Set(['restaurant', 'cafe', 'coffee_shop']);
+
+/**
+ * Types that mean the place is mainly adult entertainment or licensed premises. They reject even a place whose primary type
+ * looks like a family one, because no family category rescues a night club that Google also files under bowling.
+ */
+const ADULT_PREMISES_TYPES = new Set(['night_club', 'casino', 'liquor_store']);
+
 const RESTAURANT_EXCLUDED_PRIMARY_TYPES = [
   'hotel', 'lodging', 'motel', 'supermarket', 'grocery_store', 'department_store',
   'shopping_mall', 'gas_station', 'bar', 'pub', 'night_club', 'movie_theater',
@@ -35,8 +64,9 @@ const RESTAURANT_EXCLUDED_PRIMARY_TYPES = [
 
 const GOOGLE_TYPE_TO_TAXONOMY = {
   park: 'park', playground: 'playground', national_park: 'park', city_park: 'park', botanical_garden: 'park',
+  nature_preserve: 'park', wildlife_refuge: 'park', garden: 'park',
   hiking_area: 'park', marina: 'attraction', campground: 'attraction', rv_park: 'attraction',
-  museum: 'museum', art_gallery: 'museum', art_museum: 'museum', planetarium: 'museum',
+  museum: 'museum', art_gallery: 'museum', art_museum: 'museum', history_museum: 'museum', planetarium: 'museum',
   childrens_museum: 'museum', cultural_center: 'museum', aquarium: 'attraction',
   zoo: 'zoo', wildlife_park: 'zoo', petting_zoo: 'farm', farm: 'farm',
   tourist_attraction: 'attraction', amusement_park: 'activity', theme_park: 'activity',
@@ -77,6 +107,11 @@ const FORCE_NULL_TYPES = new Set([
 
 const IGNORED_SECONDARY_TYPES = new Set(['point_of_interest', 'establishment']);
 
+/** Further types that, on a place Google calls a park, name what the visit is really for. */
+const PARK_REPLACING_TYPES = new Set([
+  'zoo', 'wildlife_park', 'petting_zoo', 'farm', 'amusement_park', 'theme_park', 'water_park', 'indoor_playground', 'trampoline_park',
+]);
+
 const GENERIC_PRIMARY_TYPES = new Set([
   'park', 'tourist_attraction', 'point_of_interest', 'establishment',
 ]);
@@ -112,18 +147,21 @@ function mapGoogleTaxonomy(primaryType, types = [], name) {
     if (fromName) return fromName;
   }
 
+  if (primaryType === 'park') {
+    // A park is a park. Google lists the sports pitches, the museum in the grounds or the visitor centre as further types, and
+    // none of them makes the place something else (a recreation ground was filed as an activity, a historic park as a museum).
+    // Only a type that names the main draw replaces it: a zoo, a farm, a funfair, an indoor play centre.
+    const mainDraw = pickBestTaxonomyFromTypes(types.filter((type) => type !== 'park' && PARK_REPLACING_TYPES.has(type)));
+    return mainDraw ?? 'park';
+  }
+
   if (primaryType && GENERIC_PRIMARY_TYPES.has(primaryType)) {
-    const fromSecondary = pickBestTaxonomyFromTypes(
-      types.filter(
-        (type) =>
-          type !== primaryType &&
-          !IGNORED_SECONDARY_TYPES.has(type) &&
-          !FORCE_NULL_TYPES.has(type),
-      ),
+    const secondary = types.filter(
+      (type) => type !== primaryType && !IGNORED_SECONDARY_TYPES.has(type) && !FORCE_NULL_TYPES.has(type),
     );
-    // Google often labels major parks as tourist attractions (or repeats tourist_attraction as
-    // a secondary type). Keep an actual park as a park unless a more specific destination exists.
-    if (primaryType === 'park' && (!fromSecondary || fromSecondary === 'attraction')) return 'park';
+    // The primary type competes too: a tourist attraction with an on-site cafe is an attraction, not a cafe. (The cafe used to be
+    // the only candidate left, so the place was filed as a cafe and dropped from Explore.)
+    const fromSecondary = pickBestTaxonomyFromTypes(GOOGLE_TYPE_TO_TAXONOMY[primaryType] ? [primaryType, ...secondary] : secondary);
     if (fromSecondary) return fromSecondary;
   }
 
@@ -162,10 +200,31 @@ function isExploreCategory(category) {
   return !['restaurant', 'cafe', 'hotel', 'shop'].includes(category);
 }
 
+/**
+ * Is this place mainly something other than a family destination?
+ *
+ * Restaurants keep the original rule (any listed type rejects): the food intent has no "mixed use" problem.
+ *
+ * Explore judges a place by what it IS:
+ *   - an adult-premises type anywhere (night club, casino, off-licence) rejects;
+ *   - a primary type on the exclusion list rejects (the place is a hotel, a cafe, a library, a school);
+ *   - a primary type that is a family destination accepts, whatever else Google also lists (a cafe, a library, a university
+ *     department, a hotel on the same estate);
+ *   - otherwise the primary type is broad or unknown (tourist_attraction, cultural_center, marina): nothing says what the
+ *     place is, so any other listed type that says "something else" rejects, except on-site food.
+ *
+ * This replaced "any one type on the list rejects", which discarded the Natural History Museum (a museum that Google also tags
+ * as a library) and would discard any soft play centre, farm or museum that also has a cafe.
+ */
 function shouldExcludePlace(primaryType, types, intent) {
   const excluded = new Set(excludedTypesForIntent(intent));
-  const candidates = [primaryType, ...types].filter(Boolean);
-  return candidates.some((type) => excluded.has(type));
+  const all = [primaryType, ...(types || [])].filter(Boolean);
+  if (intent === 'restaurant') return all.some((type) => excluded.has(type));
+
+  if (all.some((type) => ADULT_PREMISES_TYPES.has(type))) return true;
+  if (primaryType && excluded.has(primaryType)) return true;
+  if (primaryType && FAMILY_DESTINATION_PRIMARY_TYPES.has(primaryType)) return false;
+  return all.some((type) => type !== primaryType && excluded.has(type) && !ON_SITE_FOOD_TYPES.has(type));
 }
 
 function isSupportedForIntent(primaryType, types, intent, name) {
