@@ -34,14 +34,14 @@ jobs:
         run: |
           mkdir -p work out
           URL="https://download.geofabrik.de/europe/united-kingdom/england/greater-london-latest.osm.pbf"
-          curl -fSL --retry 2 -A "$UA" -o work/greater-london.osm.pbf "$URL"
-          curl -fSL --retry 2 -A "$UA" -o work/greater-london.osm.pbf.md5 "$URL.md5"
-          cat work/greater-london.osm.pbf.md5
-          (cd work && md5sum -c greater-london.osm.pbf.md5)
-          ls -l work/greater-london.osm.pbf
-          osmium fileinfo work/greater-london.osm.pbf | head -20
+          curl -fSL --retry 2 -A "$UA" -o work/greater-london-latest.osm.pbf "$URL"
+          curl -fSL --retry 2 -A "$UA" -o work/greater-london-latest.osm.pbf.md5 "$URL.md5"
+          cat work/greater-london-latest.osm.pbf.md5
+          (cd work && md5sum -c greater-london-latest.osm.pbf.md5)
+          ls -l work/greater-london-latest.osm.pbf
+          osmium fileinfo work/greater-london-latest.osm.pbf | head -20
           # Only the tags the dry run classifies, nodes ways and relations.
-          osmium tags-filter work/greater-london.osm.pbf \
+          osmium tags-filter work/greater-london-latest.osm.pbf \
             nwr/tourism=zoo,aquarium,museum,gallery,theme_park \
             nwr/attraction=animal \
             nwr/leisure=trampoline_park,indoor_play,playground,nature_reserve,park,water_park,ice_rink,miniature_golf,bowling_alley \
@@ -128,7 +128,7 @@ jobs:
             'files': [
               info('out/london-family.geojson', source='OpenStreetMap, Greater London extract, filtered by tag with osmium',
                    source_url='https://download.geofabrik.de/europe/united-kingdom/england/greater-london-latest.osm.pbf',
-                   source_md5=open('work/greater-london.osm.pbf.md5').read().split()[0],
+                   source_md5=open('work/greater-london-latest.osm.pbf.md5').read().split()[0],
                    licence='ODbL-1.0', licence_url='https://opendatacommons.org/licenses/odbl/1-0/',
                    attribution='© OpenStreetMap contributors', attribution_url='https://www.openstreetmap.org/copyright'),
               info('out/greenspace-london.geojson', source='OS Open Greenspace, grid squares TQ and TL (ESRI Shapefile), clipped to the London box',
