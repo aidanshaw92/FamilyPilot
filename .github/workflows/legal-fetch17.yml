@@ -1,0 +1,28 @@
+# One-off, pass 18. NOT scheduled, NOT dispatchable, NOT run on pull requests. Runs only when the throwaway branch `data/open-data-fetch` is pushed with a change
+# under legal-fetch17/. GET only, descriptive User-Agent, no secret, no database, no Google API. Checks each candidate play venue's published position against the centre of its own postcode (postcodes.io, ONS data under the OGL).
+name: FHRS position vs postcode (one-off)
+
+on:
+  push:
+    branches: [data/open-data-fetch]
+    paths:
+      - .github/workflows/legal-fetch17.yml
+      - legal-fetch17/**
+
+permissions:
+  contents: write   # only to commit the result file to this throwaway branch
+
+jobs:
+  terms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet requests
+      - run: python3 legal-fetch17/postcode_check.py
+      - name: Commit the result to the throwaway branch
+        run: |
+          git config user.name "open-data-fetch"; git config user.email "actions@users.noreply.github.com"
+          git add results/softplay
+          git commit -q -m "FHRS position vs postcode: results, pass 18" || echo "nothing to commit"
+          git push -q origin HEAD:data/open-data-fetch || true
