@@ -453,7 +453,8 @@ describe('turning dry-run candidates into registry entries', () => {
     familypilot_place_id: 'fp-osm-way-1', source_record_id: 'way/1@v3', name: 'Fixture Farm', group_id: 'animals', subtype: 'petting_zoo',
     lat: 51.52, lng: -0.07, website: 'https://example.org/farm', ...over,
   });
-  const load = () => import('../../../scripts/build-identity-entries.mjs');
+  // The builder is plain JavaScript: its inferred return types are narrower than the shapes the tests probe, so it is loaded as `any`.
+  const load = (): Promise<any> => import('../../../scripts/build-identity-entries.mjs');
 
   it('maps the source group to a catalogue category, and never calls trampolines or indoor play soft play', async () => {
     const { categoryFor } = await load();
