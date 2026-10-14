@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { MatchableVenueFacts } from '@/src/types/day-request';
 import { Venue } from '@/src/types';

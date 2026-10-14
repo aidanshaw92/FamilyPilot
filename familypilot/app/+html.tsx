@@ -24,11 +24,20 @@ export default function Root({ children }: { children: ReactNode }) {
         <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
         {/* Add any additional <head> elements that you want globally available on web... */}
       </head>
-      <body>{children}</body>
+      <body>
+        {/* What a parent sees while the app downloads (on a slow connection that is seconds, not a blink): the brand on the app's own background,
+            instead of a white page. Plain HTML and CSS, no script. The root layout removes it as soon as the app has drawn (app/_layout.tsx). */}
+        <div id="boot-shell" aria-hidden="true">
+          <span className="boot-mark" />
+          <span className="boot-word">FamilyPilot</span>
+        </div>
+        {children}
+      </body>
     </html>
   );
 }
 
+// The shell's colours are the app's own (src/design-system/tokens/colors.ts: background, action, ink); a test holds them equal.
 const responsiveBackground = `
 body {
   background-color: #fff;
@@ -37,4 +46,11 @@ body {
   body {
     background-color: #000;
   }
-}`;
+}
+#boot-shell {
+  position: fixed; inset: 0; z-index: 0; display: flex; align-items: center; justify-content: center; gap: 12px;
+  background-color: #FBFAF7; color: #0D1733; font: 700 22px/1.2 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; letter-spacing: -0.02em;
+}
+#boot-shell .boot-mark { width: 22px; height: 22px; border-radius: 50%; background-color: #0F4A3E; animation: boot-pulse 1.4s ease-in-out infinite; }
+@keyframes boot-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.82); } }
+@media (prefers-reduced-motion: reduce) { #boot-shell .boot-mark { animation: none; } }`;
