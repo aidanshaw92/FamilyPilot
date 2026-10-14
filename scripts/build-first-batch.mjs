@@ -109,14 +109,6 @@ export function renderReview(r) {
   L.push('', `So **${r.aCont.length + r.aNew.length} venues can be decided now**, and ${r.bCont.length + r.bNew.length} more are ready and waiting on licensing. Tranche B holds only what the open sources cannot give (activities, farms, soft-play-type venues, attractions and the smaller museums and parks).`, '');
   L.push(`**What I am asking:** approve or amend tranche A, using the sample of 20 below and the exceptions list. The exceptions are left out by default; you do not need to open the other records one by one.`, '');
 
-  L.push('## How each record was checked (automated)', '');
-  L.push('- **Identity.** The name and position are the source\'s own (OS, Wikidata or OpenStreetMap), with a link to the record. No name, address or position from Google is used or written; a stored venue is read only to compute match numbers.');
-  L.push('- **Continuing a venue we hold.** Name overlap, whether the stored position lies inside the park\'s polygon or within 150 m of the point, and category agreement. A match is "confident" only above fixed thresholds; everything else is in the exceptions.');
-  L.push('- **Gates.** Held back, with a reason, in `A2-held.csv`: parks under 3 ha without a mapped play space, clubs, schools, burial grounds, allotments and golf courses; generic names; museums and attractions with no website of their own, or too few Wikipedia articles to show they are a destination; prehistoric monuments and arts venues that Wikidata files under "museum".');
-  L.push('- **Evidence points,** each one checkable at the link: OS "named public park" polygon, its size, a mapped play space inside it, a Wikidata item, the number of Wikipedia articles, and the venue\'s own website, **fetched once** with robots.txt honoured, to see whether it answers and names the venue.');
-  L.push('- **Duplicates.** Within 150 m of a place we already hold with a similar name, or within 120 m of a better-evidenced place in the same tranche: left out and listed. A place proposed in tranche A is dropped from tranche B.');
-  L.push('- **Classification.** A castle, palace, abbey, house or dungeon that Wikidata files under "museum" is classed as an attraction, and the reason is shown on the record. Nothing is classed from a guess about the activity.');
-  L.push('- **Shape.** The registry\'s own validator checks every entry (licence matches source, position inside Greater London, https website, no unknown key).', '');
   L.push('## What this does **not** say', '');
   L.push('An independent identity is a name, a category and a position from a source with a licence. It is **not** a statement that a place has toilets, a café, step-free access, opening hours, or suits a baby, a toddler or a ten-year-old. Those stay "not yet reviewed" until our own evidence says otherwise. OS describes its greenspaces as "likely to be accessible to the public" and generalises them automatically; that caveat applies to every park here.', '');
 
@@ -169,6 +161,14 @@ export function renderReview(r) {
   for (const [reason, n] of Object.entries(A.coverage.heldByReason).sort((a, b) => b[1] - a[1])) L.push(`- ${n}: ${reason}`);
   L.push(`- ${A.coverage.newBelowThreshold}: below the evidence threshold`, '');
 
+  L.push('## How each record was checked (automated)', '');
+  L.push('- **Identity.** The name and position are the source\'s own (OS, Wikidata or OpenStreetMap), with a link to the record. No name, address or position from Google is used or written; a stored venue is read only to compute match numbers.');
+  L.push('- **Continuing a venue we hold.** Name overlap, whether the stored position lies inside the park\'s polygon or within 150 m of the point, and category agreement. A match is "confident" only above fixed thresholds; everything else is in the exceptions.');
+  L.push('- **Gates.** Held back, with a reason, in `A2-held.csv`: parks under 3 ha without a mapped play space, clubs, schools, burial grounds, allotments and golf courses; generic names; museums and attractions with no website of their own, or too few Wikipedia articles to show they are a destination; prehistoric monuments and arts venues that Wikidata files under "museum".');
+  L.push('- **Evidence points,** each one checkable at the link: OS "named public park" polygon, its size, a mapped play space inside it, a Wikidata item, the number of Wikipedia articles, and the venue\'s own website, **fetched once** with robots.txt honoured, to see whether it answers and names the venue.');
+  L.push('- **Duplicates.** Within 150 m of a place we already hold with a similar name, or within 120 m of a better-evidenced place in the same tranche: left out and listed. A place proposed in tranche A is dropped from tranche B.');
+  L.push('- **Classification.** A castle, palace, abbey, house or dungeon that Wikidata files under "museum" is classed as an attraction, and the reason is shown on the record. Nothing is classed from a guess about the activity.');
+  L.push('- **Shape.** The registry\'s own validator checks every entry (licence matches source, position inside Greater London, https website, no unknown key).', '');
   L.push('## When you decide', '');
   L.push('Tell me which tranche you approve, with any exceptions you want added or removed. I will then (with your name, not mine) mark the entries reviewed, add them to the registry on a branch, run the full tests and the mobile-profile measurement, and open a pull request for you. I will not merge or deploy it, and tranche B stays held until the ODbL steps are done.', '');
   return L.join('\n');

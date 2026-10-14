@@ -530,3 +530,39 @@ describe('the registry folder carries its licence notice', () => {
     expect(notice).toMatch(/No Google field is, or may be, in this file/);
   });
 });
+
+describe('the catalogue after Google rows age out, with open-licence entries', () => {
+  it('serves a keyed continuing entry once its Google row is stale, draws it on the map, and does not serve the same venue twice', async () => {
+    const { simulate } = await import(join(root, 'scripts/lib/catalogue-expiry.mjs'));
+    const rows = [
+      { id: 'fp-google-A', category: 'park', lat: 51.451, lng: -0.1066, fetched: '2026-10-09', provider: 'google' },
+      { id: 'fp-google-B', category: 'museum', lat: 51.4412, lng: -0.0611, fetched: '2026-10-09', provider: 'google' },
+      { id: 'fp-google-C', category: 'farm', lat: 51.532, lng: -0.067, fetched: '2026-10-09', provider: 'google' },
+    ];
+    const entries = [osEntry({ familypilotId: 'fp-google-A' }), wdEntry({ familypilotId: 'fp-google-B' }), osEntry({ familypilotId: 'fp-os-0a1b2c3d-0000-0000-0000-000000000009', name: 'Brand New Park', location: { latitude: 51.47, longitude: -0.2, source: 'os-greenspace', licence: 'OGL-3.0' } })];
+    const [before, after] = await simulate({ rows, entries, dates: ['2026-10-20', '2026-11-09'] });
+    // while the Google rows are fresh, a continuing entry is hidden behind its own row and only the new one is added
+    expect(before.googleOnly).toBe(3);
+    expect(before.independentAdded).toBe(1);
+    expect(before.total).toBe(4);
+    // after they age out the continuing entries take over, plus the new one; the farm, which has no independent entry, is gone
+    expect(after.googleOnly).toBe(0);
+    expect(after.total).toBe(3);
+    expect(after.plottable).toBe(3); // positions from OS and Wikidata may be drawn on the app's own map
+    expect(after.listOnly).toBe(0);
+    expect(after.byCategory).toEqual({ park: 2, museum: 1 });
+  });
+
+  it('switches a category to the independent files in one release, so no Google row of it is served beside them', async () => {
+    const { simulate } = await import(join(root, 'scripts/lib/catalogue-expiry.mjs'));
+    const rows = [{ id: 'fp-google-A', category: 'park', lat: 51.451, lng: -0.1066, fetched: '2026-10-20', provider: 'google' }];
+    const entries = [osEntry({ familypilotId: 'fp-os-0a1b2c3d-0000-0000-0000-000000000009', name: 'Other Park' })];
+    const [open, switched] = [
+      (await simulate({ rows, entries, dates: ['2026-10-25'] }))[0],
+      (await simulate({ rows, entries, dates: ['2026-10-25'], cutover: ['park'] }))[0],
+    ];
+    expect(open.total).toBe(2); // a blend of Google's row and ours: the state the OpenStreetMap analysis warns about
+    expect(switched.total).toBe(1);
+    expect(switched.byCategory).toEqual({ park: 1 });
+  });
+});
