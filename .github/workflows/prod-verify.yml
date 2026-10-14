@@ -25,4 +25,4 @@ jobs:
       - name: Playwright library only (the runner's own Chrome is used)
         run: npm install --no-save --prefix prod-verify playwright@1.55.0
       - name: Visit production, read only
-        run: NODE_PATH=prod-verify/node_modules node prod-verify/verify.mjs
+        run: SKIP_BROWSER=1 node prod-verify/verify.mjs

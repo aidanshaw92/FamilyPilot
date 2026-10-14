@@ -22,6 +22,17 @@ for (const s of scripts) {
 }
 say('bundleMarkers', marker);
 
+// ---- 1b. What the live between endpoint serves (the public GET the app itself makes; a database read, no Google call)
+{
+  const u = `${BASE}/api/places/search?intent=between&aLat=51.556&aLng=-0.178&bLat=51.545&bLng=-0.06`;
+  const r = await fetch(u, { headers: { 'user-agent': 'FamilyPilot-prod-verify/1.0' } });
+  let body = null; try { body = await r.json(); } catch { /* not json */ }
+  const places = body?.places ?? [];
+  const providers = {}; for (const p of places) providers[p.provider] = (providers[p.provider] ?? 0) + 1;
+  say('betweenEndpoint', { status: r.status, places: places.length, providers, googleCalls: body?.googleCalls, considered: body?.considered, keys: body ? Object.keys(body) : null });
+}
+if (process.env.SKIP_BROWSER === '1') { console.log('DONE'); process.exit(0); }
+
 // ---- 2. Meet halfway in a real browser
 const PROFILE = {
   id: 'family-pv', parentName: 'Aidan', familyName: 'Shaw',
