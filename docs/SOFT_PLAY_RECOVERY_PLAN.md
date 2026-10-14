@@ -19,6 +19,24 @@ The Food Standards Agency's Food Hygiene Rating Scheme (FHRS) publishes every fo
 
 These are names, not verdicts. A food registration says a business serves food at that address; **it does not say that the venue is open, that it is a soft-play centre in the sense a parent means, or who it suits.** The 31 are candidates.
 
+## What the FSA says about re-use (read from the FSA's own pages on 14 October)
+
+A GitHub runner fetched `ratings.food.gov.uk/terms-and-conditions`, `www.food.gov.uk/terms-and-conditions`, the open-data page and the National Archives' licence text (GET only; the extract is on `data/open-data-fetch`, `results/softplay/fsa-terms.json`). In the FSA's words:
+
+- "All content is available under the Open Government Licence v3.0, except where otherwise stated." (food.gov.uk terms)
+- "Use of proprietary food hygiene ratings information and services is subject to the terms of the Open Government Licence (OGL)." (both terms pages)
+- "The FHRS imagery and the FSA logo ... are protected by registered UK trademarks and other intellectual property rights and are owned and controlled by the FSA." "The copying and use of the FSA logo and other FSA-related logos is not permitted without approval of the FSA."
+- "Displaying or otherwise using an invalid or inaccurate rating may constitute a criminal offence and/or expose the user to potential civil liability. It is the responsibility of users to ensure that the current rating is used or to indicate the date when the information was updated."
+
+The FSA names no attribution statement of its own on those pages. The OGL v3.0 says what applies then: acknowledge the source "by including or linking to any attribution statement specified by the Information Provider(s)", and "if the Information Provider does not provide a specific attribution statement, you must use the following: Contains public sector information licensed under the Open Government Licence v3.0", with a link to the licence where possible. The OGL excludes "personal data in the Information" and "logos, crests and the Royal Arms".
+
+What that means for FamilyPilot, as design rules (not legal advice):
+
+1. **FHRS is used for identity only**: that a food business of that name exists at that address, and where. **No hygiene rating, score or FHRS imagery is shown or stored**, so the rule about showing the current rating, and the trademark on the imagery, are never engaged. A test will hold this: the FHRS entry shape has no rating field.
+2. **The credit** is the OGL default, "Contains public sector information licensed under the Open Government Licence v3.0", with the Food Standards Agency named as the source and a link to the licence, in the venue's detail and in the notices page, as for OS data. The FSA logo is not used.
+3. **Personal data**: a business name can be a sole trader's own name. Only play-venue businesses (a trading name that says a play venue, then confirmed on the operator's own site) are kept, and the venue's displayed name is the operator's own, not the registration's. Nothing about a person (no contact name, no address of a home business) is kept; a registration whose address is a home address is held.
+4. **Positions**: FHRS publishes a coordinate per establishment; the terms do not say how precise it is. Each position is compared with its postcode before use and a large gap is held, not listed.
+
 ## The rules (written before any venue is added)
 
 1. **Identity and position come from an open source with a licence we can credit**: FHRS (OGL v3.0) for the name, address and coordinates, or, for a venue FHRS does not have, the venue's own website for the name and address with the position from a postcode lookup (the ONS postcode directory, OGL), marked as an area-level position.
@@ -31,7 +49,7 @@ These are names, not verdicts. A food registration says a business serves food a
 
 | When | Step | Needs from you |
 |---|---|---|
-| Now to 17 Oct | Read the FSA's open-data licence and attribution wording from the FSA (rendered, as the OS licence was) and add FHRS to the registry as a third open source, with its credit, notice, provenance rule and tests. Same checks as OS and Wikidata. | nothing |
+| Now to 17 Oct | ~~Read the FSA's open-data licence and attribution wording~~ (done 14 Oct, below). Add FHRS to the registry as a third open source, with its credit, notice, provenance rule and tests. Same checks as OS and Wikidata. | nothing |
 | 17 to 21 Oct | For each candidate, find the operator's own website (from the name and postcode), read it once, and record the wording that classifies it and any age or hours it states, quoted. Venues that fail rule 2 or 4 are listed with the reason. | nothing |
 | 21 to 23 Oct | Tranche C review pack: expected 12 to 20 soft-play venues and 10 to 15 trampoline and other activity venues, a sample of 20, exceptions with a recommendation each. | your sample review |
 | With the final Tranche A approval | Add Tranche C to the Preview and release it with Tranche A if approved, or after it. | final approval |
