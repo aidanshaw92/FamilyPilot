@@ -10,9 +10,10 @@
  *
  * From a Geofabrik .osm.pbf, one way to get GeoJSON (osmium-tool, run locally):
  *   osmium tags-filter greater-london-latest.osm.pbf nwr/leisure=park,playground,nature_reserve,trampoline_park,indoor_play,water_park,ice_rink,miniature_golf,bowling_alley \
- *     nwr/tourism=zoo,aquarium,museum,gallery,theme_park,attraction -R -o london-family.osm.pbf
+ *     nwr/tourism=zoo,aquarium,museum,gallery,theme_park,attraction -o london-family.osm.pbf
  *   osmium export london-family.osm.pbf -f geojson --geometry-types=point,polygon --add-unique-id=type_id -a version -o london-family.geojson
- * (-R leaves out the nodes and ways that matching relations merely refer to. osmium writes a polygon's id as `a<n>`; see normaliseFeatures.)
+ * (Do NOT add -R: it drops the nodes a polygon is built from, and the export then keeps only points. osmium writes a polygon's id as `a<n>`;
+ * see normaliseFeatures. The extra ways and nodes the default keeps are untagged members and are rejected at the classification gate.)
  *
  * Usage:
  *   node scripts/open-data/dry-run.mjs --osm london-family.geojson --version 2026-10-14 --out ./dry-run-out [--stored rows.json] [--seed 7]
