@@ -179,6 +179,28 @@ console.log('6b Meet halfway with another family, from the registry alone');
   await ctx2.close();
 }
 
+// ---------------------------------------------------------------- 6c A place saved before the release (its old Google id no longer resolves)
+console.log('6c A saved place whose venue has a new listing');
+{
+  const saved = { id: 'saved-fp-google-ChIJold', type: 'place', group: 'favourite', savedAt: '2026-10-01T10:00:00.000Z', venue: { id: 'fp-google-ChIJold', name: "Regent's Park", category: 'park', latitude: 51.5313, longitude: -0.1570, driveMinutes: 5, imageUrl: '', provider: 'google', familyScore: { score: 70, factors: {}, explanation: [] } } };
+  const ctx3 = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 2, hasTouch: true, timezoneId: 'Europe/London' });
+  const p3 = await ctx3.newPage();
+  const seen3 = { google: [], errors: [] };
+  p3.on('request', (r) => { if (/googleapis|maps\.google|gstatic\.com\/maps/i.test(r.url())) seen3.google.push(r.url()); });
+  p3.on('pageerror', (e) => seen3.errors.push(e.message));
+  await p3.addInitScript(({ pl, f, sv }) => { if (localStorage.getItem('seeded')) return; localStorage.setItem('seeded', '1'); localStorage.setItem('familypilot-family-v1', f); localStorage.setItem('familypilot-planning-v1', pl); localStorage.setItem('familypilot-saved-v2', sv); }, { pl: JSON.stringify(PLANNING), f: JSON.stringify({ state: { profile: PROFILE, hasCompletedOnboarding: true, hasSeenSplash: true, profileRevision: 2 }, version: 0 }), sv: JSON.stringify({ state: { savedIds: [saved.venue.id], items: [saved] }, version: 0 }) });
+  await p3.goto(`${BASE}/saved`, { waitUntil: 'networkidle' }); await p3.waitForTimeout(1800);
+  const savedText = (await p3.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ');
+  check(/Regent.?s Park/.test(savedText), 'the saved row still draws, from the copy kept on the device', savedText.slice(0, 100));
+  await shot(p3, '12-saved-row');
+  await p3.getByText(/Regent.?s Park/).first().click(); await p3.waitForTimeout(2500);
+  const opened = (await p3.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ');
+  check(/Could not load this place|Place not found/i.test(opened) && !seen3.errors.length, 'opening it today ends in "Could not load this place" with a Retry that cannot work, and no crash (the gap the reconnect offer closes)', opened.slice(0, 120));
+  await shot(p3, '13-saved-opens-not-found');
+  check(seen3.google.length === 0, 'no Google request', String(seen3.google.length));
+  await ctx3.close();
+}
+
 // ---------------------------------------------------------------- 7 About: the licences
 console.log('7  About: place data and licences');
 await page.goto(`${BASE}/about`, { waitUntil: 'domcontentloaded' }); await settle(page, 800);
