@@ -26,3 +26,5 @@ jobs:
         run: npm install --no-save --prefix prod-verify playwright@1.55.0
       - name: Visit production, read only
         run: SKIP_BROWSER=1 node prod-verify/verify.mjs
+      - name: Are the previews public?
+        run: node prod-verify/previews.mjs
