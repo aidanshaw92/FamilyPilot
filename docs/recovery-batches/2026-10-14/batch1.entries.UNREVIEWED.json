@@ -1,0 +1,2314 @@
+[
+ {
+  "familypilotId": "fp-osm-way-95809105",
+  "name": "Chiltern Open Air Museum",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/95809105",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/95809105"
+  },
+  "location": {
+   "latitude": 51.635511,
+   "longitude": -0.543727,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-node-2647639741",
+  "name": "The Courtauld Gallery",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/node/2647639741",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "node/2647639741"
+  },
+  "location": {
+   "latitude": 51.511624,
+   "longitude": -0.1177,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://courtauld.ac.uk/gallery/"
+ },
+ {
+  "familypilotId": "fp-osm-node-3357928873",
+  "name": "Paradox Museum",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/node/3357928873",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "node/3357928873"
+  },
+  "location": {
+   "latitude": 51.499675,
+   "longitude": -0.163914,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://paradoxmuseum.com/london/"
+ },
+ {
+  "familypilotId": "fp-osm-node-3916613190",
+  "name": "Sherlock Holmes Museum",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/node/3916613190",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "node/3916613190"
+  },
+  "location": {
+   "latitude": 51.523763,
+   "longitude": -0.158474,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.sherlock-holmes.co.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-node-4685111791",
+  "name": "St. Katharine Docks",
+  "category": "attraction",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/node/4685111791",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "node/4685111791"
+  },
+  "location": {
+   "latitude": 51.506541,
+   "longitude": -0.07165,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.skdocks.co.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-node-4973585223",
+  "name": "The Postal Museum",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/node/4973585223",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "node/4973585223"
+  },
+  "location": {
+   "latitude": 51.524724,
+   "longitude": -0.113998,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.postalmuseum.org/"
+ },
+ {
+  "familypilotId": "fp-osm-node-9777763616",
+  "name": "SEA LIFE Aquarium London",
+  "category": "attraction",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/node/9777763616",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "node/9777763616"
+  },
+  "location": {
+   "latitude": 51.501626,
+   "longitude": -0.119466,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.visitsealife.com/london"
+ },
+ {
+  "familypilotId": "fp-osm-node-10554955616",
+  "name": "Frameless",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/node/10554955616",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "node/10554955616"
+  },
+  "location": {
+   "latitude": 51.513526,
+   "longitude": -0.160148,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://frameless.com/"
+ },
+ {
+  "familypilotId": "fp-osm-node-12278757767",
+  "name": "V&A East Storehouse",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/node/12278757767",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "node/12278757767"
+  },
+  "location": {
+   "latitude": 51.546437,
+   "longitude": -0.021183,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.vam.ac.uk/east"
+ },
+ {
+  "familypilotId": "fp-osm-node-13256051041",
+  "name": "Moco Museum",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/node/13256051041",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "node/13256051041"
+  },
+  "location": {
+   "latitude": 51.5135,
+   "longitude": -0.159238,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://london.mocomuseum.com/"
+ },
+ {
+  "familypilotId": "fp-osm-way-3241371",
+  "name": "Russell Square",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/3241371",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/3241371"
+  },
+  "location": {
+   "latitude": 51.521697,
+   "longitude": -0.126068,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-3872808",
+  "name": "Broomfield Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/3872808",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/3872808"
+  },
+  "location": {
+   "latitude": 51.618552,
+   "longitude": -0.118039,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-3986346",
+  "name": "Kensington Gardens",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/3986346",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/3986346"
+  },
+  "location": {
+   "latitude": 51.506674,
+   "longitude": -0.180079,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.royalparks.org.uk/visit/parks/kensington-gardens"
+ },
+ {
+  "familypilotId": "fp-osm-way-4082666",
+  "name": "Primrose Hill",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/4082666",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/4082666"
+  },
+  "location": {
+   "latitude": 51.53894,
+   "longitude": -0.161067,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-4242930",
+  "name": "Roundwood Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/4242930",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/4242930"
+  },
+  "location": {
+   "latitude": 51.541423,
+   "longitude": -0.240433,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-4251186",
+  "name": "Walpole Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/4251186",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/4251186"
+  },
+  "location": {
+   "latitude": 51.509313,
+   "longitude": -0.309915,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-4372002",
+  "name": "National Gallery",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/4372002",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/4372002"
+  },
+  "location": {
+   "latitude": 51.508933,
+   "longitude": -0.128833,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.nationalgallery.org.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-way-4406359",
+  "name": "London Fields",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/4406359",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/4406359"
+  },
+  "location": {
+   "latitude": 51.540765,
+   "longitude": -0.060353,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-4419221",
+  "name": "Golders Hill Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/4419221",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/4419221"
+  },
+  "location": {
+   "latitude": 51.567239,
+   "longitude": -0.188783,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-4481793",
+  "name": "Clissold Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/4481793",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/4481793"
+  },
+  "location": {
+   "latitude": 51.561364,
+   "longitude": -0.088433,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://hackney.gov.uk/clissold-park"
+ },
+ {
+  "familypilotId": "fp-osm-way-4483968",
+  "name": "Greenwich Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/4483968",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/4483968"
+  },
+  "location": {
+   "latitude": 51.477214,
+   "longitude": 0.000949,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.royalparks.org.uk/parks/greenwich-park/"
+ },
+ {
+  "familypilotId": "fp-osm-way-4898913",
+  "name": "Streatham Common",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/4898913",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/4898913"
+  },
+  "location": {
+   "latitude": 51.422103,
+   "longitude": -0.121417,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://beta.lambeth.gov.uk/parks/streatham-common"
+ },
+ {
+  "familypilotId": "fp-osm-way-4899546",
+  "name": "Mayow Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/4899546",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/4899546"
+  },
+  "location": {
+   "latitude": 51.429844,
+   "longitude": -0.048899,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-4946747",
+  "name": "Dulwich Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/4946747",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/4946747"
+  },
+  "location": {
+   "latitude": 51.445713,
+   "longitude": -0.078801,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.southwark.gov.uk/culture-and-sport/parks-and-open-spaces/find-park/dulwich-park"
+ },
+ {
+  "familypilotId": "fp-osm-way-5095245",
+  "name": "Horniman Museum and Gardens",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/5095245",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/5095245"
+  },
+  "location": {
+   "latitude": 51.44192,
+   "longitude": -0.061855,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-5317958",
+  "name": "Saatchi Gallery",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/5317958",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/5317958"
+  },
+  "location": {
+   "latitude": 51.490674,
+   "longitude": -0.158743,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-6134883",
+  "name": "Northwick Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/6134883",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/6134883"
+  },
+  "location": {
+   "latitude": 51.573833,
+   "longitude": -0.314341,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-8038030",
+  "name": "Alexandra Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/8038030",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/8038030"
+  },
+  "location": {
+   "latitude": 51.593722,
+   "longitude": -0.127982,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-8137262",
+  "name": "Holland Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/8137262",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/8137262"
+  },
+  "location": {
+   "latitude": 51.502796,
+   "longitude": -0.203498,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.rbkc.gov.uk/parks-leisure-and-culture/parks/holland-park"
+ },
+ {
+  "familypilotId": "fp-osm-way-8614496",
+  "name": "Imperial War Museum London",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/8614496",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/8614496"
+  },
+  "location": {
+   "latitude": 51.49582,
+   "longitude": -0.108594,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.iwm.org.uk/visits/iwm-london"
+ },
+ {
+  "familypilotId": "fp-osm-way-10790633",
+  "name": "Young V&A",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/10790633",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/10790633"
+  },
+  "location": {
+   "latitude": 51.529051,
+   "longitude": -0.05487,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.vam.ac.uk/young"
+ },
+ {
+  "familypilotId": "fp-osm-way-11019215",
+  "name": "Waterlow Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/11019215",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/11019215"
+  },
+  "location": {
+   "latitude": 51.568374,
+   "longitude": -0.144784,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-19796961",
+  "name": "Ashburton Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/19796961",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/19796961"
+  },
+  "location": {
+   "latitude": 51.385423,
+   "longitude": -0.065527,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.croydon.gov.uk/leisure/parksandopenspaces/parksatoz/ashburton-park"
+ },
+ {
+  "familypilotId": "fp-osm-way-22703168",
+  "name": "Gunnersbury Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/22703168",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/22703168"
+  },
+  "location": {
+   "latitude": 51.49725,
+   "longitude": -0.290857,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-23458099",
+  "name": "Boston Manor",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/23458099",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/23458099"
+  },
+  "location": {
+   "latitude": 51.491942,
+   "longitude": -0.318485,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-23900327",
+  "name": "Sydenham Hill Wood",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/23900327",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/23900327"
+  },
+  "location": {
+   "latitude": 51.436576,
+   "longitude": -0.066964,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.wildlondon.org.uk/reserves/sydenham-hill-wood-and-coxs-walk"
+ },
+ {
+  "familypilotId": "fp-osm-way-24228419",
+  "name": "Mudchute Park & Farm",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/24228419",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/24228419"
+  },
+  "location": {
+   "latitude": 51.491947,
+   "longitude": -0.011641,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-24420948",
+  "name": "Victoria Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/24420948",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/24420948"
+  },
+  "location": {
+   "latitude": 51.60322,
+   "longitude": -0.183822,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-relation-29795",
+  "name": "Victoria and Albert Museum",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/29795",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/29795"
+  },
+  "location": {
+   "latitude": 51.496924,
+   "longitude": -0.172212,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.vam.ac.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-way-24436446",
+  "name": "Natural History Museum",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/24436446",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/24436446"
+  },
+  "location": {
+   "latitude": 51.496485,
+   "longitude": -0.176209,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.nhm.ac.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-way-24553580",
+  "name": "Tate Britain",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/24553580",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/24553580"
+  },
+  "location": {
+   "latitude": 51.491148,
+   "longitude": -0.127657,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.tate.org.uk/visit/tate-britain"
+ },
+ {
+  "familypilotId": "fp-osm-way-24642569",
+  "name": "Tate Modern",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/24642569",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/24642569"
+  },
+  "location": {
+   "latitude": 51.507545,
+   "longitude": -0.099513,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.tate.org.uk/visit/tate-modern"
+ },
+ {
+  "familypilotId": "fp-osm-way-25035359",
+  "name": "Northala Fields",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/25035359",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/25035359"
+  },
+  "location": {
+   "latitude": 51.539755,
+   "longitude": -0.374986,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.ealing.gov.uk/info/201136/parks_in_the_borough/663/greenford_parks/2"
+ },
+ {
+  "familypilotId": "fp-osm-way-25608663",
+  "name": "Cutty Sark",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/25608663",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/25608663"
+  },
+  "location": {
+   "latitude": 51.482845,
+   "longitude": -0.009575,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.rmg.co.uk/cuttysark"
+ },
+ {
+  "familypilotId": "fp-osm-way-27619781",
+  "name": "King Edward VII Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/27619781",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/27619781"
+  },
+  "location": {
+   "latitude": 51.557124,
+   "longitude": -0.29538,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.brent.gov.uk/parks-leisure-and-healthy-living/parks-and-open-spaces/park-finder/king-edward-vii-park-wembley"
+ },
+ {
+  "familypilotId": "fp-osm-way-27765411",
+  "name": "Science Museum",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/27765411",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/27765411"
+  },
+  "location": {
+   "latitude": 51.497293,
+   "longitude": -0.176084,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.sciencemuseum.org.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-way-29127976",
+  "name": "Golders Hill Park Zoo",
+  "category": "zoo",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/29127976",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/29127976"
+  },
+  "location": {
+   "latitude": 51.567056,
+   "longitude": -0.1898,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-29235476",
+  "name": "Kentish Town City Farm",
+  "category": "farm",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/29235476",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/29235476"
+  },
+  "location": {
+   "latitude": 51.552499,
+   "longitude": -0.149906,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://ktcityfarm.org.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-way-30170658",
+  "name": "Crystal Palace Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/30170658",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/30170658"
+  },
+  "location": {
+   "latitude": 51.421119,
+   "longitude": -0.069319,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.crystalpalaceparktrust.org/"
+ },
+ {
+  "familypilotId": "fp-osm-way-30906720",
+  "name": "Rowans Tenpin Bowl",
+  "category": "activity",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/30906720",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/30906720"
+  },
+  "location": {
+   "latitude": 51.565328,
+   "longitude": -0.1052,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-31510288",
+  "name": "Royal Academy of Arts",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/31510288",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/31510288"
+  },
+  "location": {
+   "latitude": 51.509243,
+   "longitude": -0.139686,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.royalacademy.org.uk"
+ },
+ {
+  "familypilotId": "fp-osm-way-38863276",
+  "name": "Danson Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/38863276",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/38863276"
+  },
+  "location": {
+   "latitude": 51.45507,
+   "longitude": 0.117268,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-relation-231792",
+  "name": "London Zoo",
+  "category": "zoo",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/231792",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/231792"
+  },
+  "location": {
+   "latitude": 51.534822,
+   "longitude": -0.154059,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-49676331",
+  "name": "Stonebridge Recreation Ground",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/49676331",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/49676331"
+  },
+  "location": {
+   "latitude": 51.541299,
+   "longitude": -0.266569,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-51260440",
+  "name": "Richmond Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/51260440",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/51260440"
+  },
+  "location": {
+   "latitude": 51.441856,
+   "longitude": -0.276588,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-59161723",
+  "name": "National Portrait Gallery",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/59161723",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/59161723"
+  },
+  "location": {
+   "latitude": 51.509396,
+   "longitude": -0.128173,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.npg.org.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-way-79338949",
+  "name": "Hackney City Farm",
+  "category": "farm",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/79338949",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/79338949"
+  },
+  "location": {
+   "latitude": 51.531844,
+   "longitude": -0.066835,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://hackneycityfarm.co.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-way-83488820",
+  "name": "The Wallace Collection",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/83488820",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/83488820"
+  },
+  "location": {
+   "latitude": 51.517511,
+   "longitude": -0.153041,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-103107384",
+  "name": "Freud Museum London",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/103107384",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/103107384"
+  },
+  "location": {
+   "latitude": 51.548311,
+   "longitude": -0.177393,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://freud.org.uk"
+ },
+ {
+  "familypilotId": "fp-osm-way-121750021",
+  "name": "Wimbledon Lawn Tennis Museum",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/121750021",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/121750021"
+  },
+  "location": {
+   "latitude": 51.434741,
+   "longitude": -0.213447,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.wimbledon.com/en_GB/museum_and_tours/index.html"
+ },
+ {
+  "familypilotId": "fp-osm-way-132534502",
+  "name": "Alexandra Palace Ice Rink",
+  "category": "activity",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/132534502",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/132534502"
+  },
+  "location": {
+   "latitude": 51.594629,
+   "longitude": -0.130219,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-140144139",
+  "name": "London Museum Docklands",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/140144139",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/140144139"
+  },
+  "location": {
+   "latitude": 51.507605,
+   "longitude": -0.023859,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.londonmuseum.org.uk/docklands/"
+ },
+ {
+  "familypilotId": "fp-osm-way-140855321",
+  "name": "Hillside Gardens Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/140855321",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/140855321"
+  },
+  "location": {
+   "latitude": 51.437655,
+   "longitude": -0.115438,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.lambeth.gov.uk/parks/hillside-gardens-park"
+ },
+ {
+  "familypilotId": "fp-osm-way-156510046",
+  "name": "Paddington Recreation Ground",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/156510046",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/156510046"
+  },
+  "location": {
+   "latitude": 51.530384,
+   "longitude": -0.190902,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-158748808",
+  "name": "Bushy Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/158748808",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/158748808"
+  },
+  "location": {
+   "latitude": 51.415396,
+   "longitude": -0.338759,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-181770911",
+  "name": "William Morris Gallery",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/181770911",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/181770911"
+  },
+  "location": {
+   "latitude": 51.591292,
+   "longitude": -0.020282,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.wmgallery.org.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-way-183090506",
+  "name": "National Maritime Museum",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/183090506",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/183090506"
+  },
+  "location": {
+   "latitude": 51.480775,
+   "longitude": -0.005414,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.rmg.co.uk/national-maritime-museum"
+ },
+ {
+  "familypilotId": "fp-osm-way-197206542",
+  "name": "Churchill War Rooms",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/197206542",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/197206542"
+  },
+  "location": {
+   "latitude": 51.502208,
+   "longitude": -0.12925,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.iwm.org.uk/visits/churchill-war-rooms"
+ },
+ {
+  "familypilotId": "fp-osm-way-204068874",
+  "name": "London Eye",
+  "category": "attraction",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/204068874",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/204068874"
+  },
+  "location": {
+   "latitude": 51.503342,
+   "longitude": -0.119676,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.londoneye.com/"
+ },
+ {
+  "familypilotId": "fp-osm-way-218344453",
+  "name": "Platform 9¾",
+  "category": "attraction",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/218344453",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/218344453"
+  },
+  "location": {
+   "latitude": 51.532187,
+   "longitude": -0.123921,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-221351281",
+  "name": "Hanwell Zoo",
+  "category": "zoo",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/221351281",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/221351281"
+  },
+  "location": {
+   "latitude": 51.512305,
+   "longitude": -0.347783,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://hanwellzoo.co.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-way-232067458",
+  "name": "South Norwood Country Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/232067458",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/232067458"
+  },
+  "location": {
+   "latitude": 51.396894,
+   "longitude": -0.056948,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-264131965",
+  "name": "Whitechapel Gallery",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/264131965",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/264131965"
+  },
+  "location": {
+   "latitude": 51.516176,
+   "longitude": -0.070323,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.whitechapelgallery.org/"
+ },
+ {
+  "familypilotId": "fp-osm-relation-2200771",
+  "name": "Queen Elizabeth Olympic Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/2200771",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/2200771"
+  },
+  "location": {
+   "latitude": 51.544261,
+   "longitude": -0.015513,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.queenelizabetholympicpark.co.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-way-372975520",
+  "name": "Hyde Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/372975520",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/372975520"
+  },
+  "location": {
+   "latitude": 51.506855,
+   "longitude": -0.163681,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-374960368",
+  "name": "St. James's Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/374960368",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/374960368"
+  },
+  "location": {
+   "latitude": 51.502726,
+   "longitude": -0.133716,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-402345096",
+  "name": "Museum of Brands",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/402345096",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/402345096"
+  },
+  "location": {
+   "latitude": 51.516274,
+   "longitude": -0.211005,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://museumofbrands.com/"
+ },
+ {
+  "familypilotId": "fp-osm-relation-177044",
+  "name": "British Museum",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/177044",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/177044"
+  },
+  "location": {
+   "latitude": 51.519371,
+   "longitude": -0.127114,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.britishmuseum.org"
+ },
+ {
+  "familypilotId": "fp-osm-way-482276804",
+  "name": "Highgate Wood",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/482276804",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/482276804"
+  },
+  "location": {
+   "latitude": 51.58267,
+   "longitude": -0.149887,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-536499671",
+  "name": "Hackney Marshes",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/536499671",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/536499671"
+  },
+  "location": {
+   "latitude": 51.556453,
+   "longitude": -0.028884,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://hackney.gov.uk/hackney-marshes"
+ },
+ {
+  "familypilotId": "fp-osm-way-551693023",
+  "name": "Streatham Vale Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/551693023",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/551693023"
+  },
+  "location": {
+   "latitude": 51.413567,
+   "longitude": -0.145275,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://beta.lambeth.gov.uk/parks/streatham-vale-park"
+ },
+ {
+  "familypilotId": "fp-osm-way-556485860",
+  "name": "Southwark Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/556485860",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/556485860"
+  },
+  "location": {
+   "latitude": 51.494769,
+   "longitude": -0.054641,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.southwark.gov.uk/culture-and-sport/parks-and-open-spaces/find-park/southwark-park"
+ },
+ {
+  "familypilotId": "fp-osm-way-640554759",
+  "name": "Design Museum",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/640554759",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/640554759"
+  },
+  "location": {
+   "latitude": 51.499888,
+   "longitude": -0.200174,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://designmuseum.org/"
+ },
+ {
+  "familypilotId": "fp-osm-relation-8048808",
+  "name": "Royal Botanic Gardens, Kew",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/8048808",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/8048808"
+  },
+  "location": {
+   "latitude": 51.47749,
+   "longitude": -0.296923,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.kew.org/"
+ },
+ {
+  "familypilotId": "fp-osm-way-684695074",
+  "name": "Madame Tussauds",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/684695074",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/684695074"
+  },
+  "location": {
+   "latitude": 51.5229,
+   "longitude": -0.155015,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.madametussauds.com/london/en/plan-your-visit/which-entrance/"
+ },
+ {
+  "familypilotId": "fp-osm-way-706183718",
+  "name": "Museum of the Home",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/706183718",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/706183718"
+  },
+  "location": {
+   "latitude": 51.531574,
+   "longitude": -0.076395,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.museumofthehome.org.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-relation-11127855",
+  "name": "Victoria Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/11127855",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/11127855"
+  },
+  "location": {
+   "latitude": 51.538993,
+   "longitude": -0.035226,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.towerhamlets.gov.uk/victoriapark"
+ },
+ {
+  "familypilotId": "fp-osm-way-840130236",
+  "name": "Battersea Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/840130236",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/840130236"
+  },
+  "location": {
+   "latitude": 51.479203,
+   "longitude": -0.157173,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.wandsworth.gov.uk/batterseapark"
+ },
+ {
+  "familypilotId": "fp-osm-way-860400064",
+  "name": "Belair Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/860400064",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/860400064"
+  },
+  "location": {
+   "latitude": 51.443376,
+   "longitude": -0.090951,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-863554956",
+  "name": "The Green Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/863554956",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/863554956"
+  },
+  "location": {
+   "latitude": 51.503927,
+   "longitude": -0.1438,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.royalparks.org.uk/parks/green-park"
+ },
+ {
+  "familypilotId": "fp-osm-way-949698605",
+  "name": "Crossrail Place Roof Garden",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/949698605",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/949698605"
+  },
+  "location": {
+   "latitude": 51.506105,
+   "longitude": -0.017614,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-953818152",
+  "name": "The Rookery",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/953818152",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/953818152"
+  },
+  "location": {
+   "latitude": 51.421519,
+   "longitude": -0.118006,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://beta.lambeth.gov.uk/parks/rookery"
+ },
+ {
+  "familypilotId": "fp-osm-relation-1384127",
+  "name": "The Regent's Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/1384127",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/1384127"
+  },
+  "location": {
+   "latitude": 51.529753,
+   "longitude": -0.154208,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-1030729521",
+  "name": "Trent Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/1030729521",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/1030729521"
+  },
+  "location": {
+   "latitude": 51.65929,
+   "longitude": -0.139102,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-relation-1290065",
+  "name": "Clapham Common",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/1290065",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/1290065"
+  },
+  "location": {
+   "latitude": 51.458987,
+   "longitude": -0.149369,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://beta.lambeth.gov.uk/parks/clapham-common"
+ },
+ {
+  "familypilotId": "fp-osm-relation-3118071",
+  "name": "Brockwell Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/3118071",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/3118071"
+  },
+  "location": {
+   "latitude": 51.450206,
+   "longitude": -0.107105,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.lambeth.gov.uk/parks/brockwell-park"
+ },
+ {
+  "familypilotId": "fp-osm-relation-15327162",
+  "name": "Queen's House",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/15327162",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/15327162"
+  },
+  "location": {
+   "latitude": 51.481189,
+   "longitude": -0.003749,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.rmg.co.uk/queens-house"
+ },
+ {
+  "familypilotId": "fp-osm-relation-8199759",
+  "name": "Oak Hill Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/8199759",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/8199759"
+  },
+  "location": {
+   "latitude": 51.638375,
+   "longitude": -0.154675,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.barnet.gov.uk/directories/parks/oak-hill-park"
+ },
+ {
+  "familypilotId": "fp-osm-relation-18794121",
+  "name": "Highbury Fields",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/18794121",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/18794121"
+  },
+  "location": {
+   "latitude": 51.548747,
+   "longitude": -0.103131,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.islington.gov.uk/physical-activity-parks-and-trees/parks-and-green-space/your-local-parks/highbury-fields"
+ },
+ {
+  "familypilotId": "fp-osm-relation-18915597",
+  "name": "Fryent Country Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/18915597",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/18915597"
+  },
+  "location": {
+   "latitude": 51.57766,
+   "longitude": -0.27187,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-relation-18347320",
+  "name": "Burgess Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/18347320",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/18347320"
+  },
+  "location": {
+   "latitude": 51.483824,
+   "longitude": -0.080163,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.southwark.gov.uk/culture-and-sport/parks-and-open-spaces/find-park/burgess-park"
+ },
+ {
+  "familypilotId": "fp-osm-relation-21255243",
+  "name": "Hampstead Heath",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/21255243",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/21255243"
+  },
+  "location": {
+   "latitude": 51.564013,
+   "longitude": -0.164857,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.cityoflondon.gov.uk/things-to-do/green-spaces/hampstead-heath"
+ },
+ {
+  "familypilotId": "fp-osm-relation-21292421",
+  "name": "Gladstone Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/21292421",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/21292421"
+  },
+  "location": {
+   "latitude": 51.558163,
+   "longitude": -0.237883,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.brent.gov.uk/parks-leisure-and-healthy-living/parks-and-open-spaces/park-finder/gladstone-park"
+ },
+ {
+  "familypilotId": "fp-osm-way-16947013",
+  "name": "Hertfordshire Zoo",
+  "category": "zoo",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/16947013",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/16947013"
+  },
+  "location": {
+   "latitude": 51.744111,
+   "longitude": -0.062462,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.hertfordshirezoo.com/"
+ },
+ {
+  "familypilotId": "fp-osm-way-93450297",
+  "name": "De Havilland Aircraft Museum",
+  "category": "museum",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/93450297",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/93450297"
+  },
+  "location": {
+   "latitude": 51.71069,
+   "longitude": -0.271723,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://dehavillandmuseum.co.uk"
+ },
+ {
+  "familypilotId": "fp-osm-way-126777091",
+  "name": "Verulamium Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/126777091",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/126777091"
+  },
+  "location": {
+   "latitude": 51.749111,
+   "longitude": -0.353352,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-osm-way-966857889",
+  "name": "Willows Activity Farm",
+  "category": "attraction",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/966857889",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/966857889"
+  },
+  "location": {
+   "latitude": 51.723812,
+   "longitude": -0.282704,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.willowsactivityfarm.com/"
+ },
+ {
+  "familypilotId": "fp-osm-relation-14898112",
+  "name": "Warner Bros. Studio Tour London",
+  "category": "attraction",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/14898112",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/14898112"
+  },
+  "location": {
+   "latitude": 51.690939,
+   "longitude": -0.417777,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.wbstudiotour.co.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-relation-21460925",
+  "name": "Gadebridge Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/relation/21460925",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "relation/21460925"
+  },
+  "location": {
+   "latitude": 51.760583,
+   "longitude": -0.475256,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.dacorum.gov.uk/home%5Cleisure-culture/parks-play-and-open-spaces/gadebridge-park-hemel-hempstead"
+ },
+ {
+  "familypilotId": "fp-osm-way-23710672",
+  "name": "Swanley Park",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/23710672",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/23710672"
+  },
+  "location": {
+   "latitude": 51.404841,
+   "longitude": 0.173972,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.swanleypark.co.uk/"
+ },
+ {
+  "familypilotId": "fp-osm-way-32765688",
+  "name": "Thorpe Park",
+  "category": "attraction",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/32765688",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/32765688"
+  },
+  "location": {
+   "latitude": 51.403881,
+   "longitude": -0.514231,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14",
+  "website": "https://www.thorpepark.com/"
+ },
+ {
+  "familypilotId": "fp-osm-way-26791118",
+  "name": "Princess Diana Memorial Playground",
+  "category": "park",
+  "identity": {
+   "source": "osm",
+   "url": "https://www.openstreetmap.org/way/26791118",
+   "retrievedAt": "2026-10-14",
+   "licence": "ODbL-1.0",
+   "externalId": "way/26791118"
+  },
+  "location": {
+   "latitude": 51.509124,
+   "longitude": -0.188105,
+   "source": "osm",
+   "licence": "ODbL-1.0"
+  },
+  "reviewedBy": "UNREVIEWED (simulation only)",
+  "reviewedAt": "2026-10-14"
+ }
+]
