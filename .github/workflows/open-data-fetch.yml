@@ -1,0 +1,53 @@
+# One-off open-data probe and fetch. NOT scheduled, NOT dispatchable, NOT run on pull requests.
+#
+# It runs only when the throwaway branch `data/open-data-fetch` is pushed, on GitHub's own runners (free for this public repository),
+# because the cloud coding session's network policy refuses the open-data hosts and that policy is not to be worked around. This job has
+# no secrets, no database access and makes no Google request. See open-data/README.md.
+name: Open data fetch (one-off)
+
+on:
+  push:
+    branches: [data/open-data-fetch]
+    paths:
+      - .github/workflows/open-data-fetch.yml
+      - open-data/**
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Can this runner reach each approved host? (headers and tiny requests only; nothing large is downloaded)
+        run: |
+          UA="FamilyPilot-open-data-probe/1.0 (+https://github.com/aidanshaw92/FamilyPilot)"
+          show() { echo; echo "### $1"; }
+          head_of() { curl -sSI -L --max-time 40 -A "$UA" "$1" | grep -iE '^(HTTP/|content-length|content-type|last-modified|location|etag)' || echo "NO RESPONSE"; }
+
+          show "Geofabrik: Greater London extract (headers only)"
+          head_of "https://download.geofabrik.de/europe/great-britain/england/greater-london-latest.osm.pbf"
+          show "Geofabrik: its md5 (tiny)"
+          curl -sS --max-time 30 -A "$UA" "https://download.geofabrik.de/europe/great-britain/england/greater-london-latest.osm.pbf.md5" || echo "NO RESPONSE"
+
+          show "OS Data Hub: OpenData downloads API, OS Open Greenspace listing (JSON, no key)"
+          curl -sS --max-time 40 -A "$UA" -w '\nHTTP %{http_code}\n' "https://api.os.uk/downloads/v1/products/OpenGreenspace/downloads" | head -c 6000 || echo "NO RESPONSE"
+
+          show "Wikidata query service: a one-row query"
+          curl -sS --max-time 40 -A "$UA" -H 'Accept: application/sparql-results+json' -w '\nHTTP %{http_code}\n' \
+            --get --data-urlencode 'query=SELECT ?item WHERE { ?item wdt:P31 wd:Q33506 . ?item wdt:P131* wd:Q23306 } LIMIT 1' \
+            "https://query.wikidata.org/sparql" | head -c 1500 || echo "NO RESPONSE"
+
+          show "postcodes.io: one public landmark postcode"
+          curl -sS --max-time 30 -A "$UA" -w '\nHTTP %{http_code}\n' "https://api.postcodes.io/postcodes/SW1A1AA" | head -c 800 || echo "NO RESPONSE"
+
+          show "Licence texts (headers only)"
+          for url in \
+            "https://opendatacommons.org/licenses/odbl/1-0/" \
+            "https://www.openstreetmap.org/copyright" \
+            "https://wiki.osmfoundation.org/wiki/Licence/Community_Guidelines" \
+            "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" \
+            "https://www.ordnancesurvey.co.uk/products/os-open-greenspace" ; do
+            echo "-- $url"; head_of "$url" | head -3
+          done
