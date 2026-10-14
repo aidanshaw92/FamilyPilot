@@ -594,6 +594,16 @@ const EXPLORE_PLACES = process.env.FIXTURE_EXPLORE === '1'
     })
   : null;
 
+/**
+ * A CATALOGUE FROM A FILE (optional): `FIXTURE_PLACES_FILE=<json>` (an array of places, or { places: [...] }) is served as the whole stored catalogue, both
+ * by the London search (what the app loads today) and by `intent=catalogue` (a page at a time, through the REAL endpoint module). It exists so the
+ * performance measurement (scripts/measure-explore-mobile.mjs) can serve 160, 1,000 or 3,000 places and compare the two. Never committed data.
+ */
+const FILE_PLACES = process.env.FIXTURE_PLACES_FILE
+  ? (() => { const j = JSON.parse(readFileSync(process.env.FIXTURE_PLACES_FILE, 'utf8')); return Array.isArray(j) ? j : j.places; })()
+  : null;
+const catalogueEndpointModule = createRequire(import.meta.url)('../../server/places/lib/catalogue-endpoint.js');
+
 const SEARCH_PLACES =
   process.env.FIXTURE_SEARCH_INCLUDES_OSM === '1'
     ? [...PLACES, EDGE_BY_ID.get('fp-osm-FIXTUREedgeOsm')]
@@ -874,9 +884,17 @@ const server = createServer(async (req, res) => {
     });
   }
 
+  if (url.pathname === '/api/places/search' && url.searchParams.get('intent') === 'catalogue') {
+    const query = Object.fromEntries(url.searchParams.entries());
+    const out = { code: 200, headers: {}, body: null };
+    const fake = { setHeader: (k, v) => { out.headers[k] = v; }, status: (c) => { out.code = c; return fake; }, json: (b) => { out.body = b; return fake; } };
+    await catalogueEndpointModule.handleCatalogueRequest({ query }, fake, { readCatalogue: async () => FILE_PLACES ?? EXPLORE_PLACES ?? STORED_CATALOGUE });
+    return sendJson(res, out.code, out.body);
+  }
+
   if (url.pathname === '/api/places/search') {
     return sendJson(res, 200, {
-      places: EXPLORE_PLACES ?? SEARCH_PLACES,
+      places: FILE_PLACES ?? EXPLORE_PLACES ?? SEARCH_PLACES,
       provider: 'google',
       configuredProvider: 'google',
       intent: url.searchParams.get('intent') || 'explore',
