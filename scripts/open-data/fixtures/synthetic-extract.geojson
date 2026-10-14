@@ -1,0 +1,410 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "id": "w1001",
+   "properties": {
+    "leisure": "park",
+    "name": "Fixture Common",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -0.124,
+       51.546
+      ],
+      [
+       -0.11599999999999999,
+       51.546
+      ],
+      [
+       -0.11599999999999999,
+       51.553999999999995
+      ],
+      [
+       -0.124,
+       51.553999999999995
+      ],
+      [
+       -0.124,
+       51.546
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "w1002",
+   "properties": {
+    "leisure": "playground",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -0.1204,
+       51.5496
+      ],
+      [
+       -0.1196,
+       51.5496
+      ],
+      [
+       -0.1196,
+       51.550399999999996
+      ],
+      [
+       -0.1204,
+       51.550399999999996
+      ],
+      [
+       -0.1204,
+       51.5496
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "w1003",
+   "properties": {
+    "leisure": "park",
+    "name": "Fixture Green",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -0.20400000000000001,
+       51.596000000000004
+      ],
+      [
+       -0.196,
+       51.596000000000004
+      ],
+      [
+       -0.196,
+       51.604
+      ],
+      [
+       -0.20400000000000001,
+       51.604
+      ],
+      [
+       -0.20400000000000001,
+       51.596000000000004
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "n1004",
+   "properties": {
+    "leisure": "playground",
+    "name": "Fixture Swings",
+    "wheelchair": "yes",
+    "min_age": "2",
+    "max_age": "8",
+    "toilets": "no",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.05,
+     51.45
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "n1005",
+   "properties": {
+    "tourism": "zoo",
+    "zoo": "petting_zoo",
+    "name": "Fixture City Farm",
+    "website": "https://example.invalid/farm",
+    "phone": "+44 20 0000 0000",
+    "contact:email": "x@example.invalid",
+    "opening_hours": "Tu-Su 10:00-16:00",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.07,
+     51.52
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "n1006",
+   "properties": {
+    "tourism": "museum",
+    "name": "Fixture Museum of Things",
+    "wheelchair": "limited",
+    "changing_table": "yes",
+    "fee": "yes",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.13,
+     51.5
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "n1007",
+   "properties": {
+    "leisure": "trampoline_park",
+    "name": "Fixture Jump Park",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.38,
+     51.65
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "n1008",
+   "properties": {
+    "leisure": "playground",
+    "indoor": "yes",
+    "name": "Fixture Little Ones Play",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.3,
+     51.4
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "n1009",
+   "properties": {
+    "leisure": "playground",
+    "name": "Fixture Old Playground",
+    "disused:leisure": "playground",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.11,
+     51.47
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "n1010",
+   "properties": {
+    "leisure": "park",
+    "name": "Fixture Private Gardens",
+    "access": "private",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.15,
+     51.51
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "n1011",
+   "properties": {
+    "shop": "toys",
+    "name": "Fixture Soft Play Supplies",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.1,
+     51.52
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "n1012",
+   "properties": {
+    "leisure": "park",
+    "name": "Fixture Paris Park",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     2.35,
+     48.85
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "n1013",
+   "properties": {
+    "tourism": "museum",
+    "name": "Fixture Museum of Things",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.1303,
+     51.5003
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "n1014",
+   "properties": {
+    "tourism": "museum",
+    "name": "Fixture Maritime Museum",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.0077,
+     51.4826
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "n1015",
+   "properties": {
+    "leisure": "playground",
+    "name": "",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.25,
+     51.58
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "w1016",
+   "properties": {
+    "leisure": "park",
+    "name": "Fixture Donut Park",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -0.304,
+       51.526
+      ],
+      [
+       -0.296,
+       51.526
+      ],
+      [
+       -0.296,
+       51.534
+      ],
+      [
+       -0.304,
+       51.534
+      ],
+      [
+       -0.304,
+       51.526
+      ]
+     ],
+     [
+      [
+       -0.3015,
+       51.5285
+      ],
+      [
+       -0.2985,
+       51.5285
+      ],
+      [
+       -0.2985,
+       51.5315
+      ],
+      [
+       -0.3015,
+       51.5315
+      ],
+      [
+       -0.3015,
+       51.5285
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "n1017",
+   "properties": {
+    "leisure": "playground",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.3,
+     51.53
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "n1018",
+   "properties": {
+    "tourism": "aquarium",
+    "name": "Fixture Aquarium",
+    "min_age": "",
+    "wheelchair": "unknown",
+    "@version": 3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -0.01,
+     51.55
+    ]
+   }
+  }
+ ]
+}

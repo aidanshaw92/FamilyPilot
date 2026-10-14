@@ -1,0 +1,16 @@
+[
+ {
+  "id": "fp-google-FIXTURE1",
+  "name": "Fixture Maritime Museum Greenwich",
+  "category": "museum",
+  "lat": 51.4827,
+  "lng": -0.0078
+ },
+ {
+  "id": "fp-google-FIXTURE2",
+  "name": "Somewhere Else Entirely",
+  "category": "park",
+  "lat": 51.9,
+  "lng": -0.5
+ }
+]
