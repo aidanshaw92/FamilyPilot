@@ -348,9 +348,15 @@ module.exports = async function handler(req, res) {
   // The CDN is the second line of defence after the Postgres cache: it answers repeat loads without
   // invoking this function at all. Bounded by the same window the store uses, so the two cannot
   // disagree about how old the data may be.
+  //
+  // Not for a response that carries Google's content. The Maps terms allow only the place ID (and a coordinate for 30 days) to be kept, and a CDN copy for hours is
+  // a copy (docs/GOOGLE_RETENTION_AUDIT.md, step 5). A response made only of independently held venues owes nobody that, so it is cached as before.
+  const holdsGoogleContent = places.some((place) => place && place.provider === 'google');
   res.setHeader(
     'Cache-Control',
-    `public, max-age=60, s-maxage=${Math.round(ttlHours() * 3600)}, stale-while-revalidate=600`,
+    holdsGoogleContent
+      ? 'no-store'
+      : `public, max-age=60, s-maxage=${Math.round(ttlHours() * 3600)}, stale-while-revalidate=600`,
   );
   timing.finish(res, { cacheState, places: places.length });
 

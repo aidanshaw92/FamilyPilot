@@ -20,6 +20,13 @@ interface StoredEntry<T> {
   staleUntil?: number;
 }
 
+/**
+ * Google's content (names, addresses, hours, photographs) may not be kept: the Maps terms allow a place ID, and a coordinate for 30 days, and nothing else
+ * (docs/GOOGLE_RETENTION_AUDIT.md). So a result that holds any of it is kept in memory for the session and never written to the device's storage, and an
+ * older copy already on the device is removed when a fresh result replaces it. Venues held independently of Google carry no such restriction and persist as before.
+ */
+const holdsGoogleContent = (places: ReadonlyArray<{ provider?: string }> | undefined): boolean => Boolean(places?.some((place) => place?.provider === 'google'));
+
 const memorySearch = new Map<string, StoredEntry<PlacesSearchResult>>();
 /** The last search kept past its fresh window, for stale-while-revalidate. Separate so `memoryGet` stays strictly fresh. */
 const memoryStaleSearch = new Map<string, StoredEntry<PlacesSearchResult>>();
@@ -69,6 +76,14 @@ async function diskSet<T>(key: string, value: T, ttl: number, staleMs?: number):
   }
 }
 
+async function diskRemove(key: string): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(CACHE_PREFIX + key);
+  } catch {
+    // Ignore cache removal failures
+  }
+}
+
 /** A search still inside its fresh window: the network is skipped. */
 export async function getCachedSearch(key: string): Promise<PlacesSearchResult | null> {
   return memoryGet(memorySearch, key) ?? (await diskGet<PlacesSearchResult>(`search:${key}`));
@@ -90,6 +105,10 @@ export async function getShowableSearch(key: string): Promise<PlacesSearchResult
 export async function setCachedSearch(key: string, value: PlacesSearchResult): Promise<void> {
   memorySet(memorySearch, key, value, SEARCH_TTL_MS);
   memoryStaleSearch.set(key, { value, expiresAt: Date.now() + SEARCH_TTL_MS, staleUntil: Date.now() + SEARCH_STALE_MS });
+  if (holdsGoogleContent(value.places)) {
+    await diskRemove(`search:${key}`);
+    return;
+  }
   await diskSet(`search:${key}`, value, SEARCH_TTL_MS, SEARCH_STALE_MS);
 }
 
@@ -99,6 +118,10 @@ export async function getCachedDetail(id: string): Promise<PlaceDetailResult | n
 
 export async function setCachedDetail(id: string, value: PlaceDetailResult): Promise<void> {
   memorySet(memoryDetail, id, value, DETAIL_TTL_MS);
+  if (holdsGoogleContent(value.place ? [value.place] : [])) {
+    await diskRemove(`detail:${id}`);
+    return;
+  }
   await diskSet(`detail:${id}`, value, DETAIL_TTL_MS);
 }
 

@@ -226,7 +226,9 @@ module.exports = async function handler(req, res) {
   // A venue page that is reloaded, or opened by several family members at once, must not re-invoke
   // this function. The body carries enrichment metadata that does change, so the browser is told to
   // revalidate while the CDN absorbs the repeats.
-  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
+  // Not for Google's content: only the place ID and a 30-day coordinate may be kept (docs/GOOGLE_RETENTION_AUDIT.md, step 5), and a CDN copy is a copy.
+  const holdsGoogleContent = provider === 'google' || (detail.place && detail.place.provider === 'google');
+  res.setHeader('Cache-Control', holdsGoogleContent ? 'no-store' : 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
 
   return res.status(200).json({
     ...detail,

@@ -49,10 +49,11 @@ const PROFILE: FamilyProfile = {
   members: [{ id: 'c1', name: 'Ozzie', role: 'child', dateOfBirth: '2025-03-01', age: 1 }],
 };
 
-const place = (id: string, name: string): ExternalPlaceRecord => ({
+const place = (id: string, name: string, provider: ExternalPlaceRecord['provider'] = 'osm'): ExternalPlaceRecord => ({
   familypilotId: id,
   externalId: id,
-  provider: 'google',
+  // An independently held venue by default: the device keeps those. Google's content is kept in memory only (see the retention tests below).
+  provider,
   name,
   latitude: 51.6,
   longitude: -0.3,
