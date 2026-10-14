@@ -17,7 +17,7 @@
  * see normaliseFeatures. The extra ways and nodes the default keeps are untagged members and are rejected at the classification gate.)
  *
  * Usage:
- *   node scripts/open-data/dry-run.mjs --osm london-family.geojson --version 2026-10-14 --out ./dry-run-out [--stored rows.json] [--seed 7]
+ *   node scripts/open-data/dry-run.mjs --osm london-family.geojson --version 2026-10-14 --out ./dry-run-out [--stored rows.json] [--seed 7] [--scope-km 40]
  *
  * `--stored` is the JSON exported by the SQL in scripts/replay-discovery-rules.mjs, plus lat and lng. It is Google content: used only
  * to find duplicates, in memory, and never written to the output.
@@ -92,6 +92,9 @@ export function normaliseFeatures(input) {
   throw new Error('Unrecognised input: expected GeoJSON FeatureCollection or Overpass JSON with elements');
 }
 
+/** The app's London scope (server/places/lib/catalogue.js): the reader serves nothing further than this from central London. */
+export const LONDON_CENTRE = { lat: 51.5074, lng: -0.1278 };
+export const DEFAULT_SCOPE_KM = 40;
 const insideLondon = (p) => p.lat >= LONDON_BOX.latMin && p.lat <= LONDON_BOX.latMax && p.lng >= LONDON_BOX.lngMin && p.lng <= LONDON_BOX.lngMax;
 const polygonal = (g) => g && (g.type === 'Polygon' || g.type === 'MultiPolygon');
 
@@ -118,7 +121,7 @@ export function bestStored(row, stored) {
 /**
  * @param {{ features: ReturnType<typeof normaliseFeatures>, stored?: Array<{id:string,name:string,category:string,lat:number,lng:number}>, version: string, seed?: number }} args
  */
-export function runDryRun({ features, stored = [], version, seed = 7 }) {
+export function runDryRun({ features, stored = [], version, seed = 7, scopeKm = DEFAULT_SCOPE_KM }) {
   const rejected = [];
   const accepted = [];
   const unnamedPlaygrounds = [];
@@ -133,6 +136,7 @@ export function runDryRun({ features, stored = [], version, seed = 7 }) {
     }
     if (!point) { rejected.push({ sourceId: f.sourceId, name: f.tags.name, gate: 'location', reason: 'no usable coordinate' }); continue; }
     if (!insideLondon(point)) { rejected.push({ sourceId: f.sourceId, name: f.tags.name, gate: 'location', reason: 'outside the London box' }); continue; }
+    if (Number.isFinite(scopeKm) && haversineKm(LONDON_CENTRE.lat, LONDON_CENTRE.lng, point.lat, point.lng) > scopeKm) { rejected.push({ sourceId: f.sourceId, name: f.tags.name, gate: 'location', reason: `outside the app's ${scopeKm} km London scope` }); continue; }
     accepted.push({ f, decision, point });
   }
 
@@ -253,10 +257,10 @@ async function main() {
   const args = process.argv.slice(2);
   const opt = (n) => (args.includes(n) ? args[args.indexOf(n) + 1] : undefined);
   const osm = opt('--osm'); const out = opt('--out'); const version = opt('--version');
-  if (!osm || !out || !version) { console.error('Usage: node scripts/open-data/dry-run.mjs --osm file.geojson --version YYYY-MM-DD --out dir [--stored rows.json] [--seed n]'); process.exit(2); }
+  if (!osm || !out || !version) { console.error('Usage: node scripts/open-data/dry-run.mjs --osm file.geojson --version YYYY-MM-DD --out dir [--stored rows.json] [--seed n] [--scope-km 40]'); process.exit(2); }
   const features = normaliseFeatures(JSON.parse(readFileSync(osm, 'utf8')));
   const stored = opt('--stored') ? JSON.parse(readFileSync(opt('--stored'), 'utf8')).map((r) => ({ ...r, lat: Number(r.lat), lng: Number(r.lng) })) : [];
-  const result = runDryRun({ features, stored, version, seed: Number(opt('--seed') ?? 7) });
+  const result = runDryRun({ features, stored, version, seed: Number(opt('--seed') ?? 7), scopeKm: Number(opt('--scope-km') ?? DEFAULT_SCOPE_KM) });
   mkdirSync(out, { recursive: true });
   const clean = ({ _facts, _signals, _areaHa, _polygon, _hasPolygon, _playgroundInside, _linked, ...row }) => row;
   writeFileSync(join(out, 'candidates.jsonl'), result.candidates.map((c) => JSON.stringify(clean(c))).join('\n') + '\n');

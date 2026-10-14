@@ -401,6 +401,17 @@ describe('calibration from the first real extract', () => {
     expect(why(r, 'Private Garden').reason).toMatch(/mapped gardens are private/);
   });
 
+  it('a place beyond the app\'s 40 km London scope is a location rejection, not a candidate', () => {
+    const near = point('n1', { name: 'Near Museum', tourism: 'museum' }, 51.51, -0.12);
+    const far = point('n2', { name: 'Reading Museum Fixture', tourism: 'museum' }, 51.455, -0.97);
+    const r = run([near, far]);
+    expect(names(r)).toEqual(['Near Museum']);
+    expect(why(r, 'Reading Museum Fixture')).toMatchObject({ gate: 'location' });
+    expect(why(r, 'Reading Museum Fixture').reason).toMatch(/40 km/);
+    const wide = runDryRun({ features: normaliseFeatures({ type: 'FeatureCollection', features: [near, far] }), stored: [], version: '2026-10-14', scopeKm: Infinity });
+    expect(names(wide)).toEqual(['Near Museum', 'Reading Museum Fixture']);
+  });
+
   it('a place we already hold is not judged by the gate: it has proved it is a destination', () => {
     const stored = [{ id: 'fp-google-F', name: 'Frameless', category: 'attraction', lat: 51.5001, lng: -0.1001 }];
     const r = run([point('n1', { name: 'Frameless', tourism: 'gallery' }, 51.5, -0.1)], stored);
