@@ -1,0 +1,74 @@
+{
+ "explicit": [
+  {
+   "id": 1560271,
+   "name": "Wacky Kingdom Kingston",
+   "postcode": "KT1 1TP",
+   "urls": [
+    "https://www.wackykingdom.com/",
+    "https://www.wackykingdom.com/contact"
+   ],
+   "follow": "contact|find|kingston|visit|baby|toddler|faq"
+  },
+  {
+   "id": 1711686,
+   "name": "Flip Out Canary Wharf",
+   "postcode": "E14 4QT",
+   "urls": [
+    "https://www.flipout.co.uk/locations/canary-wharf/faqs",
+    "https://www.flipout.co.uk/locations/canary-wharf/find-us"
+   ],
+   "follow": "contact|find|visit|getting|how-to|toddler|faq"
+  },
+  {
+   "id": 1764457,
+   "name": "Flip Out Croydon",
+   "postcode": "CR0 1TY",
+   "urls": [
+    "https://www.flipout.co.uk/locations/croydon",
+    "https://www.flipout.co.uk/locations/croydon/soft-play"
+   ],
+   "follow": "contact|find|visit|getting|toddler|faq|price"
+  },
+  {
+   "id": 1836741,
+   "name": "Moo Moo's Play Cafe",
+   "postcode": "KT11 3EB",
+   "urls": [
+    "https://www.moomoosplaycafe.co.uk/"
+   ],
+   "follow": "about|contact|faq|price|session|book|soft"
+  },
+  {
+   "id": 1367047,
+   "name": "HALO Play Cafe",
+   "postcode": "UB8 1GB",
+   "urls": [
+    "https://haloplaycafe.co.uk/play-booking/",
+    "https://haloplaycafe.co.uk/contact/"
+   ],
+   "follow": ""
+  },
+  {
+   "id": 1961932,
+   "name": "Cheeky Chops Play Cafe",
+   "postcode": "TW1 3LP",
+   "urls": [
+    "http://www.cheekychopsplaycafe.co.uk/play-sessions.html",
+    "http://www.cheekychopsplaycafe.co.uk/about.html"
+   ],
+   "follow": ""
+  },
+  {
+   "id": 1677302,
+   "name": "Dreami Play Cafe",
+   "postcode": "E2 7SY",
+   "urls": [
+    "https://www.dreami.uk/",
+    "https://www.dreami.uk/faq"
+   ],
+   "follow": "about|price|session|book"
+  }
+ ],
+ "independents": []
+}
