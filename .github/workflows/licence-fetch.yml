@@ -25,7 +25,6 @@ jobs:
       - run: python legal-fetch/fetch_texts.py
 
   wikidata:
-    if: ${{ false }}   # already run once; a second push of legal-fetch/ must not repeat the queries
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -40,4 +39,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add results/wikidata
           git commit -m "Wikidata (CC0) results for the licence review" || echo "nothing to commit"
+          git pull --rebase origin data/open-data-fetch
           git push origin HEAD:data/open-data-fetch
