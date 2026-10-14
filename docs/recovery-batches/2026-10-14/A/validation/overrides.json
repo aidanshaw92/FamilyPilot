@@ -1,0 +1,18 @@
+{
+  "_comment": "Changes made during validation, each with its reason. Removals leave an entry out; a category change replaces the selector's category. Nothing here is a review: it is proposed for the product reviewer's decision, and the reviewer can reverse any line.",
+  "fp-wd-q1464767": { "remove": "Royal United Services Institute is a research institution. Wikidata files it under museum, but the source gives no sign of a visit the app could describe." },
+  "fp-wd-q1628509": { "remove": "The Wikidata item is the institution (a home for veterans). Wikidata files it under museum, and the source does not say whether or when visitors may enter, so its classification as a family visit is not defensible." },
+  "fp-os-49e9c86c-6b89-a491-e063-8ccaa00a0ef3": { "remove": "The same place as Royal Botanic Gardens, Kew (fp-wd-q18748726), which is kept; the OS polygon is dropped so Kew is listed once." },
+  "fp-wd-q1067909": { "category": "attraction", "reason": "Wikidata's only class is museum, but the name has no museum or gallery wording and it is a historic house and estate; classed as an attraction, as the app does for a house." },
+  "fp-wd-q2464716": { "category": "attraction", "reason": "Wikidata's only class is museum, but the name has no museum or gallery wording and it is a historic house and estate; classed as an attraction." },
+  "fp-wd-q1254903": { "category": "attraction", "reason": "Wikidata's only class is museum, but the name has no museum or gallery wording and it is a historic moated house; classed as an attraction." },
+  "fp-wd-q5298112": { "category": "attraction", "reason": "Wikidata calls it a historic house museum; the name has no museum or gallery wording and it is a manor house; classed as an attraction." },
+  "fp-wd-q222881": { "category": "attraction", "reason": "Wikidata's only class is museum, but the name has no museum or gallery wording and it is a house; classed as an attraction." },
+  "fp-wd-q6860889": { "category": "attraction", "reason": "Wikidata's only class is museum, but the name has no museum or gallery wording and it is a cottage; classed as an attraction." },
+  "fp-wd-q1753590": { "category": "attraction", "reason": "Wikidata's only class is museum, but the name has no museum or gallery wording and it is a historic site; classed as an attraction." },
+  "fp-wd-q5102117": { "category": "attraction", "reason": "Wikidata's only class is museum, but the name has no museum or gallery wording and it is a cave system; classed as an attraction." },
+  "fp-wd-q1099856": { "category": "attraction", "reason": "Wikidata's only class is museum, but the name says a railway; a heritage railway is a day out, not a museum visit; classed as an attraction." },
+  "fp-wd-q2281943": { "category": "attraction", "reason": "Wikidata lists it as an art museum, but the name is a foundation's, not a gallery's; classed as an attraction until its public programme is checked." },
+  "fp-wd-q186309": { "category": "attraction", "reason": "Wikidata's only class is museum (a wax museum); the name has no museum or gallery wording, and the venue we hold was an attraction; kept as an attraction." },
+  "fp-wd-q564981": { "category": "museum", "reason": "Wikidata lists Queen's House as a museum as well as a palace, and the venue we hold was a museum; nothing supports moving it, so it stays a museum." }
+}

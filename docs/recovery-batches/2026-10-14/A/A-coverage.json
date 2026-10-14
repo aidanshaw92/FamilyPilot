@@ -1,0 +1,77 @@
+{
+  "stored": 147,
+  "continuity": 88,
+  "compare": 8,
+  "compareVenues": 8,
+  "unmatched": 51,
+  "continuityByCategory": {
+    "attraction": 4,
+    "farm": 4,
+    "museum": 29,
+    "park": 49,
+    "zoo": 2
+  },
+  "newCandidates": 2205,
+  "newHeld": 997,
+  "newBelowThreshold": 600,
+  "newPossibleDuplicates": 4,
+  "newFlagged": 46,
+  "newEligible": 558,
+  "newPicked": 149,
+  "newByCategory": {
+    "park": 88,
+    "museum": 40,
+    "attraction": 19,
+    "zoo": 2
+  },
+  "newByArea": {
+    "east": 28,
+    "south": 25,
+    "west": 28,
+    "north": 27,
+    "central": 21,
+    "beyond 25 km": 20
+  },
+  "newGrid": {
+    "central": {
+      "park": 7,
+      "museum": 12,
+      "attraction": 1,
+      "zoo": 1
+    },
+    "north": {
+      "park": 19,
+      "attraction": 3,
+      "museum": 5
+    },
+    "east": {
+      "park": 19,
+      "museum": 7,
+      "attraction": 2
+    },
+    "south": {
+      "park": 19,
+      "attraction": 3,
+      "museum": 2,
+      "zoo": 1
+    },
+    "west": {
+      "park": 18,
+      "museum": 4,
+      "attraction": 6
+    },
+    "beyond 25 km": {
+      "park": 6,
+      "museum": 10,
+      "attraction": 4
+    }
+  },
+  "heldByReason": {
+    "named for a club, school, burial ground, allotments or golf course: not a public park to visit": 8,
+    "a name that names no particular place": 26,
+    "too small to be a day out (under 3 ha, and no mapped play space of at least half a hectare)": 539,
+    "few Wikipedia articles: little evidence it is a destination": 254,
+    "no website of its own in Wikidata: nothing independent to check it against": 152,
+    "an arts or events venue that Wikidata files under museum": 18
+  }
+}
