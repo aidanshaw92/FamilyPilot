@@ -5,6 +5,7 @@ import * as osmClassifyModule from '../../../scripts/open-data/lib/osm-classify.
 import * as geoModule from '../../../scripts/open-data/lib/geo.mjs';
 import * as dryRunModule from '../../../scripts/open-data/dry-run.mjs';
 import * as reviewModule from '../../../scripts/open-data/lib/review.mjs';
+import * as matchModule from '../../../scripts/open-data/lib/match.mjs';
 
 // The pipeline is plain JavaScript outside the app; the tests treat its results as loose data.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -12,6 +13,10 @@ const { classifyOsm, factsFromTags, websiteFromTags } = osmClassifyModule as any
 const { areaOf, pointInGeometry, representativePoint } = geoModule as any;
 const { normaliseFeatures, renderReport, runDryRun } = dryRunModule as any;
 const { osmBatch, renderReview, reviewRecord, reviewSample } = reviewModule as any;
+const { looseSameVenue } = matchModule as any;
+const { polygonAreaHa } = geoModule as any;
+const { significance, bestStored, PARK_MIN_HA } = dryRunModule as any;
+const { rejectedAsGone } = osmClassifyModule as any;
 
 const fixtures = join(__dirname, '../../../scripts/open-data/fixtures');
 const extract = JSON.parse(readFileSync(join(fixtures, 'synthetic-extract.geojson'), 'utf8'));
@@ -267,5 +272,119 @@ describe('the first-ten review', () => {
   it('the report states the expected import count and how many reviewed batches it is', () => {
     const report = renderReport(result, { version: '2026-10-14', source: 'x' });
     expect(report).toMatch(/Expected import if approved\*\* \(new places, in reviewed batches of at most 100\) \| \*\*9\*\* \(1 batch\)/);
+  });
+});
+
+
+describe('osmium area ids', () => {
+  const feature = (id: string) => ({ type: 'FeatureCollection', features: [{ type: 'Feature', id, properties: { '@version': 3, name: 'X', leisure: 'park' }, geometry: { type: 'MultiPolygon', coordinates: [[[[-0.1, 51.5], [-0.1, 51.51], [-0.09, 51.51], [-0.1, 51.5]]]] } }] });
+
+  it('an area made from a way is the way: its id is half of osmium\'s', () => {
+    const [f] = normaliseFeatures(feature('a5676116'));
+    expect(f).toMatchObject({ type: 'way', id: '2838058', sourceId: 'way/2838058' });
+  });
+
+  it('an area made from a relation is the relation: its id is half of osmium\'s, less one', () => {
+    const [f] = normaliseFeatures(feature('a5676117'));
+    expect(f).toMatchObject({ type: 'relation', id: '2838058', sourceId: 'relation/2838058' });
+  });
+
+  it('nodes, ways and relations still read as before', () => {
+    expect(normaliseFeatures(feature('n195843'))[0]).toMatchObject({ type: 'node', id: '195843' });
+    expect(normaliseFeatures(feature('w12'))[0]).toMatchObject({ type: 'way', id: '12' });
+    expect(normaliseFeatures(feature('r34'))[0]).toMatchObject({ type: 'relation', id: '34' });
+    expect(normaliseFeatures(feature('relation/34'))[0]).toMatchObject({ type: 'relation', id: '34' });
+  });
+
+  it('a candidate from an area carries a source record that names something in OpenStreetMap', () => {
+    const result = runDryRun({ features: normaliseFeatures(feature('a5676116')), stored: [], version: '2026-10-14' });
+    expect(result.candidates[0].source_record_id).toBe('way/2838058@v3');
+    expect(result.candidates[0].familypilot_place_id).toBe('fp-osm-way-2838058');
+  });
+});
+
+
+/**
+ * Found by running the dry run on the first real Greater London extract and reconciling it with the places we already hold. Each test is
+ * a case from that run, rebuilt from small hand-made features.
+ */
+describe('calibration from the first real extract', () => {
+  const square = (lat: number, lng: number, d: number) => ({ type: 'Polygon', coordinates: [[[lng, lat], [lng + d, lat], [lng + d, lat + d], [lng, lat + d], [lng, lat]]] });
+  const poly = (id: string, tags: Record<string, string>, lat: number, lng: number, d: number) => ({ type: 'Feature', id, properties: { '@version': 1, ...tags }, geometry: square(lat, lng, d) });
+  const point = (id: string, tags: Record<string, string>, lat: number, lng: number) => ({ type: 'Feature', id, properties: { '@version': 1, ...tags }, geometry: { type: 'Point', coordinates: [lng, lat] } });
+  const run = (features: any[], stored: any[] = []) => runDryRun({ features: normaliseFeatures({ type: 'FeatureCollection', features }), stored, version: '2026-10-14' });
+  const names = (r: any) => r.candidates.map((c: any) => c.name).sort();
+  const why = (r: any, name: string) => r.rejected.find((x: any) => x.name === name);
+
+  it('measures a polygon in hectares', () => {
+    // 0.001 degrees at latitude 51.5 is about 69.3 m by 111.3 m, so about 0.77 ha.
+    expect(polygonAreaHa(square(51.5, -0.1, 0.001))).toBeGreaterThan(0.7);
+    expect(polygonAreaHa(square(51.5, -0.1, 0.001))).toBeLessThan(0.85);
+    expect(polygonAreaHa({ type: 'Point', coordinates: [0, 51] })).toBeNull();
+    expect(polygonAreaHa(null)).toBeNull();
+  });
+
+  it('a former name or an old rule is history, not a closure; a former use is a closure', () => {
+    expect(rejectedAsGone({ tourism: 'museum', name: 'Museum of the Home', 'was:name': 'Geffrye Museum' })).toBeNull();
+    expect(rejectedAsGone({ leisure: 'park', name: 'Bushy Park', 'was:dog:conditional': 'leashed @ (2021 May 01-2021 Jun 30)' })).toBeNull();
+    expect(rejectedAsGone({ name: 'X', 'was:tourism': 'museum' })).toBe('was:tourism=museum');
+    expect(rejectedAsGone({ name: 'X', 'disused:leisure': 'park' })).toBe('disused:leisure=park');
+    expect(rejectedAsGone({ name: 'X', tourism: 'museum', 'disused:amenity': 'cafe' })).toBe('disused:amenity=cafe');
+    expect(rejectedAsGone({ name: 'X', tourism: 'museum', disused: 'yes' })).toBe('disused=yes');
+  });
+
+  it('an animal enclosure inside a zoo or farm is not a venue', () => {
+    const r = run([point('n1', { name: 'Coatis', attraction: 'animal' }, 51.5, -0.1), point('n2', { name: 'Fixture Zoo', tourism: 'zoo' }, 51.51, -0.11)]);
+    expect(names(r)).toEqual(['Fixture Zoo']);
+    expect(why(r, 'Coatis').gate).toBe('classification');
+  });
+
+  it('a small plain park is held back; a big one, a linked one, or one with a playground is kept', () => {
+    const r = run([
+      poly('a2', { name: 'Pocket Square', leisure: 'park' }, 51.5, -0.1, 0.0005),
+      poly('a4', { name: 'Big Common', leisure: 'park' }, 51.52, -0.12, 0.01),
+      poly('a6', { name: 'Linked Small', leisure: 'park', wikidata: 'Q1' }, 51.53, -0.13, 0.0005),
+      poly('a8', { name: 'Park With Swings', leisure: 'park' }, 51.54, -0.14, 0.0005),
+      point('n9', { name: 'Swings', leisure: 'playground' }, 51.54012, -0.13985),
+    ]);
+    expect(names(r)).toEqual(expect.arrayContaining(['Big Common', 'Linked Small', 'Park With Swings']));
+    expect(names(r)).not.toContain('Pocket Square');
+    expect(why(r, 'Pocket Square')).toMatchObject({ gate: 'significance' });
+    expect(why(r, 'Pocket Square').reason).toMatch(/under 1 ha/);
+    expect(PARK_MIN_HA).toBe(1);
+  });
+
+  it('a gallery needs a Wikidata or Wikipedia link, a stand-alone playground needs a website or a link', () => {
+    const r = run([
+      point('n1', { name: 'Eagle Gallery', tourism: 'gallery' }, 51.5, -0.1),
+      point('n2', { name: 'Tate Fixture', tourism: 'gallery', wikidata: 'Q2' }, 51.51, -0.11),
+      point('n3', { name: 'Estate Swings', leisure: 'playground' }, 51.52, -0.12),
+      point('n4', { name: 'Adventure Playground', leisure: 'playground', website: 'https://example.org' }, 51.53, -0.13),
+    ]);
+    expect(names(r)).toEqual(['Adventure Playground', 'Tate Fixture']);
+    expect(why(r, 'Eagle Gallery').reason).toMatch(/commercial/);
+    expect(why(r, 'Estate Swings').reason).toMatch(/stand-alone playground/);
+  });
+
+  it('a place we already hold is not judged by the gate: it has proved it is a destination', () => {
+    const stored = [{ id: 'fp-google-F', name: 'Frameless', category: 'attraction', lat: 51.5001, lng: -0.1001 }];
+    const r = run([point('n1', { name: 'Frameless', tourism: 'gallery' }, 51.5, -0.1)], stored);
+    expect(names(r)).toEqual(['Frameless']);
+    expect(r.links[0]).toMatchObject({ google_place: 'fp-google-F' });
+  });
+
+  it('names that the strict test missed are matched loosely, and always for a person to review', () => {
+    expect(looseSameVenue('Burgh House', 'Burgh House and Hampstead Museum', 0.004)).toBe(true);
+    expect(looseSameVenue('Lane7', 'Lane7 London Camden', 0.05)).toBe(true);
+    expect(looseSameVenue('Byron Park', 'Byron Recreation Ground', 0.02)).toBe(true);
+    expect(looseSameVenue('Sunny Hill Park', 'Sunnyhill Park', 0.1)).toBe(true);
+    // Too far, or nothing distinguishing, or a different place.
+    expect(looseSameVenue('Burgh House', 'Burgh House and Hampstead Museum', 0.3)).toBe(false);
+    expect(looseSameVenue('The Park', 'Victoria Park', 0.01)).toBe(false);
+    expect(looseSameVenue('Kew Gardens', 'Hyde Park', 0.01)).toBe(false);
+    // The strict test already matches Lane7 (at confidence 0.5, so a person reviews it); these two it misses.
+    const match = bestStored({ name: 'Byron Park', lat: 51.5, lng: -0.1 }, [{ id: 'fp-google-B', name: 'Byron Recreation Ground', lat: 51.50018, lng: -0.1 }]);
+    expect(match).toMatchObject({ id: 'fp-google-B', method: 'loose_name_and_distance', confidence: 0.7 });
+    expect(bestStored({ name: 'Sunnyhill Park', lat: 51.5, lng: -0.1 }, [{ id: 'fp-google-S', name: 'Sunny Hill Park', lat: 51.5, lng: -0.1 }])).toMatchObject({ method: 'loose_name_and_distance' });
   });
 });

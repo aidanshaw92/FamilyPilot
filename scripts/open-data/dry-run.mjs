@@ -10,8 +10,9 @@
  *
  * From a Geofabrik .osm.pbf, one way to get GeoJSON (osmium-tool, run locally):
  *   osmium tags-filter greater-london-latest.osm.pbf nwr/leisure=park,playground,nature_reserve,trampoline_park,indoor_play,water_park,ice_rink,miniature_golf,bowling_alley \
- *     nwr/tourism=zoo,aquarium,museum,gallery,theme_park nwr/attraction=animal -o london-family.osm.pbf
- *   osmium export london-family.osm.pbf -f geojson -o london-family.geojson
+ *     nwr/tourism=zoo,aquarium,museum,gallery,theme_park -R -o london-family.osm.pbf
+ *   osmium export london-family.osm.pbf -f geojson --geometry-types=point,polygon --add-unique-id=type_id -a version -o london-family.geojson
+ * (-R leaves out the nodes and ways that matching relations merely refer to. osmium writes a polygon's id as `a<n>`; see normaliseFeatures.)
  *
  * Usage:
  *   node scripts/open-data/dry-run.mjs --osm london-family.geojson --version 2026-10-14 --out ./dry-run-out [--stored rows.json] [--seed 7]
@@ -24,14 +25,35 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { classifyOsm } from './lib/osm-classify.mjs';
-import { areaOf, haversineKm, pointInGeometry, representativePoint } from './lib/geo.mjs';
+import { areaOf, haversineKm, pointInGeometry, polygonAreaHa, representativePoint } from './lib/geo.mjs';
 import { osmBatch, renderReview, reviewSample } from './lib/review.mjs';
+import { looseSameVenue } from './lib/match.mjs';
 
 const require = createRequire(import.meta.url);
 const { tokenOverlapScore, areLikelySameVenueAlias } = require('../../server/places/lib/venue-alias-detection.js');
 
 const LONDON_BOX = { latMin: 51.0, latMax: 52.0, lngMin: -1.0, lngMax: 0.7 };
 const STORED_GROUP = { park: 'parks', museum: 'museums', zoo: 'animals', farm: 'animals', soft_play: 'play', attraction: 'attractions', activity: 'attractions', beach: 'parks' };
+/**
+ * THE SIGNIFICANCE GATE. Calibrated on the first real extract by reading its 40-row spot check and by asking which of the places we
+ * already hold the extract matched (57 of the 58 matched parks have at least 1 ha or a Wikidata/Wikipedia link):
+ *   - a park or nature reserve is a destination if it covers at least PARK_MIN_HA, or links to Wikidata or Wikipedia, or has a mapped playground inside;
+ *   - a gallery needs a Wikidata or Wikipedia link (most mapped galleries are commercial and not somewhere to take children);
+ *   - a stand-alone playground needs a website or a Wikidata/Wikipedia link (otherwise it is listed through the park that contains it).
+ * Everything held back is written to rejected.csv with the reason, so the thresholds can be argued with and changed.
+ */
+export const PARK_MIN_HA = 1;
+export function significance(row) {
+  const signal = row._signals.wikidata || row._signals.wikipedia;
+  if (['park', 'nature_reserve'].includes(row.subtype)) {
+    if ((row._areaHa ?? 0) >= PARK_MIN_HA || signal || row._playgroundInside === true) return null;
+    return `under ${PARK_MIN_HA} ha${row._areaHa == null ? ' (a point)' : ''}, no Wikidata or Wikipedia link, no mapped playground inside`;
+  }
+  if (row.subtype === 'gallery') return signal ? null : 'a gallery with no Wikidata or Wikipedia link (most mapped galleries are commercial)';
+  if (row.subtype === 'playground' && row.group_id === 'parks') return signal || row.website ? null : 'a stand-alone playground with no website or Wikidata link (listed through its park when one contains it)';
+  return null;
+}
+
 export const GOALS = { parks: 230, museums: 65, animals: 30, play: 70, attractions: 85 };
 
 /** One feature from either input shape, in the one shape the rest uses. */
@@ -39,9 +61,19 @@ export function normaliseFeatures(input) {
   if (input?.type === 'FeatureCollection') {
     return input.features.map((f) => {
       const raw = String(f.id ?? f.properties?.['@id'] ?? '');
+      // osmium writes an AREA (a closed way or a multipolygon relation) as `a<n>`: n is twice the way id, or twice the relation id plus one.
+      // Found on the first real extract: without this every park polygon got the source id `feature/a5676116`, which names nothing in OSM.
+      const area = /^a(\d+)$/.exec(raw);
       const m = /^([nwr])(\d+)$/.exec(raw) ?? /^(node|way|relation)\/(\d+)$/.exec(raw);
-      const type = m ? ({ n: 'node', w: 'way', r: 'relation' }[m[1]] ?? m[1]) : 'feature';
-      const id = m ? m[2] : raw || 'unknown';
+      let type; let id;
+      if (area) {
+        const n = Number(area[1]);
+        type = n % 2 === 0 ? 'way' : 'relation';
+        id = String(n % 2 === 0 ? n / 2 : (n - 1) / 2);
+      } else {
+        type = m ? ({ n: 'node', w: 'way', r: 'relation' }[m[1]] ?? m[1]) : 'feature';
+        id = m ? m[2] : raw || 'unknown';
+      }
       const { ['@id']: _a, ['@version']: version, ...tags } = f.properties ?? {};
       return { sourceId: `${type}/${id}`, type, id, version: version ?? f.properties?.['@version'], tags, geometry: f.geometry };
     });
@@ -57,6 +89,26 @@ export function normaliseFeatures(input) {
 
 const insideLondon = (p) => p.lat >= LONDON_BOX.latMin && p.lat <= LONDON_BOX.latMax && p.lng >= LONDON_BOX.lngMin && p.lng <= LONDON_BOX.lngMax;
 const polygonal = (g) => g && (g.type === 'Polygon' || g.type === 'MultiPolygon');
+
+/**
+ * The stored place this feature most likely is, or null. The app's strict alias test first (confidence is its token overlap); then a looser
+ * one that always asks for a person's review (confidence 0.7).
+ */
+export function bestStored(row, stored) {
+  let best = null;
+  for (const s of stored) {
+    if (!Number.isFinite(s.lat) || !Number.isFinite(s.lng)) continue;
+    const km = haversineKm(row.lat, row.lng, s.lat, s.lng);
+    let candidate = null;
+    if (areLikelySameVenueAlias({ name: row.name }, { name: s.name }, km)) {
+      candidate = { id: s.id, confidence: Number(tokenOverlapScore(row.name, s.name).toFixed(2)), km: Number(km.toFixed(3)), method: 'name_and_distance' };
+    } else if (looseSameVenue(row.name, s.name, km)) {
+      candidate = { id: s.id, confidence: 0.7, km: Number(km.toFixed(3)), method: 'loose_name_and_distance' };
+    }
+    if (candidate && (!best || candidate.confidence > best.confidence || (candidate.confidence === best.confidence && candidate.km < best.km))) best = candidate;
+  }
+  return best;
+}
 
 /**
  * @param {{ features: ReturnType<typeof normaliseFeatures>, stored?: Array<{id:string,name:string,category:string,lat:number,lng:number}>, version: string, seed?: number }} args
@@ -95,6 +147,8 @@ export function runDryRun({ features, stored = [], version, seed = 7 }) {
     identity_checked_at: version,
     // Not stored: what the report reads. Derived from source_tags at read time.
     _facts: decision.facts,
+    _signals: decision.signals,
+    _areaHa: polygonAreaHa(f.geometry),
     _polygon: polygonal(f.geometry) ? f.geometry : null,
     _hasPolygon: polygonal(f.geometry),
   }));
@@ -103,6 +157,13 @@ export function runDryRun({ features, stored = [], version, seed = 7 }) {
   const playgrounds = [...rows.filter((r) => r.subtype === 'playground').map((r) => ({ point: { lat: r.lat, lng: r.lng } })), ...unnamedPlaygrounds];
   for (const park of rows.filter((r) => r.group_id === 'parks' && ['park', 'nature_reserve'].includes(r.subtype))) {
     park._playgroundInside = park._polygon ? playgrounds.some((p) => pointInGeometry(p.point.lat, p.point.lng, park._polygon)) : null;
+  }
+
+  // The significance gate, once every park knows whether a playground lies inside it.
+  // A venue we already hold has proved it is a destination (Frameless, a gallery with no Wikidata link, is one), so the gate does not judge it.
+  for (const row of [...rows]) {
+    const why = bestStored(row, stored) ? null : significance(row);
+    if (why) { rejected.push({ sourceId: row.source_record_id, name: row.name, gate: 'significance', reason: why }); rows.splice(rows.indexOf(row), 1); }
   }
 
   // Duplicates inside the batch: same group, close, similar name. Keep the polygon over the point, then the one with more tags.
@@ -125,15 +186,8 @@ export function runDryRun({ features, stored = [], version, seed = 7 }) {
   const links = [];
   const candidates = [];
   for (const row of kept) {
-    let best = null;
-    for (const s of stored) {
-      if (!Number.isFinite(s.lat) || !Number.isFinite(s.lng)) continue;
-      const km = haversineKm(row.lat, row.lng, s.lat, s.lng);
-      if (!areLikelySameVenueAlias({ name: row.name }, { name: s.name }, km)) continue;
-      const confidence = Number(tokenOverlapScore(row.name, s.name).toFixed(2));
-      if (!best || confidence > best.confidence) best = { id: s.id, confidence, km: Number(km.toFixed(3)) };
-    }
-    if (best) links.push({ open_data_place: row.familypilot_place_id, google_place: best.id, match_method: 'name_and_distance', match_confidence: best.confidence, needs_review: best.confidence < 0.8, km: best.km });
+    const best = bestStored(row, stored);
+    if (best) links.push({ open_data_place: row.familypilot_place_id, google_place: best.id, match_method: best.method, match_confidence: best.confidence, needs_review: best.confidence < 0.8, km: best.km });
     candidates.push({ ...row, _linked: best ? best.id : null });
   }
 
@@ -199,7 +253,7 @@ async function main() {
   const stored = opt('--stored') ? JSON.parse(readFileSync(opt('--stored'), 'utf8')).map((r) => ({ ...r, lat: Number(r.lat), lng: Number(r.lng) })) : [];
   const result = runDryRun({ features, stored, version, seed: Number(opt('--seed') ?? 7) });
   mkdirSync(out, { recursive: true });
-  const clean = ({ _facts, _polygon, _hasPolygon, _playgroundInside, _linked, ...row }) => row;
+  const clean = ({ _facts, _signals, _areaHa, _polygon, _hasPolygon, _playgroundInside, _linked, ...row }) => row;
   writeFileSync(join(out, 'candidates.jsonl'), result.candidates.map((c) => JSON.stringify(clean(c))).join('\n') + '\n');
   writeFileSync(join(out, 'links.jsonl'), result.links.map((l) => JSON.stringify(l)).join('\n') + '\n');
   writeFileSync(join(out, 'rejected.csv'), csv(result.rejected, ['sourceId', 'name', 'gate', 'reason']));

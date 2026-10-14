@@ -5,7 +5,8 @@
  * THE RULES, in the order they apply:
  *   1. A feature mapped as no longer there (disused:, abandoned:, was:, demolished:) or not open to the public is rejected, with the tag.
  *   2. A feature with no name is rejected. (An unnamed playground can still add evidence to a named park; see `dry-run.mjs`.)
- *   3. The GROUP comes only from a classifying tag. A name is never enough: a shop called "Soft Play Supplies" is not soft play.
+ *   3. The GROUP comes only from a classifying tag. `attraction=animal` is NOT one: it marks a single enclosure inside a zoo or farm ("Coatis",
+ *      "Aviary", "Horses" on the first real extract), which is not a venue. A name is never enough: a shop called "Soft Play Supplies" is not soft play.
  *   4. FACTS are copied only when the source states them. A tag that is absent is unknown, never "no".
  *   5. STATUS is unknown unless the source says otherwise, and then it carries the tag that says so.
  *
@@ -15,11 +16,13 @@
 /** Keys that, prefixed to a feature key, mean the thing is gone (`disused:leisure=playground`). */
 const GONE_PREFIXES = ['disused:', 'abandoned:', 'was:', 'demolished:', 'removed:', 'razed:'];
 
+/** The keys whose value makes a feature a venue for this dry run. */
+const CLASSIFYING_KEYS = ['tourism', 'leisure', 'attraction', 'amenity', 'shop', 'building'];
+
 /** [tag, value, group, subtype]. First match wins, so specific entries come before general ones. */
 const RULES = [
   ['tourism', 'zoo', 'animals', (tags) => ({ petting_zoo: 'petting_zoo', wildlife_park: 'wildlife_park' }[tags.zoo] ?? 'zoo')],
   ['tourism', 'aquarium', 'animals', 'aquarium'],
-  ['attraction', 'animal', 'animals', 'animal_attraction'],
   ['leisure', 'trampoline_park', 'play', 'trampoline_park'],
   ['leisure', 'indoor_play', 'play', 'indoor_play'],
   ['leisure', 'playground', 'play', (tags) => (tags.indoor === 'yes' ? 'indoor_play' : null)],
@@ -40,7 +43,11 @@ const FAMILY_KEYS = ['wheelchair', 'toilets', 'changing_table', 'fee', 'opening_
 /** The first tag that says this feature is gone, or not for the public. */
 export function rejectedAsGone(tags) {
   for (const key of Object.keys(tags)) {
-    if (GONE_PREFIXES.some((prefix) => key.startsWith(prefix))) return `${key}=${tags[key]}`;
+    const prefix = GONE_PREFIXES.find((p) => key.startsWith(p));
+    // A lifecycle prefix says the THING is gone only when it sits on the key that makes it a venue (`was:tourism=museum`). On any other key
+    // it is history about an attribute: `was:name=Geffrye Museum` is the Museum of the Home's old name, not its closure, and
+    // `was:dog:conditional=...` on Bushy Park is an old rule about dogs. Found on the first real extract, where both were rejected as gone.
+    if (prefix && CLASSIFYING_KEYS.includes(key.slice(prefix.length).split(':')[0])) return `${key}=${tags[key]}`;
   }
   if (tags.disused === 'yes') return 'disused=yes';
   if (tags.abandoned === 'yes') return 'abandoned=yes';
@@ -93,6 +100,8 @@ export function classifyOsm(tags) {
       decidedBy,
       facts: factsFromTags(tags),
       website: websiteFromTags(tags),
+      // Signals that a thing is a destination people look for, not a pocket of land or a shop: a link to Wikidata or Wikipedia.
+      signals: { wikidata: Boolean(tags.wikidata), wikipedia: Boolean(tags.wikipedia) },
       // Unknown stays unknown: nothing in an OSM tag set is evidence that a place is open today.
       status: { value: 'unknown', evidence: null },
       factTags: Object.fromEntries(FAMILY_KEYS.filter((k) => tags[k] !== undefined).map((k) => [k, tags[k]])),

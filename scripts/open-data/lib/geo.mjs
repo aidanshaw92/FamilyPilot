@@ -85,3 +85,23 @@ export function areaOf(lat, lng) {
   if (b < 225) return 'south';
   return 'west';
 }
+
+
+/** Area of a polygonal geometry in hectares (holes subtracted), on a local flat projection. Null for a point or no geometry. */
+export function polygonAreaHa(geometry) {
+  const polys = polygons(geometry);
+  if (!polys.length) return null;
+  let m2 = 0;
+  for (const [outer, ...holes] of polys) {
+    const lat0 = outer.reduce((sum, [, lat]) => sum + lat, 0) / outer.length;
+    const kx = 111320 * Math.cos(toRad(lat0));
+    const ky = 110540;
+    const shoelace = (ring) => {
+      let a = 0;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) a += ring[j][0] * kx * (ring[i][1] * ky) - ring[i][0] * kx * (ring[j][1] * ky);
+      return Math.abs(a) / 2;
+    };
+    m2 += shoelace(outer) - holes.reduce((sum, hole) => sum + shoelace(hole), 0);
+  }
+  return m2 / 10000;
+}

@@ -114,6 +114,7 @@
    "properties": {
     "leisure": "playground",
     "name": "Fixture Swings",
+    "website": "https://example.invalid/swings",
     "wheelchair": "yes",
     "min_age": "2",
     "max_age": "8",
