@@ -1,0 +1,41 @@
+{
+  "generated_by": "FamilyPilot open-data-fetch workflow (one-off, throwaway branch data/open-data-fetch)",
+  "user_agent": "FamilyPilot-open-data/1.0 (+https://github.com/aidanshaw92/FamilyPilot)",
+  "files": [
+    {
+      "file": "london-family.geojson",
+      "bytes": 6268793,
+      "sha256": "e4f5762fe8939fc73238b3b4e9415f2bf5ae8222f58df5621d175ae896141e58",
+      "retrieved_at": "2026-10-14T07:28:21+00:00",
+      "source": "OpenStreetMap, Greater London extract, filtered by tag with osmium",
+      "source_url": "https://download.geofabrik.de/europe/united-kingdom/england/greater-london-latest.osm.pbf",
+      "source_md5": "b6eeab8841249288df8101e3367edd63",
+      "licence": "ODbL-1.0",
+      "licence_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "attribution": "\u00a9 OpenStreetMap contributors",
+      "attribution_url": "https://www.openstreetmap.org/copyright"
+    },
+    {
+      "file": "greenspace-london.geojson",
+      "bytes": 13362190,
+      "sha256": "017f243a2b6da5481758003f6bee05b43bcb3533dc62ce86110ef53f68eaa58d",
+      "retrieved_at": "2026-10-14T07:28:21+00:00",
+      "source": "OS Open Greenspace, grid squares TQ and TL (ESRI Shapefile), clipped to the London box",
+      "source_url": "https://api.os.uk/downloads/v1/products/OpenGreenspace/downloads",
+      "licence": "OGL-3.0",
+      "licence_url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+      "attribution": "Contains OS data \u00a9 Crown copyright and database right 2026"
+    },
+    {
+      "file": "wikidata-london.json",
+      "bytes": 336941,
+      "sha256": "bdc7afd81f92caafcbb41db88fd51eda694167fcff6d02f716cb59808ddd5434",
+      "retrieved_at": "2026-10-14T07:28:21+00:00",
+      "source": "Wikidata Query Service, museums and zoos inside Greater London",
+      "source_url": "https://query.wikidata.org/sparql",
+      "licence": "CC0-1.0",
+      "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "attribution": "none required"
+    }
+  ]
+}

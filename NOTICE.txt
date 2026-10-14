@@ -1,0 +1,5 @@
+Open data for FamilyPilot's catalogue-recovery dry run. Not for production use; not a release.
+OpenStreetMap data: © OpenStreetMap contributors, Open Database Licence 1.0 (https://www.openstreetmap.org/copyright).
+Ordnance Survey data: Contains OS data © Crown copyright and database right, Open Government Licence v3.
+Wikidata: CC0 1.0.
+See PROVENANCE.json for the source, retrieval time, size and SHA-256 of each file.
