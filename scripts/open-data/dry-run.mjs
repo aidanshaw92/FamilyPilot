@@ -59,6 +59,27 @@ export function significance(row) {
   return null;
 }
 
+/**
+ * Names that say who the land belongs to rather than what it is: a club, a school, a hospital, a sports ground. Found on the first real extract:
+ * 229 of the 739 recreation grounds were named like this ("Beaconsfield Rugby Club", "Thorpe House School Playing Fields"). They are real
+ * places and private to their members, so they are not a family day out. Applied to parks and recreation grounds only, and never to a place we
+ * already hold. A reviewer can still re-admit one: it is in rejected.csv with this reason.
+ */
+export const PRIVATE_USE_NAME = /\b(football club|rugby|cricket club|fc|rfc|sports club|sports ground|sports centre|sports park|school|academy|university|hospital|tennis club|bowls? club|hockey|athletic|social club|training ground|campus)\b/i;
+
+/** A name that names no particular place ("The Park", "Animal Enclosure"). A person cannot recognise it, and it cannot be matched to anything. */
+export const GENERIC_NAME = /^(the )?(park|gardens?|playground|recreation ground|playing fields?|field|green|animal enclosure|enclosure|zoo)$/i;
+
+/** Which gate stops this row, and why, or null. Significance is judged last. */
+export function holdBack(row) {
+  if (GENERIC_NAME.test(row.name.trim())) return { gate: 'identity', reason: 'a name that names no particular place' };
+  if (row.group_id === 'parks' && ['park', 'recreation_ground'].includes(row.subtype) && PRIVATE_USE_NAME.test(row.name)) {
+    return { gate: 'classification', reason: 'named for a club, school or sports ground: private use, not a public park' };
+  }
+  const why = significance(row);
+  return why ? { gate: 'significance', reason: why } : null;
+}
+
 export const GOALS = { parks: 230, museums: 65, animals: 30, play: 70, attractions: 85 };
 
 /** One feature from either input shape, in the one shape the rest uses. */
@@ -171,8 +192,8 @@ export function runDryRun({ features, stored = [], version, seed = 7, scopeKm = 
   // The significance gate, once every park knows whether a playground lies inside it.
   // A venue we already hold has proved it is a destination (Frameless, a gallery with no Wikidata link, is one), so the gate does not judge it.
   for (const row of [...rows]) {
-    const why = bestStored(row, stored) ? null : significance(row);
-    if (why) { rejected.push({ sourceId: row.source_record_id, name: row.name, gate: 'significance', reason: why }); rows.splice(rows.indexOf(row), 1); }
+    const held = bestStored(row, stored) ? null : holdBack(row);
+    if (held) { rejected.push({ sourceId: row.source_record_id, name: row.name, gate: held.gate, reason: held.reason }); rows.splice(rows.indexOf(row), 1); }
   }
 
   // Duplicates inside the batch: same group, close, similar name. Keep the polygon over the point, then the one with more tags.

@@ -412,6 +412,33 @@ describe('calibration from the first real extract', () => {
     expect(names(wide)).toEqual(['Near Museum', 'Reading Museum Fixture']);
   });
 
+  it('a recreation ground named for a club or a school is private use, not a public park; a park we hold is never judged by its name', () => {
+    const r = run([
+      poly('a2', { name: 'Beaconsfield Rugby Club', landuse: 'recreation_ground' }, 51.5, -0.1, 0.004),
+      poly('a4', { name: 'Thorpe House School Playing Fields', landuse: 'recreation_ground' }, 51.51, -0.11, 0.004),
+      poly('a6', { name: 'Penge Recreation Ground', landuse: 'recreation_ground' }, 51.52, -0.12, 0.004),
+      poly('a8', { name: 'Victoria Park', leisure: 'park' }, 51.53, -0.13, 0.004),
+      point('n1', { name: 'World Rugby Museum', tourism: 'museum' }, 51.45, -0.34),
+    ]);
+    expect(names(r)).toEqual(['Penge Recreation Ground', 'Victoria Park', 'World Rugby Museum']);
+    expect(why(r, 'Beaconsfield Rugby Club')).toMatchObject({ gate: 'classification' });
+    expect(why(r, 'Beaconsfield Rugby Club').reason).toMatch(/private use/);
+    expect(why(r, 'Thorpe House School Playing Fields').gate).toBe('classification');
+    const held = run([poly('a2', { name: 'Kew Green School Field', leisure: 'park' }, 51.5, -0.1, 0.004)], [{ id: 'fp-google-K', name: 'Kew Green School Field', category: 'park', lat: 51.5002, lng: -0.0998 }]);
+    expect(names(held)).toEqual(['Kew Green School Field']);
+  });
+
+  it('a name that names no particular place is an identity rejection', () => {
+    const r = run([
+      poly('a2', { name: 'The Park', leisure: 'park' }, 51.5, -0.1, 0.004),
+      point('n1', { name: 'Animal Enclosure', tourism: 'zoo' }, 51.51, -0.11),
+      point('n2', { name: 'Fixture Zoo', tourism: 'zoo' }, 51.52, -0.12),
+    ]);
+    expect(names(r)).toEqual(['Fixture Zoo']);
+    expect(why(r, 'The Park').gate).toBe('identity');
+    expect(why(r, 'Animal Enclosure').gate).toBe('identity');
+  });
+
   it('the review sample shows the place nearest the centre, not whichever the file listed first', () => {
     // The far one is listed first and is inside the 40 km scope; the sample must still lead with the one a family in the centre would see.
     const r = run([
