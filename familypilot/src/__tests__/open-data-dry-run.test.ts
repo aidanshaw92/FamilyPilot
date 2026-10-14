@@ -1,12 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-// @ts-expect-error plain ES module outside the app's TypeScript project
-import { classifyOsm, factsFromTags, websiteFromTags } from '../../../scripts/open-data/lib/osm-classify.mjs';
-// @ts-expect-error plain ES module outside the app's TypeScript project
-import { areaOf, pointInGeometry, representativePoint } from '../../../scripts/open-data/lib/geo.mjs';
-// @ts-expect-error plain ES module outside the app's TypeScript project
-import { normaliseFeatures, renderReport, runDryRun } from '../../../scripts/open-data/dry-run.mjs';
+import * as osmClassifyModule from '../../../scripts/open-data/lib/osm-classify.mjs';
+import * as geoModule from '../../../scripts/open-data/lib/geo.mjs';
+import * as dryRunModule from '../../../scripts/open-data/dry-run.mjs';
+
+// The pipeline is plain JavaScript outside the app; the tests treat its results as loose data.
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const { classifyOsm, factsFromTags, websiteFromTags } = osmClassifyModule as any;
+const { areaOf, pointInGeometry, representativePoint } = geoModule as any;
+const { normaliseFeatures, renderReport, runDryRun } = dryRunModule as any;
 
 const fixtures = join(__dirname, '../../../scripts/open-data/fixtures');
 const extract = JSON.parse(readFileSync(join(fixtures, 'synthetic-extract.geojson'), 'utf8'));
@@ -107,7 +110,7 @@ describe('geometry', () => {
 });
 
 describe('the dry run over the synthetic extract', () => {
-  const result = runDryRun({ features: normaliseFeatures(extract), stored, version: '2026-10-14' });
+  const result: any = runDryRun({ features: normaliseFeatures(extract), stored, version: '2026-10-14' });
   const byName = (name: string) => result.candidates.find((c: { name: string }) => c.name === name);
   const rejection = (needle: string) => result.rejected.find((r: { name: string; reason: string }) => r.name === needle || r.reason.includes(needle));
 
