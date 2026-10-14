@@ -85,8 +85,58 @@ describe('the corrections ledger, as Explore applies it', () => {
 
   it('gives every reviewed entry something to say', () => {
     for (const [id, entry] of Object.entries(REVIEWED_PLACES)) {
-      expect(id.startsWith('fp-google-'), id).toBe(true);
+      expect(id.startsWith('fp-google-') || id.startsWith('fp-fhrs-'), id).toBe(true);
       expect(Boolean(entry.group || entry.hidden), id).toBe(true);
     }
+  });
+});
+
+describe('the five kinds of play venue (Tranche C)', () => {
+  const tranche = Object.entries(REVIEWED_PLACES).filter(([id]) => id.startsWith('fp-fhrs-'));
+  const pick = (id: string) => classify({ id, name: 'whatever the register calls it', category: 'activity' });
+
+  it('has the twelve venues whose own pages were read, each with a kind and the words it stands on', () => {
+    expect(tranche).toHaveLength(12);
+    for (const [id, entry] of tranche) {
+      expect(entry.kind, id).toBeTruthy();
+      expect((entry.evidence ?? []).length, id).toBeGreaterThan(0);
+      expect(entry.play, id).toBeTruthy();
+    }
+  });
+
+  it('keeps soft play, play cafés, trampoline parks and climbing centres apart', () => {
+    const kinds = new Set(tranche.map(([, e]) => e.kind));
+    expect([...kinds].sort()).toEqual(['climbing_centre', 'play_cafe', 'soft_play', 'trampoline_park']);
+  });
+
+  it('files the three 0 to 5 play cafés under Activities, labelled "Play café", and never as soft play', () => {
+    for (const id of ['fp-fhrs-1961932', 'fp-fhrs-1677302', 'fp-fhrs-1756533']) {
+      const c = pick(id);
+      expect(c.group, id).toBe('attractions');
+      expect(c.label, id).toBe('Play café');
+      expect(c.kind, id).toBe('play_cafe');
+      expect(c.play?.softPlay, id).toBe('not_confirmed');
+      expect(c.basis, id).toBe('reviewed');
+      expect(c.evidence.join(' '), id).toMatch(/Soft play is not mentioned/);
+    }
+  });
+
+  it('files a venue as soft play only where its own pages say so, and says a mixed venue is mixed', () => {
+    expect(pick('fp-fhrs-346104').kind).toBe('soft_play');
+    expect(pick('fp-fhrs-1434379')).toMatchObject({ kind: 'trampoline_park', label: 'Trampoline park with soft play' });
+    expect(pick('fp-fhrs-1937580')).toMatchObject({ kind: 'climbing_centre', group: 'attractions', label: 'Climbing centre with a soft-play area' });
+    expect(pick('fp-fhrs-1935590').play).toEqual({ softPlay: 'not_confirmed', trampolines: 'confirmed' });
+  });
+
+  it('never states an age a venue did not write: every age in a card line is attributed to the venue', () => {
+    for (const [id, entry] of tranche) {
+      for (const line of entry.evidence ?? []) {
+        if (/\bages? \d|aged? \d|under-\d|under \d|\d+ to \d+|0–\d|0-\d/.test(line)) expect(line, id).toMatch(/its own page|its own pages/);
+      }
+    }
+  });
+
+  it('a food registration is not evidence: nothing in an evidence line leans on the register', () => {
+    for (const [id, entry] of tranche) for (const line of entry.evidence ?? []) expect(line, id).not.toMatch(/hygiene|rating|FHRS|food/i);
   });
 });
