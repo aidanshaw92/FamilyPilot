@@ -3,7 +3,7 @@
 Status: draft PR, **not merged**. Changes `server/places/lib/places-quality.js` only. No database change, no data correction, no new
 Google request, no scheduled job. Replay and fixtures run locally with no network.
 
-Part of the catalogue work in [CATALOGUE_BOTTLENECKS.md](CATALOGUE_BOTTLENECKS.md) and [CATALOGUE_CORRECTIONS.md](CATALOGUE_CORRECTIONS.md)
+Part of the catalogue work in CATALOGUE_BOTTLENECKS.md and CATALOGUE_CORRECTIONS.md (in the catalogue docs pull request)
 (rules R1 to R4).
 
 ## The defect
@@ -140,7 +140,7 @@ two trampoline parks with soft play, one indoor play centre with soft play, one 
 - Stored rows are **not** touched. Four stored venues get a different group the next time discovery or a refresh rewrites them (the
   four above). Until then the Explore reviewed map already shows the correct groups.
 - The Natural History Museum **does not reappear on merge.** It returns when a discovery or by-ID refresh fetches it, which is a Google
-  request this change does not make. See [FRESHNESS_DISCOVERABILITY.md](FRESHNESS_DISCOVERABILITY.md).
+  request this change does not make. See the freshness note in the catalogue docs pull request (FRESHNESS_DISCOVERABILITY.md).
 - No change to the restaurant intent, ranking, de-duplication, the budget gate or what Google is asked for.
 
 ## Rollback
