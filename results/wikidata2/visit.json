@@ -1,0 +1,2403 @@
+{
+  "head" : {
+    "vars" : [ "item", "itemLabel", "coord", "website", "sitelinks", "inception", "classLabel" ]
+  },
+  "results" : {
+    "bindings" : [ {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q57027455"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.289691 51.347058)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "0"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.hobbledown.com/epsom/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Hobbledown"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "zoo"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q56857421"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.347834 51.512267)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://hanwellzoo.co.uk/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Hanwell Zoo"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "zoo"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1975-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q56757815"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.156706643 51.481695995)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "http://www.batterseaparkzoo.co.uk/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Battersea Park Children's Zoo"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "zoo"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q270263"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.155833333 51.535555555)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "44"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.londonzoo.org/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "London Zoo"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "zoo"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1828-04-27T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q373187"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.544166666 51.849722222)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "16"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.whipsnadezoo.org/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Whipsnade Zoo"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "zoo"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1931-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q56856819"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.18893844 51.566852269)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.cityoflondon.gov.uk/things-to-do/green-spaces/hampstead-heath/golders-hill-park/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Golders Hill Park Zoo"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "zoo"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q7134390"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.053988 51.7421)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "4"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.pwpark.com/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Hertfordshire Zoo"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "zoo"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1960-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q8033330"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.446658 51.849077)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Woodside Farm and Wildfowl Park"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "zoo"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q15170809"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.223721 51.839132)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "3"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "http://www.catsurvivaltrust.org"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Cat Survival Trust"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "zoo"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q124650480"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.115539947 51.315572677)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Willow's Birds of Prey & Wildlife Trail"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "zoo"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q84042267"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.192566 51.369525)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.eagleheights.co.uk/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Eagle Heights Wildlife Foundation"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "zoo"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q3312744"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.118889 51.5019)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "16"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.visitsealife.com/london/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Sea Life London Aquarium"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "public aquarium"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "2026-03-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q4915315"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.032 51.5031)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "http://www.silvertownquays-london.com"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Biota!"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "public aquarium"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q107176945"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.133 51.511)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "2"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "SegaWorld London"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "theme park"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q125662212"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.0451 51.4977)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.phantompeak.com/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Phantom Peak"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "theme park"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "2022-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q7135338"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.311745 51.4618)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "http://www.londonparamount.info"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "London Paramount"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "theme park"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q3047891"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.65114 51.4635)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "12"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.legoland.co.uk/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Legoland Windsor"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "amusement park"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q2301819"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.513055555 51.404722222)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "14"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "http://www.thorpepark.com/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Thorpe Park"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "amusement park"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q160659"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.119722222 51.503333333)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "78"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://londoneye.com"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "London Eye"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "tourist attraction"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1999-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q139629"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.572659 51.2339)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "8"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.guildford.gov.uk/castle"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Guildford Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1100-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q42646"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.604444444 51.483888888)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "85"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.rct.uk/visit/windsorcastle"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Windsor Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1070-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q4667854"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.40686 51.2024)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "4"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Abinger Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q4926360"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.107648 51.239)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "5"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Bletchingley Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q4897394"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.296507 51.2372)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "5"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Betchworth Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q7310075"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.207447 51.2389)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "2"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Reigate Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q24660892"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.29157 51.35784)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Chessington Castle Hill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q24660890"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.24922 51.28194)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Walton on the Hill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q1470540"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.101389 51.5136)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "5"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Montfichet's Tower"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q62378"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.076198055 51.5082)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "88"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.hrp.org.uk/tower-of-london/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Tower of London"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1066-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q24660870"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.62544 51.74287)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Hawridge Court"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q24660872"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.68664 51.69528)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Great Missenden"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q5761802"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.3348 51.6536)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "4"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Hilfield Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1799-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q2363520"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.08023 51.7953)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "10"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.hertfordcastle.co.uk/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Hertford Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1066-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q24660632"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.04718 51.80041)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Barrowfield"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q1132683"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.113889 51.186944)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "30"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "http://www.hevercastle.co.uk/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Hever Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1271-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q1132683"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.113889 51.186944)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "30"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.hevercastle.co.uk/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Hever Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1271-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q5096598"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.1424 51.1858)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "5"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.chiddingstonecastle.org.uk/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Chiddingstone Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q7820768"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.273509 51.1963)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "9"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.tonbridgecastle.org/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Tonbridge Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q24662664"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.22949 51.30654)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Kemsing Castle Bank"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q6702874"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.196217 51.3579)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "6"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "http://www.lullingstonecastle.co.uk/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Lullingstone Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q6702874"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.196217 51.3579)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "6"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.lullingstonecastle.co.uk/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Lullingstone Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q1385848"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.213333 51.3706)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "8"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.english-heritage.org.uk/visit/places/eynsford-castle/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Eynsford Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q15242302"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.42088889 51.30438611)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "7"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Leybourne Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q17546819"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.286358 51.2948)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Ightham Court"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q7618887"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.277778 51.4433)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "7"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Stone Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q24661501"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.12711 51.7902)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Harlow Mill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q24660849"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.31687 51.74956)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Willingale Doe"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "castle"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q205666"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.337499 51.4034)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "53"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.hrp.org.uk/hampton-court-palace/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Hampton Court Palace"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1515-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q42646"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.604444444 51.483888888)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "85"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.rct.uk/visit/windsorcastle"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Windsor Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1070-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q2008622"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.45144 51.3754)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "8"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Oatlands Palace"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q5001608"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.339167 51.4203)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "7"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Bushy House"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1663-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q1059945"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.310219444 51.460388888)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "20"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Richmond Palace"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q1050082"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.295056 51.4838)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "22"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.hrp.org.uk/kew-palace/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Kew Palace"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1631-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q3657356"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.105642 51.37228)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "4"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Croydon Palace"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q207385"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.188333333 51.505277777)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "54"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.hrp.org.uk/kensington-palace/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Kensington Palace"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1605-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q207385"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.188333333 51.505277777)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "54"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "http://www.hrp.org.uk/kensington-palace/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Kensington Palace"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1605-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q1130266"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.11972 51.49556)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "35"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "http://www.archbishopofcanterbury.org/pages/about-lambeth-palace.html"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Lambeth Palace"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1435-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q6904072"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.126389 51.5064)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "3"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Montagu House, Whitehall"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1864-09-24T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q4802240"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.114167 51.5119)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "5"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Arundel House"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q203035"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.091 51.506888888)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "4"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "https://www.english-heritage.org.uk/visit/places/winchester-palace/"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Winchester Palace"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q564981"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.00378253 51.4812)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "33"
+      },
+      "website" : {
+        "type" : "uri",
+        "value" : "http://www.nmm.ac.uk/server/show/nav.3556"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Queen's House"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1616-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q7752234"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.439356 51.6343)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "3"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "The More"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q6412947"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.460172 51.7116)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "3"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Kings Langley Palace"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1201-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q512922"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.0557352 51.6892)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "5"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Theobalds House"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q24660958"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.192338 51.3112)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "5"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Otford Castle"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q7263490"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.199 51.6195)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "2"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Pyrgo Park"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "palace"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1400-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q6694044"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.235686 51.152442)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "2"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Lowfield Heath Windmill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q8037646"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.183396 51.2448)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "2"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Wray Common Mill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q8023531"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.232 51.438)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "4"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Wimbledon Windmill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q7967301"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.176341879 51.45497076)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "3"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Wandsworth Common Windmill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q5476394"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.17333 51.4782)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Fowler's Mill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q4804689"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.123834 51.4532)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "4"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Ashby's Mill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q27080323"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.109422 51.528518)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Windmill Base, New River Head"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      },
+      "inception" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+        "type" : "literal",
+        "value" : "1707-01-01T00:00:00Z"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q26563411"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.630688 51.644113)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Coleshill Windmill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q5580136"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.675101 51.796888)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Goldfield Mill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q4861605"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(-0.243 51.643)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "3"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Barnet Gate Mill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q24661514"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.15724 51.39953)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "St Mary Cray Hockenden"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q6395240"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.033 51.357)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "2"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Keston Windmill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q6407644"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.353472 51.3619)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "2"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Killick's Mill, Meopham"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q7898391"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.2451 51.558)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "3"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Upminster Windmill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q5506601"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.371 51.681)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "2"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Fryerning Mill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q6925820"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.358 51.656)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "2"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Mountnessing Windmill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q7995341"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.266911 51.794521)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "2"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "White Roding Windmill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q24660853"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.19481 51.75397)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "1"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Magdalen Laver mound"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q4831740"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(0.307 51.812)"
+      },
+      "sitelinks" : {
+        "datatype" : "http://www.w3.org/2001/XMLSchema#integer",
+        "type" : "literal",
+        "value" : "2"
+      },
+      "itemLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "Aythorpe Roding Windmill"
+      },
+      "classLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "windmill"
+      }
+    } ]
+  }
+}
