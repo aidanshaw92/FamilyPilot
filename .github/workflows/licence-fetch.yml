@@ -25,6 +25,7 @@ jobs:
       - run: python legal-fetch/fetch_texts.py
 
   wikidata:
+    if: ${{ false }}   # already run once; a second push of legal-fetch/ must not repeat the queries
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
