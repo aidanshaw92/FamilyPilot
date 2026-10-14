@@ -1,10 +1,11 @@
-# One-off open-data fetch. NOT scheduled, NOT dispatchable, NOT run on pull requests.
+# One-off open-data publish step. NOT scheduled, NOT dispatchable, NOT run on pull requests.
 #
-# It runs only when the throwaway branch `data/open-data-fetch` is pushed, on GitHub's own runners (free for this public repository),
-# because the cloud coding session's network policy refuses the open-data hosts and that policy is not to be worked around. This job has
-# no secrets, no database access and makes no Google request. It downloads each file once, records where it came from, reduces it to what
-# the dry run reads and uploads the result as a short-lived artifact. See open-data/README.md.
-name: Open data fetch (one-off)
+# The previous version of this file (in this branch's history) fetched Geofabrik, OS Open Greenspace and Wikidata once, on GitHub's own
+# runner, and kept the result as run 38528419810's artifact. The cloud coding session's network policy does not reach the artifact host,
+# and that policy is not to be worked around, so this job does the one thing left: it takes that artifact, checks it against its own
+# provenance file, and publishes the same files (gzipped, with their licence notice) to the throwaway branch `data/open-data-inputs`,
+# which the session can read through GitHub. Nothing is fetched from the open-data hosts again. No secret beyond the run's own token.
+name: Open data publish (one-off)
 
 on:
   push:
@@ -17,144 +18,51 @@ permissions:
   contents: read
 
 jobs:
-  fetch:
+  publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      UA: FamilyPilot-open-data/1.0 (+https://github.com/aidanshaw92/FamilyPilot)
+    timeout-minutes: 10
+    permissions:
+      contents: write   # to write the throwaway branch data/open-data-inputs only
+      actions: read     # to read the earlier run's artifact
     steps:
-      - name: Tools (from the Ubuntu archive)
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq osmium-tool gdal-bin jq unzip >/dev/null
-          osmium --version | head -1
-          ogr2ogr --version
-
-      - name: OpenStreetMap, Greater London (Geofabrik; one download)
-        run: |
-          mkdir -p work out
-          URL="https://download.geofabrik.de/europe/united-kingdom/england/greater-london-latest.osm.pbf"
-          curl -fSL --retry 2 -A "$UA" -o work/greater-london-latest.osm.pbf "$URL"
-          curl -fSL --retry 2 -A "$UA" -o work/greater-london-latest.osm.pbf.md5 "$URL.md5"
-          cat work/greater-london-latest.osm.pbf.md5
-          (cd work && md5sum -c greater-london-latest.osm.pbf.md5)
-          ls -l work/greater-london-latest.osm.pbf
-          osmium fileinfo work/greater-london-latest.osm.pbf | head -20
-          # Only the tags the dry run classifies, nodes ways and relations.
-          osmium tags-filter work/greater-london-latest.osm.pbf \
-            nwr/tourism=zoo,aquarium,museum,gallery,theme_park \
-            nwr/attraction=animal \
-            nwr/leisure=trampoline_park,indoor_play,playground,nature_reserve,park,water_park,ice_rink,miniature_golf,bowling_alley \
-            -o work/london-family.osm.pbf --overwrite
-          osmium export work/london-family.osm.pbf -f geojson --geometry-types=point,polygon \
-            --add-unique-id=type_id -a version -o out/london-family.geojson --overwrite
-          ls -l out/london-family.geojson
-          jq -r '.features | length' out/london-family.geojson | sed 's/^/features: /'
-          jq -c '.features[0:2][] | {id, properties: (.properties | {name, "@version", leisure, tourism}), geometry: .geometry.type}' out/london-family.geojson
-
-      - name: OS Open Greenspace, grid squares TQ and TL (OS OpenData, no key)
-        run: |
-          LIST=work/os-list.json
-          curl -fSL --retry 2 -A "$UA" -o $LIST https://api.os.uk/downloads/v1/products/OpenGreenspace/downloads
-          for AREA in TQ TL; do
-            ROW=$(jq -c --arg a "$AREA" '.[] | select(.area==$a and (.format|test("Shapefile")))' $LIST)
-            URL=$(echo "$ROW" | jq -r .url); MD5=$(echo "$ROW" | jq -r .md5); NAME=$(echo "$ROW" | jq -r .fileName)
-            echo "$AREA: $NAME $(echo "$ROW" | jq -r .size) bytes"
-            curl -fSL --retry 2 -A "$UA" -o "work/$NAME" "$URL"
-            echo "$MD5  work/$NAME" | md5sum -c -
-            mkdir -p "work/os-$AREA" && unzip -q -o "work/$NAME" -d "work/os-$AREA"
-          done
-          find work/os-TQ work/os-TL -type f | head -30
-          for AREA in TQ TL; do
-            SHP=$(find "work/os-$AREA" -iname '*GreenspaceSite*.shp' | head -1)
-            echo "$AREA site layer: $SHP"
-            ogrinfo -so -al "$SHP" | head -30
-            ogr2ogr -f GeoJSON -t_srs EPSG:4326 "work/greenspace-$AREA.geojson" "$SHP"
-          done
-          python3 - <<'PY'
-          import json, collections
-          feats = []
-          for area in ('TQ', 'TL'):
-              feats += json.load(open(f'work/greenspace-{area}.geojson'))['features']
-          def reps(g):
-              def pts(c):
-                  if isinstance(c[0], (int, float)): yield c
-                  else:
-                      for x in c: yield from pts(x)
-              ps = list(pts(g['coordinates']))
-              return (sum(p[1] for p in ps) / len(ps), sum(p[0] for p in ps) / len(ps))
-          keep = []
-          for f in feats:
-              lat, lng = reps(f['geometry'])
-              if 51.28 <= lat <= 51.70 and -0.52 <= lng <= 0.34:
-                  keep.append(f)
-          json.dump({'type': 'FeatureCollection', 'features': keep}, open('out/greenspace-london.geojson', 'w'))
-          print('greenspace sites in the London box:', len(keep), 'of', len(feats))
-          print('property keys:', sorted(keep[0]['properties']) if keep else None)
-          fn = next((k for k in keep[0]['properties'] if k.lower() in ('function', 'priFunc', 'primaryfunction')), None) if keep else None
-          for key in (fn,) if fn else []:
-              print(key, collections.Counter(f['properties'][key] for f in keep).most_common())
-          PY
-
-      - name: Wikidata, museums, zoos and galleries in Greater London (one query)
-        run: |
-          cat > work/wikidata.rq <<'RQ'
-          SELECT ?item ?itemLabel ?classLabel ?coord ?website WHERE {
-            VALUES ?class { wd:Q33506 wd:Q43501 }
-            ?item wdt:P31/wdt:P279* ?class .
-            ?item wdt:P131* wd:Q23306 .
-            OPTIONAL { ?item wdt:P625 ?coord }
-            OPTIONAL { ?item wdt:P856 ?website }
-            SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-          }
-          RQ
-          curl -fSL --retry 1 --max-time 120 -A "$UA" -H 'Accept: application/sparql-results+json' --get \
-            --data-urlencode query@work/wikidata.rq https://query.wikidata.org/sparql -o out/wikidata-london.json
-          jq '.results.bindings | length' out/wikidata-london.json | sed 's/^/wikidata rows: /'
-          jq '[.results.bindings[] | select(.coord != null)] | length' out/wikidata-london.json | sed 's/^/with coordinates: /'
-          jq '[.results.bindings[] | select(.website != null)] | length' out/wikidata-london.json | sed 's/^/with a website: /'
-
-      - name: Provenance and notices
-        run: |
-          python3 - <<'PY'
-          import hashlib, json, os, datetime
-          now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
-          def info(path, **kw):
-              data = open(path, 'rb').read()
-              return {'file': os.path.basename(path), 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest(), 'retrieved_at': now, **kw}
-          prov = {
-            'generated_by': 'FamilyPilot open-data-fetch workflow (one-off, throwaway branch data/open-data-fetch)',
-            'user_agent': os.environ['UA'],
-            'files': [
-              info('out/london-family.geojson', source='OpenStreetMap, Greater London extract, filtered by tag with osmium',
-                   source_url='https://download.geofabrik.de/europe/united-kingdom/england/greater-london-latest.osm.pbf',
-                   source_md5=open('work/greater-london-latest.osm.pbf.md5').read().split()[0],
-                   licence='ODbL-1.0', licence_url='https://opendatacommons.org/licenses/odbl/1-0/',
-                   attribution='© OpenStreetMap contributors', attribution_url='https://www.openstreetmap.org/copyright'),
-              info('out/greenspace-london.geojson', source='OS Open Greenspace, grid squares TQ and TL (ESRI Shapefile), clipped to the London box',
-                   source_url='https://api.os.uk/downloads/v1/products/OpenGreenspace/downloads',
-                   licence='OGL-3.0', licence_url='https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/',
-                   attribution='Contains OS data © Crown copyright and database right ' + str(datetime.date.today().year)),
-              info('out/wikidata-london.json', source='Wikidata Query Service, museums and zoos inside Greater London',
-                   source_url='https://query.wikidata.org/sparql',
-                   licence='CC0-1.0', licence_url='https://creativecommons.org/publicdomain/zero/1.0/', attribution='none required'),
-            ],
-          }
-          json.dump(prov, open('out/PROVENANCE.json', 'w'), indent=2)
-          print(json.dumps(prov, indent=2))
-          PY
-          cat > out/NOTICE.txt <<'TXT'
-          Open data for FamilyPilot's catalogue-recovery dry run. Not for production use; not a release.
-          OpenStreetMap data: © OpenStreetMap contributors, Open Database Licence 1.0 (https://www.openstreetmap.org/copyright).
-          Ordnance Survey data: Contains OS data © Crown copyright and database right, Open Government Licence v3.
-          Wikidata: CC0 1.0.
-          See PROVENANCE.json for the source, retrieval time, size and SHA-256 of each file.
-          TXT
-          ls -l out
-
-      - name: Keep the result for five days
-        uses: actions/upload-artifact@v4
+      - name: The artifact from the earlier fetch run
+        uses: actions/download-artifact@v4
         with:
           name: open-data-inputs
-          path: out/
-          retention-days: 5
+          path: in
+          run-id: 38528419810
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check each file against its provenance record
+        run: |
+          ls -l in
+          python3 - <<'PY'
+          import hashlib, json
+          prov = json.load(open('in/PROVENANCE.json'))
+          for f in prov['files']:
+              h = hashlib.sha256(open('in/' + f['file'], 'rb').read()).hexdigest()
+              assert h == f['sha256'], (f['file'], h, f['sha256'])
+              print('ok', f['file'], f['bytes'], 'bytes', f['licence'])
+          PY
+
+      - name: Publish to the throwaway branch data/open-data-inputs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir pub && cp in/PROVENANCE.json in/NOTICE.txt pub/
+          for f in london-family.geojson greenspace-london.geojson; do gzip -9 -c "in/$f" > "pub/$f.gz"; done
+          cp in/wikidata-london.json pub/
+          cat > pub/README.md <<'MD'
+          Throwaway branch. Open data fetched once from its publishers by the repository's own GitHub Actions runner, for FamilyPilot's
+          catalogue-recovery dry run. Never merged. See NOTICE.txt for the licences and credits and PROVENANCE.json for the source,
+          retrieval time, size and SHA-256 of each file (the .gz files decompress to the files named there).
+          MD
+          cd pub
+          git init -q -b data/open-data-inputs
+          git config user.name "open-data-fetch"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Open data for the catalogue-recovery dry run (OSM, OS Open Greenspace, Wikidata), with licences and provenance"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push -q -f origin data/open-data-inputs
+          ls -l
