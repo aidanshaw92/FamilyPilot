@@ -14,6 +14,7 @@ import { PRIVATE_USE_NAME, GENERIC_NAME, haversineKm, inScope, osParks, wikidata
 
 const require = createRequire(import.meta.url);
 const identities = require('../../server/places/lib/independent-identities.js');
+const { tokenOverlapScore } = require('../../server/places/lib/venue-alias-detection.js');
 
 /** Anything that names Google or carries a Google place id. Stored ids start `ChIJ` (or `fp-google-`); a source URL never should. */
 export const GOOGLE_MARKER = /google|ChIJ[\w-]{10,}|places\/ChI|maps\.app\.goo|goo\.gl/i;
@@ -29,7 +30,7 @@ export function sourceIndex({ greenspace, wikidata }) {
 }
 
 /** Fidelity: the entry is exactly what its source says. Returns a list of problems (empty when it is). */
-export function fidelityProblems(entry, index) {
+export function fidelityProblems(entry, index, override = null) {
   const out = [];
   const src = entry.identity?.source;
   if (src === 'os-greenspace') {
@@ -37,20 +38,26 @@ export function fidelityProblems(entry, index) {
     if (!c) return ['not found in the OS Open Greenspace extract'];
     if (c.name !== entry.name) out.push(`name differs from the source ("${c.name}")`);
     if (metres(entry.location.latitude, entry.location.longitude, c.lat, c.lng) > 0.5) out.push('position is not the source\'s own interior point');
-    if (c.category !== entry.category) out.push(`category differs from the source (${c.category})`);
+    if (c.category !== entry.category && !(override?.category === entry.category && override.reason)) out.push(`category differs from the source (${c.category})`);
     if (entry.website) out.push('an OS park carries no website of the source');
   } else if (src === 'wikidata') {
     const c = index.wd.get(String(entry.identity.externalId).toUpperCase());
     if (!c) return ['not found in the Wikidata extract'];
-    if (c.hold) out.push(`the source class is held (${c.hold})`);
     if (c.name !== entry.name) out.push(`name differs from the source ("${c.name}")`);
     if (metres(entry.location.latitude, entry.location.longitude, c.lat, c.lng) > 0.5) out.push('position is not the source\'s own coordinate');
-    if (c.category !== entry.category) out.push(`category differs from the source (${c.category})`);
+    if (c.category !== entry.category && !(override?.category === entry.category && override.reason)) out.push(`category differs from the source (${c.category})`);
     if (entry.website && !(c.website && c.website.replace(/^http:/i, 'https:') === entry.website)) out.push('website is not the one Wikidata lists');
   } else {
     out.push(`source ${src} is not one this check knows`);
   }
   return out;
+}
+
+/** The selector's own gates, applied to the source record: a class it holds back (a barrow, an arts venue) is a reason a person must have overruled. */
+export function gateProblems(entry, index) {
+  if (entry.identity?.source !== 'wikidata') return [];
+  const c = index.wd.get(String(entry.identity.externalId).toUpperCase());
+  return c?.hold ? [`the source class is held back by the selector (${c.hold})`] : [];
 }
 
 /** Independence: no Google value reached the entry. `stored` is optional (private rows); without it only the marker check runs. */
@@ -87,7 +94,7 @@ export function hygieneProblems(entry) {
 }
 
 /** Batch-level: one entry per source record, and no two entries for one place. Returns problems keyed by familypilotId. */
-export function batchProblems(entries, { sameNameWithinM = 150 } = {}) {
+export function batchProblems(entries, { sameNameWithinM = 150, similarNameWithinM = 600 } = {}) {
   const out = new Map();
   const add = (id, p) => out.set(id, [...(out.get(id) ?? []), p]);
   const seenId = new Map(); const seenSrc = new Map();
@@ -101,33 +108,55 @@ export function batchProblems(entries, { sameNameWithinM = 150 } = {}) {
   for (let i = 0; i < entries.length; i++) {
     for (let j = i + 1; j < entries.length; j++) {
       const a = entries[i]; const b = entries[j];
-      if (a.name.toLowerCase() !== b.name.toLowerCase()) continue;
-      if (metres(a.location.latitude, a.location.longitude, b.location.latitude, b.location.longitude) <= sameNameWithinM) add(b.familypilotId, `same name within ${sameNameWithinM} m of ${a.familypilotId}`);
+      const d = metres(a.location.latitude, a.location.longitude, b.location.latitude, b.location.longitude);
+      if (a.name.toLowerCase() === b.name.toLowerCase() && d <= sameNameWithinM) { add(b.familypilotId, `same name within ${sameNameWithinM} m of ${a.familypilotId}`); continue; }
+      // A different spelling of one place (a park and its gardens, "Royal Botanic Gardens" and "Royal Botanic Gardens, Kew"): most of the words shared, and close.
+      if (d <= similarNameWithinM && tokenOverlapScore(a.name, b.name) >= 0.6) add(b.familypilotId, `similar name (${a.name}) within ${Math.round(d)} m of ${a.familypilotId}`);
     }
   }
   return out;
 }
 
 /**
- * Everything, for a whole tranche. `shape` runs the registry's own validator as if signed, so a failure here is a failure the loader would refuse.
- * `allow` maps an entry id to the reason a person accepted its failing rule(s): such an entry is reported as accepted, with the rule and the reason, not hidden.
+ * A person's changes to a tranche, as a map from entry id to `{ category, reason }` (a reclassification) or `{ remove: reason }` (leave it out). Every change
+ * needs a stated reason; a change without one is ignored and reported. Returns the entries as they would be proposed, and what was changed and why.
  */
-export function validateTranche(entries, { index, stored = [], allow = {} }) {
+export function applyOverrides(entries, overrides = {}) {
+  const removed = []; const changed = []; const ignored = [];
+  const out = [];
+  for (const entry of entries) {
+    const o = overrides[entry.familypilotId];
+    if (!o) { out.push(entry); continue; }
+    if (o.remove) { removed.push({ id: entry.familypilotId, name: entry.name, category: entry.category, reason: o.remove }); continue; }
+    if (o.category && o.reason) { changed.push({ id: entry.familypilotId, name: entry.name, from: entry.category, to: o.category, reason: o.reason }); out.push({ ...entry, category: o.category }); continue; }
+    ignored.push({ id: entry.familypilotId, why: 'an override needs a category and a reason, or a removal with a reason' });
+    out.push(entry);
+  }
+  return { entries: out, removed, changed, ignored };
+}
+
+/**
+ * Everything, for a whole tranche. The registry's own validator runs as if the entry were signed, so a failure here is a failure the loader would refuse.
+ * `overrides` are applied first (see applyOverrides). `allow` maps an entry id to the reason a person accepted its failing gate, hygiene or batch rule: such an
+ * entry is reported as accepted, with the rule and the reason, not hidden. A registry, source or independence failure can never be accepted.
+ */
+export function validateTranche(proposed, { index, stored = [], allow = {}, overrides = {} }) {
+  const { entries, removed, changed, ignored } = applyOverrides(proposed, overrides);
   const batch = batchProblems(entries);
   const rows = entries.map((entry) => {
     const probs = [];
     const bad = identities.problemWith({ ...entry, reviewedBy: 'counted for validation only' }, {});
     if (bad) probs.push(`registry: ${bad}`);
-    probs.push(...fidelityProblems(entry, index).map((p) => `source: ${p}`));
+    probs.push(...fidelityProblems(entry, index, overrides[entry.familypilotId]).map((p) => `source: ${p}`));
     probs.push(...independenceProblems(entry, stored).map((p) => `independence: ${p}`));
+    probs.push(...gateProblems(entry, index).map((p) => `gate: ${p}`));
     probs.push(...hygieneProblems(entry).map((p) => `hygiene: ${p}`));
     probs.push(...(batch.get(entry.familypilotId) ?? []).map((p) => `batch: ${p}`));
-    const accepted = probs.length && allow[entry.familypilotId] ? allow[entry.familypilotId] : null;
-    // Registry, source and independence failures are never acceptable; only hygiene and batch rules can be overruled by a person.
-    const hard = probs.filter((p) => /^(registry|source|independence):/.test(p));
-    return { id: entry.familypilotId, name: entry.name, category: entry.category, source: entry.identity?.source, problems: probs, accepted: accepted && !hard.length ? accepted : null };
+    const hard = probs.some((p) => /^(registry|source|independence):/.test(p));
+    const accepted = probs.length && allow[entry.familypilotId] && !hard ? allow[entry.familypilotId] : null;
+    return { id: entry.familypilotId, name: entry.name, category: entry.category, source: entry.identity?.source, problems: probs, accepted };
   });
   const failed = rows.filter((r) => r.problems.length && !r.accepted);
   const acceptedRows = rows.filter((r) => r.problems.length && r.accepted);
-  return { total: entries.length, passed: entries.length - failed.length, failed, accepted: acceptedRows, rows };
+  return { total: entries.length, proposed: proposed.length, passed: entries.length - failed.length, failed, accepted: acceptedRows, removed, changed, ignored, entries, rows };
 }

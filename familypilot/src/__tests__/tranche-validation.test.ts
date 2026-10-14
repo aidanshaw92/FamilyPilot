@@ -24,7 +24,7 @@ const row = (q: string, label: string, cls: string, coord: string, website?: str
   item: { value: `http://www.wikidata.org/entity/${q}` }, itemLabel: { value: label }, coord: { value: coord }, classLabel: { value: cls }, sitelinks: { value: '12' },
   ...(website ? { website: { value: website } } : {}),
 });
-const wikidata = [{ results: { bindings: [row('Q10', 'Test Museum', 'museum', 'Point(-0.12 51.52)', 'http://museum.example.org/'), row('Q11', 'Test School Museum', 'museum', 'Point(-0.13 51.53)')] } }];
+const wikidata = [{ results: { bindings: [row('Q10', 'Test Museum', 'museum', 'Point(-0.12 51.52)', 'http://museum.example.org/'), row('Q11', 'Test School Museum', 'museum', 'Point(-0.13 51.53)'), row('Q12', 'Test Arts Venue', 'museum', 'Point(-0.14 51.54)')] } }];
 
 const osEntry = (checksLib: { sourceIndex: unknown }, index: { os: Map<string, { lat: number; lng: number }> }, over: Record<string, unknown> = {}) => {
   const p = [...index.os.values()][0];
@@ -138,3 +138,46 @@ describe('a whole tranche', () => {
     expect(accepted.failed.map((f: { id: string }) => f.id)).toEqual(['fp-os-renamed']);
   });
 });
+
+describe('what a person changed, and the rules a person may overrule', () => {
+  const heldEntry = () => wdEntry({ familypilotId: 'fp-wd-q12', name: 'Test Arts Venue', identity: { ...wdEntry().identity, externalId: 'Q12', url: 'https://www.wikidata.org/wiki/Q12' }, location: { latitude: 51.54, longitude: -0.14, source: 'wikidata', licence: 'CC0-1.0' }, website: undefined });
+
+  it('reports a class the selector holds back as a gate failure that a person may accept with a reason, but not hide', async () => {
+    const { index } = await setup();
+    const held = heldEntry();
+    delete (held as { website?: string }).website;
+    const r = checks.validateTranche([held], { index });
+    expect(r.failed[0].problems.join()).toMatch(/gate: .*held back/);
+    const ok = checks.validateTranche([held], { index, allow: { 'fp-wd-q12': 'a public gallery; the name rule is wrong here' } });
+    expect(ok.failed).toHaveLength(0);
+    expect(ok.accepted[0].accepted).toMatch(/public gallery/);
+  });
+
+  it('applies a reclassification only with a reason, a removal only with a reason, and says what it did', async () => {
+    const { index } = await setup();
+    const a = wdEntry();
+    const b = wdEntry({ familypilotId: 'fp-wd-q99', name: 'Elsewhere Institute', identity: { ...wdEntry().identity, externalId: 'Q99' } });
+    const out = checks.applyOverrides([a, b], { 'fp-wd-q10': { category: 'attraction', reason: 'a house, not a museum' }, 'fp-wd-q99': { remove: 'an institution, not a visit' } });
+    expect(out.entries.map((e: { category: string }) => e.category)).toEqual(['attraction']);
+    expect(out.removed[0]).toMatchObject({ id: 'fp-wd-q99', reason: 'an institution, not a visit' });
+    expect(out.changed[0]).toMatchObject({ from: 'museum', to: 'attraction' });
+    const noReason = checks.applyOverrides([a], { 'fp-wd-q10': { category: 'attraction' } });
+    expect(noReason.entries[0].category).toBe('museum');
+    expect(noReason.ignored).toHaveLength(1);
+    // the reclassified entry passes fidelity because the override names its category and reason; without the override it would not
+    const r = checks.validateTranche([a], { index, overrides: { 'fp-wd-q10': { category: 'attraction', reason: 'a house, not a museum' } } });
+    expect(r.failed).toHaveLength(0);
+    expect(r.changed).toHaveLength(1);
+    expect(checks.validateTranche([{ ...a, category: 'attraction' }], { index }).failed[0].problems.join()).toMatch(/category differs/);
+  });
+
+  it('finds a place written two ways, close together, and does not call two different galleries a pair when they are far apart', async () => {
+    await load();
+    const mk = (id: string, name: string, lat: number, lng: number) => wdEntry({ familypilotId: id, name, identity: { ...wdEntry().identity, externalId: id.toUpperCase() }, location: { latitude: lat, longitude: lng, source: 'wikidata', licence: 'CC0-1.0' } });
+    const near = checks.batchProblems([mk('fp-wd-q1', 'Royal Botanic Gardens', 51.48, -0.29), mk('fp-wd-q2', 'Royal Botanic Gardens, Kew', 51.4805, -0.2905)]);
+    expect(near.get('fp-wd-q2').join()).toMatch(/similar name/);
+    const far = checks.batchProblems([mk('fp-wd-q1', 'Royal Botanic Gardens', 51.48, -0.29), mk('fp-wd-q2', 'Royal Botanic Gardens, Kew', 51.6, -0.1)]);
+    expect(far.size).toBe(0);
+  });
+});
+
