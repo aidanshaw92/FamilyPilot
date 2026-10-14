@@ -180,7 +180,8 @@ describe('Meet halfway, map first', () => {
     expect(chrome).toContain('testID={`halfway-mode-${key}`}');
     expect(sheet).toContain('testID="halfway-selected-name"');
     expect(screen).toContain('onSelectPin={(id) => setSelectedId(id)}');
-    expect(screen).toContain('onSelect={() => choose(option.venue.id)}');
+    // With the map on, a card selects its pin; with it off (Google places, see map-compliance.test.ts) the same card opens the place.
+    expect(screen).toContain('onSelect={() => (canMap ? choose(option.venue.id) : openPlace(option))}');
     // Each family's journey is said separately, estimated; the ranking is explained; no score is printed.
     expect(read('src/services/planning/halfway-view.ts')).toContain("travelTimeLabel(journey.minutes, 'estimated')");
     expect(screen).toContain('not by the midpoint between your homes');

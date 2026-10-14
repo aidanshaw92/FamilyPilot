@@ -7,6 +7,7 @@
  * Usage: node scripts/capture-halfway-v2.mjs <baseUrl> <outDir> [widthxheight ...]   (default 393x852)
  */
 import { chromium } from 'playwright';
+import { routeBetweenAs } from './lib/place-provider.mjs';
 import { existsSync, mkdirSync } from 'node:fs';
 
 const BASE = process.argv[2] ?? 'http://localhost:4175';
@@ -35,6 +36,7 @@ const browser = await chromium.launch({ headless: true, ...(existsSync('/opt/pw-
 async function open(width, height, { families = FAMILIES, profile = PROFILE, block } = {}) {
   const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, hasTouch: true, timezoneId: 'Europe/London' });
   const page = await ctx.newPage();
+  await routeBetweenAs(page, 'osm'); // a Google place is never drawn on the app's own map (utils/map-compliance.ts); these captures are of the map's layout
   await page.clock.setFixedTime(new Date('2026-10-15T07:00:00'));
   // iPhone safe-area insets as real CSS (see audit-journey-phase2.mjs for why this is the method that works).
   await page.addInitScript((insets) => {
