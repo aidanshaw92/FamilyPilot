@@ -18,7 +18,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { AREAS, areaOf, csv, greenspaceIndex, wikidataItems } from './lib/recovery-select.mjs';
-import { inScope, osParks, wikidataCandidates } from './lib/open-licence.mjs';
+import { inScope, osParks, readWikidataFile, wikidataCandidates } from './lib/open-licence.mjs';
 import { buildBatches, writeOutputs as writeOsm, osmUrl } from './select-recovery-batches.mjs';
 import { buildOpenLicenceBatch, writeOpenLicenceOutputs, idOf, sourceUrlOf } from './select-open-licence-batch.mjs';
 
@@ -211,12 +211,7 @@ function main() {
   const json = (p) => JSON.parse(readFileSync(p, 'utf8'));
   const allStored = json(opt('--stored')).map((s) => ({ id: s.id ?? s.familypilot_place_id, name: s.name, category: s.category, lat: Number(s.lat), lng: Number(s.lng) }));
   const stored = allStored.filter((s) => inScope(s.lat, s.lng)); // the venues the app can serve at all
-  const GROUP = { museum_all: 'museum', zoo_all: 'zoo', farm_all: 'farm', amusement_all: 'amusement park' };
-  const wdFiles = opt('--wikidata').split(',').filter(Boolean).map((p) => {
-    const j = json(p); const g = GROUP[p.split('/').pop().replace(/\.json$/, '')];
-    if (g) for (const b of j.results.bindings) b.grp = { value: g };
-    return j;
-  });
+  const wdFiles = opt('--wikidata').split(',').filter(Boolean).map(readWikidataFile);
   const batch = json(opt('--osm-batch'));
   const osmWd = (opt('--osm-wikidata') ?? opt('--wikidata')).split(',').filter(Boolean).map(json);
   const osm = {

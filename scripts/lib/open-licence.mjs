@@ -1,9 +1,12 @@
 /**
  * Candidates from the two open-licence sources that need no OpenStreetMap data: OS Open Greenspace (Ordnance Survey, Open Government Licence v3.0) and
- * Wikidata (CC0 1.0). Pure: reads parsed files, returns candidates and the numbers a reviewer needs; writes nothing, reads no network, adds no fact.
+ * Wikidata (CC0 1.0). Pure apart from `readWikidataFile`, which reads one saved result from disk: returns candidates and the numbers a reviewer needs;
+ * writes nothing, reads no network, adds no fact.
  *
  * What these sources say is small: a name, a place and (Wikidata) a website. Nothing here says a place has toilets, opens at any hour or suits any age.
  */
+import { readFileSync } from 'node:fs';
+
 const toRad = (d) => (d * Math.PI) / 180;
 
 /** The app's London scope (server/places/lib/catalogue.js): nothing farther than this from the centre is served, so nothing farther is proposed. */
@@ -155,6 +158,18 @@ export function classifyWikidata(c) {
     return { category: 'attraction', reason: 'Wikidata calls it a museum; the name says a castle, house or similar, so it is classed as an attraction' };
   }
   return {};
+}
+
+/**
+ * A file named like museum_all.json holds distinct items under a class and its subclasses, without a class label per row: the file name is the group.
+ * Reads one saved SPARQL result and applies that rule, so every script reads the saved results the same way.
+ */
+const WIKIDATA_FILE_GROUP = { museum_all: 'museum', zoo_all: 'zoo', farm_all: 'farm', amusement_all: 'amusement park' };
+export function readWikidataFile(path) {
+  const json = JSON.parse(readFileSync(path, 'utf8'));
+  const group = WIKIDATA_FILE_GROUP[path.split('/').pop().replace(/\.json$/, '')];
+  if (group) for (const b of json.results.bindings) b.grp = { value: group };
+  return json;
 }
 
 /** One entry per Wikidata item from SPARQL JSON: coordinates, label, website, Wikipedia-link count, and every class it was returned under. */

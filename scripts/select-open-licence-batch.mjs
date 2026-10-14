@@ -20,7 +20,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { AREAS, areaOf, csv, selectBatch2 } from './lib/recovery-select.mjs';
-import { doubts, entryFromOs, entryFromWikidata, haversineKm, holdReason, inScope, judgeMatch, matchStored, osEntryId, osParks, pointInGeometry, scoreCandidate, wikidataCandidates, wikidataEntryId, OS_PRODUCT_URL } from './lib/open-licence.mjs';
+import { doubts, entryFromOs, entryFromWikidata, haversineKm, holdReason, inScope, judgeMatch, matchStored, osEntryId, osParks, pointInGeometry, readWikidataFile, scoreCandidate, wikidataCandidates, wikidataEntryId, OS_PRODUCT_URL } from './lib/open-licence.mjs';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { tokenOverlapScore } = require('../server/places/lib/venue-alias-detection.js');
@@ -167,14 +167,7 @@ function main() {
   if (need.length) { console.error(`missing ${need.join(', ')}`); process.exit(2); }
   const stored = JSON.parse(readFileSync(opt('--stored'), 'utf8')).map((s) => ({ id: s.id ?? s.familypilot_place_id, name: s.name, category: s.category, lat: Number(s.lat), lng: Number(s.lng) }));
   const parks = osParks(JSON.parse(readFileSync(opt('--greenspace'), 'utf8')));
-  // A file named like museum_all.json holds distinct items under a class and its subclasses, without a class label per row: the file name is the group.
-  const GROUP = { museum_all: 'museum', zoo_all: 'zoo', farm_all: 'farm', amusement_all: 'amusement park' };
-  const wikidata = wikidataCandidates(opt('--wikidata').split(',').filter(Boolean).map((p) => {
-    const json = JSON.parse(readFileSync(p, 'utf8'));
-    const group = GROUP[p.split('/').pop().replace(/\.json$/, '')];
-    if (group) for (const b of json.results.bindings) b.grp = { value: group };
-    return json;
-  }));
+  const wikidata = wikidataCandidates(opt('--wikidata').split(',').filter(Boolean).map(readWikidataFile));
   const version = opt('--version') ?? new Date().toISOString().slice(0, 10);
   const siteChecks = opt('--site-checks') ? JSON.parse(readFileSync(opt('--site-checks'), 'utf8')) : {};
   if (opt('--site-check-input')) {
