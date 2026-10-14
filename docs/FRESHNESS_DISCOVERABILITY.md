@@ -4,6 +4,10 @@
 git history on `main`. Nothing was written, fetched or enqueued and no Google request was made. I could not open the production app, so
 "left Explore" is what the code and the stored rows say, not something I watched.
 
+> **Update, 14 October (P0).** The "one timestamp for three things" below is four things once closure is included: existence, provider
+> content, evidence freshness and confirmed closure. The recovery proposal is in [P0_CATALOGUE_RECOVERY.md](P0_CATALOGUE_RECOVERY.md); it
+> also corrects the count of places served (142 today, not 145).
+
 ## The answer
 
 1. **One timestamp stands for three different things.** `place_records.fetched_at` decides whether a place may be shown at all. A place

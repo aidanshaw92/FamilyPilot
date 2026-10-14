@@ -1,8 +1,14 @@
 # Using OpenStreetMap-derived venue records: licence review
 
-2026-10-14. **This is a technical review, not legal advice.** I could not open the ODbL text or the OpenStreetMap Foundation's pages from
-this environment (network policy). The findings below come from search summaries of those pages and from my own reading of how the
-licence is commonly applied. Where I am unsure I say so in section 6. Counsel should read the primary texts before the first import.
+2026-10-14, revised the same day for the P0 recovery. **This is a technical review, not legal advice.** I could not open the ODbL text or
+the OpenStreetMap Foundation's pages from this environment (network policy). The findings below come from search summaries of those pages
+and from my own reading of how the licence is commonly applied. Where I am unsure I say so in section 6. Counsel should read the primary
+texts before the first import.
+
+> **What changed in this revision.** The first version said that putting OSM-derived rows in their own table makes the combined
+> database a Collective Database "as I read it". That was too confident and I withdraw it. **Separate tables (or files) are a technical
+> measure that makes the licence easy to honour. They do not decide the legal question.** What the OSMF's own guidelines say (as
+> summarised by search, not read) makes the question harder, not easier. See section 4A.
 
 ## 1. Decision asked of this review
 
@@ -50,8 +56,9 @@ extraction, so I do not see a present problem. It stops being comfortable at sev
 
 **Recommended design (see [LEDGER_MIGRATION_PROPOSAL.md](LEDGER_MIGRATION_PROPOSAL.md)):**
 
-1. OSM-derived and other open-data rows go in **their own table**, with their own batch provenance, **not in `place_records`**. They are
-   a separate database, assembled with ours at read time (a Collective Database use, as I read it).
+1. OSM-derived and other open-data rows go in **their own table** (or their own file, in the recovery registry), with their own batch
+   provenance, **not in `place_records`**. This keeps what must be offered separable. It does not by itself make the whole a Collective
+   Database; see 4A.
 2. **No Google value is copied into an open-data row**, and no open-data value into a Google row. They are linked by identifier only
    (a Google place ID against an open-data id), through a link table.
 3. **Our own derived facts** (classification, evidence from a venue's website) sit in our own tables, keyed to the venue. They are ours.
@@ -61,6 +68,46 @@ extraction, so I do not see a present problem. It stops being comfortable at sev
 5. Rows from **OGL** (OS, boroughs), **CC0** (Wikidata) and **CC BY** (Mapping Museums) sit in the same open-data table with their own
    attribution. OGL is described as compatible with the ODbL (the OGL text and the OSM wiki), so mixing them there is fine. CC0 needs
    nothing. CC BY needs credit.
+
+## 4A. What the OSMF's guidelines add, and why separate tables are not enough
+
+Summaries of the ODbL definitions and the OSMF Community Guidelines (not the primary pages) give me this:
+
+1. **The definition.** A *Collective Database* is the database "in unmodified form" as part of a collection of independent databases
+   assembled into a whole, and a Collective Database is not a Derivative Database. A *Derivative Database* includes any adaptation,
+   arrangement or alteration of the database or of a Substantial part of its contents, and includes extracting a Substantial part into a
+   new database. **We would alter what we take** (select a subset by tag, assign our own group, drop tags), so "unmodified form" does not
+   obviously describe the OSM-derived rows. I would plan on them being a Derivative Database.
+2. **The OSMF Collective Database Guideline** (endorsed June 2016, as summarised). OSM and non-OSM data are treated as independent when,
+   for each data type within a regional cut, the data is *entirely OSM or entirely non-OSM*; share-alike then reaches only the OSM parts. It
+   is not triggered when the datasets *do not reference each other*, or when non-OSM data wholly replaces a geometry type.
+   - **Mixing.** A Museums list that holds some Google rows and some OSM rows for London mixes the two within one data type and region.
+     That is the situation the guideline says does *not* qualify. Serving Google and OSM entries side by side, even from separate tables,
+     is such a mix.
+   - **References.** A table linking a Google place ID to an OSM element is a reference between the datasets. So is an OSM-derived entry
+     keyed by a Google place ID, which the recovery registry does today to keep saved plans working.
+3. **The OSMF Geocoding Guideline** (endorsed August 2017, as summarised). Results made of names, addresses and coordinates, that are not
+   "a systematic attempt to aggregate all or substantially all primary features of a type within a city-sized or larger area", are not a
+   substantial extract. **Importing every museum or playground in Greater London is exactly that systematic aggregate**, so I cannot rely
+   on this guideline for the import. It does support a handful of one-off lookups.
+4. **The Substantial Guideline** and the numeric threshold I remembered (about 100 features): I could not find its wording and will not
+   rely on a number.
+
+**So the position is:** treat the OSM-derived entries as a Derivative Database that must be offered under the ODbL; do not count on the
+Collective reading; and avoid, rather than argue about, the two situations the guideline names. The design consequences:
+
+- **Cut over by category; do not blend.** Serve a category from OSM (and the other open sources) *instead of* Google for that category,
+  rather than one list that mixes both. In steady state the Google rows are gone, so there is no mix. The blend that is only transitional
+  (20 October to 8 November, while Google rows remain) is the part to take to counsel, and the safest course is to switch a category when
+  its open-data coverage is at least what Google's was, not before.
+- **Do not cross-reference more than continuity needs.** Saved plans and saved places hold `fp-google-...` ids. Keeping those working
+  needs an alias from the old id to the new one. That alias is a reference between the datasets. Whether it can live in our own tables
+  (our fact about two records) or must be avoided is a question for counsel. Until it is answered, the registry is built but empty.
+- **`osm.json` is the thing to offer.** All OSM-derived entries are in one file (and nowhere else), with batch, version and attribution,
+  so the offer is a file at a stable address linked from the credits.
+
+None of this changes the recommendation to proceed with the **dry run**, which stores nothing and serves nothing. It does mean no OSM
+entry should be served until counsel has answered the questions in section 6 and you have approved the approach.
 
 ## 5. Provenance we must keep
 
@@ -73,8 +120,9 @@ not in the public extract and are not stored.
 
 I cannot resolve these from here. Counsel, or the OSMF's licensing working group, can.
 
-1. Whether our combined venue database is a Derivative Database or a Collective Database. The separate-table design is meant to make the
-   Collective reading the natural one, but the line is the licence's, not mine.
+1. Whether our combined venue database is a Derivative Database or a Collective Database. Separate tables do not settle it, the
+   OSMF Collective Database Guideline asks for "entirely OSM or entirely non-OSM" per data type and region and for datasets that do not
+   reference each other (4A), and we alter what we take.
 2. Where "substantial" falls for a few hundred venues from a city of millions of features, and how repeated refreshes count.
 3. Whether a publicly readable table and an API serving it is "publicly using" the database in the licence's sense, as against only
    publicly using a Produced Work.
@@ -82,6 +130,11 @@ I cannot resolve these from here. Counsel, or the OSMF's licensing working group
 5. Whether tag-level facts (`wheelchair`, `toilets`, `opening_hours`) are better presented as OSM's statement with a date than as ours.
 6. Future relicensing risk of combining OGL data with ODbL data, flagged on the OSM wiki.
 7. The UK database right as it applies alongside the licence.
+8. Whether an alias from a Google-derived id to an OSM-derived one, kept for saved plans, is a reference between the datasets in the
+   guideline's sense, and where it may live.
+9. Whether serving Google rows and OSM entries side by side for a few weeks, while a category is switched over, is acceptable.
+10. Whether a position taken from OSM for a venue we first found through Google is the venue's independent position, or still a
+    Google-seeded match (we use only OSM's name, position and website; no Google value is copied).
 
 ## 7. Access methods and limits
 
