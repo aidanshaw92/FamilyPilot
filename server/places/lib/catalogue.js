@@ -16,6 +16,8 @@
  * This is a UNION with the live search, not a replacement: a fresh search still contributes whatever is newer.
  */
 
+const { independentPlaces } = require('./independent-identities');
+
 /** The same ceiling the detail endpoint applies to stored provider content. */
 const MAX_AGE_DAYS = 30;
 
@@ -74,7 +76,10 @@ function rowToPlace(row) {
  * Reads the stored venues inside the London scope. Returns [] when the database is unavailable: the catalogue is an
  * addition to the live result, and its absence must degrade to exactly what was served before.
  *
- * @param {{ client?: any, now?: number }} [options] `client` is injectable for tests.
+ * The Google rows come first; then every independently sourced venue (independent-identities.js) whose id no fresh Google row covers, so a
+ * venue whose Google copy has aged out stays listed with only what we hold independently, and a fresh Google row always wins.
+ *
+ * @param {{ client?: any, now?: number, entries?: any[] }} [options] `client` and `entries` (the independent list) are injectable for tests.
  */
 async function readCatalogue(options = {}) {
   const client = options.client ?? db();
@@ -92,13 +97,22 @@ async function readCatalogue(options = {}) {
       .gte('fetched_at', since)
       .limit(400);
     if (error || !Array.isArray(data)) return [];
-    return data
+    const google = data
       .filter((row) => Number.isFinite(row.lat) && Number.isFinite(row.lng))
       .filter((row) => haversineKm(LONDON.lat, LONDON.lng, row.lat, row.lng) <= LONDON.radiusKm)
       .map(rowToPlace);
+    return [...google, ...withinLondon(independentPlaces(google.map((place) => place.familypilotId), options))];
   } catch {
     return [];
   }
+}
+
+/**
+ * Independently sourced venues that no fresh Google row covers (identities.js). A venue with a position must be inside the London scope;
+ * one without a position is listed without a distance, as Explore already does.
+ */
+function withinLondon(places) {
+  return places.filter((place) => !Number.isFinite(place.latitude) || haversineKm(LONDON.lat, LONDON.lng, place.latitude, place.longitude) <= LONDON.radiusKm);
 }
 
 /**

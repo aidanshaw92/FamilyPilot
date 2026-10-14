@@ -2,6 +2,7 @@ const { getGooglePlace } = require('../../server/places/lib/google-places');
 const { MOCK_FALLBACK } = require('../../server/places/lib/fallback');
 const { getCanonicalIdentity, resolvePrimaryPlaceId } = require('../../server/places/lib/canonical-venues');
 const { getPlaceRecord } = require('../../server/enrichment/_lib/enrichment-store');
+const { independentPlaceFor } = require('../../server/places/lib/independent-identities');
 const {
   isPlacesEnabled,
   describeScope,
@@ -104,6 +105,11 @@ module.exports = async function handler(req, res) {
   let servedFromStore = false;
   let storedAgeDays = null;
 
+  // A venue we hold independently (independent-identities.js): its name and position come from a source that is not Google, so it
+  // needs no Google copy. It is used only when no Google copy may still be served, so a fresh Google row is never replaced by it, and
+  // a venue whose copy has aged out is shown with what we hold rather than costing a Place Details request or failing.
+  const independent = independentPlaceFor(lookupId);
+
   if (configuredProvider === 'google' && lookupId.startsWith('fp-google-')) {
     let stored = null;
     try {
@@ -122,6 +128,10 @@ module.exports = async function handler(req, res) {
       provider = 'google';
       servedFromStore = true;
       storedAgeDays = Number(storedAge.toFixed(2));
+    } else if (independent && !storedIsServable) {
+      detail = { place: independent, metadata: null };
+      provider = independent.provider;
+      servedFromStore = true;
     } else {
       try {
         const place = await getGooglePlace(lookupId, { reason: 'venue_detail_open' });
@@ -157,6 +167,12 @@ module.exports = async function handler(req, res) {
         }
       }
     }
+  }
+
+  if (!detail && independent) {
+    detail = { place: independent, metadata: null };
+    provider = independent.provider;
+    servedFromStore = true;
   }
 
   if (!detail) {

@@ -1,0 +1,175 @@
+/**
+ * Venues FamilyPilot can serve WITHOUT a Google copy: a venue's identity, and where it is, from sources that are not Google.
+ *
+ * WHY THIS EXISTS. The stored catalogue (`catalogue.js`) serves a venue only while its Google row is under 30 days old. That gate treats
+ * four different things as one:
+ *
+ *   - that a venue EXISTS (a fact about the world, and ours: the canonical venue, its id, its place-ID link),
+ *   - the provider's copy of its CONTENT (name, address, hours, photos, summary, position as Google returned them: 30 days),
+ *   - our own EVIDENCE about it (facts read from the venue's own pages, each with its own expiry), and
+ *   - whether it has CLOSED (an event, not a clock).
+ *
+ * When the Google copy ages out, the venue vanishes from Explore and Meet halfway even where we hold an independently sourced name and
+ * position. This module is the second route in: a short, reviewed, provenance-carrying list whose entries are served when no fresh
+ * Google row covers the same id. It never carries, and cannot be made to carry, anything Google returned.
+ *
+ * WHAT AN ENTRY IS. A name and a category (ours), where the venue is (OpenStreetMap only, for now, because that is the one independent
+ * position source the app can credit), and its website, each with a source, a licence and a reviewer. The shape is closed: an unknown key,
+ * a Google-hosted URL, a licence the source cannot carry, or an unreviewed entry is dropped, never served.
+ *
+ * WHAT THIS DOES NOT DO. It does not fetch anything, does not call Google, and does not write to a database. The data file ships empty:
+ * adding an entry is a reviewed change to `data/independent-identities.json`, so every serving decision shows in a diff.
+ */
+
+const REGISTRY = require('../data/independent-identities.json');
+
+/** Identity sources, and the licence each can carry. `venue-website` is the venue's own page, read for the facts on it. */
+const IDENTITY_SOURCES = {
+  osm: ['ODbL-1.0'],
+  'official-site': ['venue-website'],
+  wikidata: ['CC0-1.0'],
+};
+
+/**
+ * Position sources. Deliberately only OpenStreetMap: a position is drawn on the app's own map, so its source must be one the app can
+ * credit. A source joins this list in the same change that adds its credit (see `utils/map-compliance.ts`).
+ */
+const LOCATION_SOURCES = { osm: ['ODbL-1.0'] };
+
+const ENTRY_KEYS = ['familypilotId', 'name', 'category', 'identity', 'location', 'website', 'reviewedBy', 'reviewedAt'];
+const IDENTITY_KEYS = ['source', 'url', 'retrievedAt', 'licence', 'externalId'];
+const LOCATION_KEYS = ['latitude', 'longitude', 'source', 'licence'];
+
+/** Greater London and a margin: a position outside it is a typo or a different venue. */
+const BOUNDS = { minLat: 51.1, maxLat: 51.9, minLng: -0.9, maxLng: 0.6 };
+
+const GOOGLE_HOST = /(^|\.)(google|googleapis|googleusercontent|gstatic|ggpht|goo\.gl|g\.page|maps\.app\.goo\.gl)(\.|$)/i;
+
+function onlyKeys(object, allowed) {
+  return object && typeof object === 'object' && !Array.isArray(object) && Object.keys(object).every((key) => allowed.includes(key));
+}
+
+function httpsUrl(value) {
+  if (typeof value !== 'string') return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || GOOGLE_HOST.test(url.hostname)) return null;
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+const isoDate = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/.test(value) && Number.isFinite(Date.parse(value));
+
+/**
+ * Why an entry would not be served, or null when it is valid. Returned as text so a test (and a person reading a failed build) can
+ * see which rule an entry broke.
+ */
+function problemWith(entry) {
+  if (!onlyKeys(entry, ENTRY_KEYS)) return 'unknown key: only a name, category, identity, location, website and review are allowed';
+  if (typeof entry.familypilotId !== 'string' || !/^fp-[a-z0-9_-]+$/i.test(entry.familypilotId)) return 'familypilotId must be an fp- id';
+  if (typeof entry.name !== 'string' || entry.name.trim().length < 2 || entry.name.length > 120) return 'name is missing or too long';
+  // Required here, not at the top: catalogue.js requires this module, and the categories are the ones it serves.
+  const { EXPLORE_CATEGORIES } = require('./catalogue');
+  if (!EXPLORE_CATEGORIES.includes(entry.category)) return `category must be one of ${EXPLORE_CATEGORIES.join(', ')}`;
+  if (typeof entry.reviewedBy !== 'string' || !entry.reviewedBy.trim() || !isoDate(entry.reviewedAt)) return 'an entry needs a reviewer and the date they reviewed it';
+
+  const identity = entry.identity;
+  if (!onlyKeys(identity, IDENTITY_KEYS)) return 'identity has an unknown key';
+  if (!Object.prototype.hasOwnProperty.call(IDENTITY_SOURCES, identity.source)) return `identity.source must be one of ${Object.keys(IDENTITY_SOURCES).join(', ')}`;
+  if (!IDENTITY_SOURCES[identity.source].includes(identity.licence)) return `identity.licence ${identity.licence} is not one ${identity.source} can carry`;
+  if (!httpsUrl(identity.url)) return 'identity.url must be an https address that is not Google’s';
+  if (!isoDate(identity.retrievedAt)) return 'identity.retrievedAt must be a date';
+
+  if (entry.website != null && !httpsUrl(entry.website)) return 'website must be an https address that is not Google’s';
+
+  if (entry.location != null) {
+    const location = entry.location;
+    if (!onlyKeys(location, LOCATION_KEYS)) return 'location has an unknown key';
+    if (!Object.prototype.hasOwnProperty.call(LOCATION_SOURCES, location.source)) return `location.source must be one of ${Object.keys(LOCATION_SOURCES).join(', ')}`;
+    if (!LOCATION_SOURCES[location.source].includes(location.licence)) return `location.licence ${location.licence} is not one ${location.source} can carry`;
+    const { latitude, longitude } = location;
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return 'location needs a latitude and longitude';
+    if (latitude < BOUNDS.minLat || latitude > BOUNDS.maxLat || longitude < BOUNDS.minLng || longitude > BOUNDS.maxLng) return 'location is outside Greater London';
+  }
+  return null;
+}
+
+/**
+ * The entries that may be served, in file order. Duplicate ids keep the first. Invalid entries are dropped and reported through
+ * `onProblem`, because a bad entry must never take the catalogue down or be served half-checked.
+ *
+ * @param {{ entries?: any[], onProblem?: (id: string, problem: string) => void }} [options] `entries` is injectable for tests.
+ */
+function loadIdentities(options = {}) {
+  const entries = options.entries ?? (Array.isArray(REGISTRY.entries) ? REGISTRY.entries : []);
+  const seen = new Set();
+  const valid = [];
+  for (const entry of entries) {
+    const problem = problemWith(entry);
+    const id = entry && typeof entry.familypilotId === 'string' ? entry.familypilotId : '(no id)';
+    if (problem) {
+      if (options.onProblem) options.onProblem(id, problem);
+      continue;
+    }
+    if (seen.has(id)) {
+      if (options.onProblem) options.onProblem(id, 'duplicate id');
+      continue;
+    }
+    seen.add(id);
+    valid.push(entry);
+  }
+  return valid;
+}
+
+/**
+ * An entry in the shape the search endpoint returns for a place.
+ *
+ * Only what the entry holds. There is no description, no photograph, no opening hours, no phone, no rating and no address, because none
+ * of those is in an entry: the screen shows them as not checked, from our own evidence layer where we hold some. `provider` is `osm` only
+ * when the POSITION is OpenStreetMap's (that is what the credit and the map rule act on); otherwise it is our own row, which owes nobody
+ * a credit and is never drawn on a map because it has no position of its own.
+ */
+function identityToPlace(entry) {
+  const located = entry.location != null;
+  return {
+    familypilotId: entry.familypilotId,
+    externalId: `${entry.identity.source}:${entry.identity.externalId ?? entry.familypilotId}`,
+    provider: located ? entry.location.source : 'familypilot',
+    name: entry.name,
+    latitude: located ? entry.location.latitude : undefined,
+    longitude: located ? entry.location.longitude : undefined,
+    category: entry.category,
+    website: entry.website ?? undefined,
+    photos: [],
+    fetchedAt: new Date(entry.identity.retrievedAt).toISOString(),
+    enrichmentStatus: 'provider_only',
+    googleTypes: [],
+    independentSource: entry.identity.source,
+  };
+}
+
+/** The places an independent entry adds to a stored list: every valid entry whose id no Google row already covers. */
+function independentPlaces(coveredIds, options = {}) {
+  const covered = coveredIds instanceof Set ? coveredIds : new Set(coveredIds);
+  return loadIdentities(options)
+    .filter((entry) => !covered.has(entry.familypilotId))
+    .map(identityToPlace);
+}
+
+/** One entry's place, or null: used by the detail endpoint when a Google copy has aged out. */
+function independentPlaceFor(id, options = {}) {
+  const entry = loadIdentities(options).find((candidate) => candidate.familypilotId === id);
+  return entry ? identityToPlace(entry) : null;
+}
+
+module.exports = {
+  loadIdentities,
+  identityToPlace,
+  independentPlaces,
+  independentPlaceFor,
+  problemWith,
+  IDENTITY_SOURCES,
+  LOCATION_SOURCES,
+};
