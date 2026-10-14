@@ -1,0 +1,29 @@
+# One-off, pass 12. NOT scheduled, NOT dispatchable, NOT run on pull requests. Runs only when the throwaway branch `data/open-data-fetch` is pushed with a change
+# under legal-fetch11/. GET only, descriptive User-Agent, no secret, no database, no Google API. Checks where the FSA's public page for an establishment lives,
+# so the registry's provenance rule can name an address a person can open.
+name: FHRS business page address (one-off)
+
+on:
+  push:
+    branches: [data/open-data-fetch]
+    paths:
+      - .github/workflows/legal-fetch11.yml
+      - legal-fetch11/**
+
+permissions:
+  contents: write   # only to commit the result file to this throwaway branch
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet requests
+      - run: python3 legal-fetch11/business_url.py
+      - name: Commit the result to the throwaway branch
+        run: |
+          git config user.name "open-data-fetch"; git config user.email "actions@users.noreply.github.com"
+          git add results/softplay
+          git commit -q -m "FHRS business page address: results, pass 12" || echo "nothing to commit"
+          git push -q origin HEAD:data/open-data-fetch || true
