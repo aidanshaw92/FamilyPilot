@@ -25,6 +25,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { classifyOsm } from './lib/osm-classify.mjs';
 import { areaOf, haversineKm, pointInGeometry, representativePoint } from './lib/geo.mjs';
+import { osmBatch, renderReview, reviewSample } from './lib/review.mjs';
 
 const require = createRequire(import.meta.url);
 const { tokenOverlapScore, areLikelySameVenueAlias } = require('../../server/places/lib/venue-alias-detection.js');
@@ -178,7 +179,7 @@ export function renderReport(result, { version, source }) {
   const groups = Object.keys(GOALS);
   const lines = [];
   lines.push(`# Open-data dry run: ${source}, version ${version}`, '', '**Nothing was imported.** This is a report on a local file.', '');
-  lines.push('## Counts', '', '| | |', '|---|---:|', `| Candidates | ${s.total} |`, `| New places | ${s.new} |`, `| Duplicates of a stored place (to be linked) | ${s.linked} (${s.needsReview} need a person to review) |`, `| Rejected | ${s.rejected} |`, '');
+  lines.push('## Counts', '', '| | |', '|---|---:|', `| Candidates | ${s.total} |`, `| New places | ${s.new} |`, `| Duplicates of a stored place (to be linked) | ${s.linked} (${s.needsReview} need a person to review) |`, `| Rejected | ${s.rejected} |`, `| **Expected import if approved** (new places, in reviewed batches of at most 100) | **${s.new}** (${Math.ceil(s.new / 100)} batch${Math.ceil(s.new / 100) === 1 ? '' : 'es'}) |`, '');
   lines.push('## Rejected, by the gate that stopped them', '', '| Gate | Rows |', '|---|---:|', ...Object.entries(s.rejectedByGate).map(([g, n]) => `| ${g} | ${n} |`), '');
   lines.push('## Against the goals', '', '| Group | Stored today | New from this source | Goal | Gap left |', '|---|---:|---:|---:|---:|', ...groups.map((g) => `| ${g} | ${s.storedByGroup[g]} | ${s.byGroup[g]} | ${GOALS[g]} | ${Math.max(0, GOALS[g] - s.storedByGroup[g] - s.byGroup[g])} |`), '');
   lines.push('## New places by area', '', `| Area | ${groups.join(' | ')} |`, `|---|${groups.map(() => '---:').join('|')}|`, ...Object.entries(s.byArea).map(([a, row]) => `| ${a} | ${groups.map((g) => row[g]).join(' | ')} |`), '');
@@ -204,6 +205,12 @@ async function main() {
   writeFileSync(join(out, 'rejected.csv'), csv(result.rejected, ['sourceId', 'name', 'gate', 'reason']));
   writeFileSync(join(out, 'spot-check-40.jsonl'), result.stats.spot.map((c) => JSON.stringify(clean(c))).join('\n') + '\n');
   writeFileSync(join(out, 'sample-10.json'), JSON.stringify(result.stats.sample.map(({ label, row }) => ({ label, row: clean(row), derivedFacts: row._facts, playgroundInside: row._playgroundInside ?? null, linkedTo: row._linked })), null, 2));
+  // The ten records a person reads first, with the batch's licence and credit recorded once.
+  const batch = osmBatch({ version, input: osm });
+  const reviews = reviewSample(result.stats.sample, batch, { links: result.links, stored });
+  writeFileSync(join(out, 'batch.json'), JSON.stringify(batch, null, 2));
+  writeFileSync(join(out, 'first-ten-review.json'), JSON.stringify(reviews, null, 2));
+  writeFileSync(join(out, 'first-ten-review.md'), renderReview(reviews, batch));
   writeFileSync(join(out, 'report.md'), renderReport(result, { version, source: osm }));
   console.log(`candidates ${result.stats.total} (new ${result.stats.new}, linked ${result.stats.linked}), rejected ${result.stats.rejected}. Wrote ${out}/ (nothing imported).`);
 }

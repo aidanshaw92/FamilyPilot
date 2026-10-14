@@ -4,12 +4,14 @@ import { describe, expect, it } from 'vitest';
 import * as osmClassifyModule from '../../../scripts/open-data/lib/osm-classify.mjs';
 import * as geoModule from '../../../scripts/open-data/lib/geo.mjs';
 import * as dryRunModule from '../../../scripts/open-data/dry-run.mjs';
+import * as reviewModule from '../../../scripts/open-data/lib/review.mjs';
 
 // The pipeline is plain JavaScript outside the app; the tests treat its results as loose data.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const { classifyOsm, factsFromTags, websiteFromTags } = osmClassifyModule as any;
 const { areaOf, pointInGeometry, representativePoint } = geoModule as any;
 const { normaliseFeatures, renderReport, runDryRun } = dryRunModule as any;
+const { osmBatch, renderReview, reviewRecord, reviewSample } = reviewModule as any;
 
 const fixtures = join(__dirname, '../../../scripts/open-data/fixtures');
 const extract = JSON.parse(readFileSync(join(fixtures, 'synthetic-extract.geojson'), 'utf8'));
@@ -193,5 +195,77 @@ describe('the dry run over the synthetic extract', () => {
   it('makes no network call and opens no database: the module imports are local only', () => {
     const source = readFileSync(join(__dirname, '../../../scripts/open-data/dry-run.mjs'), 'utf8') + readFileSync(join(__dirname, '../../../scripts/open-data/lib/osm-classify.mjs'), 'utf8');
     expect(source).not.toMatch(/fetch\(|https?\.request|require\('(https?|net)'\)|from 'node:(https?|net)'|supabase|googleapis|XMLHttpRequest/);
+  });
+});
+
+
+/**
+ * The first ten records a person reads: source and licence, the source's own category and ours, identity and duplicate checks,
+ * independent coordinates, the facilities the SOURCE states, and what is unknown. Reshaped from decisions already made; nothing added.
+ */
+describe('the first-ten review', () => {
+  const result = runDryRun({ features: normaliseFeatures(extract), stored, version: '2026-10-14' });
+  const batch = osmBatch({ version: '2026-10-14', input: 'london-family.geojson' });
+  const reviews = reviewSample(result.stats.sample, batch, { links: result.links, stored });
+
+  it('records the batch once: source, version, licence and its text, and the credit', () => {
+    expect(batch).toMatchObject({ licence: 'ODbL-1.0', attribution: '© OpenStreetMap contributors', version: '2026-10-14' });
+    expect(batch.licenceUrl).toMatch(/^https:\/\/opendatacommons\.org\/licenses\/odbl\/1-0/);
+    expect(batch.attributionUrl).toBe('https://www.openstreetmap.org/copyright');
+  });
+
+  it('every record answers each question of the review, and is at most ten', () => {
+    expect(reviews.length).toBeGreaterThan(0);
+    expect(reviews.length).toBeLessThanOrEqual(10);
+    for (const r of reviews) {
+      expect(r.source).toMatchObject({ licence: 'ODbL-1.0', attribution: '© OpenStreetMap contributors', version: '2026-10-14' });
+      expect(r.source.record).toMatch(/^(node|way|relation)\/\d+@v/);
+      expect(r.originalCategory.sourceTags).toBeTypeOf('object');
+      expect(r.proposedCategory.group).toBeTypeOf('string');
+      expect(r.identity).toMatchObject({ nameFromSource: true, duplicateInsideBatch: false });
+      expect(r.independentCoordinates).toMatchObject({ geocoded: false, googleValueUsed: false });
+      expect(Number.isFinite(r.independentCoordinates.lat) && Number.isFinite(r.independentCoordinates.lng)).toBe(true);
+      expect(Array.isArray(r.unknownFields)).toBe(true);
+      expect(r.unknownFields).toContain('operating status');
+    }
+  });
+
+  it('a stored duplicate is named and flagged for a person; its category is ours and nothing else of the stored row is copied', () => {
+    const linked = reviews.find((r: any) => r.identity.duplicateOfStoredPlace);
+    expect(linked.identity).toMatchObject({ duplicateOfStoredPlace: 'fp-google-FIXTURE1', storedCategory: 'museum', needsPersonToReview: true });
+    const text = JSON.stringify(reviews);
+    expect(text).not.toContain('Maritime Museum Greenwich');
+    expect(text).not.toMatch(/"phone"|"email"|"address"|"rating"|"photos"/);
+  });
+
+  it('facilities are listed only when the source states them, and everything else is unknown', () => {
+    const withFacts = reviews.find((r: any) => Object.keys(r.confirmedFamilyFacilities).length > 0);
+    expect(withFacts).toBeTruthy();
+    for (const fact of Object.keys(withFacts.confirmedFamilyFacilities)) expect(withFacts.unknownFields).not.toContain(fact);
+    const bare = reviews.find((r: any) => Object.keys(r.confirmedFamilyFacilities).length === 0);
+    expect(bare.unknownFields).toEqual(expect.arrayContaining(['toilets', 'babyChanging', 'stepFree', 'openingHoursText']));
+  });
+
+  it('a record with no website lists the website as unknown', () => {
+    const noSite = reviews.find((r: any) => r.website === null);
+    expect(noSite.unknownFields).toContain('website');
+  });
+
+  it('reads as a page a person can scan', () => {
+    const page = renderReview(reviews, batch);
+    expect(page).toContain('**Nothing is imported.**');
+    expect(page).toContain('© OpenStreetMap contributors');
+    expect(page).toMatch(/Position \(from the source, not geocoded\)/);
+  });
+
+  it('works for a row given with the working fields beside it, as the written sample has them', () => {
+    const entry = result.stats.sample[0];
+    const beside = reviewRecord({ label: entry.label, row: entry.row, derivedFacts: entry.row._facts, linkedTo: entry.row._linked }, batch, { links: result.links, stored });
+    expect(beside).toEqual(reviewRecord(entry, batch, { links: result.links, stored }));
+  });
+
+  it('the report states the expected import count and how many reviewed batches it is', () => {
+    const report = renderReport(result, { version: '2026-10-14', source: 'x' });
+    expect(report).toMatch(/Expected import if approved\*\* \(new places, in reviewed batches of at most 100\) \| \*\*9\*\* \(1 batch\)/);
   });
 });
