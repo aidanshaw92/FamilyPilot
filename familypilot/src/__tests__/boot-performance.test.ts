@@ -70,14 +70,12 @@ describe('fonts', () => {
 describe('the page while the app downloads', () => {
   it('shows the brand on the app\'s own background, with no script, and the layout removes it once the app is drawn', () => {
     const html = read('app/+html.tsx');
-    const colors = read('src/design-system/tokens/colors.ts');
-    const hex = (name: string) => new RegExp(`${name}\\s*=\\s*'(#[0-9A-Fa-f]{6})'`).exec(colors)?.[1] ?? /background: '(#[0-9A-Fa-f]{6})'/.exec(colors)?.[1];
+    expect(html).toContain("import { colors } from '@/src/design-system/tokens'");
+    for (const token of ['colors.background', 'colors.ink', 'colors.action']) expect(html, `the shell takes ${token} from the tokens`).toContain(token);
+    expect(html, 'no hard-coded brand hex in the shell').not.toMatch(/#(FBFAF7|0D1733|0F4A3E)/i);
     expect(html).toContain('id="boot-shell"');
     expect(html).toContain('aria-hidden="true"');
     expect(html).not.toMatch(/<script/i);
-    expect(html).toContain(/background: '(#[0-9A-Fa-f]{6})'/.exec(colors)![1].toUpperCase());
-    expect(html).toContain(hex('ACTION')!.toUpperCase());
-    expect(html).toContain(hex('INK')!.toUpperCase());
     expect(html).toMatch(/prefers-reduced-motion: reduce/);
     expect(read('app/_layout.tsx')).toMatch(/getElementById\('boot-shell'\)\?\.remove\(\)/);
   });
