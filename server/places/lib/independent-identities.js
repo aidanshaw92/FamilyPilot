@@ -32,6 +32,7 @@ const FILES = {
   osm: require('../data/identities/osm.json'),
   'official-site': require('../data/identities/official-site.json'),
   wikidata: require('../data/identities/wikidata.json'),
+  'os-greenspace': require('../data/identities/os-greenspace.json'),
 };
 
 /** Identity sources, and the licence each can carry. `venue-website` is the venue's own page, read for the facts on it. */
@@ -39,13 +40,16 @@ const IDENTITY_SOURCES = {
   osm: ['ODbL-1.0'],
   'official-site': ['venue-website'],
   wikidata: ['CC0-1.0'],
+  // OS Open Greenspace: the Ordnance Survey's park, garden and play-space polygons, published under the Open Government Licence v3.0.
+  'os-greenspace': ['OGL-3.0'],
 };
 
 /**
- * Position sources. Deliberately only OpenStreetMap: a position is drawn on the app's own map, so its source must be one the app can
- * credit. A source joins this list in the same change that adds its credit (see `utils/map-compliance.ts`).
+ * Position sources. A position is drawn on the app's own map, so its source must be one the app can credit where the licence asks for a credit:
+ * OpenStreetMap (ODbL: "© OpenStreetMap contributors"), OS Open Greenspace (OGL: the Ordnance Survey statement) and Wikidata (CC0: none owed).
+ * A source joins this list in the same change that adds its credit (see `utils/map-compliance.ts` and `services/places/attribution.ts`).
  */
-const LOCATION_SOURCES = { osm: ['ODbL-1.0'] };
+const LOCATION_SOURCES = { osm: ['ODbL-1.0'], wikidata: ['CC0-1.0'], 'os-greenspace': ['OGL-3.0'] };
 
 const ENTRY_KEYS = ['familypilotId', 'name', 'category', 'identity', 'location', 'website', 'reviewedBy', 'reviewedAt'];
 const IDENTITY_KEYS = ['source', 'url', 'retrievedAt', 'licence', 'externalId'];
@@ -53,6 +57,11 @@ const LOCATION_KEYS = ['latitude', 'longitude', 'source', 'licence'];
 
 /** Greater London and a margin: a position outside it is a typo or a different venue. */
 const BOUNDS = { minLat: 51.1, maxLat: 51.9, minLng: -0.9, maxLng: 0.6 };
+
+/** The reviewer marker of a rehearsal entry. It is not a person; `apply-review --preview-only` writes it and production never serves it. */
+const PREVIEW_ONLY = /^preview only/i;
+/** Production is a Vercel production deployment, or any Node process told it is production when it is not on Vercel at all. */
+const isProduction = () => process.env.VERCEL_ENV === 'production' || (!process.env.VERCEL_ENV && process.env.NODE_ENV === 'production');
 
 const GOOGLE_HOST = /(^|\.)(google|googleapis|googleusercontent|gstatic|ggpht|goo\.gl|g\.page|maps\.app\.goo\.gl)(\.|$)/i;
 
@@ -71,13 +80,40 @@ function httpsUrl(value) {
   }
 }
 
+
+/**
+ * Every entry must be traceable to one record in the source it names, so a person (or a licence holder) can check it: the external id has the source's
+ * own shape, and the address is the source's own address for that record. OS Open Greenspace has no page per feature, so its address is the product page
+ * and the id is the feature's identifier in the dataset (a release is recorded in the provenance manifest, `PROVENANCE.json`).
+ */
+const OS_PRODUCT_URL = 'https://www.ordnancesurvey.co.uk/products/os-open-greenspace';
+function provenanceProblem(identity) {
+  const id = identity.externalId;
+  switch (identity.source) {
+    case 'osm':
+      if (typeof id !== 'string' || !/^(node|way|relation)\/\d+$/.test(id)) return 'identity.externalId must be an OpenStreetMap element such as way/123';
+      if (identity.url !== `https://www.openstreetmap.org/${id}`) return 'identity.url must be the OpenStreetMap page of identity.externalId';
+      return null;
+    case 'wikidata':
+      if (typeof id !== 'string' || !/^Q\d+$/.test(id)) return 'identity.externalId must be a Wikidata item such as Q42';
+      if (identity.url !== `https://www.wikidata.org/wiki/${id}`) return 'identity.url must be the Wikidata page of identity.externalId';
+      return null;
+    case 'os-greenspace':
+      if (typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return 'identity.externalId must be the OS Open Greenspace feature identifier';
+      if (identity.url !== OS_PRODUCT_URL) return 'identity.url must be the OS Open Greenspace product page';
+      return null;
+    default:
+      return null; // official-site: the venue's own page is the record
+  }
+}
+
 const isoDate = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/.test(value) && Number.isFinite(Date.parse(value));
 
 /**
  * Why an entry would not be served, or null when it is valid. Returned as text so a test (and a person reading a failed build) can
  * see which rule an entry broke.
  */
-function problemWith(entry) {
+function problemWith(entry, options = {}) {
   if (!onlyKeys(entry, ENTRY_KEYS)) return 'unknown key: only a name, category, identity, location, website and review are allowed';
   if (typeof entry.familypilotId !== 'string' || !/^fp-[a-z0-9_-]+$/i.test(entry.familypilotId)) return 'familypilotId must be an fp- id';
   if (typeof entry.name !== 'string' || entry.name.trim().length < 2 || entry.name.length > 120) return 'name is missing or too long';
@@ -87,12 +123,17 @@ function problemWith(entry) {
   if (typeof entry.reviewedBy !== 'string' || !entry.reviewedBy.trim() || !isoDate(entry.reviewedAt)) return 'an entry needs a reviewer and the date they reviewed it';
   // Output generated for a simulation says so, and can never be served.
   if (/^unreviewed/i.test(entry.reviewedBy.trim())) return 'reviewedBy says the entry is unreviewed';
+  // An entry that rehearses a release on a Preview carries this marker instead of a person's name. It is not a review, and production refuses it, so
+  // a rehearsal branch that is merged by mistake cannot put unreviewed venues in front of parents.
+  if (PREVIEW_ONLY.test(entry.reviewedBy.trim()) && (options.production ?? isProduction())) return 'a preview-only entry is not served in production';
 
   const identity = entry.identity;
   if (!onlyKeys(identity, IDENTITY_KEYS)) return 'identity has an unknown key';
   if (!Object.prototype.hasOwnProperty.call(IDENTITY_SOURCES, identity.source)) return `identity.source must be one of ${Object.keys(IDENTITY_SOURCES).join(', ')}`;
   if (!IDENTITY_SOURCES[identity.source].includes(identity.licence)) return `identity.licence ${identity.licence} is not one ${identity.source} can carry`;
   if (!httpsUrl(identity.url)) return 'identity.url must be an https address that is not Google’s';
+  const provenance = provenanceProblem(identity);
+  if (provenance) return provenance;
   if (!isoDate(identity.retrievedAt)) return 'identity.retrievedAt must be a date';
 
   if (entry.website != null && !httpsUrl(entry.website)) return 'website must be an https address that is not Google’s';
@@ -127,7 +168,10 @@ function fileProblem(file, entry) {
   const fromOsm = entry?.identity?.source === 'osm' || entry?.location?.source === 'osm';
   if (file === 'osm') return fromOsm ? null : 'osm.json holds only entries whose identity or position is from OpenStreetMap';
   if (fromOsm) return `OpenStreetMap content belongs in osm.json, not ${file}.json`;
-  return entry?.identity?.source === file ? null : `${file}.json holds only identity.source ${file}`;
+  if (entry?.identity?.source !== file) return `${file}.json holds only identity.source ${file}`;
+  // One licence family per file: a position from another source would put that source's content in this file.
+  if (entry.location != null && entry.location.source !== file) return `${file}.json holds only positions whose source is ${file}`;
+  return null;
 }
 
 /** Every entry in the shipped files, each checked for the file it is in. `onProblem` reports the ones that may not be there. */
@@ -150,14 +194,14 @@ function shippedEntries(onProblem) {
  * The entries that may be served, in file order. Duplicate ids keep the first. Invalid entries are dropped and reported through
  * `onProblem`, because a bad entry must never take the catalogue down or be served half-checked.
  *
- * @param {{ entries?: any[], onProblem?: (id: string, problem: string) => void }} [options] `entries` is injectable for tests.
+ * @param {{ entries?: any[], production?: boolean, onProblem?: (id: string, problem: string) => void }} [options] `entries` and `production` are injectable for tests.
  */
 function loadIdentities(options = {}) {
   const entries = options.entries ?? shippedEntries(options.onProblem);
   const seen = new Set();
   const valid = [];
   for (const entry of entries) {
-    const problem = problemWith(entry);
+    const problem = problemWith(entry, options);
     const id = entry && typeof entry.familypilotId === 'string' ? entry.familypilotId : '(no id)';
     if (problem) {
       if (options.onProblem) options.onProblem(id, problem);

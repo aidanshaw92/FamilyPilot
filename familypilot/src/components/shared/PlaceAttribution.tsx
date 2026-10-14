@@ -5,8 +5,10 @@ import { Text } from '@/src/components/ui/Text';
 import { spacing } from '@/src/design-system/tokens';
 import {
   ATTRIBUTION_INK,
+  OGL_URL,
   OSM_COPYRIGHT_URL,
   OSM_CREDIT,
+  OS_CREDIT,
   externalCreditFor,
 } from '@/src/services/places/attribution';
 import { PlacesProviderName } from '@/src/types/places';
@@ -31,6 +33,22 @@ export function PlaceAttribution({ provider }: { provider: PlacesProviderName | 
       >
         <Text variant="caption" color={ATTRIBUTION_INK}>
           {OSM_CREDIT}
+        </Text>
+      </Pressable>
+    );
+  }
+
+  if (credit === 'os') {
+    return (
+      <Pressable
+        onPress={() => void Linking.openURL(OGL_URL)}
+        accessibilityRole="link"
+        accessibilityLabel="Ordnance Survey data, opens the Open Government Licence"
+        style={[styles.row, minTarget(20)]}
+        testID="place-attribution-os"
+      >
+        <Text variant="caption" color={ATTRIBUTION_INK}>
+          {OS_CREDIT}
         </Text>
       </Pressable>
     );

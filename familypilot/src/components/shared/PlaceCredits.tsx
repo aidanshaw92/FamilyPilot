@@ -5,8 +5,10 @@ import { Text } from '@/src/components/ui/Text';
 import { spacing } from '@/src/design-system/tokens';
 import {
   ATTRIBUTION_INK,
+  OGL_URL,
   OSM_COPYRIGHT_URL,
   OSM_CREDIT,
+  OS_CREDIT,
   creditsForPlaces,
 } from '@/src/services/places/attribution';
 import { PlacesProviderName } from '@/src/types/places';
@@ -48,6 +50,20 @@ export function PlaceCredits({
           >
             <GoogleMapsMark compact={compact} />
           </View>
+        ) : credit === 'os' ? (
+          <Pressable
+            key="os"
+            onPress={() => void Linking.openURL(OGL_URL)}
+            accessibilityRole="link"
+            accessibilityLabel="Ordnance Survey data, opens the Open Government Licence"
+            testID="place-credits-os"
+            hitSlop={8}
+            style={[minTarget(16), styles.osmLink]}
+          >
+            <Text variant="caption" color={ATTRIBUTION_INK} style={styles.osmText}>
+              {OS_CREDIT}
+            </Text>
+          </Pressable>
         ) : (
           <Pressable
             key="osm"
