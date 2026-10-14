@@ -1,0 +1,26 @@
+# One-off, pass 8. NOT scheduled, NOT dispatchable, NOT run on pull requests. Runs only when the throwaway branch `data/open-data-fetch` is pushed with a
+# change under legal-fetch7/. GET only, descriptive User-Agent, no secret, no database, no Google API. Renders the OS OpenData licence and acknowledgement pages in
+# a real browser (they are built by script) and prints the licence name and the wording OS asks for, so the attribution is read from OS, not remembered.
+name: Licence review fetch, pass 8 (one-off)
+
+on:
+  push:
+    branches: [data/open-data-fetch]
+    paths:
+      - .github/workflows/legal-fetch7.yml
+      - legal-fetch7/**
+
+permissions:
+  contents: read
+
+jobs:
+  os-licence-rendered:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: cd legal-fetch7 && npm init -y >/dev/null && npm i playwright@1.49.1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+      - run: node legal-fetch7/render.mjs
