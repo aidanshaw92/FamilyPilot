@@ -1,0 +1,122 @@
+{
+ "https://ratings.food.gov.uk/business/1670908": {
+  "status": 200,
+  "final": "https://ratings.food.gov.uk/business/1670908",
+  "title": null
+ },
+ "https://ratings.food.gov.uk/business/1670908/x": {
+  "status": 200,
+  "final": "https://ratings.food.gov.uk/business/1670908/x",
+  "title": null
+ },
+ "api-1670908": {
+  "status": 200,
+  "keys": [
+   "AddressLine1",
+   "AddressLine2",
+   "AddressLine3",
+   "AddressLine4",
+   "BusinessName",
+   "BusinessType",
+   "BusinessTypeID",
+   "ChangesByServerID",
+   "Distance",
+   "FHRSID",
+   "LocalAuthorityBusinessID",
+   "LocalAuthorityCode",
+   "LocalAuthorityEmailAddress",
+   "LocalAuthorityName",
+   "LocalAuthorityWebSite",
+   "NewRatingPending",
+   "Phone",
+   "PostCode",
+   "RatingDate",
+   "RatingKey",
+   "RatingValue",
+   "RightToReply",
+   "SchemeType",
+   "geocode",
+   "scores"
+  ]
+ },
+ "https://ratings.food.gov.uk/business/1575689": {
+  "status": 200,
+  "final": "https://ratings.food.gov.uk/business/1575689",
+  "title": null
+ },
+ "https://ratings.food.gov.uk/business/1575689/x": {
+  "status": 200,
+  "final": "https://ratings.food.gov.uk/business/1575689/x",
+  "title": null
+ },
+ "api-1575689": {
+  "status": 200,
+  "keys": [
+   "AddressLine1",
+   "AddressLine2",
+   "AddressLine3",
+   "AddressLine4",
+   "BusinessName",
+   "BusinessType",
+   "BusinessTypeID",
+   "ChangesByServerID",
+   "Distance",
+   "FHRSID",
+   "LocalAuthorityBusinessID",
+   "LocalAuthorityCode",
+   "LocalAuthorityEmailAddress",
+   "LocalAuthorityName",
+   "LocalAuthorityWebSite",
+   "NewRatingPending",
+   "Phone",
+   "PostCode",
+   "RatingDate",
+   "RatingKey",
+   "RatingValue",
+   "RightToReply",
+   "SchemeType",
+   "geocode",
+   "scores"
+  ]
+ },
+ "https://ratings.food.gov.uk/business/1385468": {
+  "status": 200,
+  "final": "https://ratings.food.gov.uk/business/1385468",
+  "title": null
+ },
+ "https://ratings.food.gov.uk/business/1385468/x": {
+  "status": 200,
+  "final": "https://ratings.food.gov.uk/business/1385468/x",
+  "title": null
+ },
+ "api-1385468": {
+  "status": 200,
+  "keys": [
+   "AddressLine1",
+   "AddressLine2",
+   "AddressLine3",
+   "AddressLine4",
+   "BusinessName",
+   "BusinessType",
+   "BusinessTypeID",
+   "ChangesByServerID",
+   "Distance",
+   "FHRSID",
+   "LocalAuthorityBusinessID",
+   "LocalAuthorityCode",
+   "LocalAuthorityEmailAddress",
+   "LocalAuthorityName",
+   "LocalAuthorityWebSite",
+   "NewRatingPending",
+   "Phone",
+   "PostCode",
+   "RatingDate",
+   "RatingKey",
+   "RatingValue",
+   "RightToReply",
+   "SchemeType",
+   "geocode",
+   "scores"
+  ]
+ }
+}
