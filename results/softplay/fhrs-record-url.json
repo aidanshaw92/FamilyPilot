@@ -1,0 +1,23 @@
+{
+ "https://ratings.food.gov.uk/api/download-data/xml/establishments/1670908": {
+  "status": 200,
+  "contentType": "text/xml",
+  "hasFHRSID": true,
+  "hasBusinessName": false,
+  "length": 1845
+ },
+ "https://ratings.food.gov.uk/api/download-data/xml/establishments/1575689": {
+  "status": 200,
+  "contentType": "text/xml",
+  "hasFHRSID": true,
+  "hasBusinessName": true,
+  "length": 1827
+ },
+ "https://ratings.food.gov.uk/api/download-data/xml/establishments/1385468": {
+  "status": 200,
+  "contentType": "text/xml",
+  "hasFHRSID": true,
+  "hasBusinessName": true,
+  "length": 1886
+ }
+}
