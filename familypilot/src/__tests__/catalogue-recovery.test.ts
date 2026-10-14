@@ -493,16 +493,29 @@ describe('turning dry-run candidates into registry entries', () => {
     expect(out.storedByCategory).toEqual({ farm: 2, park: 1 });
   });
 
-  it('drops a candidate with no served category and one the registry would refuse', async () => {
+  it('drops a candidate with no served category, one outside the app\'s London scope, and one the registry would refuse', async () => {
     const { buildEntries } = await load();
     const out = buildEntries({
-      candidates: [candidate({ group_id: 'play', subtype: 'unknown' }), candidate({ familypilot_place_id: 'fp-osm-way-9', source_record_id: 'way/9@v1', lat: 40.7, lng: -74 })],
+      candidates: [
+        candidate({ group_id: 'play', subtype: 'unknown' }),
+        candidate({ familypilot_place_id: 'fp-osm-way-9', source_record_id: 'way/9@v1', lat: 40.7, lng: -74 }),
+        candidate({ familypilot_place_id: 'fp-osm-way-8', source_record_id: 'way/8@v1', name: ' ' }),
+      ],
       links: [], batch,
     });
     expect(out.entries).toEqual([]);
     expect(out.dropped.noCategory).toBe(1);
+    expect(out.dropped.outsideScope).toBe(1);
     expect(out.dropped.invalid).toHaveLength(1);
-    expect(out.dropped.invalid[0].problem).toMatch(/outside Greater London/);
+    expect(out.dropped.invalid[0].problem).toMatch(/name/);
+  });
+
+  it('serves a general attraction as an attraction, and counts the scope in kilometres from central London', async () => {
+    const { categoryFor, kmFromCentre } = await load();
+    expect(categoryFor('attractions', 'attraction')).toBe('attraction');
+    expect(kmFromCentre(51.5074, -0.1278)).toBeLessThan(0.01);
+    expect(kmFromCentre(51.8, -0.34)).toBeGreaterThan(30);
+    expect(kmFromCentre(51.8, -0.34)).toBeLessThan(40);
   });
 
   it('keeps a website only when it is https', async () => {
