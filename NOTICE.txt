@@ -1,0 +1,2 @@
+OpenStreetMap data: © OpenStreetMap contributors, Open Database Licence 1.0 (https://www.openstreetmap.org/copyright).
+A diagnostic subset for FamilyPilot's catalogue-recovery dry run. Not for production use. See PROVENANCE.json.

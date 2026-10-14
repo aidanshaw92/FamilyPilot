@@ -1,0 +1,18 @@
+{
+  "generated_by": "FamilyPilot open-data-fetch workflow, diagnostic pass (one-off)",
+  "user_agent": "FamilyPilot-open-data/1.0 (+https://github.com/aidanshaw92/FamilyPilot)",
+  "files": [
+    {
+      "file": "osm-named-london.geojson",
+      "bytes": 48270640,
+      "sha256": "1cef627f8e111a57797b5d192890d38696fe940cc2dcb712d237e4ae9b1faa63",
+      "retrieved_at": "2026-10-14T07:45:33+00:00",
+      "source": "OpenStreetMap, Greater London (Geofabrik), named features whose name looks like a farm, play centre, green space or landmark; any tags",
+      "source_url": "https://download.geofabrik.de/europe/united-kingdom/england/greater-london-latest.osm.pbf",
+      "licence": "ODbL-1.0",
+      "licence_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "attribution": "\u00a9 OpenStreetMap contributors",
+      "attribution_url": "https://www.openstreetmap.org/copyright"
+    }
+  ]
+}
