@@ -44,8 +44,15 @@ if (entryUrl) {
   }
 }
 
-// Explore on a phone-class profile
-const PROFILE = { state: { profile: { id: 'family-pv', parentName: 'Aidan', members: [{ id: 'p1', name: 'Aidan', role: 'parent', dateOfBirth: '1990-03-15', age: 36 }, { id: 'c1', name: 'Sloane', role: 'child', dateOfBirth: '2023-03-01', age: 3 }], homeLocation: 'NW3', homeLatitude: 51.556, homeLongitude: -0.178, budgetTier: 'moderate', completionPercent: 90 }, hasCompletedOnboarding: true, hasSeenSplash: true, profileRevision: 2 }, version: 0 };
+// Meet halfway (the screen reachable without signing in) on a phone-class profile, with a family seeded on the device exactly as the earlier #207 check did.
+const PROFILE = {
+  id: 'family-pv', parentName: 'Aidan', familyName: 'Shaw',
+  members: [{ id: 'p1', name: 'Aidan', role: 'parent', dateOfBirth: '1990-03-15', age: 36 }, { id: 'c1', name: 'Sloane', role: 'child', dateOfBirth: '2023-03-01', age: 3, dobKnown: true, mobility: ['walks'] }],
+  homeLocation: 'NW3', homeLatitude: 51.556, homeLongitude: -0.178, budgetTier: 'moderate', completionPercent: 90, vehicle: null, pushchair: null, travelCot: null, memberships: [], mustHaveFacilities: [], routines: [],
+};
+const KEVIN = { id: 'guest-k', label: 'Kevin’s family', area: 'E8', latitude: 51.545, longitude: -0.06, ages: [2], pushchair: false, required: [], routines: [] };
+const PLANNING = JSON.stringify({ state: { families: [KEVIN], options: { date: '2026-10-17', leaveAt: '', returnBy: '', visitMinutes: 90, bufferMinutes: 15, environment: 'either' }, saved: [], savedDays: [], planningWith: null }, version: 1 });
+const FAMILY = JSON.stringify({ state: { profile: PROFILE, hasCompletedOnboarding: true, hasSeenSplash: true, profileRevision: 2 }, version: 0 });
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 async function visit(context, tag) {
   const page = await context.newPage();
@@ -61,18 +68,19 @@ async function visit(context, tag) {
   page.on('request', (r) => { requests++; if (/googleapis|maps\.google|google\.com\/maps|gstatic/i.test(r.url())) google.push(r.url().slice(0, 100)); });
   cdp.on('Network.loadingFinished', (e) => { bytes += e.encodedDataLength; });
   t0 = Date.now();
-  await page.goto(BASE + '/explore', { waitUntil: 'commit', timeout: 60000 });
+  await page.clock.setFixedTime(new Date('2026-10-17T07:00:00'));
+  await page.goto(BASE + '/halfway', { waitUntil: 'commit', timeout: 60000 });
   const firstPaint = await page.waitForFunction(() => document.body && document.body.innerText.trim().length > 0, null, { timeout: 60000 }).then(() => Date.now() - t0).catch(() => null);
-  const card = await page.locator('[role="button"][aria-label$="view details"]').first().waitFor({ timeout: 40000 }).then(() => Date.now() - t0).catch(() => null);
+  const card = await page.getByTestId('halfway-option').first().waitFor({ timeout: 60000 }).then(() => Date.now() - t0).catch(() => null);
   const diag = await page.evaluate(() => ({ url: location.pathname, text: document.body.innerText.replace(/\s+/g, ' ').trim().slice(0, 260), buttons: document.querySelectorAll('[role="button"]').length, viewDetails: document.querySelectorAll('[aria-label$="view details"]').length, testIds: [...new Set([...document.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')))].slice(0, 25) })).catch(() => null);
   const out = { diag, apiCalls, firstThingMs: firstPaint, firstCardMs: card, kb: Math.round(bytes / 1024), requests, errors: errors.slice(0, 5), googleRequests: google.length };
   say(tag, out);
   await page.close();
 }
 const context = await browser.newContext({ viewport: { width: 393, height: 852 }, hasTouch: true, timezoneId: 'Europe/London' });
-await context.addInitScript(([seed]) => { if (!localStorage.getItem('pv-seeded')) { localStorage.setItem('pv-seeded', '1'); localStorage.setItem('familypilot-family-v1', JSON.stringify(seed)); } }, [PROFILE]);
-say('browser', 'starting'); await visit(context, 'exploreFirstVisit');
-await visit(context, 'exploreRepeatVisit');
+await context.addInitScript(([f, p]) => { if (!localStorage.getItem('pv-seeded')) { localStorage.setItem('pv-seeded', '1'); localStorage.setItem('familypilot-family-v1', f); localStorage.setItem('familypilot-planning-v1', p); } }, [FAMILY, PLANNING]);
+say('browser', 'starting'); await visit(context, 'halfwayFirstVisit');
+await visit(context, 'halfwayRepeatVisit');
 await browser.close();
 console.log('DONE');
 process.exit(0);
