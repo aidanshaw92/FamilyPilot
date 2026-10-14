@@ -6,6 +6,8 @@
  * Usage: node scripts/local-independent-api.mjs [port] [distDir]
  */
 import { createServer } from 'node:http';
+import { gzipSync } from 'node:zlib';
+import { readFileSync } from 'node:fs';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { extname, join, normalize, resolve } from 'node:path';
@@ -34,11 +36,24 @@ for (const [dir, name] of [['places', 'search'], ['places', 'detail'], ['places'
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.ttf': 'font/ttf', '.woff2': 'font/woff2', '.ico': 'image/x-icon' };
 
-function serveStatic(res, pathname) {
+const IMMUTABLE = process.env.IMMUTABLE_ASSETS === '1';
+const gzCache = new Map();
+/** Static files as Vercel serves them: compressed when the browser accepts it, and (when IMMUTABLE_ASSETS=1) hashed assets cached for a year. */
+function serveStatic(req, res, pathname) {
   let file = normalize(join(DIST, pathname));
   if (!file.startsWith(DIST)) { res.writeHead(403); return res.end(); }
   if (!existsSync(file) || statSync(file).isDirectory()) file = existsSync(`${file}.html`) ? `${file}.html` : join(DIST, 'index.html');
-  res.writeHead(200, { 'Content-Type': MIME[extname(file).toLowerCase()] ?? 'application/octet-stream' });
+  const type = MIME[extname(file).toLowerCase()] ?? 'application/octet-stream';
+  const headers = { 'Content-Type': type };
+  if (IMMUTABLE && /^\/(_expo\/static|assets)\//.test(pathname)) headers['Cache-Control'] = 'public, max-age=31536000, immutable';
+  const compress = /gzip/.test(req.headers['accept-encoding'] ?? '') && /(javascript|css|json|html|svg|ttf)/.test(type + extname(file));
+  if (compress) {
+    if (!gzCache.has(file)) gzCache.set(file, gzipSync(readFileSync(file), { level: 6 }));
+    const body = gzCache.get(file);
+    res.writeHead(200, { ...headers, 'Content-Encoding': 'gzip', 'Content-Length': body.length });
+    return res.end(body);
+  }
+  res.writeHead(200, headers);
   createReadStream(file).pipe(res);
 }
 
@@ -47,7 +62,7 @@ createServer(async (req, res) => {
   const handler = handlers[url.pathname];
   if (!handler) {
     if (url.pathname.startsWith('/api/')) { res.writeHead(404, { 'Content-Type': 'application/json' }); return res.end('{"error":"not served by the local independent API"}'); }
-    return serveStatic(res, url.pathname);
+    return serveStatic(req, res, url.pathname);
   }
   req.query = Object.fromEntries(url.searchParams);
   if (req.method === 'POST') {
