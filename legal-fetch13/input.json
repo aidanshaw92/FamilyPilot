@@ -1,0 +1,28 @@
+{
+ "explicit": [
+  {"id": 346104, "name": "Gambado", "postcode": "SW6 2PY", "urls": ["https://www.gambado.com/"], "follow": "chelsea"},
+  {"id": 1434379, "name": "Flip Out Staples Corner", "postcode": "NW2 6LW", "urls": ["https://www.flipout.co.uk/locations"], "follow": "staples|brent|nw2"},
+  {"id": 1711686, "name": "Flip Out Canary Wharf", "postcode": "E14 4QT", "urls": ["https://www.flipout.co.uk/locations/canary-wharf"], "follow": "faq|age|toddler|session"},
+  {"id": 1764457, "name": "Flip Out Croydon", "postcode": "CR0 1TY", "urls": ["https://www.flipout.co.uk/locations"], "follow": "croydon"},
+  {"id": 1857771, "name": "Clip 'n Climb at The O2", "postcode": "SE10 0DX", "urls": ["https://theo2.clipnclimb.co.uk/", "https://theo2.clipnclimb.co.uk/faqs/", "https://theo2.clipnclimb.co.uk/facilities/"], "follow": ""},
+  {"id": 1937580, "name": "Clip 'n Climb Croydon", "postcode": "CR0 1NB", "urls": ["https://croydon.clipnclimb.co.uk/"], "follow": "faq|facilit"},
+  {"id": 963064, "name": "Air Jump Orpington", "postcode": "BR5 3QX", "urls": ["https://www.airjumptrampolinepark.co.uk/"], "follow": "faq|toddler|session|price"},
+  {"id": 1935590, "name": "The Jump Zone Beckton", "postcode": "E6 6LA", "urls": ["https://thejumpzone.com/"], "follow": "beckton|faq|toddler|session"},
+  {"id": 1560271, "name": "Wacky Kingdom Kingston", "postcode": "KT1 1TP", "urls": ["https://www.wackykingdom.com/kingston", "https://www.wackykingdom.com/"], "follow": "kingston|faq|toddler"}
+ ],
+ "independents": [
+  ["Abuela Play Cafe", "CR5 2RA", 1691253], ["Balloon Soft Play Cafe", "N12 0DY", 1575689], ["Busy Bees Soft Play", "KT9 2NB", 1390592],
+  ["Cheeky Chops Play Cafe", "TW1 3LP", 1961932], ["Cheeky Monkeys", "SE4 1RD", 1599354], ["Dreami Play Cafe", "E2 7SY", 1677302],
+  ["Eden Play Cafe", "KT9 2DR", 1759799], ["Giggles Soft Play", "KT19 9RY", 33362], ["Globetrotters Soft Play Centre", "DA7 4BT", 1652106],
+  ["HALO Play Cafe", "UB8 1GB", 1367047], ["Harmony Coffee House & Soft Play", "N10 1HD", 1670908], ["Jungle Monkeyz Adventure", "W12 8PP", 1768958],
+  ["Kidabulous Play Centre", "TW16 7EF", 831352], ["Kidz Adventure Play Zone", "N22 6UJ", 422806], ["Kidz Nest Play Cafe", "IG11 0NZ", 1884916],
+  ["Kidz Play", "E4 6AN", 1531793], ["Left and Right Play Cafe", "E4 6LQ", 1975807], ["Little Peeps Soft Play", "KT9 1NU", 1532159],
+  ["Ollie Polly Play Cafe", "BR4 0LP", 1224783], ["Owl's Play Centre", "IG6 3HN", 605488], ["Raa Raa's Soft Play", "KT3 5QE", 1385468],
+  ["Raffys Play Cafe", "BR3 3HQ", 1756533], ["Red Stairs Soft Play", "EN5 5UZ", 1549003], ["The Den Play Cafe", "TW18 1XD", 1915581],
+  ["Under The Canopy Play Cafe", "NW5 1AG", 1904984], ["Lincolnsfield Play Zone", "WD23 2ES", 1538415], ["Toddler Town", "RM11 2DN", 1694795],
+  ["Chiswick Toddlers World", "W4 3NS", 491336], ["Magdas Fun House", "UB6 0PR", 1032489], ["Little Vandals Play Cafe", "KT12 1QP", 1779162],
+  ["Moo Moo's Play Cafe", "KT11 3EB", 1836741], ["Kiddos Play Cafe", "CM14 4SX", 1713364], ["Monkey Kingdom Essex", "IG10 3TS", 1774741],
+  ["Cheeky Monkeys Soft Play Cafe", "EN11 8HF", 1897611], ["Munchkins Play Cafe", "KT14 7QH", 1616447], ["Mazzy Bees Soft Play", "GU21 5GP", 1881885],
+  ["Jump In Adventure Park", "KT10 8BL", 1778917], ["Jump City UK", "EN8 0NL", 1874582], ["Vibe Jump In Trampoline Parks Enfield", "EN1 1FS", 1562146]
+ ]
+}
