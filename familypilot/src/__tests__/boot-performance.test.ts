@@ -60,6 +60,8 @@ describe('fonts', () => {
     expect(read('src/design-system/fonts.ts')).toMatch(/blocksFirstRender = true/);
     const layout = read('app/_layout.tsx');
     expect(layout).toMatch(/!loaded && blocksFirstRender/);
+    // nothing is drawn on the server or in the first client render: the app is client-only, and drawing it on the server is hydration that fails (React 418)
+    expect(layout).toMatch(/if \(!mounted \|\|/);
     expect(layout).not.toMatch(/Inter_800ExtraBold|Inter_900Black/);
     expect(existsSync(join(root, dir, 'README.md'))).toBe(true);
   });

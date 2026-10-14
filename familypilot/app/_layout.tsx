@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -80,6 +80,11 @@ export default function RootLayout() {
   useAccountGuard();
   useEffect(() => installClientErrorReporting(), []);
   const [loaded, error] = useFonts(fontSources);
+  // The static export renders this component on the server. The app is for the client only (it reads the device's own stores and the clock), so the server
+  // and the first client render both draw nothing and the app appears once mounted: drawing it on the server would be a page the client then throws away
+  // (React error 418) at a cost of half a second on a slow phone. Waiting for fonts used to give the same "nothing yet" by accident.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     // A font that will not load is fatal only where the first screen waits for it. Elsewhere (the web) the page is already drawn in the system font.
@@ -92,7 +97,7 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  if (!loaded && blocksFirstRender) {
+  if (!mounted || (!loaded && blocksFirstRender)) {
     return null;
   }
 
