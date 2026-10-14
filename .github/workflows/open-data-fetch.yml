@@ -58,7 +58,7 @@ jobs:
             osmium tags-filter "work/$ID-latest.osm.pbf" \
               nwr/tourism=zoo,aquarium,museum,gallery,theme_park,attraction \
               nwr/leisure=trampoline_park,indoor_play,playground,nature_reserve,park,water_park,ice_rink,miniature_golf,bowling_alley \
-              -R -o "work/$ID-family.osm.pbf" --overwrite
+              -o "work/$ID-family.osm.pbf" --overwrite
             osmium export "work/$ID-family.osm.pbf" -f geojson --geometry-types=point,polygon \
               --add-unique-id=type_id -a version -o "work/$ID.geojson" --overwrite
             echo "features: $(jq '.features | length' "work/$ID.geojson")"
