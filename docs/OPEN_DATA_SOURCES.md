@@ -84,6 +84,8 @@ read the primary texts. Mapping Museums and the Arts Council list are optional.
 
 ## 5. The dry run: no database write, no network call to Google
 
+The tool that does this is in pull request #206 (`scripts/open-data/`), tested on a synthetic extract. It has not yet met real data.
+
 1. **Read** each licensed file from a local folder. Record source, version, licence, attribution and retrieval time for the batch.
 2. **Select** by source tags: for OSM, `leisure=playground`, `leisure=park`, `tourism=museum`, `tourism=zoo`, `tourism=attraction`,
    `leisure=trampoline_park` and the indoor-play tags; for OS, the greenspace function; for Wikidata, museums and galleries in London.
