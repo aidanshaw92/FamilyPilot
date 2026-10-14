@@ -409,7 +409,7 @@ describe('applying a review', () => {
     await loadReview();
     const neutral = unreviewed(osEntry());
     const r = review.applyReview({ entries: [neutral, unreviewed(wdEntry())], drop: ['fp-wd-q1234'], reviewer: 'A. Reviewer', date: '2026-10-20' });
-    expect(r.files['os-greenspace'].map((e: { familypilotId: string }) => e.familypilotId)).toEqual([neutral.familypilotId]);
+    expect(r.files['os-greenspace'].map((e: { familypilotId: string }) => e.familypilotId)).toEqual([osEntry().familypilotId]);
     expect(r.files.wikidata).toHaveLength(0);
     expect(JSON.stringify(r)).not.toMatch(/fp-google|ChIJ/);
   });
