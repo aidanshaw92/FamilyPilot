@@ -193,3 +193,15 @@ consent untouched; every change reversible by batch.
 | 6 | A bounded weekly freshness job | a scheduled job | decide in Phase C |
 
 Items 1 and 2 unblock everything else. Items 3 to 6 are not needed to ship Explore.
+
+## 9. Decisions recorded on 14 October 2026, and where each stands
+
+| Decision | State |
+|---|---|
+| Zero-Google-cost investigation and dry run from open data, with confirmation of each source's identity, licence, limits and attribution first | **Authorised.** Blocked on reading any source: the network policy refuses every open-data host. See [OPEN_DATA_SOURCES.md](OPEN_DATA_SOURCES.md) |
+| OSM-derived records approved in principle, subject to the licence | **Reviewed, with seven open legal questions.** See [OSM_LICENCE_REVIEW.md](OSM_LICENCE_REVIEW.md). Not legal advice |
+| Discovery-rule fixes as a separate draft pull request | **Done**, pull request #204, with the replay on the 149 stored rows |
+| Natural History Museum freshness issue, urgently | **Investigated.** See [FRESHNESS_DISCOVERABILITY.md](FRESHNESS_DISCOVERABILITY.md). The larger finding is that nothing has fetched since 9 October and Explore empties on 8 November |
+| Ledger migration | **Not applied.** Schema, rollback and implications in [LEDGER_MIGRATION_PROPOSAL.md](LEDGER_MIGRATION_PROPOSAL.md). The real ten-row sample waits for one readable extract |
+| No paid Google soft-play query, no new weekly freshness job, no new paid provider, no uncontrolled background processing | **Honoured.** Decisions 5 and 6 in section 8 are closed |
+| Stop for approval before production database changes, imports, new recurring jobs, paid API use, or merging the feature pull requests | **Honoured** |
