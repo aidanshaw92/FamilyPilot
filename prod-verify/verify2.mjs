@@ -54,12 +54,15 @@ const KEVIN = { id: 'guest-k', label: 'Kevin’s family', area: 'E8', latitude: 
 const PLANNING = JSON.stringify({ state: { families: [KEVIN], options: { date: '2026-10-17', leaveAt: '', returnBy: '', visitMinutes: 90, bufferMinutes: 15, environment: 'either' }, saved: [], savedDays: [], planningWith: null }, version: 1 });
 const FAMILY = JSON.stringify({ state: { profile: PROFILE, hasCompletedOnboarding: true, hasSeenSplash: true, profileRevision: 2 }, version: 0 });
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
-async function visit(context, tag) {
+// route: where to go. throttle: the phone-class profile. seeded: a family already on the device (otherwise a new visitor).
+async function visit(context, tag, { route, throttle, waitFor }) {
   const page = await context.newPage();
   const cdp = await context.newCDPSession(page);
   await cdp.send('Network.enable');
-  await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: (1.6 * 1024 * 1024) / 8, uploadThroughput: (0.75 * 1024 * 1024) / 8 });
-  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+  if (throttle) {
+    await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: (1.6 * 1024 * 1024) / 8, uploadThroughput: (0.75 * 1024 * 1024) / 8 });
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+  }
   let t0 = Date.now();
   const errors = [], google = [], apiCalls = []; let bytes = 0, requests = 0;
   page.on('response', (r) => { if (/\/api\//.test(r.url())) apiCalls.push({ path: new URL(r.url()).pathname + new URL(r.url()).search.slice(0, 80), status: r.status(), at: Date.now() - t0 }); });
@@ -67,20 +70,24 @@ async function visit(context, tag) {
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text().slice(0, 160)); });
   page.on('request', (r) => { requests++; if (/googleapis|maps\.google|google\.com\/maps|gstatic/i.test(r.url())) google.push(r.url().slice(0, 100)); });
   cdp.on('Network.loadingFinished', (e) => { bytes += e.encodedDataLength; });
-  t0 = Date.now();
   await page.clock.setFixedTime(new Date('2026-10-17T07:00:00'));
-  await page.goto(BASE + '/halfway', { waitUntil: 'commit', timeout: 60000 });
-  const firstPaint = await page.waitForFunction(() => document.body && document.body.innerText.trim().length > 0, null, { timeout: 60000 }).then(() => Date.now() - t0).catch(() => null);
-  const card = await page.getByTestId('halfway-option').first().waitFor({ timeout: 60000 }).then(() => Date.now() - t0).catch(() => null);
-  const diag = await page.evaluate(() => ({ url: location.pathname, text: document.body.innerText.replace(/\s+/g, ' ').trim().slice(0, 260), buttons: document.querySelectorAll('[role="button"]').length, viewDetails: document.querySelectorAll('[aria-label$="view details"]').length, testIds: [...new Set([...document.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')))].slice(0, 25) })).catch(() => null);
-  const out = { diag, apiCalls, firstThingMs: firstPaint, firstCardMs: card, kb: Math.round(bytes / 1024), requests, errors: errors.slice(0, 5), googleRequests: google.length };
-  say(tag, out);
+  t0 = Date.now();
+  await page.goto(BASE + route, { waitUntil: 'commit', timeout: 60000 });
+  const firstThing = await page.waitForFunction(() => document.body && document.body.innerText.trim().length > 0, null, { timeout: 60000 }).then(() => Date.now() - t0).catch(() => null);
+  const ready = waitFor ? await waitFor(page).then(() => Date.now() - t0).catch(() => null) : await page.waitForLoadState('networkidle', { timeout: 60000 }).then(() => Date.now() - t0).catch(() => null);
+  const diag = await page.evaluate(() => ({ url: location.pathname, text: document.body.innerText.replace(/\s+/g, ' ').trim().slice(0, 140), shellStillThere: document.querySelectorAll('#boot-shell').length, testIds: [...new Set([...document.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')))].slice(0, 12) })).catch(() => null);
+  say(tag, { diag, apiCalls, firstThingMs: firstThing, readyMs: ready, kb: Math.round(bytes / 1024), requests, errors: errors.slice(0, 5), googleRequests: google.length });
   await page.close();
 }
-const context = await browser.newContext({ viewport: { width: 393, height: 852 }, hasTouch: true, timezoneId: 'Europe/London' });
-await context.addInitScript(([f, p]) => { if (!localStorage.getItem('pv-seeded')) { localStorage.setItem('pv-seeded', '1'); localStorage.setItem('familypilot-family-v1', f); localStorage.setItem('familypilot-planning-v1', p); } }, [FAMILY, PLANNING]);
-say('browser', 'starting'); await visit(context, 'halfwayFirstVisit');
-await visit(context, 'halfwayRepeatVisit');
+// 1. A new visitor on a phone-class profile: first visit, then a repeat (the cache).
+const visitor = await browser.newContext({ viewport: { width: 393, height: 852 }, hasTouch: true, timezoneId: 'Europe/London' });
+await visit(visitor, 'newVisitorFirst', { route: '/', throttle: true });
+await visit(visitor, 'newVisitorRepeat', { route: '/', throttle: true });
+await visitor.close();
+// 2. A returning family, not throttled (hydration races are not what is being measured here): Meet halfway end to end.
+const family = await browser.newContext({ viewport: { width: 393, height: 852 }, hasTouch: true, timezoneId: 'Europe/London' });
+await family.addInitScript(([f, p]) => { if (!localStorage.getItem('pv-seeded')) { localStorage.setItem('pv-seeded', '1'); localStorage.setItem('familypilot-family-v1', f); localStorage.setItem('familypilot-planning-v1', p); } }, [FAMILY, PLANNING]);
+await visit(family, 'returningFamilyHalfway', { route: '/halfway', throttle: false, waitFor: (page) => page.getByTestId('halfway-option').first().waitFor({ timeout: 45000 }) });
 await browser.close();
 console.log('DONE');
 process.exit(0);
