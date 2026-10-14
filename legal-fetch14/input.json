@@ -1,0 +1,135 @@
+{
+ "explicit": [
+  {
+   "id": 346104,
+   "name": "Gambado",
+   "postcode": "SW6 2PY",
+   "urls": [
+    "https://www.gambado.com/"
+   ],
+   "follow": "chelsea"
+  },
+  {
+   "id": 1434379,
+   "name": "Flip Out Staples Corner",
+   "postcode": "NW2 6LW",
+   "urls": [
+    "https://www.flipout.co.uk/locations/brent-cross"
+   ],
+   "follow": "soft|faq|session|toddler|contact|find"
+  },
+  {
+   "id": 1711686,
+   "name": "Flip Out Canary Wharf",
+   "postcode": "E14 4QT",
+   "urls": [
+    "https://www.flipout.co.uk/locations/canary-wharf",
+    "https://www.flipout.co.uk/locations/canary-wharf/soft-play"
+   ],
+   "follow": "faq|session|toddler|contact|find"
+  },
+  {
+   "id": 1764457,
+   "name": "Flip Out Croydon",
+   "postcode": "CR0 1TY",
+   "urls": [
+    "https://www.flipout.co.uk/locations/croydon"
+   ],
+   "follow": "faq|price|session|soft"
+  },
+  {
+   "id": 1857771,
+   "name": "Clip 'n Climb at The O2",
+   "postcode": "SE10 0DX",
+   "urls": [
+    "https://theo2.clipnclimb.co.uk/",
+    "https://theo2.clipnclimb.co.uk/faqs/",
+    "https://theo2.clipnclimb.co.uk/facilities/"
+   ],
+   "follow": ""
+  },
+  {
+   "id": 1937580,
+   "name": "Clip 'n Climb Croydon",
+   "postcode": "CR0 1NB",
+   "urls": [
+    "https://croydon.clipnclimb.co.uk/"
+   ],
+   "follow": "faq|facilit"
+  },
+  {
+   "id": 963064,
+   "name": "Air Jump Orpington",
+   "postcode": "BR5 3QX",
+   "urls": [
+    "https://www.airjumptrampolinepark.co.uk/"
+   ],
+   "follow": "faq|toddler|session|price"
+  },
+  {
+   "id": 1935590,
+   "name": "The Jump Zone Beckton",
+   "postcode": "E6 6LA",
+   "urls": [
+    "https://thejumpzone.com/"
+   ],
+   "follow": "beckton|faq|toddler|session"
+  },
+  {
+   "id": 1560271,
+   "name": "Wacky Kingdom Kingston",
+   "postcode": "KT1 1TP",
+   "urls": [
+    "https://www.wackykingdom.com/kingston",
+    "https://www.wackykingdom.com/"
+   ],
+   "follow": "kingston|faq|toddler"
+  }
+ ],
+ "independents": [
+  [
+   "Abuela Play Cafe",
+   "CR5 2RA",
+   1691253
+  ],
+  [
+   "Cheeky Chops Play Cafe",
+   "TW1 3LP",
+   1961932
+  ],
+  [
+   "Dreami Play Cafe",
+   "E2 7SY",
+   1677302
+  ],
+  [
+   "HALO Play Cafe",
+   "UB8 1GB",
+   1367047
+  ],
+  [
+   "Little Peeps Soft Play",
+   "KT9 1NU",
+   1532159
+  ],
+  [
+   "Raffys Play Cafe",
+   "BR3 3HQ",
+   1756533
+  ],
+  [
+   "Moo Moo's Play Cafe",
+   "KT11 3EB",
+   1836741
+  ]
+ ],
+ "domains": {
+  "1691253": "abuelaplaycafe.co.uk",
+  "1961932": "cheekychopsplaycafe.co.uk",
+  "1677302": "dreamiplaycafe.com",
+  "1367047": "haloplaycafe.co.uk",
+  "1532159": "littlepeepssoftplay.com",
+  "1756533": "raffysplaycafe.co.uk",
+  "1836741": "moomoosplaycafe.co.uk"
+ }
+}

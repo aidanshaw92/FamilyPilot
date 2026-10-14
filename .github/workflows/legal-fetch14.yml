@@ -1,0 +1,27 @@
+# One-off, pass 15. NOT scheduled, NOT dispatchable, NOT run on pull requests. Runs only when the throwaway branch `data/open-data-fetch` is pushed with a change under legal-fetch14/. GET only, descriptive User-Agent, robots.txt honoured, two seconds between requests, at most five pages per host, no secret, no database, no Google, no search engine, no social network.
+name: Play venue operator sites (one-off)
+
+on:
+  push:
+    branches: [data/open-data-fetch]
+    paths:
+      - .github/workflows/legal-fetch14.yml
+      - legal-fetch14/**
+
+permissions:
+  contents: write   # only to commit the result file to this throwaway branch
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet requests beautifulsoup4 lxml
+      - run: python3 legal-fetch14/operator_read.py legal-fetch14/input.json
+      - name: Commit the result to the throwaway branch
+        run: |
+          git config user.name "open-data-fetch"; git config user.email "actions@users.noreply.github.com"
+          git add results/softplay
+          git commit -q -m "Play venue operator sites: results, pass 15" || echo "nothing to commit"
+          git push -q origin HEAD:data/open-data-fetch || true
