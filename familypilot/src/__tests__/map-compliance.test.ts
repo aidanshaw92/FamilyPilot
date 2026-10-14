@@ -30,8 +30,8 @@ describe('which places may be drawn on the app\'s own map', () => {
   });
 
   it('the list of plottable providers is short and says no Google', () => {
-    // Each joined with its credit (services/places/attribution.ts): OpenStreetMap and OS Open Greenspace owe one; Wikidata (CC0) owes none.
-    expect([...MAPPABLE_PROVIDERS]).toEqual(['osm', 'wikidata', 'os-greenspace', 'mock']);
+    // Each joined with its credit (services/places/attribution.ts): OpenStreetMap, OS Open Greenspace and the FSA's FHRS owe one; Wikidata (CC0) owes none.
+    expect([...MAPPABLE_PROVIDERS]).toEqual(['osm', 'wikidata', 'os-greenspace', 'fhrs', 'mock']);
     expect(MAPPABLE_PROVIDERS).not.toContain('google');
     expect(MAPPABLE_PROVIDERS).not.toContain('familypilot');
   });

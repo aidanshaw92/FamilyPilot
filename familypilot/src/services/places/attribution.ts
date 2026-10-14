@@ -40,6 +40,15 @@ export const OS_DATA_YEAR = 2026;
 export const OS_CREDIT = `Contains OS data © Crown copyright and database right ${OS_DATA_YEAR}`;
 export const OGL_URL = 'https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/';
 
+/**
+ * The credit for the Food Standards Agency's Food Hygiene Rating Scheme open data (Open Government Licence v3.0). The FSA's terms name no attribution
+ * statement of its own, so the OGL's default applies, verbatim ("If the Information Provider does not provide a specific attribution statement, you
+ * must use the following: Contains public sector information licensed under the Open Government Licence v3.0."), with the source named in front.
+ * FamilyPilot uses the register for identity only: no hygiene rating, score or FHRS/FSA imagery is shown, so the FSA's rules on those never apply.
+ */
+export const FSA_OPEN_DATA_URL = 'https://ratings.food.gov.uk/open-data';
+export const FSA_CREDIT = 'Source: Food Standards Agency. Contains public sector information licensed under the Open Government Licence v3.0.';
+
 /** The notice ODbL 4.3 asks for with a Produced Work, in the licence's own words, and the links that make the licence clear. */
 export const ODBL_NOTICE = 'Contains information from OpenStreetMap, which is made available here under the Open Database License (ODbL).';
 export const ODBL_URL = 'https://opendatacommons.org/licenses/odbl/1-0/';
@@ -59,6 +68,9 @@ export function attributionSourceOf(
   return provider ?? 'unknown';
 }
 
+/** The credits an external source can be owed: Google Maps, OpenStreetMap, Ordnance Survey, the Food Standards Agency. */
+export type ExternalCredit = 'google' | 'osm' | 'os' | 'fsa';
+
 /**
  * Whether an external credit is owed, and which.
  *
@@ -68,24 +80,26 @@ export function attributionSourceOf(
  */
 export function externalCreditFor(
   provider: PlacesProviderName | undefined,
-): 'google' | 'osm' | 'os' | null {
+): ExternalCredit | null {
   const source = attributionSourceOf(provider);
   if (source === 'google') return 'google';
   if (source === 'osm') return 'osm';
   // OS Open Greenspace (OGL) owes the Ordnance Survey statement. Wikidata (CC0) owes nobody a credit, and our own rows owe none.
   if (source === 'os-greenspace') return 'os';
+  // The FSA's Food Hygiene Rating Scheme (OGL) owes the Open Government Licence statement.
+  if (source === 'fhrs') return 'fsa';
   return null;
 }
 
 /** The distinct credits a mixed list of places owes, so a screen can show each one once. */
 export function creditsForPlaces(
   places: ReadonlyArray<{ provider?: PlacesProviderName }>,
-): Array<'google' | 'osm' | 'os'> {
-  const seen = new Set<'google' | 'osm' | 'os'>();
+): ExternalCredit[] {
+  const seen = new Set<ExternalCredit>();
   for (const place of places) {
     const credit = externalCreditFor(place.provider);
     if (credit) seen.add(credit);
   }
   // Stable order, so a list's footer does not reshuffle as results change.
-  return (['google', 'osm', 'os'] as const).filter((credit) => seen.has(credit));
+  return (['google', 'osm', 'os', 'fsa'] as const).filter((credit) => seen.has(credit));
 }

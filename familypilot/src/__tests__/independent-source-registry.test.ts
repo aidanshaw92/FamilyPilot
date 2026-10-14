@@ -137,12 +137,12 @@ describe('credit and map', () => {
   it('lets the app draw the open-licence places on its own map, and still never a Google one', () => {
     for (const provider of ['osm', 'wikidata', 'os-greenspace', 'mock'] as const) expect(canPlotOnOwnMap({ provider }), provider).toBe(true);
     for (const provider of ['google', 'familypilot'] as const) expect(canPlotOnOwnMap({ provider }), provider).toBe(false);
-    expect([...MAPPABLE_PROVIDERS].sort()).toEqual(['mock', 'os-greenspace', 'osm', 'wikidata']);
+    expect([...MAPPABLE_PROVIDERS].sort()).toEqual(['fhrs', 'mock', 'os-greenspace', 'osm', 'wikidata']);
   });
 
   it('agrees with the catalogue simulation on what can be drawn', async () => {
     const { isPlottable } = await import(join(root, 'scripts/lib/catalogue-expiry.mjs'));
-    for (const provider of ['google', 'osm', 'wikidata', 'os-greenspace', 'mock', 'familypilot'] as const) {
+    for (const provider of ['google', 'osm', 'wikidata', 'os-greenspace', 'fhrs', 'mock', 'familypilot'] as const) {
       expect(isPlottable({ provider, latitude: 51.5, longitude: -0.1 }), provider).toBe(canPlotOnOwnMap({ provider }));
     }
   });

@@ -33,6 +33,7 @@ const FILES = {
   'official-site': require('../data/identities/official-site.json'),
   wikidata: require('../data/identities/wikidata.json'),
   'os-greenspace': require('../data/identities/os-greenspace.json'),
+  fhrs: require('../data/identities/fhrs.json'),
 };
 
 /** Identity sources, and the licence each can carry. `venue-website` is the venue's own page, read for the facts on it. */
@@ -42,14 +43,18 @@ const IDENTITY_SOURCES = {
   wikidata: ['CC0-1.0'],
   // OS Open Greenspace: the Ordnance Survey's park, garden and play-space polygons, published under the Open Government Licence v3.0.
   'os-greenspace': ['OGL-3.0'],
+  // The Food Standards Agency's Food Hygiene Rating Scheme: that a food business of this name exists at this address, and where. Open Government Licence
+  // v3.0. Identity only: an entry has no field a rating, a score or the FHRS imagery could live in (the shape is closed), and none is read.
+  fhrs: ['OGL-3.0'],
 };
 
 /**
  * Position sources. A position is drawn on the app's own map, so its source must be one the app can credit where the licence asks for a credit:
- * OpenStreetMap (ODbL: "© OpenStreetMap contributors"), OS Open Greenspace (OGL: the Ordnance Survey statement) and Wikidata (CC0: none owed).
+ * OpenStreetMap (ODbL: "© OpenStreetMap contributors"), OS Open Greenspace (OGL: the Ordnance Survey statement), the FSA's FHRS (OGL: the default
+ * statement, because the FSA names none) and Wikidata (CC0: none owed).
  * A source joins this list in the same change that adds its credit (see `utils/map-compliance.ts` and `services/places/attribution.ts`).
  */
-const LOCATION_SOURCES = { osm: ['ODbL-1.0'], wikidata: ['CC0-1.0'], 'os-greenspace': ['OGL-3.0'] };
+const LOCATION_SOURCES = { osm: ['ODbL-1.0'], wikidata: ['CC0-1.0'], 'os-greenspace': ['OGL-3.0'], fhrs: ['OGL-3.0'] };
 
 const ENTRY_KEYS = ['familypilotId', 'name', 'category', 'identity', 'location', 'website', 'reviewedBy', 'reviewedAt'];
 const IDENTITY_KEYS = ['source', 'url', 'retrievedAt', 'licence', 'externalId'];
@@ -87,6 +92,11 @@ function httpsUrl(value) {
  * and the id is the feature's identifier in the dataset (a release is recorded in the provenance manifest, `PROVENANCE.json`).
  */
 const OS_PRODUCT_URL = 'https://www.ordnancesurvey.co.uk/products/os-open-greenspace';
+/**
+ * The FSA's own record of one establishment, at its open-data address (verified 14 October: it answers with the establishment's XML, whose FHRSID is the
+ * number in the address). A person can open it to check the name, address and position an entry took. Its rating fields are not read or kept.
+ */
+const FHRS_RECORD_URL = 'https://ratings.food.gov.uk/api/download-data/xml/establishments/';
 function provenanceProblem(identity) {
   const id = identity.externalId;
   switch (identity.source) {
@@ -101,6 +111,10 @@ function provenanceProblem(identity) {
     case 'os-greenspace':
       if (typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return 'identity.externalId must be the OS Open Greenspace feature identifier';
       if (identity.url !== OS_PRODUCT_URL) return 'identity.url must be the OS Open Greenspace product page';
+      return null;
+    case 'fhrs':
+      if (typeof id !== 'string' || !/^\d{3,9}$/.test(id)) return 'identity.externalId must be the FHRS establishment number (FHRSID) such as 1670908';
+      if (identity.url !== `${FHRS_RECORD_URL}${id}`) return 'identity.url must be the Food Standards Agency record of identity.externalId';
       return null;
     default:
       return null; // official-site: the venue's own page is the record

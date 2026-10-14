@@ -6,6 +6,7 @@ Each file holds places from **one** source and carries that source's licence. A 
 |---|---|---|---|
 | `osm.json` | OpenStreetMap: name, category, position and website of a feature | Open Database Licence (ODbL) 1.0, <https://opendatacommons.org/licenses/odbl/1-0/> | © OpenStreetMap contributors, <https://www.openstreetmap.org/copyright> |
 | `os-greenspace.json` | OS Open Greenspace (Ordnance Survey): name and an interior point of a named public park or garden | Open Government Licence v3.0, <https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/> | Contains OS data © Crown copyright and database right 2026 |
+| `fhrs.json` | Food Standards Agency, Food Hygiene Rating Scheme open data: that a food business of this name exists at this address, and its position. **Identity only: no hygiene rating, score or FHRS/FSA imagery is read, kept or shown.** | Open Government Licence v3.0, <https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/> (the FSA: "All content is available under the Open Government Licence v3.0") | Source: Food Standards Agency. Contains public sector information licensed under the Open Government Licence v3.0. (the FSA names no statement of its own, so the OGL's default is used) |
 | `wikidata.json` | Wikidata: label, coordinates, official website | CC0 1.0, <https://www.wikidata.org/wiki/Wikidata:Licensing> | none required |
 | `official-site.json` | A venue's own website: a name and the address of its page | none claimed; the venue's own words, read once | none |
 

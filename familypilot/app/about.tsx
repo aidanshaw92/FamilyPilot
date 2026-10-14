@@ -6,6 +6,8 @@ import { BackButton } from '@/src/components/ui/BackButton';
 import { Text } from '@/src/components/ui';
 import { colors, spacing } from '@/src/design-system/tokens';
 import {
+  FSA_CREDIT,
+  FSA_OPEN_DATA_URL,
   ODBL_NOTICE,
   ODBL_URL,
   OGL_URL,
@@ -79,6 +81,7 @@ function DataLicences() {
       </Text>
       <LicenceLine text={`${OSM_CREDIT}. ${ODBL_NOTICE}`} links={[['OpenStreetMap copyright', OSM_COPYRIGHT_URL], ['Open Database License', ODBL_URL]]} />
       <LicenceLine text={`${OS_CREDIT}, under the Open Government Licence v3.0.`} links={[['Open Government Licence', OGL_URL]]} />
+      <LicenceLine text={`Some venue names and addresses come from the Food Standards Agency's open data. ${FSA_CREDIT}`} links={[['Open Government Licence', OGL_URL], ['FSA open data', FSA_OPEN_DATA_URL]]} />
       <LicenceLine text={WIKIDATA_NOTICE} links={[['Wikidata licensing', WIKIDATA_LICENCE_URL]]} />
       <LicenceLine text="The lists of independently sourced places are public." links={[['Read the lists', PLACE_LISTS_URL]]} />
     </View>
