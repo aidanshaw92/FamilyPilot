@@ -1,0 +1,35 @@
+{
+  "generated_by": "FamilyPilot open-data-fetch workflow, second pass (one-off, throwaway branch data/open-data-fetch)",
+  "user_agent": "FamilyPilot-open-data/1.0 (+https://github.com/aidanshaw92/FamilyPilot)",
+  "files": [
+    {
+      "file": "osm-family-regions.geojson",
+      "bytes": 16698575,
+      "sha256": "f6aad23dfc13dacc48df3522457a7f9056e61609bb14e02f10fdecb491f68fc5",
+      "retrieved_at": "2026-10-14T07:41:45+00:00",
+      "source": "OpenStreetMap via Geofabrik regional extracts, filtered by tag with osmium, one feature per OSM id",
+      "regions": {
+        "berkshire": 1729,
+        "buckinghamshire": 2286,
+        "essex": 3378,
+        "greater-london": 14286,
+        "hertfordshire": 2312,
+        "kent": 3514,
+        "surrey": 2716
+      },
+      "source_urls": [
+        "https://download.geofabrik.de/europe/united-kingdom/england/greater-london-latest.osm.pbf",
+        "https://download.geofabrik.de/europe/united-kingdom/england/hertfordshire-latest.osm.pbf",
+        "https://download.geofabrik.de/europe/united-kingdom/england/surrey-latest.osm.pbf",
+        "https://download.geofabrik.de/europe/united-kingdom/england/kent-latest.osm.pbf",
+        "https://download.geofabrik.de/europe/united-kingdom/england/essex-latest.osm.pbf",
+        "https://download.geofabrik.de/europe/united-kingdom/england/buckinghamshire-latest.osm.pbf",
+        "https://download.geofabrik.de/europe/united-kingdom/england/berkshire-latest.osm.pbf"
+      ],
+      "licence": "ODbL-1.0",
+      "licence_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "attribution": "\u00a9 OpenStreetMap contributors",
+      "attribution_url": "https://www.openstreetmap.org/copyright"
+    }
+  ]
+}

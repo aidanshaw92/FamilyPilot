@@ -1,0 +1,3 @@
+OpenStreetMap data: © OpenStreetMap contributors, Open Database Licence 1.0 (https://www.openstreetmap.org/copyright).
+Reduced by tag from Geofabrik's regional extracts for FamilyPilot's catalogue-recovery dry run. Not for production use.
+See PROVENANCE.json for the sources, retrieval time, size and SHA-256.
