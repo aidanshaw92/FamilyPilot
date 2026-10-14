@@ -80,3 +80,31 @@ After cutover they run on independent coordinates. Before it, nothing changes: t
 4. **Check the three things I cannot:** whether the Google account is billed in the EEA, whether any negotiated agreement exists, and whether Explore counts as a "listings or directory service" under 3.2.3(d)(iii) once it serves an independent catalogue (it may no longer matter, because the content would not be Google's).
 
 The recovery plan and this audit point the same way: after cutover the app serves identities and positions from sources whose licences allow it, and Google contributes a place ID and, within 30 days, a coordinate. The one-off Google refresh in `GOOGLE_REFRESH_CONTINGENCY.md` would re-store names and addresses and is therefore **not** compliant, whatever the 30-day window.
+
+## 5. Status after 14 October (second pass)
+
+Production counts re-read the same day, read-only: `saved_places_backups` 0 rows, `planning_workspaces` 0, `planning_connections` 0, `plan_invites` 0. Every saved place and plan is on a device, none on a server (see `docs/SAVED_PLACE_CONTINUITY.md`).
+
+| Step | State | Needs |
+|---|---|---|
+| 1. Close the public read of `place_records` | SQL below, **not applied** | your approval |
+| 2. Stop keeping provider content on the device | the part that stops *new* copies is code in the retention PR (device cache: Google results kept in memory only, an older copy removed when replaced). Existing saved places keep their stored copy: dropping it is a migration, and it must run **after** the reconnect proposal has read it (the order is explained in the continuity note). | your approval of the migration, with the reconnect experience |
+| 3. References, not copies, in plans and backups | backups: a Google place is backed up as its id alone (the retention PR). Plan sync: no row exists, and the shared-day projection already carries venue ids and our own derived text; no change needed before launch. | merge with the Tranche A release |
+| 4. Redact stored Google rows | SQL above, **not applied**, and must follow the cutover of each category (the catalogue empties on 8 November anyway) | your approval and the cutover |
+| 5. No edge cache of provider content | code in the retention PR (a response holding a Google place is `no-store`; one made only of independent venues is cached as before) | merge with the Tranche A release |
+| 6. Replace Google-derived fixtures in the repository | not started: about 20 files (`docs/audit-*.json`, fixtures read from `place_records`); git history keeps the old ones | review only; removing history is your decision |
+| 7. Journey and corridor calculations | none to change: after cutover they run on independent coordinates; whether a derived distance is "content based on Google Maps Content" (3.2.3(c)) remains a question for a lawyer | nothing |
+
+Nothing has been deleted, no grant has changed, no migration has run, and no plan has been altered.
+
+### Step 1, proposed SQL (not applied)
+
+Nothing in the app reads `place_records` with the public key (the server reads it with the service role), so this changes no behaviour a parent sees.
+
+```sql
+drop policy if exists "Place records are publicly readable" on public.place_records;
+revoke select on public.place_records from anon, authenticated;
+-- rollback:
+-- create policy "Place records are publicly readable" on public.place_records for select using (true);
+-- grant select on public.place_records to anon, authenticated;
+```
