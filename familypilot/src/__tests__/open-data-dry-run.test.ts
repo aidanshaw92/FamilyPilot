@@ -17,6 +17,7 @@ const { looseSameVenue } = matchModule as any;
 const { polygonAreaHa } = geoModule as any;
 const { significance, bestStored, PARK_MIN_HA } = dryRunModule as any;
 const { rejectedAsGone } = osmClassifyModule as any;
+const { VISITOR_FARM } = osmClassifyModule as any;
 
 const fixtures = join(__dirname, '../../../scripts/open-data/fixtures');
 const extract = JSON.parse(readFileSync(join(fixtures, 'synthetic-extract.geojson'), 'utf8'));
@@ -375,6 +376,29 @@ describe('calibration from the first real extract', () => {
     expect(names(r)).toEqual(['London Eye Fixture']);
     expect(why(r, 'A Statue').reason).toMatch(/general attraction/);
     expect(why(r, 'Penguin Pool').gate).toBe('classification');
+  });
+
+  it('a city farm is a farmyard with a visitor-farm name; any other farmyard needs us to hold it already', () => {
+    for (const name of ['Hackney City Farm', 'Kentish Town City Farm', "Belmont Children's Farm", 'Mudchute Park and Farm', 'Willows Activity Farm', 'Spring Farm Park']) expect(VISITOR_FARM.test(name), name).toBe(true);
+    for (const name of ['Home Farm', 'Belmont Farm', 'Manor Farm Barns', 'Farmers Market']) expect(VISITOR_FARM.test(name), name).toBe(false);
+    const r = run([point('n1', { name: 'Hackney City Farm', landuse: 'farmyard' }, 51.5, -0.1), point('n2', { name: 'Home Farm', landuse: 'farmyard' }, 51.51, -0.11)]);
+    expect(names(r)).toEqual(['Hackney City Farm']);
+    expect(why(r, 'Home Farm').reason).toMatch(/working farms/);
+    const held = run([point('n3', { name: 'Belmont Farm', landuse: 'farmyard' }, 51.6, -0.3)], [{ id: 'fp-google-B', name: "Belmont Children's Farm", category: 'farm', lat: 51.6002, lng: -0.3 }]);
+    expect(names(held)).toEqual(['Belmont Farm']);
+    expect(held.links[0].google_place).toBe('fp-google-B');
+  });
+
+  it('a recreation ground is a park for the 1 ha rule, and a garden needs a link or a website', () => {
+    const r = run([
+      poly('a2', { name: 'Big Recreation Ground', landuse: 'recreation_ground' }, 51.5, -0.1, 0.01),
+      poly('a4', { name: 'Tiny Recreation Ground', landuse: 'recreation_ground' }, 51.52, -0.12, 0.0005),
+      poly('a6', { name: 'Famous Gardens', leisure: 'garden', wikidata: 'Q9' }, 51.53, -0.13, 0.001),
+      poly('a8', { name: 'Private Garden', leisure: 'garden' }, 51.54, -0.14, 0.001),
+    ]);
+    expect(names(r)).toEqual(['Big Recreation Ground', 'Famous Gardens']);
+    expect(why(r, 'Tiny Recreation Ground').gate).toBe('significance');
+    expect(why(r, 'Private Garden').reason).toMatch(/mapped gardens are private/);
   });
 
   it('a place we already hold is not judged by the gate: it has proved it is a destination', () => {

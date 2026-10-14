@@ -19,6 +19,12 @@ const GONE_PREFIXES = ['disused:', 'abandoned:', 'was:', 'demolished:', 'removed
 /** The keys whose value makes a feature a venue for this dry run. */
 const CLASSIFYING_KEYS = ['tourism', 'leisure', 'attraction', 'amenity', 'shop', 'building'];
 
+/**
+ * A name that says a farm is a place to visit: "Hackney City Farm", "Kentish Town City Farm", "Mudchute Park and Farm". OpenStreetMap maps
+ * these as plain `landuse=farmyard`, the same tag as every working farm, so the name is the only signal there is.
+ */
+export const VISITOR_FARM = /\b(city|community|children'?s?|urban|open|visitor|animal|petting|activity|adventure)\s+farm\b|\bfarm\s+(park|zoo)\b|\bpark\s+and\s+farm\b/i;
+
 /** [tag, value, group, subtype]. First match wins, so specific entries come before general ones. */
 const RULES = [
   ['tourism', 'zoo', 'animals', (tags) => ({ petting_zoo: 'petting_zoo', wildlife_park: 'wildlife_park' }[tags.zoo] ?? 'zoo')],
@@ -30,6 +36,11 @@ const RULES = [
   ['tourism', 'museum', 'museums', 'museum'],
   ['tourism', 'gallery', 'museums', 'gallery'],
   ['leisure', 'nature_reserve', 'parks', 'nature_reserve'],
+  // Found on the first real extract: city farms are landuse=farmyard, several large parks are landuse=recreation_ground, and Kew Gardens
+  // is leisure=garden. Each is broad in OpenStreetMap, so each has its own significance gate in dry-run.mjs.
+  ['landuse', 'farmyard', 'animals', (tags) => (VISITOR_FARM.test(tags.name ?? '') ? 'city_farm' : 'farmyard')],
+  ['landuse', 'recreation_ground', 'parks', 'recreation_ground'],
+  ['leisure', 'garden', 'parks', 'garden'],
   ['leisure', 'park', 'parks', 'park'],
   ['tourism', 'theme_park', 'attractions', 'theme_park'],
   // A general attraction (the London Eye, a landmark). Very broad in OSM, so the significance gate asks for a Wikidata or Wikipedia link.

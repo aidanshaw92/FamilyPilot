@@ -10,7 +10,8 @@
  *
  * From a Geofabrik .osm.pbf, one way to get GeoJSON (osmium-tool, run locally):
  *   osmium tags-filter greater-london-latest.osm.pbf nwr/leisure=park,playground,nature_reserve,trampoline_park,indoor_play,water_park,ice_rink,miniature_golf,bowling_alley \
- *     nwr/tourism=zoo,aquarium,museum,gallery,theme_park,attraction -o london-family.osm.pbf
+ *     nwr/tourism=zoo,aquarium,museum,gallery,theme_park,attraction \
+ *     nwr/landuse=farmyard,recreation_ground nwr/leisure=garden -o london-family.osm.pbf
  *   osmium export london-family.osm.pbf -f geojson --geometry-types=point,polygon --add-unique-id=type_id -a version -o london-family.geojson
  * (Do NOT add -R: it drops the nodes a polygon is built from, and the export then keeps only points. osmium writes a polygon's id as `a<n>`;
  * see normaliseFeatures. The extra ways and nodes the default keeps are untagged members and are rejected at the classification gate.)
@@ -46,7 +47,9 @@ const STORED_GROUP = { park: 'parks', museum: 'museums', zoo: 'animals', farm: '
 export const PARK_MIN_HA = 1;
 export function significance(row) {
   const signal = row._signals.wikidata || row._signals.wikipedia;
-  if (['park', 'nature_reserve'].includes(row.subtype)) {
+  if (row.subtype === 'farmyard') return 'a farmyard whose name does not say it is a visitor farm (most are working farms)';
+  if (row.subtype === 'garden') return signal || row.website ? null : 'a garden with no website or Wikidata/Wikipedia link (most mapped gardens are private)';
+  if (['park', 'nature_reserve', 'recreation_ground'].includes(row.subtype)) {
     if ((row._areaHa ?? 0) >= PARK_MIN_HA || signal || row._playgroundInside === true) return null;
     return `under ${PARK_MIN_HA} ha${row._areaHa == null ? ' (a point)' : ''}, no Wikidata or Wikipedia link, no mapped playground inside`;
   }
@@ -157,7 +160,7 @@ export function runDryRun({ features, stored = [], version, seed = 7 }) {
 
   // A park gains "a playground lies inside it" from a named or an unnamed mapped playground within its polygon.
   const playgrounds = [...rows.filter((r) => r.subtype === 'playground').map((r) => ({ point: { lat: r.lat, lng: r.lng } })), ...unnamedPlaygrounds];
-  for (const park of rows.filter((r) => r.group_id === 'parks' && ['park', 'nature_reserve'].includes(r.subtype))) {
+  for (const park of rows.filter((r) => r.group_id === 'parks' && ['park', 'nature_reserve', 'recreation_ground'].includes(r.subtype))) {
     park._playgroundInside = park._polygon ? playgrounds.some((p) => pointInGeometry(p.point.lat, p.point.lng, park._polygon)) : null;
   }
 
