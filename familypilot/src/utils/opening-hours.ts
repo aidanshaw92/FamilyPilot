@@ -98,6 +98,47 @@ function formatClockTime(minutes: number): string {
 }
 
 /**
+ * One formatter per timezone, kept for the life of the page. Building an `Intl.DateTimeFormat` costs far more than
+ * using one, and a catalogue of thousands of venues asks the same two questions of the same zone many times each
+ * ("what date is it there", "what time"): on a mid-range phone that construction alone was most of the time Explore
+ * took to show its first card. `null` is cached too, so an unrecognised zone is not retried on every venue.
+ */
+const dateFormatters = new Map<string, Intl.DateTimeFormat | null>();
+const timeFormatters = new Map<string, Intl.DateTimeFormat | null>();
+
+function cachedFormatter(
+  cache: Map<string, Intl.DateTimeFormat | null>,
+  timezone: string,
+  build: () => Intl.DateTimeFormat,
+): Intl.DateTimeFormat | null {
+  if (cache.has(timezone)) return cache.get(timezone) ?? null;
+  let formatter: Intl.DateTimeFormat | null;
+  try {
+    formatter = build();
+  } catch {
+    formatter = null;
+  }
+  cache.set(timezone, formatter);
+  return formatter;
+}
+
+function dateFormatterFor(timezone: string): Intl.DateTimeFormat | null {
+  return cachedFormatter(
+    dateFormatters,
+    timezone,
+    () => new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }),
+  );
+}
+
+function timeFormatterFor(timezone: string): Intl.DateTimeFormat | null {
+  return cachedFormatter(
+    timeFormatters,
+    timezone,
+    () => new Intl.DateTimeFormat('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }),
+  );
+}
+
+/**
  * The calendar date at a venue at a given instant, as `YYYY-MM-DD`.
  *
  * Uses `Intl` so daylight saving is handled by the platform's own timezone database rather than
@@ -106,13 +147,10 @@ function formatClockTime(minutes: number): string {
  */
 export function venueLocalDate(instant: Date, timezone: string): string | null {
   if (Number.isNaN(instant.getTime())) return null;
+  const formatter = dateFormatterFor(timezone);
+  if (!formatter) return null;
   try {
-    const parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: timezone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(instant);
+    const parts = formatter.format(instant);
     return CALENDAR_DATE.test(parts) ? parts : null;
   } catch {
     return null;
@@ -122,13 +160,10 @@ export function venueLocalDate(instant: Date, timezone: string): string | null {
 /** The wall-clock time at a venue at a given instant, as `HH:MM`. */
 export function venueLocalTime(instant: Date, timezone: string): string | null {
   if (Number.isNaN(instant.getTime())) return null;
+  const formatter = timeFormatterFor(timezone);
+  if (!formatter) return null;
   try {
-    return new Intl.DateTimeFormat('en-GB', {
-      timeZone: timezone,
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    }).format(instant);
+    return formatter.format(instant);
   } catch {
     return null;
   }
