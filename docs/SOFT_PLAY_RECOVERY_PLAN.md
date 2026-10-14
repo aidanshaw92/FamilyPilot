@@ -13,9 +13,9 @@ The Food Standards Agency's Food Hygiene Rating Scheme (FHRS) publishes every fo
 | What the name says | In scope | Of which Greater London | Examples of the kind of name |
 |---|---:|---:|---|
 | Soft play or play café / centre / zone | **31** | **18** | "… Soft Play", "… Play Cafe", "Gambado", "… Play Centre" |
-| Trampoline or jump park | 14 | 8 | Flip Out (five sites), Air Jump, Jump In by Air Hop, The Jump Zone, Jump City |
+| Trampoline or jump park | 14 | 6 | Flip Out (five sites), Air Jump, Jump In by Air Hop, The Jump Zone, Jump City |
 | Climbing | 2 | 2 | Clip 'n Climb (two sites) |
-| Bowling alleys and laser tag | about 12 | about 7 | Hollywood Bowl, Laser Quest |
+| Bowling alleys and laser tag | about 12 | about 6 | Hollywood Bowl, Laser Quest |
 
 These are names, not verdicts. A food registration says a business serves food at that address; **it does not say that the venue is open, that it is a soft-play centre in the sense a parent means, or who it suits.** The 31 are candidates.
 
