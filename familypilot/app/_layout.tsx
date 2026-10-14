@@ -1,21 +1,14 @@
 import 'react-native-reanimated';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  Inter_800ExtraBold,
-  Inter_900Black,
-  useFonts,
-} from '@expo-google-fonts/inter';
+import { useFonts } from 'expo-font';
 import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { blocksFirstRender, fontSources } from '@/src/design-system/fonts';
 import { colors } from '@/src/design-system/tokens';
 import { useDocumentTitle } from '@/src/hooks/use-document-title';
 import { installClientErrorReporting } from '@/src/services/monitoring/client-errors';
@@ -86,17 +79,20 @@ export default function RootLayout() {
   useDocumentTitle();
   useAccountGuard();
   useEffect(() => installClientErrorReporting(), []);
-  const [loaded, error] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    Inter_900Black,
-  });
+  const [loaded, error] = useFonts(fontSources);
+  // The static export renders this component on the server. The app is for the client only (it reads the device's own stores and the clock), so the server
+  // and the first client render both draw nothing and the app appears once mounted: drawing it on the server would be a page the client then throws away
+  // (React error 418) at a cost of half a second on a slow phone. Waiting for fonts used to give the same "nothing yet" by accident.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  // The web's static page carries a brand shell for the seconds the app takes to download (app/+html.tsx); remove it once the app is drawn.
+  useEffect(() => {
+    if (mounted && typeof document !== 'undefined') document.getElementById('boot-shell')?.remove();
+  }, [mounted]);
 
   useEffect(() => {
-    if (error) throw error;
+    // A font that will not load is fatal only where the first screen waits for it. Elsewhere (the web) the page is already drawn in the system font.
+    if (error && blocksFirstRender) throw error;
   }, [error]);
 
   useEffect(() => {
@@ -105,7 +101,7 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  if (!loaded) {
+  if (!mounted || (!loaded && blocksFirstRender)) {
     return null;
   }
 

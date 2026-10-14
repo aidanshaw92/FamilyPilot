@@ -1,4 +1,4 @@
-import type { Ionicons } from '@expo/vector-icons';
+import type Ionicons from '@expo/vector-icons/Ionicons';
 
 import type { BenefitIconKind } from '@/src/components/onboarding/BenefitIcon';
 import type { PhotoSlotCategory } from '@/src/components/ui';

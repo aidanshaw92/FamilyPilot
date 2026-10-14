@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/src/components/ui';
@@ -14,7 +14,8 @@ import { FitChips, OTHER_TONE } from './parts';
 
 /**
  * One place in the list: a number that is its pin, its photo (or the labelled illustration), its name, what is left to check,
- * each family's journey and each family's Family Fit. Tapping it selects the place and shows it on the map.
+ * each family's journey and each family's Family Fit. Tapping it selects the place and shows it on the map, or, where the map is switched
+ * off, opens the place; there it also carries "Plan this day", which the map's sheet otherwise holds.
  */
 export function HalfwayListCard({
   option,
@@ -23,6 +24,7 @@ export function HalfwayListCard({
   selected,
   onSelect,
   onPlan,
+  mapOff = false,
 }: {
   option: HalfwayOption;
   index: number;
@@ -30,6 +32,8 @@ export function HalfwayListCard({
   selected: boolean;
   onSelect: () => void;
   onPlan: () => void;
+  /** The map is switched off for these places (see utils/map-compliance.ts): the card opens the place and carries "Plan this day" itself. */
+  mapOff?: boolean;
 }) {
   // From the third-largest text size up, the card reflows to one column: a wide photo, the lines stacked, the action inside it.
   const large = isLargeText(useFontScale());
@@ -42,7 +46,7 @@ export function HalfwayListCard({
     bars.map((bar) => `${bar.who} ${bar.time}`).join(', '),
     `You: ${option.fits.mine.label}`,
     `${shortFamilyName(otherLabel)}: ${option.fits.other.label}`,
-    selected ? 'Selected, shown on the map' : 'Show on the map',
+    mapOff ? 'Open this place' : selected ? 'Selected, shown on the map' : 'Show on the map',
   ].join('. ');
 
   const number = (
@@ -101,7 +105,7 @@ export function HalfwayListCard({
           </View>
         </View>
       ) : null}
-      {large ? <Button label="Plan this day" onPress={onPlan} testID="halfway-plan" /> : null}
+      {large || mapOff ? <Button label="Plan this day" onPress={onPlan} testID="halfway-plan" /> : null}
     </View>
   );
 }

@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "source": "wikidata",
+  "licence": "CC0-1.0",
+  "_comment": "Wikidata, CC0. No OpenStreetMap or Google content. Empty until a reviewed set is approved. See docs/P0_CATALOGUE_RECOVERY.md.",
+  "entries": []
+}
