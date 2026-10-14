@@ -1,0 +1,25 @@
+# One-off, pass 9. NOT scheduled, NOT dispatchable, NOT run on pull requests. Runs only when the throwaway branch `data/open-data-fetch` is pushed with a
+# change under legal-fetch8/. GET only, descriptive User-Agent, no secret, no database, no Google API. It re-reads the two open sources for every Tranche A
+# candidate (the OS Open Greenspace download and Wikidata, live) and reports where an entry no longer matches its source, or where Wikidata says the place
+# has closed or ended. The input file holds only entries that already name an open source (ids, names, positions); it holds no Google value.
+name: Tranche A verification against the live sources (one-off)
+
+on:
+  push:
+    branches: [data/open-data-fetch]
+    paths:
+      - .github/workflows/legal-fetch8.yml
+      - legal-fetch8/**
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get install -y -qq gdal-bin jq unzip >/dev/null
+      - run: pip install -q requests
+      - run: python3 legal-fetch8/verify.py
