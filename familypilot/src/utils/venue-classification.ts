@@ -148,7 +148,7 @@ export const REVIEWED_PLACES: Readonly<Record<string, ReviewedPlace>> = {
     group: 'play', kind: 'trampoline_park', label: 'Trampoline park', play: { softPlay: 'not_confirmed', trampolines: 'confirmed' },
     evidence: ['Trampolines: its own page', 'A weekday term-time session for under-5s ("Toddler Takeover"): its own page'],
   },
-  'fp-fhrs-1434379': { // Flip Out, Brent Cross
+  'fp-fhrs-1434379': { // Flip Out Staples Corner (the operator's own name for the NW2 site)
     group: 'play', kind: 'trampoline_park', label: 'Trampoline park with soft play', play: { softPlay: 'confirmed', trampolines: 'confirmed' },
     evidence: ['Trampolines and soft play: its own page lists both'],
   },
