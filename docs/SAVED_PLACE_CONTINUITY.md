@@ -59,4 +59,4 @@ About 300 lines for the sheet, the Saved row line, and the venue-page fallback, 
 
 ## What this does not do
 
-It does not recover a saved place whose venue has **no** independent record (about 30 of the 147 we hold): there is nothing to reconnect to, and the row can only be kept as a note or removed. It does not touch a plan another family accepted. It does not move any data between devices.
+It does not recover a saved place whose venue has **no** independent record in what is served: with Tranche A alone that is 59 of the 147 we hold (29 of them continue only through OpenStreetMap, which is held; 30 have no candidate in any open source, among them all six soft-play and three of the seven activities). There is nothing to reconnect those to, and the row can only be kept as a note or removed. It does not touch a plan another family accepted. It does not move any data between devices.
