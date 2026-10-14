@@ -4,7 +4,7 @@
  * touches no database and writes only the file you name. It uses the real reader (server/places/lib/catalogue.js), so the 30-day gate and the category
  * switch behave exactly as they would in production.
  *
- *   node scripts/simulate-recovery-scenarios.mjs --rows rows.json --a A.keyed-entries.json,A2.entries.json --b B1.entries.json,B2.entries.json \
+ *   node scripts/simulate-recovery-scenarios.mjs --rows rows.json --a A1.entries.json,A2.entries.json --b B1.entries.json,B2.entries.json \
  *        [--out scenarios.md] [--json scenarios.json] [--dates 2026-10-20,2026-11-01,...]
  *
  * `rows.json` is the stored catalogue (id, category, lat, lng, fetched, provider). Entries are counted although they say UNREVIEWED (counted for simulation

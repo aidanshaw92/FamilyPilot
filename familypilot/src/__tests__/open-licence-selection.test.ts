@@ -240,7 +240,7 @@ describe('what the selector writes', () => {
     }
   });
 
-  it('keeps Google ids and stored names out of every public file, and puts them in the private folder', async () => {
+  it('keeps Google ids and stored names out of every public file, puts them only in the private folder, and writes no map from a stored id to an entry', async () => {
     await load();
     const { out, priv } = run();
     try {
@@ -248,8 +248,9 @@ describe('what the selector writes', () => {
       expect(pub).toMatch(/Larch Park/);
       expect(pub).not.toMatch(/fp-google|ChIJ|Some Stored Soft Play/);
       const priv_ = readAll(priv);
-      expect(priv_).toMatch(/fp-google-ChIJsecret/);
-      expect(JSON.parse(readFileSync(join(priv, 'PRIVATE-A-A1.keyed-entries.UNREVIEWED.json'), 'utf8'))[0].familypilotId).toBe('fp-google-ChIJsecret');
+      expect(priv_).toMatch(/fp-google-ChIJother/); // a stored venue with no candidate is listed for the reviewer
+      expect(priv_).not.toMatch(/fp-google-ChIJsecret/); // a matched venue's id is written nowhere: there is no map
+      expect(readdirSync(priv).some((f) => /alias|keyed/i.test(f))).toBe(false);
       const publicEntries = JSON.parse(readFileSync(join(out, 'A1.entries.UNREVIEWED.json'), 'utf8'));
       expect(publicEntries[0].familypilotId).toMatch(/^fp-os-/);
       for (const e of [...publicEntries, ...JSON.parse(readFileSync(join(out, 'A2.entries.UNREVIEWED.json'), 'utf8'))]) expect(e.reviewedBy).toMatch(/^UNREVIEWED/);
@@ -404,13 +405,13 @@ describe('applying a review', () => {
     expect(r.problems[0]).toMatch(/fp-os-.*not one os-greenspace can carry/);
   });
 
-  it('uses the keyed copy for a continuing venue, and leaves out what the reviewer dropped', async () => {
+  it('keeps the neutral id of every entry, and leaves out what the reviewer dropped', async () => {
     await loadReview();
     const neutral = unreviewed(osEntry());
-    const keyed = { ...neutral, familypilotId: 'fp-google-ChIJabc' };
-    const r = review.applyReview({ entries: [neutral, unreviewed(wdEntry())], keyed: [keyed], drop: ['fp-wd-q1234'], reviewer: 'A. Reviewer', date: '2026-10-20' });
-    expect(r.files['os-greenspace'].map((e: { familypilotId: string }) => e.familypilotId)).toEqual(['fp-google-ChIJabc']);
+    const r = review.applyReview({ entries: [neutral, unreviewed(wdEntry())], drop: ['fp-wd-q1234'], reviewer: 'A. Reviewer', date: '2026-10-20' });
+    expect(r.files['os-greenspace'].map((e: { familypilotId: string }) => e.familypilotId)).toEqual([neutral.familypilotId]);
     expect(r.files.wikidata).toHaveLength(0);
+    expect(JSON.stringify(r)).not.toMatch(/fp-google|ChIJ/);
   });
 
   it('refuses an entry already in the registry file, or twice in one batch', async () => {

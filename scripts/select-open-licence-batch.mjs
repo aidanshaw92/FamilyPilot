@@ -99,11 +99,10 @@ export function buildOpenLicenceBatch({ parks, wikidata: allWikidata, stored, ve
   const pickedSet = new Set(picked.map((p) => idOf(p.c)));
   const reserve = clean.filter((s) => !pickedSet.has(idOf(s.c))).sort((a, b) => b.score - a.score || a.c.name.localeCompare(b.c.name)).slice(0, 100);
 
-  // ---- entries (neutral ids; the keyed copy for continuity is made privately)
+  // ---- entries (neutral ids only: no entry carries, or is keyed by, a Google place id, and no map from one to the other is written)
   const entryOf = (c, over = {}) => (c.source === 'os-greenspace' ? entryFromOs(c, { version, ...over }) : entryFromWikidata(c, { version, ...over }));
   const entries = {
     continuity: rows.map((r) => entryOf(r.candidate)),
-    continuityKeyed: rows.map((r) => entryOf(r.candidate, { linkedTo: r.stored.id })),
     news: picked.map((p) => entryOf(p.c)),
   };
 
@@ -150,13 +149,11 @@ export function writeOpenLicenceOutputs(out, r, { privateOut } = {}) {
   if (privateOut) {
     mkdirSync(privateOut, { recursive: true });
     const wp = (name, text) => writeFileSync(join(privateOut, name), text);
-    wp('PRIVATE-A-alias-map.csv', csv(r.rows.map((x) => ({ stored_place_id: x.stored.id, stored_name: x.stored.name, stored_category: x.stored.category, entry_id: idOf(x.candidate), source_name: x.candidate.name, source_record: sourceUrlOf(x.candidate), name_similarity: x.sim, flags: x.flags })), ['stored_place_id', 'stored_name', 'stored_category', 'entry_id', 'source_name', 'source_record', 'name_similarity', 'flags']));
-    wp('PRIVATE-A-A1.keyed-entries.UNREVIEWED.json', JSON.stringify(r.entries.continuityKeyed, null, 1));
     const cmp = new Map(r.compare.map((x) => [x.stored.id, x]));
     wp('PRIVATE-A-unmatched.csv', csv(r.unmatched.map((u) => ({ stored_place_id: u.id, stored_name: u.name, stored_category: u.category })), ['stored_place_id', 'stored_name', 'stored_category']));
     wp('PRIVATE-A-compare.csv', csv([...cmp.values()].map((x) => ({ stored_place_id: x.stored.id, stored_name: x.stored.name, stored_category: x.stored.category, candidate_name: x.candidate.name, entry_id: idOf(x.candidate), name_similarity: x.sim, flags: x.flags })), ['stored_place_id', 'stored_name', 'stored_category', 'candidate_name', 'entry_id', 'name_similarity', 'flags']));
     wp('PRIVATE-A-possible-duplicates.csv', csv([...r.picked, ...r.dupes, ...r.flagged, ...r.reserve].filter((x) => x.nearStored).map((x) => ({ entry_id: idOf(x.c), name: x.c.name, stored_place_id: x.nearStored.id, stored_name: x.nearStored.name })), ['entry_id', 'name', 'stored_place_id', 'stored_name']));
-    wp('README.txt', 'Google content (stored names) and the link from each stored place ID to its entry. Do not commit, publish or paste into a public place.\n');
+    wp('README.txt', 'Google content (stored names and place IDs), for the person reviewing only. There is NO map from a stored place ID to an entry here, on purpose. Do not commit, publish or paste into a public place.\n');
   }
 }
 
