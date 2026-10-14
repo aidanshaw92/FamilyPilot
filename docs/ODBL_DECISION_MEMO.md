@@ -1,5 +1,7 @@
 # ODbL decision memo
 
+> **Superseded in part (14 October, later).** No counsel has been appointed, so the six questions in section 4 are no longer "send these to a lawyer". [ODBL_ASSESSMENT.md](ODBL_ASSESSMENT.md) is the working document: requirement by requirement, what is met, what is a build step, and the two judgments that remain (both avoidable by design), with non-lawyer routes. This memo's sections 1 to 3 still stand.
+
 14 October 2026. Written from the **primary texts**, fetched on 14 October from the publishers' own pages by a GitHub runner (this session's network cannot reach them): the ODbL 1.0 legal code (opendatacommons.org), the OpenStreetMap copyright page, and the OSMF Community Guidelines for Collective Database (endorsed 2016-06-17), Substantial (2014-06-06), Produced Work (2014-06-06), Geocoding (2017-08-24), Horizontal Layers, Trivial Transformations and Attribution, plus the OSMF Licence and Legal FAQ. It is an engineer's reading, not legal advice. The questions that need a lawyer are in section 4, ready to send.
 
 ## 1. The decision
