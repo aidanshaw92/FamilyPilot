@@ -53,16 +53,19 @@ async function visit(context, tag) {
   await cdp.send('Network.enable');
   await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: (1.6 * 1024 * 1024) / 8, uploadThroughput: (0.75 * 1024 * 1024) / 8 });
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
-  const errors = [], google = []; let bytes = 0, requests = 0;
+  let t0 = Date.now();
+  const errors = [], google = [], apiCalls = []; let bytes = 0, requests = 0;
+  page.on('response', (r) => { if (/\/api\//.test(r.url())) apiCalls.push({ path: new URL(r.url()).pathname + new URL(r.url()).search.slice(0, 80), status: r.status(), at: Date.now() - t0 }); });
   page.on('pageerror', (e) => errors.push(String(e.message).slice(0, 160)));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text().slice(0, 160)); });
   page.on('request', (r) => { requests++; if (/googleapis|maps\.google|google\.com\/maps|gstatic/i.test(r.url())) google.push(r.url().slice(0, 100)); });
   cdp.on('Network.loadingFinished', (e) => { bytes += e.encodedDataLength; });
-  const t0 = Date.now();
+  t0 = Date.now();
   await page.goto(BASE + '/explore', { waitUntil: 'commit', timeout: 60000 });
   const firstPaint = await page.waitForFunction(() => document.body && document.body.innerText.trim().length > 0, null, { timeout: 60000 }).then(() => Date.now() - t0).catch(() => null);
-  const card = await page.locator('[role="button"][aria-label$="view details"]').first().waitFor({ timeout: 60000 }).then(() => Date.now() - t0).catch(() => null);
-  const out = { firstThingMs: firstPaint, firstCardMs: card, kb: Math.round(bytes / 1024), requests, errors: errors.slice(0, 5), googleRequests: google.length };
+  const card = await page.locator('[role="button"][aria-label$="view details"]').first().waitFor({ timeout: 40000 }).then(() => Date.now() - t0).catch(() => null);
+  const diag = await page.evaluate(() => ({ url: location.pathname, text: document.body.innerText.replace(/\s+/g, ' ').trim().slice(0, 260), buttons: document.querySelectorAll('[role="button"]').length, viewDetails: document.querySelectorAll('[aria-label$="view details"]').length, testIds: [...new Set([...document.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')))].slice(0, 25) })).catch(() => null);
+  const out = { diag, apiCalls, firstThingMs: firstPaint, firstCardMs: card, kb: Math.round(bytes / 1024), requests, errors: errors.slice(0, 5), googleRequests: google.length };
   say(tag, out);
   await page.close();
 }
