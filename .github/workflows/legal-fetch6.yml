@@ -1,0 +1,23 @@
+# One-off, pass 7. NOT scheduled, NOT dispatchable, NOT run on pull requests. Runs only when the throwaway branch `data/open-data-fetch` is pushed with a
+# change under legal-fetch6/. GET only, descriptive User-Agent, no secret, no database, no Google API. Lists what the OS Open Greenspace download actually
+# contains and prints any licence, readme or documentation text inside it, with the file checksums, so the licence of the real dataset can be read, not assumed.
+name: Licence review fetch, pass 7 (one-off)
+
+on:
+  push:
+    branches: [data/open-data-fetch]
+    paths:
+      - .github/workflows/legal-fetch6.yml
+      - legal-fetch6/**
+
+permissions:
+  contents: read
+
+jobs:
+  os-dataset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get install -y -qq jq unzip poppler-utils >/dev/null
+      - run: bash legal-fetch6/os-dataset.sh
