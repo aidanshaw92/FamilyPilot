@@ -158,7 +158,7 @@ export const REVIEWED_PLACES: Readonly<Record<string, ReviewedPlace>> = {
   },
   'fp-fhrs-1937580': { // Clip 'n Climb, Croydon
     group: 'attractions', kind: 'climbing_centre', label: 'Climbing centre with a soft-play area', play: { softPlay: 'confirmed', trampolines: 'not_confirmed' },
-    evidence: ['Climbing, and a soft-play area open every day: its own page', 'Mini Mountaineer sessions for ages 2 to 4: its own page'],
+    evidence: ['Climbing, and a three-storey soft-play "Play Den" designed for kids under 9: its own page', 'Mini Mountaineer sessions for toddlers aged 2 to 4: its own page'],
   },
   // Play cafés: Activities, labelled "Play café". Their own pages do not say soft play, so a search for soft play never lists them as soft play.
   'fp-fhrs-1961932': { // Cheeky Chops Play Café, Twickenham
