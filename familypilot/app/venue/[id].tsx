@@ -537,11 +537,6 @@ export default function VenueScreen() {
                     </View>
                   ) : null}
 
-                  {/* Whose data this is. A licence condition for both providers. */}
-                  <View style={styles.photoAttribution}>
-                    <PlaceAttribution provider={venue.provider} />
-                  </View>
-
                   {isActivityVenue(venue) && isPilotFeatureVisible('eat_nearby') ? (
                     <EatNearbySection
                       activityVenueId={venue.id}
@@ -566,6 +561,12 @@ export default function VenueScreen() {
                 onToggle={() => setEvidenceOpen((open) => !open)}
                 startReport={startReport}
               />
+            </View>
+
+            {/* Whose data this is. A licence condition (the Open Government Licence asks for the statement "in your product or application", the
+                ODbL for a notice, Google for its mark), so it is on the page whether or not "More about this place" is open. */}
+            <View style={styles.photoAttribution}>
+              <PlaceAttribution provider={venue.provider} />
             </View>
             </>
             )}
