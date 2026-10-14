@@ -10,6 +10,7 @@
  *   6  device location denied, then a postcode; device location granted, and where it is (and is not) kept
  *   7  restrictive filters, an honest explanation, a thin area, and relaxing without starting again
  *   8  open a venue and create a plan
+ *   9  Google places: no Map and no Map/List toggle (a Google place is never drawn on the app's own map), a list that says so, and no Google request
  *   + one state across Nearby / Search all / List / Map, per-filter removal and Clear all, no provider call at any point.
  *
  * Journeys 9 and 10 (the optional lunch, and plans saved before it) belong to the lunch change and are run against a local merge
@@ -20,6 +21,8 @@
  */
 import { chromium } from 'playwright';
 import { existsSync, mkdirSync } from 'node:fs';
+
+import { routePlacesAs } from './lib/place-provider.mjs';
 
 const BASE = process.argv[2] ?? 'http://localhost:4173';
 const SHOTS = process.argv[3] ?? null;
@@ -45,7 +48,9 @@ const POSTCODES = {
   RM11AA: { latitude: 51.5762, longitude: 0.183, outcode: 'RM1' },
 };
 
-async function person(label, { geolocation, denyLocation } = {}) {
+// `provider` serves the catalogue as that provider's places. The fixture catalogue is Google-shaped and a Google place is never drawn on the
+// app's own map (src/utils/map-compliance.ts), so the journeys about the Map's behaviour serve independently located places (journey 9 covers Google).
+async function person(label, { geolocation, denyLocation, provider } = {}) {
   const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1, hasTouch: true, timezoneId: 'Europe/London', ...(geolocation ? { geolocation, permissions: ['geolocation'] } : {}) });
   const page = await ctx.newPage();
   const seen = { errors: [], google: [], places: [], postcodes: [], bodies: [] };
@@ -66,6 +71,7 @@ async function person(label, { geolocation, denyLocation } = {}) {
   // A refusal, as the browser reports it: the user (or their settings) said no, so the call fails with PERMISSION_DENIED. Simulated here
   // because a headless browser has nobody to answer the prompt; the real prompt is part of the iPhone check.
   if (denyLocation) await page.addInitScript(() => { navigator.geolocation.getCurrentPosition = (_ok, fail) => setTimeout(() => fail({ code: 1, message: 'User denied Geolocation' }), 150); });
+  if (provider) await routePlacesAs(page, provider);
   await page.clock.setFixedTime(new Date('2026-10-14T11:00:00'));
   await page.addInitScript(({ p, f }) => { if (localStorage.getItem('seeded')) return; localStorage.setItem('seeded', '1'); localStorage.setItem('familypilot-family-v1', f); localStorage.setItem('familypilot-planning-v1', p); }, { p: JSON.stringify(PLANNING), f: JSON.stringify({ state: { profile: PROFILE, hasCompletedOnboarding: true, hasSeenSplash: true, profileRevision: 2 }, version: 0 }) });
   return { page, ctx, seen, label };
@@ -209,7 +215,7 @@ console.log('Journey 3: a farm with confirmed parking and baby changing');
 // ---------------------------------------------------------------- 4 playground, map
 console.log('Journey 4: a playground nearby, on the map');
 {
-  const { page, seen } = await person('j4');
+  const { page, seen } = await person('j4', { provider: 'osm' });
   await open(page);
   await category(page, 'parks');
   await toggleSheetFilters(page, ['Playground']);
@@ -278,7 +284,7 @@ console.log('Journey 6: device location denied, then a postcode');
 }
 console.log('Journey 6b: device location granted, and where it is (and is not) kept');
 {
-  const { page, seen, ctx } = await person('j6b', { geolocation: { latitude: 51.5873, longitude: -0.2231 } });
+  const { page, seen, ctx } = await person('j6b', { geolocation: { latitude: 51.5873, longitude: -0.2231 }, provider: 'osm' });
   await open(page);
   await tid(page, 'explore-where-change').click(); await page.waitForTimeout(500);
   await tid(page, 'explore-where-option-device').click(); await page.waitForTimeout(1500);
@@ -343,6 +349,25 @@ console.log('Journey 8: open a venue and create a plan');
   await tid(page, 'plan-timeline').last().waitFor({ timeout: 40000 });
   const plan = (await tid(page, 'plan-timeline').last().innerText()).replace(/\s+/g, ' ');
   check(/Leave/i.test(plan) && /Arrive/i.test(plan), 'the plan shows when to leave and arrive', plan.slice(0, 90));
+  check(seen.google.length === 0, 'no Google request', String(seen.google.length));
+}
+
+// ---------------------------------------------------------------- 9 Google places are not drawn on the app's own map
+console.log("Journey 9: Google places get a list, not a map");
+{
+  const { page, seen } = await person('j9');
+  await open(page);
+  await tid(page, 'explore-scope-all').click(); await page.waitForTimeout(600);
+  await search(page, 'park');
+  check((await page.locator('[data-testid^="explore-card-"]').count()) >= 1, 'the places are listed');
+  check((await tid(page, 'explore-view-map').count()) === 0 && (await tid(page, 'explore-view-list').count()) === 0, 'there is no Map / List toggle');
+  check((await tid(page, 'explore-map-off').count()) === 1, 'the list says the map is switched off');
+  check((await tid(page, 'explore-map').count()) === 0 && (await page.locator('[data-testid^="explore-map-pin-"]').count()) === 0, 'nothing is drawn');
+  // A parent who chose the Map earlier (the choice is remembered) is not sent to a map that is off.
+  await page.evaluate(() => { try { const k = Object.keys(localStorage).find((x) => /explore/i.test(x)); if (k) { const v = JSON.parse(localStorage.getItem(k)); if (v?.state) { v.state.exploreView = 'map'; localStorage.setItem(k, JSON.stringify(v)); } } } catch {} });
+  await page.reload({ waitUntil: 'networkidle' }); await page.waitForTimeout(1500);
+  check((await tid(page, 'explore-map').count()) === 0, 'a remembered Map choice still shows the list');
+  await shot(page, 'j9-map-off');
   check(seen.google.length === 0, 'no Google request', String(seen.google.length));
 }
 

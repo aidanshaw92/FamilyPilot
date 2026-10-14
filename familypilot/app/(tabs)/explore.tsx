@@ -14,6 +14,7 @@ import { BrandLockup, BRAND_ROW_TOP } from '@/src/components/navigation/PageHead
 import { RestaurantCard } from '@/src/components/restaurant/RestaurantCard';
 import { DecisionCard } from '@/src/components/shared/DecisionCard';
 import { PlaceCredits } from '@/src/components/shared/PlaceCredits';
+import { MAP_OFF_MESSAGE, mapAllowedFor } from '@/src/utils/map-compliance';
 import { ScreenContainer } from '@/src/components/shared/ScreenContainer';
 import { Chip, EmptyState, ErrorState, EXPLORE_CHIP, SearchBar, SkeletonCard, Text, railTint } from '@/src/components/ui';
 import { MIN_TARGET } from '@/src/components/ui/touch';
@@ -119,6 +120,10 @@ export default function ExploreScreen() {
   );
 
   const mapRows = useMemo(() => (result ? [...result.matches, ...result.also.flatMap((g) => g.rows)] : []), [result]);
+  // Google's Places terms do not allow Places content on a map that is not Google's, and this map is drawn on the device. So the Map is
+  // offered only when every place it would show is independently located (utils/map-compliance.ts); otherwise the screen is the list.
+  const canMap = mapAllowedFor(mapRows.map((r) => r.venue));
+  const shownView: 'list' | 'map' = canMap ? exploreView : 'list';
   const selectedRow = mapRows.find((row) => row.venue.id === mapSelected) ?? mapRows[0];
   const selectedIndex = selectedRow ? mapRows.indexOf(selectedRow) : -1;
 
@@ -352,6 +357,7 @@ export default function ExploreScreen() {
       ) : (
         <View style={styles.countRow}>
           <Text variant="caption" color={colors.text.secondary} style={styles.countText} accessibilityLiveRegion="polite" testID="explore-count">{countText}</Text>
+          {canMap ? (
           <View style={styles.viewToggle} accessibilityRole="radiogroup" accessibilityLabel="Show as">
             {(['list', 'map'] as const).map((view) => (
               <Pressable
@@ -368,8 +374,12 @@ export default function ExploreScreen() {
               </Pressable>
             ))}
           </View>
+          ) : null}
         </View>
       )}
+      {!isLoading && result && !canMap ? (
+        <Text variant="caption" color={colors.text.secondary} style={styles.mapOff} testID="explore-map-off">{MAP_OFF_MESSAGE}</Text>
+      ) : null}
       {!isLoading && result ? listHeader : null}
     </>
   );
@@ -379,7 +389,7 @@ export default function ExploreScreen() {
 
   return (
     <ScreenContainer>
-      {exploreView === 'map' && result && !isLoading ? (
+      {shownView === 'map' && result && !isLoading ? (
         <ScrollView contentContainerStyle={{ paddingBottom: tabBarClearance }} showsVerticalScrollIndicator={false} refreshControl={refresh}>
           {top}
           <View style={styles.mapContent}>
@@ -454,6 +464,7 @@ const styles = StyleSheet.create({
   radiusTextOn: { color: colors.text.inverse },
   countRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, paddingHorizontal: spacing.screenPadding, paddingTop: spacing.sm },
   countText: { flex: 1 },
+  mapOff: { paddingHorizontal: spacing.screenPadding, paddingTop: spacing.xs },
   viewToggle: { flexDirection: 'row', backgroundColor: colors.borderLight, borderRadius: radius.full, padding: 3 },
   viewSeg: { minHeight: MIN_TARGET, minWidth: MIN_TARGET + 8, paddingHorizontal: spacing.md, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   viewSegOn: { backgroundColor: colors.action },

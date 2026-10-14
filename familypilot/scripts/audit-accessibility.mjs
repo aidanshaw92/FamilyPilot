@@ -24,6 +24,7 @@
  * and by reflow at 320; they still deserve a manual pass on a device before launch.
  */
 import { chromium } from 'playwright';
+import { routeBetweenAs, routePlacesAs } from './lib/place-provider.mjs';
 import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -90,7 +91,7 @@ const SCREENS = [
   // Explore's other states: where you are looking from, Search all, the map, and an empty result with its ways to relax.
   { key: 'explore-where', route: '/explore', state: PROFILE, act: async (page) => { await page.getByTestId('explore-where-change').click(); await page.waitForTimeout(700); } },
   { key: 'explore-search-all', route: '/explore', state: PROFILE, act: async (page) => { await page.getByTestId('explore-scope-all').click(); await page.waitForTimeout(700); } },
-  { key: 'explore-map', route: '/explore', state: PROFILE, act: async (page) => { await page.getByTestId('explore-scope-all').click(); await page.getByTestId('explore-view-map').click(); await page.waitForTimeout(900); } },
+  { key: 'explore-map', route: '/explore', places: 'osm', state: PROFILE, act: async (page) => { await page.getByTestId('explore-scope-all').click(); await page.getByTestId('explore-view-map').click(); await page.waitForTimeout(900); } },
   { key: 'explore-empty', route: '/explore', state: PROFILE, act: async (page) => { await page.getByTestId('explore-category-museums').click(); await page.getByTestId('explore-quick-outdoor').click(); await page.waitForTimeout(700); } },
   { key: 'saved', route: '/saved', state: PROFILE },
   { key: 'halfway-map', route: '/halfway', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-sheet-collapsed').or(page.getByTestId('halfway-empty')).first().waitFor({ timeout: 30000 }); await page.waitForTimeout(800); } },
@@ -255,6 +256,8 @@ for (const screen of SCREENS) {
       if (document.head) attach();
       else document.addEventListener('DOMContentLoaded', attach);
     }, IPHONE_INSETS);
+    if (screen.between) await routeBetweenAs(page, screen.between);
+    if (screen.places) await routePlacesAs(page, screen.places);
     await page.goto(`${BASE}${screen.route}`, { waitUntil: 'networkidle', timeout: 60000 });
     await page.evaluate(async () => document.fonts?.ready);
     await page.waitForTimeout(2500);
