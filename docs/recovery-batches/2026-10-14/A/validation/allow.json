@@ -1,0 +1,8 @@
+{
+  "_comment": "Selector gates, hygiene and duplicate rules that a person overruled, each with the reason. The entry is still reported (as an accepted exception), never hidden. A registry, source-fidelity or Google-independence failure can never be listed here.",
+  "fp-wd-q270920": "Wikidata classes it as an art museum. 'Arts' and 'Academy' here are the name of the Royal Academy of Arts itself, not an arts centre or a school.",
+  "fp-wd-q180788": "A different gallery from the National Portrait Gallery, 65 m away.",
+  "fp-os-49e9c726-852c-a491-e063-8ccaa00a0ef3": "The park and the farm inside it are different venues, each with its own record.",
+  "fp-wd-q56856819": "A zoo inside Golders Hill Park: a different venue from the park, with its own record.",
+  "fp-wd-q4947974": "The house and the park around it are different visits, each with its own record."
+}

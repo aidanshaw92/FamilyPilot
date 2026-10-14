@@ -1,0 +1,63 @@
+{
+  "tranche": "A",
+  "prepared": "2026-10-14",
+  "note": "Where every value in a Tranche A entry came from, and what was checked. No Google value is, or may be, in any entry; the check that proves it is scripts/validate-tranche.mjs. Nothing here is a review or a sign-off.",
+  "sources": [
+    {
+      "source": "os-greenspace",
+      "dataset": "OS Open Greenspace (Ordnance Survey), Public Park Or Garden sites, grid squares TQ and TL, ESRI Shapefile",
+      "retrievedAt": "2026-10-14",
+      "retrievedFrom": "https://api.os.uk/downloads/v1/products/OpenGreenspace/downloads",
+      "files": [
+        { "name": "opgrsp_essh_tq.zip", "bytes": 5184042, "sha256": "e1d66315ecd1f0d85e5e592a469a8a69cc94242ee9d19e53f8d465b049276033", "md5": "b76aa103a7d1f7956d35c86cabf3c6cb", "md5Matches": "the md5 in OS's own listing" },
+        { "name": "opgrsp_essh_tl.zip", "bytes": 2345316, "sha256": "655998afd37f670d63deeff42d570715ab6b7a080e406f2e595c3bec7f3df007", "md5": "e973f85dc848fc0603257b4bb6debae2", "md5Matches": "the md5 in OS's own listing" }
+      ],
+      "licence": "OGL-3.0",
+      "licenceEvidence": {
+        "insideTheDownload": "doc/licence.txt in both zips reads: \"ORDNANCE SURVEY DATA LICENCE. Your use of OS OpenData is subject to the terms at http://os.uk/opendata/licence. Contains Ordnance Survey data © Crown copyright and database right 2026\"",
+        "theLinkedTermsResolveTo": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/ (http://os.uk/opendata/licence redirected there when rendered in a browser on 2026-10-14)",
+        "osStatementOnAcknowledgement": "OS's published acknowledgement guidance (ordnancesurvey.co.uk, Public Sector licensing guide, Copyright acknowledgments, read 2026-10-14): \"We use the Open Government Licence (OGL) for OS OpenData. Under the terms of that licence, we are allowed to use our own attribution statement ... Contains OS data © Crown copyright [and database right] [year].\""
+      },
+      "attributionUsed": "Contains OS data © Crown copyright and database right 2026",
+      "attributionNote": "OS gives two wordings: the guidance page says \"Contains OS data\", and the licence file inside the download says \"Contains Ordnance Survey data\". Both are OS's own and name the same statement; the app uses the first, which is the one OS publishes as the statement to use, and keeps the full text of the second in the licence notice beside the registry.",
+      "derivedByUs": "The name is the site's distName1. The position is an interior point of the site's polygon (always inside the polygon), computed by FamilyPilot. The category is park (function = Public Park Or Garden). Nothing else is taken.",
+      "caveatFromOS": "OS describes these sites as likely to be accessible to the public and generalises them automatically. Opening hours, facilities and who a place suits are not in the dataset and are not stated.",
+      "entries": 131,
+      "extractUsedForSelection": { "file": "greenspace-london.geojson", "sha256": "017f243a2b6da5481758003f6bee05b43bcb3533dc62ce86110ef53f68eaa58d", "what": "the two zips, converted to GeoJSON and clipped to the London box (51.28..51.70 N, -0.52..0.34 E)" },
+      "reverifiedLive": "2026-10-14: all 132 OS entries originally selected (131 kept) were found again in a fresh download by id, with the same name, the function Public Park Or Garden, and a position inside the site's polygon: 0 differences."
+    },
+    {
+      "source": "wikidata",
+      "dataset": "Wikidata, items located in Greater London and the home counties inside the app's 40 km scope, under the classes the app serves",
+      "retrievedAt": "2026-10-14",
+      "retrievedFrom": "https://query.wikidata.org/sparql",
+      "extracts": [
+        { "file": "wikidata-london.json", "sha256": "bdc7afd81f92caafcbb41db88fd51eda694167fcff6d02f716cb59808ddd5434" },
+        { "file": "wikidata/green.json", "sha256": "d12e0847937f42b9c4b38c22eb78a0542e505546c34e4682d3c01f87b5179747" },
+        { "file": "wikidata/museum.json", "sha256": "17ab43e521fa85f00f136bdf79c99e278e1400d7be9ce9959045b653a5216b2d" },
+        { "file": "wikidata/visit.json", "sha256": "15aa6e1786f112ac0595ae188e5d464baddcf6831ee2b022616ccb7aa31feca1" },
+        { "file": "wikidata2/green.json", "sha256": "1e4c1d3e225ce64a95c627bfc0283928a6d87d9d203540841f081a4c5e138e83" },
+        { "file": "wikidata2/museum.json", "sha256": "2a4a76f90f5bb39b57957e5dd5cf258f005ed093086d9f47f8d0d88efd1c0eef" },
+        { "file": "wikidata2/museum_subclasses.json", "sha256": "81f66cb12b9deb3d90c09bc236f27b155383dd741c92a4fa496a2ffb537957b9" },
+        { "file": "wikidata2/visit.json", "sha256": "ff28148b54cb0ca398a445aa9ef883c712d6584b852f78cd3c2aa85f6bc30d3c" },
+        { "file": "wikidata3/amusement_all.json", "sha256": "a3ec518bdfb61c70bdfdf73a7f8086883189bbed3ff43da4ad7228a4c0c07ce3" },
+        { "file": "wikidata3/farm_all.json", "sha256": "b1741b5935e94973a10448f6d2a07d795338d68aba9b299812ad27e762a71fea" },
+        { "file": "wikidata3/museum_all.json", "sha256": "8986ba6e083916a02c5de5c282b179f353dbc31e12b77d2c3c15656cc30ea7b9" },
+        { "file": "wikidata3/zoo_all.json", "sha256": "baf6e96700588ce5c1ca0803a7e93cd8d9c3297dcaaf1f66c00ae9f8e411e303" }
+      ],
+      "extractsHeldOn": "the throwaway branch data/open-data-fetch (results/), not merged",
+      "licence": "CC0-1.0",
+      "licenceEvidence": "https://www.wikidata.org/wiki/Wikidata:Licensing: structured data in the main, Property and Lexeme namespaces is CC0 1.0",
+      "attributionUsed": "none required; the licence notice names Wikidata anyway",
+      "derivedByUs": "The name is the item's English label. The position is its coordinate location (P625). The website, where present, is its official website (P856), https only. The category is ours, from the item's class and name (see validation/overrides.json for every change made).",
+      "entries": 103,
+      "reverifiedLive": "2026-10-14: all 105 originally selected items were queried again. Labels, coordinates (within 5 m) and websites matched for every one; none carries a dissolved, end or official-closure date. One (London Eye) carries state of use 'in use'. 0 differences that matter."
+    }
+  ],
+  "venueOwnSites": {
+    "file": "site-checks-wikidata.json",
+    "what": "For Wikidata venues whose website is evidence: one front-page request per venue from a GitHub runner, identifying User-Agent, robots.txt honoured, two seconds between requests, no cookies or logins. Only the outcome is recorded (answered; its title or heading names the venue). No page content is kept."
+  },
+  "validation": "validation/VALIDATION.md (generated by scripts/validate-tranche.mjs), with the changes made in validation/overrides.json and the exceptions accepted in validation/allow.json",
+  "entries": { "total": 234, "continuingAVenueWeHold": 88, "new": 146, "removedInValidation": 3, "reclassifiedInValidation": 12, "reviewedBy": "nobody: every entry says UNREVIEWED (simulation only) until the product reviewer approves the final batch" }
+}
