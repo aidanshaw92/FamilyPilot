@@ -56,3 +56,20 @@ Proposed handling (needs approval, nothing done): keep the place ID, drop or nul
 - `src/__tests__/map-compliance.test.ts` (14): provider allow-list, the "every place" rule, unknown and `familypilot` providers, empty list, a mix, and that the Halfway view takes its decision from the helper.
 - `scripts/verify-map-compliance.mjs` (runs in CI): scenarios A to D above in a real browser, including "no request to a Google host".
 - The larger-text, accessibility, handoff and screenshot scripts now serve their map fixtures as independently located places (`scripts/lib/place-provider.mjs`), so they still test the map layout without pretending Google places can be drawn.
+
+## Does #207 fully resolve it? What is left, 14 October
+
+**On the map itself: yes, for everything that can reach a parent once it is merged.** The checks, not my reading, are the evidence:
+
+| | |
+|---|---|
+| Meet halfway | A Google, unknown or `familypilot` place is never plotted, and one of them switches the whole screen to the list. 14 unit tests, a browser check in CI (Google places: no map, no toggle, no request to a Google host; independent places: the map; a mix: the list), the larger-text check at 1.35, 1.9 and 2.35, and an accessibility audit of the list that replaces the map (clean at 320, 360, 393 and 430). |
+| Explore | `main` has no Explore map. #203 carries the same gate. I merged #207 and #203 in a scratch tree: one trivially resolvable conflict in an audit script, both TypeScript configs clean, and 40 tests pass, including the source scan that fails if **any** file renders `HalfwayMap` or `ExploreMap` without going through the rule. So whichever merges second, the scan checks the other. |
+| Any other map | None. A search of `src` and `app` for map components, map libraries, tile and static-map addresses finds only `HalfwayMap` and `ExploreMap` (#203). Venue, Plan and Home show addresses and links. The four places that open Google Maps (`app/venue/[id].tsx`, `app/restaurant/[id].tsx`, `RestaurantCloseByCard`, `StoreCard`) are outbound links to Google's own map, which the terms allow, and a test pins that list. |
+
+**What remains, and is not a map issue (so #207 does not touch it):**
+
+1. **Production exposure until #207 is merged.** The Halfway map has been plotting Google places on a non-Google map since #163. I could not confirm the live deployment (the Vercel API returned 403), so treat it as live. Smallest mitigation: merge #207 (one commit; no data, migration or variable).
+2. **Preview deployments of branches that predate #207.** I checked each open branch: all of them still contain the ungated Halfway map, so each one's Preview plots the stored Google places on it. That is #201 (optional lunch, the one you are reviewing on your iPhone), #190, #189, #184, #187, #179, #202, #204, #205, #206 and #208. Google is off on Previews, but the stored Google rows are served. Only #207 is clean for Meet halfway; #203 has the Explore gate but still carries the old Halfway map until it takes #207. Each stops when its branch takes `main` after #207 merges (a merge commit). I have not pushed to #201, because you asked me to leave it as it is; say if you want that merge.
+3. **Storage and calculation (the first list above).** Google content kept past 30 days in `place_records` (publicly readable), saved places and their Supabase backups, saved plans, and journey times computed from Google coordinates older than 30 days.
+4. **The legal reading.** I applied the conservative reading of Google's terms from summaries. If counsel reads section 5.3 differently, the rule can only get looser, never tighter than this.
