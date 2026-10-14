@@ -342,6 +342,29 @@ describe('timezone-safe evaluation', () => {
     expect(venueLocalDate(new Date('2026-09-21T12:00:00Z'), 'Mars/Olympus_Mons')).toBeNull();
     expect(venueLocalTime(new Date('2026-09-21T12:00:00Z'), 'Mars/Olympus_Mons')).toBeNull();
   });
+
+  test('a zone is built once, not once per venue, and answers the same either way', () => {
+    const real = Intl.DateTimeFormat;
+    let built = 0;
+    const counting = function (this: unknown, ...args: ConstructorParameters<typeof Intl.DateTimeFormat>) {
+      built += 1;
+      return new real(...args);
+    } as unknown as typeof Intl.DateTimeFormat;
+    Intl.DateTimeFormat = counting;
+    try {
+      const results = new Set<string | null>();
+      for (let i = 0; i < 50; i += 1) {
+        results.add(venueLocalDate(new Date('2026-09-21T12:00:00Z'), 'Pacific/Auckland'));
+        results.add(venueLocalTime(new Date('2026-09-21T12:00:00Z'), 'Pacific/Auckland'));
+        results.add(venueLocalDate(new Date('2026-09-21T12:00:00Z'), 'Not/AZone'));
+      }
+      // Two formatters for the real zone and one failed attempt for the bad one, however many venues ask.
+      expect(built).toBeLessThanOrEqual(3);
+      expect(results).toEqual(new Set(['2026-09-22', '00:00', null]));
+    } finally {
+      Intl.DateTimeFormat = real;
+    }
+  });
 });
 
 describe('always-open venues', () => {
