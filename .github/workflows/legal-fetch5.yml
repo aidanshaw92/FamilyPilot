@@ -1,0 +1,42 @@
+# One-off, pass 6. NOT scheduled, NOT dispatchable, NOT run on pull requests. Runs only when the throwaway branch `data/open-data-fetch` is pushed with a
+# change under legal-fetch5/. GET only, a descriptive User-Agent, no secret, no database, no Google API.
+#   os   finds and prints the Ordnance Survey OS OpenData licence and attribution wording
+#   wd   Wikidata (CC0): distinct subclasses of museum, zoo, farm and amusement park, commits JSON to results/wikidata3/ on this throwaway branch
+name: Licence review fetch, pass 6 (one-off)
+
+on:
+  push:
+    branches: [data/open-data-fetch]
+    paths:
+      - .github/workflows/legal-fetch5.yml
+      - legal-fetch5/**
+
+permissions:
+  contents: read
+
+jobs:
+  os:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet requests beautifulsoup4 lxml
+      - run: python legal-fetch5/os_licence.py
+
+  wd:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write   # only to commit results/wikidata3/ to this throwaway branch
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet requests
+      - run: python legal-fetch5/wikidata_fetch3.py results/wikidata3
+      - name: Keep the CC0 results on the throwaway branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results/wikidata3
+          git commit -m "Wikidata (CC0) results, pass 3: distinct subclasses" || echo "nothing to commit"
+          git pull --rebase origin data/open-data-fetch
+          git push origin HEAD:data/open-data-fetch
