@@ -43,10 +43,10 @@ grant select on public.place_records to anon, authenticated;
 
 | Provider | Rows | `external_id` shape | Google types stored | Fresh (30 days) | Older |
 |---|---:|---|---|---:|---:|
-| `google` | 149 | all `google:` + a place id (34 characters) | 147 non-empty (the rest of the 149 carry a primary type) | 144 | 5 |
+| `google` | 149 | all `google:` + a place id (34 characters) | 147 with a list of types (all 149 carry a primary type) | 144 | 5 |
 | `osm` | 19 | all `osm:`, no Google shape | key present but empty in all 19 | 19 | 0 |
 
-No row crosses providers: no `osm` row has a Google id or any Google type, and every `google` row carries both. Every `familypilot_place_id` is unique (168 of 168).
+No row crosses providers: no `osm` row has a Google id or any Google type, and every `google` row carries both. Every `familypilot_place_id` is unique within its provider (149 of 149 and 19 of 19).
 
 ## Effect on saved places, plans and venue references
 
