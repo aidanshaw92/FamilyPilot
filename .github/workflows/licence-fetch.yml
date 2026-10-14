@@ -1,0 +1,42 @@
+# One-off licence-review fetch. NOT scheduled, NOT dispatchable, NOT run on pull requests. Runs only when the throwaway branch
+# `data/open-data-fetch` is pushed with a change under legal-fetch/. GET requests only, a descriptive User-Agent, no secret, no database, no Google
+# API. The coding session's network policy refuses these hosts and that is not worked around: the runner is an existing, authorised environment.
+#   texts     prints the primary licence and terms texts to the job log (nothing is stored)
+#   wikidata  runs bounded Wikidata (CC0) queries and commits the JSON to results/wikidata/ on this throwaway branch
+name: Licence review fetch (one-off)
+
+on:
+  push:
+    branches: [data/open-data-fetch]
+    paths:
+      - .github/workflows/licence-fetch.yml
+      - legal-fetch/**
+
+permissions:
+  contents: read
+
+jobs:
+  texts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet requests beautifulsoup4 lxml
+      - run: python legal-fetch/fetch_texts.py
+
+  wikidata:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write   # only to commit results/wikidata/ to this throwaway branch
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet requests
+      - run: python legal-fetch/wikidata_fetch.py results/wikidata
+      - name: Keep the CC0 results on the throwaway branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results/wikidata
+          git commit -m "Wikidata (CC0) results for the licence review" || echo "nothing to commit"
+          git push origin HEAD:data/open-data-fetch
