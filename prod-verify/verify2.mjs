@@ -81,8 +81,10 @@ async function visit(context, tag, { route, throttle, waitFor }) {
 }
 // 1. A new visitor on a phone-class profile: first visit, then a repeat (the cache).
 const visitor = await browser.newContext({ viewport: { width: 393, height: 852 }, hasTouch: true, timezoneId: 'Europe/London' });
-await visit(visitor, 'newVisitorFirst', { route: '/', throttle: true });
-await visit(visitor, 'newVisitorRepeat', { route: '/', throttle: true });
+// The app has mounted when the brand shell has gone and the app has put something of its own on screen.
+const mounted = (page) => page.waitForFunction(() => document.querySelectorAll('#boot-shell').length === 0 && document.querySelectorAll('[data-testid]').length > 0, null, { timeout: 60000, polling: 100 });
+await visit(visitor, 'newVisitorFirst', { route: '/', throttle: true, waitFor: mounted });
+await visit(visitor, 'newVisitorRepeat', { route: '/', throttle: true, waitFor: mounted });
 await visitor.close();
 // 2. A returning family, not throttled (hydration races are not what is being measured here): Meet halfway end to end.
 const family = await browser.newContext({ viewport: { width: 393, height: 852 }, hasTouch: true, timezoneId: 'Europe/London' });
