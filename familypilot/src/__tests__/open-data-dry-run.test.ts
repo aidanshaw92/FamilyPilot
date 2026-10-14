@@ -355,16 +355,68 @@ describe('calibration from the first real extract', () => {
     expect(PARK_MIN_HA).toBe(1);
   });
 
-  it('a gallery needs a Wikidata or Wikipedia link, a stand-alone playground needs a website or a link', () => {
+  it('a stand-alone playground needs a website or a link', () => {
     const r = run([
-      point('n1', { name: 'Eagle Gallery', tourism: 'gallery' }, 51.5, -0.1),
-      point('n2', { name: 'Tate Fixture', tourism: 'gallery', wikidata: 'Q2' }, 51.51, -0.11),
       point('n3', { name: 'Estate Swings', leisure: 'playground' }, 51.52, -0.12),
       point('n4', { name: 'Adventure Playground', leisure: 'playground', website: 'https://example.org' }, 51.53, -0.13),
     ]);
-    expect(names(r)).toEqual(['Adventure Playground', 'Tate Fixture']);
-    expect(why(r, 'Eagle Gallery').reason).toMatch(/commercial/);
+    expect(names(r)).toEqual(['Adventure Playground']);
     expect(why(r, 'Estate Swings').reason).toMatch(/stand-alone playground/);
+  });
+
+  it('a gallery is shown only when Wikidata classes it as a museum or public gallery: a link alone is not enough', () => {
+    const features = [
+      point('n1', { name: 'Eagle Gallery', tourism: 'gallery' }, 51.5, -0.1),
+      point('n2', { name: 'Tate Fixture', tourism: 'gallery', wikidata: 'Q2' }, 51.51, -0.11),
+      point('n5', { name: 'Dealer Fixture', tourism: 'gallery', wikidata: 'Q9', wikipedia: 'en:Dealer Fixture' }, 51.52, -0.12),
+    ];
+    const withFile = runDryRun({ features: normaliseFeatures({ type: 'FeatureCollection', features }), stored: [], version: '2026-10-14', publicCultural: new Set(['Q2']) });
+    expect(names(withFile)).toEqual(['Tate Fixture']);
+    expect(why(withFile, 'Eagle Gallery').reason).toMatch(/commercial/);
+    expect(why(withFile, 'Dealer Fixture')).toMatchObject({ gate: 'classification' });
+    expect(why(withFile, 'Dealer Fixture').reason).toMatch(/does not class as a museum or public gallery/);
+    // With no Wikidata file nothing can be shown to be public, so none is kept (a gallery we already hold still is).
+    const noFile = run(features);
+    expect(names(noFile)).toEqual([]);
+    expect(why(noFile, 'Tate Fixture').reason).toMatch(/no Wikidata file/);
+    const held = run([features[1]], [{ id: 'fp-google-T', name: 'Tate Fixture', category: 'museum', lat: 51.5101, lng: -0.1099 }]);
+    expect(names(held)).toEqual(['Tate Fixture']);
+  });
+
+  it('a place of worship, a shop and a working public building are not family attractions, and a memorial with nothing to visit is a landmark', () => {
+    const r = run([
+      point('n1', { name: 'St Fixture Parish Church', tourism: 'attraction', amenity: 'place_of_worship', religion: 'christian', wikidata: 'Q1' }, 51.5, -0.1),
+      point('n2', { name: 'Old Curiosity Fixture', tourism: 'attraction', shop: 'shoes', wikidata: 'Q2' }, 51.51, -0.11),
+      point('n3', { name: 'Royal Courts Fixture', tourism: 'attraction', amenity: 'courthouse', wikidata: 'Q3' }, 51.52, -0.12),
+      point('n4', { name: 'Albert Memorial Fixture', tourism: 'attraction', historic: 'memorial', wikidata: 'Q4' }, 51.53, -0.13),
+      point('n5', { name: 'Tower Bridge Fixture', tourism: 'attraction', historic: 'monument', website: 'https://example.org/bridge', wikidata: 'Q5' }, 51.54, -0.14),
+      point('n6', { name: 'Fixture Windmill', tourism: 'attraction', historic: 'building', website: 'https://example.org/mill', wikidata: 'Q6' }, 51.55, -0.15),
+    ]);
+    expect(names(r)).toEqual(['Fixture Windmill', 'Tower Bridge Fixture']);
+    expect(why(r, 'St Fixture Parish Church').reason).toMatch(/place of worship/);
+    expect(why(r, 'Old Curiosity Fixture').reason).toMatch(/a shop/);
+    expect(why(r, 'Royal Courts Fixture').reason).toMatch(/working public building/);
+    expect(why(r, 'Albert Memorial Fixture')).toMatchObject({ gate: 'significance' });
+  });
+
+  it('a park is not public when it says so, or when a school, club or hospital runs it', () => {
+    const r = run([
+      poly('a2', { name: 'Fixture Lake', leisure: 'park', access: 'customers', fee: 'yes' }, 51.5, -0.1, 0.004),
+      poly('a4', { name: 'Henderson Playing Fields', landuse: 'recreation_ground', operator: 'Cranmore School', 'operator:type': 'school' }, 51.51, -0.11, 0.004),
+      poly('a6', { name: 'Joliffe Playing Fields', landuse: 'recreation_ground', operator: 'Caterham Pumas Football Club' }, 51.52, -0.12, 0.004),
+      poly('a8', { name: 'Osterley Fixture Park', leisure: 'park', operator: 'National Trust', access: 'permissive' }, 51.53, -0.13, 0.004),
+      poly('a10', { name: 'Royal Fixture Gardens', leisure: 'park', operator: 'The Royal Parks', access: 'yes' }, 51.54, -0.14, 0.004),
+    ]);
+    expect(names(r)).toEqual(['Osterley Fixture Park', 'Royal Fixture Gardens']);
+    expect(why(r, 'Fixture Lake').reason).toMatch(/not open to the public \(access=customers\)/);
+    expect(why(r, 'Henderson Playing Fields').reason).toMatch(/run by a school, club or hospital/);
+    expect(why(r, 'Joliffe Playing Fields').gate).toBe('classification');
+  });
+
+  it('keeps only the tags the quality gates read: no phone, email or free text rides along on a row', () => {
+    const r = run([point('n1', { name: 'Fixture Museum', tourism: 'museum', phone: '+44 20 0000 0000', 'contact:email': 'x@example.invalid', description: 'a long text' }, 51.5, -0.1)]);
+    const row = r.candidates[0];
+    expect(JSON.stringify(row)).not.toMatch(/\+44|@example|a long text/);
   });
 
   it('a general attraction needs a Wikidata or Wikipedia link, and an exhibit is never one', () => {

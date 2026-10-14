@@ -27,6 +27,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { classifyOsm } from './lib/osm-classify.mjs';
+import { qualityHold, qualityTags, publicCulturalFromWikidata, PRIVATE_USE_NAME, GENERIC_NAME } from './lib/quality.mjs';
+export { PRIVATE_USE_NAME, GENERIC_NAME };
 import { areaOf, haversineKm, pointInGeometry, polygonAreaHa, representativePoint } from './lib/geo.mjs';
 import { osmBatch, renderReview, reviewSample } from './lib/review.mjs';
 import { looseSameVenue } from './lib/match.mjs';
@@ -59,23 +61,10 @@ export function significance(row) {
   return null;
 }
 
-/**
- * Names that say who the land belongs to rather than what it is: a club, a school, a hospital, a sports ground. Found on the first real extract:
- * 229 of the 739 recreation grounds were named like this ("Beaconsfield Rugby Club", "Thorpe House School Playing Fields"). They are real
- * places and private to their members, so they are not a family day out. Applied to parks and recreation grounds only, and never to a place we
- * already hold. A reviewer can still re-admit one: it is in rejected.csv with this reason.
- */
-export const PRIVATE_USE_NAME = /\b(football club|rugby|cricket club|fc|rfc|sports club|sports ground|sports centre|sports park|school|academy|university|hospital|tennis club|bowls? club|hockey|athletic|social club|training ground|campus)\b/i;
-
-/** A name that names no particular place ("The Park", "Animal Enclosure"). A person cannot recognise it, and it cannot be matched to anything. */
-export const GENERIC_NAME = /^(the )?(park|gardens?|playground|recreation ground|playing fields?|field|green|animal enclosure|enclosure|zoo)$/i;
-
-/** Which gate stops this row, and why, or null. Significance is judged last. */
-export function holdBack(row) {
-  if (GENERIC_NAME.test(row.name.trim())) return { gate: 'identity', reason: 'a name that names no particular place' };
-  if (row.group_id === 'parks' && ['park', 'recreation_ground'].includes(row.subtype) && PRIVATE_USE_NAME.test(row.name)) {
-    return { gate: 'classification', reason: 'named for a club, school or sports ground: private use, not a public park' };
-  }
+/** Which gate stops this row, and why, or null. Quality first (identity, then classification), significance last. */
+export function holdBack(row, ctx = {}) {
+  const hit = qualityHold(row, ctx);
+  if (hit) return hit;
   const why = significance(row);
   return why ? { gate: 'significance', reason: why } : null;
 }
@@ -142,7 +131,7 @@ export function bestStored(row, stored) {
 /**
  * @param {{ features: ReturnType<typeof normaliseFeatures>, stored?: Array<{id:string,name:string,category:string,lat:number,lng:number}>, version: string, seed?: number }} args
  */
-export function runDryRun({ features, stored = [], version, seed = 7, scopeKm = DEFAULT_SCOPE_KM }) {
+export function runDryRun({ features, stored = [], version, seed = 7, scopeKm = DEFAULT_SCOPE_KM, publicCultural = null }) {
   const rejected = [];
   const accepted = [];
   const unnamedPlaygrounds = [];
@@ -178,6 +167,7 @@ export function runDryRun({ features, stored = [], version, seed = 7, scopeKm = 
     // Not stored: what the report reads. Derived from source_tags at read time.
     _facts: decision.facts,
     _signals: decision.signals,
+    _q: qualityTags(f.tags),
     _areaHa: polygonAreaHa(f.geometry),
     _polygon: polygonal(f.geometry) ? f.geometry : null,
     _hasPolygon: polygonal(f.geometry),
@@ -192,7 +182,7 @@ export function runDryRun({ features, stored = [], version, seed = 7, scopeKm = 
   // The significance gate, once every park knows whether a playground lies inside it.
   // A venue we already hold has proved it is a destination (Frameless, a gallery with no Wikidata link, is one), so the gate does not judge it.
   for (const row of [...rows]) {
-    const held = bestStored(row, stored) ? null : holdBack(row);
+    const held = bestStored(row, stored) ? null : holdBack({ ...row, tags: row._q }, { publicCultural });
     if (held) { rejected.push({ sourceId: row.source_record_id, name: row.name, gate: held.gate, reason: held.reason }); rows.splice(rows.indexOf(row), 1); }
   }
 
@@ -281,12 +271,13 @@ async function main() {
   const args = process.argv.slice(2);
   const opt = (n) => (args.includes(n) ? args[args.indexOf(n) + 1] : undefined);
   const osm = opt('--osm'); const out = opt('--out'); const version = opt('--version');
-  if (!osm || !out || !version) { console.error('Usage: node scripts/open-data/dry-run.mjs --osm file.geojson --version YYYY-MM-DD --out dir [--stored rows.json] [--seed n] [--scope-km 40]'); process.exit(2); }
+  if (!osm || !out || !version) { console.error('Usage: node scripts/open-data/dry-run.mjs --osm file.geojson --version YYYY-MM-DD --out dir [--stored rows.json] [--seed n] [--scope-km 40] [--wikidata wikidata.json]'); process.exit(2); }
   const features = normaliseFeatures(JSON.parse(readFileSync(osm, 'utf8')));
   const stored = opt('--stored') ? JSON.parse(readFileSync(opt('--stored'), 'utf8')).map((r) => ({ ...r, lat: Number(r.lat), lng: Number(r.lng) })) : [];
-  const result = runDryRun({ features, stored, version, seed: Number(opt('--seed') ?? 7), scopeKm: Number(opt('--scope-km') ?? DEFAULT_SCOPE_KM) });
+  const publicCultural = opt('--wikidata') ? publicCulturalFromWikidata(JSON.parse(readFileSync(opt('--wikidata'), 'utf8'))) : null;
+  const result = runDryRun({ features, stored, version, seed: Number(opt('--seed') ?? 7), scopeKm: Number(opt('--scope-km') ?? DEFAULT_SCOPE_KM), publicCultural });
   mkdirSync(out, { recursive: true });
-  const clean = ({ _facts, _signals, _areaHa, _polygon, _hasPolygon, _playgroundInside, _linked, ...row }) => row;
+  const clean = ({ _facts, _signals, _q, _areaHa, _polygon, _hasPolygon, _playgroundInside, _linked, ...row }) => row;
   writeFileSync(join(out, 'candidates.jsonl'), result.candidates.map((c) => JSON.stringify(clean(c))).join('\n') + '\n');
   writeFileSync(join(out, 'links.jsonl'), result.links.map((l) => JSON.stringify(l)).join('\n') + '\n');
   writeFileSync(join(out, 'rejected.csv'), csv(result.rejected, ['sourceId', 'name', 'gate', 'reason']));
