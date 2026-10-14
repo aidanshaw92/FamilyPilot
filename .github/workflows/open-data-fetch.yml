@@ -1,11 +1,14 @@
-# One-off open-data publish step. NOT scheduled, NOT dispatchable, NOT run on pull requests.
+# One-off open-data fetch, second pass. NOT scheduled, NOT dispatchable, NOT run on pull requests.
 #
-# The previous version of this file (in this branch's history) fetched Geofabrik, OS Open Greenspace and Wikidata once, on GitHub's own
-# runner, and kept the result as run 38528419810's artifact. The cloud coding session's network policy does not reach the artifact host,
-# and that policy is not to be worked around, so this job does the one thing left: it takes that artifact, checks it against its own
-# provenance file, and publishes the same files (gzipped, with their licence notice) to the throwaway branch `data/open-data-inputs`,
-# which the session can read through GitHub. Nothing is fetched from the open-data hosts again. No secret beyond the run's own token.
-name: Open data publish (one-off)
+# Runs only when the throwaway branch `data/open-data-fetch` is pushed, on GitHub's own runner (free for this public repository), because
+# the cloud coding session's network policy refuses the open-data hosts and that policy is not to be worked around. No secret beyond the
+# run's own token (to write the throwaway branch below), no database, no Google.
+#
+# Pass 1 (see this branch's history) fetched Greater London once and showed the tool works. Pass 2 adds what pass 1 showed was missing:
+# the home counties inside the app's 40 km London scope (13 of the 149 places we hold lie outside Greater London) and general attractions
+# (the London Eye is tourism=attraction). Each Geofabrik file is downloaded once, checked against Geofabrik's own checksum, reduced by tag
+# and kept only as the reduced, gzipped GeoJSON with its licence notice and provenance on the branch `data/open-data-inputs-regions`.
+name: Open data fetch, second pass (one-off)
 
 on:
   push:
@@ -18,51 +21,101 @@ permissions:
   contents: read
 
 jobs:
-  publish:
+  fetch-regions:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 40
     permissions:
-      contents: write   # to write the throwaway branch data/open-data-inputs only
-      actions: read     # to read the earlier run's artifact
+      contents: write   # only to write the throwaway branch data/open-data-inputs-regions
+    env:
+      UA: FamilyPilot-open-data/1.0 (+https://github.com/aidanshaw92/FamilyPilot)
     steps:
-      - name: The artifact from the earlier fetch run
-        uses: actions/download-artifact@v4
-        with:
-          name: open-data-inputs
-          path: in
-          run-id: 38528419810
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check each file against its provenance record
+      - name: Tools (from the Ubuntu archive)
         run: |
-          ls -l in
-          python3 - <<'PY'
-          import hashlib, json
-          prov = json.load(open('in/PROVENANCE.json'))
-          for f in prov['files']:
-              h = hashlib.sha256(open('in/' + f['file'], 'rb').read()).hexdigest()
-              assert h == f['sha256'], (f['file'], h, f['sha256'])
-              print('ok', f['file'], f['bytes'], 'bytes', f['licence'])
-          PY
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq osmium-tool jq >/dev/null
+          osmium --version | head -1
 
-      - name: Publish to the throwaway branch data/open-data-inputs
+      - name: Geofabrik regions inside the London scope, each downloaded once
+        run: |
+          mkdir -p work out
+          curl -fsS --max-time 60 -A "$UA" https://download.geofabrik.de/index-v1-nogeom.json -o work/index.json
+          python3 - <<'PY'
+          import json
+          want = ['greater-london', 'hertfordshire', 'surrey', 'kent', 'essex', 'buckinghamshire', 'berkshire']
+          idx = {f['properties']['id']: f['properties'] for f in json.load(open('work/index.json'))['features']}
+          with open('work/regions.txt', 'w') as out:
+              for w in want:
+                  assert w in idx, f'Geofabrik has no extract called {w}'
+                  print(w, idx[w]['urls']['pbf'])
+                  out.write(f"{w} {idx[w]['urls']['pbf']}\n")
+          PY
+          while read ID URL; do
+            echo "=== $ID"
+            curl -fSL --retry 2 -A "$UA" -o "work/$ID-latest.osm.pbf" "$URL"
+            curl -fSL --retry 2 -A "$UA" -o "work/$ID-latest.osm.pbf.md5" "$URL.md5"
+            (cd work && sed "s#  .*#  $ID-latest.osm.pbf#" "$ID-latest.osm.pbf.md5" | md5sum -c -)
+            ls -l "work/$ID-latest.osm.pbf" | awk '{print $5, "bytes"}'
+            osmium tags-filter "work/$ID-latest.osm.pbf" \
+              nwr/tourism=zoo,aquarium,museum,gallery,theme_park,attraction \
+              nwr/leisure=trampoline_park,indoor_play,playground,nature_reserve,park,water_park,ice_rink,miniature_golf,bowling_alley \
+              -R -o "work/$ID-family.osm.pbf" --overwrite
+            osmium export "work/$ID-family.osm.pbf" -f geojson --geometry-types=point,polygon \
+              --add-unique-id=type_id -a version -o "work/$ID.geojson" --overwrite
+            echo "features: $(jq '.features | length' "work/$ID.geojson")"
+            rm -f "work/$ID-latest.osm.pbf" "work/$ID-family.osm.pbf"
+          done < work/regions.txt
+
+      - name: Merge (one feature per OSM id), then record provenance
+        run: |
+          python3 - <<'PY'
+          import json, hashlib, os, datetime, glob
+          seen = {}
+          per = {}
+          for path in sorted(glob.glob('work/*.geojson')):
+              rid = os.path.basename(path)[:-8]
+              feats = json.load(open(path))['features']
+              per[rid] = len(feats)
+              for f in feats:
+                  seen.setdefault(f['id'], f)
+          json.dump({'type': 'FeatureCollection', 'features': list(seen.values())}, open('out/osm-family-regions.geojson', 'w'))
+          print('per region', per, '| merged unique', len(seen))
+          now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
+          data = open('out/osm-family-regions.geojson', 'rb').read()
+          prov = {
+            'generated_by': 'FamilyPilot open-data-fetch workflow, second pass (one-off, throwaway branch data/open-data-fetch)',
+            'user_agent': os.environ['UA'],
+            'files': [{
+              'file': 'osm-family-regions.geojson', 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest(), 'retrieved_at': now,
+              'source': 'OpenStreetMap via Geofabrik regional extracts, filtered by tag with osmium, one feature per OSM id',
+              'regions': per,
+              'source_urls': [l.split()[1] for l in open('work/regions.txt')],
+              'licence': 'ODbL-1.0', 'licence_url': 'https://opendatacommons.org/licenses/odbl/1-0/',
+              'attribution': '© OpenStreetMap contributors', 'attribution_url': 'https://www.openstreetmap.org/copyright',
+            }],
+          }
+          json.dump(prov, open('out/PROVENANCE.json', 'w'), indent=2)
+          print(json.dumps(prov, indent=2))
+          PY
+          cat > out/NOTICE.txt <<'TXT'
+          OpenStreetMap data: © OpenStreetMap contributors, Open Database Licence 1.0 (https://www.openstreetmap.org/copyright).
+          Reduced by tag from Geofabrik's regional extracts for FamilyPilot's catalogue-recovery dry run. Not for production use.
+          See PROVENANCE.json for the sources, retrieval time, size and SHA-256.
+          TXT
+          gzip -9 -c out/osm-family-regions.geojson > out/osm-family-regions.geojson.gz
+          ls -l out
+
+      - name: Publish to the throwaway branch data/open-data-inputs-regions
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir pub && cp in/PROVENANCE.json in/NOTICE.txt pub/
-          for f in london-family.geojson greenspace-london.geojson; do gzip -9 -c "in/$f" > "pub/$f.gz"; done
-          cp in/wikidata-london.json pub/
-          cat > pub/README.md <<'MD'
-          Throwaway branch. Open data fetched once from its publishers by the repository's own GitHub Actions runner, for FamilyPilot's
-          catalogue-recovery dry run. Never merged. See NOTICE.txt for the licences and credits and PROVENANCE.json for the source,
-          retrieval time, size and SHA-256 of each file (the .gz files decompress to the files named there).
-          MD
+          mkdir pub && cp out/PROVENANCE.json out/NOTICE.txt out/osm-family-regions.geojson.gz pub/
+          echo "Throwaway branch. OpenStreetMap data reduced by tag; never merged. See NOTICE.txt and PROVENANCE.json." > pub/README.md
           cd pub
-          git init -q -b data/open-data-inputs
+          git init -q -b data/open-data-inputs-regions
           git config user.name "open-data-fetch"
           git config user.email "actions@users.noreply.github.com"
           git add -A
-          git commit -q -m "Open data for the catalogue-recovery dry run (OSM, OS Open Greenspace, Wikidata), with licences and provenance"
+          git commit -q -m "OpenStreetMap, London and home counties, filtered by tag, with licence and provenance"
           git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git push -q -f origin data/open-data-inputs
+          git push -q -f origin data/open-data-inputs-regions
           ls -l
