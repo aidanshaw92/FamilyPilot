@@ -10,7 +10,7 @@
  *
  * From a Geofabrik .osm.pbf, one way to get GeoJSON (osmium-tool, run locally):
  *   osmium tags-filter greater-london-latest.osm.pbf nwr/leisure=park,playground,nature_reserve,trampoline_park,indoor_play,water_park,ice_rink,miniature_golf,bowling_alley \
- *     nwr/tourism=zoo,aquarium,museum,gallery,theme_park -R -o london-family.osm.pbf
+ *     nwr/tourism=zoo,aquarium,museum,gallery,theme_park,attraction -R -o london-family.osm.pbf
  *   osmium export london-family.osm.pbf -f geojson --geometry-types=point,polygon --add-unique-id=type_id -a version -o london-family.geojson
  * (-R leaves out the nodes and ways that matching relations merely refer to. osmium writes a polygon's id as `a<n>`; see normaliseFeatures.)
  *
@@ -49,6 +49,7 @@ export function significance(row) {
     if ((row._areaHa ?? 0) >= PARK_MIN_HA || signal || row._playgroundInside === true) return null;
     return `under ${PARK_MIN_HA} ha${row._areaHa == null ? ' (a point)' : ''}, no Wikidata or Wikipedia link, no mapped playground inside`;
   }
+  if (row.subtype === 'attraction') return signal ? null : 'a general attraction with no Wikidata or Wikipedia link (very broad in OpenStreetMap: statues, viewpoints, plaques)';
   if (row.subtype === 'gallery') return signal ? null : 'a gallery with no Wikidata or Wikipedia link (most mapped galleries are commercial)';
   if (row.subtype === 'playground' && row.group_id === 'parks') return signal || row.website ? null : 'a stand-alone playground with no website or Wikidata link (listed through its park when one contains it)';
   return null;

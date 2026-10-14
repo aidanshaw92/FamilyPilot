@@ -32,6 +32,9 @@ const RULES = [
   ['leisure', 'nature_reserve', 'parks', 'nature_reserve'],
   ['leisure', 'park', 'parks', 'park'],
   ['tourism', 'theme_park', 'attractions', 'theme_park'],
+  // A general attraction (the London Eye, a landmark). Very broad in OSM, so the significance gate asks for a Wikidata or Wikipedia link.
+  // An exhibit inside a venue (attraction=animal and the like) is not one.
+  ['tourism', 'attraction', 'attractions', (tags) => (tags.attraction === 'animal' ? null : 'attraction')],
   ['leisure', 'water_park', 'attractions', 'water_park'],
   ['leisure', 'ice_rink', 'attractions', 'ice_rink'],
   ['leisure', 'miniature_golf', 'attractions', 'miniature_golf'],

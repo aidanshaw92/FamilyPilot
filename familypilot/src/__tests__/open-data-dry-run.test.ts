@@ -366,6 +366,17 @@ describe('calibration from the first real extract', () => {
     expect(why(r, 'Estate Swings').reason).toMatch(/stand-alone playground/);
   });
 
+  it('a general attraction needs a Wikidata or Wikipedia link, and an exhibit is never one', () => {
+    const r = run([
+      point('n1', { name: 'London Eye Fixture', tourism: 'attraction', wikidata: 'Q3' }, 51.5, -0.1),
+      point('n2', { name: 'A Statue', tourism: 'attraction' }, 51.51, -0.11),
+      point('n3', { name: 'Penguin Pool', tourism: 'attraction', attraction: 'animal', wikidata: 'Q4' }, 51.52, -0.12),
+    ]);
+    expect(names(r)).toEqual(['London Eye Fixture']);
+    expect(why(r, 'A Statue').reason).toMatch(/general attraction/);
+    expect(why(r, 'Penguin Pool').gate).toBe('classification');
+  });
+
   it('a place we already hold is not judged by the gate: it has proved it is a destination', () => {
     const stored = [{ id: 'fp-google-F', name: 'Frameless', category: 'attraction', lat: 51.5001, lng: -0.1001 }];
     const r = run([point('n1', { name: 'Frameless', tourism: 'gallery' }, 51.5, -0.1)], stored);
