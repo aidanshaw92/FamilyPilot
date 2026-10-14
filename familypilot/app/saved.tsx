@@ -4,6 +4,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } fr
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ReconnectHost, type ActiveReconnect } from '@/src/components/saved/ReconnectHost';
 import { ReconnectLine } from '@/src/components/saved/ReconnectLine';
 import { SavedBackupPanel } from '@/src/components/saved/SavedBackupPanel';
 import { PageHeader } from '@/src/components/navigation/PageHeader';
@@ -53,6 +54,8 @@ export default function SavedScreen() {
   const [refreshing, setRefreshing] = useState(false);
   // What the last reconnect did, in a sentence. Cleared after a few seconds, like the undo bar.
   const [notice, setNotice] = useState<string | null>(null);
+  // Which saved place the one reconnect sheet is open for (the sheet draws over the whole screen, so the screen owns it, not the row).
+  const [reconnecting, setReconnecting] = useState<ActiveReconnect | null>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (noticeTimer.current) clearTimeout(noticeTimer.current); }, []);
   const showNotice = (message: string) => {
@@ -125,7 +128,7 @@ export default function SavedScreen() {
         }}
       />
       {/* Only appears for a place whose old listing the catalogue says is gone (see ReconnectLine); nothing happens until the parent taps it. */}
-      <ReconnectLine item={item} onDone={showNotice} />
+      <ReconnectLine item={item} onOpen={setReconnecting} />
     </View>
   );
 
@@ -243,6 +246,7 @@ export default function SavedScreen() {
             above them would push what they came for down the screen for a job done once in a while. */}
         {isLoading ? null : <SavedBackupPanel />}
       </ScrollView>
+      <ReconnectHost active={reconnecting} onClose={() => setReconnecting(null)} onDone={showNotice} />
     </ScreenContainer>
   );
 }

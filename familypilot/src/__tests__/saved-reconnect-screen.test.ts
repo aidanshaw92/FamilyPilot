@@ -19,7 +19,7 @@ const venue = (over: Partial<Venue> & { id: string; name: string }): Venue => ({
 }) as Venue;
 const item = (v: Venue, over: Partial<SavedItem> = {}): SavedItem => ({ id: `saved-${v.id}`, type: 'place', venue: v, group: 'want', savedAt: '2026-09-01T10:00:00.000Z', ...over }) as SavedItem;
 const record = (over: Partial<ExternalPlaceRecord> & { familypilotId: string; name: string }): ExternalPlaceRecord => ({
-  externalId: `x:${over.familypilotId}`, provider: 'os-greenspace', category: 'park', latitude: 51.4512, longitude: -0.1068, photos: [], fetchedAt: '2026-10-14T00:00:00.000Z', enrichmentStatus: 'provider_only', googleTypes: [], ...over,
+  externalId: `x:${over.familypilotId}`, provider: 'osm', category: 'park', latitude: 51.4512, longitude: -0.1068, photos: [], fetchedAt: '2026-10-14T00:00:00.000Z', enrichmentStatus: 'provider_only', googleTypes: [], ...over,
 }) as ExternalPlaceRecord;
 
 const old = venue({ id: 'fp-google-ChIJold', name: 'Brockwell Park', provider: 'google' });
@@ -28,8 +28,8 @@ const day = (id: string, venueId: string): SavedDay => ({ id, createdAt: '2026-0
 describe('which saved places are ever looked up', () => {
   it('only a Google-listed place of the venue kind with a position', () => {
     expect(mayHaveLostItsListing(item(old))).toBe(true);
-    expect(mayHaveLostItsListing(item(venue({ id: 'fp-os-1', name: 'Brockwell Park', provider: 'os-greenspace' })))).toBe(false);
-    expect(mayHaveLostItsListing(item(venue({ id: 'fp-wd-q1', name: 'Horniman Museum', provider: 'wikidata' })))).toBe(false);
+    expect(mayHaveLostItsListing(item(venue({ id: 'fp-os-1', name: 'Brockwell Park', provider: 'osm' })))).toBe(false);
+    expect(mayHaveLostItsListing(item(venue({ id: 'fp-wd-q1', name: 'Horniman Museum', provider: 'osm' })))).toBe(false);
     // a saved restaurant or hotel is not in the venue catalogue at all: "not listed" would be a wrong answer for it
     expect(mayHaveLostItsListing(item(venue({ id: 'fp-google-r1', name: 'A Cafe', category: 'cafe', provider: 'google' }), { type: 'restaurant' }))).toBe(false);
     expect(mayHaveLostItsListing(item(venue({ id: 'fp-google-h1', name: 'A Hotel', category: 'hotel', provider: 'google' }), { type: 'hotel' }))).toBe(false);
@@ -91,7 +91,7 @@ describe('looking is a read, and a failed read is not an answer', () => {
 });
 
 describe('what a confirmed match writes', () => {
-  const successor = venue({ id: 'fp-os-brockwell', name: 'Brockwell Park', provider: 'os-greenspace' });
+  const successor = venue({ id: 'fp-os-brockwell', name: 'Brockwell Park', provider: 'osm' });
 
   it('points the row at the new venue and keeps its group, its saved time and its own row id', () => {
     const rowOld = item(old, { group: 'favourite', savedAt: '2026-08-01T09:00:00.000Z' });
@@ -148,9 +148,9 @@ describe('what a confirmed match writes', () => {
 });
 
 describe('writing to the real stores', () => {
-  const successor = venue({ id: 'fp-os-brockwell', name: 'Brockwell Park', provider: 'os-greenspace' });
+  const successor = venue({ id: 'fp-os-brockwell', name: 'Brockwell Park', provider: 'osm' });
   beforeEach(() => {
-    useSavedStore.setState({ items: [item(old), item(venue({ id: 'fp-os-keep', name: 'Ruskin Park', provider: 'os-greenspace' }))], savedIds: [old.id, 'fp-os-keep'] });
+    useSavedStore.setState({ items: [item(old), item(venue({ id: 'fp-os-keep', name: 'Ruskin Park', provider: 'osm' }))], savedIds: [old.id, 'fp-os-keep'] });
     usePlanningStore.setState({ savedDays: [day('d1', old.id), day('d2', 'fp-os-keep')] });
   });
 
