@@ -1,6 +1,6 @@
 # The question for the OSM Foundation Licensing Working Group
 
-14 October 2026. **Approved by the product owner for sending (15 October). Not yet sent: this session has no mail connector, so no mail can leave it.** It contains no private project data, no Google identifier and no company detail. The answer is the licensor's guidance, not legal advice, and the plan does not depend on it: Tranche A has no OpenStreetMap data in it.
+14 October 2026. **Approved by the product owner for sending (14 October). Not yet sent: this session has no mail connector, so no mail can leave it.** It contains no private project data, no Google identifier and no company detail. The answer is the licensor's guidance, not legal advice, and the plan does not depend on it: Tranche A has no OpenStreetMap data in it.
 
 **To:** `legal-questions@osmfoundation.org`. Verified on 14 October from the Licensing Working Group's own page (<https://osmfoundation.org/wiki/Licensing_Working_Group>, "Get in touch"): "Please send questions with respect to licensing, business models and similar subjects that you are asking the OSMF as licensor of the OSM data. We will try and respond to such queries as soon as possible, however we cannot provide legal advice or extensive business plan analysis." (The page renders the address with a space before the @; it is `legal-questions@osmfoundation.org`. The separate `legal@osmfoundation.org` on the page is for reporting a suspected licence violation, which this is not.)
 
