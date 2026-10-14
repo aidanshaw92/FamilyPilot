@@ -85,6 +85,10 @@ export default function RootLayout() {
   // (React error 418) at a cost of half a second on a slow phone. Waiting for fonts used to give the same "nothing yet" by accident.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  // The web's static page carries a brand shell for the seconds the app takes to download (app/+html.tsx); remove it once the app is drawn.
+  useEffect(() => {
+    if (mounted && typeof document !== 'undefined') document.getElementById('boot-shell')?.remove();
+  }, [mounted]);
 
   useEffect(() => {
     // A font that will not load is fatal only where the first screen waits for it. Elsewhere (the web) the page is already drawn in the system font.
