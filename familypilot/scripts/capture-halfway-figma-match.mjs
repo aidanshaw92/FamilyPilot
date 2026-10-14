@@ -13,6 +13,7 @@
  * Usage: node scripts/capture-halfway-figma-match.mjs <baseUrl> <outDir>
  */
 import { chromium } from 'playwright';
+import { asProvider } from './lib/place-provider.mjs';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,7 +21,8 @@ import { fileURLToPath } from 'node:url';
 const BASE = process.argv[2] ?? 'http://localhost:4175';
 const OUT = process.argv[3] ?? '/tmp/halfway-figma-match';
 mkdirSync(OUT, { recursive: true });
-const PLACES = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'halfway-figma-places.json'), 'utf8'));
+// Served as independently located places: a Google place is never drawn on the app's own map, and this checks the map's layout (see lib/place-provider.mjs).
+const PLACES = asProvider(JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'halfway-figma-places.json'), 'utf8')), 'osm');
 
 const PROFILE = {
   id: 'family-figma', parentName: 'Aidan', familyName: 'Shaw',

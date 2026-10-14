@@ -24,6 +24,7 @@
  * and by reflow at 320; they still deserve a manual pass on a device before launch.
  */
 import { chromium } from 'playwright';
+import { routeBetweenAs, routePlacesAs } from './lib/place-provider.mjs';
 import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -88,10 +89,12 @@ const SCREENS = [
     },
   },
   { key: 'saved', route: '/saved', state: PROFILE },
-  { key: 'halfway-map', route: '/halfway', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-sheet-collapsed').or(page.getByTestId('halfway-empty')).first().waitFor({ timeout: 30000 }); await page.waitForTimeout(800); } },
-  { key: 'halfway-details', route: '/halfway', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-sheet-collapsed').or(page.getByTestId('halfway-empty')).first().waitFor({ timeout: 30000 }); if (await page.getByTestId('halfway-details').count()) await page.getByTestId('halfway-details').click(); await page.waitForTimeout(900); } },
-  { key: 'halfway-list', route: '/halfway', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-mode-list').click({ timeout: 30000 }); await page.waitForTimeout(1000); } },
-  { key: 'halfway-edit', route: '/halfway', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-edit').click({ timeout: 30000 }); await page.waitForTimeout(900); } },
+  { key: 'halfway-map', route: '/halfway', between: 'osm', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-sheet-collapsed').or(page.getByTestId('halfway-empty')).first().waitFor({ timeout: 30000 }); await page.waitForTimeout(800); } },
+  { key: 'halfway-details', route: '/halfway', between: 'osm', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-sheet-collapsed').or(page.getByTestId('halfway-empty')).first().waitFor({ timeout: 30000 }); if (await page.getByTestId('halfway-details').count()) await page.getByTestId('halfway-details').click(); await page.waitForTimeout(900); } },
+  { key: 'halfway-list', route: '/halfway', between: 'osm', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-mode-list').click({ timeout: 30000 }); await page.waitForTimeout(1000); } },
+  { key: 'halfway-edit', route: '/halfway', between: 'osm', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-edit').click({ timeout: 30000 }); await page.waitForTimeout(900); } },
+  // Google places are never drawn on the app's own map (utils/map-compliance.ts): the same screen as a plain list, with the map switched off.
+  { key: 'halfway-map-off', route: '/halfway', between: 'google', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-map-off').waitFor({ timeout: 30000 }); await page.waitForTimeout(800); } },
   // Together's second view, with a family on this phone, and the first visit with nobody. (The halfway-* screens above are reached through the old /halfway address, which redirects here.)
   { key: 'together-families', route: '/together?view=families', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('together-view-families').waitFor({ timeout: 30000 }); await page.waitForTimeout(900); } },
   { key: 'together-first-visit', route: '/together', state: HALFWAY_PROFILE, planning: NO_FAMILIES_PLANNING, act: async (page) => { await page.getByTestId('families-first-visit').waitFor({ timeout: 30000 }); await page.waitForTimeout(900); } },
@@ -245,6 +248,8 @@ for (const screen of SCREENS) {
       if (document.head) attach();
       else document.addEventListener('DOMContentLoaded', attach);
     }, IPHONE_INSETS);
+    if (screen.between) await routeBetweenAs(page, screen.between);
+    if (screen.places) await routePlacesAs(page, screen.places);
     await page.goto(`${BASE}${screen.route}`, { waitUntil: 'networkidle', timeout: 60000 });
     await page.evaluate(async () => document.fonts?.ready);
     await page.waitForTimeout(2500);
