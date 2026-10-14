@@ -267,6 +267,16 @@ export function renderReport(result, { version, source }) {
 
 const csv = (rows, cols) => [cols.join(','), ...rows.map((r) => cols.map((c) => `"${String(r[c] ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
 
+// What a person (and the batch selector) may read about a candidate beyond the tags that decided it: the size of a park, whether a playground is MAPPED
+// inside it (null when unknown; false is "none found", never "none"), and the Wikidata item and Wikipedia article the source itself links.
+export const cleanRow = ({ _facts, _signals, _q, _areaHa, _polygon, _hasPolygon, _playgroundInside, _linked, ...row }) => ({
+  ...row,
+  area_ha: _areaHa == null ? null : Number(_areaHa.toFixed(2)),
+  playground_inside: _playgroundInside ?? null,
+  wikidata_id: _q?.wikidata ?? null,
+  has_wikipedia: Boolean(_signals?.wikipedia),
+});
+
 async function main() {
   const args = process.argv.slice(2);
   const opt = (n) => (args.includes(n) ? args[args.indexOf(n) + 1] : undefined);
@@ -277,12 +287,11 @@ async function main() {
   const publicCultural = opt('--wikidata') ? publicCulturalFromWikidata(JSON.parse(readFileSync(opt('--wikidata'), 'utf8'))) : null;
   const result = runDryRun({ features, stored, version, seed: Number(opt('--seed') ?? 7), scopeKm: Number(opt('--scope-km') ?? DEFAULT_SCOPE_KM), publicCultural });
   mkdirSync(out, { recursive: true });
-  const clean = ({ _facts, _signals, _q, _areaHa, _polygon, _hasPolygon, _playgroundInside, _linked, ...row }) => row;
-  writeFileSync(join(out, 'candidates.jsonl'), result.candidates.map((c) => JSON.stringify(clean(c))).join('\n') + '\n');
+  writeFileSync(join(out, 'candidates.jsonl'), result.candidates.map((c) => JSON.stringify(cleanRow(c))).join('\n') + '\n');
   writeFileSync(join(out, 'links.jsonl'), result.links.map((l) => JSON.stringify(l)).join('\n') + '\n');
   writeFileSync(join(out, 'rejected.csv'), csv(result.rejected, ['sourceId', 'name', 'gate', 'reason']));
-  writeFileSync(join(out, 'spot-check-40.jsonl'), result.stats.spot.map((c) => JSON.stringify(clean(c))).join('\n') + '\n');
-  writeFileSync(join(out, 'sample-10.json'), JSON.stringify(result.stats.sample.map(({ label, row }) => ({ label, row: clean(row), derivedFacts: row._facts, playgroundInside: row._playgroundInside ?? null, linkedTo: row._linked })), null, 2));
+  writeFileSync(join(out, 'spot-check-40.jsonl'), result.stats.spot.map((c) => JSON.stringify(cleanRow(c))).join('\n') + '\n');
+  writeFileSync(join(out, 'sample-10.json'), JSON.stringify(result.stats.sample.map(({ label, row }) => ({ label, row: cleanRow(row), derivedFacts: row._facts, playgroundInside: row._playgroundInside ?? null, linkedTo: row._linked })), null, 2));
   // The ten records a person reads first, with the batch's licence and credit recorded once.
   const batch = osmBatch({ version, input: osm });
   const reviews = reviewSample(result.stats.sample, batch, { links: result.links, stored });

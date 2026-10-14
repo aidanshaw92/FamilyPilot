@@ -11,7 +11,7 @@ import * as matchModule from '../../../scripts/open-data/lib/match.mjs';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const { classifyOsm, factsFromTags, websiteFromTags } = osmClassifyModule as any;
 const { areaOf, pointInGeometry, representativePoint } = geoModule as any;
-const { normaliseFeatures, renderReport, runDryRun } = dryRunModule as any;
+const { normaliseFeatures, renderReport, runDryRun, cleanRow } = dryRunModule as any;
 const { osmBatch, renderReview, reviewRecord, reviewSample } = reviewModule as any;
 const { looseSameVenue } = matchModule as any;
 const { polygonAreaHa } = geoModule as any;
@@ -411,6 +411,17 @@ describe('calibration from the first real extract', () => {
     expect(why(r, 'Fixture Lake').reason).toMatch(/not open to the public \(access=customers\)/);
     expect(why(r, 'Henderson Playing Fields').reason).toMatch(/run by a school, club or hospital/);
     expect(why(r, 'Joliffe Playing Fields').gate).toBe('classification');
+  });
+
+  it('the written candidate carries a park\'s size, whether a playground is mapped inside, and the source\'s own Wikidata and Wikipedia links, and nothing private', () => {
+    const r = run([
+      poly('a2', { name: 'Fixture Common', leisure: 'park', wikidata: 'Q42', wikipedia: 'en:Fixture Common', phone: '+44 20 0000 0000' }, 51.5, -0.1, 0.01),
+    ]);
+    const written = cleanRow(r.candidates[0]);
+    expect(written).toMatchObject({ name: 'Fixture Common', wikidata_id: 'Q42', has_wikipedia: true, playground_inside: false });
+    expect(written.area_ha).toBeGreaterThan(10);
+    expect(Object.keys(written).filter((k) => k.startsWith('_'))).toEqual([]);
+    expect(JSON.stringify(written)).not.toMatch(/\+44/);
   });
 
   it('keeps only the tags the quality gates read: no phone, email or free text rides along on a row', () => {
