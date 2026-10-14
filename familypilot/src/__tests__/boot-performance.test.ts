@@ -65,6 +65,13 @@ describe('fonts', () => {
   });
 });
 
+describe('icons', () => {
+  it('imports the one icon set from its own module, never from the package that re-exports all twenty', () => {
+    const offenders = [...sourceFiles('src'), ...sourceFiles('app')].filter((f) => /from '@expo\/vector-icons'/.test(read(f)));
+    expect(offenders, 'import Ionicons from "@expo/vector-icons/Ionicons"; the main file puts every icon family in the bundle').toEqual([]);
+  });
+});
+
 describe('caching', () => {
   const config = JSON.parse(readFileSync(join(root, '..', 'vercel.json'), 'utf8')) as { headers?: Array<{ source: string; headers: Array<{ key: string; value: string }> }> };
 
