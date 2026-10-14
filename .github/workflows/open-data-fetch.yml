@@ -1,14 +1,14 @@
-# One-off open-data diagnostic. NOT scheduled, NOT dispatchable, NOT run on pull requests.
+# One-off open-data fetch, third pass (the second pass with three more tags). NOT scheduled, NOT dispatchable, NOT run on pull requests.
 #
 # Runs only when the throwaway branch `data/open-data-fetch` is pushed, on GitHub's own runner (free for this public repository), because
-# the cloud coding session's network policy refuses the open-data hosts and that policy is not to be worked around. No database, no Google.
+# the cloud coding session's network policy refuses the open-data hosts and that policy is not to be worked around. No secret beyond the
+# run's own token (to write the throwaway branch below), no database, no Google.
 #
-# Passes 1 and 2 (this branch's history) fetched OpenStreetMap by a fixed list of tags. Reconciling that with the places we already hold
-# showed gaps (city farms, soft play, some large parks) that the tag list does not reach. This pass asks the question the other way
-# round: which NAMED features in Greater London look like a farm, a play centre or a large green space, whatever their tags? It
-# downloads Greater London once and keeps the matches (name only, any tag) as a gzipped GeoJSON on the throwaway branch
-# `data/open-data-inputs-diagnostic`, with the licence notice and provenance.
-name: Open data diagnostic (one-off)
+# Pass 1 (see this branch's history) fetched Greater London once and showed the tool works. Pass 2 adds what pass 1 showed was missing:
+# the home counties inside the app's 40 km London scope (13 of the 149 places we hold lie outside Greater London) and general attractions
+# (the London Eye is tourism=attraction). Each Geofabrik file is downloaded once, checked against Geofabrik's own checksum, reduced by tag
+# and kept only as the reduced, gzipped GeoJSON with its licence notice and provenance on the branch `data/open-data-inputs-regions-2`.
+name: Open data fetch, third pass (one-off)
 
 on:
   push:
@@ -21,11 +21,11 @@ permissions:
   contents: read
 
 jobs:
-  diagnostic:
+  fetch-regions:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     permissions:
-      contents: write   # only to write the throwaway branch data/open-data-inputs-diagnostic
+      contents: write   # only to write the throwaway branch data/open-data-inputs-regions-2
     env:
       UA: FamilyPilot-open-data/1.0 (+https://github.com/aidanshaw92/FamilyPilot)
     steps:
@@ -33,50 +33,90 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq osmium-tool jq >/dev/null
+          osmium --version | head -1
 
-      - name: Greater London, one download, then the named features that look relevant
+      - name: Geofabrik regions inside the London scope, each downloaded once
         run: |
           mkdir -p work out
-          URL="https://download.geofabrik.de/europe/united-kingdom/england/greater-london-latest.osm.pbf"
-          curl -fSL --retry 2 -A "$UA" -o work/greater-london-latest.osm.pbf "$URL"
-          curl -fSL --retry 2 -A "$UA" -o work/greater-london-latest.osm.pbf.md5 "$URL.md5"
-          (cd work && md5sum -c greater-london-latest.osm.pbf.md5)
-          osmium tags-filter work/greater-london-latest.osm.pbf nwr/name -o work/named.osm.pbf --overwrite
-          osmium export work/named.osm.pbf -f geojsonseq --geometry-types=point,polygon --add-unique-id=type_id -a version -o work/named.geojsonseq --overwrite
-          ls -l work/named.geojsonseq
-          # Strip the RS (0x1e) record separators, then keep a feature when its name looks like a farm, a play centre, a green space or a landmark.
-          tr -d '\036' < work/named.geojsonseq | jq -c 'select(.properties.name != null and (.properties.name | test("farm|zoo|aquarium|soft ?play|play ?(centre|center|zone|barn|land|space|house)|trampoline|jump|bounce|adventure|kids|children|nursery|wetland|garden|heath|common|forest|wood|castle|palace|manor|house|cable|studio|park|green|fields|recreation|museum|gallery|exhibition|observatory|wheel|eye|bridge|tunnel|dock"; "i")))' > work/subset.geojsonseq
-          wc -l work/subset.geojsonseq
-          jq -s '{type: "FeatureCollection", features: .}' work/subset.geojsonseq > out/osm-named-london.geojson
-          ls -l out
-          echo "key tag counts in the subset (what these things are tagged as):"
-          jq -r '.features[].properties | (to_entries | map(select(.key | test("^(leisure|tourism|landuse|amenity|natural|boundary|attraction|zoo|historic|building|shop|sport)$")) | "\(.key)=\(.value)") | .[0:3] | join(" "))' out/osm-named-london.geojson | sort | uniq -c | sort -rn | head -40
+          curl -fsS --max-time 60 -A "$UA" https://download.geofabrik.de/index-v1-nogeom.json -o work/index.json
+          python3 - <<'PY'
+          import json
+          want = ['greater-london', 'hertfordshire', 'surrey', 'kent', 'essex', 'buckinghamshire', 'berkshire']
+          idx = {f['properties']['id']: f['properties'] for f in json.load(open('work/index.json'))['features']}
+          with open('work/regions.txt', 'w') as out:
+              for w in want:
+                  assert w in idx, f'Geofabrik has no extract called {w}'
+                  print(w, idx[w]['urls']['pbf'])
+                  out.write(f"{w} {idx[w]['urls']['pbf']}\n")
+          PY
+          while read ID URL; do
+            echo "=== $ID"
+            curl -fSL --retry 2 -A "$UA" -o "work/$ID-latest.osm.pbf" "$URL"
+            curl -fSL --retry 2 -A "$UA" -o "work/$ID-latest.osm.pbf.md5" "$URL.md5"
+            (cd work && sed "s#  .*#  $ID-latest.osm.pbf#" "$ID-latest.osm.pbf.md5" | md5sum -c -)
+            ls -l "work/$ID-latest.osm.pbf" | awk '{print $5, "bytes"}'
+            osmium tags-filter "work/$ID-latest.osm.pbf" \
+              nwr/tourism=zoo,aquarium,museum,gallery,theme_park,attraction \
+              nwr/landuse=farmyard,recreation_ground nwr/leisure=garden \
+              nwr/leisure=trampoline_park,indoor_play,playground,nature_reserve,park,water_park,ice_rink,miniature_golf,bowling_alley \
+              -o "work/$ID-family.osm.pbf" --overwrite
+            osmium export "work/$ID-family.osm.pbf" -f geojson --geometry-types=point,polygon \
+              --add-unique-id=type_id -a version -o "work/$ID.geojson" --overwrite
+            echo "features: $(jq '.features | length' "work/$ID.geojson")"
+            rm -f "work/$ID-latest.osm.pbf" "work/$ID-family.osm.pbf"
+          done < work/regions.txt
 
-      - name: Provenance and publish to the throwaway branch data/open-data-inputs-diagnostic
+      - name: Merge (one feature per OSM id), then record provenance
+        run: |
+          python3 - <<'PY'
+          import json, hashlib, os, datetime, glob
+          seen = {}
+          per = {}
+          for path in sorted(glob.glob('work/*.geojson')):
+              rid = os.path.basename(path)[:-8]
+              feats = json.load(open(path))['features']
+              per[rid] = len(feats)
+              for f in feats:
+                  seen.setdefault(f['id'], f)
+          json.dump({'type': 'FeatureCollection', 'features': list(seen.values())}, open('out/osm-family-regions.geojson', 'w'))
+          print('per region', per, '| merged unique', len(seen))
+          now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
+          data = open('out/osm-family-regions.geojson', 'rb').read()
+          prov = {
+            'generated_by': 'FamilyPilot open-data-fetch workflow, second pass (one-off, throwaway branch data/open-data-fetch)',
+            'user_agent': os.environ['UA'],
+            'files': [{
+              'file': 'osm-family-regions.geojson', 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest(), 'retrieved_at': now,
+              'source': 'OpenStreetMap via Geofabrik regional extracts, filtered by tag with osmium, one feature per OSM id',
+              'regions': per,
+              'source_urls': [l.split()[1] for l in open('work/regions.txt')],
+              'licence': 'ODbL-1.0', 'licence_url': 'https://opendatacommons.org/licenses/odbl/1-0/',
+              'attribution': '© OpenStreetMap contributors', 'attribution_url': 'https://www.openstreetmap.org/copyright',
+            }],
+          }
+          json.dump(prov, open('out/PROVENANCE.json', 'w'), indent=2)
+          print(json.dumps(prov, indent=2))
+          PY
+          cat > out/NOTICE.txt <<'TXT'
+          OpenStreetMap data: © OpenStreetMap contributors, Open Database Licence 1.0 (https://www.openstreetmap.org/copyright).
+          Reduced by tag from Geofabrik's regional extracts for FamilyPilot's catalogue-recovery dry run. Not for production use.
+          See PROVENANCE.json for the sources, retrieval time, size and SHA-256.
+          TXT
+          gzip -9 -c out/osm-family-regions.geojson > out/osm-family-regions.geojson.gz
+          ls -l out
+
+      - name: Publish to the throwaway branch data/open-data-inputs-regions-2
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python3 - <<'PY'
-          import hashlib, json, os, datetime
-          data = open('out/osm-named-london.geojson', 'rb').read()
-          prov = {'generated_by': 'FamilyPilot open-data-fetch workflow, diagnostic pass (one-off)', 'user_agent': os.environ['UA'],
-                  'files': [{'file': 'osm-named-london.geojson', 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest(),
-                             'retrieved_at': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'),
-                             'source': 'OpenStreetMap, Greater London (Geofabrik), named features whose name looks like a farm, play centre, green space or landmark; any tags',
-                             'source_url': 'https://download.geofabrik.de/europe/united-kingdom/england/greater-london-latest.osm.pbf',
-                             'licence': 'ODbL-1.0', 'licence_url': 'https://opendatacommons.org/licenses/odbl/1-0/',
-                             'attribution': '© OpenStreetMap contributors', 'attribution_url': 'https://www.openstreetmap.org/copyright'}]}
-          json.dump(prov, open('out/PROVENANCE.json', 'w'), indent=2)
-          PY
-          printf '%s\n' "OpenStreetMap data: © OpenStreetMap contributors, Open Database Licence 1.0 (https://www.openstreetmap.org/copyright)." "A diagnostic subset for FamilyPilot's catalogue-recovery dry run. Not for production use. See PROVENANCE.json." > out/NOTICE.txt
-          mkdir pub && gzip -9 -c out/osm-named-london.geojson > pub/osm-named-london.geojson.gz && cp out/PROVENANCE.json out/NOTICE.txt pub/
-          echo "Throwaway branch. OpenStreetMap data; never merged. See NOTICE.txt and PROVENANCE.json." > pub/README.md
+          mkdir pub && cp out/PROVENANCE.json out/NOTICE.txt out/osm-family-regions.geojson.gz pub/
+          echo "Throwaway branch. OpenStreetMap data reduced by tag; never merged. See NOTICE.txt and PROVENANCE.json." > pub/README.md
           cd pub
-          git init -q -b data/open-data-inputs-diagnostic
+          git init -q -b data/open-data-inputs-regions-2
           git config user.name "open-data-fetch"
           git config user.email "actions@users.noreply.github.com"
           git add -A
-          git commit -q -m "OpenStreetMap, Greater London, named features that look relevant, with licence and provenance"
+          git commit -q -m "OpenStreetMap, London and home counties, filtered by tag, with licence and provenance"
           git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git push -q -f origin data/open-data-inputs-diagnostic
+          git push -q -f origin data/open-data-inputs-regions-2
           ls -l
