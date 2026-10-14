@@ -1,0 +1,23 @@
+# One-off licence-review fetch, third pass. NOT scheduled, NOT dispatchable, NOT run on pull requests. Runs only when the throwaway branch
+# `data/open-data-fetch` is pushed with a change under legal-fetch2/. GET requests only, a descriptive User-Agent, no secret, no database, no Google API.
+# Prints the primary texts to the job log; nothing is stored.
+name: Licence review fetch, pass 3 (one-off)
+
+on:
+  push:
+    branches: [data/open-data-fetch]
+    paths:
+      - .github/workflows/legal-fetch2.yml
+      - legal-fetch2/**
+
+permissions:
+  contents: read
+
+jobs:
+  texts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet requests beautifulsoup4 lxml
+      - run: python legal-fetch2/pass3.py
