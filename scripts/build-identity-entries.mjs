@@ -27,9 +27,9 @@ const { problemWith } = require('../server/places/lib/independent-identities.js'
 
 /** [group, subtype] -> catalogue category. A subtype not listed falls back to the group's default; no default means "not served". */
 export const CATEGORY_RULES = {
-  parks: { default: 'park' },
+  parks: { default: 'park' }, // park, nature_reserve, recreation_ground, garden and playground are all `park` in the catalogue
   museums: { default: 'museum' },
-  animals: { petting_zoo: 'farm', zoo: 'zoo', wildlife_park: 'zoo', aquarium: 'attraction', animal_attraction: 'attraction' },
+  animals: { city_farm: 'farm', farmyard: 'farm', petting_zoo: 'farm', zoo: 'zoo', wildlife_park: 'zoo', aquarium: 'attraction', animal_attraction: 'attraction' },
   play: { trampoline_park: 'activity', indoor_play: 'activity' },
   attractions: { attraction: 'attraction', theme_park: 'attraction', water_park: 'attraction', ice_rink: 'activity', miniature_golf: 'activity', bowling_alley: 'activity' },
 };

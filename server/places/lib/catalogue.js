@@ -121,13 +121,24 @@ function withinLondon(places) {
 /**
  * The live places first (they are the freshest), then every stored place the live result does not already contain.
  * Keyed by FamilyPilot id, so a venue present in both is served once, from the live copy.
+ *
+ * `limit` bounds the live and Google-stored places, as it always did. It does NOT bound independently held places (independent-identities.js):
+ * those are a reviewed list whose size is a decision, not a payload accident, and a cap of 160 would silently serve the first 160 of
+ * thousands the day the Google rows leave. (3,623 of them are 1.2 MB, about 134 KB compressed.)
  */
 function mergeCatalogue(livePlaces, storedPlaces, limit = 160) {
   const merged = new Map();
   for (const place of livePlaces) merged.set(place.familypilotId, place);
+  let counted = merged.size;
   for (const place of storedPlaces) {
-    if (merged.size >= limit) break;
-    if (!merged.has(place.familypilotId)) merged.set(place.familypilotId, place);
+    if (merged.has(place.familypilotId)) continue;
+    if (place.independentSource) {
+      merged.set(place.familypilotId, place);
+      continue;
+    }
+    if (counted >= limit) continue;
+    merged.set(place.familypilotId, place);
+    counted += 1;
   }
   return [...merged.values()];
 }

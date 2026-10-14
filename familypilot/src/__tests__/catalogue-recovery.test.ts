@@ -524,3 +524,33 @@ describe('turning dry-run candidates into registry entries', () => {
     expect(entryFromCandidate(candidate({ website: null }), batch).website).toBeUndefined();
   });
 });
+
+
+describe('the merged list is not cut at 160 when it holds independently held places', () => {
+  const { mergeCatalogue } = require_(cataloguePath);
+  const google = (n: number) => Array.from({ length: n }, (_, i) => ({ familypilotId: `fp-google-${i}`, provider: 'google', name: `G${i}` }));
+  const independent = (n: number) => Array.from({ length: n }, (_, i) => ({ familypilotId: `fp-osm-${i}`, provider: 'osm', name: `O${i}`, independentSource: 'osm' }));
+
+  it('without independent places it behaves exactly as before: live first, then stored, 160 in all', () => {
+    const merged = mergeCatalogue(google(20).map((p) => ({ ...p, familypilotId: `live-${p.familypilotId}` })), google(300));
+    expect(merged).toHaveLength(160);
+    expect(merged.slice(0, 20).every((p: { familypilotId: string }) => p.familypilotId.startsWith('live-'))).toBe(true);
+  });
+
+  it('the cap applies to live and Google-stored places; every independent place is kept', () => {
+    const merged = mergeCatalogue(google(20).map((p) => ({ ...p, familypilotId: `live-${p.familypilotId}` })), [...google(300), ...independent(500)]);
+    expect(merged.filter((p: { independentSource?: string }) => !p.independentSource)).toHaveLength(160);
+    expect(merged.filter((p: { independentSource?: string }) => p.independentSource)).toHaveLength(500);
+  });
+
+  it('once the Google rows have gone, all of them are served, not the first 160', () => {
+    expect(mergeCatalogue([], independent(3623))).toHaveLength(3623);
+  });
+
+  it('a venue present live and as an independent place is served once, from the live copy', () => {
+    const live = [{ familypilotId: 'fp-google-A', provider: 'google', name: 'Live' }];
+    const merged = mergeCatalogue(live, [{ familypilotId: 'fp-google-A', provider: 'osm', name: 'OSM', independentSource: 'osm' }]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0].name).toBe('Live');
+  });
+});
