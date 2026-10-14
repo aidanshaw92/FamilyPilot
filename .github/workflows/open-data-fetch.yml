@@ -16,38 +16,32 @@ permissions:
   contents: read
 
 jobs:
-  probe:
+  discover:
+    # Header-only look at what Geofabrik and the OS downloads API actually publish for London. Nothing large is downloaded.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Can this runner reach each approved host? (headers and tiny requests only; nothing large is downloaded)
+      - name: Geofabrik index and OS download listing, filtered to London
         run: |
-          UA="FamilyPilot-open-data-probe/1.0 (+https://github.com/aidanshaw92/FamilyPilot)"
-          show() { echo; echo "### $1"; }
-          head_of() { curl -sSI -L --max-time 40 -A "$UA" "$1" | grep -iE '^(HTTP/|content-length|content-type|last-modified|location|etag)' || echo "NO RESPONSE"; }
-
-          show "Geofabrik: Greater London extract (headers only)"
-          head_of "https://download.geofabrik.de/europe/great-britain/england/greater-london-latest.osm.pbf"
-          show "Geofabrik: its md5 (tiny)"
-          curl -sS --max-time 30 -A "$UA" "https://download.geofabrik.de/europe/great-britain/england/greater-london-latest.osm.pbf.md5" || echo "NO RESPONSE"
-
-          show "OS Data Hub: OpenData downloads API, OS Open Greenspace listing (JSON, no key)"
-          curl -sS --max-time 40 -A "$UA" -w '\nHTTP %{http_code}\n' "https://api.os.uk/downloads/v1/products/OpenGreenspace/downloads" | head -c 6000 || echo "NO RESPONSE"
-
-          show "Wikidata query service: a one-row query"
-          curl -sS --max-time 40 -A "$UA" -H 'Accept: application/sparql-results+json' -w '\nHTTP %{http_code}\n' \
-            --get --data-urlencode 'query=SELECT ?item WHERE { ?item wdt:P31 wd:Q33506 . ?item wdt:P131* wd:Q23306 } LIMIT 1' \
-            "https://query.wikidata.org/sparql" | head -c 1500 || echo "NO RESPONSE"
-
-          show "postcodes.io: one public landmark postcode"
-          curl -sS --max-time 30 -A "$UA" -w '\nHTTP %{http_code}\n' "https://api.postcodes.io/postcodes/SW1A1AA" | head -c 800 || echo "NO RESPONSE"
-
-          show "Licence texts (headers only)"
-          for url in \
-            "https://opendatacommons.org/licenses/odbl/1-0/" \
-            "https://www.openstreetmap.org/copyright" \
-            "https://wiki.osmfoundation.org/wiki/Licence/Community_Guidelines" \
-            "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" \
-            "https://www.ordnancesurvey.co.uk/products/os-open-greenspace" ; do
-            echo "-- $url"; head_of "$url" | head -3
-          done
+          UA="FamilyPilot-open-data/1.0 (+https://github.com/aidanshaw92/FamilyPilot)"
+          echo "### Geofabrik extracts whose id or name mentions London"
+          curl -sS --max-time 60 -A "$UA" https://download.geofabrik.de/index-v1-nogeom.json -o index.json
+          python3 - <<'PY'
+          import json
+          idx = json.load(open('index.json'))
+          for f in idx['features']:
+              p = f['properties']
+              if 'london' in (p.get('id','') + p.get('name','')).lower() or p.get('id') in ('england','greater-london'):
+                  print(p.get('id'), '|', p.get('name'), '| parent', p.get('parent'), '|', json.dumps(p.get('urls')))
+          PY
+          echo
+          echo "### OS Open Greenspace: every download for areas TQ and TL (London is TQ, with a little in TL), and the formats offered"
+          curl -sS --max-time 60 -A "$UA" https://api.os.uk/downloads/v1/products/OpenGreenspace/downloads -o os.json
+          python3 - <<'PY'
+          import json
+          rows = json.load(open('os.json'))
+          print('total entries', len(rows), 'formats', sorted({r['format'] for r in rows}))
+          for r in rows:
+              if r['area'] in ('TQ','TL','GB'):
+                  print(r['area'], '|', r['format'], '|', r['fileName'], '|', r['size'], 'bytes | md5', r['md5'])
+          PY
