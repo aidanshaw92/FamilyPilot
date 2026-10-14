@@ -235,5 +235,13 @@ describe('the catalogue after Google rows age out, with open-licence entries', (
     expect(switched.total).toBe(1);
     expect(switched.byCategory).toEqual({ park: 1 });
   });
+
+  it('shows whose data a venue is on the page itself, not only inside the collapsed "More about this place"', () => {
+    const src = readFileSync(join(root, 'familypilot/app/venue/[id].tsx'), 'utf8');
+    const uses = [...src.matchAll(/<PlaceAttribution\b/g)];
+    expect(uses).toHaveLength(1);
+    // The one use comes after the evidence block, which is outside the `moreOpen` branch, so a parent sees the credit without opening anything.
+    expect(src.indexOf('<PlaceAttribution')).toBeGreaterThan(src.indexOf('<EvidenceSection'));
+  });
 });
 
