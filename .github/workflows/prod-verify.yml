@@ -1,0 +1,28 @@
+# One-off, read-only check of the production site after #207 (map compliance). NOT scheduled, NOT dispatchable, NOT run on pull requests.
+# Runs only when the throwaway branch `data/open-data-fetch` is pushed with a change under prod-verify/. GET requests only, no secret, no database,
+# no Google. It exists because the coding session's network policy cannot reach the production site.
+name: Production verify (one-off)
+
+on:
+  push:
+    branches: [data/open-data-fetch]
+    paths:
+      - .github/workflows/prod-verify.yml
+      - prod-verify/**
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Playwright library only (the runner's own Chrome is used)
+        run: npm install --no-save --prefix prod-verify playwright@1.55.0
+      - name: Visit production, read only
+        run: NODE_PATH=prod-verify/node_modules node prod-verify/verify.mjs
