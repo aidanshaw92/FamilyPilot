@@ -12,7 +12,7 @@ const html = await (await fetch(BASE + '/', { headers: { 'user-agent': 'FamilyPi
 const scripts = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => m[1]);
 say('scripts', scripts);
 const home = await fetch(BASE + '/');
-say('headers', Object.fromEntries(['x-vercel-id', 'x-vercel-cache', 'age', 'date', 'etag', 'last-modified'].map((h) => [h, home.headers.get(h)])));
+say('headers', Object.fromEntries([...home.headers.entries()].filter(([k]) => /^x-vercel|^age$|^date$|^etag$|^last-modified$|^server$/i.test(k))));
 let marker = { halfwayMapOff: 0, mapOffMessage: 0, bundleBytes: 0 };
 for (const s of scripts) {
   const js = await (await fetch(new URL(s, BASE))).text();
@@ -29,6 +29,7 @@ say('bundleMarkers', marker);
   let body = null; try { body = await r.json(); } catch { /* not json */ }
   const places = body?.places ?? [];
   const providers = {}; for (const p of places) providers[p.provider] = (providers[p.provider] ?? 0) + 1;
+  say('betweenHeaders', Object.fromEntries([...r.headers.entries()].filter(([k]) => /^x-vercel|^cache-control$|^age$/i.test(k))));
   say('betweenEndpoint', { status: r.status, places: places.length, providers, googleCalls: body?.googleCalls, considered: body?.considered, keys: body ? Object.keys(body) : null });
 }
 if (process.env.SKIP_BROWSER === '1') { console.log('DONE'); process.exit(0); }

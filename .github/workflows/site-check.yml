@@ -1,0 +1,23 @@
+# One-off: fetch each listed venue's own front page once and check that it names the venue. NOT scheduled, NOT dispatchable, NOT run on pull requests.
+# Runs only when the throwaway branch `data/open-data-fetch` is pushed with a change under site-check/. GET only, robots.txt honoured, an identifying
+# User-Agent, two seconds between requests, no secret, no database, no Google. The session's network refuses these hosts; the runner is an existing, authorised environment.
+name: Venue site check (one-off)
+
+on:
+  push:
+    branches: [data/open-data-fetch]
+    paths:
+      - .github/workflows/site-check.yml
+      - site-check/**
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet requests beautifulsoup4 lxml
+      - run: python site-check/check.py
