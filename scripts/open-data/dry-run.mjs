@@ -225,15 +225,18 @@ function summarise({ candidates, links, rejected, stored, seed }) {
   // One of each outcome the report can show, for the ten-row sample.
   const sample = [];
   const take = (label, row) => { if (row && sample.length < 10 && !sample.find((s) => s.row === row)) sample.push({ label, row }); };
+  // Nearest the centre first: a person reviewing should see places the app's families will actually be shown, not whichever the file listed first.
+  const nearest = (list) => [...list].sort((a, b) => haversineKm(LONDON_CENTRE.lat, LONDON_CENTRE.lng, a.lat, a.lng) - haversineKm(LONDON_CENTRE.lat, LONDON_CENTRE.lng, b.lat, b.lng));
+  const firstOf = (list, test) => nearest(list).find(test);
   // The unusual outcomes first, so the sample shows them; then one new place per group; then anything else.
-  take('linked to a stored place', candidates.find((c) => c._linked));
-  take('park with a mapped playground inside', candidates.find((c) => c._playgroundInside === true));
-  take('park with no mapped playground found (not confirmed)', candidates.find((c) => c._playgroundInside === false));
-  take('trampoline park', candidates.find((c) => c.subtype === 'trampoline_park'));
-  take('with source-stated facts', candidates.find((c) => Object.keys(c._facts).length > 0));
-  take('indoor play, soft play not confirmed', candidates.find((c) => c.subtype === 'indoor_play'));
-  for (const g of groups) take(`new, ${g}`, newOnes.find((c) => c.group_id === g));
-  for (const c of newOnes) take('another new place', c);
+  take('linked to a stored place', firstOf(candidates, (c) => c._linked));
+  take('park with a mapped playground inside', firstOf(candidates, (c) => c._playgroundInside === true));
+  take('park with no mapped playground found (not confirmed)', firstOf(candidates, (c) => c._playgroundInside === false));
+  take('trampoline park', firstOf(candidates, (c) => c.subtype === 'trampoline_park'));
+  take('with source-stated facts', firstOf(candidates, (c) => Object.keys(c._facts).length > 0));
+  take('indoor play, soft play not confirmed', firstOf(candidates, (c) => c.subtype === 'indoor_play'));
+  for (const g of groups) take(`new, ${g}`, firstOf(newOnes, (c) => c.group_id === g));
+  for (const c of nearest(newOnes)) take('another new place', c);
   return { total: candidates.length, new: newOnes.length, linked: links.length, needsReview: links.filter((l) => l.needs_review).length, rejected: rejected.length, rejectedByGate, storedByGroup, byGroup, byArea, factCoverage, parksWithPlaygroundAnswer: { yes: parks.filter((p) => p._playgroundInside === true).length, no: parks.filter((p) => p._playgroundInside === false).length, unknown: parks.filter((p) => p._playgroundInside === null).length }, spot, sample };
 }
 

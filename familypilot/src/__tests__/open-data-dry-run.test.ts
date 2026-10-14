@@ -412,6 +412,16 @@ describe('calibration from the first real extract', () => {
     expect(names(wide)).toEqual(['Near Museum', 'Reading Museum Fixture']);
   });
 
+  it('the review sample shows the place nearest the centre, not whichever the file listed first', () => {
+    // The far one is listed first and is inside the 40 km scope; the sample must still lead with the one a family in the centre would see.
+    const r = run([
+      point('n1', { name: 'Far Museum Fixture', tourism: 'museum' }, 51.62, -0.45),
+      point('n2', { name: 'Central Museum Fixture', tourism: 'museum' }, 51.508, -0.128),
+    ]);
+    const museum = r.stats.sample.find((s: any) => s.label === 'new, museums');
+    expect(museum.row.name).toBe('Central Museum Fixture');
+  });
+
   it('a place we already hold is not judged by the gate: it has proved it is a destination', () => {
     const stored = [{ id: 'fp-google-F', name: 'Frameless', category: 'attraction', lat: 51.5001, lng: -0.1001 }];
     const r = run([point('n1', { name: 'Frameless', tourism: 'gallery' }, 51.5, -0.1)], stored);
