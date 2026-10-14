@@ -169,7 +169,8 @@ console.log('Meet halfway under the switch');
   check((await page.getByRole('tab').count()) === 0, 'the navigation steps aside for the edit sheet');
   await page.getByTestId('halfway-edit-done').click(); await settle(page, 800);
   check((await page.getByRole('tab').count()) === 5, 'and returns when it closes');
-  await page.getByTestId('halfway-mode-list').click(); await settle(page, 800);
+  // These are Google places, which are never drawn on the app's own map (src/utils/map-compliance.ts): the screen is the list, with no toggle.
+  check((await page.getByTestId('halfway-mode-list').count()) === 0 && (await page.getByTestId('halfway-map-off').count()) === 1, 'Google places get the list and no Map/List toggle');
   check((await page.getByTestId('halfway-list').count()) === 1, 'the list view works');
   await ctx.close();
 }

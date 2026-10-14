@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "source": "official-site",
+  "licence": "venue-website",
+  "_comment": "Facts read from a venue's own pages. No OpenStreetMap or Google content. Empty until a reviewed set is approved. See docs/P0_CATALOGUE_RECOVERY.md.",
+  "entries": []
+}

@@ -12,6 +12,7 @@
  * Usage: node scripts/verify-halfway-handoff.mjs [baseUrl] [shotDir]
  */
 import { chromium } from 'playwright';
+import { routeBetweenAs } from './lib/place-provider.mjs';
 import { existsSync, mkdirSync } from 'node:fs';
 
 const BASE = process.argv[2] ?? 'http://localhost:4175';
@@ -31,6 +32,8 @@ const browser = await chromium.launch({ headless: true, ...(existsSync('/opt/pw-
 async function open(now, remembered) {
   const ctx = await browser.newContext({ viewport: { width: 393, height: 852 }, hasTouch: true, timezoneId: 'Europe/London' });
   const page = await ctx.newPage();
+  // Google places are never drawn on the app's own map (utils/map-compliance.ts); this is about the date handoff on the map screen, so serve independent places.
+  await routeBetweenAs(page, 'osm');
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.clock.setFixedTime(new Date(now));

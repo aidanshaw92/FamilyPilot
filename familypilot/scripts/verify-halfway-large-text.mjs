@@ -21,6 +21,7 @@
  * Usage: node scripts/verify-halfway-large-text.mjs <baseUrl> <outDir> [scale ...]   (default 1.35 1.9 2.35)
  */
 import { chromium } from 'playwright';
+import { asProvider } from './lib/place-provider.mjs';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,7 +33,8 @@ const OUT = process.argv[3] ?? '/tmp/halfway-large-text';
 const SCALES = (process.argv.slice(4).length ? process.argv.slice(4) : ['1.35', '1.9', '2.35']).map(Number);
 const SIZES = [{ tag: '393', width: 393, height: 852, insets: { top: 47, bottom: 34 } }, { tag: '375', width: 375, height: 667, insets: { top: 20, bottom: 0 } }];
 mkdirSync(OUT, { recursive: true });
-const PLACES = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'halfway-figma-places.json'), 'utf8'));
+// Served as independently located places: a Google place is never drawn on the app's own map, and this checks the map's layout (see lib/place-provider.mjs).
+const PLACES = asProvider(JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'halfway-figma-places.json'), 'utf8')), 'osm');
 
 const PROFILE = {
   id: 'family-lt', parentName: 'Aidan', familyName: 'Shaw',

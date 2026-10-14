@@ -12,6 +12,7 @@
  * usage: node scripts/capture-decision-completion.mjs [baseUrl] [outDir]
  */
 import { chromium } from 'playwright';
+import { routeBetweenAs } from './lib/place-provider.mjs';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
@@ -46,6 +47,7 @@ async function phone(width, seeded = true) {
     return route.continue();
   });
   const page = await context.newPage();
+  await routeBetweenAs(page, 'osm'); // a Google place is never drawn on the app's own map (utils/map-compliance.ts); these captures are of the map's layout
   await page.clock.setFixedTime(NOW);
   if (seeded) {
     await page.addInitScript(({ profile, guest }) => {
