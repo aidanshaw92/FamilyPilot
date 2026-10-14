@@ -16,6 +16,8 @@
 import { chromium } from 'playwright';
 import { existsSync, readFileSync } from 'node:fs';
 
+import { routeBetweenAs } from './lib/place-provider.mjs';
+
 const BASE = process.argv[2] ?? 'http://localhost:4175';
 const ROWS = JSON.parse(readFileSync(process.argv[3] ?? '/tmp/claude-0/ux/real-catalogue.json', 'utf8'));
 const REAL_IDS = new Set(ROWS.map((r) => r.familypilot_place_id));
@@ -38,6 +40,10 @@ async function run(label, today) {
   console.log(`\n${label} (${today})`);
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, hasTouch: true, timezoneId: 'Europe/London' });
   const page = await ctx.newPage();
+  // The stored rows are Google rows, which are never drawn on the app's own map (utils/map-compliance.ts). This script is about the map's
+  // behaviour on real geography and real hours, so it serves the same rows labelled as independently located. What the real rows do
+  // under the rule (a list, no map) is run by verify-map-compliance.mjs and shown in docs/MAP_COMPLIANCE.md.
+  await routeBetweenAs(page, 'osm', { placesOnly: true });
   await page.clock.setFixedTime(new Date(`${today}T07:00:00`));
   const outside = []; const google = []; const between = [];
   page.on('request', (r) => { const u = new URL(r.url()); if (/googleapis|maps\.google/i.test(r.url())) google.push(r.url()); if (u.origin !== BASE && !r.url().startsWith('data:')) outside.push(r.url()); });

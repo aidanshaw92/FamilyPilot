@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "source": "osm",
+  "licence": "ODbL-1.0",
+  "_comment": "OpenStreetMap contributors. Entries here are an extraction from OpenStreetMap and are offered under the ODbL; see docs/OSM_LICENCE_REVIEW.md. Empty until a reviewed set is approved. See docs/P0_CATALOGUE_RECOVERY.md.",
+  "entries": []
+}

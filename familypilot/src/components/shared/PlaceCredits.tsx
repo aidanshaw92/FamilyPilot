@@ -56,9 +56,9 @@ export function PlaceCredits({
             accessibilityLabel="Map data from OpenStreetMap contributors, opens the licence"
             testID="place-credits-osm"
             hitSlop={8}
-            style={minTarget(16)}
+            style={[minTarget(16), styles.osmLink]}
           >
-            <Text variant="caption" color={ATTRIBUTION_INK}>
+            <Text variant="caption" color={ATTRIBUTION_INK} style={styles.osmText}>
               {OSM_CREDIT}
             </Text>
           </Pressable>
@@ -76,4 +76,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
+  // At the largest text sizes the credit is wider than a phone; it wraps inside the screen rather than running off it.
+  osmLink: { maxWidth: '100%' },
+  osmText: { textAlign: 'center', flexShrink: 1 },
 });

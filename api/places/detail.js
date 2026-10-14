@@ -2,6 +2,7 @@ const { getGooglePlace } = require('../../server/places/lib/google-places');
 const { MOCK_FALLBACK } = require('../../server/places/lib/fallback');
 const { getCanonicalIdentity, resolvePrimaryPlaceId } = require('../../server/places/lib/canonical-venues');
 const { getPlaceRecord } = require('../../server/enrichment/_lib/enrichment-store');
+const { independentPlaceFor, cutoverCategories } = require('../../server/places/lib/independent-identities');
 const {
   isPlacesEnabled,
   describeScope,
@@ -104,6 +105,11 @@ module.exports = async function handler(req, res) {
   let servedFromStore = false;
   let storedAgeDays = null;
 
+  // A venue we hold independently (independent-identities.js): its name and position come from a source that is not Google, so it
+  // needs no Google copy. It is used only when no Google copy may still be served, so a fresh Google row is never replaced by it, and
+  // a venue whose copy has aged out is shown with what we hold rather than costing a Place Details request or failing.
+  const independent = independentPlaceFor(lookupId);
+
   if (configuredProvider === 'google' && lookupId.startsWith('fp-google-')) {
     let stored = null;
     try {
@@ -116,12 +122,22 @@ module.exports = async function handler(req, res) {
     const storedIsServable = Boolean(stored) && storedAge < STORED_MAX_DAYS;
     const storedIsFresh = storedIsServable && storedAge < STORED_FRESH_DAYS;
 
-    if (storedIsFresh) {
+    // A category that has been switched over is served from the independent entry even while a Google copy is fresh.
+    const switchedOver = Boolean(independent && stored && cutoverCategories().has(stored.category));
+    if (switchedOver) {
+      detail = { place: independent, metadata: null };
+      provider = independent.provider;
+      servedFromStore = true;
+    } else if (storedIsFresh) {
       // The whole point of the change: no Google request on the common path.
       detail = { place: stored, metadata: null };
       provider = 'google';
       servedFromStore = true;
       storedAgeDays = Number(storedAge.toFixed(2));
+    } else if (independent && !storedIsServable) {
+      detail = { place: independent, metadata: null };
+      provider = independent.provider;
+      servedFromStore = true;
     } else {
       try {
         const place = await getGooglePlace(lookupId, { reason: 'venue_detail_open' });
@@ -157,6 +173,12 @@ module.exports = async function handler(req, res) {
         }
       }
     }
+  }
+
+  if (!detail && independent) {
+    detail = { place: independent, metadata: null };
+    provider = independent.provider;
+    servedFromStore = true;
   }
 
   if (!detail) {
