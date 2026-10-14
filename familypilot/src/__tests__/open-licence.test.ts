@@ -516,3 +516,17 @@ describe('an open-licence place becomes a venue like any other', () => {
     }
   });
 });
+
+describe('the registry folder carries its licence notice', () => {
+  const notice = readFileSync(join(root, 'server/places/data/identities/NOTICE.md'), 'utf8');
+
+  it('names every file and the licence it carries, and the ODbL notice for the OpenStreetMap file', () => {
+    for (const needle of ['osm.json', 'os-greenspace.json', 'wikidata.json', 'official-site.json', 'ODbL', 'Open Government Licence v3.0', 'CC0 1.0', '© OpenStreetMap contributors', 'Contains OS data © Crown copyright and database right']) {
+      expect(notice, needle).toContain(needle);
+    }
+  });
+
+  it('says no Google field may be in the OpenStreetMap file', () => {
+    expect(notice).toMatch(/No Google field is, or may be, in this file/);
+  });
+});

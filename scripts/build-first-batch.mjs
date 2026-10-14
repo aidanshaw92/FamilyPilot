@@ -67,10 +67,10 @@ export function buildFirstBatch({ osm, open, stored, version, seed = 7 }) {
   const B = buildBatches({ ...osm, stored, excludeStoredIds: aStoredIds, excludeNear: aPlaces, target: osm.target ?? 120, seed, budget: osm.budget ?? { activity: 0.3, attraction: 0.25, farm: 0.05, zoo: 0.05, museum: 0.15, park: 0.2 } });
 
   // ---- normalised records, for the sample and the tables
-  const aCont = A.rows.map((r, i) => ({ tranche: 'A', kind: 'continuity', ref: `A1-${String(i + 1).padStart(2, '0')}`, entryId: idOf(r.candidate), name: r.candidate.name, category: r.candidate.category, area: areaOf(r.candidate.lat, r.candidate.lng), source: r.candidate.source, link: sourceUrlOf(r.candidate), storedCategory: r.stored.category, sim: r.sim, distance: r.inside ? 'inside the polygon' : `${r.distanceM} m`, flags: r.flags, signals: [] }));
-  const aNew = A.picked.map((p, i) => ({ tranche: 'A', kind: 'new', ref: `A2-${String(i + 1).padStart(3, '0')}`, entryId: idOf(p.c), name: p.c.name, category: p.category, area: p.area, source: p.c.source, link: sourceUrlOf(p.c), signals: p.signals, flags: p.flags }));
-  const bCont = B.batch1.map((r, i) => ({ tranche: 'B', kind: 'continuity', ref: `B1-${String(i + 1).padStart(2, '0')}`, entryId: r.candidate.familypilot_place_id, name: r.candidate.name, category: r.category, area: areaOf(r.candidate.lat, r.candidate.lng), source: 'osm', link: osmUrl(r.candidate), storedCategory: r.storedCategory, sim: r.nameSimilarity, distance: `${r.distanceM} m`, flags: r.flags, signals: [] }));
-  const bNew = B.picked.map((p, i) => ({ tranche: 'B', kind: 'new', ref: `B2-${String(i + 1).padStart(3, '0')}`, entryId: p.c.familypilot_place_id, name: p.c.name, category: p.category, area: p.area, source: 'osm', link: osmUrl(p.c), signals: p.signals, flags: p.flags }));
+  const aCont = A.rows.map((r, i) => ({ tranche: 'A', kind: 'continuity', ref: `A1-${String(i + 1).padStart(2, '0')}`, entryId: idOf(r.candidate), name: r.candidate.name, category: r.candidate.category, area: areaOf(r.candidate.lat, r.candidate.lng), lat: r.candidate.lat, lng: r.candidate.lng, source: r.candidate.source, link: sourceUrlOf(r.candidate), storedCategory: r.stored.category, sim: r.sim, distance: r.inside ? 'inside the polygon' : `${r.distanceM} m`, flags: r.flags, signals: [] }));
+  const aNew = A.picked.map((p, i) => ({ tranche: 'A', kind: 'new', ref: `A2-${String(i + 1).padStart(3, '0')}`, entryId: idOf(p.c), name: p.c.name, category: p.category, area: p.area, lat: p.c.lat, lng: p.c.lng, source: p.c.source, link: sourceUrlOf(p.c), signals: p.signals, flags: p.flags }));
+  const bCont = B.batch1.map((r, i) => ({ tranche: 'B', kind: 'continuity', ref: `B1-${String(i + 1).padStart(2, '0')}`, entryId: r.candidate.familypilot_place_id, name: r.candidate.name, category: r.category, area: areaOf(r.candidate.lat, r.candidate.lng), lat: r.candidate.lat, lng: r.candidate.lng, source: 'osm', link: osmUrl(r.candidate), storedCategory: r.storedCategory, sim: r.nameSimilarity, distance: `${r.distanceM} m`, flags: r.flags, signals: [] }));
+  const bNew = B.picked.map((p, i) => ({ tranche: 'B', kind: 'new', ref: `B2-${String(i + 1).padStart(3, '0')}`, entryId: p.c.familypilot_place_id, name: p.c.name, category: p.category, area: p.area, lat: p.c.lat, lng: p.c.lng, source: 'osm', link: osmUrl(p.c), signals: p.signals, flags: p.flags }));
 
   // ---- the sample of 20: five from each of the four groups, so one review covers both tranches and both kinds
   const groups = [aCont, aNew, bCont, bNew];
@@ -136,13 +136,15 @@ export function renderReview(r) {
   L.push('', '(Each category cell reads "tranche A / tranche A and B".)', '');
 
   L.push('## Your sample: 20 records, drawn at random by category and area', '');
-  L.push('Five from each of: A continuing, A new, B continuing, B new. For each, open the link and check three things: **is it the right place, is the category right, would you be content to see it in Explore?** Tick if yes. If two or more fail, reject the tranche; a single failure is a gate to tighten, and I will do that and redraw.', '');
+  L.push('Five from each of: A continuing, A new, B continuing, B new. For each, open **where it is** (a street map, used only as a viewer) and the record, and check three things: **is it the right place, is the category right, would you be content to see it in Explore?** Tick if yes. If two or more fail, reject the tranche; a single failure is a gate to tighten, and I will do that and redraw.', '');
   for (const g of ['A', 'B']) for (const kind of ['continuity', 'new']) {
     const rs = r.sample.filter((x) => x.tranche === g && x.kind === kind);
     L.push(`### Tranche ${g}, ${kind === 'continuity' ? 'continuing a venue we hold' : 'new'}${g === 'B' ? ' (held; ODbL)' : ''}`, '');
     for (const x of rs) {
       const evidence = kind === 'continuity' ? `name similarity ${x.sim}, ${x.distance}${x.flags.length ? `, **${x.flags.join('; ')}**` : ''}` : `${x.signals.join('; ')}${x.flags.length ? `. **${x.flags.join('; ')}**` : ''}`;
-      L.push(`- [ ] **${x.name}** · ${LABEL[x.category] ?? x.category} · ${AREA_LABEL[x.area]} · [${x.source === 'os-greenspace' ? 'OS' : x.source === 'wikidata' ? 'Wikidata' : 'OpenStreetMap'} record](${x.link}) · ref ${x.ref}: ${evidence}`);
+      const where = `https://www.openstreetmap.org/?mlat=${x.lat}&mlon=${x.lng}#map=17/${x.lat}/${x.lng}`;
+      const record = x.source === 'os-greenspace' ? 'OS Open Greenspace (no page per record)' : `[${x.source === 'wikidata' ? 'Wikidata' : 'OpenStreetMap'} record](${x.link})`;
+      L.push(`- [ ] **${x.name}** · ${LABEL[x.category] ?? x.category} · ${AREA_LABEL[x.area]} · [where it is](${where}) · ${record} · ref ${x.ref}: ${evidence}`);
     }
     L.push('');
   }
@@ -178,7 +180,7 @@ export function writeFirstBatch(out, r, { privateOut }) {
   writeOpenLicenceOutputs(join(out, 'A'), r.A, { privateOut: privateOut && join(privateOut, 'A') });
   writeOsm(join(out, 'B'), r.B, { version: r.version, privateOut: privateOut && join(privateOut, 'B') });
   writeFileSync(join(out, 'coverage.json'), JSON.stringify(r.coverage, null, 2));
-  writeFileSync(join(out, 'sample-20.json'), JSON.stringify(r.sample.map(({ ref, tranche, kind, name, category, area, source, link }) => ({ ref, tranche, kind, name, category, area, source, link })), null, 1));
+  writeFileSync(join(out, 'sample-20.json'), JSON.stringify(r.sample.map(({ ref, tranche, kind, name, category, area, source, link, lat, lng }) => ({ ref, tranche, kind, name, category, area, source, link, lat, lng })), null, 1));
   if (privateOut) {
     mkdirSync(privateOut, { recursive: true });
     const refs = [
