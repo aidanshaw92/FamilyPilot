@@ -85,6 +85,8 @@ function problemWith(entry) {
   const { EXPLORE_CATEGORIES } = require('./catalogue');
   if (!EXPLORE_CATEGORIES.includes(entry.category)) return `category must be one of ${EXPLORE_CATEGORIES.join(', ')}`;
   if (typeof entry.reviewedBy !== 'string' || !entry.reviewedBy.trim() || !isoDate(entry.reviewedAt)) return 'an entry needs a reviewer and the date they reviewed it';
+  // Output generated for a simulation says so, and can never be served.
+  if (/^unreviewed/i.test(entry.reviewedBy.trim())) return 'reviewedBy says the entry is unreviewed';
 
   const identity = entry.identity;
   if (!onlyKeys(identity, IDENTITY_KEYS)) return 'identity has an unknown key';

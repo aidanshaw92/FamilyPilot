@@ -49,12 +49,15 @@ export function standInClient(rows) {
 export const isPlottable = (place) => (place.provider === 'osm' || place.provider === 'mock') && Number.isFinite(place.latitude) && Number.isFinite(place.longitude);
 
 /**
- * @param {{ rows: any[], entries?: any[], dates: string[], cutover?: string[] }} input  `dates` are YYYY-MM-DD, evaluated at noon UTC.
+ * @param {{ rows: any[], entries?: any[], dates: string[], cutover?: string[], countUnreviewed?: boolean }} input  `dates` are YYYY-MM-DD, evaluated at noon UTC.
  * @returns one result per date: the served counts under today's gate alone, and with the independent list, by category.
  */
-export async function simulate({ rows, entries = [], dates, cutover = [] }) {
+export async function simulate({ rows, entries = [], dates, cutover = [], countUnreviewed = false }) {
   const client = standInClient(normaliseRows(rows));
-  const valid = loadIdentities({ entries });
+  // Entries generated for a simulation say they are unreviewed, and the registry loader refuses them. To COUNT them, say so explicitly;
+  // the counted copy is used only here and nothing is served.
+  const counted = countUnreviewed ? entries.map((e) => (/^unreviewed/i.test(e.reviewedBy ?? '') ? { ...e, reviewedBy: 'counted for simulation only' } : e)) : entries;
+  const valid = loadIdentities({ entries: counted });
   const out = [];
   for (const date of dates) {
     const now = Date.parse(`${date}T12:00:00Z`);

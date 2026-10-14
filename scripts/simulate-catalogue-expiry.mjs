@@ -3,6 +3,8 @@
  * Read-only: it reads two JSON files you give it and prints a table. It touches no database, calls no provider and writes nothing.
  *
  *   node scripts/simulate-catalogue-expiry.mjs --rows rows.json [--registry entries.json] [--dates 2026-10-20,2026-11-01,2026-11-08] [--json]
+ *        [--cutover park,museum,...]  serve those categories from the entries instead of Google
+ *        [--count-unreviewed]         count entries marked UNREVIEWED (simulation output); nothing is served
  *
  * `rows.json` is an array of { id, category, lat, lng, fetched, provider } (the non-content columns of place_records).
  * `entries.json` is an array of independent entries (the `entries` of server/places/data/identities/*.json); default: the shipped files.
@@ -18,7 +20,7 @@ const flag = (name) => { const i = args.indexOf(`--${name}`); return i >= 0 ? ar
 
 const rowsPath = flag('rows');
 if (!rowsPath) {
-  console.error('usage: node scripts/simulate-catalogue-expiry.mjs --rows rows.json [--registry entries.json] [--dates a,b,c] [--json]');
+  console.error('usage: node scripts/simulate-catalogue-expiry.mjs --rows rows.json [--registry entries.json] [--dates a,b,c] [--cutover cats] [--count-unreviewed] [--json]');
   process.exit(2);
 }
 const rows = JSON.parse(readFileSync(rowsPath, 'utf8'));
@@ -28,7 +30,8 @@ const entries = registryPath
   : require('../server/places/lib/independent-identities.js').shippedEntries();
 const dates = (flag('dates') ?? '2026-10-20,2026-11-01,2026-11-08').split(',');
 
-const results = await simulate({ rows, entries, dates });
+const cutover = (flag('cutover') ?? '').split(',').filter(Boolean);
+const results = await simulate({ rows, entries, dates, cutover, countUnreviewed: args.includes('--count-unreviewed') });
 if (args.includes('--json')) {
   console.log(JSON.stringify(results, null, 2));
 } else {

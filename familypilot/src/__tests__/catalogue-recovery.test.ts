@@ -419,3 +419,95 @@ describe('the simulation reads the real reader', () => {
     expect(isPlottable({ provider: 'osm' })).toBe(false);
   });
 });
+
+
+describe('entries generated for a simulation can be counted but never served', () => {
+  const { problemWith, loadIdentities } = require_(identitiesPath);
+  const unreviewed = (over: Record<string, unknown> = {}) => entry({ reviewedBy: 'UNREVIEWED (simulation only)', ...over });
+
+  it('the registry loader refuses an entry that says it is unreviewed', () => {
+    expect(problemWith(unreviewed())).toMatch(/unreviewed/);
+    expect(loadIdentities({ entries: [unreviewed(), entry()] }).map((e: { familypilotId: string }) => e.familypilotId)).toEqual(['fp-google-A']);
+  });
+
+  it('so the catalogue never serves one', async () => {
+    const { readCatalogue } = require_(cataloguePath);
+    expect(await readCatalogue({ client: fakeClient([]), now: NOW, entries: [unreviewed()] })).toEqual([]);
+  });
+
+  it('the simulation counts them only when asked', async () => {
+    const { simulate } = await import('../../../scripts/lib/catalogue-expiry.mjs');
+    const rows = [{ id: 'fp-google-A', category: 'farm', lat: 51.532, lng: -0.067, fetched: '2026-10-09', provider: 'google' }];
+    const [off] = await simulate({ rows, entries: [unreviewed()], dates: ['2026-11-20'] });
+    const [on] = await simulate({ rows, entries: [unreviewed()], dates: ['2026-11-20'], countUnreviewed: true });
+    expect(off.total).toBe(0);
+    expect(on.total).toBe(1);
+  });
+});
+
+
+describe('turning dry-run candidates into registry entries', () => {
+  const { problemWith } = require_(identitiesPath);
+  const batch = { version: '2026-10-14' };
+  const candidate = (over: Record<string, unknown> = {}) => ({
+    familypilot_place_id: 'fp-osm-way-1', source_record_id: 'way/1@v3', name: 'Fixture Farm', group_id: 'animals', subtype: 'petting_zoo',
+    lat: 51.52, lng: -0.07, website: 'https://example.org/farm', ...over,
+  });
+  const load = () => import('../../../scripts/build-identity-entries.mjs');
+
+  it('maps the source group to a catalogue category, and never calls trampolines or indoor play soft play', async () => {
+    const { categoryFor } = await load();
+    expect(categoryFor('parks', 'playground')).toBe('park');
+    expect(categoryFor('museums', 'gallery')).toBe('museum');
+    expect(categoryFor('animals', 'petting_zoo')).toBe('farm');
+    expect(categoryFor('animals', 'zoo')).toBe('zoo');
+    expect(categoryFor('play', 'trampoline_park')).toBe('activity');
+    expect(categoryFor('play', 'indoor_play')).toBe('activity');
+    expect(categoryFor('play', 'anything')).toBeNull();
+    expect(categoryFor('nonsense', 'x')).toBeNull();
+  });
+
+  it('an entry carries only OpenStreetMap facts and says it is unreviewed unless a person is named', async () => {
+    const { entryFromCandidate } = await load();
+    const e = entryFromCandidate(candidate(), batch);
+    expect(e).toMatchObject({ familypilotId: 'fp-osm-way-1', category: 'farm', identity: { source: 'osm', url: 'https://www.openstreetmap.org/way/1', externalId: 'way/1', licence: 'ODbL-1.0' }, location: { source: 'osm', latitude: 51.52 } });
+    expect(e.reviewedBy).toMatch(/^UNREVIEWED/);
+    expect(entryFromCandidate(candidate(), batch, { reviewedBy: 'Aidan' }).reviewedBy).toBe('Aidan');
+    expect(problemWith(entryFromCandidate(candidate(), batch, { reviewedBy: 'Aidan' }))).toBeNull();
+  });
+
+  it('keeps a stored place by keying the entry with its id, only for a confident match, and once', async () => {
+    const { buildEntries } = await load();
+    const candidates = [candidate(), candidate({ familypilot_place_id: 'fp-osm-way-2', source_record_id: 'way/2@v1', name: 'Fixture Farm Two' }), candidate({ familypilot_place_id: 'fp-osm-way-3', source_record_id: 'way/3@v1', name: 'Fixture Farm Three' })];
+    const links = [
+      { open_data_place: 'fp-osm-way-1', google_place: 'fp-google-S1', match_confidence: 0.9, needs_review: false },
+      { open_data_place: 'fp-osm-way-2', google_place: 'fp-google-S1', match_confidence: 0.85, needs_review: false },
+      { open_data_place: 'fp-osm-way-3', google_place: 'fp-google-S2', match_confidence: 0.75, needs_review: true },
+    ];
+    const stored = [{ id: 'fp-google-S1', category: 'farm' }, { id: 'fp-google-S2', category: 'farm' }, { id: 'fp-google-S3', category: 'park' }];
+    const out = buildEntries({ candidates, links, batch, stored });
+    expect(out.entries.map((x: { familypilotId: string }) => x.familypilotId).sort()).toEqual(['fp-google-S1', 'fp-osm-way-2', 'fp-osm-way-3']);
+    expect(out.report).toMatchObject({ linkedConfident: 1, linkedNeedsReview: 2 });
+    expect(out.keptStoredIds).toEqual(['fp-google-S1']);
+    expect(out.keptByCategory).toEqual({ farm: 1 });
+    expect(out.storedByCategory).toEqual({ farm: 2, park: 1 });
+  });
+
+  it('drops a candidate with no served category and one the registry would refuse', async () => {
+    const { buildEntries } = await load();
+    const out = buildEntries({
+      candidates: [candidate({ group_id: 'play', subtype: 'unknown' }), candidate({ familypilot_place_id: 'fp-osm-way-9', source_record_id: 'way/9@v1', lat: 40.7, lng: -74 })],
+      links: [], batch,
+    });
+    expect(out.entries).toEqual([]);
+    expect(out.dropped.noCategory).toBe(1);
+    expect(out.dropped.invalid).toHaveLength(1);
+    expect(out.dropped.invalid[0].problem).toMatch(/outside Greater London/);
+  });
+
+  it('keeps a website only when it is https', async () => {
+    const { entryFromCandidate } = await load();
+    expect(entryFromCandidate(candidate({ website: 'http://example.org' }), batch).website).toBeUndefined();
+    expect(entryFromCandidate(candidate({ website: null }), batch).website).toBeUndefined();
+  });
+});
