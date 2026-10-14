@@ -14,13 +14,15 @@
 | Category | Held today | Tranche A | Of which continue a venue we hold |
 |---|---:|---:|---:|
 | Parks and gardens | 69 | 136 | 49 |
-| Museums and galleries | 40 | 58 | 29 |
-| Attractions | 12 | 31 | 4 |
-| Zoos and aquariums | 6 | 5 | 2 |
+| Museums and galleries | 40 | 58 | 30 |
+| Attractions | 12 | 31 | 2 |
+| Zoos and aquariums | 6 | 5 | 3 |
 | Farms | 7 | 4 | 4 |
 | Activities | 7 | 0 | 0 |
 | Soft play | 6 | 0 | 0 |
 | **All** | **147** | **234** | **88** |
+
+The last column counts each continuing entry under the category it will have, which differs from the held category for two venues: Churchill War Rooms (held as an attraction, continues as a museum) and Sea Life London Aquarium (held as an attraction, continues as a zoo or aquarium). Every one of the 234 entries is listed in `TRANCHE_A_CONTENTS.md`.
 
 **What parents lose with Tranche A alone:** 59 of the 147 venues we hold have no Tranche A successor: activities 7 (all), soft play 6 (all; none was genuine toddler soft play, see `docs/SOFT_PLAY_RECOVERY_PLAN.md`), attractions 8, museums 11, parks 20, zoos 4, farms 3. Twenty-nine of them continue only through OpenStreetMap (held) and 30 through no open source I found. Parks, museums and attractions grow; the rest shrink or go until Tranche B or the soft-play and activity work lands. This is the honest shape of the recovery, not a count to be proud of.
 
@@ -104,10 +106,12 @@ Four are in Tranche A and are in the numbers above; five are in Tranche B (held)
 
 ## What happens to saved places and plans
 
-Saved places and plans live on each parent's device (production holds none on a server). A saved place whose venue has a new listing keeps drawing from its stored copy but will not open ("Place not found"). The recommended fix, which asks the parent and never chooses for them, is in `docs/SAVED_PLACE_CONTINUITY.md`; it is separate from Tranche A and is best released with it.
+Saved places and plans live on each parent's device (production holds none on a server). A saved place whose venue has a new listing keeps drawing from its stored copy but will not open ("Place not found"). The reconnect screen (draft PR #220, separate from Tranche A, not merged) fixes that without ever choosing for the parent: it looks up today's catalogue on the device's own request (a database read, no Google), proposes at most three nearby venues that look like the saved one, and changes nothing until the parent taps "Yes, this is it". Declining, or doing nothing, leaves the saved place exactly as it was. A saved day keeps its itinerary and its original decisions; only the venue it was built from is repointed, and only after the parent confirms. If the parent had already saved the confirmed venue, they keep that row and are told so. When nothing nearby matches, the saved place says plainly that it is no longer listed and keeps its details. An unreachable catalogue never reads as "gone". Tested for saved places and for saved days in `verify-saved-reconnect.mjs`; design in `docs/SAVED_PLACE_CONTINUITY.md`. It is best released with Tranche A, and only after you have reviewed it.
+
+What the Preview demonstrated, and what it did not, is in `PREVIEW_EVIDENCE.md`.
 
 ## To release, once you approve the final batch
 
 1. You approve this batch (and any change you make to the lines above).
-2. I run `node scripts/apply-review.mjs --reviewer "<your name>" --date <date> --entries A/tranche-a.entries.UNREVIEWED.json --write`, which writes your name and the date and validates every entry first, and set the five categories in `cutover.json` in the same commit (so no Google row is served beside an independent one of the same type).
+2. I run `node scripts/apply-review.mjs --reviewer "<your name>" --date <date> --entries A/tranche-a.entries.UNREVIEWED.json --write`, which writes your name and the date and validates every entry first, and set the five categories in `cutover.json` in the same commit (so no Google row is served beside an independent one of the same type). The same commit updates the twelve unit tests that assert the identity files ship empty (they check the reviewed set instead), so CI stays green; `PREVIEW_EVIDENCE.md` lists them.
 3. The Preview is rebuilt from that commit and you check it, then production is deployed and verified before 8 November, with the one-step rollback recorded beforehand.
