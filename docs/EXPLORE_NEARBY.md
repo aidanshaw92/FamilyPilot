@@ -114,9 +114,23 @@ The older browser verifiers that touch Explore were updated for the new screen, 
 
 **What this does not prove.** These are simulated runs. Headless Chromium cannot show a real iOS location permission prompt, the real Safari toolbar, real Dynamic Type, or real touch feel. Location denial and grant were simulated by injecting the browser's geolocation answer. **A pass on a real iPhone is still required** before anyone relies on it, and a real-device check of the location prompt in particular.
 
+## iPhone review route
+
+Open the Preview (the branch's Vercel preview). It reads the stored catalogue only. Google is off outside production by design (`places-budget.js`: the master switch defaults to production only, and the usage ledger shows no preview call since 3 October), so nothing in this route can cost anything.
+
+1. **Nearby and Search all.** Open Explore. Expect "Near <your area>, Your home area" and a count such as "N places within 5 miles". Tap **Search all**: the count rises to every place loaded. Tap **Nearby** again.
+2. **Soft play search.** In Search all, type `soft play`. Expect four places whose own pages mention soft play, each saying where that comes from and that the age line is typical, not a limit. Expect a separate heading "Also: trampoline parks" with two more. Then type `trampoline`: Flip Out Canary Wharf must not be listed, because its page says it has none.
+3. **Combined filters.** Tap **Parks & playgrounds**, then **More** and choose Playground and Toilets. The count falls and a line at the end says how many places are "not checked". Then choose **Soft play & trampolines** with **Outdoor**: expect "Nothing matches all of these" and one-tap "Take off" buttons.
+4. **List and Map.** Tap **Map**. Expect a dashed ring, numbered pins and "Your area" as a circle, never a dot. Tap a pin, then **List**: same results, same filters.
+5. **Current location.** **Change**, then **My current location**. Allow: "Near you". Then **Change** again and try Don't Allow (reset under Settings, Safari, Location): it says location is off and keeps using your home area. Try a postcode in **Another area**.
+6. **Venue to Create a plan.** Open any card, **View family details**, **Create a plan**, then build the plan and read the timeline.
+
+Counts depend on the day: stored places leave Explore 30 days after they were last fetched (see `docs/FRESHNESS_DISCOVERABILITY.md` in the catalogue docs pull request).
+
 ## Known limits
 
 - **Larger text.** The category and quick-filter rows scroll sideways. At 135 to 235 per cent text the larger-text checker flags them for reaching past the right edge, as it already flags Home's "For you" rail. It finds nothing else on Explore (no clipping, overlap or small target). Wrapping the rows at larger text sizes needs the device's real font scale and a real-device check; it is a follow-up, not done here.
+- **The Map and Google's terms.** The Map draws Google Places positions on the app's own basemap. Google's Places terms (section 5.3, "No use with a non-Google map", as I read it from search summaries; I could not open the primary text) may not allow that. The Meet halfway map already does the same. Until the places carry coordinates from a source that allows it (see the open-data work), this needs a decision before merge: hide the Map in production, or accept the risk. I have not changed it.
 - **No age or price filter** until the data exists (see `docs/CATALOGUE_EXPANSION_PLAN.md`, phase C).
 - **Towns** are looked up only as postcodes, outcodes or 13 built-in towns.
 - **Coverage** is what is loaded and cached. Nearby will often be thin outside central London, and says so.
