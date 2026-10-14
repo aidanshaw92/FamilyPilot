@@ -208,7 +208,8 @@ describe('what reaches the repository', () => {
     await load();
     const { r, out, priv } = run();
     try {
-      const flagged = r.picked.filter((p: { flags?: string[] }) => p.flags?.some((f) => /possible duplicate/.test(f)));
+      const flagged = r.flagged.filter((p: { flags?: string[] }) => p.flags?.some((f) => /possible duplicate/.test(f)));
+      expect(r.picked.some((p: { flags?: string[] }) => p.flags?.length)).toBe(false); // nothing flagged is proposed
       expect(flagged.length).toBeGreaterThan(0);
       expect(readFileSync(join(out, 'SUMMARY.md'), 'utf8')).toMatch(/possible duplicate/);
       expect(readFileSync(join(priv, 'PRIVATE-possible-duplicates.csv'), 'utf8')).toMatch(/fp-google-ChIJsecret2/);

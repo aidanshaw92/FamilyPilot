@@ -8,7 +8,7 @@ import {
 import { OpeningHoursSchedule } from './opening-hours';
 
 /** External data provider — never expose API keys for these on the client. */
-export type PlacesProviderName = 'mock' | 'google' | 'osm' | 'familypilot';
+export type PlacesProviderName = 'mock' | 'google' | 'osm' | 'wikidata' | 'os-greenspace' | 'familypilot';
 
 /** How much FamilyPilot-specific family metadata exists for a venue. */
 export type EnrichmentStatus = 'provider_only' | 'ai_draft' | 'enriched' | 'verified';

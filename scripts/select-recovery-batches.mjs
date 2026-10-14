@@ -27,41 +27,53 @@ export function doubts(c, scoredRow) {
   if (/\b(square|gardens?)$/i.test(c.name) && (c.area_ha ?? 0) < 2 && c.group_id === 'parks' && c.playground_inside !== true) out.push('a small garden: may be for keyholders only');
   if (/\b(estate|housing|flats)\b/i.test(c.name)) out.push('a housing estate name');
   if (c.group_id === 'attractions' && !c.website) out.push('an attraction with no website of its own');
-  if (scoredRow && !scoredRow.secondSource) out.push('no second source: own website only');
   return out;
 }
 
-export function buildBatches({ candidates, links, batch, stored, wikidata = [], greenspace = [], siteChecks = {}, target = 200, seed = 7 }) {
+export function buildBatches({ candidates, links, batch, stored, wikidata = [], greenspace = [], siteChecks = {}, target = 200, seed = 7, excludeStoredIds = new Set(), excludeNear = [], budget }) {
   const linked = new Set(links.map((l) => l.open_data_place));
   const wikidataByQ = new Map(wikidata.map((w) => [w.q, w]));
 
-  // ---- batch 1
+  // ---- batch 1. A stored venue already continued by another, non-OSM source (excludeStoredIds) is served from that source and not proposed here.
   const { rows: contRows, unmatched } = continuityRows({ candidates, links, stored });
-  const batch1 = contRows.filter((r) => r.confident);
-  const compare = contRows.filter((r) => !r.confident);
+  const batch1 = contRows.filter((r) => r.confident && !excludeStoredIds.has(r.storedId));
+  const coveredElsewhere = contRows.filter((r) => r.confident && excludeStoredIds.has(r.storedId));
+  const compare = contRows.filter((r) => !r.confident && !excludeStoredIds.has(r.storedId));
 
-  // ---- batch 2: new places only, scored, then selected
+  // ---- batch 2: new places only, scored, tiered, then selected from the clean tier
   const newOnes = candidates.filter((c) => !linked.has(c.familypilot_place_id));
   const storedPts = stored.map((s) => ({ id: s.id, name: s.name, lat: s.lat, lng: s.lng }));
   const scored = [];
+  const duplicatesOfOther = [];
   for (const c of newOnes) {
     const category = categoryOf(c);
     if (!category) continue;
+    // The same place is already proposed from a source with no ODbL obligation: serve that one.
+    const other = excludeNear.find((o) => haversineKm(c.lat, c.lng, o.lat, o.lng) < 0.15 && tokenOverlapScore(c.name, o.name) >= 0.5);
+    if (other) { duplicatesOfOther.push({ c, category, other }); continue; }
     const corr = corroborate(c, { wikidata, wikidataByQ, greenspace });
     const s = scoreNew(c, corr, siteChecks[osmUrl(c)] ?? null);
-    scored.push({ c, category, area: areaOf(c.lat, c.lng), corr, ...s });
+    const row = { c, category, area: areaOf(c.lat, c.lng), corr, ...s };
+    row.flags = doubts(c, row);
+    const nearStored = storedPts.find((p) => haversineKm(c.lat, c.lng, p.lat, p.lng) < 0.15);
+    if (nearStored) { row.nearStored = nearStored; row.flags.push('within 150 m of a place we already hold: possible duplicate (which one is in the private review folder)'); }
+    scored.push(row);
   }
-  const { picked, eligible } = selectBatch2(scored, { target });
-  const reserve = scored.filter((s) => s.independent && s.score >= (DEFAULT_MIN_SCORE[s.category] ?? DEFAULT_MIN_SCORE.default) && !picked.includes(s)).sort((a, b) => b.score - a.score).slice(0, 100);
-
-  // ---- exceptions on the picked set
-  for (const s of picked) {
-    s.flags = doubts(s.c, s);
-    const nearStored = storedPts.find((p) => haversineKm(s.c.lat, s.c.lng, p.lat, p.lng) < 0.15);
-    if (nearStored) { s.nearStored = nearStored; s.flags.push('within 150 m of a place we already hold: possible duplicate (which one is in the private review folder)'); }
-    const nearPicked = picked.find((o) => o !== s && o.category === s.category && haversineKm(s.c.lat, s.c.lng, o.c.lat, o.c.lng) < 0.12 && tokenOverlapScore(s.c.name, o.c.name) >= 0.5);
-    if (nearPicked) s.flags.push(`within 120 m of ${nearPicked.c.name}: possible duplicate in this batch`);
+  const floor = (cat) => DEFAULT_MIN_SCORE[cat] ?? DEFAULT_MIN_SCORE.default;
+  const eligibleAll = scored.filter((s) => s.independent && s.score >= floor(s.category));
+  // CLEAN: nothing for a person to look at. FLAGGED: eligible but something is open; default is to leave it out.
+  const flagged = eligibleAll.filter((s) => s.flags.length > 0);
+  let clean = eligibleAll.filter((s) => s.flags.length === 0).sort((a, b) => b.score - a.score || a.c.name.localeCompare(b.c.name));
+  // Two OSM features for one place (a park and its playground): keep the better evidenced.
+  const kept = []; const duplicatesInBatch = [];
+  for (const s of clean) {
+    const twin = kept.find((o) => o.category === s.category && haversineKm(s.c.lat, s.c.lng, o.c.lat, o.c.lng) < 0.12 && tokenOverlapScore(s.c.name, o.c.name) >= 0.5);
+    if (twin) duplicatesInBatch.push({ ...s, flags: [...s.flags, `within 120 m of ${twin.c.name}: the better evidenced one is proposed`] }); else kept.push(s);
   }
+  clean = kept;
+  const { picked } = selectBatch2(clean, budget ? { target, budget } : { target });
+  const eligible = clean.length;
+  const reserve = clean.filter((s) => !picked.includes(s)).slice(0, 100);
 
   // ---- coverage
   const grid = (items, areaOfItem, catOfItem) => {
@@ -77,6 +89,10 @@ export function buildBatches({ candidates, links, batch, stored, wikidata = [], 
     batch1ByArea: batch1.reduce((m, r) => { const a = areaOf(r.candidate.lat, r.candidate.lng); m[a] = (m[a] ?? 0) + 1; return m; }, {}),
     storedByArea: stored.reduce((m, s) => { const a = areaOf(s.lat, s.lng); m[a] = (m[a] ?? 0) + 1; return m; }, {}),
     eligibleForBatch2: eligible,
+    flaggedForBatch2: flagged.length,
+    duplicatesOfOtherSource: duplicatesOfOther.length,
+    duplicatesWithinBatch: duplicatesInBatch.length,
+    continuedElsewhere: coveredElsewhere.length,
     newCandidates: newOnes.length,
   };
 
@@ -96,7 +112,7 @@ export function buildBatches({ candidates, links, batch, stored, wikidata = [], 
   const recoverableByComparison = new Set(compareOnUnmatched.map((x) => x.storedId)).size;
   const unmatchedByCategory = {};
   for (const u of unmatched) if (!compareOnUnmatched.some((x) => x.storedId === u.id)) unmatchedByCategory[u.category] = (unmatchedByCategory[u.category] ?? 0) + 1;
-  return { batch1, compare, unmatched, unmatchedByCategory, recoverableByComparison, compareLinksOnUnmatched: compareOnUnmatched.length, picked, reserve, coverage, entries: { batch1: e1, batch2: e2 }, sample: { batch1: sample1, batch2: sample2 } };
+  return { batch1, compare, unmatched, unmatchedByCategory, recoverableByComparison, compareLinksOnUnmatched: compareOnUnmatched.length, picked, reserve, flagged, duplicatesOfOther, duplicatesInBatch, coveredElsewhere, coverage, entries: { batch1: e1, batch2: e2 }, sample: { batch1: sample1, batch2: sample2 } };
 }
 
 export const osmUrl = (c) => { const [t, rest] = String(c.source_record_id).split('/'); return `https://www.openstreetmap.org/${t}/${String(rest).split('@')[0]}`; };
@@ -119,6 +135,7 @@ export function writeOutputs(out, r, { version, privateOut } = {}) {
   const row2 = (s) => ({ osm_record: osmUrl(s.c), osm_name: s.c.name, category: s.category, subtype: s.c.subtype, area: s.area, osm_lat: s.c.lat, osm_lng: s.c.lng, score: s.score, signals: s.signals, wikidata: s.corr.wikidata ? `${s.corr.wikidata.q} ${s.corr.wikidata.label}` : '', os_greenspace: s.corr.os ? `${s.corr.os.function}: ${s.corr.os.name}` : '', website: s.c.website ?? '', area_ha: s.c.area_ha ?? '', playground_mapped_inside: s.c.playground_inside ?? '', flags: s.flags ?? [] });
   const c2 = ['osm_record', 'osm_name', 'category', 'subtype', 'area', 'osm_lat', 'osm_lng', 'score', 'signals', 'wikidata', 'os_greenspace', 'website', 'area_ha', 'playground_mapped_inside', 'flags'];
   w('batch2-new.csv', csv(r.picked.map(row2), c2));
+  w('batch2-flagged.csv', csv(r.flagged.map(row2), c2));
   w('batch2-reserve.csv', csv(r.reserve.map((s) => row2({ ...s, flags: doubts(s.c, s) })), c2));
   const idByStored = new Map(r.batch1.map((x) => [x.storedId, publicIdOf(x)]));
   w('batch1.entries.UNREVIEWED.json', JSON.stringify(r.entries.batch1.map((e) => ({ ...e, familypilotId: idByStored.get(e.familypilotId) ?? e.familypilotId })), null, 1));
@@ -136,7 +153,7 @@ export function writeOutputs(out, r, { version, privateOut } = {}) {
     for (const x of r.compare) if (!compareIds.has(x.storedId)) compareIds.set(x.storedId, x);
     const un = r.unmatched.map((u) => ({ stored_place_id: u.id, stored_name: u.name, stored_category: u.category, comparison_candidate: compareIds.has(u.id) ? osmUrl(compareIds.get(u.id).candidate) : '', candidate_name: compareIds.has(u.id) ? compareIds.get(u.id).candidate.name : '' }));
     wp('PRIVATE-unmatched.csv', csv(un, ['stored_place_id', 'stored_name', 'stored_category', 'comparison_candidate', 'candidate_name']));
-    const dupes = r.picked.filter((x) => x.nearStored).map((x) => ({ osm_record: osmUrl(x.c), osm_name: x.c.name, stored_place_id: x.nearStored.id, stored_name: x.nearStored.name }));
+    const dupes = [...r.picked, ...r.flagged, ...r.reserve].filter((x) => x.nearStored).map((x) => ({ osm_record: osmUrl(x.c), osm_name: x.c.name, stored_place_id: x.nearStored.id, stored_name: x.nearStored.name }));
     wp('PRIVATE-possible-duplicates.csv', csv(dupes, ['osm_record', 'osm_name', 'stored_place_id', 'stored_name']));
     wp('README.txt', 'Google content (stored names) and the link from each stored place ID to its entry. Do not commit, publish or paste into a public place. Kept only so the reviewer can see which existing venue each entry continues.\n');
   }
@@ -153,7 +170,7 @@ function renderSample(r, version) {
 function renderSummary(r, version) {
   const c = r.coverage;
   const rowsOf = (g) => AREAS.map((a) => `| ${a} | ${Object.entries(g[a]).map(([k, v]) => `${k} ${v}`).join(', ') || '-'} | ${Object.values(g[a]).reduce((s, v) => s + v, 0)} |`);
-  const exceptions = r.picked.filter((s) => s.flags?.length);
+  const exceptions = r.flagged;
   const L = [`# Recovery batches, ${version}`, '', '**Nothing here is imported, served or signed off.** Every entry is marked `UNREVIEWED`; the registry loader refuses it. A reviewer puts their name on a batch, not me.', '',
     `**Batch 1: ${r.batch1.length} entries that continue a venue we already hold** (a confident match on name and position; ${r.batch1.filter((x) => x.flags.length).length} of them carry a flag to look at). Of the ${r.batch1.length + r.unmatched.length} stored venues, ${r.unmatched.length} have no confident match: ${r.recoverableByComparison} of those have a candidate a person could confirm (\`batch1-needs-comparison.csv\`, which also lists ${r.compare.length - r.compareLinksOnUnmatched} alternative links to venues already matched), and ${r.unmatched.length - r.recoverableByComparison} have no independent candidate at all (by category: ${Object.entries(r.unmatchedByCategory).map(([k, v]) => `${k} ${v}`).join(', ')}; the list, with names, is in the private review folder, not here).`,
     `**Batch 2: ${r.picked.length} new destinations** chosen from ${c.newCandidates} new candidates, ${c.eligibleForBatch2} of which have enough independent evidence (a score of 3 for parks and museums, 2 for the rest, and a source that is not OpenStreetMap alone). A reserve of ${r.reserve.length} is in \`batch2-reserve.csv\`.`, '',
@@ -162,7 +179,7 @@ function renderSummary(r, version) {
     `Batch 1 by category: ${Object.entries(c.batch1ByCategory).map(([k, v]) => `${k} ${v}`).join(', ')}. By area: ${Object.entries(c.batch1ByArea).map(([k, v]) => `${k} ${v}`).join(', ')}.`, '',
     `Stored venues by area today (counts only): ${Object.entries(c.storedByArea).map(([k, v]) => `${k} ${v}`).join(', ')}.`, '',
     '## How each batch-2 place earned its place', '', 'A score from: a Wikidata item (CC0) or an OS Open Greenspace polygon (OGL) that agrees on the name and place (2 each); the venue\'s own website in the source (1) and, where its page was fetched once and names the venue, 1.5 more; a Wikipedia article (1); a mapped playground inside a park (1); a park of 3 hectares or more (1); opening hours or a fee stated (0.5). For activities, farms, zoos and attractions, where those sources hardly reach, the venue\'s own page, fetched and checked, is the independent source. The batch stops when the evidence runs out; it is never padded to a target. Quality gates have already held back clubs, schools, shops, places of worship, commercial galleries and memorials (`docs/OPEN_DATA_FIRST_EXTRACT.md`).', '',
-    `## Exceptions to look at (${exceptions.length} of ${r.picked.length})`, '', ...(exceptions.length ? exceptions.map((s) => `- **${s.c.name}** (${s.category}, ${s.area}): ${s.flags.join('; ')}`) : ['None.']), '',
+    `## Flagged and left out by default (${exceptions.length}): your decision, nothing is proposed from this list`, '', ...(exceptions.length ? exceptions.map((s) => `- **${s.c.name}** (${s.category}, ${s.area}): ${s.flags.join('; ')}`) : ['None.']), '',
     '## What this does not say', '', 'An independent identity is a name, a category and a position from a source with a licence. It is **not** a claim that the place has toilets, opens at any hour, is open today or suits a child of any age. Those stay "not yet reviewed" until our own evidence says otherwise.', ''];
   return L.join('\n');
 }

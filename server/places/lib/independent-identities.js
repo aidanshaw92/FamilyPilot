@@ -32,6 +32,7 @@ const FILES = {
   osm: require('../data/identities/osm.json'),
   'official-site': require('../data/identities/official-site.json'),
   wikidata: require('../data/identities/wikidata.json'),
+  'os-greenspace': require('../data/identities/os-greenspace.json'),
 };
 
 /** Identity sources, and the licence each can carry. `venue-website` is the venue's own page, read for the facts on it. */
@@ -39,13 +40,16 @@ const IDENTITY_SOURCES = {
   osm: ['ODbL-1.0'],
   'official-site': ['venue-website'],
   wikidata: ['CC0-1.0'],
+  // OS Open Greenspace: the Ordnance Survey's park, garden and play-space polygons, published under the Open Government Licence v3.0.
+  'os-greenspace': ['OGL-3.0'],
 };
 
 /**
- * Position sources. Deliberately only OpenStreetMap: a position is drawn on the app's own map, so its source must be one the app can
- * credit. A source joins this list in the same change that adds its credit (see `utils/map-compliance.ts`).
+ * Position sources. A position is drawn on the app's own map, so its source must be one the app can credit where the licence asks for a credit:
+ * OpenStreetMap (ODbL: "© OpenStreetMap contributors"), OS Open Greenspace (OGL: the Ordnance Survey statement) and Wikidata (CC0: none owed).
+ * A source joins this list in the same change that adds its credit (see `utils/map-compliance.ts` and `services/places/attribution.ts`).
  */
-const LOCATION_SOURCES = { osm: ['ODbL-1.0'] };
+const LOCATION_SOURCES = { osm: ['ODbL-1.0'], wikidata: ['CC0-1.0'], 'os-greenspace': ['OGL-3.0'] };
 
 const ENTRY_KEYS = ['familypilotId', 'name', 'category', 'identity', 'location', 'website', 'reviewedBy', 'reviewedAt'];
 const IDENTITY_KEYS = ['source', 'url', 'retrievedAt', 'licence', 'externalId'];
@@ -127,7 +131,10 @@ function fileProblem(file, entry) {
   const fromOsm = entry?.identity?.source === 'osm' || entry?.location?.source === 'osm';
   if (file === 'osm') return fromOsm ? null : 'osm.json holds only entries whose identity or position is from OpenStreetMap';
   if (fromOsm) return `OpenStreetMap content belongs in osm.json, not ${file}.json`;
-  return entry?.identity?.source === file ? null : `${file}.json holds only identity.source ${file}`;
+  if (entry?.identity?.source !== file) return `${file}.json holds only identity.source ${file}`;
+  // One licence family per file: a position from another source would put that source's content in this file.
+  if (entry.location != null && entry.location.source !== file) return `${file}.json holds only positions whose source is ${file}`;
+  return null;
 }
 
 /** Every entry in the shipped files, each checked for the file it is in. `onProblem` reports the ones that may not be there. */

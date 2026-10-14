@@ -31,6 +31,15 @@ export type PlaceAttributionSource = PlacesProviderName | 'unknown';
 export const OSM_CREDIT = '© OpenStreetMap contributors';
 export const OSM_COPYRIGHT_URL = 'https://www.openstreetmap.org/copyright';
 
+/**
+ * The credit Ordnance Survey asks for with OS Open Greenspace, which is published under the Open Government Licence v3.0. The OGL asks the
+ * user to acknowledge the source "by including or linking to any attribution statement specified by the Information Provider" and, where possible,
+ * to link to the licence. The year is the year of the data release the entries were taken from.
+ */
+export const OS_DATA_YEAR = 2026;
+export const OS_CREDIT = `Contains OS data © Crown copyright and database right ${OS_DATA_YEAR}`;
+export const OGL_URL = 'https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/';
+
 /** The grey both providers' guidance permits for attribution on a light background. */
 export const ATTRIBUTION_INK = '#5E5E5E';
 
@@ -50,22 +59,24 @@ export function attributionSourceOf(
  */
 export function externalCreditFor(
   provider: PlacesProviderName | undefined,
-): 'google' | 'osm' | null {
+): 'google' | 'osm' | 'os' | null {
   const source = attributionSourceOf(provider);
   if (source === 'google') return 'google';
   if (source === 'osm') return 'osm';
+  // OS Open Greenspace (OGL) owes the Ordnance Survey statement. Wikidata (CC0) owes nobody a credit, and our own rows owe none.
+  if (source === 'os-greenspace') return 'os';
   return null;
 }
 
 /** The distinct credits a mixed list of places owes, so a screen can show each one once. */
 export function creditsForPlaces(
   places: ReadonlyArray<{ provider?: PlacesProviderName }>,
-): Array<'google' | 'osm'> {
-  const seen = new Set<'google' | 'osm'>();
+): Array<'google' | 'osm' | 'os'> {
+  const seen = new Set<'google' | 'osm' | 'os'>();
   for (const place of places) {
     const credit = externalCreditFor(place.provider);
     if (credit) seen.add(credit);
   }
   // Stable order, so a list's footer does not reshuffle as results change.
-  return (['google', 'osm'] as const).filter((credit) => seen.has(credit));
+  return (['google', 'osm', 'os'] as const).filter((credit) => seen.has(credit));
 }
