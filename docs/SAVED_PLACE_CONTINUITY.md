@@ -18,7 +18,7 @@ So there is nothing on a server to migrate or to lose, and nothing a server-side
 A saved row and a saved day name a venue by the id its old provider copy had. When the venue is listed again from an independent source it has a new id. Then, on that device:
 
 - the saved row still **draws**, from the copy kept on the device;
-- **opening it** asks the server for an id that is no longer served and shows "Place not found. This venue may have been removed or the link is incorrect.";
+- **opening it** asks the server for an id that is no longer served. With Google details off the server answers 503 (`PLACES_DISABLED`), which the screen reads as a connection problem: **"Could not load this place. Check your connection and try again."** with a Retry that can never succeed (measured in the release rehearsal, 14 October). The "Place not found" page appears only for a 404, which a Google-style id does not get;
 - a saved day still **reads** as it was planned (its itinerary is stored whole), but **Change / rebuild** needs the venue id and fails the same way;
 - a plan sent to another family is not affected: what was sent is a copy of the day, not a reference.
 
@@ -40,7 +40,7 @@ Principles: **never silent, never bulk, never destructive, and the parent can al
 3. **What "Yes" does.** The saved row points at the chosen venue (it keeps its group, its saved time and its own id), the saved id is replaced, and any saved day *rebuilt from* the old id now rebuilds from the new one. A day that has already been made keeps its itinerary exactly as it was; nothing a parent has planned is rewritten.
 4. **What "None of these" does.** Nothing changes. The line stays, and the sheet can be reopened.
 5. **From a plan.** "Change" on a saved day whose venue no longer resolves opens the same sheet for that venue, instead of the "Place not found" page.
-6. **From the venue page.** An id that is not served, when the device holds a saved copy of it, shows the same offer instead of "Place not found". An id nobody saved still says "Place not found".
+6. **From the venue page.** An id that is not served (the 503 above, or a 404), when the device holds a saved copy of it, shows the same offer instead of "Could not load this place … try again". An id nobody saved keeps today's wording.
 7. **Nobody is asked about a place they have not saved**, and nobody is asked twice about one they declined in the same visit.
 
 Copy rules: plain, no "migration", no "alias", no blame ("This place has a new listing", not "Your saved place is broken").
@@ -55,7 +55,7 @@ The saved copy that makes this possible (name, position) is Google content kept 
 
 ## Cost and when
 
-About 300 lines for the sheet, the Saved row line, and the venue-page fallback, plus the plan "Change" route; the matching and the state changes are written and tested here. It is **not** part of Tranche A: Tranche A can be published without it (the rows keep drawing; opening a pre-release save shows "Place not found"), and the experience above should ship in the same window, before 8 November. If you would rather not build it now, the minimum honest alternative is a one-time notice on Saved: "Some saved places have a new listing. Search for them again and save them to keep them," and nothing else.
+About 300 lines for the sheet, the Saved row line, and the venue-page fallback, plus the plan "Change" route; the matching and the state changes are written and tested here. It is **not** part of Tranche A: Tranche A can be published without it (the rows keep drawing; opening a pre-release save says "Could not load this place" with a Retry that cannot work), and the experience above should ship in the same window, before 8 November. If you would rather not build it now, the minimum honest alternative is a one-time notice on Saved: "Some saved places have a new listing. Search for them again and save them to keep them," and nothing else.
 
 ## What this does not do
 
