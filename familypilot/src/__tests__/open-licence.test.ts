@@ -194,6 +194,26 @@ describe('candidates', () => {
     expect(c.find((x: { q: string }) => x.q === 'Q1')).toMatchObject({ website: 'https://example.org/', sitelinks: 9, category: 'museum' });
   });
 
+  it('classes a castle, house or dungeon that Wikidata files under museum as an attraction, says why, and holds a barrow or an arts centre back', async () => {
+    await load();
+    const row = (q: string, label: string) => ({
+      item: { value: `http://www.wikidata.org/entity/${q}` }, itemLabel: { value: label }, coord: { value: 'Point(-0.1 51.5)' }, classLabel: { value: 'museum' },
+      website: { value: 'https://example.org/' }, sitelinks: { value: '9' },
+    });
+    const c = lib.wikidataCandidates([{ results: { bindings: [row('Q1', 'Kenwood House'), row('Q2', 'Horniman Museum and Gardens'), row('Q3', 'Coldrum Long Barrow'), row('Q4', 'Barbican Centre'), row('Q5', 'Dulwich Picture Gallery'), row('Q6', 'London Dungeon')] } }]);
+    const by = Object.fromEntries(c.map((x: { q: string }) => [x.q, x]));
+    expect(by.Q1).toMatchObject({ category: 'attraction' });
+    expect(by.Q1.reclassified).toMatch(/classed as an attraction/);
+    expect(by.Q6.category).toBe('attraction');
+    expect(by.Q2.category).toBe('museum'); // the name says museum
+    expect(by.Q5.category).toBe('museum'); // the name says gallery
+    expect(lib.holdReason(by.Q3)).toMatch(/prehistoric monument/);
+    expect(lib.holdReason(by.Q4)).toMatch(/arts or events venue/);
+    // the reclassification is a note shown with the record, not a doubt that holds it back
+    expect(lib.doubts(by.Q1)).toEqual([]);
+    expect(lib.scoreCandidate(by.Q1).signals.join(' ')).toMatch(/classed as an attraction/);
+  });
+
   it('writes entries that are never reviewed and that the registry accepts once a person has signed', async () => {
     await load();
     const parks = lib.osParks(grid);
@@ -383,6 +403,116 @@ describe('the first-batch review pack', () => {
     } finally {
       rmSync(out, { recursive: true, force: true });
       rmSync(priv, { recursive: true, force: true });
+    }
+  });
+});
+
+// ---------------------------------------------------------------- applying a person's review
+describe('applying a review', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let review: any;
+  const unreviewed = (e: Record<string, unknown>) => ({ ...e, reviewedBy: 'UNREVIEWED (simulation only)', reviewedAt: '2026-10-14' });
+  const osmEntry = unreviewed({
+    familypilotId: 'fp-osm-way-9', name: 'Hackney City Farm', category: 'farm',
+    identity: { source: 'osm', url: 'https://www.openstreetmap.org/way/9', retrievedAt: '2026-10-14', licence: 'ODbL-1.0', externalId: 'way/9' },
+    location: { latitude: 51.532, longitude: -0.067, source: 'osm', licence: 'ODbL-1.0' },
+  });
+  const batch = () => [unreviewed(osEntry()), unreviewed(wdEntry()), osmEntry];
+  async function loadReview() { review ??= await import(join(root, 'scripts/apply-review.mjs')); }
+
+  it('will not write a reviewer for you, or accept an unnamed one', async () => {
+    await loadReview();
+    for (const reviewer of ['', ' ', 'UNREVIEWED', 'Claude', 'simulation', undefined]) {
+      const r = review.applyReview({ entries: batch(), reviewer, date: '2026-10-20', odblCleared: true });
+      expect(r.ok, String(reviewer)).toBe(false);
+      expect(r.problems.join(' ')).toMatch(/named person/);
+    }
+    expect(review.applyReview({ entries: batch(), reviewer: 'A. Reviewer', date: 'tomorrow' }).problems.join(' ')).toMatch(/review date/);
+  });
+
+  it('marks the open-licence entries reviewed, sorts them into their files, and the registry then serves them', async () => {
+    await loadReview();
+    const r = review.applyReview({ entries: batch().slice(0, 2), reviewer: 'A. Reviewer', date: '2026-10-20' });
+    expect(r.problems).toEqual([]);
+    expect(r.files['os-greenspace']).toHaveLength(1);
+    expect(r.files.wikidata).toHaveLength(1);
+    expect(r.files.osm).toHaveLength(0);
+    const served = identities.loadIdentities({ entries: [...r.files['os-greenspace'], ...r.files.wikidata] });
+    expect(served).toHaveLength(2);
+    expect(served[0].reviewedBy).toBe('A. Reviewer');
+  });
+
+  it('keeps OpenStreetMap entries out until the ODbL steps are declared done', async () => {
+    await loadReview();
+    const held = review.applyReview({ entries: batch(), reviewer: 'A. Reviewer', date: '2026-10-20' });
+    expect(held.ok).toBe(false);
+    expect(held.problems.join(' ')).toMatch(/--odbl-cleared/);
+    const cleared = review.applyReview({ entries: batch(), reviewer: 'A. Reviewer', date: '2026-10-20', odblCleared: true });
+    expect(cleared.problems).toEqual([]);
+    expect(cleared.files.osm).toHaveLength(1);
+  });
+
+  it('refuses a batch with one bad entry, whole, and names it', async () => {
+    await loadReview();
+    const bad = unreviewed({ ...osEntry(), identity: { ...osEntry().identity, licence: 'ODbL-1.0' } });
+    const r = review.applyReview({ entries: [unreviewed(wdEntry()), bad], reviewer: 'A. Reviewer', date: '2026-10-20' });
+    expect(r.ok).toBe(false);
+    expect(r.problems[0]).toMatch(/fp-os-.*not one os-greenspace can carry/);
+  });
+
+  it('uses the keyed copy for a continuing venue, and leaves out what the reviewer dropped', async () => {
+    await loadReview();
+    const neutral = unreviewed(osEntry());
+    const keyed = { ...neutral, familypilotId: 'fp-google-ChIJabc' };
+    const r = review.applyReview({ entries: [neutral, unreviewed(wdEntry())], keyed: [keyed], drop: ['fp-wd-q1234'], reviewer: 'A. Reviewer', date: '2026-10-20' });
+    expect(r.files['os-greenspace'].map((e: { familypilotId: string }) => e.familypilotId)).toEqual(['fp-google-ChIJabc']);
+    expect(r.files.wikidata).toHaveLength(0);
+  });
+
+  it('refuses an entry already in the registry file, or twice in one batch', async () => {
+    await loadReview();
+    const e = unreviewed(osEntry());
+    expect(review.applyReview({ entries: [e, e], reviewer: 'A. Reviewer', date: '2026-10-20' }).problems.join(' ')).toMatch(/twice/);
+    const have = { ...osEntry(), reviewedBy: 'someone', reviewedAt: '2026-10-01' };
+    expect(review.applyReview({ entries: [e], reviewer: 'A. Reviewer', date: '2026-10-20', existing: { 'os-greenspace': [have] } }).problems.join(' ')).toMatch(/already in/);
+  });
+});
+
+describe('the About screen carries the licence notices', () => {
+  const about = readFileSync(join(__dirname, '../../app/about.tsx'), 'utf8');
+
+  it('shows the Open Database License notice, the Ordnance Survey statement and the Wikidata line, each with its licence link', () => {
+    for (const name of ['ODBL_NOTICE', 'ODBL_URL', 'OS_CREDIT', 'OGL_URL', 'OSM_CREDIT', 'OSM_COPYRIGHT_URL', 'WIKIDATA_NOTICE', 'WIKIDATA_LICENCE_URL', 'PLACE_LISTS_URL']) {
+      expect(about, name).toContain(name);
+    }
+    expect(about).toMatch(/accessibilityRole="link"/);
+  });
+
+  it('uses the licence\'s own words for the notice', async () => {
+    const { ODBL_NOTICE, ODBL_URL, PLACE_LISTS_URL } = await import('@/src/services/places/attribution');
+    expect(ODBL_NOTICE).toBe('Contains information from OpenStreetMap, which is made available here under the Open Database License (ODbL).');
+    expect(ODBL_URL).toBe('https://opendatacommons.org/licenses/odbl/1-0/');
+    expect(PLACE_LISTS_URL).toMatch(/server\/places\/data\/identities$/);
+  });
+
+  it('says what the data does not tell you', () => {
+    expect(about).toMatch(/shown as not checked until we have looked/);
+    expect(about).not.toMatch(/checked by us/);
+  });
+});
+
+describe('an open-licence place becomes a venue like any other', () => {
+  it('keeps its provider, says nothing it does not know, and is not given hours, photos or a rating', async () => {
+    const { mergePlaceToVenue } = await import('@/src/services/places/merge-place');
+    for (const entry of [osEntry(), wdEntry()]) {
+      const place = identities.identityToPlace(entry);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const venue = mergePlaceToVenue(place as any, null, 51.5, -0.1);
+      expect(venue.provider).toBe(place.provider);
+      expect(venue.name).toBe(entry.name);
+      expect(venue.structuredOpeningHours).toBeUndefined();
+      expect(venue.imageUrl ?? '').toBe('');
+      expect(venue.enrichmentStatus).toBe('provider_only');
     }
   });
 });

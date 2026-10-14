@@ -40,6 +40,15 @@ export const OS_DATA_YEAR = 2026;
 export const OS_CREDIT = `Contains OS data © Crown copyright and database right ${OS_DATA_YEAR}`;
 export const OGL_URL = 'https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/';
 
+/** The notice ODbL 4.3 asks for with a Produced Work, in the licence's own words, and the links that make the licence clear. */
+export const ODBL_NOTICE = 'Contains information from OpenStreetMap, which is made available here under the Open Database License (ODbL).';
+export const ODBL_URL = 'https://opendatacommons.org/licenses/odbl/1-0/';
+/** Wikidata's structured data is CC0: nothing is owed, and the app says where the data comes from anyway. */
+export const WIKIDATA_NOTICE = 'Some place names and positions come from Wikidata, which is released under CC0.';
+export const WIKIDATA_LICENCE_URL = 'https://www.wikidata.org/wiki/Wikidata:Licensing';
+/** Where the lists of independently sourced places live, free to read, so the ODbL's offer of the database to recipients is a link. */
+export const PLACE_LISTS_URL = 'https://github.com/aidanshaw92/FamilyPilot/tree/main/server/places/data/identities';
+
 /** The grey both providers' guidance permits for attribution on a light background. */
 export const ATTRIBUTION_INK = '#5E5E5E';
 

@@ -291,20 +291,21 @@ export function holdReason(c) {
 /** Flags that do not hold a candidate back but ask the reviewer to look. */
 export function doubts(c) {
   const out = [];
-  if (c.category === 'museum' && /\b(university|college|school|academy)\b/i.test(c.name)) out.push('a museum named for a university or school: check it is open to the public');
+  if (c.category === 'museum' && /\b(university|school|academy)\b/i.test(c.name)) out.push('a museum named for a university or school: check it is open to the public');
   if (c.category === 'museum' && /\b(football club|rugby|cricket club)\b/i.test(c.name)) out.push('a sports-club museum: check it is open to visitors and not only to ticket holders');
-  if (c.reclassified) out.push(c.reclassified);
   if (/\b(palace|castle)\b/i.test(c.name) && /\b(lambeth|buckingham|st james)/i.test(c.name)) out.push('an official residence: check public access');
   if (c.classes?.includes('windmill')) out.push('a windmill: often a landmark rather than a visit');
   if (c.classes?.includes('castle') && !c.website) out.push('a castle with no website: may be a ruin or private');
   if (c.category === 'park' && /\b(square|gardens?)$/i.test(c.name) && c.ha < 6 && !c.play) out.push('a small garden square: may be for keyholders only');
-  if (c.source === 'os-greenspace' && (c.parts ?? 1) > 1) out.push(`drawn as ${c.parts} separate areas: the point is in the largest`);
   return out;
 }
 
 /** Evidence points. Each is something a person can check against the source link. */
 export function scoreCandidate(c, { wdMatch = null } = {}) {
   const signals = []; let score = 0;
+  // Notes on how the record was read. They are shown with it; they are not doubts, so they do not hold a venue back.
+  if (c.reclassified) signals.push(c.reclassified);
+  if (c.source === 'os-greenspace' && (c.parts ?? 1) > 1) signals.push(`drawn as ${c.parts} separate areas; the point is in the largest`);
   const add = (s, pts) => { signals.push(s); score += pts; };
   if (c.source === 'os-greenspace') {
     add('OS Open Greenspace: a named public park or garden', 1);
