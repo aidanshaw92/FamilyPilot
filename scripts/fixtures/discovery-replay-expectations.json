@@ -1,0 +1,37 @@
+{
+  "fp-google-ChIJYXZohAkQdkgRfyZIWSl03SM": {
+    "expect": "park",
+    "was": "activity",
+    "why": "Google primary type park; sports pitches and a gym are facilities of the park, not a different kind of place."
+  },
+  "fp-google-ChIJq4lX1doEdkgR5JXPstgQjc0": {
+    "expect": "museum",
+    "was": "attraction",
+    "why": "Google primary type history_museum; a museum subtype is a museum."
+  },
+  "fp-google-ChIJgUtOcjEcdkgR6Y_NLIc0XBQ": {
+    "expect": "park",
+    "was": "attraction",
+    "why": "Google primary type nature_preserve is a green space, not a generic attraction."
+  },
+  "fp-google-ChIJoapqFmI8dkgRFrAV0X3pn_A": {
+    "expect": "excluded",
+    "was": "museum",
+    "why": "Primary type library; a university library is not an Explore destination (legacy row)."
+  },
+  "fp-google-ChIJrcFVE-YNdkgRJQPxAxaTnMY": {
+    "expect": "park",
+    "was": "museum",
+    "why": "Google primary type park; the museum in the grounds is a facility of the park."
+  },
+  "fp-google-ChIJPy8Y5kIFdkgRxGSXw4Xjt3s": {
+    "expect": "museum",
+    "was": "museum",
+    "why": "Primary type museum; a library secondary type is a facility of the museum, so it must stay accepted."
+  },
+  "fp-google-ChIJt1tI0ZcRdkgRY71kqlLf7Vs": {
+    "expect": "excluded",
+    "was": "park",
+    "why": "Primary type performing_arts_theater; a theatre is not an Explore destination (legacy row)."
+  }
+}
