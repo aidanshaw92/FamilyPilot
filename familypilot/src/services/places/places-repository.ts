@@ -23,14 +23,6 @@ function searchCacheKey(params: PlaceSearchParams): string {
   return JSON.stringify(params);
 }
 
-async function fallbackSearch(params: PlaceSearchParams, home: Coordinates): Promise<Venue[]> {
-  const records = await clientMockProvider.searchNearby(params);
-  return records.map((record) => {
-    const metadata = getFamilyPlaceMetadata(record.familypilotId);
-    return mergePlaceToVenue(record, metadata, home.latitude, home.longitude);
-  });
-}
-
 async function fallbackDetail(id: string, profile: FamilyProfile): Promise<VenueDetail | null> {
   const record = await clientMockProvider.getPlace(id);
   if (!record) {
@@ -111,12 +103,16 @@ export class PlacesRepository {
       const result = await liveSearchOnce(params);
       return mapLivePlacesToVenues(result.places, home);
     } catch (error) {
-      if (__DEV__) {
-        console.warn('[PlacesRepository] API unavailable, using safe fallback:', error);
+      // An outage is told as an outage. The last real list this device may still show (the same one Home shows while a
+      // fresh list loads) is returned if there is one; demo venues never are, because their facilities and prices would
+      // read as recommendations. With nothing kept, the error reaches the screen, which says it could not load and
+      // offers a retry, and the next query asks the live API again.
+      const kept = await getShowableSearch(cacheKey);
+      if (kept && kept.provider !== 'mock' && kept.places.length > 0) return mapLivePlacesToVenues(kept.places, home);
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlacesRepository] API unavailable and nothing kept to show:', error);
       }
-      // Do not leave Home/Explore blank during a provider outage. The UI labels these records as
-      // unreviewed/mock data, while the next query will retry the live API rather than cache them.
-      return fallbackSearch(params, home);
+      throw error;
     }
   }
 
