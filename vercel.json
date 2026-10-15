@@ -4,6 +4,19 @@
   "buildCommand": "cd familypilot && npm run build:web",
   "outputDirectory": "familypilot/dist",
   "framework": null,
+  "git": {
+    "deploymentEnabled": {
+      "data/open-data-fetch": false,
+      "data/open-data-inputs": false,
+      "data/open-data-inputs-diagnostic": false,
+      "data/open-data-inputs-regions": false,
+      "data/open-data-inputs-regions-2": false,
+      "docs/licensing-and-retention": false,
+      "docs/open-data-dry-run": false,
+      "docs/soft-play-recovery": false,
+      "docs/catalogue-expansion": false
+    }
+  },
   "cleanUrls": true,
   "env": {
     "PLACES_PROVIDER": "google"
