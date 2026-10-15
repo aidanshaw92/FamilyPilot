@@ -244,8 +244,9 @@ describe('the stored read itself', () => {
 
   it('reads only place_records, narrowed by a box round the two homes and bounded in size', async () => {
     const { client, filters } = recordingClient([row('barnet', 51.625, -0.19), row('croydon', 51.37, -0.1)]);
+    // The independent list and the cut-over are injected empty: this test is about the database read alone.
     const result = await betweenLib().readBetween({
-      client, a: { latitude: 51.643, longitude: -0.36 }, b: { latitude: 51.59, longitude: -0.02 },
+      client, a: { latitude: 51.643, longitude: -0.36 }, b: { latitude: 51.59, longitude: -0.02 }, entries: [], cutover: [],
     });
     expect(filters[0]).toEqual(['from', 'place_records']);
     expect(filters.some((f) => f[0] === 'gte' && f[1] === 'lat')).toBe(true);

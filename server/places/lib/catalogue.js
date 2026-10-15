@@ -73,8 +73,8 @@ function rowToPlace(row) {
 }
 
 /**
- * Reads the stored venues inside the London scope. Returns [] when the database is unavailable: the catalogue is an
- * addition to the live result, and its absence must degrade to exactly what was served before.
+ * Reads the stored venues inside the London scope. When the database is unavailable the Google rows are simply absent (the catalogue is an
+ * addition to the live result, and its absence degrades to what was served before) and the independently held venues are still served: they are files, not rows.
  *
  * The Google rows come first; then every independently sourced venue (independent-identities.js) whose id no fresh Google row covers, so a
  * venue whose Google copy has aged out stays listed with only what we hold independently, and a fresh Google row always wins.
@@ -83,7 +83,10 @@ function rowToPlace(row) {
  */
 async function readCatalogue(options = {}) {
   const client = options.client ?? db();
-  if (!client) return [];
+  // The independently held venues are files in this repository, not rows: they need no database. When the database cannot be read (no client, a
+  // query error, an outage) they are still served, so a database problem never empties a category that has been switched to them.
+  const independentOnly = () => withinLondon(independentPlaces([], options));
+  if (!client) return independentOnly();
   const now = options.now ?? Date.now();
   const since = new Date(now - MAX_AGE_DAYS * 86400000).toISOString();
   try {
@@ -96,7 +99,7 @@ async function readCatalogue(options = {}) {
       .in('category', EXPLORE_CATEGORIES)
       .gte('fetched_at', since)
       .limit(400);
-    if (error || !Array.isArray(data)) return [];
+    if (error || !Array.isArray(data)) return independentOnly();
     // A category that has been switched over is served from the independent files only, not beside Google rows.
     const cutover = cutoverCategories(options);
     const google = data
@@ -106,7 +109,7 @@ async function readCatalogue(options = {}) {
       .map(rowToPlace);
     return [...google, ...withinLondon(independentPlaces(google.map((place) => place.familypilotId), options))];
   } catch {
-    return [];
+    return independentOnly();
   }
 }
 
@@ -126,9 +129,13 @@ function withinLondon(places) {
  * those are a reviewed list whose size is a decision, not a payload accident, and a cap of 160 would silently serve the first 160 of
  * thousands the day the Google rows leave. (3,623 of them are 1.2 MB, about 134 KB compressed.)
  */
-function mergeCatalogue(livePlaces, storedPlaces, limit = 160) {
+function mergeCatalogue(livePlaces, storedPlaces, limit = 160, options = {}) {
   const merged = new Map();
-  for (const place of livePlaces) merged.set(place.familypilotId, place);
+  // A switched-over category is served from the independent files INSTEAD of Google everywhere, so a Google place in such a category
+  // is dropped here too, whether it came fresh from Google or from a cached search: otherwise a cached search would blend the two sources
+  // within one data type for as long as the cache lives.
+  const cutover = cutoverCategories(options);
+  for (const place of livePlaces) if (place.independentSource || !cutover.has(place.category)) merged.set(place.familypilotId, place);
   let counted = merged.size;
   for (const place of storedPlaces) {
     if (merged.has(place.familypilotId)) continue;
