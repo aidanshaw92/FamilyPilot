@@ -52,9 +52,15 @@ await page.goto(`${BASE}/explore`); await settle(page, 2200);
 await page.getByText('View family details').first().click(); await settle(page, 1800);
 await page.getByTestId('venue-create-plan').click(); await page.waitForTimeout(900);
 await page.getByTestId('create-plan-submit').click(); await waitPlan(page);
+const built = await timelineText(page);
+check(lunchNames(built).length === 0 && (await page.getByTestId('plan-lunch-ask').count()) === 1, 'the day is built without a lunch, and asks whether to add one');
+// Lunch is chosen and confirmed by the parent; the discovery's first place is the one picked here.
+await page.getByTestId('plan-lunch-choose').click(); await page.waitForTimeout(600);
+await page.getByTestId('plan-edit-lunch-option').first().click(); await page.waitForTimeout(300);
+await page.getByTestId('plan-lunch-confirm').click(); await waitPlan(page);
 const first = await timelineText(page);
 const firstLunch = lunchNames(first)[0];
-check(Boolean(firstLunch), 'the day has a lunch stop', firstLunch);
+check(Boolean(firstLunch), 'the chosen lunch is in the day', firstLunch);
 
 await page.getByTestId('plan-timeline-edit-arrival').first().click(); await page.waitForTimeout(600);
 await page.getByTestId('plan-edit-arrival-10:30').click(); await waitPlan(page);
@@ -70,7 +76,8 @@ const options = page.getByTestId('plan-edit-lunch-option');
 const optionCount = await options.count();
 check(optionCount >= 3, 'the restaurant sheet offers the real candidates found nearby', `${optionCount} candidates`);
 const optionNames = await options.locator('div').filter({ hasText: /^[A-Z]/ }).allInnerTexts();
-await options.nth(1).click(); await waitPlan(page);
+await options.nth(1).click(); await page.waitForTimeout(300);
+await page.getByTestId('plan-lunch-confirm').click(); await waitPlan(page);
 const secondLunch = lunchNames(await timelineText(page))[0];
 check(secondLunch && secondLunch !== firstLunch, 'changing the restaurant re-plans with the other place', `${firstLunch} -> ${secondLunch}`);
 
@@ -117,7 +124,8 @@ check(days.length === 1 && days[0].draft.params.start === '10:30', 'an edit that
 // ---------------------------------------------------------------- 5. edit again and save: the same day is updated
 console.log('5. change the restaurant and arrival again, save: the original is updated, not duplicated');
 await page2.getByTestId('plan-timeline-edit-lunch').first().click(); await page2.waitForTimeout(600);
-await page2.getByTestId('plan-edit-lunch-option').nth(2).click(); await waitPlan(page2);
+await page2.getByTestId('plan-edit-lunch-option').nth(2).click(); await page2.waitForTimeout(300);
+await page2.getByTestId('plan-lunch-confirm').click(); await waitPlan(page2);
 const thirdLunch = lunchNames(await timelineText(page2))[0];
 check(thirdLunch && thirdLunch !== secondLunch, 'a third restaurant is chosen', `${secondLunch} -> ${thirdLunch}`);
 await page2.getByTestId('plan-save').click(); await page2.waitForTimeout(2000);

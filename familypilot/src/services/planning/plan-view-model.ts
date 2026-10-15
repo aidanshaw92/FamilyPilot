@@ -424,6 +424,8 @@ export interface PlanViewModelInput {
   /** Facts the timeline explains the day with (plan-timeline.ts). Absent on a day saved before the timeline existed. */
   anchorFacts?: PlanAnchorFacts;
   lunchFacts?: PlanLunchFacts;
+  /** A lunch the parent named themselves (create-plan.ts `OwnLunch`): in the timeline as entered, never sequenced. */
+  ownLunch?: { name: string; startAt?: string };
 }
 
 /** What only the device knows at render time. Names live here, not in the saved plan. */
@@ -475,6 +477,8 @@ function caveatLine(caveat: PlanCaveat): string {
       return caveat.reason === 'late'
         ? `Lunch isn’t added: with this arrival and visit it would start around ${caveat.startsAt}, which is late for lunch. You can add one below.`
         : `Lunch isn’t added: it would start around ${caveat.startsAt}, which is too early for lunch. You can add one below.`;
+    case 'own-lunch':
+      return `Lunch at ${caveat.name} is in your day as you entered it. We don’t know where it is, so the journey there and your time home aren’t adjusted.`;
     case 'meal-lookup-failed':
       // Says the failure is ours, in the same terms RestaurantsCloseBy already uses on Venue Detail,
       // so a parent is not left inferring that the area has nowhere to eat.
@@ -659,7 +663,7 @@ function routinesView(input: PlanViewModelInput, context: PlanViewContext | unde
     resolveSubject,
     buggyFamilies: new Set(input.buggyFamilyIds ?? []),
     alternatives: input.alternatives ?? [],
-    mealIncluded: itinerary.stops.some((stop) => stop.role === 'meal'),
+    mealIncluded: itinerary.stops.some((stop) => stop.role === 'meal') || Boolean(input.ownLunch),
     lunchAvailable: Boolean(input.lunchAvailable),
   };
   const reasoning = reasonAboutRoutines(adviceContext);
@@ -823,8 +827,8 @@ export function toPlanViewModel(input: PlanViewModelInput, context?: PlanViewCon
     needsChecking: [...needsCheckingLines(itinerary), ...(input.venueNotes ?? []).filter((n) => n.severity === 'important').map((n) => n.text)],
     routines,
     lunch: {
-      included: itinerary.stops.some((stop) => stop.role === 'meal'),
-      available: Boolean(input.lunchAvailable) || itinerary.stops.some((stop) => stop.role === 'meal'),
+      included: itinerary.stops.some((stop) => stop.role === 'meal') || Boolean(input.ownLunch),
+      available: Boolean(input.lunchAvailable) || itinerary.stops.some((stop) => stop.role === 'meal') || Boolean(input.ownLunch),
     },
     dateSummary: date
       ? `${date.short} ${date.day} ${date.month} · ${planClock(dayStart)}–${planClock(dayEnd)}`

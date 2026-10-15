@@ -53,6 +53,13 @@ export interface MealCandidate {
   travel?: TravelLeg[];
 }
 
+/** A place to eat the parent named themselves. Only what they typed: no coordinates, no facts, no journey. */
+export interface OwnLunch {
+  name: string;
+  /** `HH:MM`, when the parent gave one; otherwise lunch is shown after the visit. */
+  startAt?: string;
+}
+
 export interface CreatePlanInput {
   /**
    * The venue the day is built around, already narrowed by one of day-plan's adapters —
@@ -89,6 +96,11 @@ export interface CreatePlanInput {
    * lets the finished plan say which, rather than omitting lunch silently in both cases.
    */
   mealLookupFailed?: boolean;
+  /**
+   * A lunch the parent added by name. Shown in the day as entered; never sequenced, because the planner would have to invent
+   * where it is. Exclusive with `meal`.
+   */
+  ownLunch?: OwnLunch;
   /** The anchor's photograph for frame 03's stop thumbnail. Absent, the card draws a placeholder. */
   anchorImageUrl?: string;
   /**
@@ -498,6 +510,7 @@ export async function createPlan(
       ...result.plan.caveats,
       ...(input.mealLookupFailed && !meal ? [{ kind: 'meal-lookup-failed' as const }] : []),
       ...lunchLeftOut,
+      ...(input.ownLunch && !mealStop ? [{ kind: 'own-lunch' as const, name: input.ownLunch.name }] : []),
     ],
     anchorName: venue.name,
     parking: {
@@ -530,6 +543,7 @@ export async function createPlan(
       maxRecommendedAge: anchorFacts.maxRecommendedAge,
     },
     ...(withMeal && input.mealFacts ? { lunchFacts: input.mealFacts } : {}),
+    ...(input.ownLunch && !mealStop ? { ownLunch: input.ownLunch } : {}),
   };
 
   return { ok: true, view: toPlanViewModel(source, input.viewContext), source };

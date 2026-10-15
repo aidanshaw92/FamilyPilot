@@ -499,8 +499,14 @@ async function auditJourney(browser, viewport) {
   await page.screenshot({ path: join(dir, '06-plan.png') });
 
   // --- THE LUNCH STOP ---------------------------------------------------------------------------
-  // Section 12: a real OpenStreetMap restaurant inside the generated day, and Section 13: the hop
-  // between stops shown in the mode the plan's timings were actually computed from.
+  // Lunch is the parent's call: the day is built without one and asks once. Section 12 then holds for the lunch the parent
+  // chooses (a real OpenStreetMap restaurant, confirmed in the picker), and Section 13 for the hop between the two stops.
+  const builtText = await text(page);
+  note(V, 'Plan', 'is built without a lunch stop, and asks whether to add one', {
+    ok: !/Stop 2\s+\d{1,2}:\d{2}/.test(builtText) && /Add lunch to your day\?/.test(builtText),
+    message: (builtText.match(/Add lunch to your day\?[^\n]{0,80}/) ?? ['no question'])[0].replace(/\s+/g, ' '),
+  });
+  await chooseLunch(page);
   const lunchText = await text(page);
   note(V, 'Plan', 'puts a real discovered restaurant in the day', {
     // Frame 03 names stops "Stop 1", "Stop 2"; a discovered restaurant is the second card.
@@ -669,6 +675,18 @@ async function auditPlanLinks(browser, viewport) {
  * neighbourhood produced identical plans, with no lunch and no explanation -- so the distinction is
  * asserted here rather than left to a reviewer noticing.
  */
+/** The parent chooses the first place the picker offers and confirms it; nothing enters the day before that. */
+async function chooseLunch(page) {
+  const choose = page.getByTestId('plan-lunch-choose');
+  if (!(await choose.count())) return;
+  await choose.click(); await page.waitForTimeout(700);
+  if (!(await page.getByTestId('plan-edit-lunch-option').count())) return;
+  await page.getByTestId('plan-edit-lunch-option').first().click(); await page.waitForTimeout(300);
+  await page.getByTestId('plan-lunch-confirm').click();
+  await page.waitForTimeout(4600);
+  await settle(page, 700);
+}
+
 async function auditLunchStates(browser, viewport) {
   const dir = join(OUT, 'lunch-states');
   mkdirSync(dir, { recursive: true });
@@ -688,8 +706,11 @@ async function auditLunchStates(browser, viewport) {
 
   const cases = [
     {
-      label: 'candidates found: the day contains the restaurant',
+      label: 'candidates found: the day asks, and contains the restaurant once chosen',
       placeId: EDGE.rich,
+      // Before choosing: no lunch stop and the question; after: the chosen restaurant as the second stop.
+      before: (t) => !hasLunchStop(t) && /Add lunch to your day\?/.test(t),
+      choose: true,
       expect: (t) => hasLunchStop(t) && /The Mapped Kitchen/.test(t),
       forbid: (t) => /could not check what is nearby/i.test(t),
     },
@@ -710,13 +731,18 @@ async function auditLunchStates(browser, viewport) {
     },
   ];
 
-  for (const { label, placeId, expect: wanted, forbid } of cases) {
+  for (const { label, placeId, expect: wanted, forbid, before, choose } of cases) {
     const { context, page, errors } = await newPage(browser, viewport);
     await page.goto(
       `${BASE}/plan?venue=${placeId}&date=${PLAN_DATE}&leaveAt=09:30&visit=90&parties=mine`,
       { waitUntil: 'domcontentloaded' },
     );
     await settle(page, 6000);
+    if (before) {
+      const b = await text(page);
+      note(V, 'Plan', `${label} — before choosing`, { ok: before(b), message: before(b) ? undefined : b.replace(/\s+/g, ' ').slice(0, 200) });
+    }
+    if (choose) await chooseLunch(page);
     const t = await text(page);
     await page.screenshot({ path: join(dir, `${label.replace(/[^a-z]+/gi, '-').slice(0, 50)}.png`) });
     // Every state must still produce a plan. A day that never finishes generating is the worst of the

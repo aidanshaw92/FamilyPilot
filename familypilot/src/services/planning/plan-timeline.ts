@@ -1,3 +1,5 @@
+import { MEAL_DWELL_MINUTES } from './create-plan';
+import { minutesOfClock } from './meal-window';
 import { DayItinerary, RoutineInsight, SequenceLeg, SequenceStop } from '@/src/types/day-sequence';
 import { FamilyProfile } from '@/src/types';
 import { familyDisplayName } from '@/src/utils/family-title';
@@ -351,11 +353,32 @@ export function planTimeline(input: PlanViewModelInput, context: TimelineContext
     push({
       kind: 'leave',
       time: stop.depart,
-      title: next ? (next.role === 'meal' ? 'Leave for lunch' : `Leave for ${next.name}`) : 'Leave for home',
+      title: next ? (next.role === 'meal' ? 'Leave for lunch' : `Leave for ${next.name}`) : input.ownLunch && stop.anchor ? 'Leave for lunch' : 'Leave for home',
       tone,
       lines: leaveLines,
       edit,
       stopIndex: stop.index,
+    });
+  }
+
+  // A lunch the parent named: in the day where they put it (or straight after the visit), with what is and is not known.
+  if (input.ownLunch) {
+    const anchor = stops.find((s) => s.anchor) ?? stops[0];
+    const given = minutesOfClock(input.ownLunch.startAt ?? '');
+    const start = given ?? anchor.depart;
+    push({
+      kind: 'lunch',
+      time: start,
+      until: start + MEAL_DWELL_MINUTES,
+      title: `Lunch at ${input.ownLunch.name}`,
+      tone: 'quiet',
+      lines: [
+        { text: given ? 'You added this place, at the time you gave.' : 'You added this place; shown after the visit until you give it a time.', provenance: 'reported' },
+        { text: `${spanLabel(MEAL_DWELL_MINUTES)} at the table, assumed.`, provenance: 'inferred' },
+        { text: 'We don’t know where it is, so the journey there and your time home aren’t adjusted.', provenance: 'unknown' },
+      ],
+      edit: 'lunch',
+      stopIndex: anchor.index,
     });
   }
 

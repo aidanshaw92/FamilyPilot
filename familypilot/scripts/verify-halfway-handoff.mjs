@@ -4,8 +4,8 @@
  *
  *   1. The day, the arrival and the other family chosen on Meet halfway are what the Create a plan sheet opens on, whether the
  *      parent taps "Plan this day" or goes through "See the place", even with a different day remembered from an earlier plan.
- *   2. An afternoon arrival gets no default lunch (and says why), a morning one keeps its lunch, and nothing is ever scheduled
- *      for lunch after 14:00.
+ *   2. No lunch is added on the parent's behalf at any hour: the plan asks once ("Add lunch to your day?"), the picker says when
+ *      each place would start (and warns when that is late), and a lunch enters the day only when the parent confirms it.
  *   3. A family typed in on the phone is said to be on this phone only, and Families says nobody is connected.
  *
  * Serve first: FIXTURE_SCENARIO=realistic FIXTURE_CATALOGUE_ROWS=<rows.json> node scripts/serve-places-fixture.mjs 4175 dist
@@ -71,11 +71,16 @@ console.log('Tuesday 13 Oct, 13:05, a Saturday remembered from an earlier plan')
   const planA = await planText(page);
   check(/Tue 13 Oct/.test(planA) && !/Sat 17 Oct/.test(planA), 'Plan this day: the plan is for Tuesday 13 October', planA.slice(0, 70));
   check(new RegExp(`${arrive} Arrive at`).test(planA), 'Plan this day: it arrives at the time Meet halfway showed', arrive);
-  check(/Lunch isn’t added/.test(planA) && !/Lunch at /.test(planA), 'an afternoon arrival has no default lunch, and the plan says why', '');
-  check(await page.getByTestId('plan-toggle-lunch').count() === 1, 'and lunch can still be added in one tap');
+  check(!/Lunch at /.test(planA) && !/Lunch isn’t added/.test(planA), 'an afternoon arrival has no lunch added for it, and nothing is said about one being dropped', '');
+  check(await page.getByTestId('plan-lunch-ask').count() === 1 && /Add lunch to your day\?/.test(planA), 'the plan asks once whether to add lunch');
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/a-plan-afternoon.png` });
-  const lunchTimes = [...planA.matchAll(/(\d\d):(\d\d) (?:to \d\d:\d\d )?Lunch at/g)].map((m) => Number(m[1]) * 60 + Number(m[2]));
-  check(lunchTimes.every((t) => t <= 14 * 60), 'no lunch is scheduled after 14:00', lunchTimes.join(','));
+  // The picker says when lunch would start and that it is late; it is advice, and the choice stays the parent's.
+  await page.getByTestId('plan-lunch-choose').click(); await page.waitForTimeout(700);
+  const sheetA = (await page.getByTestId('plan-edit-sheet').innerText()).replace(/\s+/g, ' ');
+  check(/Would start about \d\d:\d\d, later than most families eat lunch\. Your call\./.test(sheetA), 'the picker says a lunch would start late, and leaves it to the parent', sheetA.match(/Would start about [^.]*\./)?.[0] ?? '');
+  check(/OpenStreetMap/.test(sheetA) && /“not listed” doesn’t mean “not there”/.test(sheetA), 'and says where the places come from and what "not listed" means');
+  await page.getByRole('button', { name: 'Cancel' }).last().click(); await page.waitForTimeout(500);
+  check(!/Lunch at /.test(await planText(page)), 'closing the picker adds nothing');
 
   // B: See the place -> Create a plan
   await page.goBack(); await page.waitForTimeout(1500);
@@ -118,8 +123,8 @@ console.log('Tuesday 13 Oct, 13:05, a Saturday remembered from an earlier plan')
   await ctx.close();
 }
 
-// ------------------------------------------------------------------ 2b: a morning day keeps its lunch
-console.log('Monday morning: lunch stays');
+// ------------------------------------------------------------------ 2b: a morning day gets a lunch only when the parent adds one
+console.log('Monday morning: lunch is offered, chosen, kept, and taken out again');
 {
   const { ctx, page } = await open('2026-10-12T08:00:00');
   await page.goto(`${BASE}/halfway`, { waitUntil: 'networkidle' }); await page.waitForTimeout(2000);
@@ -128,9 +133,21 @@ console.log('Monday morning: lunch stays');
   await page.getByTestId('halfway-plan').first().waitFor({ timeout: 20000 });
   await page.getByTestId('halfway-plan').first().click();
   const plan = await planText(page);
-  check(/Lunch at /.test(plan) && !/Lunch isn’t added/.test(plan), 'a 10:00 arrival keeps its lunch', plan.match(/\d\d:\d\d (?:to \d\d:\d\d )?Lunch at [^.]{0,30}/)?.[0] ?? '');
-  const lunch = plan.match(/(\d\d):(\d\d) (?:to \d\d:\d\d )?Lunch at/);
-  check(Boolean(lunch) && Number(lunch[1]) * 60 + Number(lunch[2]) <= 14 * 60, 'and it starts by 14:00', lunch ? `${lunch[1]}:${lunch[2]}` : 'none');
+  check(!/Lunch at /.test(plan) && (await page.getByTestId('plan-lunch-ask').count()) === 1, 'a 10:00 arrival has no lunch until one is chosen: the plan asks', '');
+  await page.getByTestId('plan-lunch-choose').click(); await page.waitForTimeout(700);
+  const sheet = (await page.getByTestId('plan-edit-sheet').innerText()).replace(/\s+/g, ' ');
+  check(/Would start about \d\d:\d\d · 45 minutes at the table\./.test(sheet) && !/later than most families/.test(sheet), 'the picker says when lunch would start, with no warning in the morning');
+  const confirmBtn = page.getByTestId('plan-lunch-confirm');
+  check((await confirmBtn.getAttribute('aria-disabled')) === 'true' || (await confirmBtn.isDisabled()), 'nothing can be confirmed before a place is selected');
+  await page.getByTestId('plan-edit-lunch-option').first().click(); await page.waitForTimeout(300);
+  await page.getByTestId('plan-lunch-confirm').click();
+  const withLunch = await planText(page);
+  const lunch = withLunch.match(/(\d\d):(\d\d) (?:to \d\d:\d\d )?Lunch at/);
+  check(Boolean(lunch) && Number(lunch[1]) * 60 + Number(lunch[2]) <= 14 * 60, 'the chosen lunch is in the day, and starts by 14:00', lunch ? `${lunch[1]}:${lunch[2]}` : 'none');
+  check((await page.getByTestId('plan-lunch-ask').count()) === 0 && (await page.getByTestId('plan-toggle-lunch').count()) === 1, 'the question is gone and lunch can be taken out');
+  await page.getByTestId('plan-toggle-lunch').click();
+  const without = await planText(page);
+  check(!/Lunch at /.test(without) && (await page.getByTestId('plan-lunch-declined').count()) === 1, 'taken out: no lunch, and a quiet way to add one back');
   await ctx.close();
 }
 
