@@ -29,6 +29,17 @@ say('scripts', scripts);
 say('htmlHeaders', headers);
 say('html', { bootShell: /id="boot-shell"/.test(html), bootShellAriaHidden: /id="boot-shell"[^>]*aria-hidden="true"/.test(html), bytes: html.length });
 
+// The cost posture, from the public status endpoint (no probe parameter, so no billable request): which Google scopes are switched on and their caps.
+{
+  const r = await fetch(BASE + '/api/places/status', { headers: { 'user-agent': UA } });
+  const body = await r.json().catch(() => null);
+  const scopes = body?.placesBudget?.scopes ?? null;
+  say('status', { status: r.status, configuredProvider: body?.runtime?.configuredProvider, probeEnabled: body?.probeEnabled, scopes });
+  // The deployed bundle carries the outage change when it holds the new warning text and no longer the old one.
+  const entry = entryOf(html) ? await (await fetch(new URL(entryOf(html), BASE), { headers: { 'user-agent': UA } })).text() : '';
+  say('outageChange', { newWarning: /nothing kept to show/.test(entry), oldWarning: /using safe fallback/.test(entry) });
+}
+
 // hashed assets and fonts
 const entryUrl = entryOf(html) ? new URL(entryOf(html), BASE) : null;
 if (entryUrl) {
