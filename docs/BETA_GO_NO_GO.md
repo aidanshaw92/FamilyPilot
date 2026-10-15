@@ -1,6 +1,6 @@
 # 20-family beta: go / no-go checklist
 
-15 October 2026. One page, to be ticked on the day. **Go** means every row in sections A to H is ticked; one unticked row in A, B, G or H is a no-go; an unticked row in C to F is a known limitation to state to the families, not a stop. Nothing here is ticked yet: the product owner ticks the iPhone and account rows; I tick the production rows and record the evidence beside them.
+15 October 2026. One page, to be ticked on the day. **Go** means every row in sections A to G is ticked. **Any unticked row in A to G is a NO-GO**: in particular an unsuccessful sign-up, invitation, plan-sharing, account-isolation or privacy test stops the release until it is fixed and re-run. Section H lists the limitations that are disclosed to the families; they are not release gates. Nothing here is ticked yet: the product owner ticks the iPhone and account rows; I tick the production rows and record the evidence beside them.
 
 Who the families are told the product is: *London days out, parks, museums and attractions from open sources; practical fit (distance, routines, facilities we have read) rather than activity-specific; no prices yet; soft play thin until the follow-on release.*
 
@@ -25,10 +25,12 @@ Who the families are told the product is: *London days out, parks, museums and a
 - [ ] Airplane mode on Explore: "Couldn't load" with Try again, never an example venue (#223); switch it off, Try again recovers.
 - [ ] Rotate and background the app mid-load; nothing reverts.
 
-## C. Two separate family accounts (product owner, on a computer, two inboxes; `docs/PRODUCTION_CANARY.md` sections 1 to 6)
+## C. Two separate family accounts: a release gate (product owner, on a computer, two inboxes; `docs/PRODUCTION_CANARY.md` sections 1 to 6)
 
 - [ ] Sign up A and B with the normal flow; confirmation emails arrive within 3 minutes (if not, stop: SMTP is your decision).
-- [ ] A invites B; B accepts; both see Connected, neither sees the other's children's details beyond what the privacy model allows (`docs/PRIVACY_MODEL.md`, "Connected Families").
+- [ ] A invites B; B accepts; both see Connected.
+- [ ] **Account isolation:** signed in as B, nothing of A's is reachable except what the connection carries (area, ages, pushchair, routines; never names of children, dates of birth, home position or saved places), per `docs/PRIVACY_MODEL.md` "Connected Families"; A's plans and saved places do not appear on B.
+- [ ] Signed out, no screen shows either family's data; a stale deep link to a plan asks for sign-in rather than showing the plan.
 - [ ] Meet halfway between A and B: a list between the two areas; Plan this day; the plan carries the date and arrival time.
 - [ ] A shares a plan with B; B opens it; B's copy shows the same stops and times; A's edit does not silently change B's copy.
 - [ ] Sign out and in on A: profile, saved places and plans intact.
@@ -46,11 +48,12 @@ Who the families are told the product is: *London days out, parks, museums and a
 - [ ] Catalogue outage on Saved: no reconnect line, nothing said to be "gone".
 - [ ] A link to a venue that does not exist: "Place not found" and a way back.
 
-## F. Privacy
+## F. Privacy: a release gate
 
 - [ ] The About screen names the sources and licences (OS, Wikidata, FSA when Tranche C ships, OSM notice ready).
 - [ ] No child's date of birth, no home position and no device position leaves the device except as the privacy model states; the catalogue read sends a venue's position, never the home.
 - [ ] Public read of `place_records` closed (the retention migration), or the exposure is accepted in writing for the trial.
+- [ ] The privacy wording shown to the parent (profile and invitation screens) matches what the app does.
 
 ## G. Approvals on record (written, from the product owner)
 
@@ -59,12 +62,9 @@ Who the families are told the product is: *London days out, parks, museums and a
 - [ ] Retention migration: "approve the migration", or deferred.
 - [ ] Tranche C (soft play) as a follow-on, or deferred.
 
-## H. What the families are told (so nothing is oversold)
+## H. Disclosed limitations: what the families are told (not gates)
 
-- [ ] Coverage: parks, museums, attractions, a few zoos and farms; thin for activities and soft play until the follow-on.
-- [ ] No prices; fit is practical, not activity-specific.
-- [ ] How to report a wrong fact (the parent-report path on a venue page).
-
-## Known limitations going in (state them; not stops)
-
-Slow-network first load 9 to 10 s cold; 59 previously held venues without a successor until Tranche C; Explore outage fallback replaced only once #223 merges; photographs as decided in October; the two-account canary has never been run against production.
+- Coverage: parks, museums, attractions, a few zoos and farms; **soft play and activities thin** until the follow-on release (59 previously held venues have no Tranche A successor).
+- **Venue facilities are unverified unless the venue page says they were read**: toilets, baby changing, parking and step-free access show as "not recorded" otherwise; no prices; fit is practical, not activity-specific.
+- **The first load on a slow connection takes 9 to 10 seconds**; repeat visits are fast.
+- How to report a wrong fact (the parent-report path on a venue page).
