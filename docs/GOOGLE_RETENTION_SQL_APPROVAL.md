@@ -79,6 +79,19 @@ Google Maps Platform Terms, 3.2.3(a): the customer "will not export, extract, or
 
 None. Saved places and saved days live on each parent's device and never read `place_records`; the two production tables that could hold a copy (`saved_places_backups`, `planning_workspaces`) hold 0 rows; every table that references `place_records` keeps its rows because no row changes. After the migration a saved place still opens exactly as it does today, because the app reaches the catalogue through `/api/places/*` (service role), never through the public key.
 
+## Preflight re-run, 15 October (read-only, recorded as the "before" state)
+
+| Reading | Value |
+|---|---|
+| Policy on `place_records` | `Place records are publicly readable` (present) |
+| `has_table_privilege('anon', 'public.place_records', 'select')` | true |
+| `authenticated` select | true · `service_role` select: true (unchanged by the migration) |
+| Row-level security | on |
+| Rows readable as `anon` (`set local role anon`, rolled back) | **168** (149 `google`, 19 `osm`) |
+| `saved_places_backups` / `planning_workspaces` / `plan_invites` / `planning_connections` | 0 / 0 / 0 / 0 |
+
+**Expected effect of the migration:** the policy row disappears; `anon` and `authenticated` select become false; the `anon` count becomes a permission error; `service_role` (the API and the enrichment scripts) is unchanged; no row in any table changes; saved places and plans, which live on devices and never read this table, are unaffected. **Rollback:** the two statements under "Rollback" above restore exactly this state. Still not executed.
+
 ## Proposed execution order
 
 1. **Before anything:** re-run the two privilege queries and the `anon` row count (read-only) and record them, so the "before" state is written down on the day, not from 14 October.
