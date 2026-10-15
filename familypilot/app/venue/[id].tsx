@@ -56,6 +56,8 @@ import { accountRequired } from '@/src/stores/auth-store';
 import { isActivityVenue } from '@/src/data/mock-restaurants';
 import { useFamilyProfile, useNearbyFood, useParentObservations, useVenue, useWeather } from '@/src/hooks/use-queries';
 import { venueService } from '@/src/services/api';
+import { ReconnectOffer } from '@/src/components/saved/ReconnectOffer';
+import { useSavedSuccessor } from '@/src/hooks/use-saved-successor';
 import { useSavedStore } from '@/src/stores/saved-store';
 import { minTarget } from '@/src/components/ui/touch';
 import { useNamedDocumentTitle } from '@/src/hooks/use-document-title';
@@ -99,6 +101,10 @@ export default function VenueScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: baseVenue, isLoading, isError, refetch, isPlaceholderData } = useVenue(id ?? '', { showCardWhileLoading: true });
+  // A saved place whose listing has gone: when this address is one the device saved and the catalogue says it is not listed, the page offers to reconnect
+  // it instead of a Retry that can never work. For any other address (nobody saved it, or the catalogue did not answer) nothing changes.
+  const savedCopy = useSavedStore((state) => state.items.find((item) => item.venue.id === id));
+  const successor = useSavedSuccessor(savedCopy);
   // True while `venue` is the CARD the parent tapped, standing in until the full detail returns. The card knows the place's
   // identity, photograph, travel time and fit badge (all of which the parent just saw), and nothing evidence-backed: so those
   // are drawn, and everything else waits for the real detail rather than being drawn from a partial record.
@@ -274,6 +280,19 @@ export default function VenueScreen() {
           <Skeleton height={200} />
         </View>
       </View>
+    );
+  }
+
+  const lostListing = successor.data && successor.data.status !== 'listed' ? successor.data : null;
+  if ((isError || !venue) && savedCopy && lostListing) {
+    return (
+      <ReconnectOffer
+        saved={savedCopy}
+        lookup={lostListing}
+        paddingTop={insets.top}
+        onBack={handleBack}
+        onReconnected={(newId) => router.replace(`/venue/${newId}` as never)}
+      />
     );
   }
 
