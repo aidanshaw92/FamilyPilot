@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ReconnectHost, type ActiveReconnect } from '@/src/components/saved/ReconnectHost';
+import { ReconnectLine } from '@/src/components/saved/ReconnectLine';
 import { SavedBackupPanel } from '@/src/components/saved/SavedBackupPanel';
 import { PageHeader } from '@/src/components/navigation/PageHeader';
 import { SavedPlaceRow } from '@/src/components/shared/SavedPlaceRow';
@@ -50,6 +52,17 @@ export default function SavedScreen() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [removedItem, setRemovedItem] = useState<SavedItem | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  // What the last reconnect did, in a sentence. Cleared after a few seconds, like the undo bar.
+  const [notice, setNotice] = useState<string | null>(null);
+  // Which saved place the one reconnect sheet is open for (the sheet draws over the whole screen, so the screen owns it, not the row).
+  const [reconnecting, setReconnecting] = useState<ActiveReconnect | null>(null);
+  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (noticeTimer.current) clearTimeout(noticeTimer.current); }, []);
+  const showNotice = (message: string) => {
+    setNotice(message);
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    noticeTimer.current = setTimeout(() => setNotice(null), 8000);
+  };
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -103,17 +116,20 @@ export default function SavedScreen() {
   };
 
   const renderItem = (item: SavedItem, index: number) => (
-    <SavedPlaceRow
-      key={item.id}
-      venue={item.venue}
-      itemType={item.type}
-      index={index}
-      onRemoved={(id) => {
-        const removed = (savedItems ?? []).find((candidate) => candidate.venue.id === id) ?? item;
-        setRemovedItem(removed);
-        setTimeout(() => setRemovedItem(null), 5000);
-      }}
-    />
+    <View key={item.id}>
+      <SavedPlaceRow
+        venue={item.venue}
+        itemType={item.type}
+        index={index}
+        onRemoved={(id) => {
+          const removed = (savedItems ?? []).find((candidate) => candidate.venue.id === id) ?? item;
+          setRemovedItem(removed);
+          setTimeout(() => setRemovedItem(null), 5000);
+        }}
+      />
+      {/* Only appears for a place whose old listing the catalogue says is gone (see ReconnectLine); nothing happens until the parent taps it. */}
+      <ReconnectLine item={item} onOpen={setReconnecting} />
+    </View>
   );
 
   return (
@@ -169,6 +185,14 @@ export default function SavedScreen() {
         ))}
       </ScrollView>
 
+      {notice ? (
+        <FadeInView style={styles.undoBar}>
+          <Text variant="bodySmall" color={colors.text.secondary} style={styles.noticeText} testID="reconnect-notice">
+            {notice}
+          </Text>
+        </FadeInView>
+      ) : null}
+
       {removedItem ? (
         <FadeInView style={styles.undoBar}>
           <Text variant="bodySmall" color={colors.text.secondary}>
@@ -222,6 +246,7 @@ export default function SavedScreen() {
             above them would push what they came for down the screen for a job done once in a while. */}
         {isLoading ? null : <SavedBackupPanel />}
       </ScrollView>
+      <ReconnectHost active={reconnecting} onClose={() => setReconnecting(null)} onDone={showNotice} />
     </ScreenContainer>
   );
 }
@@ -265,6 +290,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.fill,
     borderRadius: radius.md,
   },
+  noticeText: { flex: 1 },
   content: {
     paddingHorizontal: spacing.screenPadding,
     paddingBottom: spacing['3xl'],
