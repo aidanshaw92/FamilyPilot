@@ -106,14 +106,16 @@ describe('the independent list: what an entry may be', () => {
     expect(kept[0].name).toBe('Hackney City Farm');
   });
 
-  it('the files that ship validate, and ship empty until a reviewed set is approved', () => {
-    for (const file of ['osm', 'official-site', 'wikidata']) {
+  it('the files that ship validate in production, and every shipped entry carries a named reviewer (none is a rehearsal or unreviewed)', () => {
+    // Empty until a reviewed set is approved; afterwards, every entry must be one a person signed, so a rehearsal branch or a simulation
+    // output can never reach main unnoticed.
+    for (const file of ['osm', 'official-site', 'wikidata', 'os-greenspace']) {
       const shipped = JSON.parse(readFileSync(join(root, `server/places/data/identities/${file}.json`), 'utf8'));
       const problems: string[] = [];
-      const kept = loadIdentities({ entries: shipped.entries, onProblem: (id: string, why: string) => problems.push(`${id}: ${why}`) });
+      const kept = loadIdentities({ entries: shipped.entries, production: true, onProblem: (id: string, why: string) => problems.push(`${id}: ${why}`) });
       expect(problems, file).toEqual([]);
       expect(kept, file).toHaveLength(shipped.entries.length);
-      expect(shipped.entries, file).toEqual([]);
+      for (const e of shipped.entries) expect(e.reviewedBy, `${file} ${e.familypilotId}`).not.toMatch(/unreviewed|preview only|simulation/i);
       expect(shipped.source).toBe(file);
     }
   });
@@ -176,18 +178,20 @@ describe('the catalogue with an independent list', () => {
   beforeEach(() => { fetchSpy.mockReset(); vi.stubGlobal('fetch', fetchSpy); });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('with an empty list it is exactly what was served before', async () => {
+  it('with an empty list it is exactly what was served before, and what ships is exactly what the shipped files say', async () => {
     const { readCatalogue } = require_(cataloguePath);
+    const { shippedEntries } = require_(identitiesPath);
     const rows = [row(), row({ familypilot_place_id: 'fp-google-B', external_id: 'google:B', name: 'B' })];
-    const without = await readCatalogue({ client: fakeClient(rows), now: NOW, entries: [] });
-    const shipped = await readCatalogue({ client: fakeClient(rows), now: NOW });
-    expect(shipped).toEqual(without);
+    const without = await readCatalogue({ client: fakeClient(rows), now: NOW, entries: [], cutover: [] });
     expect(without.map((p: { provider: string }) => p.provider)).toEqual(['google', 'google']);
+    const shippedCutover = JSON.parse(readFileSync(join(root, 'server/places/data/identities/cutover.json'), 'utf8')).categories;
+    const shipped = await readCatalogue({ client: fakeClient(rows), now: NOW });
+    expect(shipped).toEqual(await readCatalogue({ client: fakeClient(rows), now: NOW, entries: shippedEntries(), cutover: shippedCutover }));
   });
 
   it('a fresh Google row always wins over an entry for the same venue', async () => {
     const { readCatalogue } = require_(cataloguePath);
-    const places = await readCatalogue({ client: fakeClient([row()]), now: NOW, entries: [entry({ name: 'From OSM' })] });
+    const places = await readCatalogue({ client: fakeClient([row()]), now: NOW, entries: [entry({ name: 'From OSM' })], cutover: [] });
     expect(places).toHaveLength(1);
     expect(places[0]).toMatchObject({ provider: 'google', name: 'Hackney City Farm' });
   });
@@ -258,15 +262,31 @@ describe('switching a category over, so a list is not a blend of two sources', (
     expect(places).toEqual([]);
   });
 
+  it('a Google place from a live or cached search in a switched-over category is not served beside the independent entries', () => {
+    const { mergeCatalogue } = require_(cataloguePath);
+    const live = [{ familypilotId: 'fp-google-F', category: 'farm', provider: 'google' }, { familypilotId: 'fp-google-P', category: 'park', provider: 'google' }];
+    const stored = [{ familypilotId: 'fp-wd-q1', category: 'farm', provider: 'wikidata', independentSource: 'wikidata' }];
+    expect(mergeCatalogue(live, stored, 160, { cutover: ['farm'] }).map((p: { familypilotId: string }) => p.familypilotId)).toEqual(['fp-google-P', 'fp-wd-q1']);
+    expect(mergeCatalogue(live, stored, 160, { cutover: [] }).map((p: { familypilotId: string }) => p.familypilotId)).toEqual(['fp-google-F', 'fp-google-P', 'fp-wd-q1']);
+  });
+
   it('only categories the catalogue serves can be switched over', () => {
     const { cutoverCategories } = require_(identitiesPath);
     expect([...cutoverCategories({ cutover: ['farm', 'restaurant', 'toString'] })]).toEqual(['farm']);
     expect([...cutoverCategories({ cutover: [] })]).toEqual([]);
   });
 
-  it('the file that ships switches nothing over', () => {
+  it('the file that ships switches over only categories the catalogue serves, and only ones the shipped files can serve', () => {
+    // Empty until a reviewed set is approved. Once one is, a category may be switched over only when the shipped files hold entries for it,
+    // so a cut-over can never empty a category.
+    const { EXPLORE_CATEGORIES } = require_(cataloguePath);
+    const { shippedEntries } = require_(identitiesPath);
     const shipped = JSON.parse(readFileSync(join(root, 'server/places/data/identities/cutover.json'), 'utf8'));
-    expect(shipped.categories).toEqual([]);
+    const held = new Set(shippedEntries().map((e: { category: string }) => e.category));
+    for (const category of shipped.categories) {
+      expect(EXPLORE_CATEGORIES, category).toContain(category);
+      expect(held.has(category), `${category} is switched over but no shipped entry has that category`).toBe(true);
+    }
   });
 
   it('Meet halfway follows the same rule', async () => {

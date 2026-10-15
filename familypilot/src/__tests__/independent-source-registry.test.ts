@@ -115,8 +115,14 @@ describe('the registry accepts the two open-licence sources, each with its own l
     }
   });
 
-  it('ships empty files for every family until a reviewed set is approved', () => {
-    expect(identities.shippedEntries()).toEqual([]);
+  it('ships, for every family, only entries a named person reviewed (empty until a reviewed set is approved)', () => {
+    const problems: string[] = [];
+    const shipped = identities.shippedEntries((id: string, why: string) => problems.push(`${id}: ${why}`));
+    expect(problems).toEqual([]);
+    const served = identities.loadIdentities({ entries: shipped, production: true, onProblem: (id: string, why: string) => problems.push(`${id}: ${why}`) });
+    expect(problems).toEqual([]);
+    expect(served).toHaveLength(shipped.length);
+    for (const e of shipped) expect(e.reviewedBy, e.familypilotId).not.toMatch(/unreviewed|preview only|simulation/i);
   });
 });
 

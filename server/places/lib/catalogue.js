@@ -129,9 +129,13 @@ function withinLondon(places) {
  * those are a reviewed list whose size is a decision, not a payload accident, and a cap of 160 would silently serve the first 160 of
  * thousands the day the Google rows leave. (3,623 of them are 1.2 MB, about 134 KB compressed.)
  */
-function mergeCatalogue(livePlaces, storedPlaces, limit = 160) {
+function mergeCatalogue(livePlaces, storedPlaces, limit = 160, options = {}) {
   const merged = new Map();
-  for (const place of livePlaces) merged.set(place.familypilotId, place);
+  // A switched-over category is served from the independent files INSTEAD of Google everywhere, so a Google place in such a category
+  // is dropped here too, whether it came fresh from Google or from a cached search: otherwise a cached search would blend the two sources
+  // within one data type for as long as the cache lives.
+  const cutover = cutoverCategories(options);
+  for (const place of livePlaces) if (place.independentSource || !cutover.has(place.category)) merged.set(place.familypilotId, place);
   let counted = merged.size;
   for (const place of storedPlaces) {
     if (merged.has(place.familypilotId)) continue;

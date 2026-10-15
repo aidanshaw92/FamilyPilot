@@ -600,11 +600,20 @@ describe('repeat renders are absorbed rather than re-bought', () => {
     );
     delete process.env.PLACES_PROVIDER;
 
-    expect(res.statusCode).toBe(503);
-    expect(res.body?.code).toBe('PLACES_DISABLED');
-    // Critically NOT mock London: a cost control must not look like a provider outage.
-    expect(res.body?.fallbackAvailable).toBe(false);
-    expect(res.headers['Cache-Control']).toBe('no-store');
+    const { shippedEntries } = await import('../../../server/places/lib/independent-identities.js');
+    if (shippedEntries().length === 0) {
+      expect(res.statusCode).toBe(503);
+      expect(res.body?.code).toBe('PLACES_DISABLED');
+      // Critically NOT mock London: a cost control must not look like a provider outage.
+      expect(res.body?.fallbackAvailable).toBe(false);
+      expect(res.headers['Cache-Control']).toBe('no-store');
+    } else {
+      // Once a reviewed set ships, the gate refusal is answered with the independently held venues (real, not demo), still with no Google request.
+      expect(res.statusCode).toBe(200);
+      expect(res.body?.provider).not.toBe('mock');
+      expect(res.body?.places?.length).toBeGreaterThan(0);
+      expect(res.body?.places?.every((p: { independentSource?: string }) => Boolean(p.independentSource))).toBe(true);
+    }
     expect(spy).not.toHaveBeenCalled();
   });
 });
