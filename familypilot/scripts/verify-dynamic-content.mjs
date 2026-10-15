@@ -118,6 +118,8 @@ for (const [name, width] of [['Priya Nair', 393], ['Bartholomew-Maximilian Feath
 console.log('\nExplore is data-driven');
 {
   const { page, context } = await open('/explore');
+  await page.getByTestId('explore-scope-all').click();
+  await page.waitForTimeout(700);
   // The list is windowed (only the rows near the screen are mounted, on purpose: every photograph a parent
   // never sees is money), so collect the cards while scrolling down it.
   const seen = new Map();
@@ -169,46 +171,44 @@ console.log('\nExplore is data-driven');
   check("Home's first card is Explore's first card", homeLabel?.startsWith(exploreFirst.slice(0, 20)) === true, `${exploreFirst.slice(0, 24)} / ${homeLabel?.slice(0, 24)}`);
   await home.context.close();
 
-  // Category chip.
-  const count = async () => /(\d+) places? across London/.exec(await body(page))?.[1];
+  // Category chip. (Explore opens on Nearby, within 5 miles of home; the whole loaded list is Search all.)
+  const count = async () => Number(/(\d+) places?/.exec(await page.getByTestId('explore-count').innerText())?.[1]);
+  await page.getByTestId('explore-scope-all').click();
+  await page.waitForTimeout(600);
   const before = await count();
-  await page.getByRole('button', { name: 'Parks', exact: true }).click();
+  await page.getByTestId('explore-category-parks').click();
   await page.waitForTimeout(700);
   const parks = await page.locator('[role="button"][aria-label$="view details"]').evaluateAll((els) => els.map((e) => e.innerText));
-  check('the Parks chip narrows the list to parks', parks.length > 0 && parks.every((t) => /\bpark\b/.test(t)), `${parks.length} cards`);
+  check('the Parks & playgrounds chip narrows the list to parks', parks.length > 0 && parks.every((t) => /\bpark\b/i.test(t)), `${parks.length} cards`);
   const after = await count();
-  check('the count line follows the list', Number(after) === parks.length || Number(after) < Number(before), `${before} → ${after}`);
-  check('the selected chip says so, not only by colour', (await page.getByRole('button', { name: 'Parks', exact: true }).getAttribute('aria-pressed')) === 'true' && (await page.getByRole('button', { name: 'All', exact: true }).getAttribute('aria-pressed')) === 'false');
-  await page.getByRole('button', { name: 'All', exact: true }).click();
+  check('the count line follows the list', after < before, `${before} → ${after}`);
+  check('the selected chip says so, not only by colour', (await page.getByTestId('explore-category-parks').getAttribute('aria-pressed')) === 'true' && (await page.getByTestId('explore-category-all').getAttribute('aria-pressed')) === 'false');
+  await page.getByTestId('explore-category-all').click();
   await page.waitForTimeout(500);
-  check('"All" restores the list', Number(await count()) === Number(before));
+  check('"All" restores the list', (await count()) === before);
 
-  // Filters.
-  await page.getByRole('button', { name: /^Filters/ }).click();
+  // More (the filter sheet).
+  await page.getByTestId('explore-more').click();
   await page.waitForTimeout(600);
-  await page.getByRole('button', { name: '10 min', exact: true }).click();
+  await page.getByRole('button', { name: 'Toilets', exact: true }).click();
   await page.getByRole('button', { name: 'Show results' }).click();
   await page.waitForTimeout(800);
-  const filtered = Number(await count());
-  check('a travel-time filter narrows the list', filtered < Number(before), `${before} → ${filtered}`);
-  const linkName = await page.getByRole('button', { name: /^Filters/ }).first().getAttribute('aria-label');
-  check('the Filters link carries the active count', /Filters \(1\)/.test(linkName ?? ''), linkName ?? '');
-  await page.getByRole('button', { name: /^Filters/ }).click();
+  const filtered = await count();
+  check('a filter narrows the list', filtered < before, `${before} → ${filtered}`);
+  check('the More control carries the active count', /More \(1\)/.test((await page.getByTestId('explore-more').innerText()) ?? ''), await page.getByTestId('explore-more').innerText());
+  await page.getByTestId('explore-more').click();
   await page.waitForTimeout(600);
   await page.getByRole('button', { name: 'Reset filters' }).click();
   await page.getByRole('button', { name: 'Show results' }).click();
   await page.waitForTimeout(700);
-  check('Reset restores the full list', Number(await count()) === Number(before));
+  check('Reset restores the full list', (await count()) === before);
 
-  // When filters leave nothing, the screen suggests loosening them, so the sheet must stay reachable.
-  await page.getByRole('button', { name: /^Filters/ }).click();
-  await page.waitForTimeout(500);
-  await page.getByRole('button', { name: 'Free', exact: true }).first().click();
-  await page.getByRole('button', { name: '10 min', exact: true }).click();
-  await page.getByRole('button', { name: 'Show results' }).click();
+  // When filters leave nothing, the screen says why and offers a way back, and the filters stay reachable.
+  await page.getByTestId('explore-category-museums').click();
+  await page.getByTestId('explore-quick-outdoor').click();
   await page.waitForTimeout(800);
-  const emptyNow = /No places found/.test(await body(page));
-  check('an empty result still offers Filters (and says how many)', emptyNow ? (await page.getByRole('button', { name: /^Filters/ }).count()) > 0 && /0 places across London/.test(await body(page)) : true, emptyNow ? 'empty state shown' : 'filters left some results; empty branch not reached');
+  const emptyNow = (await page.getByTestId('explore-empty').count()) > 0;
+  check('an empty result explains itself, offers a way back, and keeps More reachable', emptyNow && (await page.getByTestId('explore-more').count()) > 0 && /Nothing matches/.test(await body(page)) && /0 places/.test(await page.getByTestId('explore-count').innerText()), emptyNow ? 'empty state shown' : 'filters left some results; empty branch not reached');
   await context.close();
 }
 

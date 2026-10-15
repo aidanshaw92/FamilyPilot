@@ -63,7 +63,10 @@ export function SearchBar({
         accessibilityRole={readOnly ? 'button' : undefined}
         accessibilityLabel={readOnly ? placeholder : undefined}
         onPress={onPress}
-        disabled={!readOnly}
+        // An input needs no press target of its own: the wrapper is neither a tab stop nor announced as disabled (`disabled` set
+        // aria-disabled on a container that holds a working text field, which a screen reader can read as the field being off).
+        // react-native-web's Pressable makes itself a tab stop unless it is given a tabIndex, so say it is not one.
+        tabIndex={readOnly ? undefined : -1}
         style={[
           styles.field,
           explore && styles.fieldExplore,

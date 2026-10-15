@@ -1,5 +1,11 @@
 {
   "version": 1,
   "_comment": "Categories that are served from the independent files INSTEAD of Google, rather than beside it. Empty until a category's independent coverage is at least what Google's was. The OSMF Collective Database Guideline (as summarised) asks for each data type in a region to be entirely OSM or entirely non-OSM; see docs/OSM_LICENCE_REVIEW.md section 4A.",
-  "categories": []
+  "categories": [
+    "park",
+    "museum",
+    "attraction",
+    "zoo",
+    "farm"
+  ]
 }

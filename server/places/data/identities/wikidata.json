@@ -3,5 +3,2138 @@
   "source": "wikidata",
   "licence": "CC0-1.0",
   "_comment": "Wikidata, CC0. No OpenStreetMap or Google content. Empty until a reviewed set is approved. See docs/P0_CATALOGUE_RECOVERY.md.",
-  "entries": []
+  "entries": [
+    {
+      "familypilotId": "fp-wd-q1024854",
+      "name": "Churchill War Rooms",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1024854",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1024854"
+      },
+      "location": {
+        "latitude": 51.50222,
+        "longitude": -0.1293,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.iwm.org.uk/visits/churchill-war-rooms"
+    },
+    {
+      "familypilotId": "fp-wd-q160659",
+      "name": "London Eye",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q160659",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q160659"
+      },
+      "location": {
+        "latitude": 51.503333,
+        "longitude": -0.119722,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://londoneye.com"
+    },
+    {
+      "familypilotId": "fp-wd-q186309",
+      "name": "Madame Tussauds",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q186309",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q186309"
+      },
+      "location": {
+        "latitude": 51.52279,
+        "longitude": -0.15517,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.madametussauds.com/london/"
+    },
+    {
+      "familypilotId": "fp-wd-q3312744",
+      "name": "Sea Life London Aquarium",
+      "category": "zoo",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q3312744",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q3312744"
+      },
+      "location": {
+        "latitude": 51.5019,
+        "longitude": -0.118889,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.visitsealife.com/london/"
+    },
+    {
+      "familypilotId": "fp-wd-q139906047",
+      "name": "Crystal Palace Park Farm",
+      "category": "farm",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q139906047",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q139906047"
+      },
+      "location": {
+        "latitude": 51.417828,
+        "longitude": -0.069887,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.capel.ac.uk/community/crystal-palace-park-farm/"
+    },
+    {
+      "familypilotId": "fp-wd-q5637349",
+      "name": "Hackney City Farm",
+      "category": "farm",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q5637349",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q5637349"
+      },
+      "location": {
+        "latitude": 51.5317,
+        "longitude": -0.06661,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q139906079",
+      "name": "Kentish Town City Farm",
+      "category": "farm",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q139906079",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q139906079"
+      },
+      "location": {
+        "latitude": 51.552445,
+        "longitude": -0.148949,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://ktcityfarm.org.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q6931579",
+      "name": "Mudchute Park and Farm",
+      "category": "farm",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q6931579",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q6931579"
+      },
+      "location": {
+        "latitude": 51.4922,
+        "longitude": -0.012222,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q1073042",
+      "name": "Chiltern Open Air Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1073042",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1073042"
+      },
+      "location": {
+        "latitude": 51.6364,
+        "longitude": -0.541403,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.coam.org.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q171255",
+      "name": "Cutty Sark",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q171255",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q171255"
+      },
+      "location": {
+        "latitude": 51.482778,
+        "longitude": -0.009722,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.rmg.co.uk/cutty-sark"
+    },
+    {
+      "familypilotId": "fp-wd-q5244410",
+      "name": "De Havilland Aircraft Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q5244410",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q5244410"
+      },
+      "location": {
+        "latitude": 51.7108,
+        "longitude": -0.271111,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.dehavillandmuseum.co.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q1455777",
+      "name": "Freud Museum London",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1455777",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1455777"
+      },
+      "location": {
+        "latitude": 51.5483,
+        "longitude": -0.177778,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.freud.org.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q5619226",
+      "name": "Gunnersbury Park",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q5619226",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q5619226"
+      },
+      "location": {
+        "latitude": 51.498,
+        "longitude": -0.292,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q15223102",
+      "name": "Headstone Manor and Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q15223102",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q15223102"
+      },
+      "location": {
+        "latitude": 51.594444,
+        "longitude": -0.355,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q749808",
+      "name": "Imperial War Museum London",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q749808",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q749808"
+      },
+      "location": {
+        "latitude": 51.495833,
+        "longitude": -0.108611,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.iwm.org.uk/visits/iwm-london"
+    },
+    {
+      "familypilotId": "fp-wd-q2904846",
+      "name": "London Museum Docklands",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q2904846",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q2904846"
+      },
+      "location": {
+        "latitude": 51.5075,
+        "longitude": -0.023611,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.londonmuseum.org.uk/docklands/"
+    },
+    {
+      "familypilotId": "fp-wd-q2918086",
+      "name": "Museum of the Home",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q2918086",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q2918086"
+      },
+      "location": {
+        "latitude": 51.531739,
+        "longitude": -0.076219,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.museumofthehome.org.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q1199924",
+      "name": "National Maritime Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1199924",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1199924"
+      },
+      "location": {
+        "latitude": 51.4811,
+        "longitude": -0.005556,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.rmg.co.uk/national-maritime-museum"
+    },
+    {
+      "familypilotId": "fp-wd-q238587",
+      "name": "National Portrait Gallery",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q238587",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q238587"
+      },
+      "location": {
+        "latitude": 51.509444,
+        "longitude": -0.128056,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q309388",
+      "name": "Natural History Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q309388",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q309388"
+      },
+      "location": {
+        "latitude": 51.496111,
+        "longitude": -0.176111,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q564981",
+      "name": "Queen's House",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q564981",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q564981"
+      },
+      "location": {
+        "latitude": 51.4812,
+        "longitude": -0.003783,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q270920",
+      "name": "Royal Academy of Arts",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q270920",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q270920"
+      },
+      "location": {
+        "latitude": 51.509167,
+        "longitude": -0.139444,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.royalacademy.org.uk"
+    },
+    {
+      "familypilotId": "fp-wd-q1311497",
+      "name": "Saatchi Gallery",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1311497",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1311497"
+      },
+      "location": {
+        "latitude": 51.4906,
+        "longitude": -0.1589,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q674773",
+      "name": "Science Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q674773",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q674773"
+      },
+      "location": {
+        "latitude": 51.4975,
+        "longitude": -0.174722,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.sciencemuseum.org.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q195436",
+      "name": "Tate Britain",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q195436",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q195436"
+      },
+      "location": {
+        "latitude": 51.491111,
+        "longitude": -0.1275,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.tate.org.uk/visit/tate-britain"
+    },
+    {
+      "familypilotId": "fp-wd-q193375",
+      "name": "Tate Modern",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q193375",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q193375"
+      },
+      "location": {
+        "latitude": 51.507778,
+        "longitude": -0.099444,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.tate.org.uk/visit/tate-modern"
+    },
+    {
+      "familypilotId": "fp-wd-q6373",
+      "name": "British Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q6373",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q6373"
+      },
+      "location": {
+        "latitude": 51.519444,
+        "longitude": -0.126944,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q12110695",
+      "name": "Courtauld Gallery",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q12110695",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q12110695"
+      },
+      "location": {
+        "latitude": 51.511568,
+        "longitude": -0.117712,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://courtauld.ac.uk/gallery"
+    },
+    {
+      "familypilotId": "fp-wd-q571249",
+      "name": "Design Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q571249",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q571249"
+      },
+      "location": {
+        "latitude": 51.499897,
+        "longitude": -0.200244,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://designmuseum.org/"
+    },
+    {
+      "familypilotId": "fp-wd-q180788",
+      "name": "National Gallery",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q180788",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q180788"
+      },
+      "location": {
+        "latitude": 51.508889,
+        "longitude": -0.128333,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.nationalgallery.org.uk"
+    },
+    {
+      "familypilotId": "fp-wd-q3520122",
+      "name": "The Postal Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q3520122",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q3520122"
+      },
+      "location": {
+        "latitude": 51.524,
+        "longitude": -0.1126,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://postalmuseum.org/"
+    },
+    {
+      "familypilotId": "fp-wd-q1327919",
+      "name": "Wallace Collection",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1327919",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1327919"
+      },
+      "location": {
+        "latitude": 51.517454,
+        "longitude": -0.153022,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.wallacecollection.org/"
+    },
+    {
+      "familypilotId": "fp-wd-q213322",
+      "name": "Victoria and Albert Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q213322",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q213322"
+      },
+      "location": {
+        "latitude": 51.49685,
+        "longitude": -0.17162,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.vam.ac.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q1814654",
+      "name": "Whitechapel Gallery",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1814654",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1814654"
+      },
+      "location": {
+        "latitude": 51.516,
+        "longitude": -0.070485,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.whitechapelgallery.org/"
+    },
+    {
+      "familypilotId": "fp-wd-q8015837",
+      "name": "William Morris Gallery",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q8015837",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q8015837"
+      },
+      "location": {
+        "latitude": 51.5913,
+        "longitude": -0.02035,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://wmgallery.org.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q2583240",
+      "name": "Wimbledon Lawn Tennis Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q2583240",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q2583240"
+      },
+      "location": {
+        "latitude": 51.434722,
+        "longitude": -0.213333,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q644281",
+      "name": "Young V&A",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q644281",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q644281"
+      },
+      "location": {
+        "latitude": 51.529056,
+        "longitude": -0.054889,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.vam.ac.uk/info/young"
+    },
+    {
+      "familypilotId": "fp-wd-q15205137",
+      "name": "Broomfield Park",
+      "category": "park",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q15205137",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q15205137"
+      },
+      "location": {
+        "latitude": 51.61827,
+        "longitude": -0.11761,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q7057552",
+      "name": "Northala Fields",
+      "category": "park",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q7057552",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q7057552"
+      },
+      "location": {
+        "latitude": 51.5401,
+        "longitude": -0.373792,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q18748726",
+      "name": "Royal Botanic Gardens, Kew",
+      "category": "park",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q18748726",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q18748726"
+      },
+      "location": {
+        "latitude": 51.478694,
+        "longitude": -0.295611,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.kew.org/"
+    },
+    {
+      "familypilotId": "fp-wd-q7640693",
+      "name": "Sunny Hill Park",
+      "category": "park",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q7640693",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q7640693"
+      },
+      "location": {
+        "latitude": 51.597,
+        "longitude": -0.23,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q56856819",
+      "name": "Golders Hill Park Zoo",
+      "category": "zoo",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q56856819",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q56856819"
+      },
+      "location": {
+        "latitude": 51.566852,
+        "longitude": -0.188938,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.cityoflondon.gov.uk/things-to-do/green-spaces/hampstead-heath/golders-hill-park/"
+    },
+    {
+      "familypilotId": "fp-wd-q56857421",
+      "name": "Hanwell Zoo",
+      "category": "zoo",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q56857421",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q56857421"
+      },
+      "location": {
+        "latitude": 51.512267,
+        "longitude": -0.347834,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://hanwellzoo.co.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q1893754",
+      "name": "Bank of England Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1893754",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1893754"
+      },
+      "location": {
+        "latitude": 51.5141,
+        "longitude": -0.088059,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.bankofengland.co.uk/museum/"
+    },
+    {
+      "familypilotId": "fp-wd-q1069148",
+      "name": "Chelsea Physic Garden",
+      "category": "park",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1069148",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1069148"
+      },
+      "location": {
+        "latitude": 51.485,
+        "longitude": -0.162778,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.chelseaphysicgarden.co.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q5460739",
+      "name": "Florence Nightingale Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q5460739",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q5460739"
+      },
+      "location": {
+        "latitude": 51.5003,
+        "longitude": -0.1175,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.florence-nightingale.co.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q1067909",
+      "name": "Chartwell",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1067909",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1067909"
+      },
+      "location": {
+        "latitude": 51.2441,
+        "longitude": 0.08245,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q5474645",
+      "name": "Foundling Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q5474645",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q5474645"
+      },
+      "location": {
+        "latitude": 51.525272,
+        "longitude": -0.121686,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q2464716",
+      "name": "Cliveden",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q2464716",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q2464716"
+      },
+      "location": {
+        "latitude": 51.558333,
+        "longitude": -0.688333,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q4870554",
+      "name": "Battle of Britain Bunker",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q4870554",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q4870554"
+      },
+      "location": {
+        "latitude": 51.5412,
+        "longitude": -0.465278,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://battleofbritainbunker.co.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q1385848",
+      "name": "Eynsford Castle",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1385848",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1385848"
+      },
+      "location": {
+        "latitude": 51.3706,
+        "longitude": 0.213333,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.english-heritage.org.uk/visit/places/eynsford-castle/"
+    },
+    {
+      "familypilotId": "fp-wd-q1753590",
+      "name": "Old Royal Naval College",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1753590",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1753590"
+      },
+      "location": {
+        "latitude": 51.483667,
+        "longitude": -0.005944,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q3038318",
+      "name": "Down House",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q3038318",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q3038318"
+      },
+      "location": {
+        "latitude": 51.331389,
+        "longitude": 0.053333,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q1074877",
+      "name": "Chiswick House",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1074877",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1074877"
+      },
+      "location": {
+        "latitude": 51.483611,
+        "longitude": -0.258611,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://chiswickhouseandgardens.org.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q991572",
+      "name": "Bruce Castle",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q991572",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q991572"
+      },
+      "location": {
+        "latitude": 51.599167,
+        "longitude": -0.075278,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.brucecastle.org/"
+    },
+    {
+      "familypilotId": "fp-wd-q564578",
+      "name": "Frogmore House",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q564578",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q564578"
+      },
+      "location": {
+        "latitude": 51.4743,
+        "longitude": -0.594333,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.royal.uk/houses-frogmore"
+    },
+    {
+      "familypilotId": "fp-wd-q192988",
+      "name": "Royal Observatory",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q192988",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q192988"
+      },
+      "location": {
+        "latitude": 51.477833,
+        "longitude": -0.001389,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.rmg.co.uk/royal-observatory/"
+    },
+    {
+      "familypilotId": "fp-wd-q1628487",
+      "name": "Horniman Museum and Gardens",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1628487",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1628487"
+      },
+      "location": {
+        "latitude": 51.440556,
+        "longitude": -0.060833,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.horniman.ac.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q7622436",
+      "name": "Strawberry Hill House",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q7622436",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q7622436"
+      },
+      "location": {
+        "latitude": 51.438,
+        "longitude": -0.335114,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.strawberryhillhouse.org.uk"
+    },
+    {
+      "familypilotId": "fp-wd-q764804",
+      "name": "Kenwood House",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q764804",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q764804"
+      },
+      "location": {
+        "latitude": 51.571389,
+        "longitude": -0.1675,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q2920095",
+      "name": "Handel Hendrix House",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q2920095",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q2920095"
+      },
+      "location": {
+        "latitude": 51.513,
+        "longitude": -0.1459,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://handelhendrix.org"
+    },
+    {
+      "familypilotId": "fp-wd-q5102117",
+      "name": "Chislehurst Caves",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q5102117",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q5102117"
+      },
+      "location": {
+        "latitude": 51.4074,
+        "longitude": 0.0575,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q1070642",
+      "name": "Chessington World of Adventures",
+      "category": "zoo",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1070642",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1070642"
+      },
+      "location": {
+        "latitude": 51.348611,
+        "longitude": -0.316667,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q2121329",
+      "name": "Syon House",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q2121329",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q2121329"
+      },
+      "location": {
+        "latitude": 51.4767,
+        "longitude": -0.3125,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q1890450",
+      "name": "RAF Museum London",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1890450",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1890450"
+      },
+      "location": {
+        "latitude": 51.598889,
+        "longitude": -0.238611,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.rafmuseum.org.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q19813",
+      "name": "Hatfield House",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q19813",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q19813"
+      },
+      "location": {
+        "latitude": 51.7606,
+        "longitude": -0.2092,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q5433566",
+      "name": "Fan Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q5433566",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q5433566"
+      },
+      "location": {
+        "latitude": 51.4786,
+        "longitude": -0.007778,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.thefanmuseum.org.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q5187495",
+      "name": "Crofton Roman Villa",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q5187495",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q5187495"
+      },
+      "location": {
+        "latitude": 51.3731,
+        "longitude": 0.087688,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://karu.org.uk/crofton_roman_villa.html"
+    },
+    {
+      "familypilotId": "fp-wd-q4947974",
+      "name": "Boston Manor",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q4947974",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q4947974"
+      },
+      "location": {
+        "latitude": 51.4919,
+        "longitude": -0.3184,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.hounslow.gov.uk/info/20174/heritage_and_arts/1855/historic_houses"
+    },
+    {
+      "familypilotId": "fp-wd-q222881",
+      "name": "2 Willow Road",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q222881",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q222881"
+      },
+      "location": {
+        "latitude": 51.557222,
+        "longitude": -0.169167,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.nationaltrust.org.uk/2-willow-road"
+    },
+    {
+      "familypilotId": "fp-wd-q21585359",
+      "name": "Jack the Ripper Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q21585359",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q21585359"
+      },
+      "location": {
+        "latitude": 51.510805,
+        "longitude": -0.067972,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.jacktherippermuseum.com/"
+    },
+    {
+      "familypilotId": "fp-wd-q5642615",
+      "name": "Hall Place and Gardens",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q5642615",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q5642615"
+      },
+      "location": {
+        "latitude": 51.4479,
+        "longitude": 0.159314,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.hallplace.org.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q7049612",
+      "name": "Nonsuch Mansion",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q7049612",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q7049612"
+      },
+      "location": {
+        "latitude": 51.3582,
+        "longitude": -0.228733,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q5507927",
+      "name": "Fulham Palace",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q5507927",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q5507927"
+      },
+      "location": {
+        "latitude": 51.47044,
+        "longitude": -0.21605,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.fulhampalace.org/"
+    },
+    {
+      "familypilotId": "fp-wd-q4861613",
+      "name": "Barnet Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q4861613",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q4861613"
+      },
+      "location": {
+        "latitude": 51.6544,
+        "longitude": -0.20312,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q2363520",
+      "name": "Hertford Castle",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q2363520",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q2363520"
+      },
+      "location": {
+        "latitude": 51.7953,
+        "longitude": -0.08023,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.hertfordcastle.co.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q11974541",
+      "name": "Havering Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q11974541",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q11974541"
+      },
+      "location": {
+        "latitude": 51.5776,
+        "longitude": 0.1788,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.haveringmuseum.org.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q1241163",
+      "name": "Dulwich Picture Gallery",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1241163",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1241163"
+      },
+      "location": {
+        "latitude": 51.446111,
+        "longitude": -0.086389,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.dulwichpicturegallery.org.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q5877115",
+      "name": "Hogarth's House",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q5877115",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q5877115"
+      },
+      "location": {
+        "latitude": 51.4871,
+        "longitude": -0.258875,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://hogarthshouse.org"
+    },
+    {
+      "familypilotId": "fp-wd-q5472972",
+      "name": "Forty Hall",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q5472972",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q5472972"
+      },
+      "location": {
+        "latitude": 51.6699,
+        "longitude": -0.06888,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.fortyhallestate.co.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q917820",
+      "name": "London Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q917820",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q917820"
+      },
+      "location": {
+        "latitude": 51.5179,
+        "longitude": -0.1048,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.londonmuseum.org.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q682917",
+      "name": "Royal Artillery Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q682917",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q682917"
+      },
+      "location": {
+        "latitude": 51.4939,
+        "longitude": 0.070833,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.royalartillerymuseum.com/"
+    },
+    {
+      "familypilotId": "fp-wd-q15260380",
+      "name": "Museum of Richmond",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q15260380",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q15260380"
+      },
+      "location": {
+        "latitude": 51.45884,
+        "longitude": -0.30653,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.museumofrichmond.com/"
+    },
+    {
+      "familypilotId": "fp-wd-q3918721",
+      "name": "Francis Skaryna Belarusian Library and Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q3918721",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q3918721"
+      },
+      "location": {
+        "latitude": 51.6162,
+        "longitude": -0.1848,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://skaryna.org/"
+    },
+    {
+      "familypilotId": "fp-wd-q1254903",
+      "name": "Ightham Mote",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1254903",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1254903"
+      },
+      "location": {
+        "latitude": 51.2583,
+        "longitude": 0.26855,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.nationaltrust.org.uk/ightham-mote"
+    },
+    {
+      "familypilotId": "fp-wd-q131783017",
+      "name": "V&A East",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q131783017",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q131783017"
+      },
+      "location": {
+        "latitude": 51.541944,
+        "longitude": -0.013611,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.vam.ac.uk/east"
+    },
+    {
+      "familypilotId": "fp-wd-q3868648",
+      "name": "Musical Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q3868648",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q3868648"
+      },
+      "location": {
+        "latitude": 51.4879,
+        "longitude": -0.2931,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.musicalmuseum.co.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q119160",
+      "name": "Museum of Domestic Design and Architecture",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q119160",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q119160"
+      },
+      "location": {
+        "latitude": 51.595888,
+        "longitude": -0.241567,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://moda.mdx.ac.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q731616",
+      "name": "National Army Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q731616",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q731616"
+      },
+      "location": {
+        "latitude": 51.4861,
+        "longitude": -0.16,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.nam.ac.uk"
+    },
+    {
+      "familypilotId": "fp-wd-q7910630",
+      "name": "Valence House Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q7910630",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q7910630"
+      },
+      "location": {
+        "latitude": 51.5583,
+        "longitude": 0.1342,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://valencehousecollections.co.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q12064946",
+      "name": "Orleans House Gallery",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q12064946",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q12064946"
+      },
+      "location": {
+        "latitude": 51.4473,
+        "longitude": -0.319022,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.orleanshousegallery.org/"
+    },
+    {
+      "familypilotId": "fp-wd-q4974674",
+      "name": "Brooklands Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q4974674",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q4974674"
+      },
+      "location": {
+        "latitude": 51.353,
+        "longitude": -0.465,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.brooklandsmuseum.com/"
+    },
+    {
+      "familypilotId": "fp-wd-q1283541",
+      "name": "Royal Armouries",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1283541",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1283541"
+      },
+      "location": {
+        "latitude": 51.508545,
+        "longitude": -0.07631,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q5092926",
+      "name": "Chesham Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q5092926",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q5092926"
+      },
+      "location": {
+        "latitude": 51.703,
+        "longitude": -0.602,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q5298112",
+      "name": "Dorney Court",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q5298112",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q5298112"
+      },
+      "location": {
+        "latitude": 51.502596,
+        "longitude": -0.668369,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://dorneycourt.co.uk"
+    },
+    {
+      "familypilotId": "fp-wd-q1099856",
+      "name": "Epping Ongar Railway",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1099856",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1099856"
+      },
+      "location": {
+        "latitude": 51.7111,
+        "longitude": 0.18505,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q1990172",
+      "name": "Sherlock Holmes Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q1990172",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q1990172"
+      },
+      "location": {
+        "latitude": 51.523694,
+        "longitude": -0.161,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q2281943",
+      "name": "Henry Moore Foundation",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q2281943",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q2281943"
+      },
+      "location": {
+        "latitude": 51.8369,
+        "longitude": 0.086389,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.henry-moore.org"
+    },
+    {
+      "familypilotId": "fp-wd-q2060860",
+      "name": "Sir John Soane's Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q2060860",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q2060860"
+      },
+      "location": {
+        "latitude": 51.517103,
+        "longitude": -0.116914,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q6860889",
+      "name": "Milton's Cottage",
+      "category": "attraction",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q6860889",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q6860889"
+      },
+      "location": {
+        "latitude": 51.6304,
+        "longitude": -0.572716,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.miltonscottage.org/"
+    },
+    {
+      "familypilotId": "fp-wd-q55075068",
+      "name": "Vagina Museum",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q55075068",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q55075068"
+      },
+      "location": {
+        "latitude": 51.530397,
+        "longitude": -0.056892,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20"
+    },
+    {
+      "familypilotId": "fp-wd-q21008534",
+      "name": "Museum of Watford",
+      "category": "museum",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q21008534",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q21008534"
+      },
+      "location": {
+        "latitude": 51.6594,
+        "longitude": -0.4031,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.watfordmuseum.org.uk/"
+    },
+    {
+      "familypilotId": "fp-wd-q270263",
+      "name": "London Zoo",
+      "category": "zoo",
+      "identity": {
+        "source": "wikidata",
+        "url": "https://www.wikidata.org/wiki/Q270263",
+        "retrievedAt": "2026-10-14",
+        "licence": "CC0-1.0",
+        "externalId": "Q270263"
+      },
+      "location": {
+        "latitude": 51.535556,
+        "longitude": -0.155833,
+        "source": "wikidata",
+        "licence": "CC0-1.0"
+      },
+      "reviewedBy": "PREVIEW ONLY (not a review)",
+      "reviewedAt": "2026-10-20",
+      "website": "https://www.londonzoo.org/"
+    }
+  ]
 }

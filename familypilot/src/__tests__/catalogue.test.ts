@@ -1,4 +1,7 @@
 import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const require_ = createRequire(import.meta.url);
@@ -49,7 +52,7 @@ describe('the stored catalogue', () => {
   it('turns stored rows into places, with the schedule and the snapshot kept apart', async () => {
     const { readCatalogue } = await import(cataloguePath);
     const { client } = fakeClient([row()]);
-    const [place] = await readCatalogue({ client, now: NOW });
+    const [place] = await readCatalogue({ client, now: NOW, entries: [], cutover: [] });
     expect(place).toMatchObject({
       familypilotId: 'fp-google-A', category: 'farm', provider: 'google', latitude: 51.532, enrichmentStatus: 'provider_only',
     });
@@ -82,15 +85,31 @@ describe('the stored catalogue', () => {
       row({ familypilot_place_id: 'manchester', lat: 53.48, lng: -2.24 }),
       row({ familypilot_place_id: 'nocoords', lat: null, lng: null }),
     ]);
-    const places = await readCatalogue({ client, now: NOW });
+    const places = await readCatalogue({ client, now: NOW, entries: [], cutover: [] });
     expect(places.map((p: { familypilotId: string }) => p.familypilotId)).toEqual(['near']);
   });
 
   it('degrades to an empty list when the database is unavailable, never an error', async () => {
     const { readCatalogue } = await import(cataloguePath);
-    expect(await readCatalogue({ client: null as never })).toEqual([]);
+    expect(await readCatalogue({ client: null as never, entries: [] })).toEqual([]);
     const broken = { from: () => { throw new Error('down'); } };
-    expect(await readCatalogue({ client: broken })).toEqual([]);
+    expect(await readCatalogue({ client: broken, entries: [] })).toEqual([]);
+  });
+
+  it('still serves the independently held venues when the database is unavailable: they are files, not rows', async () => {
+    const { readCatalogue } = await import(cataloguePath);
+    const entries = [{
+      familypilotId: 'fp-os-0a1b2c3d-0000-0000-0000-000000000001', name: 'Brockwell Park', category: 'park',
+      identity: { source: 'os-greenspace', url: 'https://www.ordnancesurvey.co.uk/products/os-open-greenspace', retrievedAt: '2026-10-14', licence: 'OGL-3.0', externalId: '0a1b2c3d-0000-0000-0000-000000000001' },
+      location: { latitude: 51.451, longitude: -0.1066, source: 'os-greenspace', licence: 'OGL-3.0' }, reviewedBy: 'A. Reviewer', reviewedAt: '2026-10-20',
+    }];
+    const broken = { from: () => { throw new Error('down'); } };
+    for (const client of [null as never, broken]) {
+      const places = await readCatalogue({ client, entries });
+      expect(places.map((p: { familypilotId: string }) => p.familypilotId)).toEqual(['fp-os-0a1b2c3d-0000-0000-0000-000000000001']);
+    }
+    const noRows = { from: () => ({ select: () => ({ eq: () => ({ in: () => ({ gte: () => ({ limit: async () => ({ data: null, error: { message: 'x' } }) }) }) }) }) }) };
+    expect(await readCatalogue({ client: noRows as never, entries })).toHaveLength(1);
   });
 
   it('merges by id, preferring the live copy, and respects the limit', async () => {
@@ -153,6 +172,11 @@ describe('the London search serves the catalogue alongside the cached search', (
 
   const park = { familypilotId: 'fp-google-P', externalId: 'google:P', provider: 'google', name: 'A Park', category: 'park', latitude: 51.5, longitude: -0.1, photos: [], fetchedAt: new Date().toISOString(), enrichmentStatus: 'provider_only' };
   const query = { lat: '51.5074', lng: '-0.1278', radiusKm: '40', scope: 'london', intent: 'explore' };
+  // The endpoint reads the shipped registry files, so what it serves beside the Google rows depends on the release state: before a
+  // reviewed set is approved the files are empty and nothing is switched over; after, the switched-over categories are served from
+  // the files instead of Google. Both states are honest; the expectations below follow the shipped cut-over file.
+  const switchedOver: Set<string> = new Set(JSON.parse(readFileSync(join(__dirname, '..', '..', '..', 'server/places/data/identities/cutover.json'), 'utf8')).categories);
+  const googleOnly = <T extends { independentSource?: string }>(places: T[]): T[] => places.filter((p) => !p.independentSource);
 
   it('adds stored farms to a stale cached search, with Google switched off and nothing fetched', async () => {
     const fetchSpy = vi.fn(async () => { throw new Error('fetch must not be reached'); });
@@ -163,8 +187,8 @@ describe('the London search serves the catalogue alongside the cached search', (
     const response = res();
     await (mod.default ?? mod)({ method: 'GET', query }, response);
     expect(response.statusCode).toBe(200);
-    const categories = response.body.places.map((p: { category: string }) => p.category).sort();
-    expect(categories).toEqual(['farm', 'park', 'soft_play']);
+    const categories = googleOnly(response.body.places as Array<{ category: string; independentSource?: string }>).map((p) => p.category).sort();
+    expect(categories).toEqual(['farm', 'park', 'soft_play'].filter((c) => !switchedOver.has(c)));
     expect(response.body.cacheState).toBe('stale');
     expect(fetchSpy).not.toHaveBeenCalled();
   });
@@ -177,7 +201,7 @@ describe('the London search serves the catalogue alongside the cached search', (
     const response = res();
     await (mod.default ?? mod)({ method: 'GET', query }, response);
     expect(response.statusCode).toBe(200);
-    expect(response.body.places.map((p: { name: string }) => p.name)).toEqual(['Hackney City Farm']);
+    expect(googleOnly(response.body.places as Array<{ name: string; independentSource?: string }>).map((p) => p.name)).toEqual(switchedOver.has('farm') ? [] : ['Hackney City Farm']);
     expect(response.body.cacheState).toBe('catalogue');
     expect(fetchSpy).not.toHaveBeenCalled();
   });

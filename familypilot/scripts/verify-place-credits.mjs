@@ -180,6 +180,9 @@ async function runPass({ label, includeOsm }) {
     // --- EXPLORE --------------------------------------------------------------------------------
     await page.goto(`${BASE}/explore`, { waitUntil: 'domcontentloaded' });
     await settle(page, 3000);
+    // Explore opens on Nearby (within 5 miles of home); the credit has to be measured over the whole loaded list, so ask for all of it.
+    await page.getByTestId('explore-scope-all').click();
+    await page.waitForTimeout(600);
     // The credit sits under the last row, so the list has to be scrolled to the end to read it.
     await page.evaluate(() => {
       for (const node of document.querySelectorAll('*')) {

@@ -22,25 +22,29 @@ function venue(category: VenueCategory, extra: Partial<Venue> = {}): Venue {
 const many = (category: VenueCategory, count: number, extra: Partial<Venue> = {}) => Array.from({ length: count }, () => venue(category, extra));
 
 describe('one taxonomy for Home and Explore', () => {
-  it('gives the same answer to the same question on both screens', () => {
+  it('gives the same answer to the same question wherever it is asked', () => {
     const venues = [...many('farm', 4), ...many('museum', 4), ...many('park', 4), ...many('zoo', 3), ...many('soft_play', 3), ...many('activity', 2), ...many('attraction', 2)];
-    const pairs: Array<[string, string]> = [['park', 'parks'], ['farm', 'farms'], ['museum', 'museums'], ['activity', 'activities'], ['soft_play', 'soft_play'], ['animals', 'animals']];
-    for (const [homeId, exploreId] of pairs) {
-      const home = filterByPlanCategory(venues, homeId).map((v) => v.id);
-      const explore = filterVenues(venues, exploreId, [], 'any', 'any').map((v) => v.id).sort();
-      expect(explore, `${homeId} / ${exploreId}`).toEqual([...home].sort());
+    for (const id of ['parks', 'museums', 'animals', 'play', 'attractions']) {
+      const shared = filterByPlanCategory(venues, id).map((v) => v.id);
+      const explore = filterVenues(venues, id, [], 'any', 'any').map((v) => v.id).sort();
+      expect(explore, id).toEqual([...shared].sort());
     }
   });
 
-  it('defines Activity once: activity and attraction, not farms, museums or zoos', () => {
+  it('defines Attractions & activities once: activity and attraction, not farms, museums or zoos', () => {
     const venues = [...many('farm', 1), ...many('museum', 1), ...many('zoo', 1), ...many('soft_play', 1), venue('activity'), venue('attraction')];
-    const found = filterByPlanCategory(venues, 'activity').map((v) => v.category).sort();
+    const found = filterByPlanCategory(venues, 'attractions').map((v) => v.category).sort();
     expect(found).toEqual(['activity', 'attraction']);
   });
 
+  it('defines Farms & animals once: farms and zoos together, which is what a parent asking for animals means', () => {
+    const venues = [...many('farm', 2), ...many('zoo', 3), ...many('park', 2)];
+    expect(filterByPlanCategory(venues, 'animals').map((v) => v.category).sort()).toEqual(['farm', 'farm', 'zoo', 'zoo', 'zoo']);
+  });
+
   it('resolves either screen\'s id to the same entry', () => {
-    expect(findEntry('parks')).toBe(findEntry('park'));
     expect(findEntry('all')).toBe(findEntry('for_you'));
+    expect(findEntry('play')?.label).toBe('Soft play & trampolines');
   });
 
   it('gives Home and Explore different jobs: Home holds situations, Explore holds the categories', () => {
@@ -48,7 +52,7 @@ describe('one taxonomy for Home and Explore', () => {
     // short on time). Browsing by kind of place is Explore's job, so two directories do not compete. There is no
     // "Fits your day": that lens assumed the family was leaving now, and whether a day works is the planner's question.
     expect(PLAN_CATEGORIES.map((c) => c.label)).toEqual(['For you', 'Indoor', 'Outdoor', 'Free', 'Rainy day', 'Under 1 hour']);
-    for (const kind of ['farm', 'park', 'museum', 'soft_play', 'activity', 'animals']) {
+    for (const kind of ['parks', 'museums', 'animals', 'play', 'attractions']) {
       expect(PLAN_CATEGORIES.some((c) => c.id === kind), kind).toBe(false);
       expect(findEntry(kind)?.explore, kind).toBe(true);
     }
@@ -66,8 +70,9 @@ describe('a category is offered only if it can fill a list', () => {
     expect(explore).toContain('all');
     expect(explore).toContain('parks');
     expect(explore).toContain('museums');
-    expect(explore).not.toContain('farms'); // 2 < 3
-    expect(explore).not.toContain('soft_play'); // 1
+    expect(explore).toContain('animals'); // 2 farms + 1 zoo = 3
+    expect(explore).not.toContain('play'); // 1
+    expect(explore).not.toContain('attractions'); // none
     expect(planCategoriesFor(venues).map((c) => c.id)).toContain('for_you');
   });
 
@@ -87,8 +92,8 @@ describe('a category is offered only if it can fill a list', () => {
   it('offers the same categories on Explore, in Explore\'s own ids and wording', () => {
     const explore = exploreCategoriesFor(venues);
     expect(explore.map((c) => c.id)).toEqual(expect.arrayContaining(['all', 'parks', 'museums']));
-    expect(explore.map((c) => c.id)).not.toContain('farms');
-    expect(explore.find((c) => c.id === 'parks')?.label).toBe('Parks');
+    expect(explore.map((c) => c.id)).not.toContain('farms'); // the old ids are gone: five groups now
+    expect(explore.find((c) => c.id === 'parks')?.label).toBe('Parks & playgrounds');
   });
 
   it('reports the real count behind each offer', () => {
@@ -98,14 +103,15 @@ describe('a category is offered only if it can fill a list', () => {
     expect(MIN_USEFUL_RESULTS).toBeGreaterThanOrEqual(2);
   });
 
-  it('REGRESSION: with the real London mix (2 farms in 79) Farm is not offered; with the catalogue (8) it is', () => {
+  it('REGRESSION: with the real London mix (2 soft play in 79) soft play is not offered from the live page alone; with the catalogue it is', () => {
     const live = [...many('park', 34), ...many('museum', 28), ...many('attraction', 7), ...many('activity', 4), ...many('soft_play', 2), ...many('zoo', 2), ...many('farm', 2)];
-    expect(exploreCategoriesFor(live).map((c) => c.id)).not.toContain('farms');
+    const liveIds = exploreCategoriesFor(live).map((c) => c.id);
+    expect(liveIds).not.toContain('play');
+    expect(liveIds).toContain('animals'); // 2 zoos and 2 farms are one group now
     const withCatalogue = [...live, ...many('farm', 6), ...many('soft_play', 3)];
     const ids = exploreCategoriesFor(withCatalogue).map((c) => c.id);
-    expect(ids).toContain('farms');
-    expect(ids).toContain('soft_play');
-    expect(filterByPlanCategory(withCatalogue, 'farm')).toHaveLength(8);
+    expect(ids).toContain('play');
+    expect(filterByPlanCategory(withCatalogue, 'animals')).toHaveLength(10);
   });
 });
 

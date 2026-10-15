@@ -9,6 +9,7 @@ import { timing } from '@/src/design-system/animations/presets';
 import { colors, radius, shadows, spacing } from '@/src/design-system/tokens';
 import { useReducedMotion } from '@/src/hooks/use-reduced-motion';
 import { useFiltersStore } from '@/src/stores/filters-store';
+import { RADIUS_MILES } from '@/src/utils/explore-geo';
 import { RESTAURANT_FILTER_OPTIONS } from '@/src/utils/filter-restaurants';
 import {
   BUDGET_FILTER_OPTIONS,
@@ -60,8 +61,11 @@ export function FilterSheet({ visible, onClose, scope = 'explore', priceFiltersA
     categoryFilter,
     exploreMaxDrive,
     exploreBudget,
+    exploreRadius,
+    exploreScope,
     advancedFilters,
     setExploreMaxDrive,
+    setExploreRadius,
     setExploreBudget,
     toggleAdvancedFilter,
     resetExploreFilters,
@@ -135,22 +139,54 @@ export function FilterSheet({ visible, onClose, scope = 'explore', priceFiltersA
         <ScrollView contentContainerStyle={styles.content}>
           {scope === 'explore' ? (
             <>
-              <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
-                Travel time from home
-              </Text>
-              <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint}>
-                Every distance is shown until you choose one here. It applies to this search only
-              </Text>
-              <View style={styles.chipWrap}>
-                {DRIVE_FILTER_OPTIONS.map((option) => (
-                  <Chip
-                    key={String(option.id)}
-                    label={option.label}
-                    active={exploreMaxDrive === option.id}
-                    onPress={() => setExploreMaxDrive(option.id)}
-                  />
-                ))}
-              </View>
+              {isRestaurantMode ? (
+                <>
+                  <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+                    Travel time from home
+                  </Text>
+                  <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint}>
+                    Every distance is shown until you choose one here. It applies to this search only
+                  </Text>
+                  <View style={styles.chipWrap}>
+                    {DRIVE_FILTER_OPTIONS.map((option) => (
+                      <Chip
+                        key={String(option.id)}
+                        label={option.label}
+                        active={exploreMaxDrive === option.id}
+                        onPress={() => setExploreMaxDrive(option.id)}
+                      />
+                    ))}
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+                    How far
+                  </Text>
+                  <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint} testID="explore-distance-note">
+                    Straight-line miles from where you are looking. {exploreScope === 'all' ? 'Search all has no limit; this is the distance Nearby uses.' : 'Anywhere in London is Search all.'}
+                  </Text>
+                  <View style={styles.chipWrap}>
+                    {RADIUS_MILES.map((miles) => (
+                      <Chip
+                        key={miles}
+                        label={`${miles} miles`}
+                        active={exploreRadius === miles}
+                        onPress={() => setExploreRadius(miles)}
+                        testID={`explore-sheet-radius-${miles}`}
+                      />
+                    ))}
+                  </View>
+                  <Text variant="bodySmall" color={colors.text.secondary} style={styles.groupLabel}>
+                    Age guidance
+                  </Text>
+                  <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint} testID="explore-age-note">
+                    There is no age filter yet: no place has a recorded age limit, so it would hide nothing. Each card says whether its guidance is a
+                    recorded limit, typical for that kind of place, or not recorded. A limit that is confirmed and rules your child out hides the place,
+                    with a count and a way to show it.
+                  </Text>
+                </>
+              )}
 
               {showPrices ? (
                 <>
@@ -185,7 +221,8 @@ export function FilterSheet({ visible, onClose, scope = 'explore', priceFiltersA
               </Text>
               {group.id === 'general' ? (
                 <Text variant="caption" color={colors.text.tertiary} style={styles.groupHint} testID="evidence-filters-note">
-                  These show only places where it is confirmed. A place we haven’t been able to check is left out, not counted as a no.
+                  Only what is confirmed counts. A place with nothing recorded is not a match and is listed apart as “not checked”; a place whose own page
+                  says it does not have it is hidden, with a count.
                 </Text>
               ) : null}
               <View style={styles.chipWrap}>
