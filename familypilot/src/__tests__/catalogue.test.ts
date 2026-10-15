@@ -187,7 +187,7 @@ describe('the London search serves the catalogue alongside the cached search', (
     const response = res();
     await (mod.default ?? mod)({ method: 'GET', query }, response);
     expect(response.statusCode).toBe(200);
-    const categories = googleOnly(response.body.places).map((p: { category: string }) => p.category).sort();
+    const categories = googleOnly(response.body.places as Array<{ category: string; independentSource?: string }>).map((p) => p.category).sort();
     expect(categories).toEqual(['farm', 'park', 'soft_play'].filter((c) => !switchedOver.has(c)));
     expect(response.body.cacheState).toBe('stale');
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -201,7 +201,7 @@ describe('the London search serves the catalogue alongside the cached search', (
     const response = res();
     await (mod.default ?? mod)({ method: 'GET', query }, response);
     expect(response.statusCode).toBe(200);
-    expect(googleOnly(response.body.places).map((p: { name: string }) => p.name)).toEqual(switchedOver.has('farm') ? [] : ['Hackney City Farm']);
+    expect(googleOnly(response.body.places as Array<{ name: string; independentSource?: string }>).map((p) => p.name)).toEqual(switchedOver.has('farm') ? [] : ['Hackney City Farm']);
     expect(response.body.cacheState).toBe('catalogue');
     expect(fetchSpy).not.toHaveBeenCalled();
   });
