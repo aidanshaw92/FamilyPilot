@@ -14,8 +14,9 @@ export const fontFamily = {
 /**
  * The identity references set the page voice (the greeting, "Explore London", the Welcome headline)
  * in Inter Bold with a -0.025em track, and card titles and button labels in Semi Bold. Display,
- * heading1 and heading2 are therefore Bold; heading3 stays Semi Bold. Extra Bold and Black are loaded
- * for the internal tools and never used for a parent-facing word.
+ * heading1 and heading2 are therefore Bold; heading3 stays Semi Bold. Extra Bold and Black are named here
+ * but NOT loaded (design-system/fonts.ts): nothing draws with them, and loading them cost every first visit
+ * two full font files. Loading one again is a deliberate change, with the word that needs it.
  */
 const HEADING_TRACK = -0.025;
 
