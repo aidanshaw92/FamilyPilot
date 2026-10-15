@@ -31,25 +31,33 @@ async function open() {
   return { context, page };
 }
 
-// ---- A the service is down, then comes back
-// Explore's designed behaviour on an outage (src/utils/saved-examples-notice.ts): a bundled list of examples, said to be examples, so the screen is never blank.
+// ---- A the service is down, then comes back (with #223: an honest error with retry on Explore and Home, never demo venues)
 {
   const { context, page } = await open();
   let mode = 'down';
   await page.route('**/api/places/search**', (r) => (mode === 'down' ? r.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'The venue catalogue is unavailable', code: 'CATALOGUE_UNAVAILABLE' }) }) : r.fallback()));
   await page.goto(`${BASE}/explore`, { waitUntil: 'domcontentloaded' });
-  await page.getByText(/Live places aren.t loading right now/).waitFor({ timeout: 60000 });
+  await page.getByRole('alert').waitFor({ timeout: 60000 });
   const text = await body(page);
-  check('A  a failing service says live places are not loading and that what is shown are saved examples', /Live places aren.t loading right now, so these are saved examples/.test(text));
+  check('A  Explore, service down: "Couldn\'t load" with Try again', /Couldn.t load/.test(text) && (await page.getByText('Try again').count()) >= 1, text.slice(0, 160));
+  check('A  and no demo venue, no "saved examples", no facilities or prices shown as recommendations', !/saved examples|Café on site|Science Museum|Good fit/.test(text), text.slice(0, 200));
   check('A  and never says there are no places near you', !/no places (near|within)|nothing (near|to show)|0 places/i.test(text), text.slice(0, 200));
   await shot(page, '30-explore-service-down');
   mode = 'up';
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.getByRole('button', { name: /Try again/i }).first().click();
   await page.getByTestId('explore-count').waitFor({ timeout: 60000 });
-  await page.waitForTimeout(1500);
-  const back = await body(page);
   const shown = Number(/(\d+) places? within/.exec(await page.getByTestId('explore-count').innerText())?.[1] ?? 0);
-  check('A  once the service is back, a reload shows the real places (the count is the registry\'s) and the notice is gone', !/saved examples/.test(back) && shown > 20, `${shown} places`);
+  check('A  Try again recovers once the service is back: the real places (the registry\'s count)', shown > 20, `${shown} places`);
+  await context.close();
+}
+{
+  const { context, page } = await open();
+  await page.route('**/api/places/search**', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'down', code: 'CATALOGUE_UNAVAILABLE' }) }));
+  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(6000);
+  const text = await body(page);
+  check('A  Home, service down and nothing kept: an honest error, not demo venues', /Couldn.t load|could not load|try again/i.test(text) && !/saved examples|Science Museum|Café on site/.test(text), text.slice(0, 220));
+  await shot(page, '30b-home-service-down');
   await context.close();
 }
 
