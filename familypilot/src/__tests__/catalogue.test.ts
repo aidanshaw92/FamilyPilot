@@ -176,7 +176,7 @@ describe('the London search serves the catalogue alongside the cached search', (
   // reviewed set is approved the files are empty and nothing is switched over; after, the switched-over categories are served from
   // the files instead of Google. Both states are honest; the expectations below follow the shipped cut-over file.
   const switchedOver: Set<string> = new Set(JSON.parse(readFileSync(join(__dirname, '..', '..', '..', 'server/places/data/identities/cutover.json'), 'utf8')).categories);
-  const googleOnly = (places: Array<{ independentSource?: string }>) => places.filter((p) => !p.independentSource);
+  const googleOnly = <T extends { independentSource?: string }>(places: T[]): T[] => places.filter((p) => !p.independentSource);
 
   it('adds stored farms to a stale cached search, with Google switched off and nothing fetched', async () => {
     const fetchSpy = vi.fn(async () => { throw new Error('fetch must not be reached'); });

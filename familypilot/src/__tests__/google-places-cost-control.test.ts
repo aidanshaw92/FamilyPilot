@@ -609,10 +609,11 @@ describe('repeat renders are absorbed rather than re-bought', () => {
       expect(res.headers['Cache-Control']).toBe('no-store');
     } else {
       // Once a reviewed set ships, the gate refusal is answered with the independently held venues (real, not demo), still with no Google request.
+      const body = res.body as { provider?: string; places?: Array<{ independentSource?: string }> };
       expect(res.statusCode).toBe(200);
-      expect(res.body?.provider).not.toBe('mock');
-      expect(res.body?.places?.length).toBeGreaterThan(0);
-      expect(res.body?.places?.every((p: { independentSource?: string }) => Boolean(p.independentSource))).toBe(true);
+      expect(body.provider).not.toBe('mock');
+      expect(body.places?.length ?? 0).toBeGreaterThan(0);
+      expect(body.places?.every((p) => Boolean(p.independentSource))).toBe(true);
     }
     expect(spy).not.toHaveBeenCalled();
   });
