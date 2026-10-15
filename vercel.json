@@ -10,7 +10,11 @@
       "data/open-data-inputs": false,
       "data/open-data-inputs-diagnostic": false,
       "data/open-data-inputs-regions": false,
-      "data/open-data-inputs-regions-2": false
+      "data/open-data-inputs-regions-2": false,
+      "docs/licensing-and-retention": false,
+      "docs/open-data-dry-run": false,
+      "docs/soft-play-recovery": false,
+      "docs/catalogue-expansion": false
     }
   },
   "cleanUrls": true,

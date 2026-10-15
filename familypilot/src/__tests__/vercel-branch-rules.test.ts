@@ -3,7 +3,7 @@
  * allowance (100 on the free plan; docs/VERCEL_DEPLOYMENT_LIMITS.md), and a release day needs that allowance for the production deploy and a Preview rebuild.
  *
  * This pins the setting so it can only ever narrow, on purpose:
- *  - the excluded branches are exactly the listed ones: throwaway branches a GitHub runner pushes results to, and documentation-only branches (none in this commit);
+ *  - the excluded branches are exactly the listed ones: throwaway branches a GitHub runner pushes results to, and (second block) documentation-only branches;
  *  - every entry is an EXACT branch name. A pattern such as `data/*` or `docs/*` would also switch off a future venue-data release or a branch that needs a Preview
  *    to be reviewed, so a glob character fails this test;
  *  - the branches that must stay deployable are not excluded, whatever is added later.
@@ -21,7 +21,7 @@ const rules = config.git?.deploymentEnabled as Record<string, boolean>;
 /** Throwaway branches: a GitHub runner reads public sources and commits its results back, so every job would otherwise cost two deployments. */
 const THROWAWAY = ['data/open-data-fetch', 'data/open-data-inputs', 'data/open-data-inputs-diagnostic', 'data/open-data-inputs-regions', 'data/open-data-inputs-regions-2'];
 /** Documentation-only branches (markdown and review packs; no app, server or script change). Vercel is not a required check on any pull request. */
-const DOCS_ONLY: string[] = [];
+const DOCS_ONLY = ['docs/licensing-and-retention', 'docs/open-data-dry-run', 'docs/soft-play-recovery', 'docs/catalogue-expansion'];
 
 /** Branches that must always build: production, the functional work, the Tranche A Preview and everything a venue-data release could be called. */
 const MUST_DEPLOY = [
