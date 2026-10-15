@@ -1,5 +1,6 @@
 import { Venue, VenueCategory } from '@/src/types';
 import { isFreeSpend } from '@/src/utils/spend';
+import { EXPLORE_GROUPS, groupOf, REVIEWED_PLACES } from '@/src/utils/venue-classification';
 
 /**
  * ONE taxonomy for Home's plan rail and Explore's category rail.
@@ -54,13 +55,16 @@ const CATEGORY_ENVIRONMENT: Partial<Record<VenueCategory, Environment>> = {
   activity: 'unknown',
 };
 
-export function environmentOf(venue: Pick<Venue, 'category' | 'trustedFacts'>): { environment: Environment; confirmed: boolean } {
+export function environmentOf(
+  venue: Pick<Venue, 'category' | 'trustedFacts'> & Partial<Pick<Venue, 'id' | 'name'>>,
+): { environment: Environment; confirmed: boolean } {
   const fact = venue.trustedFacts?.environment;
   if (fact === 'indoor' || fact === 'outdoor' || fact === 'mixed') return { environment: fact, confirmed: true };
+  // A place the corrections ledger moved to another group (a nature reserve filed as an attraction) is usual for that group.
+  const reviewed = venue.id ? REVIEWED_PLACES[venue.id]?.usualEnvironment : undefined;
+  if (reviewed) return { environment: reviewed, confirmed: false };
   return { environment: CATEGORY_ENVIRONMENT[venue.category] ?? 'unknown', confirmed: false };
 }
-
-const isCategory = (...categories: VenueCategory[]) => (venue: Venue) => categories.includes(venue.category);
 
 export const TAXONOMY: readonly TaxonomyEntry[] = [
   { id: 'for_you', exploreId: 'all', label: 'For you', exploreLabel: 'All', kind: 'all', matches: () => true, home: true, explore: true },
@@ -72,16 +76,11 @@ export const TAXONOMY: readonly TaxonomyEntry[] = [
     id: 'outdoor', label: 'Outdoor', kind: 'condition', home: true, explore: false,
     matches: (v) => environmentOf(v).environment === 'outdoor',
   },
-  { id: 'soft_play', label: 'Soft play', kind: 'type', matches: isCategory('soft_play'), home: false, explore: true },
-  { id: 'farm', exploreId: 'farms', label: 'Farm', exploreLabel: 'Farms', kind: 'type', matches: isCategory('farm'), home: false, explore: true },
-  { id: 'park', exploreId: 'parks', label: 'Park', exploreLabel: 'Parks', kind: 'type', matches: isCategory('park', 'beach'), home: false, explore: true },
-  {
-    id: 'activity', exploreId: 'activities', label: 'Activity', exploreLabel: 'Activities', kind: 'type',
-    // Somewhere the family does something, rather than somewhere they walk around.
-    matches: isCategory('activity', 'attraction'), home: false, explore: true,
-  },
-  { id: 'museum', exploreId: 'museums', label: 'Museum', exploreLabel: 'Museums', kind: 'type', matches: isCategory('museum'), home: false, explore: true },
-  { id: 'animals', label: 'Animals', kind: 'type', matches: isCategory('zoo', 'farm'), home: false, explore: true },
+  // Explore's five groups (approved 13 Oct). What a place IS comes from `classify`, which reads the stored category and then a
+  // short reviewed list, so a trampoline park is not offered as soft play and a nature reserve is a park (venue-classification.ts).
+  ...EXPLORE_GROUPS.map((group): TaxonomyEntry => ({
+    id: group.id, label: group.label, kind: 'type', matches: (v) => groupOf(v) === group.id, home: false, explore: true,
+  })),
   // "Fits your day" (places where the next nap or feed left time to go now) was removed: browsing does not assume the
   // family is leaving now. Whether a chosen day works around naps and feeds is answered by the planner.
   { id: 'free', label: 'Free', kind: 'condition', matches: (v) => isFreeSpend(v.estimatedSpend), home: true, explore: false },

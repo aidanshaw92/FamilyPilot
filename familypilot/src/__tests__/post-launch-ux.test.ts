@@ -26,7 +26,8 @@ describe('Explore filters and evidence', () => {
   it('the sheet says a filter shows confirmed places only, and that unchecked is not a no', () => {
     const sheet = read('src/components/explore/FilterSheet.tsx');
     expect(sheet).toContain('testID="evidence-filters-note"');
-    expect(sheet).toContain('left out, not counted as a no');
+    expect(sheet).toContain('Only what is confirmed counts');
+    expect(sheet).toContain('not checked');
   });
 });
 

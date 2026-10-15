@@ -210,7 +210,9 @@ describe('the brand row on every main screen', () => {
     expect(home).toContain('windowHeight - (insets.top + BRAND_ROW_TOP + BRAND_ROW_HEIGHT)');
     const explore = read('app/(tabs)/explore.tsx');
     expect(explore).toContain('<BrandLockup testID="explore-brand-row" gap={0} />');
-    expect(explore).toContain('style={{ top: BRAND_ROW_SHIFT }}');
+    // Explore no longer draws the old frame's artwork (the approved proposal, Figma page 10, has none), so there is no art to
+    // shift below the row; the row itself sits at the same height as on every main screen.
+    expect(explore).toContain('brandRow: { paddingTop: BRAND_ROW_TOP }');
   });
 
   it('the section pages use the one PageHeader, which draws the same lockup', () => {

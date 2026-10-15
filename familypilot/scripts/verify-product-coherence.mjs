@@ -209,11 +209,16 @@ for (const [width, height] of VIEWPORTS) {
   await settle(page, 2200);
   await page.screenshot({ path: join(dir, '02-explore.jpg'), type: 'jpeg', quality: 82 });
   const explore = await text(page);
-  check(`${label}: Explore is for browsing, searching and filtering`, /Browse, search and filter family days out across London/.test(explore));
-  check(`${label}: Explore carries the categories Home does not`, /Parks/.test(explore) && /Museums/.test(explore));
+  const searchBar = await page.getByPlaceholder(/Search places/).count();
+  check(`${label}: Explore is for browsing, searching and filtering`, /Nearby/.test(explore) && /Search all/.test(explore) && searchBar > 0 && /Within 5 miles/.test(explore));
+  // A group is offered only when it can fill a list; this fixture has parks and museums, no soft play.
+  check(`${label}: Explore carries the categories Home does not`, /Parks & playgrounds/.test(explore) && /Museums & galleries/.test(explore));
   check(`${label}: Explore never tells the family when to leave`, !PRE_PLAN_TIMING.test(explore), (explore.match(PRE_PLAN_TIMING) ?? [''])[0]);
 
   // ---- VENUE DETAIL ------------------------------------------------------------------------------
+  // This household lives in Bushey and the fixture places are across London, so Nearby is thin by design: open Search all.
+  await page.getByTestId('explore-scope-all').click();
+  await page.waitForTimeout(700);
   const card = page.locator('[role="button"][aria-label$="view details"]').first();
   await card.waitFor({ state: 'visible', timeout: 15000 });
   await card.click();

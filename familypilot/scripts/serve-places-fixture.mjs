@@ -38,6 +38,7 @@ import { createReadStream, existsSync, readFileSync, readdirSync, statSync } fro
 import { extname, join, normalize, resolve } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
+import { EXPLORE_SPEC } from './fixtures/explore-places.mjs';
 
 /**
  * The same distance estimator the deployed journey endpoint falls back to when Google is disabled.
@@ -569,6 +570,30 @@ const STORED_CATALOGUE = REAL_ROWS
   : [...PLACES, ...CATALOGUE_ONLY];
 const betweenModule = createRequire(import.meta.url)('../../server/places/lib/between.js');
 
+/**
+ * EXPLORE CATALOGUE (optional): `FIXTURE_EXPLORE=1` makes the search payload a London-wide stand-in for the stored catalogue
+ * (scripts/fixtures/explore-places.mjs), so the Explore journeys have a soft play venue near Camden, farms with and without
+ * recorded facts, a park with a confirmed playground, and a thin outer-London area. Off by default: Home's composition is locked
+ * against the fifteen-venue payload, and every other verifier runs unchanged.
+ */
+const EXPLORE_PLACES = process.env.FIXTURE_EXPLORE === '1'
+  ? EXPLORE_SPEC.map((entry, index) => {
+      const id = entry.id ?? `fp-google-FIXTURExp${String(index).padStart(3, '0')}`;
+      const place = { ...fixturePlace(index % NAMES.length), familypilotId: id, externalId: `google:${id.slice('fp-google-'.length)}`, name: entry.name, category: entry.category, latitude: entry.lat, longitude: entry.lng, googlePrimaryType: entry.ptype ?? entry.category, googleTypes: [entry.ptype ?? entry.category], address: `${entry.name}, London`, website: null, description: undefined };
+      place.photos = place.photos.map((u) => u.replace(/id=[^&]*/, `id=${id.slice('fp-google-'.length)}`));
+      place.enrichmentStatus = 'enriched';
+      const yes = Object.entries(entry.facts).filter(([, v]) => v === 'yes').map(([k]) => k);
+      const FACILITY_NAME = { toilets: 'toilets', babyChanging: 'baby_changing', parking: 'parking', cafe: 'cafe', playground: 'playground' };
+      place.familyMetadata = scenarioMetadata(id, {
+        bestAges: undefined, minRecommendedAge: undefined, maxRecommendedAge: undefined, estimatedSpend: undefined,
+        environment: undefined, parkingInfo: undefined, goodToKnow: [], visitDurationMinutes: undefined,
+        familyFacilities: entry.facts, facilities: [...yes.map((k) => FACILITY_NAME[k]), ...(entry.pushchair === 'good' ? ['pushchair_friendly'] : [])],
+        pushchairSuitability: entry.pushchair,
+      });
+      return place;
+    })
+  : null;
+
 const SEARCH_PLACES =
   process.env.FIXTURE_SEARCH_INCLUDES_OSM === '1'
     ? [...PLACES, EDGE_BY_ID.get('fp-osm-FIXTUREedgeOsm')]
@@ -851,7 +876,7 @@ const server = createServer(async (req, res) => {
 
   if (url.pathname === '/api/places/search') {
     return sendJson(res, 200, {
-      places: SEARCH_PLACES,
+      places: EXPLORE_PLACES ?? SEARCH_PLACES,
       provider: 'google',
       configuredProvider: 'google',
       intent: url.searchParams.get('intent') || 'explore',
@@ -864,7 +889,7 @@ const server = createServer(async (req, res) => {
 
   if (url.pathname === '/api/places/detail') {
     const id = url.searchParams.get('id');
-    const place = EDGE_BY_ID.get(id) ?? STORED_CATALOGUE.find((candidate) => candidate.familypilotId === id);
+    const place = EDGE_BY_ID.get(id) ?? EXPLORE_PLACES?.find((candidate) => candidate.familypilotId === id) ?? STORED_CATALOGUE.find((candidate) => candidate.familypilotId === id);
     if (!place) return sendJson(res, 404, { error: 'Place not found', code: 'NOT_FOUND' });
     return sendJson(res, 200, {
       place,
