@@ -75,6 +75,19 @@ Google Maps Platform Terms, 3.2.3(a): the customer "will not export, extract, or
 2. **Evidence and enrichment tables.** 885 of 904 enrichment drafts carry the word "google" in their `source_context`. Looking at what it is (field names and the words around them, no content): the venue's id (`fp-google-<place id>`, which is allowed), the label `google_provider` as a source type, and **the venue's own website address as Google listed it** (with Google's tracking parameters such as `utm_source=google`). The websites are the venues' own pages and the page text is ours; but the address was *learned* from Google's website field, which is Google content. This does not need the migration above. It needs a decision: for venues that continue in the independent catalogue, take the website from the independent source or the operator and strip the tracking parameters; for venues that do not continue, remove them with the redaction.
 3. **Repository fixtures** read from `place_records` (about 20 files). Code, not SQL; no approval beyond review.
 
+## Consequences for existing saved plans, stated once more
+
+None. Saved places and saved days live on each parent's device and never read `place_records`; the two production tables that could hold a copy (`saved_places_backups`, `planning_workspaces`) hold 0 rows; every table that references `place_records` keeps its rows because no row changes. After the migration a saved place still opens exactly as it does today, because the app reaches the catalogue through `/api/places/*` (service role), never through the public key.
+
+## Proposed execution order
+
+1. **Before anything:** re-run the two privilege queries and the `anon` row count (read-only) and record them, so the "before" state is written down on the day, not from 14 October.
+2. **Apply the migration** as one Supabase migration named `close_public_read_of_place_records` (the two statements above). Expected duration: under a second; no lock of consequence (DDL on a policy and grants).
+3. **Verify, within five minutes:** `has_table_privilege('anon', 'public.place_records', 'select')` is false; `set local role anon; select count(*) from place_records` is a permission error; `GET /api/places/search?intent=catalogue&lat=51.5074&lng=-0.1278&radiusKm=5&limit=5` on production returns places (the service role is unaffected); Explore and Meet halfway on production still list places.
+4. **Rollback trigger:** if step 3's search request returns no places or a 5xx that it did not return before, run the rollback above and record it. Nothing else can be affected, because nothing else reads the table with the public key.
+5. **Independent of Tranche A.** This can be run before or after the catalogue cutover; it does not change what Tranche A serves. Recommended: before, so the public read is closed before more attention comes to the project, on a day with no other production change.
+6. **Not in this order, and not requested:** the redaction `UPDATE` of the 149 Google rows and the enrichment-table clean-up; each would be its own request with its own dry run after the cutover, when the stored Google rows are no longer served.
+
 ## What I am asking
 
-Reply **"approve the migration"** and I will apply it as one migration, run the three verification queries and the production search request, and record the results. No other SQL is requested. I will not apply it without that reply.
+Reply **"approve the migration"** and I will carry out steps 1 to 4 above on the day you name (or at once if you say so), and record the before and after readings in this document. No other SQL is requested. I will not apply it without that reply.
