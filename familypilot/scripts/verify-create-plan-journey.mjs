@@ -118,6 +118,9 @@ async function horizontalOverflow(page) {
 async function firstVenueId(page, viewport) {
   await page.goto(`${BASE}/explore`, { waitUntil: 'domcontentloaded' });
   await settle(page, 2400);
+  // Explore opens on Nearby (5 miles from home); the verifier's household may live beyond the fixture's venues, so take the whole list.
+  await page.getByTestId('explore-scope-all').click();
+  await page.waitForTimeout(500);
   const card = page.locator('[role="button"][aria-label$="view details"]').first();
   await card.waitFor({ state: 'visible', timeout: 15000 });
   const name = (await card.getAttribute('aria-label')) ?? '';

@@ -42,6 +42,9 @@ for (const [width, height] of [[360, 780], [390, 844], [393, 852], [430, 932]]) 
   await page.addInitScript((seed) => localStorage.setItem('familypilot-family-v1', JSON.stringify(seed)), FAMILY_STATE);
   await page.goto(`${BASE}/explore`, { waitUntil: 'networkidle', timeout: 60000 });
   await page.waitForTimeout(2500);
+  // Explore opens on Nearby; this verifier's household is in Manchester, away from every fixture venue, so ask for the whole loaded list.
+  await page.getByTestId('explore-scope-all').click();
+  await page.waitForTimeout(700);
 
   // 1. end of list clears the navigation: wheel to the very end, then find the lowest text on screen
   await page.mouse.move(width / 2, height / 2);
@@ -63,6 +66,8 @@ for (const [width, height] of [[360, 780], [390, 844], [393, 852], [430, 932]]) 
       if (!n.textContent?.trim()) continue;
       const range = document.createRange(); range.selectNodeContents(n);
       const r = range.getBoundingClientRect();
+      // The navigation's own labels sit below its top edge by definition; only the page's content has to clear it.
+      if (n.parentElement?.closest('[role="tablist"]')) continue;
       if (r.height > 0 && r.top < window.innerHeight && r.bottom <= window.innerHeight + 1) bottom = Math.max(bottom, r.bottom);
     }
     return { navTop: nav?.top ?? null, contentBottom: bottom };
@@ -72,18 +77,30 @@ for (const [width, height] of [[360, 780], [390, 844], [393, 852], [430, 932]]) 
 
   // 2. food filter
   await page.evaluate(() => { for (const el of document.querySelectorAll('div')) if (el.scrollTop > 0) el.scrollTop = 0; });
-  const before = Number(((await page.evaluate(() => document.body.innerText)).match(/(\d+) places? across London/) ?? [])[1] ?? -1);
-  await page.getByText(/^Filters/).first().click();
+  const countOf = async () => Number(((await page.getByTestId('explore-count').innerText()).match(/(\d+) places?/) ?? [])[1] ?? -1);
+  const before = await countOf();
+  await page.getByTestId('explore-more').click();
   await page.waitForTimeout(600);
   const sheet = await page.evaluate(() => document.body.innerText);
   check(`${label}: the filter sheet has a "Food nearby" group`, /Food nearby/.test(sheet) && /Café on site/.test(sheet) && /Food within 5 min walk/.test(sheet) && /Food within 10 min walk/.test(sheet));
   await page.getByText('Food within 5 min walk', { exact: true }).click();
   await page.getByRole('button', { name: /show results/i }).click();
   await page.waitForTimeout(900);
+  const count = await countOf();
+  // The places that were not checked are listed apart after the matches, so go to the end of the list to read how many.
+  await page.mouse.move(width / 2, height / 2);
+  let seen = -1;
+  for (let i = 0; i < 40; i += 1) {
+    await page.mouse.wheel(0, 700);
+    await page.waitForTimeout(120);
+    const top = await page.evaluate(() => [...document.querySelectorAll('div')].reduce((m, el) => Math.max(m, el.scrollTop), 0));
+    if (top === seen) break;
+    seen = top;
+  }
+  await page.waitForTimeout(300);
   const text = await page.evaluate(() => document.body.innerText);
-  const count = Number((text.match(/(\d+) places? across London/) ?? [])[1] ?? -1);
   check(`${label}: within 5 min keeps only places known to have food (a café on site counts)`, count >= 1 && count < before, `${count} of ${before} places`);
-  check(`${label}: it says how many could not be checked`, /\d+ not checked for food nearby/.test(text), (text.match(/\d+ not checked for food nearby/) ?? [''])[0]);
+  check(`${label}: it says how many could not be checked`, /\d+ places? (is|are) not checked for food/.test(text), (text.match(/\d+ places? (is|are) not checked for food[^.]*/) ?? [''])[0]);
   await ctx.close();
 }
 await browser.close();

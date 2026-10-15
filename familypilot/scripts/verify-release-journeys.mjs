@@ -95,9 +95,11 @@ console.log('Journey B: Explore -> Filter -> venue -> View details -> Create a p
 {
   const { page, errors } = await person('B');
   await page.goto(`${BASE}/explore`, { waitUntil: 'domcontentloaded' }); await settle(page, 2500);
-  const count = async () => { const t = await page.evaluate(() => document.body.innerText); const m = t.match(/(\d+) places? across London/); return m ? Number(m[1]) : null; };
+  // Explore opens on Nearby (5 miles from home); this journey filters the whole loaded list, so it asks for all of it first (not counted as a tap of the journey).
+  await page.getByTestId('explore-scope-all').click(); await page.waitForTimeout(500);
+  const count = async () => { const t = await page.getByTestId('explore-count').innerText(); const m = t.match(/(\d+) places?/); return m ? Number(m[1]) : null; };
   const before = await count();
-  await page.getByText(/^Filters/).first().click(); await page.waitForTimeout(700);
+  await page.getByTestId('explore-more').click(); await page.waitForTimeout(700);
   let taps = 1;
   await page.getByText('Toilets', { exact: true }).first().click(); taps += 1; await page.waitForTimeout(500);
   await shot(page, 'B-filter');
@@ -105,7 +107,7 @@ console.log('Journey B: Explore -> Filter -> venue -> View details -> Create a p
   const after = await count();
   check(before !== null && after !== null && after <= before, 'B: the filter narrows (or keeps) the list and says how many are left', `${before} -> ${after}`);
   const body = (await page.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ');
-  check(/Filters \(1\)/.test(body), 'B: the filter control says one filter is on');
+  check(/More \(1\)/.test(body), 'B: the More control says one filter is on');
   await shot(page, 'B-results');
   await page.getByText('View family details').first().click(); taps += 1; await page.waitForTimeout(2200);
   check(/\/venue\//.test(page.url()), 'B: a result opens Venue Detail', page.url());

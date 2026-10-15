@@ -46,6 +46,7 @@ let planningWithPlan = null;
   await page.clock.setFixedTime(new Date('2026-10-14T07:30:00'));
   await page.addInitScript(({ p, f }) => { if (localStorage.getItem('seeded')) return; localStorage.setItem('seeded', '1'); localStorage.setItem('familypilot-family-v1', f); localStorage.setItem('familypilot-planning-v1', p); }, { p: JSON.stringify(PLANNING), f: FAMILY });
   await page.goto(`${BASE}/explore`); await settle(page, 2200);
+  await page.getByTestId('explore-scope-all').click(); await page.waitForTimeout(500);
   await page.getByText(/View (family )?details/).first().click(); await settle(page, 1800);
   await page.getByTestId('venue-create-plan').click(); await page.waitForTimeout(900);
   await page.getByTestId('create-plan-submit').click();
@@ -80,6 +81,15 @@ async function scenario({ tag, width, height, insets }, scale) {
   await page.getByTestId('home-up-next').scrollIntoViewIfNeeded().catch(() => {});
 
   await page.goto(`${BASE}/explore`, { waitUntil: 'domcontentloaded' }); await settle(page, 2200);
+  // Explore itself, at this size: the controls above the list, the list scrolled to its end, and the sheet that says where you are looking from.
+  await shot('explore'); await report('Explore', true);
+  await page.mouse.move(width / 2, height / 2); await page.mouse.wheel(0, 6000); await page.waitForTimeout(600);
+  await shot('explore-end'); await report('Explore scrolled to the end', true);
+  await page.mouse.wheel(0, -9000); await page.waitForTimeout(400);
+  await page.getByTestId('explore-where-change').click(); await page.waitForTimeout(700);
+  await shot('explore-where'); await report('Explore: where are you looking', false);
+  await page.getByTestId('explore-where-close').click(); await page.waitForTimeout(400);
+  await page.getByTestId('explore-scope-all').click(); await page.waitForTimeout(500);
   await page.getByText(/View (family )?details/).first().click(); await settle(page, 2000);
   const bar = page.getByTestId('venue-create-plan');
   await bar.waitFor({ timeout: 15000 });
