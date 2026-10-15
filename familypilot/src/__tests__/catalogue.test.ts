@@ -93,6 +93,22 @@ describe('the stored catalogue', () => {
     expect(await readCatalogue({ client: broken })).toEqual([]);
   });
 
+  it('still serves the independently held venues when the database is unavailable: they are files, not rows', async () => {
+    const { readCatalogue } = await import(cataloguePath);
+    const entries = [{
+      familypilotId: 'fp-os-0a1b2c3d-0000-0000-0000-000000000001', name: 'Brockwell Park', category: 'park',
+      identity: { source: 'os-greenspace', url: 'https://www.ordnancesurvey.co.uk/products/os-open-greenspace', retrievedAt: '2026-10-14', licence: 'OGL-3.0', externalId: '0a1b2c3d-0000-0000-0000-000000000001' },
+      location: { latitude: 51.451, longitude: -0.1066, source: 'os-greenspace', licence: 'OGL-3.0' }, reviewedBy: 'A. Reviewer', reviewedAt: '2026-10-20',
+    }];
+    const broken = { from: () => { throw new Error('down'); } };
+    for (const client of [null as never, broken]) {
+      const places = await readCatalogue({ client, entries });
+      expect(places.map((p: { familypilotId: string }) => p.familypilotId)).toEqual(['fp-os-0a1b2c3d-0000-0000-0000-000000000001']);
+    }
+    const noRows = { from: () => ({ select: () => ({ eq: () => ({ in: () => ({ gte: () => ({ limit: async () => ({ data: null, error: { message: 'x' } }) }) }) }) }) }) };
+    expect(await readCatalogue({ client: noRows as never, entries })).toHaveLength(1);
+  });
+
   it('merges by id, preferring the live copy, and respects the limit', async () => {
     const { mergeCatalogue } = await import(cataloguePath);
     const live = [{ familypilotId: 'a', name: 'live a' }];
