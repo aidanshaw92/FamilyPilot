@@ -1,0 +1,253 @@
+[
+ {
+  "familypilotId": "fp-fhrs-346104",
+  "name": "Gambado Chelsea",
+  "category": "soft_play",
+  "identity": {
+   "source": "fhrs",
+   "url": "https://ratings.food.gov.uk/api/download-data/xml/establishments/346104",
+   "retrievedAt": "2026-10-14",
+   "licence": "OGL-3.0",
+   "externalId": "346104"
+  },
+  "location": {
+   "latitude": 51.474468,
+   "longitude": -0.183747,
+   "source": "fhrs",
+   "licence": "OGL-3.0"
+  },
+  "website": "https://www.gambado.com/",
+  "reviewedBy": "UNREVIEWED (Tranche C: awaiting explicit approval; never served)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-fhrs-1691253",
+  "name": "Abuela Play Café",
+  "category": "soft_play",
+  "identity": {
+   "source": "fhrs",
+   "url": "https://ratings.food.gov.uk/api/download-data/xml/establishments/1691253",
+   "retrievedAt": "2026-10-14",
+   "licence": "OGL-3.0",
+   "externalId": "1691253"
+  },
+  "location": {
+   "latitude": 51.3207546,
+   "longitude": -0.1396142,
+   "source": "fhrs",
+   "licence": "OGL-3.0"
+  },
+  "website": "https://abuelaplaycafe.co.uk/",
+  "reviewedBy": "UNREVIEWED (Tranche C: awaiting explicit approval; never served)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-fhrs-1367047",
+  "name": "Halo Play Café",
+  "category": "soft_play",
+  "identity": {
+   "source": "fhrs",
+   "url": "https://ratings.food.gov.uk/api/download-data/xml/establishments/1367047",
+   "retrievedAt": "2026-10-14",
+   "licence": "OGL-3.0",
+   "externalId": "1367047"
+  },
+  "location": {
+   "latitude": 51.5455526,
+   "longitude": -0.4761012,
+   "source": "fhrs",
+   "licence": "OGL-3.0"
+  },
+  "website": "https://haloplaycafe.co.uk/",
+  "reviewedBy": "UNREVIEWED (Tranche C: awaiting explicit approval; never served)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-fhrs-1532159",
+  "name": "Little Peeps Soft Play",
+  "category": "soft_play",
+  "identity": {
+   "source": "fhrs",
+   "url": "https://ratings.food.gov.uk/api/download-data/xml/establishments/1532159",
+   "retrievedAt": "2026-10-14",
+   "licence": "OGL-3.0",
+   "externalId": "1532159"
+  },
+  "location": {
+   "latitude": 51.367245,
+   "longitude": -0.3072945,
+   "source": "fhrs",
+   "licence": "OGL-3.0"
+  },
+  "website": "https://www.littlepeepssoftplay.com/",
+  "reviewedBy": "UNREVIEWED (Tranche C: awaiting explicit approval; never served)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-fhrs-1836741",
+  "name": "Moo Moo's Play Café",
+  "category": "soft_play",
+  "identity": {
+   "source": "fhrs",
+   "url": "https://ratings.food.gov.uk/api/download-data/xml/establishments/1836741",
+   "retrievedAt": "2026-10-14",
+   "licence": "OGL-3.0",
+   "externalId": "1836741"
+  },
+  "location": {
+   "latitude": 51.3274132,
+   "longitude": -0.4103402,
+   "source": "fhrs",
+   "licence": "OGL-3.0"
+  },
+  "website": "https://www.moomoosplaycafe.co.uk/",
+  "reviewedBy": "UNREVIEWED (Tranche C: awaiting explicit approval; never served)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-fhrs-1935590",
+  "name": "The Jump Zone Beckton",
+  "category": "activity",
+  "identity": {
+   "source": "fhrs",
+   "url": "https://ratings.food.gov.uk/api/download-data/xml/establishments/1935590",
+   "retrievedAt": "2026-10-14",
+   "licence": "OGL-3.0",
+   "externalId": "1935590"
+  },
+  "location": {
+   "latitude": 51.5169784,
+   "longitude": 0.0614395,
+   "source": "fhrs",
+   "licence": "OGL-3.0"
+  },
+  "website": "https://thejumpzone.com/",
+  "reviewedBy": "UNREVIEWED (Tranche C: awaiting explicit approval; never served)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-fhrs-1434379",
+  "name": "Flip Out Brent Cross",
+  "category": "activity",
+  "identity": {
+   "source": "fhrs",
+   "url": "https://ratings.food.gov.uk/api/download-data/xml/establishments/1434379",
+   "retrievedAt": "2026-10-14",
+   "licence": "OGL-3.0",
+   "externalId": "1434379"
+  },
+  "location": {
+   "latitude": 51.570301,
+   "longitude": -0.229727,
+   "source": "fhrs",
+   "licence": "OGL-3.0"
+  },
+  "website": "https://www.flipout.co.uk/locations/brent-cross",
+  "reviewedBy": "UNREVIEWED (Tranche C: awaiting explicit approval; never served)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-fhrs-1857771",
+  "name": "Clip 'n Climb at The O2",
+  "category": "activity",
+  "identity": {
+   "source": "fhrs",
+   "url": "https://ratings.food.gov.uk/api/download-data/xml/establishments/1857771",
+   "retrievedAt": "2026-10-14",
+   "licence": "OGL-3.0",
+   "externalId": "1857771"
+  },
+  "location": {
+   "latitude": 51.5016804,
+   "longitude": 0.0040714,
+   "source": "fhrs",
+   "licence": "OGL-3.0"
+  },
+  "website": "https://theo2.clipnclimb.co.uk/",
+  "reviewedBy": "UNREVIEWED (Tranche C: awaiting explicit approval; never served)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-fhrs-1937580",
+  "name": "Clip 'n Climb Croydon",
+  "category": "activity",
+  "identity": {
+   "source": "fhrs",
+   "url": "https://ratings.food.gov.uk/api/download-data/xml/establishments/1937580",
+   "retrievedAt": "2026-10-14",
+   "licence": "OGL-3.0",
+   "externalId": "1937580"
+  },
+  "location": {
+   "latitude": 51.3779745,
+   "longitude": -0.1017918,
+   "source": "fhrs",
+   "licence": "OGL-3.0"
+  },
+  "website": "https://croydon.clipnclimb.co.uk/",
+  "reviewedBy": "UNREVIEWED (Tranche C: awaiting explicit approval; never served)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-fhrs-1961932",
+  "name": "Cheeky Chops Play Café",
+  "category": "activity",
+  "identity": {
+   "source": "fhrs",
+   "url": "https://ratings.food.gov.uk/api/download-data/xml/establishments/1961932",
+   "retrievedAt": "2026-10-14",
+   "licence": "OGL-3.0",
+   "externalId": "1961932"
+  },
+  "location": {
+   "latitude": 51.4478798,
+   "longitude": -0.3265789,
+   "source": "fhrs",
+   "licence": "OGL-3.0"
+  },
+  "reviewedBy": "UNREVIEWED (Tranche C: awaiting explicit approval; never served)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-fhrs-1677302",
+  "name": "Dreami Play Café",
+  "category": "activity",
+  "identity": {
+   "source": "fhrs",
+   "url": "https://ratings.food.gov.uk/api/download-data/xml/establishments/1677302",
+   "retrievedAt": "2026-10-14",
+   "licence": "OGL-3.0",
+   "externalId": "1677302"
+  },
+  "location": {
+   "latitude": 51.5315259,
+   "longitude": -0.0617983,
+   "source": "fhrs",
+   "licence": "OGL-3.0"
+  },
+  "website": "https://www.dreami.uk/",
+  "reviewedBy": "UNREVIEWED (Tranche C: awaiting explicit approval; never served)",
+  "reviewedAt": "2026-10-14"
+ },
+ {
+  "familypilotId": "fp-fhrs-1756533",
+  "name": "Raffy's Play Café",
+  "category": "activity",
+  "identity": {
+   "source": "fhrs",
+   "url": "https://ratings.food.gov.uk/api/download-data/xml/establishments/1756533",
+   "retrievedAt": "2026-10-14",
+   "licence": "OGL-3.0",
+   "externalId": "1756533"
+  },
+  "location": {
+   "latitude": 51.3897216,
+   "longitude": -0.0269624,
+   "source": "fhrs",
+   "licence": "OGL-3.0"
+  },
+  "website": "https://www.raffysplaycafe.co.uk/",
+  "reviewedBy": "UNREVIEWED (Tranche C: awaiting explicit approval; never served)",
+  "reviewedAt": "2026-10-14"
+ }
+]
