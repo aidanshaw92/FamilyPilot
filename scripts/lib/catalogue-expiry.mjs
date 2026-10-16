@@ -46,7 +46,7 @@ export function standInClient(rows) {
 }
 
 /** The rule the map applies (src/utils/map-compliance.ts): a place is drawn only if its provider is independent and it has a position. */
-export const isPlottable = (place) => (place.provider === 'osm' || place.provider === 'mock') && Number.isFinite(place.latitude) && Number.isFinite(place.longitude);
+export const isPlottable = (place) => ['osm', 'wikidata', 'os-greenspace', 'mock'].includes(place.provider) && Number.isFinite(place.latitude) && Number.isFinite(place.longitude);
 
 /**
  * @param {{ rows: any[], entries?: any[], dates: string[], cutover?: string[], countUnreviewed?: boolean }} input  `dates` are YYYY-MM-DD, evaluated at noon UTC.

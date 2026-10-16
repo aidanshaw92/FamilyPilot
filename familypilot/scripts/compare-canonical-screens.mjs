@@ -80,7 +80,8 @@ const FRESH = { state: { hasCompletedOnboarding: false, hasSeenSplash: true }, v
 const SCREENS = [
   { key: 'welcome', route: '/welcome', state: FRESH, figma: 'welcome-393.png' },
   { key: 'home', route: '/', state: PROFILE, figma: 'home-393.png' },
-  { key: 'explore', route: '/explore', state: PROFILE, figma: 'explore-393.png' },
+  // Explore is no longer compared with the earlier canonical frame (explore-393.png): the approved proposal on Figma page 10 replaced
+  // it (Nearby | Search all, where, five groups, quick filters), and is checked by verify-explore-journeys.mjs.
 ];
 
 mkdirSync(OUT, { recursive: true });

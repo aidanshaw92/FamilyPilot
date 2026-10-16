@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { memo } from 'react';
+import { memo, ReactNode } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -30,6 +30,14 @@ interface DecisionCardProps {
   index?: number;
   variant?: 'carousel' | 'list' | 'hero';
   onViewDetails?: () => void;
+  /**
+   * The list card's meta line, replacing "category · travel time from home". Explore measures from wherever the parent chose
+   * to look from, so it words the distance itself. Absent: the card says what it always has.
+   */
+  metaLine?: string;
+  /** Evidence lines under the meta (ages, confirmed facilities), for the list card. */
+  extra?: ReactNode;
+  testID?: string;
 }
 
 function DecisionCardComponent({
@@ -37,6 +45,9 @@ function DecisionCardComponent({
   index = 0,
   variant = 'carousel',
   onViewDetails,
+  metaLine,
+  extra,
+  testID,
 }: DecisionCardProps) {
   const router = useRouter();
   const { width: windowWidth } = useWindowDimensions();
@@ -76,6 +87,7 @@ function DecisionCardComponent({
         accessibilityRole="button"
         accessibilityLabel={`${venue.name}, ${classification}, view details`}
         style={styles.compact}
+        testID={testID}
       >
         <VenueImage
           uri={venue.imageUrl}
@@ -105,9 +117,10 @@ function DecisionCardComponent({
           {/* Two lines, not one: the spend ("£8 to £15 for a family of four") is dynamic and long, and one line
               cut it to "£8 to £1…", which reads as a different price. The frame's own meta is the first line. */}
           <Text variant="caption" color={colors.text.secondary} numberOfLines={2} style={styles.compactMeta}>
-            {venue.category.replace('_', ' ')} · {travelTimeLabel(venue.driveMinutes, 'estimated')}
+            {metaLine ?? `${venue.category.replace('_', ' ')} · ${travelTimeLabel(venue.driveMinutes, 'estimated')}`}
             {venue.estimatedSpend ? ` · ${venue.estimatedSpend}` : ''}
           </Text>
+          {extra}
           <ArrowCta
             size="compact"
             disc="mint"

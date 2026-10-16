@@ -54,6 +54,19 @@ export function resolveHomeCoordinates(input: HomeInput): { latitude: number; lo
   return DEFAULT_HOME;
 }
 
+/**
+ * A town in the small built-in list, or null. Unlike `resolveHomeCoordinates` this never falls back to central London, so a
+ * caller that must not substitute a default location can tell "not known" from "known".
+ */
+export function knownLocation(input: string): { latitude: number; longitude: number } | null {
+  const key = input.trim().toLowerCase();
+  if (!key) return null;
+  for (const [pattern, coords] of Object.entries(KNOWN_LOCATIONS)) {
+    if (key.includes(pattern)) return coords;
+  }
+  return null;
+}
+
 /** Haversine distance in km. */
 export function distanceKm(
   lat1: number,

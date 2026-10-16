@@ -95,10 +95,15 @@ const SCREENS = [
     route: '/explore',
     state: PROFILE,
     act: async (page) => {
-      await page.getByRole('button', { name: /^Filters/ }).click();
+      await page.getByTestId('explore-more').click();
       await page.waitForTimeout(700);
     },
   },
+  // Explore's other states: where you are looking from, Search all, the map, and an empty result with its ways to relax.
+  { key: 'explore-where', route: '/explore', state: PROFILE, act: async (page) => { await page.getByTestId('explore-where-change').click(); await page.waitForTimeout(700); } },
+  { key: 'explore-search-all', route: '/explore', state: PROFILE, act: async (page) => { await page.getByTestId('explore-scope-all').click(); await page.waitForTimeout(700); } },
+  { key: 'explore-map', route: '/explore', places: 'osm', state: PROFILE, act: async (page) => { await page.getByTestId('explore-scope-all').click(); await page.getByTestId('explore-view-map').click(); await page.waitForTimeout(900); } },
+  { key: 'explore-empty', route: '/explore', state: PROFILE, act: async (page) => { await page.getByTestId('explore-category-museums').click(); await page.getByTestId('explore-quick-outdoor').click(); await page.waitForTimeout(700); } },
   { key: 'saved', route: '/saved', state: PROFILE },
   { key: 'halfway-map', route: '/halfway', between: 'osm', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-sheet-collapsed').or(page.getByTestId('halfway-empty')).first().waitFor({ timeout: 30000 }); await page.waitForTimeout(800); } },
   { key: 'halfway-details', route: '/halfway', between: 'osm', state: HALFWAY_PROFILE, planning: HALFWAY_PLANNING, act: async (page) => { await page.getByTestId('halfway-sheet-collapsed').or(page.getByTestId('halfway-empty')).first().waitFor({ timeout: 30000 }); if (await page.getByTestId('halfway-details').count()) await page.getByTestId('halfway-details').click(); await page.waitForTimeout(900); } },
@@ -114,6 +119,8 @@ const SCREENS = [
     route: '/explore',
     state: PROFILE,
     act: async (page) => {
+      await page.getByTestId('explore-scope-all').click();
+      await page.waitForTimeout(500);
       await page.locator('[role="button"][aria-label$="view details"]').first().click();
       await page.waitForTimeout(1800);
     },
@@ -210,6 +217,9 @@ function collect() {
   // proxy for order; its order is the DOM order, checked by eye. Pages are checked.
   for (const el of modal ? [] : controls.filter(onScreen)) {
     const r = el.getBoundingClientRect();
+    // The numbered pins on Explore's map follow the numbered list below it (rank order), not the page's top-to-bottom order, and each place is
+    // also a full card in the List: they are the one reviewed exception, as the Meet halfway pins are in the larger-text check.
+    if (el.matches('[data-testid^="explore-map-pin-"]')) continue;
     if (r.top < lastTop - 60 && !el.closest('[role="tablist"]')) order.push(`${describe(el)} comes after something ${Math.round(lastTop - r.top)}px lower`);
     lastTop = Math.max(lastTop, r.top);
   }

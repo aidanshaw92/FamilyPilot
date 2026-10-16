@@ -28,7 +28,7 @@ import { PlacesProviderName } from '@/src/types/places';
  * `familypilot` is deliberately NOT listed: a row of our own has no recorded origin for its position, so it must state one first.
  * A provider joins this list in the same change that adds an independent source, with its licence and credit.
  */
-export const MAPPABLE_PROVIDERS: readonly PlacesProviderName[] = ['osm', 'mock'];
+export const MAPPABLE_PROVIDERS: readonly PlacesProviderName[] = ['osm', 'wikidata', 'os-greenspace', 'mock'];
 
 /** True when the place may be drawn on the app's own map. Unknown origin is false. */
 export function canPlotOnOwnMap(place: { provider?: PlacesProviderName }): boolean {
