@@ -31,7 +31,8 @@ const personalVenue = (over: Partial<Venue> = {}): Venue =>
     longitude: -0.2956,
     address: 'Richmond TW9 3AE',
     imageUrl: 'https://example.invalid/kew.jpg',
-    provider: 'google',
+    // An independently held venue: Google's content is not backed up at all (see the retention tests below).
+    provider: 'osm',
     // EVERY FIELD BELOW IS ABOUT THE FAMILY, NOT THE PLACE.
     driveMinutes: 23,
     familyScore: {
@@ -84,7 +85,7 @@ describe('nothing personal leaves the device in a Saved backup', () => {
       longitude: -0.2956,
       address: 'Richmond TW9 3AE',
       imageUrl: 'https://example.invalid/kew.jpg',
-      provider: 'google',
+      provider: 'osm',
     });
     // The parent's own filing of it is theirs and is kept.
     expect(payload.items[0].group).toBe('want');

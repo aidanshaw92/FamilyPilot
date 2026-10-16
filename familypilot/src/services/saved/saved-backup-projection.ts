@@ -79,6 +79,9 @@ const isFiniteNumber = (value: unknown): value is number => typeof value === 'nu
 
 /** Only the allowlisted fields, and only when they are the type they claim to be. */
 function projectVenue(venue: Venue): BackedUpVenue | null {
+  // A place that came from Google is backed up as its id alone (it lands in `idsWithoutSnapshot`): its name, address, position and photograph are Google's content,
+  // which may not be stored on a server (docs/GOOGLE_RETENTION_AUDIT.md, step 3). The id is the one thing the terms allow to be kept.
+  if (venue?.provider === 'google') return null;
   if (!isNonEmptyString(venue?.id) || !isNonEmptyString(venue?.name)) return null;
   if (!isFiniteNumber(venue?.latitude) || !isFiniteNumber(venue?.longitude)) return null;
 
